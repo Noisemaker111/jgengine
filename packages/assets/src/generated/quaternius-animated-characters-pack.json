@@ -1,0 +1,2290 @@
+[
+  {
+    "id": "quaternius-animated-characters-pack/BaseCharacter",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "BaseCharacter.glb",
+    "metrics": {
+      "glbBytes": 524352,
+      "byteLength": 524352,
+      "triangles": 2104,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 0.9931343854041303
+      },
+      "center": {
+        "x": 0,
+        "z": 0.004944264908895241
+      },
+      "minY": -0.01859067008070966,
+      "maxY": 3.1280740124469015
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/BlueSoldier_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "BlueSoldier_Female.glb",
+    "metrics": {
+      "glbBytes": 1269120,
+      "byteLength": 1269120,
+      "triangles": 7062,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.4228835558056927
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0501748519233578
+      },
+      "minY": -0.018590475649686456,
+      "maxY": 3.185749876944829
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/BlueSoldier_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "BlueSoldier_Male.glb",
+    "metrics": {
+      "glbBytes": 658848,
+      "byteLength": 658848,
+      "triangles": 2994,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.148304878190404
+      },
+      "center": {
+        "x": 0,
+        "z": 0.002319727133921534
+      },
+      "minY": -0.018590683148538574,
+      "maxY": 3.265012596589481
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Casual_Bald",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Casual_Bald.glb",
+    "metrics": {
+      "glbBytes": 556212,
+      "byteLength": 556212,
+      "triangles": 2312,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 0.9931343854041303
+      },
+      "center": {
+        "x": 0,
+        "z": 0.004944264908895241
+      },
+      "minY": -0.01859067008070966,
+      "maxY": 3.1280740124469015
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Casual_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Casual_Female.glb",
+    "metrics": {
+      "glbBytes": 1202344,
+      "byteLength": 1202344,
+      "triangles": 6614,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.5289960359693042
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0028813881584091594
+      },
+      "minY": -0.018590714068265558,
+      "maxY": 3.1857498942327465
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Casual_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Casual_Male.glb",
+    "metrics": {
+      "glbBytes": 1183724,
+      "byteLength": 1183724,
+      "triangles": 6492,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.32457101873897
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05599075594258335
+      },
+      "minY": -0.01859068876311669,
+      "maxY": 3.306525585848307
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Casual2_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Casual2_Female.glb",
+    "metrics": {
+      "glbBytes": 1223160,
+      "byteLength": 1223160,
+      "triangles": 6748,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.4228835558057316
+      },
+      "center": {
+        "x": 0,
+        "z": -0.05017485192337723
+      },
+      "minY": -0.018590714068265558,
+      "maxY": 3.185749876944829
+    },
+    "clips": [
+      "CharacterArmature|Idle",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Punch",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Victory"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Casual2_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Casual2_Male.glb",
+    "metrics": {
+      "glbBytes": 693272,
+      "byteLength": 693272,
+      "triangles": 3216,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.0473069405075268
+      },
+      "center": {
+        "x": 0,
+        "z": -0.02214201264280302
+      },
+      "minY": -0.01859067890653762,
+      "maxY": 3.185966811824342
+    },
+    "clips": [
+      "CharacterArmature|Idle",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Punch",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Victory"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Casual3_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Casual3_Female.glb",
+    "metrics": {
+      "glbBytes": 1474392,
+      "byteLength": 1474392,
+      "triangles": 8430,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.4220914696812725
+      },
+      "center": {
+        "x": 0,
+        "z": 0.056333671302425115
+      },
+      "minY": -0.018590458232721863,
+      "maxY": 3.1857498942327465
+    },
+    "clips": [
+      "CharacterArmature|Idle",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Punch",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Victory"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Casual3_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Casual3_Male.glb",
+    "metrics": {
+      "glbBytes": 947888,
+      "byteLength": 947888,
+      "triangles": 4920,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.0833541011329841
+      },
+      "center": {
+        "x": 0,
+        "z": -0.040165592955531626
+      },
+      "minY": -0.018590446360786425,
+      "maxY": 3.185967050242921
+    },
+    "clips": [
+      "CharacterArmature|Idle",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Punch",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Victory"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Chef_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Chef_Female.glb",
+    "metrics": {
+      "glbBytes": 1520136,
+      "byteLength": 1520136,
+      "triangles": 8754,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.4220914696813112
+      },
+      "center": {
+        "x": 0,
+        "z": 0.056333671302405686
+      },
+      "minY": -0.018590696651300965,
+      "maxY": 3.1857498942327465
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Chef_Hat",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Chef_Hat.glb",
+    "metrics": {
+      "glbBytes": 664024,
+      "byteLength": 664024,
+      "triangles": 3048,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.1049198811930612
+      },
+      "center": {
+        "x": 0,
+        "z": 0.024879890446588226
+      },
+      "minY": -0.01859067593884994,
+      "maxY": 3.8263066755577384
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Chef_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Chef_Male.glb",
+    "metrics": {
+      "glbBytes": 1024440,
+      "byteLength": 1024440,
+      "triangles": 5452,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.1591824745651813
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0022514062394718426
+      },
+      "minY": -0.018590684779365527,
+      "maxY": 3.1859670625969314
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Cow",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cow.glb",
+    "metrics": {
+      "glbBytes": 646120,
+      "byteLength": 646120,
+      "triangles": 2332,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.1191845209816538
+      },
+      "center": {
+        "x": 0,
+        "z": 0.19800042060798403
+      },
+      "minY": -0.018590648895962746,
+      "maxY": 2.890788201735581
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Cowboy_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cowboy_Female.glb",
+    "metrics": {
+      "glbBytes": 1235788,
+      "byteLength": 1235788,
+      "triangles": 6830,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.532463351260366
+      },
+      "center": {
+        "x": 0,
+        "z": 0.00461499230410739
+      },
+      "minY": -0.018590714068265558,
+      "maxY": 3.514129525840112
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Cowboy_Hair",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cowboy_Hair.glb",
+    "metrics": {
+      "glbBytes": 1195684,
+      "byteLength": 1195684,
+      "triangles": 6560,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.32457101873897
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05599075594258335
+      },
+      "minY": -0.01859068876311669,
+      "maxY": 3.306525585848307
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Cowboy_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cowboy_Male.glb",
+    "metrics": {
+      "glbBytes": 687424,
+      "byteLength": 687424,
+      "triangles": 3176,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.416161633313005
+      },
+      "center": {
+        "x": 0,
+        "z": 0.01180691983171328
+      },
+      "minY": -0.01859070342257479,
+      "maxY": 3.4983342866723697
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Doctor_Female_Old",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Doctor_Female_Old.glb",
+    "metrics": {
+      "glbBytes": 1227148,
+      "byteLength": 1227148,
+      "triangles": 6786,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.2396678924560547,
+        "d": 1.4228835558057318
+      },
+      "center": {
+        "x": 0,
+        "z": -0.050174851923338204
+      },
+      "minY": -0.018590715930910707,
+      "maxY": 3.185749876944829
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Doctor_Female_Young",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Doctor_Female_Young.glb",
+    "metrics": {
+      "glbBytes": 1487248,
+      "byteLength": 1487248,
+      "triangles": 8516,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.2396678924560547,
+        "d": 1.4220914696813116
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05633367130244471
+      },
+      "minY": -0.018590698513946114,
+      "maxY": 3.1857498942327465
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Doctor_Male_Old",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Doctor_Male_Old.glb",
+    "metrics": {
+      "glbBytes": 961616,
+      "byteLength": 961616,
+      "triangles": 5006,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.2396678924560547,
+        "d": 1.0833541607376291
+      },
+      "center": {
+        "x": 0,
+        "z": -0.040165563153170214
+      },
+      "minY": -0.018590686642010676,
+      "maxY": 3.185966811824352
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Doctor_Male_Young",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Doctor_Male_Young.glb",
+    "metrics": {
+      "glbBytes": 1185428,
+      "byteLength": 1185428,
+      "triangles": 6498,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.2396678924560547,
+        "d": 1.3245710187389703
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05599075594262237
+      },
+      "minY": -0.018590690625761838,
+      "maxY": 3.306525585848307
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Elf",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Elf.glb",
+    "metrics": {
+      "glbBytes": 598952,
+      "byteLength": 598952,
+      "triangles": 2594,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.7299286840291983
+      },
+      "center": {
+        "x": 0,
+        "z": -3.3065455923297904e-7
+      },
+      "minY": -0.01859073090577526,
+      "maxY": 4.07767667557318
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Goblin_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Goblin_Female.glb",
+    "metrics": {
+      "glbBytes": 1255548,
+      "byteLength": 1255548,
+      "triangles": 6968,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.4228835558057316
+      },
+      "center": {
+        "x": 0,
+        "z": -0.05017485192337723
+      },
+      "minY": -0.018590714068265558,
+      "maxY": 3.185749876944829
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Goblin_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Goblin_Male.glb",
+    "metrics": {
+      "glbBytes": 579164,
+      "byteLength": 579164,
+      "triangles": 2462,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.00946397191002
+      },
+      "center": {
+        "x": 0,
+        "z": 0.013109058161840076
+      },
+      "minY": -0.01859067008070966,
+      "maxY": 3.128074015107329
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Kimono_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Kimono_Female.glb",
+    "metrics": {
+      "glbBytes": 1590480,
+      "byteLength": 1590480,
+      "triangles": 9228,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.325333878910591
+      },
+      "center": {
+        "x": 0,
+        "z": 0.007954875917045634
+      },
+      "minY": -0.018590696651300965,
+      "maxY": 3.1857498784689344
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Kimono_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Kimono_Male.glb",
+    "metrics": {
+      "glbBytes": 586672,
+      "byteLength": 586672,
+      "triangles": 2540,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.0588330700231658
+      },
+      "center": {
+        "x": 0,
+        "z": -0.016149789753375388
+      },
+      "minY": -0.01859067886919948,
+      "maxY": 3.3193295838200862
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Knight_Golden_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Knight_Golden_Female.glb",
+    "metrics": {
+      "glbBytes": 1139316,
+      "byteLength": 1139316,
+      "triangles": 6218,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.5289960359693042
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0028813881584091594
+      },
+      "minY": -0.018590714068265558,
+      "maxY": 3.1857498942327465
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Knight_Golden_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Knight_Golden_Male.glb",
+    "metrics": {
+      "glbBytes": 653200,
+      "byteLength": 653200,
+      "triangles": 2964,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.0803047841319093
+      },
+      "center": {
+        "x": 0,
+        "z": -2.5652607027470964e-7
+      },
+      "minY": -0.018590677987203704,
+      "maxY": 3.167681782032672
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Knight_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Knight_Male.glb",
+    "metrics": {
+      "glbBytes": 655092,
+      "byteLength": 655092,
+      "triangles": 2992,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.350476909320666
+      },
+      "center": {
+        "x": 0,
+        "z": -0.13508631912044866
+      },
+      "minY": -0.018590722003819258,
+      "maxY": 3.570655672337232
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Ninja_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Ninja_Female.glb",
+    "metrics": {
+      "glbBytes": 1273988,
+      "byteLength": 1273988,
+      "triangles": 7094,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.5289960359693042
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0028813881584091594
+      },
+      "minY": -0.018590714068265558,
+      "maxY": 3.1857498942327465
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Ninja_Male_Hair",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Ninja_Male_Hair.glb",
+    "metrics": {
+      "glbBytes": 1412288,
+      "byteLength": 1412288,
+      "triangles": 8016,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.1562235211492102
+      },
+      "center": {
+        "x": 0,
+        "z": -0.07660030296364478
+      },
+      "minY": -0.018590696651300965,
+      "maxY": 3.1857498509173596
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Ninja_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Ninja_Male.glb",
+    "metrics": {
+      "glbBytes": 617408,
+      "byteLength": 617408,
+      "triangles": 2720,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 0.9533353226817477
+      },
+      "center": {
+        "x": 0,
+        "z": -0.02511240623693184
+      },
+      "minY": -0.018590671735517504,
+      "maxY": 3.138357712880391
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Ninja_Sand_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Ninja_Sand_Female.glb",
+    "metrics": {
+      "glbBytes": 1273980,
+      "byteLength": 1273980,
+      "triangles": 7094,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.5289960359693042
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0028813881584091594
+      },
+      "minY": -0.018590714068265558,
+      "maxY": 3.1857498942327465
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Ninja_Sand",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Ninja_Sand.glb",
+    "metrics": {
+      "glbBytes": 617288,
+      "byteLength": 617288,
+      "triangles": 2720,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 0.9533353226817477
+      },
+      "center": {
+        "x": 0,
+        "z": -0.02511240623693184
+      },
+      "minY": -0.018590671735517504,
+      "maxY": 3.138357712880391
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/OldClassy_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "OldClassy_Female.glb",
+    "metrics": {
+      "glbBytes": 1262256,
+      "byteLength": 1262256,
+      "triangles": 7004,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.422883648281803
+      },
+      "center": {
+        "x": 0,
+        "z": -0.05017489816141296
+      },
+      "minY": -0.018590714068265558,
+      "maxY": 3.75336395546655
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/OldClassy_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "OldClassy_Male.glb",
+    "metrics": {
+      "glbBytes": 1024964,
+      "byteLength": 1024964,
+      "triangles": 5432,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.1542733496482311
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0047060611386322004
+      },
+      "minY": -0.018590684779365527,
+      "maxY": 3.7533639409932777
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Pirate_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Pirate_Female.glb",
+    "metrics": {
+      "glbBytes": 1629044,
+      "byteLength": 1629044,
+      "triangles": 9452,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.3885686233828487
+      },
+      "center": {
+        "x": 0,
+        "z": -0.023662496319083126
+      },
+      "minY": -0.01859070695352941,
+      "maxY": 3.905274262013847
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Pirate_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Pirate_Male.glb",
+    "metrics": {
+      "glbBytes": 619504,
+      "byteLength": 619504,
+      "triangles": 2724,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.3372794007136513
+      },
+      "center": {
+        "x": 0,
+        "z": -0.025610186353197395
+      },
+      "minY": -0.018590703092814454,
+      "maxY": 3.7709363554494004
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Pug",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Pug.glb",
+    "metrics": {
+      "glbBytes": 606980,
+      "byteLength": 606980,
+      "triangles": 2124,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 0.9653217344620457
+      },
+      "center": {
+        "x": 0,
+        "z": 0.09621801534484131
+      },
+      "minY": -0.01859065294470849,
+      "maxY": 2.816227291958398
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Soldier_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Soldier_Female.glb",
+    "metrics": {
+      "glbBytes": 1269124,
+      "byteLength": 1269124,
+      "triangles": 7062,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.4228835558056927
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0501748519233578
+      },
+      "minY": -0.018590475649686456,
+      "maxY": 3.185749876944829
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Soldier_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Soldier_Male.glb",
+    "metrics": {
+      "glbBytes": 658932,
+      "byteLength": 658932,
+      "triangles": 2994,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.148304878190404
+      },
+      "center": {
+        "x": 0,
+        "z": 0.002319727133921534
+      },
+      "minY": -0.018590683148538574,
+      "maxY": 3.265012596589481
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Suit_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Suit_Female.glb",
+    "metrics": {
+      "glbBytes": 1231408,
+      "byteLength": 1231408,
+      "triangles": 6806,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.4228835558057316
+      },
+      "center": {
+        "x": 0,
+        "z": -0.05017485192337723
+      },
+      "minY": -0.018590714068265558,
+      "maxY": 3.185749876944829
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Suit_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Suit_Male.glb",
+    "metrics": {
+      "glbBytes": 1188188,
+      "byteLength": 1188188,
+      "triangles": 6518,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.32457101873897
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05599075594258335
+      },
+      "minY": -0.01859068876311669,
+      "maxY": 3.306525585848307
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Viking_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Viking_Female.glb",
+    "metrics": {
+      "glbBytes": 1307856,
+      "byteLength": 1307856,
+      "triangles": 7314,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.4220914696813112
+      },
+      "center": {
+        "x": 0,
+        "z": 0.056333671302405686
+      },
+      "minY": -0.018590696651300965,
+      "maxY": 3.1857498942327465
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Viking_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Viking_Male.glb",
+    "metrics": {
+      "glbBytes": 1148424,
+      "byteLength": 1148424,
+      "triangles": 6260,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.3212308845573957
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0959718178052506
+      },
+      "minY": -0.018590713248865787,
+      "maxY": 3.6165352787596525
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/VikingHelmet",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "VikingHelmet.glb",
+    "metrics": {
+      "glbBytes": 1184924,
+      "byteLength": 1184924,
+      "triangles": 6494,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.1086937018140552
+      },
+      "center": {
+        "x": 0,
+        "z": 0.01029677356641967
+      },
+      "minY": -0.018590678622165697,
+      "maxY": 3.5349811043364356
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Witch",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Witch.glb",
+    "metrics": {
+      "glbBytes": 1269032,
+      "byteLength": 1269032,
+      "triangles": 7062,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.7032412130459538
+      },
+      "center": {
+        "x": 0,
+        "z": -0.044466067246981544
+      },
+      "minY": -0.018590735976187635,
+      "maxY": 4.273341071977573
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Wizard",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Wizard.glb",
+    "metrics": {
+      "glbBytes": 1181988,
+      "byteLength": 1181988,
+      "triangles": 6478,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.7299286840291983
+      },
+      "center": {
+        "x": 0,
+        "z": -3.3065455923297904e-7
+      },
+      "minY": -0.01859073090577526,
+      "maxY": 4.07767667557318
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Worker_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Worker_Female.glb",
+    "metrics": {
+      "glbBytes": 1088092,
+      "byteLength": 1088092,
+      "triangles": 5852,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.5080763323320876
+      },
+      "center": {
+        "x": 0,
+        "z": -0.007578500222986118
+      },
+      "minY": -0.018590714068265558,
+      "maxY": 3.4101709151469954
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Worker_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Worker_Male.glb",
+    "metrics": {
+      "glbBytes": 588436,
+      "byteLength": 588436,
+      "triangles": 2524,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.2810828159573613
+      },
+      "center": {
+        "x": 0,
+        "z": 0.08144518686604968
+      },
+      "minY": -0.01859068107349945,
+      "maxY": 3.3169454320338505
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Zombie_Female",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Zombie_Female.glb",
+    "metrics": {
+      "glbBytes": 1670076,
+      "byteLength": 1670076,
+      "triangles": 9746,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 1.325333878910591
+      },
+      "center": {
+        "x": 0,
+        "z": 0.007954875917045634
+      },
+      "minY": -0.018590696651300965,
+      "maxY": 3.1857498784689344
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-animated-characters-pack/Zombie_Male",
+    "source": "quaternius-animated-characters-pack",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Zombie_Male.glb",
+    "metrics": {
+      "glbBytes": 814868,
+      "byteLength": 814868,
+      "triangles": 4046,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.239668130874634,
+        "d": 0.9931343788187508
+      },
+      "center": {
+        "x": 0,
+        "z": 0.004944268201584973
+      },
+      "minY": -0.01859067008070966,
+      "maxY": 3.0876532418017604
+    },
+    "clips": [
+      "CharacterArmature|Victory",
+      "CharacterArmature|SitDown",
+      "CharacterArmature|Shoot_OneHanded",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Defeat",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Carry",
+      "CharacterArmature|StandUp",
+      "CharacterArmature|Punch"
+    ]
+  }
+]

@@ -1,0 +1,205 @@
+[
+  {
+    "id": "quaternius-low-poly-medieval-weapons/Club",
+    "source": "quaternius-low-poly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Club.glb",
+    "metrics": {
+      "glbBytes": 34304,
+      "byteLength": 34304,
+      "triangles": 464,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0031059980392456,
+        "d": 0.9878660142421722
+      },
+      "center": {
+        "x": -0.0011280179023742676,
+        "z": 0.015997007489204407
+      },
+      "minY": -0.4582290053367615,
+      "maxY": 3.001910924911499
+    }
+  },
+  {
+    "id": "quaternius-low-poly-medieval-weapons/Dagger",
+    "source": "quaternius-low-poly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Dagger.glb",
+    "metrics": {
+      "glbBytes": 44672,
+      "byteLength": 44672,
+      "triangles": 608,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.545414000749588,
+        "d": 2.1355899572372437
+      },
+      "center": {
+        "x": -0.0029260069131851196,
+        "z": -0.0913509726524353
+      },
+      "minY": -0.07924500107765198,
+      "maxY": 0.08429700136184692
+    }
+  },
+  {
+    "id": "quaternius-low-poly-medieval-weapons/Katana",
+    "source": "quaternius-low-poly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Katana.glb",
+    "metrics": {
+      "glbBytes": 20488,
+      "byteLength": 20488,
+      "triangles": 272,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6507280021905899,
+        "d": 4.339085102081299
+      },
+      "center": {
+        "x": -0.09927400201559067,
+        "z": 1.1573514938354492
+      },
+      "minY": -0.17744700610637665,
+      "maxY": 0.18667399883270264
+    }
+  },
+  {
+    "id": "quaternius-low-poly-medieval-weapons/LongSword",
+    "source": "quaternius-low-poly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "LongSword.glb",
+    "metrics": {
+      "glbBytes": 37908,
+      "byteLength": 37908,
+      "triangles": 514,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8020539879798889,
+        "d": 4.975682020187378
+      },
+      "center": {
+        "x": 0,
+        "z": -1.2071219682693481
+      },
+      "minY": -0.11167000234127045,
+      "maxY": 0.10431700199842453
+    }
+  },
+  {
+    "id": "quaternius-low-poly-medieval-weapons/ShortSword",
+    "source": "quaternius-low-poly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "ShortSword.glb",
+    "metrics": {
+      "glbBytes": 37908,
+      "byteLength": 37908,
+      "triangles": 514,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8020539879798889,
+        "d": 3.458583116531372
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4485725164413452
+      },
+      "minY": -0.11167000234127045,
+      "maxY": 0.10431700199842453
+    }
+  },
+  {
+    "id": "quaternius-low-poly-medieval-weapons/SimpleAxe",
+    "source": "quaternius-low-poly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "SimpleAxe.glb",
+    "metrics": {
+      "glbBytes": 25084,
+      "byteLength": 25084,
+      "triangles": 336,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6773499846458435,
+        "d": 0.2824999988079071
+      },
+      "center": {
+        "x": 0.24475398659706116,
+        "z": 0
+      },
+      "minY": -2.032327890396118,
+      "maxY": 1.10725998878479
+    }
+  },
+  {
+    "id": "quaternius-low-poly-medieval-weapons/Spear",
+    "source": "quaternius-low-poly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Spear.glb",
+    "metrics": {
+      "glbBytes": 15004,
+      "byteLength": 15004,
+      "triangles": 196,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.19850900024175644,
+        "d": 0.6757600009441376
+      },
+      "center": {
+        "x": 0.0022705011069774628,
+        "z": 0.005536004900932312
+      },
+      "minY": -2.11641788482666,
+      "maxY": 3.018791913986206
+    }
+  }
+]

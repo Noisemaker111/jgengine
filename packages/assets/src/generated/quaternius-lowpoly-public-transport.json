@@ -1,0 +1,362 @@
+[
+  {
+    "id": "quaternius-lowpoly-public-transport/Ambulance",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "Ambulance.glb",
+    "metrics": {
+      "glbBytes": 127760,
+      "byteLength": 127760,
+      "triangles": 1634,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.8379573694032296,
+        "d": 5.716819694352433
+      },
+      "center": {
+        "x": 0,
+        "z": 0.7682931759213565
+      },
+      "minY": -0.41076580013066866,
+      "maxY": 2.5032036695062985
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/Bicycle",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "Bicycle.glb",
+    "metrics": {
+      "glbBytes": 213592,
+      "byteLength": 213592,
+      "triangles": 2700,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4937001454147776,
+        "d": 5.827754895736507
+      },
+      "center": {
+        "x": 0.00061509038055646,
+        "z": 0.283407516479492
+      },
+      "minY": -0.9500000870848982,
+      "maxY": 2.3454206743438015
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/Bus",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "Bus.glb",
+    "metrics": {
+      "glbBytes": 119128,
+      "byteLength": 119128,
+      "triangles": 1526,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.086398661136627,
+        "d": 1.7446366698339761
+      },
+      "center": {
+        "x": 1.7651314437389374,
+        "z": 3.636892481617693e-8
+      },
+      "minY": -1.1215470364524762,
+      "maxY": 0.5544445147726291
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/SchoolBus",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "SchoolBus.glb",
+    "metrics": {
+      "glbBytes": 138952,
+      "byteLength": 138952,
+      "triangles": 1782,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.607690215110779,
+        "d": 1.8785291709536267
+      },
+      "center": {
+        "x": 1.5044856667518616,
+        "z": -5.713881034985491e-9
+      },
+      "minY": -1.1215470364524762,
+      "maxY": 1.0710493664350067
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/SquareFrameBicycle",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "SquareFrameBicycle.glb",
+    "metrics": {
+      "glbBytes": 84428,
+      "byteLength": 84428,
+      "triangles": 1044,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5046247636838235,
+        "d": 5.827754895736507
+      },
+      "center": {
+        "x": 0.0006151166185736634,
+        "z": 0.283407516479492
+      },
+      "minY": -0.9500000870848982,
+      "maxY": 2.345589363553636
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/Taxi",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "Taxi.glb",
+    "metrics": {
+      "glbBytes": 80156,
+      "byteLength": 80156,
+      "triangles": 1072,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8355256563067088,
+        "d": 3.7934907133251965
+      },
+      "center": {
+        "x": 0,
+        "z": 0.08424979365499163
+      },
+      "minY": -0.7847624851207183,
+      "maxY": 0.6679835851435684
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/TrafficCone",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "TrafficCone.glb",
+    "metrics": {
+      "glbBytes": 11300,
+      "byteLength": 11300,
+      "triangles": 124,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9995871485106363,
+        "d": 0.9995873541487037
+      },
+      "center": {
+        "x": 0,
+        "z": -9.699424899367592e-8
+      },
+      "minY": -0.03575239648533372,
+      "maxY": 1.2264453104802984
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/TrafficLight",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "TrafficLight.glb",
+    "metrics": {
+      "glbBytes": 67624,
+      "byteLength": 67624,
+      "triangles": 842,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.20743631214704578,
+        "d": 0.14524941363626176
+      },
+      "center": {
+        "x": -0.030036265109726512,
+        "z": -1.5347932941223164e-7
+      },
+      "minY": 0.00795043246058997,
+      "maxY": 1.8761483815054452
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/TrafficSign1",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "TrafficSign1.glb",
+    "metrics": {
+      "glbBytes": 9908,
+      "byteLength": 9908,
+      "triangles": 104,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.10585975440014288,
+        "d": 0.46510295653292016
+      },
+      "center": {
+        "x": -0.002621661828573575,
+        "z": 1.54408227870384e-9
+      },
+      "minY": -0.0007589253402313285,
+      "maxY": 1.51456805672643
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/TrafficSign2",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "TrafficSign2.glb",
+    "metrics": {
+      "glbBytes": 7952,
+      "byteLength": 7952,
+      "triangles": 78,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4590719735630046,
+        "d": 0.12498178961282061
+      },
+      "center": {
+        "x": -1.3797989584229953e-8,
+        "z": 0.030506429895835945
+      },
+      "minY": -0.001028125739757968,
+      "maxY": 1.4844602329601184
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/TrafficSign3",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "TrafficSign3.glb",
+    "metrics": {
+      "glbBytes": 8992,
+      "byteLength": 8992,
+      "triangles": 90,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4709568471680061,
+        "d": 0.11129024320722081
+      },
+      "center": {
+        "x": 0.0004896841429262722,
+        "z": 0.0321938181540716
+      },
+      "minY": -0.03252653200368982,
+      "maxY": 1.438430306719341
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-public-transport/Train",
+    "source": "quaternius-lowpoly-public-transport",
+    "categories": [
+      "vehicle",
+      "bus",
+      "train"
+    ],
+    "file": "Train.glb",
+    "metrics": {
+      "glbBytes": 57648,
+      "byteLength": 57648,
+      "triangles": 712,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1264317512673188,
+        "d": 7.017307195147259
+      },
+      "center": {
+        "x": -3.74067894437502e-8,
+        "z": -1.9543330700884003
+      },
+      "minY": -1.0544574675595875,
+      "maxY": 1.144559072645584
+    }
+  }
+]

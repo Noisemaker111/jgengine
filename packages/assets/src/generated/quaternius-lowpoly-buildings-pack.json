@@ -1,0 +1,3492 @@
+[
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_Base.glb",
+    "metrics": {
+      "glbBytes": 208320,
+      "byteLength": 208320,
+      "triangles": 2120,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1541606187820435,
+        "d": 2.174636628226451
+      },
+      "center": {
+        "x": 1.7881393432617188e-7,
+        "z": 0.010237683349488713
+      },
+      "minY": -0.015193094889430686,
+      "maxY": 1.6067212224012783
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_GableRoof_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_GableRoof_Base.glb",
+    "metrics": {
+      "glbBytes": 122324,
+      "byteLength": 122324,
+      "triangles": 1224,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.105249762535095,
+        "d": 2.380130620827777
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -1.6312048234379262e-7
+      },
+      "minY": -0.011053845457495947,
+      "maxY": 2.013506606392299
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_GableRoof_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_GableRoof_Mat.glb",
+    "metrics": {
+      "glbBytes": 135896,
+      "byteLength": 135896,
+      "triangles": 1684,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.105249762535095,
+        "d": 2.380130620827797
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -1.6399188362825612e-7
+      },
+      "minY": -0.005705282263221114,
+      "maxY": 2.0188552887958635
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_GableRoof",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_GableRoof.glb",
+    "metrics": {
+      "glbBytes": 166476,
+      "byteLength": 166476,
+      "triangles": 1684,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.105249762535095,
+        "d": 2.380130620827758
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -1.6670821612052578e-7
+      },
+      "minY": 0.010967567391930031,
+      "maxY": 2.0355279000324353
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_Mat.glb",
+    "metrics": {
+      "glbBytes": 224792,
+      "byteLength": 224792,
+      "triangles": 2824,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1541606187820435,
+        "d": 2.1746366364265466
+      },
+      "center": {
+        "x": 1.7881393432617188e-7,
+        "z": 0.010237679249440634
+      },
+      "minY": -0.015193094889430686,
+      "maxY": 1.6570530533796712
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_RoundRoof_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_RoundRoof_Base.glb",
+    "metrics": {
+      "glbBytes": 213716,
+      "byteLength": 213716,
+      "triangles": 2176,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.086726665496826,
+        "d": 2.1257766791520165
+      },
+      "center": {
+        "x": -0.0077936649322509766,
+        "z": -0.006079865421084407
+      },
+      "minY": -0.015193152241050762,
+      "maxY": 2.3679208093066606
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_RoundRoof_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_RoundRoof_Mat.glb",
+    "metrics": {
+      "glbBytes": 191100,
+      "byteLength": 191100,
+      "triangles": 2408,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.086726665496826,
+        "d": 2.125777036779885
+      },
+      "center": {
+        "x": -0.0077936649322509766,
+        "z": -2.512586394498584e-7
+      },
+      "minY": -0.015193151250585023,
+      "maxY": 2.3679208102971847
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_RoundRoof",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_RoundRoof.glb",
+    "metrics": {
+      "glbBytes": 235976,
+      "byteLength": 235976,
+      "triangles": 2408,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.086726665496826,
+        "d": 2.125777036779885
+      },
+      "center": {
+        "x": -0.0077936649322509766,
+        "z": -2.512586394498584e-7
+      },
+      "minY": -0.015193151250585023,
+      "maxY": 2.3679208102971847
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_Sign_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_Sign_Base.glb",
+    "metrics": {
+      "glbBytes": 208332,
+      "byteLength": 208332,
+      "triangles": 2120,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.154160737991333,
+        "d": 2.1541610102909763
+      },
+      "center": {
+        "x": 2.384185791015625e-7,
+        "z": -1.3367458562285606e-7
+      },
+      "minY": -0.015193153562752887,
+      "maxY": 1.6561706628825135
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_Sign_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_Sign_Mat.glb",
+    "metrics": {
+      "glbBytes": 194188,
+      "byteLength": 194188,
+      "triangles": 2426,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.154160737991333,
+        "d": 2.1541610302355627
+      },
+      "center": {
+        "x": 2.384185791015625e-7,
+        "z": -1.436468788362788e-7
+      },
+      "minY": -0.015193153562752887,
+      "maxY": 1.778589662554448
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story_Sign",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story_Sign.glb",
+    "metrics": {
+      "glbBytes": 237696,
+      "byteLength": 237696,
+      "triangles": 2426,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.154160737991333,
+        "d": 2.1541610302355627
+      },
+      "center": {
+        "x": 2.384185791015625e-7,
+        "z": -1.436468788362788e-7
+      },
+      "minY": -0.015193153562752887,
+      "maxY": 1.778589662554448
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/1Story",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "1Story.glb",
+    "metrics": {
+      "glbBytes": 275896,
+      "byteLength": 275896,
+      "triangles": 2824,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1541606187820435,
+        "d": 2.1746366364265466
+      },
+      "center": {
+        "x": 1.7881393432617188e-7,
+        "z": 0.010237679249440634
+      },
+      "minY": -0.015193094889430686,
+      "maxY": 1.6570530533796712
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_2_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_2_Mat.glb",
+    "metrics": {
+      "glbBytes": 325224,
+      "byteLength": 325224,
+      "triangles": 4106,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.1748584241148707
+      },
+      "center": {
+        "x": 0,
+        "z": 0.01012666619598912
+      },
+      "minY": -0.015193093994232396,
+      "maxY": 2.7472710013395374
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_2",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_2.glb",
+    "metrics": {
+      "glbBytes": 398972,
+      "byteLength": 398972,
+      "triangles": 4106,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.1748584241148707
+      },
+      "center": {
+        "x": 0,
+        "z": 0.01012666619598912
+      },
+      "minY": -0.015193093994232396,
+      "maxY": 2.7472710013395374
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Balcony_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Balcony_Mat.glb",
+    "metrics": {
+      "glbBytes": 333036,
+      "byteLength": 333036,
+      "triangles": 4206,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.532175662946191
+      },
+      "center": {
+        "x": 0,
+        "z": 0.18878525407759583
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 2.9408256993701816
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Balcony",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Balcony.glb",
+    "metrics": {
+      "glbBytes": 408584,
+      "byteLength": 408584,
+      "triangles": 4206,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.532175662946191
+      },
+      "center": {
+        "x": 0,
+        "z": 0.18878525407759583
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 2.9408256993701816
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Base.glb",
+    "metrics": {
+      "glbBytes": 305280,
+      "byteLength": 305280,
+      "triangles": 3130,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.1748584016964503
+      },
+      "center": {
+        "x": 0,
+        "z": 0.010126677405199347
+      },
+      "minY": -0.015193093994232396,
+      "maxY": 2.6096677184110724
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Center_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Center_Base.glb",
+    "metrics": {
+      "glbBytes": 192784,
+      "byteLength": 192784,
+      "triangles": 1958,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4211490154266357,
+        "d": 2.4985055397684164
+      },
+      "center": {
+        "x": 0,
+        "z": 0.17195012884373506
+      },
+      "minY": -0.004311779474459166,
+      "maxY": 2.599774353781467
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Center_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Center_Mat.glb",
+    "metrics": {
+      "glbBytes": 260108,
+      "byteLength": 260108,
+      "triangles": 3282,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4211490154266357,
+        "d": 2.4985055613424607
+      },
+      "center": {
+        "x": 0,
+        "z": 0.1719501180567129
+      },
+      "minY": -0.004311779474459166,
+      "maxY": 2.732194893637422
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Center",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Center.glb",
+    "metrics": {
+      "glbBytes": 319876,
+      "byteLength": 319876,
+      "triangles": 3282,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4211490154266357,
+        "d": 2.4985055613424607
+      },
+      "center": {
+        "x": 0,
+        "z": 0.1719501180567129
+      },
+      "minY": -0.004311779474459166,
+      "maxY": 2.732194893637422
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Columns_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Columns_Base.glb",
+    "metrics": {
+      "glbBytes": 250768,
+      "byteLength": 250768,
+      "triangles": 2562,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.4888048987783953
+      },
+      "center": {
+        "x": 0,
+        "z": 0.1670997926991018
+      },
+      "minY": -1.7692694616282562e-7,
+      "maxY": 2.695831051953836
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Columns_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Columns_Mat.glb",
+    "metrics": {
+      "glbBytes": 287332,
+      "byteLength": 287332,
+      "triangles": 3620,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.48880491065289
+      },
+      "center": {
+        "x": 0,
+        "z": 0.16709978862483388
+      },
+      "minY": -0.011435063982001921,
+      "maxY": 2.757281294950051
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Columns",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Columns.glb",
+    "metrics": {
+      "glbBytes": 352328,
+      "byteLength": 352328,
+      "triangles": 3620,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.48880491065289
+      },
+      "center": {
+        "x": 0,
+        "z": 0.16709978862483388
+      },
+      "minY": -0.011435063982001921,
+      "maxY": 2.757281294950051
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Double_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Double_Mat.glb",
+    "metrics": {
+      "glbBytes": 320636,
+      "byteLength": 320636,
+      "triangles": 4058,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4211485385894775,
+        "d": 2.5321756305678003
+      },
+      "center": {
+        "x": 0.1786794662475586,
+        "z": 0.18878527026679115
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 2.742088554899969
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Double",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Double.glb",
+    "metrics": {
+      "glbBytes": 394376,
+      "byteLength": 394376,
+      "triangles": 4058,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4211485385894775,
+        "d": 2.5321756305678003
+      },
+      "center": {
+        "x": 0.1786794662475586,
+        "z": 0.18878527026679115
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 2.742088554899969
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_GableRoof_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_GableRoof_Base.glb",
+    "metrics": {
+      "glbBytes": 232148,
+      "byteLength": 232148,
+      "triangles": 2368,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.3801308014554685
+      },
+      "center": {
+        "x": 0,
+        "z": -2.527599556323423e-7
+      },
+      "minY": -0.015193112365664684,
+      "maxY": 3.118052199654003
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_GableRoof_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_GableRoof_Mat.glb",
+    "metrics": {
+      "glbBytes": 254572,
+      "byteLength": 254572,
+      "triangles": 3200,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.3801308014554685
+      },
+      "center": {
+        "x": 0,
+        "z": -2.527599556323423e-7
+      },
+      "minY": -0.015193112365664684,
+      "maxY": 3.118052199654003
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_GableRoof",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_GableRoof.glb",
+    "metrics": {
+      "glbBytes": 312012,
+      "byteLength": 312012,
+      "triangles": 3200,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.3801308014554685
+      },
+      "center": {
+        "x": 0,
+        "z": -2.527599556323423e-7
+      },
+      "minY": -0.015193112365664684,
+      "maxY": 3.118052199654003
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Mat.glb",
+    "metrics": {
+      "glbBytes": 280444,
+      "byteLength": 280444,
+      "triangles": 3532,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.532175630567761
+      },
+      "center": {
+        "x": 0,
+        "z": 0.18878527026681058
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 2.74208831648139
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_RoundRoof_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_RoundRoof_Base.glb",
+    "metrics": {
+      "glbBytes": 262096,
+      "byteLength": 262096,
+      "triangles": 2680,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.111485719680786,
+        "d": 2.1257770016809334
+      },
+      "center": {
+        "x": 0,
+        "z": -2.3370917312526274e-7
+      },
+      "minY": -0.015193091645920826,
+      "maxY": 2.8841864410192235
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_RoundRoof_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_RoundRoof_Mat.glb",
+    "metrics": {
+      "glbBytes": 214964,
+      "byteLength": 214964,
+      "triangles": 2714,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.111485719680786,
+        "d": 2.1257770016809334
+      },
+      "center": {
+        "x": 0,
+        "z": -2.3370917312526274e-7
+      },
+      "minY": -0.015193091645920826,
+      "maxY": 2.8841864410192235
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_RoundRoof",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_RoundRoof.glb",
+    "metrics": {
+      "glbBytes": 265352,
+      "byteLength": 265352,
+      "triangles": 2714,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.111485719680786,
+        "d": 2.1257770016809334
+      },
+      "center": {
+        "x": 0,
+        "z": -2.3370917312526274e-7
+      },
+      "minY": -0.015193091645920826,
+      "maxY": 2.8841864410192235
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Sidehouse_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Sidehouse_Base.glb",
+    "metrics": {
+      "glbBytes": 349848,
+      "byteLength": 349848,
+      "triangles": 3594,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.4682201147079468,
+        "d": 2.174858401696451
+      },
+      "center": {
+        "x": -0.6594946980476379,
+        "z": -0.18539372509776753
+      },
+      "minY": -0.005973962285446643,
+      "maxY": 2.6188868561734546
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Sidehouse_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Sidehouse_Mat.glb",
+    "metrics": {
+      "glbBytes": 445044,
+      "byteLength": 445044,
+      "triangles": 5642,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.4682201147079468,
+        "d": 2.5321756325143037
+      },
+      "center": {
+        "x": -0.6594946980476379,
+        "z": -0.006735131262924354
+      },
+      "minY": -0.005973962285446643,
+      "maxY": 2.7513076926623516
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Sidehouse",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Sidehouse.glb",
+    "metrics": {
+      "glbBytes": 546444,
+      "byteLength": 546444,
+      "triangles": 5642,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.4682201147079468,
+        "d": 2.5321756325143037
+      },
+      "center": {
+        "x": -0.6594946980476379,
+        "z": -0.006735131262924354
+      },
+      "minY": -0.005973962285446643,
+      "maxY": 2.7513076926623516
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Sign_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Sign_Base.glb",
+    "metrics": {
+      "glbBytes": 259404,
+      "byteLength": 259404,
+      "triangles": 2652,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.154160737991333,
+        "d": 2.1541611656353545
+      },
+      "center": {
+        "x": 0,
+        "z": -2.113467841846628e-7
+      },
+      "minY": -0.015193093958108111,
+      "maxY": 2.609667715075189
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Sign_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Sign_Mat.glb",
+    "metrics": {
+      "glbBytes": 258392,
+      "byteLength": 258392,
+      "triangles": 3260,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.154160737991333,
+        "d": 2.1541611872094766
+      },
+      "center": {
+        "x": 0,
+        "z": -2.221338452068622e-7
+      },
+      "minY": -0.015193093958108111,
+      "maxY": 2.7420887317683023
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Sign",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Sign.glb",
+    "metrics": {
+      "glbBytes": 317760,
+      "byteLength": 317760,
+      "triangles": 3260,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.154160737991333,
+        "d": 2.1541611872094766
+      },
+      "center": {
+        "x": 0,
+        "z": -2.221338452068622e-7
+      },
+      "minY": -0.015193093958108111,
+      "maxY": 2.7420887317683023
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Slim_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Slim_Base.glb",
+    "metrics": {
+      "glbBytes": 231752,
+      "byteLength": 231752,
+      "triangles": 2364,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1155787110328674,
+        "d": 2.1546046241924834
+      },
+      "center": {
+        "x": 0.010557442903518677,
+        "z": -2.113467841846628e-7
+      },
+      "minY": -0.015193093994232396,
+      "maxY": 2.609667715111313
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Slim_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Slim_Mat.glb",
+    "metrics": {
+      "glbBytes": 229488,
+      "byteLength": 229488,
+      "triangles": 2884,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1155787110328674,
+        "d": 2.1546046457665273
+      },
+      "center": {
+        "x": 0.010557442903518677,
+        "z": -2.2213380634905633e-7
+      },
+      "minY": -0.015193093994232396,
+      "maxY": 2.742088254967268
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Slim",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Slim.glb",
+    "metrics": {
+      "glbBytes": 281664,
+      "byteLength": 281664,
+      "triangles": 2884,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1155787110328674,
+        "d": 2.1546046457665273
+      },
+      "center": {
+        "x": 0.010557442903518677,
+        "z": -2.2213380634905633e-7
+      },
+      "minY": -0.015193093994232396,
+      "maxY": 2.742088254967268
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Stairs_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Stairs_Mat.glb",
+    "metrics": {
+      "glbBytes": 325704,
+      "byteLength": 325704,
+      "triangles": 4112,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.5321756305678003
+      },
+      "center": {
+        "x": 0,
+        "z": 0.18878527026679115
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 2.742088554899969
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Stairs",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Stairs.glb",
+    "metrics": {
+      "glbBytes": 399560,
+      "byteLength": 399560,
+      "triangles": 4112,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.5321756305678003
+      },
+      "center": {
+        "x": 0,
+        "z": 0.18878527026679115
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 2.742088554899969
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Wide_2Doors_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Wide_2Doors_Base.glb",
+    "metrics": {
+      "glbBytes": 331032,
+      "byteLength": 331032,
+      "triangles": 3398,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.827825546264648,
+        "d": 2.1546047401966497
+      },
+      "center": {
+        "x": 0,
+        "z": -2.6925794083254573e-7
+      },
+      "minY": -0.015751198360315882,
+      "maxY": 2.58943670658165
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Wide_2Doors_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Wide_2Doors_Mat.glb",
+    "metrics": {
+      "glbBytes": 615488,
+      "byteLength": 615488,
+      "triangles": 7838,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.827825546264648,
+        "d": 2.2552978701062063
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05034627243858569
+      },
+      "minY": -0.015751198360315882,
+      "maxY": 2.7321948540138594
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Wide_2Doors",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Wide_2Doors.glb",
+    "metrics": {
+      "glbBytes": 757264,
+      "byteLength": 757264,
+      "triangles": 7838,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.827825546264648,
+        "d": 2.2552978701062063
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05034627243858569
+      },
+      "minY": -0.015751198360315882,
+      "maxY": 2.7321948540138594
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Wide_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Wide_Base.glb",
+    "metrics": {
+      "glbBytes": 240584,
+      "byteLength": 240584,
+      "triangles": 2456,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.825212240219116,
+        "d": 2.2552983236851127
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05034652248629068
+      },
+      "minY": -0.015751198360315882,
+      "maxY": 2.5894367229867172
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Wide_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Wide_Mat.glb",
+    "metrics": {
+      "glbBytes": 397544,
+      "byteLength": 397544,
+      "triangles": 5044,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.825212240219116,
+        "d": 2.2552983469433645
+      },
+      "center": {
+        "x": 0,
+        "z": 0.050346510857164795
+      },
+      "minY": -0.015751198360315882,
+      "maxY": 2.732194854013937
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story_Wide",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story_Wide.glb",
+    "metrics": {
+      "glbBytes": 489024,
+      "byteLength": 489024,
+      "triangles": 5044,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.825212240219116,
+        "d": 2.2552983469433645
+      },
+      "center": {
+        "x": 0,
+        "z": 0.050346510857164795
+      },
+      "minY": -0.015751198360315882,
+      "maxY": 2.732194854013937
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/2Story",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "2Story.glb",
+    "metrics": {
+      "glbBytes": 343864,
+      "byteLength": 343864,
+      "triangles": 3532,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1586458683013916,
+        "d": 2.532175630567761
+      },
+      "center": {
+        "x": 0,
+        "z": 0.18878527026681058
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 2.74208831648139
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/3Story_Balcony_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "3Story_Balcony_Mat.glb",
+    "metrics": {
+      "glbBytes": 410880,
+      "byteLength": 410880,
+      "triangles": 5204,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.158645987510681,
+        "d": 2.507730097432571
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.17656226466338576
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 4.209279770247062
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/3Story_Balcony",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "3Story_Balcony.glb",
+    "metrics": {
+      "glbBytes": 504392,
+      "byteLength": 504392,
+      "triangles": 5204,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.158645987510681,
+        "d": 2.507730097432571
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.17656226466338576
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 4.209279770247062
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/3Story_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "3Story_Base.glb",
+    "metrics": {
+      "glbBytes": 237312,
+      "byteLength": 237312,
+      "triangles": 2422,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.158645987510681,
+        "d": 2.174857804747017
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.015065576380922985
+      },
+      "minY": -0.0032455444740984193,
+      "maxY": 4.079475582451127
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/3Story_Slim_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "3Story_Slim_Base.glb",
+    "metrics": {
+      "glbBytes": 304712,
+      "byteLength": 304712,
+      "triangles": 3124,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1155787706375122,
+        "d": 2.154604826010278
+      },
+      "center": {
+        "x": 0.010557413101196289,
+        "z": -3.122556815338129e-7
+      },
+      "minY": -0.015193093994232396,
+      "maxY": 3.848416503944915
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/3Story_Slim_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "3Story_Slim_Mat.glb",
+    "metrics": {
+      "glbBytes": 294384,
+      "byteLength": 294384,
+      "triangles": 3716,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1155787706375122,
+        "d": 2.154604846921383
+      },
+      "center": {
+        "x": 0.010557413101196289,
+        "z": -3.227112341797067e-7
+      },
+      "minY": -0.015193093994232396,
+      "maxY": 3.976767953911344
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/3Story_Slim",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "3Story_Slim.glb",
+    "metrics": {
+      "glbBytes": 361540,
+      "byteLength": 361540,
+      "triangles": 3716,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1155787706375122,
+        "d": 2.154604846921383
+      },
+      "center": {
+        "x": 0.010557413101196289,
+        "z": -3.227112341797067e-7
+      },
+      "minY": -0.015193093994232396,
+      "maxY": 3.976767953911344
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/3Story_Small_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "3Story_Small_Mat.glb",
+    "metrics": {
+      "glbBytes": 265992,
+      "byteLength": 265992,
+      "triangles": 3352,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9088786840438843,
+        "d": 1.974837274517165
+      },
+      "center": {
+        "x": -0.00761258602142334,
+        "z": -0.14320079825781784
+      },
+      "minY": -0.013159555182341668,
+      "maxY": 3.8353802149025538
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/3Story_Small",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "3Story_Small.glb",
+    "metrics": {
+      "glbBytes": 326596,
+      "byteLength": 326596,
+      "triangles": 3352,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9088786840438843,
+        "d": 1.974837274517165
+      },
+      "center": {
+        "x": -0.00761258602142334,
+        "z": -0.14320079825781784
+      },
+      "minY": -0.013159555182341668,
+      "maxY": 3.8353802149025538
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/4Story_Center_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "4Story_Center_Base.glb",
+    "metrics": {
+      "glbBytes": 347536,
+      "byteLength": 347536,
+      "triangles": 3570,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4211491346359253,
+        "d": 2.5321761104971108
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.1887850304758475
+      },
+      "minY": -0.004311779008797879,
+      "maxY": 4.955106018584022
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/4Story_Center_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "4Story_Center_Mat.glb",
+    "metrics": {
+      "glbBytes": 496296,
+      "byteLength": 496296,
+      "triangles": 6310,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4211491346359253,
+        "d": 2.5321761320711547
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.18878501968882533
+      },
+      "minY": -0.004311779008797879,
+      "maxY": 5.087526558439977
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/4Story_Center",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "4Story_Center.glb",
+    "metrics": {
+      "glbBytes": 610568,
+      "byteLength": 610568,
+      "triangles": 6310,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4211491346359253,
+        "d": 2.5321761320711547
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.18878501968882533
+      },
+      "minY": -0.004311779008797879,
+      "maxY": 5.087526558439977
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/4Story_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "4Story_Mat.glb",
+    "metrics": {
+      "glbBytes": 539024,
+      "byteLength": 539024,
+      "triangles": 6858,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.421148657798767,
+        "d": 2.532176012861861
+      },
+      "center": {
+        "x": 0.17867952585220337,
+        "z": 0.18878507911976072
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 5.0885927663257196
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/4Story_Wide_2Doors_Base",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "4Story_Wide_2Doors_Base.glb",
+    "metrics": {
+      "glbBytes": 517848,
+      "byteLength": 517848,
+      "triangles": 5344,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.827825546264648,
+        "d": 2.154605131113305
+      },
+      "center": {
+        "x": -0.012681961059570312,
+        "z": -0.007228004732443005
+      },
+      "minY": -0.015751197675186464,
+      "maxY": 4.988866026693166
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/4Story_Wide_2Doors_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "4Story_Wide_2Doors_Mat.glb",
+    "metrics": {
+      "glbBytes": 1062548,
+      "byteLength": 1062548,
+      "triangles": 13564,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.827825546264648,
+        "d": 2.6963244724601196
+      },
+      "center": {
+        "x": 0,
+        "z": 0.27085918348503646
+      },
+      "minY": -0.024580654183021987,
+      "maxY": 5.126798893532744
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/4Story_Wide_2Doors_Roof_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "4Story_Wide_2Doors_Roof_Mat.glb",
+    "metrics": {
+      "glbBytes": 989476,
+      "byteLength": 989476,
+      "triangles": 12638,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.827825546264648,
+        "d": 2.6963243207287144
+      },
+      "center": {
+        "x": 0,
+        "z": 0.270858186467133
+      },
+      "minY": -0.024580654183157937,
+      "maxY": 5.658880974373627
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/4Story_Wide_2Doors_Roof",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "4Story_Wide_2Doors_Roof.glb",
+    "metrics": {
+      "glbBytes": 1218076,
+      "byteLength": 1218076,
+      "triangles": 12638,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.827825546264648,
+        "d": 2.6963243207287144
+      },
+      "center": {
+        "x": 0,
+        "z": 0.270858186467133
+      },
+      "minY": -0.024580654183157937,
+      "maxY": 5.658880974373627
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/4Story_Wide_2Doors",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "4Story_Wide_2Doors.glb",
+    "metrics": {
+      "glbBytes": 1306960,
+      "byteLength": 1306960,
+      "triangles": 13564,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.827825546264648,
+        "d": 2.6963244724601196
+      },
+      "center": {
+        "x": 0,
+        "z": 0.27085918348503646
+      },
+      "minY": -0.024580654183021987,
+      "maxY": 5.126798893532744
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/4Story",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "4Story.glb",
+    "metrics": {
+      "glbBytes": 663160,
+      "byteLength": 663160,
+      "triangles": 6858,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.421148657798767,
+        "d": 2.532176012861861
+      },
+      "center": {
+        "x": 0.17867952585220337,
+        "z": 0.18878507911976072
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 5.0885927663257196
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/6Story_Stack_Mat",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "6Story_Stack_Mat.glb",
+    "metrics": {
+      "glbBytes": 482168,
+      "byteLength": 482168,
+      "triangles": 6118,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.158645987510681,
+        "d": 2.4985062676293577
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.17194976473955292
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 7.800120585241969
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/6Story_Stack",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "6Story_Stack.glb",
+    "metrics": {
+      "glbBytes": 592132,
+      "byteLength": 592132,
+      "triangles": 6118,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.158645987510681,
+        "d": 2.4985062676293577
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.17194976473955292
+      },
+      "minY": -0.0032455452788348383,
+      "maxY": 7.800120585241969
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/AC_Unit",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "AC_Unit.glb",
+    "metrics": {
+      "glbBytes": 9376,
+      "byteLength": 9376,
+      "triangles": 48,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.28523436188697815,
+        "d": 0.17715550858120932
+      },
+      "center": {
+        "x": 0,
+        "z": 0.009656653313134728
+      },
+      "minY": -1.2857874716242406e-8,
+      "maxY": 0.17672669997868018
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/AC_Unitx4",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "AC_Unitx4.glb",
+    "metrics": {
+      "glbBytes": 23208,
+      "byteLength": 23208,
+      "triangles": 192,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6047646701335907,
+        "d": 0.4152958233986348
+      },
+      "center": {
+        "x": -0.006294146180152893,
+        "z": 0.0042059948129402475
+      },
+      "minY": -3.314489067019618e-8,
+      "maxY": 0.17672671848964616
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Balcony",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Balcony.glb",
+    "metrics": {
+      "glbBytes": 21684,
+      "byteLength": 21684,
+      "triangles": 176,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.834382176399231,
+        "d": 0.4747487150835248
+      },
+      "center": {
+        "x": 0,
+        "z": -2.9802312673243847e-8
+      },
+      "minY": -0.13512318723371514,
+      "maxY": 0.13512306802441587
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Bricks_Half",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Bricks_Half.glb",
+    "metrics": {
+      "glbBytes": 5752,
+      "byteLength": 5752,
+      "triangles": 10,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.11760866641998291,
+        "d": 0.13642535488588295
+      },
+      "center": {
+        "x": 0.011851787567138672,
+        "z": 2.0904744602034953e-10
+      },
+      "minY": -0.07386739173230195,
+      "maxY": 0.07130114355381992
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Bricks_Large",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Bricks_Large.glb",
+    "metrics": {
+      "glbBytes": 28032,
+      "byteLength": 28032,
+      "triangles": 242,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.062021493911743,
+        "d": 0.13642540158509325
+      },
+      "center": {
+        "x": 0,
+        "z": -2.9802323602001746e-8
+      },
+      "minY": -0.21590311446484886,
+      "maxY": 0.21590312936600034
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Bricks_LeftStraight",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Bricks_LeftStraight.glb",
+    "metrics": {
+      "glbBytes": 13452,
+      "byteLength": 13452,
+      "triangles": 90,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7915234863758087,
+        "d": 0.13642540158509325
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": -2.9802323602001746e-8
+      },
+      "minY": -0.21590311446484886,
+      "maxY": 0.21590312936600034
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Bricks_RightStraight",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Bricks_RightStraight.glb",
+    "metrics": {
+      "glbBytes": 14608,
+      "byteLength": 14608,
+      "triangles": 102,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7945454120635986,
+        "d": 0.13642541559357674
+      },
+      "center": {
+        "x": 0.008967936038970947,
+        "z": -2.9802323602001746e-8
+      },
+      "minY": -0.21316350617703886,
+      "maxY": 0.21316352107819034
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Bricks_Single",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Bricks_Single.glb",
+    "metrics": {
+      "glbBytes": 5756,
+      "byteLength": 5756,
+      "triangles": 10,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2387605905532837,
+        "d": 0.13642535530397665
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -6.036837696399289e-16
+      },
+      "minY": -0.07386738428172135,
+      "maxY": 0.07386739173230195
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Bricks_Small",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Bricks_Small.glb",
+    "metrics": {
+      "glbBytes": 10556,
+      "byteLength": 10556,
+      "triangles": 60,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.606700599193573,
+        "d": 0.13642540158509325
+      },
+      "center": {
+        "x": 0,
+        "z": -2.9802323602001746e-8
+      },
+      "minY": -0.21590311446484886,
+      "maxY": 0.21590312936600034
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/CasinoSign",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "CasinoSign.glb",
+    "metrics": {
+      "glbBytes": 66620,
+      "byteLength": 66620,
+      "triangles": 644,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.66259765625,
+        "d": 0.1361163478510387
+      },
+      "center": {
+        "x": 0.002657175064086914,
+        "z": 0.004749710221848086
+      },
+      "minY": -0.03616192850734214,
+      "maxY": 0.6476233124142686
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Door_Double",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Door_Double.glb",
+    "metrics": {
+      "glbBytes": 36668,
+      "byteLength": 36668,
+      "triangles": 332,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7495711147785187,
+        "d": 0.12272308141309313
+      },
+      "center": {
+        "x": -0.00035552680492401123,
+        "z": 0.002321494814956148
+      },
+      "minY": -0.015541324697554275,
+      "maxY": 0.9521532162468525
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Door_Window",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Door_Window.glb",
+    "metrics": {
+      "glbBytes": 45124,
+      "byteLength": 45124,
+      "triangles": 420,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4386463761329651,
+        "d": 0.057202094608917106
+      },
+      "center": {
+        "x": 0,
+        "z": 0.03155549392200147
+      },
+      "minY": -0.013159370499792213,
+      "maxY": 0.9037653901832701
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Door_Window2",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Door_Window2.glb",
+    "metrics": {
+      "glbBytes": 15748,
+      "byteLength": 15748,
+      "triangles": 114,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4437251389026642,
+        "d": 0.04956685248285159
+      },
+      "center": {
+        "x": 0,
+        "z": 0.03167437033193493
+      },
+      "minY": -0.008412862005186003,
+      "maxY": 0.8981816264581097
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Door1",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Door1.glb",
+    "metrics": {
+      "glbBytes": 19764,
+      "byteLength": 19764,
+      "triangles": 156,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4386463761329651,
+        "d": 0.042937630696221654
+      },
+      "center": {
+        "x": 0,
+        "z": 0.015218125051847666
+      },
+      "minY": -0.013159371999499375,
+      "maxY": 0.9037653863595868
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Door2",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Door2.glb",
+    "metrics": {
+      "glbBytes": 23412,
+      "byteLength": 23412,
+      "triangles": 194,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.39767101407051086,
+        "d": 0.02538365649423124
+      },
+      "center": {
+        "x": 0,
+        "z": -1.0599530628034592e-7
+      },
+      "minY": -0.011434890534946984,
+      "maxY": 0.9067583700830211
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Door3",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Door3.glb",
+    "metrics": {
+      "glbBytes": 25144,
+      "byteLength": 25144,
+      "triangles": 212,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4386463761329651,
+        "d": 0.04293763023056037
+      },
+      "center": {
+        "x": 0,
+        "z": 0.024423261732823102
+      },
+      "minY": -0.013159370499792213,
+      "maxY": 0.9037653878592938
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Door4",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Door4.glb",
+    "metrics": {
+      "glbBytes": 15732,
+      "byteLength": 15732,
+      "triangles": 114,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.44368886947631836,
+        "d": 0.050133393402027215
+      },
+      "center": {
+        "x": 0,
+        "z": 0.013517969627497947
+      },
+      "minY": -0.011444314401827482,
+      "maxY": 0.9047533336559177
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Door5",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Door5.glb",
+    "metrics": {
+      "glbBytes": 19764,
+      "byteLength": 19764,
+      "triangles": 156,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4409151077270508,
+        "d": 0.04293762984513391
+      },
+      "center": {
+        "x": 0,
+        "z": 0.024423261679800155
+      },
+      "minY": -0.011651052612009181,
+      "maxY": 0.9029079750442
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Pipe_L",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Pipe_L.glb",
+    "metrics": {
+      "glbBytes": 14772,
+      "byteLength": 14772,
+      "triangles": 104,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8518372774124146,
+        "d": 0.3079735793055139
+      },
+      "center": {
+        "x": 0.0031569600105285645,
+        "z": 0.1254288280615883
+      },
+      "minY": -0.06298744398707334,
+      "maxY": 0.03297590546263226
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Pipe_Straight_Short",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Pipe_Straight_Short.glb",
+    "metrics": {
+      "glbBytes": 11344,
+      "byteLength": 11344,
+      "triangles": 68,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6272139549255371,
+        "d": 0.05711590944539993
+      },
+      "center": {
+        "x": -0.008174896240234375,
+        "z": 1.7758387624994265e-9
+      },
+      "minY": -0.058881697241008654,
+      "maxY": 0.03708165604227847
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Pipe_Straight",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Pipe_Straight.glb",
+    "metrics": {
+      "glbBytes": 11332,
+      "byteLength": 11332,
+      "triangles": 68,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5068316459655762,
+        "d": 0.05711590944539993
+      },
+      "center": {
+        "x": 0,
+        "z": 1.7758387624994265e-9
+      },
+      "minY": -0.058881697241008654,
+      "maxY": 0.03708165604227847
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Sign_Bakery",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Sign_Bakery.glb",
+    "metrics": {
+      "glbBytes": 134404,
+      "byteLength": 134404,
+      "triangles": 1350,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.18173611164093,
+        "d": 0.10764486537900732
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": -2.4970370389454377e-8
+      },
+      "minY": -0.24144097549412247,
+      "maxY": 0.5708407251307688
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Sign_Barbershop",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Sign_Barbershop.glb",
+    "metrics": {
+      "glbBytes": 120588,
+      "byteLength": 120588,
+      "triangles": 1206,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.006915271282196,
+        "d": 0.04829575847755242
+      },
+      "center": {
+        "x": 0.03264310956001282,
+        "z": -1.284609757110089e-9
+      },
+      "minY": -0.09443656748561056,
+      "maxY": 0.12163915878562119
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Sign_Bookshop",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Sign_Bookshop.glb",
+    "metrics": {
+      "glbBytes": 214468,
+      "byteLength": 214468,
+      "triangles": 2184,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8299682140350342,
+        "d": 0.3430993576169804
+      },
+      "center": {
+        "x": -0.059800148010253906,
+        "z": -0.00970487552390463
+      },
+      "minY": -0.5389650759358949,
+      "maxY": 0.20451728656167312
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Sign_Hardware",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Sign_Hardware.glb",
+    "metrics": {
+      "glbBytes": 108488,
+      "byteLength": 108488,
+      "triangles": 1080,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.175381660461426,
+        "d": 0.10291567973092544
+      },
+      "center": {
+        "x": 0,
+        "z": -6.166356484108015e-8
+      },
+      "minY": -0.003575593001910759,
+      "maxY": 0.7605521166713373
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Sign_Pharmacy",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Sign_Pharmacy.glb",
+    "metrics": {
+      "glbBytes": 93892,
+      "byteLength": 93892,
+      "triangles": 928,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.125952363014221,
+        "d": 0.07385342096488702
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0
+      },
+      "minY": -0.21418123548827658,
+      "maxY": 0.21418123548827658
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Staircase",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Staircase.glb",
+    "metrics": {
+      "glbBytes": 7668,
+      "byteLength": 7668,
+      "triangles": 30,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8455045223236084,
+        "d": 0.48070433694655335
+      },
+      "center": {
+        "x": -1.1920928955078125e-7,
+        "z": 0
+      },
+      "minY": -0.09019855600403817,
+      "maxY": 0.09019855600403817
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Stairs_Roof",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Stairs_Roof.glb",
+    "metrics": {
+      "glbBytes": 14972,
+      "byteLength": 14972,
+      "triangles": 106,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8455044627189636,
+        "d": 0.9462514035056784
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.20825256159827998
+      },
+      "minY": -0.11046747708272589,
+      "maxY": 1.0554689086943085
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Window_Double_Roof",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Window_Double_Roof.glb",
+    "metrics": {
+      "glbBytes": 27084,
+      "byteLength": 27084,
+      "triangles": 232,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3602502644062042,
+        "d": 0.1755213806705945
+      },
+      "center": {
+        "x": 0,
+        "z": 0.07268662750720882
+      },
+      "minY": -0.2956309343101129,
+      "maxY": 0.2956309579944224
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Window_Double",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Window_Double.glb",
+    "metrics": {
+      "glbBytes": 21700,
+      "byteLength": 21700,
+      "triangles": 176,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.30273309350013733,
+        "d": 0.056434707916592365
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": -9.710982018518166e-15
+      },
+      "minY": -0.2349883363919199,
+      "maxY": 0.23498845560120946
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Window_Roof",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Window_Roof.glb",
+    "metrics": {
+      "glbBytes": 22076,
+      "byteLength": 22076,
+      "triangles": 180,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3602501451969147,
+        "d": 0.22433634583594186
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": 5.960464477539063e-8
+      },
+      "minY": -0.24342616239757298,
+      "maxY": 0.24342616239759238
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings-pack/Window",
+    "source": "quaternius-lowpoly-buildings-pack",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Window.glb",
+    "metrics": {
+      "glbBytes": 16692,
+      "byteLength": 16692,
+      "triangles": 124,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 3212
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3027331233024597,
+        "d": 0.05643455565119656
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 4.3772152510251905e-8
+      },
+      "minY": -0.1735547975973853,
+      "maxY": 0.17355490190552791
+    }
+  }
+]

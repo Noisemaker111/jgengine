@@ -1,0 +1,339 @@
+[
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/BigBush",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "BigBush.glb",
+    "metrics": {
+      "glbBytes": 86916,
+      "byteLength": 86916,
+      "triangles": 1190,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.142145276069641,
+        "d": 2.771478863088511
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": -0.3337385429827967
+      },
+      "minY": -0.051068560030653985,
+      "maxY": 2.70213072749923
+    }
+  },
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/BiggerBush",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "BiggerBush.glb",
+    "metrics": {
+      "glbBytes": 65196,
+      "byteLength": 65196,
+      "triangles": 886,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.876340572048595,
+        "d": 2.4216284122301897
+      },
+      "center": {
+        "x": 0.35160899175490135,
+        "z": 9.508234399824289e-8
+      },
+      "minY": -0.010849283267696776,
+      "maxY": 2.558401601479298
+    }
+  },
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/BigTree",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "BigTree.glb",
+    "metrics": {
+      "glbBytes": 138648,
+      "byteLength": 138648,
+      "triangles": 1908,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.006327748298645,
+        "d": 4.883212804794311
+      },
+      "center": {
+        "x": 0.160273015499115,
+        "z": 0.06277430057525635
+      },
+      "minY": -0.0573427490890026,
+      "maxY": 6.375419616699218
+    }
+  },
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/BigTree2",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "BigTree2.glb",
+    "metrics": {
+      "glbBytes": 186132,
+      "byteLength": 186132,
+      "triangles": 2568,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.014693975448608,
+        "d": 3.9966277677049042
+      },
+      "center": {
+        "x": -0.15916812419891357,
+        "z": -0.01590046904553022
+      },
+      "minY": -0.02250518310437068,
+      "maxY": 4.854425753273928
+    }
+  },
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/Bush",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "Bush.glb",
+    "metrics": {
+      "glbBytes": 42824,
+      "byteLength": 42824,
+      "triangles": 576,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5777302384376535,
+        "d": 1.7522027682166659
+      },
+      "center": {
+        "x": -0.0434369742870333,
+        "z": 1.2795105724938693e-7
+      },
+      "minY": -0.004903683478691817,
+      "maxY": 2.094410551751696
+    }
+  },
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/Flower",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "Flower.glb",
+    "metrics": {
+      "glbBytes": 20108,
+      "byteLength": 20108,
+      "triangles": 262,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7184740900993347,
+        "d": 0.7004605297410695
+      },
+      "center": {
+        "x": 0,
+        "z": -0.042554063834246675
+      },
+      "minY": -0.03030907428972002,
+      "maxY": 1.106367399751434
+    }
+  },
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/Flower2",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "Flower2.glb",
+    "metrics": {
+      "glbBytes": 23996,
+      "byteLength": 23996,
+      "triangles": 316,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3424364924430847,
+        "d": 0.3424367292463292
+      },
+      "center": {
+        "x": 0,
+        "z": -1.1709517093450028e-7
+      },
+      "minY": -0.008018982552011115,
+      "maxY": 1.445469049692154
+    }
+  },
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/Flower3",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "Flower3.glb",
+    "metrics": {
+      "glbBytes": 26380,
+      "byteLength": 26380,
+      "triangles": 348,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6796354313915969,
+        "d": 1.6269409596865314
+      },
+      "center": {
+        "x": 7.595019319017737e-8,
+        "z": -1.2340285182599331e-8
+      },
+      "minY": 0.011639457601226425,
+      "maxY": 0.21988162730343147
+    }
+  },
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/Mushroom",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "Mushroom.glb",
+    "metrics": {
+      "glbBytes": 147428,
+      "byteLength": 147428,
+      "triangles": 218,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 512,
+          "height": 512,
+          "byteLength": 124921
+        }
+      ],
+      "maxTextureDimension": 512
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0495487451553345,
+        "d": 1.1035611491960524
+      },
+      "center": {
+        "x": 0,
+        "z": 0.04625673069139341
+      },
+      "minY": -0.017157992751949895,
+      "maxY": 0.9959817907004528
+    }
+  },
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/SmallTree",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "SmallTree.glb",
+    "metrics": {
+      "glbBytes": 44892,
+      "byteLength": 44892,
+      "triangles": 604,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9661106123007641,
+        "d": 2.122138593270222
+      },
+      "center": {
+        "x": -0.1375290335599496,
+        "z": 0.09966855224866744
+      },
+      "minY": -0.02094762036702885,
+      "maxY": 3.4225850657869885
+    }
+  },
+  {
+    "id": "quaternius-fantasy-low-poly-trees-and-bushes/Tree",
+    "source": "quaternius-fantasy-low-poly-trees-and-bushes",
+    "categories": [
+      "nature",
+      "tree",
+      "fantasy"
+    ],
+    "file": "Tree.glb",
+    "metrics": {
+      "glbBytes": 89508,
+      "byteLength": 89508,
+      "triangles": 1226,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.579841136932373,
+        "d": 2.68050127775736
+      },
+      "center": {
+        "x": 0.05948531627655029,
+        "z": -1.4398203174170732e-7
+      },
+      "minY": -0.0171909057128419,
+      "maxY": 3.9798059262859873
+    }
+  }
+]

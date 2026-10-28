@@ -1,0 +1,2732 @@
+[
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Column_1",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Column_1.glb",
+    "metrics": {
+      "glbBytes": 6644,
+      "byteLength": 6644,
+      "triangles": 60,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6842905282974243,
+        "d": 0.6842913746878578
+      },
+      "center": {
+        "x": 0,
+        "z": -3.635905764520775e-7
+      },
+      "minY": -5.574254867260655e-8,
+      "maxY": 4.463406141710507
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Column_2",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Column_2.glb",
+    "metrics": {
+      "glbBytes": 16632,
+      "byteLength": 16632,
+      "triangles": 188,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6842905282974243,
+        "d": 0.6842913746878578
+      },
+      "center": {
+        "x": 0,
+        "z": -3.635905764520775e-7
+      },
+      "minY": -5.574254867260655e-8,
+      "maxY": 4.463406141710507
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Column_3",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Column_3.glb",
+    "metrics": {
+      "glbBytes": 61448,
+      "byteLength": 61448,
+      "triangles": 758,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3678332590007796,
+        "d": 1.3678332591226294
+      },
+      "center": {
+        "x": 1.1913964864662674e-7,
+        "z": 1.1913962916221266e-7
+      },
+      "minY": -3.649096569285232e-8,
+      "maxY": 4.463406122458972
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Column_Slim",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Column_Slim.glb",
+    "metrics": {
+      "glbBytes": 33284,
+      "byteLength": 33284,
+      "triangles": 396,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6285995244979858,
+        "d": 0.6930174046657014
+      },
+      "center": {
+        "x": -0.0051444172859191895,
+        "z": -0.04044290452706864
+      },
+      "minY": -6.304230039388413e-8,
+      "maxY": 4.459660103117563
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Arrow_2",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Arrow_2.glb",
+    "metrics": {
+      "glbBytes": 5304,
+      "byteLength": 5304,
+      "triangles": 54,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3672765642404556,
+        "d": 0.07284869995459997
+      },
+      "center": {
+        "x": -0.00036541372537612915,
+        "z": -0.01582201193002346
+      },
+      "minY": -0.16025146203087576,
+      "maxY": 0.09107244350394136
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Arrow",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Arrow.glb",
+    "metrics": {
+      "glbBytes": 5444,
+      "byteLength": 5444,
+      "triangles": 56,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3601299524307251,
+        "d": 0.04934397971272386
+      },
+      "center": {
+        "x": 7.450580596923828e-8,
+        "z": 1.9095456754020246e-7
+      },
+      "minY": -0.18536046549300478,
+      "maxY": 0.15065145894513865
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Basic_1",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Basic_1.glb",
+    "metrics": {
+      "glbBytes": 12144,
+      "byteLength": 12144,
+      "triangles": 130,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.26992127299308777,
+        "d": 0.05027646684889595
+      },
+      "center": {
+        "x": 0,
+        "z": -0.014771672897062497
+      },
+      "minY": -0.13496050888823685,
+      "maxY": 0.13496077229591635
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Basic_2",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Basic_2.glb",
+    "metrics": {
+      "glbBytes": 18540,
+      "byteLength": 18540,
+      "triangles": 212,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.26992136240005493,
+        "d": 0.05169677416034682
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.002852309495222749
+      },
+      "minY": -0.2646181630163806,
+      "maxY": 0.26461831109859213
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Basic_3",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Basic_3.glb",
+    "metrics": {
+      "glbBytes": 5940,
+      "byteLength": 5940,
+      "triangles": 56,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.30989886820316315,
+        "d": 0.04127362390241036
+      },
+      "center": {
+        "x": -2.2351741790771484e-8,
+        "z": -0.008591234268769163
+      },
+      "minY": -0.14034875213447406,
+      "maxY": 0.16955003338603644
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Basic_4",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Basic_4.glb",
+    "metrics": {
+      "glbBytes": 12924,
+      "byteLength": 12924,
+      "triangles": 140,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6794764697551727,
+        "d": 0.06803438306281594
+      },
+      "center": {
+        "x": -4.470348358154297e-8,
+        "z": -0.018831076482954314
+      },
+      "minY": -0.23363912966566966,
+      "maxY": 0.22690165290289496
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Cylinder_Long",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Cylinder_Long.glb",
+    "metrics": {
+      "glbBytes": 31196,
+      "byteLength": 31196,
+      "triangles": 374,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7893226444721222,
+        "d": 0.19088210970449407
+      },
+      "center": {
+        "x": 0.17955879867076874,
+        "z": 0.0959319669345859
+      },
+      "minY": -0.1913730054293892,
+      "maxY": 0.1913730217868305
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Cylinder",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Cylinder.glb",
+    "metrics": {
+      "glbBytes": 31188,
+      "byteLength": 31188,
+      "triangles": 374,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4302050918340683,
+        "d": 0.1908821097044965
+      },
+      "center": {
+        "x": 2.2351741790771484e-8,
+        "z": 0.09593196693458468
+      },
+      "minY": -0.1913730054293892,
+      "maxY": 0.1913730366879917
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Dots",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Dots.glb",
+    "metrics": {
+      "glbBytes": 28632,
+      "byteLength": 28632,
+      "triangles": 378,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5512664020061493,
+        "d": 0.05876170008009515
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": 6.071532165918825e-16
+      },
+      "minY": -0.11154257984806489,
+      "maxY": 0.11154257239748429
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Hexagon",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Hexagon.glb",
+    "metrics": {
+      "glbBytes": 5944,
+      "byteLength": 5944,
+      "triangles": 56,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.34154459834098816,
+        "d": 0.07899900804369817
+      },
+      "center": {
+        "x": 1.341104507446289e-7,
+        "z": -0.015234963037010291
+      },
+      "minY": -0.19719115791372188,
+      "maxY": 0.19719037808915874
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Output_Small",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Output_Small.glb",
+    "metrics": {
+      "glbBytes": 12816,
+      "byteLength": 12816,
+      "triangles": 158,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15839046239852905,
+        "d": 0.05415911386525591
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": -0.001575279049520685
+      },
+      "minY": -0.07919531037353271,
+      "maxY": 0.07919463930798791
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Output",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Output.glb",
+    "metrics": {
+      "glbBytes": 26652,
+      "byteLength": 26652,
+      "triangles": 316,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.299713671207428,
+        "d": 0.05869727391470636
+      },
+      "center": {
+        "x": -9.5367431640625e-7,
+        "z": -0.001632447354480938
+      },
+      "minY": -0.14850405363334512,
+      "maxY": 0.14850387428749193
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Pipes_Long",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Pipes_Long.glb",
+    "metrics": {
+      "glbBytes": 41716,
+      "byteLength": 41716,
+      "triangles": 498,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5143293142318726,
+        "d": 0.09316355474305821
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 0.0465815886854925
+      },
+      "minY": -0.7922956943511955,
+      "maxY": 0.7922959479479829
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Pipes_Medium",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Pipes_Medium.glb",
+    "metrics": {
+      "glbBytes": 41720,
+      "byteLength": 41720,
+      "triangles": 498,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5143293142318726,
+        "d": 0.09316342136357567
+      },
+      "center": {
+        "x": -8.046627044677734e-7,
+        "z": 0.046581625938429475
+      },
+      "minY": -0.3829571902751909,
+      "maxY": 0.38295702663947684
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Pipes_Small",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Pipes_Small.glb",
+    "metrics": {
+      "glbBytes": 41720,
+      "byteLength": 41720,
+      "triangles": 498,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3503868281841278,
+        "d": 0.11019391851736791
+      },
+      "center": {
+        "x": 0.021609410643577576,
+        "z": -0.0010099522768953345
+      },
+      "minY": -0.12308205833196935,
+      "maxY": 0.12308144705527617
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Plate_Details",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Plate_Details.glb",
+    "metrics": {
+      "glbBytes": 31140,
+      "byteLength": 31140,
+      "triangles": 368,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6199354827404022,
+        "d": 0.03213538830007169
+      },
+      "center": {
+        "x": -0.000033274292945861816,
+        "z": -0.00024829528972885283
+      },
+      "minY": -0.30975464252216767,
+      "maxY": 0.310180905058374
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Plate_Large",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Plate_Large.glb",
+    "metrics": {
+      "glbBytes": 29776,
+      "byteLength": 29776,
+      "triangles": 356,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0521420240402222,
+        "d": 0.02868811523640413
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -0.0015607174261498876
+      },
+      "minY": -0.5374268319292691,
+      "maxY": 0.5382946154440077
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Plate_Long",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Plate_Long.glb",
+    "metrics": {
+      "glbBytes": 29776,
+      "byteLength": 29776,
+      "triangles": 356,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0521420240402222,
+        "d": 0.028687995775826373
+      },
+      "center": {
+        "x": -0.000003874301910400391,
+        "z": 0.014343947044977141
+      },
+      "minY": -0.17331635951995986,
+      "maxY": 0.17487770786370244
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Plate_Small",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Plate_Small.glb",
+    "metrics": {
+      "glbBytes": 25408,
+      "byteLength": 25408,
+      "triangles": 300,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.395954966545105,
+        "d": 0.02868799552134438
+      },
+      "center": {
+        "x": -0.0000010132789611816406,
+        "z": 0.014343945309572987
+      },
+      "minY": -0.17331635951996016,
+      "maxY": 0.17331570854271827
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Triangles",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Triangles.glb",
+    "metrics": {
+      "glbBytes": 3152,
+      "byteLength": 3152,
+      "triangles": 24,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.47597944736480713,
+        "d": 0.02694114780600325
+      },
+      "center": {
+        "x": 0.022036075592041016,
+        "z": -2.2817401864640152e-8
+      },
+      "minY": -0.08056111108183116,
+      "maxY": 0.08056109618066253
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Vent_1",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Vent_1.glb",
+    "metrics": {
+      "glbBytes": 15224,
+      "byteLength": 15224,
+      "triangles": 164,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5264898836612701,
+        "d": 0.04127366208665291
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": -0.006360007764399588
+      },
+      "minY": -0.15587778829287607,
+      "maxY": 0.15402110153576906
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Vent_2",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Vent_2.glb",
+    "metrics": {
+      "glbBytes": 13040,
+      "byteLength": 13040,
+      "triangles": 136,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.30989886820316315,
+        "d": 0.04127361272653703
+      },
+      "center": {
+        "x": -0.00031181424856185913,
+        "z": -0.006729963460533911
+      },
+      "minY": -0.1650013223173027,
+      "maxY": 0.14489744830204482
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Vent_3",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Vent_3.glb",
+    "metrics": {
+      "glbBytes": 44120,
+      "byteLength": 44120,
+      "triangles": 540,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0521420240402222,
+        "d": 0.028688002473057948
+      },
+      "center": {
+        "x": 1.7881393432617188e-7,
+        "z": -0.003381978550966761
+      },
+      "minY": -0.10994456997223664,
+      "maxY": 0.11358071297186793
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Vent_4",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Vent_4.glb",
+    "metrics": {
+      "glbBytes": 51576,
+      "byteLength": 51576,
+      "triangles": 630,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.23825788497924805,
+        "d": 0.09052124587538977
+      },
+      "center": {
+        "x": 0,
+        "z": 0.01738714224546014
+      },
+      "minY": -0.16953342116999628,
+      "maxY": 0.2057893676303916
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_Vent_5",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_Vent_5.glb",
+    "metrics": {
+      "glbBytes": 51576,
+      "byteLength": 51576,
+      "triangles": 630,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6864247918128967,
+        "d": 0.09052124773803251
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.1876613869496135,
+      "maxY": 0.1876613869496135
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Details_X",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Details_X.glb",
+    "metrics": {
+      "glbBytes": 4572,
+      "byteLength": 4572,
+      "triangles": 44,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.31916262209415436,
+        "d": 0.02420841980038154
+      },
+      "center": {
+        "x": 0.002161659300327301,
+        "z": -0.0006513240749632223
+      },
+      "minY": -0.15729318766983158,
+      "maxY": 0.16186936386255632
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Door_Double",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Door_Double.glb",
+    "metrics": {
+      "glbBytes": 160264,
+      "byteLength": 160264,
+      "triangles": 1992,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.6527841091156006,
+        "d": 0.4542332070631282
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4149052091636584
+      },
+      "minY": -0.0003555270953516237,
+      "maxY": 2.790818660658978
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Door_Single",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Door_Single.glb",
+    "metrics": {
+      "glbBytes": 112164,
+      "byteLength": 112164,
+      "triangles": 1396,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6732139587402344,
+        "d": 0.45136203642310724
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4173174165280287
+      },
+      "minY": -0.0007253740752948548,
+      "maxY": 2.790448634397327
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/DoorDouble_Wall_SideA",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "DoorDouble_Wall_SideA.glb",
+    "metrics": {
+      "glbBytes": 28096,
+      "byteLength": 28096,
+      "triangles": 326,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 1.253755100241217
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.37122202201386756
+      },
+      "minY": -0.006088255534107291,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/DoorDouble_Wall_SideB",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "DoorDouble_Wall_SideB.glb",
+    "metrics": {
+      "glbBytes": 17936,
+      "byteLength": 17936,
+      "triangles": 196,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 0.5307130581860418
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.009701001978156099
+      },
+      "minY": -4.4812442285159736e-8,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/DoorDoubleLong_Wall_SideA",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "DoorDoubleLong_Wall_SideA.glb",
+    "metrics": {
+      "glbBytes": 28104,
+      "byteLength": 28104,
+      "triangles": 326,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 2.253755100241204
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.871222022013861
+      },
+      "minY": -0.006088418454786905,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/DoorSingle_Wall_SideA",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "DoorSingle_Wall_SideA.glb",
+    "metrics": {
+      "glbBytes": 28548,
+      "byteLength": 28548,
+      "triangles": 332,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 1.253755100241217
+      },
+      "center": {
+        "x": 0,
+        "z": -0.37122202201386756
+      },
+      "minY": -0.006088255534107291,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/DoorSingle_Wall_SideB",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "DoorSingle_Wall_SideB.glb",
+    "metrics": {
+      "glbBytes": 18388,
+      "byteLength": 18388,
+      "triangles": 202,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 0.5307130581860418
+      },
+      "center": {
+        "x": 0,
+        "z": -0.009701001978156099
+      },
+      "minY": -4.4812442285159736e-8,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/DoorSingleLong_Wall_SideA",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "DoorSingleLong_Wall_SideA.glb",
+    "metrics": {
+      "glbBytes": 28556,
+      "byteLength": 28556,
+      "triangles": 332,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 2.253755100241204
+      },
+      "center": {
+        "x": 0,
+        "z": -0.871222022013861
+      },
+      "minY": -0.006088418454786905,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/FloorTile_Basic",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "FloorTile_Basic.glb",
+    "metrics": {
+      "glbBytes": 32180,
+      "byteLength": 32180,
+      "triangles": 388,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.0000000152108854
+      },
+      "center": {
+        "x": 0,
+        "z": -7.605455876191769e-9
+      },
+      "minY": -1.6292067961387602e-7,
+      "maxY": 0.09336407383414579
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/FloorTile_Basic2",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "FloorTile_Basic2.glb",
+    "metrics": {
+      "glbBytes": 47312,
+      "byteLength": 47312,
+      "triangles": 570,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0000007152557373,
+        "d": 2.000000730466623
+      },
+      "center": {
+        "x": 0,
+        "z": -1.5115542151278305e-10
+      },
+      "minY": -0.04575433482863904,
+      "maxY": 0.04760990565159319
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/FloorTile_Corner",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "FloorTile_Corner.glb",
+    "metrics": {
+      "glbBytes": 31324,
+      "byteLength": 31324,
+      "triangles": 360,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.0000002484421993
+      },
+      "center": {
+        "x": -1.1920928955078125e-7,
+        "z": -1.2093323298323355e-7
+      },
+      "minY": -0.02018102531767368,
+      "maxY": 0.04134400462242505
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/FloorTile_Double_Hallway",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "FloorTile_Double_Hallway.glb",
+    "metrics": {
+      "glbBytes": 40340,
+      "byteLength": 40340,
+      "triangles": 476,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 2.00000001115231
+      },
+      "center": {
+        "x": 1,
+        "z": -2.28828833659378e-9
+      },
+      "minY": -0.020181025317634837,
+      "maxY": 0.048271852484668615
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/FloorTile_Empty",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "FloorTile_Empty.glb",
+    "metrics": {
+      "glbBytes": 7232,
+      "byteLength": 7232,
+      "triangles": 68,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.0000000125999176
+      },
+      "center": {
+        "x": 0,
+        "z": -5.610453435167528e-9
+      },
+      "minY": -0.004232398173536767,
+      "maxY": 0.07310583343240121
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/FloorTile_InnerCorner",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "FloorTile_InnerCorner.glb",
+    "metrics": {
+      "glbBytes": 20160,
+      "byteLength": 20160,
+      "triangles": 217,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0000003576278687,
+        "d": 2.0000000083074108
+      },
+      "center": {
+        "x": -1.7881393432617188e-7,
+        "z": -3.7107379391443374e-9
+      },
+      "minY": -0.002719159410100111,
+      "maxY": 0.048271852484668615
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/FloorTile_Side",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "FloorTile_Side.glb",
+    "metrics": {
+      "glbBytes": 21768,
+      "byteLength": 21768,
+      "triangles": 238,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.00000001115231
+      },
+      "center": {
+        "x": 0,
+        "z": -2.28828833659378e-9
+      },
+      "minY": -0.020181025317634837,
+      "maxY": 0.048271852484668615
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/LongWindow_Wall_SideA",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "LongWindow_Wall_SideA.glb",
+    "metrics": {
+      "glbBytes": 28704,
+      "byteLength": 28704,
+      "triangles": 332,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 1.064087099504928
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.2763880226375993
+      },
+      "minY": -1.3171010358523344e-7,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/LongWindow_Wall_SideB",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "LongWindow_Wall_SideB.glb",
+    "metrics": {
+      "glbBytes": 27456,
+      "byteLength": 27456,
+      "triangles": 316,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 0.5355419880871647
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.012115466928717566
+      },
+      "minY": -4.559917482645847e-8,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Pipes",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Pipes.glb",
+    "metrics": {
+      "glbBytes": 27032,
+      "byteLength": 27032,
+      "triangles": 356,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.508448362350464,
+        "d": 0.12758624623368825
+      },
+      "center": {
+        "x": 0.07746660709381104,
+        "z": 0.27671641716626816
+      },
+      "minY": 3.9850688327548562,
+      "maxY": 4.355197008295918
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Base",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Base.glb",
+    "metrics": {
+      "glbBytes": 45784,
+      "byteLength": 45784,
+      "triangles": 556,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.3960468769073486,
+        "d": 2.3960469290928668
+      },
+      "center": {
+        "x": 0,
+        "z": -2.6118251117424052e-8
+      },
+      "minY": 0.00015617694793926374,
+      "maxY": 0.32046918717764633
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Capsule",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Capsule.glb",
+    "metrics": {
+      "glbBytes": 101564,
+      "byteLength": 101564,
+      "triangles": 1260,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8693035244941711,
+        "d": 0.8693037882884767
+      },
+      "center": {
+        "x": 0,
+        "z": -1.3161644749071222e-7
+      },
+      "minY": -0.0017230622802826947,
+      "maxY": 1.6174350492988465
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Chest",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Chest.glb",
+    "metrics": {
+      "glbBytes": 396884,
+      "byteLength": 396884,
+      "triangles": 5024,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.287598967552185,
+        "d": 0.8082310053016953
+      },
+      "center": {
+        "x": 0,
+        "z": -0.001522516563999543
+      },
+      "minY": 0.004513019297735172,
+      "maxY": 0.9155197324615465
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Computer",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Computer.glb",
+    "metrics": {
+      "glbBytes": 51948,
+      "byteLength": 51948,
+      "triangles": 624,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.580413281917572,
+        "d": 0.6440762540085225
+      },
+      "center": {
+        "x": 0,
+        "z": 0.08041380610520799
+      },
+      "minY": -0.0041689837988749204,
+      "maxY": 2.0753162562873193
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_ComputerSmall",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_ComputerSmall.glb",
+    "metrics": {
+      "glbBytes": 51960,
+      "byteLength": 51960,
+      "triangles": 624,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7512153387069702,
+        "d": 0.4563853265804187
+      },
+      "center": {
+        "x": 0,
+        "z": 0.09421017228126657
+      },
+      "minY": -0.004168966261809219,
+      "maxY": 1.5336005020881416
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_ContainerFull",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_ContainerFull.glb",
+    "metrics": {
+      "glbBytes": 387840,
+      "byteLength": 387840,
+      "triangles": 4930,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2020481824874878,
+        "d": 0.7516878004076248
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -4.771535630498924e-8
+      },
+      "minY": 0.0016568584850527542,
+      "maxY": 0.5840926782676402
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Crate",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Crate.glb",
+    "metrics": {
+      "glbBytes": 212948,
+      "byteLength": 212948,
+      "triangles": 2688,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7971169352531433,
+        "d": 0.7971170664936207
+      },
+      "center": {
+        "x": 0,
+        "z": -6.507746685979754e-8
+      },
+      "minY": -0.0033316069484920514,
+      "maxY": 0.8022168928028212
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_CrateLong",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_CrateLong.glb",
+    "metrics": {
+      "glbBytes": 246652,
+      "byteLength": 246652,
+      "triangles": 3120,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.232951581478119,
+        "d": 0.7697854998169654
+      },
+      "center": {
+        "x": -0.0027465522289276123,
+        "z": -0.0001887563288683891
+      },
+      "minY": 0.0013360647818872915,
+      "maxY": 0.7711216838081228
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Laser",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Laser.glb",
+    "metrics": {
+      "glbBytes": 124724,
+      "byteLength": 124724,
+      "triangles": 1568,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.8412997722625732,
+        "d": 1.463862390972656
+      },
+      "center": {
+        "x": -0.16050755977630615,
+        "z": -0.004872066335310787
+      },
+      "minY": -0.01995313250688483,
+      "maxY": 1.2706311933583456
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Pod",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Pod.glb",
+    "metrics": {
+      "glbBytes": 178288,
+      "byteLength": 178288,
+      "triangles": 2246,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.809989094734192,
+        "d": 1.8100731893835955
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": -0.00004198803714083876
+      },
+      "minY": 0.001946025221058605,
+      "maxY": 3.6143919511837437
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Shelf_Tall",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Shelf_Tall.glb",
+    "metrics": {
+      "glbBytes": 44232,
+      "byteLength": 44232,
+      "triangles": 536,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.056917190551758,
+        "d": 0.810790508491539
+      },
+      "center": {
+        "x": 0,
+        "z": -2.5364429598329075e-7
+      },
+      "minY": 0.0035080249256712413,
+      "maxY": 3.110207146888252
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Shelf",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Shelf.glb",
+    "metrics": {
+      "glbBytes": 31120,
+      "byteLength": 31120,
+      "triangles": 368,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7889971733093262,
+        "d": 0.8107904096596132
+      },
+      "center": {
+        "x": 0,
+        "z": -2.0422833313382682e-7
+      },
+      "minY": 0.0035080249256712413,
+      "maxY": 2.5035811131053016
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Statue",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Statue.glb",
+    "metrics": {
+      "glbBytes": 90404,
+      "byteLength": 90404,
+      "triangles": 1128,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1848825216293335,
+        "d": 1.4638626059015407
+      },
+      "center": {
+        "x": -0.009762465953826904,
+        "z": -0.004873607788564438
+      },
+      "minY": 0.0013906076618407288,
+      "maxY": 2.611199020582826
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Teleporter_1",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Teleporter_1.glb",
+    "metrics": {
+      "glbBytes": 56092,
+      "byteLength": 56092,
+      "triangles": 688,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2057896256446838,
+        "d": 1.2057898326162735
+      },
+      "center": {
+        "x": 9.238719940185547e-7,
+        "z": -1.3261232922889832e-7
+      },
+      "minY": -0.004148104663256136,
+      "maxY": 0.9003840475038011
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Teleporter_2",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Teleporter_2.glb",
+    "metrics": {
+      "glbBytes": 77308,
+      "byteLength": 77308,
+      "triangles": 960,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2057896256446838,
+        "d": 1.2057899033695454
+      },
+      "center": {
+        "x": 9.238719940185547e-7,
+        "z": -1.6890957599269285e-7
+      },
+      "minY": 0.0015025646730627584,
+      "maxY": 1.3403152017548938
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Vessel_Short",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Vessel_Short.glb",
+    "metrics": {
+      "glbBytes": 22084,
+      "byteLength": 22084,
+      "triangles": 252,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2873099595308304,
+        "d": 0.28730989817495184
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": -3.526704403511438e-8
+      },
+      "minY": -0.006814652243846289,
+      "maxY": 0.5312124724781405
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Vessel_Tall",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Vessel_Tall.glb",
+    "metrics": {
+      "glbBytes": 27076,
+      "byteLength": 27076,
+      "triangles": 316,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2873099744319916,
+        "d": 0.2873099771424781
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": -7.567738048719352e-8
+      },
+      "minY": -0.0011273856556353041,
+      "maxY": 1.0215989585316008
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Props_Vessel",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Props_Vessel.glb",
+    "metrics": {
+      "glbBytes": 28312,
+      "byteLength": 28312,
+      "triangles": 332,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2873099744319916,
+        "d": 0.2873099360572123
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": -5.491172869187544e-8
+      },
+      "minY": -0.0024962659275469075,
+      "maxY": 0.7680505152141909
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_Corner_Pipes",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_Corner_Pipes.glb",
+    "metrics": {
+      "glbBytes": 41020,
+      "byteLength": 41020,
+      "triangles": 490,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.0000000186817006
+      },
+      "center": {
+        "x": 0,
+        "z": -2.569654156125978e-9
+      },
+      "minY": -0.04156155039998433,
+      "maxY": 0.07310639967652657
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_Details",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_Details.glb",
+    "metrics": {
+      "glbBytes": 68928,
+      "byteLength": 68928,
+      "triangles": 848,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.000000013122659
+      },
+      "center": {
+        "x": 0,
+        "z": -5.34908273230883e-9
+      },
+      "minY": -0.007440960905279583,
+      "maxY": 0.07310583343240121
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_Empty",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_Empty.glb",
+    "metrics": {
+      "glbBytes": 7228,
+      "byteLength": 7228,
+      "triangles": 68,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.0000000125999176
+      },
+      "center": {
+        "x": 0,
+        "z": -5.610453435167528e-9
+      },
+      "minY": -0.004232398173536767,
+      "maxY": 0.07310583343240121
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_InnerCorner_Pipes",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_InnerCorner_Pipes.glb",
+    "metrics": {
+      "glbBytes": 41092,
+      "byteLength": 41092,
+      "triangles": 490,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000476837158,
+        "d": 2.000000495518859
+      },
+      "center": {
+        "x": 0,
+        "z": -2.5696540451036753e-9
+      },
+      "minY": -0.04156155040002318,
+      "maxY": 0.07310639967656542
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_OrangeVent",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_OrangeVent.glb",
+    "metrics": {
+      "glbBytes": 21308,
+      "byteLength": 21308,
+      "triangles": 232,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.0000000188451534
+      },
+      "center": {
+        "x": 0,
+        "z": -5.3387407827898414e-9
+      },
+      "minY": -0.025066650411810113,
+      "maxY": 0.09060456504556016
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_Pipes1",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_Pipes1.glb",
+    "metrics": {
+      "glbBytes": 33044,
+      "byteLength": 33044,
+      "triangles": 388,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.000000018461355
+      },
+      "center": {
+        "x": 0,
+        "z": -2.6797345453744015e-9
+      },
+      "minY": -0.04020964627596282,
+      "maxY": 0.07310583343240121
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_Pipes2",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_Pipes2.glb",
+    "metrics": {
+      "glbBytes": 72980,
+      "byteLength": 72980,
+      "triangles": 900,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.000000018703596
+      },
+      "center": {
+        "x": 0,
+        "z": -2.8008547703350928e-9
+      },
+      "minY": -0.04020964627596282,
+      "maxY": 0.0745926936480651
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_Plate",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_Plate.glb",
+    "metrics": {
+      "glbBytes": 35424,
+      "byteLength": 35424,
+      "triangles": 424,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.0000000125999176
+      },
+      "center": {
+        "x": 0,
+        "z": -5.610453435167528e-9
+      },
+      "minY": -0.004232398173536767,
+      "maxY": 0.07310583343240121
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_Plate2",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_Plate2.glb",
+    "metrics": {
+      "glbBytes": 36364,
+      "byteLength": 36364,
+      "triangles": 436,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.0000000152360737
+      },
+      "center": {
+        "x": 0,
+        "z": -6.9285316373068895e-9
+      },
+      "minY": -0.004232398173536767,
+      "maxY": 0.0892864455792554
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_Sides_Pipes",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_Sides_Pipes.glb",
+    "metrics": {
+      "glbBytes": 26916,
+      "byteLength": 26916,
+      "triangles": 308,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0000000441267383,
+        "d": 2.0000000319696243
+      },
+      "center": {
+        "x": 6.405059593816986e-9,
+        "z": 4.640453465931671e-9
+      },
+      "minY": -0.04021048645046247,
+      "maxY": 0.07310634205606094
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_SmallVents",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_SmallVents.glb",
+    "metrics": {
+      "glbBytes": 29736,
+      "byteLength": 29736,
+      "triangles": 340,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.000000014770279
+      },
+      "center": {
+        "x": 0,
+        "z": -6.695634380271542e-9
+      },
+      "minY": -0.004232398173536767,
+      "maxY": 0.08642741938563667
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/RoofTile_Vents",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "RoofTile_Vents.glb",
+    "metrics": {
+      "glbBytes": 129304,
+      "byteLength": 129304,
+      "triangles": 1622,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.0000000125999176
+      },
+      "center": {
+        "x": 0,
+        "z": -5.610453435167528e-9
+      },
+      "minY": -0.004232398173536767,
+      "maxY": 0.07310583343240121
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/SmallWindows_Wall_SideA",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "SmallWindows_Wall_SideA.glb",
+    "metrics": {
+      "glbBytes": 64760,
+      "byteLength": 64760,
+      "triangles": 794,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000003814697266,
+        "d": 1.0584044820790095
+      },
+      "center": {
+        "x": 0,
+        "z": -0.2735468033316072
+      },
+      "minY": -1.3078430225846099e-7,
+      "maxY": 4.430893939661753
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/SmallWindows_Wall_SideB",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "SmallWindows_Wall_SideB.glb",
+    "metrics": {
+      "glbBytes": 60704,
+      "byteLength": 60704,
+      "triangles": 742,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000003814697266,
+        "d": 0.5260992712502355
+      },
+      "center": {
+        "x": 0,
+        "z": -0.007394197917220152
+      },
+      "minY": -4.406077554822841e-8,
+      "maxY": 4.430893939661753
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Staircase",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Staircase.glb",
+    "metrics": {
+      "glbBytes": 26744,
+      "byteLength": 26744,
+      "triangles": 312,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.7822030782699585,
+        "d": 3.111955810320863
+      },
+      "center": {
+        "x": -5.364418029785156e-7,
+        "z": 1.5559772242181542
+      },
+      "minY": -1.2394630908966953,
+      "maxY": 0.214467063908509
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/ThreeWindows_Wall_SideA",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "ThreeWindows_Wall_SideA.glb",
+    "metrics": {
+      "glbBytes": 64760,
+      "byteLength": 64760,
+      "triangles": 794,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000003814697266,
+        "d": 1.0584044820790095
+      },
+      "center": {
+        "x": 0,
+        "z": -0.2735468033316072
+      },
+      "minY": -1.3078430225846099e-7,
+      "maxY": 4.430893939661753
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/ThreeWindows_Wall_SideB",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "ThreeWindows_Wall_SideB.glb",
+    "metrics": {
+      "glbBytes": 60704,
+      "byteLength": 60704,
+      "triangles": 742,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000003814697266,
+        "d": 0.5260992712502355
+      },
+      "center": {
+        "x": 0,
+        "z": -0.007394197917220152
+      },
+      "minY": -4.406077554822841e-8,
+      "maxY": 4.430893939661753
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Wall_1",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Wall_1.glb",
+    "metrics": {
+      "glbBytes": 87488,
+      "byteLength": 87488,
+      "triangles": 1088,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 0.5446788138871066
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.01668387982868852
+      },
+      "minY": -4.708775269529862e-8,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Wall_2",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Wall_2.glb",
+    "metrics": {
+      "glbBytes": 167756,
+      "byteLength": 167756,
+      "triangles": 2106,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 0.5333661801342839
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.011027562952277165
+      },
+      "minY": -4.5244690716065844e-8,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Wall_3",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Wall_3.glb",
+    "metrics": {
+      "glbBytes": 93024,
+      "byteLength": 93024,
+      "triangles": 1148,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 0.5229807264332647
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.0058348361017675765
+      },
+      "minY": -4.355268554099734e-8,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Wall_4",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Wall_4.glb",
+    "metrics": {
+      "glbBytes": 108392,
+      "byteLength": 108392,
+      "triangles": 1356,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 0.5725779003624786
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.03063342306637451
+      },
+      "minY": -5.1633090824472574e-8,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Wall_5",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Wall_5.glb",
+    "metrics": {
+      "glbBytes": 113776,
+      "byteLength": 113776,
+      "triangles": 1414,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 0.5278769797806615
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.008282962775465974
+      },
+      "minY": -4.435038646391695e-8,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Wall_Empty",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Wall_Empty.glb",
+    "metrics": {
+      "glbBytes": 27120,
+      "byteLength": 27120,
+      "triangles": 314,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 0.4991172618393777
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": 0.0060968961951759215
+      },
+      "minY": -3.9664833671419546e-8,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Window_Wall_SideA",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Window_Wall_SideA.glb",
+    "metrics": {
+      "glbBytes": 28696,
+      "byteLength": 28696,
+      "triangles": 332,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000001907348633,
+        "d": 1.064087099504928
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.2763880226375993
+      },
+      "minY": -1.3171010358523344e-7,
+      "maxY": 4.430893939661767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-sci-fi-environments/Window_Wall_SideB",
+    "source": "quaternius-lowpoly-modular-sci-fi-environments",
+    "categories": [
+      "scifi",
+      "modular",
+      "environment"
+    ],
+    "file": "Window_Wall_SideB.glb",
+    "metrics": {
+      "glbBytes": 27464,
+      "byteLength": 27464,
+      "triangles": 316,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.000002384185791,
+        "d": 0.5355439252381199
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": -0.012115303015944434
+      },
+      "minY": -4.559930592265314e-8,
+      "maxY": 4.430893939661952
+    }
+  }
+]

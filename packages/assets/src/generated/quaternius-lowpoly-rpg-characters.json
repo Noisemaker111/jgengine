@@ -1,0 +1,580 @@
+[
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Cleric_Staff",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cleric_Staff.glb",
+    "metrics": {
+      "glbBytes": 123952,
+      "byteLength": 123952,
+      "triangles": 1703,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7957496643066406,
+        "d": 0.15796519159741085
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": 2.4286169568454863e-8
+      },
+      "minY": -1.6380635628632607,
+      "maxY": 1.2941973338059518
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Cleric",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cleric.glb",
+    "metrics": {
+      "glbBytes": 1919936,
+      "byteLength": 1919936,
+      "triangles": 5101,
+      "primitives": 4,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 788637
+        },
+        {
+          "image": 1,
+          "width": 512,
+          "height": 512,
+          "byteLength": 209022
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.064614415168762,
+        "d": 2.514583680630314
+      },
+      "center": {
+        "x": -0.004521310329437256,
+        "z": 0.11211628048453348
+      },
+      "minY": -0.003266665979286523,
+      "maxY": 3.0043025169801143
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Staff_Attack",
+      "CharacterArmature|Spell2",
+      "CharacterArmature|Walk",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Idle",
+      "CharacterArmature|RecieveHit_Attacking",
+      "CharacterArmature|Run_Weapon",
+      "CharacterArmature|Idle_Weapon",
+      "CharacterArmature|Punch",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Spell1",
+      "CharacterArmature|Run",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|Attack_Idle"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Monk",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Monk.glb",
+    "metrics": {
+      "glbBytes": 1761788,
+      "byteLength": 1761788,
+      "triangles": 6712,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 731007
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.2757725715637207,
+        "d": 0.9606696801124031
+      },
+      "center": {
+        "x": -0.000091552734375,
+        "z": 0.0026552859299932563
+      },
+      "minY": 0.0004272595104591336,
+      "maxY": 2.9481564112474845
+    },
+    "clips": [
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|RecieveHit_Attacking",
+      "CharacterArmature|Attack2",
+      "CharacterArmature|Death",
+      "CharacterArmature|Run",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Attack",
+      "CharacterArmature|Idle",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|Idle_Attacking",
+      "CharacterArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Ranger_Arrow",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Ranger_Arrow.glb",
+    "metrics": {
+      "glbBytes": 383892,
+      "byteLength": 383892,
+      "triangles": 1312,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 512,
+          "height": 512,
+          "byteLength": 256343
+        }
+      ],
+      "maxTextureDimension": 512
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7427879720926285,
+        "d": 0.3079759708698375
+      },
+      "center": {
+        "x": -0.14314555376768112,
+        "z": 0
+      },
+      "minY": -1.5340290320457741,
+      "maxY": 1.5340290320457741
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Ranger_Bow",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Ranger_Bow.glb",
+    "metrics": {
+      "glbBytes": 383892,
+      "byteLength": 383892,
+      "triangles": 1312,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 512,
+          "height": 512,
+          "byteLength": 256343
+        }
+      ],
+      "maxTextureDimension": 512
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7427879720926285,
+        "d": 0.3079759708698375
+      },
+      "center": {
+        "x": -0.14314555376768112,
+        "z": 0
+      },
+      "minY": -1.5340290320457741,
+      "maxY": 1.5340290320457741
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Ranger",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Ranger.glb",
+    "metrics": {
+      "glbBytes": 1580328,
+      "byteLength": 1580328,
+      "triangles": 3803,
+      "primitives": 6,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 790203
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.0310471057891846,
+        "d": 2.2005144046910368
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.20386827079947895
+      },
+      "minY": 0.00043699872442479865,
+      "maxY": 2.9585402503958385
+    },
+    "clips": [
+      "CharacterArmature|Run_Holding",
+      "CharacterArmature|Run",
+      "CharacterArmature|Idle_Weapon",
+      "CharacterArmature|Bow_Attack_Draw",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Bow_Attack_Shoot",
+      "CharacterArmature|Idle_Attacking",
+      "CharacterArmature|Death",
+      "CharacterArmature|Walk",
+      "CharacterArmature|RecieveHit_Attacking",
+      "CharacterArmature|Punch",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Roll",
+      "CharacterArmature|PickUp"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Rogue_Dagger",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Rogue_Dagger.glb",
+    "metrics": {
+      "glbBytes": 210668,
+      "byteLength": 210668,
+      "triangles": 668,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 512,
+          "height": 512,
+          "byteLength": 144932
+        }
+      ],
+      "maxTextureDimension": 512
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.25851067900657654,
+        "d": 0.06507647510992488
+      },
+      "center": {
+        "x": 0,
+        "z": -9.404853171940397e-8
+      },
+      "minY": -0.26042950683463684,
+      "maxY": 1.3234983735643566
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Rogue",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Rogue.glb",
+    "metrics": {
+      "glbBytes": 1398228,
+      "byteLength": 1398228,
+      "triangles": 2326,
+      "primitives": 8,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 646086
+        },
+        {
+          "image": 1,
+          "width": 512,
+          "height": 512,
+          "byteLength": 144932
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.098344564437866,
+        "d": 1.5475237768551533
+      },
+      "center": {
+        "x": 0,
+        "z": -0.13052695388654112
+      },
+      "minY": -0.0032640544660020514,
+      "maxY": 2.9962578028745006
+    },
+    "clips": [
+      "CharacterArmature|Run",
+      "CharacterArmature|Idle",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Dagger_Attack2",
+      "CharacterArmature|RecieveHit_Attacking",
+      "CharacterArmature|Dagger_Attack",
+      "CharacterArmature|Roll",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|Attacking_Idle",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Death",
+      "CharacterArmature|Punch"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Warrior_Sword",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Warrior_Sword.glb",
+    "metrics": {
+      "glbBytes": 239116,
+      "byteLength": 239116,
+      "triangles": 712,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 512,
+          "height": 512,
+          "byteLength": 169153
+        }
+      ],
+      "maxTextureDimension": 512
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5163724422454834,
+        "d": 0.14235081869547692
+      },
+      "center": {
+        "x": 0,
+        "z": -1.8264527953948395e-7
+      },
+      "minY": -0.4672777470676232,
+      "maxY": 2.7094152089683043
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Warrior",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Warrior.glb",
+    "metrics": {
+      "glbBytes": 1814548,
+      "byteLength": 1814548,
+      "triangles": 5402,
+      "primitives": 5,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 693384
+        },
+        {
+          "image": 1,
+          "width": 512,
+          "height": 512,
+          "byteLength": 169153
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.043887138366699,
+        "d": 2.59766391136521
+      },
+      "center": {
+        "x": 0,
+        "z": 0.5990740179342803
+      },
+      "minY": -0.0032757300477478154,
+      "maxY": 2.9802963561004505
+    },
+    "clips": [
+      "CharacterArmature|Roll",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Death",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|RecieveHit_Attacking",
+      "CharacterArmature|Punch",
+      "CharacterArmature|Sword_AttackFast",
+      "CharacterArmature|Idle_Attacking",
+      "CharacterArmature|Run",
+      "CharacterArmature|Idle_Weapon",
+      "CharacterArmature|Run_Weapon",
+      "CharacterArmature|Sword_Attack",
+      "CharacterArmature|RecieveHit"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Wizard_Staff",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Wizard_Staff.glb",
+    "metrics": {
+      "glbBytes": 350636,
+      "byteLength": 350636,
+      "triangles": 1285,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 512,
+          "height": 512,
+          "byteLength": 225672
+        }
+      ],
+      "maxTextureDimension": 512
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3737276792526245,
+        "d": 0.3737281032383778
+      },
+      "center": {
+        "x": 0,
+        "z": 5.6124689229442026e-8
+      },
+      "minY": -1.6456939286449508,
+      "maxY": 0.9567121571758437
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg-characters/Wizard",
+    "source": "quaternius-lowpoly-rpg-characters",
+    "categories": [
+      "character",
+      "rpg",
+      "fantasy",
+      "rigged",
+      "animated"
+    ],
+    "file": "Wizard.glb",
+    "metrics": {
+      "glbBytes": 1873408,
+      "byteLength": 1873408,
+      "triangles": 5369,
+      "primitives": 6,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 686778
+        },
+        {
+          "image": 1,
+          "width": 512,
+          "height": 512,
+          "byteLength": 225672
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.0522372722625732,
+        "d": 2.119100038844539
+      },
+      "center": {
+        "x": 0,
+        "z": -0.027407511595488154
+      },
+      "minY": -0.003306136140793228,
+      "maxY": 3.1021238763221834
+    },
+    "clips": [
+      "CharacterArmature|Idle_Weapon",
+      "CharacterArmature|Death",
+      "CharacterArmature|Punch",
+      "CharacterArmature|Roll",
+      "CharacterArmature|RecieveHit",
+      "CharacterArmature|Run_Weapon",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Attacking",
+      "CharacterArmature|Run",
+      "CharacterArmature|PickUp",
+      "CharacterArmature|Staff_Attack",
+      "CharacterArmature|Spell2",
+      "CharacterArmature|Spell1",
+      "CharacterArmature|Walk",
+      "CharacterArmature|RecieveHit_Attacking"
+    ]
+  }
+]

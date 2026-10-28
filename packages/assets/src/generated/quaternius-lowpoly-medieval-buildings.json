@@ -1,0 +1,902 @@
+[
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Banner",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Banner.glb",
+    "metrics": {
+      "glbBytes": 5920,
+      "byteLength": 5920,
+      "triangles": 56,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.703507985919714,
+        "d": 0.0695976272707135
+      },
+      "center": {
+        "x": 0.3216173816472292,
+        "z": -4.799883088907331e-8
+      },
+      "minY": -0.03479876563652586,
+      "maxY": 0.6240282115410114
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Bridge",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Bridge.glb",
+    "metrics": {
+      "glbBytes": 39468,
+      "byteLength": 39468,
+      "triangles": 486,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.884245753288269,
+        "d": 0.9120306529181578
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4397959323376737
+      },
+      "minY": 0.005829748849103678,
+      "maxY": 1.1994650631290857
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Door",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Door.glb",
+    "metrics": {
+      "glbBytes": 35740,
+      "byteLength": 35740,
+      "triangles": 356,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8907878994941711,
+        "d": 0.12096014091954349
+      },
+      "center": {
+        "x": 0,
+        "z": 0.005092794629842776
+      },
+      "minY": 0.0013363204764847646,
+      "maxY": 0.99794937248431
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Dummy",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Dummy.glb",
+    "metrics": {
+      "glbBytes": 9668,
+      "byteLength": 9668,
+      "triangles": 104,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.43017280101776123,
+        "d": 0.31717411596079753
+      },
+      "center": {
+        "x": 0,
+        "z": -9.39131187815967e-8
+      },
+      "minY": -0.0003443022653186063,
+      "maxY": 1.1532135268136432
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/LargeSimpleTower",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "LargeSimpleTower.glb",
+    "metrics": {
+      "glbBytes": 37932,
+      "byteLength": 37932,
+      "triangles": 462,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7657052278518677,
+        "d": 0.8310852699347028
+      },
+      "center": {
+        "x": 0.0020033717155456543,
+        "z": -0.0008100014945582878
+      },
+      "minY": 0.009504011986369186,
+      "maxY": 3.700247355318718
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/LargeSquareTower",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "LargeSquareTower.glb",
+    "metrics": {
+      "glbBytes": 53060,
+      "byteLength": 53060,
+      "triangles": 660,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.287788987159729,
+        "d": 1.3707671394357526
+      },
+      "center": {
+        "x": -0.0030338168144226074,
+        "z": -0.002495718784482237
+      },
+      "minY": 0.007724641511336929,
+      "maxY": 4.17257510820474
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/LargeSquareTowerBricks",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "LargeSquareTowerBricks.glb",
+    "metrics": {
+      "glbBytes": 68212,
+      "byteLength": 68212,
+      "triangles": 852,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.28778874874115,
+        "d": 1.370767139435751
+      },
+      "center": {
+        "x": -0.0030344724655151367,
+        "z": -0.0024958371985720484
+      },
+      "minY": 0.002843744741853556,
+      "maxY": 4.167694203053354
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/LargeTower",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "LargeTower.glb",
+    "metrics": {
+      "glbBytes": 42724,
+      "byteLength": 42724,
+      "triangles": 576,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2524347305297852,
+        "d": 1.3168887076602147
+      },
+      "center": {
+        "x": 0,
+        "z": -3.6824739912955096e-7
+      },
+      "minY": 0.010967318727883549,
+      "maxY": 4.509605514988926
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/PointyTower",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "PointyTower.glb",
+    "metrics": {
+      "glbBytes": 52904,
+      "byteLength": 52904,
+      "triangles": 654,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5299572944641113,
+        "d": 1.5299581700842029
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -4.4100118973267044e-7
+      },
+      "minY": 0.019586915316668407,
+      "maxY": 5.394105082211336
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Simpletower",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Simpletower.glb",
+    "metrics": {
+      "glbBytes": 12328,
+      "byteLength": 12328,
+      "triangles": 134,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6396704912185669,
+        "d": 0.6942897285458307
+      },
+      "center": {
+        "x": -0.000303417444229126,
+        "z": -0.003138894178888657
+      },
+      "minY": 0.01260090127892307,
+      "maxY": 2.6622362697297337
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/SimpleTowerBricks",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "SimpleTowerBricks.glb",
+    "metrics": {
+      "glbBytes": 22336,
+      "byteLength": 22336,
+      "triangles": 262,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6396704912185669,
+        "d": 0.6942897307643192
+      },
+      "center": {
+        "x": -0.000303417444229126,
+        "z": -0.0031388918991787085
+      },
+      "minY": -0.008200351406563926,
+      "maxY": 2.6550520026856663
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/SmallSquareTower",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "SmallSquareTower.glb",
+    "metrics": {
+      "glbBytes": 41828,
+      "byteLength": 41828,
+      "triangles": 516,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8285571932792664,
+        "d": 0.8819448668328169
+      },
+      "center": {
+        "x": -0.0021416544914245605,
+        "z": -0.0015289045581399485
+      },
+      "minY": -0.0012650018639883596,
+      "maxY": 2.0222354651185817
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/SmallSquareTowerBricks",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "SmallSquareTowerBricks.glb",
+    "metrics": {
+      "glbBytes": 51984,
+      "byteLength": 51984,
+      "triangles": 644,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8285572230815887,
+        "d": 0.8819451648560603
+      },
+      "center": {
+        "x": -0.0021415501832962036,
+        "z": -0.0015287865666951672
+      },
+      "minY": 0.006210016637288424,
+      "maxY": 2.0297106028291965
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/SmallTower",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "SmallTower.glb",
+    "metrics": {
+      "glbBytes": 28324,
+      "byteLength": 28324,
+      "triangles": 376,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6930556297302246,
+        "d": 0.7287221447617822
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4501295020341587e-7
+      },
+      "minY": 0.007166100908641513,
+      "maxY": 1.773000180478545
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/TallWall",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "TallWall.glb",
+    "metrics": {
+      "glbBytes": 9020,
+      "byteLength": 9020,
+      "triangles": 108,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5238512754440308,
+        "d": 0.4246910911299481
+      },
+      "center": {
+        "x": 0.0017455220222473145,
+        "z": 0.027995995703581897
+      },
+      "minY": 0.01769414520908631,
+      "maxY": 2.3661494646631684
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/TallWallBricks",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "TallWallBricks.glb",
+    "metrics": {
+      "glbBytes": 23112,
+      "byteLength": 23112,
+      "triangles": 188,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5238512754440308,
+        "d": 0.42469179148455327
+      },
+      "center": {
+        "x": 0.0017455220222473145,
+        "z": 0.027995647861879372
+      },
+      "minY": 0.003358334070819318,
+      "maxY": 2.3518138323389497
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/TallWallEntrance",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "TallWallEntrance.glb",
+    "metrics": {
+      "glbBytes": 20068,
+      "byteLength": 20068,
+      "triangles": 236,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5238522647801438,
+        "d": 0.4246910644668615
+      },
+      "center": {
+        "x": 0.001745019642112322,
+        "z": 0.027996697730223452
+      },
+      "minY": -0.0018324918582718049,
+      "maxY": 2.3466229782685635
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Target",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Target.glb",
+    "metrics": {
+      "glbBytes": 13880,
+      "byteLength": 13880,
+      "triangles": 156,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5263822972774506,
+        "d": 0.14694506373259728
+      },
+      "center": {
+        "x": -6.407499313354492e-7,
+        "z": 0.03384966707664347
+      },
+      "minY": 0.013441079360064738,
+      "maxY": 0.7266215260833241
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/TargetWithArrows",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "TargetWithArrows.glb",
+    "metrics": {
+      "glbBytes": 29168,
+      "byteLength": 29168,
+      "triangles": 352,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5263822972774506,
+        "d": 0.41640840914103333
+      },
+      "center": {
+        "x": -6.407499313354492e-7,
+        "z": 0.1685813397808615
+      },
+      "minY": 0.013441079360064738,
+      "maxY": 0.7266215699844754
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Tower",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Tower.glb",
+    "metrics": {
+      "glbBytes": 57564,
+      "byteLength": 57564,
+      "triangles": 716,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1250386238098145,
+        "d": 1.1250393093478608
+      },
+      "center": {
+        "x": 0,
+        "z": -3.434722761763709e-7
+      },
+      "minY": 0.00431639896317016,
+      "maxY": 4.212119194124
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Tunnel",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Tunnel.glb",
+    "metrics": {
+      "glbBytes": 7292,
+      "byteLength": 7292,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8913168907165527,
+        "d": 0.9750372006951316
+      },
+      "center": {
+        "x": 0,
+        "z": -0.06431316593457045
+      },
+      "minY": 0.005297153690343419,
+      "maxY": 1.0019103978139552
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Wall",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Wall.glb",
+    "metrics": {
+      "glbBytes": 9012,
+      "byteLength": 9012,
+      "triangles": 108,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.536070704460144,
+        "d": 0.5592131754874992
+      },
+      "center": {
+        "x": 0.0017595291137695312,
+        "z": 0.03686394340022206
+      },
+      "minY": 0.01513256648175524,
+      "maxY": 1.5645834723130527
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/WallBricks",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "WallBricks.glb",
+    "metrics": {
+      "glbBytes": 16228,
+      "byteLength": 16228,
+      "triangles": 188,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5360709428787231,
+        "d": 0.5592131754874992
+      },
+      "center": {
+        "x": 0.0017594099044799805,
+        "z": 0.036863943717610814
+      },
+      "minY": 0.013184448271916399,
+      "maxY": 1.5626353541032139
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/WallEntrance",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "WallEntrance.glb",
+    "metrics": {
+      "glbBytes": 12484,
+      "byteLength": 12484,
+      "triangles": 156,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5360709428787231,
+        "d": 0.5592131754875088
+      },
+      "center": {
+        "x": 0.0015103816986083984,
+        "z": -0.11659259517636134
+      },
+      "minY": 0.013051445308178892,
+      "maxY": 1.5625024107441212
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/WallEntranceBricks",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "WallEntranceBricks.glb",
+    "metrics": {
+      "glbBytes": 18744,
+      "byteLength": 18744,
+      "triangles": 220,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5360701084136963,
+        "d": 0.5592127135515118
+      },
+      "center": {
+        "x": 0.0015099644660949707,
+        "z": -0.1165925256855823
+      },
+      "minY": -0.0018978764385985283,
+      "maxY": 1.5475530889972686
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Watchtower",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Watchtower.glb",
+    "metrics": {
+      "glbBytes": 26304,
+      "byteLength": 26304,
+      "triangles": 348,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.493543028831482,
+        "d": 1.4935435303924516
+      },
+      "center": {
+        "x": 0,
+        "z": -2.4938555354125924e-7
+      },
+      "minY": -0.008562209677217845,
+      "maxY": 3.06999743230291
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/WatchTowerWRoof",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "WatchTowerWRoof.glb",
+    "metrics": {
+      "glbBytes": 34036,
+      "byteLength": 34036,
+      "triangles": 416,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4935418963432312,
+        "d": 1.49354311749539
+      },
+      "center": {
+        "x": 5.662441253662109e-7,
+        "z": -4.053813895676939e-8
+      },
+      "minY": -0.023286453109413654,
+      "maxY": 3.8135854030365426
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/Well",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "Well.glb",
+    "metrics": {
+      "glbBytes": 13568,
+      "byteLength": 13568,
+      "triangles": 152,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5932480096817017,
+        "d": 0.6453022672947395
+      },
+      "center": {
+        "x": -0.004944801330566406,
+        "z": 1.4151213062474355e-8
+      },
+      "minY": 0.000268913393028939,
+      "maxY": 0.7406387854766908
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/WindowGothic",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "WindowGothic.glb",
+    "metrics": {
+      "glbBytes": 6880,
+      "byteLength": 6880,
+      "triangles": 68,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15525145828723907,
+        "d": 0.04947214544126533
+      },
+      "center": {
+        "x": 0,
+        "z": -4.135024034984669e-9
+      },
+      "minY": -0.14520672366692844,
+      "maxY": 0.19596791670396085
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-buildings/WindowSquare",
+    "source": "quaternius-lowpoly-medieval-buildings",
+    "categories": [
+      "building",
+      "medieval",
+      "modular"
+    ],
+    "file": "WindowSquare.glb",
+    "metrics": {
+      "glbBytes": 3748,
+      "byteLength": 3748,
+      "triangles": 28,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15525145828723907,
+        "d": 0.04947214466440142
+      },
+      "center": {
+        "x": 0,
+        "z": -4.371775262981825e-9
+      },
+      "minY": -0.14136937663628885,
+      "maxY": 0.19503690705373045
+    }
+  }
+]

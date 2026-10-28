@@ -1,0 +1,299 @@
+[
+  {
+    "id": "quaternius-lowpoly-buildings/Bank",
+    "source": "quaternius-lowpoly-buildings",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Bank.glb",
+    "metrics": {
+      "glbBytes": 907140,
+      "byteLength": 907140,
+      "triangles": 12582,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.008483409881592,
+        "d": 4.24380052026454
+      },
+      "center": {
+        "x": -2.384185791015625e-7,
+        "z": -0.21706706333035575
+      },
+      "minY": 0.004859343481645711,
+      "maxY": 2.9277845148197126
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings/Flat",
+    "source": "quaternius-lowpoly-buildings",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Flat.glb",
+    "metrics": {
+      "glbBytes": 154024,
+      "byteLength": 154024,
+      "triangles": 2122,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1683831214904785,
+        "d": 2.143738368553663
+      },
+      "center": {
+        "x": 0,
+        "z": 0.12592823379916324
+      },
+      "minY": -0.0026721560655639347,
+      "maxY": 3.164392666459404
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings/Flat2",
+    "source": "quaternius-lowpoly-buildings",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Flat2.glb",
+    "metrics": {
+      "glbBytes": 151288,
+      "byteLength": 151288,
+      "triangles": 2084,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1683812141418457,
+        "d": 1.8918813857709131
+      },
+      "center": {
+        "x": -0.0000015497207641601562,
+        "z": -2.5690076177475873e-7
+      },
+      "minY": -0.006457275224711028,
+      "maxY": 3.1601485363001065
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings/Hospital",
+    "source": "quaternius-lowpoly-buildings",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Hospital.glb",
+    "metrics": {
+      "glbBytes": 306388,
+      "byteLength": 306388,
+      "triangles": 4238,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.098076343536377,
+        "d": 3.4611358029191313
+      },
+      "center": {
+        "x": 0,
+        "z": 0.24243548705491968
+      },
+      "minY": -0.006526973867726791,
+      "maxY": 4.738889538819699
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings/House",
+    "source": "quaternius-lowpoly-buildings",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "House.glb",
+    "metrics": {
+      "glbBytes": 309548,
+      "byteLength": 309548,
+      "triangles": 4282,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2222704887390137,
+        "d": 1.716009251383292
+      },
+      "center": {
+        "x": 0,
+        "z": 0.19954306310264375
+      },
+      "minY": -0.0019035610023578724,
+      "maxY": 1.413374119439924
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings/House2",
+    "source": "quaternius-lowpoly-buildings",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "House2.glb",
+    "metrics": {
+      "glbBytes": 145244,
+      "byteLength": 145244,
+      "triangles": 2000,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2549102902412415,
+        "d": 1.4428167742633349
+      },
+      "center": {
+        "x": -0.006898432970046997,
+        "z": -0.011216482243482429
+      },
+      "minY": 0.003745937336694117,
+      "maxY": 1.3465058768514755
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings/House3",
+    "source": "quaternius-lowpoly-buildings",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "House3.glb",
+    "metrics": {
+      "glbBytes": 286216,
+      "byteLength": 286216,
+      "triangles": 3958,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2549108266830444,
+        "d": 1.4349652785209217
+      },
+      "center": {
+        "x": -0.006898343563079834,
+        "z": -0.014439894280603882
+      },
+      "minY": 0.003746143506255873,
+      "maxY": 1.9904056740799707
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings/House4",
+    "source": "quaternius-lowpoly-buildings",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "House4.glb",
+    "metrics": {
+      "glbBytes": 148700,
+      "byteLength": 148700,
+      "triangles": 2048,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.163504123687744,
+        "d": 1.4363730949305955
+      },
+      "center": {
+        "x": -0.06117904186248779,
+        "z": -0.003972282000046512
+      },
+      "minY": -0.0007288994552887697,
+      "maxY": 1.3420309991956438
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings/House5",
+    "source": "quaternius-lowpoly-buildings",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "House5.glb",
+    "metrics": {
+      "glbBytes": 190168,
+      "byteLength": 190168,
+      "triangles": 2624,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1635035276412964,
+        "d": 2.1902428668879566
+      },
+      "center": {
+        "x": -0.05358189344406128,
+        "z": -0.00020961904139993326
+      },
+      "minY": -0.00409192881679451,
+      "maxY": 1.3386679287423406
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-buildings/Shop",
+    "source": "quaternius-lowpoly-buildings",
+    "categories": [
+      "building",
+      "city"
+    ],
+    "file": "Shop.glb",
+    "metrics": {
+      "glbBytes": 141420,
+      "byteLength": 141420,
+      "triangles": 1454,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 32,
+          "height": 32,
+          "byteLength": 223
+        }
+      ],
+      "maxTextureDimension": 32
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.477086067199707,
+        "d": 1.8004374391891367
+      },
+      "center": {
+        "x": 0,
+        "z": -0.004139298932460733
+      },
+      "minY": 0.002340110527722147,
+      "maxY": 1.3968767195524718
+    }
+  }
+]

@@ -1,0 +1,1322 @@
+[
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Bag_Open",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Bag_Open.glb",
+    "metrics": {
+      "glbBytes": 23832,
+      "byteLength": 23832,
+      "triangles": 280,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15017066150903702,
+        "d": 0.20347284736139515
+      },
+      "center": {
+        "x": 0.00538397952914238,
+        "z": 0.00010019822615075363
+      },
+      "minY": -0.0008932589247864619,
+      "maxY": 0.10349027236435773
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Bag",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Bag.glb",
+    "metrics": {
+      "glbBytes": 23288,
+      "byteLength": 23288,
+      "triangles": 304,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15346048772335052,
+        "d": 0.10962676090284201
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0009113541004300806
+      },
+      "minY": -0.0005225458281959622,
+      "maxY": 0.0578479854663243
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Bags",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Bags.glb",
+    "metrics": {
+      "glbBytes": 67064,
+      "byteLength": 67064,
+      "triangles": 912,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2697358727455139,
+        "d": 0.23922185109291297
+      },
+      "center": {
+        "x": -0.005049347877502441,
+        "z": -0.0016552333488801668
+      },
+      "minY": -0.000522556506248066,
+      "maxY": 0.1065640641698127
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Barrel",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Barrel.glb",
+    "metrics": {
+      "glbBytes": 104756,
+      "byteLength": 104756,
+      "triangles": 1312,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1582040637731552,
+        "d": 0.15682866773045073
+      },
+      "center": {
+        "x": 0,
+        "z": -0.00027189964858392174
+      },
+      "minY": 0.0008712967252819139,
+      "maxY": 0.205201146816671
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Bell_Tower",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Bell_Tower.glb",
+    "metrics": {
+      "glbBytes": 925736,
+      "byteLength": 925736,
+      "triangles": 11799,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9369354248046875,
+        "d": 2.228519500043177
+      },
+      "center": {
+        "x": 0,
+        "z": -0.010933071728527755
+      },
+      "minY": -0.0001046106546993404,
+      "maxY": 4.760504902349884
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Bell",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Bell.glb",
+    "metrics": {
+      "glbBytes": 57484,
+      "byteLength": 57484,
+      "triangles": 779,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6331451535224915,
+        "d": 0.6331452728639981
+      },
+      "center": {
+        "x": 0,
+        "z": -5.955359880238653e-8
+      },
+      "minY": -0.0007191667142732376,
+      "maxY": 0.7317939320388562
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Bench_1",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Bench_1.glb",
+    "metrics": {
+      "glbBytes": 28484,
+      "byteLength": 28484,
+      "triangles": 376,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6649717092514038,
+        "d": 0.2424181245732045
+      },
+      "center": {
+        "x": 0,
+        "z": 0.039926551850999505
+      },
+      "minY": -0.001346063654987582,
+      "maxY": 0.3144854271674654
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Bench_2",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Bench_2.glb",
+    "metrics": {
+      "glbBytes": 21280,
+      "byteLength": 21280,
+      "triangles": 276,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6649717092514038,
+        "d": 0.2219230909609835
+      },
+      "center": {
+        "x": 0,
+        "z": 0.02967905625457578
+      },
+      "minY": -0.001346063654987582,
+      "maxY": 0.184301294947905
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Blacksmith",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Blacksmith.glb",
+    "metrics": {
+      "glbBytes": 877872,
+      "byteLength": 877872,
+      "triangles": 7659,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.8900245428085327,
+        "d": 3.283497584426226
+      },
+      "center": {
+        "x": -0.6212013363838196,
+        "z": -0.016132598752394478
+      },
+      "minY": -0.003947294802383795,
+      "maxY": 2.9994671609035843
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Bonfire_Lit",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Bonfire_Lit.glb",
+    "metrics": {
+      "glbBytes": 93744,
+      "byteLength": 93744,
+      "triangles": 1162,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4065704643726349,
+        "d": 0.3623832294026769
+      },
+      "center": {
+        "x": 0.0009110867977142334,
+        "z": 0.0016761529751307402
+      },
+      "minY": -0.013809423338139566,
+      "maxY": 0.33904132246032503
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Bonfire",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Bonfire.glb",
+    "metrics": {
+      "glbBytes": 49796,
+      "byteLength": 49796,
+      "triangles": 602,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4065704643726349,
+        "d": 0.3623831901911836
+      },
+      "center": {
+        "x": 0.0009110867977142334,
+        "z": 0.0016761757670805955
+      },
+      "minY": -0.033366199027264364,
+      "maxY": 0.07880611716762678
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Cart",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Cart.glb",
+    "metrics": {
+      "glbBytes": 210752,
+      "byteLength": 210752,
+      "triangles": 2660,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.46199747920036316,
+        "d": 0.927389006370531
+      },
+      "center": {
+        "x": 0,
+        "z": 0.14126617690788704
+      },
+      "minY": -0.0005231657683804881,
+      "maxY": 0.7955329807741871
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Cauldron",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Cauldron.glb",
+    "metrics": {
+      "glbBytes": 99400,
+      "byteLength": 99400,
+      "triangles": 1238,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.36066141724586487,
+        "d": 0.2988354675911505
+      },
+      "center": {
+        "x": 0,
+        "z": -2.0051782151364606e-8
+      },
+      "minY": -0.002819203434837921,
+      "maxY": 0.24897312572071928
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Crate",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Crate.glb",
+    "metrics": {
+      "glbBytes": 63152,
+      "byteLength": 63152,
+      "triangles": 784,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.16023103147745132,
+        "d": 0.16024411099968489
+      },
+      "center": {
+        "x": 4.3585896492004395e-7,
+        "z": -0.000012064044687336295
+      },
+      "minY": -0.001976085843739515,
+      "maxY": 0.15825547092968492
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Door_Round",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Door_Round.glb",
+    "metrics": {
+      "glbBytes": 80080,
+      "byteLength": 80080,
+      "triangles": 990,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5013779997825623,
+        "d": 0.29639017433080106
+      },
+      "center": {
+        "x": 0,
+        "z": 0.008253039059180789
+      },
+      "minY": -0.002365284115733875,
+      "maxY": 0.7201992528216943
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Door_Straight",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Door_Straight.glb",
+    "metrics": {
+      "glbBytes": 78020,
+      "byteLength": 78020,
+      "triangles": 958,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5013779997825623,
+        "d": 0.2963903612340612
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.14549008390073395
+      },
+      "minY": -0.0434746746655515,
+      "maxY": 0.6644320966450004
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Fence",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Fence.glb",
+    "metrics": {
+      "glbBytes": 16384,
+      "byteLength": 16384,
+      "triangles": 208,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.791008710861206,
+        "d": 0.02588727980141621
+      },
+      "center": {
+        "x": -0.005444586277008057,
+        "z": 0.00012768709859631647
+      },
+      "minY": -0.0028258201125508347,
+      "maxY": 0.3231950125532454
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Gazebo",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Gazebo.glb",
+    "metrics": {
+      "glbBytes": 56420,
+      "byteLength": 56420,
+      "triangles": 698,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0369818210601807,
+        "d": 1.2594001699806219
+      },
+      "center": {
+        "x": -0.0051048994064331055,
+        "z": 0.008392194443884782
+      },
+      "minY": -1.0122386802005504e-7,
+      "maxY": 1.3471362438281
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Hay",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Hay.glb",
+    "metrics": {
+      "glbBytes": 36532,
+      "byteLength": 36532,
+      "triangles": 488,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1209879107773304,
+        "d": 0.1248681240027831
+      },
+      "center": {
+        "x": -0.0012644436210393906,
+        "z": -0.001190326805762143
+      },
+      "minY": 0.0003570999786152404,
+      "maxY": 0.17885915442710262
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/House_1",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "House_1.glb",
+    "metrics": {
+      "glbBytes": 454108,
+      "byteLength": 454108,
+      "triangles": 5758,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.143923044204712,
+        "d": 2.658826307421031
+      },
+      "center": {
+        "x": 0,
+        "z": -0.013063528106056155
+      },
+      "minY": -0.00010464605476987173,
+      "maxY": 3.3898997067243246
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/House_2",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "House_2.glb",
+    "metrics": {
+      "glbBytes": 563616,
+      "byteLength": 563616,
+      "triangles": 7162,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.220160722732544,
+        "d": 3.420025043747879
+      },
+      "center": {
+        "x": -0.008806347846984863,
+        "z": -0.3610722683390958
+      },
+      "minY": -0.0017012274401286807,
+      "maxY": 3.2486517242868214
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/House_3",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "House_3.glb",
+    "metrics": {
+      "glbBytes": 367812,
+      "byteLength": 367812,
+      "triangles": 4668,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9369356036186218,
+        "d": 2.1235672062603235
+      },
+      "center": {
+        "x": -0.008677035570144653,
+        "z": 0.0043410744875616025
+      },
+      "minY": 0.0002474552175193929,
+      "maxY": 2.0892357178984415
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/House_4",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "House_4.glb",
+    "metrics": {
+      "glbBytes": 239148,
+      "byteLength": 239148,
+      "triangles": 3024,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9369354248046875,
+        "d": 2.1235672792027067
+      },
+      "center": {
+        "x": 0,
+        "z": 0.00434127649230609
+      },
+      "minY": -0.00010459961684644718,
+      "maxY": 1.0731980153380687
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Inn",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Inn.glb",
+    "metrics": {
+      "glbBytes": 609100,
+      "byteLength": 609100,
+      "triangles": 7756,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.0291125774383545,
+        "d": 4.021362873476383
+      },
+      "center": {
+        "x": -0.003680586814880371,
+        "z": -2.8346969416226386e-7
+      },
+      "minY": -0.0056765468213707225,
+      "maxY": 3.4855256972256585
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/MarketStand_1",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "MarketStand_1.glb",
+    "metrics": {
+      "glbBytes": 123596,
+      "byteLength": 123596,
+      "triangles": 1548,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.950941264629364,
+        "d": 1.189832381472782
+      },
+      "center": {
+        "x": 0,
+        "z": -0.001608396822199487
+      },
+      "minY": -0.004749574095800878,
+      "maxY": 1.044423915250352
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/MarketStand_2",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "MarketStand_2.glb",
+    "metrics": {
+      "glbBytes": 90728,
+      "byteLength": 90728,
+      "triangles": 1132,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5171720087528229,
+        "d": 1.154234698329227
+      },
+      "center": {
+        "x": -0.042792126536369324,
+        "z": -8.442513149686803e-8
+      },
+      "minY": -0.0028769978860979668,
+      "maxY": 1.0392725215832221
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Mill",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Mill.glb",
+    "metrics": {
+      "glbBytes": 640908,
+      "byteLength": 640908,
+      "triangles": 8126,
+      "primitives": 14,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.3967809677124023,
+        "d": 2.7307931992441334
+      },
+      "center": {
+        "x": 0.005858421325683594,
+        "z": 0.022919795039987867
+      },
+      "minY": 0.00009800973746645371,
+      "maxY": 4.8037755139990175
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Package_1",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Package_1.glb",
+    "metrics": {
+      "glbBytes": 34748,
+      "byteLength": 34748,
+      "triangles": 420,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2789401188492775,
+        "d": 0.18452975766729257
+      },
+      "center": {
+        "x": 0.04618703946471214,
+        "z": -9.662373262608881e-9
+      },
+      "minY": -0.005231024828116769,
+      "maxY": 0.1238454730625541
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Package_2",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Package_2.glb",
+    "metrics": {
+      "glbBytes": 38184,
+      "byteLength": 38184,
+      "triangles": 464,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.18969164788722992,
+        "d": 0.18762126158961748
+      },
+      "center": {
+        "x": 0,
+        "z": -1.2004555779987491e-8
+      },
+      "minY": -0.005318662534222661,
+      "maxY": 0.15268553831682968
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Path_Square",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Path_Square.glb",
+    "metrics": {
+      "glbBytes": 20728,
+      "byteLength": 20728,
+      "triangles": 240,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.48555122315883636,
+        "d": 0.47727868760916703
+      },
+      "center": {
+        "x": 2.2351741790771484e-8,
+        "z": -0.017307687654306278
+      },
+      "minY": -0.0010503912568353,
+      "maxY": 0.04805256679523431
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Path_Straight",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Path_Straight.glb",
+    "metrics": {
+      "glbBytes": 41480,
+      "byteLength": 41480,
+      "triangles": 506,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4960942566394806,
+        "d": 0.9779230727364687
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0015088135890719279
+      },
+      "minY": -0.0010352276940064585,
+      "maxY": 0.04384883660851631
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Rock_1",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Rock_1.glb",
+    "metrics": {
+      "glbBytes": 3748,
+      "byteLength": 3748,
+      "triangles": 28,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.25502902269363403,
+        "d": 0.2099182886724088
+      },
+      "center": {
+        "x": -0.013999879360198975,
+        "z": -0.0035357609528217163
+      },
+      "minY": -0.00383188107937949,
+      "maxY": 0.16863288147605163
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Rock_2",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Rock_2.glb",
+    "metrics": {
+      "glbBytes": 5448,
+      "byteLength": 5448,
+      "triangles": 56,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.23869267106056213,
+        "d": 0.09190919470583034
+      },
+      "center": {
+        "x": -0.0057668983936309814,
+        "z": -0.0031551241130918124
+      },
+      "minY": -0.0026453813454066183,
+      "maxY": 0.1480726073376023
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Rock_3",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Rock_3.glb",
+    "metrics": {
+      "glbBytes": 7460,
+      "byteLength": 7460,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.30365943908691406,
+        "d": 0.2618631255005309
+      },
+      "center": {
+        "x": -0.01988774538040161,
+        "z": 0.013155632646136547
+      },
+      "minY": 1.0002115710232115e-7,
+      "maxY": 0.08010592423924807
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Sawmill_saw",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Sawmill_saw.glb",
+    "metrics": {
+      "glbBytes": 26660,
+      "byteLength": 26660,
+      "triangles": 300,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7052978724241257,
+        "d": 1.7045708584777035
+      },
+      "center": {
+        "x": 0.18069306761026382,
+        "z": 0.015921074426117066
+      },
+      "minY": -0.016314210658122035,
+      "maxY": 0.5251400693128611
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Sawmill",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Sawmill.glb",
+    "metrics": {
+      "glbBytes": 343548,
+      "byteLength": 343548,
+      "triangles": 4335,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.399089455604553,
+        "d": 3.2834974422544527
+      },
+      "center": {
+        "x": 0.876288115978241,
+        "z": -0.007254408026139858
+      },
+      "minY": -0.051829942006492526,
+      "maxY": 2.810641793468789
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Smoke",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Smoke.glb",
+    "metrics": {
+      "glbBytes": 88792,
+      "byteLength": 88792,
+      "triangles": 1216,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.44224973022937775,
+        "d": 0.27232917654265776
+      },
+      "center": {
+        "x": -0.04127883166074753,
+        "z": 0.004961181851889665
+      },
+      "minY": -0.010435406073932093,
+      "maxY": 1.0571017495242745
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Stable",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stable.glb",
+    "metrics": {
+      "glbBytes": 491744,
+      "byteLength": 491744,
+      "triangles": 6246,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.700659155845642,
+        "d": 3.3274103883360118
+      },
+      "center": {
+        "x": -1.3070622086524963,
+        "z": 0.383957544551754
+      },
+      "minY": -0.022922010973339495,
+      "maxY": 2.4669698236578417
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Stairs",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Stairs.glb",
+    "metrics": {
+      "glbBytes": 18532,
+      "byteLength": 18532,
+      "triangles": 212,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5013779997825623,
+        "d": 0.2949239215899851
+      },
+      "center": {
+        "x": 0,
+        "z": 0.008986165429588772
+      },
+      "minY": -0.0023652838768668974,
+      "maxY": 0.12059071228672909
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Well",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Well.glb",
+    "metrics": {
+      "glbBytes": 149132,
+      "byteLength": 149132,
+      "triangles": 1870,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.66636723279953,
+        "d": 1.003556365842691
+      },
+      "center": {
+        "x": -0.004261612892150879,
+        "z": 0.13672803227245545
+      },
+      "minY": -0.25230863677330684,
+      "maxY": 0.9981392470159589
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Window_1",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Window_1.glb",
+    "metrics": {
+      "glbBytes": 10532,
+      "byteLength": 10532,
+      "triangles": 104,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.37971825897693634,
+        "d": 0.11930507737174181
+      },
+      "center": {
+        "x": -7.450580596923828e-9,
+        "z": 0.0596525813622449
+      },
+      "minY": -0.18985939025877457,
+      "maxY": 0.1898589030565722
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Window_2",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Window_2.glb",
+    "metrics": {
+      "glbBytes": 9232,
+      "byteLength": 9232,
+      "triangles": 82,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4470124691724777,
+        "d": 0.1531652700773123
+      },
+      "center": {
+        "x": 3.725290298461914e-8,
+        "z": 0.07016206736560518
+      },
+      "minY": -0.11674004897770601,
+      "maxY": 0.2574924767676187
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Window_3",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Window_3.glb",
+    "metrics": {
+      "glbBytes": 9232,
+      "byteLength": 9232,
+      "triangles": 82,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4470124691724777,
+        "d": 0.15316530010229804
+      },
+      "center": {
+        "x": 3.725290298461914e-8,
+        "z": 0.0701620523531123
+      },
+      "minY": -0.11674004897770601,
+      "maxY": 0.44178452498348236
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-village-pack/Window_4",
+    "source": "quaternius-lowpoly-medieval-village-pack",
+    "categories": [
+      "building",
+      "medieval",
+      "environment"
+    ],
+    "file": "Window_4.glb",
+    "metrics": {
+      "glbBytes": 10792,
+      "byteLength": 10792,
+      "triangles": 102,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4470124691724777,
+        "d": 0.15316530010229804
+      },
+      "center": {
+        "x": 3.725290298461914e-8,
+        "z": 0.0701620523531123
+      },
+      "minY": -0.11674004897770601,
+      "maxY": 0.44178452498348236
+    }
+  }
+]

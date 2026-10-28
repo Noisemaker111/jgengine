@@ -1,0 +1,153 @@
+[
+  {
+    "id": "quaternius-lowpoly-animated-monsters/Bat",
+    "source": "quaternius-lowpoly-animated-monsters",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Bat.glb",
+    "metrics": {
+      "glbBytes": 288184,
+      "byteLength": 288184,
+      "triangles": 1046,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.733186721801758,
+        "d": 4.31393773239851
+      },
+      "center": {
+        "x": 0.08248603343963645,
+        "z": -0.7269383408506718
+      },
+      "minY": 0.42780594374546066,
+      "maxY": 4.505944759596816
+    },
+    "clips": [
+      "BatArmature|Bat_Hit",
+      "BatArmature|Bat_Attack2",
+      "BatArmature|Bat_Flying",
+      "BatArmature|Bat_Attack",
+      "BatArmature|Bat_Death"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-animated-monsters/Dragon",
+    "source": "quaternius-lowpoly-animated-monsters",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Dragon.glb",
+    "metrics": {
+      "glbBytes": 349980,
+      "byteLength": 349980,
+      "triangles": 1344,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.4096851348876953,
+        "d": 3.711472304457927
+      },
+      "center": {
+        "x": 0,
+        "z": -0.044390051988987156
+      },
+      "minY": 0.12988926680772916,
+      "maxY": 3.9822645443728755
+    },
+    "clips": [
+      "DragonArmature|Dragon_Attack2",
+      "DragonArmature|Dragon_Death",
+      "DragonArmature|Dragon_Flying",
+      "DragonArmature|Dragon_Attack",
+      "DragonArmature|Dragon_Hit"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-animated-monsters/Skeleton",
+    "source": "quaternius-lowpoly-animated-monsters",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Skeleton.glb",
+    "metrics": {
+      "glbBytes": 336524,
+      "byteLength": 336524,
+      "triangles": 1810,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.60457706451416,
+        "d": 1.329165751438095
+      },
+      "center": {
+        "x": -0.002333187498152256,
+        "z": 0.027887996443367757
+      },
+      "minY": 0.019311914501701555,
+      "maxY": 5.108909833076453
+    },
+    "clips": [
+      "SkeletonArmature|Skeleton_Attack",
+      "SkeletonArmature|Skeleton_Death",
+      "SkeletonArmature|Skeleton_Running",
+      "SkeletonArmature|Skeleton_Spawn",
+      "SkeletonArmature|Skeleton_Idle"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-animated-monsters/Slime",
+    "source": "quaternius-lowpoly-animated-monsters",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Slime.glb",
+    "metrics": {
+      "glbBytes": 261292,
+      "byteLength": 261292,
+      "triangles": 1440,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.5367748737335205,
+        "d": 3.061755020896551
+      },
+      "center": {
+        "x": 0,
+        "z": -1.5636115680006668e-7
+      },
+      "minY": -0.014278821464295573,
+      "maxY": 1.9337546935338672
+    },
+    "clips": [
+      "Armature|Slime_Walk",
+      "Armature|Slime_Death",
+      "Armature|Slime_Idle",
+      "Armature|Slime_Attack"
+    ]
+  }
+]

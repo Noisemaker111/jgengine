@@ -83,8 +83,8 @@ interface TextureRef {
   url: string;
 }
 
-/** An FBX loader that never touches the DOM: textures come back as name-only placeholders. */
-function fbxLoader(): FBXLoader {
+/** An FBX loader that never touches the DOM: textures come back as name-only placeholders. @internal */
+export function fbxLoader(): FBXLoader {
   const manager = new THREE.LoadingManager();
   const placeholder = {
     path: "",
@@ -152,7 +152,8 @@ class RocketboxSource {
   }
 }
 
-function parseFbx(loader: FBXLoader, bytes: Uint8Array): THREE.Group {
+/** Parse FBX bytes with {@link fbxLoader}, textures left as placeholders whose `userData.url` names the file. @internal */
+export function parseFbx(loader: FBXLoader, bytes: Uint8Array): THREE.Group {
   const prototype = THREE.TextureLoader.prototype;
   const original = prototype.load;
   // Restored afterwards: a stub left on the shared prototype hangs every later texture load in the process.

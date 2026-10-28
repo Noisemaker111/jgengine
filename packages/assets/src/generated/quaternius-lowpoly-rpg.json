@@ -1,0 +1,410 @@
+[
+  {
+    "id": "quaternius-lowpoly-rpg/AnimatedChest",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "AnimatedChest.glb",
+    "metrics": {
+      "glbBytes": 46708,
+      "byteLength": 46708,
+      "triangles": 366,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1847756576871746,
+        "d": 3.007989890001841
+      },
+      "center": {
+        "x": 1.7634014668971176,
+        "z": 1.3332191921373282
+      },
+      "minY": -1.389980220158393,
+      "maxY": 1.2320785805982166
+    },
+    "clips": [
+      "Armature|CubeAction",
+      "Armature|ArmatureAction",
+      "BottomChest|CubeAction"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/Barrel",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "Barrel.glb",
+    "metrics": {
+      "glbBytes": 66300,
+      "byteLength": 66300,
+      "triangles": 828,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.5166633129119873,
+        "d": 2.516664014477366
+      },
+      "center": {
+        "x": -0.001309037208557129,
+        "z": -0.0004430925136429398
+      },
+      "minY": -0.009639587442785128,
+      "maxY": 2.8331358097944777
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/Book",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "Book.glb",
+    "metrics": {
+      "glbBytes": 14492,
+      "byteLength": 14492,
+      "triangles": 184,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3260614275932312,
+        "d": 0.6919384056126958
+      },
+      "center": {
+        "x": -0.021382316946983337,
+        "z": 0.012027710462333335
+      },
+      "minY": -0.5638645239341555,
+      "maxY": 0.3835645007212443
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/Dagger",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "Dagger.glb",
+    "metrics": {
+      "glbBytes": 38976,
+      "byteLength": 38976,
+      "triangles": 524,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5517938733100891,
+        "d": 0.16354256200029965
+      },
+      "center": {
+        "x": 0,
+        "z": 0.004327082434379105
+      },
+      "minY": -0.3532609171677359,
+      "maxY": 2.7611794612012304
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/Gems",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "Gems.glb",
+    "metrics": {
+      "glbBytes": 38140,
+      "byteLength": 38140,
+      "triangles": 428,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6547389864921569,
+        "d": 5.187487097366801
+      },
+      "center": {
+        "x": -0.6434302866458893,
+        "z": -0.07907785744569074
+      },
+      "minY": -0.5332431699259074,
+      "maxY": 0.4266668825874429
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/IceStaff",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "IceStaff.glb",
+    "metrics": {
+      "glbBytes": 32448,
+      "byteLength": 32448,
+      "triangles": 396,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3104337155818939,
+        "d": 0.21967483869525917
+      },
+      "center": {
+        "x": -0.014939948916435242,
+        "z": -0.010502062416595973
+      },
+      "minY": -1.2766978936749558,
+      "maxY": 1.1812904042910342
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/KnightHelmet",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "KnightHelmet.glb",
+    "metrics": {
+      "glbBytes": 77228,
+      "byteLength": 77228,
+      "triangles": 991,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1627914905548096,
+        "d": 1.8049642525218261
+      },
+      "center": {
+        "x": 0.45917083740234377,
+        "z": 0.3322327488637931
+      },
+      "minY": -0.32131483035419206,
+      "maxY": 1.9892719659157945
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/Rollofpaper",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "Rollofpaper.glb",
+    "metrics": {
+      "glbBytes": 48208,
+      "byteLength": 48208,
+      "triangles": 434,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8303869664669037,
+        "d": 2.3241969256404627
+      },
+      "center": {
+        "x": 0.05001775920391083,
+        "z": 0.0006023605511001895
+      },
+      "minY": -0.3135631188620001,
+      "maxY": 0.36253173220601037
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/Scroll",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "Scroll.glb",
+    "metrics": {
+      "glbBytes": 45020,
+      "byteLength": 45020,
+      "triangles": 608,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.25339050590991974,
+        "d": 1.125032655364536
+      },
+      "center": {
+        "x": 0.002343885600566864,
+        "z": 1.190331788136767e-7
+      },
+      "minY": -0.7061276756260552,
+      "maxY": 0.7082895956967422
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/Shield",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "Shield.glb",
+    "metrics": {
+      "glbBytes": 41028,
+      "byteLength": 41028,
+      "triangles": 504,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.902113139629364,
+        "d": 0.6268029491133417
+      },
+      "center": {
+        "x": 0.011088341474533081,
+        "z": -0.10218626070415833
+      },
+      "minY": -1.0116832933395106,
+      "maxY": 0.9883171068027963
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/Staff",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "Staff.glb",
+    "metrics": {
+      "glbBytes": 21520,
+      "byteLength": 21520,
+      "triangles": 256,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3995411545038223,
+        "d": 0.2951932790892471
+      },
+      "center": {
+        "x": -0.01373397558927536,
+        "z": 0.031961651560175074
+      },
+      "minY": -1.0004027078193831,
+      "maxY": 1.3886128956553863
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/Sword",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "Sword.glb",
+    "metrics": {
+      "glbBytes": 38976,
+      "byteLength": 38976,
+      "triangles": 524,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5517938733100891,
+        "d": 0.16354256200029965
+      },
+      "center": {
+        "x": 0,
+        "z": 0.004327082434379105
+      },
+      "minY": -0.3532609171677359,
+      "maxY": 2.7611794612012304
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-rpg/WoodenStaff",
+    "source": "quaternius-lowpoly-rpg",
+    "categories": [
+      "rpg",
+      "item",
+      "prop",
+      "fantasy"
+    ],
+    "file": "WoodenStaff.glb",
+    "metrics": {
+      "glbBytes": 17080,
+      "byteLength": 17080,
+      "triangles": 220,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1437055841088295,
+        "d": 0.6484984358507182
+      },
+      "center": {
+        "x": 2.60770320892334e-8,
+        "z": -0.016278854431192924
+      },
+      "minY": -1.0280186492671546,
+      "maxY": 1.6551048065299776
+    }
+  }
+]

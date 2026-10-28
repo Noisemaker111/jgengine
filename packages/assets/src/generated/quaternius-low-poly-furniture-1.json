@@ -1,0 +1,242 @@
+[
+  {
+    "id": "quaternius-low-poly-furniture-1/BigSofa",
+    "source": "quaternius-low-poly-furniture-1",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "BigSofa.glb",
+    "metrics": {
+      "glbBytes": 59508,
+      "byteLength": 59508,
+      "triangles": 814,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.453205108642578,
+        "d": 2.1771100759506226
+      },
+      "center": {
+        "x": -0.027919530868530273,
+        "z": -0.07797998189926147
+      },
+      "minY": 0.35105401277542114,
+      "maxY": 1.9118030071258545
+    }
+  },
+  {
+    "id": "quaternius-low-poly-furniture-1/BigTable",
+    "source": "quaternius-low-poly-furniture-1",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "BigTable.glb",
+    "metrics": {
+      "glbBytes": 12996,
+      "byteLength": 12996,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.1008920669555664,
+        "d": 6.335813999176025
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1.2288880348205566,
+      "maxY": 1.0340640544891357
+    }
+  },
+  {
+    "id": "quaternius-low-poly-furniture-1/Chair",
+    "source": "quaternius-low-poly-furniture-1",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Chair.glb",
+    "metrics": {
+      "glbBytes": 24512,
+      "byteLength": 24512,
+      "triangles": 328,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7296059727668762,
+        "d": 1.2953640222549438
+      },
+      "center": {
+        "x": 0.2966019809246063,
+        "z": -0.03914600610733032
+      },
+      "minY": -0.8611019849777222,
+      "maxY": 1.685181975364685
+    }
+  },
+  {
+    "id": "quaternius-low-poly-furniture-1/CoffeeTable",
+    "source": "quaternius-low-poly-furniture-1",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "CoffeeTable.glb",
+    "metrics": {
+      "glbBytes": 18112,
+      "byteLength": 18112,
+      "triangles": 240,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.6660839915275574,
+      "maxY": 0.4650830030441284
+    }
+  },
+  {
+    "id": "quaternius-low-poly-furniture-1/OldTelevision",
+    "source": "quaternius-low-poly-furniture-1",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "OldTelevision.glb",
+    "metrics": {
+      "glbBytes": 34308,
+      "byteLength": 34308,
+      "triangles": 464,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.329251006245613,
+        "d": 2.1273709535598755
+      },
+      "center": {
+        "x": 0.4939325079321861,
+        "z": -0.6269394755363464
+      },
+      "minY": -0.9171119928359985,
+      "maxY": 1.1855109930038452
+    }
+  },
+  {
+    "id": "quaternius-low-poly-furniture-1/Small Table",
+    "source": "quaternius-low-poly-furniture-1",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Small Table.glb",
+    "metrics": {
+      "glbBytes": 15228,
+      "byteLength": 15228,
+      "triangles": 200,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.7577069997787476,
+      "maxY": 1.033506989479065
+    }
+  },
+  {
+    "id": "quaternius-low-poly-furniture-1/SmallSofa",
+    "source": "quaternius-low-poly-furniture-1",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "SmallSofa.glb",
+    "metrics": {
+      "glbBytes": 46516,
+      "byteLength": 46516,
+      "triangles": 634,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.8987109661102295,
+        "d": 2.177109956741333
+      },
+      "center": {
+        "x": 4.76837158203125e-7,
+        "z": -0.13650298118591309
+      },
+      "minY": -1.0240850448608398,
+      "maxY": 0.5366629958152771
+    }
+  },
+  {
+    "id": "quaternius-low-poly-furniture-1/Stool",
+    "source": "quaternius-low-poly-furniture-1",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Stool.glb",
+    "metrics": {
+      "glbBytes": 28228,
+      "byteLength": 28228,
+      "triangles": 380,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 1.4519059658050537
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.9382860064506531,
+      "maxY": 1.0780080556869507
+    }
+  }
+]

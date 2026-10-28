@@ -1,0 +1,266 @@
+[
+  {
+    "id": "quaternius-lowpoly-animated-farm-animal-pack/Cow",
+    "source": "quaternius-lowpoly-animated-farm-animal-pack",
+    "categories": [
+      "animal",
+      "farm",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cow.glb",
+    "metrics": {
+      "glbBytes": 318036,
+      "byteLength": 318036,
+      "triangles": 796,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.2495670318603516,
+        "d": 9.172448281682941
+      },
+      "center": {
+        "x": 0,
+        "z": 0.8099860638786451
+      },
+      "minY": -0.0680469466327778,
+      "maxY": 5.079702779636342
+    },
+    "clips": [
+      "Armature|WalkSlow",
+      "Armature|Death",
+      "Armature|Jump",
+      "Armature|Idle",
+      "Armature|Walk",
+      "Armature|Run"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-animated-farm-animal-pack/Horse",
+    "source": "quaternius-lowpoly-animated-farm-animal-pack",
+    "categories": [
+      "animal",
+      "farm",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Horse.glb",
+    "metrics": {
+      "glbBytes": 291428,
+      "byteLength": 291428,
+      "triangles": 690,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.5697736740112305,
+        "d": 9.235139064472845
+      },
+      "center": {
+        "x": 0,
+        "z": 0.49941006375489483
+      },
+      "minY": 0.018460079646678153,
+      "maxY": 6.92378413596883
+    },
+    "clips": [
+      "Armature|WalkSlow",
+      "Armature|Death",
+      "Armature|Jump",
+      "Armature|Idle",
+      "Armature|Walk",
+      "Armature|Run"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-animated-farm-animal-pack/Llama",
+    "source": "quaternius-lowpoly-animated-farm-animal-pack",
+    "categories": [
+      "animal",
+      "farm",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Llama.glb",
+    "metrics": {
+      "glbBytes": 186896,
+      "byteLength": 186896,
+      "triangles": 662,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5761100053787231,
+        "d": 4.912084102535421
+      },
+      "center": {
+        "x": 0,
+        "z": 0.4301848433245601
+      },
+      "minY": -0.013018908344817264,
+      "maxY": 5.840009205882707
+    },
+    "clips": [
+      "Armature|Jump",
+      "Armature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-animated-farm-animal-pack/Pig",
+    "source": "quaternius-lowpoly-animated-farm-animal-pack",
+    "categories": [
+      "animal",
+      "farm",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Pig.glb",
+    "metrics": {
+      "glbBytes": 168332,
+      "byteLength": 168332,
+      "triangles": 562,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.311164140701294,
+        "d": 9.78384664923815
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3056770403242455
+      },
+      "minY": -0.0015863725391270871,
+      "maxY": 4.588065994196425
+    },
+    "clips": [
+      "Armature|Jump",
+      "Armature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-animated-farm-animal-pack/Pug",
+    "source": "quaternius-lowpoly-animated-farm-animal-pack",
+    "categories": [
+      "animal",
+      "farm",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Pug.glb",
+    "metrics": {
+      "glbBytes": 160944,
+      "byteLength": 160944,
+      "triangles": 644,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4543080494982497,
+        "d": 3.5090773275371214
+      },
+      "center": {
+        "x": 0,
+        "z": 0.28201274221173567
+      },
+      "minY": -0.017124968385472037,
+      "maxY": 2.6418902160751294
+    },
+    "clips": [
+      "Armature|Jump",
+      "Armature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-animated-farm-animal-pack/Sheep",
+    "source": "quaternius-lowpoly-animated-farm-animal-pack",
+    "categories": [
+      "animal",
+      "farm",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Sheep.glb",
+    "metrics": {
+      "glbBytes": 176332,
+      "byteLength": 176332,
+      "triangles": 612,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.221452403178121,
+        "d": 5.919238640437638
+      },
+      "center": {
+        "x": -2.220446049250313e-16,
+        "z": 0.5510417099506668
+      },
+      "minY": -0.010182076196259413,
+      "maxY": 4.349553203469436
+    },
+    "clips": [
+      "Armature|Jump",
+      "Armature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-lowpoly-animated-farm-animal-pack/Zebra",
+    "source": "quaternius-lowpoly-animated-farm-animal-pack",
+    "categories": [
+      "animal",
+      "farm",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Zebra.glb",
+    "metrics": {
+      "glbBytes": 415508,
+      "byteLength": 415508,
+      "triangles": 1354,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.5697736740112305,
+        "d": 9.235139091595038
+      },
+      "center": {
+        "x": 0,
+        "z": 0.45340671872025995
+      },
+      "minY": -0.04415484560334365,
+      "maxY": 7.027644029902157
+    },
+    "clips": [
+      "Armature|WalkSlow",
+      "Armature|Death",
+      "Armature|Jump",
+      "Armature|Idle",
+      "Armature|Walk",
+      "Armature|Run"
+    ]
+  }
+]

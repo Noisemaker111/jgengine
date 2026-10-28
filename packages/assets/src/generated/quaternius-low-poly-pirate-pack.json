@@ -1,0 +1,247 @@
+[
+  {
+    "id": "quaternius-low-poly-pirate-pack/Brass Telescope",
+    "source": "quaternius-low-poly-pirate-pack",
+    "categories": [
+      "pirate",
+      "prop",
+      "ship"
+    ],
+    "file": "Brass Telescope.glb",
+    "metrics": {
+      "glbBytes": 34164,
+      "byteLength": 34164,
+      "triangles": 414,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3741501097660512,
+        "d": 3.1996996479481457
+      },
+      "center": {
+        "x": 3.484626722727313e-7,
+        "z": -1.1299136542156338
+      },
+      "minY": 0.5100439727492632,
+      "maxY": 0.8841940947482363
+    }
+  },
+  {
+    "id": "quaternius-low-poly-pirate-pack/Cannon",
+    "source": "quaternius-low-poly-pirate-pack",
+    "categories": [
+      "pirate",
+      "prop",
+      "ship"
+    ],
+    "file": "Cannon.glb",
+    "metrics": {
+      "glbBytes": 58920,
+      "byteLength": 58920,
+      "triangles": 726,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4406330453793545,
+        "d": 5.368680809816439
+      },
+      "center": {
+        "x": -0.6136649313357476,
+        "z": -0.054354279648071824
+      },
+      "minY": 0.09144635164358994,
+      "maxY": 2.0561062741838367
+    }
+  },
+  {
+    "id": "quaternius-low-poly-pirate-pack/ChestAnimated",
+    "source": "quaternius-low-poly-pirate-pack",
+    "categories": [
+      "pirate",
+      "prop",
+      "ship"
+    ],
+    "file": "ChestAnimated.glb",
+    "metrics": {
+      "glbBytes": 47064,
+      "byteLength": 47064,
+      "triangles": 366,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1857051060190105,
+        "d": 3.007989890001841
+      },
+      "center": {
+        "x": -0.2856551897152977,
+        "z": 1.3332191921373282
+      },
+      "minY": -1.5406325213012635,
+      "maxY": 1.0544018907215187
+    },
+    "clips": [
+      "Armature|ArmatureAction",
+      "BottomChest|CubeAction",
+      "Armature|CubeAction"
+    ]
+  },
+  {
+    "id": "quaternius-low-poly-pirate-pack/Gun",
+    "source": "quaternius-low-poly-pirate-pack",
+    "categories": [
+      "pirate",
+      "prop",
+      "ship"
+    ],
+    "file": "Gun.glb",
+    "metrics": {
+      "glbBytes": 51740,
+      "byteLength": 51740,
+      "triangles": 626,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7987989031103415,
+        "d": 4.775692647767954
+      },
+      "center": {
+        "x": -0.220639120299154,
+        "z": -0.10411131016192487
+      },
+      "minY": 0.05959504934035076,
+      "maxY": 1.7252158482042523
+    }
+  },
+  {
+    "id": "quaternius-low-poly-pirate-pack/PirateSword",
+    "source": "quaternius-low-poly-pirate-pack",
+    "categories": [
+      "pirate",
+      "prop",
+      "ship"
+    ],
+    "file": "PirateSword.glb",
+    "metrics": {
+      "glbBytes": 40064,
+      "byteLength": 40064,
+      "triangles": 490,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6417020261287689,
+        "d": 0.25540082649897355
+      },
+      "center": {
+        "x": 0.01629789173603058,
+        "z": -9.22973816264161e-8
+      },
+      "minY": -0.433495406451799,
+      "maxY": 2.340659715476618
+    }
+  },
+  {
+    "id": "quaternius-low-poly-pirate-pack/Pistol",
+    "source": "quaternius-low-poly-pirate-pack",
+    "categories": [
+      "pirate",
+      "prop",
+      "ship"
+    ],
+    "file": "Pistol.glb",
+    "metrics": {
+      "glbBytes": 49860,
+      "byteLength": 49860,
+      "triangles": 602,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7191731984575744,
+        "d": 3.913007179834175
+      },
+      "center": {
+        "x": -0.22063902125703405,
+        "z": -0.10467343361778592
+      },
+      "minY": 0.33791009391417925,
+      "maxY": 1.7158133825117692
+    }
+  },
+  {
+    "id": "quaternius-low-poly-pirate-pack/Rifle",
+    "source": "quaternius-low-poly-pirate-pack",
+    "categories": [
+      "pirate",
+      "prop",
+      "ship"
+    ],
+    "file": "Rifle.glb",
+    "metrics": {
+      "glbBytes": 69280,
+      "byteLength": 69280,
+      "triangles": 856,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8722174197807908,
+        "d": 9.152515084967016
+      },
+      "center": {
+        "x": -0.00003568972559150896,
+        "z": -1.0798616312071683
+      },
+      "minY": -0.7416956934332846,
+      "maxY": 0.8841941069811583
+    }
+  },
+  {
+    "id": "quaternius-low-poly-pirate-pack/Skull",
+    "source": "quaternius-low-poly-pirate-pack",
+    "categories": [
+      "pirate",
+      "prop",
+      "ship"
+    ],
+    "file": "Skull.glb",
+    "metrics": {
+      "glbBytes": 8380,
+      "byteLength": 8380,
+      "triangles": 97,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9916010262886994,
+        "d": 1.5561053229025763
+      },
+      "center": {
+        "x": -0.03843858493550223,
+        "z": 0.007024930310709776
+      },
+      "minY": 0.3190943412307262,
+      "maxY": 1.898222253010117
+    }
+  }
+]

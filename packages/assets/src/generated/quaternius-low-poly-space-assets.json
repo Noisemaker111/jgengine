@@ -1,0 +1,392 @@
+[
+  {
+    "id": "quaternius-low-poly-space-assets/Asteroid1",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "Asteroid1.glb",
+    "metrics": {
+      "glbBytes": 2332,
+      "byteLength": 2332,
+      "triangles": 20,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.914074957370758,
+        "d": 2.1679229736328125
+      },
+      "center": {
+        "x": 0.04430350661277771,
+        "z": 0.5272284746170044
+      },
+      "minY": -0.9240180253982544,
+      "maxY": 0.7434160113334656
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/Asteroid2",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "Asteroid2.glb",
+    "metrics": {
+      "glbBytes": 2332,
+      "byteLength": 2332,
+      "triangles": 20,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3208150267601013,
+        "d": 1.6983199715614319
+      },
+      "center": {
+        "x": 0.038404494524002075,
+        "z": 0.32019099593162537
+      },
+      "minY": -0.5916410088539124,
+      "maxY": 0.9820060133934021
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/Asteroid3",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "Asteroid3.glb",
+    "metrics": {
+      "glbBytes": 3776,
+      "byteLength": 3776,
+      "triangles": 40,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.05799400806427,
+        "d": 1.8002620339393616
+      },
+      "center": {
+        "x": 0.03579801321029663,
+        "z": 0.12806901335716248
+      },
+      "minY": -0.583296000957489,
+      "maxY": 1.4343149662017822
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/BigAsteroid",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "BigAsteroid.glb",
+    "metrics": {
+      "glbBytes": 6664,
+      "byteLength": 6664,
+      "triangles": 80,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 11.668601751327515,
+        "d": 9.87929105758667
+      },
+      "center": {
+        "x": -4.325330853462219,
+        "z": -2.5941145420074463
+      },
+      "minY": -5.323994159698486,
+      "maxY": 3.9924700260162354
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/BiggerAsteroid",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "BiggerAsteroid.glb",
+    "metrics": {
+      "glbBytes": 6664,
+      "byteLength": 6664,
+      "triangles": 80,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.431770920753479,
+        "d": 9.145061254501343
+      },
+      "center": {
+        "x": 2.1161414980888367,
+        "z": 2.3203035593032837
+      },
+      "minY": -4.869190216064453,
+      "maxY": 1.2358989715576172
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/Moon",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "Moon.glb",
+    "metrics": {
+      "glbBytes": 39200,
+      "byteLength": 39200,
+      "triangles": 532,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.875462055206299,
+        "d": 2.875462055206299
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1.4377310276031494,
+      "maxY": 1.3916510343551636
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/Planet1",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "Planet1.glb",
+    "metrics": {
+      "glbBytes": 38336,
+      "byteLength": 38336,
+      "triangles": 520,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.9348779916763306,
+        "d": 3.9267410039901733
+      },
+      "center": {
+        "x": -0.037641942501068115,
+        "z": 0.01458650827407837
+      },
+      "minY": -2.0156118869781494,
+      "maxY": 1.9866000413894653
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/Planet2",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "Planet2.glb",
+    "metrics": {
+      "glbBytes": 31212,
+      "byteLength": 31212,
+      "triangles": 422,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.193138003349304
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0008030533790588379
+      },
+      "minY": -1,
+      "maxY": 1
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/Planet3",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "Planet3.glb",
+    "metrics": {
+      "glbBytes": 38048,
+      "byteLength": 38048,
+      "triangles": 516,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.803025960922241,
+        "d": 3.8940030336380005
+      },
+      "center": {
+        "x": 0.038064002990722656,
+        "z": -0.007945477962493896
+      },
+      "minY": -1.8559260368347168,
+      "maxY": 1.9106390476226807
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/SmallMoon",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "SmallMoon.glb",
+    "metrics": {
+      "glbBytes": 15008,
+      "byteLength": 15008,
+      "triangles": 196,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.4238080978393555,
+        "d": 3.5999999046325684
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1.7999999523162842,
+      "maxY": 1.7999999523162842
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/SmallPlanet1",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "SmallPlanet1.glb",
+    "metrics": {
+      "glbBytes": 10520,
+      "byteLength": 10520,
+      "triangles": 134,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0925099849700928,
+        "d": 2.1048989295959473
+      },
+      "center": {
+        "x": -0.03698897361755371,
+        "z": 0.028560519218444824
+      },
+      "minY": -1,
+      "maxY": 1.091025948524475
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/SmallPlanet2",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "SmallPlanet2.glb",
+    "metrics": {
+      "glbBytes": 10248,
+      "byteLength": 10248,
+      "triangles": 130,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.083364963531494,
+        "d": 2.0803840160369873
+      },
+      "center": {
+        "x": 0.0002745389938354492,
+        "z": -0.00001704692840576172
+      },
+      "minY": -1.0148359537124634,
+      "maxY": 1
+    }
+  },
+  {
+    "id": "quaternius-low-poly-space-assets/SpaceShip",
+    "source": "quaternius-low-poly-space-assets",
+    "categories": [
+      "space",
+      "scifi",
+      "prop"
+    ],
+    "file": "SpaceShip.glb",
+    "metrics": {
+      "glbBytes": 52880,
+      "byteLength": 52880,
+      "triangles": 722,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.986791968345642,
+        "d": 7.5123450756073
+      },
+      "center": {
+        "x": -1.6670950055122375,
+        "z": 0.528626561164856
+      },
+      "minY": 2.4195199012756348,
+      "maxY": 3.739089012145996
+    }
+  }
+]

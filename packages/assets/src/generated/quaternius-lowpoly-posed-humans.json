@@ -1,0 +1,842 @@
+[
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Hairstyle_1",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Hairstyle_1.glb",
+    "metrics": {
+      "glbBytes": 28432,
+      "byteLength": 28432,
+      "triangles": 375,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5232391357421875,
+        "d": 0.5584726771752136
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.3173877753765554,
+      "maxY": 0.3173877753765554
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Hairstyle_2",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Hairstyle_2.glb",
+    "metrics": {
+      "glbBytes": 28428,
+      "byteLength": 28428,
+      "triangles": 375,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.617357611656189,
+        "d": 0.5584727087149721
+      },
+      "center": {
+        "x": 0.005050361156463623,
+        "z": 1.576987926354967e-8
+      },
+      "minY": -0.5109774329216425,
+      "maxY": 0.3173877753765554
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Hairstyle_3",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Hairstyle_3.glb",
+    "metrics": {
+      "glbBytes": 20652,
+      "byteLength": 20652,
+      "triangles": 267,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5232391357421875,
+        "d": 0.5584726590212262
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.26167358537030005,
+      "maxY": 0.26167358537030005
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Hairstyle_4",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Hairstyle_4.glb",
+    "metrics": {
+      "glbBytes": 26572,
+      "byteLength": 26572,
+      "triangles": 315,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5232391357421875,
+        "d": 0.7869007637804144
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.38130963298317694,
+      "maxY": 0.38130963298317694
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_LookingUp",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_LookingUp.glb",
+    "metrics": {
+      "glbBytes": 104556,
+      "byteLength": 104556,
+      "triangles": 1304,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3645617365837097,
+        "d": 1.0658991227338153
+      },
+      "center": {
+        "x": -0.02015402913093567,
+        "z": -0.21510141338730118
+      },
+      "minY": -0.012385591734206636,
+      "maxY": 3.578920654582451
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_PickingUp",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_PickingUp.glb",
+    "metrics": {
+      "glbBytes": 108612,
+      "byteLength": 108612,
+      "triangles": 1356,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0789045989513397,
+        "d": 2.0880883739920453
+      },
+      "center": {
+        "x": 0.13474591076374054,
+        "z": 0.7100893980028042
+      },
+      "minY": -0.017699934933551213,
+      "maxY": 2.2423627850216663
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Running",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Running.glb",
+    "metrics": {
+      "glbBytes": 106580,
+      "byteLength": 106580,
+      "triangles": 1330,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8366372883319855,
+        "d": 2.0625456637118473
+      },
+      "center": {
+        "x": 0.02215556800365448,
+        "z": -0.010755835314022799
+      },
+      "minY": -0.030239541350786575,
+      "maxY": 3.668495821323088
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Sitting_Cheering",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Sitting_Cheering.glb",
+    "metrics": {
+      "glbBytes": 108548,
+      "byteLength": 108548,
+      "triangles": 1355,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0766156911849976,
+        "d": 1.4686808537131095
+      },
+      "center": {
+        "x": 0.016164660453796387,
+        "z": -0.416492278978261
+      },
+      "minY": -0.01176380489071479,
+      "maxY": 3.250823311137631
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Sitting",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Sitting.glb",
+    "metrics": {
+      "glbBytes": 108608,
+      "byteLength": 108608,
+      "triangles": 1356,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.019038826227188,
+        "d": 1.4090669820579624
+      },
+      "center": {
+        "x": 0.01297597587108612,
+        "z": -0.3866853431506875
+      },
+      "minY": -0.011763795178390086,
+      "maxY": 2.9576471369738164
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Standing_CoveringEyes",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Standing_CoveringEyes.glb",
+    "metrics": {
+      "glbBytes": 108636,
+      "byteLength": 108636,
+      "triangles": 1356,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0208494663238525,
+        "d": 0.9408774255016781
+      },
+      "center": {
+        "x": -0.04455578327178955,
+        "z": 0.09232486090488692
+      },
+      "minY": -0.011763678998820552,
+      "maxY": 3.7554617844958322
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Standing_Hips",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Standing_Hips.glb",
+    "metrics": {
+      "glbBytes": 104488,
+      "byteLength": 104488,
+      "triangles": 1303,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4413368701934814,
+        "d": 0.69721568694008
+      },
+      "center": {
+        "x": 0.004775702953338623,
+        "z": -0.029506001295863005
+      },
+      "minY": -0.011763678998820552,
+      "maxY": 3.7120047135482985
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Standing",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Standing.glb",
+    "metrics": {
+      "glbBytes": 108612,
+      "byteLength": 108612,
+      "triangles": 1356,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.013553261756897,
+        "d": 0.6993859480501102
+      },
+      "center": {
+        "x": 0.00227510929107666,
+        "z": -0.031844826120825676
+      },
+      "minY": -0.011922871455655877,
+      "maxY": 3.689682058619925
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Female_Walking",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Female_Walking.glb",
+    "metrics": {
+      "glbBytes": 108608,
+      "byteLength": 108608,
+      "triangles": 1356,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0587533712387085,
+        "d": 1.3528176029761818
+      },
+      "center": {
+        "x": 0.024345338344573975,
+        "z": 0.06192794748480396
+      },
+      "minY": -0.04326421347814437,
+      "maxY": 3.664169670232292
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Hairstyle_1",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Hairstyle_1.glb",
+    "metrics": {
+      "glbBytes": 13804,
+      "byteLength": 13804,
+      "triangles": 172,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5025275349617004,
+        "d": 0.5118085560442213
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.31013206836444984,
+      "maxY": 0.31013206836444984
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Hairstyle_2",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Hairstyle_2.glb",
+    "metrics": {
+      "glbBytes": 14964,
+      "byteLength": 14964,
+      "triangles": 188,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5025275349617004,
+        "d": 0.5719617863704536
+      },
+      "center": {
+        "x": 0,
+        "z": -1.942890293094024e-14
+      },
+      "minY": -0.2622569073252233,
+      "maxY": 0.2622571457438024
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Hairstyle_3",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Hairstyle_3.glb",
+    "metrics": {
+      "glbBytes": 17264,
+      "byteLength": 17264,
+      "triangles": 220,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5203925967216492,
+        "d": 0.598348124311687
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.3155045996754669,
+      "maxY": 0.3155045996754669
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Hairstyle_4",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Hairstyle_4.glb",
+    "metrics": {
+      "glbBytes": 14544,
+      "byteLength": 14544,
+      "triangles": 180,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5046020746231079,
+        "d": 0.5824013418537182
+      },
+      "center": {
+        "x": -0.008641470074653615,
+        "z": -1.105936731082835e-10
+      },
+      "minY": -0.20404770350186827,
+      "maxY": 0.2024014708968878
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_LookingUp",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_LookingUp.glb",
+    "metrics": {
+      "glbBytes": 71904,
+      "byteLength": 71904,
+      "triangles": 885,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.986024260520935,
+        "d": 1.1833061619899945
+      },
+      "center": {
+        "x": 0.00042128562927246094,
+        "z": -0.22207507043131872
+      },
+      "minY": -0.04100365410486647,
+      "maxY": 3.6445170050971054
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_PickingUp",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_PickingUp.glb",
+    "metrics": {
+      "glbBytes": 72028,
+      "byteLength": 72028,
+      "triangles": 887,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5898211598396301,
+        "d": 2.1557743165726957
+      },
+      "center": {
+        "x": 0.16391655802726746,
+        "z": 0.7729006074327858
+      },
+      "minY": -0.04230252779338476,
+      "maxY": 2.283188644579665
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Running",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Running.glb",
+    "metrics": {
+      "glbBytes": 72140,
+      "byteLength": 72140,
+      "triangles": 888,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2147309184074402,
+        "d": 2.2149046963429084
+      },
+      "center": {
+        "x": 0.0075314342975616455,
+        "z": -0.04309886977267896
+      },
+      "minY": -0.07589511691711706,
+      "maxY": 3.7691814249310194
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Sitting_Cheering",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Sitting_Cheering.glb",
+    "metrics": {
+      "glbBytes": 72160,
+      "byteLength": 72160,
+      "triangles": 888,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4467159509658813,
+        "d": 1.5860509795135411
+      },
+      "center": {
+        "x": 0.08607620000839233,
+        "z": -0.42344747926901616
+      },
+      "minY": -0.04053770080515144,
+      "maxY": 3.570522606980041
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Sitting",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Sitting.glb",
+    "metrics": {
+      "glbBytes": 72100,
+      "byteLength": 72100,
+      "triangles": 888,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.252394199371338,
+        "d": 1.4226933998786508
+      },
+      "center": {
+        "x": -0.011084675788879395,
+        "z": -0.341768689451571
+      },
+      "minY": -0.040537674190837134,
+      "maxY": 3.058780968796454
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Standing_CoveringEyes",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Standing_CoveringEyes.glb",
+    "metrics": {
+      "glbBytes": 72128,
+      "byteLength": 72128,
+      "triangles": 888,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.43830406665802,
+        "d": 0.9277350624481434
+      },
+      "center": {
+        "x": -0.10596776008605957,
+        "z": 0.16580291653098272
+      },
+      "minY": -0.040537551177431755,
+      "maxY": 3.81313858754112
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Standing_Hips",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Standing_Hips.glb",
+    "metrics": {
+      "glbBytes": 72112,
+      "byteLength": 72112,
+      "triangles": 888,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.983916461467743,
+        "d": 0.720721956622081
+      },
+      "center": {
+        "x": 0.006914228200912476,
+        "z": 0.009217062108613339
+      },
+      "minY": -0.04133289812799924,
+      "maxY": 3.778950274597841
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Standing_Waving",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Standing_Waving.glb",
+    "metrics": {
+      "glbBytes": 72112,
+      "byteLength": 72112,
+      "triangles": 888,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5656092762947083,
+        "d": 0.7819501288188486
+      },
+      "center": {
+        "x": 0.0016351640224456787,
+        "z": -0.021286188941458645
+      },
+      "minY": -0.04263017710176447,
+      "maxY": 4.425293028979903
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Standing",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Standing.glb",
+    "metrics": {
+      "glbBytes": 72104,
+      "byteLength": 72104,
+      "triangles": 888,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.239491045475006,
+        "d": 0.6923108681332755
+      },
+      "center": {
+        "x": -0.013849765062332153,
+        "z": 0.023422576421116698
+      },
+      "minY": -0.04053755519639924,
+      "maxY": 3.7913168078772546
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Male_Walking",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Male_Walking.glb",
+    "metrics": {
+      "glbBytes": 72096,
+      "byteLength": 72096,
+      "triangles": 888,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.21711003780365,
+        "d": 1.4591341319016973
+      },
+      "center": {
+        "x": 0.010760664939880371,
+        "z": 0.06834554449438052
+      },
+      "minY": -0.07849836691330338,
+      "maxY": 3.7643565047370133
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-posed-humans/Woman_Standing_Waving",
+    "source": "quaternius-lowpoly-posed-humans",
+    "categories": [
+      "character",
+      "human",
+      "posed"
+    ],
+    "file": "Woman_Standing_Waving.glb",
+    "metrics": {
+      "glbBytes": 106592,
+      "byteLength": 106592,
+      "triangles": 1330,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0621565580368042,
+        "d": 0.703731656070445
+      },
+      "center": {
+        "x": 0.008056879043579102,
+        "z": -0.033906815500975074
+      },
+      "minY": -0.011866008383147723,
+      "maxY": 4.195392183607463
+    }
+  }
+]

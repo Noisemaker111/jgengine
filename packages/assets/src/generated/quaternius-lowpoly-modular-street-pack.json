@@ -1,0 +1,777 @@
+[
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Sign_NoParking",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Sign_NoParking.glb",
+    "metrics": {
+      "glbBytes": 21860,
+      "byteLength": 21860,
+      "triangles": 244,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.026885155588388443,
+        "d": 0.13939492987571944
+      },
+      "center": {
+        "x": 0.005837572738528252,
+        "z": -0.0001959755433865104
+      },
+      "minY": 0.000039207239552849405,
+      "maxY": 0.5388750547154042
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Sign_Stop",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Sign_Stop.glb",
+    "metrics": {
+      "glbBytes": 25784,
+      "byteLength": 25784,
+      "triangles": 300,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.0232712309807539,
+        "d": 0.1384255122989675
+      },
+      "center": {
+        "x": 0.0040306104347109795,
+        "z": -4.380836671896704e-8
+      },
+      "minY": 0.00003920735044323614,
+      "maxY": 0.5377484672774567
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Sign_Triangle",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Sign_Triangle.glb",
+    "metrics": {
+      "glbBytes": 7076,
+      "byteLength": 7076,
+      "triangles": 60,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.03453424200415611,
+        "d": 0.15493754063711013
+      },
+      "center": {
+        "x": 0.009662115946412086,
+        "z": -0.0000211845633985297
+      },
+      "minY": 0.000039206001923443505,
+      "maxY": 0.5344657428080833
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_3Way_2",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_3Way_2.glb",
+    "metrics": {
+      "glbBytes": 17064,
+      "byteLength": 17064,
+      "triangles": 188,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.000063698490771
+      },
+      "center": {
+        "x": 0,
+        "z": -4.073016701688914e-9
+      },
+      "minY": -0.1000001867677218,
+      "maxY": 0.1500001837874889
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_3Way",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_3Way.glb",
+    "metrics": {
+      "glbBytes": 54820,
+      "byteLength": 54820,
+      "triangles": 672,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.000063698490771
+      },
+      "center": {
+        "x": 0,
+        "z": -4.073016701688914e-9
+      },
+      "minY": -0.1000001867677218,
+      "maxY": 0.1500001837874889
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_4Way_2",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_4Way_2.glb",
+    "metrics": {
+      "glbBytes": 20500,
+      "byteLength": 20500,
+      "triangles": 232,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.000063698490771
+      },
+      "center": {
+        "x": 0,
+        "z": -4.073016701688914e-9
+      },
+      "minY": -0.1000001867677218,
+      "maxY": 0.1500001837874889
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_4Way",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_4Way.glb",
+    "metrics": {
+      "glbBytes": 72288,
+      "byteLength": 72288,
+      "triangles": 896,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.000063698490771
+      },
+      "center": {
+        "x": 0,
+        "z": -4.073016701688914e-9
+      },
+      "minY": -0.1000001867677218,
+      "maxY": 0.1500001837874889
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Bridge_Ramp",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Bridge_Ramp.glb",
+    "metrics": {
+      "glbBytes": 129044,
+      "byteLength": 129044,
+      "triangles": 1618,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9999977946281433,
+        "d": 2.000000362854507
+      },
+      "center": {
+        "x": -0.0000016987323760986328,
+        "z": -4.5925905300947534e-8
+      },
+      "minY": -0.10000018676255562,
+      "maxY": 0.6637825806948907
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Bridge_Underpass",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Bridge_Underpass.glb",
+    "metrics": {
+      "glbBytes": 87396,
+      "byteLength": 87396,
+      "triangles": 1084,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000004291534424,
+        "d": 2.000041967239372
+      },
+      "center": {
+        "x": 0,
+        "z": 0.00002182880732132242
+      },
+      "minY": -0.10000018676238083,
+      "maxY": 0.6658867438717045
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Bridge_Water",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Bridge_Water.glb",
+    "metrics": {
+      "glbBytes": 113356,
+      "byteLength": 113356,
+      "triangles": 1412,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.00000012477874
+      },
+      "center": {
+        "x": 0,
+        "z": 9.075770051603094e-7
+      },
+      "minY": -0.10000018676238083,
+      "maxY": 0.6658867438648874
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Bridge_WaterRamp",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Bridge_WaterRamp.glb",
+    "metrics": {
+      "glbBytes": 89360,
+      "byteLength": 89360,
+      "triangles": 1104,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.000241523247268
+      },
+      "center": {
+        "x": 0,
+        "z": 0.00012005743331711116
+      },
+      "minY": -0.10000018676263331,
+      "maxY": 0.663782580734103
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Bridge",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Bridge.glb",
+    "metrics": {
+      "glbBytes": 112932,
+      "byteLength": 112932,
+      "triangles": 1412,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.00000012477874
+      },
+      "center": {
+        "x": 0,
+        "z": 9.075770051603094e-7
+      },
+      "minY": -0.10000018676238083,
+      "maxY": 0.6658867438648874
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Curve",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Curve.glb",
+    "metrics": {
+      "glbBytes": 24976,
+      "byteLength": 24976,
+      "triangles": 290,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000016927719116,
+        "d": 2.000000040730151
+      },
+      "center": {
+        "x": 0.000008463859558105469,
+        "z": -4.0730168127112165e-9
+      },
+      "minY": -0.1000001867625362,
+      "maxY": 0.15000018378230331
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Deadend",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Deadend.glb",
+    "metrics": {
+      "glbBytes": 26432,
+      "byteLength": 26432,
+      "triangles": 308,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.00000027914873
+      },
+      "center": {
+        "x": 0,
+        "z": -4.073016701688914e-9
+      },
+      "minY": -0.10000018676255562,
+      "maxY": 0.15000018378232274
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Elevated_Ramp",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Elevated_Ramp.glb",
+    "metrics": {
+      "glbBytes": 30816,
+      "byteLength": 30816,
+      "triangles": 364,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0000243186950684,
+        "d": 2.001191591668028
+      },
+      "center": {
+        "x": -0.00002086162567138672,
+        "z": -0.0005956599890227787
+      },
+      "minY": -0.10210945377420597,
+      "maxY": 0.4798857112738879
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Elevated",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Elevated.glb",
+    "metrics": {
+      "glbBytes": 33144,
+      "byteLength": 33144,
+      "triangles": 394,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.000000332887738
+      },
+      "center": {
+        "x": 0,
+        "z": -3.094252065682923e-8
+      },
+      "minY": -0.10000018676255562,
+      "maxY": 0.47984786232445553
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Empty_Water",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Empty_Water.glb",
+    "metrics": {
+      "glbBytes": 4572,
+      "byteLength": 4572,
+      "triangles": 44,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.000240941672784
+      },
+      "center": {
+        "x": 0,
+        "z": 0.00012034822055906336
+      },
+      "minY": -0.10000018676255562,
+      "maxY": 0.020909459308602073
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Empty",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Empty.glb",
+    "metrics": {
+      "glbBytes": 2196,
+      "byteLength": 2196,
+      "triangles": 12,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 2.000000040730151
+      },
+      "center": {
+        "x": 0,
+        "z": -4.0730168127112165e-9
+      },
+      "minY": -0.1000001867625362,
+      "maxY": 0.15000018378230331
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Street_Straight",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Street_Straight.glb",
+    "metrics": {
+      "glbBytes": 30180,
+      "byteLength": 30180,
+      "triangles": 356,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000000238418579,
+        "d": 2.00000027914873
+      },
+      "center": {
+        "x": 0,
+        "z": -4.073016701688914e-9
+      },
+      "minY": -0.10000018676255562,
+      "maxY": 0.15000018378232274
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Streetlight_Double",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Streetlight_Double.glb",
+    "metrics": {
+      "glbBytes": 196352,
+      "byteLength": 196352,
+      "triangles": 2486,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1317111700773239,
+        "d": 0.3157327775620865
+      },
+      "center": {
+        "x": 0,
+        "z": -8.962636133258428e-8
+      },
+      "minY": -0.000014202848517416705,
+      "maxY": 1.1002595681848804
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Streetlight_Single",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Streetlight_Single.glb",
+    "metrics": {
+      "glbBytes": 82608,
+      "byteLength": 82608,
+      "triangles": 1028,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1317111700773239,
+        "d": 0.13171134772297743
+      },
+      "center": {
+        "x": 0,
+        "z": -8.882051787811873e-8
+      },
+      "minY": -0.00001418785806934154,
+      "maxY": 1.09036708951035
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Streetlight_Triple",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Streetlight_Triple.glb",
+    "metrics": {
+      "glbBytes": 220220,
+      "byteLength": 220220,
+      "triangles": 2792,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1317111700773239,
+        "d": 0.3157327759503996
+      },
+      "center": {
+        "x": 0,
+        "z": -8.882051788505763e-8
+      },
+      "minY": -0.000014202848517416705,
+      "maxY": 1.0903671045007983
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/Streets_all",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "Streets_all.glb",
+    "metrics": {
+      "glbBytes": 729668,
+      "byteLength": 729668,
+      "triangles": 10382,
+      "primitives": 52,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 11.000000238418579,
+        "d": 11.00003198881975
+      },
+      "center": {
+        "x": -1.5,
+        "z": -1.5000158589085273
+      },
+      "minY": -0.10210945377420597,
+      "maxY": 0.6658867438717045
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/TrafficLight_2",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "TrafficLight_2.glb",
+    "metrics": {
+      "glbBytes": 34312,
+      "byteLength": 34312,
+      "triangles": 398,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.12297586724162102,
+        "d": 0.6707655511411995
+      },
+      "center": {
+        "x": 0.02601333148777485,
+        "z": 0.3077910382207459
+      },
+      "minY": 0.00017511785102887774,
+      "maxY": 1.1340764616741175
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-street-pack/TrafficLight",
+    "source": "quaternius-lowpoly-modular-street-pack",
+    "categories": [
+      "city",
+      "street",
+      "modular",
+      "prop"
+    ],
+    "file": "TrafficLight.glb",
+    "metrics": {
+      "glbBytes": 30716,
+      "byteLength": 30716,
+      "triangles": 352,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.12297588586807251,
+        "d": 0.08961601587972695
+      },
+      "center": {
+        "x": 0.0260133296251297,
+        "z": -7.097217357560082e-8
+      },
+      "minY": 0.00017511504612382903,
+      "maxY": 0.8710730744883909
+    }
+  }
+]

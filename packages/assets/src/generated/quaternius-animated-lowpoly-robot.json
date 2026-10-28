@@ -1,0 +1,50 @@
+[
+  {
+    "id": "quaternius-animated-lowpoly-robot/Robot",
+    "source": "quaternius-animated-lowpoly-robot",
+    "categories": [
+      "character",
+      "robot",
+      "scifi",
+      "rigged",
+      "animated"
+    ],
+    "file": "Robot.glb",
+    "metrics": {
+      "glbBytes": 696656,
+      "byteLength": 696656,
+      "triangles": 3236,
+      "primitives": 19,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.61854887008667,
+        "d": 2.807914799840957
+      },
+      "center": {
+        "x": -0.002715637087821854,
+        "z": -0.0011346598900126015
+      },
+      "minY": -0.020304399584710753,
+      "maxY": 4.618533053442575
+    },
+    "clips": [
+      "RobotArmature|Robot_No",
+      "RobotArmature|Robot_Sitting",
+      "RobotArmature|Robot_Punch",
+      "RobotArmature|Robot_Dance",
+      "RobotArmature|Robot_Standing",
+      "RobotArmature|Robot_Idle",
+      "RobotArmature|Robot_WalkJump",
+      "RobotArmature|Robot_Yes",
+      "RobotArmature|Robot_Wave",
+      "RobotArmature|Robot_Death",
+      "RobotArmature|Robot_Walking",
+      "RobotArmature|Robot_Running",
+      "RobotArmature|Robot_ThumbsUp",
+      "RobotArmature|Robot_Jump"
+    ]
+  }
+]

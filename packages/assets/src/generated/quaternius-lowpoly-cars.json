@@ -1,0 +1,176 @@
+[
+  {
+    "id": "quaternius-lowpoly-cars/BasicCar",
+    "source": "quaternius-lowpoly-cars",
+    "categories": [
+      "vehicle",
+      "car"
+    ],
+    "file": "BasicCar.glb",
+    "metrics": {
+      "glbBytes": 100676,
+      "byteLength": 100676,
+      "triangles": 1868,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0114370584487915,
+        "d": 4.202815343285382
+      },
+      "center": {
+        "x": 0.0018505454063415527,
+        "z": 0.10439230156134527
+      },
+      "minY": -0.7959308953996722,
+      "maxY": 0.785015416531921
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-cars/CopCar",
+    "source": "quaternius-lowpoly-cars",
+    "categories": [
+      "vehicle",
+      "car"
+    ],
+    "file": "CopCar.glb",
+    "metrics": {
+      "glbBytes": 89796,
+      "byteLength": 89796,
+      "triangles": 1206,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.856416404247284,
+        "d": 3.9916018151340253
+      },
+      "center": {
+        "x": 0.0012933313846588135,
+        "z": -0.014805710300606734
+      },
+      "minY": -0.8036056018809723,
+      "maxY": 0.9561533968946903
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-cars/RaceCar",
+    "source": "quaternius-lowpoly-cars",
+    "categories": [
+      "vehicle",
+      "car"
+    ],
+    "file": "RaceCar.glb",
+    "metrics": {
+      "glbBytes": 99748,
+      "byteLength": 99748,
+      "triangles": 1344,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.627465852308933,
+        "d": 4.914636590176677
+      },
+      "center": {
+        "x": 0.0031047160114530126,
+        "z": -0.629885369410486
+      },
+      "minY": -0.4596800925294372,
+      "maxY": 0.9933906790628043
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-cars/SimpleCarHigh",
+    "source": "quaternius-lowpoly-cars",
+    "categories": [
+      "vehicle",
+      "car"
+    ],
+    "file": "SimpleCarHigh.glb",
+    "metrics": {
+      "glbBytes": 72684,
+      "byteLength": 72684,
+      "triangles": 968,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1362987361161507,
+        "d": 4.0297215142511735
+      },
+      "center": {
+        "x": 0,
+        "z": 0.07368980255971702
+      },
+      "minY": -0.9504688144664215,
+      "maxY": 0.6512356805508
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-cars/SimpleCarShort",
+    "source": "quaternius-lowpoly-cars",
+    "categories": [
+      "vehicle",
+      "car"
+    ],
+    "file": "SimpleCarShort.glb",
+    "metrics": {
+      "glbBytes": 72684,
+      "byteLength": 72684,
+      "triangles": 968,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1890889963911104,
+        "d": 4.02972150776463
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0736898249285437
+      },
+      "minY": -0.8000848270396637,
+      "maxY": 0.768627499388112
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-cars/Taxi",
+    "source": "quaternius-lowpoly-cars",
+    "categories": [
+      "vehicle",
+      "car"
+    ],
+    "file": "Taxi.glb",
+    "metrics": {
+      "glbBytes": 79004,
+      "byteLength": 79004,
+      "triangles": 1056,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8355256563067088,
+        "d": 3.9687457947261393
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0033777085167620013
+      },
+      "minY": -0.7847624851207183,
+      "maxY": 0.9044711988062983
+    }
+  }
+]

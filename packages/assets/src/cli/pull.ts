@@ -9,7 +9,8 @@ import { dirHasEntries } from "../assetStore";
 import { cmdFind } from "./find";
 import { MATERIAL_LIBRARY } from "../catalogs/materialLibrary";
 import { MODEL_LIBRARY, findLibraryModelByName } from "../catalogs/modelLibrary";
-import { downloadPackArchive, extractGlbs, extractSpriteFiles } from "../download";
+import { downloadPackArchive, extractSpriteFiles } from "../download";
+import { extractPackModels } from "../packModelConvert";
 import { type AssetKind, type AssetMatch, describeAssetMatch, rankAssets } from "../rankAssets";
 import { generatedIndex } from "../generated";
 import { generatedSpriteIndex } from "../generated-sprites";
@@ -371,7 +372,7 @@ async function fetchPackInto(
     }
     return { outDir, models: files.length, textures: 0, url };
   }
-  const { models, images } = extractGlbs(archive);
+  const { models, images } = await extractPackModels(archive);
   if (models.length === 0) fail(`no .glb files found in ${source.id} archive`);
   mkdirSync(outDir, { recursive: true });
   for (const glb of models) writeFileSync(join(outDir, glb.file), glb.bytes);

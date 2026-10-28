@@ -1,0 +1,170 @@
+[
+  {
+    "id": "quaternius-5-low-poly-animals/bird",
+    "source": "quaternius-5-low-poly-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "nature"
+    ],
+    "file": "bird.glb",
+    "metrics": {
+      "glbBytes": 53604,
+      "byteLength": 53604,
+      "triangles": 158,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.204676985740662,
+        "d": 6.27468183884478
+      },
+      "center": {
+        "x": -0.002824723720550537,
+        "z": -1.0677225132136003
+      },
+      "minY": -1.4815217836315522,
+      "maxY": 3.9778968336161045
+    },
+    "clips": [
+      "Armature|Plane.001Action",
+      "Armature|PlaneAction",
+      "Armature|ArmatureAction"
+    ]
+  },
+  {
+    "id": "quaternius-5-low-poly-animals/Chick",
+    "source": "quaternius-5-low-poly-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "nature"
+    ],
+    "file": "Chick.glb",
+    "metrics": {
+      "glbBytes": 66724,
+      "byteLength": 66724,
+      "triangles": 250,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.243386487990538,
+        "d": 2.6654085884544547
+      },
+      "center": {
+        "x": -0.09307433233854678,
+        "z": -3.051212882354548e-8
+      },
+      "minY": -1.8868152626455217,
+      "maxY": 2.880123152486206
+    },
+    "clips": [
+      "Armature|ArmatureAction.002"
+    ]
+  },
+  {
+    "id": "quaternius-5-low-poly-animals/Fish",
+    "source": "quaternius-5-low-poly-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "nature"
+    ],
+    "file": "Fish.glb",
+    "metrics": {
+      "glbBytes": 59228,
+      "byteLength": 59228,
+      "triangles": 304,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8815267150031834,
+        "d": 5.423923852100154
+      },
+      "center": {
+        "x": -0.03089302586281517,
+        "z": -0.6090999411652944
+      },
+      "minY": -0.6652944057204733,
+      "maxY": 1.3688215979084755
+    },
+    "clips": [
+      "Armature|ArmatureAction"
+    ]
+  },
+  {
+    "id": "quaternius-5-low-poly-animals/Red Fox",
+    "source": "quaternius-5-low-poly-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "nature"
+    ],
+    "file": "Red Fox.glb",
+    "metrics": {
+      "glbBytes": 111900,
+      "byteLength": 111900,
+      "triangles": 490,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5537888546270446,
+        "d": 5.2626571055998905
+      },
+      "center": {
+        "x": -0.011831596217205587,
+        "z": 1.0263285341639674
+      },
+      "minY": -1.64186046709636,
+      "maxY": 0.6709033444325565
+    },
+    "clips": [
+      "Armature|ArmatureAction"
+    ]
+  },
+  {
+    "id": "quaternius-5-low-poly-animals/Whale",
+    "source": "quaternius-5-low-poly-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "nature"
+    ],
+    "file": "Whale.glb",
+    "metrics": {
+      "glbBytes": 182344,
+      "byteLength": 182344,
+      "triangles": 954,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.3009239216995416,
+        "d": 9.30189603568666
+      },
+      "center": {
+        "x": -1.3042848111172134,
+        "z": -1.936048342748109
+      },
+      "minY": -0.43572050766266335,
+      "maxY": 2.503524017757709
+    },
+    "clips": [
+      "Armature|ArmatureAction",
+      "Armature|PlaneAction"
+    ]
+  }
+]

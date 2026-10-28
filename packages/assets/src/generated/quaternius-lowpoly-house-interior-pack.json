@@ -1,0 +1,3692 @@
+[
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_Bathtub",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_Bathtub.glb",
+    "metrics": {
+      "glbBytes": 21340,
+      "byteLength": 21340,
+      "triangles": 248,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6075098514556885,
+        "d": 3.8997363713141873
+      },
+      "center": {
+        "x": 0,
+        "z": -0.1740834535230893
+      },
+      "minY": -0.007505673498761197,
+      "maxY": 1.2527025254875757
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_Mirror1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_Mirror1.glb",
+    "metrics": {
+      "glbBytes": 7768,
+      "byteLength": 7768,
+      "triangles": 76,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6480790376663208,
+        "d": 0.10197041428740825
+      },
+      "center": {
+        "x": 0,
+        "z": 0.011021398040837838
+      },
+      "minY": -0.4650356834670892,
+      "maxY": 0.4646309715202916
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_Mirror2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_Mirror2.glb",
+    "metrics": {
+      "glbBytes": 9020,
+      "byteLength": 9020,
+      "triangles": 92,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5371610522270203,
+        "d": 0.037747198220873836
+      },
+      "center": {
+        "x": 0,
+        "z": -0.010674239136278487
+      },
+      "minY": -0.3871974397161297,
+      "maxY": 0.38719743623802105
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_Shower1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_Shower1.glb",
+    "metrics": {
+      "glbBytes": 53712,
+      "byteLength": 53712,
+      "triangles": 652,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.895848572254181,
+        "d": 1.8928365527536737
+      },
+      "center": {
+        "x": 0.1237383782863617,
+        "z": -0.07832989629639509
+      },
+      "minY": -0.09501154279705443,
+      "maxY": 3.453098200130062
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_Sink",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_Sink.glb",
+    "metrics": {
+      "glbBytes": 29288,
+      "byteLength": 29288,
+      "triangles": 350,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.389499306678772,
+        "d": 0.8152639242828708
+      },
+      "center": {
+        "x": 0,
+        "z": 0.10399944253276827
+      },
+      "minY": 0.15050996363550906,
+      "maxY": 1.5973404287380095
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_Toilet",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_Toilet.glb",
+    "metrics": {
+      "glbBytes": 30360,
+      "byteLength": 30360,
+      "triangles": 402,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1966686248779297,
+        "d": 1.6914022681244643
+      },
+      "center": {
+        "x": 0,
+        "z": -0.05382255087939691
+      },
+      "minY": -0.013109516685730674,
+      "maxY": 1.8875635960391286
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_Toilet2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_Toilet2.glb",
+    "metrics": {
+      "glbBytes": 25468,
+      "byteLength": 25468,
+      "triangles": 334,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1111400127410889,
+        "d": 1.539820358430518
+      },
+      "center": {
+        "x": 0,
+        "z": 0.02196840396757621
+      },
+      "minY": -0.013109491989926631,
+      "maxY": 0.9946581819346787
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_ToiletPaper",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_ToiletPaper.glb",
+    "metrics": {
+      "glbBytes": 23968,
+      "byteLength": 23968,
+      "triangles": 276,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.29994112253189087,
+        "d": 0.17487661191146048
+      },
+      "center": {
+        "x": -0.01580546796321869,
+        "z": -1.2045393300852414e-8
+      },
+      "minY": -0.0982694246768874,
+      "maxY": 0.2461376183628939
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_ToiletPaperPile",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_ToiletPaperPile.glb",
+    "metrics": {
+      "glbBytes": 31976,
+      "byteLength": 31976,
+      "triangles": 384,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.33447882533073425,
+        "d": 0.34981167460736773
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": -1.5949227091804907e-8
+      },
+      "minY": 0.002004404461848921,
+      "maxY": 0.3767122613239106
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_Towel",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_Towel.glb",
+    "metrics": {
+      "glbBytes": 17400,
+      "byteLength": 17400,
+      "triangles": 192,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1845464706420898,
+        "d": 0.1611165538206042
+      },
+      "center": {
+        "x": 0.03139221668243408,
+        "z": -0.04605711855370059
+      },
+      "minY": -0.6213970390608744,
+      "maxY": 0.03242353166959552
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bathroom_WashingMachine",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bathroom_WashingMachine.glb",
+    "metrics": {
+      "glbBytes": 26128,
+      "byteLength": 26128,
+      "triangles": 304,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2919137477874756,
+        "d": 1.323711932812114
+      },
+      "center": {
+        "x": 0,
+        "z": 0.044200747651856054
+      },
+      "minY": -1.0062876898287882e-7,
+      "maxY": 1.4701955276670235
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bed_Bunk",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bed_Bunk.glb",
+    "metrics": {
+      "glbBytes": 77712,
+      "byteLength": 77712,
+      "triangles": 960,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1688263416290283,
+        "d": 3.9973951747428416
+      },
+      "center": {
+        "x": 0.18634557723999023,
+        "z": -1.8266654266962945e-7
+      },
+      "minY": -0.028307512068752337,
+      "maxY": 3.0024073996037086
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bed_King",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bed_King.glb",
+    "metrics": {
+      "glbBytes": 55988,
+      "byteLength": 55988,
+      "triangles": 676,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.0641281604766846,
+        "d": 3.952844340794324
+      },
+      "center": {
+        "x": 0,
+        "z": -3.373588580712905e-7
+      },
+      "minY": -3.2386271107817217e-7,
+      "maxY": 1.2145825268186978
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bed_Single",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bed_Single.glb",
+    "metrics": {
+      "glbBytes": 45048,
+      "byteLength": 45048,
+      "triangles": 536,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.979145109653473,
+        "d": 3.9400000394900943
+      },
+      "center": {
+        "x": 0.023003309965133667,
+        "z": -1.1034413316401981e-7
+      },
+      "minY": -3.209537240788753e-7,
+      "maxY": 1.3545752397006543
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Bookshelf",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Bookshelf.glb",
+    "metrics": {
+      "glbBytes": 10040,
+      "byteLength": 10040,
+      "triangles": 120,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.318324327468872,
+        "d": 0.7559996325282973
+      },
+      "center": {
+        "x": 0,
+        "z": -3.576961116191768e-7
+      },
+      "minY": -0.023516612244061107,
+      "maxY": 4.414562763762825
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Carpet_1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Carpet_1.glb",
+    "metrics": {
+      "glbBytes": 10416,
+      "byteLength": 10416,
+      "triangles": 108,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1312304735183716,
+        "d": 3.093209153425618
+      },
+      "center": {
+        "x": 0.007420718669891357,
+        "z": -0.009365025027457397
+      },
+      "minY": -0.0008668252901627408,
+      "maxY": 0.03579170714748333
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Carpet_2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Carpet_2.glb",
+    "metrics": {
+      "glbBytes": 9636,
+      "byteLength": 9636,
+      "triangles": 98,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.093209385871887,
+        "d": 3.181445246946735
+      },
+      "center": {
+        "x": 0.09074848890304565,
+        "z": 0.03319519473725141
+      },
+      "minY": -0.0008668255439649736,
+      "maxY": 0.035791721269165425
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Carpet_Round",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Carpet_Round.glb",
+    "metrics": {
+      "glbBytes": 11984,
+      "byteLength": 11984,
+      "triangles": 128,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.492732882499695,
+        "d": 2.531187417686674
+      },
+      "center": {
+        "x": -6.556510925292969e-7,
+        "z": -2.993050629562788e-7
+      },
+      "minY": -3.401126402974944e-7,
+      "maxY": 0.01573608386913646
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Chair_1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Chair_1.glb",
+    "metrics": {
+      "glbBytes": 16960,
+      "byteLength": 16960,
+      "triangles": 216,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7617217898368835,
+        "d": 0.8254340190859775
+      },
+      "center": {
+        "x": 0,
+        "z": -0.031856114084080206
+      },
+      "minY": -0.0033174643956468248,
+      "maxY": 1.7644563341753368
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Chair_2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Chair_2.glb",
+    "metrics": {
+      "glbBytes": 29448,
+      "byteLength": 29448,
+      "triangles": 352,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7617217898368835,
+        "d": 0.8254340063104881
+      },
+      "center": {
+        "x": 0,
+        "z": -0.03185610769633557
+      },
+      "minY": -0.0033174643956468248,
+      "maxY": 1.6860409403459922
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Chair_3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Chair_3.glb",
+    "metrics": {
+      "glbBytes": 35376,
+      "byteLength": 35376,
+      "triangles": 428,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7617217898368835,
+        "d": 0.8375081497675012
+      },
+      "center": {
+        "x": 0,
+        "z": -0.03789317889747901
+      },
+      "minY": -0.006554398111462537,
+      "maxY": 1.6874844456331626
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Chair_4",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Chair_4.glb",
+    "metrics": {
+      "glbBytes": 20416,
+      "byteLength": 20416,
+      "triangles": 264,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7617217898368835,
+        "d": 0.8254339594813327
+      },
+      "center": {
+        "x": 0,
+        "z": -0.031855369026020514
+      },
+      "minY": -0.0033174643955205837,
+      "maxY": 1.7644563341754531
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Column_Round1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Column_Round1.glb",
+    "metrics": {
+      "glbBytes": 25316,
+      "byteLength": 25316,
+      "triangles": 332,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4000351428985596,
+        "d": 1.4720845726466298
+      },
+      "center": {
+        "x": -0.0000034570693969726562,
+        "z": -8.480434698920902e-8
+      },
+      "minY": 9.342088217132683e-8,
+      "maxY": 1.7727520472922658
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Column_Round2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Column_Round2.glb",
+    "metrics": {
+      "glbBytes": 41428,
+      "byteLength": 41428,
+      "triangles": 556,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4000351428985596,
+        "d": 1.4720849356166996
+      },
+      "center": {
+        "x": 0.0000016689300537109375,
+        "z": -2.662893471283567e-7
+      },
+      "minY": -1.1991647627431253e-7,
+      "maxY": 4.000646234265807
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Column_Round3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Column_Round3.glb",
+    "metrics": {
+      "glbBytes": 41444,
+      "byteLength": 41444,
+      "triangles": 556,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4000351428985596,
+        "d": 1.4720851683233254
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": -3.8264269475174473e-7
+      },
+      "minY": 9.342088217132683e-8,
+      "maxY": 5.428989530316814
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Column_SquareBig",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Column_SquareBig.glb",
+    "metrics": {
+      "glbBytes": 14360,
+      "byteLength": 14360,
+      "triangles": 180,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9072689414024353,
+        "d": 0.9072696189235608
+      },
+      "center": {
+        "x": 8.642673492431641e-7,
+        "z": -3.387605687632522e-7
+      },
+      "minY": -7.390643626292331e-8,
+      "maxY": 4.158595159050424
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Column_SquareSmall",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Column_SquareSmall.glb",
+    "metrics": {
+      "glbBytes": 12064,
+      "byteLength": 12064,
+      "triangles": 148,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9072689414024353,
+        "d": 0.9072693400725935
+      },
+      "center": {
+        "x": 0,
+        "z": -1.9933508510483477e-7
+      },
+      "minY": -7.390643626292331e-8,
+      "maxY": 2.447020127769929
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Couch_L",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Couch_L.glb",
+    "metrics": {
+      "glbBytes": 112536,
+      "byteLength": 112536,
+      "triangles": 1417,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.6144092082977295,
+        "d": 4.3269729722142385
+      },
+      "center": {
+        "x": -0.49208033084869385,
+        "z": 0.7832748861158952
+      },
+      "minY": -0.015454700632862545,
+      "maxY": 2.2458696397868216
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Couch_Large1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Couch_Large1.glb",
+    "metrics": {
+      "glbBytes": 115892,
+      "byteLength": 115892,
+      "triangles": 1460,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.475492000579834,
+        "d": 1.9922888730555033
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": 0.3209917319521384
+      },
+      "minY": -3.6531655178810725e-8,
+      "maxY": 2.1064402818799515
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Couch_Large2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Couch_Large2.glb",
+    "metrics": {
+      "glbBytes": 105060,
+      "byteLength": 105060,
+      "triangles": 1321,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.190925359725952,
+        "d": 1.992288932921491
+      },
+      "center": {
+        "x": -3.5762786865234375e-7,
+        "z": 0.22928030251100068
+      },
+      "minY": -0.014922939381682472,
+      "maxY": 2.0931214898539174
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Couch_Large3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Couch_Large3.glb",
+    "metrics": {
+      "glbBytes": 94160,
+      "byteLength": 94160,
+      "triangles": 1288,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.085160255432129,
+        "d": 3.0215062484027406
+      },
+      "center": {
+        "x": 0.019643068313598633,
+        "z": 0.1792723269687876
+      },
+      "minY": -0.01455359991847213,
+      "maxY": 1.0737806927824023
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Couch_Medium1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Couch_Medium1.glb",
+    "metrics": {
+      "glbBytes": 80952,
+      "byteLength": 80952,
+      "triangles": 1012,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.688142776489258,
+        "d": 2.203461958216857
+      },
+      "center": {
+        "x": -9.5367431640625e-7,
+        "z": -0.08176032153306545
+      },
+      "minY": -0.01309915821412376,
+      "maxY": 1.8969300262893385
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Couch_Medium2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Couch_Medium2.glb",
+    "metrics": {
+      "glbBytes": 70488,
+      "byteLength": 70488,
+      "triangles": 878,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.518662929534912,
+        "d": 1.9994781229245069
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05412362946331345
+      },
+      "minY": -4.811827808226962e-8,
+      "maxY": 1.9593427706111
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Couch_Small1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Couch_Small1.glb",
+    "metrics": {
+      "glbBytes": 68468,
+      "byteLength": 68468,
+      "triangles": 852,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.885470390319824,
+        "d": 2.2034619582168498
+      },
+      "center": {
+        "x": -2.384185791015625e-7,
+        "z": -0.08176032153306878
+      },
+      "minY": -0.013099117235930477,
+      "maxY": 1.8969300262893385
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Couch_Small2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Couch_Small2.glb",
+    "metrics": {
+      "glbBytes": 37428,
+      "byteLength": 37428,
+      "triangles": 454,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.113649606704712,
+        "d": 1.9922886174285384
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3209935286956895
+      },
+      "minY": -1.2836214683174114e-7,
+      "maxY": 1.2691144704941262
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Curtains_Double",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Curtains_Double.glb",
+    "metrics": {
+      "glbBytes": 26976,
+      "byteLength": 26976,
+      "triangles": 320,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.468798875808716,
+        "d": 0.476478032768194
+      },
+      "center": {
+        "x": 0.04043698310852051,
+        "z": -0.12379130253159748
+      },
+      "minY": -0.005857182975447515,
+      "maxY": 4.338622588683683
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Curtains_Single",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Curtains_Single.glb",
+    "metrics": {
+      "glbBytes": 18240,
+      "byteLength": 18240,
+      "triangles": 208,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6319938898086548,
+        "d": 0.47647801786703553
+      },
+      "center": {
+        "x": 0.03953969478607178,
+        "z": -0.1825322248043513
+      },
+      "minY": -2.1849515455947037e-7,
+      "maxY": 4.34447956992778
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Door_1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Door_1.glb",
+    "metrics": {
+      "glbBytes": 37532,
+      "byteLength": 37532,
+      "triangles": 456,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7357715368270874,
+        "d": 0.4201315907742591
+      },
+      "center": {
+        "x": -0.8678857684135437,
+        "z": -2.2193322904429102e-7
+      },
+      "minY": -3.4689648434579295e-8,
+      "maxY": 4.187835727583346
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Door_2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Door_2.glb",
+    "metrics": {
+      "glbBytes": 37536,
+      "byteLength": 37536,
+      "triangles": 456,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.739842176437378,
+        "d": 0.4211168273501854
+      },
+      "center": {
+        "x": -0.8699214458465576,
+        "z": -2.2273328488531252e-7
+      },
+      "minY": -3.430424472319112e-8,
+      "maxY": 4.197657142611114
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Door_3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Door_3.glb",
+    "metrics": {
+      "glbBytes": 68756,
+      "byteLength": 68756,
+      "triangles": 856,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7357715964317322,
+        "d": 0.4158526925351234
+      },
+      "center": {
+        "x": -0.8678856194019318,
+        "z": -4.603518081458535e-7
+      },
+      "minY": -3.434112677333693e-8,
+      "maxY": 4.187835727234747
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Door_4",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Door_4.glb",
+    "metrics": {
+      "glbBytes": 73728,
+      "byteLength": 73728,
+      "triangles": 920,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.739842176437378,
+        "d": 0.4211168273500301
+      },
+      "center": {
+        "x": -0.8699207305908203,
+        "z": -3.121401743605423e-7
+      },
+      "minY": -3.430425928943497e-8,
+      "maxY": 4.197656188936782
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Door_5",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Door_5.glb",
+    "metrics": {
+      "glbBytes": 97464,
+      "byteLength": 97464,
+      "triangles": 1224,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.739842176437378,
+        "d": 0.421116857152517
+      },
+      "center": {
+        "x": -0.8699188232421875,
+        "z": -3.41942569842546e-7
+      },
+      "minY": -9.06492823367926e-8,
+      "maxY": 4.197657142611097
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Door_6",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Door_6.glb",
+    "metrics": {
+      "glbBytes": 67572,
+      "byteLength": 67572,
+      "triangles": 832,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.739842176437378,
+        "d": 0.4211168273501946
+      },
+      "center": {
+        "x": -0.8699207305908203,
+        "z": -3.41942569842546e-7
+      },
+      "minY": -9.06492799090853e-8,
+      "maxY": 4.197657142611094
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Door_7",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Door_7.glb",
+    "metrics": {
+      "glbBytes": 15380,
+      "byteLength": 15380,
+      "triangles": 172,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.739842176437378,
+        "d": 0.4211168273501854
+      },
+      "center": {
+        "x": -0.8699226379394531,
+        "z": -3.4194257443609377e-7
+      },
+      "minY": -3.430426414484959e-8,
+      "maxY": 4.197657142611094
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Door_8",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Door_8.glb",
+    "metrics": {
+      "glbBytes": 202280,
+      "byteLength": 202280,
+      "triangles": 2568,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.739842176437378,
+        "d": 0.442415578585038
+      },
+      "center": {
+        "x": -0.8699226379394531,
+        "z": 0.0035815321300549374
+      },
+      "minY": -3.545570629972535e-8,
+      "maxY": 4.1976561912553425
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Door_9",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Door_9.glb",
+    "metrics": {
+      "glbBytes": 73732,
+      "byteLength": 73732,
+      "triangles": 920,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.739842176437378,
+        "d": 0.4211168273500301
+      },
+      "center": {
+        "x": -0.8699226379394531,
+        "z": -1.9293088480976106e-7
+      },
+      "minY": -3.43042398677765e-8,
+      "maxY": 4.197656188936802
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Door_Double",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Door_Double.glb",
+    "metrics": {
+      "glbBytes": 132236,
+      "byteLength": 132236,
+      "triangles": 1720,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.4826079226094224,
+        "d": 0.429796930959502
+      },
+      "center": {
+        "x": -0.0015777397155761763,
+        "z": 0.0005344280050770256
+      },
+      "minY": 0.004165375984115512,
+      "maxY": 4.192001377784711
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Drawer_1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Drawer_1.glb",
+    "metrics": {
+      "glbBytes": 33932,
+      "byteLength": 33932,
+      "triangles": 404,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.794059991836548,
+        "d": 1.118607562661096
+      },
+      "center": {
+        "x": -7.152557373046875e-7,
+        "z": 0.0007170842133984445
+      },
+      "minY": -0.009416309852324894,
+      "maxY": 1.3434993941030366
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Drawer_2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Drawer_2.glb",
+    "metrics": {
+      "glbBytes": 36428,
+      "byteLength": 36428,
+      "triangles": 436,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.035199165344238,
+        "d": 1.1186074952398357
+      },
+      "center": {
+        "x": -7.152557373046875e-7,
+        "z": 0.0007155085986196297
+      },
+      "minY": -0.009416309852577374,
+      "maxY": 1.2955213505465617
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Drawer_3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Drawer_3.glb",
+    "metrics": {
+      "glbBytes": 49536,
+      "byteLength": 49536,
+      "triangles": 604,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.1530680656433105,
+        "d": 1.3364914245003408
+      },
+      "center": {
+        "x": 0,
+        "z": -9.86751859666235e-8
+      },
+      "minY": -1.803548661995659e-7,
+      "maxY": 1.5771788255305546
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Drawer_4",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Drawer_4.glb",
+    "metrics": {
+      "glbBytes": 38612,
+      "byteLength": 38612,
+      "triangles": 464,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.794059991836548,
+        "d": 1.1186076795080258
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0038586443322387587
+      },
+      "minY": -0.00722690114437432,
+      "maxY": 2.0628901432888918
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Drawer_5",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Drawer_5.glb",
+    "metrics": {
+      "glbBytes": 29876,
+      "byteLength": 29876,
+      "triangles": 352,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.794059991836548,
+        "d": 1.1527662659482634
+      },
+      "center": {
+        "x": 0,
+        "z": 0.020937719885147144
+      },
+      "minY": 0.011076233194521563,
+      "maxY": 1.3432587166243735
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Fireplace",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Fireplace.glb",
+    "metrics": {
+      "glbBytes": 26748,
+      "byteLength": 26748,
+      "triangles": 352,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.2498072385787964,
+        "d": 1.1578463316357843
+      },
+      "center": {
+        "x": 0.0000023245811462402344,
+        "z": 0.08649039266523745
+      },
+      "minY": -1.702554879686465e-7,
+      "maxY": 2.5611969124562264
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Fork",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Fork.glb",
+    "metrics": {
+      "glbBytes": 14948,
+      "byteLength": 14948,
+      "triangles": 188,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.044701674953103065,
+        "d": 0.40317595171099607
+      },
+      "center": {
+        "x": -0.00007013324648141861,
+        "z": -0.041496977342675184
+      },
+      "minY": -0.0042824475318237465,
+      "maxY": 0.00591059914368971
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Houseplant_1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Houseplant_1.glb",
+    "metrics": {
+      "glbBytes": 21544,
+      "byteLength": 21544,
+      "triangles": 245,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7690395414829254,
+        "d": 0.6942598796364323
+      },
+      "center": {
+        "x": 0.09271968901157379,
+        "z": 0.024368257254134162
+      },
+      "minY": 0.0015023238144693536,
+      "maxY": 0.718860507931498
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Houseplant_2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Houseplant_2.glb",
+    "metrics": {
+      "glbBytes": 28132,
+      "byteLength": 28132,
+      "triangles": 324,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.25055065751075745,
+        "d": 0.2505507202176185
+      },
+      "center": {
+        "x": 0,
+        "z": -3.1524735780164015e-8
+      },
+      "minY": 0.0010514335799887374,
+      "maxY": 0.3859434629930207
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Houseplant_3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Houseplant_3.glb",
+    "metrics": {
+      "glbBytes": 34996,
+      "byteLength": 34996,
+      "triangles": 412,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3425743877887726,
+        "d": 0.33825661596401835
+      },
+      "center": {
+        "x": 0.0021589547395706177,
+        "z": -6.90584611301448e-8
+      },
+      "minY": 0.001419469168031714,
+      "maxY": 0.8463361538819911
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Houseplant_4",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Houseplant_4.glb",
+    "metrics": {
+      "glbBytes": 27080,
+      "byteLength": 27080,
+      "triangles": 316,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.33825647830963135,
+        "d": 0.3382566295603252
+      },
+      "center": {
+        "x": 0,
+        "z": -7.585661453146653e-8
+      },
+      "minY": 0.001419469168031714,
+      "maxY": 0.9297896899156204
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Houseplant_5",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Houseplant_5.glb",
+    "metrics": {
+      "glbBytes": 40812,
+      "byteLength": 40812,
+      "triangles": 492,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5117817372083664,
+        "d": 0.5283552204328816
+      },
+      "center": {
+        "x": 0.019899018108844757,
+        "z": -0.024730463793580335
+      },
+      "minY": 0.0014194496534308976,
+      "maxY": 0.42504910555446535
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Houseplant_6",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Houseplant_6.glb",
+    "metrics": {
+      "glbBytes": 53280,
+      "byteLength": 53280,
+      "triangles": 652,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0398852229118347,
+        "d": 1.0501041782031375
+      },
+      "center": {
+        "x": 0.0451028048992157,
+        "z": -0.04594494783808947
+      },
+      "minY": 0.0014194036953195455,
+      "maxY": 0.9600277131539521
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Houseplant_7",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Houseplant_7.glb",
+    "metrics": {
+      "glbBytes": 37456,
+      "byteLength": 37456,
+      "triangles": 449,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1662461757659912,
+        "d": 1.2200593000905076
+      },
+      "center": {
+        "x": 0.045137763023376465,
+        "z": 0.023981201093182636
+      },
+      "minY": 0.0015022585678730158,
+      "maxY": 0.8833590586767679
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Houseplant_8",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Houseplant_8.glb",
+    "metrics": {
+      "glbBytes": 26348,
+      "byteLength": 26348,
+      "triangles": 310,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5171481519937515,
+        "d": 0.5171336981495331
+      },
+      "center": {
+        "x": -0.02620299905538559,
+        "z": -0.00501214750092055
+      },
+      "minY": 0.0014194537800914797,
+      "maxY": 1.558016818347858
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Kitchen_1Drawers",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Kitchen_1Drawers.glb",
+    "metrics": {
+      "glbBytes": 8968,
+      "byteLength": 8968,
+      "triangles": 84,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0108121037483215,
+        "d": 1.1204270369188616
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 0.054807291989387
+      },
+      "minY": 0.0068065659952679415,
+      "maxY": 1.6204380798977684
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Kitchen_2Drawers",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Kitchen_2Drawers.glb",
+    "metrics": {
+      "glbBytes": 13944,
+      "byteLength": 13944,
+      "triangles": 148,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0108118057250977,
+        "d": 1.120427038695833
+      },
+      "center": {
+        "x": 2.384185791015625e-7,
+        "z": 0.054807292209845204
+      },
+      "minY": -8.23410828860603e-8,
+      "maxY": 1.624538402621157
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Kitchen_3Drawers",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Kitchen_3Drawers.glb",
+    "metrics": {
+      "glbBytes": 18936,
+      "byteLength": 18936,
+      "triangles": 212,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.010811984539032,
+        "d": 1.120427038695833
+      },
+      "center": {
+        "x": 3.8743019104003906e-7,
+        "z": 0.054807292209845204
+      },
+      "minY": -8.23410828860603e-8,
+      "maxY": 1.624538402621157
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Kitchen_Cabinet1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Kitchen_Cabinet1.glb",
+    "metrics": {
+      "glbBytes": 7296,
+      "byteLength": 7296,
+      "triangles": 68,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0108119249343872,
+        "d": 1.0714650919140594
+      },
+      "center": {
+        "x": 0,
+        "z": 0.030326327064268133
+      },
+      "minY": 0.0068065659952679415,
+      "maxY": 1.5739290444397775
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Kitchen_Cabinet2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Kitchen_Cabinet2.glb",
+    "metrics": {
+      "glbBytes": 7296,
+      "byteLength": 7296,
+      "triangles": 68,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0108120441436768,
+        "d": 1.0714651515187041
+      },
+      "center": {
+        "x": 0,
+        "z": 0.030326297261945745
+      },
+      "minY": 0.0068065659952582305,
+      "maxY": 1.5739290444397775
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Kitchen_CabinetSmall",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Kitchen_CabinetSmall.glb",
+    "metrics": {
+      "glbBytes": 7308,
+      "byteLength": 7308,
+      "triangles": 68,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8612343072891235,
+        "d": 1.0714650505602767
+      },
+      "center": {
+        "x": 0.0000010728836059570312,
+        "z": 0.03032634885006341
+      },
+      "minY": 1.613085873904639e-7,
+      "maxY": 0.9474442331337862
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Kitchen_Fridge",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Kitchen_Fridge.glb",
+    "metrics": {
+      "glbBytes": 33516,
+      "byteLength": 33516,
+      "triangles": 404,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2975924015045166,
+        "d": 1.3018603946656846
+      },
+      "center": {
+        "x": 0,
+        "z": 0.06663152331115635
+      },
+      "minY": 0.0071061218957912875,
+      "maxY": 3.3155497289508875
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Kitchen_Oven_Large",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Kitchen_Oven_Large.glb",
+    "metrics": {
+      "glbBytes": 44288,
+      "byteLength": 44288,
+      "triangles": 528,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1712193489074707,
+        "d": 1.0703635426259335
+      },
+      "center": {
+        "x": 0,
+        "z": 0.022152830566145865
+      },
+      "minY": -8.358298141525962e-8,
+      "maxY": 1.5926069929238085
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Kitchen_Oven",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Kitchen_Oven.glb",
+    "metrics": {
+      "glbBytes": 44388,
+      "byteLength": 44388,
+      "triangles": 524,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0108117461204529,
+        "d": 1.120427037498235
+      },
+      "center": {
+        "x": 2.682209014892578e-7,
+        "z": 0.054807292808644104
+      },
+      "minY": -8.208582704182105e-8,
+      "maxY": 1.6171876001995873
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Kitchen_Sink",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Kitchen_Sink.glb",
+    "metrics": {
+      "glbBytes": 37476,
+      "byteLength": 37476,
+      "triangles": 444,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0108117461204529,
+        "d": 1.1204270875488005
+      },
+      "center": {
+        "x": 2.682209014892578e-7,
+        "z": 0.05480726778336126
+      },
+      "minY": -8.183057119758182e-8,
+      "maxY": 1.9243957806271343
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Knife",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Knife.glb",
+    "metrics": {
+      "glbBytes": 9476,
+      "byteLength": 9476,
+      "triangles": 112,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.03482264373451471,
+        "d": 0.41913217421858495
+      },
+      "center": {
+        "x": -0.004443780984729528,
+        "z": -0.050327271103984564
+      },
+      "minY": -0.004282450270260597,
+      "maxY": 0.0028205812968331756
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Ceiling1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Ceiling1.glb",
+    "metrics": {
+      "glbBytes": 23248,
+      "byteLength": 23248,
+      "triangles": 269,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.44051074981689453,
+        "d": 0.43602707963722576
+      },
+      "center": {
+        "x": 0,
+        "z": -0.004506722005496788
+      },
+      "minY": -0.8231360678807964,
+      "maxY": -0.0010976302672756264
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Ceiling2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Ceiling2.glb",
+    "metrics": {
+      "glbBytes": 17556,
+      "byteLength": 17556,
+      "triangles": 196,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3608052283525467,
+        "d": 0.35713286796066385
+      },
+      "center": {
+        "x": 2.2351741790771484e-8,
+        "z": -0.003691277728192943
+      },
+      "minY": -1.0132147370681097,
+      "maxY": -0.0010976365611772279
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Ceiling3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Ceiling3.glb",
+    "metrics": {
+      "glbBytes": 66224,
+      "byteLength": 66224,
+      "triangles": 820,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5370410680770874,
+        "d": 0.5370411785166654
+      },
+      "center": {
+        "x": 0,
+        "z": 5.5219778638537775e-8
+      },
+      "minY": -0.6778732975698656,
+      "maxY": 1.2943351643858734e-7
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Ceiling4",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Ceiling4.glb",
+    "metrics": {
+      "glbBytes": 66208,
+      "byteLength": 66208,
+      "triangles": 820,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7757441997528076,
+        "d": 0.7757444110025651
+      },
+      "center": {
+        "x": 8.940696716308594e-8,
+        "z": 1.0562488381160584e-7
+      },
+      "minY": -1.2966418898220078,
+      "maxY": 6.31923861151249e-8
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Ceiling5",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Ceiling5.glb",
+    "metrics": {
+      "glbBytes": 10880,
+      "byteLength": 10880,
+      "triangles": 116,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5310855805873871,
+        "d": 0.5584164483848095
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": 1.0693417484830547e-8
+      },
+      "minY": -0.13377636749596933,
+      "maxY": 0.0025049106620422344
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Ceiling6",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Ceiling6.glb",
+    "metrics": {
+      "glbBytes": 10564,
+      "byteLength": 10564,
+      "triangles": 112,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5310855805873871,
+        "d": 0.5584164471519881
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": 1.0077006812325706e-8
+      },
+      "minY": -0.12620936412663808,
+      "maxY": 0.0025049106620422344
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_CeilingSingle",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_CeilingSingle.glb",
+    "metrics": {
+      "glbBytes": 20368,
+      "byteLength": 20368,
+      "triangles": 232,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.26423291862010956,
+        "d": 0.2778310065025922
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": 3.8656013917615084e-8
+      },
+      "minY": -0.47646056888730726,
+      "maxY": 0.0019227262131326535
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Chandelier",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Chandelier.glb",
+    "metrics": {
+      "glbBytes": 77656,
+      "byteLength": 77656,
+      "triangles": 972,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8131063580513,
+        "d": 0.8131064425771328
+      },
+      "center": {
+        "x": 0.000001430511474609375,
+        "z": -6.72992804678918e-7
+      },
+      "minY": -0.5188160604987252,
+      "maxY": -5.5412633497293e-10
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Cube",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Cube.glb",
+    "metrics": {
+      "glbBytes": 31372,
+      "byteLength": 31372,
+      "triangles": 368,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5637560188770294,
+        "d": 0.5637563365487244
+      },
+      "center": {
+        "x": 7.301568984985352e-7,
+        "z": 8.408280752214559e-8
+      },
+      "minY": -1.0337107640786625,
+      "maxY": 0.001517580063335108
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Cube2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Cube2.glb",
+    "metrics": {
+      "glbBytes": 37308,
+      "byteLength": 37308,
+      "triangles": 444,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5542261600494385,
+        "d": 0.6407218289941585
+      },
+      "center": {
+        "x": 3.5762786865234375e-7,
+        "z": 2.8349918970715926e-7
+      },
+      "minY": -0.920773915985779,
+      "maxY": 0.0015175863330057627
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Desk",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Desk.glb",
+    "metrics": {
+      "glbBytes": 30192,
+      "byteLength": 30192,
+      "triangles": 356,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.251529335975647,
+        "d": 0.4531743268232802
+      },
+      "center": {
+        "x": 0,
+        "z": 0.10082240201191423
+      },
+      "minY": 0.00015467024002180835,
+      "maxY": 0.5733582314805142
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Floor1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Floor1.glb",
+    "metrics": {
+      "glbBytes": 19888,
+      "byteLength": 19888,
+      "triangles": 226,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.28089265525341034,
+        "d": 0.29534826471132214
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": -1.255045660869536e-7
+      },
+      "minY": 0.014441444693772924,
+      "maxY": 1.6177042963293313
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Floor2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Floor2.glb",
+    "metrics": {
+      "glbBytes": 23508,
+      "byteLength": 23508,
+      "triangles": 276,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.31328827142715454,
+        "d": 0.32941089977787785
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0000012462832892357056
+      },
+      "minY": -2.68341067921571e-8,
+      "maxY": 0.7566992312785961
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Floor3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Floor3.glb",
+    "metrics": {
+      "glbBytes": 21032,
+      "byteLength": 21032,
+      "triangles": 244,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.40024659037590027,
+        "d": 0.42084434295649853
+      },
+      "center": {
+        "x": 0,
+        "z": -0.000001413946131428867
+      },
+      "minY": -3.950866073290623e-8,
+      "maxY": 0.894197438666494
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Floor4",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Floor4.glb",
+    "metrics": {
+      "glbBytes": 21032,
+      "byteLength": 21032,
+      "triangles": 244,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.350733146071434,
+        "d": 0.35073328530551917
+      },
+      "center": {
+        "x": 0.0000023618340492248535,
+        "z": -6.216645828671652e-8
+      },
+      "minY": -6.542836750640772e-8,
+      "maxY": 0.7631500649058238
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Icosahedron",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Icosahedron.glb",
+    "metrics": {
+      "glbBytes": 97848,
+      "byteLength": 97848,
+      "triangles": 1220,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5021507740020752,
+        "d": 0.4792963805669118
+      },
+      "center": {
+        "x": 0,
+        "z": 7.142107090463146e-8
+      },
+      "minY": -0.8782763871576363,
+      "maxY": 0.0015175731832004565
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Icosahedron2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Icosahedron2.glb",
+    "metrics": {
+      "glbBytes": 283184,
+      "byteLength": 283184,
+      "triangles": 3596,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6261618733406067,
+        "d": 0.5021509471410066
+      },
+      "center": {
+        "x": -0.008195728063583374,
+        "z": 0.0000011594530570924189
+      },
+      "minY": -0.8797938040658918,
+      "maxY": 1.5089570620856119e-7
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Small",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Small.glb",
+    "metrics": {
+      "glbBytes": 10876,
+      "byteLength": 10876,
+      "triangles": 116,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15518852323293686,
+        "d": 0.1631748700698281
+      },
+      "center": {
+        "x": -1.862645149230957e-8,
+        "z": 9.231302666723451e-9
+      },
+      "minY": -0.10988045322939222,
+      "maxY": -0.003442210124362358
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Stand1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Stand1.glb",
+    "metrics": {
+      "glbBytes": 21028,
+      "byteLength": 21028,
+      "triangles": 244,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7733679711818695,
+        "d": 0.8131677319450876
+      },
+      "center": {
+        "x": 0.0000025779008865356445,
+        "z": -0.0000015402756042282029
+      },
+      "minY": -6.497878287366497e-8,
+      "maxY": 2.993783063371977
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Light_Stand2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Light_Stand2.glb",
+    "metrics": {
+      "glbBytes": 21008,
+      "byteLength": 21008,
+      "triangles": 244,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.677696704864502,
+        "d": 0.6776971846683695
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0000013723901890194679
+      },
+      "minY": -5.520558837005997e-8,
+      "maxY": 2.945015247237041
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/NightStand_1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "NightStand_1.glb",
+    "metrics": {
+      "glbBytes": 15412,
+      "byteLength": 15412,
+      "triangles": 172,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9522296786308289,
+        "d": 0.9522298130271574
+      },
+      "center": {
+        "x": 0,
+        "z": -6.781636313624162e-8
+      },
+      "minY": 0.0037943615680287182,
+      "maxY": 0.8287133754128753
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/NightStand_2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "NightStand_2.glb",
+    "metrics": {
+      "glbBytes": 16348,
+      "byteLength": 16348,
+      "triangles": 184,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9522296786308289,
+        "d": 0.9522298326317873
+      },
+      "center": {
+        "x": 0,
+        "z": -7.761867809596978e-8
+      },
+      "minY": 0.0037943615680287182,
+      "maxY": 0.9490457356805129
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/NightStand_3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "NightStand_3.glb",
+    "metrics": {
+      "glbBytes": 23212,
+      "byteLength": 23212,
+      "triangles": 272,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9522296786308289,
+        "d": 0.9522298133747382
+      },
+      "center": {
+        "x": 0,
+        "z": -6.764257268199181e-8
+      },
+      "minY": 0.001660925067002593,
+      "maxY": 0.8287133754128753
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Plate_1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Plate_1.glb",
+    "metrics": {
+      "glbBytes": 11192,
+      "byteLength": 11192,
+      "triangles": 136,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3735980987548828,
+        "d": 0.39282432727974637
+      },
+      "center": {
+        "x": 4.172325134277344e-7,
+        "z": -8.222111268912924e-7
+      },
+      "minY": 1.606612434775105e-8,
+      "maxY": 0.032497531137585633
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Plate_2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Plate_2.glb",
+    "metrics": {
+      "glbBytes": 16096,
+      "byteLength": 16096,
+      "triangles": 204,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.352035254240036,
+        "d": 0.3520352434145358
+      },
+      "center": {
+        "x": 0,
+        "z": 8.249766313139784e-7
+      },
+      "minY": -1.3842715671031797e-7,
+      "maxY": 0.02501617632037234
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Plate_3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Plate_3.glb",
+    "metrics": {
+      "glbBytes": 11192,
+      "byteLength": 11192,
+      "triangles": 136,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.373598113656044,
+        "d": 0.39282432763648645
+      },
+      "center": {
+        "x": -8.121132850646973e-7,
+        "z": 8.167382343909901e-7
+      },
+      "minY": 1.606639139555501e-8,
+      "maxY": 0.0346871859947729
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Shelf_1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Shelf_1.glb",
+    "metrics": {
+      "glbBytes": 8308,
+      "byteLength": 8308,
+      "triangles": 96,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7073433101177216,
+        "d": 0.6521840486340382
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": -1.9835494216580152e-7
+      },
+      "minY": -1.4283560398075254e-7,
+      "maxY": 3.166689449031601
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Shelf_2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Shelf_2.glb",
+    "metrics": {
+      "glbBytes": 10016,
+      "byteLength": 10016,
+      "triangles": 120,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1191483736038208,
+        "d": 0.7559996325283143
+      },
+      "center": {
+        "x": -8.940696716308594e-7,
+        "z": -3.6152745253037466e-7
+      },
+      "minY": -6.15839280593793e-8,
+      "maxY": 4.438079418731086
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Shelf_Large",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Shelf_Large.glb",
+    "metrics": {
+      "glbBytes": 17248,
+      "byteLength": 17248,
+      "triangles": 220,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.3808964490890503,
+        "d": 0.7559996325282973
+      },
+      "center": {
+        "x": -0.5312860608100891,
+        "z": -3.576961116191768e-7
+      },
+      "minY": -0.023516612244061107,
+      "maxY": 4.414562763762825
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Shelf_Small1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Shelf_Small1.glb",
+    "metrics": {
+      "glbBytes": 10912,
+      "byteLength": 10912,
+      "triangles": 132,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.944328486919403,
+        "d": 0.5503868209230072
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 1.6010129694210562e-8
+      },
+      "minY": -0.021107716617054188,
+      "maxY": 0.5562701673627684
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Shelf_Small2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Shelf_Small2.glb",
+    "metrics": {
+      "glbBytes": 8032,
+      "byteLength": 8032,
+      "triangles": 92,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.039621889591217,
+        "d": 0.5503866711561023
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 9.089358180003337e-8
+      },
+      "minY": -0.021107714754389616,
+      "maxY": 0.3687088639856193
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Shelf_Small3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Shelf_Small3.glb",
+    "metrics": {
+      "glbBytes": 4864,
+      "byteLength": 4864,
+      "triangles": 48,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.039621889591217,
+        "d": 0.5503866711561023
+      },
+      "center": {
+        "x": -8.940696716308594e-8,
+        "z": 9.089358180003337e-8
+      },
+      "minY": -0.021107714754389616,
+      "maxY": 0.3687088639856193
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Spoon",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Spoon.glb",
+    "metrics": {
+      "glbBytes": 10624,
+      "byteLength": 10624,
+      "triangles": 128,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.0844714306294918,
+        "d": 0.4053738742533483
+      },
+      "center": {
+        "x": -0.000314200296998024,
+        "z": -0.04489880755538053
+      },
+      "minY": -0.011726877942075426,
+      "maxY": 0.006238415932866012
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Stool",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Stool.glb",
+    "metrics": {
+      "glbBytes": 40980,
+      "byteLength": 40980,
+      "triangles": 500,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6753438115119934,
+        "d": 0.7100987882011907
+      },
+      "center": {
+        "x": 0.00004285573959350586,
+        "z": -1.1034172922586016e-7
+      },
+      "minY": -0.008878474226646586,
+      "maxY": 1.3634238821551552
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Table_RoundLarge",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Table_RoundLarge.glb",
+    "metrics": {
+      "glbBytes": 44048,
+      "byteLength": 44048,
+      "triangles": 592,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.7133671045303345,
+        "d": 1.9409881272689256
+      },
+      "center": {
+        "x": -2.980232238769531e-7,
+        "z": 9.807201087341788e-7
+      },
+      "minY": 0.0050974448463594795,
+      "maxY": 1.1262935789053234
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Table_RoundSmall",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Table_RoundSmall.glb",
+    "metrics": {
+      "glbBytes": 44044,
+      "byteLength": 44044,
+      "triangles": 592,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.940987467765808,
+        "d": 1.9409876546896676
+      },
+      "center": {
+        "x": 0,
+        "z": -9.30228993278881e-8
+      },
+      "minY": -0.002694986316446624,
+      "maxY": 1.1446359546604197
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Table_RoundSmall2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Table_RoundSmall2.glb",
+    "metrics": {
+      "glbBytes": 54992,
+      "byteLength": 54992,
+      "triangles": 744,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9409873485565186,
+        "d": 1.9409875453296392
+      },
+      "center": {
+        "x": 0,
+        "z": -8.809826879119242e-8
+      },
+      "minY": -0.06314931975031751,
+      "maxY": 1.14463595466041
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Trashcan_Cylindric",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Trashcan_Cylindric.glb",
+    "metrics": {
+      "glbBytes": 28800,
+      "byteLength": 28800,
+      "triangles": 380,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7547006905078888,
+        "d": 0.7547008953014027
+      },
+      "center": {
+        "x": 1.043081283569336e-7,
+        "z": -1.769025678999281e-7
+      },
+      "minY": -6.181713318124343e-8,
+      "maxY": 1.0740883965153798
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Trashcan_Green",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Trashcan_Green.glb",
+    "metrics": {
+      "glbBytes": 59660,
+      "byteLength": 59660,
+      "triangles": 739,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2172768712043762,
+        "d": 1.5913431074619184
+      },
+      "center": {
+        "x": 0.0017590224742889404,
+        "z": -0.07525137197509046
+      },
+      "minY": -0.00002854274965112662,
+      "maxY": 2.2111734133460477
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Trashcan_Large",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Trashcan_Large.glb",
+    "metrics": {
+      "glbBytes": 47940,
+      "byteLength": 47940,
+      "triangles": 646,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2232365608215332,
+        "d": 1.223236802015394
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 1.1863693527569552e-7
+      },
+      "minY": -0.0050043426391085276,
+      "maxY": 1.8412840170723432
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Trashcan_Small1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Trashcan_Small1.glb",
+    "metrics": {
+      "glbBytes": 22296,
+      "byteLength": 22296,
+      "triangles": 260,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5030289888381958,
+        "d": 0.30621416553024194
+      },
+      "center": {
+        "x": 0,
+        "z": 0.010885338191427577
+      },
+      "minY": -0.006860081459865717,
+      "maxY": 0.7055832414775738
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Trashcan_Small2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Trashcan_Small2.glb",
+    "metrics": {
+      "glbBytes": 32536,
+      "byteLength": 32536,
+      "triangles": 432,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.46477603912353516,
+        "d": 0.4284540433549491
+      },
+      "center": {
+        "x": 0,
+        "z": -3.423510969158272e-8
+      },
+      "minY": -0.07000552627792675,
+      "maxY": 0.4902727356885886
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Window_Large1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Window_Large1.glb",
+    "metrics": {
+      "glbBytes": 21484,
+      "byteLength": 21484,
+      "triangles": 252,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8324295282363892,
+        "d": 0.14110434159495713
+      },
+      "center": {
+        "x": 4.76837158203125e-7,
+        "z": -1.569829427838787e-7
+      },
+      "minY": -5.479361910865545e-7,
+      "maxY": 1.6984527225997064
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Window_Large2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Window_Large2.glb",
+    "metrics": {
+      "glbBytes": 30848,
+      "byteLength": 30848,
+      "triangles": 372,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8324295282363892,
+        "d": 0.14110434159495713
+      },
+      "center": {
+        "x": 0,
+        "z": -1.5698302047173485e-7
+      },
+      "minY": -7.109903288343575e-8,
+      "maxY": 1.6984531994368646
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Window_Round1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Window_Round1.glb",
+    "metrics": {
+      "glbBytes": 11340,
+      "byteLength": 11340,
+      "triangles": 122,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9063925445079803,
+        "d": 0.1125574401711174
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": -1.4114842808096717e-7
+      },
+      "minY": -4.860061073866612e-7,
+      "maxY": 1.5498008819716582
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Window_Round2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Window_Round2.glb",
+    "metrics": {
+      "glbBytes": 12256,
+      "byteLength": 12256,
+      "triangles": 134,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9063925445079803,
+        "d": 0.1125574401711174
+      },
+      "center": {
+        "x": -9.387731552124023e-7,
+        "z": -2.6035779531960457e-7
+      },
+      "minY": -9.168968605201041e-9,
+      "maxY": 1.549801358808797
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Window_Round3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Window_Round3.glb",
+    "metrics": {
+      "glbBytes": 14132,
+      "byteLength": 14132,
+      "triangles": 158,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9063925445079803,
+        "d": 0.1125574401711174
+      },
+      "center": {
+        "x": 9.685754776000977e-7,
+        "z": -1.4114850576882332e-7
+      },
+      "minY": -9.168949183542571e-9,
+      "maxY": 1.5498013588088164
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Window_Small1",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Window_Small1.glb",
+    "metrics": {
+      "glbBytes": 10556,
+      "byteLength": 10556,
+      "triangles": 112,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9281983375549316,
+        "d": 0.14110427402022457
+      },
+      "center": {
+        "x": 0,
+        "z": 1.3757469582986737e-7
+      },
+      "minY": -2.49912925938581e-7,
+      "maxY": 1.2379509325530629
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Window_Small2",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Window_Small2.glb",
+    "metrics": {
+      "glbBytes": 12116,
+      "byteLength": 12116,
+      "triangles": 132,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9281983375549316,
+        "d": 0.14110427402022457
+      },
+      "center": {
+        "x": 4.76837158203125e-7,
+        "z": -1.0084388327169513e-7
+      },
+      "minY": -2.4991296478189796e-7,
+      "maxY": 1.237950932553024
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-house-interior-pack/Window_Small3",
+    "source": "quaternius-lowpoly-house-interior-pack",
+    "categories": [
+      "furniture",
+      "interior",
+      "prop"
+    ],
+    "file": "Window_Small3.glb",
+    "metrics": {
+      "glbBytes": 9000,
+      "byteLength": 9000,
+      "triangles": 92,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9281983375549316,
+        "d": 0.14110427402022457
+      },
+      "center": {
+        "x": 4.76837158203125e-7,
+        "z": 1.8365406279086116e-8
+      },
+      "minY": -2.499129453602395e-7,
+      "maxY": 1.2379509325530436
+    }
+  }
+]

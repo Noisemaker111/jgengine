@@ -1,0 +1,1112 @@
+[
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Base",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Base.glb",
+    "metrics": {
+      "glbBytes": 31312,
+      "byteLength": 31312,
+      "triangles": 376,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 1.3767608138729202
+      },
+      "center": {
+        "x": 9.238719940185547e-7,
+        "z": -9.883380908126682e-8
+      },
+      "minY": -0.04360398316909979,
+      "maxY": 0.5251777697555972
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Bomber_1",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Bomber_1.glb",
+    "metrics": {
+      "glbBytes": 216012,
+      "byteLength": 216012,
+      "triangles": 2714,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8403092622756958,
+        "d": 1.9386343496929492
+      },
+      "center": {
+        "x": 0,
+        "z": 0.2809386117187134
+      },
+      "minY": -0.043603994344650225,
+      "maxY": 2.327865146243158
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Bomber_2",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Bomber_2.glb",
+    "metrics": {
+      "glbBytes": 286528,
+      "byteLength": 286528,
+      "triangles": 3618,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1473615169525146,
+        "d": 1.8655610311891642
+      },
+      "center": {
+        "x": -0.0010457038879394531,
+        "z": 0.24439909144387179
+      },
+      "minY": -0.043603994345116345,
+      "maxY": 2.582302924254517
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Cannon_1",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Cannon_1.glb",
+    "metrics": {
+      "glbBytes": 102596,
+      "byteLength": 102596,
+      "triangles": 1260,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 1.3964123320096258
+      },
+      "center": {
+        "x": -2.682209014892578e-7,
+        "z": 0.009826217874926768
+      },
+      "minY": -0.04360399434488329,
+      "maxY": 1.840801096874712
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Cannon_2",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Cannon_2.glb",
+    "metrics": {
+      "glbBytes": 112888,
+      "byteLength": 112888,
+      "triangles": 1392,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5622742176055908,
+        "d": 1.840801064980476
+      },
+      "center": {
+        "x": 0,
+        "z": 0.23202000240919934
+      },
+      "minY": -0.043603994344970684,
+      "maxY": 2.2476572483762887
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Cannon_3",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Cannon_3.glb",
+    "metrics": {
+      "glbBytes": 202128,
+      "byteLength": 202128,
+      "triangles": 2536,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.022779703140259,
+        "d": 1.8653074115341282
+      },
+      "center": {
+        "x": 0,
+        "z": 0.2442732808000197
+      },
+      "minY": -0.043603998070251275,
+      "maxY": 2.5776842270469187
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Cannon_4",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Cannon_4.glb",
+    "metrics": {
+      "glbBytes": 230528,
+      "byteLength": 230528,
+      "triangles": 2900,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.022779703140259,
+        "d": 2.6105523398456243
+      },
+      "center": {
+        "x": -4.76837158203125e-7,
+        "z": 0.6168959378649972
+      },
+      "minY": -0.04360399434492213,
+      "maxY": 2.2150165542351745
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Cannon_5",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Cannon_5.glb",
+    "metrics": {
+      "glbBytes": 160944,
+      "byteLength": 160944,
+      "triangles": 2008,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.875976324081421,
+        "d": 1.5049506453871684
+      },
+      "center": {
+        "x": -4.76837158203125e-7,
+        "z": 0.06409300808994
+      },
+      "minY": -0.04360394964178814,
+      "maxY": 1.9791817374212237
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Cannon_6",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Cannon_6.glb",
+    "metrics": {
+      "glbBytes": 208364,
+      "byteLength": 208364,
+      "triangles": 2616,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0227795243263245,
+        "d": 2.159245391191711
+      },
+      "center": {
+        "x": 0.016419023275375366,
+        "z": 0.39124222511947115
+      },
+      "minY": -0.04360400924612217,
+      "maxY": 2.3029067194698065
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Cannon_7",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Cannon_7.glb",
+    "metrics": {
+      "glbBytes": 340036,
+      "byteLength": 340036,
+      "triangles": 4304,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.4932777881622314,
+        "d": 2.3509679239166563
+      },
+      "center": {
+        "x": -9.5367431640625e-7,
+        "z": 0.4871034907969809
+      },
+      "minY": -0.04360391983915501,
+      "maxY": 2.353448370959885
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/GearCannon_1",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "GearCannon_1.glb",
+    "metrics": {
+      "glbBytes": 136628,
+      "byteLength": 136628,
+      "triangles": 1696,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.883179783821106,
+        "d": 1.5049509702030752
+      },
+      "center": {
+        "x": 0,
+        "z": 0.06409549146230181
+      },
+      "minY": -0.04360399434488329,
+      "maxY": 1.4704926342951379
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/GearCannon_2",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "GearCannon_2.glb",
+    "metrics": {
+      "glbBytes": 169552,
+      "byteLength": 169552,
+      "triangles": 2118,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.883179783821106,
+        "d": 1.504950752998261
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.0640947056388439
+      },
+      "minY": -0.04360399434499982,
+      "maxY": 1.8218859524712572
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Gun_10",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Gun_10.glb",
+    "metrics": {
+      "glbBytes": 384644,
+      "byteLength": 384644,
+      "triangles": 4876,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.022779703140259,
+        "d": 4.29744955475402
+      },
+      "center": {
+        "x": 0,
+        "z": -0.07594895362853915
+      },
+      "minY": -0.04360400924613188,
+      "maxY": 3.208554863073358
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Gun_2",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Gun_2.glb",
+    "metrics": {
+      "glbBytes": 101636,
+      "byteLength": 101636,
+      "triangles": 1248,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 2.3457934788146146
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.4602145552635181
+      },
+      "minY": -0.043603979443916314,
+      "maxY": 1.8698954131527783
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Gun_3",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Gun_3.glb",
+    "metrics": {
+      "glbBytes": 152808,
+      "byteLength": 152808,
+      "triangles": 1904,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.022779703140259,
+        "d": 2.9444304438900972
+      },
+      "center": {
+        "x": 0,
+        "z": 0.7838347231117881
+      },
+      "minY": -0.04360400924613188,
+      "maxY": 1.9415932611576339
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Gun_4",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Gun_4.glb",
+    "metrics": {
+      "glbBytes": 175900,
+      "byteLength": 175900,
+      "triangles": 2200,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.022779703140259,
+        "d": 2.778687587936048
+      },
+      "center": {
+        "x": 0,
+        "z": 0.7009632638869756
+      },
+      "minY": -0.0436039496414871,
+      "maxY": 2.0727807637185958
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Gun_5",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Gun_5.glb",
+    "metrics": {
+      "glbBytes": 161848,
+      "byteLength": 161848,
+      "triangles": 2020,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 2.8272133607904353
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0.725226448058022
+      },
+      "minY": -0.0436040688507281,
+      "maxY": 2.2747217825764903
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Gun_6",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Gun_6.glb",
+    "metrics": {
+      "glbBytes": 157180,
+      "byteLength": 157180,
+      "triangles": 1960,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0227795839309692,
+        "d": 2.7786869258992115
+      },
+      "center": {
+        "x": 1.7881393432617188e-7,
+        "z": 0.7009633501010513
+      },
+      "minY": -0.043603837882710175,
+      "maxY": 2.182240526291798
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Gun_7",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Gun_7.glb",
+    "metrics": {
+      "glbBytes": 177768,
+      "byteLength": 177768,
+      "triangles": 2224,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0227798223495483,
+        "d": 2.7078995754534825
+      },
+      "center": {
+        "x": -2.980232238769531e-7,
+        "z": 0.6655697940875153
+      },
+      "minY": -0.04360400924604448,
+      "maxY": 2.363998336795841
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Gun_8",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Gun_8.glb",
+    "metrics": {
+      "glbBytes": 162172,
+      "byteLength": 162172,
+      "triangles": 2024,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.022779703140259,
+        "d": 2.778687554478304
+      },
+      "center": {
+        "x": 0,
+        "z": 0.7009632851927995
+      },
+      "minY": -0.04360400924613188,
+      "maxY": 2.4621994801492546
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Gun_9",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Gun_9.glb",
+    "metrics": {
+      "glbBytes": 223012,
+      "byteLength": 223012,
+      "triangles": 2804,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.022779703140259,
+        "d": 2.7786875376371625
+      },
+      "center": {
+        "x": 0,
+        "z": 0.700963301958925
+      },
+      "minY": -0.04360400924613188,
+      "maxY": 2.485816409203516
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Gun",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Gun.glb",
+    "metrics": {
+      "glbBytes": 77880,
+      "byteLength": 77880,
+      "triangles": 944,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9361638426780701,
+        "d": 1.2206355852139346
+      },
+      "center": {
+        "x": -0.00607144832611084,
+        "z": 0.22459690746315097
+      },
+      "minY": -0.03869575585795945,
+      "maxY": 1.643155358546919
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Laser_1",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Laser_1.glb",
+    "metrics": {
+      "glbBytes": 140184,
+      "byteLength": 140184,
+      "triangles": 1744,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9975413084030151,
+        "d": 1.9149426403799832
+      },
+      "center": {
+        "x": 0.006360471248626709,
+        "z": 0.5717504153701902
+      },
+      "minY": -0.03869575585795945,
+      "maxY": 2.0143930089417816
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Laser_2",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Laser_2.glb",
+    "metrics": {
+      "glbBytes": 167488,
+      "byteLength": 167488,
+      "triangles": 2092,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 2.8272133859356097
+      },
+      "center": {
+        "x": 9.238719940185547e-7,
+        "z": 0.7252261626073759
+      },
+      "minY": -0.04360400924613188,
+      "maxY": 2.3600695756787102
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Laser_Doble",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Laser_Doble.glb",
+    "metrics": {
+      "glbBytes": 268920,
+      "byteLength": 268920,
+      "triangles": 3392,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.41110360622406,
+        "d": 2.778687578581252
+      },
+      "center": {
+        "x": -0.0004252195358276367,
+        "z": 0.7009632592096066
+      },
+      "minY": -0.0436039496414871,
+      "maxY": 2.2481349106759922
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Laser_MachineGun",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Laser_MachineGun.glb",
+    "metrics": {
+      "glbBytes": 397800,
+      "byteLength": 397800,
+      "triangles": 5044,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 2.5702577820507777
+      },
+      "center": {
+        "x": 9.238719940185547e-7,
+        "z": 0.5405767261981699
+      },
+      "minY": -0.043603949641477395,
+      "maxY": 2.242089516538501
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Laser_Quad",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Laser_Quad.glb",
+    "metrics": {
+      "glbBytes": 363436,
+      "byteLength": 363436,
+      "triangles": 4604,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3886983394622803,
+        "d": 4.998799934053225
+      },
+      "center": {
+        "x": -0.00042617321014404297,
+        "z": -4.3493619372725334e-8
+      },
+      "minY": -0.0436039496414871,
+      "maxY": 2.1186200303881257
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Long_1",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Long_1.glb",
+    "metrics": {
+      "glbBytes": 184176,
+      "byteLength": 184176,
+      "triangles": 2306,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1473615169525146,
+        "d": 3.173997320561167
+      },
+      "center": {
+        "x": 0,
+        "z": 0.06002724116729674
+      },
+      "minY": -0.04360397944379978,
+      "maxY": 2.1736206759158896
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Long_2",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Long_2.glb",
+    "metrics": {
+      "glbBytes": 234096,
+      "byteLength": 234096,
+      "triangles": 2946,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1473615169525146,
+        "d": 2.9078383821532774
+      },
+      "center": {
+        "x": 0,
+        "z": -0.2408879587734103
+      },
+      "minY": -0.043603979443916314,
+      "maxY": 2.3133441922453173
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Teleporter1",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Teleporter1.glb",
+    "metrics": {
+      "glbBytes": 47888,
+      "byteLength": 47888,
+      "triangles": 576,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 1.3767608138729202
+      },
+      "center": {
+        "x": -0.0000019371509552001953,
+        "z": -9.883380908126682e-8
+      },
+      "minY": -0.04360398316909979,
+      "maxY": 0.7903093904858748
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Teleporter2",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Teleporter2.glb",
+    "metrics": {
+      "glbBytes": 60524,
+      "byteLength": 60524,
+      "triangles": 736,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 1.3767608138729202
+      },
+      "center": {
+        "x": 0.0000018775463104248047,
+        "z": -9.883380908126682e-8
+      },
+      "minY": -0.04360398316909979,
+      "maxY": 1.0252133221036086
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Teleporter3",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Teleporter3.glb",
+    "metrics": {
+      "glbBytes": 78000,
+      "byteLength": 78000,
+      "triangles": 960,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 1.3767608138729202
+      },
+      "center": {
+        "x": 9.238719940185547e-7,
+        "z": -9.883380908126682e-8
+      },
+      "minY": -0.04360398316909979,
+      "maxY": 1.4369952333662677
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Teleporter4",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Teleporter4.glb",
+    "metrics": {
+      "glbBytes": 97652,
+      "byteLength": 97652,
+      "triangles": 1212,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7620604038238525,
+        "d": 1.7620612459766802
+      },
+      "center": {
+        "x": 0.00014901161193847656,
+        "z": -0.0006627684842777093
+      },
+      "minY": -0.04360399434496098,
+      "maxY": 2.368703747174618
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Teleporter5",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Teleporter5.glb",
+    "metrics": {
+      "glbBytes": 150264,
+      "byteLength": 150264,
+      "triangles": 1872,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7631818056106567,
+        "d": 1.7620619958817696
+      },
+      "center": {
+        "x": -0.00040590763092041016,
+        "z": -0.0006630838321775578
+      },
+      "minY": -0.04360399434496098,
+      "maxY": 4.77648415603382
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Upwards_1",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Upwards_1.glb",
+    "metrics": {
+      "glbBytes": 105720,
+      "byteLength": 105720,
+      "triangles": 1300,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 1.3767608121296533
+      },
+      "center": {
+        "x": 0.0000014007091522216797,
+        "z": -3.8357529097421406e-8
+      },
+      "minY": -0.04360399434496098,
+      "maxY": 2.1852950269088742
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Upwards_2",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Upwards_2.glb",
+    "metrics": {
+      "glbBytes": 107572,
+      "byteLength": 107572,
+      "triangles": 1324,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3767607808113098,
+        "d": 1.3767608138729241
+      },
+      "center": {
+        "x": 0.0000014007091522216797,
+        "z": 4.3760799600667255e-7
+      },
+      "minY": -0.04360400924604448,
+      "maxY": 2.7478382416877656
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-steampunk-turrets/Upwards_3_",
+    "source": "quaternius-lowpoly-steampunk-turrets",
+    "categories": [
+      "turret",
+      "steampunk",
+      "tower-defense"
+    ],
+    "file": "Upwards_3_.glb",
+    "metrics": {
+      "glbBytes": 129744,
+      "byteLength": 129744,
+      "triangles": 1608,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4788073301315308,
+        "d": 1.376760838183694
+      },
+      "center": {
+        "x": -0.0074117183685302734,
+        "z": -5.138454700626127e-8
+      },
+      "minY": -0.04360400924612217,
+      "maxY": 2.53328013496375
+    }
+  }
+]

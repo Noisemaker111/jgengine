@@ -1,0 +1,332 @@
+[
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Bob",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Bob.glb",
+    "metrics": {
+      "glbBytes": 68624,
+      "byteLength": 68624,
+      "triangles": 936,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 10.502223014831543,
+        "d": 5.612261388497336
+      },
+      "center": {
+        "x": 0,
+        "z": 0.25486884164188695
+      },
+      "minY": -0.8742139323654613,
+      "maxY": 1.1611172179459968
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Challenger",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Challenger.glb",
+    "metrics": {
+      "glbBytes": 127104,
+      "byteLength": 127104,
+      "triangles": 1748,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 10.502226829528809,
+        "d": 10.180246845503977
+      },
+      "center": {
+        "x": 0,
+        "z": 2.0382074186293524
+      },
+      "minY": -0.8214516843539493,
+      "maxY": 2.200601547018348
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Dispatcher",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Dispatcher.glb",
+    "metrics": {
+      "glbBytes": 55092,
+      "byteLength": 55092,
+      "triangles": 748,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.903879165649414,
+        "d": 10.262998130087214
+      },
+      "center": {
+        "x": 0,
+        "z": 2.433134536062587
+      },
+      "minY": -1.4219224080794028,
+      "maxY": 1.6644219563502878
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Executioner",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Executioner.glb",
+    "metrics": {
+      "glbBytes": 245184,
+      "byteLength": 245184,
+      "triangles": 3388,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 10.02212142944336,
+        "d": 9.202171388206093
+      },
+      "center": {
+        "x": 0,
+        "z": 1.5231367107152605
+      },
+      "minY": -0.7747543104367213,
+      "maxY": 1.072411104421377
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Imperial",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Imperial.glb",
+    "metrics": {
+      "glbBytes": 191464,
+      "byteLength": 191464,
+      "triangles": 2642,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.729520797729492,
+        "d": 18.54838568147915
+      },
+      "center": {
+        "x": 0,
+        "z": 2.605009262408233
+      },
+      "minY": -1.314198149993896,
+      "maxY": 1.9892490190315593
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Insurgent",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Insurgent.glb",
+    "metrics": {
+      "glbBytes": 598272,
+      "byteLength": 598272,
+      "triangles": 8292,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.565521240234375,
+        "d": 10.950497618088406
+      },
+      "center": {
+        "x": 0,
+        "z": 2.192917503340632
+      },
+      "minY": -0.9317511303291939,
+      "maxY": 1.9387727355851654
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Omen",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Omen.glb",
+    "metrics": {
+      "glbBytes": 103904,
+      "byteLength": 103904,
+      "triangles": 1426,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 12.78441047668457,
+        "d": 12.581446205313492
+      },
+      "center": {
+        "x": 0,
+        "z": 2.3678273328020376
+      },
+      "minY": -1.0619144870440547,
+      "maxY": 2.0766942302522025
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Pancake",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Pancake.glb",
+    "metrics": {
+      "glbBytes": 194776,
+      "byteLength": 194776,
+      "triangles": 2688,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 10.50222396850586,
+        "d": 8.232778972650037
+      },
+      "center": {
+        "x": 9.5367431640625e-7,
+        "z": 0.8639773793803507
+      },
+      "minY": -0.9750596219299652,
+      "maxY": 1.6240949400134106
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Spitfire",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Spitfire.glb",
+    "metrics": {
+      "glbBytes": 254108,
+      "byteLength": 254108,
+      "triangles": 3512,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 10.523688316345215,
+        "d": 7.533308288508121
+      },
+      "center": {
+        "x": 0,
+        "z": 0.627238950764093
+      },
+      "minY": -2.0253606188974778,
+      "maxY": 1.029820562009241
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Striker",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Striker.glb",
+    "metrics": {
+      "glbBytes": 327404,
+      "byteLength": 327404,
+      "triangles": 4530,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.033616542816162,
+        "d": 8.426167448645053
+      },
+      "center": {
+        "x": 0,
+        "z": 0.6840107588330622
+      },
+      "minY": -1.4327856091386013,
+      "maxY": 1.2518607011734781
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-spaceships-pack/Zenith",
+    "source": "quaternius-lowpoly-spaceships-pack",
+    "categories": [
+      "vehicle",
+      "spaceship",
+      "scifi"
+    ],
+    "file": "Zenith.glb",
+    "metrics": {
+      "glbBytes": 156184,
+      "byteLength": 156184,
+      "triangles": 2152,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.627893924713135,
+        "d": 12.068500926620775
+      },
+      "center": {
+        "x": 0,
+        "z": 2.499521491890033
+      },
+      "minY": -2.702591518263151,
+      "maxY": 2.7274102762836296
+    }
+  }
+]

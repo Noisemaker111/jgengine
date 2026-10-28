@@ -1,0 +1,182 @@
+[
+  {
+    "id": "quaternius-lowpoly-ship-pack/Boat",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "Boat.glb",
+    "metrics": {
+      "glbBytes": 15396,
+      "byteLength": 15396,
+      "triangles": 172,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3645388185977936,
+        "d": 0.668401117855566
+      },
+      "center": {
+        "x": 0,
+        "z": -0.00713231911844317
+      },
+      "minY": -0.0022029035826925756,
+      "maxY": 0.15471219384632795
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-ship-pack/BoatWSail",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "BoatWSail.glb",
+    "metrics": {
+      "glbBytes": 83628,
+      "byteLength": 83628,
+      "triangles": 1020,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4032173901796341,
+        "d": 0.9890372726116327
+      },
+      "center": {
+        "x": -0.010335679948329929,
+        "z": 0.06617234710484915
+      },
+      "minY": -0.0046908853684633905,
+      "maxY": 0.8500247660095692
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-ship-pack/CruiseShip",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "CruiseShip.glb",
+    "metrics": {
+      "glbBytes": 69552,
+      "byteLength": 69552,
+      "triangles": 858,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 18.046453596999186
+      },
+      "center": {
+        "x": 0,
+        "z": 0.1635140769646286
+      },
+      "minY": -0.0013530383551694576,
+      "maxY": 6.595243997015156
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-ship-pack/Lifeboat",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "Lifeboat.glb",
+    "metrics": {
+      "glbBytes": 51660,
+      "byteLength": 51660,
+      "triangles": 626,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6471477746963501,
+        "d": 1.112765525063045
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0224218502769416
+      },
+      "minY": -0.003982041411391985,
+      "maxY": 0.20504194987289223
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-ship-pack/Sail ship",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "Sail ship.glb",
+    "metrics": {
+      "glbBytes": 313092,
+      "byteLength": 313092,
+      "triangles": 3938,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6950589418411255,
+        "d": 6.375427873285889
+      },
+      "center": {
+        "x": -2.3489653777630792e-8,
+        "z": 0.583226035235767
+      },
+      "minY": -0.11195220117079972,
+      "maxY": 3.7377272533231904
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-ship-pack/Viking boat",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "Viking boat.glb",
+    "metrics": {
+      "glbBytes": 132568,
+      "byteLength": 132568,
+      "triangles": 1640,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5672084612660955,
+        "d": 4.201464514272398
+      },
+      "center": {
+        "x": 0.007558075785634666,
+        "z": 0.18382969486715062
+      },
+      "minY": -0.012313730877739324,
+      "maxY": 2.496833227882652
+    }
+  }
+]

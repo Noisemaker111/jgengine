@@ -1,0 +1,1490 @@
+[
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Arch_bars",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Arch_bars.glb",
+    "metrics": {
+      "glbBytes": 116832,
+      "byteLength": 116832,
+      "triangles": 1603,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4782551527023315,
+        "d": 0.030330883063913322
+      },
+      "center": {
+        "x": 0.0013815760612487793,
+        "z": -2.3510974252877181e-7
+      },
+      "minY": -0.02518153437684068,
+      "maxY": 3.362965109434792
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Arch_Door_bottompivot",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Arch_Door_bottompivot.glb",
+    "metrics": {
+      "glbBytes": 98032,
+      "byteLength": 98032,
+      "triangles": 1220,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.421112060546875,
+        "d": 0.3296204638201784
+      },
+      "center": {
+        "x": 0,
+        "z": -2.5972309056210285e-7
+      },
+      "minY": -0.0008543998291630911,
+      "maxY": 3.1891923219253733
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Arch_Door",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Arch_Door.glb",
+    "metrics": {
+      "glbBytes": 98116,
+      "byteLength": 98116,
+      "triangles": 1220,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4211121296229976,
+        "d": 0.329620478721359
+      },
+      "center": {
+        "x": 0.010553535255639845,
+        "z": -0.007415026378852704
+      },
+      "minY": 0.006791377618803329,
+      "maxY": 3.1968382185826316
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Arch",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Arch.glb",
+    "metrics": {
+      "glbBytes": 352180,
+      "byteLength": 352180,
+      "triangles": 4484,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.104361057281494,
+        "d": 0.9926128960221228
+      },
+      "center": {
+        "x": 0,
+        "z": 0.026917428945636618
+      },
+      "minY": -0.00002205009789702742,
+      "maxY": 4.010048951515909
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Bag_Coins",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Bag_Coins.glb",
+    "metrics": {
+      "glbBytes": 78124,
+      "byteLength": 78124,
+      "triangles": 976,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.44197578728199005,
+        "d": 0.2221761905087259
+      },
+      "center": {
+        "x": 0.06688492745161057,
+        "z": -0.0032356269814462837
+      },
+      "minY": -0.011468667536218096,
+      "maxY": 0.10312389104360951
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Bag_Standing",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Bag_Standing.glb",
+    "metrics": {
+      "glbBytes": 37576,
+      "byteLength": 37576,
+      "triangles": 456,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2177513986825943,
+        "d": 0.2099374348357242
+      },
+      "center": {
+        "x": 0,
+        "z": -1.9111755338030445e-8
+      },
+      "minY": -0.009043996560082182,
+      "maxY": 0.2436582319090786
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Banner_wall",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Banner_wall.glb",
+    "metrics": {
+      "glbBytes": 36732,
+      "byteLength": 36732,
+      "triangles": 440,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6402608752250671,
+        "d": 0.5930573288491843
+      },
+      "center": {
+        "x": 0.027054816484451294,
+        "z": -0.207330566240204
+      },
+      "minY": -2.793280683590515,
+      "maxY": 0.05358149074368778
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Banner",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Banner.glb",
+    "metrics": {
+      "glbBytes": 46828,
+      "byteLength": 46828,
+      "triangles": 564,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.3610129356384277,
+        "d": 0.21929674642105307
+      },
+      "center": {
+        "x": 0,
+        "z": -3.1003465372769767e-7
+      },
+      "minY": 0.003701188199914596,
+      "maxY": 3.8022570788685255
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Barrel",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Barrel.glb",
+    "metrics": {
+      "glbBytes": 110364,
+      "byteLength": 110364,
+      "triangles": 1384,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.042624831199646,
+        "d": 1.033560435817627
+      },
+      "center": {
+        "x": 0,
+        "z": -0.00179191565984399
+      },
+      "minY": 0.0057421757688309195,
+      "maxY": 1.3523534183291064
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Barrel2",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Barrel2.glb",
+    "metrics": {
+      "glbBytes": 86852,
+      "byteLength": 86852,
+      "triangles": 1088,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0278140902519226,
+        "d": 1.0163914370993656
+      },
+      "center": {
+        "x": -0.004273742437362671,
+        "z": 0.005668618912757217
+      },
+      "minY": 0.005742178382898752,
+      "maxY": 1.3523534181459893
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Brick",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Brick.glb",
+    "metrics": {
+      "glbBytes": 11488,
+      "byteLength": 11488,
+      "triangles": 140,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7148602604866028,
+        "d": 0.39716520963784036
+      },
+      "center": {
+        "x": 0,
+        "z": -1.3815360050406511e-8
+      },
+      "minY": -0.008453535604286095,
+      "maxY": 0.17804968612174754
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Bucket",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Bucket.glb",
+    "metrics": {
+      "glbBytes": 30492,
+      "byteLength": 30492,
+      "triangles": 360,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3781757950782776,
+        "d": 0.40413866621190975
+      },
+      "center": {
+        "x": 0,
+        "z": 0.00011079896978598291
+      },
+      "minY": 0.0011914412448647343,
+      "maxY": 0.5305735202211169
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Chair",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Chair.glb",
+    "metrics": {
+      "glbBytes": 103656,
+      "byteLength": 103656,
+      "triangles": 1298,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6269979476928711,
+        "d": 0.7024391989591825
+      },
+      "center": {
+        "x": 0,
+        "z": -0.009024089214355407
+      },
+      "minY": 0.003676684089837868,
+      "maxY": 1.1626206001843036
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Chest_Gold",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Chest_Gold.glb",
+    "metrics": {
+      "glbBytes": 1760200,
+      "byteLength": 1760200,
+      "triangles": 22512,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1793178915977482,
+        "d": 1.6179669681397901
+      },
+      "center": {
+        "x": -0.0006084692478178222,
+        "z": -0.3756621866851091
+      },
+      "minY": -0.0013262295458962734,
+      "maxY": 0.8981036453100648
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Chest",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Chest.glb",
+    "metrics": {
+      "glbBytes": 134408,
+      "byteLength": 134408,
+      "triangles": 1676,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1793178915977478,
+        "d": 0.8237706551634403
+      },
+      "center": {
+        "x": -0.0006084692478179887,
+        "z": 0.021435969803065752
+      },
+      "minY": -0.0013262295458962734,
+      "maxY": 0.8971704719927641
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Cobweb",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Cobweb.glb",
+    "metrics": {
+      "glbBytes": 81156,
+      "byteLength": 81156,
+      "triangles": 1108,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2058952450752258,
+        "d": 0.9108640738055261
+      },
+      "center": {
+        "x": 0.04359331727027893,
+        "z": 0.3322245140084607
+      },
+      "minY": -0.03236052911100526,
+      "maxY": 0.7223440499869072
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Cobweb2",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Cobweb2.glb",
+    "metrics": {
+      "glbBytes": 63880,
+      "byteLength": 63880,
+      "triangles": 868,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3391897678375244,
+        "d": 1.0300595274520445
+      },
+      "center": {
+        "x": 0.0606684684753418,
+        "z": 0.4446023970932577
+      },
+      "minY": -0.015589644499281189,
+      "maxY": 0.8294967784294837
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Coin_Pile",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Coin_Pile.glb",
+    "metrics": {
+      "glbBytes": 233300,
+      "byteLength": 233300,
+      "triangles": 3220,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.13638877123594284,
+        "d": 0.13544897786894433
+      },
+      "center": {
+        "x": 0.0008594505488872528,
+        "z": 0.00862085803023354
+      },
+      "minY": -0.0005933568713032374,
+      "maxY": 0.0940473129557936
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Column",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Column.glb",
+    "metrics": {
+      "glbBytes": 36324,
+      "byteLength": 36324,
+      "triangles": 440,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3041191101074219,
+        "d": 1.3041197723905664
+      },
+      "center": {
+        "x": 0,
+        "z": -3.324996741271846e-7
+      },
+      "minY": 0.008335810091463976,
+      "maxY": 4.0734010805076135
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Column2",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Column2.glb",
+    "metrics": {
+      "glbBytes": 44748,
+      "byteLength": 44748,
+      "triangles": 548,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3041191101074219,
+        "d": 1.3041197735622363
+      },
+      "center": {
+        "x": 0,
+        "z": -3.3308550906330225e-7
+      },
+      "minY": 0.008335810091463976,
+      "maxY": 4.080592738527633
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Crate",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Crate.glb",
+    "metrics": {
+      "glbBytes": 197148,
+      "byteLength": 197148,
+      "triangles": 2502,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3797668814659119,
+        "d": 1.3108930930020528
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": -0.0007304722024184529
+      },
+      "minY": 0.0010316141060330644,
+      "maxY": 1.3086567991716533
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Decorative_Wall",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Decorative_Wall.glb",
+    "metrics": {
+      "glbBytes": 88128,
+      "byteLength": 88128,
+      "triangles": 1104,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7398162484169006,
+        "d": 0.438072571883663
+      },
+      "center": {
+        "x": -0.0502224862575531,
+        "z": 9.61896479134694e-9
+      },
+      "minY": -0.8204068302335441,
+      "maxY": 0.7023252605619148
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Fence_90_Modular",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Fence_90_Modular.glb",
+    "metrics": {
+      "glbBytes": 10716,
+      "byteLength": 10716,
+      "triangles": 112,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3905984163284302,
+        "d": 1.3905986271360649
+      },
+      "center": {
+        "x": 0.3047007918357849,
+        "z": -0.3047007344674063
+      },
+      "minY": -0.9990888079020507,
+      "maxY": 0.294839565017476
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Fence_End_Modular",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Fence_End_Modular.glb",
+    "metrics": {
+      "glbBytes": 9956,
+      "byteLength": 9956,
+      "triangles": 102,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3905984163284302,
+        "d": 0.781197043464503
+      },
+      "center": {
+        "x": 0.3047007918357849,
+        "z": 5.7368374550836876e-8
+      },
+      "minY": -0.9990887086179305,
+      "maxY": 0.294839565017476
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Fence_Straight_Modular",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Fence_Straight_Modular.glb",
+    "metrics": {
+      "glbBytes": 10104,
+      "byteLength": 10104,
+      "triangles": 104,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2,
+        "d": 0.781197043464503
+      },
+      "center": {
+        "x": 0,
+        "z": 5.7368374550836876e-8
+      },
+      "minY": -0.9990887086179305,
+      "maxY": 0.294839565017476
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Floor_BricksSeparate",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Floor_BricksSeparate.glb",
+    "metrics": {
+      "glbBytes": 20004,
+      "byteLength": 20004,
+      "triangles": 236,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9508900940418243,
+        "d": 1.1998446404917884
+      },
+      "center": {
+        "x": 0.022970333695411682,
+        "z": -0.1256004741111836
+      },
+      "minY": -0.02419049937197941,
+      "maxY": 0.2318954346472104
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Floor_BricksSeparate2",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Floor_BricksSeparate2.glb",
+    "metrics": {
+      "glbBytes": 39352,
+      "byteLength": 39352,
+      "triangles": 484,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3056654036045074,
+        "d": 1.1682416386061178
+      },
+      "center": {
+        "x": -0.15441732108592987,
+        "z": -0.1414020114793538
+      },
+      "minY": -0.024190491921398813,
+      "maxY": 0.4554725414578764
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Floor_Modular",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Floor_Modular.glb",
+    "metrics": {
+      "glbBytes": 93308,
+      "byteLength": 93308,
+      "triangles": 1176,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0048166513442993,
+        "d": 2.000578503861081
+      },
+      "center": {
+        "x": 0.005075633525848389,
+        "z": 0.00031706690790078706
+      },
+      "minY": -0.1251641352939201,
+      "maxY": 0.1251639118798157
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Pedestal",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Pedestal.glb",
+    "metrics": {
+      "glbBytes": 134176,
+      "byteLength": 134176,
+      "triangles": 1844,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9469517469406128,
+        "d": 1.9594545957226155
+      },
+      "center": {
+        "x": -0.000015556812286376953,
+        "z": 0.00000944752572651364
+      },
+      "minY": -0.00018143707339880866,
+      "maxY": 2.192958991406457
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Pedestal2",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Pedestal2.glb",
+    "metrics": {
+      "glbBytes": 86504,
+      "byteLength": 86504,
+      "triangles": 1182,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.743032455444336,
+        "d": 1.743032832553195
+      },
+      "center": {
+        "x": 0,
+        "z": -1.9103018189525756e-7
+      },
+      "minY": 0.015195847061954787,
+      "maxY": 2.3298739422656953
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Skull",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Skull.glb",
+    "metrics": {
+      "glbBytes": 101624,
+      "byteLength": 101624,
+      "triangles": 1392,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6005688011646271,
+        "d": 0.4383293098335732
+      },
+      "center": {
+        "x": 0.01624317467212677,
+        "z": -2.186422698030599e-7
+      },
+      "minY": -0.0317909441325247,
+      "maxY": 0.42925742858971316
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Spikes",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Spikes.glb",
+    "metrics": {
+      "glbBytes": 37700,
+      "byteLength": 37700,
+      "triangles": 504,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7645338773727417,
+        "d": 1.7645340688780444
+      },
+      "center": {
+        "x": 0,
+        "z": -9.484527829783929e-8
+      },
+      "minY": -0.005569631549664065,
+      "maxY": 1.1698819644182246
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Stairs_Modular",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Stairs_Modular.glb",
+    "metrics": {
+      "glbBytes": 103664,
+      "byteLength": 103664,
+      "triangles": 1420,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0131359100341797,
+        "d": 2.05160901066684
+      },
+      "center": {
+        "x": -0.0016145706176757812,
+        "z": 0.00364798348208184
+      },
+      "minY": -1.012161063785339,
+      "maxY": 1.0071537979757117
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Stairs_SideCover",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Stairs_SideCover.glb",
+    "metrics": {
+      "glbBytes": 65648,
+      "byteLength": 65648,
+      "triangles": 892,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.44271034002304077,
+        "d": 2.0590367049796083
+      },
+      "center": {
+        "x": 1.0368696749210358,
+        "z": 0.020723878917996874
+      },
+      "minY": -1.012913033806871,
+      "maxY": 1.0180604976823706
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Stairs_SideCoverWall",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Stairs_SideCoverWall.glb",
+    "metrics": {
+      "glbBytes": 91628,
+      "byteLength": 91628,
+      "triangles": 1252,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.44271034002304077,
+        "d": 2.0287632677571827
+      },
+      "center": {
+        "x": 1.0368696749210358,
+        "z": -1.99441283997079
+      },
+      "minY": -1.012913033806871,
+      "maxY": 1.0197642319164613
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Statue_Horse",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Statue_Horse.glb",
+    "metrics": {
+      "glbBytes": 160032,
+      "byteLength": 160032,
+      "triangles": 1849,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.743032455444336,
+        "d": 3.3783539452642426
+      },
+      "center": {
+        "x": -0.007198810577392578,
+        "z": 5.852110531547859
+      },
+      "minY": 0.015195701551542748,
+      "maxY": 5.870005929732921
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Sword_WallMount",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Sword_WallMount.glb",
+    "metrics": {
+      "glbBytes": 138184,
+      "byteLength": 138184,
+      "triangles": 1702,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0658165216445923,
+        "d": 0.1507399362282953
+      },
+      "center": {
+        "x": 0.07510724544525149,
+        "z": 0.13541030040312543
+      },
+      "minY": 0.00972778140778413,
+      "maxY": 0.358092391027576
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Table_Big",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Table_Big.glb",
+    "metrics": {
+      "glbBytes": 73560,
+      "byteLength": 73560,
+      "triangles": 912,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5844660997390747,
+        "d": 3.3033321103065343
+      },
+      "center": {
+        "x": -0.0021651387214660645,
+        "z": -0.047811278886358055
+      },
+      "minY": -0.005144855284704248,
+      "maxY": 0.848879002565442
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Table_Small",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Table_Small.glb",
+    "metrics": {
+      "glbBytes": 64828,
+      "byteLength": 64828,
+      "triangles": 800,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3049263954162598,
+        "d": 1.9791965683906385
+      },
+      "center": {
+        "x": -0.014425694942474365,
+        "z": -0.11156595665886931
+      },
+      "minY": -0.005144758272789772,
+      "maxY": 0.8488787651046659
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Torch",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Torch.glb",
+    "metrics": {
+      "glbBytes": 32100,
+      "byteLength": 32100,
+      "triangles": 386,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2782745957374573,
+        "d": 0.43764741093696746
+      },
+      "center": {
+        "x": 0,
+        "z": -0.07471959784113345
+      },
+      "minY": -0.27078493251548597,
+      "maxY": 0.8798632856540339
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Trap_empty",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Trap_empty.glb",
+    "metrics": {
+      "glbBytes": 115144,
+      "byteLength": 115144,
+      "triangles": 1456,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9892268180847168,
+        "d": 1.9892268384193672
+      },
+      "center": {
+        "x": 0,
+        "z": -9.685773461054481e-9
+      },
+      "minY": -0.002955986179826524,
+      "maxY": 0.1218576934118234
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Trap_spikes",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Trap_spikes.glb",
+    "metrics": {
+      "glbBytes": 160504,
+      "byteLength": 160504,
+      "triangles": 2032,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9892268180847168,
+        "d": 1.9892270091641968
+      },
+      "center": {
+        "x": 0,
+        "z": -9.50581882097623e-8
+      },
+      "minY": -0.002955986179826524,
+      "maxY": 1.169881982721788
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Trapdoor_open",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Trapdoor_open.glb",
+    "metrics": {
+      "glbBytes": 46844,
+      "byteLength": 46844,
+      "triangles": 564,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7412713766098022,
+        "d": 2.6635123823304125
+      },
+      "center": {
+        "x": 0.0019529461860656738,
+        "z": -0.4818093132895434
+      },
+      "minY": -0.13121111435407776,
+      "maxY": 0.07258005131523858
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Trapdoor",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Trapdoor.glb",
+    "metrics": {
+      "glbBytes": 42156,
+      "byteLength": 42156,
+      "triangles": 504,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7412713766098022,
+        "d": 1.7000089638282216
+      },
+      "center": {
+        "x": 0.0019529461860656738,
+        "z": -0.000057617458333381055
+      },
+      "minY": -0.04884028872977332,
+      "maxY": 0.16631043393652564
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Vase",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Vase.glb",
+    "metrics": {
+      "glbBytes": 17324,
+      "byteLength": 17324,
+      "triangles": 220,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3109765201807022,
+        "d": 0.31097659390383625
+      },
+      "center": {
+        "x": -2.2351741790771484e-8,
+        "z": -1.0887861924098416
+      },
+      "minY": -0.002033068985027096,
+      "maxY": 0.3590137019756211
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Wall_Modular",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Wall_Modular.glb",
+    "metrics": {
+      "glbBytes": 132700,
+      "byteLength": 132700,
+      "triangles": 1670,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.000737965106964,
+        "d": 0.43807265051927796
+      },
+      "center": {
+        "x": 0.0005606114864349365,
+        "z": -9.994385874456668e-11
+      },
+      "minY": -1.0020835756482755,
+      "maxY": 1.0033104776563322
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/WallCover_Modular",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "WallCover_Modular.glb",
+    "metrics": {
+      "glbBytes": 21588,
+      "byteLength": 21588,
+      "triangles": 280,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0101596117019653,
+        "d": 0.5091879475026608
+      },
+      "center": {
+        "x": 0.0007312893867492676,
+        "z": 1.2935111495804286e-7
+      },
+      "minY": -1.009775799268216,
+      "maxY": -0.5781271638932315
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-modular-dungeon-pack/Woodfire",
+    "source": "quaternius-lowpoly-modular-dungeon-pack",
+    "categories": [
+      "dungeon",
+      "modular",
+      "environment",
+      "fantasy"
+    ],
+    "file": "Woodfire.glb",
+    "metrics": {
+      "glbBytes": 19884,
+      "byteLength": 19884,
+      "triangles": 224,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7755993902683258,
+        "d": 0.8266202964522171
+      },
+      "center": {
+        "x": 0.003993794322013855,
+        "z": -0.0014695219097839718
+      },
+      "minY": -0.05315244994997429,
+      "maxY": 0.774973817211784
+    }
+  }
+]
