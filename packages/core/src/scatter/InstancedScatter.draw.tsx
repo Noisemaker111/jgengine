@@ -442,7 +442,28 @@ export function InstancedScatter({
   );
   // The grid is sized from every placement, not the shown ones, so clearing a tree never re-chunks the field.
   const edge = useMemo(() => scatterChunkSize(assigned, chunkSize, maxChunks), [assigned, chunkSize, maxChunks]);
-  const allBatches = useMemo(() => scatterBatchInstances(assigned, edge), [assigned, edge]);
+  const allBatches = useMemo(() => {
+    if (resolved.generators.size === 0) return scatterBatchInstances(assigned, edge);
+    // A generator species splits into variants, each its own draw per chunk; a coarser grid for it
+    // keeps its chunk-times-variant count near what one model species costs, since every chunk draw
+    // is a scene node walked each frame.
+    const plain: ScatterInstance[] = [];
+    const grown = new Map<string, { variants: number; instances: ScatterInstance[] }>();
+    for (const instance of assigned) {
+      const tagged = parseScatterVariantItem(instance.item);
+      const generator = tagged === null ? undefined : resolved.generators.get(tagged.item);
+      if (tagged === null || generator === undefined) {
+        plain.push(instance);
+        continue;
+      }
+      const entry = grown.get(tagged.item) ?? { variants: scatterGeneratorVariantCount(generator.spec), instances: [] };
+      entry.instances.push(instance);
+      grown.set(tagged.item, entry);
+    }
+    const out = scatterBatchInstances(plain, edge);
+    for (const { variants, instances } of grown.values()) out.push(...scatterBatchInstances(instances, edge * Math.sqrt(variants)));
+    return out;
+  }, [assigned, edge, resolved]);
   const batches = useMemo(() => hideScatterPlacements(allBatches, hidden), [allBatches, hidden]);
 
   const { proxyBatches, modelSpecies, generatorSpecies } = useMemo(() => {
