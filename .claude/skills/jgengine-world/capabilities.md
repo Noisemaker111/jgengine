@@ -586,9 +586,73 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `findEffect` (function) · `import { findEffect } from "@jgengine/core/vfx/effectLibrary"`
 
+## fire-byram-intensity — Byram fireline intensity from heat per unit area and spread rate
+
+- `firelineIntensity` (function) · `import { firelineIntensity } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-ellipse-eccentricity — eccentricity of a fire ellipse from its length-to-breadth ratio
+
+- `ellipseEccentricity` (function) · `import { ellipseEccentricity } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-flame-length — Byram flame length from fireline intensity
+
+- `flameLength` (function) · `import { flameLength } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-fuel-load — total surface fuel load of a fuel model
+
+- `totalFuelLoad` (function) · `import { totalFuelLoad } from "@jgengine/core/fire/fuelModels"`
+
+## fire-fuel-model-lookup — look up any standard surface fuel model by its published code
+
+- `standardFuelModel` (function) · `import { standardFuelModel } from "@jgengine/core/fire/fuelModels"`
+
+## fire-fuel-models — the 40 Scott & Burgan 2005 surface fuel models, the 13 Anderson 1982 models and the non-burnable codes, in metric units
+
+- `SCOTT_BURGAN_FUEL_MODELS` (const) · `import { SCOTT_BURGAN_FUEL_MODELS } from "@jgengine/core/fire/fuelModels"`
+
+## fire-herb-curing — share of live herbs cured to dead fuel at a herb moisture (Scott & Burgan 2005)
+
+- `curedHerbFraction` (function) · `import { curedHerbFraction } from "@jgengine/core/fire/surfaceFire"`
+
 ## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger
 
 - `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/input/actionBindings"`
+
+## fire-intensity-for-flame — fireline intensity that gives a flame length
+
+- `intensityForFlameLength` (function) · `import { intensityForFlameLength } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-length-to-breadth — Anderson 1983 surface fire ellipse shape from effective wind
+
+- `surfaceLengthToBreadth` (function) · `import { surfaceLengthToBreadth } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-normal-spread — rate a fire front advances along its normal at any angle from the head
+
+- `normalSpreadRate` (function) · `import { normalSpreadRate } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-ray-spread — rate a fire travels along a ray from its ignition point
+
+- `rayFromIgnitionRate` (function) · `import { rayFromIgnitionRate } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-scorch-height — Van Wagner crown scorch height from intensity, wind and air temperature
+
+- `scorchHeight` (function) · `import { scorchHeight } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-surface-fuelbed — reduce a fuel model and moisture to Rothermel reaction intensity, residence time and no-wind spread rate
+
+- `surfaceFuelbed` (function) · `import { surfaceFuelbed } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-surface-spread — Rothermel 1972 surface fire rate, heading, ellipse, Byram intensity and flame length under wind and slope
+
+- `surfaceSpread` (function) · `import { surfaceSpread } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-twenty-foot-wind — 20-ft open wind from a 10-m wind
+
+- `twentyFootWind` (function) · `import { twentyFootWind } from "@jgengine/core/fire/windAdjustment"`
+
+## fire-wind-adjustment — convert 20-ft or 10-m open wind to midflame wind over open or sheltered fuel
+
+- `windAdjustmentFactor` (function) · `import { windAdjustmentFactor } from "@jgengine/core/fire/windAdjustment"`
 
 ## first-person-arms — keep a first-person body's hands and held items in view
 
