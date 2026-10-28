@@ -7292,7 +7292,7 @@
       "module": "@jgengine/core/movement/reference/muscleTendon",
       "gameFacing": false,
       "probe": null,
-      "intent": "metabolic power of a Hill muscle from activation and shortening speed (Minetti & Alexander 1997)"
+      "intent": "metabolic power of a Hill muscle from the positive and negative work of its fibres (Margaria 1968)"
     },
     {
       "id": "muscle-reflex-walker",

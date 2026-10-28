@@ -44,6 +44,8 @@ export interface MuscleState {
   vce: number;
   /** Tendon (and unit) force, N. */
   force: number;
+  /** Active contractile force, N: activation × force–length × force–velocity × `fmax`. */
+  activeForce: number;
 }
 
 /**
@@ -88,7 +90,7 @@ function inverseForceVelocity(f: number): number {
  * @internal
  */
 export function restingMuscle(spec: MuscleSpec, lmtu: number): MuscleState {
-  return { activation: 0.01, lce: Math.max(spec.lopt * (1 - HILL_CONSTANTS.width), Math.min(spec.lopt * 1.2, lmtu - spec.lslack)), vce: 0, force: 0 };
+  return { activation: 0.01, lce: Math.max(spec.lopt * (1 - HILL_CONSTANTS.width), Math.min(spec.lopt * 1.2, lmtu - spec.lslack)), vce: 0, force: 0, activeForce: 0 };
 }
 
 /**
@@ -112,19 +114,18 @@ export function stepMuscle(spec: MuscleSpec, state: MuscleState, lmtu: number, s
   state.vce = inverseForceVelocity(fv) * spec.vmax * spec.lopt;
   state.lce = Math.max(lmin * 0.5, state.lce + state.vce * dt);
   state.force = fse;
+  state.activeForce = active * fv * spec.fmax;
   return fse;
 }
 
 /**
- * Metabolic power of a muscle, W (A. E. Minetti and R. McN. Alexander, "A theory of metabolic costs for bipedal
- * gaits", *J. Theor. Biol.* 186, 1997): `A·Fmax·vmax·φ(v/vmax)` with
- * `φ(x) = (0.054 + 0.506x + 2.46x²)/(1 − 1.13x + 12.8x² − 1.64x³)` while shortening, and the isometric rate while
- * lengthening.
- * @capability muscle-energetics metabolic power of a Hill muscle from activation and shortening speed (Minetti & Alexander 1997)
+ * Metabolic power of a muscle, W, from the work of its fibres (R. Margaria, "Positive and negative work performances
+ * and their efficiencies in human locomotion", *Int. Z. Angew. Physiol.* 25, 1968): positive work costs 1/0.25 and
+ * negative work 1/1.2 of itself. Of seven muscle energy models, it best follows how walking cost changes up and down
+ * slopes (A. D. Koelewijn, D. Heinrich and A. J. van den Bogert, *PLoS ONE* 14, e0222037, 2019).
+ * @capability muscle-energetics metabolic power of a Hill muscle from the positive and negative work of its fibres (Margaria 1968)
  */
-export function muscleMetabolicPower(spec: MuscleSpec, state: MuscleState): number {
-  const vmax = spec.vmax * spec.lopt;
-  const x = Math.min(1, Math.max(0, -state.vce / vmax));
-  const phi = (0.054 + 0.506 * x + 2.46 * x * x) / (1 - 1.13 * x + 12.8 * x * x - 1.64 * x * x * x);
-  return state.activation * spec.fmax * vmax * phi;
+export function muscleMetabolicPower(state: MuscleState): number {
+  const power = Math.max(0, state.activeForce) * state.vce;
+  return power < 0 ? -power / 0.25 : power / 1.2;
 }
