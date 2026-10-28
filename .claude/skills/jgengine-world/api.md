@@ -3046,6 +3046,7 @@
 ## @jgengine/core/plants/growth/lightField
 
 - `LightField` (interface): interface LightField — Relative light (0..1 of open sky) and the least-shaded direction at a point.
+- `LightFieldSnapshot` (interface): interface LightFieldSnapshot — A light field's grids and the boxes they cover, as plain data.
 
 ## @jgengine/core/plants/growth/phenology
 

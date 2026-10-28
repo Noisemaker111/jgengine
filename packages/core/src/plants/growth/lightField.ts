@@ -15,6 +15,18 @@ export interface LightField {
   lightAt(x: number, y: number, z: number, openSky: number, extinction: number): number;
   /** Write the direction of least shadow at a point into `out` (zero when the field is flat there). */
   optimalDirection(x: number, y: number, z: number, out: Float64Array): void;
+  /** Copy of the deposited leaf area and propagated shadow, with the boxes they cover. */
+  snapshot(): LightFieldSnapshot;
+  /** Put back a {@link snapshot} taken from a field of the same size. */
+  restore(next: LightFieldSnapshot): void;
+}
+
+/** A light field's grids and the boxes they cover, as plain data. */
+export interface LightFieldSnapshot {
+  leaf: Float32Array;
+  shadow: Float32Array;
+  /** minX, maxX, minZ, maxZ, maxY, shadowMinY, shadowMaxY, shadowMinX, shadowMaxX, shadowMinZ, shadowMaxZ. */
+  bounds: number[];
 }
 
 /**
@@ -183,6 +195,30 @@ export function createLightField(options: LightFieldOptions): LightField {
       const at0 = Math.floor(depth);
       const t = depth - at0;
       return openSky * ((expTable[at0] ?? 0) * (1 - t) + (expTable[at0 + 1] ?? 0) * t);
+    },
+    snapshot() {
+      return {
+        leaf: leaf.slice(),
+        shadow: shadow.slice(),
+        bounds: [minX, maxX, minZ, maxZ, maxY, shadowMinY, shadowMaxY, shadowMinX, shadowMaxX, shadowMinZ, shadowMaxZ],
+      };
+    },
+    restore(next) {
+      if (next.leaf.length !== leaf.length || next.shadow.length !== shadow.length) throw new Error("light field snapshot has a different grid size");
+      leaf.set(next.leaf);
+      shadow.set(next.shadow);
+      const b = next.bounds;
+      minX = b[0] ?? nx;
+      maxX = b[1] ?? -1;
+      minZ = b[2] ?? nz;
+      maxZ = b[3] ?? -1;
+      maxY = b[4] ?? -1;
+      shadowMinY = b[5] ?? ny;
+      shadowMaxY = b[6] ?? -1;
+      shadowMinX = b[7] ?? 0;
+      shadowMaxX = b[8] ?? -1;
+      shadowMinZ = b[9] ?? 0;
+      shadowMaxZ = b[10] ?? -1;
     },
     optimalDirection(x, y, z, out) {
       const cx = ix(x);
