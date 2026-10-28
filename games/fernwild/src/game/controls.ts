@@ -2,6 +2,7 @@ import { libraryModelCredits } from "@jgengine/assets/catalogs/modelLibrary";
 
 import { CREATURE_MODEL_SOURCES, type CreatureModelSource } from "./data/creatureModels";
 import { SURVIVOR_MODELS } from "./models";
+import { itemIconCredits } from "./ui/itemIcons";
 
 /** One credit line per author and licence of the creature models, naming each model. */
 function creatureCredits(): string[] {
@@ -45,4 +46,5 @@ export const CREDITS: readonly string[] = [
   "Nature models: Quaternius (Stylized Nature MegaKit), CC0.",
   ...creatureCredits(),
   ...libraryModelCredits(SURVIVOR_MODELS),
+  ...itemIconCredits(),
 ];

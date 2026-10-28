@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
+import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons";
+import { SpriteIcon } from "@jgengine/core/ui/icons/spriteIcon.view";
 
 import { itemDef, itemLabel } from "../data/items";
+import { itemIconKey } from "./itemIcons";
 
-/** Our own item tiles: a colour per kind and the item's initials (ARK's painted icons are theirs). */
+/** Our own item tiles: a colour per kind under a game-icons.net glyph (ARK's painted icons are theirs). */
 const KIND_COLOR: Record<string, string> = {
   resource: "#8a6a3c",
   consumable: "#a33b4a",
@@ -36,6 +39,7 @@ function initials(label: string): string {
 export function ItemIcon({ itemId }: { itemId: string }): ReactNode {
   const def = itemDef(itemId);
   const color = RESOURCE_COLOR[itemId] ?? KIND_COLOR[def?.kind ?? "resource"] ?? "#666";
+  const icon = itemIconKey(itemId);
   return (
     <div
       title={itemLabel(itemId)}
@@ -53,7 +57,7 @@ export function ItemIcon({ itemId }: { itemId: string }): ReactNode {
         textShadow: "0 1px 2px #000a",
       }}
     >
-      {initials(itemLabel(itemId))}
+      {icon === null ? initials(itemLabel(itemId)) : <SpriteIcon src={libraryIconUrl(icon)} color="#f4efe2" style={{ width: "74%", height: "74%", filter: "drop-shadow(0 1px 1px #000a)" }} />}
     </div>
   );
 }
