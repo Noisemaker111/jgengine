@@ -146,7 +146,9 @@ function importedValues(traits: SpeciesTraits, reference: SpeciesReference): Imp
     if (row["species"] !== scientificKey(traits)) continue;
     const area = csvNumber(row["a.lf"]);
     const mass = csvNumber(row["m.lf"]);
-    if (area !== undefined && mass !== undefined && area > 0 && mass > 0) slas.push(area / mass);
+    // Saplings carry thin shade leaves; a canopy tree's leaves are thicker, so only plants of 5 m or more count.
+    const height = csvNumber(row["h.t"]);
+    if (area !== undefined && mass !== undefined && height !== undefined && area > 0 && mass > 0 && height >= 5) slas.push(area / mass);
   }
   slas.sort((a, b) => a - b);
   const ek = reference.openCrownWidth;
@@ -156,7 +158,7 @@ function importedValues(traits: SpeciesTraits, reference: SpeciesReference): Imp
   return {
     ...(gravity === undefined ? {} : { densityKgM3: Math.round(gravity * 1000) }),
     ...(moisture === undefined ? {} : { greenFactor: Math.round((1 + moisture / 100) * 100) / 100 }),
-    ...(slas.length >= 20 ? { sla: Math.round((slas[slas.length >> 1] ?? 0) * 10) / 10 } : {}),
+    ...(slas.length >= 10 ? { sla: Math.round((slas[slas.length >> 1] ?? 0) * 10) / 10 } : {}),
     maxCrownRadiusM: Math.round(ekRadius ?? (tallo === undefined ? 8 : 0.5 * tallo.p90M * 1.3)),
     maxCrownRadiusSource: ekRadius === undefined ? "tallo-2022" : "ek-1974",
   };
