@@ -1010,6 +1010,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `slopeAreaFit` (function) · `import { slopeAreaFit } from "@jgengine/core/landform/validation/geomorphicLaws"`
 - `upstreamLength` (function) · `import { upstreamLength } from "@jgengine/core/landform/validation/geomorphicLaws"`
 
+## landform-generator — grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
+
+- `createLandformCache` (function) · `import { createLandformCache } from "@jgengine/core/landform/generator/landformGenerator"`
+- `createLandformGenerator` (function) · `import { createLandformGenerator } from "@jgengine/core/landform/generator/landformGenerator"`
+- `createWorkerLandformGrower` (function) · `import { createWorkerLandformGrower } from "@jgengine/core/landform/generator/landformGenerator"`
+
 ## landform-materials — per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation
 
 - `landformSurface` (function) · `import { landformSurface } from "@jgengine/core/landform/materials/landformSurface"`
