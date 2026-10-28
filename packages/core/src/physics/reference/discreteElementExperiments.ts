@@ -22,10 +22,10 @@ import {
 
 /**
  * Natural quartz sand as DEM grains: solid density 2650 kg/m³, sliding friction 0.5 and restitution 0.55
- * (the measured ranges collected by Al-Hashemi & Al-Amoudi 2018), rolling resistance 0.6 standing in for angular
+ * (the measured ranges collected by Al-Hashemi & Al-Amoudi 2018), rolling resistance 0.7 standing in for angular
  * grain shape (Wensrich & Katterfeld 2012), contact stiffness lowered to 5 MPa as DEM practice does.
  */
-export const DEM_SAND: DemMaterial = { id: "quartz-sand", density: 2650, youngsModulus: 5e6, poissonRatio: 0.3, restitution: 0.55, friction: 0.5, rollingFriction: 0.6 };
+export const DEM_SAND: DemMaterial = { id: "quartz-sand", density: 2650, youngsModulus: 5e6, poissonRatio: 0.3, restitution: 0.55, friction: 0.5, rollingFriction: 0.7 };
 
 /** Soda-lime glass beads: restitution 0.97 and friction 0.092 measured by Foerster, Louge, Chang & Allia (1994). */
 export const DEM_GLASS_BEADS: DemMaterial = { id: "glass-beads", density: 2500, youngsModulus: 5e6, poissonRatio: 0.22, restitution: 0.97, friction: 0.092, rollingFriction: 0 };

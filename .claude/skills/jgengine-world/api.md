@@ -3279,7 +3279,7 @@
 ## @jgengine/core/physics/reference/discreteElementExperiments
 
 - `DEM_GLASS_BEADS` (const): const DEM_GLASS_BEADS: DemMaterial — Soda-lime glass beads: restitution 0.97 and friction 0.092 measured by Foerster, Louge, Chang & Allia (1994).
-- `DEM_SAND` (const): const DEM_SAND: DemMaterial — Natural quartz sand as DEM grains: solid density 2650 kg/m³, sliding friction 0.5 and restitution 0.55 (the measured ranges collected by Al-Hashemi & Al-Amoudi 2018), rolling resistance 0.6 standing in for angular grain shape (Wensrich & Katterfeld 2012), contact stiffness lowered to 5 MPa as DEM practice does.
+- `DEM_SAND` (const): const DEM_SAND: DemMaterial — Natural quartz sand as DEM grains: solid density 2650 kg/m³, sliding friction 0.5 and restitution 0.55 (the measured ranges collected by Al-Hashemi & Al-Amoudi 2018), rolling resistance 0.7 standing in for angular grain shape (Wensrich & Katterfeld 2012), contact stiffness lowered to 5 MPa as DEM practice does.
 - `DEM_STEEL` (const): const DEM_STEEL: DemMaterial — A rigid steel container wall (same simulation stiffness as the grains).
 - `HopperOptions` (interface): interface HopperOptions — Options for {@link beverlooHopper}.
 - `HopperResult` (interface): interface HopperResult — Steady mass discharge rates, kg/s, one per orifice.
