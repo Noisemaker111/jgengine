@@ -259,7 +259,7 @@ export function Hud(): ReactNode {
   return (
     <HudSlots
       storageKey="fernwild"
-      slots={{ topLeft: <OnboardingHud accent="#e7c84a" />, top: <BossBar />, topRight: <BodyLine />, right: <MapCorner />, left: <Feed />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }}
+      slots={{ topLeft: <OnboardingHud accent="#e7c84a" ahead={1} />, top: <BossBar />, topRight: <BodyLine />, right: <MapCorner />, left: <Feed />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }}
       overlay={<Screens />}
     />
   );
