@@ -12,7 +12,3 @@ fire/ surface spread from Rothermel 1972 with Albini 1976 corrections, matching 
 ### Changed
 
 - Part of #2741
-
-### Removed
-
-- `@jgengine/core/plants/validation/stemAllometry` no longer exports `BAAD_LEAF_TO_SAPWOOD`, `FIA_STAND_DIAMETER`, `LeafToSapwoodBand`, `StandDiameterAtAge`.
