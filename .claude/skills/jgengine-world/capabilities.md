@@ -1388,7 +1388,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `sweepMovingSphere` (function) · `import { sweepMovingSphere } from "@jgengine/core/physics/ballisticSweep"`
 
-## muscle-energetics — metabolic power of a Hill muscle from activation and shortening speed (Minetti & Alexander 1997)
+## muscle-energetics — metabolic power of a Hill muscle from the positive and negative work of its fibres (Margaria 1968)
 
 - `muscleMetabolicPower` (function) · `import { muscleMetabolicPower } from "@jgengine/core/movement/reference/muscleTendon"`
 

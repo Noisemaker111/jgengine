@@ -90,6 +90,13 @@ describe("walking", () => {
     expect(FITTED_WALKS.some((w) => w.terrain === "stairs")).toBe(true);
     for (const walk of FITTED_WALKS) expect(measureWalk(walk, 3, 4).fell).toBe(false);
   });
+
+  test("walking up and down a 6% grade costs what Minetti measured over level", () => {
+    const measured = measureFittedWalks(FITTED_WALKS.filter((w) => w.speed === 1.3));
+    const slopes = validateHumanReference(measured).filter((row) => row.metric === "uphillCost" || row.metric === "downhillCost");
+    expect(slopes.length).toBe(2);
+    expect(slopes.filter((row) => !row.pass)).toEqual([]);
+  }, 120_000);
 });
 
 describe("running, sprinting and turning", () => {

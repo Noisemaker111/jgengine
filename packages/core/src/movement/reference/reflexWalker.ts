@@ -236,7 +236,7 @@ export function actuateLegMuscles(body: HumanBody, side: HumanSide, muscles: Rec
     const state = muscles[name];
     const lmtu = spec.lopt + spec.lslack + muscleLengthChange(spec, phi);
     const force = stepMuscle(spec, state, lmtu, stimulation[name], dt);
-    power += muscleMetabolicPower(spec, state);
+    power += muscleMetabolicPower(state);
     for (const span of spec.spans) {
       const torque = span.direction * momentArm(span, phi[span.joint]) * force;
       if (span.joint === "hip") hip += torque;

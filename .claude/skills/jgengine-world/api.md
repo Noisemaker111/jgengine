@@ -3011,7 +3011,7 @@
 
 ## @jgengine/core/movement/reference/humanGaits
 
-- `FITTED_WALKS` (const): const FITTED_WALKS: readonly FittedWalk[] — Geyer–Herr reflex parameters fitted by CMA-ES on the 80 kg, 1.80 m reference human, minimising gross metabolic cost of transport at the target speed with penalties on speed error, step-time variation, a heel-strike transient above 1.3 body weights, a loading peak above 1.25, a mid-stance valley under 0.55, and any flight phase. The fits at 1.9 and 2.2 m/s are the fastest the walker holds: it settles at 1.70 and 1.78 m/s.
+- `FITTED_WALKS` (const): const FITTED_WALKS: readonly FittedWalk[] — Geyer–Herr reflex parameters fitted by CMA-ES on the 80 kg, 1.80 m reference human, minimising gross metabolic cost of transport at the target speed with penalties on speed error, step-time variation, a heel-strike transient above 1.3 body weights, a loading peak above 1.25, a mid-stance valley under 0.55, and any flight phase, with muscle cost from fibre work (Margaria 1968, see `muscleMetabolicPower`). The fits at 2.0 and 2.3 m/s are the fastest the walker holds: it settles at 1.76 and 1.83 m/s. The stair fit predates the fibre-work cost; cost does not change its gait.
 - `FittedWalk` (interface): interface FittedWalk — Reflex parameters fitted for one walking speed and terrain.
 - `WALK_TERRAIN` (const): const WALK_TERRAIN: Record<WalkTerrain, GroundProfile> — The terrains the fits ran on: level; a 6% grade up or down starting 3 m ahead; a flight of 0.15 m × 0.30 m steps (a common building-code stair) starting 4 m ahead.
 - `WalkTerrain` (type): type WalkTerrain = "level" | "uphill" | "downhill" | "stairs" — Ground a fitted walk was tuned on.
@@ -3046,7 +3046,7 @@
 - `MuscleJointSpan` (interface): interface MuscleJointSpan — One joint a muscle–tendon unit crosses, in the extension-angle convention of {@link MuscleSpec}.
 - `MuscleSpec` (interface): interface MuscleSpec — A Hill-type muscle–tendon unit.
 - `MuscleState` (interface): interface MuscleState — Live state of one muscle.
-- `muscleMetabolicPower` (function): function muscleMetabolicPower(spec: MuscleSpec, state: MuscleState): number — Metabolic power of a muscle, W (A. E. Minetti and R. McN. Alexander, "A theory of metabolic costs for bipedal gaits", *J. Theor. Biol.* 186, 1997): `A·Fmax·vmax·φ(v/vmax)` with `φ(x) = (0.054 + 0.506x + 2.46x²)/(1 − 1.13x + 12.8x² − 1.64x³)` while shortening, and the isometric rate while lengthening.
+- `muscleMetabolicPower` (function): function muscleMetabolicPower(state: MuscleState): number — Metabolic power of a muscle, W, from the work of its fibres (R. Margaria, "Positive and negative work performances and their efficiencies in human locomotion", *Int. Z. Angew. Physiol.* 25, 1968): positive work costs 1/0.25 and negative work 1/1.2 of itself. Of seven muscle energy models, it best follows how walking cost changes up and down slopes (A. D. Koelewijn, D. Heinrich and A. J. van den Bogert, *PLoS ONE* 14, e0222037, 2019).
 - `stepMuscle` (function): function stepMuscle(spec: MuscleSpec, state: MuscleState, lmtu: number, stimulation: number, dt: number): number — Advance one muscle by `dt` at unit length `lmtu` (m) under stimulation `stimulation` (0.01–1): first-order activation, then the fibre velocity that balances tendon, contractile, parallel and buffer forces (Geyer & Herr 2010, Appendix II), integrated for the new fibre length. Returns the tendon force, N.
 
 ## @jgengine/core/movement/reference/planarMultibody
