@@ -39084,64 +39084,6 @@
       }
     },
     {
-      "id": "scatter_south_jungle_canopy",
-      "kind": "scatter",
-      "points": [
-        {
-          "x": -60,
-          "y": 0,
-          "z": 1220
-        },
-        {
-          "x": 520,
-          "y": 0,
-          "z": 1220
-        },
-        {
-          "x": 520,
-          "y": 0,
-          "z": 1420
-        },
-        {
-          "x": -60,
-          "y": 0,
-          "z": 1420
-        }
-      ],
-      "label": "Jungle wall: canopy",
-      "meta": {
-        "seed": "south-jungle-canopy",
-        "density": 0.045,
-        "minSpacing": 3.2,
-        "minHeight": 3,
-        "maxSlope": 0.9,
-        "minScale": 0.85,
-        "maxScale": 1.35,
-        "palette": [
-          {
-            "item": "jungletree",
-            "weight": 5
-          },
-          {
-            "item": "tree2",
-            "weight": 2
-          },
-          {
-            "item": "palm",
-            "weight": 2
-          },
-          {
-            "item": "fanpalm",
-            "weight": 1.5
-          },
-          {
-            "item": "treefern",
-            "weight": 2
-          }
-        ]
-      }
-    },
-    {
       "id": "scatter_spawn_beach_stones",
       "kind": "scatter",
       "points": [
@@ -39202,6 +39144,64 @@
           {
             "item": "pebble2",
             "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "scatter_south_jungle_canopy",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -60,
+          "y": 0,
+          "z": 1220
+        },
+        {
+          "x": 520,
+          "y": 0,
+          "z": 1220
+        },
+        {
+          "x": 520,
+          "y": 0,
+          "z": 1420
+        },
+        {
+          "x": -60,
+          "y": 0,
+          "z": 1420
+        }
+      ],
+      "label": "Jungle wall: canopy",
+      "meta": {
+        "seed": "south-jungle-canopy",
+        "density": 0.045,
+        "minSpacing": 3.2,
+        "minHeight": 3,
+        "maxSlope": 0.9,
+        "minScale": 0.85,
+        "maxScale": 1.35,
+        "palette": [
+          {
+            "item": "jungletree",
+            "weight": 5
+          },
+          {
+            "item": "youngtree",
+            "weight": 2
+          },
+          {
+            "item": "palm",
+            "weight": 2
+          },
+          {
+            "item": "fanpalm",
+            "weight": 1.5
+          },
+          {
+            "item": "treefern",
+            "weight": 2
           }
         ]
       }
