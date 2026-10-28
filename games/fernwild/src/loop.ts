@@ -17,7 +17,7 @@ import { callSupplyDrop, openCrate, resetSupplyDrops, supplyDropsSave, tickSuppl
 import type { NewGameConfig } from "@jgengine/core/game/newGame";
 import { START } from "./game/data/start";
 import { cancelCraft, consume, grantXp, heldItem, learn, learnFree, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, takeOff, tickSurvivor, use, wearArmour } from "./game/survivor";
-import { setScreen, toggleScreen, type SurvivorScreen } from "./game/screens";
+import { setScreen, toggleExtendedHud, toggleScreen, type SurvivorScreen } from "./game/screens";
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
 
@@ -41,6 +41,7 @@ export const systems = [
       });
       commands.define("harvest", { apply: (state) => (use(state), state) });
       commands.define("inventory", { apply: (state) => (toggleScreen(state, "inventory"), state) });
+      commands.define("hudDetail", { apply: (state) => (toggleExtendedHud(state), state) });
       // First person looks out of the survivor's own body, so the arms and the tool in hand stay in view.
       commands.define("view", {
         apply(state) {

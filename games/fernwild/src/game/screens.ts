@@ -20,3 +20,16 @@ export function setScreen(ctx: GameContext, screen: SurvivorScreen | null): void
   open(ctx).screen = screen;
   ctx.touch();
 }
+
+const detail = perContext((_ctx: GameContext) => ({ on: false }));
+
+/** ARK's extended HUD (H): the numbers under each vital icon. */
+export function extendedHud(ctx: GameContext): boolean {
+  return detail(ctx).on;
+}
+
+export function toggleExtendedHud(ctx: GameContext): void {
+  const state = detail(ctx);
+  state.on = !state.on;
+  ctx.touch();
+}

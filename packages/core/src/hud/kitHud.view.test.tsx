@@ -2,10 +2,27 @@ import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { HUD_CORNER_WIDTH, HudSlots } from "./hudLayout.view";
-import { KitCount, KitCounts, KitHint, KitVitals, KitWaveClock } from "./kitHud.view";
+import { KitCount, KitCounts, KitHint, KitVitalIcons, KitVitals, KitWaveClock } from "./kitHud.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 describe("kitHud blocks", () => {
+  test("vital icons fill each glyph from the bottom and print numbers only on request", () => {
+    const vitals = [
+      { id: "health", label: "Health", icon: "/icons/heart.svg", value: 25, max: 100 },
+      { id: "food", label: "Food", icon: "/icons/meat.svg", value: 80, max: 100, warn: true },
+      { id: "heat", label: "Temperature", icon: "/icons/thermometer.svg", value: 0.6, max: 1, text: "24°C" },
+    ];
+    const quiet = renderToStaticMarkup(<KitVitalIcons vitals={vitals} />);
+    expect(quiet).toContain('data-vital="health"');
+    expect(quiet).toContain('aria-valuenow="25"');
+    expect(quiet).toContain("inset(75% 0 0 0)");
+    expect(quiet).not.toContain("25 / 100");
+    expect(quiet.match(/data-low=""/g)?.length).toBe(1);
+    const loud = renderToStaticMarkup(<KitVitalIcons vitals={vitals} readout />);
+    expect(loud).toContain("25 / 100");
+    expect(loud).toContain("24°C");
+  });
+
   test("a count marks itself and shows its rate", () => {
     const html = renderToStaticMarkup(
       <KitCounts>

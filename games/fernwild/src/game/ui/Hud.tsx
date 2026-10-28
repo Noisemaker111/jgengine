@@ -1,6 +1,8 @@
 import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { KillFeed } from "@jgengine/core/feed/killFeed.view";
+import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons";
 import { Hotbar } from "@jgengine/core/hud/hudReadouts.view";
+import { KitVitalIcons, type KitVitalIcon } from "@jgengine/core/hud/kitHud.view";
 import { Minimap, useMarkers } from "@jgengine/core/map/map.view";
 import type { MarkerView } from "@jgengine/core/map/markers";
 import { OnboardingBanner, OnboardingHud, useOnboarding } from "@jgengine/core/onboarding/onboarding.view";
@@ -13,11 +15,12 @@ import { bodyView } from "../deathBody";
 import { dossierView } from "../dossier";
 import { ISLAND_MARKS, islandBake, islandMarks } from "../islandMap";
 import { pickupFeed } from "../pickupFeed";
-import { openScreen } from "../screens";
+import { extendedHud, openScreen } from "../screens";
 import { HOTBAR } from "../bags";
 import { survivorView, type SurvivorView } from "../survivor";
 import { BossBar } from "./Broodmother";
 import { itemIcon } from "./ItemIcon";
+import { VITAL_ICON } from "./itemIcons";
 import { InventoryScreen } from "./InventoryScreen";
 import { CreatureReadout, useCreatures } from "./CreatureScreen";
 
@@ -27,39 +30,10 @@ export function useSurvivor(): SurvivorView {
   return useGameStore(survivorView, same);
 }
 
-const COLORS = {
-  health: "#d8483f",
-  stamina: "#e7c84a",
-  food: "#d98a3a",
-  water: "#3fa0e0",
-  oxygen: "#9ad7f0",
-  weight: "#b9b0a0",
-  torpor: "#a45fd6",
-  xp: "#7ad06a",
-} as const;
-
-/** ARK's bottom-right column: one round gauge per pool, filling from the bottom, number beside it. */
-function Gauge({ id, label, value, max, warn }: { id: keyof typeof COLORS; label: string; value: number; max: number; warn?: boolean }): ReactNode {
-  const fill = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
-  const color = COLORS[id];
-  return (
-    <div data-vital={id} style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
-      <span style={{ fontSize: 12, fontVariantNumeric: "tabular-nums", opacity: 0.9, textShadow: "0 1px 2px #000" }}>
-        {label} {Math.floor(value)}/{Math.round(max)}
-      </span>
-      <div
-        style={{
-          width: 30,
-          height: 30,
-          borderRadius: "50%",
-          border: `2px solid ${warn === true ? "#ff5a4a" : "#0008"}`,
-          background: `linear-gradient(to top, ${color} ${fill * 100}%, #1a1712cc ${fill * 100}%)`,
-          boxShadow: "0 1px 4px #0009",
-        }}
-      />
-    </div>
-  );
-}
+const ARK_CYAN = "#5cc8dc";
+/** The thermometer's span: empty at -10 °C, full at 45 °C. */
+const COLDEST = -10;
+const HOTTEST = 45;
 
 /** Where your body lies after a death: how far, and how long before it falls apart with your things. */
 function BodyLine(): ReactNode {
@@ -77,26 +51,33 @@ function BodyLine(): ReactNode {
 
 const WEATHER_WORD: Record<string, string> = { rain: "Rain", snow: "Snow", mixed: "Sleet", dust: "Dust" };
 
+/**
+ * ARK's right-edge column: a cyan glyph per pool filling from the bottom, health at the foot and
+ * weight near the top, red while it needs you; H prints the numbers under each.
+ */
 function Vitals(): ReactNode {
   const view = useSurvivor();
+  const detail = useGameStore(extendedHud);
+  const weather = view.weather === "clear" ? "Temperature" : `${WEATHER_WORD[view.weather]}${view.sheltered ? " (sheltered)" : ""}`;
+  const pool = (id: keyof typeof VITAL_ICON, label: string, value: number, max: number, warn = false): KitVitalIcon => ({ id, label, icon: libraryIconUrl(VITAL_ICON[id]), value, max, color: ARK_CYAN, warn });
+  const vitals: KitVitalIcon[] = [
+    { ...pool("temperature", weather, view.temperature - COLDEST, HOTTEST - COLDEST, view.comfort !== "comfortable"), text: `${view.temperature}°C` },
+    { ...pool("xp", `Level ${view.level}`, view.xp - view.xpFrom, Math.max(1, view.xpNext - view.xpFrom)), color: "#8fdc6a" },
+    pool("weight", "Weight", view.weight.value, view.weight.max, view.encumbered),
+    pool("water", "Water", view.water.value, view.water.max, view.flags.includes("thirsty")),
+    pool("food", "Food", view.food.value, view.food.max, view.flags.includes("hungry")),
+    pool("stamina", "Stamina", view.stamina.value, view.stamina.max),
+    ...(view.torpor.value > 0 ? [{ ...pool("torpor", "Torpor", view.torpor.value, view.torpor.max), color: "#b07ee0" }] : []),
+    pool("health", "Health", view.health.value, view.health.max, view.health.value <= 30),
+  ];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4, color: "#f2ead8", pointerEvents: "none" }}>
-      <div style={{ textAlign: "right", fontSize: 12, opacity: 0.85, textShadow: "0 1px 2px #000" }} data-temperature="">
-        {view.weather === "clear" ? "" : `${WEATHER_WORD[view.weather]}${view.sheltered ? " (sheltered)" : ""} · `}
-        {view.temperature}°C{view.comfort === "comfortable" ? "" : ` · ${view.comfort}`}
-      </div>
-      {view.torpor.value > 0 ? <Gauge id="torpor" label="Torpor" value={view.torpor.value} max={view.torpor.max} /> : null}
-      <Gauge id="health" label="Health" value={view.health.value} max={view.health.max} warn={view.health.value <= 30} />
-      <Gauge id="stamina" label="Stamina" value={view.stamina.value} max={view.stamina.max} />
-      <Gauge id="food" label="Food" value={view.food.value} max={view.food.max} warn={view.flags.includes("hungry")} />
-      <Gauge id="water" label="Water" value={view.water.value} max={view.water.max} warn={view.flags.includes("thirsty")} />
-      <Gauge id="weight" label="Weight" value={view.weight.value} max={view.weight.max} warn={view.encumbered} />
-      <Gauge id="xp" label={`Level ${view.level}`} value={view.xp - view.xpFrom} max={Math.max(1, view.xpNext - view.xpFrom)} />
+    <div data-temperature={view.temperature} style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
       {view.statPoints > 0 ? (
         <div data-levelup="" style={{ textAlign: "right", color: "#9ef08a", fontWeight: 800, fontSize: 13, textShadow: "0 1px 2px #000" }}>
           ▲ Level up — press I
         </div>
       ) : null}
+      <KitVitalIcons vitals={vitals} size={30} readout={detail} />
     </div>
   );
 }
