@@ -1,4 +1,4 @@
-// @skill jgengine-world
+// @skill jgengine-assets
 /**
  * A cel-shading ramp: how diffuse light (0 facing away .. 1 facing the light) maps to brightness. A
  * game builds its toon look from one, and the draw side turns it into a toon material's gradient.
@@ -16,7 +16,7 @@ export interface ToonRamp {
 /** Texels across a ramp texture: enough for 8 bands with blended edges. */
 export const TOON_RAMP_TEXELS = 64;
 
-/** A ramp with every value clamped to its range. */
+/** @internal A ramp with every value clamped to its range. */
 export function normalizeToonRamp(ramp: ToonRamp): ToonRamp {
   return {
     bands: Math.max(2, Math.min(8, Math.round(ramp.bands))),
@@ -25,13 +25,14 @@ export function normalizeToonRamp(ramp: ToonRamp): ToonRamp {
   };
 }
 
-/** A stable key for a ramp, for caching the material built from it. */
+/** @internal A stable key for a ramp, for caching the material built from it. */
 export function toonRampKey(ramp: ToonRamp): string {
   const { bands, softness, shadow } = normalizeToonRamp(ramp);
   return `${bands}/${softness.toFixed(3)}/${shadow.toFixed(3)}`;
 }
 
 /**
+ * @internal
  * The ramp as {@link TOON_RAMP_TEXELS} brightness bytes, dark to light: band k of n sits at
  * shadow + (1 - shadow) · k / (n - 1), and `softness` blends each step into the next.
  */

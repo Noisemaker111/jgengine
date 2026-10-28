@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { generatorVariants, untypedGenerator, type GeneratorVariant } from "@jgengine/core/generator/generator";
 import { GeneratorVariantGrid } from "@jgengine/core/generator/GeneratorVariantGrid.draw";
 import { findSchemaPreset } from "@jgengine/core/generator/paramSchema";
-import { BROADLEAF_GENERATOR, NATURE_GENERATORS } from "@jgengine/core/nature/natureGenerators";
+import { NATURE_GENERATORS, PALM_GENERATOR } from "@jgengine/core/nature/natureGenerators";
 import { registerNatureDraw } from "@jgengine/core/nature/naturePreview.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
@@ -11,10 +11,10 @@ import { demoGame } from "./demoGame";
 
 registerNatureDraw();
 
-/** The species a page shows, from `?generator=nature.palm&preset=cycad`; defaults to the broadleaf tree. */
+/** The species a page shows, from `?generator=nature.palm&preset=cycad`; defaults to the palm. */
 function species() {
   const params = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
-  const definition = NATURE_GENERATORS.find((entry) => entry.id === params.get("generator")) ?? untypedGenerator(BROADLEAF_GENERATOR);
+  const definition = NATURE_GENERATORS.find((entry) => entry.id === params.get("generator")) ?? untypedGenerator(PALM_GENERATOR);
   const preset = findSchemaPreset(definition.schema, params.get("preset") ?? "");
   return { definition, preset };
 }

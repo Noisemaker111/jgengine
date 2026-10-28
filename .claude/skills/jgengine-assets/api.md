@@ -720,6 +720,15 @@
 - `SurfaceScanTextures` (interface): interface SurfaceScanTextures — Decoded maps of one scanned surface, shared by every material that tiles it.
 - `useSurfaceScan` (function): function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanState — React handle on a scan's maps. `maps` undefined or `enabled` false (the `low` tier) asks for none and is never pending. Every component naming the same URLs shares one decode. The scene's shader warmup waits for the maps, and a caller hides its surface while `pending`, so the warmup links only the scanned programs the first frame draws, not the procedural ones they replace.
 
+## @jgengine/core/material/toonRamp
+
+- `TOON_RAMP_TEXELS` (const): const TOON_RAMP_TEXELS: 64 — Texels across a ramp texture: enough for 8 bands with blended edges.
+- `ToonRamp` (interface): interface ToonRamp — A cel-shading ramp: how diffuse light (0 facing away .. 1 facing the light) maps to brightness. A game builds its toon look from one, and the draw side turns it into a toon material's gradient.
+
+## @jgengine/core/material/toonRamp.draw
+
+- `toonRampMaterial` (function): function toonRampMaterial(ramp: ToonRamp): THREE.MeshToonMaterial — A shared vertex-coloured toon material for a ramp: one per distinct ramp, so every mesh drawn with the same look batches into the same program.
+
 ## @jgengine/core/material/triplanarMaterial.draw
 
 - `TriplanarAssetMaterial` (function): function TriplanarAssetMaterial({ asset, ...options }: { asset: MaterialAsset } & { tileMetres?: number; sharpness?: number; normalScale?: number }): React.JSX.Element — Mounts {@link useTriplanarAssetMaterial} on a mesh; the R3F renderer owns disposal.

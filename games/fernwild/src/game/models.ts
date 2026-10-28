@@ -54,20 +54,32 @@ export const objectModels: Record<string, ModelConfig> = {};
 /** A palette item grown by an engine nature generator: a few seeded variants of one species. */
 const grown = (generator: string, preset: string, params: Record<string, unknown> = {}, variants = 6): ScatterGeneratorItem => ({ generator, preset, params, variants });
 
+/** The island's tree look: rounded leaf clumps over the grown wood, lit, a touch more saturated than life. */
+const TREE_LOOK = { foliage: "clumps", shading: "lit", saturation: 1.15, brightness: 1.05, barkGrain: true };
+
+/** A tree grown by the plant simulation: a species at an age (and day of year), drawn at the clump level. */
+const tree = (species: string, age: number, params: Record<string, unknown> = {}): ScatterGeneratorItem => ({
+  generator: "plant.grown",
+  params: { species, age, ...TREE_LOOK, ...params },
+  variants: 4,
+  detail: 0.25,
+});
+
 /**
  * Scatter palette item (the island's forests, rocks and bushes in editor.scene.json) → what it draws.
- * Trees, palms, bushes, ferns, rocks and pebbles grow from the engine's nature generators, so no two
- * neighbours match; grass, flowers and ore rocks stay catalog models.
+ * Trees are grown by the engine's plant simulation (sugar maple and white pine; bare winter maples
+ * stand in for dead trees); palms, bushes, ferns, rocks and pebbles grow from its nature generators,
+ * so no two neighbours match; grass, flowers and ore rocks stay catalog models.
  */
 export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> = {
   palm: grown("nature.palm", "coconut", { height: 9, frondLength: 3.6 }),
-  tree: grown("nature.broadleaf", "oak", { height: 11, branchStart: 0.5, clusterSize: 1.5 }),
-  tree2: grown("nature.broadleaf", "tropical", { height: 12, twigs: 2, clusterSize: 1.7, leafColor: "#467f33" }),
-  tree3: grown("nature.broadleaf", "birch", { height: 13, twigs: 2, clusterSize: 1.4, leafColor: "#5d9a3a" }),
-  pine: grown("nature.conifer", "pine", { height: 13 }),
-  pine2: grown("nature.conifer", "spruce", { height: 11 }),
-  redwood: grown("nature.conifer", "redwood", { height: 30 }),
-  deadtree: grown("nature.broadleaf", "dead", { height: 8 }),
+  tree: tree("acer-saccharum", 25),
+  tree2: tree("acer-saccharum", 34, { leafTint: "#d2e6c0" }),
+  tree3: tree("acer-saccharum", 28, { leafTint: "#eef8c4" }),
+  pine: tree("pinus-strobus", 30),
+  pine2: tree("pinus-strobus", 22, { leafTint: "#c4d8c8" }),
+  redwood: tree("pinus-strobus", 110),
+  deadtree: tree("acer-saccharum", 20, { day: 20 }),
   rock: grown("nature.rock", "rock", { size: 2.2 }),
   boulder: grown("nature.rock", "boulder", { size: 4.6 }),
   boulder2: grown("nature.rock", "slab", { size: 4.2, flatness: 0.55, moss: 0.4 }),

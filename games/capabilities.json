@@ -7287,6 +7287,26 @@
       "intent": "cap live particles to a graphics tier and drop whole effects lowest-priority-first when over budget"
     },
     {
+      "id": "plant-cache",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/cache/plantCache",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "cache grown plant structures and styled meshes in memory and injected storage"
+    },
+    {
+      "id": "plant-grown",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/grown/plantGrown",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "place, scatter and preview simulation-grown plants of any species, age and style"
+    },
+    {
       "id": "plant-growth",
       "packages": [
         "@jgengine/core"
@@ -7295,6 +7315,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "grow a tree from seed to any age with a real biology simulation; snapshot, restore, retune"
+    },
+    {
+      "id": "plant-mesh",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/mesh/plantMesh",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets"
     },
     {
       "id": "plant-species",
@@ -10000,6 +10030,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "tyre vertical force from deflection with speed, force, pressure and bottoming terms"
+    },
+    {
+      "id": "toon-ramp",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/material/toonRamp",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "cel-shading ramp a toon material reads: flat light bands with an optional soft edge"
     },
     {
       "id": "touch-controls",

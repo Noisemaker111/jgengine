@@ -235,6 +235,7 @@ export const gameRegistry: GameRegistry = {
   "grass-looks": () => import("./demo/grassLooksDemo").then((module) => module.grassLooksGame),
   "generator-variants": () => import("./demo/generatorVariantsDemo").then((module) => module.generatorVariantsGame),
   "nature-variants": () => import("./demo/natureVariantsDemo").then((module) => module.natureVariantsGame),
+  "plant-styles": () => import("./demo/plantStylesDemo").then((module) => module.plantStylesGame),
   "material-variants": () => import("./demo/materialVariantsDemo").then((module) => module.materialVariantsGame),
   decals: () => import("./demo/decalShowcase").then((module) => module.decalShowcaseGame),
   "terrain-layers": () => import("./demo/terrainLayersDemo").then((module) => module.terrainLayersGame),

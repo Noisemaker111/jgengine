@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
+import { PINUS_STROBUS } from "../species/data/pinusStrobus";
 import { validatePlantSpecies } from "../species/plantSpecies";
 import { crownRatio, hashPlantStructure } from "../structure/plantStructure";
-import { SUGAR_MAPLE_CARMEAN, siteIndexHeightM } from "../validation/heightAgeCurves";
+import { EASTERN_WHITE_PINE_CARMEAN, SUGAR_MAPLE_CARMEAN, siteIndexHeightM } from "../validation/heightAgeCurves";
 import { OPEN_TEMPERATE_SITE } from "./plantEnvironment";
 import { DEFAULT_GROWTH_LIMITS, createPlantGrowth, type PlantGrowthSnapshot } from "./plantGrowth";
 
@@ -128,5 +129,29 @@ describe("plant growth", () => {
     const before = plant.structure().stats.heightM;
     plant.step(5);
     expect(plant.structure().stats.heightM).toBeGreaterThanOrEqual(before);
+  });
+});
+
+describe("eastern white pine", () => {
+  test("the record is valid", () => {
+    expect(validatePlantSpecies(PINUS_STROBUS)).toEqual([]);
+  });
+
+  test("height at 50 and 100 years is within 15% of the Carmean site-index curve", () => {
+    const plant = createPlantGrowth(PINUS_STROBUS, OPEN_TEMPERATE_SITE, "pine");
+    for (const age of [50, 100]) {
+      plant.step(age - plant.ageYears());
+      const expected = siteIndexHeightM(EASTERN_WHITE_PINE_CARMEAN, SITE_INDEX_FT, age);
+      expect(Math.abs(plant.structure().stats.heightM - expected) / expected).toBeLessThan(0.15);
+    }
+    expect(plant.stats().alive).toBe(true);
+  }, 60_000);
+
+  test("evergreen needles keep their colour through winter", () => {
+    const plant = createPlantGrowth(PINUS_STROBUS, OPEN_TEMPERATE_SITE, "pine");
+    plant.step(8);
+    const winter = plant.structure(355);
+    expect(winter.leaves.size.length).toBeGreaterThan(0);
+    expect(Math.max(...winter.leaves.colorState.filter((_, i) => i % 4 === 3))).toBe(0);
   });
 });

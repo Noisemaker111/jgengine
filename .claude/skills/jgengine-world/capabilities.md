@@ -671,6 +671,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `bakeGeneratorVariants` (function) · `import { bakeGeneratorVariants } from "@jgengine/core/world"`
 - `jitterParams` (function) · `import { jitterParams } from "@jgengine/core/world"`
+- `prepareGeneratorVariants` (function) · `import { prepareGeneratorVariants } from "@jgengine/core/generator/generator"`
 - `registerPlaceableGeneratorOutput` (function) · `import { registerPlaceableGeneratorOutput } from "@jgengine/core/world"`
 - `sampleGradient` (function) · `import { sampleGradient } from "@jgengine/core/world"`
 - `untypedGenerator` (function) · `import { untypedGenerator } from "@jgengine/core/world"`
@@ -1117,9 +1118,41 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `planParticleBudget` (function) · `import { planParticleBudget } from "@jgengine/core/vfx/particleBudget"`
 
+## plant-cache — cache grown plant structures and styled meshes in memory and injected storage
+
+- `PlantCache` (interface) · `import { PlantCache } from "@jgengine/core/plants/cache/plantCache"`
+- `PlantCacheStorage` (interface) · `import { PlantCacheStorage } from "@jgengine/core/plants/cache/plantCache"`
+- `createIndexedDbPlantCacheStorage` (function) · `import { createIndexedDbPlantCacheStorage } from "@jgengine/core/plants/cache/plantCache"`
+- `createMemoryPlantCacheStorage` (function) · `import { createMemoryPlantCacheStorage } from "@jgengine/core/plants/cache/plantCache"`
+- `createPlantCache` (function) · `import { createPlantCache } from "@jgengine/core/plants/cache/plantCache"`
+- `decodePlantMesh` (function) · `import { decodePlantMesh } from "@jgengine/core/plants/cache/plantCodec"`
+- `decodePlantStructure` (function) · `import { decodePlantStructure } from "@jgengine/core/plants/cache/plantCodec"`
+- `encodePlantMesh` (function) · `import { encodePlantMesh } from "@jgengine/core/plants/cache/plantCodec"`
+- `encodePlantStructure` (function) · `import { encodePlantStructure } from "@jgengine/core/plants/cache/plantCodec"`
+
+## plant-grown — place, scatter and preview simulation-grown plants of any species, age and style
+
+- `BUILTIN_PLANT_SPECIES` (const) · `import { BUILTIN_PLANT_SPECIES } from "@jgengine/core/plants/grown/plantGrown"`
+- `PLANT_CACHE` (const) · `import { PLANT_CACHE } from "@jgengine/core/plants/grown/plantGrown"`
+- `PLANT_GROWN_GENERATOR` (const) · `import { PLANT_GROWN_GENERATOR } from "@jgengine/core/plants/grown/plantGrown"`
+- `createPlantGrownGenerator` (function) · `import { createPlantGrownGenerator } from "@jgengine/core/plants/grown/plantGrown"`
+- `plantStructureKey` (function) · `import { plantStructureKey } from "@jgengine/core/plants/grown/plantGrown"`
+- `plantStyleOf` (function) · `import { plantStyleOf } from "@jgengine/core/plants/grown/plantGrown"`
+
 ## plant-growth — grow a tree from seed to any age with a real biology simulation; snapshot, restore, retune
 
 - `createPlantGrowth` (function) · `import { createPlantGrowth } from "@jgengine/core/plants/growth/plantGrowth"`
+
+## plant-mesh — turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
+
+- `DEFAULT_PLANT_STYLE` (const) · `import { DEFAULT_PLANT_STYLE } from "@jgengine/core/plants/mesh/plantMesh"`
+- `PlantMesh` (interface) · `import { PlantMesh } from "@jgengine/core/plants/mesh/plantMesh"`
+- `PlantStyle` (interface) · `import { PlantStyle } from "@jgengine/core/plants/mesh/plantMesh"`
+- `buildPlantMesh` (function) · `import { buildPlantMesh } from "@jgengine/core/plants/mesh/plantMesh"`
+- `isPlantMesh` (function) · `import { isPlantMesh } from "@jgengine/core/plants/mesh/plantMesh"`
+- `plantMeshLod` (function) · `import { plantMeshLod } from "@jgengine/core/plants/mesh/plantMesh"`
+- `plantMeshMaterials` (function) · `import { plantMeshMaterials } from "@jgengine/core/plants/mesh/plantMesh.draw"`
+- `plantMeshSources` (function) · `import { plantMeshSources } from "@jgengine/core/plants/mesh/plantMesh.draw"`
 
 ## plant-species — register and validate plant species records: measured biology as plain data
 

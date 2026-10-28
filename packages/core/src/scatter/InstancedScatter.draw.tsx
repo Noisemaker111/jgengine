@@ -1,9 +1,9 @@
-import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
+import { sharedGltfLoader, trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import { groupInstancesByCell } from "@jgengine/core/instancing/instanceCells";
 import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
@@ -19,7 +19,7 @@ import { writeScatterVariantLevel } from "./scatterVariants.draw";
 import { detailDrawDistance, IMPOSTOR_MIN_RADIUS, sourceRadius } from "@jgengine/core/lod/impostor.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { ScatterImpostorField } from "./ScatterImpostorField.draw";
-import { bakeGeneratorVariants, getGenerator, type GeneratorDefinition } from "@jgengine/core/generator/generator";
+import { bakeGeneratorVariants, getGenerator, prepareGeneratorVariants, type GeneratorDefinition } from "@jgengine/core/generator/generator";
 import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
 import {
   assignScatterVariants,
@@ -339,28 +339,50 @@ interface ScatterGeneratorSpeciesDraw {
  * A palette item grown by a generator: its variants are baked once, each turned into instanced draws
  * through the mesh builder registered for the generator's output, and every variant draws only the
  * placements assigned to it. Far away every variant draws one shared impostor baked from the first,
- * so more variants cost near draws, not atlas memory.
+ * so more variants cost near draws, not atlas memory. A generator with a `prepare` step (a grown
+ * plant) prepares every variant off the frame first, counted as scene loading, then bakes from that.
  */
 function ScatterGeneratorSpecies({ item, species }: { item: string; species: ScatterGeneratorSpeciesDraw }) {
   const { definition, spec } = species;
-  const variants = useMemo(() => {
-    const build = getGeneratorMesh(definition.output);
-    if (build === undefined) return [];
-    const baked = bakeGeneratorVariants({ ...definition, lods: [spec.detail ?? 1] }, scatterGeneratorBase(spec, definition.schema), {
+  const key = useMemo(() => `generator:${item}:${JSON.stringify(spec)}`, [item, spec]);
+  const bake = useMemo(() => ({
+    definition: { ...definition, lods: [spec.detail ?? 1] },
+    base: scatterGeneratorBase(spec, definition.schema),
+    options: {
       count: scatterGeneratorVariantCount(spec),
       explore: spec.explore ?? 0.3,
       seed: item,
       ...(spec.keep === undefined ? {} : { keep: spec.keep }),
-    });
+    },
+  }), [definition, spec, item]);
+  const [prepared, setPrepared] = useState<typeof bake | null>(null);
+  useEffect(() => {
+    if (bake.definition.prepare === undefined) return;
+    let live = true;
+    const done = trackSceneWork(`scatter-${item}`);
+    prepareGeneratorVariants(bake.definition, bake.base, bake.options)
+      .then(() => {
+        if (live) setPrepared(bake);
+      })
+      .catch((error: unknown) => console.error(`[jgengine] scatter ${item} failed to prepare`, error))
+      .finally(done);
+    return () => {
+      live = false;
+    };
+  }, [bake, item]);
+  const ready = bake.definition.prepare === undefined || prepared === bake;
+  const variants = useMemo(() => {
+    const build = getGeneratorMesh(definition.output);
+    if (build === undefined || !ready) return [];
+    const baked = bakeGeneratorVariants(bake.definition, bake.base, bake.options);
     return baked.map((variant) => (build(variant.lods[0]?.output) ?? []).map((source): ScatterModelSource => {
       if (source.geometry.boundingSphere === null) source.geometry.computeBoundingSphere();
       // Pebble-sized meshes cast no shadow: the map cannot resolve them, so they only draw a detached halo.
       const small = (source.geometry.boundingSphere?.radius ?? 1) < SMALL_SHADOW_RADIUS;
       return { ...source, localMatrix: IDENTITY, ...(small ? { skipShadow: true } : {}) };
     }));
-  }, [definition, spec, item]);
+  }, [definition, bake, ready]);
   useEffect(() => () => variants.forEach((sources) => sources.forEach((source) => source.geometry.dispose())), [variants]);
-  const key = useMemo(() => `generator:${item}:${JSON.stringify(spec)}`, [item, spec]);
   return (
     <>
       {[...species.byVariant.entries()].map(([variant, batches]) => {

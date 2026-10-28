@@ -4,7 +4,7 @@ import { TOON_RAMP_TEXELS, toonRampKey, toonRampTexels, type ToonRamp } from "./
 
 const materials = new Map<string, THREE.MeshToonMaterial>();
 
-/** The ramp as a 1-row gradient texture a toon material reads. The caller owns it. */
+/** @internal The ramp as a 1-row gradient texture a toon material reads. The caller owns it. */
 export function toonRampTexture(ramp: ToonRamp): THREE.DataTexture {
   const texels = toonRampTexels(ramp);
   const data = new Uint8Array(TOON_RAMP_TEXELS * 4);

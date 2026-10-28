@@ -31,6 +31,19 @@ export const SUGAR_MAPLE_CARMEAN: SiteIndexCurve = {
   breastHeightFt: 0,
 };
 
+/** NC-128 curve 103: eastern white pine, northern Wisconsin (FVS `htcalc.f`), total age. */
+export const EASTERN_WHITE_PINE_CARMEAN: SiteIndexCurve = {
+  speciesId: "pinus-strobus",
+  curve: 103,
+  region: "northern Wisconsin",
+  b1: 1.966,
+  b2: 1,
+  b3: -0.024,
+  b4: 1.8942,
+  b5: 0,
+  breastHeightFt: 0,
+};
+
 const FOOT_M = 0.3048;
 
 /**
