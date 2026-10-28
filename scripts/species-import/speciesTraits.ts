@@ -64,7 +64,7 @@ export const SHADE_TOLERANCE: Readonly<Record<ShadeClass, number>> = {
 type Leaf = SpeciesTraits["leaf"];
 type Bark = SpeciesTraits["bark"];
 
-function broadleaf(kind: "lobed" | "ovate" | "lanceolate", sizeCm: number, aspect: number, lobes: number, lobeDepth: number, leavesPerNode: number, autumn: string, sla = 20): Leaf {
+export function broadleaf(kind: "lobed" | "ovate" | "lanceolate", sizeCm: number, aspect: number, lobes: number, lobeDepth: number, leavesPerNode: number, autumn: string, sla = 20): Leaf {
   return {
     shape: { kind, lobes, lobeDepth, aspect, petioleFraction: kind === "lobed" ? 0.2 : 0.15 },
     sizeCm,
@@ -87,12 +87,12 @@ function needles(sizeCm: number, lifespanYears: number, leavesPerNode: number, s
   };
 }
 
-const bark = (kind: Bark["kind"], smoothUntilYears: number, furrowDepth: number, color: string): Bark => ({ kind, smoothUntilYears, furrowDepth, color });
-const spring = (forcingSum: number, senescencePhotoperiodH = 11): SpeciesTraits["phenology"] => ({ forcingBaseC: 5, forcingSum, chillingDays: 60, senescencePhotoperiodH });
+export const bark = (kind: Bark["kind"], smoothUntilYears: number, furrowDepth: number, color: string): Bark => ({ kind, smoothUntilYears, furrowDepth, color });
+export const spring = (forcingSum: number, senescencePhotoperiodH = 11): SpeciesTraits["phenology"] => ({ forcingBaseC: 5, forcingSum, chillingDays: 60, senescencePhotoperiodH });
 
 const OAK_ARCH = { model: "rauh", phyllotaxis: "spiral", divergence: 144 } as const;
-const OPPOSITE = { model: "rauh", phyllotaxis: "opposite", divergence: 90 } as const;
-const ALTERNATE = { model: "rauh", phyllotaxis: "spiral", divergence: 144 } as const;
+export const OPPOSITE = { model: "rauh", phyllotaxis: "opposite", divergence: 90 } as const;
+export const ALTERNATE = { model: "rauh", phyllotaxis: "spiral", divergence: 144 } as const;
 const DISTICHOUS = { model: "troll", phyllotaxis: "alternate", divergence: 180 } as const;
 const WHORLED = { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 } as const;
 const MASSART = { model: "massart", phyllotaxis: "whorled", divergence: 137.5 } as const;

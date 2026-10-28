@@ -51,6 +51,7 @@ import { THUJA_PLICATA } from "./thujaPlicata";
 import { LARIX_LARICINA } from "./larixLaricina";
 import { LARIX_OCCIDENTALIS } from "./larixOccidentalis";
 import { ROBINIA_PSEUDOACACIA } from "./robiniaPseudoacacia";
+import { VACCINIUM_CORYMBOSUM } from "./vacciniumCorymbosum";
 
 /**
  * Every species record the engine ships, registered with the grown-plant generator. Written by
@@ -110,4 +111,5 @@ export const PLANT_LIBRARY: readonly PlantSpecies[] = [
   LARIX_LARICINA,
   LARIX_OCCIDENTALIS,
   ROBINIA_PSEUDOACACIA,
+  VACCINIUM_CORYMBOSUM,
 ];

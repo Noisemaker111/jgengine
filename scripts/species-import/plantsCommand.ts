@@ -18,8 +18,10 @@ import { fitSpecies, type Evaluate } from "./speciesFit";
 import { buildSpeciesRecord, speciesRecordSource, type FittedParameters, type ImportedValues } from "./speciesRecord";
 import { scoreTrial, type FitTarget } from "./speciesScore";
 import { SHADE_TOLERANCE, SPECIES_TRAITS, type CrownForm, type SpeciesTraits } from "./speciesTraits";
-import { TRIAL_AGES, runTrial, type Trial } from "./speciesTrial";
+import { TRIAL_AGES, runHabitTrial, runTrial, type Trial } from "./speciesTrial";
 import { talloCrownWidthClasses } from "./tallo";
+import { buildHabitRecord, HABIT_FIT_PARAMETERS, HABIT_TRAITS, habitReferenceTableSource, importHabitReference, scoreHabitTrial, type HabitTraits } from "./habitSpecies";
+import { HABIT_REFERENCE } from "../../packages/core/src/plants/species/habitReferenceTable";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const PLANTS = join(ROOT, "packages/core/src/plants");
@@ -96,7 +98,29 @@ function runImport(): void {
     console.log(`${traits.id}: SI ${stand.siteIndexFt} ft, ${stand.trees} site trees, H ${at(stand.height)} m, DBH ${at(stand.dbh)} cm, Tallo ${widths.trees} trees${ek === undefined ? ", no Ek" : ""}`);
   }
   writeFileSync(join(PLANTS, "species/speciesReferenceTable.ts"), referenceTableSource(references));
+  const habits = HABIT_TRAITS.map((traits) => importHabitReference(ROOT, traits));
+  for (const habit of habits) console.log(`${habit.speciesId}: PLANTS ${habit.heightAt20M} m at 20 y, ${habit.matureHeightM} m mature${habit.multiStem ? ", multi-stem" : ""}`);
+  writeFileSync(join(PLANTS, "species/habitReferenceTable.ts"), habitReferenceTableSource(habits));
 }
+
+const habitOf = (id: string): HabitTraits | undefined => HABIT_TRAITS.find((traits) => traits.id === id);
+
+function habitReferenceOf(id: string) {
+  const reference = HABIT_REFERENCE[id];
+  if (reference === undefined) throw new Error(`no PLANTS reference for ${id}: run bun run jgengine plants import`);
+  return reference;
+}
+
+async function startingHabitRecord(traits: HabitTraits): Promise<PlantSpecies> {
+  const prior = await loadRecord(traits.prior);
+  if (prior === undefined) throw new Error(`prior ${traits.prior} has no record`);
+  const own = await loadRecord(traits.id);
+  const source = own ?? prior;
+  const growth = own === undefined ? { ...prior.growth, stemLifespanYears: 10 } : own.growth;
+  return buildHabitRecord(traits, growth, source.carbon, { score: 0, against: "" }, prior, (own?.version ?? 0) + 1);
+}
+
+const HABIT_AGAINST = "usda-plants";
 
 const num = (x: number): string => String(Number(x.toPrecision(5)));
 
@@ -201,7 +225,7 @@ function flag(argv: readonly string[], name: string, fallback: string): string {
   return at >= 0 ? (argv[at + 1] ?? fallback) : fallback;
 }
 
-function workerPool(size: number, seeds: readonly string[], shade: boolean): { evaluate: Evaluate; close: () => void } {
+export function workerPool(size: number, seeds: readonly string[], shade: boolean, habit = false): { evaluate: Evaluate; close: () => void } {
   const workers = Array.from({ length: size }, () => new Worker(new URL("./fitWorker.ts", import.meta.url).href));
   const idle = [...workers];
   const queue: (() => void)[] = [];
@@ -226,7 +250,7 @@ function workerPool(size: number, seeds: readonly string[], shade: boolean): { e
         }
         const id = next++;
         waiting.set(id, resolve);
-        worker.postMessage({ id, species, seeds, shade });
+        worker.postMessage({ id, species, seeds, shade, habit });
       };
       go();
     });
@@ -247,6 +271,25 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
   const seeds = flag(argv, "--seeds", "a,b").split(",");
   const workers = Number(flag(argv, "--workers", String(Math.max(1, availableParallelism() - 2))));
   for (const id of ids) {
+    const habit = habitOf(id);
+    if (habit !== undefined) {
+      const out = join(FIT_DIR, `${id}.json`);
+      const resumed: FitFile | undefined = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : undefined;
+      const start = resumed?.species ?? (await startingHabitRecord(habit));
+      const reference = habitReferenceOf(id);
+      const pool = workerPool(workers, seeds, false, true);
+      await fitSpecies(start, (trial) => scoreHabitTrial(reference, habit.limits.maxCrownRadiusM, trial), pool.evaluate, {
+        generations: Number(flag(argv, "--generations", "40")),
+        lambda: Number(flag(argv, "--lambda", "16")),
+        sigma: Number(flag(argv, "--sigma", "0.12")),
+        seed: 1,
+        parameters: HABIT_FIT_PARAMETERS,
+        onBest: (best) => writeFileSync(out, JSON.stringify({ score: best.score, parts: best.parts, against: HABIT_AGAINST, species: best.species } satisfies FitFile, null, 1)),
+        onGeneration: (line) => console.log(`${id} ${line}`),
+      });
+      pool.close();
+      continue;
+    }
     const traits = traitsOf(id);
     const out = join(FIT_DIR, `${id}.json`);
     const resumed: FitFile | undefined = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : undefined;
@@ -254,7 +297,7 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
     const start = resumed === undefined ? await startingRecord(traits) : { ...resumed.species, carbon: { ...resumed.species.carbon, hydraulicHeightShare: resumed.species.carbon.hydraulicHeightShare ?? 1 } };
     const target = fitTarget(traits, start, referenceOf(id));
     const pool = workerPool(workers, seeds, target.shadeTolerant);
-    await fitSpecies(start, target, pool.evaluate, {
+    await fitSpecies(start, (trial) => scoreTrial(target, trial), pool.evaluate, {
       generations: Number(flag(argv, "--generations", "40")),
       lambda: Number(flag(argv, "--lambda", "16")),
       sigma: Number(flag(argv, "--sigma", "0.12")),
@@ -279,8 +322,33 @@ function wrap(text: string, width: number): string {
   return lines.join("\n * ");
 }
 
+async function writeHabit(traits: HabitTraits): Promise<void> {
+  const { id } = traits;
+  const fit = join(FIT_DIR, `${id}.json`);
+  const own = await loadRecord(id);
+  const prior = await loadRecord(traits.prior);
+  if (prior === undefined) throw new Error(`no prior record for ${id}`);
+  const fitted: FitFile | undefined = existsSync(fit) ? JSON.parse(readFileSync(fit, "utf8")) : undefined;
+  const source = fitted?.species ?? own;
+  if (source === undefined) throw new Error(`${id} has neither a fit nor a record`);
+  const ownFit = own?.provenance["growth"]?.fitted;
+  const score = { score: fitted?.score ?? ownFit?.score ?? 0, against: fitted?.against ?? ownFit?.against ?? HABIT_AGAINST };
+  const unchanged = own === undefined ? undefined : buildHabitRecord(traits, source.growth, source.carbon, score, prior, own.version);
+  const record = unchanged !== undefined && JSON.stringify(unchanged) === JSON.stringify(own) ? unchanged : buildHabitRecord(traits, source.growth, source.carbon, score, prior, (own?.version ?? 0) + 1);
+  const reference = habitReferenceOf(id);
+  const name = `${traits.common.en[0]?.toUpperCase() ?? ""}${traits.common.en.slice(1)}.`;
+  const summary = `${name} A ${traits.habit} of ${traits.basalStems} stems at the collar that die and resprout. Traits from USDA PLANTS and NRCS plant guides; growth and carbon fitted to PLANTS heights (${reference.heightAt20M} m at 20 years, ${reference.matureHeightM} m mature). Written by \`bun run jgengine plants write ${id}\`; edit the importer's traits or refit, not this file.`;
+  writeFileSync(join(PLANTS, "species/data", `${camel(id)}.ts`), speciesRecordSource(traits, record, wrap(summary, 96)));
+  console.log(`wrote ${id} v${record.version}`);
+}
+
 async function runWrite(ids: readonly string[]): Promise<void> {
   for (const id of ids) {
+    const habitTraits = habitOf(id);
+    if (habitTraits !== undefined) {
+      await writeHabit(habitTraits);
+      continue;
+    }
     const traits = traitsOf(id);
     const fit = join(FIT_DIR, `${id}.json`);
     const own = await loadRecord(id);
@@ -305,7 +373,7 @@ async function runWrite(ids: readonly string[]): Promise<void> {
     writeFileSync(join(PLANTS, "species/data", `${camel(id)}.ts`), speciesRecordSource(traits, record, wrap(summary, 96)));
     console.log(`wrote ${id} v${record.version}`);
   }
-  const all = SPECIES_TRAITS.filter((traits) => existsSync(join(PLANTS, "species/data", `${camel(traits.id)}.ts`)));
+  const all = [...SPECIES_TRAITS, ...HABIT_TRAITS].filter((traits) => existsSync(join(PLANTS, "species/data", `${camel(traits.id)}.ts`)));
   writeFileSync(
     join(PLANTS, "species/data/plantLibrary.ts"),
     `import type { PlantSpecies } from "../plantSpecies";\n${all.map((t) => `import { ${t.exportName} } from "./${camel(t.id)}";`).join("\n")}\n\n/**
@@ -321,6 +389,16 @@ async function runReport(ids: readonly string[], argv: readonly string[]): Promi
   for (const id of ids) {
     const fit = join(FIT_DIR, `${id}.json`);
     const fitted: FitFile | undefined = argv.includes("--fitted") && existsSync(fit) ? JSON.parse(readFileSync(fit, "utf8")) : undefined;
+    const habit = habitOf(id);
+    if (habit !== undefined) {
+      const record = fitted?.species ?? (await loadRecord(id)) ?? (await startingHabitRecord(habit));
+      const reference = habitReferenceOf(id);
+      const trial = runHabitTrial(record, seeds);
+      const score = scoreHabitTrial(reference, habit.limits.maxCrownRadiusM, trial);
+      console.log(`${id} score ${score.total.toFixed(2)} ${JSON.stringify(score.parts)}`);
+      for (const r of trial.open.flat()) console.log(`  ${r.age} y: H ${r.heightM.toFixed(2)} CW ${r.crownWidthM.toFixed(2)} stems ${r.stems}${r.alive ? "" : " dead"}`);
+      continue;
+    }
     const record = fitted?.species ?? (await loadRecord(id)) ?? (await startingRecord(traitsOf(id)));
     const traits = traitsOf(id);
     const reference = referenceOf(id);

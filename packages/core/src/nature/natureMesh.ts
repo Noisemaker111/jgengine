@@ -41,7 +41,7 @@ export interface NatureMeshPart {
 
 /**
  * True when a generator output is a {@link NatureMesh}.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function isNatureMesh(value: unknown): value is NatureMesh {
   return typeof value === "object" && value !== null && "positions" in value && value.positions instanceof Float32Array && "indices" in value && value.indices instanceof Uint32Array;
@@ -256,7 +256,7 @@ export interface TubeOptions {
 /**
  * A tapered tube along `path` with radius `radii[i]` at each point: trunks, branches, logs. Rings
  * follow the path's tangent with a rotation-minimising frame so a bent trunk does not twist.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], radii: readonly number[], options: TubeOptions): void {
   if (path.length < 2) return;
@@ -373,7 +373,7 @@ export interface BlobOptions {
 
 /**
  * A lumpy ellipsoid: a leaf cluster, a bush clump, a coconut.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void {
   const { vertices, faces } = icosphere(options.level);
@@ -413,7 +413,7 @@ export interface LeafClusterOptions {
  * A leafy cluster: a shaded core with folded leaf blades fanned out over its shell, so a canopy or a
  * bush reads as foliage with a broken edge instead of a smooth ball. The blades are single-sided;
  * draw them with the `"leaf"` surface, which lights both faces.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addLeafCluster(builder: NatureMeshBuilder, options: LeafClusterOptions): void {
   const [cx, cy, cz] = options.center;
@@ -484,7 +484,7 @@ export interface ConeOptions {
 
 /**
  * A closed, drooping cone: one conifer tier.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addCone(builder: NatureMeshBuilder, options: ConeOptions): void {
   const sides = Math.max(4, Math.floor(options.sides));
@@ -532,7 +532,7 @@ export interface FrondOptions {
  * A folded, drooping leaf blade: palm and cycad fronds, fern fronds, broad bush leaves. Both faces
  * are emitted (the shared material is single-sided) with normals leaning up, so the underside of a
  * raised frond reads as lit foliage rather than a black sliver.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addFrond(builder: NatureMeshBuilder, options: FrondOptions): void {
   const segments = Math.max(2, Math.floor(options.segments));
@@ -619,7 +619,7 @@ function ridged(seed: number, x: number, y: number, z: number): number {
  * `erosion` blending the cuts back toward smooth, moss on the faces that look up, and a flat buried
  * base. `crag` adds ridged cracks and stacked ledges; vertices are shared when `smooth` is set, else
  * each face keeps its own and the stone shades faceted like a low-poly rock.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addStone(builder: NatureMeshBuilder, options: StoneOptions): void {
   const { vertices, faces } = icosphere(options.level);

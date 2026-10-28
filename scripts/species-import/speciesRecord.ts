@@ -96,7 +96,7 @@ function key(name: string): string {
 }
 
 /** TypeScript source of a species record file, as `bun run jgengine plants write` emits it. */
-export function speciesRecordSource(traits: SpeciesTraits, record: PlantSpecies, summary: string): string {
+export function speciesRecordSource(traits: Pick<SpeciesTraits, "exportName">, record: PlantSpecies, summary: string): string {
   return `import type { PlantSpecies } from "../plantSpecies";
 
 /**

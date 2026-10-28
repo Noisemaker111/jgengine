@@ -76,9 +76,21 @@ const tree = (species: string, age: number, params: Record<string, unknown> = {}
 });
 
 /**
+ * A shrub grown by the plant simulation: a species at an age. Bushes stand by the thousand, so they
+ * share a few seeded variants at the lighter leaf budget.
+ */
+const shrub = (species: string, age: number, params: Record<string, unknown> = {}, variants = 6): ScatterGeneratorItem => ({
+  generator: "plant.grown",
+  params: { species, age, ...TREE_LOOK, ...params },
+  variants,
+  detail: 0.5,
+});
+
+/**
  * Scatter palette item (the island's forests, rocks and bushes in editor.scene.json) → what it draws.
  * Trees are grown by the engine's plant simulation (sugar maple and white pine; dead trees are
- * maple snags left standing 8 years); palms, bushes, ferns, rocks and pebbles grow from its nature generators,
+ * maple snags left standing 8 years) and so are the berry bushes (highbush blueberry); palms, ferns,
+ * rocks and pebbles grow from its nature generators,
  * so no two neighbours match; grass, flowers and ore rocks stay catalog models.
  */
 export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> = {
@@ -93,8 +105,8 @@ export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> =
   rock: grown("nature.rock", "rock", { size: 2.2, erosion: 0.2, smooth: true, crag: 0.9 }),
   boulder: grown("nature.rock", "boulder", { size: 4.6, erosion: 0.2, smooth: true, crag: 0.8 }),
   boulder2: grown("nature.rock", "slab", { size: 4.2, flatness: 0.55, moss: 0.4, smooth: true, crag: 0.8 }),
-  bush: undergrowth("nature.bush", "shrub", { width: 1.6, height: 1.3 }),
-  berrybush: undergrowth("nature.bush", "berry", { width: 1.6, height: 1.3 }),
+  bush: shrub("vaccinium-corymbosum", 4),
+  berrybush: shrub("vaccinium-corymbosum", 4, { leafScale: 3.2 }),
   fern: undergrowth("nature.fern", "fern", { frondLength: 1.4 }),
   pebble: grown("nature.rock", "pebbles", { size: 0.42, color: "#b9b2a4", smooth: true }, 4),
   pebble2: grown("nature.rock", "pebbles", { size: 0.48, count: 4, color: "#cfc7b6", smooth: true }, 4),
@@ -108,7 +120,7 @@ export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> =
   driftwood: grown("nature.driftwood", "driftwood", {}, 4),
   log: grown("nature.driftwood", "fallen-log", {}, 3),
   bracken: undergrowth("nature.fern", "bracken", {}, 4),
-  shrub: undergrowth("nature.bush", "shrub", { width: 2.2, height: 1.8, leafSize: 0.22, leafColor: "#3e7430" }, 4),
+  shrub: shrub("vaccinium-corymbosum", 6, { leafTint: "#d8ecc8" }, 4),
   jungletree: grown("nature.palm", "coconut", { height: 15, frondLength: 4.2, fruit: 0, frondColor: "#3d7430" }),
   youngtree: grown("nature.palm", "fan", { height: 6, frondColor: "#3f7a30" }, 4),
   grass: nature("Grass_Common_Tall", 0.7),

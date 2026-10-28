@@ -331,6 +331,10 @@ provenance.
   Phytologist* 128; Oborny, Kun, Czárán & Bokros 2000, clonal spread; May, Grimm & Jeltsch 2009,
   IBC-grass, *Oikos* 118 (paper only: grazing, trampling and mowing as defoliation); USDA NRCS plant
   guides (US public domain) for ryegrass, timothy and Kentucky bluegrass.
+- **Shrubs** (`growth.stemLifespanYears`, `species/habitReference.ts`): Bond & Midgley 2001, ecology of
+  sprouting in woody plants, *Trends in Ecology & Evolution* 16; Wilson & Tilman 1991, shrub stem
+  turnover; USDA NRCS PLANTS Database characteristics and the highbush blueberry plant guide (US
+  public domain) for heights, growth form and traits.
 
 ## Landform simulation
 

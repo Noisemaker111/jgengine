@@ -1,13 +1,13 @@
 // @skill jgengine-world
 /**
- * Seeded nature generators on the generator contract: palms and cycads, bushes, ferns, rocks from
+ * Seeded nature generators on the generator contract: palms and cycads, ferns, rocks from
  * pebbles to boulders, and driftwood; trees are grown by the plant simulation (`plant.grown`). Each
  * is a bounded param schema (trunk shape, fronds, clumps, colour, rock shape and erosion …) whose
  * variants differ in lean, clumps, tint and wear while still reading as their species. Species
- * recipes (palm, cycad, berry bush, boulder, pebbles …) are schema presets. Every generator returns a {@link NatureMesh} under
+ * recipes (palm, cycad, boulder, pebbles …) are schema presets. Every generator returns a {@link NatureMesh} under
  * {@link NATURE_OUTPUT}, so one draw path previews, places and scatter-instances them all.
  *
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 import { defineGenerator, registerGenerator, untypedGenerator, type GeneratorDefinition } from "../generator/generator";
 import { defineParamSchema } from "../generator/paramSchema";
@@ -46,9 +46,6 @@ const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 const LEAF_TRIANGLES = 1800;
 /** Most blades one cluster grows, however few clusters share the budget. */
 const MAX_CLUSTER_LEAVES = 90;
-
-/** Triangles a full-detail bush spends on leaf blades; bushes are many, so fewer than a tree's. */
-const BUSH_LEAF_TRIANGLES = 1100;
 
 /** Blades each of `clusters` grows at `detail` from a shared triangle budget. */
 function leavesPerCluster(clusters: number, detail: number, budget = LEAF_TRIANGLES): number {
@@ -199,100 +196,6 @@ export const PALM_GENERATOR = defineGenerator({
       const r = params.trunkRadius * 1.1;
       const size = Math.max(0.08, params.trunkRadius * 0.55);
       addBlob(builder, { center: [top[0] + Math.cos(angle) * r, top[1] - size * 1.2, top[2] + Math.sin(angle) * r], radii: [size, size * 1.1, size], level: 0, lumpiness: 0.1, seed: seed + i, color: fruit, colorJitter: 0.1, shadeBelow: 0.3 });
-    }
-    return builder.build();
-  },
-});
-
-// --- Bush ----------------------------------------------------------------------------------------
-
-/** Bush params: footprint, clumps, berries and colours. */
-export const BUSH_SCHEMA = defineParamSchema({
-  groups: [
-    { id: "shape", label: "Shape" },
-    { id: "berries", label: "Berries" },
-    { id: "colour", label: "Colour" },
-  ],
-  fields: [
-    { type: "seed", key: "seed", label: "seed", default: "" },
-    { type: "range", key: "width", label: "width", group: "shape", min: 0.3, max: 5, step: 0.05, default: 1.4, unit: "m", explore: [1, 1.9], exploreScale: "log" },
-    { type: "range", key: "height", label: "height", group: "shape", min: 0.2, max: 4, step: 0.05, default: 1.1, unit: "m", explore: [0.8, 1.4], exploreScale: "log" },
-    { type: "range", key: "clumps", label: "clumps", group: "shape", min: 2, max: 14, step: 1, default: 6, explore: [4, 9] },
-    { type: "range", key: "clumpSize", label: "clump size", group: "shape", min: 0.25, max: 0.8, step: 0.01, default: 0.48 },
-    { type: "range", key: "lumpiness", label: "lumpiness", group: "shape", min: 0, max: 0.6, step: 0.01, default: 0.3 },
-    { type: "range", key: "leafSize", label: "leaf size", group: "shape", min: 0.05, max: 1, step: 0.01, default: 0.32, unit: "m", explore: [0.24, 0.42] },
-    { type: "range", key: "berries", label: "berries", group: "berries", min: 0, max: 40, step: 1, default: 0, vary: false },
-    { type: "range", key: "berrySize", label: "berry size", group: "berries", min: 0.02, max: 0.15, step: 0.005, default: 0.06, unit: "m" },
-    { type: "color", key: "leafColor", label: "leaves", group: "colour", default: "#4a7f34", explore: { hue: 18, saturation: 0.2, lightness: 0.07 } },
-    { type: "range", key: "tint", label: "tint variation", group: "colour", min: 0, max: 0.5, step: 0.01, default: 0.18 },
-    { type: "color", key: "berryColor", label: "berries", group: "colour", default: "#b3243a", explore: { hue: 30, saturation: 0.2, lightness: 0.08 } },
-  ],
-  presets: [
-    { id: "shrub", label: "Shrub", values: { width: 1.4, height: 1.1, berries: 0 } },
-    { id: "berry", label: "Berry bush", values: { width: 1.5, height: 1.2, clumps: 7, berries: 26, leafColor: "#3f7a37" } },
-    { id: "hedge", label: "Low hedge", values: { width: 2.6, height: 0.8, clumps: 10, clumpSize: 0.38, lumpiness: 0.18 } },
-  ],
-});
-
-/** Bushes: shrub, berry bush, low hedge. */
-export const BUSH_GENERATOR = defineGenerator({
-  id: "nature.bush",
-  label: "Bush",
-  output: NATURE_OUTPUT,
-  schema: BUSH_SCHEMA,
-  lods: NATURE_LODS,
-  generate(params, context): NatureMesh {
-    const random = context.random("shape");
-    const seed = noiseSeed(context.seed);
-    const builder = new NatureMeshBuilder();
-    const leaf = hexRgb(params.leafColor);
-    const halfW = params.width / 2;
-    const clumps: { center: NatureVec; radii: NatureVec }[] = [];
-    const core = Math.min(halfW, params.height) * 0.7;
-    clumps.push({ center: [0, params.height * 0.45, 0], radii: [halfW * 0.75, params.height * 0.5, halfW * 0.75] });
-    for (let i = 0; i < params.clumps; i += 1) {
-      const angle = i * GOLDEN * 1.0 + random() * 0.6;
-      const reach = halfW * (0.35 + random() * 0.4);
-      const size = Math.max(core * 0.4, params.width * params.clumpSize * 0.5 * spread(random, 0.25));
-      const y = params.height * lerp(0.3, 0.7, random());
-      clumps.push({ center: [Math.cos(angle) * reach, Math.max(size * 0.55, Math.min(y, params.height - size * 0.6)), Math.sin(angle) * reach], radii: [size, size * 0.85, size * spread(random, 0.15)] });
-    }
-    const leaves = leavesPerCluster(clumps.length, context.detail, BUSH_LEAF_TRIANGLES);
-    builder.surface("leaf");
-    clumps.forEach((clump, index) => {
-      addLeafCluster(builder, {
-        center: clump.center,
-        radii: clump.radii,
-        coreLevel: 0,
-        lumpiness: params.lumpiness,
-        seed: seed + index * 31,
-        color: tinted(leaf, random, params.tint),
-        colorJitter: params.tint,
-        shadeBelow: 0.45,
-        leaves,
-        leafSize: params.leafSize,
-      });
-    });
-    builder.surface();
-    const berry = hexRgb(params.berryColor);
-    const berryRandom = context.random("berries");
-    const berries = Math.round(params.berries * (context.detail >= 0.75 ? 1 : 0.5));
-    for (let i = 0; i < berries; i += 1) {
-      const clump = clumps[1 + Math.floor(berryRandom() * Math.max(1, clumps.length - 1))] ?? pick(clumps, 0);
-      const theta = berryRandom() * Math.PI * 2;
-      const phi = Math.acos(berryRandom() * 1.4 - 0.4);
-      const out: NatureVec = [Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)];
-      const size = params.berrySize * spread(berryRandom, 0.25);
-      addBlob(builder, {
-        center: [clump.center[0] + out[0] * clump.radii[0] * 0.98, clump.center[1] + out[1] * clump.radii[1] * 0.98, clump.center[2] + out[2] * clump.radii[2] * 0.98],
-        radii: [size, size, size],
-        level: 0,
-        lumpiness: 0,
-        seed,
-        color: shade(berry, spread(berryRandom, 0.15)),
-        colorJitter: 0,
-        shadeBelow: 0.3,
-      });
     }
     return builder.build();
   },
@@ -489,7 +392,6 @@ export const DRIFTWOOD_GENERATOR = defineGenerator({
 /** Every nature generator, in editor order, as the untyped registry view. */
 export const NATURE_GENERATORS: readonly GeneratorDefinition[] = [
   untypedGenerator(PALM_GENERATOR),
-  untypedGenerator(BUSH_GENERATOR),
   untypedGenerator(FERN_GENERATOR),
   untypedGenerator(ROCK_GENERATOR),
   untypedGenerator(DRIFTWOOD_GENERATOR),

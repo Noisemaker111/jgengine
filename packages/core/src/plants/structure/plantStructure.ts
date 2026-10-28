@@ -90,6 +90,8 @@ export interface PlantStructure {
   leafShape: LeafShapeParams;
   /** The species' leaf colours across the season; {@link PlantStructure.leaves} `colorState` mixes them. */
   leafColor: SeasonalColor;
+  /** Colours of the species' flowers and ripe fruit, hex. */
+  organColor: { flower: string; fruit: string };
   bark: { kind: BarkKind; furrow: number; color: string };
 }
 
@@ -363,6 +365,7 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     reproductive: { kind: organKind, position: organPosition, size: organSize, stage: organStage, count: organCount },
     leafShape: species.leaf.shape,
     leafColor: species.leaf.color,
+    organColor: { flower: species.reproduction.flowerColor ?? "#efeadb", fruit: species.reproduction.fruitColor ?? "#6b3a24" },
     bark: { kind: species.bark.kind, furrow, color: species.bark.color },
   };
 }

@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
 import { PINUS_STROBUS } from "../species/data/pinusStrobus";
+import { VACCINIUM_CORYMBOSUM } from "../species/data/vacciniumCorymbosum";
+import { basalStemCount } from "../species/habitReference";
+import { PLANT_REGION } from "../structure/plantStructure";
 import { validatePlantSpecies } from "../species/plantSpecies";
 import { crownRatio, hashPlantStructure } from "../structure/plantStructure";
 import { siteIndexHeightM, type SiteIndexCurve } from "../validation/heightAgeCurves";
@@ -209,4 +212,22 @@ describe("eastern white pine", () => {
     expect(winter.leaves.size.length).toBeGreaterThan(0);
     expect(Math.max(...winter.leaves.colorState.filter((_, i) => i % 4 === 3))).toBe(0);
   });
+});
+
+describe("highbush blueberry", () => {
+  test("old stems die and suckers replace them, so the clump keeps its stems and height", () => {
+    const shrub = createPlantGrowth(VACCINIUM_CORYMBOSUM, OPEN_TEMPERATE_SITE, "clump");
+    const lifespan = VACCINIUM_CORYMBOSUM.growth.stemLifespanYears ?? 0;
+    expect(lifespan).toBeGreaterThan(0);
+    shrub.step(40);
+    const { segments, stats } = shrub.structure();
+    let oldest = 40;
+    for (let i = 0; i < segments.parent.length; i += 1) {
+      if (segments.parent[i] === 0 && segments.order[i] === 0 && segments.region[i] !== PLANT_REGION.deadwood) oldest = Math.min(oldest, segments.bornYear[i] ?? 0);
+    }
+    expect(40 - oldest).toBeLessThan(1.5 * lifespan);
+    expect(basalStemCount(segments, PLANT_REGION.deadwood)).toBeGreaterThanOrEqual(3);
+    expect(stats.heightM).toBeGreaterThan(2);
+    expect(shrub.stats().alive).toBe(true);
+  }, 60_000);
 });

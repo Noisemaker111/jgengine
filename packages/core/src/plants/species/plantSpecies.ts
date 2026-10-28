@@ -73,6 +73,13 @@ export interface PlantSpecies {
      */
     basalStems: number;
     /**
+     * A shrub's stems live this many years on average (each one 0.6–1.4 of it), then die and a new
+     * sucker rises from the root collar, so the clump renews itself and never grows a trunk (Bond &
+     * Midgley 2001; Wilson & Tilman 1991 on clonal stem turnover). Absent for a tree, whose stems
+     * live as long as it does.
+     */
+    stemLifespanYears?: number;
+    /**
      * Gravimorphism (Wareing & Nasr 1961): share of that maximum a horizontal shoot keeps; upright
      * shoots keep all of it, in between scales with the shoot's vertical component.
      */
@@ -198,7 +205,7 @@ export interface PlantSpecies {
     color: SeasonalColor;
   };
   bark: { kind: BarkKind; smoothUntilYears: number; furrowDepth: number; color: string };
-  reproduction: { firstFlowerYears: number; flowerColor?: string; seedMassMg: number };
+  reproduction: { firstFlowerYears: number; flowerColor?: string; fruitColor?: string; seedMassMg: number };
   phenology: {
     /** Base temperature of spring forcing, °C. */
     forcingBaseC: number;
