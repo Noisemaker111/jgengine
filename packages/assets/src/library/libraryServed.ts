@@ -48,6 +48,8 @@ export function libraryServedPath(entry: LibraryEntry): LibraryServedPath {
     }
     case "makehuman":
       return { dir: `models/library/makehuman/${id}`, url: `/models/library/makehuman/${id}/model.glb` };
+    case "smithsonian":
+      return { dir: `models/library/smithsonian/${id}`, url: `/models/library/smithsonian/${id}/model.glb` };
     case "sketchfab":
       return { dir: `models/sketchfab/${id}`, url: `/models/sketchfab/${id}/model.glb` };
     case "kaykit":

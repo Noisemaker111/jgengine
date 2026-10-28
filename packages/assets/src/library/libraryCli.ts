@@ -27,6 +27,7 @@ import {
   type KayKitTreePack,
 } from "./libraryIngest";
 import { makehumanRecords } from "./libraryMakehuman";
+import { ingestSmithsonian } from "./librarySmithsonian";
 import { LIBRARY_KINDS } from "./librarySources";
 
 /** The sources `assets library ingest` can refresh, each writing `library/generated/<source>.json`. */
@@ -37,6 +38,7 @@ const INGESTERS: Record<string, (options: IngestOptions) => Promise<LibraryRecor
   sketchfab: ingestSketchfab,
   rocketbox: ingestRocketbox,
   makehuman: async () => makehumanRecords(),
+  smithsonian: ingestSmithsonian,
   kaykit: (options) => ingestKaykitTrees(kaykitTreePacks(), options),
 };
 

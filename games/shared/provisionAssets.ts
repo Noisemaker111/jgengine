@@ -26,7 +26,7 @@ export interface LibraryPullJob extends PullJob {
   url: string;
 }
 
-const LIBRARY_KEY = /["'`]((?:ambientcg|polyhaven|gameicons|sketchfab|kaykit|quaternius|rocketbox|makehuman):[A-Za-z0-9_./-]+)["'`]/g;
+const LIBRARY_KEY = /["'`]((?:ambientcg|polyhaven|gameicons|sketchfab|kaykit|quaternius|rocketbox|makehuman|smithsonian):[A-Za-z0-9_./-]+)["'`]/g;
 
 function sourceText(dir: string): string {
   if (!existsSync(dir)) return "";

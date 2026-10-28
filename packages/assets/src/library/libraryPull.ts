@@ -13,6 +13,7 @@ import { sourceById } from "../sources";
 import type { LibraryEntry } from "./assetLibrary";
 import { makehumanPreset } from "./libraryMakehuman";
 import { rocketboxClipOf } from "./libraryRocketbox";
+import { smithsonianGlbUrl } from "./librarySmithsonian";
 import { librarySource } from "./librarySources";
 import { libraryServedPath, lowerLibraryId, type LibraryServedPath } from "./libraryServed";
 
@@ -86,7 +87,7 @@ const POLYHAVEN_MAPS: readonly [MaterialMapRole, readonly string[]][] = [
  * Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the
  * pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through
  * the model library's converters (a Rocketbox character with `ctx.clips` baked on), a Rocketbox
- * animation as a skeleton-only clip GLB, a MakeHuman person built from its CC0 base mesh and targets, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a
+ * animation as a skeleton-only clip GLB, a MakeHuman person built from its CC0 base mesh and targets, a Smithsonian scan as its CC0 GLB, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a
  * Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
  *
  * @capability library-pull fetch one library asset (model, material, HDRI, icon pack) into the folder a game serves it from
@@ -175,6 +176,11 @@ export async function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullCont
     const preset = makehumanPreset(entry.id);
     if (preset === undefined) throw new Error(`${entry.key}: no pinned MakeHuman preset has this id`);
     await pullMakeHumanCharacter(preset, { outDir: dir, fetchImpl, githubToken: ctx.githubToken });
+    return served;
+  }
+  if (entry.source === "smithsonian") {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "model.glb"), await bytesOf(fetchImpl, smithsonianGlbUrl(entry)));
     return served;
   }
   if (entry.source === "sketchfab") {
