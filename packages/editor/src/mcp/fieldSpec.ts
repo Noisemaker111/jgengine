@@ -88,6 +88,7 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   list_assets: [],
   place_asset: [req(s("id")), s("kind"), n("x"), n("y"), n("z")],
   create_terrain: [n("width"), n("depth"), n("cellSize"), n("centerX"), n("centerZ")],
+  grow_landform: [o("params"), n("centerX"), n("centerZ"), n("datum")],
   sculpt_terrain: [req(s("mode", ["raise", "lower", "smooth", "flatten", "noise", "ramp"])), req(n("x")), req(n("z")), n("radius"), n("strength"), n("target"), n("toX"), n("toZ"), n("seed"), s("shape", SHAPE)],
   terrain_summary: [],
   paint_terrain: [req(s("surface")), req(n("x")), req(n("z")), n("radius"), s("shape", SHAPE)],

@@ -71,6 +71,7 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "set_mode", description: "Switch the live editor between edit, walk, play, and hud (HUD-layout authoring) modes." },
   { name: "perf_report", description: "Frame-time breakdown from engine devtools: fps, sim phases, and lag culprit hints." },
   { name: "create_terrain", description: "Create an editable sculpt heightfield over the scene (width/depth/cellSize)." },
+  { name: "grow_landform", description: "Grow the scene terrain from geology, rivers and wind (landform generator params: side, cellSize, years, uplift, erodibility, caprock, sand, windToward, …) as one undoable edit, with rock/gravel/sand/mud/soil material layers." },
   { name: "sculpt_terrain", description: "Apply one sculpt brush (raise/lower/smooth/flatten/noise/ramp) at x/z as an undoable stroke." },
   { name: "terrain_summary", description: "Report the sculpt heightfield's grid size, bounds, min/max offset, edited vertices, and painted cells." },
   { name: "paint_terrain", description: "Paint a terrain material (grass/dirt/rock/…) at x/z as an undoable stroke." },
