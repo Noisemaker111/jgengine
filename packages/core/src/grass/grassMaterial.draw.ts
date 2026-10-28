@@ -20,6 +20,8 @@ export interface GrassShaderUniforms {
   uTone: THREE.IUniform<THREE.Vector4>;
   uNoise: THREE.IUniform<THREE.Vector2>;
   uLight: THREE.IUniform<THREE.Vector2>;
+  /** Mow stripes: x width in metres (0 off), y contrast, zw heading as a unit vector. */
+  uStripe: THREE.IUniform<THREE.Vector4>;
 }
 
 /** The grass blade material and the uniforms behind it. */
@@ -46,7 +48,9 @@ uniform vec4 uWind;
 uniform vec2 uWindDirection;
 uniform vec4 uShape;
 uniform float uFlower;
+uniform vec4 uStripe;
 varying float vGrassT;
+varying float vGrassStripe;
 varying float vGrassRoll;
 varying float vGrassKind;
 varying float vGrassTone;
@@ -110,6 +114,9 @@ void jgComputeGrassBlade() {
   vGrassRoll = instanceVary.y;
   vGrassKind = petal ? 2.0 + mod(kind, 2.0) : mod(kind, 2.0);
   vGrassTone = instanceTone;
+  // Mirrors grassStripeAt, so blade stripes line up with the turf mat's.
+  float stripeBand = sin(dot(instanceOffset.xz, uStripe.zw) * 3.14159265 / max(uStripe.x, 1e-3));
+  vGrassStripe = uStripe.x > 0.0 ? smoothstep(-0.15, 0.15, stripeBand) * 2.0 - 1.0 : 0.0;
   vGrassFade = fade;
   vGrassPetal = petal ? vec2(grassUv.x, grassUv.y - 2.0) : vec2(-1.0);
 }
@@ -126,7 +133,9 @@ uniform vec3 uGroundColor;
 uniform vec4 uTone;
 uniform vec2 uNoise;
 uniform vec2 uLight;
+uniform vec4 uStripe;
 varying float vGrassT;
+varying float vGrassStripe;
 varying float vGrassRoll;
 varying float vGrassKind;
 varying float vGrassTone;
@@ -163,6 +172,7 @@ if (vGrassKind > 1.5) {
   float dry = clamp(uTone.z + (vGrassTone - 0.5) * uTone.w * 0.7, 0.0, 1.0);
   float dryReach = dry * smoothstep(-0.3, 1.0, vGrassT + dry * 0.6);
   grassColor = mix(grassColor, vec3(0.79, 0.70, 0.48) * (0.6 + lum), dryReach);
+  grassColor *= 1.0 + vGrassStripe * uStripe.y * 0.6;
   // Roots take the ground colour so blades grow out of the terrain instead of floating on it.
   grassColor = mix(mix(uGroundColor, grassColor, 0.45), grassColor, smoothstep(0.0, 0.3, vGrassT));
 }
@@ -182,6 +192,7 @@ reflectedLight.directDiffuse += vec3(0.34, 0.28, 0.12) * jgTipMask * jgLit * uLi
 export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRepresentation): GrassMaterialHandle {
   const base = new THREE.Color(look.baseColor);
   const heading = (look.windDirection * Math.PI) / 180;
+  const stripeHeading = (look.stripeAngle * Math.PI) / 180;
   const softness = 1.25 - look.stiffness;
   const strength = look.windStrength * 0.6 * softness;
   const flutter = look.windStrength * 0.18 * softness;
@@ -201,6 +212,7 @@ export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRe
     uTone: { value: new THREE.Vector4(look.gradient, look.season, look.dryness, look.seasonNoise) },
     uNoise: { value: new THREE.Vector2(look.hueNoise, look.valueNoise) },
     uLight: { value: new THREE.Vector2(look.translucency, 0) },
+    uStripe: { value: new THREE.Vector4(look.stripeWidth, look.stripeContrast, Math.cos(stripeHeading), Math.sin(stripeHeading)) },
   };
   const material = new THREE.MeshStandardMaterial({ color: "#ffffff", side: THREE.DoubleSide, roughness: look.roughness, metalness: 0 });
   material.onBeforeCompile = (shader) => {

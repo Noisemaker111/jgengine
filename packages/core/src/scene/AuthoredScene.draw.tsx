@@ -24,7 +24,7 @@ import { isScatterPath, resolveScatter } from "@jgengine/core/scatter/scatterReg
 import { scatterClearingOf } from "@jgengine/core/scatter/scatterClearing";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
-import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
+import { partsGeneratorFor } from "@jgengine/core/scene/assetGenerator";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
@@ -87,7 +87,7 @@ function pathToKindObject(path: EditorPath): SceneKindObject {
 /** Renders every marker placed as a parametric generator asset, re-resolved from its `meta` + seed. */
 function AuthoredGenerators({ document, field }: { document: EditorDocument; field: TerrainField }) {
   const markers = useMemo(
-    () => document.markers.filter((marker) => typeof marker.meta?.["assetId"] === "string" && getAssetGenerator(marker.meta["assetId"] as string) !== undefined),
+    () => document.markers.filter((marker) => partsGeneratorFor(marker.meta) !== undefined),
     [document.markers],
   );
   return (

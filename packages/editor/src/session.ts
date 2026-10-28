@@ -25,7 +25,7 @@ import {
   type RuntimePlayControl,
 } from "@jgengine/core/editor/index";
 import type { TerraformMode, TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
-import type { ParamSchema } from "@jgengine/core/scene/sceneKinds";
+import type { ParamSchema } from "@jgengine/core/generator/paramSchema";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import type { ModelMaterialSlotInfo } from "@jgengine/core/material/materialAsset.draw";
 
@@ -99,6 +99,40 @@ export type EditorBridgeRequest =
   | { method: "set_note"; id: string; text?: string; meta?: Record<string, unknown> }
   | { method: "set_meta"; id: string; patch: Record<string, unknown> }
   | { method: "apply_preset"; id: string; preset: string }
+  | { method: "list_generators"; output?: string }
+  | {
+      method: "generator_variants";
+      id?: string;
+      generator?: string;
+      count?: number;
+      explore?: number;
+      seed?: string;
+      keep?: Record<string, unknown>[];
+    }
+  | {
+      method: "apply_variant";
+      id: string;
+      index?: number;
+      meta?: Record<string, unknown>;
+      count?: number;
+      explore?: number;
+      seed?: string;
+      keep?: Record<string, unknown>[];
+    }
+  | {
+      method: "place_variant";
+      id: string;
+      index?: number;
+      meta?: Record<string, unknown>;
+      dx?: number;
+      dy?: number;
+      dz?: number;
+      newId?: string;
+      count?: number;
+      explore?: number;
+      seed?: string;
+      keep?: Record<string, unknown>[];
+    }
   | { method: "select"; ids: string[] }
   | { method: "clear_selection" }
   | {

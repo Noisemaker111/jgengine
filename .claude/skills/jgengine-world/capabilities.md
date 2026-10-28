@@ -607,6 +607,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveGamepadFrame` (function) · `import { resolveGamepadFrame } from "@jgengine/core/input/gamepadModel"`
 
+## generator-contract — seeded, schema-driven procedural generator with variants and editor exposure
+
+- `bakeGeneratorVariants` (function) · `import { bakeGeneratorVariants } from "@jgengine/core/world"`
+- `jitterParams` (function) · `import { jitterParams } from "@jgengine/core/world"`
+- `sampleGradient` (function) · `import { sampleGradient } from "@jgengine/core/world"`
+- `untypedGenerator` (function) · `import { untypedGenerator } from "@jgengine/core/world"`
+- `variantIndexAt` (function) · `import { variantIndexAt } from "@jgengine/core/generator/generator"`
+
 ## gesture-resume — unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing
 
 - `installGestureResume` (function) · `import { installGestureResume } from "@jgengine/core/audio/gestureResume.view"`

@@ -1,5 +1,5 @@
 import type { EditorCatalogDefinition, EditorCatalogEntry, EditorCatalogsInput } from "@jgengine/core/editor/index";
-import type { ParamSchema } from "@jgengine/core/scene/sceneKinds";
+import type { ParamSchema } from "@jgengine/core/generator/paramSchema";
 import { importOptionalGameModule } from "./importOptionalGameModule";
 
 /** Result of {@link loadGameCatalogs}: validated definitions, or diagnostics when the export is malformed. */

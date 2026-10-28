@@ -9,7 +9,7 @@
  *
  * @capability city-district zone bands, weighted building-class mixes, and per-class massing pieces
  */
-import type { WeightedParamEntry } from "../scene/sceneKinds";
+import type { WeightedParamEntry } from "../generator/paramSchema";
 
 /** A building class a zone mix can weight — drives lot size, floors, setback, and massing. */
 export type CityLotClass =

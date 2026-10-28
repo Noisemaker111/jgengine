@@ -8,7 +8,10 @@
  *
  * @capability grass-field editor-authorable GPU grass patch
  */
-import { registerSceneKind, type ParamField, type ParamSchema, type SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+import { registerSceneKind, type SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+import { defineParamSchema, parseParams, type ColorParamField, type RangeParamField } from "@jgengine/core/generator/paramSchema";
+import { defineGenerator, registerGenerator } from "@jgengine/core/generator/generator";
+import { createGrassTuftTemplate, type GrassTuftTemplate } from "@jgengine/core/grass/grassField";
 
 /** The editor volume kind marking a box as a GPU grass patch. */
 export const GRASS_FIELD_KIND = "grass_field";
@@ -77,6 +80,14 @@ export interface GrassLook {
   patchiness: number;
   /** 0..1 how much steep ground shortens the grass growing on it. */
   slopeThin: number;
+  /** 0..1 share of the field left as open ground between tufts (dune sand, savanna soil); 0 grows everywhere. */
+  bareGround: number;
+  /** Width of one mow stripe in metres; 0 turns stripes off. */
+  stripeWidth: number;
+  /** 0..1 light/dark contrast between neighbouring mow stripes. */
+  stripeContrast: number;
+  /** Mow stripe heading in degrees, 0 along +X. */
+  stripeAngle: number;
   /** 0..1 sway distance. */
   windStrength: number;
   /** Wind animation speed. */
@@ -130,6 +141,10 @@ export const GRASS_DEFAULTS: GrassLook = {
   clumpSize: 2.5,
   patchiness: 0,
   slopeThin: 0.5,
+  bareGround: 0,
+  stripeWidth: 0,
+  stripeContrast: 0.35,
+  stripeAngle: 0,
   windStrength: 0.3,
   windSpeed: 1.4,
   windGust: 0.25,
@@ -144,10 +159,47 @@ export const GRASS_DEFAULTS: GrassLook = {
 type NumberKey = { [K in keyof GrassLook]: GrassLook[K] extends number ? K : never }[keyof GrassLook];
 type ColorKey = "baseColor" | "tipColor" | "mixColor" | "flowerColor" | "flowerColor2";
 
-const range = (key: NumberKey, label: string, min: number, max: number, step: number, group?: string, unit?: string): ParamField => ({
-  type: "range", key, label, min, max, step, default: GRASS_DEFAULTS[key], ...(group === undefined ? {} : { group }), ...(unit === undefined ? {} : { unit }),
+/** Where variants explore, inside each knob's full range, so every variant still reads as grass. */
+const GRASS_EXPLORE: Partial<Record<NumberKey, readonly [number, number]>> = {
+  density: [0.5, 1],
+  groundCover: [0.75, 1],
+  flowerShare: [0, 0.2],
+  clumping: [0, 0.7],
+  bladeHeight: [0.01, 1.2],
+  heightVariation: [0, 0.8],
+  bladeWidth: [0.008, 0.12],
+  widthVariation: [0, 0.8],
+  profile: [0, 0.8],
+  curvature: [0, 0.8],
+  stiffness: [0.2, 1],
+  tuftSpread: [0, 0.3],
+  tuftBlades: [2, 9],
+  gradient: [0.2, 1],
+  hueNoise: [0, 0.5],
+  valueNoise: [0, 0.5],
+  seasonNoise: [0, 0.6],
+  dryness: [0, 0.7],
+  mixHeight: [0.5, 2.5],
+  mixWidth: [0.5, 2.5],
+  patchiness: [0, 0.35],
+  bareGround: [0, 0.3],
+  normalLift: [0.3, 1],
+  roughness: [0.4, 1],
+  translucency: [0, 0.6],
+};
+/** Sizes that span orders of magnitude explore by ratio, so a putting green's variants stay short. */
+const GRASS_LOG_EXPLORE: ReadonlySet<NumberKey> = new Set<NumberKey>(["bladeHeight", "bladeWidth", "flowerSize"]);
+
+const range = <Key extends NumberKey>(key: Key, label: string, min: number, max: number, step: number, group?: string, unit?: string): RangeParamField & { key: Key } => {
+  const explore = GRASS_EXPLORE[key];
+  return {
+    type: "range", key, label, min, max, step, default: GRASS_DEFAULTS[key], ...(group === undefined ? {} : { group }), ...(unit === undefined ? {} : { unit }),
+    ...(explore === undefined ? {} : { explore }), ...(GRASS_LOG_EXPLORE.has(key) ? { exploreScale: "log" as const } : {}),
+  };
+};
+const color = <Key extends ColorKey>(key: Key, label: string, group: string): ColorParamField & { key: Key } => ({
+  type: "color", key, label, group, default: GRASS_DEFAULTS[key], explore: { hue: 20, saturation: 0.2, lightness: 0.06 },
 });
-const color = (key: ColorKey, label: string, group: string): ParamField => ({ type: "color", key, label, group, default: GRASS_DEFAULTS[key] });
 
 /**
  * Starting looks the inspector offers as one-click applies. Each is plain knob values, so a game
@@ -177,22 +229,36 @@ export const GRASS_PRESETS = [
   preset("jungle", "Broadleaf jungle floor", { bladeHeight: 0.5, heightVariation: 0.5, bladeWidth: 0.16, profile: 0.95, curvature: 0.7,
     stiffness: 0.4, tuftSpread: 0.25, tuftBlades: 4, baseColor: "#1f4a24", tipColor: "#4f9a3c", hueNoise: 0.25, valueNoise: 0.4, normalLift: 0.45,
     mixShare: 0.2, mixHeight: 1.8, mixWidth: 0.4, mixColor: "#6cae48", windStrength: 0.15 }),
+  preset("green", "Putting green", { density: 1, bladeHeight: 0.02, heightVariation: 0.05, bladeWidth: 0.01, widthVariation: 0.2, profile: 0.3,
+    curvature: 0.05, stiffness: 0.95, tuftSpread: 0.03, tuftBlades: 7, baseColor: "#2a5a26", tipColor: "#5fa040", gradient: 0.6, hueNoise: 0.05,
+    valueNoise: 0.15, seasonNoise: 0.05, clumping: 0, slopeThin: 0, windStrength: 0, normalLift: 0.85, groundCover: 1, stripeWidth: 1.2, stripeContrast: 0.25 }),
+  preset("fairway", "Striped fairway", { density: 0.9, bladeHeight: 0.035, heightVariation: 0.1, bladeWidth: 0.014, widthVariation: 0.25, profile: 0.3,
+    curvature: 0.1, stiffness: 0.9, tuftSpread: 0.04, tuftBlades: 7, baseColor: "#335f2a", tipColor: "#76b44c", hueNoise: 0.08, valueNoise: 0.2,
+    seasonNoise: 0.1, clumping: 0.05, windStrength: 0.04, normalLift: 0.8, groundCover: 1, stripeWidth: 4, stripeContrast: 0.55, stripeAngle: 30 }),
+  preset("savanna", "Tall savanna", { density: 0.45, bladeHeight: 1.8, heightVariation: 0.45, bladeWidth: 0.022, widthVariation: 0.4, profile: 0.1,
+    curvature: 0.5, stiffness: 0.35, tuftSpread: 0.28, tuftBlades: 9, baseColor: "#7a6a3a", tipColor: "#e0c27a", gradient: 0.3, season: 0.5,
+    dryness: 0.55, seasonNoise: 0.45, mixShare: 0.15, mixHeight: 1.3, mixColor: "#d9b878", clumping: 0.75, clumpSize: 1.4, bareGround: 0.35,
+    windStrength: 0.55, windGust: 0.2, translucency: 0.85, groundCover: 0.35 }),
+  preset("dune", "Beach dune grass", { density: 0.35, bladeHeight: 0.75, heightVariation: 0.4, bladeWidth: 0.012, widthVariation: 0.3, profile: 0.05,
+    curvature: 0.75, stiffness: 0.3, tuftSpread: 0.18, tuftBlades: 9, baseColor: "#6f7a48", tipColor: "#c8c08a", dryness: 0.35, seasonNoise: 0.3,
+    clumping: 0.9, clumpSize: 1.2, bareGround: 0.6, slopeThin: 0.2, windStrength: 0.7, windSpeed: 2, windGust: 0.35, windDirection: 200, groundCover: 0 }),
 ];
 
-/** The grass parameter schema — drives the inspector and `meta` parse via the studio seam. */
-export const GRASS_SCHEMA: ParamSchema = {
+/** The grass parameter schema: drives the inspector, the variant grid and every `meta` parse. */
+export const GRASS_SCHEMA = defineParamSchema({
   groups: [
     { id: "blade", label: "Blade" },
     { id: "colour", label: "Colour" },
     { id: "species", label: "Species & flowers", collapsed: true },
     { id: "growth", label: "Growth & masks", collapsed: true },
+    { id: "mowing", label: "Mow stripes", collapsed: true, parent: "growth" },
     { id: "wind", label: "Wind", collapsed: true },
     { id: "light", label: "Light", collapsed: true },
   ],
   presets: GRASS_PRESETS,
   fields: [
     range("density", "fullness", 0, 1, 0.01),
-    range("bladeHeight", "height", 0.05, 2.5, 0.01, "blade", "m"),
+    range("bladeHeight", "height", 0.01, 2.5, 0.005, "blade", "m"),
     range("heightVariation", "height variation", 0, 1, 0.01, "blade"),
     range("bladeWidth", "width", 0.008, 0.3, 0.002, "blade", "m"),
     range("widthVariation", "width variation", 0, 1, 0.01, "blade"),
@@ -222,6 +288,10 @@ export const GRASS_SCHEMA: ParamSchema = {
     range("clumpSize", "clump size", 0.5, 12, 0.25, "growth", "m"),
     range("patchiness", "mown patches", 0, 1, 0.01, "growth"),
     range("slopeThin", "slope thinning", 0, 1, 0.01, "growth"),
+    range("bareGround", "bare ground", 0, 1, 0.01, "growth"),
+    range("stripeWidth", "stripe width", 0, 8, 0.1, "mowing", "m"),
+    range("stripeContrast", "stripe contrast", 0, 1, 0.01, "mowing"),
+    range("stripeAngle", "stripe heading", 0, 180, 1, "mowing", "°"),
     range("windStrength", "strength", 0, 1, 0.01, "wind"),
     range("windSpeed", "speed", 0, 4, 0.05, "wind"),
     range("windGust", "gust size", 0, 1, 0.01, "wind"),
@@ -232,32 +302,11 @@ export const GRASS_SCHEMA: ParamSchema = {
     range("groundCover", "ground cover", 0, 1, 0.01),
     { type: "seed", key: "seed", label: "seed", default: "" },
   ],
-};
-
-const RANGES: ReadonlyMap<string, { min: number; max: number; step: number }> = new Map(
-  GRASS_SCHEMA.fields.flatMap((field) => (field.type === "range" ? [[field.key, { min: field.min, max: field.max, step: field.step ?? 0 }] as const] : [])),
-);
-
-const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+});
 
 /** Parse a volume's `meta` (or a `grass()` config) into a fully-defaulted, clamped look. @internal */
 export function readGrassLook(meta: Readonly<Record<string, unknown>> | undefined): GrassLook {
-  const look: Record<string, number | string> = { ...GRASS_DEFAULTS };
-  for (const key of Object.keys(GRASS_DEFAULTS) as (keyof GrassLook)[]) {
-    const raw = meta?.[key];
-    const fallback = GRASS_DEFAULTS[key];
-    if (typeof fallback === "number") {
-      const bounds = RANGES.get(key)!;
-      const value = typeof raw === "number" && Number.isFinite(raw) ? raw : fallback;
-      const clamped = Math.max(bounds.min, Math.min(bounds.max, value));
-      look[key] = bounds.step >= 1 ? Math.round(clamped) : clamped;
-    } else if (key === "seed") {
-      look[key] = typeof raw === "string" ? raw : fallback;
-    } else {
-      look[key] = typeof raw === "string" && HEX.test(raw) ? raw : fallback;
-    }
-  }
-  return look as unknown as GrassLook;
+  return parseParams(GRASS_SCHEMA, meta);
 }
 
 /**
@@ -271,6 +320,37 @@ export function grassBladeDensity(look: GrassLook): number {
   const cover = 2.6 + look.density * 2.4;
   return cover / (width * (0.3 + Math.min(height, 1.2)));
 }
+
+/** The generator output family a grass look bakes to: {@link GrassFieldBake}. */
+export const GRASS_FIELD_OUTPUT = "grass-field";
+
+/** One baked grass look: the look with its seed settled, and the tuft mesh every instance of it places. */
+export interface GrassFieldBake {
+  look: GrassLook;
+  seed: string;
+  /** Blade segments the template was built at. */
+  segments: number;
+  template: GrassTuftTemplate;
+  /** Blades per m² at full detail. */
+  bladesPerM2: number;
+}
+
+/**
+ * The grass generator: one schema from a putting green to tall savanna and dune grass. Detail picks
+ * the blade segments (4 at full detail, 2 at half, 1 at a quarter), so a baked variant carries its LODs.
+ */
+export const GRASS_GENERATOR = defineGenerator({
+  id: "grass",
+  label: "Grass",
+  output: GRASS_FIELD_OUTPUT,
+  schema: GRASS_SCHEMA,
+  lods: [1, 0.5, 0.25],
+  generate(params, context): GrassFieldBake {
+    const look: GrassLook = { ...params, seed: context.seed };
+    const segments = Math.max(1, Math.round(4 * context.detail));
+    return { look, seed: context.seed, segments, template: createGrassTuftTemplate({ look, seed: context.seed, segments }), bladesPerM2: grassBladeDensity(look) };
+  },
+});
 
 /** A resolved grass patch: world-space area center at ground height, footprint size (XZ), and look. */
 export interface ResolvedGrass {
@@ -299,10 +379,12 @@ export function resolveGrassObject(object: SceneKindObject): ResolvedGrass | nul
   };
 }
 
-/** Registers the `grass_field` scene kind (schema + resolver). Called by {@link registerBuiltinSceneKinds}. @internal */
+/** Registers the grass generator and the `grass_field` scene kind (schema + resolver). Called by {@link registerBuiltinSceneKinds}. @internal */
 export function registerGrassKind(): void {
+  registerGenerator(GRASS_GENERATOR);
   registerSceneKind<ResolvedGrass | null>({
     kind: GRASS_FIELD_KIND,
+    generator: GRASS_GENERATOR.id,
     target: "volume",
     label: "Grass field",
     addCategory: "Studios",

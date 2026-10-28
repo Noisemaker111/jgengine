@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ParamSchema } from "../scene/sceneKinds";
+import type { ParamSchema } from "../generator/paramSchema";
 import { createEditorSession, createEmptyEditorDocument, exportEditorDocumentJson } from "./index";
 import { decodeEditorDocument } from "./document";
 import { resolveCatalogDefinitions } from "./entityCatalog";

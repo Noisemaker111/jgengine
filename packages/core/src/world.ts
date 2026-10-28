@@ -213,7 +213,46 @@ export {
   type FreeFlightStep,
   type FreeFlightTuning,
 } from "./flight/freeFlight";
-export { GRASS_SCHEMA } from "./grass/grassKind";
+export {
+  bakeGeneratorVariants,
+  defineGenerator,
+  generatorVariants,
+  getGenerator,
+  listGenerators,
+  registerGenerator,
+  runGenerator,
+  untypedGenerator,
+  type BakedGeneratorVariant,
+  type GeneratorContext,
+  type GeneratorDefinition,
+  type GeneratorVariant,
+  type GeneratorVariantOptions,
+} from "./generator/generator";
+export {
+  defineParamSchema,
+  findSchemaPreset,
+  jitterParams,
+  parseParams,
+  sampleCurve,
+  sampleGradient,
+  type CurvePoint,
+  type GradientStop,
+  type ParamField,
+  type ParamGroup,
+  type ParamPreset,
+  type ParamSchema,
+  type ParamsOf,
+  type ParsedParams,
+  type WeightedParamEntry,
+} from "./generator/paramSchema";
+export {
+  GRASS_FIELD_OUTPUT,
+  GRASS_GENERATOR,
+  GRASS_PRESETS,
+  GRASS_SCHEMA,
+  type GrassFieldBake,
+  type GrassLook,
+} from "./grass/grassKind";
 export {
   controlGroupKey,
   resolveControlGroupIntent,
@@ -654,7 +693,7 @@ export {
   type ScatterTerrain,
 } from "./scatter/scatterRegion";
 export { createAssetCatalog, type AssetCatalog, type ModelAssetRef, type ModelDims } from "./scene/assetCatalog";
-export { partsBounds, registerAssetGenerator, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
+export { PARTS_OUTPUT, partsBounds, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
 export {
   applyRotationPolicy,
   headingToRotationY,
@@ -734,18 +773,7 @@ export { MountController, createMountController } from "./scene/mount";
 export { objectVisualScale, type ObjectVisual, type SceneObject } from "./scene/objectStore";
 export { type PaintStroke } from "./scene/paintLayer";
 export { type RosterEntry } from "./scene/roster";
-export {
-  findSchemaPreset,
-  parseParams,
-  registerSceneKind,
-  type ParamField,
-  type ParamPreset,
-  type ParamSchema,
-  type ParsedParams,
-  type SceneKindObject,
-  type SceneKindResolveContext,
-  type WeightedParamEntry,
-} from "./scene/sceneKinds";
+export { registerSceneKind, type SceneKindObject, type SceneKindResolveContext } from "./scene/sceneKinds";
 export { firstImpact, hitsUntilBlocked, type SceneRaycastApi, type SceneRaycastHit } from "./scene/sceneRaycast";
 export {
   createSelectionSet,

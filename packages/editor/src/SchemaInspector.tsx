@@ -1,13 +1,18 @@
 import { useState } from "react";
 
 import {
+  childParamGroups,
   parseParams,
   randomizeGroupParams,
   resetGroupParams,
+  sampleCurve,
+  type CurvePoint,
+  type GradientStop,
   type ParamField,
+  type ParamGroup,
   type ParamSchema,
   type WeightedParamEntry,
-} from "@jgengine/core/scene/sceneKinds";
+} from "@jgengine/core/generator/paramSchema";
 import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view";
 
 import { BORDER, CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
@@ -45,6 +50,26 @@ function PresetRow({ schema, onMeta }: { schema: ParamSchema; onMeta: MetaPatch 
       </select>
     </label>
   );
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function curvePoints(value: unknown): CurvePoint[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isObject).flatMap((point) => {
+    const x = point["x"], y = point["y"];
+    return typeof x === "number" && typeof y === "number" ? [{ x, y }] : [];
+  });
+}
+
+function gradientStops(value: unknown): GradientStop[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isObject).flatMap((stop) => {
+    const at = stop["at"], color = stop["color"];
+    return typeof at === "number" && typeof color === "string" ? [{ at, color }] : [];
+  });
 }
 
 function labelOf(field: ParamField): string {
@@ -239,6 +264,93 @@ function WeightedListField({
   );
 }
 
+/** Curve field: an SVG preview of the sampled curve plus one x/y row per control point. */
+function CurveField({
+  field,
+  value,
+  coalesce,
+  onMeta,
+}: {
+  field: Extract<ParamField, { type: "curve" }>;
+  value: CurvePoint[];
+  coalesce: string;
+  onMeta: MetaPatch;
+}) {
+  const { value: points, onInput, flush } = useDebouncedCommit(value, (next) => onMeta({ [field.key]: next }, coalesce));
+  const min = field.min ?? 0;
+  const max = field.max ?? 1;
+  const span = max - min || 1;
+  const sorted = [...points].sort((a, b) => a.x - b.x);
+  const path = Array.from({ length: 33 }, (_, i) => {
+    const x = i / 32;
+    const y = 1 - (sampleCurve(sorted, x) - min) / span;
+    return `${i === 0 ? "M" : "L"}${(x * 100).toFixed(1)},${(y * 40).toFixed(1)}`;
+  }).join(" ");
+  const setNow = (next: CurvePoint[]) => {
+    onInput(next);
+    flush();
+  };
+  return (
+    <div className="space-y-1">
+      <div className={MICRO}>{labelOf(field)}</div>
+      <svg viewBox="0 0 100 40" className="h-10 w-full rounded bg-black/30" preserveAspectRatio="none">
+        <path d={path} fill="none" stroke="currentColor" strokeWidth={1.2} className="text-emerald-300" vectorEffect="non-scaling-stroke" />
+      </svg>
+      {points.map((point, index) => (
+        <div key={index} className="flex items-center gap-1">
+          <input type="number" step={0.05} min={0} max={1} className={`w-14 ${INPUT}`} value={point.x} onChange={(event) => onInput(points.map((p, i) => (i === index ? { ...p, x: Number(event.target.value) } : p)))} onBlur={flush} />
+          <input type="number" step={span / 20} min={min} max={max} className={`min-w-0 flex-1 ${INPUT}`} value={point.y} onChange={(event) => onInput(points.map((p, i) => (i === index ? { ...p, y: Number(event.target.value) } : p)))} onBlur={flush} />
+          <button type="button" className={BTN} disabled={points.length <= 2} onClick={() => setNow(points.filter((_, i) => i !== index))}>
+            ×
+          </button>
+        </div>
+      ))}
+      <button type="button" className={`w-full ${BTN}`} onClick={() => setNow([...points, { x: 0.5, y: sampleCurve(sorted, 0.5) }])}>
+        + point
+      </button>
+    </div>
+  );
+}
+
+/** Gradient field: a preview bar plus one position/colour row per stop. */
+function GradientField({
+  field,
+  value,
+  coalesce,
+  onMeta,
+}: {
+  field: Extract<ParamField, { type: "gradient" }>;
+  value: GradientStop[];
+  coalesce: string;
+  onMeta: MetaPatch;
+}) {
+  const { value: stops, onInput, flush } = useDebouncedCommit(value, (next) => onMeta({ [field.key]: next }, coalesce));
+  const sorted = [...stops].sort((a, b) => a.at - b.at);
+  const background = `linear-gradient(to right, ${sorted.map((stop) => `${stop.color} ${(stop.at * 100).toFixed(0)}%`).join(", ")})`;
+  const setNow = (next: GradientStop[]) => {
+    onInput(next);
+    flush();
+  };
+  return (
+    <div className="space-y-1">
+      <div className={MICRO}>{labelOf(field)}</div>
+      <div className="h-4 w-full rounded" style={{ background }} />
+      {stops.map((stop, index) => (
+        <div key={index} className="flex items-center gap-1">
+          <input type="range" min={0} max={1} step={0.01} className="min-w-0 flex-1 accent-emerald-400" value={stop.at} onChange={(event) => onInput(stops.map((s, i) => (i === index ? { ...s, at: Number(event.target.value) } : s)))} onPointerUp={flush} onBlur={flush} />
+          <input type="color" className="h-6 w-8 cursor-pointer rounded border-0 bg-transparent" value={stop.color} onChange={(event) => onInput(stops.map((s, i) => (i === index ? { ...s, color: event.target.value } : s)))} onBlur={flush} />
+          <button type="button" className={BTN} disabled={stops.length <= 1} onClick={() => setNow(stops.filter((_, i) => i !== index))}>
+            ×
+          </button>
+        </div>
+      ))}
+      <button type="button" className={`w-full ${BTN}`} onClick={() => setNow([...stops, { at: 0.5, color: sorted[0]?.color ?? "#888888" }])}>
+        + stop
+      </button>
+    </div>
+  );
+}
+
 function FieldRow({ field, meta, onMeta }: { field: ParamField; meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
   const params = parseParams({ fields: [field] }, meta);
   const coalesce = `kind:${field.key}`;
@@ -279,6 +391,10 @@ function FieldRow({ field, meta, onMeta }: { field: ParamField; meta: Record<str
       return <SeedField field={field} value={params[field.key] as string} coalesce={coalesce} onMeta={onMeta} />;
     case "weightedList":
       return <WeightedListField field={field} value={params[field.key] as WeightedParamEntry[]} coalesce={coalesce} onMeta={onMeta} />;
+    case "curve":
+      return <CurveField field={field} value={curvePoints(params[field.key])} coalesce={coalesce} onMeta={onMeta} />;
+    case "gradient":
+      return <GradientField field={field} value={gradientStops(params[field.key])} coalesce={coalesce} onMeta={onMeta} />;
     case "action":
       return null; // Action buttons are rendered by the group section, which owns the whole schema.
   }
@@ -305,23 +421,24 @@ function ActionButton({ field, schema, onMeta }: { field: Extract<ParamField, { 
 
 /** A collapsible group section: header (click to toggle) + its fields + any action buttons. */
 function GroupSection({
-  title,
+  group,
   accent,
-  fields,
+  visible,
   schema,
   meta,
   onMeta,
-  defaultCollapsed,
 }: {
-  title: string;
+  group: ParamGroup;
   accent: string;
-  fields: readonly ParamField[];
+  visible: readonly ParamField[];
   schema: ParamSchema;
   meta: Record<string, unknown> | undefined;
   onMeta: MetaPatch;
-  defaultCollapsed: boolean;
 }) {
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [collapsed, setCollapsed] = useState(group.collapsed ?? false);
+  const fields = visible.filter((field) => field.group === group.id);
+  const children = childParamGroups(schema, group.id).filter((child) => groupHasFields(schema, child.id, visible));
+  const title = group.label;
   return (
     <div className={`rounded-[6px] border ${BORDER}`}>
       <button
@@ -341,10 +458,19 @@ function GroupSection({
               <FieldRow key={field.key} field={field} meta={meta} onMeta={onMeta} />
             ),
           )}
+          {children.map((child) => (
+            <GroupSection key={child.id} group={child} accent={accent} visible={visible} schema={schema} meta={meta} onMeta={onMeta} />
+          ))}
         </div>
       )}
     </div>
   );
+}
+
+/** True when a group or any group nested under it holds a visible field. */
+function groupHasFields(schema: ParamSchema, groupId: string, visible: readonly ParamField[]): boolean {
+  if (visible.some((field) => field.group === groupId)) return true;
+  return childParamGroups(schema, groupId).some((child) => groupHasFields(schema, child.id, visible));
 }
 
 /**
@@ -392,21 +518,11 @@ export function SchemaInspector({
           <FieldRow key={field.key} field={field} meta={meta} onMeta={onMeta} />
         ),
       )}
-      {groups
-        .map((group) => ({ group, fields: visible.filter((field) => field.group === group.id) }))
-        .filter((entry) => entry.fields.length > 0)
-        .map(({ group, fields }) => (
-        <GroupSection
-          key={group.id}
-          title={group.label}
-          accent={accent}
-          fields={fields}
-          schema={schema}
-          meta={meta}
-          onMeta={onMeta}
-          defaultCollapsed={group.collapsed ?? false}
-        />
-      ))}
+      {childParamGroups(schema, undefined)
+        .filter((group) => groupHasFields(schema, group.id, visible))
+        .map((group) => (
+          <GroupSection key={group.id} group={group} accent={accent} visible={visible} schema={schema} meta={meta} onMeta={onMeta} />
+        ))}
       {note !== undefined && note.length > 0 ? <div className="text-[10px] text-neutral-500">{note}</div> : null}
     </div>
   );

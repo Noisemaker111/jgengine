@@ -9,7 +9,8 @@
  *
  * @capability water parametric water surface volume
  */
-import { registerSceneKind, type ParamSchema, type SceneKindObject } from "../scene/sceneKinds";
+import { registerSceneKind, type SceneKindObject } from "../scene/sceneKinds";
+import { type ParamSchema } from "../generator/paramSchema";
 import type { WaterSurfaceConfig } from "./waterSurface";
 
 /** The editor volume kind marking a box as a water surface. */

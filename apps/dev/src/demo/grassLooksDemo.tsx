@@ -68,6 +68,10 @@ export const grassLooksGame: PlayableGame = {
         const [x, z] = patchCenter(index);
         return [`look-${index + 1}`, { look: `${x},0.3,${z}`, lookFrom: "9,2.2,0.5" }];
       })),
+      ...Object.fromEntries(LOOKS.map((_entry, index) => {
+        const [x, z] = patchCenter(index);
+        return [`close-${index + 1}`, { look: `${x},0,${z}`, lookFrom: "1.6,0.45,0.4" }];
+      })),
     },
   },
 };

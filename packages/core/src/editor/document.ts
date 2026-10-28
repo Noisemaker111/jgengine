@@ -2,7 +2,7 @@ import { decodeEditorSimulation, type EditorSimulation } from "./simulation";
 import { parseMaterialAssignments, validateMaterialAsset, validateMaterialAssignments, type MaterialAsset } from "../material/materialAsset";
 import { authoredHiddenNodes } from "./modelNodeVisibility";
 import { parseStaticPrefabBake } from "./staticPrefab";
-import type { ParamField, ParamSchema } from "../scene/sceneKinds";
+import type { ParamField, ParamSchema } from "../generator/paramSchema";
 import { cloneEditorUiDocument, decodeEditorUiDocument } from "../hud/hudDocument";
 import { migrateTerrainSnapshot } from "../terrain/terraform";
 import {

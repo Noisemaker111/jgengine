@@ -38,6 +38,7 @@
     "flight": "jgengine-world",
     "format": "jgengine-ui",
     "game": "jgengine-gameplay",
+    "generator": "jgengine-world",
     "grass": "jgengine-world",
     "haptics": "jgengine-world",
     "harvest": "jgengine-gameplay",

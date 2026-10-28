@@ -7,7 +7,8 @@
  *
  * @capability decal editor-authored surface decal
  */
-import { registerSceneKind, type ParamSchema, type SceneKindObject } from "../scene/sceneKinds";
+import { registerSceneKind, type SceneKindObject } from "../scene/sceneKinds";
+import { type ParamSchema } from "../generator/paramSchema";
 
 /** The editor marker kind marking a surface decal. */
 export const DECAL_KIND = "decal";

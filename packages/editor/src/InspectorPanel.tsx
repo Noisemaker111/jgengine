@@ -10,13 +10,9 @@ import {
   type EditorSession,
   type EditorVolume,
 } from "@jgengine/core/editor/index";
-import {
-  getSceneKind,
-  isSceneKind,
-  parseParams,
-  type SceneKindObject,
-} from "@jgengine/core/scene/sceneKinds";
-import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
+import { getSceneKind, isSceneKind, type SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+import { parseParams } from "@jgengine/core/generator/paramSchema";
+import { partsGeneratorFor } from "@jgengine/core/scene/assetGenerator";
 import type { TriggerSourceKind } from "@jgengine/core/scene/authoredTriggers";
 import type { AuthoredAnimationDiagnostic } from "@jgengine/core/world/authoredAnimation";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
@@ -31,6 +27,8 @@ import {
   hasMaterialAssignment,
 } from "./authoredComponentMeta";
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
+import { GeneratorVariants } from "./GeneratorVariants";
+import { generatorForObject } from "@jgengine/core/scene/assetGenerator";
 import { TriggerInspector } from "./TriggerInspector";
 import { describeClipRoles, type EditorAssetEntry } from "./AssetBrowser";
 import {
@@ -119,10 +117,34 @@ function KindInspector({ object, meta, onMeta }: { object: SceneKindObject; meta
 
 /** Auto-generated inspector for a placed generator asset's params (building/bookcase/…). */
 function GeneratorInspector({ meta, onMeta }: { meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
-  const assetId = typeof meta?.["assetId"] === "string" ? (meta["assetId"] as string) : undefined;
-  const generator = assetId === undefined ? undefined : getAssetGenerator(assetId);
+  const generator = partsGeneratorFor(meta);
   if (generator === undefined) return null;
   return <SchemaInspector schema={generator.schema} label={`${generator.label} (generator)`} accent="#a78bfa" meta={meta} onMeta={onMeta} />;
+}
+
+/** The variant grid for an object whose kind or asset names a generator; nothing otherwise. */
+function VariantsSection({
+  api,
+  id,
+  kind,
+  meta,
+  placeOffset,
+  sections,
+}: {
+  api: EditorHostApi | undefined;
+  id: string;
+  kind: string;
+  meta: Record<string, unknown> | undefined;
+  placeOffset: number;
+  sections: SectionState;
+}) {
+  const definition = generatorForObject(kind, meta);
+  if (api === undefined || definition === undefined) return null;
+  return (
+    <Section id="variants" title={`${definition.label} variants`} icon="cube" sections={sections}>
+      <GeneratorVariants api={api} id={id} definition={definition} meta={meta} placeOffset={placeOffset} accent={getSceneKind(kind)?.accent} />
+    </Section>
+  );
 }
 
 /**
@@ -786,7 +808,7 @@ export function InspectorPanel({
     const animation = readAnimationSettingResult(document, marker.id);
     const hasTrigger = hasAuthoredTrigger(marker.meta);
     const hasMaterial = hasMaterialAssignment(marker.meta);
-    const hasGenerator = typeof marker.meta?.["assetId"] === "string" && getAssetGenerator(marker.meta["assetId"] as string) !== undefined;
+    const hasGenerator = partsGeneratorFor(marker.meta) !== undefined;
     const hasKindParams = isSceneKind(marker.kind);
     const componentCards = (
       <>
@@ -839,6 +861,7 @@ export function InspectorPanel({
             <GeneratorInspector meta={marker.meta} onMeta={onMeta} />
           </Section>
         ) : null}
+        <VariantsSection api={api} id={marker.id} kind={marker.kind} meta={marker.meta} placeOffset={3} sections={sections} />
         {!hasKindParams && !hasTrigger && !hasMaterial && !hasGenerator && !canAuthorTrigger("marker") ? (
           <EmptyState
             icon="settings"
@@ -974,6 +997,14 @@ export function InspectorPanel({
             <KindInspector object={volumeObject(volume)} meta={volume.meta} onMeta={onMeta} />
           </Section>
         ) : null}
+        <VariantsSection
+          api={api}
+          id={volume.id}
+          kind={volume.kind}
+          meta={volume.meta}
+          placeOffset={(volume.halfExtents?.x ?? volume.radius ?? 5) * 2 + 1}
+          sections={sections}
+        />
         {hasTrigger ? (
           <Section
             id="trigger"

@@ -8,13 +8,8 @@
  */
 import { placeAlongPath } from "../instancing/pathInstances";
 import { sagCurve, type Vec3 } from "./catenary";
-import {
-  registerSceneKind,
-  type ParamSchema,
-  type ParsedParams,
-  type SceneKindObject,
-  type SceneKindResolveContext,
-} from "../scene/sceneKinds";
+import { registerSceneKind, type SceneKindObject, type SceneKindResolveContext } from "../scene/sceneKinds";
+import { type ParamSchema, type ParsedParams } from "../generator/paramSchema";
 
 /**
  * The editor path kind marking a polyline as a pole/cable run.

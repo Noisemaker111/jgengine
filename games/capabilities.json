@@ -3649,6 +3649,16 @@
       "intent": "score a loadout from stat weights, level, rarity and slot coverage"
     },
     {
+      "id": "generator-contract",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/generator/generator",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "seeded, schema-driven procedural generator with variants and editor exposure"
+    },
+    {
       "id": "gesture-resume",
       "packages": [
         "@jgengine/core"

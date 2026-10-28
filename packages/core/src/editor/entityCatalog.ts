@@ -1,5 +1,5 @@
 import type { CatalogEntityRole, GameContextEntityEntry } from "../runtime/gameContext";
-import { parseParams, type ParamSchema } from "../scene/sceneKinds";
+import { parseParams, type ParamSchema } from "../generator/paramSchema";
 import type { EditorCatalogData, EditorCatalogDefinition } from "./types";
 
 /**

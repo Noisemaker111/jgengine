@@ -1,6 +1,6 @@
 import type { MovementFeelConfig, PlayerMovementConfig } from "../game/playableGame";
 import type { PhysicsConfig } from "../game/defineGame";
-import type { ParamSchema } from "../scene/sceneKinds";
+import type { ParamSchema } from "../generator/paramSchema";
 import type { EditorCatalogData } from "./types";
 
 /** Numeric character controls a game elects to author through its own named catalog rows. */

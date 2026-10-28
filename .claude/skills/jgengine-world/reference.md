@@ -1,6 +1,18 @@
-`grass({ ...GrassLook })` takes the same knobs as a `grass_field` volume (`GRASS_SCHEMA`, starting looks in `GRASS_PRESETS`): blade shape (`bladeHeight`, `bladeWidth`, `profile` needle→leaf, `curvature`, `stiffness`, `tuftSpread`, `tuftBlades`), colour (`baseColor`/`tipColor`, `gradient`, `hueNoise`, `valueNoise`, `season`, `seasonNoise`, `dryness`, `noiseScale`), a second species (`mixShare`, `mixHeight`, `mixWidth`, `mixColor`), flowers (`flowerShare`, `flowerSize`, `flowerColor`, `flowerColor2`), masks (`clumping`, `clumpSize`, `patchiness`, `slopeThin`), wind and light. `density` is 0..1 fullness; blades/m² follow from blade size (`grassBladeDensity`), so no knob mix comes out sparse. There is no blade budget: one `GrassPatch` streams every field around the camera |# jgengine domain API — World features
+`grass({ ...GrassLook })` takes the same knobs as a `grass_field` volume (`GRASS_SCHEMA`, starting looks in `GRASS_PRESETS`): blade shape (`bladeHeight`, `bladeWidth`, `profile` needle→leaf, `curvature`, `stiffness`, `tuftSpread`, `tuftBlades`), colour (`baseColor`/`tipColor`, `gradient`, `hueNoise`, `valueNoise`, `season`, `seasonNoise`, `dryness`, `noiseScale`), a second species (`mixShare`, `mixHeight`, `mixWidth`, `mixColor`), flowers (`flowerShare`, `flowerSize`, `flowerColor`, `flowerColor2`), masks (`clumping`, `clumpSize`, `patchiness`, `slopeThin`, `bareGround` sand or soil showing through), mow stripes (`stripeWidth`, `stripeContrast`, `stripeAngle`), wind and light. The presets run from a 1 cm putting green and a striped fairway through lawn and meadow to tall savanna and sparse beach dune grass. `density` is 0..1 fullness; blades/m² follow from blade size (`grassBladeDensity`), so no knob mix comes out sparse. There is no blade budget: one `GrassPatch` streams every field around the camera |# jgengine domain API — World features
 
 Reference module for the [`jgengine-world` API](SKILL.md) skill. Load this when you need the renderer-free world surface.
+
+## Procedural generators
+
+Every procedural system is one `defineGenerator({ id, label, output, schema, lods?, generate(params, context) })` from `@jgengine/core/generator/generator`. `schema` is a `defineParamSchema` (`generator/paramSchema`): range, number, bool, select, colour, text, seed, weighted list, curve and gradient fields in nested groups, with presets. `generate` is pure: it reads typed params (`ParamsOf<typeof SCHEMA>`) and the injected `context.seed`/`context.random`, never `Math.random`. `context.detail` is the LOD scale.
+
+- `runGenerator(definition, meta)` parses a meta bag and runs once; the same meta always gives the same output.
+- `generatorVariants(definition, meta, { count, explore, seed, keep })` lays out seeded variants around a look (variant 0 is the look itself); `bakeGeneratorVariants` also bakes each variant at every `lods` entry, for instancing and LOD.
+- Keep variants plausible from the schema: a range or number field's `explore: [min, max]` is the window variants stay in, `exploreScale: "log"` explores sizes by ratio, a colour or gradient's `explore: { hue, saturation, lightness }` caps its drift, and `vary: false` pins a field.
+- `registerGenerator` makes it visible to the editor's variant grid and the `list_generators` / `generator_variants` / `apply_variant` / `place_variant` verbs. A scene kind names its generator with `generator: "<id>"`; parts generators such as `BUILDING_GENERATOR` are found through `meta.assetId`.
+- A tile preview per output family goes in a `.draw` file with `registerGeneratorPreview(output, { Component, frame })`; `GeneratorVariantGrid` draws any generator through it, all tiles in one canvas.
+
+Grass is the reference adopter (`GRASS_GENERATOR`, output `grass-field`).
 
 ## World = place (the definition of a world)
 

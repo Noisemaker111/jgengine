@@ -29,6 +29,29 @@ function respondError(id: JsonRpcId | undefined, code: number, message: string):
   process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } })}\n`);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function variantGridArgs(args: Record<string, unknown>): { count?: number; explore?: number; seed?: string; keep?: Record<string, unknown>[] } {
+  const keep = args.keep;
+  if (keep !== undefined && !(Array.isArray(keep) && keep.every(isRecord))) throw new Error("keep must be an array of variant meta objects");
+  return {
+    ...(typeof args.count === "number" ? { count: args.count } : {}),
+    ...(typeof args.explore === "number" ? { explore: args.explore } : {}),
+    ...(typeof args.seed === "string" ? { seed: args.seed } : {}),
+    ...(keep === undefined ? {} : { keep: keep.filter(isRecord) }),
+  };
+}
+
+function variantPickArgs(args: Record<string, unknown>): ReturnType<typeof variantGridArgs> & { index?: number; meta?: Record<string, unknown> } {
+  return {
+    ...variantGridArgs(args),
+    ...(typeof args.index === "number" ? { index: args.index } : {}),
+    ...(isRecord(args.meta) ? { meta: args.meta } : {}),
+  };
+}
+
 function toolToBridge(name: string, args: Record<string, unknown>): EditorBridgeRequest {
   switch (name) {
     case "editor_status":
@@ -190,6 +213,27 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
         method: "apply_preset",
         id: String(args.id ?? ""),
         preset: String(args.preset ?? ""),
+      };
+    case "list_generators":
+      return { method: "list_generators", ...(typeof args.output === "string" ? { output: args.output } : {}) };
+    case "generator_variants":
+      return {
+        method: "generator_variants",
+        ...(typeof args.id === "string" ? { id: args.id } : {}),
+        ...(typeof args.generator === "string" ? { generator: args.generator } : {}),
+        ...variantGridArgs(args),
+      };
+    case "apply_variant":
+      return { method: "apply_variant", id: String(args.id ?? ""), ...variantPickArgs(args) };
+    case "place_variant":
+      return {
+        method: "place_variant",
+        id: String(args.id ?? ""),
+        ...variantPickArgs(args),
+        ...(typeof args.dx === "number" ? { dx: args.dx } : {}),
+        ...(typeof args.dy === "number" ? { dy: args.dy } : {}),
+        ...(typeof args.dz === "number" ? { dz: args.dz } : {}),
+        ...(typeof args.newId === "string" ? { newId: args.newId } : {}),
       };
     case "push_document_patch":
       return {

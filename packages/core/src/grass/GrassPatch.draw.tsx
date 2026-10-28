@@ -7,6 +7,8 @@ import type { GrassLook } from "@jgengine/core/grass/grassKind";
 import { seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/terrainSeed";
 import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 import { GrassCover } from "./GrassCover.draw";
+import { GRASS_COVER_MAX_SEGMENTS } from "./grassCoverGeometry.draw";
+import { grassStripeAt } from "./grassField";
 import { grassFieldColors, resolveGrassBake, type GrassExclusion } from "./grassBake.draw";
 import { createGrassMaterial } from "./grassMaterial.draw";
 import { GrassStream } from "./grassStream.draw";
@@ -19,6 +21,11 @@ const BAKE_SLICE_MS = 3;
  * freezing the menu above the loading cover.
  */
 const FILL_SLICE_MS = 8;
+
+/** The mat floats a little above the ground against z-fighting, but always under the blades, so a putting green's 1 cm blades stay visible. */
+function grassCoverLift(look: GrassLook): number {
+  return Math.min(0.035, Math.max(0.008, look.bladeHeight * 0.25));
+}
 
 /** Props for {@link GrassPatch}. */
 export interface GrassPatchProps extends Omit<ThreeElements["group"], "children"> {
@@ -84,6 +91,15 @@ export function GrassPatch({
   const colors = useMemo(() => grassFieldColors(look), [look]);
   const coverArea = useMemo(() => [size.width, size.depth] as const, [size.width, size.depth]);
   const coverSeed = seedToUint32(bake.seed) % 100000;
+  const striped = look.stripeWidth > 0 && look.stripeContrast > 0;
+  const stripeAt = useMemo(
+    () => (striped ? (x: number, z: number) => grassStripeAt(look, x, z) * look.stripeContrast : undefined),
+    [striped, look],
+  );
+  // A striped mat needs a few cells per stripe, or the bands alias into blotches.
+  const coverSegments = striped
+    ? Math.min(GRASS_COVER_MAX_SEGMENTS, Math.max(Math.round(Math.max(size.width, size.depth) / 2), Math.ceil((Math.max(size.width, size.depth) * 8) / look.stripeWidth)))
+    : undefined;
   return (
     <group {...groupProps}>
       {look.groundCover > 0 ? (
@@ -96,6 +112,9 @@ export function GrassPatch({
           edgeFeather={bake.edgeFeather}
           heightAt={bake.heightAt}
           coverageAt={bake.coverageAt}
+          stripeAt={stripeAt}
+          lift={grassCoverLift(look)}
+          {...(coverSegments === undefined ? {} : { segments: coverSegments })}
         />
       ) : null}
       <primitive object={stream.group} />

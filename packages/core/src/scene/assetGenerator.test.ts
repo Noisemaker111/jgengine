@@ -1,15 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  getAssetGenerator,
-  listAssetGenerators,
-  partsBounds,
-  registerAssetGenerator,
-  resolveGeneratorAsset,
-  type GeneratedAsset,
-} from "./assetGenerator";
+import { listGenerators, registerGenerator } from "../generator/generator";
+import { PARTS_OUTPUT, getPartsGenerator, partsBounds, resolveGeneratorAsset, type GeneratedAsset } from "./assetGenerator";
 import { registerBuiltinSceneKinds } from "./builtinSceneKinds";
-import type { ParamSchema } from "./sceneKinds";
+import type { ParamSchema } from "../generator/paramSchema";
 
 const SCHEMA: ParamSchema = {
   fields: [
@@ -18,9 +12,10 @@ const SCHEMA: ParamSchema = {
   ],
 };
 
-registerAssetGenerator({
+registerGenerator({
   id: "test_box",
   label: "Test box",
+  output: PARTS_OUTPUT,
   schema: SCHEMA,
   generate: (params): GeneratedAsset => {
     const width = params["width"] as number;
@@ -31,8 +26,8 @@ registerAssetGenerator({
 
 describe("asset generator registry", () => {
   test("registers and lists a generator", () => {
-    expect(getAssetGenerator("test_box")?.label).toBe("Test box");
-    expect(listAssetGenerators().some((generator) => generator.id === "test_box")).toBe(true);
+    expect(getPartsGenerator("test_box")?.label).toBe("Test box");
+    expect(listGenerators(PARTS_OUTPUT).some((generator) => generator.id === "test_box")).toBe(true);
   });
 
   test("resolveGeneratorAsset parses params off meta and generates", () => {
@@ -45,6 +40,12 @@ describe("asset generator registry", () => {
   test("clamps params from the schema", () => {
     const resolved = resolveGeneratorAsset({ assetId: "test_box", width: 99 });
     expect(resolved!.parts[0]!.size[0]).toBe(4);
+  });
+
+  test("ignores generators of another output family", () => {
+    registerGenerator({ id: "test_field", label: "Field", output: "field", schema: { fields: [] }, generate: () => ({ parts: [], bounds: { min: [0, 0, 0], max: [0, 0, 0] } }) });
+    expect(getPartsGenerator("test_field")).toBeUndefined();
+    expect(resolveGeneratorAsset({ assetId: "test_field" })).toBeNull();
   });
 
   test("returns null for an unknown or missing assetId", () => {

@@ -7,7 +7,7 @@ import {
   TRIGGER_RADIUS_KEY,
   type TriggerSourceKind,
 } from "@jgengine/core/scene/authoredTriggers";
-import { defaultParamMeta } from "@jgengine/core/scene/sceneKinds";
+import { defaultParamMeta } from "@jgengine/core/generator/paramSchema";
 
 /**
  * True when an object's meta carries an authored behavior trigger (flat on/action or a multi-list).
