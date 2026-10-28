@@ -2121,6 +2121,51 @@
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 
+## @jgengine/core/landform/evolution/landscapeEvolution
+
+- `DEFAULT_LANDFORM_PARAMS` (const): const DEFAULT_LANDFORM_PARAMS: LandformParams — Sensible defaults for a 100 m grid: 1 mm/yr uplift, K = 2·10⁻⁵, m = 0.5, n = 1 (concavity 0.5), D = 0.01 m²/yr, repose 34°, 10 kyr steps.
+- `LandformFields` (interface): interface LandformFields — Per-cell fields of a run. The arrays are live; read them, never write them.
+- `LandformInitial` (interface): interface LandformInitial — Starting surface of a run.
+- `LandformParams` (interface): interface LandformParams — Physical parameters of a landscape evolution run; every one can be retuned between steps.
+- `LandformSnapshot` (interface): interface LandformSnapshot — Plain-JSON state of a run, enough to resume it exactly.
+- `LandformStepReport` (interface): interface LandformStepReport — What one step did. Volumes in m³, rates in m/yr.
+- `LandscapeEvolution` (interface): interface LandscapeEvolution — A running landscape.
+- `LandscapeEvolutionOptions` (interface): interface LandscapeEvolutionOptions — Options for {@link createLandscapeEvolution}.
+- `createLandscapeEvolution` (function): function createLandscapeEvolution(options: LandscapeEvolutionOptions): LandscapeEvolution — Start a landscape evolution run on a grid.
+- `hashLandformArrays` (function): function hashLandformArrays(...arrays: readonly Float64Array[]): string — Hash of float arrays by their exact bits (FNV-1a over 32-bit words), as 8 hex digits per array.
+
+## @jgengine/core/landform/evolution/rockStrata
+
+- `LandformStrata` (interface): interface LandformStrata — A tilted stack of rock layers.
+- `RockLayer` (interface): interface RockLayer — One rock layer.
+- `UNIFORM_ROCK` (const): const UNIFORM_ROCK: LandformStrata — The default single rock: uniform, standing at 45°.
+
+## @jgengine/core/landform/flow/dInfinity
+
+- `dInfinityArea` (function): function dInfinityArea(topology: LandformTopology, surface: ArrayLike<number>, fallback: ArrayLike<number>, rainfall?: ArrayLike<number>): Float64Array — D∞ upstream area per cell in m² over a depression-free `surface`, weighted by `rainfall` when given. `fallback` names a downhill cell for any cell with no descending facet (a D8 receiver).
+
+## @jgengine/core/landform/flow/flowRouting
+
+- `FLAT_RISE` (const): const FLAT_RISE: 0.000001 — Rise per cell across filled flats, in metres; small next to any relief, large next to rounding.
+- `FlowRouting` (interface): interface FlowRouting — Flow routing of one heightfield. Arrays are owned by the router and overwritten by the next {@link FlowRouter.route}.
+
+## @jgengine/core/landform/grid/landformGrid
+
+- `D8_DCOL` (const): const D8_DCOL: readonly number[] — Column offsets of the D8 neighbours: east, south-east, south, south-west, west, north-west, north, north-east.
+- `D8_DROW` (const): const D8_DROW: readonly number[] — Row offsets of the D8 neighbours, in {@link D8_DCOL} order.
+- `LANDFORM_MAX_SIDE` (const): const LANDFORM_MAX_SIDE: 2048 — Largest grid side the model accepts, so one step's work stays bounded.
+- `LandformEdge` (type): type LandformEdge = "north" | "south" | "east" | "west" — The square-cell grid every landform process runs on: row-major cells, the eight D8 neighbours with their distances, and which cells are base level (outlets held at a fixed height, where water and sediment leave the map).
+- `LandformGrid` (interface): interface LandformGrid — A landform grid: `cols` × `rows` square cells, `cellSize` metres a side, row 0 at the north edge.
+
+## @jgengine/core/landform/validation/geomorphicLaws
+
+- `ChannelSelection` (interface): interface ChannelSelection — Which cells count as channels: drainage area in m² at least `minArea`, on land, not at an outlet.
+- `PowerLawFit` (interface): interface PowerLawFit — A least-squares power law y = coefficient · x^exponent fitted in log space.
+- `fitPowerLaw` (function): function fitPowerLaw(x: ArrayLike<number>, y: ArrayLike<number>): PowerLawFit — Fit y = c · x^e by least squares on log x, log y over the points where both are positive.
+- `hackLawFit` (function): function hackLawFit(routing: FlowRouting, height: ArrayLike<number>, selection: ChannelSelection): PowerLawFit — Hack's law over channel cells: longest upstream length against drainage area; `exponent` is h.
+- `slopeAreaFit` (function): function slopeAreaFit(routing: FlowRouting, height: ArrayLike<number>, selection: ChannelSelection): PowerLawFit & { concavity: number } — Flint's slope–area law over channel cells: exponent −θ (θ the concavity) and coefficient k_s (the steepness index).
+- `upstreamLength` (function): function upstreamLength(routing: FlowRouting): Float64Array — Length in metres of the longest flow path from a divide down to each cell.
+
 ## @jgengine/core/lighting/CascadedShadows.draw
 
 - `CASCADE_DEPTH_STEP_TEXELS` (const): const CASCADE_DEPTH_STEP_TEXELS: 8 — Depth-axis steps worth of a texel the snapped light may drift before it re-anchors.

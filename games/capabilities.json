@@ -5110,6 +5110,16 @@
       "intent": "resolve a hit through a damage chart and apply it to the world as one damage effect"
     },
     {
+      "id": "landform-evolution",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/landform/flow/dInfinity",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata"
+    },
+    {
       "id": "lane-board",
       "packages": [
         "@jgengine/core"
