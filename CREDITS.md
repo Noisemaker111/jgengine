@@ -401,6 +401,12 @@ no code is copied (Landlab, Fastscape and TopoToolbox were not used as sources).
   temperature by conduction and the pressure-melting point.
 - Hallet, Hunter & Bogen 1996, rates of erosion and sediment evacuation by glaciers, *Global and
   Planetary Change* 12: the glacial erosion rates the default erosion constant falls among.
+- Alley, Lawson, Larson, Evenson & Baker 2003, stabilizing feedbacks in glacier-bed erosion,
+  *Nature* 424: supercooling meltwater stops erosion where the bed rises out of an overdeepening
+  1.2–1.7 times as steeply as the ice surface falls.
+- Brozović, Burbank & Meigs 1997, climatic limits on landscape development in the northwestern
+  Himalaya, *Science* 276; Egholm, Nielsen, Pedersen & Lesemann 2009, glacial effects limiting
+  mountain height, *Nature* 460: the glacial buzzsaw capping a range near the snowline.
 - Sunamura 1992, *Geomorphology of Rocky Coasts*; Anderson, Densmore & Ellis 1999, the generation and
   degradation of marine terraces, *Basin Research* 11: cliff retreat damped by the platform it leaves,
   and platform lowering by depth.
