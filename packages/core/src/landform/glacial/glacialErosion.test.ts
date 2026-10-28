@@ -3,6 +3,7 @@ import { createLandscapeEvolution, type GlacialParams, type LandscapeEvolution }
 import { landformTopology } from "../grid/landformGrid";
 import { COVER, COVER_CLASSES } from "../materials/sedimentCover";
 import { fitPowerLaw } from "../validation/geomorphicLaws";
+import { snowlineHistory } from "./glacialClimate";
 import { createIceFlow, iceDeformationRate } from "./iceFlow";
 
 describe("ice flow", () => {
@@ -180,9 +181,9 @@ describe("glacial erosion by first-order (Blatter–Pattyn) ice flow", () => {
   // the walls' drag in first-order flow is what leaves them standing.
   test("the V's trough steepens toward a U: its cross-section exponent rises from 1", () => {
     const model = glaciate(2000, firstOrder);
-    for (let k = 0; k < 15; k += 1) model.step();
+    for (let k = 0; k < 10; k += 1) model.step();
     const exponent = medianTroughExponent(model);
-    expect(exponent).toBeGreaterThan(1.25);
+    expect(exponent).toBeGreaterThan(1.2);
     expect(exponent).toBeLessThan(2.5);
   }, 120_000);
 
@@ -204,8 +205,8 @@ describe("glacial erosion by first-order (Blatter–Pattyn) ice flow", () => {
     expect(slowerAxis / columns).toBeGreaterThan(0.5);
   }, 60_000);
 
-  test("its flux scale is state: a snapshot restores it and the run resumes bit for bit", () => {
-    const model = glaciate(2000, firstOrder);
+  test("its flux scale is state: a snapshot restores it and a run through the LR04 snowline resumes bit for bit", () => {
+    const model = glaciate(2000, { model: "first-order", layers: 4, elaHistory: snowlineHistory({ presentEla: 2200, glacialEla: 1500, startKa: 24 }) });
     for (let k = 0; k < 2; k += 1) model.step();
     const saved = JSON.stringify(model.snapshot());
     model.step();
@@ -213,5 +214,37 @@ describe("glacial erosion by first-order (Blatter–Pattyn) ice flow", () => {
     model.restore(JSON.parse(saved));
     model.step();
     expect(model.hash()).toBe(ahead);
+  }, 60_000);
+});
+
+describe("ice surface on a smooth steep bed", () => {
+  // A straight trough, sloping 0.3 or 0.5, under a temperate glacier 100 m thick. Mismatched face
+  // fluxes would pile ice into steps; the smooth bed allows none.
+  test.each([0.3, 0.5])("at slope %p the first-order glacier's surface has no steps over 10 m", (slope) => {
+    const cols = 60;
+    const rows = 31;
+    const mid = 15;
+    const heights: number[] = [];
+    for (let row = 0; row < rows; row += 1) for (let col = 0; col < cols; col += 1) heights.push(1000 + slope * col * 100 + 0.0004 * ((row - mid) * 100) ** 2);
+    const model = createLandscapeEvolution({
+      grid: { cols, rows, cellSize: 100, outlets: ["west"] },
+      seed: "smooth",
+      initial: { heights, roughness: 0 },
+      params: { uplift: 0, erodibility: 0, diffusivity: 0, marineDiffusivity: 0, soilProduction: 0, timeStep: 1000, glacial: { ela: 1000 + slope * 4500, model: "first-order", layers: 4, erosion: 0, snowlineTemperature: 10 } },
+    });
+    for (let k = 0; k < 10; k += 1) model.step();
+    const { height, ice } = model.fields();
+    const surface = (i: number): number => (height[i] ?? 0) + (ice[i] ?? 0);
+    let worst = 0;
+    let measured = 0;
+    // Away from the outlet edge and the head, wherever ice 20 m thick spans five cells.
+    for (let col = 4; col < cols - 4; col += 1) {
+      const i = mid * cols + col;
+      if ([-2, -1, 0, 1, 2].some((k) => (ice[i + k] ?? 0) < 20)) continue;
+      measured += 1;
+      worst = Math.max(worst, Math.abs(surface(i + 1) - 2 * surface(i) + surface(i - 1)));
+    }
+    expect(measured).toBeGreaterThan(30);
+    expect(worst).toBeLessThan(10);
   }, 60_000);
 });

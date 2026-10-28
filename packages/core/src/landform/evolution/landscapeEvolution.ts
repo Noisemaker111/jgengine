@@ -631,6 +631,10 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     // times as much; the slope is the upwind (Godunov) one, so a trough's floor keeps its point and a
     // ridge wears from both sides. That update is stable while a step wears less than half a cell
     // (the eikonal CFL condition), so a step that would wear more is split, at most 256 ways.
+    // Out of an overdeepening, meltwater climbing a bed that rises more than 1.2 times as steeply as
+    // the ice surface falls supercools and freezes, and by 1.7 times the bed stops wearing (Alley et
+    // al. 2003), which bounds how deep a glacier digs below its outlet.
+    for (let i = 0; i < cells; i += 1) iceSurface[i] = (height[i] ?? 0) + (ice[i] ?? 0);
     let fastest = 0;
     for (let i = 0; i < cells; i += 1) {
       const rate = base[i] === 1 || (ice[i] ?? 0) <= 0 ? 0 : kg * plantPow(sliding[i] ?? 0, power);
@@ -658,7 +662,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
         bedArea[i] = Math.sqrt(1 + slope2);
       }
       for (let i = 0; i < cells; i += 1) {
-        const rate = wearRate[i] ?? 0;
+        const rate = (wearRate[i] ?? 0) > 0 ? (wearRate[i] ?? 0) * supercooling(i) : 0;
         if (rate <= 0) continue;
         const depth = rate * part * (bedArea[i] ?? 1);
         cover.remove(i, depth);
@@ -669,6 +673,28 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       }
     }
     rideIce(tillShare, report);
+  }
+
+  // Share of the bed's wear left by supercooling: 1 while the bed out of an overdeepening rises less
+  // than 1.2 times as steeply as the ice surface falls, 0 from 1.7 times.
+  function supercooling(i: number): number {
+    let bedDotSurface = 0;
+    let surfaceSlope2 = 0;
+    for (const [ahead, behind] of [[0, 4], [2, 6]] as const) {
+      const a = neighbour[i * 8 + ahead] ?? -1;
+      const b = neighbour[i * 8 + behind] ?? -1;
+      const from = b < 0 ? i : b;
+      const to = a < 0 ? i : a;
+      const span = (to === i ? 0 : 1) + (from === i ? 0 : 1);
+      if (span === 0) continue;
+      const bed = ((height[to] ?? 0) - (height[from] ?? 0)) / span;
+      const top = ((iceSurface[to] ?? 0) - (iceSurface[from] ?? 0)) / span;
+      bedDotSurface += bed * top;
+      surfaceSlope2 += top * top;
+    }
+    if (bedDotSurface >= 0) return 1;
+    const ratio = -bedDotSurface / (surfaceSlope2 > 1e-12 ? surfaceSlope2 : 1e-12);
+    return ratio <= 1.2 ? 1 : ratio >= 1.7 ? 0 : (1.7 - ratio) / 0.5;
   }
 
   // Debris in `carried` rides the ice down its surface, pits filled (Priority-Flood), and melts out

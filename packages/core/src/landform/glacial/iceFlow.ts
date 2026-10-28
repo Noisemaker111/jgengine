@@ -18,6 +18,7 @@
  * sheet on a flat bed).
  *
  * Sliding is what erodes: the bed lowers at K_g·u_b (Harbor 1992; Braun, Zwartz & Tomkin 1999).
+ * Only a temperate bed slides: `temperate` scales C cell by cell (see `basalTemperature`).
  * Neighbouring columns shear each other where their ice meets, and rock holds the ice still where
  * a neighbour's bed rises beside it, so ice in the bottom of a V slides slower than ice on its
  * flanks, the corner effect behind Harbor's (1992) widening of V-shaped valleys. This stand-in
