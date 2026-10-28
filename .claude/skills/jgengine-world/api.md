@@ -1325,6 +1325,110 @@
 - `resolveFreeFlightIntent` (function): function resolveFreeFlightIntent(keys: MovementKeysState, analog: AnalogMoveIntent | null | undefined): FreeFlightIntent — Translate held keys + analog into a free-flight intent. Vertical is `space - (control|c)` so jump ascends and crouch descends — the same keys that walk/jump/crouch use, re-mapped for flight without re-binding.
 - `resolveFreeFlightIntentFromInput` (function): function resolveFreeFlightIntentFromInput(isDown: (action: string) => boolean, value: (action: string) => number, pointer: PointerAxisState | null, bindings?: FreeFlightBindings): FreeFlightIntent — Translate live input (held actions + analog + pointer) into a flight intent using per-profile axis bindings. Unlisted bindings fall back to the defaults above so existing games keep WASD/Space/Ctrl/Shift without declaring anything.
 
+## @jgengine/core/flight/reference/aircraftTrim
+
+- `Eigenvalue` (interface): interface Eigenvalue — A complex eigenvalue.
+- `FlightLinearization` (interface): interface FlightLinearization — Small-perturbation model about a trim point.
+- `FlightMode` (interface): interface FlightMode — One dynamic mode read from eigenvalues.
+- `TrimCondition` (interface): interface TrimCondition — A steady flight condition to trim for.
+- `TrimResult` (interface): interface TrimResult — A trimmed steady flight point.
+- `WindAxisState` (interface): interface WindAxisState — Flight state in wind axes and Euler angles, the form Stevens & Lewis tabulate: SI units and radians.
+- `linearizeReferenceAircraft` (function): function linearizeReferenceAircraft(aircraft: ReferenceAircraft, trim: TrimResult): FlightLinearization — Linearizes a reference aircraft about a trim point by central differences of the wind-axis equations, with propulsion and actuator states held, and names the classical modes: short period and phugoid from the longitudinal matrix, dutch roll, roll subsidence and spiral from the lateral one.
+- `matrixEigenvalues` (function): function matrixEigenvalues(matrix: readonly (readonly number[])[]): Eigenvalue[] — Eigenvalues of a small real matrix: Faddeev–LeVerrier characteristic polynomial, then Durand–Kerner roots.
+- `referenceStateFromWindAxes` (function): function referenceStateFromWindAxes(flight: WindAxisState, surfaces: ReferenceSurfaces, propulsion: readonly number[]): ReferenceAircraftState — Builds a reference state from wind-axis flight variables, still air.
+- `trimReferenceAircraft` (function): function trimReferenceAircraft(aircraft: ReferenceAircraft, condition: TrimCondition, initial: { alpha?: number; throttle?: number } = {}): TrimResult — Trims a reference aircraft for steady wings-level flight at a speed, altitude and flight path angle: solves angle of attack, sideslip, throttle, elevator, aileron and rudder so every body acceleration vanishes, with the propulsion states at their steady values. Newton's method on a finite-difference Jacobian with a backtracking line search.
+- `windAxesOf` (function): function windAxesOf(state: ReferenceAircraftState): WindAxisState — Wind-axis flight variables of a reference state, still air.
+- `windAxisRates` (function): function windAxisRates(aircraft: ReferenceAircraft, state: ReferenceAircraftState, input: ReferencePilotInput): WindAxisState — Time derivative of the wind-axis variables at a state: airspeed, α and β rates from the body accelerations, Euler rates from the body rates, and the navigation rates. Still air.
+
+## @jgengine/core/flight/reference/cessna172Aircraft
+
+- `C172_PROPELLER` (const): const C172_PROPELLER: PropellerGeometry — McCauley 1C160/DTM7553 fixed-pitch propeller: 75 in diameter, 53 in geometric pitch, two blades. The planform is a representative metal GA blade (activity factor about 85), widest near 45% radius.
+- `createCessna172Model` (function): function createCessna172Model(): ReferenceAircraftModel — A Cessna 172N at its 2300 lb gross weight, flaps up. Geometry, weights and control travel come from the 172N handbook and FAA type certificate; stability and control derivatives from Roskam's data for the Cessna 182, which flies the same wing; maximum lift from NACA 2412 section data; post-stall lift and drag from Viterna–Corrigan; inertia from Roskam scaled to this weight. Ground effect cuts induced drag (McCormick's high-wing factor). Power is a Lycoming O-320-H2AD with Gagg–Ferrar altitude lapse driving a blade-element McCauley 1C160 propeller, with the shaft speed integrated, its gyroscopic momentum and its torque reaction on the airframe.
+
+## @jgengine/core/flight/reference/coefficientTable
+
+- `CoefficientTable` (interface): interface CoefficientTable — A gridded table over any number of axes with multilinear interpolation.
+- `CoefficientTableAxis` (interface): interface CoefficientTableAxis — One axis of a {@link CoefficientTable}: strictly increasing breakpoints and what happens past the ends.
+- `createCoefficientTable` (function): function createCoefficientTable(axes: readonly CoefficientTableAxis[], values: readonly number[]): CoefficientTable — Creates a gridded {@link CoefficientTable}, the form aerodynamic data comes in (alpha by beta by Mach by deflection). `values` is row-major: the last axis varies fastest. Interpolation is multilinear across all axes and allocates nothing per sample.
+- `evenBreakpoints` (function): function evenBreakpoints(start: number, end: number, count: number): number[] — Evenly spaced breakpoints from `start` to `end` inclusive.
+
+## @jgengine/core/flight/reference/f16Aircraft
+
+- `F16ModelOptions` (interface): interface F16ModelOptions — Options for {@link createF16Model}.
+- `STEVENS_LEWIS_GRAVITY` (const): const STEVENS_LEWIS_GRAVITY: number — Stevens & Lewis gravity, 32.17 ft/s², in m/s².
+- `createF16Model` (function): function createF16Model(options: F16ModelOptions = {}): ReferenceAircraftModel — The F-16 of Stevens & Lewis, *Aircraft Control and Simulation* (2nd ed., Appendix A): NASA TP-1538 (Nguyen et al., 1979) wind-tunnel data reduced to coefficient tables in angle of attack (−10° to 45°), sideslip and elevator, damping derivatives by angle of attack, the F100 thrust table by altitude and Mach with its power-lag dynamics, and engine gyroscopic momentum. 20 500 lb, 300 ft² wing. Subsonic and below 45° angle of attack; outside that the tables extrapolate. Elevator, aileron and rudder actuators are the book's 20.2 rad/s first-order lags with 60, 80 and 120 °/s rate limits. Gear geometry is estimated (see source).
+- `f16PowerCommand` (function): function f16PowerCommand(throttle: number): number — Commanded power level, percent, for a throttle position `0..1` (the throttle gearing; 77% throttle is military power).
+- `f16Thrust` (function): function f16Thrust(power: number, altitude: number, mach: number): number — Installed thrust, N, at a power level (percent), altitude (m) and Mach: idle to military below 50%, military to full afterburner above.
+- `stevensLewisAtmosphere` (function): function stevensLewisAtmosphere(altitude: number): AtmosphereSample — The air-data model Stevens & Lewis run the F-16 with (their `ADC` routine): a linear-lapse troposphere density fit and a 390 °R stratosphere above 35 000 ft. Use it to reproduce the book's numbers; use `standardAtmosphere` otherwise.
+
+## @jgengine/core/flight/reference/flightComparison
+
+- `CESSNA_172N_PUBLISHED` (const): const CESSNA_172N_PUBLISHED: PublishedFlightFigures — Cessna 172N figures from its Pilot's Operating Handbook (1978) at 2300 lb, sea level, standard day: stall 50 KCAS flaps up, top speed 125 KTAS, climb 770 ft/min at 73 KIAS, take-off ground roll 805 ft (the chart is flaps 10°).
+- `FlightComparison` (interface): interface FlightComparison — A game aircraft's flight-test results beside its reference aircraft's and the real aircraft's.
+- `FlightComparisonAircraft` (interface): interface FlightComparisonAircraft — A game aircraft to fly against the reference: its tuning and a comfortable cruise speed, m/s.
+- `FlightComparisonRow` (interface): interface FlightComparisonRow — One metric of one comparison, SI units; `real` is absent where nothing is published.
+- `PublishedFlightFigures` (type): type PublishedFlightFigures = Partial<Record<keyof FlightTestReport, number>> — Published figures for a real aircraft, SI units, for the metrics a source gives.
+- `compareFlight` (function): function compareFlight(aircraft: readonly FlightComparisonAircraft[]): FlightComparison[] — Flies each game aircraft and its nearest reference (the Cessna 172 below 5 t, the F-16 at 30% chord above) through the same {@link runFlightTests} scenarios and lines the results up beside the published figures, so a game model's drift from real flight is a number. The game aircraft fly with their own assists, as players fly them.
+- `formatFlightComparison` (function): function formatFlightComparison(comparisons: readonly FlightComparison[]): string — Renders comparisons as a plain-text table per aircraft: game, reference and real values with the deltas between them.
+
+## @jgengine/core/flight/reference/flightTests
+
+- `FlightTestControls` (interface): interface FlightTestControls — Stick, throttle and brakes, the `RigidAircraftInput` shape.
+- `FlightTestOptions` (interface): interface FlightTestOptions — Scenario settings.
+- `FlightTestReport` (interface): interface FlightTestReport — Results of {@link runFlightTests}, SI units. `NaN` where a test could not finish.
+- `FlightTestSample` (interface): interface FlightTestSample — What a flight test reads each tick, in the same units and signs for every subject.
+- `FlightTestSubject` (interface): interface FlightTestSubject — Anything the flight tests can fly: the reference sim or a game model behind an adapter.
+- `KNOTS_PER_MPS` (const): const KNOTS_PER_MPS: number — Knots in one m/s.
+- `referenceFlightSubject` (function): function referenceFlightSubject(model: ReferenceAircraftModel, cruiseSpeed: number, options: ReferenceAircraftOptions = {}): FlightTestSubject & { maxMach: number } — Wraps a reference model as a {@link FlightTestSubject}. Airborne starts are trimmed, so a scenario begins in steady flight; the air is sea-level standard at the start and the ground far below unless the test is on the runway.
+- `rigidAircraftFlightSubject` (function): function rigidAircraftFlightSubject(name: string, tuning: RigidAircraftTuning, cruiseSpeed: number, options: RigidAircraftOptions = {}): FlightTestSubject — Wraps a game `RigidAircraftTuning` as a {@link FlightTestSubject}, flown exactly as the game runs it: its assists stay on, air density is the model's default, and the ground is flat at `y = 0`.
+- `runFlightTests` (function): function runFlightTests(subject: FlightTestSubject, options: FlightTestOptions = {}): FlightTestReport — Flies one subject through the standard flight tests with simple deterministic autopilots: the idle stall at constant altitude, full-throttle level top speed, a constant-speed climb sweep, a full-aileron roll at twice the stall speed, a sustained turn found by bisecting the bank to zero excess power at each speed, and a full-throttle take-off. Every subject flies the same manoeuvres, so a game model and a reference airframe compare metric by metric.
+
+## @jgengine/core/flight/reference/propeller
+
+- `BladeSection` (type): type BladeSection = (alpha: number, mach: number, radiusFraction: number) => { cl: number; cd: number } — Lift and drag of one blade section at an angle of attack and Mach number.
+- `PropellerGeometry` (interface): interface PropellerGeometry — A fixed-pitch propeller's geometry.
+- `PropellerMap` (interface): interface PropellerMap — Thrust and power coefficients `CT = T/(ρn²D⁴)`, `CP = P/(ρn³D⁵)` by advance ratio `J = V/(nD)` and tip Mach.
+- `clarkYPropellerSection` (function): function clarkYPropellerSection(alpha: number, mach: number, radiusFraction: number): { cl: number; cd: number } — The section data of a flat-bottomed propeller airfoil in the Clark Y family: a thin-airfoil lift slope corrected by Prandtl–Glauert up to Mach 0.7, zero lift at −4° to the flat lower surface, a stall near `cl = 1.2` that falls to flat-plate lift, a parabolic drag bucket, Lock's compressibility drag rise past a critical Mach that drops as the section thickens toward the hub, and flat-plate drag past the stall.
+- `createPropellerMap` (function): function createPropellerMap(geometry: PropellerGeometry, advanceRatios = evenBreakpoints(0, 1.5, 31), tipMachs = evenBreakpoints(0.2, 0.95, 6)): PropellerMap — Tabulates a propeller's `CT` and `CP` over advance ratio and tip Mach with {@link solvePropeller}, so a simulation interpolates instead of solving momentum balances every step.
+- `solvePropeller` (function): function solvePropeller(geometry: PropellerGeometry, advanceRatio: number, tipMach: number, speedOfSound = 340.294): { ct: number; cp: number } — Solves blade-element momentum theory for one operating point: each annulus balances the thrust and torque its blade sections make against the axial and swirl momentum it puts into the slipstream, with Prandtl's tip and hub loss. Returns `CT` and `CP`; `J` is the advance ratio and `tipMach` the tip's rotational Mach number.
+
+## @jgengine/core/flight/reference/referenceAircraft
+
+- `ReferenceActuator` (interface): interface ReferenceActuator — One surface actuator: where full pilot input puts it, and how fast it gets there.
+- `ReferenceAeroCoefficients` (interface): interface ReferenceAeroCoefficients — Body-axis aerodynamic coefficients about the centre of gravity, written by a model's `aerodynamics`. Forces are `q̄·S·C`, rolling and yawing moments `q̄·S·b·C`, pitching moment `q̄·S·c̄·C`.
+- `ReferenceAirData` (interface): interface ReferenceAirData — Air data the aerodynamic model reads, SI units and radians.
+- `ReferenceAircraft` (interface): interface ReferenceAircraft — A reference 6-DOF aircraft: rigid body, quaternion attitude, fixed-step RK4.
+- `ReferenceAircraftModel` (interface): interface ReferenceAircraftModel — A complete reference airframe: geometry, mass, aerodynamics, controls, propulsion and gear.
+- `ReferenceAircraftOptions` (interface): interface ReferenceAircraftOptions — World hooks for a reference aircraft.
+- `ReferenceAircraftSample` (interface): interface ReferenceAircraftSample — Telemetry for the current state.
+- `ReferenceAircraftState` (interface): interface ReferenceAircraftState — Serializable integrator state.
+- `ReferenceGearLeg` (interface): interface ReferenceGearLeg — One landing gear leg: a massless strut spring-damper at the wheel's contact point and a tyre with rolling resistance, brakes and slip-angle side force that saturates at the friction limit.
+- `ReferenceInitialCondition` (interface): interface ReferenceInitialCondition — Where and how a reference aircraft starts.
+- `ReferenceMassProperties` (interface): interface ReferenceMassProperties — Mass and inertia about the centre of gravity, body axes.
+- `ReferencePilotInput` (interface): interface ReferencePilotInput — Pilot input, the same shape as `RigidAircraftInput`.
+- `ReferencePropulsion` (interface): interface ReferencePropulsion — An engine and whatever it drives, with its own integrated states.
+- `ReferencePropulsionOutput` (interface): interface ReferencePropulsionOutput — What a propulsion model writes each evaluation: body-axis force and moment, rotor angular momentum, state rates.
+- `ReferenceSurfaces` (interface): interface ReferenceSurfaces — Surface deflections, rad, in the model's own sign convention.
+- `ReferenceVector` (type): type ReferenceVector = [number, number, number] — Three numbers, body axes (x forward, y right, z down) or north-east-down axes.
+- `ReferenceWind` (type): type ReferenceWind = (position: ReferenceVector, time: number) => ReferenceVector — Wind at a point and time: mean wind plus any turbulence, north-east-down m/s.
+- `createReferenceAircraft` (function): function createReferenceAircraft(model: ReferenceAircraftModel, options: ReferenceAircraftOptions = {}): ReferenceAircraft — Creates a {@link ReferenceAircraft}: a flat, non-rotating Earth 6-DOF rigid body with quaternion attitude, a full inertia tensor (with the `Ixz` product) plus gyroscopic engine momentum, gravity falling off with altitude, an injected atmosphere and wind, the α̇ aerodynamic terms solved implicitly, first-order rate-limited actuators, propulsion states, and spring-damper gear with tyre friction. Integrates with classic fourth-order Runge–Kutta at a fixed step, so halving the step cuts the error about sixteen-fold. It is a measuring stick for game flight models, not a game's runtime.
+- `referenceEuler` (function): function referenceEuler(q: readonly [number, number, number, number]): { heading: number; pitch: number; bank: number } — Yaw-pitch-roll Euler angles, rad, of a body-to-NED quaternion `[w, x, y, z]`.
+- `referenceQuaternion` (function): function referenceQuaternion(heading: number, pitch: number, bank: number): [number, number, number, number] — Quaternion `[w, x, y, z]` from yaw-pitch-roll Euler angles, rad.
+
+## @jgengine/core/flight/reference/standardAtmosphere
+
+- `AtmosphereModel` (type): type AtmosphereModel = (altitude: number) => AtmosphereSample — An air model: geometric altitude above mean sea level, m, to the air state there.
+- `AtmosphereSample` (interface): interface AtmosphereSample — Air state at one altitude, SI units.
+- `SEA_LEVEL_DENSITY` (const): const SEA_LEVEL_DENSITY: 1.225 — Sea-level standard density, kg/m³.
+- `SEA_LEVEL_PRESSURE` (const): const SEA_LEVEL_PRESSURE: 101325 — Sea-level standard pressure, Pa.
+- `SEA_LEVEL_SPEED_OF_SOUND` (const): const SEA_LEVEL_SPEED_OF_SOUND: 340.294 — Sea-level standard speed of sound, m/s.
+- `STANDARD_EARTH_RADIUS` (const): const STANDARD_EARTH_RADIUS: 6356766 — Effective Earth radius the 1976 standard uses for geopotential altitude and gravity, m.
+- `STANDARD_GRAVITY` (const): const STANDARD_GRAVITY: 9.80665 — Standard sea-level gravity, m/s².
+- `calibratedAirspeed` (function): function calibratedAirspeed(trueAirspeed: number, air: AtmosphereSample): number — Calibrated airspeed, m/s, for a true airspeed in an air state: the subsonic isentropic pitot relation referred to sea-level standard conditions, which is what an airspeed indicator without position error reads.
+- `geopotentialAltitude` (function): function geopotentialAltitude(altitude: number): number — Geopotential altitude, m', of a geometric altitude, m.
+- `standardAtmosphere` (function): function standardAtmosphere(altitude: number): AtmosphereSample — The U.S. Standard Atmosphere 1976 (NOAA/NASA/USAF, NOAA-S/T 76-1562) from −5 km to 86 km geometric altitude: the seven geopotential layers with their molecular-scale temperature gradients, hydrostatic pressure, the molecular weight change between 80 and 86 km, the speed of sound and Sutherland's viscosity. Above 86 km it continues the 86 km layer isothermally, which the standard does not define.
+- `standardGravity` (function): function standardGravity(altitude: number): number — Gravity at a geometric altitude, m/s², by the inverse-square law the 1976 standard uses.
+
 ## @jgengine/core/generator/GeneratorMeshInstance.draw
 
 - `GeneratorMeshInstance` (function): function GeneratorMeshInstance({ definition, meta, fallbackSeed, position = [0, 0, 0], rotationY = 0 }: GeneratorMeshInstanceProps): React.JSX.Element — One placed generator instance drawn through the mesh builder registered for its output family (`registerGeneratorMesh`), regrown from its params and seed. Null when the family has no builder.
