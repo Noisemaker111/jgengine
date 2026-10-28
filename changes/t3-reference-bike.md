@@ -31,6 +31,5 @@ Whipple bicycle benchmark (Meijaard et al. 2007): linear eigenvalues and weave/c
 ### Removed
 
 - `@jgengine/core/flight/reference/aircraftTrim` no longer exports `Eigenvalue`, `matrixEigenvalues`, `solveLinearSystem`.
-- `@jgengine/core/scatter/scatterGenerator` no longer exports `scatterPlacementVariant`.
 - `@jgengine/core/scatter/scatterHeroes` no longer exports `ScatterHeroMember`, `ScatterHeroSet`, `ScatterHeroSetOptions`, `ScatterHeroSetState`, `ScatterHeroUpdate`, `createScatterHeroSet`.
 - `@jgengine/core/scatter/ScatterHeroes.draw` no longer exports `ScatterHeroesProps`.
