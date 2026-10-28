@@ -7,9 +7,11 @@ import type { ModelLibraryEntry } from "../catalogs/modelLibrary";
 import type { AssetSource } from "../manifest";
 import { MATERIAL_MAP_FILES, type MaterialMapRole } from "../materialMapFiles";
 import { pullLibraryModel } from "../modelLibraryPull";
+import { pullMakeHumanCharacter } from "../makehumanPull";
 import { pullRocketboxClip, pullRocketboxModel } from "../rocketboxPull";
 import { sourceById } from "../sources";
 import type { LibraryEntry } from "./assetLibrary";
+import { makehumanPreset } from "./libraryMakehuman";
 import { rocketboxClipOf } from "./libraryRocketbox";
 import { librarySource } from "./librarySources";
 import { libraryServedPath, lowerLibraryId, type LibraryServedPath } from "./libraryServed";
@@ -84,7 +86,7 @@ const POLYHAVEN_MAPS: readonly [MaterialMapRole, readonly string[]][] = [
  * Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the
  * pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through
  * the model library's converters (a Rocketbox character with `ctx.clips` baked on), a Rocketbox
- * animation as a skeleton-only clip GLB, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a
+ * animation as a skeleton-only clip GLB, a MakeHuman person built from its CC0 base mesh and targets, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a
  * Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
  *
  * @capability library-pull fetch one library asset (model, material, HDRI, icon pack) into the folder a game serves it from
@@ -167,6 +169,12 @@ export async function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullCont
       homepage: entry.page,
     };
     await pullRocketboxModel(model, { modelsRoot: join(ctx.outRoot, "models"), fetchImpl, ...(ctx.githubToken === undefined ? {} : { githubToken: ctx.githubToken }) });
+    return served;
+  }
+  if (entry.source === "makehuman") {
+    const preset = makehumanPreset(entry.id);
+    if (preset === undefined) throw new Error(`${entry.key}: no pinned MakeHuman preset has this id`);
+    await pullMakeHumanCharacter(preset, { outDir: dir, fetchImpl, githubToken: ctx.githubToken });
     return served;
   }
   if (entry.source === "sketchfab") {

@@ -2,6 +2,7 @@
 import s_ambientcg from "./ambientcg.json" with { type: "json" };
 import s_gameicons from "./gameicons.json" with { type: "json" };
 import s_kaykit from "./kaykit.json" with { type: "json" };
+import s_makehuman from "./makehuman.json" with { type: "json" };
 import s_polyhaven from "./polyhaven.json" with { type: "json" };
 import s_rocketbox from "./rocketbox.json" with { type: "json" };
 import s_sketchfab from "./sketchfab.json" with { type: "json" };
@@ -11,6 +12,7 @@ export const libraryRecordFiles: readonly unknown[] = [
   s_ambientcg,
   s_gameicons,
   s_kaykit,
+  s_makehuman,
   s_polyhaven,
   s_rocketbox,
   s_sketchfab,
