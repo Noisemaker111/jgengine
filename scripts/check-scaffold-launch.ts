@@ -235,6 +235,7 @@ const REMOTE_FETCH: Record<string, string> = {
   "scripts/pr-video.ts": "api.github.com",
   "packages/assets/src/cli/pull.ts": "remote asset registry, URL from the caller",
   "packages/assets/src/library/libraryIngest.ts": "public asset catalogues (ambientCG, Poly Haven, Sketchfab, api.github.com) listed by library ingest",
+  "packages/assets/src/library/librarySmithsonian.ts": "the Smithsonian Open Access search API (api.si.edu) listed by library ingest",
   "packages/editor/src/assetImport.ts": "an editor route the caller supplies, never a fixed local address",
   "packages/github/src/server.ts": "api.github.com",
   "packages/github/src/source.ts": "api.github.com",
