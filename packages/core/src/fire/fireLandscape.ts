@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { bytesToBase64, base64ToBytes } from "../plants/growth/growthState";
+import { decodeFireArray, encodeFireArray } from "./fireArrays";
 import { seededRng } from "../random/rng";
 import { CANOPY_HEAT_KJ_KG, assessCrownFire, canopyFuelLoad, crownFlameLength, crownInitiationIntensity, type CanopyFuel } from "./crownFire";
 import { ANDERSON_FUEL_MODELS, totalFuelLoad, type FuelModel, type FuelMoisture } from "./fuelModels";
@@ -314,16 +314,6 @@ class EventHeap {
     this.cells[i] = lc;
     return top;
   }
-}
-
-function encode(array: { buffer: ArrayBufferLike; byteOffset: number; byteLength: number }): string {
-  return bytesToBase64(new Uint8Array(array.buffer, array.byteOffset, array.byteLength));
-}
-
-function decodeInto(text: string, target: Float64Array | Float32Array | Uint8Array, name: string): void {
-  const bytes = base64ToBytes(text);
-  if (bytes.byteLength !== target.byteLength) throw new Error(`fire snapshot ${name} has the wrong size`);
-  new Uint8Array(target.buffer, target.byteOffset, target.byteLength).set(bytes);
 }
 
 /**
@@ -837,45 +827,45 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
         time,
         rng: rng.state(),
         epoch,
-        fuel: encode(fuel),
-        arrival: encode(arrival),
-        tentative: encode(tentative),
-        crossRate: encode(crossRate),
-        flameEnd: encode(flameEnd),
-        burnEnd: encode(burnEnd),
-        state: encode(state),
-        kind: encode(kind),
-        spotted: encode(spotted),
-        intensity: encode(intensity),
-        flameLength: encode(flameLen),
-        scorchHeight: encode(scorch),
-        char: encode(char),
-        ash: encode(ash),
-        fuelLeft: encode(fuelLeft),
-        consumed: encode(consumed),
+        fuel: encodeFireArray(fuel),
+        arrival: encodeFireArray(arrival),
+        tentative: encodeFireArray(tentative),
+        crossRate: encodeFireArray(crossRate),
+        flameEnd: encodeFireArray(flameEnd),
+        burnEnd: encodeFireArray(burnEnd),
+        state: encodeFireArray(state),
+        kind: encodeFireArray(kind),
+        spotted: encodeFireArray(spotted),
+        intensity: encodeFireArray(intensity),
+        flameLength: encodeFireArray(flameLen),
+        scorchHeight: encodeFireArray(scorch),
+        char: encodeFireArray(char),
+        ash: encodeFireArray(ash),
+        fuelLeft: encodeFireArray(fuelLeft),
+        consumed: encodeFireArray(consumed),
         active: [...active],
       };
     },
     restore(s) {
       if (s.version !== 1) throw new Error("fire snapshot version is not supported");
       if (!Number.isFinite(s.time) || s.time < 0) throw new Error("fire snapshot time is invalid");
-      decodeInto(s.fuel, fuel, "fuel");
+      decodeFireArray(s.fuel, fuel, "fuel");
       for (let i = 0; i < n; i++) if ((fuel[i] ?? 0) >= fuels.length) throw new Error("fire snapshot fuel index is outside the palette");
-      decodeInto(s.arrival, arrival, "arrival");
-      decodeInto(s.tentative, tentative, "tentative");
-      decodeInto(s.crossRate, crossRate, "crossRate");
-      decodeInto(s.flameEnd, flameEnd, "flameEnd");
-      decodeInto(s.burnEnd, burnEnd, "burnEnd");
-      decodeInto(s.state, state, "state");
-      decodeInto(s.kind, kind, "kind");
-      decodeInto(s.spotted, spotted, "spotted");
-      decodeInto(s.intensity, intensity, "intensity");
-      decodeInto(s.flameLength, flameLen, "flameLength");
-      decodeInto(s.scorchHeight, scorch, "scorchHeight");
-      decodeInto(s.char, char, "char");
-      decodeInto(s.ash, ash, "ash");
-      decodeInto(s.fuelLeft, fuelLeft, "fuelLeft");
-      decodeInto(s.consumed, consumed, "consumed");
+      decodeFireArray(s.arrival, arrival, "arrival");
+      decodeFireArray(s.tentative, tentative, "tentative");
+      decodeFireArray(s.crossRate, crossRate, "crossRate");
+      decodeFireArray(s.flameEnd, flameEnd, "flameEnd");
+      decodeFireArray(s.burnEnd, burnEnd, "burnEnd");
+      decodeFireArray(s.state, state, "state");
+      decodeFireArray(s.kind, kind, "kind");
+      decodeFireArray(s.spotted, spotted, "spotted");
+      decodeFireArray(s.intensity, intensity, "intensity");
+      decodeFireArray(s.flameLength, flameLen, "flameLength");
+      decodeFireArray(s.scorchHeight, scorch, "scorchHeight");
+      decodeFireArray(s.char, char, "char");
+      decodeFireArray(s.ash, ash, "ash");
+      decodeFireArray(s.fuelLeft, fuelLeft, "fuelLeft");
+      decodeFireArray(s.consumed, consumed, "consumed");
       if (!s.active.every((i) => Number.isInteger(i) && i >= 0 && i < n)) throw new Error("fire snapshot active cells are invalid");
       active = [...s.active];
       time = s.time;

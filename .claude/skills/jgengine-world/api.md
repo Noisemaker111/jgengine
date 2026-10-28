@@ -1296,6 +1296,11 @@
 - `crownLengthToBreadth` (function): function crownLengthToBreadth(twentyFootWind: number): number — Rothermel 1991 crown fire length-to-breadth ratio, 1 + 0.125 × the 20-ft wind in mph.
 - `rothermelCrownRate` (function): function rothermelCrownRate(moisture: FuelMoisture, twentyFootWind: number, fm10Bed?: SurfaceFuelbed): number — Rothermel 1991 active crown fire spread rate, m/s: 3.34 times the surface rate of fuel model 10 at the same dead and live moisture, with midflame wind 0.4 × the 20-ft wind, on level ground.
 
+## @jgengine/core/fire/fireArrays
+
+- `decodeFireArray` (function): function decodeFireArray(text: string, target: Float64Array | Float32Array | Uint8Array, name: string): void — Decode base64 from {@link encodeFireArray} into a typed array of the same byte length.
+- `encodeFireArray` (function): function encodeFireArray(array: { buffer: ArrayBufferLike; byteOffset: number; byteLength: number }): string — Encode a typed array's bytes as base64 for a JSON snapshot.
+
 ## @jgengine/core/fire/fireLandscape
 
 - `CanopyStand` (interface): interface CanopyStand extends CanopyFuel — A forest stand over a cell: the canopy that shelters the wind and can carry crown fire.
@@ -1328,6 +1333,19 @@
 - `SCOTT_BURGAN_FUEL_MODELS` (const): const SCOTT_BURGAN_FUEL_MODELS: Readonly<Record<string, FuelModel>> — The 40 standard fire behavior fuel models of Scott & Burgan 2005 (grass GR, grass-shrub GS, shrub SH, timber-understory TU, timber litter TL, slash-blowdown SB), keyed by code.
 - `standardFuelModel` (function): function standardFuelModel(code: string): FuelModel | undefined — Every standard fuel model by code.
 - `totalFuelLoad` (function): function totalFuelLoad(fuel: FuelModel): number — Total fuel load of a model, kg/m².
+
+## @jgengine/core/fire/fuelMoisture
+
+- `DEFAULT_FUEL_MOISTURE_TUNING` (const): const DEFAULT_FUEL_MOISTURE_TUNING: Readonly<FuelMoistureTuning> — NFDRS 1978 dead fuel lags and rain boundaries, NFDRS 2016 live fuel ranges.
+- `FuelMoistureModel` (interface): interface FuelMoistureModel extends FireMoistureField — Per-cell dead fuel moisture and stand-wide live fuel moisture that follow the weather over time.
+- `FuelMoistureSnapshot` (interface): interface FuelMoistureSnapshot — Serializable state of a fuel moisture model.
+- `FuelMoistureTuning` (interface): interface FuelMoistureTuning — Live policy of a fuel moisture model; every value can change during play with `retune`.
+- `MoistureWeather` (interface): interface MoistureWeather — The weather a fuel moisture model reads; the only seam between fire and a weather system.
+- `createFuelMoistureModel` (function): function createFuelMoistureModel(config: { cells: number; initial: FuelMoisture; exposure?: Float32Array; tuning?: Partial<FuelMoistureTuning>; }): FuelMoistureModel — Fuel moisture over time from weather, one value set per fire grid cell, ready to hand to a fire landscape with `setMoistureField`. Dead fuels relax exponentially toward their equilibrium moisture (Simard 1968 at fuel-level conditions for 1-h and 10-h, air conditions for 100-h) with NFDRS 1978 time lags and rain boundaries; live fuels start at `initial` and follow a Jolly 2005 growing season index mapped onto the NFDRS 2016 live moisture ranges, averaged over the index's window. `exposure` (0..1 per cell) is how much sun reaches the fuel.
+- `equilibriumMoistureContent` (function): function equilibriumMoistureContent(temperatureC: number, relativeHumidity: number): number — Equilibrium moisture content of dead wood, fraction of dry mass, from temperature (°C) and relative humidity (0..1): Simard 1968's three-part regression as used by the 1978 NFDRS.
+- `fuelLevelWeather` (function): function fuelLevelWeather(temperatureC: number, relativeHumidity: number, cloudCover: number, sun: number): { temperatureC: number; relativeHumidity: number } — Temperature and humidity at the surface of sunlit fuel (Cohen & Deeming 1985): sun heats the fuel above the air and dries the air next to it, more under clear sky than overcast. `sun` scales the correction from none (night or full shade) to the full table value.
+- `growingSeasonIndex` (function): function growingSeasonIndex(minimumTemperatureC: number, vaporPressureDeficitPa: number, dayLengthHours: number): number — Jolly et al. 2005 growing season index, 0..1: the product of ramps on daily minimum temperature (−2..5 °C), vapour pressure deficit (900..4100 Pa, inverted) and day length (10..11 h).
+- `vaporPressureDeficit` (function): function vaporPressureDeficit(temperatureC: number, relativeHumidity: number): number — Vapour pressure deficit, Pa, from temperature (°C) and relative humidity (0..1), Tetens saturation pressure.
 
 ## @jgengine/core/fire/spotting
 

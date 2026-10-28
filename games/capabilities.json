@@ -3525,6 +3525,16 @@
       "intent": "eccentricity of a fire ellipse from its length-to-breadth ratio"
     },
     {
+      "id": "fire-equilibrium-moisture",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelMoisture",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "equilibrium moisture of dead fuel from air temperature and humidity"
+    },
+    {
       "id": "fire-flame-length",
       "packages": [
         "@jgengine/core"
@@ -3533,6 +3543,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Byram flame length from fireline intensity"
+    },
+    {
+      "id": "fire-fuel-level-weather",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelMoisture",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "temperature and humidity at sunlit fuel from air values, cloud and sun"
     },
     {
       "id": "fire-fuel-load",
@@ -3563,6 +3583,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "the 40 Scott & Burgan 2005 surface fuel models, the 13 Anderson 1982 models and the non-burnable codes, in metric units"
+    },
+    {
+      "id": "fire-fuel-moisture",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelMoisture",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "per-cell dead and live fuel moisture that dries in sun and heat and wets in rain, as a fire moisture field"
+    },
+    {
+      "id": "fire-growing-season-index",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelMoisture",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Jolly 2005 growing season index from minimum temperature, vapour pressure deficit and day length"
     },
     {
       "id": "fire-herb-curing",
@@ -3655,6 +3695,26 @@
       "intent": "Van Wagner crown scorch height from intensity, wind and air temperature"
     },
     {
+      "id": "fire-snapshot-arrays",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fireArrays",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "base64 typed-array codec for fire and fuel moisture snapshots"
+    },
+    {
+      "id": "fire-snapshot-arrays-decode",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fireArrays",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "restore a typed array from a fire snapshot's base64"
+    },
+    {
       "id": "fire-spotting-surface",
       "packages": [
         "@jgengine/core"
@@ -3703,6 +3763,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "20-ft open wind from a 10-m wind"
+    },
+    {
+      "id": "fire-vapor-pressure-deficit",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelMoisture",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "vapour pressure deficit from air temperature and humidity"
     },
     {
       "id": "fire-wind-adjustment",
