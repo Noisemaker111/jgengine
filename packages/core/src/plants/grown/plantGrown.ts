@@ -11,13 +11,14 @@ import { defineParamSchema, type ParamsOf } from "../../generator/paramSchema";
 import { runSliced, type SlicedJob } from "../../run/slicedWork";
 import { registerPlaceableGeneratorOutput } from "../../scene/assetGenerator";
 import { createIndexedDbPlantCacheStorage, createPlantCache, type CachedPlantStructure, type PlantCache } from "../cache/plantCache";
-import { OPEN_TEMPERATE_SITE, type PlantEnvironment } from "../growth/plantEnvironment";
+import { OPEN_TEMPERATE_SITE } from "../growth/plantEnvironment";
 import { createPlantGrowth, PLANT_SIM_VERSION } from "../growth/plantGrowth";
 import { buildPlantMesh, PLANT_MESH_LODS, plantMeshLod, type PlantMesh, type PlantStyle } from "../mesh/plantMesh";
 import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
 import { PINUS_STROBUS } from "../species/data/pinusStrobus";
 import { plantSpeciesById, registerPlantSpecies, type PlantSpecies } from "../species/plantSpecies";
 import { hashPlantStructure } from "../structure/plantStructure";
+import { createWorkerPlantGrower, type PlantGrower, type PlantGrowRequest } from "./plantGrowPool";
 
 /** The generator output family a grown plant returns: a {@link PlantMesh}. */
 export const PLANT_MESH_OUTPUT = "plant-mesh";
@@ -113,15 +114,7 @@ export function plantStyleOf(params: PlantGrownParams): PlantStyle {
   };
 }
 
-interface GrowRequest {
-  species: PlantSpecies;
-  env: PlantEnvironment;
-  seed: string;
-  age: number;
-  day: number;
-}
-
-function growRequest(params: PlantGrownParams, context: GeneratorContext): GrowRequest {
+function growRequest(params: PlantGrownParams, context: GeneratorContext): PlantGrowRequest {
   const species = plantSpeciesById(params.species) ?? BUILTIN_PLANT_SPECIES.find((known) => known.id === params.species) ?? ACER_SACCHARUM;
   const age = Math.max(1, Math.min(species.limits.maxAgeYears, Math.round(params.age)));
   return { species, env: { ...OPEN_TEMPERATE_SITE, light: params.light }, seed: context.seed, age, day: Math.round(params.day) };
@@ -132,7 +125,7 @@ function growRequest(params: PlantGrownParams, context: GeneratorContext): GrowR
  * and site. Anything that changes what grows is in it; nothing about the look is.
  * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
  */
-export function plantStructureKey(request: GrowRequest): string {
+export function plantStructureKey(request: PlantGrowRequest): string {
   const { species, env } = request;
   return `plant/${species.id}@${species.version}/sim${PLANT_SIM_VERSION}/${request.seed}/${request.age}/${request.day}/${JSON.stringify(env)}`;
 }
@@ -144,7 +137,7 @@ function meshKey(structureKey: string, style: PlantStyle, lod: number): string {
 // Plants grow while the loading screen is up, so a slice can take most of a 30 Hz frame.
 const GROW_SLICE_MS = 24;
 
-function* growJob(request: GrowRequest): SlicedJob<CachedPlantStructure> {
+function* growJob(request: PlantGrowRequest): SlicedJob<CachedPlantStructure> {
   const growth = createPlantGrowth(request.species, request.env, request.seed);
   while (growth.ageYears() < request.age) {
     growth.step();
@@ -155,27 +148,52 @@ function* growJob(request: GrowRequest): SlicedJob<CachedPlantStructure> {
   return { structure, hash: hashPlantStructure(structure) };
 }
 
-function growNow(request: GrowRequest): CachedPlantStructure {
+function growNow(request: PlantGrowRequest): CachedPlantStructure {
   const growth = createPlantGrowth(request.species, request.env, request.seed);
   growth.step(request.age);
   const structure = growth.structure(request.day);
   return { structure, hash: hashPlantStructure(structure) };
 }
 
+/** Options for {@link createPlantGrownGenerator}. */
+export interface PlantGrownGeneratorOptions {
+  /**
+   * Where `prepare` grows plants. Default: a worker pool ({@link createWorkerPlantGrower}) where the
+   * platform has workers. Null, or a grower that fails, grows in frame slices on the main thread.
+   */
+  grower?: PlantGrower | null;
+}
+
 /**
- * A grown-plant generator over one cache. `prepare` grows in slices off the frame (or loads from
- * storage); `generate` answers from the cache, growing on the spot only when nothing prepared it.
+ * A grown-plant generator over one cache. `prepare` grows in a worker (or in slices off the frame,
+ * or loads from storage); `generate` answers from the cache, growing on the spot only when nothing
+ * prepared it.
  * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
  */
-export function createPlantGrownGenerator(cache: PlantCache) {
+export function createPlantGrownGenerator(cache: PlantCache, options: PlantGrownGeneratorOptions = {}) {
   const growing = new Map<string, Promise<CachedPlantStructure>>();
-  const structureFor = async (request: GrowRequest): Promise<CachedPlantStructure> => {
+  let grower: PlantGrower | null | undefined = options.grower;
+  const growOffFrame = async (request: PlantGrowRequest): Promise<CachedPlantStructure> => {
+    grower ??= createWorkerPlantGrower();
+    if (grower !== null) {
+      try {
+        return await grower.grow(request);
+      } catch (error) {
+        // A platform that cannot run the worker grows in frame slices from now on.
+        console.warn("[jgengine] plant worker unavailable, growing on the main thread", error);
+        grower.dispose();
+        grower = null;
+      }
+    }
+    return runSliced(growJob(request), { budgetMs: GROW_SLICE_MS }).done;
+  };
+  const structureFor = async (request: PlantGrowRequest): Promise<CachedPlantStructure> => {
     const key = plantStructureKey(request);
     const stored = await cache.loadStructure(key);
     if (stored !== undefined) return stored;
     const pending = growing.get(key);
     if (pending !== undefined) return pending;
-    const run = runSliced(growJob(request), { budgetMs: GROW_SLICE_MS }).done.then((grown) => {
+    const run = growOffFrame(request).then((grown) => {
       cache.putStructure(key, grown);
       return grown;
     });

@@ -56,10 +56,10 @@ const grown = (generator: string, preset: string, params: Record<string, unknown
 /** Undergrowth stands by the thousand, so it grows at the generators' lighter leaf budget. */
 const undergrowth = (generator: string, preset: string, params: Record<string, unknown> = {}, variants = 6): ScatterGeneratorItem => ({ ...grown(generator, preset, params, variants), detail: 0.5 });
 
-/** The island's tree look: rounded leaf clumps over the grown wood, lit, a touch more saturated than life. */
-const TREE_LOOK = { foliage: "clumps", shading: "lit", saturation: 1.15, brightness: 1.05, barkGrain: true };
+/** The island's tree look: textured leaf cards over the grown wood, lit, a touch more saturated than life. */
+const TREE_LOOK = { foliage: "leaves", shading: "lit", saturation: 1.15, brightness: 1.05, barkGrain: true };
 
-/** A tree grown by the plant simulation: a species at an age (and day of year), drawn at the clump level. */
+/** A tree grown by the plant simulation: a species at an age (and day of year), drawn at the leaf-card level. */
 const tree = (species: string, age: number, params: Record<string, unknown> = {}): ScatterGeneratorItem => ({
   generator: "plant.grown",
   params: { species, age, ...TREE_LOOK, ...params },
