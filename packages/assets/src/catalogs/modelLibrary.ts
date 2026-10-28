@@ -88,8 +88,8 @@ export interface RocketboxClip {
   name: string;
   /** File in Rocketbox's `Assets/Animations/all_animations_max_motextr_<folder>`. */
   file: string;
-  /** `static` clips are already in place; `xy` clips travel and take `inPlace`. */
-  folder: "static" | "xy";
+  /** `static` clips are already in place; `xy` (ground) and `xyz` (3D) clips travel and take `inPlace`. */
+  folder: "static" | "xy" | "xyz";
   /** Remove the clip's travel along the ground so the game's own movement carries the body. */
   inPlace?: boolean;
 }

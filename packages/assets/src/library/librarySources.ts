@@ -11,10 +11,10 @@ export type LibrarySourceId =
   | "rocketbox";
 
 /** What a library entry is, which decides where it is served and which browser tab shows it. */
-export type LibraryKind = "model" | "character" | "material" | "decal" | "hdri" | "icon";
+export type LibraryKind = "model" | "character" | "animation" | "material" | "decal" | "hdri" | "icon";
 
 /** Every {@link LibraryKind}, in browser tab order. */
-export const LIBRARY_KINDS: readonly LibraryKind[] = ["model", "character", "material", "decal", "hdri", "icon"];
+export const LIBRARY_KINDS: readonly LibraryKind[] = ["model", "character", "animation", "material", "decal", "hdri", "icon"];
 
 /** One upstream the library indexes. `{id}` in a template is replaced by the entry's native id. */
 export interface LibrarySource {
@@ -29,6 +29,8 @@ export interface LibrarySource {
   page: string;
   /** Preview image template, when the provider publishes one per entry. */
   thumbnail?: string;
+  /** The kinds {@link thumbnail} applies to; every kind when absent. */
+  thumbnailKinds?: readonly LibraryKind[];
   /** Whether the licence lets JGengine mirror the bytes (every accepted licence does; kept explicit for audits). */
   rehost: boolean;
   /** Environment variable holding the API token `assets pull` needs, when the provider gates downloads. */
@@ -94,6 +96,7 @@ export const ASSET_LIBRARY_SOURCES: readonly LibrarySource[] = [
     author: "Microsoft (Rocketbox Studios GmbH)",
     page: `https://github.com/microsoft/Microsoft-Rocketbox/tree/${ROCKETBOX_REVISION}/Assets/{id}`,
     thumbnail: `https://cdn.jsdelivr.net/gh/microsoft/Microsoft-Rocketbox@${ROCKETBOX_REVISION}/Assets/{id}/{name}.png`,
+    thumbnailKinds: ["character"],
     rehost: true,
     revision: ROCKETBOX_REVISION,
   },

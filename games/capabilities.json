@@ -8207,6 +8207,16 @@
       "intent": "draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions"
     },
     {
+      "id": "rocketbox-clip",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/rocketboxPull",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "pull one Microsoft Rocketbox animation clip as a skeleton-only GLB that plays on any Rocketbox human"
+    },
+    {
       "id": "role-assign",
       "packages": [
         "@jgengine/core"

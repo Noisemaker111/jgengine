@@ -7,9 +7,10 @@ import type { ModelLibraryEntry } from "../catalogs/modelLibrary";
 import type { AssetSource } from "../manifest";
 import { MATERIAL_MAP_FILES, type MaterialMapRole } from "../materialMapFiles";
 import { pullLibraryModel } from "../modelLibraryPull";
-import { pullRocketboxModel } from "../rocketboxPull";
+import { pullRocketboxClip, pullRocketboxModel } from "../rocketboxPull";
 import { sourceById } from "../sources";
 import type { LibraryEntry } from "./assetLibrary";
+import { rocketboxClipOf } from "./libraryRocketbox";
 import { librarySource } from "./librarySources";
 import { libraryServedPath, lowerLibraryId, type LibraryServedPath } from "./libraryServed";
 
@@ -22,6 +23,8 @@ export interface LibraryPullContext {
   pullPack: (source: AssetSource) => Promise<void>;
   githubToken?: string;
   env?: Readonly<Record<string, string | undefined>>;
+  /** Rocketbox animation entries baked onto a pulled Rocketbox character, retargeted by bone name and made in place. */
+  clips?: readonly LibraryEntry[];
   log?: (line: string) => void;
 }
 
@@ -80,7 +83,8 @@ const POLYHAVEN_MAPS: readonly [MaterialMapRole, readonly string[]][] = [
 /**
  * Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the
  * pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through
- * the model library's converters, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a
+ * the model library's converters (a Rocketbox character with `ctx.clips` baked on), a Rocketbox
+ * animation as a skeleton-only clip GLB, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a
  * Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
  *
  * @capability library-pull fetch one library asset (model, material, HDRI, icon pack) into the folder a game serves it from
@@ -142,14 +146,22 @@ export async function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullCont
     if (wrote === 0) throw new Error(`${entry.key}: Poly Haven lists no 1k JPG maps`);
     return served;
   }
+  if (entry.source === "rocketbox" && entry.kind === "animation") {
+    await pullRocketboxClip(rocketboxClipOf(entry), { outDir: dir, fetchImpl, ...(ctx.githubToken === undefined ? {} : { githubToken: ctx.githubToken }) });
+    return served;
+  }
   if (entry.source === "rocketbox") {
     const name = entry.id.split("/").pop() ?? entry.id;
+    const clips = (ctx.clips ?? []).map((clip) => {
+      if (clip.source !== "rocketbox" || clip.kind !== "animation") throw new Error(`${clip.key} is not a Rocketbox animation; only those retarget onto ${entry.key}`);
+      return rocketboxClipOf(clip);
+    });
     const model: ModelLibraryEntry = {
       name: `rocketbox/${name}`,
       title: entry.title,
       genres: [],
       intents: [],
-      origin: { provider: "rocketbox", path: entry.id, rootBone: "Bip01", clips: [] },
+      origin: { provider: "rocketbox", path: entry.id, rootBone: "Bip01", clips },
       author: entry.author,
       license: entry.license,
       homepage: entry.page,
