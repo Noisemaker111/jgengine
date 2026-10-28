@@ -58,11 +58,8 @@ describe("core domain barrels", () => {
         () => {
           // Retired skills keep a frozen hand-curated barrel — generator skips them.
           if (!existsSync(join(root, ".claude", "skills", skill))) return;
-          expect(src).toBe(renderBarrel(collectBarrelReexports(root, skill)));
+          expect(src).toBe(renderBarrel(collectBarrelReexports(root, skill, surface)));
         },
-        // Re-walks the skill's source surface to regenerate the barrel — the
-        // heaviest per-case work here, which has tripped the default 5s (and
-        // 8s+) timeout under a loaded test:all run (issue #1504).
         20_000,
       );
 
