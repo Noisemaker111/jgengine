@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /**
  * The one generator contract every procedural system follows: a typed {@link ParamSchema}, an
  * injected seed, a pure deterministic `generate(params, context)`, and baking to N seeded variants
@@ -48,7 +49,7 @@ export function defineGenerator<Schema extends ParamSchema, Output>(definition: 
   return definition;
 }
 
-/** The context a generate call receives for `seed` at `detail`. */
+/** The context a generate call receives for `seed` at `detail`. @internal */
 export function generatorContext(seed: string, detail = 1): GeneratorContext {
   return {
     seed,
@@ -153,6 +154,7 @@ export interface BakedGeneratorVariant<Schema extends ParamSchema, Output> {
 /**
  * Bake N variants of a generator at each of its `lods` — the set an instanced renderer draws from
  * (pick one per instance with {@link variantIndexAt}) and the editor's variant grid previews.
+ * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
  */
 export function bakeGeneratorVariants<Schema extends ParamSchema, Output>(
   definition: GeneratorDefinition<Schema, Output>,
@@ -166,7 +168,10 @@ export function bakeGeneratorVariants<Schema extends ParamSchema, Output>(
   }));
 }
 
-/** A stable variant index in `[0, count)` for one placed instance key (an id, a grid cell). */
+/**
+ * A stable variant index in `[0, count)` for one placed instance key (an id, a grid cell).
+ * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
+ */
 export function variantIndexAt(count: number, seed: string, key: string | number): number {
   if (count <= 1) return 0;
   return Math.floor(seededRng(`${seed}#${key}`)() * count) % count;
@@ -176,7 +181,17 @@ const generators = new Map<string, GeneratorDefinition>();
 
 /** Register a generator so the editor, the asset catalog and agents can find it. Last registration per id wins. */
 export function registerGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): void {
-  generators.set(definition.id, {
+  generators.set(definition.id, untypedGenerator(definition));
+}
+
+/**
+ * The untyped view of a typed generator, for code that holds raw meta bags (the editor, the variant
+ * grid): its `generate` parses params against the schema first. Registered generators are already
+ * this shape.
+ * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
+ */
+export function untypedGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): GeneratorDefinition {
+  return {
     id: definition.id,
     label: definition.label,
     schema: definition.schema,
@@ -184,7 +199,7 @@ export function registerGenerator<Schema extends ParamSchema, Output>(definition
     ...(definition.lods === undefined ? {} : { lods: definition.lods }),
     // Registry callers hold untyped params, so they are parsed against the schema on the way in.
     generate: (params, context) => definition.generate(parseParams(definition.schema, params), context),
-  });
+  };
 }
 
 /** The registered generator for an id, or undefined. */

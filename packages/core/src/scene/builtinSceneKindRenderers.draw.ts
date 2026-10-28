@@ -13,10 +13,12 @@ import { registerSoilPatchRenderer } from "./SoilPatchRenderer.draw";
 import { registerCityRenderer } from "@jgengine/core/city/CityRenderer.draw";
 import { registerPoleLineRenderer } from "./PoleLineRenderer.draw";
 import { registerDecalRenderer } from "./DecalRenderer.draw";
+import { registerGrassPreview } from "@jgengine/core/grass/grassPreview.draw";
+import { registerPartsPreview } from "./GeneratedAssetRenderer.draw";
 
 let registered = false;
 
-/** Registers the engine's built-in environment scene-kind renderers. Called by `AuthoredScene`. @internal */
+/** Registers the engine's built-in environment scene-kind renderers and generator variant previews. Called by `AuthoredScene`. @internal */
 export function registerBuiltinSceneKindRenderers(): void {
   if (registered) return;
   registered = true;
@@ -27,4 +29,6 @@ export function registerBuiltinSceneKindRenderers(): void {
   registerCityRenderer();
   registerPoleLineRenderer();
   registerDecalRenderer();
+  registerGrassPreview();
+  registerPartsPreview();
 }

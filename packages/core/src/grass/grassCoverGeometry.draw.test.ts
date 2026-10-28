@@ -39,6 +39,13 @@ describe("grass cover geometry", () => {
     expect(alphaAt(Math.round(segments / 2), Math.round(segments / 2))).toBeGreaterThan(0.6);
   });
 
+  test("a small patch keeps enough grid for its feather, so its mat still shows", () => {
+    const cover = createGrassCoverGeometry({ ...base, area: [1.5, 1.5], edgeFeather: 0.3 });
+    let opaque = 0;
+    for (let i = 3; i < cover.colors.length; i += 4) if ((cover.colors[i] ?? 0) > 0.6) opaque += 1;
+    expect(opaque / (cover.colors.length / 4)).toBeGreaterThan(0.3);
+  });
+
   test("authored clearance masks punch cover back out and strength 0 bakes nothing", () => {
     const masked = createGrassCoverGeometry({ ...base, coverageAt: (x) => (x > 0 ? 0 : 1) });
     const segments = Math.round(Math.sqrt(masked.colors.length / 4)) - 1;

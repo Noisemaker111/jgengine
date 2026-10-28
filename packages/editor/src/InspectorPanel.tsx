@@ -27,6 +27,8 @@ import {
   hasMaterialAssignment,
 } from "./authoredComponentMeta";
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
+import { GeneratorVariants } from "./GeneratorVariants";
+import { generatorForObject } from "@jgengine/core/scene/assetGenerator";
 import { TriggerInspector } from "./TriggerInspector";
 import { describeClipRoles, type EditorAssetEntry } from "./AssetBrowser";
 import {
@@ -118,6 +120,31 @@ function GeneratorInspector({ meta, onMeta }: { meta: Record<string, unknown> | 
   const generator = partsGeneratorFor(meta);
   if (generator === undefined) return null;
   return <SchemaInspector schema={generator.schema} label={`${generator.label} (generator)`} accent="#a78bfa" meta={meta} onMeta={onMeta} />;
+}
+
+/** The variant grid for an object whose kind or asset names a generator; nothing otherwise. */
+function VariantsSection({
+  api,
+  id,
+  kind,
+  meta,
+  placeOffset,
+  sections,
+}: {
+  api: EditorHostApi | undefined;
+  id: string;
+  kind: string;
+  meta: Record<string, unknown> | undefined;
+  placeOffset: number;
+  sections: SectionState;
+}) {
+  const definition = generatorForObject(kind, meta);
+  if (api === undefined || definition === undefined) return null;
+  return (
+    <Section id="variants" title={`${definition.label} variants`} icon="cube" sections={sections}>
+      <GeneratorVariants api={api} id={id} definition={definition} meta={meta} placeOffset={placeOffset} accent={getSceneKind(kind)?.accent} />
+    </Section>
+  );
 }
 
 /**
@@ -834,6 +861,7 @@ export function InspectorPanel({
             <GeneratorInspector meta={marker.meta} onMeta={onMeta} />
           </Section>
         ) : null}
+        <VariantsSection api={api} id={marker.id} kind={marker.kind} meta={marker.meta} placeOffset={3} sections={sections} />
         {!hasKindParams && !hasTrigger && !hasMaterial && !hasGenerator && !canAuthorTrigger("marker") ? (
           <EmptyState
             icon="settings"
@@ -969,6 +997,14 @@ export function InspectorPanel({
             <KindInspector object={volumeObject(volume)} meta={volume.meta} onMeta={onMeta} />
           </Section>
         ) : null}
+        <VariantsSection
+          api={api}
+          id={volume.id}
+          kind={volume.kind}
+          meta={volume.meta}
+          placeOffset={(volume.halfExtents?.x ?? volume.radius ?? 5) * 2 + 1}
+          sections={sections}
+        />
         {hasTrigger ? (
           <Section
             id="trigger"

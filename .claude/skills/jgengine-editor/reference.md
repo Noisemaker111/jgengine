@@ -143,6 +143,17 @@ export const STASH_KIND = definePlaceableMarkerKind({
 - **Load path:** register from a module the editor loads. Importing your `editorKinds.ts` (side effect) from `editorLayers.ts` covers it — `loadGameLayers` imports `editorLayers.ts` for every editor session, and the game runtime imports it too, so one registration serves both.
 - `fields` also gives `add_marker`/`set_marker`/`set_meta` a schema to validate that kind's `meta` against; omit `fields` for a bare placeable marker.
 
+## Generator variants
+
+An object has a generator when its scene kind sets `generator`, or when its `meta.assetId` names a parts generator. These verbs drive that generator's seeded variant grid:
+
+- `list_generators` `{ output? }`: each registered generator's `id`, `label`, `output`, `fields` (`key`/`type`/`label`/`group`), preset ids and `lods`.
+- `generator_variants` `{ id | generator, count?, explore?, seed?, keep? }`: read-only `{ generator, id?, variants: [{ index, seed, meta }] }`. Variant 0 is the object's current look unless `keep` pins bags ahead of it. `count` defaults to 20 and is capped at 64.
+- `apply_variant` `{ id, index | meta, count?, explore?, seed?, keep? }`: writes the variant's schema fields and seed into the object's meta as one undoable edit. Other meta keys such as `assetId` stay. Pass the same grid options you gave `generator_variants`; a `meta` you pass wins over `index`.
+- `place_variant` `{ id, index | meta, dx?, dy?, dz?, newId?, ... }`: adds a copy of the marker, volume or path, offset by `dx`/`dy`/`dz` and carrying the variant's meta, as one undoable add. `newId` defaults to `<id>_v<index>`.
+
+In the GUI, the inspector's **Variants** section shows the same grid as live tiles. Click a tile to apply it, **keep** pins it at the front, **place** copies the object beside itself with that variant, **reroll** lays out a new set, and **explore** sets how far variants wander from the current look.
+
 ## Placement animation
 
 A placed rigged asset's animation override lives at `marker.meta.animation` and reaches the game through `markerAnimation` → `ModelConfig.animation`. It is `"auto"`, `"none"` or a config with `states`, `oneShots` and an optional stored `graph` (an `AnimGraph`, validated with `parseAnimGraph` on read).

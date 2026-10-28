@@ -44,6 +44,8 @@ const READ_ONLY_METHODS = new Set<string>([
   "hierarchy",
   "list_prefabs",
   "list_collections",
+  "list_generators",
+  "generator_variants",
 ]);
 
 /** @internal Builds an editor RPC request from a tool name + args (tool name ≡ method). */

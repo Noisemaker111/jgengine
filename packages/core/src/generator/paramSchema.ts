@@ -43,6 +43,10 @@ export interface RangeParamField extends ParamFieldBase {
   default: number;
   /** Suffix shown next to the readout, e.g. "m" or "/m²". */
   unit?: string;
+  /** The window variants explore inside, when the full range allows values that stop looking right. Defaults to `[min, max]`. */
+  explore?: readonly [number, number];
+  /** `"log"` explores by ratio rather than by step, for sizes spanning orders of magnitude (needs `min > 0`). */
+  exploreScale?: "linear" | "log";
 }
 
 /** A free numeric input, optionally clamped. */
@@ -52,6 +56,8 @@ export interface NumberParamField extends ParamFieldBase {
   default: number;
   min?: number;
   max?: number;
+  /** The window variants explore inside. Defaults to `[min, max]`. */
+  explore?: readonly [number, number];
 }
 
 /** A checkbox. */
@@ -71,6 +77,21 @@ export interface SelectParamField extends ParamFieldBase {
 export interface ColorParamField extends ParamFieldBase {
   type: "color";
   default: string;
+  /** How far variants shift this colour at full explore. */
+  explore?: ColorExplore;
+}
+
+/**
+ * How far variant exploration may shift a colour at full explore, so a variant keeps the colour's
+ * character instead of drifting to black or white.
+ */
+export interface ColorExplore {
+  /** Hue shift in degrees. Default 24. */
+  hue?: number;
+  /** Saturation change as a fraction of the current saturation. Default 0.25. */
+  saturation?: number;
+  /** Lightness change, 0..1. Default 0.08. */
+  lightness?: number;
 }
 
 /** A free string input. */
@@ -110,6 +131,8 @@ export interface CurveParamField extends ParamFieldBase {
 export interface GradientParamField extends ParamFieldBase {
   type: "gradient";
   default: readonly GradientStop[];
+  /** How far variants shift every stop at full explore; all stops shift together. */
+  explore?: ColorExplore;
 }
 
 /**
@@ -217,7 +240,7 @@ export function findSchemaPreset(schema: ParamSchema, id: string): ParamPreset |
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 /** True for a `#rgb` or `#rrggbb` hex colour string. */
-export function isHexColor(value: unknown): value is string {
+function isHexColor(value: unknown): value is string {
   return typeof value === "string" && HEX.test(value);
 }
 
@@ -380,8 +403,8 @@ function hexChannels(hex: string): [number, number, number] {
   return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
 }
 
-/** Mix two hex colours in sRGB, `t` 0 → `a`, 1 → `b`. */
-export function mixHex(a: string, b: string, t: number): string {
+/** Mix two hex colours (3- or 6-digit) in sRGB, clamped. */
+function blendHex(a: string, b: string, t: number): string {
   const ca = hexChannels(isHexColor(a) ? a : "#000000");
   const cb = hexChannels(isHexColor(b) ? b : "#000000");
   const k = Math.max(0, Math.min(1, t));
@@ -402,7 +425,10 @@ export function sampleCurve(points: readonly CurvePoint[], x: number): number {
   return points[points.length - 1]?.y ?? first.y;
 }
 
-/** The hex colour of a gradient at `t` (0..1), mixed between neighbouring stops. */
+/**
+ * The hex colour of a gradient at `t` (0..1), mixed between neighbouring stops.
+ * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
+ */
 export function sampleGradient(stops: readonly GradientStop[], t: number): string {
   const first = stops[0];
   if (first === undefined) return "#000000";
@@ -411,13 +437,57 @@ export function sampleGradient(stops: readonly GradientStop[], t: number): strin
     const b = stops[i];
     const a = stops[i - 1];
     if (a === undefined || b === undefined) break;
-    if (t <= b.at) return b.at === a.at ? b.color : mixHex(a.color, b.color, (t - a.at) / (b.at - a.at));
+    if (t <= b.at) return b.at === a.at ? b.color : blendHex(a.color, b.color, (t - a.at) / (b.at - a.at));
   }
   return stops[stops.length - 1]?.color ?? first.color;
 }
 
 function randomHex(random: () => number): string {
   return `#${channelHex(60 + random() * 180)}${channelHex(60 + random() * 180)}${channelHex(60 + random() * 180)}`;
+}
+
+function exploreWindow(window: readonly [number, number] | undefined, min: number, max: number, current: number): [number, number] {
+  const low = Math.max(min, window?.[0] ?? min);
+  const high = Math.min(max, window?.[1] ?? max);
+  return [Math.min(low, current), Math.max(high, current)];
+}
+
+interface ColourShift {
+  hue: number;
+  saturation: number;
+  lightness: number;
+}
+
+function colourShift(explore: ColorExplore | undefined, random: () => number, k: number): ColourShift {
+  return {
+    hue: (random() * 2 - 1) * (explore?.hue ?? 24) * k,
+    saturation: (random() * 2 - 1) * (explore?.saturation ?? 0.25) * k,
+    lightness: (random() * 2 - 1) * (explore?.lightness ?? 0.08) * k,
+  };
+}
+
+/** Shift a hex colour in HSL: hue by degrees, saturation by a fraction of itself, lightness by an amount. */
+function shiftHex(hex: string, shift: ColourShift): string {
+  if (!isHexColor(hex)) return hex;
+  const [r255, g255, b255] = hexChannels(hex);
+  const r = r255 / 255;
+  const g = g255 / 255;
+  const b = b255 / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  const h = d === 0 ? 0 : max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  const hue = (((h * 60 + shift.hue) % 360) + 360) % 360;
+  const sat = Math.max(0, Math.min(1, s * (1 + shift.saturation)));
+  const light = Math.max(0, Math.min(1, l + shift.lightness));
+  const c = (1 - Math.abs(2 * light - 1)) * sat;
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = light - c / 2;
+  const sector = Math.floor(hue / 60);
+  const [pr, pg, pb] = sector === 0 ? [c, x, 0] : sector === 1 ? [x, c, 0] : sector === 2 ? [0, c, x] : sector === 3 ? [0, x, c] : sector === 4 ? [x, 0, c] : [c, 0, x];
+  return `#${channelHex((pr + m) * 255)}${channelHex((pg + m) * 255)}${channelHex((pb + m) * 255)}`;
 }
 
 function roundTo(field: RangeParamField | NumberParamField, value: number): number {
@@ -473,6 +543,7 @@ export function randomizeGroupParams(schema: ParamSchema, groupId: string | unde
  * the variant grid's "explore around this" step. Numbers move within their bounds, colours drift
  * toward a random tone, bools and selects flip with probability `amount / 2`, curves move their
  * points. Fields marked `vary: false`, seeds, text and weighted lists stay as they are.
+ * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
  */
 export function jitterParams(schema: ParamSchema, base: Readonly<Record<string, unknown>> | undefined, random: () => number, amount: number): Record<string, unknown> {
   const k = Math.max(0, Math.min(1, amount));
@@ -485,14 +556,21 @@ export function jitterParams(schema: ParamSchema, base: Readonly<Record<string, 
     switch (field.type) {
       case "range": {
         if (typeof current !== "number") break;
-        const span = field.max - field.min;
-        patch[field.key] = roundTo(field, Math.max(field.min, Math.min(field.max, current + (random() * 2 - 1) * span * k)));
+        const [low, high] = exploreWindow(field.explore, field.min, field.max, current);
+        const step = random() * 2 - 1;
+        const next =
+          field.exploreScale === "log" && low > 0 && current > 0
+            ? current * Math.pow(high / low, step * k * 0.25)
+            : current + step * (high - low) * k * 0.5;
+        patch[field.key] = roundTo(field, Math.max(low, Math.min(high, next)));
         break;
       }
       case "number": {
         if (typeof current !== "number") break;
-        const span = field.min !== undefined && field.max !== undefined ? field.max - field.min : Math.max(1, Math.abs(current));
-        patch[field.key] = roundTo(field, num(current + (random() * 2 - 1) * span * k * 0.5, current, field.min, field.max));
+        const bounded = field.explore !== undefined || (field.min !== undefined && field.max !== undefined);
+        const [low, high] = exploreWindow(field.explore, field.min ?? -Infinity, field.max ?? Infinity, current);
+        const span = bounded ? high - low : Math.max(1, Math.abs(current));
+        patch[field.key] = roundTo(field, Math.max(low, Math.min(high, current + (random() * 2 - 1) * span * k * 0.5)));
         break;
       }
       case "bool":
@@ -505,7 +583,7 @@ export function jitterParams(schema: ParamSchema, base: Readonly<Record<string, 
         break;
       }
       case "color":
-        if (typeof current === "string") patch[field.key] = mixHex(current, randomHex(random), k * 0.5);
+        if (typeof current === "string") patch[field.key] = shiftHex(current, colourShift(field.explore, random, k));
         break;
       case "curve": {
         const min = field.min ?? 0;
@@ -513,9 +591,11 @@ export function jitterParams(schema: ParamSchema, base: Readonly<Record<string, 
         patch[field.key] = readCurve(base?.[field.key], field).map((point) => ({ x: point.x, y: num(point.y + (random() * 2 - 1) * (max - min) * k * 0.5, point.y, min, max) }));
         break;
       }
-      case "gradient":
-        patch[field.key] = readGradient(base?.[field.key], field.default).map((stop) => ({ at: stop.at, color: mixHex(stop.color, randomHex(random), k * 0.4) }));
+      case "gradient": {
+        const shift = colourShift(field.explore, random, k);
+        patch[field.key] = readGradient(base?.[field.key], field.default).map((stop) => ({ at: stop.at, color: shiftHex(stop.color, shift) }));
         break;
+      }
       case "seed":
       case "text":
       case "weightedList":

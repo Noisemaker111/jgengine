@@ -9,6 +9,7 @@
  * @capability asset-generator seeded parametric geometry registered as a placeable asset
  */
 import { getGenerator, runGenerator, type GeneratorDefinition } from "../generator/generator";
+import { getSceneKind } from "./sceneKinds";
 
 /** One generated primitive part — a box/panel placed in the asset's local space. */
 export interface GeneratedPart {
@@ -69,10 +70,16 @@ export function isGeneratedAsset(value: unknown): value is GeneratedAsset {
   return "parts" in value && Array.isArray(value.parts) && "bounds" in value && typeof value.bounds === "object" && value.bounds !== null;
 }
 
-/** The registered parts generator for an asset id, or undefined when the id names none. */
+/** The registered parts generator for an asset id, or undefined when the id names none. @internal */
 export function getPartsGenerator(assetId: string): GeneratorDefinition | undefined {
   const definition = getGenerator(assetId);
   return definition?.output === PARTS_OUTPUT ? definition : undefined;
+}
+
+/** An object's generator: its kind's `generator`, else the parts generator its `meta.assetId` names. @internal */
+export function generatorForObject(kind: string, meta: Readonly<Record<string, unknown>> | undefined): GeneratorDefinition | undefined {
+  const kindGenerator = getSceneKind(kind)?.generator;
+  return kindGenerator === undefined ? partsGeneratorFor(meta) : getGenerator(kindGenerator);
 }
 
 /** The parts generator a placed marker's `meta.assetId` names, or undefined. */

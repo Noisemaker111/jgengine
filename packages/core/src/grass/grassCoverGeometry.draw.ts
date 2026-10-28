@@ -8,6 +8,9 @@ export const GRASS_COVER_TILE_METRES = 3;
 /** Largest grid a cover mat bakes to, per axis — a 66 m park stays one draw at ~1 m cells. */
 export const GRASS_COVER_MAX_SEGMENTS = 96;
 
+/** Fewest grid segments a default mat bakes to; with fewer, the edge feather fades a small patch's whole mat. */
+const GRASS_COVER_MIN_SEGMENTS = 16;
+
 /** Inputs for {@link createGrassCoverGeometry}. */
 export interface GrassCoverGeometryOptions {
   area: TerrainArea;
@@ -22,8 +25,10 @@ export interface GrassCoverGeometryOptions {
   coverageAt: TerrainHeightSampler;
   /** Lift above the ground in meters so the mat never z-fights the terrain. Default 0.035. */
   lift?: number;
-  /** Grid segments per axis; defaults to one per 2 m, clamped to {@link GRASS_COVER_MAX_SEGMENTS}. */
+  /** Grid segments per axis; defaults to one per 2 m, at least 16 so a small patch keeps its feathered edge, clamped to {@link GRASS_COVER_MAX_SEGMENTS}. */
   segments?: number;
+  /** Patch-local mow-stripe shade, -1..1, times its contrast (see `grassStripeAt`). Omit for no stripes. */
+  stripeAt?: TerrainHeightSampler;
 }
 
 /** Bake result for {@link createGrassCoverGeometry}; empty arrays when the mat is switched off. */
@@ -72,7 +77,7 @@ export function createGrassCoverGeometry(options: GrassCoverGeometryOptions): Gr
     1,
     Math.min(
       GRASS_COVER_MAX_SEGMENTS,
-      Math.floor(options.segments ?? Math.min(GRASS_COVER_MAX_SEGMENTS, Math.max(2, Math.round(Math.max(size.width, size.depth) / 2)))),
+      Math.floor(options.segments ?? Math.min(GRASS_COVER_MAX_SEGMENTS, Math.max(GRASS_COVER_MIN_SEGMENTS, Math.round(Math.max(size.width, size.depth) / 2)))),
     ),
   );
   if (options.strength <= 0 || size.width <= 0 || size.depth <= 0) {
@@ -128,9 +133,10 @@ export function createGrassCoverGeometry(options: GrassCoverGeometryOptions): Gr
       const g = root.g + (sheen.g - root.g) * light;
       const b = root.b + (sheen.b - root.b) * light;
       const tipMix = grain * 0.3;
-      colors[index * 4] = r + (tip.r - r) * tipMix;
-      colors[index * 4 + 1] = g + (tip.g - g) * tipMix;
-      colors[index * 4 + 2] = b + (tip.b - b) * tipMix;
+      const stripe = 1 + (options.stripeAt === undefined ? 0 : options.stripeAt(x, z) * 0.6);
+      colors[index * 4] = (r + (tip.r - r) * tipMix) * stripe;
+      colors[index * 4 + 1] = (g + (tip.g - g) * tipMix) * stripe;
+      colors[index * 4 + 2] = (b + (tip.b - b) * tipMix) * stripe;
       colors[index * 4 + 3] = alpha;
       uvs[index * 2] = x / GRASS_COVER_TILE_METRES;
       uvs[index * 2 + 1] = z / GRASS_COVER_TILE_METRES;

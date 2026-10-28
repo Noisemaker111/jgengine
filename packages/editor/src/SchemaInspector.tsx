@@ -52,6 +52,26 @@ function PresetRow({ schema, onMeta }: { schema: ParamSchema; onMeta: MetaPatch 
   );
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function curvePoints(value: unknown): CurvePoint[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isObject).flatMap((point) => {
+    const x = point["x"], y = point["y"];
+    return typeof x === "number" && typeof y === "number" ? [{ x, y }] : [];
+  });
+}
+
+function gradientStops(value: unknown): GradientStop[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isObject).flatMap((stop) => {
+    const at = stop["at"], color = stop["color"];
+    return typeof at === "number" && typeof color === "string" ? [{ at, color }] : [];
+  });
+}
+
 function labelOf(field: ParamField): string {
   return field.label ?? field.key;
 }
@@ -372,9 +392,9 @@ function FieldRow({ field, meta, onMeta }: { field: ParamField; meta: Record<str
     case "weightedList":
       return <WeightedListField field={field} value={params[field.key] as WeightedParamEntry[]} coalesce={coalesce} onMeta={onMeta} />;
     case "curve":
-      return <CurveField field={field} value={params[field.key] as CurvePoint[]} coalesce={coalesce} onMeta={onMeta} />;
+      return <CurveField field={field} value={curvePoints(params[field.key])} coalesce={coalesce} onMeta={onMeta} />;
     case "gradient":
-      return <GradientField field={field} value={params[field.key] as GradientStop[]} coalesce={coalesce} onMeta={onMeta} />;
+      return <GradientField field={field} value={gradientStops(params[field.key])} coalesce={coalesce} onMeta={onMeta} />;
     case "action":
       return null; // Action buttons are rendered by the group section, which owns the whole schema.
   }

@@ -179,6 +179,31 @@ describe("jitterParams", () => {
   test("amount 0 changes nothing", () => {
     expect(jitterParams(SCHEMA, { height: 3 }, seededRng("zero"), 0)).toEqual({});
   });
+
+  test("variants stay inside the explore window and keep a colour's lightness", () => {
+    const bounded = defineParamSchema({
+      fields: [
+        { type: "range", key: "size", min: 0.01, max: 3, default: 0.02, explore: [0.01, 1], exploreScale: "log" },
+        { type: "range", key: "lean", min: 0, max: 1, default: 0.1, explore: [0, 0.4] },
+        { type: "color", key: "tint", default: "#3a7a30", explore: { lightness: 0.05 } },
+      ],
+    });
+    const lightness = (hex: string) => {
+      const value = Number.parseInt(hex.slice(1), 16);
+      const channels = [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+      return (Math.max(...channels) + Math.min(...channels)) / 510;
+    };
+    for (let i = 0; i < 40; i += 1) {
+      const patch = jitterParams(bounded, undefined, seededRng(`b${i}`), 1);
+      const size = patch["size"];
+      const lean = patch["lean"];
+      const tint = patch["tint"];
+      if (typeof size !== "number" || typeof lean !== "number" || typeof tint !== "string") throw new Error("missing patch values");
+      expect(size).toBeLessThan(0.07);
+      expect(lean).toBeLessThanOrEqual(0.4);
+      expect(Math.abs(lightness(tint) - lightness("#3a7a30"))).toBeLessThan(0.06);
+    }
+  });
 });
 
 describe("nested groups", () => {

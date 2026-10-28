@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { seededRng } from "@jgengine/core/random/rng";
 import { grassBladeDensity, type GrassLook } from "@jgengine/core/grass/grassKind";
 
+import { grassBareAt, grassFieldNoise } from "@jgengine/core/grass/grassField";
 import { hashNoise2, seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/terrainSeed";
 import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 
@@ -60,6 +61,14 @@ export interface ResolvedGrassBake {
   maxHeight: number;
 }
 
+function bareCoverage(look: GrassLook, seed: string, coverageAt: TerrainHeightSampler | undefined): TerrainHeightSampler {
+  if (look.bareGround <= 0) return coverageAt ?? (() => 1);
+  const seedNumber = seedToUint32(seed);
+  return coverageAt === undefined
+    ? (x, z) => grassBareAt(look, seedNumber, x, z)
+    : (x, z) => coverageAt(x, z) * grassBareAt(look, seedNumber, x, z);
+}
+
 /** Resolve a patch's bake inputs once; the stream and every node bake read the result. */
 export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
   const size = resolveTerrainSize(options.area);
@@ -78,116 +87,13 @@ export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
     edgeFeather: Math.max(0, options.edgeFeather ?? Math.min(4, Math.max(1.5, Math.min(size.width, size.depth) * 0.12))),
     exclude: options.exclude ?? [],
     heightAt: options.heightAt ?? (() => 0),
-    coverageAt: options.coverageAt ?? (() => 1),
+    coverageAt: bareCoverage(look, seed, options.coverageAt),
     bladesPerM2,
     tuftsPerM2: bladesPerM2 / look.tuftBlades,
     columns,
     rows,
     rootLevel: Math.ceil(Math.log2(Math.max(columns, rows))),
     maxHeight: look.bladeHeight * tallest * 1.15 + look.flowerSize,
-  };
-}
-
-/** One draw-detail level of the tuft template: an index range drawing every blade at `segments`. */
-export interface GrassTemplateLod {
-  segments: number;
-  start: number;
-  count: number;
-}
-
-/**
- * The shared tuft mesh every instance places: `tuftBlades` blades splayed around a root, each a
- * strip of `segments` rows, plus one flower quad that only flowering tufts open. The index buffer
- * holds the strips at full, half and single-segment detail back to back, so a far draw picks a
- * cheaper range of the same vertices.
- */
-export interface GrassTuftTemplate {
-  position: Float32Array;
-  uv: Float32Array;
-  bladeOffset: Float32Array;
-  bladeVary: Float32Array;
-  bladeBendScale: Float32Array;
-  index: Uint16Array;
-  lods: readonly GrassTemplateLod[];
-  /** Largest per-blade height and width scale and splay radius, for conservative bounds. */
-  heightScale: number;
-  widthScale: number;
-  radius: number;
-}
-
-/** Build the shared tuft template for a resolved patch. */
-export function createGrassTuftTemplate(bake: ResolvedGrassBake): GrassTuftTemplate {
-  const { segments, look } = bake;
-  const blades = look.tuftBlades;
-  const random = seededRng(`${bake.seed}/tuft`);
-  const position: number[] = [];
-  const uv: number[] = [];
-  const bladeOffset: number[] = [];
-  const bladeVary: number[] = [];
-  const bladeBendScale: number[] = [];
-  let heightScale = 0, widthScale = 0, radius = 0;
-  for (let blade = 0; blade < blades; blade += 1) {
-    const angle = blade === 0 ? 0 : ((blade - 1) / Math.max(1, blades - 1)) * Math.PI * 2 + random() * 1.4;
-    const reach = blade === 0 ? 0 : look.tuftSpread * (0.35 + 0.65 * random());
-    const ox = Math.cos(angle) * reach;
-    const oz = Math.sin(angle) * reach;
-    // Each blade bends away from the tuft centre (plus jitter), so the clump splays open.
-    const yaw = angle + Math.PI / 2 + (random() - 0.5) * 1.6;
-    const h = blade === 0 ? 1 : 0.7 + random() * 0.45;
-    const w = 0.8 + random() * 0.4;
-    const phase = random();
-    const bend = 0.7 + random() * 0.7;
-    heightScale = Math.max(heightScale, h);
-    widthScale = Math.max(widthScale, w);
-    radius = Math.max(radius, reach);
-    for (let row = 0; row <= segments; row += 1) {
-      const t = row / segments;
-      for (const side of [-0.5, 0.5]) {
-        position.push(side, t, 0);
-        uv.push(side + 0.5, t);
-        bladeOffset.push(ox, oz);
-        bladeVary.push(yaw, h, w, phase);
-        bladeBendScale.push(bend);
-      }
-    }
-  }
-  // Flower quad on the first blade's tip; uv.y above 1 marks its corners for the shader.
-  const flowerBase = position.length / 3;
-  for (const [cx, cy] of [[-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]] as const) {
-    position.push(cx, cy, 0);
-    uv.push(cx + 0.5, cy + 2.5);
-    bladeOffset.push(0, 0);
-    bladeVary.push(Math.PI / 2, 1, 1, 0);
-    bladeBendScale.push(1);
-  }
-  const levels = [...new Set([segments, Math.ceil(segments / 2), 1])].sort((a, b) => b - a);
-  const index: number[] = [];
-  const lods: GrassTemplateLod[] = [];
-  const vertsPerBlade = (segments + 1) * 2;
-  for (const level of levels) {
-    const start = index.length;
-    for (let blade = 0; blade < blades; blade += 1) {
-      const base = blade * vertsPerBlade;
-      for (let k = 0; k < level; k += 1) {
-        const a = base + Math.round((k * segments) / level) * 2;
-        const b = base + Math.round(((k + 1) * segments) / level) * 2;
-        index.push(a, a + 1, b + 1, a, b + 1, b);
-      }
-    }
-    if (look.flowerShare > 0) index.push(flowerBase, flowerBase + 1, flowerBase + 3, flowerBase, flowerBase + 3, flowerBase + 2);
-    lods.push({ segments: level, start, count: index.length - start });
-  }
-  return {
-    position: Float32Array.from(position),
-    uv: Float32Array.from(uv),
-    bladeOffset: Float32Array.from(bladeOffset),
-    bladeVary: Float32Array.from(bladeVary),
-    bladeBendScale: Float32Array.from(bladeBendScale),
-    index: Uint16Array.from(index),
-    lods,
-    heightScale,
-    widthScale,
-    radius,
   };
 }
 
@@ -221,26 +127,6 @@ export function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number
   const x0 = -bake.width / 2 + ix * span;
   const z0 = -bake.depth / 2 + iz * span;
   return [x0, z0, Math.min(bake.width / 2, x0 + span), Math.min(bake.depth / 2, z0 + span)];
-}
-
-function smooth(t: number): number {
-  return t * t * (3 - 2 * t);
-}
-
-/** Two-octave value noise in 0..1, deterministic per seed. */
-function fieldNoise(x: number, z: number, seed: number): number {
-  let total = 0;
-  let weight = 0;
-  for (let octave = 0, scale = 1, amp = 1; octave < 2; octave += 1, scale *= 2.3, amp *= 0.45) {
-    const px = x * scale, pz = z * scale;
-    const xi = Math.floor(px), zi = Math.floor(pz);
-    const tx = smooth(px - xi), tz = smooth(pz - zi);
-    const s = seed + octave * 977;
-    const a = hashNoise2(xi, zi, s), b = hashNoise2(xi + 1, zi, s), c = hashNoise2(xi, zi + 1, s), d = hashNoise2(xi + 1, zi + 1, s);
-    total += ((a + (b - a) * tx) * (1 - tz) + (c + (d - c) * tx) * tz) * amp;
-    weight += amp;
-  }
-  return total / weight;
 }
 
 function smoothstep(a: number, b: number, x: number): number {
@@ -316,7 +202,7 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
       }
       const nx = x / look.noiseScale, nz = z / look.noiseScale;
       // Mown patches drop to low turf and never flower; at patchiness 0 the mask never bites.
-      const grown = smoothstep(look.patchiness * 0.85 - 0.1, look.patchiness * 0.85 + 0.04, fieldNoise(nx, nz, seedNumber + 31));
+      const grown = smoothstep(look.patchiness * 0.85 - 0.1, look.patchiness * 0.85 + 0.04, grassFieldNoise(nx, nz, seedNumber + 31));
       height *= 0.55 + 0.45 * grown;
       const y = bake.heightAt(x, z);
       if (look.slopeThin > 0) {
@@ -348,7 +234,7 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
       vary[n * 4 + 1] = colorRoll;
       vary[n * 4 + 2] = species + flower;
       vary[n * 4 + 3] = cell.full > 0 ? (j + u) / cell.full : 1;
-      tone[n] = fieldNoise(nx * 0.7 + 17.3, nz * 0.7 - 9.1, seedNumber + 53);
+      tone[n] = grassFieldNoise(nx * 0.7 + 17.3, nz * 0.7 - 9.1, seedNumber + 53);
       roots.expandByPoint(point.set(x, y, z));
       maxReach = Math.max(maxReach, height * 1.15 + width * 2 + (flower > 0 ? look.flowerSize : 0));
       n += 1;

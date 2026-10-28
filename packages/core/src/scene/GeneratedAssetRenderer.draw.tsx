@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 
-import { resolveGeneratorAsset, type GeneratedAsset } from "@jgengine/core/scene/assetGenerator";
+import { runGenerator } from "@jgengine/core/generator/generator";
+import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
+import { PARTS_OUTPUT, isGeneratedAsset, resolveGeneratorAsset, type GeneratedAsset } from "@jgengine/core/scene/assetGenerator";
 import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 
 const NEUTRAL = "#b8b0a4";
@@ -39,4 +41,29 @@ export function GeneratedAssetInstance({ meta, position = [0, 0, 0], rotationY =
       <GeneratedParts asset={asset} />
     </group>
   );
+}
+
+function variantAsset({ definition, variant }: GeneratorPreviewProps): GeneratedAsset | null {
+  const output = runGenerator(definition, variant.meta);
+  return isGeneratedAsset(output) ? output : null;
+}
+
+function PartsPreview(props: GeneratorPreviewProps) {
+  const { definition, variant } = props;
+  const asset = useMemo(() => variantAsset({ definition, variant }), [definition, variant]);
+  return asset === null ? null : <GeneratedParts asset={asset} />;
+}
+
+/** Registers the variant-tile preview for parts generators. Called by `registerBuiltinSceneKindRenderers`. @internal */
+export function registerPartsPreview(): void {
+  registerGeneratorPreview(PARTS_OUTPUT, {
+    Component: PartsPreview,
+    frame: (props) => {
+      const asset = variantAsset(props);
+      if (asset === null) return { target: [0, 0.5, 0], distance: 3 };
+      const { min, max } = asset.bounds;
+      const extent = Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2], 0.1);
+      return { target: [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2], distance: extent * 1.9 };
+    },
+  });
 }

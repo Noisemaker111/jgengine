@@ -3,13 +3,26 @@ import {
   editorDocumentBounds,
   listEditorKinds,
   summarizeEditorSession,
+  type EditorCommand,
   type EditorDocument,
   type EditorMarker,
+  type EditorNote,
   type EditorPath,
+  type EditorVec3,
+  type EditorVolume,
 } from "@jgengine/core/editor/index";
 import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/placement/placeAsset";
+import { generatorForObject } from "@jgengine/core/scene/assetGenerator";
 import { getSceneKind } from "@jgengine/core/scene/sceneKinds";
-import { findSchemaPreset, validateParams } from "@jgengine/core/generator/paramSchema";
+import {
+  generatorSeed,
+  generatorVariants,
+  getGenerator,
+  listGenerators,
+  type GeneratorDefinition,
+  type GeneratorVariantOptions,
+} from "@jgengine/core/generator/generator";
+import { findSchemaPreset, validateParams, type ParamSchema } from "@jgengine/core/generator/paramSchema";
 
 import { EDITOR_RUN_MODES } from "../session";
 import { boundsCenter, frameDistanceForBounds } from "../camera/orbitFraming";
@@ -51,20 +64,182 @@ function documentHasAnyId(doc: EditorDocument, ids: readonly string[]): boolean 
   );
 }
 
+type MetaTarget =
+  | { target: "marker"; object: EditorMarker; kind: string; meta: Record<string, unknown> | undefined }
+  | { target: "volume"; object: EditorVolume; kind: string; meta: Record<string, unknown> | undefined }
+  | { target: "path"; object: EditorPath; kind: string; meta: Record<string, unknown> | undefined }
+  | { target: "note"; object: EditorNote; kind: string; meta: Record<string, unknown> | undefined };
+
 /** Which document collection an object lives in, plus its current kind + meta — for generic `set_meta`. */
-function findMetaTarget(
-  doc: EditorDocument,
-  id: string,
-): { target: "marker" | "volume" | "path" | "note"; kind: string; meta: Record<string, unknown> | undefined } | null {
+function findMetaTarget(doc: EditorDocument, id: string): MetaTarget | null {
   const marker = doc.markers.find((m) => m.id === id);
-  if (marker !== undefined) return { target: "marker", kind: marker.kind, meta: marker.meta };
+  if (marker !== undefined) return { target: "marker", object: marker, kind: marker.kind, meta: marker.meta };
   const volume = doc.volumes.find((v) => v.id === id);
-  if (volume !== undefined) return { target: "volume", kind: volume.kind, meta: volume.meta };
+  if (volume !== undefined) return { target: "volume", object: volume, kind: volume.kind, meta: volume.meta };
   const path = doc.paths.find((p) => p.id === id);
-  if (path !== undefined) return { target: "path", kind: path.kind, meta: path.meta };
+  if (path !== undefined) return { target: "path", object: path, kind: path.kind, meta: path.meta };
   const note = doc.annotations.find((n) => n.id === id);
-  if (note !== undefined) return { target: "note", kind: "note", meta: note.meta };
+  if (note !== undefined) return { target: "note", object: note, kind: "note", meta: note.meta };
   return null;
+}
+
+/** The one command that replaces an object's meta bag, whichever collection it lives in. */
+function metaPatchCommand(target: MetaTarget["target"], id: string, meta: Record<string, unknown>): EditorCommand {
+  switch (target) {
+    case "marker":
+      return { type: "setMarker", id, patch: { meta } };
+    case "volume":
+      return { type: "setVolume", id, patch: { meta } };
+    case "path":
+      return { type: "setPath", id, patch: { meta } };
+    case "note":
+      return { type: "setNote", id, patch: { meta } };
+  }
+}
+
+const MAX_GENERATOR_VARIANTS = 64;
+
+/** The variant-grid options shared by `generator_variants`, `apply_variant` and `place_variant`. */
+interface VariantGridRequest {
+  count?: number;
+  explore?: number;
+  seed?: string;
+  keep?: Record<string, unknown>[];
+}
+
+/** A variant pick: a grid index, or a variant `meta` bag the caller already holds (wins over `index`). */
+interface VariantPickRequest extends VariantGridRequest {
+  index?: number;
+  meta?: Record<string, unknown>;
+}
+
+function variantGridOptions(request: VariantGridRequest): GeneratorVariantOptions {
+  const count =
+    typeof request.count === "number" && Number.isFinite(request.count)
+      ? Math.min(MAX_GENERATOR_VARIANTS, Math.max(1, Math.floor(request.count)))
+      : 20;
+  return {
+    count,
+    ...(typeof request.explore === "number" && Number.isFinite(request.explore) ? { explore: Math.min(1, Math.max(0, request.explore)) } : {}),
+    ...(request.seed === undefined ? {} : { seed: request.seed }),
+    ...(request.keep === undefined ? {} : { keep: request.keep }),
+  };
+}
+
+function objectGenerator(doc: EditorDocument, id: string): { target: MetaTarget; definition: GeneratorDefinition } | { error: string } {
+  const target = findMetaTarget(doc, id);
+  if (target === null) return { error: `object not found: ${id}` };
+  const definition = generatorForObject(target.kind, target.meta);
+  if (definition !== undefined) return { target, definition };
+  const kindGenerator = getSceneKind(target.kind)?.generator;
+  return kindGenerator === undefined
+    ? { error: `object "${id}" (kind "${target.kind}") has no generator: its kind names none and meta.assetId names no parts generator` }
+    : { error: `kind "${target.kind}" names generator "${kindGenerator}", which is not registered` };
+}
+
+/** The schema-owned keys of a variant bag (every value field plus the seed), so non-schema meta like `assetId` stays put. */
+function variantMetaPatch(schema: ParamSchema, meta: Readonly<Record<string, unknown>>): Record<string, unknown> {
+  const keys = schema.fields.filter((field) => field.type !== "action").map((field) => field.key);
+  if (!schema.fields.some((field) => field.type === "seed")) keys.push("seed");
+  const patch: Record<string, unknown> = {};
+  for (const key of keys) if (meta[key] !== undefined) patch[key] = meta[key];
+  return patch;
+}
+
+function chosenVariant(
+  definition: GeneratorDefinition,
+  base: Record<string, unknown> | undefined,
+  request: VariantPickRequest,
+): { meta: Record<string, unknown>; index: number | null } | { error: string } {
+  if (request.meta !== undefined) return { meta: request.meta, index: null };
+  if (request.index === undefined) return { error: "requires index (a variant from generator_variants) or meta" };
+  const variants = generatorVariants(definition, base, variantGridOptions(request));
+  const variant = Number.isInteger(request.index) ? variants[request.index] : undefined;
+  if (variant === undefined) return { error: `variant index ${request.index} is outside 0..${variants.length - 1}` };
+  return { meta: variant.meta, index: variant.index };
+}
+
+/** The object's meta with a picked variant's schema fields and seed written over it, validated. */
+function variantMeta(
+  definition: GeneratorDefinition,
+  target: MetaTarget,
+  base: Record<string, unknown>,
+  request: VariantPickRequest,
+): { meta: Record<string, unknown>; index: number | null } | { error: string } {
+  const chosen = chosenVariant(definition, target.meta, request);
+  if ("error" in chosen) return chosen;
+  const meta = { ...base, ...variantMetaPatch(definition.schema, chosen.meta) };
+  const issues = validateParams(definition.schema, meta);
+  if (issues.length > 0) {
+    return { error: `invalid ${definition.id} params: ${issues.map((issue) => `${issue.key} (${issue.message})`).join(", ")}` };
+  }
+  const invalid = validateMetaForKind(target.kind, meta);
+  return invalid === null ? { meta, index: chosen.index } : { error: invalid };
+}
+
+function withoutPrefabLink(meta: Record<string, unknown> | undefined): Record<string, unknown> {
+  const copy = { ...meta };
+  delete copy["prefabId"];
+  delete copy["prefabInstanceId"];
+  return copy;
+}
+
+/** A fresh copy of `target`'s geometry shifted by `offset`, carrying `meta`; null for notes. */
+function placedVariantCommand(target: MetaTarget, id: string, offset: EditorVec3, meta: Record<string, unknown>): EditorCommand | null {
+  const shift = (point: EditorVec3): EditorVec3 => ({ x: point.x + offset.x, y: point.y + offset.y, z: point.z + offset.z });
+  switch (target.target) {
+    case "marker": {
+      const source = target.object;
+      return {
+        type: "addMarker",
+        marker: {
+          id,
+          kind: source.kind,
+          position: shift(source.position),
+          ...(source.rotationY === undefined ? {} : { rotationY: source.rotationY }),
+          ...(source.color === undefined ? {} : { color: source.color }),
+          ...(source.label === undefined ? {} : { label: source.label }),
+          ...(source.catalogId === undefined ? {} : { catalogId: source.catalogId }),
+          meta,
+        },
+      };
+    }
+    case "volume": {
+      const source = target.object;
+      return {
+        type: "addVolume",
+        volume: {
+          id,
+          kind: source.kind,
+          shape: source.shape,
+          center: shift(source.center),
+          ...(source.radius === undefined ? {} : { radius: source.radius }),
+          ...(source.height === undefined ? {} : { height: source.height }),
+          ...(source.halfExtents === undefined ? {} : { halfExtents: { ...source.halfExtents } }),
+          ...(source.color === undefined ? {} : { color: source.color }),
+          ...(source.label === undefined ? {} : { label: source.label }),
+          meta,
+        },
+      };
+    }
+    case "path": {
+      const source = target.object;
+      return {
+        type: "addPath",
+        path: {
+          id,
+          kind: source.kind,
+          points: source.points.map(shift),
+          ...(source.width === undefined ? {} : { width: source.width }),
+          ...(source.color === undefined ? {} : { color: source.color }),
+          ...(source.label === undefined ? {} : { label: source.label }),
+          meta,
+        },
+      };
+    }
+    case "note":
+      return null;
+  }
 }
 
 /** Validates a merged meta bag against a registered kind's schema; returns an error string or null. */
@@ -95,6 +270,10 @@ export const documentHandlers: Pick<
   | "set_note"
   | "set_meta"
   | "apply_preset"
+  | "list_generators"
+  | "generator_variants"
+  | "apply_variant"
+  | "place_variant"
   | "select"
   | "clear_selection"
   | "camera_goto"
@@ -283,15 +462,7 @@ export const documentHandlers: Pick<
     const merged = { ...target.meta, ...request.patch };
     const invalid = validateMetaForKind(target.kind, merged);
     if (invalid !== null) return { ok: false, error: invalid };
-    ctx.session.dispatch(
-      target.target === "marker"
-        ? { type: "setMarker", id: request.id, patch: { meta: merged } }
-        : target.target === "volume"
-          ? { type: "setVolume", id: request.id, patch: { meta: merged } }
-          : target.target === "path"
-            ? { type: "setPath", id: request.id, patch: { meta: merged } }
-            : { type: "setNote", id: request.id, patch: { meta: merged } },
-    );
+    ctx.session.dispatch(metaPatchCommand(target.target, request.id, merged));
     return { ok: true, result: { id: request.id, kind: target.kind, meta: merged } };
   },
   apply_preset: (ctx, request) => {
@@ -307,16 +478,103 @@ export const documentHandlers: Pick<
     const merged = { ...target.meta, ...preset.values };
     const invalid = validateMetaForKind(target.kind, merged);
     if (invalid !== null) return { ok: false, error: invalid };
-    ctx.session.dispatch(
-      target.target === "marker"
-        ? { type: "setMarker", id: request.id, patch: { meta: merged } }
-        : target.target === "volume"
-          ? { type: "setVolume", id: request.id, patch: { meta: merged } }
-          : target.target === "path"
-            ? { type: "setPath", id: request.id, patch: { meta: merged } }
-            : { type: "setNote", id: request.id, patch: { meta: merged } },
-    );
+    ctx.session.dispatch(metaPatchCommand(target.target, request.id, merged));
     return { ok: true, result: { id: request.id, kind: target.kind, preset: preset.id, meta: merged } };
+  },
+  list_generators: (_ctx, request) => ({
+    ok: true,
+    result: {
+      generators: listGenerators(request.output).map((definition) => ({
+        id: definition.id,
+        label: definition.label,
+        output: definition.output,
+        fields: definition.schema.fields.map((field) => ({
+          key: field.key,
+          type: field.type,
+          ...(field.label === undefined ? {} : { label: field.label }),
+          ...(field.group === undefined ? {} : { group: field.group }),
+        })),
+        presets: (definition.schema.presets ?? []).map((preset) => preset.id),
+        lods: definition.lods !== undefined && definition.lods.length > 0 ? [...definition.lods] : [1],
+      })),
+    },
+  }),
+  generator_variants: (ctx, request) => {
+    let definition: GeneratorDefinition;
+    let base: Record<string, unknown> | undefined;
+    if (request.id !== undefined) {
+      const resolved = objectGenerator(ctx.session.getState().document, request.id);
+      if ("error" in resolved) return { ok: false, error: resolved.error };
+      if (request.generator !== undefined && request.generator !== resolved.definition.id) {
+        return { ok: false, error: `object "${request.id}" uses generator "${resolved.definition.id}", not "${request.generator}"` };
+      }
+      definition = resolved.definition;
+      base = resolved.target.meta;
+    } else if (request.generator !== undefined) {
+      const found = getGenerator(request.generator);
+      if (found === undefined) {
+        const available = listGenerators().map((entry) => entry.id).join(", ") || "none";
+        return { ok: false, error: `unknown generator "${request.generator}" (available: ${available})` };
+      }
+      definition = found;
+    } else {
+      return { ok: false, error: "generator_variants requires id (an object) or generator (a generator id)" };
+    }
+    const variants = generatorVariants(definition, base, variantGridOptions(request));
+    return {
+      ok: true,
+      result: {
+        generator: definition.id,
+        ...(request.id === undefined ? {} : { id: request.id }),
+        variants: variants.map((variant) => ({ index: variant.index, seed: variant.seed, meta: variant.meta })),
+      },
+    };
+  },
+  apply_variant: (ctx, request) => {
+    const resolved = objectGenerator(ctx.session.getState().document, request.id);
+    if ("error" in resolved) return { ok: false, error: resolved.error };
+    const { target, definition } = resolved;
+    const picked = variantMeta(definition, target, { ...target.meta }, request);
+    if ("error" in picked) return { ok: false, error: `apply_variant ${picked.error}` };
+    ctx.session.dispatch(metaPatchCommand(target.target, request.id, picked.meta));
+    return {
+      ok: true,
+      result: {
+        id: request.id,
+        kind: target.kind,
+        generator: definition.id,
+        index: picked.index,
+        seed: generatorSeed(definition.schema, picked.meta, definition.id),
+        meta: picked.meta,
+      },
+    };
+  },
+  place_variant: (ctx, request) => {
+    const resolved = objectGenerator(ctx.session.getState().document, request.id);
+    if ("error" in resolved) return { ok: false, error: resolved.error };
+    const { target, definition } = resolved;
+    const picked = variantMeta(definition, target, withoutPrefabLink(target.meta), request);
+    if ("error" in picked) return { ok: false, error: `place_variant ${picked.error}` };
+    const newId = request.newId ?? `${request.id}_v${picked.index ?? "meta"}`;
+    const offset = { x: request.dx ?? 0, y: request.dy ?? 0, z: request.dz ?? 0 };
+    const command = placedVariantCommand(target, newId, offset, picked.meta);
+    if (command === null) return { ok: false, error: `place_variant cannot copy a ${target.target}` };
+    // The add commands re-id on a document-global collision, so read the created id back from the selection.
+    const { applied, state } = ctx.dispatchGuarded(command);
+    if (!applied) return { ok: false, error: "place_variant rejected: no effect" };
+    const createdId = state.selection[0] ?? newId;
+    return {
+      ok: true,
+      result: {
+        id: createdId,
+        source: request.id,
+        target: target.target,
+        generator: definition.id,
+        index: picked.index,
+        seed: generatorSeed(definition.schema, picked.meta, definition.id),
+        meta: picked.meta,
+      },
+    };
   },
   select: (ctx, request) => {
     ctx.session.dispatch({ type: "select", ids: request.ids });

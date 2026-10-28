@@ -2,14 +2,13 @@ import * as THREE from "three";
 
 import {
   bakeGrassNode,
-  createGrassTuftTemplate,
   GRASS_CELL_SIZE,
   grassNodeRect,
   grassTuftsBelow,
   type GrassTufts,
-  type GrassTuftTemplate,
   type ResolvedGrassBake,
 } from "./grassBake.draw";
+import { createGrassTuftTemplate, type GrassTuftTemplate } from "./grassField";
 import type { GrassMaterialHandle } from "./grassMaterial.draw";
 
 /**

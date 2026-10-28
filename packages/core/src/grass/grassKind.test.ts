@@ -1,7 +1,20 @@
 import { describe, expect, test } from "bun:test";
 
 import { defaultParamMeta, parseParams, randomizeGroupParams } from "@jgengine/core/generator/paramSchema";
-import { GRASS_DEFAULTS, GRASS_PRESETS, GRASS_SCHEMA, grassBladeDensity, readGrassLook, resolveGrassObject } from "./grassKind";
+import { bakeGeneratorVariants, generatorVariants, getGenerator, runGenerator } from "@jgengine/core/generator/generator";
+import { getSceneKind } from "@jgengine/core/scene/sceneKinds";
+import { grassBareAt, grassStripeAt } from "./grassField";
+import {
+  GRASS_DEFAULTS,
+  GRASS_FIELD_OUTPUT,
+  GRASS_GENERATOR,
+  GRASS_PRESETS,
+  GRASS_SCHEMA,
+  grassBladeDensity,
+  readGrassLook,
+  registerGrassKind,
+  resolveGrassObject,
+} from "./grassKind";
 
 describe("readGrassLook", () => {
   test("fills defaults and reads overrides", () => {
@@ -68,5 +81,54 @@ describe("resolveGrassObject", () => {
 
   test("returns null without a center", () => {
     expect(resolveGrassObject({ id: "x", kind: "grass_field" })).toBeNull();
+  });
+});
+
+describe("grass generator", () => {
+  test("one schema spans a putting green to tall savanna and dune grass", () => {
+    const ids = GRASS_PRESETS.map((preset) => preset.id);
+    for (const id of ["green", "fairway", "lawn", "meadow", "savanna", "dune"]) expect(ids).toContain(id);
+    const height = (id: string) => readGrassLook(GRASS_PRESETS.find((preset) => preset.id === id)?.values).bladeHeight;
+    expect(height("green")).toBeLessThan(0.03);
+    expect(height("savanna")).toBeGreaterThan(1.5);
+  });
+
+  test("registers with the grass_field kind and bakes deterministic LODs", () => {
+    registerGrassKind();
+    expect(getSceneKind("grass_field")?.generator).toBe("grass");
+    expect(getGenerator("grass")?.output).toBe(GRASS_FIELD_OUTPUT);
+    const a = runGenerator(GRASS_GENERATOR, { bladeHeight: 0.3, seed: "g" });
+    const b = runGenerator(GRASS_GENERATOR, { bladeHeight: 0.3, seed: "g" });
+    expect(a.template.position).toEqual(b.template.position);
+    expect(a.look.seed).toBe("g");
+    const [baked] = bakeGeneratorVariants(GRASS_GENERATOR, { seed: "g" }, { count: 1 });
+    expect(baked?.lods.map((lod) => lod.output.segments)).toEqual([4, 2, 1]);
+  });
+
+  test("a variant grid around one look stays inside the schema", () => {
+    const grid = generatorVariants(GRASS_GENERATOR, { ...GRASS_PRESETS[0]?.values, seed: "base" }, { count: 20, explore: 0.5 });
+    expect(grid).toHaveLength(20);
+    for (const variant of grid) expect(readGrassLook(variant.meta)).toEqual({ ...variant.params });
+  });
+});
+
+describe("grass masks", () => {
+  test("mow stripes alternate across their heading and vanish when off", () => {
+    const look = { stripeWidth: 2, stripeContrast: 0.5, stripeAngle: 0 };
+    expect(grassStripeAt(look, 1, 0)).toBeCloseTo(1);
+    expect(grassStripeAt(look, 3, 0)).toBeCloseTo(-1);
+    expect(grassStripeAt(look, 3, 7)).toBeCloseTo(-1);
+    expect(grassStripeAt({ ...look, stripeWidth: 0 }, 3, 0)).toBe(0);
+  });
+
+  test("bare ground opens more of the field as it rises", () => {
+    const share = (bareGround: number) => {
+      let total = 0;
+      for (let i = 0; i < 400; i += 1) total += grassBareAt({ bareGround, noiseScale: 18 }, 9, (i % 20) * 3.1, Math.floor(i / 20) * 3.1);
+      return total / 400;
+    };
+    expect(share(0)).toBe(1);
+    expect(share(0.3)).toBeGreaterThan(share(0.8));
+    expect(share(0.8)).toBeLessThan(0.5);
   });
 });

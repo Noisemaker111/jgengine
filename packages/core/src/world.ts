@@ -213,7 +213,46 @@ export {
   type FreeFlightStep,
   type FreeFlightTuning,
 } from "./flight/freeFlight";
-export { GRASS_SCHEMA } from "./grass/grassKind";
+export {
+  bakeGeneratorVariants,
+  defineGenerator,
+  generatorVariants,
+  getGenerator,
+  listGenerators,
+  registerGenerator,
+  runGenerator,
+  untypedGenerator,
+  type BakedGeneratorVariant,
+  type GeneratorContext,
+  type GeneratorDefinition,
+  type GeneratorVariant,
+  type GeneratorVariantOptions,
+} from "./generator/generator";
+export {
+  defineParamSchema,
+  findSchemaPreset,
+  jitterParams,
+  parseParams,
+  sampleCurve,
+  sampleGradient,
+  type CurvePoint,
+  type GradientStop,
+  type ParamField,
+  type ParamGroup,
+  type ParamPreset,
+  type ParamSchema,
+  type ParamsOf,
+  type ParsedParams,
+  type WeightedParamEntry,
+} from "./generator/paramSchema";
+export {
+  GRASS_FIELD_OUTPUT,
+  GRASS_GENERATOR,
+  GRASS_PRESETS,
+  GRASS_SCHEMA,
+  type GrassFieldBake,
+  type GrassLook,
+} from "./grass/grassKind";
 export {
   controlGroupKey,
   resolveControlGroupIntent,
@@ -735,8 +774,6 @@ export { objectVisualScale, type ObjectVisual, type SceneObject } from "./scene/
 export { type PaintStroke } from "./scene/paintLayer";
 export { type RosterEntry } from "./scene/roster";
 export { registerSceneKind, type SceneKindObject, type SceneKindResolveContext } from "./scene/sceneKinds";
-export { defineParamSchema, findSchemaPreset, parseParams, type ParamField, type ParamPreset, type ParamSchema, type ParamsOf, type ParsedParams, type WeightedParamEntry } from "./generator/paramSchema";
-export { bakeGeneratorVariants, defineGenerator, generatorVariants, registerGenerator, runGenerator, type GeneratorContext, type GeneratorDefinition, type GeneratorVariant } from "./generator/generator";
 export { firstImpact, hitsUntilBlocked, type SceneRaycastApi, type SceneRaycastHit } from "./scene/sceneRaycast";
 export {
   createSelectionSet,
