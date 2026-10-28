@@ -245,6 +245,7 @@ export const gameRegistry: GameRegistry = {
   "game-menu": () => import("./demo/gameMenuDemo").then((module) => module.gameMenuDemoGame),
   demo: () => import("./demo/demoGame").then((module) => module.demoGame),
   "physics-probe": () => import("./demo/physicsProbeDemo").then((module) => module.physicsProbeGame),
+  granular: () => import("./demo/granularDemo").then((module) => module.granularDemoGame),
   "guard-probe": () => import("./demo/guardProbeDemo").then((module) => module.guardProbeGame),
   handling: () => import("./demo/handlingDemo").then((module) => module.handlingDemoGame),
   "handling-bike": () => import("./demo/handlingDemo").then((module) => module.handlingBikeDemoGame),
