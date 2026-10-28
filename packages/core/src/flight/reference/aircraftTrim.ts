@@ -125,7 +125,11 @@ export interface TrimResult {
   converged: boolean;
 }
 
-function solveLinear(matrix: number[][], rhs: number[]): number[] {
+/**
+ * Solves `A·x = b` by Gaussian elimination with partial pivoting; a singular pivot leaves that unknown at `0`.
+ * @capability linear-solve solve a small dense linear system
+ */
+export function solveLinearSystem(matrix: readonly (readonly number[])[], rhs: readonly number[]): number[] {
   const n = rhs.length;
   const a = matrix.map((row, i) => [...row, rhs[i] ?? 0]);
   for (let col = 0; col < n; col += 1) {
@@ -157,7 +161,11 @@ function solveLinear(matrix: number[][], rhs: number[]): number[] {
   return x;
 }
 
-function airDataFor(aircraft: ReferenceAircraft, altitude: number, airspeed: number, alpha: number, beta: number): ReferenceAirData {
+/**
+ * Air data for a reference aircraft at rest in steady flight: no body rates, height above the ground at the origin.
+ * @capability aircraft-trim air data for a steady flight condition, to settle propulsion or rotor states
+ */
+export function steadyAirData(aircraft: ReferenceAircraft, altitude: number, airspeed: number, alpha: number, beta: number): ReferenceAirData {
   const air = aircraft.options.atmosphere(altitude);
   return {
     airspeed,
@@ -188,7 +196,7 @@ export function trimReferenceAircraft(aircraft: ReferenceAircraft, condition: Tr
     const [alpha = 0, beta = 0, throttle = 0, elevator = 0, aileron = 0, rudder = 0] = x;
     const pitch = alpha + Math.asin(Math.max(-1, Math.min(1, Math.sin(gamma) / Math.cos(beta))));
     const propulsion = new Array<number>(aircraft.model.propulsion.stateNames.length).fill(0);
-    aircraft.model.propulsion.settle(throttle, airDataFor(aircraft, condition.altitude, condition.airspeed, alpha, beta), propulsion);
+    aircraft.model.propulsion.settle(throttle, steadyAirData(aircraft, condition.altitude, condition.airspeed, alpha, beta), propulsion, { elevator, aileron, rudder, flap: 0 });
     return referenceStateFromWindAxes(
       { airspeed: condition.airspeed, alpha, beta, bank: 0, pitch, heading: 0, p: 0, q: 0, r: 0, north: 0, east: 0, altitude: condition.altitude },
       { elevator, aileron, rudder, flap: 0 },
@@ -219,7 +227,7 @@ export function trimReferenceAircraft(aircraft: ReferenceAircraft, condition: Tr
         if (line !== undefined) line[col] = ((ru[row] ?? 0) - (rd[row] ?? 0)) / (2 * step);
       }
     }
-    const delta = solveLinear(jacobian, r.map((value) => -value));
+    const delta = solveLinearSystem(jacobian, r.map((value) => -value));
     let scale = 1;
     let accepted = false;
     for (let attempt = 0; attempt < 30; attempt += 1) {

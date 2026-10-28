@@ -282,7 +282,7 @@
       "module": "@jgengine/core/flight/reference/aircraftTrim",
       "gameFacing": false,
       "probe": null,
-      "intent": "trim a reference aircraft for steady flight — alpha, sideslip, throttle and surfaces"
+      "intent": "air data for a steady flight condition, to settle propulsion or rotor states"
     },
     {
       "id": "airdrops",
@@ -906,6 +906,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "persist personal-best times/scores with safe storage fallback"
+    },
+    {
+      "id": "bo105-reference",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/bo105Helicopter",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "MBB Bo-105 reference helicopter validated against NASA TM-110356 rotor data"
     },
     {
       "id": "board-vehicle",
@@ -5290,6 +5300,16 @@
       "intent": "per-body-part/region health tracked separately"
     },
     {
+      "id": "linear-solve",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/aircraftTrim",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "solve a small dense linear system"
+    },
+    {
       "id": "listing-book",
       "packages": [
         "@jgengine/core"
@@ -6451,6 +6471,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "declare what the player has at second 0 (cash, kit, unlocks, prebuilt pieces, systems that start on their own) as data the engine builds from and checks read"
+    },
+    {
+      "id": "nonlinear-solve",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/helicopterRotor",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "solve a small nonlinear system of equations"
     },
     {
       "id": "notice-feed",
@@ -7791,6 +7821,16 @@
       "intent": "multibody reference car on Magic Formula tires and real suspension kinematics — the physics ruler for game vehicle handling"
     },
     {
+      "id": "reference-helicopter",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/helicopter",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "blade-element helicopter on the reference 6-DOF: flapping, dynamic inflow, governor, autorotation"
+    },
+    {
       "id": "reference-validation",
       "packages": [
         "@jgengine/core"
@@ -8075,6 +8115,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "assign hidden or team roles to players by ratio"
+    },
+    {
+      "id": "rotor-bemt",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/helicopterRotor",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "size a rotor state vector"
     },
     {
       "id": "route-course",
