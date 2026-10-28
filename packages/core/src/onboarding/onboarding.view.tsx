@@ -30,7 +30,22 @@ export interface OnboardingHudProps {
   accent?: string;
   skipLabel?: string;
   nextLabel?: string;
+  /** Show only the current step and this many after it, with "N of M" on the title, so a long path stays a line or two. Default: every step. */
+  ahead?: number;
   style?: CSSProperties;
+}
+
+/**
+ * The tracker's view of `quest` cut to the step at `current` and `ahead` steps after it, its title
+ * counting the step ("Survivor's path · 3 of 22"). `ahead` undefined keeps every step.
+ *
+ * @internal
+ */
+export function onboardingWindow(quest: TrackedQuestView, current: string | undefined, ahead: number | undefined): TrackedQuestView {
+  if (ahead === undefined || current === undefined) return quest;
+  const at = quest.objectives.findIndex((objective) => objective.id === current);
+  if (at < 0) return quest;
+  return { ...quest, title: `${quest.title} · ${at + 1} of ${quest.objectives.length}`, objectives: quest.objectives.slice(at, at + 1 + Math.max(0, ahead)) };
 }
 
 /**
@@ -40,20 +55,20 @@ export interface OnboardingHudProps {
  *
  * @capability onboarding-hud onboarding steps in the quest tracker with Next and Skip
  */
-export function OnboardingHud({ accent, skipLabel = "Skip tutorial", nextLabel = "Next", style }: OnboardingHudProps): ReactNode {
+export function OnboardingHud({ accent, skipLabel = "Skip tutorial", nextLabel = "Next", ahead, style }: OnboardingHudProps): ReactNode {
   const runtime = useOnboarding();
   const { commands } = useGame();
   const view = useGameStore((ctx): OnboardingHudView | null => {
     const run = onboardingOf(ctx)?.run();
     if (run === undefined) return null;
     const current = run.current();
-    return { quest: run.tracked(), finished: run.isFinished(), next: current !== null && "next" in current.step.done, detail: current?.step.detail };
+    return { quest: onboardingWindow(run.tracked(), current?.step.id, ahead), finished: run.isFinished(), next: current !== null && "next" in current.step.done, detail: current?.step.detail };
   }, sameView);
   if (runtime === null || view === null || view.finished) return null;
   const button: CSSProperties = { pointerEvents: "auto", cursor: "pointer", borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 700, border: "1px solid rgba(148,163,184,0.4)", background: "rgba(11,14,19,0.85)", color: "#e2e8f0" };
   return (
     <div data-onboarding={runtime.config.id} data-style={runtime.config.style} style={{ display: "flex", flexDirection: "column", gap: 6, ...style }}>
-      <QuestTracker quests={[view.quest]} title={runtime.config.title} {...(accent === undefined ? {} : { accent })} />
+      <QuestTracker quests={[view.quest]} title={ahead === undefined ? runtime.config.title : ""} {...(accent === undefined ? {} : { accent })} />
       {view.detail === undefined ? null : <div style={{ maxWidth: 260, fontSize: 12, color: "#e2e8f0", textShadow: "0 1px 2px #000" }}>{view.detail}</div>}
       <div style={{ display: "flex", gap: 6 }}>
         {view.next ? <button type="button" data-onboarding-next="" style={button} onClick={() => void commands.run("onboarding.next", {})}>{nextLabel}</button> : null}

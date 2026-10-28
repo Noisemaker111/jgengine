@@ -2675,7 +2675,7 @@
 ## @jgengine/core/onboarding/onboarding.view
 
 - `OnboardingBanner` (function): function OnboardingBanner({ theme }: { theme?: ObjectiveBannerTheme }): ReactNode — The step-done banner ("Gather stone" / "Next: Craft a Stone Pick") through `ObjectiveBannerHost`, near the top of the screen. Put it in the HUD's full-screen overlay.
-- `OnboardingHud` (function): function OnboardingHud({ accent, skipLabel = "Skip tutorial", nextLabel = "Next", style }: OnboardingHudProps): ReactNode — The onboarding's HUD: its steps as a quest in the existing `QuestTracker` (current step's detail under it), Next for a step the player acknowledges, and Skip when skippable. Put it in a `HudSlots` slot; it hides itself once finished.
+- `OnboardingHud` (function): function OnboardingHud({ accent, skipLabel = "Skip tutorial", nextLabel = "Next", ahead, style }: OnboardingHudProps): ReactNode — The onboarding's HUD: its steps as a quest in the existing `QuestTracker` (current step's detail under it), Next for a step the player acknowledges, and Skip when skippable. Put it in a `HudSlots` slot; it hides itself once finished.
 - `OnboardingHudProps` (interface): interface OnboardingHudProps — Props for {@link OnboardingHud}.
 - `useOnboarding` (function): function useOnboarding(): OnboardingRuntime | null — The running onboarding, or `null` when the game installed none. Compose its `markers` into the game's `Minimap` and its `waypoints` into a compass.
 
