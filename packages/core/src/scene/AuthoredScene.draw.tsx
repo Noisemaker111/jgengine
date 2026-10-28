@@ -22,6 +22,7 @@ import type { RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
 import { pathRoad } from "@jgengine/core/roads/pathRoads";
 import { isScatterPath, resolveScatter } from "@jgengine/core/scatter/scatterRegion";
 import { scatterClearingOf } from "@jgengine/core/scatter/scatterClearing";
+import { syncScatterSolids, type ScatterSolidSpec } from "@jgengine/core/scatter/scatterSolids";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
 import { PARTS_OUTPUT, placedGeneratorFor } from "@jgengine/core/scene/assetGenerator";
@@ -280,6 +281,8 @@ export interface AuthoredSceneProps {
   scatterModels?: Record<string, string | ModelConfig | ScatterGeneratorItem>;
   /** Most scatter instances drawn; past it the foliage thins evenly. Default 20000. */
   scatterBudget?: number;
+  /** Scatter palette item → the box each of its placements blocks with; unlisted items stay walk-through. */
+  scatterSolids?: Readonly<Record<string, ScatterSolidSpec>>;
   /** Animated models keyed by authored cosmetic habitat species. */
   flockModels?: Record<string, string | ModelConfig>;
   /** Catalog `scatterModels` string ids resolve through; required together with `scatterModels`. */
@@ -319,6 +322,7 @@ export function AuthoredScene({
   pathSurfaceDetail = true,
   scatterModels,
   scatterBudget,
+  scatterSolids,
   flockModels,
   assets,
   live = true,
@@ -332,6 +336,29 @@ export function AuthoredScene({
   const instances = useMemo(() => resolveScatter(liveDocument, field), [liveDocument, field]);
   const clearing = scatterClearingOf(ctx);
   const hidden = useSyncExternalStore(clearing.subscribe, clearing.hidden, clearing.hidden);
+  const solidPlacements = useMemo(
+    () => (scatterSolids === undefined ? [] : instances.filter((instance) => scatterSolids[instance.item] !== undefined)),
+    [instances, scatterSolids],
+  );
+  // Felling a tree changes `hidden` too; rebuild the rock layer only when a solid placement's visibility changed.
+  const solidHidden = useMemo(() => {
+    const ids = new Set<string>();
+    for (const placement of solidPlacements) if (hidden.has(placement.id)) ids.add(placement.id);
+    return ids;
+  }, [solidPlacements, hidden]);
+  const solidHiddenKey = [...solidHidden].sort().join("|");
+  useEffect(() => {
+    if (scatterSolids === undefined) return;
+    syncScatterSolids(ctx.world.solids, solidPlacements, scatterSolids, solidHidden);
+    // solidHidden is read through its key so an unrelated clearing change does not rebuild the layer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctx.world.solids, solidPlacements, scatterSolids, solidHiddenKey]);
+  useEffect(
+    () => () => {
+      if (scatterSolids !== undefined) syncScatterSolids(ctx.world.solids, [], {});
+    },
+    [ctx.world.solids, scatterSolids],
+  );
   const resolveItem = useMemo(
     () => scatterItemResolver(scatterModels, assets),
     [scatterModels, assets],
