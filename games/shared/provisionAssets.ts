@@ -15,7 +15,7 @@ const compressScript = fileURLToPath(new URL("../scripts/compress-textures.ts", 
 export interface AssetCatalogs {
   sources: readonly { id: string; kind?: string }[];
   library: readonly { name: string; origin: { provider: string } }[];
-  /** Semantic keys (`asset:person_casual`, `character/rogue`) and the `pack/model` ids they stand for. */
+  /** Semantic keys (`asset:prop_crate`, `nature/tree_pine`) and the `pack/model` ids they stand for. */
   aliases?: readonly { key: string; target: string }[];
 }
 
@@ -32,7 +32,7 @@ function sourceText(dir: string): string {
 
 /**
  * The packs and library models a game's `src/` names that its `public/` lacks. A pack counts as
- * referenced when its id, or an alias that resolves into it (`"asset:person_casual"`), appears as a
+ * referenced when its id, or an alias that resolves into it (`"asset:prop_crate"`), appears as a
  * string literal; generated library models are committed by the game itself, so they never need a pull.
  */
 export function missingPulls(text: string, publicDir: string, catalogs: AssetCatalogs): PullJob[] {

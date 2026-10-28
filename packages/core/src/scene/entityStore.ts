@@ -34,6 +34,12 @@ export interface SceneEntity<TMeta = unknown> {
    * @capability entity-size grow or shrink one entity's model without a new kind, for babies growing up
    */
   size?: number;
+  /**
+   * The item id this entity holds in its hand, drawn from its model's `held` table at the hand
+   * socket. Render-only, like `size`; absent means empty hands.
+   * @capability entity-held-item show the item an entity holds in its hand
+   */
+  held?: string;
   /** Game-defined per-instance data set at `spawn`/`update` and carried to `renderEntity`/queries — narrow with {@link entityMetaOf} (or a type guard) on read (#286.1); never encode state in the id/name string. */
   meta: TMeta;
 }
@@ -117,6 +123,8 @@ export type PoseConstraint = (frame: PoseConstraintFrame) => readonly [number, n
 export type EntityUpdatePatch<TMeta = unknown> = Partial<
   Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "size" | "meta">
 > & {
+  /** The item now in hand; `null` empties the hands. */
+  held?: string | null;
   /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not derived; use `setPose` with `dt` for that. */
   position?: SpawnPositionInput;
 };
@@ -293,6 +301,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (patch.behaviors !== undefined) current.behaviors = patch.behaviors;
       if (patch.hidden !== undefined) current.hidden = patch.hidden;
       if (patch.size !== undefined) current.size = patch.size;
+      if (patch.held === null) delete current.held;
+      else if (patch.held !== undefined) current.held = patch.held;
       if (patch.meta !== undefined) current.meta = patch.meta;
       if (patch.behaviors === undefined) store.set(id, current);
       else writeEntity(current, previousBehaviors);
@@ -394,6 +404,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
           behaviors: entity.behaviors,
           ...(entity.hidden === undefined ? {} : { hidden: entity.hidden }),
           ...(entity.size === undefined ? {} : { size: entity.size }),
+          ...(entity.held === undefined ? {} : { held: entity.held }),
           meta: entity.meta,
         });
         if (!spawnPoses.has(entity.id)) {

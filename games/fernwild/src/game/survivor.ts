@@ -263,6 +263,7 @@ export function swing(ctx: GameContext, yaw?: number): void {
     return;
   }
   survivor.swingReady = now + tool.cooldown;
+  ctx.game.playEntityAnimation(ctx.player.userId, heldTool(ctx, survivor).id === null ? "attack" : "swing");
   // Like ARK's third-person swing: the survivor turns to where the camera aims before striking.
   if (yaw !== undefined && yaw !== me.rotationY) ctx.scene.entity.setPose(me.id, { position: me.position, rotationY: yaw });
   const melee = statValue(survivor, "melee") / 100;
@@ -317,6 +318,7 @@ export function use(ctx: GameContext): void {
   survivor.aim = aimAt(ctx, survivor, me.position, me.rotationY);
   const hit = survivor.aim.pick === null ? null : survivor.harvest.strike({ ...pickSpec(me.position, me.rotationY), tool: PICK_UP.gather });
   if (hit !== null) {
+    ctx.game.playEntityAnimation(ctx.player.userId, "gather");
     const got = grantGather(ctx, survivor, hit.granted);
     if (got.length > 0) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+${got.join(", +")}`, kind: "pickup" });
     return;
@@ -514,6 +516,8 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   ensurePlacements(ctx, survivor);
   survivor.harvest.tick(dt);
   survivor.aim = aimAt(ctx, survivor, me.position, me.rotationY);
+  const holding = heldTool(ctx, survivor).id;
+  if ((me.held ?? null) !== holding) ctx.scene.entity.update(id, { held: holding });
 
   if (survivor.vitals.value("health") <= 0 && !survivor.dead) die(ctx, survivor);
   ctx.touch();

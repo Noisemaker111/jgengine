@@ -23,8 +23,7 @@ export const idea: Idea = {
     "start": 30
   },
   "hero": {
-    "model": "/models/imported/lantern-reach/players/ranger.glb",
-    "height": 1.8,
+    "model": "human/woman-casual",
     "label": "You"
   },
   "home": {
@@ -188,8 +187,7 @@ export const idea: Idea = {
       "title": "Harbor keeper",
       "line": "Tide's kind today. The bay always gives back what you put into it.",
       "model": {
-        "model": "/models/imported/lantern-reach/players/mage_classic.glb",
-        "height": 1.75
+        "model": "human/businesswoman"
       }
     },
     {
@@ -198,8 +196,7 @@ export const idea: Idea = {
       "title": "Fisherman",
       "line": "Watch the green, not the float. And never chase Old Whiskers on an empty stomach.",
       "model": {
-        "model": "/models/imported/lantern-reach/players/barbarian.glb",
-        "height": 1.8
+        "model": "human/man-casual-2"
       }
     },
     {
@@ -208,8 +205,7 @@ export const idea: Idea = {
       "title": "Market cook",
       "line": "Bring me anything fresh and I'll find a pot for it.",
       "model": {
-        "model": "/models/imported/lantern-reach/players/rogue_hooded.glb",
-        "height": 1.7
+        "model": "human/nurse"
       }
     }
   ],

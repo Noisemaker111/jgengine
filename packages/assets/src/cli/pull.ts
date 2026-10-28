@@ -29,7 +29,7 @@ import {
   modelWiringSnippet,
   spriteWiringSnippet,
 } from "../snippet";
-import { STARTER_SOURCE_PACKS } from "../packs/starter";
+import { STARTER_PEOPLE, STARTER_SOURCE_PACKS } from "../packs/starter";
 import { materialSources, sourceById, spriteSources } from "../sources";
 import { reindexSprites } from "../spriteIndexGen";
 import { verifyManifest } from "../verify";
@@ -187,12 +187,13 @@ export async function cmdPull(argv: string[]): Promise<void> {
   if (sourceId === undefined) {
     fail("usage: pull <source-id|starter> [--dir <dir>] [--mirror <baseUrl>] [--offline]");
   }
-  // `starter` is the meta-id a fresh game needs: every pack behind the starter catalog, so a
-  // scaffold resolves `asset:person_casual` and friends without the caller memorising five ids.
-  // The list lives with the catalog it serves, not in the CLI or in `jgengine create`.
+  // `starter` is the meta-id a fresh game needs: every pack behind the starter catalog plus the
+  // library people, so a scaffold resolves `asset:prop_crate` and its player without the caller
+  // memorising ids. The lists live with the catalog they serve, not in the CLI or `jgengine create`.
   if (sourceId === "starter") {
     for (const id of STARTER_SOURCE_PACKS) await cmdPull([id, ...argv.slice(1)]);
-    console.log(`starter: ${STARTER_SOURCE_PACKS.length} pack(s) ready`);
+    for (const name of STARTER_PEOPLE) await cmdPull([`model:${name}`, ...argv.slice(1)]);
+    console.log(`starter: ${STARTER_SOURCE_PACKS.length} pack(s) and ${STARTER_PEOPLE.length} people ready`);
     return;
   }
   // `library` pulls every map the shared material library pins, so one command gives a game the

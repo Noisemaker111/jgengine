@@ -8,5 +8,6 @@ describe("scrap-signal credits", () => {
     expect(labels).toMatch(/Quaternius/i);
     expect(labels).toMatch(/KayKit/i);
     expect(labels).toMatch(/ambientCG/i);
+    expect(labels).toMatch(/Rocketbox/i);
   });
 });

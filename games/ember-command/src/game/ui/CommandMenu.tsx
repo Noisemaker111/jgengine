@@ -31,7 +31,7 @@ const credits = mergeCredits({ title: "The makers of the vale", sections: [
   ] },
   { heading: "Icons", entries: [{ label: "game-icons.net contributors", detail: "CC BY 3.0; individual credits in iconData.ts", href: "https://game-icons.net" }] },
   { heading: "Type", entries: [{ label: "IM Fell English SC and Alegreya", detail: "SIL Open Font License 1.1" }] },
-] }, creditsForSourceIds(["kaykit-adventurers", "kaykit-city-builder", "quaternius-stylized-nature", "kaykit-dungeon"]));
+] }, creditsForSourceIds(["kaykit-city-builder", "quaternius-stylized-nature", "kaykit-dungeon"]));
 
 export function battleTime(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;

@@ -24,8 +24,8 @@ Do not reindex the installed package or commit downloaded models/materials.
 
 | Game | Sources |
 | --- | --- |
-| Brightway Park | kaykit-city-builder, quaternius-stylized-nature, kaykit-adventurers, ambientcg-grass001 |
-| Scrap Signal | quaternius-modular-scifi, quaternius-stylized-nature, kaykit-adventurers, kaykit-space-base, ambientcg-ground025, ambientcg-rock022, ambientcg-metal007, ambientcg-metalplates001 |
+| Brightway Park | kaykit-city-builder, quaternius-stylized-nature, ambientcg-grass001 |
+| Scrap Signal | quaternius-modular-scifi, quaternius-stylized-nature, kaykit-space-base, ambientcg-ground025, ambientcg-rock022, ambientcg-metal007, ambientcg-metalplates001 |
 
 Run `bun run check-types`, `bun run test`, and `bun run vite build` from each
 target game's directory. No build command deploys. Vite and Tailwind resolve

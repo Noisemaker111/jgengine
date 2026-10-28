@@ -7,7 +7,6 @@ Run `bun run dev`, `bun run check-types` and `bun run test` here. Vite resolves 
 ```sh
 bunx --no-install assets pull quaternius-modular-scifi --dir public
 bunx --no-install assets pull quaternius-stylized-nature --dir public
-bunx --no-install assets pull kaykit-adventurers --dir public
 bunx --no-install assets pull kaykit-furniture --dir public
 bunx --no-install assets pull kaykit-space-base --dir public
 bunx --no-install assets pull ambientcg-metalplates001 --dir public

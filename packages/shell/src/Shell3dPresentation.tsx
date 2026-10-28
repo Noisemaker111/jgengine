@@ -53,6 +53,7 @@ import { ColorblindFrame, useColorblindMode } from "@jgengine/core/ui/accessibil
 import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settings/settings.view";
 
 import { resolveWorldSky } from "@jgengine/core/sky/worldSky";
+import { FirstPersonBodyContext } from "@jgengine/core/camera/firstPersonBody.draw";
 import { resolveCaptureCameraConfig } from "@jgengine/core/camera/rigResolve";
 import { rtsRotateKeysConflict } from "@jgengine/core/camera/rigMath";
 import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "@jgengine/core/input/shellPointer.draw";
@@ -273,6 +274,7 @@ export function Shell3dPresentation({
   const cameraConfig = resolveCaptureCameraConfig(configuredCamera, cameraOverride);
   const rigKind = resolveRigKind(cameraConfig);
   const firstPerson = rigKind === "first";
+  const firstPersonBody = firstPerson && cameraConfig?.firstPerson?.body === true ? controlledEntityId : null;
   const showReticle =
     (firstPerson && cameraConfig?.firstPerson?.reticle !== false) || rigKind === "shoulder";
   const rtsPanKeysEnabled = !rtsPanKeysConflict(playable.game.input);
@@ -741,6 +743,7 @@ export function Shell3dPresentation({
                     <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.visibility} cullingDisabled={splitScreen}>
                     <CullingProvider config={playable.visibility} drawDistance={graphics.profile.drawDistance}>
                       <BootSuspenseGuard area="the world">
+                      <FirstPersonBodyContext.Provider value={firstPersonBody}>
                       <WorldView
                         entitySprites={playable.entitySprites}
                         entityModels={playable.entityModels}
@@ -751,9 +754,10 @@ export function Shell3dPresentation({
                         renderEntity={playable.renderEntity}
                         renderObject={playable.renderObject}
                         selectedIds={selectedIds}
-                        hideLocalActor={firstPerson}
+                        hideLocalActor={firstPerson && firstPersonBody === null}
                         editorLayers={playable.editorLayers}
                       />
+                      </FirstPersonBodyContext.Provider>
                       </BootSuspenseGuard>
                       {bars !== null ? (
                         <WorldEntityBars

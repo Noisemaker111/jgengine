@@ -92,7 +92,7 @@ const CREATE_USAGE = `usage: jgengine create "<Game Name>" [flags]
                              2d: a board game drawn by GameUI, no 3D scene, editor or models
                              (grid, card and tile games); takes none of the 3D flags below
                              builder: a 3d world players build in together, on Convex
-  --player <asset id>        starter player model (default asset:person_casual)
+  --player <model>           player model: a library human or a catalog id (default human/man-casual)
   --ground terrain|flat      starter ground (default terrain)
   --scene starter|empty      starter props and a goal to walk to, or just ground and the player (default starter)
   --from-scene <folder>      promote an authored editor.scene.json into the game

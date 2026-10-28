@@ -22,8 +22,7 @@ export const idea: Idea = {
     "title": "Last of the wardens"
   },
   "hero": {
-    "model": "/models/imported/lantern-reach/players/ranger.glb",
-    "height": 1.8,
+    "model": "human/man-casual",
     "health": 120,
     "damage": 30,
     "stamina": 100,

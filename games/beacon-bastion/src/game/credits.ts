@@ -1,7 +1,9 @@
+import { libraryModelCredits } from "@jgengine/assets/catalogs/modelLibrary";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { ASSET_SOURCE_IDS } from "./assets";
+import { RAIDER_HUMANS } from "./models";
 
 /** The keep's own work, then every pack it actually ships - both derived, neither retyped by hand. */
 const AUTHORED = {
@@ -15,6 +17,10 @@ const AUTHORED = {
           detail: "Authored tower-defense rules, wave manifest, field-kit HUD and the keep's palette; source in beacon-bastion/src.",
         },
       ],
+    },
+    {
+      heading: "Raider bodies",
+      entries: libraryModelCredits(RAIDER_HUMANS).map((label) => ({ label })),
     },
     {
       heading: "Built with",

@@ -1,32 +1,28 @@
-import type { ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
-import { pickModel, resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
+import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
+import type { ModelAttachment, ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
+import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
 import { assets, chassisOf, CLIFF_MAPS, NPC_STYLES, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
 import { MACHINE } from "../palette";
 import { enemies, type EnemyDef } from "../entities/enemies/catalog";
 import { robotChassis } from "./robots";
 
-const CHAR = "kaykit-adventurers";
 const SCIFI = "quaternius-modular-scifi";
 const NATURE = "quaternius-stylized-nature";
 const SPACE = "kaykit-space-base";
 
 /**
- * Two things are deliberately *absent* from every rigged pick below.
- *
- * There is no explicit `animation` block: a catalog-resolved rig is stamped `animation: "auto"` and
- * the engine derives idle/walk/run plus hit/death/attack one-shots from the GLB's real clip names.
- * The previous hand-written config named clips no pack here has (`idle`, `walk`, `sprint`, `die`,
- * `holding-right-shoot`), and an explicit config always wins over `"auto"`. Worse, a missing state
- * clip silently falls back to the GLB's *first* clip — which on a KayKit rig is
- * `1H_Melee_Attack_Chop` — so every humanoid stood in the world looping a sword swing and never
- * played a death or a hit.
- *
- * And weapon attachments use `handslot.r`, the bone the rigs actually have. The previous `arm-right`
- * matched nothing, so the game logged one warning per enemy per frame and drew no weapons at all.
+ * Rigged picks carry no explicit `animation`: a catalog-resolved rig is stamped `animation: "auto"`
+ * and the engine derives its states and one-shots from the GLB's real clip names. Humanoids are
+ * library humans, which bring the engine's humanoid clip set, and hold their tools in the `hand.r`
+ * socket every mapped human rig gets.
  */
 const HUMANOID_HEIGHT = 1.8;
-const WEAPON_BONE = "handslot.r";
+
+/** A tool in a human's right fist, haft down out of the grip. */
+function inHand(name: string): ModelAttachment {
+  return { slot: "hand.r", model: libraryModel(name), position: [0, -0.09, 0.02], rotation: [2.62, 0, 0] };
+}
 
 type RigKind = "humanoid" | "beast" | "machine";
 
@@ -37,7 +33,7 @@ const BASE_HEIGHT: Record<RigKind, number> = { humanoid: 1.8, beast: 1.2, machin
  *
  * Ferralon's hostiles are machines by name ("Husk Drone", "Hauler Frame", "Loader"), but no CC0 pack
  * we ship has a rigged robot, so the cast is the closest rigged silhouette per family plus a machine
- * finish: humanoid drones on the KayKit rigs, beast-frames on the Quaternius aliens (which carry
+ * finish: humanoid drones on library humans plated like mannequins, beast-frames on the Quaternius aliens (which carry
  * their own idle clip), and the heavy loaders on sci-fi hardware.
  *
  * The loaders are the honest weak spot — `drill_structure` and friends are static scenery with no
@@ -45,10 +41,10 @@ const BASE_HEIGHT: Record<RigKind, number> = { humanoid: 1.8, beast: 1.2, machin
  * a working rig-less part composition; see the tracked issue.
  */
 const RIG_BY_ID: Record<string, { kind: RigKind; model: string; fallbackModel?: string }> = {
-  husk: { kind: "humanoid", model: `${CHAR}/Rogue`, fallbackModel: `${CHAR}/Rogue_Hooded` },
-  marauder: { kind: "humanoid", model: `${CHAR}/Barbarian`, fallbackModel: `${CHAR}/Knight` },
+  husk: { kind: "humanoid", model: "human/man-casual" },
+  marauder: { kind: "humanoid", model: "human/construction-worker" },
   nomad: { kind: "machine", model: `${SPACE}/spacetruck`, fallbackModel: `${SCIFI}/Prop_Computer` },
-  elite_husk: { kind: "humanoid", model: `${CHAR}/Knight`, fallbackModel: `${CHAR}/Barbarian` },
+  elite_husk: { kind: "humanoid", model: "human/soldier" },
   ripper_pup: { kind: "beast", model: `${SCIFI}/Alien_Cyclop`, fallbackModel: `${SCIFI}/Alien_Scolitex` },
   ripper: { kind: "beast", model: `${SCIFI}/Alien_Cyclop`, fallbackModel: `${SCIFI}/Alien_Oculichrysalis` },
   elite_ripper: { kind: "beast", model: `${SCIFI}/Alien_Oculichrysalis`, fallbackModel: `${SCIFI}/Alien_Cyclop` },
@@ -62,15 +58,15 @@ const RIG_BY_ID: Record<string, { kind: RigKind; model: string; fallbackModel?: 
   old_tusk: { kind: "beast", model: `${SCIFI}/Alien_Scolitex`, fallbackModel: `${SCIFI}/Alien_Oculichrysalis` },
   wreck_maw: { kind: "beast", model: `${SCIFI}/Alien_Cyclop`, fallbackModel: `${SCIFI}/Alien_Scolitex` },
   foreman_maw: { kind: "beast", model: `${SCIFI}/Alien_Oculichrysalis`, fallbackModel: `${SCIFI}/Alien_Cyclop` },
-  captain_rusk: { kind: "humanoid", model: `${CHAR}/Knight`, fallbackModel: `${CHAR}/Barbarian` },
+  captain_rusk: { kind: "humanoid", model: "human/security-guard" },
   foundry_heart: { kind: "machine", model: `${SPACE}/lander_A`, fallbackModel: `${SPACE}/structure_tall` },
 };
 
-/** Drones carry a scavenged blade; the beasts and hardware carry nothing. */
-const WEAPON_PLAN: Record<string, ModelPick> = {
-  marauder: { model: `${CHAR}/axe_1handed`, fallbackModel: `${CHAR}/sword_1handed` },
-  elite_husk: { model: `${CHAR}/axe_2handed`, fallbackModel: `${CHAR}/sword_2handed` },
-  captain_rusk: { model: `${CHAR}/sword_2handed`, fallbackModel: `${CHAR}/axe_2handed` },
+/** Drones carry a scavenged tool; the beasts and hardware carry nothing. */
+const WEAPONS: Record<string, string> = {
+  marauder: "survival/stone-hatchet",
+  elite_husk: "survival/wooden-club",
+  captain_rusk: "survival/stone-pick",
 };
 
 /**
@@ -109,67 +105,54 @@ function rigOf(def: EnemyDef) {
 
 function enemyPick(def: EnemyDef): ModelPick | null {
   const rig = rigOf(def);
-  if (rig === undefined) return null;
-  const weapon = WEAPON_PLAN[def.look ?? def.id];
-  const weaponModel = weapon === undefined ? undefined : pickModel(assets, weapon);
+  if (rig === undefined || rig.kind === "humanoid") return null;
   return {
     model: rig.model,
     ...(rig.fallbackModel === undefined ? {} : { fallbackModel: rig.fallbackModel }),
-    style: {
-      targetHeight: BASE_HEIGHT[rig.kind] * def.scale,
-      material: enemyFinish(def, rig.kind),
-      ...(weaponModel === undefined
-        ? {}
-        : {
-            attachments: [
-              { slot: WEAPON_BONE, model: weaponModel, position: [0, -0.08, 0] as const, scale: 0.9 },
-            ],
-          }),
-    },
+    style: { targetHeight: BASE_HEIGHT[rig.kind] * def.scale, material: enemyFinish(def, rig.kind) },
   };
 }
 
-const NPC_PLAN: Record<string, ModelPick & { weapon?: ModelPick }> = {
-  dr_sparx: {
-    model: `${CHAR}/Mage`,
-    fallbackModel: `${CHAR}/Rogue`,
-    style: { targetHeight: HUMANOID_HEIGHT, material: { color: NPC_STYLES["dr_sparx"]!.coat } },
-  },
-  rigg: {
-    model: `${CHAR}/Barbarian`,
-    fallbackModel: `${CHAR}/Knight`,
-    style: { targetHeight: HUMANOID_HEIGHT, material: { color: NPC_STYLES["rigg"]!.coat } },
-    weapon: { model: `${CHAR}/axe_1handed`, fallbackModel: `${CHAR}/sword_1handed` },
-  },
-  gauge: {
-    model: `${CHAR}/Knight`,
-    fallbackModel: `${CHAR}/Barbarian`,
-    style: { targetHeight: HUMANOID_HEIGHT, material: { color: NPC_STYLES["gauge"]!.coat } },
-    weapon: { model: `${CHAR}/sword_1handed`, fallbackModel: `${CHAR}/axe_1handed` },
-  },
-  reactor_hunter: {
-    model: `${CHAR}/Rogue_Hooded`,
-    fallbackModel: `${CHAR}/Rogue`,
-    style: {
-      targetHeight: HUMANOID_HEIGHT,
-      material: { color: "#5a5a5a", metalness: 0.5, roughness: 0.4 },
-    },
-    weapon: { model: `${CHAR}/crossbow_1handed`, fallbackModel: `${CHAR}/dagger` },
-  },
+function humanEnemy(def: EnemyDef): ModelConfig | null {
+  const rig = rigOf(def);
+  if (rig?.kind !== "humanoid") return null;
+  const weapon = WEAPONS[def.look ?? def.id];
+  return {
+    ...libraryModel(rig.model, { targetHeight: BASE_HEIGHT.humanoid * def.scale }),
+    material: enemyFinish(def, rig.kind),
+    ...(weapon === undefined ? {} : { attachments: [inHand(weapon)] }),
+  };
+}
+
+const coat = (npc: string): ModelMaterialOverride => {
+  const style = NPC_STYLES[npc];
+  return style === undefined ? {} : { color: style.coat };
 };
 
-function npcPick(plan: ModelPick & { weapon?: ModelPick }): ModelPick {
-  if (plan.weapon === undefined) return plan;
-  const weapon = pickModel(assets, plan.weapon);
-  if (weapon === undefined) return plan;
+/** The crew: library humans in their coats, each with the tool of their trade. */
+const NPCS: Record<string, { human: string; material: ModelMaterialOverride; tool?: string }> = {
+  dr_sparx: { human: "human/businesswoman", material: coat("dr_sparx") },
+  rigg: { human: "human/construction-worker", material: coat("rigg"), tool: "survival/stone-hatchet" },
+  gauge: { human: "human/police-officer-female", material: coat("gauge"), tool: "survival/wooden-club" },
+  reactor_hunter: { human: "human/soldier", material: { color: "#5a5a5a", metalness: 0.5, roughness: 0.4 }, tool: "survival/spear" },
+};
+
+function npcModel(npc: { human: string; material: ModelMaterialOverride; tool?: string }): ModelConfig {
   return {
-    ...plan,
-    style: {
-      ...plan.style,
-      attachments: [{ slot: WEAPON_BONE, model: weapon, position: [0, -0.08, 0], scale: 0.9 }],
-    },
+    ...libraryModel(npc.human, { targetHeight: HUMANOID_HEIGHT }),
+    material: npc.material,
+    ...(npc.tool === undefined ? {} : { attachments: [inHand(npc.tool)] }),
   };
 }
+
+/** The model-library names the cast wears and carries, for the credits. */
+export const CAST_LIBRARY_MODELS: readonly string[] = [
+  ...new Set([
+    ...Object.values(RIG_BY_ID).filter((rig) => rig.kind === "humanoid").map((rig) => rig.model),
+    ...Object.values(WEAPONS),
+    ...Object.values(NPCS).flatMap((npc) => [npc.human, ...(npc.tool === undefined ? [] : [npc.tool])]),
+  ]),
+];
 
 function buildEntityModels(): Record<string, ModelConfig> {
   const enemyPlan: Record<string, ModelPick> = {};
@@ -178,6 +161,10 @@ function buildEntityModels(): Record<string, ModelConfig> {
     if (pick !== null) enemyPlan[def.id] = pick;
   }
   const models: Record<string, ModelConfig> = resolveModelPlan(assets, enemyPlan);
+  for (const def of enemies) {
+    const human = humanEnemy(def);
+    if (human !== null) models[def.id] = human;
+  }
 
   // Loaders walk as kit-bashed part compositions; the rigged pick above stays their fallback when a
   // chassis piece is missing from the catalog.
@@ -187,9 +174,7 @@ function buildEntityModels(): Record<string, ModelConfig> {
     if (chassis !== null) models[def.id] = chassis;
   }
 
-  const npcPlan: Record<string, ModelPick> = {};
-  for (const [id, plan] of Object.entries(NPC_PLAN)) npcPlan[id] = npcPick(plan);
-  Object.assign(models, resolveModelPlan(assets, npcPlan));
+  for (const [id, npc] of Object.entries(NPCS)) models[id] = npcModel(npc);
 
   // B0-LT is a hovering repair drone, not a walker — a lamp head with no legs reads correctly.
   Object.assign(

@@ -55,6 +55,14 @@ test("runtime rig resolution preserves authored camera data/callbacks and null r
   }
 });
 
+test("a runtime first-person rig can ask to draw the player's own body", () => {
+  const director = createCameraDirector();
+  director.setRig("first", { firstPerson: { body: true, viewmodel: false } });
+  const resolved = resolveRuntimeCameraConfig({ perspective: "third" }, director.rig());
+  expect(resolveRigKind(resolved)).toBe("first");
+  expect(resolved?.firstPerson).toEqual({ body: true, viewmodel: false });
+});
+
 describe("resolveCaptureCameraConfig", () => {
   afterEach(() => installCaptureCamera(null));
 

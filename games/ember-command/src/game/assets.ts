@@ -6,5 +6,5 @@ import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
  * primitives, so the skirmish stays legible even before a pack is pulled. */
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
-  sources: ["kaykit-adventurers", "kaykit-city-builder", "quaternius-stylized-nature", "kaykit-dungeon"],
+  sources: ["kaykit-city-builder", "quaternius-stylized-nature", "kaykit-dungeon"],
 });

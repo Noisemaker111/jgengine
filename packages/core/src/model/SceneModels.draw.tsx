@@ -419,12 +419,21 @@ export function EntityModel({
     );
   });
 
+  const heldTable = model.held;
+  const subscribeHeld = useCallback(
+    (listener: () => void) => (ctx === null || heldTable === undefined || instanceId === undefined ? () => {} : ctx.subscribe(listener)),
+    [ctx, heldTable, instanceId],
+  );
+  const heldId = useSyncExternalStore(subscribeHeld, () => (ctx === null || instanceId === undefined ? undefined : ctx.scene.entity.get(instanceId)?.held));
+  const held = heldId === undefined ? undefined : heldTable?.[heldId];
+  const attachments = held === undefined ? model.attachments ?? [] : [...(model.attachments ?? []), held];
+
   const base = (
     <>
       <primitive object={scene} position={position} scale={[scale, scale, scale]} />
-      {(model.attachments ?? []).map((attachment, index) =>
+      {attachments.map((attachment, index) =>
         typeof attachment.model === "string" ? null : (
-          <IsolatedModelPart key={`${attachment.slot}-${index}`} model={attachment.model}>
+          <IsolatedModelPart key={`${attachment.slot}-${index}-${attachment.model.url}`} model={attachment.model}>
             <BoneAttachment
               rig={scene}
               model={attachment.model}

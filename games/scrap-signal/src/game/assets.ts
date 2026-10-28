@@ -7,7 +7,6 @@ import { MACHINE } from "./palette";
 const MODEL_SOURCES = [
   "quaternius-modular-scifi",
   "quaternius-stylized-nature",
-  "kaykit-adventurers",
   "kaykit-space-base",
 ] as const;
 

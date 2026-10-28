@@ -1,3 +1,5 @@
+import { findLibraryModelByName } from "@jgengine/assets/catalogs/modelLibrary";
+
 import { escapeHtml } from "../escapeHtml";
 import type { EditorSceneDoc, TemplateVariant } from "./types";
 
@@ -399,25 +401,35 @@ ${goalBlock}});
 
 const gameAssetsTs = `import { createStarterCatalog } from "@jgengine/assets/catalogs/starter";
 
-/** Curated people/props/nature/urban starter packs — resolve asset:person_casual etc. */
+/** Curated props/nature/urban starter packs — resolve asset:prop_crate etc. */
 export const assets = createStarterCatalog({ basePath: "/models" });
 `;
 
-const gameModelsTs = (player = "asset:person_casual") => `import type { ModelConfig } from "@jgengine/core/game/playableGame";
+const gameModelsTs = (player = "human/man-casual") => {
+  const human = findLibraryModelByName(player) !== null;
+  const playerModel = human
+    ? `{
+  player: libraryModel(${JSON.stringify(player)}),
+}`
+    : `resolveModelPlan(assets, {
+  player: { model: ${JSON.stringify(player)}, style: { targetHeight: 1.8 } },
+})`;
+  const libraryImport = human ? `import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
+` : "";
+  return `${libraryImport}import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "./assets";
 
-/** Drop-in GLTF figures from the curated starter packs (asset:person_casual, …). */
-export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
-  player: { model: ${JSON.stringify(player)}, style: { targetHeight: 1.8 } },
-});
+/** The player is a realistic rigged human from the model library; props come from the starter packs. */
+export const entityModels: Record<string, ModelConfig> = ${playerModel};
 
 export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
   crate: { model: "asset:prop_crate", style: { targetHeight: 1.2 } },
   tree: { model: "asset:nature_tree", style: { targetHeight: 4.5 } },
 });
 `;
+};
 
 export interface GameConfigOptions {
   /** Ship world.ts + game/assets.ts + game/models.ts (every 3d template). */

@@ -2,10 +2,12 @@ import { describe, expect, test } from "bun:test";
 
 import { aliases } from "../aliases";
 import { buildCatalog } from "../catalogs/build";
+import { findLibraryModelByName, libraryModel } from "../catalogs/modelLibrary";
 import { generatedIndex } from "../generated";
 import {
   STARTER_ASSETS,
   STARTER_PACKS,
+  STARTER_PEOPLE,
   STARTER_SOURCE_PACKS,
   STARTER_THEMES,
   starterAliases,
@@ -14,8 +16,8 @@ import {
 } from "./starter";
 
 describe("starter packs", () => {
-  test("ships four starter themes with curated assets", () => {
-    expect(STARTER_THEMES).toEqual(["people", "props", "nature", "urban"]);
+  test("ships three starter themes with curated assets", () => {
+    expect(STARTER_THEMES).toEqual(["props", "nature", "urban"]);
     for (const theme of STARTER_THEMES) {
       expect(STARTER_PACKS[theme].length).toBeGreaterThanOrEqual(4);
       for (const asset of STARTER_PACKS[theme]) {
@@ -35,12 +37,23 @@ describe("starter packs", () => {
     }
   });
 
-  test("asset:person_casual and short id resolve through buildCatalog with dims", () => {
+  test("starter people are realistic library humans, a man and a woman, with the full action set", () => {
+    expect(STARTER_PEOPLE.length).toBeGreaterThanOrEqual(2);
+    for (const name of STARTER_PEOPLE) {
+      expect(findLibraryModelByName(name)?.origin.provider).toBe("rocketbox");
+      const animation = libraryModel(name).animation;
+      expect(typeof animation === "object" && animation.humanoidActions).toBe(true);
+    }
+    expect(STARTER_SOURCE_PACKS).not.toContain("kaykit-adventurers");
+    expect(buildCatalog({ basePath: "/models" }).resolve("asset:person_casual")).toBeNull();
+  });
+
+  test("asset:prop_crate and short id resolve through buildCatalog with dims", () => {
     const catalog = buildCatalog({ basePath: "/models" });
-    const viaAsset = catalog.resolve("asset:person_casual");
-    const viaShort = catalog.resolve("person_casual");
-    const viaStarter = catalog.resolve("starter/person_casual");
-    const target = catalog.resolve("kaykit-adventurers/Rogue");
+    const viaAsset = catalog.resolve("asset:prop_crate");
+    const viaShort = catalog.resolve("prop_crate");
+    const viaStarter = catalog.resolve("starter/prop_crate");
+    const target = catalog.resolve(starterAssetById("prop_crate")?.target ?? "");
     expect(viaAsset).not.toBeNull();
     expect(viaShort?.url).toBe(target?.url);
     expect(viaAsset?.url).toBe(target?.url);
@@ -66,7 +79,7 @@ describe("starter packs", () => {
   test("starterAssetById accepts asset: and starter/ prefixes", () => {
     expect(starterAssetById("asset:nature_tree")?.target).toBe("quaternius-stylized-nature/CommonTree_1");
     expect(starterAssetById("starter/prop_crate")?.theme).toBe("props");
-    expect(starterStyle("person_casual")?.targetHeight).toBe(1.8);
+    expect(starterStyle("prop_crate")).toBeDefined();
   });
 
   test("never references Kenney", () => {

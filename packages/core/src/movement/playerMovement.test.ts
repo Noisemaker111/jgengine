@@ -180,6 +180,15 @@ describe("swim (heightfield)", () => {
     expect(wet[0] / land[0]).toBeCloseTo(0.65, 2);
   });
 
+  test("telemetry reports swimming while floating, so the body's swim clip plays", () => {
+    const water = context(["a"]);
+    driveWith(water, "a", ["moveForward"], 10, tuning({ movement: { swim: true }, ground: SUBMERGED_GROUND }), Math.PI / 2);
+    expect(playerMovementTelemetry(water, "a")?.swimming).toBe(true);
+    const dry = context(["b"]);
+    driveWith(dry, "b", ["moveForward"], 10, tuning({ movement: { swim: true }, ground: ABOVE_WATER_GROUND }), Math.PI / 2);
+    expect(playerMovementTelemetry(dry, "b")?.swimming).toBe(false);
+  });
+
   test("swim unset leaves the player on the (submerged) floor", () => {
     const ctx = context(["a"]);
     // The 5m drop is taller than a step, so the player now genuinely falls before settling on the floor.
@@ -1128,11 +1137,11 @@ describe("indexed movement telemetry", () => {
     backend.addBody({ shape: { kind: "box", halfExtents: [50, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
     const capsule = context(["a"], { entityById: () => ({ movement: { poses: ["standing", "crouch"] } }) });
     driveWith(capsule, "a", ["crouch"], 1, resolvePlayerMovementTuning({ physics: { backend } }));
-    expect(playerMovementTelemetry(capsule, "a")).toEqual({ grounded: true, verticalVelocity: 0, crouching: true });
+    expect(playerMovementTelemetry(capsule, "a")).toEqual({ grounded: true, verticalVelocity: 0, crouching: true, swimming: false });
     const voxel = context(["a"]);
     driveWith(voxel, "a", [], 1, resolvePlayerMovementTuning({ collision: { voxel: true } }));
     const body = snapshotPlayerMovement(voxel, "a")!.voxelBody!;
-    expect(playerMovementTelemetry(voxel, "a")).toEqual({ grounded: body.grounded, verticalVelocity: body.velocityY, crouching: false });
+    expect(playerMovementTelemetry(voxel, "a")).toEqual({ grounded: body.grounded, verticalVelocity: body.velocityY, crouching: false, swimming: false });
   });
 });
 

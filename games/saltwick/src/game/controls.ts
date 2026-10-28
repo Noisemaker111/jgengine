@@ -28,6 +28,6 @@ export const BRIEFING: readonly string[] = [
 
 export const CREDITS: readonly string[] = [
   `${idea.name} - made with JGengine.`,
-  "Characters, creatures and nature: KayKit (Kay Lousberg) and Quaternius, CC0.",
+  "Creatures, buildings and nature: KayKit (Kay Lousberg) and Quaternius, CC0.",
   ...libraryModelCredits([...new Set(libraryNames)]),
 ];

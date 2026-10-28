@@ -143,6 +143,48 @@ class Builder {
     return node;
   }
 
+  /** A capped cone frustum along its local Y axis, `radiusBottom` below and `radiusTop` above, centred on `at`. */
+  frustum(parent: Node, name: string, radiusBottom: number, radiusTop: number, height: number, at: Vec3, material: Material, rotation?: Vec3, segments = 16): Node {
+    const positions: number[] = [];
+    const normals: number[] = [];
+    const indices: number[] = [];
+    const half = height / 2;
+    const slope = Math.hypot(height, radiusBottom - radiusTop);
+    for (let i = 0; i <= segments; i += 1) {
+      const a = (i / segments) * Math.PI * 2;
+      const x = Math.cos(a);
+      const z = Math.sin(a);
+      const nx = (x * height) / slope;
+      const ny = (radiusBottom - radiusTop) / slope;
+      const nz = (z * height) / slope;
+      positions.push(x * radiusBottom, -half, z * radiusBottom, x * radiusTop, half, z * radiusTop);
+      normals.push(nx, ny, nz, nx, ny, nz);
+    }
+    for (let i = 0; i < segments; i += 1) {
+      const a = i * 2;
+      indices.push(a, a + 1, a + 3, a, a + 3, a + 2);
+    }
+    for (const [y, ny, radius] of [[half, 1, radiusTop], [-half, -1, radiusBottom]] as const) {
+      if (radius <= 0) continue;
+      const centre = positions.length / 3;
+      positions.push(0, y, 0);
+      normals.push(0, ny, 0);
+      for (let i = 0; i <= segments; i += 1) {
+        const a = (i / segments) * Math.PI * 2;
+        positions.push(Math.cos(a) * radius, y, Math.sin(a) * radius);
+        normals.push(0, ny, 0);
+      }
+      for (let i = 0; i < segments; i += 1) {
+        if (ny > 0) indices.push(centre, centre + i + 2, centre + i + 1);
+        else indices.push(centre, centre + i + 1, centre + i + 2);
+      }
+    }
+    const node = this.document.createNode(name).setTranslation([...at]).setMesh(this.mesh(name, positions, normals, indices, material));
+    if (rotation !== undefined) node.setRotation(eulerQuat(rotation));
+    parent.addChild(node);
+    return node;
+  }
+
   group(parent: Node, name: string, at: Vec3, rotation?: Vec3): Node {
     const node = this.document.createNode(name).setTranslation([...at]);
     if (rotation !== undefined) node.setRotation(eulerQuat(rotation));
@@ -237,10 +279,91 @@ function robotArm(): Builder {
   return b;
 }
 
+const WOOD: Finish = { color: "#6e4b2c", metalness: 0, roughness: 0.82 };
+const FLINT: Finish = { color: "#6f6b66", metalness: 0, roughness: 0.62 };
+const FIBRE: Finish = { color: "#8c7146", metalness: 0, roughness: 0.95 };
+
+/*
+ * Hand tools share one frame: the grip sits at the origin, the haft runs up local +Y and the
+ * working end (pick point, hatchet edge) faces +Z, so a hand socket holds every one the same way.
+ */
+
+/** A primitive stone pick: a flint head lashed across a 60 cm wooden haft. */
+function stonePick(): Builder {
+  const b = new Builder("stone_pick");
+  const wood = b.material("haft_wood", WOOD);
+  const flint = b.material("flint", FLINT);
+  const fibre = b.material("lashing", FIBRE);
+  const r = b.root;
+  b.cylinder(r, "haft", 0.016, 0.6, [0, 0.2, 0], wood, 12);
+  b.box(r, "head", [0.06, 0.07, 0.08], [0, 0.46, 0], flint);
+  b.frustum(r, "point_front", 0.032, 0, 0.16, [0, 0.46, 0.12], flint, [Math.PI / 2, 0, 0], 8);
+  b.frustum(r, "point_back", 0.03, 0, 0.12, [0, 0.46, -0.1], flint, [-Math.PI / 2, 0, 0], 8);
+  b.cylinder(r, "lashing", 0.022, 0.07, [0, 0.4, 0], fibre, 12);
+  return b;
+}
+
+/** A primitive stone hatchet: a knapped flint blade lashed to a 60 cm wooden haft. */
+function stoneHatchet(): Builder {
+  const b = new Builder("stone_hatchet");
+  const wood = b.material("haft_wood", WOOD);
+  const flint = b.material("flint", FLINT);
+  const fibre = b.material("lashing", FIBRE);
+  const r = b.root;
+  b.cylinder(r, "haft", 0.016, 0.6, [0, 0.2, 0], wood, 12);
+  b.box(r, "blade", [0.036, 0.11, 0.12], [0, 0.45, 0.07], flint);
+  b.box(r, "edge", [0.012, 0.14, 0.04], [0, 0.45, 0.15], flint);
+  b.cylinder(r, "lashing", 0.022, 0.08, [0, 0.45, 0], fibre, 12);
+  return b;
+}
+
+/** A heavy wooden club, 70 cm, thickening to a knob. */
+function woodenClub(): Builder {
+  const b = new Builder("wooden_club");
+  const wood = b.material("club_wood", WOOD);
+  const fibre = b.material("grip_wrap", FIBRE);
+  const r = b.root;
+  b.cylinder(r, "grip", 0.02, 0.2, [0, 0, 0], fibre, 12);
+  b.frustum(r, "shaft", 0.022, 0.05, 0.42, [0, 0.31, 0], wood, undefined, 12);
+  b.frustum(r, "knob", 0.05, 0.03, 0.08, [0, 0.56, 0], wood, undefined, 12);
+  return b;
+}
+
+/** A 1.8 m wooden spear with a lashed flint point, gripped a third of the way up. */
+function spear(): Builder {
+  const b = new Builder("spear");
+  const wood = b.material("shaft_wood", WOOD);
+  const flint = b.material("flint", FLINT);
+  const fibre = b.material("lashing", FIBRE);
+  const r = b.root;
+  b.cylinder(r, "shaft", 0.014, 1.8, [0, 0.3, 0], wood, 10);
+  b.frustum(r, "point", 0.026, 0, 0.18, [0, 1.29, 0], flint, undefined, 8);
+  b.cylinder(r, "lashing", 0.019, 0.07, [0, 1.19, 0], fibre, 10);
+  return b;
+}
+
+/** A hand torch: a 55 cm stick with a pitch-soaked wrap and a glowing flame. */
+function torch(): Builder {
+  const b = new Builder("torch");
+  const wood = b.material("torch_wood", WOOD);
+  const wrap = b.material("pitch_wrap", { color: "#2a2018", metalness: 0, roughness: 0.9 });
+  const flame = b.material("flame", { color: "#ff7a1a", metalness: 0, roughness: 1, emissive: "#ff8a2a", emissiveStrength: 6 });
+  const r = b.root;
+  b.cylinder(r, "stick", 0.018, 0.55, [0, 0.17, 0], wood, 10);
+  b.frustum(r, "wrap", 0.03, 0.038, 0.11, [0, 0.47, 0], wrap, undefined, 10);
+  b.frustum(r, "flame", 0.034, 0, 0.16, [0, 0.6, 0], flame, undefined, 8);
+  return b;
+}
+
 /** Every engine-authored builder, by the `builder` an entry names. */
 export const AUTHORED_BUILDERS: Readonly<Record<string, () => Builder>> = {
   "server-rack": serverRack,
   "robot-arm": robotArm,
+  "stone-pick": stonePick,
+  "stone-hatchet": stoneHatchet,
+  "wooden-club": woodenClub,
+  spear,
+  torch,
 };
 
 /** What an authored pull wrote. */
