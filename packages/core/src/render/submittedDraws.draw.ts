@@ -1,4 +1,5 @@
 import type * as THREE from "three";
+import { showCulled } from "@jgengine/core/visibility/culledTransforms.draw";
 
 /**
  * What one instanced draw submits this frame. Three skips a draw whose instance count is zero and
@@ -9,7 +10,8 @@ import type * as THREE from "three";
  */
 export function submitInstanceCount(mesh: THREE.InstancedMesh, count: number): void {
   mesh.count = count;
-  mesh.visible = count > 0;
+  // An empty draw leaves the matrix pass too: a field's far chunks hold thousands of them.
+  showCulled(mesh, count > 0);
 }
 
 /** Whether three issues a draw for this node this frame: instanced, visible, and holding an instance. @internal */

@@ -8,6 +8,7 @@ import { scatterBatchInstances, type ScatterBatch } from "@jgengine/core/scatter
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { scatterVariantTriangles, writeScatterVariantLevel } from "@jgengine/core/scatter/scatterVariants.draw";
 import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, gatherStaticMembers, syncStaticObjectSource } from "@jgengine/core/instancing/staticObjectBatches.draw";
+import { skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
 import { countSubmittedDraws, submitInstanceCount } from "./submittedDraws.draw";
 
 const FULL_TRIANGLES = 9134;
@@ -134,4 +135,31 @@ describe("a batch with no instances issues no draw", () => {
 
     expect(countStaticBatchDraws(scene)).toEqual({ draws: 1, drawn: 2 });
   });
+});
+
+test("an emptied instanced draw leaves the matrix pass and is rebuilt where it hangs once it holds instances again", () => {
+  const scene = new THREE.Scene();
+  skipCulledMatrices(scene);
+  const chunk = new THREE.Group();
+  const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial(), 4);
+  mesh.position.set(0, 2, 0);
+  chunk.add(mesh);
+  scene.add(chunk);
+  scene.updateMatrixWorld();
+  let rebuilt = 0;
+  const multiply = mesh.matrixWorld.multiplyMatrices.bind(mesh.matrixWorld);
+  mesh.matrixWorld.multiplyMatrices = (a, b) => {
+    rebuilt += 1;
+    return multiply(a, b);
+  };
+  submitInstanceCount(mesh, 0);
+  expect(mesh.visible).toBe(false);
+  chunk.position.x = 30;
+  scene.updateMatrixWorld();
+  expect(rebuilt).toBe(0);
+  submitInstanceCount(mesh, 3);
+  expect(mesh.visible).toBe(true);
+  scene.updateMatrixWorld();
+  expect(rebuilt).toBe(1);
+  expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([30, 2, 0]);
 });

@@ -18,6 +18,17 @@ export function setCulled(node: THREE.Object3D, isCulled: boolean): void {
   }
 }
 
+/**
+ * Show or hide a node that drew nothing useful while hidden (an emptied instanced chunk, a field
+ * chunk past its draw distance), leaving the matrix pass with it; a no-op when nothing changes.
+ * @internal
+ */
+export function showCulled(node: THREE.Object3D, shown: boolean): void {
+  if (node.visible === shown) return;
+  node.visible = shown;
+  setCulled(node, !shown);
+}
+
 const LOCAL = Symbol("jg.localTransform");
 
 interface Tracked {
@@ -73,11 +84,17 @@ function signatureChanged(node: THREE.Object3D, snapshot: Float64Array, composes
   return false;
 }
 
-/** Whether something other than the pass wrote this world matrix since the pass last did (a pose held for one render, say). */
+/**
+ * Whether something other than the pass wrote this world matrix since the pass last did (a pose held
+ * for one render, say). Unrolled, and the bottom row skipped (a world matrix is affine): it runs for
+ * every shown node every frame, and the loop form was most of the pass's cost.
+ */
 function worldChanged(node: THREE.Object3D, snapshot: Float64Array): boolean {
-  const elements = node.matrixWorld.elements;
-  for (let index = 0; index < 16; index += 1) if (snapshot[WORLD + index] !== elements[index]) return true;
-  return false;
+  const e = node.matrixWorld.elements;
+  return snapshot[WORLD + 12] !== e[12] || snapshot[WORLD + 13] !== e[13] || snapshot[WORLD + 14] !== e[14] ||
+    snapshot[WORLD] !== e[0] || snapshot[WORLD + 1] !== e[1] || snapshot[WORLD + 2] !== e[2] ||
+    snapshot[WORLD + 4] !== e[4] || snapshot[WORLD + 5] !== e[5] || snapshot[WORLD + 6] !== e[6] ||
+    snapshot[WORLD + 8] !== e[8] || snapshot[WORLD + 9] !== e[9] || snapshot[WORLD + 10] !== e[10];
 }
 
 /**
