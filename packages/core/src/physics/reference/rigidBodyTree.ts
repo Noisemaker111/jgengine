@@ -76,6 +76,22 @@ export interface RigidBodyTree {
   kineticEnergy(): number;
   /** Write the position-coordinate rates `q̇` for velocities `u` (quaternion kinematics for the root). */
   positionRates(q: ArrayLike<number>, u: ArrayLike<number>, out: Float64Array, offset?: number): void;
+  /** Copy of the last {@link update} state and the applied forces. */
+  snapshot(): RigidBodyTreeState;
+  /** Put a {@link snapshot} back: re-runs {@link update} with its coordinates and restores the applied forces. */
+  restore(state: RigidBodyTreeState): void;
+}
+
+/** A {@link RigidBodyTree}'s state: coordinates from the last update and the forces applied since the last clear. */
+export interface RigidBodyTreeState {
+  /** Position coordinates, length `positions`. */
+  readonly q: readonly number[];
+  /** Velocity coordinates, length `dofs`. */
+  readonly u: readonly number[];
+  /** Applied spatial force per body at its origin, body axes, `6 × bodies`. */
+  readonly forces: readonly number[];
+  /** Applied generalized force per velocity coordinate, length `dofs`. */
+  readonly generalized: readonly number[];
 }
 
 function cross(a: ArrayLike<number>, b: ArrayLike<number>, out: Float64Array, o = 0): void {
@@ -265,7 +281,10 @@ export function createRigidBodyTree(definitions: readonly RigidBodyDefinition[])
   const hBody = new Float64Array(3 * nb);
   for (let i = 0; i < nb; i++) for (let k = 0; k < 3; k++) hBody[3 * i + k] = (mass[i] ?? 0) * (comLocal[3 * i + k] ?? 0);
 
+  const lastQ = new Float64Array(positions);
+  lastQ[3] = 1;
   function update(q: ArrayLike<number>, u: ArrayLike<number>): void {
+    for (let k = 0; k < positions; k++) lastQ[k] = q[k] ?? 0;
     for (let k = 0; k < dofs; k++) qd[k] = u[k] ?? 0;
     // Root.
     const qw = q[3] ?? 1;
@@ -526,6 +545,14 @@ export function createRigidBodyTree(definitions: readonly RigidBodyDefinition[])
     dofOf: (body) => dofIndex[body] ?? 0,
     coordinateOf: (body) => coordIndex[body] ?? 0,
     update,
+    snapshot: () => ({ q: Array.from(lastQ), u: Array.from(qd), forces: Array.from(fext), generalized: Array.from(tauApplied) }),
+    restore(state) {
+      update(state.q, state.u);
+      fext.fill(0);
+      tauApplied.fill(0);
+      for (let k = 0; k < fext.length; k++) fext[k] = state.forces[k] ?? 0;
+      for (let k = 0; k < dofs; k++) tauApplied[k] = state.generalized[k] ?? 0;
+    },
     rotation: (body) => Rw.subarray(9 * body, 9 * body + 9),
     origin: (body) => pw.subarray(3 * body, 3 * body + 3),
     angularVelocity(body, out) {
