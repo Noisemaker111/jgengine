@@ -33,6 +33,7 @@ const TOLERANCE = 1e-9;
 const PASSES = 4;
 
 /** A landslide solver for a topology. @internal */
+// stateless: scratch buffers every collapse refills before use; nothing carries between calls.
 export function createLandslider(topology: LandformTopology): Landslider {
   const { cells, neighbour, distance, base, cellArea } = topology;
   const heap = createCellHeap(cells * 9);
