@@ -7,7 +7,7 @@ import { createMaterialTemplate } from "../material/materialAsset";
 const simulation: EditorSimulation = {
   weather: { profiles: [{ id: "storm", mode: "rain", intensity: 0.8 }], schedule: [{ atSeconds: 10, profileId: "storm", transitionSeconds: 4 }], wind: { direction: [1, 0], speed: 5 }, zones: [{ id: "valley", center: [2, 4], radius: 10, falloff: 2, wind: { speed: 2 } }] },
   emitters: [{ id: "chimney", position: { x: 1, y: 4, z: 2 }, config: { rate: 4, max: 20, seed: "smoke" }, options: { render: { shape: "smoke" }, space: "world" } }],
-  fires: [{ id: "camp", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1 }, fuel: [0.5, 1], ignitions: [{ col: 0, row: 0 }] }],
+  fires: [{ id: "camp", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1 }, fuel: ["GR2", "TU5"], moisture: "D1L1", ignitions: [{ col: 0, row: 0 }] }],
   habitats: [{ id: "birds", species: "swallow", position: { x: 0, y: 4, z: 0 }, radius: 8, count: 4, seed: 2, role: "cosmetic", steering: { maxSpeed: 5, separationRadius: 1, neighborRadius: 5 } }],
 };
 
@@ -85,8 +85,10 @@ test("simulation typos and runtime-invalid fire bounds are rejected before histo
     { weathre: { ambient: { mode: "rain", intensity: 1 } } },
     { weather: [] },
     { weather: { ambient: { mode: "rain", intensity: 1, tempratureOffset: 2 } } },
-    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1, maxCells: 1 } }] },
-    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1, maxCells: 2.5 } }] },
+    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1 }, fuel: "XX1" }] },
+    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1 }, fuel: ["GR2"] }] },
+    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1 }, moisture: "wet" }] },
+    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1, burnRate: 0.2 } }] },
   ];
   for (const value of malformed) {
     const result = session.transaction([{ type: "setSimulation", simulation: value as EditorSimulation }]);

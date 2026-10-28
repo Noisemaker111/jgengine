@@ -9,7 +9,7 @@ import { seededRng } from "../random/rng";
 function document(): EditorDocument {
   return { ...createEmptyEditorDocument(), volumes: [{ id: "roof", kind: "shelter", shape: "box", center: { x: 0, y: 1, z: 0 }, halfExtents: { x: 2, y: 2, z: 2 } }], simulation: {
     weather: { ambient: { mode: "rain", intensity: 1 }, profiles: [{ id: "snow", mode: "snow", intensity: 1, temperatureOffset: -5 }], schedule: [{ atSeconds: 1, profileId: "snow", transitionSeconds: 0.5 }], wind: { direction: [1, 0], speed: 10 } },
-    fires: [{ id: "fire", position: { x: 8, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1, burnRate: 0.2 }, ignitions: [{ col: 0, row: 0 }] }],
+    fires: [{ id: "fire", position: { x: 8, y: 0, z: 0 }, config: { cols: 4, rows: 1, cellSize: 1 }, fuel: "GR2", moisture: "D1L1", ignitions: [{ col: 0, row: 0 }] }],
     emitters: [{ id: "rain", position: { x: 0, y: 4, z: 0 }, config: { rate: 20, max: 32, seed: 4 }, options: { render: { shape: "streak" } } }],
     forces: [{ center: [5, 0, 0], shape: { kind: "sphere", radius: 4 }, strength: 2, vortex: { axis: [0, 1, 0], strength: 3 }, directionality: 0.5, direction: [0, 1, 0], mask: 1 }],
   } };
@@ -53,15 +53,16 @@ test("pause, whole simulation restore and durable runtime restore retain state w
   const reopened = context(true);
   reopened.restore(world);
   expect(reopened.environment.snapshot()).toEqual(baseline);
-  expect(authored.simulation!.fires![0]!.config.burnRate).toBe(0.2);
+  expect(authored.simulation!.fires![0]!.moisture).toBe("D1L1");
 });
 test("weather retuning preserves progressed fire and teardown releases authored effects", () => {
   const ctx = context(true);
   advance(ctx, 0.1);
-  const fuel = ctx.environment.fire("fire")!.cell(0, 0).fuel;
+  const before = ctx.environment.fire("fire")!.fire.snapshot();
+  expect(ctx.environment.fire("fire")!.fire.cell(0, 0).state).toBe("flaming");
   const next = document(); next.simulation!.weather!.ambient = { mode: "clear", intensity: 0 };
   ctx.environment.retune(next);
-  expect(ctx.environment.fire("fire")!.cell(0, 0).fuel).toBe(fuel);
+  expect(ctx.environment.fire("fire")!.fire.snapshot()).toEqual(before);
   expect(ctx.particles.emitters()).toHaveLength(1);
   ctx.environment.dispose();
   expect(ctx.particles.emitters()).toHaveLength(0);
@@ -122,7 +123,8 @@ test("malformed restored fires, watches and flock vectors leave all authority un
   const malformed = [
     (state: typeof baseline) => { state.watched[1] = state.watched[0]!; },
     (state: typeof baseline) => { state.fires = []; },
-    (state: typeof baseline) => { state.fires[0]!.cells[0]!.heat = NaN; },
+    (state: typeof baseline) => { state.fires[0]!.fire.arrival = ""; },
+    (state: typeof baseline) => { state.fires[0]!.pendingSeconds = NaN; },
     (state: typeof baseline) => { state.flocks[0]!.agents[0]!.position = [1, 2] as unknown as readonly [number, number, number]; },
     (state: typeof baseline) => { state.flocks[0]!.routeIndex = 1; },
   ];
@@ -162,6 +164,7 @@ test("habitats opt into capped weather force and preserve poses while steering r
 
 test("fire binding stops spawning on extinction and appearance signals keep Celsius separate", () => {
   const ctx = context(true);
+  advance(ctx, 0.05);
   const next = document();
   next.simulation!.emitters = [{ id: "flame", fireAreaId: "fire", position: { x: 8, y: 0, z: 0 }, config: { rate: 12, max: 32 }, options: { render: { shape: "flame" } } }];
   ctx.environment.retune(next);
@@ -173,10 +176,13 @@ test("fire binding stops spawning on extinction and appearance signals keep Cels
   const out: [number, number, number] = [9, 9, 9];
   expect(ctx.environment.accelerationAt([8, 0, 0], 0, 1, 3, 0, out)).toBe(out);
   expect(out).toEqual([3, 0, 0]);
-  ctx.environment.fire("fire")!.extinguish(8, 0);
+  expect(ctx.environment.fire("fire")!.extinguish(8.5, 0.5)).toBe(true);
   advance(ctx, 0.05);
   expect(ctx.particles.emitters()[0]!.active).toBe(false);
-  ctx.environment.fire("fire")!.ignite(8, 0);
+  expect(ctx.environment.fire("fire")!.ignite(9.5, 0.5)).toBe(true);
+  advance(ctx, 0.05);
+  expect(ctx.particles.emitters()[0]!.active).toBe(false);
+  expect(ctx.environment.fire("fire")!.ignite(11.5, 0.5)).toBe(true);
   advance(ctx, 0.05);
   expect(ctx.particles.emitters()[0]!.active).toBe(true);
   next.simulation!.emitters[0]!.options!.active = false;

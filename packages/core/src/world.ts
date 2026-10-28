@@ -944,10 +944,9 @@ export {
   type WaveSpawnSink,
   type WaveView,
 } from "./waves/waveRunner";
+export { createFireLandscape, type FireLandscape } from "./fire/fireLandscape";
 export {
-  createFireGrid,
   resolveWeather,
-  type FireGrid,
   type ResolvedWeather,
   type WeatherModifierTable,
   type WeatherState,

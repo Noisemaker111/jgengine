@@ -192,12 +192,16 @@ export function createFuelMoistureModel(config: {
   cells: number;
   initial: FuelMoisture;
   exposure?: Float32Array;
+  /** Share of the rain that reaches each cell's fuel, 0 (under a roof) .. 1 (open); all open when omitted. */
+  rainShare?: Float32Array;
   tuning?: Partial<FuelMoistureTuning>;
 }): FuelMoistureModel {
   const n = config.cells;
   if (!Number.isInteger(n) || n <= 0) throw new Error("fuel moisture cells must be a positive integer");
   if (config.exposure !== undefined && config.exposure.length !== n) throw new Error("fuel moisture exposure must have one value per cell");
+  if (config.rainShare !== undefined && config.rainShare.length !== n) throw new Error("fuel moisture rainShare must have one value per cell");
   const exposure = config.exposure;
+  const rainShare = config.rainShare;
   const initial = { ...config.initial };
   let tuning: FuelMoistureTuning = { ...DEFAULT_FUEL_MOISTURE_TUNING, ...config.tuning };
   const oneHour = new Float32Array(n);
@@ -307,9 +311,11 @@ export function createFuelMoistureModel(config: {
       const b100 = raining ? Math.max(air, tuning.rainHundredBase + tuning.rainHundredPerHour * rainCount) : air;
       const open = fuelLevelWeather(w.airTemperatureC, w.relativeHumidity, w.cloudCover, sun);
       const openEmc = equilibriumMoistureContent(open.temperatureC, open.relativeHumidity);
+      const rainFine = Math.max(tuning.rainFineMoisture, air);
       for (let i = 0; i < n; i++) {
+        const wetShare = raining ? Math.min(1, Math.max(0, rainShare?.[i] ?? 1)) : 0;
         let fine: number;
-        if (raining) fine = Math.max(tuning.rainFineMoisture, air);
+        if (wetShare >= 1) fine = rainFine;
         else if (exposure === undefined) fine = openEmc;
         else {
           const e = exposure[i] ?? 1;
@@ -319,9 +325,11 @@ export function createFuelMoistureModel(config: {
             fine = equilibriumMoistureContent(level.temperatureC, level.relativeHumidity);
           }
         }
+        if (wetShare > 0 && wetShare < 1) fine += (rainFine - fine) * wetShare;
+        const heavy = air + (b100 - air) * wetShare;
         oneHour[i] = fine + ((oneHour[i] ?? fine) - fine) * k1;
         tenHour[i] = fine + ((tenHour[i] ?? fine) - fine) * k10;
-        hundredHour[i] = b100 + ((hundredHour[i] ?? b100) - b100) * k100;
+        hundredHour[i] = heavy + ((hundredHour[i] ?? heavy) - heavy) * k100;
       }
       time += dt;
       version++;

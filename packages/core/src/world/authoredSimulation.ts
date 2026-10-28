@@ -5,7 +5,10 @@ import { decodeEditorSimulation, type EditorSimulation } from "../editor/simulat
 import type { EditorDocument, EditorVolume } from "../editor/types";
 import { createEmptyEditorDocument } from "../editor/document";
 import { createAuthoredWeather, createWeatherExposure, type AuthoredWeatherSample, type WeatherExposure, type WeatherExposureSnapshot, type WeatherExposureSurface } from "@jgengine/core/weather/authoredWeather";
-import { createFireGrid, type FireCell, type FireGrid } from "@jgengine/core/weather/weather";
+import { createFireLandscape, type FireLandscape, type FireLandscapeSnapshot } from "../fire/fireLandscape";
+import { MOISTURE_SCENARIOS, standardFuelModel, type FuelModel } from "../fire/fuelModels";
+import { createFuelMoistureModel, type FuelMoistureModel, type FuelMoistureSnapshot } from "../fire/fuelMoisture";
+import type { AuthoredFireArea } from "../editor/simulation";
 import type { EffectRequest, ParticleDirector } from "../vfx/particleDirector";
 import type { Vec3 } from "./geometry";
 
@@ -28,8 +31,88 @@ export interface EnvironmentAppearanceSignals {
 export interface AuthoredSimulationSnapshot {
   surfaces: WeatherExposureSnapshot;
   watched: AuthoredSurface[];
-  fires: { id: string; cells: FireCell[] }[];
+  fires: { id: string; fire: FireLandscapeSnapshot; moisture: FuelMoistureSnapshot; pendingSeconds: number }[];
   flocks: { id: string; agents: FlockStepAgent[]; routeIndex: number }[];
+}
+
+/** One authored fire area at runtime: its landscape fire and the fuel moisture authored weather drives. */
+export interface AuthoredFireRuntime {
+  readonly fire: FireLandscape;
+  readonly moisture: FuelMoistureModel;
+  /** Light the cell under a world position; false off the grid. */
+  ignite(x: number, z: number): boolean;
+  /** Douse the cell under a world position: soak its fine fuel and its neighbours', and put it out. */
+  extinguish(x: number, z: number): boolean;
+  /** Cells flaming or smouldering. */
+  readonly burning: number;
+}
+
+interface FireAreaState extends AuthoredFireRuntime {
+  pendingSeconds: number;
+}
+
+/** Authored rain intensity 1 as a rain rate, mm/h (heavy rain). */
+const RAIN_MM_PER_HOUR = 10;
+/** Fuel moisture follows the weather in steps of this many game seconds. */
+const MOISTURE_STEP_SECONDS = 60;
+const DEFAULT_CLIMATE = { airTemperatureC: 25, relativeHumidity: 0.35 };
+
+function fireAreaFuel(area: AuthoredFireArea): { fuels: FuelModel[]; fuel: Uint8Array } {
+  const n = area.config.cols * area.config.rows;
+  const codes = area.fuel ?? "GR2";
+  const fuels: FuelModel[] = [];
+  const index = new Map<string, number>();
+  const fuel = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const code = typeof codes === "string" ? codes : (codes[i] ?? "GR2");
+    let k = index.get(code);
+    if (k === undefined) {
+      const model = standardFuelModel(code);
+      if (model === undefined) throw new Error(`unknown fuel model ${code}`);
+      k = fuels.length;
+      fuels.push(model);
+      index.set(code, k);
+    }
+    fuel[i] = k;
+  }
+  return { fuels, fuel };
+}
+
+function createFireArea(area: AuthoredFireArea, exposureAt: (x: number, y: number, z: number) => number): FireAreaState {
+  const { cols, rows, cellSize } = area.config;
+  const n = cols * rows;
+  const exposure = new Float32Array(n);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) exposure[r * cols + c] = exposureAt(area.position.x + (c + 0.5) * cellSize, area.position.y, area.position.z + (r + 0.5) * cellSize);
+  const scenario = area.moisture ?? "D2L2";
+  const initial = MOISTURE_SCENARIOS[scenario];
+  if (initial === undefined) throw new Error(`unknown moisture scenario ${scenario}`);
+  const fire = createFireLandscape({ cols, rows, cellSize, originX: area.position.x, originZ: area.position.z, ...fireAreaFuel(area), seed: area.id, maxCells: 16_384 });
+  const moisture = createFuelMoistureModel({ cells: n, initial, exposure, rainShare: exposure });
+  fire.setMoistureField(moisture);
+  for (const ignition of area.ignitions ?? []) fire.ignite(ignition.col, ignition.row);
+  return {
+    fire,
+    moisture,
+    pendingSeconds: 0,
+    ignite: (x, z) => fire.igniteAt(x, z),
+    extinguish(x, z) {
+      const i = fire.cellIndexAt(x, z);
+      if (i < 0) return false;
+      const col = i % cols;
+      const row = (i - col) / cols;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const c = col + dc;
+          const r = row + dr;
+          if (c >= 0 && r >= 0 && c < cols && r < rows) moisture.wet(r * cols + c, 1);
+        }
+      }
+      return fire.extinguish(col, row);
+    },
+    get burning() {
+      return fire.activeCells().length;
+    },
+  };
 }
 
 /** A habitat's live poses; game species determine appearance and gameplay actor policy. */
@@ -59,7 +142,7 @@ export interface AuthoredSimulationRuntime {
   windAcceleration(position: Vec3, response: number, maxAcceleration: number): Vec3;
   /** Sum authored fields and wind (response 1/second), capped in metres/second² by game policy. */
   accelerationAt(position: Vec3, timeSeconds: number, windResponse: number, maxAcceleration: number, mask?: number, out?: [number, number, number]): Vec3;
-  fire(id: string): FireGrid | undefined;
+  fire(id: string): AuthoredFireRuntime | undefined;
   /** Cosmetic poses render directly; gameplay habitats are consumed by game actor adapters. */
   flocks(): readonly AuthoredFlockState[];
   step(gameDt: number): void;
@@ -93,7 +176,7 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
   let shelters: EditorVolume[] = [];
   const surfaces = createWeatherExposure({ maxSurfaces: options.maxSurfaces ?? 1024 });
   const watched = new Map<string, AuthoredSurface>();
-  let fires = new Map<string, FireGrid>();
+  let fires = new Map<string, FireAreaState>();
   let emitterIds: string[] = [];
   let flocks: MutableAuthoredFlockState[] = [];
   let disposed = false;
@@ -117,14 +200,12 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
     const nextShelters = next.volumes.filter((volume) => volume.kind === "shelter");
     if (nextShelters.length > 256) throw new Error("authored shelters are limited to 256 volumes");
     const nextWeather = createAuthoredWeather(nextConfig.weather ?? {});
-    const nextFires = new Map<string, FireGrid>();
+    const nextFires = new Map<string, FireAreaState>();
     for (const area of nextConfig.fires ?? []) {
-      const grid = createFireGrid({ ...area.config, origin: [area.position.x, area.position.z], ...(area.fuel === undefined ? {} : { fuelAt: (col, row) => area.fuel![row * area.config.cols + col]! }) });
-      for (const ignition of area.ignitions ?? []) grid.igniteCell(ignition.col, ignition.row);
       const previousArea = config.fires?.find((previous) => previous.id === area.id);
-      const previousGrid = fires.get(area.id);
-      if (previousGrid !== undefined && previousArea !== undefined && previousArea.config.cols === area.config.cols && previousArea.config.rows === area.config.rows && previousArea.config.cellSize === area.config.cellSize && JSON.stringify(previousArea.position) === JSON.stringify(area.position) && JSON.stringify(previousArea.fuel) === JSON.stringify(area.fuel) && JSON.stringify(previousArea.ignitions) === JSON.stringify(area.ignitions)) grid.restore(previousGrid.snapshot());
-      nextFires.set(area.id, grid);
+      const previous = fires.get(area.id);
+      const keep = previous !== undefined && previousArea !== undefined && JSON.stringify(previousArea) === JSON.stringify(area);
+      nextFires.set(area.id, keep ? previous : createFireArea(area, (x, y, z) => exposureIn(nextShelters, x, y, z)));
     }
     const nextFlocks = (nextConfig.habitats ?? []).map((habitat) => {
       const previous = flocks.find((state) => state.id === habitat.id);
@@ -163,9 +244,13 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
   }
 
   function exposureAt(x: number, y: number, z: number): number {
+    return exposureIn(shelters, x, y, z);
+  }
+
+  function exposureIn(list: readonly EditorVolume[], x: number, y: number, z: number): number {
     finite(x, "exposure x"); finite(y, "exposure y"); finite(z, "exposure z");
     let exposure = 1;
-    for (const shelter of shelters) {
+    for (const shelter of list) {
       if (!inside(shelter, x, y, z)) continue;
       const authored = shelter.meta?.["exposure"];
       const amount = typeof authored === "number" && Number.isFinite(authored) ? Math.max(0, Math.min(1, authored)) : 0;
@@ -206,8 +291,10 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
       let heat = 0;
       for (const area of config.fires ?? []) {
         if (Math.abs(position[1] - area.position.y) > area.config.cellSize) continue;
-        const cell = fires.get(area.id)!.cellAt(position[0], position[2]);
-        if (cell !== null) heat = Math.max(heat, Math.min(1, cell.heat / (area.config.ignitionThreshold ?? 1)));
+        const fire = fires.get(area.id)?.fire;
+        const i = fire?.cellIndexAt(position[0], position[2]) ?? -1;
+        const state = i >= 0 ? (fire?.layers.state[i] ?? 0) : 0;
+        heat = Math.max(heat, state === 1 ? 1 : state === 2 ? 0.5 : 0);
       }
       return { timeSeconds: sample.timeSeconds, wind: [sample.wind[0], 0, sample.wind[1]], wetness: accumulated?.wetness ?? 0, snow: accumulated?.snow ?? 0, exposure, heat, temperatureOffsetC: sample.temperatureOffset ?? 0 };
     },
@@ -252,17 +339,27 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
         if (route !== undefined && lead !== undefined && Math.hypot(lead.position[0] - target[0], lead.position[1] - target[1], lead.position[2] - target[2]) < Math.max(1, habitat.steering.maxSpeed * gameDt)) state.routeIndex = (state.routeIndex + 1) % route.points.length;
       }
       for (const area of config.fires ?? []) {
-        const grid = fires.get(area.id)!;
-        const local = weather.sample(area.position.x, area.position.z, time);
-        grid.step(gameDt, { spread: 1 - local.precipitation, wind: local.wind, extinguishRate: area.extinguishRate ?? 0, wetnessAt: (col, row) => {
-          const x = area.position.x + col * area.config.cellSize, z = area.position.z + row * area.config.cellSize;
-          return weather.sample(x, z, time).rain * exposureAt(x, area.position.y, z);
-        } });
+        const runtime = fires.get(area.id);
+        if (runtime === undefined) continue;
+        const local = weather.sample(area.position.x + (area.config.cols * area.config.cellSize) / 2, area.position.z + (area.config.rows * area.config.cellSize) / 2, time);
+        const climate = area.climate ?? DEFAULT_CLIMATE;
+        const airTemperatureC = climate.airTemperatureC + (local.temperatureOffset ?? 0);
+        runtime.pendingSeconds += gameDt;
+        if (runtime.pendingSeconds >= MOISTURE_STEP_SECONDS) {
+          runtime.moisture.step(runtime.pendingSeconds, {
+            airTemperatureC,
+            relativeHumidity: climate.relativeHumidity + (1 - climate.relativeHumidity) * local.precipitation,
+            rainRateMmPerHour: local.rain * RAIN_MM_PER_HOUR,
+            cloudCover: local.cloudCover,
+          });
+          runtime.pendingSeconds = 0;
+        }
+        runtime.fire.step(gameDt, { twentyFootWind: Math.hypot(local.wind[0], local.wind[1]), windDirection: Math.atan2(local.wind[1], local.wind[0]), airTemperatureC, moisture: runtime.moisture.moistureAt(0) });
       }
       syncFireEmitters();
     },
     retune(next) { if (disposed) throw new Error("authored simulation is disposed"); install(next); },
-    snapshot: () => ({ surfaces: surfaces.snapshot(), watched: Array.from(watched.values(), (surface) => ({ ...surface })), fires: Array.from(fires, ([id, grid]) => ({ id, cells: grid.snapshot() })), flocks: structuredClone(flocks.map(({ id, agents, routeIndex }) => ({ id, agents, routeIndex }))) }),
+    snapshot: () => ({ surfaces: surfaces.snapshot(), watched: Array.from(watched.values(), (surface) => ({ ...surface })), fires: Array.from(fires, ([id, area]) => ({ id, fire: area.fire.snapshot(), moisture: area.moisture.snapshot(), pendingSeconds: area.pendingSeconds })), flocks: structuredClone(flocks.map(({ id, agents, routeIndex }) => ({ id, agents, routeIndex }))) }),
     restore(state) {
       if (disposed) throw new Error("authored simulation is disposed");
       if (!Array.isArray(state.watched) || state.watched.length > (options.maxSurfaces ?? 1024)) throw new Error("authored surface restore budget exceeded");
@@ -282,9 +379,11 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
         for (const saved of state.fires) {
           if (fireIds.has(saved.id)) throw new Error(`duplicate restored fire id: ${saved.id}`);
           fireIds.add(saved.id);
-          const grid = next.fire(saved.id);
-          if (grid === undefined) throw new Error(`unknown restored fire area: ${saved.id}`);
-          grid.restore(saved.cells);
+          const area = next.fire(saved.id);
+          if (area === undefined) throw new Error(`unknown restored fire area: ${saved.id}`);
+          finite(saved.pendingSeconds, "restored fire moisture clock", 0, MOISTURE_STEP_SECONDS);
+          area.fire.restore(saved.fire);
+          area.moisture.restore(saved.moisture);
         }
         const restoredFlocks = state.flocks.map((saved) => {
           if (flockIds.has(saved.id)) throw new Error(`duplicate restored flock id: ${saved.id}`);
@@ -303,7 +402,13 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
         surfaces.restore(next.surfaces.snapshot());
         watched.clear();
         for (const surface of state.watched) watched.set(surface.id, { ...surface });
-        for (const saved of state.fires) fires.get(saved.id)!.restore(saved.cells);
+        for (const saved of state.fires) {
+          const area = fires.get(saved.id);
+          if (area === undefined) continue;
+          area.fire.restore(saved.fire);
+          area.moisture.restore(saved.moisture);
+          area.pendingSeconds = saved.pendingSeconds;
+        }
         flocks = restoredFlocks;
         syncFireEmitters();
       } finally { next.dispose(); }

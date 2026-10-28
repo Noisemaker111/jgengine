@@ -167,11 +167,22 @@ describe("landscape behaviour", () => {
     expect(cell.fuelLeft).toBeLessThan(0.5);
   });
 
-  test("wet fuel does not burn", () => {
+  test("wet fuel does not catch, even when lit", () => {
     const fire = uniform(20, 20, 2, GR2, 16);
     fire.ignite(10, 10);
     run(fire, 600, weather(5, { oneHour: 0.4, tenHour: 0.4, hundredHour: 0.4, liveHerb: 2, liveWoody: 2 }));
-    expect(fire.burnedArea()).toBe(4);
+    expect(fire.burnedArea()).toBe(0);
+  });
+
+  test("an extinguished cell stops burning and keeps the fuel it had not yet consumed", () => {
+    const fire = uniform(20, 20, 2, need(SCOTT_BURGAN_FUEL_MODELS["TL5"]), 16);
+    fire.ignite(10, 10);
+    fire.step(5, weather(0, D1L1));
+    expect(fire.extinguish(10, 10)).toBe(true);
+    const cell = fire.cell(10, 10);
+    expect(cell.state).toBe("burnt");
+    expect(cell.fuelLeft).toBeGreaterThan(0.5 * (cell.fuelLeft + cell.ash / 0.0555));
+    expect(fire.extinguish(10, 10)).toBe(false);
   });
 
   test("same seed, same fire; snapshot and restore resume it exactly", () => {

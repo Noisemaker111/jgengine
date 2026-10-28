@@ -147,7 +147,6 @@ export interface FireLandscapeSnapshot {
   version: 1;
   time: number;
   rng: number;
-  epoch: number;
   fuel: string;
   arrival: string;
   tentative: string;
@@ -193,6 +192,9 @@ export interface FireLandscape {
   ignite(col: number, row: number, time?: number): void;
   /** Light the cell under a world position; false when it is off the grid. */
   igniteAt(x: number, z: number, time?: number): boolean;
+  /** Put out a flaming or smouldering cell now; false when it is not burning. Fronts it already launched still
+   * arrive unless the fuel ahead cannot burn (wet it through the moisture field first). */
+  extinguish(col: number, row: number): boolean;
   /** Change a cell's fuel (a dug line, a cleared yard, new growth). */
   setFuel(col: number, row: number, fuelIndex: number): void;
   /** Feed fuel moisture per cell; `null` uses the weather's moisture everywhere. */
@@ -634,7 +636,7 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
     stats.ignitions++;
     const f = fuels[fuel[i] ?? 0];
     const crossed = crossRate[i] ?? 0;
-    const rate = crossed > 0 ? crossed : Math.max(bHead[i] ?? 0, 1e-6);
+    const rate = crossed > 0 ? crossed : (bHead[i] ?? 0);
     const k = bKind[i] ?? 0;
     kind[i] = k;
     const c = canopyOf[i] ?? -1;
@@ -744,6 +746,12 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
       const i = heap.pop();
       if ((arrival[i] ?? Infinity) < Infinity || at > (tentative[i] ?? Infinity)) continue;
       events++;
+      // Fuel that cannot burn now (soaked since the front was scheduled, or lit while wet) does not catch.
+      behaviour(i);
+      if ((bHead[i] ?? 0) <= 0) {
+        tentative[i] = Infinity;
+        continue;
+      }
       igniteCell(i, at, weather, stats);
     }
     time = target;
@@ -762,6 +770,21 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
     const i = index(col, row);
     if ((arrival[i] ?? Infinity) < Infinity) return;
     schedule(i, at, 0);
+  }
+
+  function extinguish(col: number, row: number): boolean {
+    const i = index(col, row);
+    const s = state[i] ?? 0;
+    if (s !== 1 && s !== 2) return false;
+    const start = arrival[i] ?? time;
+    const end = burnEnd[i] ?? time;
+    const progress = end > start ? Math.min(1, (time - start) / (end - start)) : 1;
+    consumed[i] = (consumed[i] ?? 0) * progress;
+    char[i] = (char[i] ?? 0) * progress;
+    flameEnd[i] = time;
+    burnEnd[i] = time;
+    updateActive(time);
+    return true;
   }
 
   function rebuildHeap(): void {
@@ -783,6 +806,7 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
     layers,
     step,
     ignite,
+    extinguish,
     igniteAt(x, z, at) {
       const i = cellOf(x, z);
       if (i < 0) return false;
@@ -831,7 +855,6 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
         version: 1,
         time,
         rng: rng.state(),
-        epoch,
         fuel: encodeFireArray(fuel),
         arrival: encodeFireArray(arrival),
         tentative: encodeFireArray(tentative),
@@ -875,7 +898,7 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
       active = [...s.active];
       time = s.time;
       rng.restore(s.rng);
-      epoch = Math.max(epoch, s.epoch) + 1;
+      epoch++;
       paletteBeds.clear();
       fm10Bed = undefined;
       rebuildHeap();
