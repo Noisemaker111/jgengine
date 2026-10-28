@@ -24,9 +24,10 @@ export interface Landslider {
    * Fail every slope steeper than it can stand and run the debris downslope to rest at `repose`
    * (rise over run). Bedrock stands at `rockCritical` per cell; loose `sediment` over it at `repose`,
    * and a loose-cover failure takes only the cover. Updates `height` and `sediment`, adds the debris
-   * thickness laid on each cell to `laid` and the thickness each cell lost to `failed`.
+   * thickness laid on each cell to `laid` and the thickness each cell lost to `failed`. Cells marked
+   * in `held` keep their cover, as ice holds the till beneath it.
    */
-  collapse(height: Float64Array, sediment: Float64Array, rockCritical: Float64Array, repose: number, laid: Float64Array, failed: Float64Array): LandslideReport;
+  collapse(height: Float64Array, sediment: Float64Array, rockCritical: Float64Array, repose: number, laid: Float64Array, failed: Float64Array, held?: Uint8Array): LandslideReport;
 }
 
 const TOLERANCE = 1e-9;
@@ -201,7 +202,7 @@ export function createLandslider(topology: LandformTopology): Landslider {
   }
 
   return {
-    collapse(height, sediment, rockCritical, repose, laid, failed) {
+    collapse(height, sediment, rockCritical, repose, laid, failed, held) {
       const report: LandslideReport = { failed: 0, exported: 0 };
       for (let pass = 0; pass < PASSES; pass += 1) {
         let moved = false;
@@ -216,7 +217,7 @@ export function createLandslider(topology: LandformTopology): Landslider {
         }
         // Then loose cover, which slides off down to the rock beneath it.
         limit.fill(repose);
-        for (let i = 0; i < cells; i += 1) floor[i] = (height[i] ?? 0) - (sediment[i] ?? 0);
+        for (let i = 0; i < cells; i += 1) floor[i] = held?.[i] === 1 ? (height[i] ?? 0) : (height[i] ?? 0) - (sediment[i] ?? 0);
         if (oversteep(height)) {
           capAll(height);
           report.failed += fail(height, sediment, failed);
