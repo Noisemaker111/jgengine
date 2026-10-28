@@ -23,6 +23,8 @@ import { createWorkerPlantGrower, type PlantGrower, type PlantGrowRequest, type 
 /** The generator output family a grown plant returns: a {@link PlantMesh}. */
 export const PLANT_MESH_OUTPUT = "plant-mesh";
 
+const sentenceCase = (name: string): string => name.charAt(0).toUpperCase() + name.slice(1);
+
 /** Grown-plant params: what grows (species, age, site) and how it looks (every style field). */
 export const PLANT_GROWN_SCHEMA = defineParamSchema({
   groups: [
@@ -40,10 +42,7 @@ export const PLANT_GROWN_SCHEMA = defineParamSchema({
       group: "plant",
       default: "acer-saccharum",
       vary: false,
-      options: [
-        { value: "acer-saccharum", label: "Sugar maple" },
-        { value: "pinus-strobus", label: "Eastern white pine" },
-      ],
+      options: PLANT_LIBRARY.map((species) => ({ value: species.id, label: sentenceCase(species.names.common["en"] ?? species.id) })),
     },
     { type: "range", key: "age", label: "age", group: "plant", min: 1, max: 300, step: 1, default: 60, unit: "years", explore: [5, 300], exploreScale: "log" },
     { type: "range", key: "day", label: "day of year", group: "plant", min: 1, max: 365, step: 1, default: 200, vary: false },

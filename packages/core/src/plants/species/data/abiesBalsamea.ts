@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const ABIES_BALSAMEA: PlantSpecies = {
   id: "abies-balsamea",
-  version: 1,
+  version: 2,
   names: { scientific: "Abies balsamea (L.) Mill.", common: { en: "balsam fir", fr: "sapin baumier" } },
   ids: { usda: "ABBA" },
   habit: "tree",
@@ -31,6 +31,7 @@ export const ABIES_BALSAMEA: PlantSpecies = {
       setpointPerOrder: 25,
       optimal: 0.00407,
       wind: 0.2,
+      setpointMax: 90,
     },
     budLightThreshold: 0.02,
     budDeathYears: 2,
@@ -39,8 +40,10 @@ export const ABIES_BALSAMEA: PlantSpecies = {
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.45,
     jitter: 0.1,
+    basalStems: 1,
   },
   carbon: {
+    hydraulicHeightShare: 1,
     lueGPerMJ: 2.235,
     lightHalfSaturation: 1.068,
     respiration: 1.519,
@@ -65,7 +68,7 @@ export const ABIES_BALSAMEA: PlantSpecies = {
     reactionCompensation: 0.7,
     shootRadiusM: 0.002,
   },
-  limits: { maxAgeYears: 200, maxHeightM: 23, maxDbhCm: 60, maxCrownRadiusM: 4 },
+  limits: { maxAgeYears: 200, maxHeightM: 23, maxDbhCm: 60, maxCrownRadiusM: 8 },
   tolerance: { shade: 0.9, drought: 0.3, frost: 0.95, waterlogging: 0.4 },
   leaf: {
     shape: { kind: "needle", lobes: 0, lobeDepth: 0, aspect: 0.08, petioleFraction: 0.05 },
@@ -85,7 +88,6 @@ export const ABIES_BALSAMEA: PlantSpecies = {
     "limits.maxCrownRadiusM": { source: "tallo-2022" },
     tolerance: { source: "silvics-654" },
     leaf: { source: "silvics-654" },
-    "leaf.sla": { source: "baad-2015" },
     wood: { source: "wood-handbook" },
     "wood.densityKgM3": { source: "fia" },
     "wood.greenFactor": { source: "fia" },

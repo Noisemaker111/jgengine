@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const ACER_RUBRUM: PlantSpecies = {
   id: "acer-rubrum",
-  version: 2,
+  version: 3,
   names: { scientific: "Acer rubrum L.", common: { en: "red maple", fr: "érable rouge" } },
   ids: { usda: "ACRU" },
   habit: "tree",
@@ -31,6 +31,7 @@ export const ACER_RUBRUM: PlantSpecies = {
       setpointPerOrder: 13.93,
       optimal: 0.2656,
       wind: 0.15,
+      setpointMax: 90,
     },
     budLightThreshold: 0.02342,
     budDeathYears: 3,
@@ -39,8 +40,10 @@ export const ACER_RUBRUM: PlantSpecies = {
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.5,
     jitter: 0.12,
+    basalStems: 1,
   },
   carbon: {
+    hydraulicHeightShare: 1,
     lueGPerMJ: 1.663,
     lightHalfSaturation: 0.4063,
     respiration: 0.8712,

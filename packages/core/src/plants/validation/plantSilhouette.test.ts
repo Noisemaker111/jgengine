@@ -52,7 +52,7 @@ describe("unique trees", () => {
     }
     console.log(`unique trees: most alike pair has 8-view IoU ${mostAlike.toFixed(3)}`);
     expect(alike).toEqual([]);
-  });
+  }, 60_000);
 
   test("regrowing a seed gives the same bytes", () => {
     for (const k of [0, 37, 99]) {

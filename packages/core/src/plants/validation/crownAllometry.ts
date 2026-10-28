@@ -57,6 +57,8 @@ export interface CrownWidthClass {
   p10M: number;
   p50M: number;
   p90M: number;
+  /** The species has under 10 trees of this class, so the class is its genus's. */
+  genus?: true;
 }
 
 /** Where a crown carries its spread, from its envelope. */

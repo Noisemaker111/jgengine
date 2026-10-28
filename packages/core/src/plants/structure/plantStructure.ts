@@ -165,7 +165,8 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     const p = state.parent[i] ?? -1;
     if (p >= 0) subFoliage[p] = (subFoliage[p] ?? 0) + (subFoliage[i] ?? 0);
   }
-  let dbhCm = 0;
+  // Several stems at breast height read as one, by the quadratic sum forest inventories use.
+  let dbhSquared = 0;
   let crownBaseM = heightM;
   for (let i = 0; i < n; i += 1) {
     const p = state.parent[i] ?? -1;
@@ -200,7 +201,7 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     for (let k = 0; k < 3; k += 1) windPivot[i * 3 + k] = ap >= 0 ? (state.end[ap * 3 + k] ?? 0) : 0;
     windLevel[i] = Math.min(3, state.order[i] ?? 0);
     const ey = state.end[i * 3 + 1] ?? 0;
-    if ((state.order[i] ?? 0) === 0 && sy <= 1.3 && ey > 1.3) dbhCm = 2 * r * 100;
+    if ((state.order[i] ?? 0) === 0 && sy <= 1.3 && ey > 1.3) dbhSquared += (2 * r * 100) ** 2;
     if (!dead && (state.order[i] ?? 0) === 1 && (flags & NODE_AXIS_START) !== 0 && (subFoliage[i] ?? 0) >= 0.01 * totalFoliage && sy < crownBaseM) crownBaseM = sy;
   }
 
@@ -354,7 +355,7 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     dayOfYear,
     seed: source.seed,
     health: state.health,
-    stats: { heightM, dbhCm, crownRadiusM, crownBaseM: Math.min(crownBaseM, heightM) },
+    stats: { heightM, dbhCm: Math.sqrt(dbhSquared), crownRadiusM, crownBaseM: Math.min(crownBaseM, heightM) },
     crownHull,
     segments: { start, end, radiusStart, radiusEnd, parent, order, bornYear, distFromRoot, curvature, region, health, light, windPivot, windLevel },
     leaves: { position, normal, up, size, count, segment, cluster, crownDepth, colorState, health: leafHealth },

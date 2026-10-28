@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PINUS_STROBUS: PlantSpecies = {
   id: "pinus-strobus",
-  version: 4,
+  version: 5,
   names: { scientific: "Pinus strobus L.", common: { en: "eastern white pine", fr: "pin blanc" } },
   ids: { usda: "PIST" },
   habit: "tree",
@@ -31,6 +31,7 @@ export const PINUS_STROBUS: PlantSpecies = {
       setpointPerOrder: 13.62,
       optimal: 0,
       wind: 0.2,
+      setpointMax: 90,
     },
     budLightThreshold: 0.02,
     budDeathYears: 2,
@@ -39,8 +40,10 @@ export const PINUS_STROBUS: PlantSpecies = {
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.45,
     jitter: 0.1,
+    basalStems: 1,
   },
   carbon: {
+    hydraulicHeightShare: 1,
     lueGPerMJ: 2.808,
     lightHalfSaturation: 1.447,
     respiration: 3,

@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const QUERCUS_RUBRA: PlantSpecies = {
   id: "quercus-rubra",
-  version: 2,
+  version: 3,
   names: { scientific: "Quercus rubra L.", common: { en: "northern red oak", fr: "chêne rouge" } },
   ids: { usda: "QURU" },
   habit: "tree",
@@ -31,6 +31,7 @@ export const QUERCUS_RUBRA: PlantSpecies = {
       setpointPerOrder: 15.89,
       optimal: 0.2051,
       wind: 0.15,
+      setpointMax: 90,
     },
     budLightThreshold: 0.02,
     budDeathYears: 3,
@@ -39,8 +40,10 @@ export const QUERCUS_RUBRA: PlantSpecies = {
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.5,
     jitter: 0.12,
+    basalStems: 1,
   },
   carbon: {
+    hydraulicHeightShare: 1,
     lueGPerMJ: 2.048,
     lightHalfSaturation: 0.223,
     respiration: 0.6,

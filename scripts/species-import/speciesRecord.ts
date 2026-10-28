@@ -52,8 +52,14 @@ export function buildSpeciesRecord(traits: SpeciesTraits, imported: ImportedValu
     ids: { usda: traits.usda },
     habit: "tree",
     architecture: { ...traits.architecture },
-    growth: { ...fitted.growth, lateralBudsPerNode: traits.lateralBudsPerNode, tropism: { ...fitted.growth.tropism }, shadow: { ...fitted.growth.shadow } },
-    carbon: { ...fitted.carbon },
+    growth: {
+      ...fitted.growth,
+      basalStems: traits.basalStems ?? 1,
+      lateralBudsPerNode: traits.lateralBudsPerNode,
+      tropism: { ...fitted.growth.tropism, setpointMax: traits.setpointMax ?? 90 },
+      shadow: { ...fitted.growth.shadow },
+    },
+    carbon: { ...fitted.carbon, hydraulicHeightShare: fitted.carbon.hydraulicHeightShare ?? 1 },
     wood: {
       ...base.wood,
       densityKgM3: imported.densityKgM3 ?? base.wood.densityKgM3,

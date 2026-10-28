@@ -85,9 +85,10 @@ export function bendTowardsTropisms(dir: Float64Array, optimal: Float64Array, we
   dir[1] = y + weights.gravity * (targetY - y) + weights.optimal * (optimal[1] ?? 0) + weights.jitter * (randomB - 0.5);
   dir[2] = z + weights.gravity * (targetZ - z) + weights.optimal * (optimal[2] ?? 0) + weights.wind * weights.windZ + weights.jitter * (randomC - 0.5);
   normalize3(dir);
-  // A shoot never grows into the ground.
-  if ((dir[1] ?? 0) < -0.2) {
-    dir[1] = -0.2;
+  // A shoot hangs no further than its set point allows, and never steeper than 20° short of straight down.
+  const lowest = Math.max(-0.94, Math.min(-0.2, weights.setpointCos));
+  if ((dir[1] ?? 0) < lowest) {
+    dir[1] = lowest;
     normalize3(dir);
   }
 }

@@ -90,6 +90,8 @@ export interface PlantGrowthStats {
 const CELL_M = 0.5;
 const BREAST_HEIGHT_M = 1.3;
 const SEEDLING_LENGTH_M = 0.04;
+/** Lean of each further basal stem of a multi-stemmed seedling from vertical, radians. */
+const BASAL_STEM_LEAN = (20 * Math.PI) / 180;
 const MERGE_COS = 0.985;
 const MERGE_MAX_LENGTH_M = 3;
 /** Wood older than this may merge across a wider bend: its shape is set and only the node budget matters. */
@@ -291,6 +293,15 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     // Cotyledons: half a node's leaf area from seed reserves.
     state.foliage[root] = leafAreaPerNode * 0.5;
     addBud(root);
+    // Further basal stems lean out from the collar, evenly around it, each its own trunk.
+    const extra = Math.round(g.basalStems) - 1;
+    for (let s = 0; s < extra; s += 1) {
+      const azimuth = spin * 2 * PLANT_PI + (s * 2 * PLANT_PI) / extra;
+      lateralDirection(heading, BASAL_STEM_LEAN, azimuth, axisDir);
+      const stem = addNode(root, 0, NODE_AXIS_START, axisDir, SEEDLING_LENGTH_M, azimuth, 1);
+      state.foliage[stem] = leafAreaPerNode * 0.5;
+      addBud(stem);
+    }
     lastPhotosynthesis = 0;
     lastLeafArea = state.foliage[root] ?? 0;
     maxNodesSeen = state.nodeCount;
@@ -349,7 +360,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   function gatherCarbon(): boolean {
     const n = state.nodeCount;
     const lue = (c.lueGPerMJ / 1000) * season.parMJ * site * g.extinction;
-    const maxHeight = species.limits.maxHeightM;
+    const maxHeight = species.limits.maxHeightM * c.hydraulicHeightShare;
     const efficiency = c.growthEfficiency;
     const threshold = g.budLightThreshold;
     const { parent, flags, foliage: leaves, light: nodeLight, sapArea, length, leafBorn, latent, end } = state;
@@ -720,7 +731,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     for (let k = 0; k < order; k += 1) gravity *= g.tropism.gravityOrderDecay;
     const windAngle = (environment.wind.dir * PLANT_PI) / 180;
     const strength = environment.wind.strength * g.tropism.wind;
-    const setpointDeg = order === 0 ? 0 : Math.min(90, g.tropism.setpointAngle + (order - 1) * g.tropism.setpointPerOrder);
+    const setpointDeg = order === 0 ? 0 : Math.min(g.tropism.setpointMax, g.tropism.setpointAngle + (order - 1) * g.tropism.setpointPerOrder);
     const setpoint = (setpointDeg * PLANT_PI) / 180;
     return {
       optimal: g.tropism.optimal,
@@ -760,7 +771,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     axisDir[2] = cz;
     normalize3(axisDir);
     const height = (state.end[fromNode * 3 + 1] ?? 0) + 0.5 * metamers * g.internodeMax * (axisDir[1] ?? 0);
-    const length = metamers * g.internodeMax * hydraulicFactor(height, species.limits.maxHeightM);
+    const length = metamers * g.internodeMax * hydraulicFactor(height, species.limits.maxHeightM * c.hydraulicHeightShare);
     return addNode(fromNode, order, firstFlags, axisDir, length, startPhase + (metamers - 1) * divergence, metamers);
   }
 
@@ -1113,13 +1124,14 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   }
 
   function sapwoodAtBreastHeight(): number {
+    let area = 0;
     for (let i = 0; i < state.nodeCount; i += 1) {
       if ((state.order[i] ?? 0) !== 0) continue;
       const p = state.parent[i] ?? -1;
       const startY = p >= 0 ? (state.end[p * 3 + 1] ?? 0) : 0;
-      if (startY <= BREAST_HEIGHT_M && (state.end[i * 3 + 1] ?? 0) > BREAST_HEIGHT_M) return state.sapArea[i] ?? 0;
+      if (startY <= BREAST_HEIGHT_M && (state.end[i * 3 + 1] ?? 0) > BREAST_HEIGHT_M) area += state.sapArea[i] ?? 0;
     }
-    return 0;
+    return area;
   }
 
   function snapshotArrays(): Record<string, string> {

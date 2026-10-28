@@ -82,6 +82,18 @@ describe("species importer", () => {
     expect(classes[0]?.p50M).toBeGreaterThan(classes[0]?.p10M ?? 0);
   });
 
+  test("a DBH class the species lacks takes its genus's trees, flagged", () => {
+    const own = Array.from({ length: 12 }, () => ({ genus: "Acer", species: "Acer saccharum", stem_diameter_cm: "12", crown_radius_m: "2" }));
+    const kin = Array.from({ length: 12 }, () => ({ genus: "Acer", species: "Acer rubrum", stem_diameter_cm: "35", crown_radius_m: "4" }));
+    const stranger = Array.from({ length: 12 }, () => ({ genus: "Quercus", species: "Quercus rubra", stem_diameter_cm: "55", crown_radius_m: "5" }));
+    const { trees, classes } = talloCrownWidthClasses([...own, ...kin, ...stranger], "Acer saccharum");
+    expect(trees).toBe(12);
+    expect(classes.map((k) => [k.dbhCm, k.p50M, k.genus])).toEqual([
+      [12.5, 4, undefined],
+      [35, 8, true],
+    ]);
+  });
+
   test("CMA-ES finds the minimum of a rotated quadratic", () => {
     const search = createCmaEs([0.9, 0.9, 0.9], 0.3, 12, 7);
     const f = (x: readonly number[]): number => ((x[0] ?? 0) - 0.2) ** 2 + 4 * ((x[1] ?? 0) + (x[0] ?? 0) - 0.5) ** 2 + 2 * ((x[2] ?? 0) - 0.4) ** 2;

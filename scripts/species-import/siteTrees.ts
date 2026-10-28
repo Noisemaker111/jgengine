@@ -35,21 +35,29 @@ function median(values: readonly number[]): number {
 }
 
 
-/** Least log-squares Chapman–Richards fit by Nelder–Mead from a start that suits tree size by age. */
-export function fitGrowthCurve(points: readonly { age: number; value: number }[]): GrowthCurve {
+/**
+ * Least log-squares Chapman–Richards fit by Nelder–Mead from a start that suits tree size by age.
+ * A point may carry a weight; `minShape` holds the shape p at or above it, so a curve that must start
+ * slow (height from seed) cannot bend into a power law below its youngest point.
+ */
+export function fitGrowthCurve(points: readonly { age: number; value: number; weight?: number }[], minShape = 0): GrowthCurve {
+  const shape = (x: number): number => minShape + Math.exp(x);
   const loss = (v: readonly number[]): number => {
-    const curve = { a: Math.exp(v[0] ?? 0), k: Math.exp(v[1] ?? 0), p: Math.exp(v[2] ?? 0) };
+    const curve = { a: Math.exp(v[0] ?? 0), k: Math.exp(v[1] ?? 0), p: shape(v[2] ?? 0) };
     let sum = 0;
     for (const point of points) {
       const r = Math.log(Math.max(1e-6, growthCurveAt(curve, point.age)) / point.value);
-      sum += r * r;
+      sum += (point.weight ?? 1) * r * r;
     }
     return sum;
   };
   const top = Math.max(...points.map((point) => point.value));
-  const best = nelderMead(loss, [Math.log(top * 1.5), Math.log(0.02), Math.log(1.2)], 0.5, 2000);
-  return { a: Math.exp(best[0] ?? 0), k: Math.exp(best[1] ?? 0), p: Math.exp(best[2] ?? 0) };
+  const best = nelderMead(loss, [Math.log(top * 1.5), Math.log(0.02), Math.log(Math.max(0.05, 1.2 - minShape))], 0.5, 2000);
+  return { a: Math.exp(best[0] ?? 0), k: Math.exp(best[1] ?? 0), p: shape(best[2] ?? 0) };
 }
+
+/** Breast height, m: every site tree stood this tall at its years to breast height. */
+const BREAST_HEIGHT_M = 1.37;
 
 function nelderMead(f: (v: readonly number[]) => number, start: readonly number[], step: number, iterations: number): number[] {
   const n = start.length;
@@ -124,7 +132,12 @@ export function standReference(trees: readonly SiteTree[], yearsToBreastHeight: 
     trees: band.length,
     youngestYears: ages[Math.floor(0.05 * (ages.length - 1))] ?? 0,
     oldestYears: ages[ages.length - 1] ?? 0,
-    height: fitGrowthCurve(band.map((tree) => ({ age: age(tree), value: tree.heightM }))),
+    // Height starts from the one exact datum the site trees give, breast height at yearsToBreastHeight,
+    // weighted as a twentieth of the trees, and rises slow-fast-slow (p ≥ 1, Richards 1959).
+    height: fitGrowthCurve(
+      [...band.map((tree) => ({ age: age(tree), value: tree.heightM })), { age: yearsToBreastHeight, value: BREAST_HEIGHT_M, weight: Math.max(1, band.length / 20) }],
+      1,
+    ),
     dbh: fitGrowthCurve(band.map((tree) => ({ age: age(tree), value: tree.dbhCm }))),
     dbhByHeight: heightDiameter(band),
   };
