@@ -608,6 +608,30 @@
 - `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions — Options for applyMaterialOverride: clone first, textures to apply and a hook that records replaced materials.
 - `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
 
+## @jgengine/core/material/surfaceMaterialGenerator
+
+- `SURFACE_MATERIAL_GENERATOR` (const): const SURFACE_MATERIAL_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "kind"; readonly label: "kind"; readonly group: "surface"; readonly vary: false; readon… — The surface material generator: one schema for every kind, with presets for the common looks. Bake one with {@link bakeSurfaceMaterial}, a variant grid with `generatorVariants`.
+- `SURFACE_MATERIAL_KINDS` (const): const SURFACE_MATERIAL_KINDS: readonly ["sand", "grass", "soil", "mud", "rock", "gravel", "bark", "snow"] — The surface kinds the material generator draws.
+- `SURFACE_MATERIAL_OUTPUT` (const): const SURFACE_MATERIAL_OUTPUT: "surface-material" — The generator output family every surface material returns: {@link SurfaceMaterialMaps}.
+- `SURFACE_MATERIAL_SCHEMA` (const): const SURFACE_MATERIAL_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "kind"; readonly label: "kind"; readonly group: "surface"; readonly vary: false; readonly default: "sand"; rea… — The surface material param schema: kind, colours, feature scale, stones, cracks, cover and wear.
+- `SurfaceMaterialKind` (type): type SurfaceMaterialKind = (typeof SURFACE_MATERIAL_KINDS)[number] — One surface kind.
+- `SurfaceMaterialMaps` (interface): interface SurfaceMaterialMaps — One baked surface material: square tileable maps, row-major, `size` texels a side, `v` down the rows. Albedo is sRGB with height (0..1) in alpha; `surface` packs the tangent-space normal's x and y (0.5 is flat; x tilts toward +u, y toward +v), roughness and ambient occlusion.
+- `SurfaceMaterialParams` (type): type SurfaceMaterialParams = ParamsOf<typeof SURFACE_MATERIAL_SCHEMA> — Parsed surface material params.
+- `SurfaceMaterialSpec` (interface): interface SurfaceMaterialSpec — A surface material by preset and overrides: `{ preset: "beach-sand", params: { stones: 0.4 } }`.
+- `bakeSurfaceMaterial` (function): function bakeSurfaceMaterial(spec: SurfaceMaterialSpec, options: { detail?: number } = {}): SurfaceMaterialMaps — Bake a surface material from a spec (or a raw `meta` bag). Pure and deterministic; cost grows with the resolution squared, about 30–150 ms for a 512 map, so bake once at load and share the result.
+- `bakeSurfaceMaterialJob` (function): function bakeSurfaceMaterialJob(spec: SurfaceMaterialSpec, options: { detail?: number } = {}): SlicedJob<SurfaceMaterialMaps> — {@link bakeSurfaceMaterial} as a sliced job that yields between rows, so `runSliced` can bake at load without freezing the page. Same bytes as the direct bake.
+- `isSurfaceMaterialMaps` (function): function isSurfaceMaterialMaps(value: unknown): value is SurfaceMaterialMaps — True when a generator output is {@link SurfaceMaterialMaps}.
+- `surfaceMaterialMeta` (function): function surfaceMaterialMeta(spec: SurfaceMaterialSpec): Record<string, unknown> — The `meta` bag a {@link SurfaceMaterialSpec} resolves to: preset values, then overrides, then seed.
+
+## @jgengine/core/material/surfaceMaterialTextures.draw
+
+- `SurfaceMaterialArrayTextures` (interface): interface SurfaceMaterialArrayTextures — Baked surfaces stacked as array-texture layers, one layer per material, in the order given.
+- `SurfaceMaterialStandardMaps` (interface): interface SurfaceMaterialStandardMaps — A baked surface as the maps a stock `MeshStandardMaterial` reads.
+- `bakeSurfaceMaterialShared` (function): function bakeSurfaceMaterialShared(spec: SurfaceMaterialSpec, detail = 1): SurfaceMaterialMaps — Bake a surface material once per spec and detail level and share it: a world that names the same sand twice, or remounts its terrain, pays for one bake. Keeps the last few specs.
+- `bakeSurfaceMaterialSharedJob` (function): function bakeSurfaceMaterialSharedJob(spec: SurfaceMaterialSpec, detail = 1): SlicedJob<SurfaceMaterialMaps> — {@link bakeSurfaceMaterialShared} as a sliced job, for bakes that run at load under `runSliced`.
+- `surfaceMaterialArrayTextures` (function): function surfaceMaterialArrayTextures(layers: readonly SurfaceMaterialMaps[]): SurfaceMaterialArrayTextures — Stack baked surface materials into two array textures, so a shader samples any of them through two samplers. Every map must share one size. The caller owns the textures.
+- `surfaceMaterialStandardMaps` (function): function surfaceMaterialStandardMaps(maps: SurfaceMaterialMaps): SurfaceMaterialStandardMaps — Unpack a baked surface into standard-material maps (albedo, normal, AO + roughness), for meshes and previews that use a stock material. The caller owns the textures.
+
 ## @jgengine/core/material/surfaceScanShader.draw
 
 - `SURFACE_SCAN_PARS_GLSL` (const): const SURFACE_SCAN_PARS_GLSL: "\n#ifdef JG_SCAN\nuniform sampler2D uScanColor;\nuniform sampler2D uScanNormal;\n#ifdef JG_SCAN_ROUGH\nuniform sampler2D uScanRough;\n#endif\n#ifdef JG_SCAN_AO\nuniform sampler2D uScanAo;\n#endif\nuniform float uScanRepeat;\nuniform float uScanStrength;\nuniform float … — Fragment helpers for a scanned surface: uniforms, the scan's mean tone (its last mip), the grain/tint recolour, mean-relative roughness and a derivative cotangent frame for its normal map. Guarded by `JG_SCAN`, so a material compiled before its maps arrive carries none of it.

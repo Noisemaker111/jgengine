@@ -583,7 +583,7 @@ export const ROCK_GENERATOR = defineGenerator({
         colorVariance: params.colorVariance,
       });
     }
-    return builder.build();
+    return builder.build("rock");
   },
 });
 
@@ -633,7 +633,7 @@ export const DRIFTWOOD_GENERATOR = defineGenerator({
       const stub = limbPath(from, random() * Math.PI * 2, lerp(0.6, 1.4, random()), params.radius * lerp(1.5, 4, random()), 0, 1);
       addTube(builder, stub, [params.radius * 0.45, params.radius * 0.22], { sides: 4, color: barkColors(wood, seed + i), seed });
     }
-    return builder.build();
+    return builder.build("bark");
   },
 });
 

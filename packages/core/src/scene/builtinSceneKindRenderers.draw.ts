@@ -16,6 +16,7 @@ import { registerDecalRenderer } from "./DecalRenderer.draw";
 import { registerGrassPreview } from "@jgengine/core/grass/grassPreview.draw";
 import { registerPartsPreview } from "./GeneratedAssetRenderer.draw";
 import { registerNatureDraw } from "@jgengine/core/nature/naturePreview.draw";
+import { registerSurfaceMaterialDraw } from "@jgengine/core/material/surfaceMaterialPreview.draw";
 
 let registered = false;
 
@@ -33,4 +34,5 @@ export function registerBuiltinSceneKindRenderers(): void {
   registerGrassPreview();
   registerPartsPreview();
   registerNatureDraw();
+  registerSurfaceMaterialDraw();
 }

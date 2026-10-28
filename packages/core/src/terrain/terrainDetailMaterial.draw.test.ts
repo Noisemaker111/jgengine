@@ -3,7 +3,7 @@ import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 import { expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { createTerrainDetailMaterial, type TerrainDetailMaterialTextures } from "./terrainDetailMaterial.draw";
+import { createTerrainDetailMaterial, createTerrainSurfaceTextures, type TerrainDetailMaterialTextures } from "./terrainDetailMaterial.draw";
 import { createTerrainPaintTextures, packTerrainPaintWeights } from "./terrainSurfaces.draw";
 import { surfaceNoiseTexture } from "./terrainSurfaceShader.draw";
 
@@ -226,4 +226,37 @@ test("each blended slot inlines the procedural surface once, so the terrain prog
   const slot = fragment.slice(fragment.indexOf("JgSurf jgSlot("), fragment.indexOf("vec2 jgWp ="));
   expect(slot.match(/jgSurface\(/g)?.length).toBe(1);
   expect(fragment.match(/jgSlot\(/g)?.length).toBe(3);
+});
+
+test("generated surfaces resolve with per-role tile and tint defaults", () => {
+  const detail = resolveTerrainDetail({ surfaces: { ground: { preset: "grass" }, rock: { preset: "cliff", tile: 12, tint: 2 } } });
+  expect(detail.surfaces?.ground).toEqual({ spec: { preset: "grass" }, tile: 5, tint: 0.8 });
+  expect(detail.surfaces?.rock).toEqual({ spec: { preset: "cliff" }, tile: 12, tint: 1 });
+  expect(detail.surfaces?.sand).toBeUndefined();
+});
+
+test("generated surfaces bake into one array texture and compile only the roles set", () => {
+  const detail = resolveTerrainDetail({ surfaces: { sand: { preset: "beach-sand", params: { resolution: "64" } }, rock: { preset: "rock", params: { resolution: "64" } } } });
+  const surfaces = createTerrainSurfaceTextures(detail.surfaces);
+  expect(surfaces?.textures.albedo.image.depth).toBe(2);
+  expect(surfaces?.roles.sand?.layer).toBe(0);
+  expect(surfaces?.roles.rock?.layer).toBe(1);
+  const { material } = createTerrainDetailMaterial(detail, undefined, surfaces === undefined ? {} : { surfaces });
+  expect(material.defines?.["JG_GEN_SAND"]).toBe("0.0");
+  expect(material.defines?.["JG_GEN_ROCK"]).toBe("1.0");
+  expect(material.defines?.["JG_GEN_GROUND"]).toBeUndefined();
+  const shader = fakeShader();
+  // type-escape: the fake shader stands in for three's program parameters, as in the tests above.
+  material.onBeforeCompile?.(shader as never, undefined as never);
+  expect(shader.uniforms["uGenAlbedo"]?.value).toBe(surfaces?.textures.albedo);
+  expect(shader.fragmentShader).toContain("jgGenProject(JG_GEN_ROCK");
+  expect(material.customProgramCacheKey()).toContain("JG_GEN_ROCK1.0");
+  surfaces?.dispose();
+});
+
+test("surfaces that bake at different sizes are rebaked to the smallest so they stack", () => {
+  const detail = resolveTerrainDetail({ surfaces: { ground: { preset: "grass", params: { resolution: "128" } }, sand: { preset: "sand", params: { resolution: "64" } } } });
+  const surfaces = createTerrainSurfaceTextures(detail.surfaces);
+  expect(surfaces?.textures.albedo.image.width).toBe(64);
+  surfaces?.dispose();
 });

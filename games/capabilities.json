@@ -9082,6 +9082,16 @@
       "intent": "terrain-following reference grid that is not occluded by relief"
     },
     {
+      "id": "surface-material-generator",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/material/surfaceMaterialGenerator",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)"
+    },
+    {
       "id": "surface-ribbon-material",
       "packages": [
         "@jgengine/core"

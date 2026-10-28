@@ -7,6 +7,7 @@ import type { TerraformSnapshot } from "../terrain/terraform";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { VolumetricCloudsConfig } from "../sky/volumetricClouds";
 import { warnOnce } from "../devtools/warnOnce";
+import type { SurfaceMaterialSpec } from "../material/surfaceMaterialGenerator";
 import { readGrassLook, type GrassLook } from "@jgengine/core/grass/grassKind";
 
 export interface WorldBounds {
@@ -72,6 +73,33 @@ export interface TerrainDetailConfig {
   sweeps?: { dry?: readonly [number, number, number]; wet?: readonly [number, number, number] };
   /** Real PBR texture maps blended over the procedural detail — the seam for `@jgengine/assets` `buildMaterialCatalog` output. Omit to keep the procedural-only look. */
   material?: TerrainDetailMaterialConfig;
+  /**
+   * Generated PBR surfaces (`@jgengine/core/material/surfaceMaterialGenerator`) for the unpainted
+   * ground, the waterline sand band and slope rock, baked once at load and tiled by world position.
+   * A role left out keeps its procedural look.
+   */
+  surfaces?: TerrainSurfacesConfig;
+}
+
+/** One generated terrain surface: a material spec plus how it tiles and tints. */
+export interface TerrainSurfaceLayer extends SurfaceMaterialSpec {
+  /** World metres one tile covers. Default 5 ground, 4 sand, 8 rock. */
+  tile?: number;
+  /**
+   * 0..1 how much the terrain's own colour (biome tint and sweeps for ground, `sandColor`,
+   * `rockColor`) recolours the map while keeping its grain. Default 0.8 ground (so biome tints carry), 0 sand and rock.
+   */
+  tint?: number;
+}
+
+/** Which generated surface draws each terrain role. */
+export interface TerrainSurfacesConfig {
+  /** Unpainted ground between the sand band and slope rock, e.g. `{ preset: "grass" }`. */
+  ground?: TerrainSurfaceLayer;
+  /** The waterline sand band, e.g. `{ preset: "beach-sand" }`. */
+  sand?: TerrainSurfaceLayer;
+  /** Steep slopes, e.g. `{ preset: "cliff" }`; projected onto the cliff face, not stretched. */
+  rock?: TerrainSurfaceLayer;
 }
 
 /**

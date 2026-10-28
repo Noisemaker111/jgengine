@@ -21,7 +21,12 @@ export interface NatureMesh {
   indices: Uint32Array;
   bounds: { min: [number, number, number]; max: [number, number, number] };
   triangles: number;
+  /** The generated surface material its faces take (`"rock"`, `"bark"`); omitted draws vertex colour only. */
+  surface?: NatureSurface;
 }
+
+/** Generated surface materials a nature mesh can be drawn with. */
+export type NatureSurface = "rock" | "bark";
 
 /**
  * True when a generator output is a {@link NatureMesh}.
@@ -138,8 +143,8 @@ export class NatureMeshBuilder {
     this.indices.push(a, b, c);
   }
 
-  /** Emit the mesh: smooth area-weighted normals, bounds and triangle count. */
-  build(): NatureMesh {
+  /** Emit the mesh: smooth area-weighted normals, bounds and triangle count, drawn with `surface` when given. */
+  build(surface?: NatureSurface): NatureMesh {
     const positions = Float32Array.from(this.positions);
     const indices = Uint32Array.from(this.indices);
     const normals = new Float32Array(positions.length);
@@ -184,7 +189,7 @@ export class NatureMeshBuilder {
       min.fill(0);
       max.fill(0);
     }
-    return { positions, normals, colors: Float32Array.from(this.colors), indices, bounds: { min, max }, triangles: indices.length / 3 };
+    return { positions, normals, colors: Float32Array.from(this.colors), indices, bounds: { min, max }, triangles: indices.length / 3, ...(surface === undefined ? {} : { surface }) };
   }
 }
 

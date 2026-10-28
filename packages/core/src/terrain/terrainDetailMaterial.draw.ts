@@ -1,7 +1,10 @@
 import * as THREE from "three";
 
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
-import type { ResolvedTerrainDetail } from "@jgengine/core/terrain/terrain";
+import type { ResolvedTerrainDetail, ResolvedTerrainSurfaces, TerrainSurfaceRole } from "@jgengine/core/terrain/terrain";
+import { bakeSurfaceMaterialSharedJob, surfaceMaterialArrayTextures, type SurfaceMaterialArrayTextures } from "@jgengine/core/material/surfaceMaterialTextures.draw";
+import { runToEnd, type SlicedJob } from "@jgengine/core/run/slicedWork";
+import type { SurfaceMaterialMaps } from "@jgengine/core/material/surfaceMaterialGenerator";
 
 import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "./terrainSurfaceShader.draw";
 import type { TerrainPaintTextures } from "./terrainSurfaces.draw";
@@ -43,6 +46,55 @@ export interface TerrainDetailMaterialOptions {
    * without a map (or beyond {@link MAX_TERRAIN_LAYER_MAPS}) keep the procedural surface response.
    */
   layerMaps?: readonly (TerrainLayerMap | undefined)[];
+  /** Generated surfaces for the ground, sand band and slope rock, from {@link createTerrainSurfaceTextures}. */
+  surfaces?: TerrainSurfaceTextures | undefined;
+}
+
+/** One terrain role's generated surface: its array layer, tile metres and tint. */
+export interface TerrainSurfaceSlot {
+  layer: number;
+  tile: number;
+  tint: number;
+}
+
+/** Generated terrain surfaces baked into array textures, ready for {@link createTerrainDetailMaterial}. */
+export interface TerrainSurfaceTextures {
+  textures: SurfaceMaterialArrayTextures;
+  roles: Partial<Record<TerrainSurfaceRole, TerrainSurfaceSlot>>;
+  dispose(): void;
+}
+
+/**
+ * Bake a terrain's generated surfaces (shared per spec) and stack them into array textures. `detail`
+ * 1 bakes each map at its own resolution, 0.5 at half; layers are rebaked at the smallest size any
+ * role asks for so they stack. Undefined when the terrain names no surfaces.
+ */
+export function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): TerrainSurfaceTextures | undefined {
+  return runToEnd(createTerrainSurfaceTexturesJob(surfaces, detail));
+}
+
+/** {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze. */
+export function* createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): SlicedJob<TerrainSurfaceTextures | undefined> {
+  if (surfaces === undefined) return undefined;
+  const roles: Partial<Record<TerrainSurfaceRole, TerrainSurfaceSlot>> = {};
+  const specs: ResolvedTerrainSurfaces[TerrainSurfaceRole][] = [];
+  const baked: SurfaceMaterialMaps[] = [];
+  for (const role of ["ground", "sand", "rock"] as const) {
+    const layer = surfaces[role];
+    if (layer === undefined) continue;
+    roles[role] = { layer: baked.length, tile: layer.tile, tint: layer.tint };
+    specs.push(layer);
+    baked.push(yield* bakeSurfaceMaterialSharedJob(layer.spec, detail));
+  }
+  if (baked.length === 0) return undefined;
+  const size = Math.min(...baked.map((maps) => maps.size));
+  const stacked: SurfaceMaterialMaps[] = [];
+  for (const [index, maps] of baked.entries()) {
+    const spec = specs[index]?.spec;
+    stacked.push(maps.size === size || spec === undefined ? maps : yield* bakeSurfaceMaterialSharedJob({ ...spec, params: { ...spec.params, resolution: String(size) } }, 1));
+  }
+  const textures = surfaceMaterialArrayTextures(stacked);
+  return { textures, roles, dispose: () => textures.dispose() };
 }
 
 
@@ -88,7 +140,100 @@ vec3 jgLayerMap(int slot, vec3 wp, out bool has) {
   return vec3(0.0);
 }
 #endif
+vec3 jgSlotTilt;
+float jgSlotAo;
+#ifdef JG_TERRAIN_GEN
+uniform highp sampler2DArray uGenAlbedo;
+uniform highp sampler2DArray uGenSurface;
+uniform vec3 uGenTile;
+uniform vec3 uGenTint;
+uniform vec3 uGenMean0;
+uniform vec3 uGenMean1;
+uniform vec3 uGenMean2;
+struct JgGen { vec3 albedo; float height; vec2 tilt; float rough; float ao; };
+JgGen jgGenRead(float layer, vec2 uv){
+  vec4 a = texture(uGenAlbedo, vec3(uv, layer));
+  vec4 s = texture(uGenSurface, vec3(uv, layer));
+  JgGen g;
+  g.albedo = a.rgb; g.height = a.a; g.tilt = s.rg * 2.0 - 1.0; g.rough = s.b; g.ao = s.a;
+  return g;
+}
+// The map at its tile, and again rotated at another scale; a noise mask leaning on both heights picks
+// between them per texel, so the repeat never lines up across a field.
+JgGen jgGenSample(float layer, vec2 p, float tile){
+  vec2 uv = p / tile;
+  JgGen g = jgGenRead(layer, uv);
+#ifndef JG_SURFACE_LOW
+  const mat2 jgRot = mat2(0.8, -0.6, 0.6, 0.8);
+  JgGen h = jgGenRead(layer, jgRot * uv * 0.71 + vec2(0.37, 0.61));
+  h.tilt = transpose(jgRot) * h.tilt;
+  float k = clamp((jgVNoise(p / (tile * 1.9) + 7.3) - 0.5) * 3.5 + (h.height - g.height) * 1.5 + 0.5, 0.0, 1.0);
+  g.albedo = mix(g.albedo, h.albedo, k);
+  g.height = mix(g.height, h.height, k);
+  g.tilt = mix(g.tilt, h.tilt, k);
+  g.rough = mix(g.rough, h.rough, k);
+  g.ao = mix(g.ao, h.ao, k);
+#endif
+  return g;
+}
+vec3 jgGenTilt;
+// Flat ground takes the map from above; slopes take it on their own face as well, so a hillside
+// never smears one texel down its length. The world-space tilt lands in jgGenTilt.
+JgGen jgGenProject(float layer, vec3 wp, float tile, bool antiTile){
+  vec3 an = abs(normalize(vJgWorldNormal));
+  float topW = smoothstep(0.55, 0.85, an.y);
+  JgGen g = JgGen(vec3(0.0), 0.0, vec2(0.0), 1.0, 1.0);
+  jgGenTilt = vec3(0.0);
+  if (topW > 0.0) {
+    if (antiTile) g = jgGenSample(layer, wp.xz, tile);
+    else g = jgGenRead(layer, wp.xz / tile);
+    jgGenTilt = vec3(g.tilt.x, 0.0, g.tilt.y);
+  }
+  if (topW < 1.0) {
+    bool xFace = an.x > an.z;
+    JgGen side = jgGenRead(layer, (xFace ? wp.zy : wp.xy) / tile);
+    vec3 sideTilt = xFace ? vec3(0.0, side.tilt.y, side.tilt.x) : vec3(side.tilt.x, side.tilt.y, 0.0);
+    if (topW <= 0.0) {
+      g = side;
+      jgGenTilt = sideTilt;
+    } else {
+      g.albedo = mix(side.albedo, g.albedo, topW);
+      g.height = mix(side.height, g.height, topW);
+      g.rough = mix(side.rough, g.rough, topW);
+      g.ao = mix(side.ao, g.ao, topW);
+      jgGenTilt = mix(sideTilt, jgGenTilt, topW);
+    }
+  }
+  return g;
+}
+#endif
 JgSurf jgSlot(int slot, vec3 baseTone, vec3 wp){
+  jgSlotTilt = vec3(0.0);
+  jgSlotAo = 1.0;
+#ifdef JG_GEN_GROUND
+  if (slot == 0) {
+    JgGen g = jgGenProject(JG_GEN_GROUND, wp, uGenTile.x, true);
+    JgSurf gs;
+    gs.albedo = mix(g.albedo, g.albedo * baseTone / max(uGenMean0, vec3(1e-3)), uGenTint.x);
+    // The map's height spans 0..1; the procedural surfaces sit near 0.2..0.6, so it is rescaled to
+    // that band or the generated ground would win every height-aware edge against painted layers.
+    gs.height = 0.2 + g.height * 0.4; gs.rough = g.rough; gs.bump = 0.0;
+    jgSlotTilt = jgGenTilt;
+    jgSlotAo = g.ao;
+    return gs;
+  }
+#endif
+#ifdef JG_GEN_ROCK
+  if (slot == 9) {
+    JgGen g = jgGenProject(JG_GEN_ROCK, wp, uGenTile.z, false);
+    JgSurf rs;
+    rs.albedo = mix(g.albedo, g.albedo * uRockColor / max(uGenMean2, vec3(1e-3)), uGenTint.z);
+    rs.height = 0.2 + g.height * 0.4; rs.rough = g.rough; rs.bump = 0.0;
+    jgSlotTilt = jgGenTilt;
+    jgSlotAo = g.ao;
+    return rs;
+  }
+#endif
   // One jgSurface call site: shader compilers inline every call, so picking the arguments first
   // keeps one copy of the surface code per slot instead of three.
   vec3 jgFlatC = baseTone;
@@ -169,6 +314,26 @@ export function createTerrainDetailMaterial(
   // GPUs that run both sides of a branch.
   const classMask = (options.classMask ?? paint?.classMask ?? 0) | ROCK_CLASS_BIT;
 
+  const surfaces = options.surfaces;
+  const surfaceRoles = surfaces?.roles ?? {};
+  const grey = (): THREE.Color => new THREE.Color(0.5, 0.5, 0.5);
+  const surfaceUniforms = surfaces === undefined
+    ? undefined
+    : {
+        uGenAlbedo: { value: surfaces.textures.albedo },
+        uGenSurface: { value: surfaces.textures.surface },
+        uGenTile: { value: new THREE.Vector3(surfaceRoles.ground?.tile ?? 1, surfaceRoles.sand?.tile ?? 1, surfaceRoles.rock?.tile ?? 1) },
+        uGenTint: { value: new THREE.Vector3(surfaceRoles.ground?.tint ?? 0, surfaceRoles.sand?.tint ?? 0, surfaceRoles.rock?.tint ?? 0) },
+        uGenMean0: { value: surfaces.textures.means[surfaceRoles.ground?.layer ?? 0] ?? grey() },
+        uGenMean1: { value: surfaces.textures.means[surfaceRoles.sand?.layer ?? 0] ?? grey() },
+        uGenMean2: { value: surfaces.textures.means[surfaceRoles.rock?.layer ?? 0] ?? grey() },
+      };
+  const surfaceDefines: Record<string, string> = surfaces === undefined ? {} : { JG_TERRAIN_GEN: "" };
+  if (surfaceRoles.ground !== undefined) surfaceDefines["JG_GEN_GROUND"] = `${surfaceRoles.ground.layer}.0`;
+  if (surfaceRoles.sand !== undefined) surfaceDefines["JG_GEN_SAND"] = `${surfaceRoles.sand.layer}.0`;
+  if (surfaceRoles.rock !== undefined) surfaceDefines["JG_GEN_ROCK"] = `${surfaceRoles.rock.layer}.0`;
+  const surfaceKey = Object.entries(surfaceDefines).map(([key, value]) => `${key}${value}`).join(",");
+
   const uniforms = {
     uRockColor: { value: new THREE.Color(detail.rockColor) },
     uSandColor: { value: new THREE.Color(detail.sandColor) },
@@ -186,6 +351,7 @@ export function createTerrainDetailMaterial(
     uContour: contour,
     ...(paint === undefined ? {} : paint.uniforms),
     ...layerMapUniforms,
+    ...(surfaceUniforms ?? {}),
     ...(hasTexture
       ? {
           uMatColor: { value: textures.color },
@@ -210,6 +376,7 @@ export function createTerrainDetailMaterial(
     ...(hasLayerMaps ? { JG_TERRAIN_LAYER_MAPS: "" } : {}),
     ...(low ? { JG_SURFACE_LOW: "" } : {}),
     JG_SURFACE_CLASSES: String(classMask),
+    ...surfaceDefines,
   };
 
   material.onBeforeCompile = (shader) => {
@@ -347,6 +514,10 @@ bool jgTwo = jgW2 > 0.004;
 
 vec3 jgBase = diffuseColor.rgb;
 if (jgI1 == 0 || (jgTwo && jgI2 == 0)) {
+#ifdef JG_GEN_GROUND
+  jgBase = mix(jgBase, jgBase * uSweepDry, smoothstep(0.5, 0.8, jgMacro) * 0.55 * uStrength);
+  jgBase *= 1.0 + (jgFbm(jgWp / (uMacroScale * 2.3) + vec2(9.1, 73.4)) - 0.5) * 0.22 * uStrength;
+#else
   float jgFine = jgFbm(jgWp / uDetailScale);
   float jgPatch = jgFbm(jgWp / (uMacroScale * 0.35) + vec2(37.2, 11.7));
   float jgFleck = jgVNoise(jgWp / max(0.05, uDetailScale * 0.024));
@@ -358,14 +529,21 @@ if (jgI1 == 0 || (jgTwo && jgI2 == 0)) {
   jgBase *= 1.0 + (jgFbm(jgWp / (uMacroScale * 2.3) + vec2(9.1, 73.4)) - 0.5) * 0.22 * uStrength;
   jgBase *= 1.0 + (jgFleck - 0.5) * 0.48 * uStrength * jgBand(1.0 / max(0.05, uDetailScale * 0.024));
   jgBase *= 1.0 + (jgFleckMid - 0.5) * 0.34 * uStrength * jgBand(1.0 / max(0.12, uDetailScale * 0.07));
+#endif
 }
 
 JgSurf jgS1 = jgSlot(jgI1, jgBase, vJgWorldPos);
+vec3 jgT1 = jgSlotTilt;
+float jgO1 = jgSlotAo;
+vec3 jgT2 = jgT1;
+float jgO2 = jgO1;
 JgSurf jgS2 = jgS1;
 float jgA1 = 1.0;
 float jgA2 = 0.0;
 if (jgTwo) {
   jgS2 = jgSlot(jgI2, jgBase, vJgWorldPos);
+  jgT2 = jgSlotTilt;
+  jgO2 = jgSlotAo;
   float jgB1 = jgW1 / (jgW1 + jgW2);
   float jgB2 = 1.0 - jgB1;
   // Height-aware blend: along an edge the layer standing taller (gravel stones, grass clumps) wins
@@ -382,6 +560,8 @@ if (jgTwo) {
 vec3 jgCol = jgS1.albedo * jgA1 + jgS2.albedo * jgA2;
 float jgRough = jgS1.rough * jgA1 + jgS2.rough * jgA2;
 float jgBumpH = jgS1.bump * jgA1 + jgS2.bump * jgA2;
+vec3 jgGenTiltSum = jgT1 * jgA1 + jgT2 * jgA2;
+float jgGenAoSum = jgO1 * jgA1 + jgO2 * jgA2;
 
 // Large-scale light and sun-dried sweeps over painted ground, so a field painted one hue never tiles flat.
 float jgPaintCover = jgPaintTotal * (1.0 - jgRockW) * uSurface;
@@ -389,7 +569,22 @@ jgCol *= 1.0 + (jgFbm2(jgWp / (uMacroScale * 1.3) + vec2(3.7, 61.2)) - 0.5) * 0.
 jgCol = mix(jgCol, jgCol * uSweepDry, smoothstep(0.52, 0.78, jgMacro) * 0.2 * jgPaintCover);
 
 float jgSandW = smoothstep(uWaterLevel + 2.4, uWaterLevel - 0.4, jgH) * (1.0 - jgRockW) * uStrength;
+#ifdef JG_GEN_SAND
+if (jgSandW > 0.001) {
+  JgGen jgSd = jgGenSample(JG_GEN_SAND, jgWp, uGenTile.y);
+  // Along the shore edge the sand fills the ground's hollows first and the tall tufts stand out of it.
+  float jgUnderH = jgS1.height * jgA1 + jgS2.height * jgA2;
+  jgSandW = clamp((jgSandW - 0.5) * 1.6 + 0.5 + (0.2 + jgSd.height * 0.4 - jgUnderH) * 0.6, 0.0, 1.0) * smoothstep(0.0, 0.2, jgSandW);
+  vec3 jgSandC = mix(jgSd.albedo, jgSd.albedo * uSandColor / max(uGenMean1, vec3(1e-3)), uGenTint.y);
+  jgCol = mix(jgCol, jgSandC * (0.94 + 0.12 * jgMacro), jgSandW);
+  jgRough = mix(jgRough, jgSd.rough, jgSandW);
+  jgGenTiltSum = mix(jgGenTiltSum, vec3(jgSd.tilt.x, 0.0, jgSd.tilt.y), jgSandW);
+  jgGenAoSum = mix(jgGenAoSum, jgSd.ao, jgSandW);
+  jgBumpH *= 1.0 - jgSandW;
+}
+#else
 jgCol = mix(jgCol, uSandColor * (0.9 + 0.2 * jgMacro), jgSandW);
+#endif
 float jgSnowW = smoothstep(uSnowHeight, uSnowHeight + 8.0, jgH) * (1.0 - jgRockW * 0.6) * uStrength;
 jgCol = mix(jgCol, uSnowColor * (0.94 + 0.1 * jgMacro), jgSnowW);
 ${materialColorGlsl}
@@ -407,16 +602,22 @@ ${materialRoughnessGlsl}`,
         "#include <normal_fragment_maps>",
         `#include <normal_fragment_maps>
 ${SURFACE_BUMP_NORMAL_GLSL}
-${materialNormalGlsl}`,
+${materialNormalGlsl}
+#ifdef JG_TERRAIN_GEN
+normal = normalize(normal + (viewMatrix * vec4(jgGenTiltSum, 0.0)).xyz);
+#endif`,
       )
       .replace(
         "#include <aomap_fragment>",
         `#include <aomap_fragment>
-${materialAoGlsl}`,
+${materialAoGlsl}
+#ifdef JG_TERRAIN_GEN
+reflectedLight.indirectDiffuse *= jgGenAoSum;
+#endif`,
       );
   };
 
   material.customProgramCacheKey = () =>
-    `jgengine-terrain-detail-${hasTexture ? "tex" : "flat"}-${hasTexture && textures.roughness !== undefined ? "rough" : "scalar"}-${hasTexture && textures.ao !== undefined ? "ao" : "unoccluded"}-${paint === undefined ? "bare" : "paint"}-${hasLayerMaps ? "layers" : "procedural"}-${low ? "low" : "full"}-${classMask}`;
+    `jgengine-terrain-detail-${hasTexture ? "tex" : "flat"}-${hasTexture && textures.roughness !== undefined ? "rough" : "scalar"}-${hasTexture && textures.ao !== undefined ? "ao" : "unoccluded"}-${paint === undefined ? "bare" : "paint"}-${hasLayerMaps ? "layers" : "procedural"}-${low ? "low" : "full"}-${classMask}-${surfaceKey}`;
   return { material, contour };
 }
