@@ -11,7 +11,10 @@
  *    on land a share G·a/A of the passing flux (the ξ–q erosion–deposition model of Davy & Lague 2009,
  *    in the form of Yuan et al. 2019), which builds fans where rivers leave the mountains;
  * 5. hillslopes creep by linear diffusion, implicit;
- * 6. any slope steeper than its rock's critical angle fails and the debris rests at the angle of repose.
+ * 6. glaciers, when on, flow, slide and carve their beds, and drop the rock they carry as till where
+ *    the ice ends ({@link GlacialParams});
+ * 7. waves, when on, cut sea cliffs back and wear down the platforms they leave ({@link CoastalParams});
+ * 8. any slope steeper than its rock's critical angle fails and the debris rests at the angle of repose.
  *
  * Units are metres and years. State is plain arrays with {@link LandscapeEvolution.snapshot} and
  * {@link LandscapeEvolution.restore}; params retune between steps; randomness comes only from the
@@ -21,13 +24,55 @@
  * @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
  */
 import { seededRng } from "../../random/rng";
+import { createWaveEroder } from "../coastal/waveErosion";
 import { createFlowRouter, type FlowRouting } from "../flow/flowRouting";
+import { createIceFlow, GLEN_RATE_FACTOR, iceDeformationRate } from "../glacial/iceFlow";
 import { landformTopology, type LandformGrid } from "../grid/landformGrid";
 import { COVER, COVER_CLASSES, createSedimentCover, DEFAULT_GRAIN_SIZES, DEFAULT_ROCK_YIELD, settlingVelocity, weatheredDepth, type GrainSizes } from "../materials/sedimentCover";
 import { createHillslopeDiffuser } from "./hillslopeDiffusion";
 import { createLandslider } from "./landsliding";
 import { resolveStrata, tanDegrees, UNIFORM_ROCK, type LandformStrata, type ResolvedStrata } from "./rockStrata";
 import { incise } from "./streamPower";
+
+/** Glaciers: shallow-ice flow with sliding, which erodes the bed (see `glacial/iceFlow`). */
+export interface GlacialParams {
+  /** Equilibrium line altitude in metres: ice grows above it and melts below. */
+  ela: number;
+  /** Mass balance gradient in (m/yr of ice) per metre of altitude. Default 0.005. */
+  balanceGradient?: number;
+  /** Largest accumulation in m/yr. Default 2. */
+  maxAccumulation?: number;
+  /** Glen's flow rate factor A in Pa⁻³ yr⁻¹. Default 7.57·10⁻¹⁷, temperate ice. */
+  flowRate?: number;
+  /** Sliding coefficient C of u_b = C·τ_b³, in m yr⁻¹ Pa⁻³. Default 5·10⁻¹⁴ (about 50 m/yr under 100 kPa). */
+  sliding?: number;
+  /** Erosion constant K_g of ė = K_g·u_b, dimensionless. Default 10⁻⁴ (Humphrey & Raymond 1994). */
+  erosion?: number;
+  /** Years the ice flows each step; ice settles within centuries, so less than a step is enough. Default 2000. */
+  iceYears?: number;
+  /** Most ice sub-steps per step, bounding the work. Default 400. */
+  maxIterations?: number;
+}
+
+/** Waves on the coast: cliff retreat and platform wear (see `coastal/waveErosion`). Needs a `seaLevel`. */
+export interface CoastalParams {
+  /** Cliff retreat rate R₀ in m/yr under waves that arrive across deep water. */
+  cliffRetreat: number;
+  /** Distance W* in metres of shallow water over which waves lose a factor e of their energy. Default 200. */
+  attenuation?: number;
+  /** Wave base in metres: deeper water does not damp waves. Default 10. */
+  waveBase?: number;
+  /** Lowering rate in m/yr of a platform at the waterline under full waves. Default 10⁻⁴. */
+  platformErosion?: number;
+  /** Depth in metres over which platform lowering falls by e. Default 2. */
+  platformDepthScale?: number;
+  /** Depth below sea level in metres that a retreating cliff is cut to. Default 1. */
+  notchDepth?: number;
+  /** Share of the sand cut from a cliff that stays as beach; the rest drifts away along the shore. Default 0.5. */
+  beachShare?: number;
+  /** Most wave sub-steps per step. Default 64. */
+  maxSubsteps?: number;
+}
 
 /** Physical parameters of a landscape evolution run; every one can be retuned between steps. */
 export interface LandformParams {
@@ -68,6 +113,10 @@ export interface LandformParams {
   timeStep: number;
   /** Rock layers. Default one uniform rock standing at 45°. */
   strata?: LandformStrata;
+  /** Glaciers. Default none. */
+  glacial?: GlacialParams;
+  /** Waves on the coast, which need `seaLevel`. Default none. */
+  coastal?: CoastalParams;
 }
 
 /**
@@ -115,7 +164,7 @@ export interface LandformStepReport {
 
 /** Plain-JSON state of a run, enough to resume it exactly. */
 export interface LandformSnapshot {
-  version: 1;
+  version: 2;
   grid: LandformGrid;
   params: LandformParams;
   seed: string;
@@ -127,6 +176,8 @@ export interface LandformSnapshot {
   debris: readonly number[];
   /** Cover thickness per cell and class, cell-major in `COVER_CLASSES` order. */
   cover: readonly number[];
+  /** Ice thickness per cell in metres. */
+  ice: readonly number[];
 }
 
 /** Per-cell fields of a run. The arrays are live; read them, never write them. */
@@ -141,8 +192,14 @@ export interface LandformFields {
   readonly layer: Uint8Array;
   /** Cumulative debris thickness laid by landslide runout, in metres. */
   readonly debris: Float64Array;
-  /** Loose cover per cell and class in metres, `cells × 5`, cell-major in `COVER_CLASSES` order (gravel, sand, silt, scree, soil); each cell sums to `sediment`. */
+  /** Loose cover per cell and class in metres, `cells × 7`, cell-major in `COVER_CLASSES` order (gravel, sand, silt, scree, soil, till, beach); each cell sums to `sediment`. */
   readonly cover: Float64Array;
+  /** Glacier ice thickness in metres. */
+  readonly ice: Float64Array;
+  /** Glacier sliding speed in m/yr after the last step. */
+  readonly iceSliding: Float64Array;
+  /** Wave energy, 0..1 of open-sea waves, on sea and cliff cells after the last step. */
+  readonly waveEnergy: Float64Array;
 }
 
 /** A running landscape. */
@@ -192,7 +249,7 @@ function checkMap(name: string, map: readonly number[] | undefined, cells: numbe
 }
 
 function copyParams(params: LandformParams): LandformParams {
-  const { upliftMap, rainfall, strata, seaLevel, grainSizes, ...rest } = params;
+  const { upliftMap, rainfall, strata, seaLevel, grainSizes, glacial, coastal, ...rest } = params;
   return {
     ...rest,
     ...(upliftMap === undefined ? {} : { upliftMap: [...upliftMap] }),
@@ -200,6 +257,8 @@ function copyParams(params: LandformParams): LandformParams {
     ...(strata === undefined ? {} : { strata: { ...strata, layers: strata.layers.map((layer) => ({ ...layer })) } }),
     ...(seaLevel === undefined ? {} : { seaLevel }),
     ...(grainSizes === undefined ? {} : { grainSizes: { ...grainSizes } }),
+    ...(glacial === undefined ? {} : { glacial: { ...glacial } }),
+    ...(coastal === undefined ? {} : { coastal: { ...coastal } }),
   };
 }
 
@@ -277,6 +336,12 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
   const router = createFlowRouter(topology);
   const diffuser = createHillslopeDiffuser(topology);
   const slider = createLandslider(topology);
+  const iceFlow = createIceFlow(topology);
+  const ice = new Float64Array(cells);
+  const carried = new Float64Array(cells);
+  const order = new Int32Array(cells);
+  const waves = createWaveEroder(topology);
+  const grains = new Float64Array(cells * 3);
   let settling: readonly number[] = settlingShares(params.grainSizes ?? DEFAULT_GRAIN_SIZES);
   let time = 0;
   let steps = 0;
@@ -471,6 +536,135 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     for (let label = 0; label < bodies; label += 1) if (settled[label] !== 1) report.exported += settleSilt(label, report);
   }
 
+  // Remove `depth` metres from cell i, cover first, then rock, and leave what it was made of in `grains`.
+  function wear(i: number, depth: number): void {
+    grains[i * 3] = 0;
+    grains[i * 3 + 1] = 0;
+    grains[i * 3 + 2] = 0;
+    const fromCover = cover.remove(i, depth, grains);
+    sediment[i] = cover.total(i);
+    const rock = depth - fromCover;
+    if (rock <= 0) return;
+    const mix = strata.layers[layer[i] ?? 0]?.yields ?? DEFAULT_ROCK_YIELD;
+    grains[i * 3] = (grains[i * 3] ?? 0) + rock * mix.gravel;
+    grains[i * 3 + 1] = (grains[i * 3 + 1] ?? 0) + rock * mix.sand;
+    grains[i * 3 + 2] = (grains[i * 3 + 2] ?? 0) + rock * mix.silt;
+  }
+
+  // Glaciers flow and erode their beds by sliding, carry what they pluck down their own surface to
+  // where the ice ends, and drop it there as till: terminal and lateral moraines.
+  function glaciate(dt: number, report: LandformStepReport): void {
+    const g = params.glacial;
+    if (g === undefined) return;
+    const iceYears = g.iceYears ?? 2000;
+    iceFlow.advance(
+      height,
+      ice,
+      iceYears < dt ? iceYears : dt,
+      {
+        deformation: iceDeformationRate(g.flowRate ?? GLEN_RATE_FACTOR),
+        sliding: g.sliding ?? 5e-14,
+        ela: g.ela,
+        balanceGradient: g.balanceGradient ?? 0.005,
+        maxAccumulation: g.maxAccumulation ?? 2,
+      },
+      g.maxIterations ?? 400,
+    );
+    const kg = g.erosion ?? 1e-4;
+    const { sliding } = iceFlow;
+    carried.fill(0);
+    let count = 0;
+    for (let i = 0; i < cells; i += 1) {
+      if (base[i] === 1 || (ice[i] ?? 0) <= 0) continue;
+      order[count] = i;
+      count += 1;
+      const depth = kg * (sliding[i] ?? 0) * dt;
+      if (depth <= 0) continue;
+      cover.remove(i, depth);
+      sediment[i] = cover.total(i);
+      height[i] = (height[i] ?? 0) - depth;
+      carried[i] = depth * cellArea;
+      report.eroded += depth * cellArea;
+    }
+    // Ice cells from the highest surface down, so each passes on everything carried from above.
+    const surface = (i: number): number => (height[i] ?? 0) + (ice[i] ?? 0);
+    const flowing = order.subarray(0, count);
+    flowing.sort((a, b) => surface(b) - surface(a) || a - b);
+    for (const i of flowing) {
+      const load = carried[i] ?? 0;
+      if (load <= 0) continue;
+      let next = -1;
+      let lowest = surface(i);
+      for (let k = 0; k < 8; k += 1) {
+        const n = neighbour[i * 8 + k] ?? -1;
+        if (n < 0) continue;
+        const s = surface(n);
+        if (s < lowest) {
+          lowest = s;
+          next = n;
+        }
+      }
+      if (next < 0) continue;
+      carried[next] = (carried[next] ?? 0) + load;
+      carried[i] = 0;
+    }
+    for (let i = 0; i < cells; i += 1) {
+      const load = carried[i] ?? 0;
+      if (load <= 0) continue;
+      if (base[i] === 1) {
+        report.exported += load;
+        continue;
+      }
+      const thickness = load / cellArea;
+      cover.add(i, COVER.till, thickness);
+      height[i] = (height[i] ?? 0) + thickness;
+      sediment[i] = cover.total(i);
+      report.deposited += load;
+    }
+  }
+
+  // Waves cut cliffs back and wear platforms down; part of each cliff's sand stays as beach.
+  function batter(dt: number, report: LandformStepReport): void {
+    const c = params.coastal;
+    const seaLevel = params.seaLevel;
+    if (c === undefined || seaLevel === undefined) return;
+    const notchDepth = c.notchDepth ?? 1;
+    carried.fill(0);
+    waves.erode(
+      height,
+      {
+        seaLevel,
+        cliffRetreat: c.cliffRetreat,
+        attenuation: c.attenuation ?? 200,
+        waveBase: c.waveBase ?? 10,
+        platformErosion: c.platformErosion ?? 1e-4,
+        platformDepthScale: c.platformDepthScale ?? 2,
+        notchDepth,
+      },
+      dt,
+      carried,
+      c.maxSubsteps ?? 64,
+    );
+    const beachShare = c.beachShare ?? 0.5;
+    const beachTop = seaLevel - 0.5 * notchDepth;
+    for (let i = 0; i < cells; i += 1) {
+      const depth = carried[i] ?? 0;
+      if (depth <= 0) continue;
+      wear(i, depth);
+      report.eroded += depth * cellArea;
+      const room = beachTop - (height[i] ?? 0);
+      let beach = (grains[i * 3 + 1] ?? 0) * beachShare;
+      if (beach > room) beach = room > 0 ? room : 0;
+      if (beach > 0) {
+        cover.add(i, COVER.beach, beach);
+        height[i] = (height[i] ?? 0) + beach;
+        sediment[i] = cover.total(i);
+        report.deposited += beach * cellArea;
+      }
+      report.exported += (depth - beach) * cellArea;
+    }
+  }
+
   function step(dtIn?: number): LandformStepReport {
     const dt = dtIn ?? params.timeStep;
     if (!(dt > 0)) throw new Error(`landform step needs a positive dt, got ${dt}`);
@@ -517,6 +711,9 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       }
     }
 
+    glaciate(dt, report);
+    batter(dt, report);
+
     failed.fill(0);
     laid.fill(0);
     coverBefore.set(sediment);
@@ -551,13 +748,14 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
 
   function restoreFrom(snapshot: LandformSnapshot): void {
     if (snapshot.grid.cols !== cols || snapshot.grid.rows !== rows) throw new Error(`landform snapshot is ${snapshot.grid.cols}×${snapshot.grid.rows}, this run is ${cols}×${rows}`);
-    if (snapshot.height.length !== cells || snapshot.sediment.length !== cells || snapshot.exhumation.length !== cells || snapshot.debris.length !== cells || snapshot.cover.length !== cells * COVER_CLASSES.length) throw new Error("landform snapshot arrays do not match the grid");
+    if (snapshot.height.length !== cells || snapshot.sediment.length !== cells || snapshot.exhumation.length !== cells || snapshot.debris.length !== cells || snapshot.cover.length !== cells * COVER_CLASSES.length || snapshot.ice.length !== cells) throw new Error("landform snapshot arrays do not match the grid");
     retune(snapshot.params);
     height.set(snapshot.height);
     sediment.set(snapshot.sediment);
     exhumation.set(snapshot.exhumation);
     debris.set(snapshot.debris);
     cover.thickness.set(snapshot.cover);
+    ice.set(snapshot.ice);
     time = snapshot.time;
     steps = snapshot.steps;
     classify();
@@ -595,10 +793,10 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     },
     time: () => time,
     steps: () => steps,
-    fields: () => ({ height, sediment, exhumation, layer, debris, cover: cover.thickness }),
+    fields: () => ({ height, sediment, exhumation, layer, debris, cover: cover.thickness, ice, iceSliding: iceFlow.sliding, waveEnergy: waves.energy }),
     routing: () => router,
     snapshot: () => ({
-      version: 1,
+      version: 2,
       grid: { ...grid },
       params: copyParams(params),
       seed,
@@ -609,6 +807,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       exhumation: Array.from(exhumation),
       debris: Array.from(debris),
       cover: Array.from(cover.thickness),
+      ice: Array.from(ice),
     }),
     restore: restoreFrom,
     reset() {
@@ -617,11 +816,12 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       exhumation.fill(0);
       debris.fill(0);
       cover.thickness.fill(0);
+      ice.fill(0);
       time = 0;
       steps = 0;
       classify();
       route();
     },
-    hash: () => hashLandformArrays(height, sediment, cover.thickness),
+    hash: () => hashLandformArrays(height, sediment, cover.thickness, ice),
   };
 }

@@ -1,7 +1,7 @@
 // @skill jgengine-world
 /**
  * What the loose cover over bedrock is made of, per cell: river-sorted gravel, sand and silt, scree
- * from landslides, and soil weathered in place. Rivers sort what they carry by how fast each grain
+ * from landslides, soil weathered in place, till dropped by glaciers and beach sand thrown up by waves. Rivers sort what they carry by how fast each grain
  * size settles (Ferguson & Church 2004), so gravel drops first where a river leaves the mountains,
  * sand further out and silt last, on floodplains, in lakes and in the sea: downstream fining (the
  * exponential decay of Sternberg 1875). Bedrock weathers into soil at a rate that falls with the soil
@@ -13,7 +13,7 @@
 import { plantExp, plantLog } from "../../plants/growth/plantMath";
 
 /** Classes of loose cover, in their order in {@link SedimentCover.thickness}. */
-export const COVER_CLASSES = ["gravel", "sand", "silt", "scree", "soil"] as const;
+export const COVER_CLASSES = ["gravel", "sand", "silt", "scree", "soil", "till", "beach"] as const;
 
 /** One class of loose cover. */
 export type CoverClass = (typeof COVER_CLASSES)[number];
@@ -50,12 +50,17 @@ export const SCREE_YIELD: GrainMix = { gravel: 0.55, sand: 0.3, silt: 0.15 };
 /** What soil is made of when a river picks it up. */
 export const SOIL_YIELD: GrainMix = { gravel: 0, sand: 0.4, silt: 0.6 };
 
+/** What glacial till breaks into: unsorted, from boulders to rock flour. */
+export const TILL_YIELD: GrainMix = { gravel: 0.4, sand: 0.35, silt: 0.25 };
+
 const CLASS_COUNT = COVER_CLASSES.length;
 const GRAVEL = 0;
 const SAND = 1;
 const SILT = 2;
 const SCREE = 3;
 const SOIL = 4;
+const TILL = 5;
+const BEACH = 6;
 
 /**
  * Settling velocity in m/s of a natural quartz grain of diameter `diameter` metres in water
@@ -82,7 +87,7 @@ export function weatheredDepth(depth: number, production: number, depthScale: nu
 
 /** Per-cell thickness of each cover class. @internal */
 export interface SedimentCover {
-  /** `cells × 5` thicknesses in metres, cell-major, in {@link COVER_CLASSES} order. */
+  /** `cells × 7` thicknesses in metres, cell-major, in {@link COVER_CLASSES} order. */
   readonly thickness: Float64Array;
   /** Remove `loss` metres from cell `i` in proportion to what is there, adding what it carried, as grains, to `grains[i*3..]`. Returns the thickness removed. */
   remove(i: number, loss: number, grains?: Float64Array): number;
@@ -121,8 +126,9 @@ export function createSedimentCover(cells: number): SedimentCover {
         if (c === GRAVEL) grains[i * 3] = (grains[i * 3] ?? 0) + gone;
         else if (c === SAND) grains[i * 3 + 1] = (grains[i * 3 + 1] ?? 0) + gone;
         else if (c === SILT) grains[i * 3 + 2] = (grains[i * 3 + 2] ?? 0) + gone;
+        else if (c === BEACH) grains[i * 3 + 1] = (grains[i * 3 + 1] ?? 0) + gone;
         else {
-          const mix = c === SCREE ? SCREE_YIELD : SOIL_YIELD;
+          const mix = c === SCREE ? SCREE_YIELD : c === TILL ? TILL_YIELD : SOIL_YIELD;
           grains[i * 3] = (grains[i * 3] ?? 0) + gone * mix.gravel;
           grains[i * 3 + 1] = (grains[i * 3 + 1] ?? 0) + gone * mix.sand;
           grains[i * 3 + 2] = (grains[i * 3 + 2] ?? 0) + gone * mix.silt;
@@ -134,4 +140,4 @@ export function createSedimentCover(cells: number): SedimentCover {
 }
 
 /** Cover class indices. @internal */
-export const COVER = { gravel: GRAVEL, sand: SAND, silt: SILT, scree: SCREE, soil: SOIL } as const;
+export const COVER = { gravel: GRAVEL, sand: SAND, silt: SILT, scree: SCREE, soil: SOIL, till: TILL, beach: BEACH } as const;
