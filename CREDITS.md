@@ -223,6 +223,36 @@ Used by `packages/core/src/movement/reference/`. Equations and published data on
 - Quadrupeds: R. McN. Alexander and A. S. Jayes, "A dynamic similarity hypothesis for the gaits of quadrupedal mammals", *J. Zool.* 201 (1983), table 2 as tabulated by A. C. Basu et al., *J. Exp. Biol.* 222 (2019); C. L. Shine et al., *J. Exp. Biol.* 218 (2015); A. A. Biewener, *J. Exp. Biol.* 105 (1983); M. R. Hirt et al., "A general scaling law reveals why the largest animals are not the fastest", *Nat. Ecol. Evol.* 1 (2017), and its supplementary data. Used by `quadrupedGait.ts`.
 - Falls and landings: S. N. Robinovitch, W. C. Hayes and T. A. McMahon, *J. Biomech. Eng.* 113 (1991); "Leg joint stiffness affects dynamics of backward falling from standing height", *J. Biomech. Eng.* 142 (2020); "Impact forces in backward falls: subject-specific video-based rigid body simulation of backward falls" (PMC10685694, 2023); W. Niu, T. Feng, C. Jiang and M. Zhang, *Biomed Res. Int.* 2014, 126860; A. C. Courtney et al., *J. Bone Joint Surg.* 77-A (1995); US FMVSS 208 (49 CFR 571.208). Used by `humanFall.ts` and `compareRagdollFall.ts`.
 
+## Granular materials reference physics
+
+All implemented from the papers; no code copied from LIGGGHTS, YADE or other DEM codes. Used by `physics/reference/discreteElements.ts` and `discreteElementExperiments.ts`.
+
+- Soft-sphere DEM: P. A. Cundall and O. D. L. Strack, "A discrete numerical model for granular assemblies", *Géotechnique* 29 (1979) 47–65. Hertz–Mindlin contact with the restitution dashpot of Y. Tsuji, T. Tanaka and T. Ishida, *Powder Technology* 71 (1992) 239–250, in the form of D. Antypov and J. A. Elliott, *EPL* 94 (2011) 50004.
+- Rolling resistance: J. Ai, J.-F. Chen, J. M. Rotter and J. Y. Ooi, "Assessment of rolling resistance models in discrete element simulations", *Powder Technology* 206 (2011) 269–282 (EPSD model). C. M. Wensrich and A. Katterfeld, *Powder Technology* 217 (2012) 409–417 (rolling friction as a shape proxy).
+- Capillary bridges: C. D. Willett, M. J. Adams, S. A. Johnson and J. P. K. Seville, *Langmuir* 16 (2000) 9396–9405 (force); G. Lian, C. Thornton and M. J. Adams, *J. Colloid Interface Sci.* 161 (1993) 138–147 (rupture distance). Damp-heap excess angle: S. Nowak, A. Samadani and A. Kudrolli, *Nature Physics* 1 (2005) 50–52.
+- Angle of repose of dry sands: Y. Al-Hashemi and O. S. B. Al-Amoudi, "A review on the angle of repose of granular materials", *Powder Technology* 330 (2018) 397–417. Glass-bead contact data: S. F. Foerster, M. Y. Louge, H. Chang and K. Allia, *Physics of Fluids* 6 (1994) 1108–1115.
+- Silos: H. A. Janssen, *Zeitschrift des Vereines Deutscher Ingenieure* 39 (1895) 1045–1049; L. Vanel and E. Clément, *Eur. Phys. J. B* 11 (1999) 525–533; J. Jaky, *J. Soc. Hungarian Architects and Engineers* (1944) for K₀ = 1 − sin φ.
+- Discharge: W. A. Beverloo, H. A. Leniger and J. van de Velde, *Chem. Eng. Sci.* 15 (1961) 260–269; R. M. Nedderman, *Statics and Kinematics of Granular Materials* (1992).
+- Brazil-nut segregation: A. Rosato, K. J. Strandburg, F. Prinz and R. H. Swendsen, *Phys. Rev. Lett.* 58 (1987) 1038; J. B. Knight, H. M. Jaeger and S. R. Nagel, *Phys. Rev. Lett.* 70 (1993) 3728.
+- Column collapse: G. Lube, H. E. Huppert, R. S. J. Sparks and M. A. Hallworth, "Axisymmetric collapses of granular columns", *J. Fluid Mech.* 508 (2004) 175–199. Used by `collapsedColumn` and `granular/granularExperiments.ts`.
+
+The game-facing granular layer in `granular/` (`granularMaterial.ts`, `granularLayer.ts`, `granularTerrain.ts`) is implemented from these papers:
+
+- Depth-averaged flow: S. B. Savage and K. Hutter, *J. Fluid Mech.* 199 (1989) 177–215; well-balanced upwinding over bed steps after E. Audusse, F. Bouchut, M.-O. Bristeau, R. Klein and B. Perthame, *SIAM J. Sci. Comput.* 25 (2004) 2050–2065.
+- Basal friction law and glass-bead constants: O. Pouliquen, *Phys. Fluids* 11 (1999) 542–548; O. Pouliquen and Y. Forterre, "Friction law for dense granular flows", *J. Fluid Mech.* 453 (2002) 133–151.
+- Pressure–sinkage: M. G. Bekker, *Theory of Land Locomotion* (1956) and *Introduction to Terrain-Vehicle Systems* (1969); soil values from J. Y. Wong, *Theory of Ground Vehicles*, 4th ed. (2008), Table 2.3.
+- Cohesive banks: K. Culmann, *Die graphische Statik* (1866), the planar-wedge critical height as given in K. Terzaghi, *Theoretical Soil Mechanics* (1943). Capillary tensile strength: H. Rumpf, *Chem. Ing. Tech.* 30 (1958) 144–158.
+
+## Rock fracture
+
+Implemented from the papers; no code copied from PFC, LIGGGHTS or YADE. Used by the parallel bonds in `physics/reference/discreteElements.ts`, by `physics/reference/bondedRock.ts`, and by the game model and `fractureComparison.ts` in `fracture/`.
+
+- Bonded-particle model: D. O. Potyondy and P. A. Cundall, "A bonded-particle model for rock", *Int. J. Rock Mech. Min. Sci.* 41 (2004) 1329–1364 (parallel bonds, their strengths and spread, k̄n/k̄s = 2.5).
+- Rock properties: R. E. Goodman, *Introduction to Rock Mechanics*, 2nd ed. (1989); W. F. Brace, "Brittle fracture of rocks" (1964), for Westerly granite; B. K. Atkinson and P. G. Meredith, "Experimental fracture mechanics data for rocks and minerals", in *Fracture Mechanics of Rock* (1987), for K_IC. Brazilian test: ISRM, "Suggested methods for determining tensile strength of rock materials", *Int. J. Rock Mech. Min. Sci.* 15 (1978) 99–103.
+- Breakage laws: P. Rosin and E. Rammler, *J. Inst. Fuel* 7 (1933) 29–36; A. M. Gaudin, *Trans. AIME* 73 (1926) 253–316; R. Schuhmann, *Trans. AIME* 141 (1940); T. J. Napier-Munn, S. Morrell, R. D. Morrison and T. Kojovic, *Mineral Comminution Circuits*, JKMRC (1996), for the t10 law; L. Vogel and W. Peukert, "Breakage behaviour of different materials", *Powder Technology* 129 (2003) 101–110, for breakage probability.
+- Published drop-weight A and b ranges: the DWi and A×b table collected by [911 Metallurgist](https://www.911metallurgist.com/blog/calculating-dwi-drop-weight-index-axb-test-result/).
+- Fragment energy and speed: A. Fujiwara and A. Tsukamoto, *Icarus* 44 (1980) 142–153; A. Nakamura and A. Fujiwara, *Icarus* 92 (1991) 132–146.
+
 ## Plant growth simulation
 
 The plant simulator (`packages/core/src/plants/`) ports models and data, not code. Every source is

@@ -1668,6 +1668,65 @@
 - `standardAtmosphere` (function): function standardAtmosphere(altitude: number): AtmosphereSample — The U.S. Standard Atmosphere 1976 (NOAA/NASA/USAF, NOAA-S/T 76-1562) from −5 km to 86 km geometric altitude: the seven geopotential layers with their molecular-scale temperature gradients, hydrostatic pressure, the molecular weight change between 80 and 86 km, the speed of sound and Sutherland's viscosity. Above 86 km it continues the 86 km layer isothermally, which the standard does not define.
 - `standardGravity` (function): function standardGravity(altitude: number): number — Gravity at a geometric altitude, m/s², by the inverse-square law the 1976 standard uses.
 
+## @jgengine/core/fracture/convexCell
+
+- `CellFace` (interface): interface CellFace — One face: vertices counter-clockwise seen from outside; `fracture` marks a face made by a cut.
+- `CellPlane` (interface): interface CellPlane — The half-space n·x ≤ offset; `n` need not be unit length.
+- `CellVec` (type): type CellVec = readonly [number, number, number] — Convex polyhedra as lists of faces, cut by planes: the cells a rock breaks into.
+- `ConvexCell` (interface): interface ConvexCell — A convex polyhedron.
+- `boxCell` (function): function boxCell(min: CellVec, max: CellVec): ConvexCell — An axis-aligned box cell from `min` to `max`.
+- `cellContains` (function): function cellContains(cell: ConvexCell, point: CellVec): boolean — Whether `point` lies inside every face plane of `cell`.
+- `cellVolume` (function): function cellVolume(cell: ConvexCell): { volume: number; centroid: [number, number, number] } — Volume and centroid of a cell, by the divergence theorem over fan triangles.
+- `clipCell` (function): function clipCell(cell: ConvexCell, plane: CellPlane, fracture = true): ConvexCell — Keep the part of `cell` inside `plane`, closing the cut with one new face (marked `fracture` when `fracture` is true). Returns an empty cell when nothing is left.
+- `transformCell` (function): function transformCell(cell: ConvexCell, centre: CellVec, scale: number, offset: CellVec = [0, 0, 0]): ConvexCell — The cell moved by `offset` and scaled by `scale` about `centre`.
+
+## @jgengine/core/fracture/fractureComparison
+
+- `FractureComparisonRow` (interface): interface FractureComparisonRow — One subject at one energy.
+- `compareFracture` (function): function compareFracture(energies: readonly number[] = [0.01, 0.1, 1]): FractureComparisonRow[] — Break a 0.5 m granite block at each energy with every subject. The structure subjects get the block as 2×2×2 pieces, their finest possible split.
+- `formatFractureComparison` (function): function formatFractureComparison(rows: readonly FractureComparisonRow[]): string — The comparison as a markdown table.
+
+## @jgengine/core/fracture/fragmentSize
+
+- `FragmentSizes` (interface): interface FragmentSizes — How rock breaks by size: the laws comminution measures fragments with. Rosin & Rammler (1933) and Gaudin (1926) / Schuhmann (1940) give the size distribution of one breakage, the JKMRC t10 law (Napier-Munn et al. 1996) gives how fine it gets with specific energy, and Vogel & Peukert (2003) give the chance a particle breaks at all.
+- `GaudinSchuhmannFit` (interface): interface GaudinSchuhmannFit extends SizeFit — Gaudin–Schuhmann: passing P(x) = (x/maxSize)^exponent in the fines.
+- `KWH_PER_TONNE` (const): const KWH_PER_TONNE: 3600 — 1 kWh/t in J/kg.
+- `RosinRammlerFit` (interface): interface RosinRammlerFit extends SizeFit — Rosin–Rammler: passing P(x) = 1 − exp(−(x/scale)^spread); `scale` is the 63.2% passing size.
+- `SizeFit` (interface): interface SizeFit — A least-squares fit and its coefficient of determination.
+- `T10Fit` (interface): interface T10Fit extends SizeFit — JKMRC drop-weight law: t10 = A (1 − e^(−b E_cs)), t10 in percent, E_cs in kWh/t.
+- `breakageProbability` (function): function breakageProbability(energy: number, size: number, fMat: number, threshold: number, impacts = 1): number — Vogel & Peukert (2003) breakage probability after `impacts` impacts at mass-specific energy `energy` J/kg on a particle of `size` m: 1 − exp(−f_Mat x k (W − W_min)); `fMat` in kg/(J m), `threshold` W_min in J/kg.
+- `fitGaudinSchuhmann` (function): function fitGaudinSchuhmann(fragments: FragmentSizes, upTo = 0.5): GaudinSchuhmannFit — Fit Gaudin–Schuhmann to the fines: a line through ln P against ln x for points passing at most `upTo` (default 0.5).
+- `fitRosinRammler` (function): function fitRosinRammler(fragments: FragmentSizes): RosinRammlerFit — Fit Rosin–Rammler to fragments: a line through ln(−ln(1 − P)) against ln x, skipping the largest size (P = 1). The share of mass in the largest fragment of a barely broken particle makes this fit poor; it is meant for a broken one.
+- `fitT10` (function): function fitT10(energies: readonly number[], t10s: readonly number[]): T10Fit — Least-squares fit of the JKMRC law to measured (E_cs kWh/t, t10 %) pairs: exact A for each b over a log grid, refined by golden section.
+- `gaudinSchuhmann` (function): function gaudinSchuhmann(size: number, maxSize: number, exponent: number): number — Gaudin–Schuhmann passing fraction at `size`, capped at 1.
+- `jkT10` (function): function jkT10(energy: number, a: number, b: number): number — The JKMRC t10, percent, at specific energy `energy` kWh/t.
+- `passingFraction` (function): function passingFraction(fragments: FragmentSizes, size: number): number — Mass fraction of fragments smaller than `size`.
+- `rosinRammler` (function): function rosinRammler(size: number, scale: number, spread: number): number — Rosin–Rammler passing fraction at `size`.
+- `t10` (function): function t10(fragments: FragmentSizes, parentSize: number): number — t10, percent: the mass passing a tenth of the parent size, the JKMRC fineness index.
+
+## @jgengine/core/fracture/rockFracture
+
+- `BASALT_BREAKAGE` (const): const BASALT_BREAKAGE: RockBreakage — Basalt: very hard, A×b 30.
+- `FractureOptions` (interface): interface FractureOptions — Options of {@link fractureRock}.
+- `FractureResult` (interface): interface FractureResult — What {@link fractureRock} did.
+- `GRANITE_BREAKAGE` (const): const GRANITE_BREAKAGE: RockBreakage — Granite. A and b sit inside the range of published drop-weight results for hard ores (A 45–100, b 0.4–3.3, A×b 27–160), at A×b 42; the four presets keep the order the bonded-particle reference breaks the rocks in (`physics/reference/bondedRock.ts`). f_Mat and x·W_min put a 50 mm piece at about one chance in four of breaking at 10 J/kg, and grow easier with size as Vogel & Peukert (2003) found.
+- `LIMESTONE_BREAKAGE` (const): const LIMESTONE_BREAKAGE: RockBreakage — Indiana limestone: medium, A×b 60.
+- `ROCK_BREAKAGE` (const): const ROCK_BREAKAGE: readonly RockBreakage[] — The four rock breakage presets.
+- `RockBreakage` (interface): interface RockBreakage — How a rock breaks by impact.
+- `RockFragment` (interface): interface RockFragment — One piece of a broken rock. Its cell is in world space; `centre` is its centroid.
+- `SANDSTONE_BREAKAGE` (const): const SANDSTONE_BREAKAGE: RockBreakage — Berea sandstone: soft, A×b 120.
+- `convexCellBounds` (function): function convexCellBounds(cell: ConvexCell): { min: [number, number, number]; max: [number, number, number] } — Axis-aligned bounds of a cell.
+- `fractureRock` (function): function fractureRock(rock: ConvexCell, options: FractureOptions): FractureResult — Break `rock` (a convex cell, world space) with an impact of `energy` J at `impactPoint`.
+- `fragmentSizes` (function): function fragmentSizes(size: number, t10: number, maxFragments: number, rng: SeededRng): { sizes: number[]; exponent: number; fines: number } — Fragment sizes for a parent `size` m across breaking to `t10` percent: the Gaudin–Schuhmann distribution P(x) = (x/size)^m with m = −log₁₀(t10/100), so P(size/10) = t10, binned logarithmically and each bin rounded at random to whole fragments. Bins past `maxFragments` fold into the fines.
+
+## @jgengine/core/fracture/rockFractureGenerator
+
+- `FRACTURE_GENERATORS` (const): const FRACTURE_GENERATORS: readonly GeneratorDefinition[] — The fracture generators.
+- `ROCK_FRACTURE_GENERATOR` (const): const ROCK_FRACTURE_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "rock"; readonly label: "rock"; readonly group: "stone"; readonly options: { value: string… — A stone broken by a blow from above, its fragments shown `explode` seconds into their flight.
+- `ROCK_FRACTURE_SCHEMA` (const): const ROCK_FRACTURE_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "rock"; readonly label: "rock"; readonly group: "stone"; readonly options: { value: string; }[]; readonly default… — Params of `fracture.rock`.
+- `fragmentMesh` (function): function fragmentMesh(fragment: Pick<RockFragment, "cell" | "centre">, color: NatureRgb, fractureColor: NatureRgb, offset: CellVec = [0, 0, 0]): NatureMesh — A fragment's mesh, positions relative to its centre: one flat-shaded polygon per face, fracture faces in `fractureColor`.
+- `rockCell` (function): function rockCell(radii: CellVec, facets: number, roughness: number, rng: SeededRng): ConvexCell — A convex stone centred at the origin: an ellipsoid of half-axes `radii` cut by `facets` random tangent planes, each set in by up to `roughness` of its reach.
+
 ## @jgengine/core/generator/GeneratorMeshInstance.draw
 
 - `GeneratorMeshInstance` (function): function GeneratorMeshInstance({ definition, meta, fallbackSeed, position = [0, 0, 0], rotationY = 0 }: GeneratorMeshInstanceProps): React.JSX.Element — One placed generator instance drawn through the mesh builder registered for its output family (`registerGeneratorMesh`), regrown from its params and seed. Null when the family has no builder.
@@ -1748,6 +1807,50 @@
 - `parseParams` (function): function parseParams<Schema extends ParamSchema>(schema: Schema, meta: Readonly<Record<string, unknown>> | undefined): ParamsOf<Schema> — Parse a raw `meta` bag against a schema into typed params — every field present, invalid or missing values replaced by the field default, numbers clamped to their range (and rounded when `step >= 1`), colours checked as hex. The single parser every generator and studio shares.
 - `sampleCurve` (function): function sampleCurve(points: readonly CurvePoint[], x: number): number — The value of a curve at `x` (0..1), linear between control points and flat past the ends.
 - `sampleGradient` (function): function sampleGradient(stops: readonly GradientStop[], t: number): string — The hex colour of a gradient at `t` (0..1), mixed between neighbouring stops.
+
+## @jgengine/core/granular/granularExperiments
+
+- `ContinuumCollapse` (interface): interface ContinuumCollapse — Where a released column of the continuum came to rest.
+- `FlumeFlow` (interface): interface FlumeFlow — Steady flow down a rough incline, read at the middle of a long channel.
+- `PouredHeap` (interface): interface PouredHeap — A heap poured from a point.
+- `continuumCollapse` (function): function continuumCollapse(material: GranularMaterial, aspect: number, radius = 0.1, cellsPerRadius = 20): ContinuumCollapse — Release a column of `aspect` = h_i / r_i, radius `radius` m, on a flat bed and measure the deposit. The edge is the farthest cell deeper than 1% of the initial height.
+- `inclinedFlume` (function): function inclinedFlume(material: GranularMaterial, angle: number, depth: number, seconds = 3, gravity = 9.81): FlumeFlow — A uniform layer `depth` m deep released on a `angle`° incline, run for `seconds`, then read far from both ends: the steady uniform flow Pouliquen (1999) measured.
+- `pouredHeap` (function): function pouredHeap(material: GranularMaterial, volume = 0.6, cell = 0.1, cells = 61): PouredHeap — Pour `volume` m³ in small batches onto the middle of a flat bed of `cell` m cells and measure the heap once still.
+
+## @jgengine/core/granular/granularLayer
+
+- `GranularLayer` (interface): interface GranularLayer — A granular layer. Cell arrays are row-major, `gz * cols + gx`.
+- `GranularLayerConfig` (interface): interface GranularLayerConfig — Grid, starting ground and tuning for {@link createGranularLayer}.
+- `GranularLayerSnapshot` (interface): interface GranularLayerSnapshot — Plain JSON of a {@link GranularLayer}.
+- `GranularPressReport` (interface): interface GranularPressReport — What a load did to the ground.
+- `GranularStepReport` (interface): interface GranularStepReport — What one {@link GranularLayer.step} did.
+- `createGranularLayer` (function): function createGranularLayer(config: GranularLayerConfig): GranularLayer — Create a granular layer over a bedrock grid.
+
+## @jgengine/core/granular/granularMaterial
+
+- `BekkerSoil` (interface): interface BekkerSoil — What a loose granular material is, for the depth-averaged model in {@link createGranularLayer}: how steep it stands and how it flows, from the friction law of Pouliquen & Forterre (2002), how it packs, and how far a load sinks into it, from the pressure–sinkage law of Bekker (1956) with the soil values Wong (2008) tabulates.
+- `DAMP_SAND` (const): const DAMP_SAND: GranularMaterial — Sand with about 1% water. Repose angle from the damp poured-cone DEM (3.3° over dry, about half the Nowak et al. 2005 maximum excess); cohesion 0.5 kPa, the tensile strength Rumpf (1958) gives for capillary bridges between 0.5 mm grains, (1 − ε)/ε · 2πRγ/d², which lets a cut stand.
+- `DRY_SAND` (const): const DRY_SAND: GranularMaterial — Dry quartz sand. Repose angle from the poured-cone DEM (`physics/reference`, mean of three heaps 32.3°); the span to δ₂ and δ₃ and β from the glass-bead fit; packing 0.56 to 0.64 (porosity 0.44 to 0.36); Bekker values for dry sand from Wong (2008).
+- `GLASS_BEADS` (const): const GLASS_BEADS: GranularMaterial — Glass beads 0.5 mm across on a rough plane, the material Pouliquen & Forterre (2002) fitted their law to.
+- `GRAVEL` (const): const GRAVEL: GranularMaterial — Rounded river gravel, 10–20 mm: repose 38° (Al-Hashemi & Al-Amoudi 2018); depth scale for a 15 mm grain.
+- `GranularMaterial` (interface): interface GranularMaterial — A loose granular material. Angles are in degrees.
+- `SANDY_LOAM` (const): const SANDY_LOAM: GranularMaterial — Sandy loam (Michigan), Bekker values and cohesion 1.72 kPa from Wong (2008); stands at its friction angle, 29°.
+- `culmannHeight` (function): function culmannHeight(cohesion: number, unitWeight: number, slope: number, friction: number): number — Tallest bank, m, of cohesion `cohesion` Pa and unit weight `unitWeight` N/m³ that stands at slope angle `slope` with friction angle `friction` (both radians): Culmann's planar wedge, H_c = 4c sin β cos φ / (γ (1 − cos(β − φ))). Infinite at or below the friction angle.
+- `flowFriction` (function): function flowFriction(material: GranularMaterial, depth: number, froude: number): number — Basal friction of a layer `depth` m deep flowing at Froude number `froude` = u/√(gh), Pouliquen & Forterre (2002): μ_stop(hβ/Fr) above Fr = β and (Fr/β)^γ (μ_stop − μ_start) + μ_start below, γ = 10⁻³. Steady uniform flow then obeys Fr = β h/h_stop(θ).
+- `plateSinkage` (function): function plateSinkage(soil: BekkerSoil, pressure: number, width: number): number — Bekker sinkage, m, of a flat plate pressing `pressure` Pa on soil, `width` m its smaller dimension: z = (p/(k_c/b + k_φ))^(1/n).
+- `plateSinkagePressure` (function): function plateSinkagePressure(soil: BekkerSoil, sinkage: number, width: number): number — Pressure, Pa, that sinks a plate `width` m wide to `sinkage` m: the inverse of {@link plateSinkage}.
+- `startFriction` (function): function startFriction(material: GranularMaterial, depth: number): number — Friction μ_start(h) a static layer `depth` m deep must exceed to start: tan δ₃ + (tan δ₂ − tan δ₁)/(h/L + 1).
+- `stopFriction` (function): function stopFriction(material: GranularMaterial, depth: number): number — Basal friction μ_stop(h) of a layer `depth` m deep that is just stopping: tan δ₁ + (tan δ₂ − tan δ₁)/(h/L + 1).
+- `stoppingDepth` (function): function stoppingDepth(material: GranularMaterial, angle: number): number — Thickness h_stop(θ) a layer leaves behind when it stops on a slope of `angle` degrees: L (tan δ₂ − tan θ)/(tan θ − tan δ₁). Infinite at or below δ₁, 0 at or above δ₂.
+- `wheelSinkage` (function): function wheelSinkage(soil: BekkerSoil, load: number, width: number, diameter: number): number — Static sinkage, m, of a rigid wheel of `diameter` and `width` m carrying `load` N, Bekker's closed form: z₀ = (3W / ((3 − n)(k_c + b k_φ) √D))^(2/(2n+1)).
+
+## @jgengine/core/granular/granularTerrain
+
+- `GranularTerrain` (interface): interface GranularTerrain — A granular layer bound to a terrain; positions are world x/z.
+- `GranularTerrainOptions` (interface): interface GranularTerrainOptions — Options for {@link createGranularTerrain}.
+- `LandformCoverPlacement` (interface): interface LandformCoverPlacement — Where a landform's cover grid sits in the world: cell (gx, gz) spans `origin + g · cellSize` to the next cell.
+- `createGranularTerrain` (function): function createGranularTerrain(terrain: EditableTerrain, options: GranularTerrainOptions): GranularTerrain — Bind a granular layer to a terrain's vertex grid.
+- `landformLooseCover` (function): function landformLooseCover(surface: LandformSurface, placement: LandformCoverPlacement): Pick<GranularTerrainOptions, "looseDepth" | "materialAt"> — Loose depth and material callbacks for {@link createGranularTerrain} from a landform simulation's cover: depth is the cover thickness, material the heaviest-weighted loose kind the placement maps.
 
 ## @jgengine/core/grass/GrassCover.draw
 
@@ -3447,6 +3550,32 @@
 - `surgeAddedMass` (function): function surgeAddedMass(massKg: number, length: number, density = RHO): number — Surge added mass of a hull as the half of a prolate spheroid of the same length and twice its volume (the double-body image across the still surface): Lamb's `k₁ = α₀/(2 − α₀)` times the displaced mass.
 - `wigleyStandIn` (function): function wigleyStandIn(tuning: BoatTuning): StripHull — A Wigley hull (`C_B` 4/9) with a boat tuning's length, beam and mass, floating level with G on the waterline: the seakeeping stand-in for a boat whose real lines are unknown.
 
+## @jgengine/core/physics/reference/bondedRock
+
+- `BASALT` (const): const BASALT: RockProperties — Basalt: ρ 2900 kg/m³, E 70 GPa (reported 50–90), σ_t 14 MPa (Nevada Test Site basalt 13.1), UCS 150–350 MPa, K_IC 2.0 MPa√m (1.6–2.6) (Goodman 1989; Atkinson & Meredith 1987).
+- `BEREA_SANDSTONE` (const): const BEREA_SANDSTONE: RockProperties — Berea sandstone (Ohio): ρ 2100 kg/m³, E 14 GPa (reported 10–19), σ_t 2 MPa (1–3), UCS 60 MPa (50–75), K_IC 0.35 MPa√m (0.25–0.45) (Goodman 1989; Atkinson & Meredith 1987).
+- `BondedRockModel` (interface): interface BondedRockModel — Micro-parameters of a bonded-particle rock.
+- `BondedSpecimen` (interface): interface BondedSpecimen — A bonded specimen ready to load.
+- `BrazilianResult` (interface): interface BrazilianResult — Result of {@link brazilianTest}.
+- `CalibrationResult` (interface): interface CalibrationResult — Result of {@link calibrateBondedRock}.
+- `GrainPacking` (interface): interface GrainPacking — A packed specimen: grain centres and radii, and the pairs to bond.
+- `INDIANA_LIMESTONE` (const): const INDIANA_LIMESTONE: RockProperties — Indiana (Salem) limestone: ρ 2300 kg/m³, E 28 GPa (reported 25–33), σ_t 5.9 MPa (4–7), UCS 53 MPa, K_IC 0.95 MPa√m (0.9–1.0) (Goodman 1989; Atkinson & Meredith 1987).
+- `ImpactOptions` (interface): interface ImpactOptions extends SpecimenTestOptions — Options of {@link impactBreakage}.
+- `ImpactResult` (interface): interface ImpactResult — Result of {@link impactBreakage}.
+- `ModulusResult` (interface): interface ModulusResult — Result of {@link uniaxialModulus}.
+- `ROCKS` (const): const ROCKS: readonly RockProperties[] — The four rocks with measured properties.
+- `RockProperties` (interface): interface RockProperties — Measured properties of an intact rock. Representative laboratory values; each rock varies by quarry and test.
+- `SpecimenShape` (type): type SpecimenShape = | { kind: "sphere"; diameter: number } /** A disc or cylinder, axis along `axis`. */ | { kind: "cylinder"; diameter: number; length: number; axis: "y" | "z" } — Shape of a specimen centred at the origin.
+- `SpecimenTestOptions` (interface): interface SpecimenTestOptions — Options shared by the specimen tests.
+- `WESTERLY_GRANITE` (const): const WESTERLY_GRANITE: RockProperties — Westerly granite (Rhode Island): ρ 2650 kg/m³, E 50 GPa, σ_t 10 MPa (reported 8–14), UCS 230 MPa (Goodman 1989; Brace 1964), K_IC 1.7 MPa√m (Atkinson & Meredith 1987).
+- `bondedFragments` (function): function bondedFragments(dem: DiscreteElements, parentSize: number): FragmentSizes & { grains: number[] } — Fragments of a bonded specimen: grains joined by intact bonds, by union–find. Each fragment's size is its equivalent diameter scaled so the intact specimen measures `parentSize`: x = D (m/M)^(1/3).
+- `bondedSpecimen` (function): function bondedSpecimen(model: BondedRockModel, packing: GrainPacking, options: { walls?: readonly DemWallShape[]; offset?: Vec3; velocity?: Vec3; seed?: string; gravity?: Vec3; domain?: number } = {}): BondedSpecimen — Build a bonded specimen in a DEM system with steel walls, material 1. Bond strengths are drawn per bond from a normal distribution (truncated at a fifth of the mean); `strength` Infinity makes unbreakable bonds.
+- `brazilianTest` (function): function brazilianTest(model: BondedRockModel, options: SpecimenTestOptions & { rateScale?: number } = {}): BrazilianResult — Brazilian disc test (ISRM 1978): a disc of thickness half its diameter squeezed across a diameter between steel platens until the load falls to half its peak or stops rising for 30 P-wave transits; σ_t = 2P/(π D t).
+- `calibrateBondedRock` (function): function calibrateBondedRock(rock: RockProperties, options: SpecimenTestOptions & { modulusGrainsAcross?: number } = {}): CalibrationResult — Calibrate bond modulus to the rock's Young's modulus and bond strength to its Brazilian strength. The model is linear in both (Potyondy & Cundall 2004), so each is one rescale and a check.
+- `impactBreakage` (function): function impactBreakage(model: BondedRockModel, options: ImpactOptions): ImpactResult — Single-impact breakage: a bonded sphere fired at a steel anvil at the speed that carries `energy` kWh/t, run until no bond has broken for 20 P-wave transits and the specimen is rebounding.
+- `packSpecimen` (function): function packSpecimen(shape: SpecimenShape, options: { grainsAcross: number; density: number; seed: string; jitter?: number; flattenY?: boolean }): GrainPacking — Pack a specimen: a face-centred cubic lattice of `grainsAcross` grains per diameter, each point jittered by up to `jitter` of the spacing, radii grown until grains touch their nearest neighbour (sizes vary about 1.6 to 1), and bonds between every pair closer than 1.2 spacings. `flattenY` grinds the top and bottom flat, as a lab specimen's loaded faces are: grains near them move until they touch the plane, shrinking where that would overlap a neighbour.
+- `uniaxialModulus` (function): function uniaxialModulus(model: BondedRockModel, options: SpecimenTestOptions = {}): ModulusResult — Young's modulus of a bonded cylinder (height twice its diameter) squeezed slowly between steel platens with unbreakable bonds: the secant slope of axial stress against platen strain between 40% and 100% of 10⁻⁴ strain.
+
 ## @jgengine/core/physics/reference/compareHandling
 
 - `BikeHandlingComparison` (interface): interface BikeHandlingComparison — Result of {@link compareBikeTuning}.
@@ -3470,6 +3599,56 @@
 - `measureReferenceMotorcycle` (function): function measureReferenceMotorcycle(bike: RealMotorcycle, options: { dt?: number; tests?: readonly BikeScenario[] } = {}): BikeHandlingMetrics — Measure a real motorcycle's reference model with its rider; pass the result to {@link compareBikeTuning} to reuse it.
 - `validateReferenceCars` (function): function validateReferenceCars(cars: readonly RealCar[] = REAL_CARS): { car: RealCar; metrics: ComparableHandlingMetrics; checks: PublishedCheck[] }[] — Measure every real car's reference model and check it against the published numbers: the full validation behind `bun run games:capabilities handling --validate`.
 - `validateReferenceMotorcycles` (function): function validateReferenceMotorcycles(bikes: readonly RealMotorcycle[] = REAL_MOTORCYCLES): { bike: RealMotorcycle; metrics: BikeHandlingMetrics; checks: MotorcyclePublishedCheck[] }[] — Measure every real motorcycle's reference model and check it against its published tests: the bike half of `bun run games:capabilities handling --validate`.
+
+## @jgengine/core/physics/reference/discreteElementExperiments
+
+- `ColumnCollapseOptions` (interface): interface ColumnCollapseOptions — Options for {@link collapsedColumn}.
+- `ColumnCollapseResult` (interface): interface ColumnCollapseResult — Where a released column came to rest.
+- `DEM_GLASS_BEADS` (const): const DEM_GLASS_BEADS: DemMaterial — Soda-lime glass beads: restitution 0.97 and friction 0.092 measured by Foerster, Louge, Chang & Allia (1994).
+- `DEM_SAND` (const): const DEM_SAND: DemMaterial — Natural quartz sand as DEM grains: solid density 2650 kg/m³, sliding friction 0.5 and restitution 0.55 (the measured ranges collected by Al-Hashemi & Al-Amoudi 2018), rolling resistance 0.7 standing in for angular grain shape (Wensrich & Katterfeld 2012), contact stiffness lowered to 5 MPa as DEM practice does.
+- `DEM_STEEL` (const): const DEM_STEEL: DemMaterial — A rigid steel container wall (same simulation stiffness as the grains).
+- `HopperOptions` (interface): interface HopperOptions — Options for {@link beverlooHopper}.
+- `HopperResult` (interface): interface HopperResult — Steady mass discharge rates, kg/s, one per orifice.
+- `JanssenFit` (interface): interface JanssenFit — A fitted Janssen curve with the hydrostatic zone of Vanel & Clément (1999).
+- `PouredConeOptions` (interface): interface PouredConeOptions — Options for {@link pouredCone}.
+- `PouredConeResult` (interface): interface PouredConeResult — A cone poured onto a fixed rough base.
+- `ShakerOptions` (interface): interface ShakerOptions — Options for {@link brazilNutShaker}.
+- `ShakerResult` (interface): interface ShakerResult — Intruder height over time in a vertically shaken bed.
+- `SiloOptions` (interface): interface SiloOptions — Options for {@link janssenSilo}.
+- `SiloResult` (interface): interface SiloResult — Base load against filled mass, kg, for each filling stage.
+- `beverlooHopper` (function): function beverlooHopper(options: HopperOptions): HopperResult — Discharge of a flat-bottomed cylindrical silo through a round orifice, grains recycled to the top so the head stays steady. Beverloo, Leniger & van de Velde (1961) predict W = C ρ_b √g (D − k d)^{5/2}, independent of the head.
+- `brazilNutShaker` (function): function brazilNutShaker(options: ShakerOptions = {}): ShakerResult — A large intruder buried at the floor of a vertically vibrated box of small grains (Rosato, Strandburg, Prinz & Swendsen 1987; Knight, Jaeger & Nagel 1993): it rises when the peak acceleration exceeds gravity.
+- `collapsedColumn` (function): function collapsedColumn(options: ColumnCollapseOptions): ColumnCollapseResult — A cylinder of grains on a rough floor, released by lifting its frictionless wall away fast: the axisymmetric collapse of Lube, Huppert, Sparks & Hallworth (2004), who measured r_∞/r_i = 1 + 1.24 a for a < 1.7.
+- `fitBeverloo` (function): function fitBeverloo(result: HopperResult, gravity = 9.81): { c: number; k: number } — Fit Beverloo's C and k to measured rates by least squares on W^{2/5} = (C ρ_b √g)^{2/5} (D − k d), which is linear in D.
+- `janssenLoad` (function): function janssenLoad(fill: number, fit: JanssenFit): number — Base load of a silo holding `fill` kg: all of it up to the hydrostatic mass, then M_h + M_∞ (1 − e^{−(M − M_h)/M_∞}).
+- `janssenSilo` (function): function janssenSilo(options: SiloOptions = {}): SiloResult — A silo filled layer by layer, weighing its base after each layer settles (the experiment of Vanel & Clément 1999): Janssen (1895) predicts the base carries M_∞ (1 − e^{−M/M_∞}) as wall friction takes the rest, above a bottom zone that rests on the base in full.
+- `measuredRestitution` (function): function measuredRestitution(material: DemMaterial, speed: number, grainRadius = 0.005): number — Normal coefficient of restitution measured from a head-on collision of two equal grains at `speed` each.
+- `nowakExcessAngle` (function): function nowakExcessAngle(dryAngle: number, surfaceTension: number, density: number, grainRadius: number, slopeLength: number, gravity = 9.81): number — Excess avalanche angle a damp pile gains over the dry one, after Nowak, Samadani & Kudrolli (2005): θ_m − θ_d = √((9π/2f_p)^{1/3} α₀ cos θ_d Γ / (√6 tan θ_d ρ g r L)), α₀ = 1.2, f_p = 0.64. Radians.
+- `pouredCone` (function): function pouredCone(options: PouredConeOptions = {}): PouredConeResult — Angle of repose by the fixed-base cone (the poured-heap method of ISO 4324 and Al-Hashemi & Al-Amoudi 2018): pour grains slowly onto the axis of a disc of glued grains until the excess spills over the rim, then fit the cone.
+- `settleGrains` (function): function settleGrains(dem: DiscreteElements, speed = 0.005, limit = 1): number — Run until the mean grain speed falls under `speed` m/s or `limit` seconds pass. Returns the time spent.
+- `waterBridges` (function): function waterBridges(moisture: number, grainRadius: number, solidDensity = DEM_SAND.density): DemLiquid — Capillary bridges of water on clean silica (surface tension 0.072 N/m, contact angle 0) at gravimetric `moisture`.
+
+## @jgengine/core/physics/reference/discreteElements
+
+- `DemBodySpec` (interface): interface DemBodySpec — A body to add: one sphere (`radius`) or a rigid clump (`spheres`).
+- `DemBondLoad` (interface): interface DemBondLoad — What a parallel bond carries now. Tension and tensile stress are positive pulling apart.
+- `DemBondSpec` (interface): interface DemBondSpec — A parallel bond (Potyondy & Cundall 2004): a disc of elastic cement between two single-sphere grains that carries force and moment, and breaks for good once the tensile stress σ = −F_n/A + |M_s| R̄/I or the shear stress τ = |F_s|/A + |M_n| R̄/J reaches its strength.
+- `DemInteraction` (interface): interface DemInteraction — Contact coefficients for one pair of materials (a grain on a wall, say). Unset pairs take the lower friction and rolling coefficients of the two and the mean restitution.
+- `DemLiquid` (interface): interface DemLiquid — Pendular liquid bridges between damp grains.
+- `DemMaterial` (interface): interface DemMaterial — A grain material. Simulation stiffness may be far below the solid's (see {@link DemMaterial.youngsModulus}).
+- `DemSnapshot` (interface): interface DemSnapshot — A serializable state of a {@link DiscreteElements} system.
+- `DemSphereSpec` (interface): interface DemSphereSpec — One sphere of a body, in the body's frame.
+- `DemStepReport` (interface): interface DemStepReport — What one step did.
+- `DemWallMotion` (interface): interface DemWallMotion — How a wall moves: steady velocity plus a sinusoidal shake, both from the moment the motion is set.
+- `DemWallShape` (type): type DemWallShape = | { kind: "plane"; point: Vec3; normal: Vec3; material: number } /** Thin annulus in the plane through `center` normal to `normal`: a floor with a round orifice (`innerRadius` > 0). Two-sided. */ | { kind: "disc"; center: Vec3; normal: Vec3; innerRadius: number; outerRadius: numb… — A frictional boundary. Walls take the material at index `material`.
+- `DiscreteElementConfig` (interface): interface DiscreteElementConfig — Configuration of {@link createDiscreteElements}.
+- `DiscreteElements` (interface): interface DiscreteElements — A running DEM system. Arrays are live views for measurement; mutate state only through methods.
+- `bridgeRuptureDistance` (function): function bridgeRuptureDistance(liquid: DemLiquid): number — Gap at which a bridge breaks (Lian et al. 1993): (1 + θ/2) V^{1/3}.
+- `bridgeVolumeFromMoisture` (function): function bridgeVolumeFromMoisture(moisture: number, radius: number, solidDensity: number, liquidDensity = 1000, coordination = 6): number — Volume of one liquid bridge when a grain of `radius` holds `moisture` (liquid mass per solid mass) shared among `coordination` bridges, each fed by both grains: 2 w (ρ_s/ρ_l) V_p / z.
+- `capillaryForce` (function): function capillaryForce(liquid: DemLiquid, radius: number, separation: number): number — Capillary force of a bridge between spheres of harmonic-mean radius `radius` at gap `separation` (Willett et al. 2000): 2π R γ cos θ / (1 + 1.05 Ŝ + 2.5 Ŝ²), Ŝ = S √(R/V).
+- `createDiscreteElements` (function): function createDiscreteElements(config: DiscreteElementConfig): DiscreteElements — Create a DEM system. Add grains with `addBody`, then `step` or `run`.
+- `rayleighTime` (function): function rayleighTime(material: DemMaterial, radius: number): number — Rayleigh-wave time step of a grain, π R √(ρ/G) / (0.1631 ν + 0.8766); a DEM step is a fraction of it.
+- `restitutionDamping` (function): function restitutionDamping(restitution: number): number — Damping ratio β of the restitution-matched Hertzian dashpot, ln e / √(ln² e + π²) (negative).
 
 ## @jgengine/core/physics/reference/eigenvalues
 
