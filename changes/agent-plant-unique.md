@@ -1,4 +1,4 @@
-Mark isUniqueScatterItem internal
+Scatter grows every tree from its own seed (`variants: "unique"`); Fernwild adopts it at the same frame cost
 
 Engine seam: packages/core/src/generator/generator.ts, packages/core/src/plants/validation/plantSilhouette.ts, packages/core/src/scatter/InstancedScatter.draw.tsx, packages/core/src/scatter/ScatterHeroes.draw.tsx, packages/core/src/scatter/ScatterImpostorField.draw.tsx, packages/core/src/scatter/scatterGenerator.ts, packages/core/src/scatter/scatterHeroes.ts
 
@@ -10,8 +10,12 @@ Engine seam: packages/core/src/generator/generator.ts, packages/core/src/plants/
 - `createScatterHeroSet` (`@jgengine/core/scatter/scatterHeroes`): A hero set for one species. Also `ScatterHeroMember`, `ScatterHeroSet`, `ScatterHeroSetOptions`, `ScatterHeroSetState`, `ScatterHeroUpdate`.
 - `ScatterHeroesProps` (`@jgengine/core/scatter/ScatterHeroes.draw`): Props for {@link ScatterHeroes}.
 
+- Scatter `variants: "unique"` grows every placement from its own seed. The nearest few (`heroes`, `heroDistance`, `heroDetail`) draw as their own mesh, grown in the plant workers; the rest draw as 4 shared stand-ins and their impostors.
+- The plant-styles demo has a `unique` view: 100 sugar maples, each from its own seed.
+
 ### Changed
 
-- Mark isUniqueScatterItem internal
-- Fernwild grows every tree from its own seed; a contact sheet of 100 seeded maples
-- Unique scatter trees: per-placement seeds, hero meshes near the camera, silhouette measures
+- Fernwild's trees are unique, at the same frame cost as before.
+- A scatter impostor field keeps its far mesh when a few placements are hidden.
+
+Part of #2699
