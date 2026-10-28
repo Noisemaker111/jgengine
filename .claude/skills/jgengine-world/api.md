@@ -3703,7 +3703,7 @@
 
 ## @jgengine/core/sky/VolumetricClouds.draw
 
-- `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
+- `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds}: fully resolved cloud rules. Light and cover come from the scene's {@link readSkyLight}.
 
 ## @jgengine/core/sky/dayNightCycle
 
@@ -3722,10 +3722,10 @@
 - `DEFAULT_DAY_SUN_INTENSITY` (const): const DEFAULT_DAY_SUN_INTENSITY: 1 — ⚠ undocumented
 - `DEFAULT_SUN_COLOR` (const): const DEFAULT_SUN_COLOR: "#fff1c9" — Warm-white noon sun used when the game authored no sun tint (the shell's `SUN_COLOR`).
 - `DEFAULT_SUN_ELEVATION_DEG` (const): const DEFAULT_SUN_ELEVATION_DEG: number — The engine arc's noon height: `atan(1 / SUN_DEPTH_RATIO)`, ~68 degrees.
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; dayHold?: number; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; dayHold?: number; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; fog?: {color?: string | undefined} | undefined; moonIntensity?: num… — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented · used by `overcastDaylight`: A daylight state under cloud: `cover` 0 is the clear sky, 1 a full storm.
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `bandFogColor` (function): function bandFogColor(input: { authored: string | undefined; timeOfDay: boolean; cycle: string; band: string }): string — The fog color a biome-banded sky shows at the camera. Without a day cycle the bands own it: the sampled band color, which already falls back to the sky's authored fog between colorless bands. Under a day cycle the sky owns it (its authored fog, else the cycle's), so a fixed noon tint never hangs in a night sky.
+- `bandFogColor` (function): function bandFogColor(input: { timeOfDay: boolean; cycle: string; band: string }): string — The fog color a biome-banded sky shows at the camera. Without a day cycle the bands own it: the sampled band color, which already falls back to the sky's authored fog between colorless bands. Under a day cycle the sky owns it (its authored fog, else the cycle's), so a fixed noon tint never hangs in a night sky.
 - `overcastDaylight` (function): function overcastDaylight(state: DaylightState, cover: number): DaylightState — A daylight state under cloud: `cover` 0 is the clear sky, 1 a full storm. Dome, horizon and fog turn grey at their own brightness (so a stormy night stays dark), the sun dims to a fifth, the fill a little, and the moon and stars go behind the cloud.
 
 ## @jgengine/core/sky/physicalSky
@@ -3742,6 +3742,14 @@
 
 - `biomeBandsForSky` (function): function biomeBandsForSky(authoredSky: SkyEnvironmentDescriptor | undefined, worldSky: SkyEnvironmentDescriptor | undefined, bands: readonly BiomeBand[] | undefined): readonly BiomeBand[] | undefined — The terrain biome bands a sky cross-fades through. They belong to the world's own sky, so they apply whenever the sky in force is that sky, even after the shell derives a copy of it (a sun bearing taken from the game's lighting, noon keyframes); a look preset's backdrop sky replaces the world's sky and drops them.
 
+## @jgengine/core/sky/skyLight.draw
+
+- `SkyDirection` (type): type SkyDirection = readonly [number, number, number] — A world-space direction, `[x, y, z]`.
+- `SkyLight` (interface): interface SkyLight — The light a sky gives the scene this frame, in the renderer's working colour space (the values a shader adds before tone mapping). Whoever owns the sky writes it each frame with {@link publishSkyLight}: the engine `Sky` does, and so can a game's own sky (a space sky, an alien sun, a sky that changes with the zone). Water, clouds and anything else that shades by the sky read it with {@link readSkyLight}, so they follow whatever sky the game draws.
+- `createSkyLight` (function): function createSkyLight(): SkyLight — A sky light at noon under a clear sky, for a scene whose sky has not published one yet.
+- `publishSkyLight` (function): function publishSkyLight(scene: THREE.Scene, light: SkyLight): void — Record the sky's light for this frame on a scene. Publish one object and mutate it each frame; readers keep the reference. A game drawing its own sky calls this from its `useFrame`.
+- `readSkyLight` (function): function readSkyLight(scene: THREE.Scene): SkyLight | undefined — The light the scene's sky published, or `undefined` when no sky has.
+
 ## @jgengine/core/sky/skyLightingPolicy
 
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
@@ -3752,14 +3760,11 @@
 - `skyNoonKeyframes` (function): function skyNoonKeyframes<T extends SkyEnvironmentConfig>(sky: T, lighting: LightingConfig | undefined, fogColor?: string): T — The authored `lighting` as the day cycle's **noon keyframes**, filling only the sky fields the game left unset. A game's midday sun, fill and fog therefore become the peak the cycle scales and cross-fades from, so an authored world gets a sunset and a night without re-authoring the same numbers in the sky. Authored sky fields always win over the lighting config.
 - `splitSkyOwnedLighting` (function): function splitSkyOwnedLighting(lighting: LightingConfig | undefined): SkyOwnedLighting — Splits authored lighting into the sun/ambient terms a time-of-day sky drives and the rest. Returns an empty `sky` when the game authored no lighting, so callers can keep engine defaults.
 
-## @jgengine/core/sky/skySun.draw
-
-- `SkySunDirection` (type): type SkySunDirection = readonly [number, number, number] — World-space direction toward the sun, as the mounted sky last placed it.
-
 ## @jgengine/core/sky/volumetricClouds
 
-- `VOLUMETRIC_CLOUDS_DEFAULTS` (const): const VOLUMETRIC_CLOUDS_DEFAULTS: VolumetricCloudsRules — Volumetric cloud defaults: a moderate, drifting cumulus layer.
-- `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
+- `CLOUD_NOISE_SIZE` (const): const CLOUD_NOISE_SIZE: 32 — Edge length of the tileable cloud noise volume, in voxels.
+- `VOLUMETRIC_CLOUDS_DEFAULTS` (const): const VOLUMETRIC_CLOUDS_DEFAULTS: Omit<VolumetricCloudsRules, "fade"> — Volumetric cloud defaults: a moderate, drifting cumulus layer.
+- `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()`: a raymarched cloud slab the sky mounts beside its dome (`VolumetricClouds.draw.tsx`). The sky's light colours and shades it through the day, and the weather's cloud cover thickens and greys it. Off by default: omit `volumetricClouds` on `sky({...})` and no layer mounts.
 - `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
 
 ## @jgengine/core/spatial/spatialIndex
@@ -4286,8 +4291,8 @@
 
 ## @jgengine/core/water/Ocean.draw
 
-- `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — An animated Gerstner-wave ocean sheet; `depthAt` tints shallows and adds shoreline foam.
-- `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — Props for {@link Ocean}: the ocean config, an optional water-depth sampler for shore colour and foam, and mesh props.
+- `Ocean` (function): function Ocean({ config, bedAt, bedBounds, ...meshProps }: OceanProps): React.JSX.Element | null — An animated Gerstner-wave water surface lit by the scene's sky: it reflects the sky's colours, takes the sun's and moon's light, clears over shallows and foams at the shore wherever `bedAt` puts the bed, and follows the camera to the horizon when `config.follow` is set.
+- `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — Props for {@link Ocean}: the ocean config, the ground under it, and mesh props.
 
 ## @jgengine/core/water/OceanConfig.draw
 
@@ -4304,19 +4309,23 @@
 
 ## @jgengine/core/water/OceanMaterial.draw
 
-- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms — Uniforms the ocean shader reads: time, wave set, colours, foam and depth shading.
+- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms — Uniforms the ocean shader reads: time, wave set, bed map, colours, foam, and the sky's light.
 - `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — The ocean's `ShaderMaterial`, typed with its {@link OceanMaterialUniforms}.
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — Build the ocean shader material for a resolved config.
-- `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number, sunDirection?: readonly [number, number, number]): void — Write the config and the frame's clock into the material. `sunDirection` is where the sky put the sun: glints follow it, and fade out as it sets so a night sea does not sparkle. Without a sky the fixed day heading is used.
+- `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number, light?: SkyLight): void — Write the config, the frame's clock and the sky's light into the material. `light` is what the scene's sky published (`readSkyLight`): the water is lit, tinted and reflects by it, and its glints fade as the sun sets. Without a sky it keeps a clear noon.
 
 ## @jgengine/core/water/OceanShader
 
-- `oceanFragmentShader` (const): const oceanFragmentShader: "\nuniform float uTime;\nuniform vec3 uShallowColor;\nuniform vec3 uDeepColor;\nuniform vec3 uCrestColor;\nuniform vec3 uFoamColor;\nuniform float uOpacity;\nuniform float uFresnelStrength;\nuniform float uHorizonBlend;\nuniform float uFoamIntensity;\nuniform float uDepthR… — GLSL fragment shader that colours the ocean by depth, fresnel, crest foam and sun glint.
-- `oceanVertexShader` (const): const oceanVertexShader: "\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform float uWaveCount;\nuniform float uFoamThreshold;\nuniform float uFoamSoftness;\nuniform float uFoamCoverage;\n\nattribute float aDepth;\n\nvarying vec… — GLSL vertex shader that displaces the ocean sheet by the summed Gerstner waves.
+- `oceanFragmentShader` (const): const oceanFragmentShader: "\n\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform sampler2D uBedMap;\nuniform vec4 uBedRect;\nuniform float uSurfaceY;\n\n// Water depth under a point in ocean-local XZ: the surface height minus t… — GLSL fragment shader: depth colour and clarity, sky reflection, sun and moon light, crest and shore foam.
+- `oceanVertexShader` (const): const oceanVertexShader: "\n\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform sampler2D uBedMap;\nuniform vec4 uBedRect;\nuniform float uSurfaceY;\n\n// Water depth under a point in ocean-local XZ: the surface height minus the… — GLSL vertex shader that displaces the ocean sheet by the summed Gerstner waves, in world space.
+
+## @jgengine/core/water/oceanBed
+
+- `OceanBedBounds` (type): type OceanBedBounds = readonly [number, number, number, number] — A rect in an ocean sheet's local XZ: `[minX, minZ, maxX, maxZ]`.
 
 ## @jgengine/core/water/oceanColor
 
-- `oceanColor` (function): function oceanColor(ocean: Pick<OceanEnvironmentDescriptor, "color" | "palette">): { fresnelStrength?: number | undefined; foam?: string | undefined; crest?: string | undefined; deep?: string | undefined; shallow: string; } — The descriptor's colors in the shell Ocean's terms; unset palette fields keep the Ocean default.
+- `oceanColor` (function): function oceanColor(ocean: Pick<OceanEnvironmentDescriptor, "color" | "palette" | "clarity">): { clarity?: number | undefined; fresnelStrength?: number | undefined; foam?: string | undefined; crest?: string | undefined; deep?: string | undefined; shallow: string; } — The descriptor's colors in the shell Ocean's terms; unset palette fields keep the Ocean default.
 
 ## @jgengine/core/water/waterKind
 
@@ -4387,7 +4396,7 @@
 - `AuthoredWeatherSample` (interface): interface AuthoredWeatherSample extends WeatherConditions — Resolved conditions and wind at a world point and absolute simulation time.
 - `AuthoredWeatherTransition` (interface): interface AuthoredWeatherTransition — An absolute simulation-time profile change with an optional continuous blend.
 - `AuthoredWeatherZone` (interface): interface AuthoredWeatherZone — A local weather override and additive wind source centered in world X,Z metres.
-- `WeatherConditions` (interface): interface WeatherConditions — Precipitation intensity, temperature offset in degrees, and normalized lightning brightness.
+- `WeatherConditions` (interface): interface WeatherConditions — Precipitation intensity, temperature offset in degrees, normalized lightning brightness and cloud cover.
 - `WeatherExposure` (interface): interface WeatherExposure — Bounded surface accumulation with restoration, live rate tuning and explicit release.
 - `WeatherExposureConfig` (interface): interface WeatherExposureConfig — Surface capacity and normalized wetting, drying, snowfall and melting rates per second.
 - `WeatherExposureSample` (interface): interface WeatherExposureSample — Retained normalized wetness and snow coverage, temperature, and sky exposure.
@@ -4768,7 +4777,7 @@
 - `ObjectSlotResult` (type): type ObjectSlotResult = { status: "ok" } | { status: "rejected"; reason: ObjectSlotRejection } — Outcome of an object slot mutation: applied, or refused with a reason and no state change on either side.
 - `ObjectSlotTransfer` (interface): interface ObjectSlotTransfer — Which player inventory a transfer moves between, and what it moves.
 - `ObjectVisual` (interface): interface ObjectVisual { scale?: number | readonly [number, number, number]; color?: string; opacity?: number } — ⚠ undocumented
-- `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt" | "palette"> — ⚠ undocumented · used by `ocean`: Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
+- `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt" | "palette" | "horizon" | "clarity" | "bedResolution"> — ⚠ undocumented · used by `ocean`: Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
 - `Order` (interface): interface Order<TPayload = unknown> — One issued order. Fully serializable: `kind` is a registry key (not a closure), `payload` is the caller's plain data, and `state` is the kind's own plain progress scratch (e.g. a patrol waypoint index) written during `start`/`update`. Never holds functions, so the whole queue round-trips through `JSON`/`structuredClone`.
 - `OrderCancelReason` (type): type OrderCancelReason = "replaced" | "preempted" | "requested" | "invalid" | "failed" | "cleared" — Why an order left the queue without completing. `replaced`/`preempted` come from a newer order taking over; `requested` from explicit `cancelActive`; `invalid` when the kind's `start` rejects; `failed` when `update` reports failure; `cleared` from a full `clear`/`cancelAll`.
 - `OrderEvent` (interface): interface OrderEvent — A lifecycle event emitted synchronously as orders move through the queue.
@@ -5079,7 +5088,7 @@
 - `VisibilityState` (type): type VisibilityState = "hidden" | "remembered" | "observed" — One viewer group's knowledge of a cell: never/forgotten, last-known, or live.
 - `VisibilitySystem` (interface): interface VisibilitySystem { update(): VisibilityResult; isVisible(id: string): boolean; isPreloaded(id: string): boolean; boundsOf(id: string): RenderBounds | undefined; settings(): CullingSettings; setSettings(patch: Partial<CullingSettings>): void; stats(): Visibi… — ⚠ undocumented
 - `VolumeDistribution` (type): type VolumeDistribution = "volume" | "radial" — Fill policy for a sphere/shell: `"volume"` = volume-uniform (even density); `"radial"` = radius-uniform.
-- `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
+- `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()`: a raymarched cloud slab the sky mounts beside its dome (`VolumetricClouds.draw.tsx`). The sky's light colours and shades it through the day, and the weather's cloud cover thickens and greys it. Off by default: omit `volumetricClouds` on `sky({...})` and no layer mounts.
 - `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
 - `VoxelFace` (type): type VoxelFace = "px" | "nx" | "py" | "ny" | "pz" | "nz" — ⚠ undocumented
 - `VoxelGround` (interface): interface VoxelGround — A procedural volume of blocks. `size` is the generator domain; `generator` is algorithm params only.
@@ -5614,8 +5623,8 @@
 - `GrassEnvironmentConfig` (interface): interface GrassEnvironmentConfig extends Partial<GrassLook> — Config for {@link grass}: where the patch grows plus any {@link GrassLook} knob (blade shape, colour and season, species, flowers, masks, wind). Unset knobs take the shared grass defaults; every knob is clamped to a range that still reads as full ground cover.
 - `GrassEnvironmentDescriptor` (interface): interface GrassEnvironmentDescriptor — A resolved grass patch: its area and the fully-defaulted {@link GrassLook} the shell draws.
 - `LiveRoadSource` (interface): interface LiveRoadSource — A road list that changes at runtime: read `current()`, and `subscribe` to hear when it changed.
-- `OceanEnvironmentConfig` (interface): interface OceanEnvironmentConfig { bounds?: WorldBounds; position?: EnvironmentVec2; level?: number; levelAt?: (time: number) => number; waveHeight?: number; waveScale?: number; waveSpeed?: number; color?: string; palette?: OceanPalette } — ⚠ undocumented · used by `ocean`: Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
-- `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt" | "palette"> — ⚠ undocumented · used by `ocean`: Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
+- `OceanEnvironmentConfig` (interface): interface OceanEnvironmentConfig { bounds?: WorldBounds; position?: EnvironmentVec2; level?: number; levelAt?: (time: number) => number; waveHeight?: number; waveScale?: number; waveSpeed?: number; color?: string; palette?: OceanPalette; horizon?: boolean; clarity?: number… — ⚠ undocumented · used by `ocean`: Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
+- `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt" | "palette" | "horizon" | "clarity" | "bedResolution"> — ⚠ undocumented · used by `ocean`: Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
 - `OceanPalette` (interface): interface OceanPalette — Optional ocean surface colors beyond the shallow `color` (all hex).
 - `PadEnvironmentConfig` (interface): interface PadEnvironmentConfig { center: EnvironmentVec2; size: PadSize; height?: number; elevation?: number; color?: string; rotationY?: number } — ⚠ undocumented
 - `PadEnvironmentDescriptor` (type): type PadEnvironmentDescriptor = { kind: "pad" } & Required< Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color"> > & Pick<PadEnvironmentConfig, "rotationY" | "elevation"> — ⚠ undocumented · used by `padFlattenMasks`: Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it.

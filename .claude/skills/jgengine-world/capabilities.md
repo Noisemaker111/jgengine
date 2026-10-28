@@ -405,6 +405,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
 
+## custom-sky-light — a game's own sky lights the engine's water and clouds by publishing its sun, moon and sky colours
+
+- `publishSkyLight` (function) · `import { publishSkyLight } from "@jgengine/core/sky/skyLight.draw"`
+
 ## custom-viewmodel-muzzle — align tracer origins with a custom viewmodel's live muzzle without changing authoritative shots
 
 - `registerFirstPersonMuzzle` (function) · `import { registerFirstPersonMuzzle } from "@jgengine/core/camera/customMuzzle.draw"`
@@ -1201,6 +1205,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `skillCheckZoneAt` (function) · `import { skillCheckZoneAt } from "@jgengine/core/world"`
 
+## sky-light — one per-frame record of sun, moon, sky colour and cloud cover that water, clouds and a game's own sky share
+
+- `SkyLight` (interface) · `import { SkyLight } from "@jgengine/core/sky/skyLight.draw"`
+
 ## soil-patch — editor-authorable terrain crack/moss material variation
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
@@ -1495,7 +1503,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createVisibilityField` (function) · `import { createVisibilityField } from "@jgengine/core/world"`
 
-## volumetric-clouds — raymarched cloud layer sky option
+## volumetric-clouds — raymarched cloud layer, lit by the day and thickened by the weather
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
 
