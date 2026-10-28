@@ -3,13 +3,20 @@ import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
 import { PINUS_STROBUS } from "../species/data/pinusStrobus";
 import { validatePlantSpecies } from "../species/plantSpecies";
 import { crownRatio, hashPlantStructure } from "../structure/plantStructure";
-import { EASTERN_WHITE_PINE_CARMEAN, SUGAR_MAPLE_CARMEAN, siteIndexHeightM } from "../validation/heightAgeCurves";
+import { siteIndexHeightM, type SiteIndexCurve } from "../validation/heightAgeCurves";
+import { SPECIES_REFERENCE } from "../species/speciesReferenceTable";
 import { OPEN_TEMPERATE_SITE } from "./plantEnvironment";
 import { DEFAULT_GROWTH_LIMITS, createPlantGrowth, type PlantGrowthSnapshot } from "./plantGrowth";
 
 const SEED = "maple";
 /** Carmean 1989 site index for northern Wisconsin sugar maple on a good site, feet at 50 years. */
 const SITE_INDEX_FT = 65;
+
+function carmeanOf(speciesId: string): SiteIndexCurve {
+  const curve = SPECIES_REFERENCE[speciesId]?.carmean;
+  if (curve === undefined) throw new Error(`no Carmean curve for ${speciesId}`);
+  return curve;
+}
 
 interface LongRun {
   heights: Map<number, number>;
@@ -91,7 +98,7 @@ describe("plant growth", () => {
   test("height at 50 and 100 years is within 15% of the Carmean site-index curve", () => {
     const run = growLong();
     for (const age of [50, 100]) {
-      const expected = siteIndexHeightM(SUGAR_MAPLE_CARMEAN, SITE_INDEX_FT, age);
+      const expected = siteIndexHeightM(carmeanOf("acer-saccharum"), SITE_INDEX_FT, age);
       const height = run.heights.get(age) ?? 0;
       expect(Math.abs(height - expected) / expected).toBeLessThan(0.15);
     }
@@ -149,7 +156,7 @@ describe("eastern white pine", () => {
     const plant = createPlantGrowth(PINUS_STROBUS, OPEN_TEMPERATE_SITE, "pine");
     for (const age of [50, 100]) {
       plant.step(age - plant.ageYears());
-      const expected = siteIndexHeightM(EASTERN_WHITE_PINE_CARMEAN, SITE_INDEX_FT, age);
+      const expected = siteIndexHeightM(carmeanOf("pinus-strobus"), SITE_INDEX_FT, age);
       expect(Math.abs(plant.structure().stats.heightM - expected) / expected).toBeLessThan(0.15);
     }
     expect(plant.stats().alive).toBe(true);

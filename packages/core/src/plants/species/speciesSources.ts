@@ -34,7 +34,8 @@ export const PLANT_SOURCES = {
   "thornley-1976": "Thornley 1976, Mathematical models in plant physiology, Academic Press: the rectangular-hyperbola leaf light response",
   "barthelemy-2007": "Barthélémy & Caraglio 2007, Plant architecture: a dynamic, multilevel and comprehensive approach to plant form, structure and ontogeny, Ann. Bot. 99: the establishment phase",
   "putz-1984": "Putz, Parker & Archibald 1984, Mechanical abrasion and intercrown spacing, Am. Midl. Nat. 112: crown shyness between neighbours",
-  "crown-fit": "Fitted by CMA-ES against the Carmean 1989 height curve, FIA stand diameters, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees (plants/validation/crownAllometry.test.ts)",
+  "crown-fit": "Fitted by CMA-ES (Stava et al. 2014) against the Carmean 1989 height curve, FIA site-tree diameters, Tallo heights and crown widths, Ek 1974 and the crown profile of open- and forest-grown trees (`bun run jgengine plants fit`; plants/species/data/plantLibrary.test.ts)",
+  "stava-2014": "Stava, Pirk, Kratt, Chen, Měch, Deussen & Benes 2014, Inverse procedural modelling of trees, Computer Graphics Forum 33: fitting a tree model's parameters by searching until grown trees match target statistics",
 } as const;
 
 /** Id of a credited plant data or model source. */

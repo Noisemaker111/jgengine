@@ -7891,7 +7891,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/plants/validation/crownAllometry",
+      "module": "@jgengine/core/plants/species/speciesReference",
       "gameFacing": false,
       "probe": null,
       "intent": "published crown allometry and crown-shape measures to check a growth model against"

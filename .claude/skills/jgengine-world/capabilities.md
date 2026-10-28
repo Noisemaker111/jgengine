@@ -1393,9 +1393,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## plant-grown — place, scatter and preview simulation-grown plants of any species, age and style
 
-- `BUILTIN_PLANT_SPECIES` (const) · `import { BUILTIN_PLANT_SPECIES } from "@jgengine/core/plants/grown/plantGrown"`
 - `PLANT_CACHE` (const) · `import { PLANT_CACHE } from "@jgengine/core/plants/grown/plantGrown"`
 - `PLANT_GROWN_GENERATOR` (const) · `import { PLANT_GROWN_GENERATOR } from "@jgengine/core/plants/grown/plantGrown"`
+- `PLANT_LIBRARY` (const) · `import { PLANT_LIBRARY } from "@jgengine/core/plants/species/data/plantLibrary"`
 - `createPlantGrownGenerator` (function) · `import { createPlantGrownGenerator } from "@jgengine/core/plants/grown/plantGrown"`
 - `createWorkerPlantGrower` (function) · `import { createWorkerPlantGrower } from "@jgengine/core/plants/grown/plantGrowPool"`
 - `plantStructureKey` (function) · `import { plantStructureKey } from "@jgengine/core/plants/grown/plantGrown"`
@@ -1434,15 +1434,19 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## plant-validation — published crown allometry and crown-shape measures to check a growth model against
 
+- `REFERENCE_STAND` (const) · `import { REFERENCE_STAND } from "@jgengine/core/plants/species/speciesReference"`
 - `branchAzimuthHistogram` (function) · `import { branchAzimuthHistogram } from "@jgengine/core/plants/validation/plantSilhouette"`
 - `crownProfile` (function) · `import { crownProfile } from "@jgengine/core/plants/validation/crownAllometry"`
+- `crownWidthBandM` (function) · `import { crownWidthBandM } from "@jgengine/core/plants/species/speciesReference"`
 - `forestGrownCrownWidthM` (function) · `import { forestGrownCrownWidthM } from "@jgengine/core/plants/validation/crownAllometry"`
+- `growthCurveAt` (function) · `import { growthCurveAt } from "@jgengine/core/plants/species/speciesReference"`
 - `histogramDistance` (function) · `import { histogramDistance } from "@jgengine/core/plants/validation/plantSilhouette"`
-- `measuredCrownWidthBandM` (function) · `import { measuredCrownWidthBandM } from "@jgengine/core/plants/validation/crownAllometry"`
 - `openGrownCrownWidthM` (function) · `import { openGrownCrownWidthM } from "@jgengine/core/plants/validation/crownAllometry"`
 - `plantSilhouettes` (function) · `import { plantSilhouettes } from "@jgengine/core/plants/validation/plantSilhouette"`
 - `silhouetteIoU` (function) · `import { silhouetteIoU } from "@jgengine/core/plants/validation/plantSilhouette"`
 - `siteIndexHeightM` (function) · `import { siteIndexHeightM } from "@jgengine/core/plants/validation/heightAgeCurves"`
+- `standDbhAtCm` (function) · `import { standDbhAtCm } from "@jgengine/core/plants/species/speciesReference"`
+- `standHeightAtM` (function) · `import { standHeightAtM } from "@jgengine/core/plants/species/speciesReference"`
 
 ## plot-permissions — Owner, editor and guild build rights on a plot
 

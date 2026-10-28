@@ -18,32 +18,6 @@ export interface SiteIndexCurve {
   breastHeightFt: number;
 }
 
-/** NC-128 curve 3: sugar maple, northern Wisconsin and Upper Michigan (Carmean 1978), total age. */
-export const SUGAR_MAPLE_CARMEAN: SiteIndexCurve = {
-  speciesId: "acer-saccharum",
-  curve: 3,
-  region: "northern Wisconsin and Upper Michigan",
-  b1: 6.1308,
-  b2: 0.6904,
-  b3: -0.0195,
-  b4: 10.1563,
-  b5: -0.533,
-  breastHeightFt: 0,
-};
-
-/** NC-128 curve 103: eastern white pine, northern Wisconsin (FVS `htcalc.f`), total age. */
-export const EASTERN_WHITE_PINE_CARMEAN: SiteIndexCurve = {
-  speciesId: "pinus-strobus",
-  curve: 103,
-  region: "northern Wisconsin",
-  b1: 1.966,
-  b2: 1,
-  b3: -0.024,
-  b4: 1.8942,
-  b5: 0,
-  breastHeightFt: 0,
-};
-
 const FOOT_M = 0.3048;
 
 /**

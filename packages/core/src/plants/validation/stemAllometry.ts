@@ -1,25 +1,3 @@
-/** Median trunk diameter of measured stand-grown trees at a given age. */
-export interface StandDiameterAtAge {
-  ageYears: number;
-  dbhCm: number;
-}
-
-/**
- * Median DBH of USDA Forest Inventory and Analysis site trees (US public domain) in Wisconsin,
- * Michigan and Minnesota on site index 55–75 ft, by age. Site trees are dominant or codominant trees
- * of a fully stocked stand, so they match a crown grown in a closed stand.
- */
-export const FIA_STAND_DIAMETER: Readonly<Record<string, readonly StandDiameterAtAge[]>> = {
-  "acer-saccharum": [
-    { ageYears: 50, dbhCm: 22.6 },
-    { ageYears: 100, dbhCm: 32 },
-  ],
-  "pinus-strobus": [
-    { ageYears: 50, dbhCm: 30 },
-    { ageYears: 100, dbhCm: 48 },
-  ],
-};
-
 /** The 10th–90th percentile leaf area per sapwood area at breast height, m² per m². */
 export interface LeafToSapwoodBand {
   low: number;
