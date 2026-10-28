@@ -13,9 +13,7 @@ import { defineGenerator, registerGenerator, untypedGenerator, type GeneratorDef
 import { defineParamSchema } from "../generator/paramSchema";
 import { registerPlaceableGeneratorOutput } from "../scene/assetGenerator";
 import {
-
   addBlob,
-  addLeafCluster,
   addFrond,
   addStone,
   addTube,
@@ -42,17 +40,6 @@ export const NATURE_OUTPUT = "nature-mesh";
 const NATURE_LODS = [1, 0.5] as const;
 
 const GOLDEN = Math.PI * (3 - Math.sqrt(5));
-/** Triangles a full-detail variant spends on leaf blades, shared by its clusters; half detail spends less. */
-const LEAF_TRIANGLES = 1800;
-/** Most blades one cluster grows, however few clusters share the budget. */
-const MAX_CLUSTER_LEAVES = 90;
-
-/** Blades each of `clusters` grows at `detail` from a shared triangle budget. */
-function leavesPerCluster(clusters: number, detail: number, budget = LEAF_TRIANGLES): number {
-  const share = (budget * (detail >= 0.75 ? 1 : 0.4)) / Math.max(1, clusters) / 2;
-  return Math.max(4, Math.min(MAX_CLUSTER_LEAVES, Math.floor(share)));
-}
-
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }

@@ -7512,7 +7512,7 @@
       "module": "@jgengine/core/nature/natureMesh",
       "gameFacing": false,
       "probe": null,
-      "intent": "seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter"
+      "intent": "seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter"
     },
     {
       "id": "nav-crowd",
@@ -8451,7 +8451,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/plants/species/speciesReference",
+      "module": "@jgengine/core/plants/species/habitReference",
       "gameFacing": false,
       "probe": null,
       "intent": "published crown allometry and crown-shape measures to check a growth model against"

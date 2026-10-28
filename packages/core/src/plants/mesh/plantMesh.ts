@@ -833,7 +833,8 @@ function addOrgans(build: FoliageBuild, lod: number, textured: boolean, reserve:
   for (let organ = 0; organ < kind.length; organ += 1) {
     const base = kind[organ] === PLANT_ORGAN.flower ? flower : fruit;
     const clusters = organClusters(count[organ] ?? 1, lod);
-    const radius = Math.max(0.012, (size[organ] ?? 0.01) * build.style.leafScale);
+    // One cluster stands for a bunch of berries or flowers, so it is drawn about twice an organ's size.
+    const radius = Math.max(0.03, 2 * (size[organ] ?? 0.01) * build.style.leafScale);
     for (let c = 0; c < clusters; c += 1) {
       if (writer.triangles + OCTAHEDRON.faces.length > cap) return;
       const jx = (hash01(build.seed ^ organ, c * 3) - 0.5) * radius * 4;
