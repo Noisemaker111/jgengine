@@ -14,6 +14,11 @@ describe("landform generator", () => {
     const first = runGenerator(generator, SMALL);
     expect(cache.keys()).toHaveLength(1);
     expect(runGenerator(generator, SMALL)).toBe(first);
+    const held = cache.snapshot();
+    cache.reset();
+    expect(cache.keys()).toHaveLength(0);
+    cache.restore(held);
+    expect(runGenerator(generator, SMALL)).toBe(first);
     const fresh = runGenerator(createLandformGenerator(createLandformCache(), { grower: null }), SMALL);
     expect(Array.from(fresh.heights)).toEqual(Array.from(first.heights));
     expect(Array.from(fresh.weights)).toEqual(Array.from(first.weights));

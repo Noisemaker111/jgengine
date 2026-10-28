@@ -103,6 +103,10 @@ export interface LandformCache {
   load(key: string): Promise<LandformTerrain | undefined>;
   /** Keys held in memory, oldest first. */
   keys(): string[];
+  /** The landforms held in memory, oldest first. */
+  snapshot(): Array<[string, LandformTerrain]>;
+  /** Replace what memory holds with `entries`, oldest first; storage is untouched. */
+  restore(entries: ReadonlyArray<readonly [string, LandformTerrain]>): void;
   /** Forget everything in memory; storage is untouched. */
   reset(): void;
 }
@@ -148,6 +152,11 @@ export function createLandformCache(options: LandformCacheOptions = {}): Landfor
       return stored;
     },
     keys: () => [...memory.keys()],
+    snapshot: () => [...memory.entries()],
+    restore(entries) {
+      memory.clear();
+      for (const [key, terrain] of entries) remember(key, terrain);
+    },
     reset: () => memory.clear(),
   };
 }
@@ -186,6 +195,7 @@ export interface WorkerLandformGrowerOptions {
   spawn?: () => Worker;
 }
 
+// stateless: its queue holds in-flight promises, not state to save; a new grower is the reset.
 /**
  * A pool of workers that grow landforms with the same models as the main thread. Workers start on
  * demand and stop when the queue drains. Null where the platform has no workers.
