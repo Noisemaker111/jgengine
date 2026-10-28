@@ -32,12 +32,18 @@ export function isScatterGeneratorItem(value: unknown): value is ScatterGenerato
   return typeof value === "object" && value !== null && "generator" in value && typeof value.generator === "string";
 }
 
-/** How many variants a generator item bakes. */
+/**
+ * How many variants a generator item bakes.
+ * @capability scatter-generator grow a scatter palette item from a seeded generator's baked variants
+ */
 export function scatterGeneratorVariantCount(item: ScatterGeneratorItem): number {
   return Math.max(1, Math.min(16, Math.floor(item.variants ?? 6)));
 }
 
-/** The base `meta` a generator item's variants grow around: preset values, then params. */
+/**
+ * The base `meta` a generator item's variants grow around: preset values, then params.
+ * @capability scatter-generator grow a scatter palette item from a seeded generator's baked variants
+ */
 export function scatterGeneratorBase(item: ScatterGeneratorItem, schema: ParamSchema): Record<string, unknown> {
   const preset = item.preset === undefined ? undefined : findSchemaPreset(schema, item.preset);
   return { ...preset?.values, ...item.params };

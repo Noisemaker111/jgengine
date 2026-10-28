@@ -6,6 +6,12 @@
  */
 import { hashString } from "../random/rng";
 
+function pick<T>(values: readonly T[], index: number): T {
+  const value = values[index];
+  if (value === undefined) throw new RangeError(`index ${index} outside ${values.length} items`);
+  return value;
+}
+
 /** Indexed triangle mesh with per-vertex sRGB colours, in metres with the base at y = 0. */
 export interface NatureMesh {
   positions: Float32Array;
@@ -17,7 +23,10 @@ export interface NatureMesh {
   triangles: number;
 }
 
-/** True when a generator output is a {@link NatureMesh}. */
+/**
+ * True when a generator output is a {@link NatureMesh}.
+ * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ */
 export function isNatureMesh(value: unknown): value is NatureMesh {
   return typeof value === "object" && value !== null && "positions" in value && value.positions instanceof Float32Array && "indices" in value && value.indices instanceof Uint32Array;
 }
@@ -135,40 +144,40 @@ export class NatureMeshBuilder {
     const indices = Uint32Array.from(this.indices);
     const normals = new Float32Array(positions.length);
     for (let i = 0; i < indices.length; i += 3) {
-      const a = indices[i]! * 3;
-      const b = indices[i + 1]! * 3;
-      const c = indices[i + 2]! * 3;
-      const ux = positions[b]! - positions[a]!;
-      const uy = positions[b + 1]! - positions[a + 1]!;
-      const uz = positions[b + 2]! - positions[a + 2]!;
-      const vx = positions[c]! - positions[a]!;
-      const vy = positions[c + 1]! - positions[a + 1]!;
-      const vz = positions[c + 2]! - positions[a + 2]!;
+      const a = (indices[i] ?? 0) * 3;
+      const b = (indices[i + 1] ?? 0) * 3;
+      const c = (indices[i + 2] ?? 0) * 3;
+      const ux = (positions[b] ?? 0) - (positions[a] ?? 0);
+      const uy = (positions[b + 1] ?? 0) - (positions[a + 1] ?? 0);
+      const uz = (positions[b + 2] ?? 0) - (positions[a + 2] ?? 0);
+      const vx = (positions[c] ?? 0) - (positions[a] ?? 0);
+      const vy = (positions[c + 1] ?? 0) - (positions[a + 1] ?? 0);
+      const vz = (positions[c + 2] ?? 0) - (positions[a + 2] ?? 0);
       const nx = uy * vz - uz * vy;
       const ny = uz * vx - ux * vz;
       const nz = ux * vy - uy * vx;
       for (const index of [a, b, c]) {
-        normals[index] = normals[index]! + nx;
-        normals[index + 1] = normals[index + 1]! + ny;
-        normals[index + 2] = normals[index + 2]! + nz;
+        normals[index] = (normals[index] ?? 0) + nx;
+        normals[index + 1] = (normals[index + 1] ?? 0) + ny;
+        normals[index + 2] = (normals[index + 2] ?? 0) + nz;
       }
     }
     const min: [number, number, number] = [Infinity, Infinity, Infinity];
     const max: [number, number, number] = [-Infinity, -Infinity, -Infinity];
     for (let i = 0; i < positions.length; i += 3) {
-      const length = Math.hypot(normals[i]!, normals[i + 1]!, normals[i + 2]!) || 1;
+      const length = Math.hypot((normals[i] ?? 0), (normals[i + 1] ?? 0), (normals[i + 2] ?? 0)) || 1;
       const bias = this.upBias[i / 3] ?? 0;
-      const nx = (normals[i]! / length) * (1 - bias);
-      const ny = (normals[i + 1]! / length) * (1 - bias) + bias;
-      const nz = (normals[i + 2]! / length) * (1 - bias);
+      const nx = ((normals[i] ?? 0) / length) * (1 - bias);
+      const ny = ((normals[i + 1] ?? 0) / length) * (1 - bias) + bias;
+      const nz = ((normals[i + 2] ?? 0) / length) * (1 - bias);
       const biased = Math.hypot(nx, ny, nz) || 1;
       normals[i] = nx / biased;
       normals[i + 1] = ny / biased;
       normals[i + 2] = nz / biased;
       for (let axis = 0; axis < 3; axis += 1) {
-        const value = positions[i + axis]!;
-        if (value < min[axis]!) min[axis] = value;
-        if (value > max[axis]!) max[axis] = value;
+        const value = (positions[i + axis] ?? 0);
+        if (value < (min[axis] ?? 0)) min[axis] = value;
+        if (value > (max[axis] ?? 0)) max[axis] = value;
       }
     }
     if (positions.length === 0) {
@@ -195,13 +204,14 @@ export interface TubeOptions {
 /**
  * A tapered tube along `path` with radius `radii[i]` at each point: trunks, branches, logs. Rings
  * follow the path's tangent with a rotation-minimising frame so a bent trunk does not twist.
+ * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], radii: readonly number[], options: TubeOptions): void {
   if (path.length < 2) return;
   const sides = Math.max(3, Math.floor(options.sides));
   const tangentAt = (i: number): [number, number, number] => {
-    const a = path[Math.max(0, i - 1)]!;
-    const b = path[Math.min(path.length - 1, i + 1)]!;
+    const a = pick(path, Math.max(0, i - 1));
+    const b = pick(path, Math.min(path.length - 1, i + 1));
     return normalize([b[0] - a[0], b[1] - a[1], b[2] - a[2]]);
   };
   let tangent = tangentAt(0);
@@ -214,7 +224,7 @@ export function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], 
     normal = normalize([normal[0] - next[0] * dot, normal[1] - next[1] * dot, normal[2] - next[2] * dot]);
     tangent = next;
     const binormal = cross(tangent, normal);
-    const center = path[i]!;
+    const center = pick(path, i);
     const radius = radii[Math.min(i, radii.length - 1)] ?? 0.1;
     const t = i / (path.length - 1);
     const color = options.color(i, t);
@@ -229,8 +239,8 @@ export function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], 
     }
   }
   for (let i = 0; i < rings.length - 1; i += 1) {
-    const a = rings[i]!;
-    const b = rings[i + 1]!;
+    const a = pick(rings, i);
+    const b = pick(rings, i + 1);
     for (let s = 0; s < sides; s += 1) {
       const s1 = (s + 1) % sides;
       builder.triangle(a + s, b + s1, b + s);
@@ -238,9 +248,9 @@ export function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], 
     }
   }
   if (options.closeTip !== false) {
-    const last = path[path.length - 1]!;
+    const last = pick(path, path.length - 1);
     const tip = builder.vertex([last[0] + tangent[0] * (radii[radii.length - 1] ?? 0), last[1] + tangent[1] * (radii[radii.length - 1] ?? 0), last[2] + tangent[2] * (radii[radii.length - 1] ?? 0)], options.color(path.length - 1, 1));
-    const ring = rings[rings.length - 1]!;
+    const ring = pick(rings, rings.length - 1);
     for (let s = 0; s < sides; s += 1) builder.triangle(ring + s, ring + ((s + 1) % sides), tip);
   }
 }
@@ -272,8 +282,8 @@ export function icosphere(level: number): { vertices: readonly NatureVec[]; face
       const key = a < b ? `${a}_${b}` : `${b}_${a}`;
       const known = midpoints.get(key);
       if (known !== undefined) return known;
-      const va = vertices[a]!;
-      const vb = vertices[b]!;
+      const va = pick(vertices, a);
+      const vb = pick(vertices, b);
       vertices.push(normalize([(va[0] + vb[0]) / 2, (va[1] + vb[1]) / 2, (va[2] + vb[2]) / 2]));
       midpoints.set(key, vertices.length - 1);
       return vertices.length - 1;
@@ -309,7 +319,10 @@ export interface BlobOptions {
   shadeBelow: number;
 }
 
-/** A lumpy ellipsoid: a leaf cluster, a bush clump, a coconut. */
+/**
+ * A lumpy ellipsoid: a leaf cluster, a bush clump, a coconut.
+ * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ */
 export function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void {
   const { vertices, faces } = icosphere(options.level);
   const base = builder.vertexCount;
@@ -339,7 +352,10 @@ export interface ConeOptions {
   rimColor: NatureRgb;
 }
 
-/** A closed, drooping cone: one conifer tier. */
+/**
+ * A closed, drooping cone: one conifer tier.
+ * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ */
 export function addCone(builder: NatureMeshBuilder, options: ConeOptions): void {
   const sides = Math.max(4, Math.floor(options.sides));
   const [bx, by, bz] = options.base;
@@ -355,8 +371,8 @@ export function addCone(builder: NatureMeshBuilder, options: ConeOptions): void 
   }
   const under = builder.vertex([bx, by + options.height * 0.12, bz], shade(options.color, 0.55));
   for (let s = 0; s < rim.length; s += 1) {
-    const a = rim[s]!;
-    const b = rim[(s + 1) % rim.length]!;
+    const a = pick(rim, s);
+    const b = pick(rim, (s + 1) % rim.length);
     builder.triangle(apex, b, a);
     builder.triangle(under, a, b);
   }
@@ -386,6 +402,7 @@ export interface FrondOptions {
  * A folded, drooping leaf blade: palm and cycad fronds, fern fronds, broad bush leaves. Both faces
  * are emitted (the shared material is single-sided) with normals leaning up, so the underside of a
  * raised frond reads as lit foliage rather than a black sliver.
+ * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addFrond(builder: NatureMeshBuilder, options: FrondOptions): void {
   const segments = Math.max(2, Math.floor(options.segments));
@@ -463,6 +480,7 @@ export interface StoneOptions {
  * One stone: an icosphere displaced by noise, sliced by `facets` random planes (sharp edges), with
  * `erosion` blending the cuts back toward smooth, moss on the faces that look up, and a flat buried
  * base. Vertices are not shared between faces, so it shades faceted like a real low-poly rock.
+ * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addStone(builder: NatureMeshBuilder, options: StoneOptions): void {
   const { vertices, faces } = icosphere(options.level);
@@ -491,9 +509,9 @@ export function addStone(builder: NatureMeshBuilder, options: StoneOptions): voi
   for (const point of shaped) point[1] -= lowest - options.center[1];
   const tone = (options.random() - 0.5) * options.colorVariance;
   for (const [a, b, c] of faces) {
-    const pa = shaped[a]!;
-    const pb = shaped[b]!;
-    const pc = shaped[c]!;
+    const pa = pick(shaped, a);
+    const pb = pick(shaped, b);
+    const pc = pick(shaped, c);
     const normal = normalize(cross([pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]], [pc[0] - pa[0], pc[1] - pa[1], pc[2] - pa[2]]));
     const mid: NatureVec = [(pa[0] + pb[0] + pc[0]) / 3, (pa[1] + pb[1] + pc[1]) / 3, (pa[2] + pb[2] + pc[2]) / 3];
     const grain = (natureNoise(options.seed + 31, mid[0] * 2.5, mid[1] * 2.5, mid[2] * 2.5) - 0.5) * options.colorVariance;

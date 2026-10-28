@@ -13,8 +13,10 @@ function mesh(value: unknown): NatureMesh {
   return value;
 }
 
+const noValues: Record<string, unknown> = {};
+
 const SPECIES = NATURE_GENERATORS.flatMap((definition) => [
-  { definition, preset: "default", values: {} as Record<string, unknown> },
+  { definition, preset: "default", values: noValues },
   ...(definition.schema.presets ?? []).map((preset) => ({ definition, preset: preset.id, values: { ...preset.values } })),
 ]);
 
@@ -44,7 +46,7 @@ describe("nature generators", () => {
   test("twenty variants of every species stay finite, grounded, bounded and look alike", () => {
     for (const { definition, preset, values } of SPECIES) {
       const baked = bakeGeneratorVariants(definition, values, { count: 20, explore: 1 });
-      const base = mesh(baked[0]!.lods[0]!.output);
+      const base = mesh(baked[0]?.lods[0]?.output);
       const baseHeight = base.bounds.max[1] - base.bounds.min[1];
       for (const variant of baked) {
         const [full, half] = variant.lods.map((lod) => mesh(lod.output));

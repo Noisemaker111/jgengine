@@ -75,6 +75,7 @@ const placeableOutputs = new Set<string>([PARTS_OUTPUT]);
 /**
  * Let markers place generators of an output family by `meta.assetId` (parts always can). The
  * family also needs a draw-side mesh builder (`registerGeneratorMesh`) to render at runtime.
+ * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
  */
 export function registerPlaceableGeneratorOutput(output: string): void {
   placeableOutputs.add(output);

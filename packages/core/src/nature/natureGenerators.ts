@@ -14,6 +14,7 @@ import { defineGenerator, registerGenerator, untypedGenerator, type GeneratorDef
 import { defineParamSchema } from "../generator/paramSchema";
 import { registerPlaceableGeneratorOutput } from "../scene/assetGenerator";
 import {
+
   addBlob,
   addCone,
   addFrond,
@@ -28,6 +29,12 @@ import {
   type NatureRgb,
   type NatureVec,
 } from "./natureMesh";
+
+function pick<T>(values: readonly T[], index: number): T {
+  const value = values[index];
+  if (value === undefined) throw new RangeError(`index ${index} outside ${values.length} items`);
+  return value;
+}
 
 /** The generator output family every nature generator returns: a {@link NatureMesh}. */
 export const NATURE_OUTPUT = "nature-mesh";
@@ -85,8 +92,8 @@ function pointOnPath(path: readonly NatureVec[], t: number): NatureVec {
   const f = Math.max(0, Math.min(1, t)) * (path.length - 1);
   const i = Math.min(path.length - 2, Math.floor(f));
   const k = f - i;
-  const a = path[i]!;
-  const b = path[i + 1]!;
+  const a = pick(path, i);
+  const b = pick(path, i + 1);
   return [lerp(a[0], b[0], k), lerp(a[1], b[1], k), lerp(a[2], b[2], k)];
 }
 
@@ -174,15 +181,15 @@ export const BROADLEAF_GENERATOR = defineGenerator({
       const limb = limbPath(start, azimuth, elevation, length, 0.5 + params.bend * 0.4, limbSegments);
       const base = trunkRadius(t) * 0.62;
       addTube(builder, limb, limb.map((_, i) => base * (1 - 0.75 * (i / limb.length))), { sides: Math.max(3, sides - 3), color: barkColors(bark, seed + b), wobble: params.gnarl * 0.5, seed: seed + b });
-      tips.push({ at: limb[limb.length - 1]!, scale: 1 });
+      tips.push({ at: pick(limb, limb.length - 1), scale: 1 });
       for (let k = 0; k < params.twigs && tips.length < MAX_LEAF_CLUSTERS - 1; k += 1) {
         const from = pointOnPath(limb, 0.45 + random() * 0.4);
         const twig = limbPath(from, azimuth + (random() - 0.5) * 2.2, elevation * spread(random, 0.3), length * 0.42 * spread(random, 0.25), 0.4, 2);
         addTube(builder, twig, [base * 0.45, base * 0.28, base * 0.12], { sides: 3, color: barkColors(bark, seed + b * 7 + k), seed });
-        tips.push({ at: twig[twig.length - 1]!, scale: 0.72 });
+        tips.push({ at: pick(twig, twig.length - 1), scale: 0.72 });
       }
     }
-    tips.push({ at: trunk[trunk.length - 1]!, scale: 1.15 });
+    tips.push({ at: pick(trunk, trunk.length - 1), scale: 1.15 });
     const clusterRandom = context.random("leaves");
     for (const tip of tips) {
       const keep = clusterRandom();
@@ -335,7 +342,7 @@ export const PALM_GENERATOR = defineGenerator({
       const t = i / (trunk.length - 1);
       return params.trunkRadius * (1 - 0.3 * t) * (i % 2 === 0 ? 1 : 1 - params.bands * 0.12) * (t < 0.1 ? 1 + (0.1 - t) * 4 : 1);
     }), { sides: sidesFor(context.detail, 8), color: (i, t) => shade(trunkColor, (i % 2 === 0 ? 1 : 1 - params.bands * 0.35) * (0.82 + t * 0.2)), seed });
-    const top = trunk[trunk.length - 1]!;
+    const top = pick(trunk, trunk.length - 1);
     const frond = hexRgb(params.frondColor);
     const tip = hexRgb(params.tipColor);
     const frondSegments = Math.max(3, Math.round(lerp(3, 7, context.detail)) + (params.leaflets > 0 ? 2 : 0));
@@ -426,7 +433,7 @@ export const BUSH_GENERATOR = defineGenerator({
     const berryRandom = context.random("berries");
     const berries = Math.round(params.berries * (context.detail >= 0.75 ? 1 : 0.5));
     for (let i = 0; i < berries; i += 1) {
-      const clump = clumps[1 + Math.floor(berryRandom() * Math.max(1, clumps.length - 1))] ?? clumps[0]!;
+      const clump = clumps[1 + Math.floor(berryRandom() * Math.max(1, clumps.length - 1))] ?? pick(clumps, 0);
       const theta = berryRandom() * Math.PI * 2;
       const phi = Math.acos(berryRandom() * 1.4 - 0.4);
       const out: NatureVec = [Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)];

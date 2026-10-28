@@ -2,13 +2,16 @@ import * as THREE from "three";
 
 import type { NatureMesh } from "./natureMesh";
 
-/** A three geometry for a nature mesh, its sRGB vertex colours converted to linear. The caller owns it. */
+/**
+ * A three geometry for a nature mesh, its sRGB vertex colours converted to linear. The caller owns it.
+ * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ */
 export function natureGeometry(mesh: NatureMesh): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
   const colors = new Float32Array(mesh.colors.length);
   const color = new THREE.Color();
   for (let i = 0; i < colors.length; i += 3) {
-    color.setRGB(mesh.colors[i]!, mesh.colors[i + 1]!, mesh.colors[i + 2]!, THREE.SRGBColorSpace);
+    color.setRGB((mesh.colors[i] ?? 0), (mesh.colors[i + 1] ?? 0), (mesh.colors[i + 2] ?? 0), THREE.SRGBColorSpace);
     colors[i] = color.r;
     colors[i + 1] = color.g;
     colors[i + 2] = color.b;
@@ -24,7 +27,10 @@ export function natureGeometry(mesh: NatureMesh): THREE.BufferGeometry {
 
 let material: THREE.MeshStandardMaterial | null = null;
 
-/** The one material every nature mesh shares: vertex colours, matte; leaf blades carry both faces themselves. */
+/**
+ * The one material every nature mesh shares: vertex colours, matte; leaf blades carry both faces themselves.
+ * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ */
 export function natureMaterial(): THREE.MeshStandardMaterial {
   material ??= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
   return material;

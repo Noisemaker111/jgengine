@@ -6155,6 +6155,16 @@
       "intent": "freeze caller-reviewed character ids, facts and chronology for a narrative authoring revision"
     },
     {
+      "id": "nature-generator",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/nature/natureMesh",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter"
+    },
+    {
       "id": "nav-crowd",
       "packages": [
         "@jgengine/core"
@@ -7987,6 +7997,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "shared density/budget semantics for scatterable kinds"
+    },
+    {
+      "id": "scatter-generator",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scatter/scatterGenerator",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grow a scatter palette item from a seeded generator's baked variants"
     },
     {
       "id": "scatter-harvest",

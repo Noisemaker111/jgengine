@@ -37,10 +37,10 @@ describe("scatter generator items", () => {
     const first = assignScatterVariants(instances, (item) => (item === "palm" ? 4 : undefined));
     const again = assignScatterVariants(instances, (item) => (item === "palm" ? 4 : undefined));
     expect(first.map((instance) => instance.item)).toEqual(again.map((instance) => instance.item));
-    expect(first[200]).toBe(instances[200]!);
+    expect(first[200]).toBe(instances[200]);
     const used = new Set(first.slice(0, 200).map((instance) => parseScatterVariantItem(instance.item)?.variant));
     expect([...used].sort()).toEqual([0, 1, 2, 3]);
-    expect(first.every((instance, index) => instance.id === instances[index]!.id)).toBe(true);
+    expect(first.every((instance, index) => instance.id === instances[index]?.id)).toBe(true);
   });
 
   test("round-trip the variant tag", () => {
