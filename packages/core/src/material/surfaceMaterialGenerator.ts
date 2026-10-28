@@ -1,4 +1,3 @@
-// @skill jgengine-world
 /**
  * Seeded PBR surface materials on the generator contract: sand, grass, soil, mud, rock, gravel, bark
  * and snow, each baked from bounded params and a seed into tileable albedo, height, normal,
