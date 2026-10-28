@@ -8377,6 +8377,16 @@
       "intent": "cache grown plant structures and styled meshes in memory and injected storage"
     },
     {
+      "id": "plant-ground-cover",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/groundCover/tillerSim",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape"
+    },
+    {
       "id": "plant-grown",
       "packages": [
         "@jgengine/core"

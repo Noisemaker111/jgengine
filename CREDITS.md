@@ -320,7 +320,7 @@ provenance.
   1993 and 1994, seed dispersal and seed production, *Ecology* 74 and 75; Niinemets 2010, leaf area
   of shade-tolerant crowns, *Ecological Research* 25; Oliver & Larson 1996, *Forest Stand
   Dynamics*; Reineke 1933, the stand density index, *Journal of Agricultural Research* 46.
-- Grass tiller fields (`plants/groundCover/`): Davies 1988, *The regrowth of grass swards*; Lemaire &
+- **Grass tiller fields** (`plants/groundCover/`): Davies 1988, *The regrowth of grass swards*; Lemaire &
   Agnusdei 2000, leaf tissue turnover in grass swards; Neuteboom & Lantinga 1989, tillering and site
   filling; Matthew et al. 1995, the self-thinning line of tiller size and density, *Annals of Botany* 76;
   Evers et al. 2007, red:far-red light and tillering; Heide 1994, flowering in temperate grasses, *New

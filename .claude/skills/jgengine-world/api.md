@@ -4237,6 +4237,25 @@
 - `encodePlantMesh` (function): function encodePlantMesh(mesh: PlantMesh): Uint8Array — A styled plant mesh as bytes for a {@link PlantCacheStorage}.
 - `encodePlantStructure` (function): function encodePlantStructure(structure: PlantStructure, hash: string): Uint8Array — A grown plant's structure as bytes, with its hash, for a {@link PlantCacheStorage}.
 
+## @jgengine/core/plants/groundCover/grassSpecies
+
+- `GRASS_LIBRARY` (const): const GRASS_LIBRARY: readonly GrassSpecies[] — Every grass record shipped with the engine.
+- `GrassSpecies` (interface): interface GrassSpecies — A grass as data for the tiller field: how fast its tillers make leaves and daughters, how tall its leaves and flowering stems grow, what makes it flower, and how it spreads. A new grass is one record.
+- `LOLIUM_PERENNE` (const): const LOLIUM_PERENNE: GrassSpecies — Perennial ryegrass: the bunch grass of most lawns and sown pastures. Phyllochron and three live leaves from Davies 1988 and Lemaire & Agnusdei 2000; vernalization and long-day flowering from Heide 1994.
+- `PHLEUM_PRATENSE` (const): const PHLEUM_PRATENSE: GrassSpecies — Timothy: a tall hay-meadow bunch grass that flowers in long days with no winter cold needed (Heide 1994).
+- `POA_PRATENSIS` (const): const POA_PRATENSIS: GrassSpecies — Kentucky bluegrass: a rhizomatous lawn and pasture grass that knits trampled ground back together.
+
+## @jgengine/core/plants/groundCover/tillerSim
+
+- `CellArea` (interface): interface CellArea — A rectangle of cells: its first column and row and its size in cells (1 × 1 when absent).
+- `TillerCell` (interface): interface TillerCell — One cell: its cohorts in species order, plus totals.
+- `TillerCohort` (interface): interface TillerCohort — One species in one cell.
+- `TillerField` (interface): interface TillerField — A stateful grass field: step it by weeks, act on it, read it, snapshot and restore it.
+- `TillerFieldOptions` (interface): interface TillerFieldOptions — Grass as a field of tillers: every cell holds, per species, its tillers per m², the height of its leaf canopy, the share of tillers flowering and their stem height. A week at a time tillers make leaves on thermal time, make daughters while light reaches their base (site filling, cut off by a closing canopy), thin to the size/density line, flower after winter cold and long days, set seed and die, and spread by rhizomes into neighbouring cells. Mowing, trampling and grazing act on it, so a lawn, a meadow and a worn path all come out of the same field.
+- `TillerFieldSnapshot` (interface): interface TillerFieldSnapshot — A tiller field's whole state as JSON-safe values.
+- `createTillerField` (function): function createTillerField(options: TillerFieldOptions): TillerField — Create a grass field of tiller cohorts, sown on 1 January with every species' tillers at a short, half-full sward.
+- `tillerCellLook` (function): function tillerCellLook(field: TillerField, species: readonly GrassSpecies[], col: number, row: number, base: GrassLook): GrassLook — The look of one grass cell for the `grass/` renderer: density from tillers per m² against the most its leaf height allows, blade height from leaves and flowering stems, flowers while heads are out, gold once seed has set and through autumn, colours from the cell's leading species. Every other field keeps `base`.
+
 ## @jgengine/core/plants/grown/plantGrowPool
 
 - `PlantGrowRequest` (interface): interface PlantGrowRequest — Everything that decides what grows: species, site, seed, age and the day it is seen. Plain data, so it crosses to a worker unchanged.
