@@ -102,6 +102,17 @@ describe("nature generators", () => {
     expect(rock.surface).toBe("rock");
   });
 
+  test("a smooth rock shares its vertices and crags reshape it", () => {
+    const faceted = mesh(runGenerator(ROCK_GENERATOR, { seed: "s" }));
+    expect(faceted.positions.length / 3).toBe(faceted.triangles * 3);
+    const smooth = mesh(runGenerator(ROCK_GENERATOR, { seed: "s", smooth: true }));
+    expect(smooth.triangles).toBe(faceted.triangles * 4);
+    expect(smooth.positions.length / 3).toBeLessThan(smooth.triangles);
+    const cragged = mesh(runGenerator(ROCK_GENERATOR, { seed: "s", smooth: true, crag: 1 }));
+    expect(cragged.triangles).toBe(smooth.triangles);
+    expect(cragged.positions).not.toEqual(smooth.positions);
+  });
+
   test("register as placeable generators", () => {
     registerBuiltinSceneKinds();
     for (const definition of NATURE_GENERATORS) {

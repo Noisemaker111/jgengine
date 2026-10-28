@@ -604,12 +604,21 @@ export interface StoneOptions {
   /** Moss cover on upward faces, 0..1. */
   moss: number;
   colorVariance: number;
+  /** Ridged crags and stacked ledges cut into the surface, 0 (none) to 1 (weathered cliff rock). */
+  crag?: number;
+  /** Share vertices so the stone shades rounded instead of as flat low-poly triangles. */
+  smooth?: boolean;
+}
+
+function ridged(seed: number, x: number, y: number, z: number): number {
+  return 1 - Math.abs(natureNoise(seed, x, y, z) * 2 - 1);
 }
 
 /**
  * One stone: an icosphere displaced by noise, sliced by `facets` random planes (sharp edges), with
  * `erosion` blending the cuts back toward smooth, moss on the faces that look up, and a flat buried
- * base. Vertices are not shared between faces, so it shades faceted like a real low-poly rock.
+ * base. `crag` adds ridged cracks and stacked ledges; vertices are shared when `smooth` is set, else
+ * each face keeps its own and the stone shades faceted like a low-poly rock.
  * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addStone(builder: NatureMeshBuilder, options: StoneOptions): void {
@@ -620,9 +629,17 @@ export function addStone(builder: NatureMeshBuilder, options: StoneOptions): voi
     const phi = Math.acos(options.random() * 1.6 - 0.6);
     planes.push({ n: [Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)], d: 0.55 + options.random() * 0.35 });
   }
+  const crag = options.crag ?? 0;
   const shaped = vertices.map((v): [number, number, number] => {
     const n = natureNoise(options.seed, v[0] * 1.9 + 7, v[1] * 1.9, v[2] * 1.9) * 0.65 + natureNoise(options.seed + 5, v[0] * 4.3, v[1] * 4.3, v[2] * 4.3) * 0.35;
-    let p: [number, number, number] = [v[0] * (1 + (n - 0.5) * 2 * options.roughness), v[1] * (1 + (n - 0.5) * 2 * options.roughness), v[2] * (1 + (n - 0.5) * 2 * options.roughness)];
+    let scale = 1 + (n - 0.5) * 2 * options.roughness;
+    if (crag > 0) {
+      const cracks = ridged(options.seed + 13, v[0] * 2.6, v[1] * 2.6, v[2] * 2.6) ** 4 * 0.7 + ridged(options.seed + 17, v[0] * 6.1, v[1] * 6.1, v[2] * 6.1) ** 4 * 0.3;
+      const band = v[1] * 2.6 + natureNoise(options.seed + 23, v[0] * 1.4, 0, v[2] * 1.4) * 1.2;
+      const ledge = band - Math.floor(band);
+      scale *= 1 - crag * (cracks * 0.22 + ledge * 0.14);
+    }
+    let p: [number, number, number] = [v[0] * scale, v[1] * scale, v[2] * scale];
     for (const plane of planes) {
       const over = p[0] * plane.n[0] + p[1] * plane.n[1] + p[2] * plane.n[2] - plane.d;
       if (over > 0) {
@@ -638,19 +655,36 @@ export function addStone(builder: NatureMeshBuilder, options: StoneOptions): voi
   const lowest = shaped.reduce((min, point) => Math.min(min, point[1]), Infinity);
   for (const point of shaped) point[1] -= lowest - options.center[1];
   const tone = (options.random() - 0.5) * options.colorVariance;
+  const colorAt = (at: NatureVec, normal: NatureVec): NatureRgb => {
+    const grain = (natureNoise(options.seed + 31, at[0] * 2.5, at[1] * 2.5, at[2] * 2.5) - 0.5) * options.colorVariance;
+    const mossy = options.moss > 0 && normal[1] > 1 - options.moss * 0.9 && natureNoise(options.seed + 9, at[0] * 1.3, at[1] * 1.3, at[2] * 1.3) < 0.35 + options.moss * 0.5;
+    const light = 0.82 + normal[1] * 0.12 + tone + grain;
+    return shade(mossy ? mixRgb(options.color, options.mossColor, 0.7) : options.color, mossy ? 0.92 + grain : light);
+  };
+  const faceNormal = (pa: NatureVec, pb: NatureVec, pc: NatureVec): [number, number, number] =>
+    normalize(cross([pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]], [pc[0] - pa[0], pc[1] - pa[1], pc[2] - pa[2]]));
+  if (options.smooth === true) {
+    const sums = shaped.map((): [number, number, number] => [0, 0, 0]);
+    for (const [a, b, c] of faces) {
+      const normal = faceNormal(pick(shaped, a), pick(shaped, b), pick(shaped, c));
+      for (const index of [a, b, c]) {
+        const sum = pick(sums, index);
+        sum[0] += normal[0];
+        sum[1] += normal[1];
+        sum[2] += normal[2];
+      }
+    }
+    const first = builder.vertexCount;
+    shaped.forEach((point, index) => builder.vertex(point, colorAt(point, normalize(pick(sums, index)))));
+    for (const [a, b, c] of faces) builder.triangle(first + a, first + b, first + c);
+    return;
+  }
   for (const [a, b, c] of faces) {
     const pa = pick(shaped, a);
     const pb = pick(shaped, b);
     const pc = pick(shaped, c);
-    const normal = normalize(cross([pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]], [pc[0] - pa[0], pc[1] - pa[1], pc[2] - pa[2]]));
     const mid: NatureVec = [(pa[0] + pb[0] + pc[0]) / 3, (pa[1] + pb[1] + pc[1]) / 3, (pa[2] + pb[2] + pc[2]) / 3];
-    const grain = (natureNoise(options.seed + 31, mid[0] * 2.5, mid[1] * 2.5, mid[2] * 2.5) - 0.5) * options.colorVariance;
-    const mossy = options.moss > 0 && normal[1] > 1 - options.moss * 0.9 && natureNoise(options.seed + 9, mid[0] * 1.3, mid[1] * 1.3, mid[2] * 1.3) < 0.35 + options.moss * 0.5;
-    const light = 0.82 + normal[1] * 0.12 + tone + grain;
-    const color = shade(mossy ? mixRgb(options.color, options.mossColor, 0.7) : options.color, mossy ? 0.92 + grain : light);
-    const ia = builder.vertex(pa, color);
-    const ib = builder.vertex(pb, color);
-    const ic = builder.vertex(pc, color);
-    builder.triangle(ia, ib, ic);
+    const color = colorAt(mid, faceNormal(pa, pb, pc));
+    builder.triangle(builder.vertex(pa, color), builder.vertex(pb, color), builder.vertex(pc, color));
   }
 }
