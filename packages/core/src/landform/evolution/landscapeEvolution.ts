@@ -46,15 +46,15 @@ export interface GlacialParams {
   flowRate?: number;
   /** Sliding coefficient C of u_b = C·τ_b, in m yr⁻¹ Pa⁻¹. Default 5·10⁻⁴ (50 m/yr under 100 kPa). */
   sliding?: number;
-  /** Effective ice viscosity in Pa·yr that couples neighbouring columns' sliding (lateral drag). Default 3·10⁶ (about 10¹⁴ Pa·s). */
+  /** Effective ice viscosity in Pa·yr through which neighbouring columns and valley walls drag on sliding ice. Default 10⁶ (about 3·10¹³ Pa·s). */
   lateralDrag?: number;
   /** Share of the rock a glacier plucks that it drops as till where the ice ends; meltwater carries the rest away. Default 0.25. */
   tillShare?: number;
   /** Erosion constant K_g of ė = K_g·u_b, dimensionless. Default 10⁻⁴ (Humphrey & Raymond 1994). */
   erosion?: number;
-  /** Years the ice flows each step; a glacier settles within centuries, so less than a step is enough. Default 1000. */
+  /** Years the ice flows each step; a glacier settles within centuries, so less than a step is enough. Default 200. */
   iceYears?: number;
-  /** Implicit ice steps per landscape step, bounding the work. Default 10. */
+  /** Implicit ice steps per landscape step, bounding the work; a glacier front advances at most one cell per ice step. Default 20. */
   iceSteps?: number;
 }
 
@@ -563,15 +563,15 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     iceFlow.relax(
       height,
       ice,
-      Math.min(g.iceYears ?? 1000, dt),
-      g.iceSteps ?? 10,
+      Math.min(g.iceYears ?? 200, dt),
+      g.iceSteps ?? 20,
       {
         deformation: iceDeformationRate(g.flowRate ?? GLEN_RATE_FACTOR),
         sliding: g.sliding ?? 5e-4,
         ela: g.ela,
         balanceGradient: g.balanceGradient ?? 0.005,
         maxAccumulation: g.maxAccumulation ?? 2,
-        lateralDrag: g.lateralDrag ?? 3e6,
+        lateralDrag: g.lateralDrag ?? 1e6,
       },
     );
     const kg = g.erosion ?? 1e-4;
@@ -583,7 +583,8 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       if (base[i] === 1 || (ice[i] ?? 0) <= 0) continue;
       order[count] = i;
       count += 1;
-      const depth = kg * (sliding[i] ?? 0) * dt;
+      const u = sliding[i] ?? 0;
+      const depth = kg * u * dt;
       if (depth <= 0) continue;
       cover.remove(i, depth);
       sediment[i] = cover.total(i);

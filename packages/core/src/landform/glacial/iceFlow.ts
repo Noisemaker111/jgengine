@@ -14,11 +14,13 @@
  * is bounded by the step count.
  *
  * Sliding is what erodes: the bed lowers at K_g·u_b (Harbor 1992; Braun, Zwartz & Tomkin 1999).
- * Neighbouring columns share stress through lateral drag (the side-drag term of depth-integrated
- * higher-order ice models), so ice beside bare rock slides slower. A glacier deepens and widens its
- * floor under the thickest ice and the oversteepened walls fail, so a river's V becomes a U.
+ * Neighbouring columns shear each other where their ice meets, and rock holds the ice still where
+ * a neighbour's bed rises beside it, so ice in the bottom of a V slides slower than ice on its
+ * flanks, the corner effect behind Harbor's (1992) widening of V-shaped valleys. A plan-view model
+ * resolves it only roughly: a V's cross-section exponent rises from 1 toward 1.3 here, where
+ * Harbor's cross-section model reaches about 2.
  *
- * @capability landform-glacial glaciers that flow, slide and carve U-shaped valleys and lay moraines
+ * @capability landform-glacial glaciers that flow, slide, carve their valleys wider and deeper and lay moraines
  */
 import type { LandformTopology } from "../grid/landformGrid";
 
@@ -33,7 +35,7 @@ export const GLEN_RATE_FACTOR = 7.57e-17;
 
 /**
  * Γ = 2A(ρg)³/(n + 2) of the shallow-ice flux for Glen's n = 3, in m⁻³ yr⁻¹.
- * @capability landform-glacial glaciers that flow, slide and carve U-shaped valleys and lay moraines
+ * @capability landform-glacial glaciers that flow, slide, carve their valleys wider and deeper and lay moraines
  */
 export function iceDeformationRate(rateFactor: number = GLEN_RATE_FACTOR): number {
   return (2 * rateFactor * ICE_WEIGHT * ICE_WEIGHT * ICE_WEIGHT) / 5;
@@ -84,7 +86,8 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
   const rhs = new Float64Array(side);
   const solution = new Float64Array(side);
   const sliding = new Float64Array(cells);
-  const driving = new Float64Array(cells);
+  const slideX = new Float64Array(cells);
+  const slideY = new Float64Array(cells);
   const dx = cellSize;
 
   function surfaceGradients(bed: Float64Array, ice: Float64Array): void {
@@ -109,6 +112,20 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
     const h2 = h * h;
     const h4 = h2 * h2;
     return settings.deformation * h4 * h * (along * along + across * across) + settings.sliding * ICE_WEIGHT * h2;
+  }
+
+  // How much of column i's ice faces column j's ice, and how much faces rock, in metres.
+  function faceContact(bed: Float64Array, ice: Float64Array, i: number, j: number): [number, number] {
+    const floor = bed[i] ?? 0;
+    const top = surface[i] ?? 0;
+    const theirBed = bed[j] ?? 0;
+    const rockTop = theirBed < top ? theirBed : top;
+    const rock = rockTop > floor ? rockTop - floor : 0;
+    if ((ice[j] ?? 0) <= 0) return [0, rock];
+    const theirTop = surface[j] ?? 0;
+    const iceTop = theirTop < top ? theirTop : top;
+    const iceBottom = theirBed > floor ? theirBed : floor;
+    return [iceTop > iceBottom ? iceTop - iceBottom : 0, rock];
   }
 
   function solve(count: number): void {
@@ -183,36 +200,58 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
         }
       }
       surfaceGradients(bed, ice);
+      // Lateral drag. Each face of a column meets the neighbouring column's ice where that ice stands
+      // level with it, and rock where the neighbour's bed rises above this column's bed. A face
+      // shears only the motion along it: ice drags by its speed difference and rock holds it still.
+      // Ice in the bottom of a V, walled by rock on both sides, so slides slower than ice on its
+      // flanks (Harbor 1992). Per component, u = C·(τ_d + K·Σ(ice·u_j − (ice + rock)·u)), K = η/Δx²,
+      // solved cell by cell in place.
+      const drag = settings.lateralDrag;
+      const c = settings.sliding;
       for (let i = 0; i < cells; i += 1) {
         const h = ice[i] ?? 0;
         const gx = gradX[i] ?? 0;
         const gy = gradY[i] ?? 0;
-        driving[i] = h > 0 ? ICE_WEIGHT * h * Math.sqrt(gx * gx + gy * gy) : 0;
-        const tau = driving[i] ?? 0;
-        sliding[i] = settings.sliding * tau;
+        slideX[i] = h > 0 ? -c * ICE_WEIGHT * h * gx : 0;
+        slideY[i] = h > 0 ? -c * ICE_WEIGHT * h * gy : 0;
       }
-      // Lateral drag: a column sliding faster than its neighbours hands part of its driving stress to
-      // them, and bare rock beside the ice holds it back: u = C·(τ_d + k·Σ(u_j − u)), k = ηH/Δx²,
-      // solved for u cell by cell, sweeping the grid in place.
-      const drag = settings.lateralDrag;
-      const c = settings.sliding;
       if (drag > 0 && c > 0) {
+        const k = drag / (dx * dx);
         for (let pass = 0; pass < DRAG_PASSES; pass += 1) {
           for (let row = 0; row < rows; row += 1) {
             for (let col = 0; col < cols; col += 1) {
               const i = row * cols + col;
               const h = ice[i] ?? 0;
               if (h <= 0 || base[i] === 1) continue;
-              let around = 0;
-              if (col > 0) around += sliding[i - 1] ?? 0;
-              if (col < cols - 1) around += sliding[i + 1] ?? 0;
-              if (row > 0) around += sliding[i - cols] ?? 0;
-              if (row < rows - 1) around += sliding[i + cols] ?? 0;
-              const k = (drag * h) / (dx * dx);
-              sliding[i] = (c * ((driving[i] ?? 0) + k * around)) / (1 + 4 * k * c);
+              // East and west faces shear the north-south motion; north and south faces the east-west.
+              let pulledX = 0;
+              let heldX = 0;
+              let pulledY = 0;
+              let heldY = 0;
+              for (let side = 0; side < 4; side += 1) {
+                const j = side === 0 ? (col > 0 ? i - 1 : -1) : side === 1 ? (col < cols - 1 ? i + 1 : -1) : side === 2 ? (row > 0 ? i - cols : -1) : row < rows - 1 ? i + cols : -1;
+                if (j < 0) continue;
+                const [contact, rock] = faceContact(bed, ice, i, j);
+                if (side < 2) {
+                  pulledY += contact * (slideY[j] ?? 0);
+                  heldY += contact + rock;
+                } else {
+                  pulledX += contact * (slideX[j] ?? 0);
+                  heldX += contact + rock;
+                }
+              }
+              const gx = gradX[i] ?? 0;
+              const gy = gradY[i] ?? 0;
+              slideX[i] = (c * (-ICE_WEIGHT * h * gx + k * pulledX)) / (1 + c * k * heldX);
+              slideY[i] = (c * (-ICE_WEIGHT * h * gy + k * pulledY)) / (1 + c * k * heldY);
             }
           }
         }
+      }
+      for (let i = 0; i < cells; i += 1) {
+        const ux = slideX[i] ?? 0;
+        const uy = slideY[i] ?? 0;
+        sliding[i] = Math.sqrt(ux * ux + uy * uy);
       }
       return residual;
     },
