@@ -5,7 +5,7 @@ import type { PlantClusterLevel, PlantStructure } from "../structure/plantStruct
 
 type PackedArray = Float32Array | Float64Array | Int32Array | Uint8Array | Uint16Array | Uint32Array;
 
-const CODEC_VERSION = 2;
+const CODEC_VERSION = 3;
 const ALIGN = 8;
 
 function typeCode(array: PackedArray): number {
@@ -191,6 +191,7 @@ export function encodePlantStructure(structure: PlantStructure, hash: string): U
     levels: structure.clusters.levels.length,
     leafShape: structure.leafShape,
     leafColor: structure.leafColor,
+    organColor: structure.organColor,
     bark: structure.bark,
   };
   return pack(meta, arrays);
@@ -206,6 +207,7 @@ export function decodePlantStructure(bytes: Uint8Array): { structure: PlantStruc
   const stats = obj(meta, "stats");
   const leafShape = obj(meta, "leafShape");
   const leafColor = obj(meta, "leafColor");
+  const organColor = obj(meta, "organColor");
   const bark = obj(meta, "bark");
   const levels: PlantClusterLevel[] = [];
   for (let index = 0; index < num(meta, "levels"); index += 1) {
@@ -262,6 +264,7 @@ export function decodePlantStructure(bytes: Uint8Array): { structure: PlantStruc
     },
     leafShape: readLeafShape(leafShape),
     leafColor: { spring: str(leafColor, "spring"), summer: str(leafColor, "summer"), autumn: str(leafColor, "autumn") },
+    organColor: { flower: str(organColor, "flower"), fruit: str(organColor, "fruit") },
     bark: { kind: oneOf(BARK_KINDS, str(bark, "kind"), "bark kind"), furrow: num(bark, "furrow"), color: str(bark, "color") },
   };
   return { structure, hash: str(meta, "hash") };

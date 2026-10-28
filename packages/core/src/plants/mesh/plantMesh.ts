@@ -2,7 +2,7 @@
 import { normalizeToonRamp, type ToonRamp } from "../../material/toonRamp";
 import { hexRgb, icosphere, type NatureMesh, type NatureRgb } from "../../nature/natureMesh";
 import type { LeafShapeParams } from "../species/plantSpecies";
-import { hashPlantStructure, PLANT_CLUSTER_LEVELS, PLANT_REGION, type PlantStructure } from "../structure/plantStructure";
+import { hashPlantStructure, PLANT_CLUSTER_LEVELS, PLANT_ORGAN, PLANT_REGION, type PlantStructure } from "../structure/plantStructure";
 import { PLANT_LEAF_ATLAS_CELL_COUNT, PLANT_LEAF_ATLAS_CELLS } from "./plantLeafAtlas";
 
 /** Detail of each mesh level, highest first: leaves, shoot cards, then leaf clusters at two sizes. */
@@ -798,6 +798,66 @@ function addClusterCards(build: FoliageBuild, baseCell: number, level: boolean):
   }
 }
 
+/** Atlas texel inside the leaf blade, for organs drawn in the textured foliage pass. */
+const ORGAN_UV = [0.5 / PLANT_LEAF_ATLAS_CELL_COUNT, 0.5] as const;
+
+/**
+ * Clusters each flower or fruit organ draws at a level: none past level 2, up to three up close.
+ */
+function organClusters(count: number, lod: number): number {
+  if (lod > 2) return 0;
+  return Math.min(lod === 0 ? 3 : 1, Math.max(1, Math.ceil(count / 6)));
+}
+
+/** Triangles the organs will take, at most a tenth of the foliage budget, so the foliage leaves room. */
+function organReserve(structure: PlantStructure, lod: number, budget: number): number {
+  const { count } = structure.reproductive;
+  let triangles = 0;
+  for (let organ = 0; organ < count.length; organ += 1) triangles += organClusters(count[organ] ?? 1, lod) * OCTAHEDRON.faces.length;
+  return Math.min(triangles, Math.floor(budget / 10));
+}
+
+/**
+ * Flowers and fruit as small rounded clusters at their nodes, coloured from the species, sized up
+ * with the style's leaf scale so a berry still reads at game distance. Drawn at the nearer levels
+ * into the `reserve` the foliage left for them.
+ */
+function addOrgans(build: FoliageBuild, lod: number, textured: boolean, reserve: number): void {
+  const { structure, writer } = build;
+  const { kind, position, size, count } = structure.reproductive;
+  if (kind.length === 0 || reserve <= 0) return;
+  const flower = hexRgb(structure.organColor.flower);
+  const fruit = hexRgb(structure.organColor.fruit);
+  const color = new Float64Array(3);
+  const cap = writer.triangles + reserve;
+  for (let organ = 0; organ < kind.length; organ += 1) {
+    const base = kind[organ] === PLANT_ORGAN.flower ? flower : fruit;
+    const clusters = organClusters(count[organ] ?? 1, lod);
+    // One cluster stands for a bunch of berries or flowers, so it is drawn about twice an organ's size.
+    const radius = Math.max(0.03, 2 * (size[organ] ?? 0.01) * build.style.leafScale);
+    for (let c = 0; c < clusters; c += 1) {
+      if (writer.triangles + OCTAHEDRON.faces.length > cap) return;
+      const jx = (hash01(build.seed ^ organ, c * 3) - 0.5) * radius * 4;
+      const jy = (hash01(build.seed ^ organ, c * 3 + 1) - 0.8) * radius * 3;
+      const jz = (hash01(build.seed ^ organ, c * 3 + 2) - 0.5) * radius * 4;
+      const cx = (position[organ * 3] ?? 0) + jx;
+      const cy = (position[organ * 3 + 1] ?? 0) + jy;
+      const cz = (position[organ * 3 + 2] ?? 0) + jz;
+      const first = writer.vertexCount;
+      for (const vertex of OCTAHEDRON.vertices) {
+        const shade = 0.75 + 0.25 * (vertex[1] + 1) / 2;
+        color[0] = base[0] * shade;
+        color[1] = base[1] * shade;
+        color[2] = base[2] * shade;
+        grade(color, build.grade, hash01(build.seed + organ, c));
+        writer.vertex(cx + vertex[0] * radius, cy + vertex[1] * radius, cz + vertex[2] * radius, vertex[0], vertex[1], vertex[2], color);
+        if (textured) writer.uv(ORGAN_UV[0], ORGAN_UV[1]);
+      }
+      for (const face of OCTAHEDRON.faces) writer.triangle(first + face[0], first + face[1], first + face[2]);
+    }
+  }
+}
+
 function addFoliage(build: FoliageBuild, lod: number): void {
   if (build.structure.leaves.size.length === 0) return;
   const clumps = build.style.foliage === "clumps";
@@ -848,18 +908,18 @@ export function buildPlantMesh(input: PlantMeshInput): PlantMesh {
   const barkWriter = new PartWriter();
   addBark({ writer: barkWriter, structure, grade: { tint: hexRgb(style.barkTint), paint, saturation, brightness, jitter: jitter * 0.5 }, seed, lod, budget: barkBudget });
   const leafWriter = new PartWriter();
-  addFoliage(
-    {
-      writer: leafWriter,
-      structure,
-      style,
-      grade: { tint: hexRgb(style.leafTint), paint, saturation, brightness, jitter },
-      rowColors: leafRowColors(structure),
-      seed,
-      budget: budget - barkWriter.triangles,
-    },
-    lod,
-  );
+  const foliage: FoliageBuild = {
+    writer: leafWriter,
+    structure,
+    style,
+    grade: { tint: hexRgb(style.leafTint), paint, saturation, brightness, jitter },
+    rowColors: leafRowColors(structure),
+    seed,
+    budget: budget - barkWriter.triangles,
+  };
+  const reserve = organReserve(structure, lod, foliage.budget);
+  addFoliage({ ...foliage, budget: foliage.budget - reserve }, lod);
+  addOrgans(foliage, lod, style.foliage === "leaves", reserve);
   const bark = barkWriter.build(style.barkGrain && style.shading === "lit" ? "bark" : undefined);
   const leaves = leafWriter.build();
   const textured = style.foliage === "leaves";

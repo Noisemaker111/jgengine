@@ -3174,8 +3174,6 @@
 
 ## @jgengine/core/nature/natureGenerators
 
-- `BUSH_GENERATOR` (const): const BUSH_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "width"; readonly label: "width"; readonly group: "shape"; readonly min: 0.3; readonly max: 5; reado… — Bushes: shrub, berry bush, low hedge.
-- `BUSH_SCHEMA` (const): const BUSH_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "width"; readonly label: "width"; readonly group: "shape"; readonly min: 0.3; readonly max: 5; readonly step: 0.05; readonl… — Bush params: footprint, clumps, berries and colours.
 - `DRIFTWOOD_GENERATOR` (const): const DRIFTWOOD_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 0.5; readonly max: 8… — Driftwood and fallen logs.
 - `DRIFTWOOD_SCHEMA` (const): const DRIFTWOOD_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 0.5; readonly max: 8; readonly step: 0.05; … — Driftwood params: a weathered log lying on the ground.
 - `FERN_GENERATOR` (const): const FERN_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "fronds"; readonly label: "fronds"; readonly group: "fronds"; readonly min: 3; readonly max: 22; rea… — Ferns: fern, low frond clump, bracken.
@@ -3192,7 +3190,6 @@
 - `BlobOptions` (interface): interface BlobOptions — Options for {@link addBlob}.
 - `ConeOptions` (interface): interface ConeOptions — Options for {@link addCone}.
 - `FrondOptions` (interface): interface FrondOptions — Options for {@link addFrond}.
-- `LeafClusterOptions` (interface): interface LeafClusterOptions — Options for {@link addLeafCluster}.
 - `NatureMesh` (interface): interface NatureMesh — Indexed triangle mesh with per-vertex sRGB colours, in metres with the base at y = 0.
 - `NatureMeshPart` (interface): interface NatureMeshPart — One run of a nature mesh's index buffer drawn with one surface (none: plain vertex colour).
 - `NatureRgb` (type): type NatureRgb = readonly [number, number, number] — An sRGB colour, 0..1 per channel.
@@ -3203,7 +3200,6 @@
 - `addBlob` (function): function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void — A lumpy ellipsoid: a leaf cluster, a bush clump, a coconut.
 - `addCone` (function): function addCone(builder: NatureMeshBuilder, options: ConeOptions): void — A closed, drooping cone: one conifer tier.
 - `addFrond` (function): function addFrond(builder: NatureMeshBuilder, options: FrondOptions): void — A folded, drooping leaf blade: palm and cycad fronds, fern fronds, broad bush leaves. Both faces are emitted (the shared material is single-sided) with normals leaning up, so the underside of a raised frond reads as lit foliage rather than a black sliver.
-- `addLeafCluster` (function): function addLeafCluster(builder: NatureMeshBuilder, options: LeafClusterOptions): void — A leafy cluster: a shaded core with folded leaf blades fanned out over its shell, so a canopy or a bush reads as foliage with a broken edge instead of a smooth ball. The blades are single-sided; draw them with the `"leaf"` surface, which lights both faces.
 - `addStone` (function): function addStone(builder: NatureMeshBuilder, options: StoneOptions): void — One stone: an icosphere displaced by noise, sliced by `facets` random planes (sharp edges), with `erosion` blending the cuts back toward smooth, moss on the faces that look up, and a flat buried base. `crag` adds ridged cracks and stacked ledges; vertices are shared when `smooth` is set, else each face keeps its own and the stone shades faceted like a low-poly rock.
 - `addTube` (function): function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], radii: readonly number[], options: TubeOptions): void — A tapered tube along `path` with radius `radii[i]` at each point: trunks, branches, logs. Rings follow the path's tangent with a rotation-minimising frame so a bent trunk does not twist.
 - `isNatureMesh` (function): function isNatureMesh(value: unknown): value is NatureMesh — True when a generator output is a {@link NatureMesh}.
@@ -4567,6 +4563,21 @@
 ## @jgengine/core/plants/species/data/ulmusAmericana
 
 - `ULMUS_AMERICANA` (const): const ULMUS_AMERICANA: PlantSpecies — American elm. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1921 FIA site trees on site index 65 ft and 125 Tallo crowns. Written by `bun run jgengine plants write ulmus-americana`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/vacciniumCorymbosum
+
+- `VACCINIUM_CORYMBOSUM` (const): const VACCINIUM_CORYMBOSUM: PlantSpecies — Highbush blueberry. A shrub of 6 stems at the collar that die and resprout. Traits from USDA PLANTS and NRCS plant guides; growth and carbon fitted to PLANTS heights (3.66 m at 20 years, 3.66 m mature). Written by `bun run jgengine plants write vaccinium-corymbosum`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/habitReference
+
+- `HABIT_CHECK_AGES` (const): const HABIT_CHECK_AGES: readonly [5, 10, 20, 40] — Ages a habit species is grown to and checked at.
+- `HabitReference` (interface): interface HabitReference — What USDA PLANTS says a shrub, palm, fern or herb grows into, for species no forest inventory measures: imported by `bun run jgengine plants import` and checked by the species library test. Heights are open-grown on a good site, as PLANTS characteristics describe them.
+- `SHRUB_STEMS` (const): const SHRUB_STEMS: { readonly min: 3; readonly max: 30; } — Most stems a multi-stemmed shrub should keep alive at 20 years, and fewest.
+- `basalStemCount` (function): function basalStemCount(segments: { parent: Int32Array; order: Uint8Array; region: Uint8Array }, deadwoodRegion: number): number — Live basal stems of a grown structure: the order-0 segments rising straight from the collar.
+
+## @jgengine/core/plants/species/habitReferenceTable
+
+- `HABIT_REFERENCE` (const): const HABIT_REFERENCE: Readonly<Record<string, HabitReference>> — USDA PLANTS heights and growth form of every shrub, palm, fern and herb in the library. Written by `bun run jgengine plants import`; do not edit by hand.
 
 ## @jgengine/core/plants/species/plantSpecies
 
@@ -6216,8 +6227,6 @@
 - `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented · used by `AUTO_TARGET_POLICIES`: Every policy, in the order a "cycle targeting" button steps through them.
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
 - `AvoidanceAgent` (interface): interface AvoidanceAgent — A circular agent that avoidance may push on the XZ plane.
-- `BUSH_GENERATOR` (const): const BUSH_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "width"; readonly label: "width"; readonly group: "shape"; readonly min: 0.3; readonly max: 5; reado… — Bushes: shrub, berry bush, low hedge.
-- `BUSH_SCHEMA` (const): const BUSH_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "width"; readonly label: "width"; readonly group: "shape"; readonly min: 0.3; readonly max: 5; readonly step: 0.05; readonl… — Bush params: footprint, clumps, berries and colours.
 - `BakedGeneratorVariant` (interface): interface BakedGeneratorVariant<Schema extends ParamSchema, Output> — One baked variant: the variant and its output at each detail level, highest detail first.
 - `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Sweeps each short chord of the closed-form arc through live body AABBs, including sleeping bodies.
 - `BallisticSweepHit` (interface): interface BallisticSweepHit { point: [number, number, number]; time: number } — ⚠ undocumented

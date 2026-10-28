@@ -411,8 +411,6 @@ export { resolvePlayerMovementTuning, stepPlayerMovement } from "./movement/play
 export { POSE_HITBOX, createPoseState, type MovementPose } from "./movement/poseState";
 export { steerYaw } from "./movement/steering";
 export {
-  BUSH_GENERATOR,
-  BUSH_SCHEMA,
   DRIFTWOOD_GENERATOR,
   DRIFTWOOD_SCHEMA,
   FERN_GENERATOR,

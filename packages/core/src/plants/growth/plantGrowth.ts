@@ -300,9 +300,11 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     const root = addNode(-1, 0, 0, heading, SEEDLING_LENGTH_M, spin * 2 * PLANT_PI, 1);
     // Cotyledons: half a node's leaf area from seed reserves.
     state.foliage[root] = leafAreaPerNode * 0.5;
-    addBud(root);
+    // A shrub's root is only its collar: every stem rises from it, so each can die and be replaced.
+    const shrub = g.stemLifespanYears !== undefined;
+    if (!shrub) addBud(root);
     // Further basal stems lean out from the collar, evenly around it, each its own trunk.
-    const extra = Math.round(g.basalStems) - 1;
+    const extra = Math.round(g.basalStems) - (shrub ? 0 : 1);
     for (let s = 0; s < extra; s += 1) {
       const azimuth = spin * 2 * PLANT_PI + (s * 2 * PLANT_PI) / extra;
       lateralDirection(heading, BASAL_STEM_LEAN, azimuth, axisDir);
@@ -520,6 +522,47 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       }
     }
     dropBuds((node) => isDead(node));
+  }
+
+  /**
+   * Kill every basal stem past its lifespan and raise a sucker from the collar in its place, keeping
+   * the clump's stem count.
+   */
+  function renewStems(lifespanYears: number): void {
+    const n = state.nodeCount;
+    removed.fill(0, 0, n);
+    let dying = 0;
+    let lostHeight = 0;
+    for (let i = 1; i < n; i += 1) {
+      if ((state.parent[i] ?? -1) !== 0 || ((state.flags[i] ?? 0) & NODE_AXIS_START) === 0 || isDead(i)) continue;
+      const [roll] = stepRandomSeed(streamFor(state.nodeId[i] ?? 0, 0x5eed));
+      if (state.year - (state.born[i] ?? 0) > lifespanYears * (0.6 + 0.8 * roll)) {
+        removed[i] = 1;
+        dying += 1;
+      }
+    }
+    if (dying === 0) return;
+    for (let i = 1; i < n; i += 1) {
+      const p = state.parent[i] ?? -1;
+      if (removed[i] === 0 && p >= 0 && removed[p] === 1) removed[i] = 1;
+      if (removed[i] === 1) lostHeight = Math.max(lostHeight, state.end[i * 3 + 1] ?? 0);
+    }
+    markDeadBranches();
+    // The sucker shoots up on root reserves in its first season, to half the height of the stem it
+    // replaces (Bond & Midgley 2001), as a leafy cane of full-length internodes.
+    const internodes = Math.max(1, Math.min(40, Math.round((0.5 * lostHeight) / g.internodeMax)));
+    for (let s = 0; s < dying; s += 1) {
+      if (state.nodeCount + internodes > nodeCap || state.budCount >= budCap) break;
+      const [spin] = stepRandomSeed(streamFor(state.year, 0x5ec0 + s));
+      const azimuth = spin * 2 * PLANT_PI;
+      heading[0] = 0;
+      heading[1] = 1;
+      heading[2] = 0;
+      lateralDirection(heading, BASAL_STEM_LEAN, azimuth, axisDir);
+      let node = addNode(0, 0, NODE_AXIS_START, axisDir, g.internodeMax, azimuth, 1);
+      for (let k = 1; k < internodes; k += 1) node = addNode(node, 0, 0, axisDir, g.internodeMax, azimuth + k * 2.4, 1);
+      addBud(node);
+    }
   }
 
   function dropBuds(drop: (node: number) => boolean): void {
@@ -1097,6 +1140,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       compact();
       return;
     }
+    if (g.stemLifespanYears !== undefined) renewStems(g.stemLifespanYears);
     buildChildren();
     indexBuds();
     flushAndLight();

@@ -12,7 +12,7 @@ type BakedSurface = Exclude<NatureSurface, "leaf">;
 
 /**
  * A three geometry for a nature mesh, its sRGB vertex colours converted to linear. The caller owns it.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function natureGeometry(mesh: NatureMesh): THREE.BufferGeometry {
   const geometry = new THREE.BufferGeometry();
@@ -128,7 +128,7 @@ function surfaceMaterial(surface: BakedSurface): THREE.MeshStandardMaterial {
  * blades carry both faces themselves, while `"leaf"` blades are single-sided and lit from both faces.
  * Rocks and wood (`surface`) add the generated rock or bark grain, normal, roughness and AO,
  * projected in world space so the meshes need no UVs.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function natureMaterial(surface?: NatureSurface): THREE.MeshStandardMaterial {
   if (surface === "leaf") {
@@ -143,7 +143,7 @@ export function natureMaterial(surface?: NatureSurface): THREE.MeshStandardMater
 /**
  * Every draw a nature mesh makes: one geometry and material per part (a tree's bark trunk, its
  * leaves), or one for a single-surface mesh. The caller owns and disposes the geometries.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function natureDraws(mesh: NatureMesh): { geometry: THREE.BufferGeometry; material: THREE.MeshStandardMaterial }[] {
   const whole = natureGeometry(mesh);

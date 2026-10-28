@@ -1440,12 +1440,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createReflexWalker` (function) · `import { createReflexWalker } from "@jgengine/core/movement/reference/reflexWalker"`
 
-## nature-generator — seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+## nature-generator — seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
 
 - `addBlob` (function) · `import { addBlob } from "@jgengine/core/world"`
 - `addCone` (function) · `import { addCone } from "@jgengine/core/world"`
 - `addFrond` (function) · `import { addFrond } from "@jgengine/core/world"`
-- `addLeafCluster` (function) · `import { addLeafCluster } from "@jgengine/core/nature/natureMesh"`
 - `addStone` (function) · `import { addStone } from "@jgengine/core/world"`
 - `addTube` (function) · `import { addTube } from "@jgengine/core/world"`
 - `isNatureMesh` (function) · `import { isNatureMesh } from "@jgengine/core/world"`
@@ -1696,7 +1695,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## plant-validation — published crown allometry and crown-shape measures to check a growth model against
 
+- `HABIT_CHECK_AGES` (const) · `import { HABIT_CHECK_AGES } from "@jgengine/core/plants/species/habitReference"`
+- `HABIT_REFERENCE` (const) · `import { HABIT_REFERENCE } from "@jgengine/core/plants/species/habitReferenceTable"`
+- `HabitReference` (interface) · `import { HabitReference } from "@jgengine/core/plants/species/habitReference"`
 - `REFERENCE_STAND` (const) · `import { REFERENCE_STAND } from "@jgengine/core/plants/species/speciesReference"`
+- `SHRUB_STEMS` (const) · `import { SHRUB_STEMS } from "@jgengine/core/plants/species/habitReference"`
+- `basalStemCount` (function) · `import { basalStemCount } from "@jgengine/core/plants/species/habitReference"`
 - `branchAzimuthHistogram` (function) · `import { branchAzimuthHistogram } from "@jgengine/core/plants/validation/plantSilhouette"`
 - `crownProfile` (function) · `import { crownProfile } from "@jgengine/core/plants/validation/crownAllometry"`
 - `crownWidthBandM` (function) · `import { crownWidthBandM } from "@jgengine/core/plants/species/speciesReference"`

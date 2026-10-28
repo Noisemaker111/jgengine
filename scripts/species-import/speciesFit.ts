@@ -1,6 +1,6 @@
 import type { PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
 import { createCmaEs } from "./cmaEs";
-import { scoreTrial, type FitTarget } from "./speciesScore";
+import type { TrialScore } from "./speciesScore";
 import type { Trial } from "./speciesTrial";
 
 /** One fitted parameter: its path in the record and the range the search may move it in. */
@@ -70,9 +70,9 @@ function fromUnit(p: FitParameter, u: number): number {
 }
 
 /** `base` with the fitted parameters set from a point of the unit cube. */
-export function speciesAt(base: PlantSpecies, point: readonly number[]): PlantSpecies {
+export function speciesAt(base: PlantSpecies, point: readonly number[], parameters: readonly FitParameter[] = FIT_PARAMETERS): PlantSpecies {
   const species = structuredClone(base);
-  FIT_PARAMETERS.forEach((p, i) => writePath(species, p.path, fromUnit(p, point[i] ?? 0.5)));
+  parameters.forEach((p, i) => writePath(species, p.path, fromUnit(p, point[i] ?? 0.5)));
   return species;
 }
 
@@ -92,28 +92,30 @@ export interface FitProgress {
  */
 export async function fitSpecies(
   start: PlantSpecies,
-  target: FitTarget,
+  scoreTrial: (trial: Trial) => TrialScore,
   evaluate: Evaluate,
-  options: { generations: number; lambda: number; sigma: number; seed: number; onBest: (best: FitProgress) => void; onGeneration?: (line: string) => void },
+  options: { generations: number; lambda: number; sigma: number; seed: number; parameters?: readonly FitParameter[]; onBest: (best: FitProgress) => void; onGeneration?: (line: string) => void },
 ): Promise<FitProgress> {
-  const origin = FIT_PARAMETERS.map((p) => toUnit(p, readPath(start, p.path)));
-  const first = await evaluate(speciesAt(start, origin));
-  const firstScore = first === null ? { total: 1e9, parts: {} } : scoreTrial(target, first);
-  let best: FitProgress = { generation: 0, score: firstScore.total, parts: firstScore.parts, species: speciesAt(start, origin) };
+  const parameters = options.parameters ?? FIT_PARAMETERS;
+  const at = (point: readonly number[]): PlantSpecies => speciesAt(start, point, parameters);
+  const origin = parameters.map((p) => toUnit(p, readPath(start, p.path)));
+  const first = await evaluate(at(origin));
+  const firstScore = first === null ? { total: 1e9, parts: {} } : scoreTrial(first);
+  let best: FitProgress = { generation: 0, score: firstScore.total, parts: firstScore.parts, species: at(origin) };
   options.onBest(best);
   const search = createCmaEs(origin, options.sigma, options.lambda, options.seed);
   for (let generation = 1; generation <= options.generations; generation += 1) {
     const population = search.ask();
-    const trials = await Promise.all(population.map((point) => evaluate(speciesAt(start, point))));
-    const scores = trials.map((trial) => (trial === null ? 1e9 : scoreTrial(target, trial).total));
+    const trials = await Promise.all(population.map((point) => evaluate(at(point))));
+    const scores = trials.map((trial) => (trial === null ? 1e9 : scoreTrial(trial).total));
     const outside = population.map((point) => 50 * point.reduce((s, x) => s + (x < 0 ? x * x : x > 1 ? (x - 1) ** 2 : 0), 0));
     search.tell(population, scores.map((s, i) => s + (outside[i] ?? 0)));
     const k = scores.indexOf(Math.min(...scores));
     const trial = trials[k];
     const point = population[k];
     if (trial !== null && trial !== undefined && point !== undefined && (scores[k] ?? 1e9) < best.score) {
-      const scored = scoreTrial(target, trial);
-      best = { generation, score: scored.total, parts: scored.parts, species: speciesAt(start, point) };
+      const scored = scoreTrial(trial);
+      best = { generation, score: scored.total, parts: scored.parts, species: at(point) };
       options.onBest(best);
     }
     options.onGeneration?.(`gen ${generation} best ${best.score.toFixed(2)} sigma ${search.sigma.toFixed(3)} ${JSON.stringify(Object.fromEntries(Object.entries(best.parts).map(([k2, v]) => [k2, Number(v.toFixed(2))])))}`);

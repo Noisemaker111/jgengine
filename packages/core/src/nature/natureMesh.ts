@@ -41,7 +41,7 @@ export interface NatureMeshPart {
 
 /**
  * True when a generator output is a {@link NatureMesh}.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function isNatureMesh(value: unknown): value is NatureMesh {
   return typeof value === "object" && value !== null && "positions" in value && value.positions instanceof Float32Array && "indices" in value && value.indices instanceof Uint32Array;
@@ -256,7 +256,7 @@ export interface TubeOptions {
 /**
  * A tapered tube along `path` with radius `radii[i]` at each point: trunks, branches, logs. Rings
  * follow the path's tangent with a rotation-minimising frame so a bent trunk does not twist.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], radii: readonly number[], options: TubeOptions): void {
   if (path.length < 2) return;
@@ -373,7 +373,7 @@ export interface BlobOptions {
 
 /**
  * A lumpy ellipsoid: a leaf cluster, a bush clump, a coconut.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void {
   const { vertices, faces } = icosphere(options.level);
@@ -387,84 +387,6 @@ export function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void 
     builder.vertex([cx + v[0] * options.radii[0] * r, cy + v[1] * options.radii[1] * r, cz + v[2] * options.radii[2] * r], shade(options.color, light, [jitter * 0.3, jitter * 0.5, -jitter * 0.2], options.colorJitter * 0.25));
   }
   for (const [a, b, c] of faces) builder.triangle(base + a, base + b, base + c);
-}
-
-/** Options for {@link addLeafCluster}. */
-export interface LeafClusterOptions {
-  center: NatureVec;
-  radii: NatureVec;
-  seed: number;
-  color: NatureRgb;
-  /** Per-blade colour variation 0..1. */
-  colorJitter: number;
-  /** Darken the underside by this much, 0..1. */
-  shadeBelow: number;
-  /** Leaf blades over the cluster's shell. */
-  leaves: number;
-  /** Blade length in metres. */
-  leafSize: number;
-  /** Icosphere level of the shaded core the blades grow from (0..2), or -1 for blades only. */
-  coreLevel: number;
-  /** Lumpiness of the core, 0..1. */
-  lumpiness: number;
-}
-
-/**
- * A leafy cluster: a shaded core with folded leaf blades fanned out over its shell, so a canopy or a
- * bush reads as foliage with a broken edge instead of a smooth ball. The blades are single-sided;
- * draw them with the `"leaf"` surface, which lights both faces.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
- */
-export function addLeafCluster(builder: NatureMeshBuilder, options: LeafClusterOptions): void {
-  const [cx, cy, cz] = options.center;
-  const [rx, ry, rz] = options.radii;
-  if (options.coreLevel >= 0) {
-    addBlob(builder, {
-      center: options.center,
-      radii: [rx * 0.8, ry * 0.8, rz * 0.8],
-      level: options.coreLevel,
-      lumpiness: options.lumpiness,
-      seed: options.seed,
-      color: shade(options.color, 0.68),
-      colorJitter: options.colorJitter,
-      shadeBelow: options.shadeBelow,
-    });
-  }
-  const count = Math.max(0, Math.floor(options.leaves));
-  for (let i = 0; i < count; i += 1) {
-    const n1 = natureNoise(options.seed, i * 0.71, 3.1, i * 0.37);
-    const n2 = natureNoise(options.seed + 5, i * 0.53, 7.7, i * 0.91);
-    const n3 = natureNoise(options.seed + 11, i * 1.13, 1.9, i * 0.29);
-    // Golden-spiral directions over the shell, jittered so no two clusters fan the same way.
-    const y = 1 - (2 * (i + 0.5)) / count;
-    const ring = Math.sqrt(Math.max(0, 1 - y * y));
-    const theta = i * 2.399963 + (n1 - 0.5) * 1.2;
-    const dir = normalize([Math.cos(theta) * ring, y + (n2 - 0.5) * 0.3, Math.sin(theta) * ring]);
-    const shell = 0.84 + n3 * 0.26;
-    const at: NatureVec = [cx + dir[0] * rx * shell, cy + dir[1] * ry * shell, cz + dir[2] * rz * shell];
-    // Blades point out and sag a little under their own weight.
-    const axis = normalize([dir[0] + (n1 - 0.5) * 0.9, dir[1] - 0.45 + (n3 - 0.5) * 0.4, dir[2] + (n2 - 0.5) * 0.9]);
-    const crossed = cross(axis, dir);
-    const side = Math.hypot(crossed[0], crossed[1], crossed[2]) < 1e-4 ? perpendicular(axis) : normalize(crossed);
-    const face = normalize(cross(side, axis));
-    const length = options.leafSize * (0.75 + n2 * 0.5);
-    const width = length * (0.38 + n1 * 0.14);
-    const point = (along: number, across: number, lift: number): NatureVec => [
-      at[0] + axis[0] * length * along + side[0] * width * across + face[0] * width * lift,
-      at[1] + axis[1] * length * along + side[1] * width * across + face[1] * width * lift,
-      at[2] + axis[2] * length * along + side[2] * width * across + face[2] * width * lift,
-    ];
-    const jitter = (n3 - 0.5) * 2;
-    const light = 1 - options.shadeBelow * (1 - (dir[1] + 1) / 2) + jitter * options.colorJitter * 0.6;
-    const body = shade(options.color, light, [jitter * 0.3, jitter * 0.45, -jitter * 0.25], options.colorJitter * 0.3);
-    const tip = shade(body, 1.12, [0.05, 0.08, -0.04], 0.5);
-    const base = builder.vertex(point(-0.35, 0, 0), shade(body, 0.8), 0.45);
-    const left = builder.vertex(point(0.12, 0.5, -0.22), body, 0.45);
-    const end = builder.vertex(point(0.65, 0, 0), tip, 0.45);
-    const right = builder.vertex(point(0.12, -0.5, -0.22), body, 0.45);
-    builder.triangle(base, left, end);
-    builder.triangle(base, end, right);
-  }
 }
 
 /** Options for {@link addCone}. */
@@ -484,7 +406,7 @@ export interface ConeOptions {
 
 /**
  * A closed, drooping cone: one conifer tier.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addCone(builder: NatureMeshBuilder, options: ConeOptions): void {
   const sides = Math.max(4, Math.floor(options.sides));
@@ -532,7 +454,7 @@ export interface FrondOptions {
  * A folded, drooping leaf blade: palm and cycad fronds, fern fronds, broad bush leaves. Both faces
  * are emitted (the shared material is single-sided) with normals leaning up, so the underside of a
  * raised frond reads as lit foliage rather than a black sliver.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addFrond(builder: NatureMeshBuilder, options: FrondOptions): void {
   const segments = Math.max(2, Math.floor(options.segments));
@@ -619,7 +541,7 @@ function ridged(seed: number, x: number, y: number, z: number): number {
  * `erosion` blending the cuts back toward smooth, moss on the faces that look up, and a flat buried
  * base. `crag` adds ridged cracks and stacked ledges; vertices are shared when `smooth` is set, else
  * each face keeps its own and the stone shades faceted like a low-poly rock.
- * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function addStone(builder: NatureMeshBuilder, options: StoneOptions): void {
   const { vertices, faces } = icosphere(options.level);

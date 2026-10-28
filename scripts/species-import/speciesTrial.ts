@@ -1,7 +1,8 @@
 import { OPEN_TEMPERATE_SITE, type PlantEnvironment } from "../../packages/core/src/plants/growth/plantEnvironment";
 import { createPlantGrowth } from "../../packages/core/src/plants/growth/plantGrowth";
 import type { PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
-import { crownRatio } from "../../packages/core/src/plants/structure/plantStructure";
+import { crownRatio, PLANT_REGION } from "../../packages/core/src/plants/structure/plantStructure";
+import { basalStemCount, HABIT_CHECK_AGES } from "../../packages/core/src/plants/species/habitReference";
 import { REFERENCE_STAND } from "../../packages/core/src/plants/species/speciesReference";
 import { crownProfile } from "../../packages/core/src/plants/validation/crownAllometry";
 
@@ -15,6 +16,8 @@ export interface TrialReading {
   centroid: number;
   shoulder: number;
   leafAreaM2: number;
+  /** Live stems rising from the collar. */
+  stems: number;
   alive: boolean;
 }
 
@@ -29,10 +32,10 @@ export interface Trial {
 
 export const TRIAL_AGES = [20, 50, 100] as const;
 
-function grow(species: PlantSpecies, env: PlantEnvironment, seed: string): TrialReading[] {
+function grow(species: PlantSpecies, env: PlantEnvironment, seed: string, ages: readonly number[] = TRIAL_AGES): TrialReading[] {
   const plant = createPlantGrowth(species, env, seed);
   const readings: TrialReading[] = [];
-  for (const age of TRIAL_AGES) {
+  for (const age of ages) {
     plant.step(age - plant.ageYears());
     const structure = plant.structure();
     const stats = plant.stats();
@@ -44,11 +47,19 @@ function grow(species: PlantSpecies, env: PlantEnvironment, seed: string): Trial
       crownRatio: crownRatio(structure),
       ...crownProfile(structure),
       leafAreaM2: stats.leafAreaM2,
+      stems: basalStemCount(structure.segments, PLANT_REGION.deadwood),
       alive: stats.alive,
     });
     if (!stats.alive) break;
   }
   return readings;
+}
+
+/** Grow a shrub, palm, fern or herb open-grown to each habit check age, once per seed. */
+export function runHabitTrial(species: PlantSpecies, seeds: readonly string[]): Trial {
+  const started = performance.now();
+  const open = seeds.map((seed) => grow(species, OPEN_TEMPERATE_SITE, seed, HABIT_CHECK_AGES));
+  return { open, stand: [], shadeLeafAreaM2: [], shadeAlive: [], ms: performance.now() - started };
 }
 
 /** Grow `species` open, in a stand and (when `shade`) under 0.2 light, once per seed. */

@@ -24,8 +24,14 @@ function shapePenalty(form: CrownForm, r: TrialReading): number {
   return hinge(r.centroid, 0, 0.33, 0.03) + (r.age >= 50 ? hinge(r.shoulder, 0, 0.42, 0.03) : 0);
 }
 
+/** A trial's total misfit and its parts; lower is better. */
+export interface TrialScore {
+  total: number;
+  parts: Record<string, number>;
+}
+
 /** Sum of squared misfits of a trial against its target, by part; lower is better. */
-export function scoreTrial(target: FitTarget, trial: Trial): { total: number; parts: Record<string, number> } {
+export function scoreTrial(target: FitTarget, trial: Trial): TrialScore {
   const { reference } = target;
   const parts: Record<string, number> = {};
   const add = (key: string, value: number): void => {
