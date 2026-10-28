@@ -587,9 +587,37 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `findEffect` (function) · `import { findEffect } from "@jgengine/core/vfx/effectLibrary"`
 
+## fire-active-crown-threshold — Van Wagner 1977 spread rate a crown fire needs to stay active
+
+- `activeCrownCriticalRate` (function) · `import { activeCrownCriticalRate } from "@jgengine/core/fire/crownFire"`
+
 ## fire-byram-intensity — Byram fireline intensity from heat per unit area and spread rate
 
 - `firelineIntensity` (function) · `import { firelineIntensity } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-canopy-load — canopy fuel load from bulk density and crown depth
+
+- `canopyFuelLoad` (function) · `import { canopyFuelLoad } from "@jgengine/core/fire/crownFire"`
+
+## fire-crown-fire — classify a surface fire as surface, torching, crowning or conditional crown fire and give the crown rate and intensity
+
+- `assessCrownFire` (function) · `import { assessCrownFire } from "@jgengine/core/fire/crownFire"`
+
+## fire-crown-flame-length — Thomas 1963 crown fire flame length from intensity
+
+- `crownFlameLength` (function) · `import { crownFlameLength } from "@jgengine/core/fire/crownFire"`
+
+## fire-crown-initiation — Van Wagner 1977 surface intensity needed to torch a canopy
+
+- `crownInitiationIntensity` (function) · `import { crownInitiationIntensity } from "@jgengine/core/fire/crownFire"`
+
+## fire-crown-shape — Rothermel 1991 crown fire ellipse shape from the 20-ft wind
+
+- `crownLengthToBreadth` (function) · `import { crownLengthToBreadth } from "@jgengine/core/fire/crownFire"`
+
+## fire-crown-spread — Rothermel 1991 crown fire spread rate from 20-ft wind and fuel moisture
+
+- `rothermelCrownRate` (function) · `import { rothermelCrownRate } from "@jgengine/core/fire/crownFire"`
 
 ## fire-ellipse-eccentricity — eccentricity of a fire ellipse from its length-to-breadth ratio
 
@@ -615,6 +643,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `curedHerbFraction` (function) · `import { curedHerbFraction } from "@jgengine/core/fire/surfaceFire"`
 
+## fire-ignition-probability — chance an ember lighting fine fuel at a moisture and temperature starts a fire
+
+- `emberIgnitionProbability` (function) · `import { emberIgnitionProbability } from "@jgengine/core/fire/spotting"`
+
 ## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger
 
 - `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/input/actionBindings"`
@@ -622,6 +654,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## fire-intensity-for-flame — fireline intensity that gives a flame length
 
 - `intensityForFlameLength` (function) · `import { intensityForFlameLength } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-landscape — grow a wildfire over fuel, terrain and canopy with crown fire, ember spotting and burnout; snapshot, restore, retune
+
+- `createFireLandscape` (function) · `import { createFireLandscape } from "@jgengine/core/fire/fireLandscape"`
 
 ## fire-length-to-breadth — Anderson 1983 surface fire ellipse shape from effective wind
 
@@ -638,6 +674,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## fire-scorch-height — Van Wagner crown scorch height from intensity, wind and air temperature
 
 - `scorchHeight` (function) · `import { scorchHeight } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-spotting-surface — maximum ember spotting distance from a surface fire's flame length and wind
+
+- `surfaceFireSpotDistance` (function) · `import { surfaceFireSpotDistance } from "@jgengine/core/fire/spotting"`
+
+## fire-spotting-torching — maximum ember spotting distance from a group of torching trees
+
+- `torchingTreeSpotDistance` (function) · `import { torchingTreeSpotDistance } from "@jgengine/core/fire/spotting"`
 
 ## fire-surface-fuelbed — reduce a fuel model and moisture to Rothermel reaction intensity, residence time and no-wind spread rate
 
