@@ -98,3 +98,21 @@ describe("terrain RPC authoring recovery", () => {
     dispose();
   });
 });
+
+describe("grow_landform", () => {
+  test("grows the scene terrain with material layers as one undoable edit, and rejects bad params", () => {
+    const { api, dispose } = host();
+    const session = api.getSession();
+    const before = session.exportJson();
+    const grown = api.handle({ method: "grow_landform", params: { seed: "rpc", side: 32, cellSize: 40, years: 3e5 }, centerX: 10, datum: 5 });
+    expect(grown.ok).toBe(true);
+    const terrain = session.getState().document.terrain;
+    expect(terrain?.cols).toBe(31);
+    expect(terrain?.layers?.map((layer) => layer.surface)).toEqual(["rock", "gravel", "sand", "mud", "dirt"]);
+    expect(api.handle({ method: "undo" }).ok).toBe(true);
+    expect(session.exportJson()).toBe(before);
+    expect(api.handle({ method: "grow_landform", params: { side: 4000 } }).ok).toBe(false);
+    expect(api.handle({ method: "grow_landform", centerX: Number.NaN }).ok).toBe(false);
+    dispose();
+  }, 30_000);
+});

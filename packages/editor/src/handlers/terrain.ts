@@ -16,6 +16,10 @@ import {
 } from "@jgengine/core/scatter/scatterRegion";
 
 import { TERRAIN_PAINT_PRESETS } from "@jgengine/core/terrain/terrainPaint";
+import { runGenerator } from "@jgengine/core/generator/generator";
+import { validateParams } from "@jgengine/core/generator/paramSchema";
+import { LANDFORM_GENERATOR, LANDFORM_SCHEMA } from "@jgengine/core/landform/generator/landformGenerator";
+import { landformTerrainSnapshot } from "@jgengine/core/landform/generator/landformTerrain";
 import { libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
 import type { HandlerTable } from "./context";
 
@@ -30,6 +34,7 @@ function brushError(request: { x: number; z: number; radius?: number; strength?:
 export const terrainHandlers: Pick<
   HandlerTable,
   | "create_terrain"
+  | "grow_landform"
   | "sculpt_terrain"
   | "terrain_summary"
   | "paint_terrain"
@@ -65,6 +70,22 @@ export const terrainHandlers: Pick<
     });
     ctx.session.dispatch({ type: "setTerrain", terrain });
     return { ok: true, result: { cols: terrain.cols, rows: terrain.rows, cellSize: terrain.cellSize } };
+  },
+  grow_landform: (ctx, request) => {
+    const center = [request.centerX ?? 0, request.centerZ ?? 0] as const;
+    if (![...center, request.datum ?? 0].every(Number.isFinite)) return { ok: false, error: "landform center and datum must be finite" };
+    const issues = validateParams(LANDFORM_SCHEMA, request.params);
+    if (issues.length > 0) return { ok: false, error: issues.map((issue) => `${issue.key}: ${issue.message}`).join("; ") };
+    const grown = runGenerator(LANDFORM_GENERATOR, request.params);
+    const terrain = landformTerrainSnapshot(grown, { center, ...(request.datum === undefined ? {} : { datum: request.datum }) });
+    ctx.session.dispatch({ type: "setTerrain", terrain });
+    let min = Infinity;
+    let max = -Infinity;
+    for (const h of terrain.offsets) {
+      min = Math.min(min, h);
+      max = Math.max(max, h);
+    }
+    return { ok: true, result: { cols: terrain.cols, rows: terrain.rows, cellSize: terrain.cellSize, bounds: terrain.bounds, minHeight: min, maxHeight: max, layers: grown.kinds, canUndo: ctx.session.canUndo() } };
   },
   sculpt_terrain: (ctx, request) => {
     const invalid = brushError(request);
