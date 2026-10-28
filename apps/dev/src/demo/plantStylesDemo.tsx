@@ -28,6 +28,8 @@ const SPACING = 22;
 /** The realistic look again at the three lower detail levels, beside each tree's style row. */
 const DETAILS = [0.5, 0.25, 0.1];
 const DETAIL_ROW_OFFSET = 75;
+/** A contact sheet of 100 sugar maples of one age, each from its own seed (the unique-trees test's seeds). */
+const UNIQUE = { x: 300, columns: 10, rows: 10, spacing: 11, age: 20, detail: 0.25 };
 
 function GrownPlant({ meta, detail, position }: { meta: Record<string, unknown>; detail: number; position: [number, number, number] }) {
   const [mesh, setMesh] = useState<PlantMesh | null>(null);
@@ -71,13 +73,20 @@ function PlantStyles() {
           detail,
           position: [plant.x + DETAIL_ROW_OFFSET + (column - 1) * SPACING, 0, 0] satisfies [number, number, number],
         })),
-      ]),
+      ]).concat(
+        Array.from({ length: UNIQUE.columns * UNIQUE.rows }, (_, k) => ({
+          key: `unique/${k}`,
+          meta: { species: "acer-saccharum", age: UNIQUE.age, seed: `maple-${k}`, ...STYLES[0]?.meta },
+          detail: UNIQUE.detail,
+          position: [UNIQUE.x + (k % UNIQUE.columns) * UNIQUE.spacing, 0, Math.floor(k / UNIQUE.columns) * UNIQUE.spacing] satisfies [number, number, number],
+        })),
+      ),
     [],
   );
   return (
     <group>
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[700, 200]} />
+        <planeGeometry args={[900, 400]} />
         <meshStandardMaterial color="#6b7a4a" roughness={1} />
       </mesh>
       {placements.map((entry) => (
@@ -110,6 +119,7 @@ export const plantStylesGame: PlayableGame = {
       pines: { look: "150,12,0", lookFrom: "62,10,0" },
       "maple-details": { look: "75,11,0", lookFrom: "62,10,0" },
       "pine-details": { look: "225,12,0", lookFrom: "62,10,0" },
+      unique: { look: "350,4,48", lookFrom: "122,52,0" },
     },
   },
 };

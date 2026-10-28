@@ -166,6 +166,25 @@ export function generatorVariants<Schema extends ParamSchema>(
   }));
 }
 
+/**
+ * The one variant of `base` that belongs to `key` (a placement id): its own seed, and params nudged
+ * by `explore` from a stream seeded by the key. The same key always gives the same variant, so a
+ * field can grow every placement as its own plant and regrow any of them anywhere.
+ * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
+ */
+export function generatorVariantFor<Schema extends ParamSchema>(
+  definition: GeneratorDefinition<Schema, unknown>,
+  base: Readonly<Record<string, unknown>> | undefined,
+  key: string,
+  options: Pick<GeneratorVariantOptions, "seed" | "explore"> = {},
+): GeneratorVariant<Schema> {
+  const setSeed = options.seed ?? "variants";
+  const baseSeed = generatorSeed(definition.schema, base, definition.id);
+  const random = seededRng(`${setSeed}/${baseSeed}@${key}`);
+  const meta = { ...base, ...jitterParams(definition.schema, base, random, options.explore ?? 0.25), [seedKey(definition.schema)]: `${baseSeed}-${setSeed}@${key}` };
+  return { index: -1, seed: generatorSeed(definition.schema, meta, baseSeed), meta, params: parseParams(definition.schema, meta) };
+}
+
 /** One baked variant: the variant and its output at each detail level, highest detail first. */
 export interface BakedGeneratorVariant<Schema extends ParamSchema, Output> {
   variant: GeneratorVariant<Schema>;

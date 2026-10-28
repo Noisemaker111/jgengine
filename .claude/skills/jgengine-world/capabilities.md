@@ -670,6 +670,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## generator-contract — seeded, schema-driven procedural generator with variants and editor exposure
 
 - `bakeGeneratorVariants` (function) · `import { bakeGeneratorVariants } from "@jgengine/core/world"`
+- `generatorVariantFor` (function) · `import { generatorVariantFor } from "@jgengine/core/generator/generator"`
 - `jitterParams` (function) · `import { jitterParams } from "@jgengine/core/world"`
 - `prepareGeneratorVariants` (function) · `import { prepareGeneratorVariants } from "@jgengine/core/generator/generator"`
 - `registerPlaceableGeneratorOutput` (function) · `import { registerPlaceableGeneratorOutput } from "@jgengine/core/world"`
@@ -1175,10 +1176,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## plant-validation — published crown allometry and crown-shape measures to check a growth model against
 
+- `branchAzimuthHistogram` (function) · `import { branchAzimuthHistogram } from "@jgengine/core/plants/validation/plantSilhouette"`
 - `crownProfile` (function) · `import { crownProfile } from "@jgengine/core/plants/validation/crownAllometry"`
 - `forestGrownCrownWidthM` (function) · `import { forestGrownCrownWidthM } from "@jgengine/core/plants/validation/crownAllometry"`
+- `histogramDistance` (function) · `import { histogramDistance } from "@jgengine/core/plants/validation/plantSilhouette"`
 - `measuredCrownWidthBandM` (function) · `import { measuredCrownWidthBandM } from "@jgengine/core/plants/validation/crownAllometry"`
 - `openGrownCrownWidthM` (function) · `import { openGrownCrownWidthM } from "@jgengine/core/plants/validation/crownAllometry"`
+- `plantSilhouettes` (function) · `import { plantSilhouettes } from "@jgengine/core/plants/validation/plantSilhouette"`
+- `silhouetteIoU` (function) · `import { silhouetteIoU } from "@jgengine/core/plants/validation/plantSilhouette"`
 - `siteIndexHeightM` (function) · `import { siteIndexHeightM } from "@jgengine/core/plants/validation/heightAgeCurves"`
 
 ## plot-permissions — Owner, editor and guild build rights on a plot
@@ -1352,8 +1357,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## scatter-generator — grow a scatter palette item from a seeded generator's baked variants
 
+- `ScatterHeroMember` (interface) · `import { ScatterHeroMember } from "@jgengine/core/scatter/scatterHeroes"`
+- `createScatterHeroSet` (function) · `import { createScatterHeroSet } from "@jgengine/core/scatter/scatterHeroes"`
 - `scatterGeneratorBase` (function) · `import { scatterGeneratorBase } from "@jgengine/core/world"`
 - `scatterGeneratorVariantCount` (function) · `import { scatterGeneratorVariantCount } from "@jgengine/core/world"`
+- `scatterPlacementVariant` (function) · `import { scatterPlacementVariant } from "@jgengine/core/scatter/scatterGenerator"`
 
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
 
