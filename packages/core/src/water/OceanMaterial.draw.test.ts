@@ -63,6 +63,13 @@ test("a fog-aware blended material that still writes depth, so post passes see t
   expect(material.uniforms).toHaveProperty("fogColor");
 });
 
+function texel(texture: THREE.DataTexture, index: number): number | undefined {
+  const data: unknown = texture.image.data;
+  if (!(data instanceof Uint16Array)) return undefined;
+  const value = data[index];
+  return value === undefined ? undefined : THREE.DataUtils.fromHalfFloat(value);
+}
+
 test("the bed bakes to a half-float height map, one row per slice, sampled at texel centres", () => {
   const job = bakeOceanBed((x, z) => x * 0.5 - z, [-4, -4, 4, 4], 4);
   let slices = 0;
@@ -74,13 +81,12 @@ test("the bed bakes to a half-float height map, one row per slice, sampled at te
   expect(slices).toBe(4);
   const texture = step.value;
   expect(texture.type).toBe(THREE.HalfFloatType);
-  const data = texture.image.data as Uint16Array;
   // texel (column 0, row 0) centre is (-3, -3): -1.5 + 3
-  expect(THREE.DataUtils.fromHalfFloat(data[0]!)).toBeCloseTo(1.5, 2);
+  expect(texel(texture, 0)).toBeCloseTo(1.5, 2);
   // texel (column 3, row 3) centre is (3, 3): 1.5 - 3
-  expect(THREE.DataUtils.fromHalfFloat(data[15]!)).toBeCloseTo(-1.5, 2);
+  expect(texel(texture, 15)).toBeCloseTo(-1.5, 2);
   const nonFinite = runToEnd(bakeOceanBed(() => Number.NaN, [0, 0, 1, 1], 1));
-  expect(THREE.DataUtils.fromHalfFloat((nonFinite.image.data as Uint16Array)[0]!)).toBe(-1000);
+  expect(texel(nonFinite, 0)).toBe(-1000);
 });
 
 test("the follow grid packs vertices near the camera and still reaches its edge", () => {

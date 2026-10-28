@@ -49,6 +49,7 @@ const lights = new WeakMap<THREE.Scene, SkyLight>();
 /**
  * Record the sky's light for this frame on a scene. Publish one object and mutate it each frame; readers
  * keep the reference. A game drawing its own sky calls this from its `useFrame`.
+ * @capability custom-sky-light a game's own sky lights the engine's water and clouds by publishing its sun, moon and sky colours
  */
 export function publishSkyLight(scene: THREE.Scene, light: SkyLight): void {
   lights.set(scene, light);

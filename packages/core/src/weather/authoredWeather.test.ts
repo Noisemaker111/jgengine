@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { createAuthoredWeather, createWeatherExposure, createWeatherEnvironmentField, validateAuthoredWeather } from "./authoredWeather";
 
+/** A serialized copy, as a save would carry it. */
+function roundTrip<T>(value: T): T {
+  return structuredClone(value);
+}
+
 const config = {
   initialProfileId: "dry",
   profiles: [
@@ -97,10 +102,10 @@ describe("authored weather cloud cover", () => {
     const weather = createAuthoredWeather(sky);
     const times = [0, 150, 250, 350, 425, 650, 999];
     const first = times.map((t) => weather.sample(10, 20, t));
-    const restored = createAuthoredWeather(JSON.parse(JSON.stringify(sky)) as typeof sky);
+    const restored = createAuthoredWeather(roundTrip(sky));
     expect(times.map((t) => restored.sample(10, 20, t))).toEqual(first);
-    expect(restored.sample(10, 20, 1000 + 250).cloudCover).toBeCloseTo(first[2]!.cloudCover);
-    expect(restored.sample(10, 20, 3000 + 425).cloudCover).toBeCloseTo(first[4]!.cloudCover);
+    expect(restored.sample(10, 20, 1000 + 250).cloudCover).toBeCloseTo(first[2]?.cloudCover ?? Number.NaN);
+    expect(restored.sample(10, 20, 3000 + 425).cloudCover).toBeCloseTo(first[4]?.cloudCover ?? Number.NaN);
   });
 
   test("rejects cover outside 0..1", () => {

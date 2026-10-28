@@ -67,7 +67,7 @@ describe("sky() volumetricClouds passthrough", () => {
 
 describe("cloudNoiseVolume", () => {
   const volume = cloudNoiseVolume();
-  const at = (x: number, y: number, z: number) => volume[((z % CLOUD_NOISE_SIZE) * CLOUD_NOISE_SIZE + (y % CLOUD_NOISE_SIZE)) * CLOUD_NOISE_SIZE + (x % CLOUD_NOISE_SIZE)]!;
+  const at = (x: number, y: number, z: number) => volume[((z % CLOUD_NOISE_SIZE) * CLOUD_NOISE_SIZE + (y % CLOUD_NOISE_SIZE)) * CLOUD_NOISE_SIZE + (x % CLOUD_NOISE_SIZE)] ?? -1;
 
   test("is deterministic and spans a usable range", () => {
     expect(cloudNoiseVolume()).toEqual(volume);

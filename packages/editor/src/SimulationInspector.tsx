@@ -60,7 +60,7 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
         }} /></label>
         <select aria-label={`Profile ${profile.id} mode`} value={profile.mode} onChange={(event) => setWeather({ ...weather, profiles: weather.profiles!.map((row, i) => i === index ? { ...row, mode: event.target.value as AuthoredWeatherMode } : row) })}>{modes.map((mode) => <option key={mode}>{mode}</option>)}</select>
         <NumberInput label={`Profile ${profile.id} intensity`} value={profile.intensity} onChange={(intensity) => setWeather({ ...weather, profiles: weather.profiles!.map((row, i) => i === index ? { ...row, intensity } : row) })} />
-        <NumberInput label={`Profile ${profile.id} cloud cover`} value={profile.cloudCover ?? 0} onChange={(cloudCover) => setWeather({ ...weather, profiles: weather.profiles!.map((row, i) => i === index ? { ...row, cloudCover } : row) })} />
+        <NumberInput label={`Profile ${profile.id} cloud cover`} value={profile.cloudCover ?? 0} onChange={(cloudCover) => setWeather({ ...weather, profiles: (weather.profiles ?? []).map((row, i) => i === index ? { ...row, cloudCover } : row) })} />
         <button type="button" onClick={() => setWeather({ ...weather, profiles: weather.profiles!.filter((_, i) => i !== index), initialProfileId: weather.initialProfileId === profile.id ? undefined : weather.initialProfileId, schedule: weather.schedule?.filter((row) => row.profileId !== profile.id) })}>Remove profile</button>
       </div>)}
       <button type="button" onClick={() => setWeather({ ...weather, profiles: [...(weather.profiles ?? []), { id: id("profile", weather.profiles ?? []), mode: "rain", intensity: 0.5 }] })}>Add weather profile</button>

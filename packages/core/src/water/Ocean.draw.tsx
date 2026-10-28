@@ -87,7 +87,7 @@ export function* bakeOceanBed(bedAt: (x: number, z: number) => number, bounds: O
  */
 export function Ocean({ config, bedAt, bedBounds, ...meshProps }: OceanProps) {
   const resolved = useMemo(() => createOceanConfig(config), [config]);
-  const far = useThree((state) => (state.camera as THREE.PerspectiveCamera).far);
+  const far = useThree((state) => (state.camera instanceof THREE.PerspectiveCamera || state.camera instanceof THREE.OrthographicCamera ? state.camera.far : 0));
   const followHalf = resolved.follow ? Math.max(resolved.size, resolved.depth, (Number.isFinite(far) ? far : 0) * 2) / 2 : 0;
   const sheet = useMemo(
     () => (resolved.follow ? createFollowGeometry(followHalf, resolved.resolution) : { geometry: createSheetGeometry(resolved), spacing: 0 }),

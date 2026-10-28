@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import type { VolumetricCloudsRules } from "@jgengine/core/sky/volumetricClouds";
@@ -167,6 +167,11 @@ void main() {
 }
 `;
 
+/** The camera's far plane, or infinity for a camera without one. */
+function cameraFar(camera: THREE.Camera): number {
+  return camera instanceof THREE.PerspectiveCamera || camera instanceof THREE.OrthographicCamera ? camera.far : Number.POSITIVE_INFINITY;
+}
+
 /**
  * A raymarched cloud slab between `height` and `height + thickness`, drawn on a camera-centred sphere
  * just inside the far plane. Each frame it reads the scene's {@link readSkyLight}: the sun (or the moon
@@ -181,37 +186,43 @@ export function VolumetricClouds({ rules }: VolumetricCloudsProps) {
   const frameRef = useRef(0);
   const fallback = useRef(createSkyLight());
 
-  const material = useDisposable(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uNoise: { value: cloudNoiseTexture() },
-        uCameraPos: { value: new THREE.Vector3() },
-        uAlbedo: { value: new THREE.Color(rules.color) },
-        uRim: { value: new THREE.Color(rules.sunColor) },
-        uLightDirection: { value: new THREE.Vector3(0, 1, 0) },
-        uLight: { value: new THREE.Color() },
-        uAmbientTop: { value: new THREE.Color() },
-        uAmbientBottom: { value: new THREE.Color() },
-        uHorizon: { value: new THREE.Color() },
-        uSunScatter: { value: rules.sunScatter },
-        uCoverage: { value: rules.coverage },
-        uDensity: { value: rules.density },
-        uBaseHeight: { value: rules.height },
-        uThickness: { value: rules.thickness },
-        uScale: { value: rules.scale },
-        uFade: { value: rules.fade },
-        uWind: { value: new THREE.Vector3() },
-        uFrame: { value: 0 },
-        uSeed: { value: hashSeed(rules.seed) },
-      },
-      vertexShader: CLOUD_VERTEX_SHADER,
-      fragmentShader: CLOUD_FRAGMENT_SHADER,
-      transparent: true,
-      depthWrite: false,
-      side: THREE.BackSide,
-      fog: false,
-    });
-  }, [rules]);
+  const uniforms = useMemo(
+    () => ({
+      uNoise: { value: cloudNoiseTexture() },
+      uCameraPos: { value: new THREE.Vector3() },
+      uAlbedo: { value: new THREE.Color(rules.color) },
+      uRim: { value: new THREE.Color(rules.sunColor) },
+      uLightDirection: { value: new THREE.Vector3(0, 1, 0) },
+      uLight: { value: new THREE.Color() },
+      uAmbientTop: { value: new THREE.Color() },
+      uAmbientBottom: { value: new THREE.Color() },
+      uHorizon: { value: new THREE.Color() },
+      uSunScatter: { value: rules.sunScatter },
+      uCoverage: { value: rules.coverage },
+      uDensity: { value: rules.density },
+      uBaseHeight: { value: rules.height },
+      uThickness: { value: rules.thickness },
+      uScale: { value: rules.scale },
+      uFade: { value: rules.fade },
+      uWind: { value: new THREE.Vector3() },
+      uFrame: { value: 0 },
+      uSeed: { value: hashSeed(rules.seed) },
+    }),
+    [rules],
+  );
+  const material = useDisposable(
+    () =>
+      new THREE.ShaderMaterial({
+        uniforms,
+        vertexShader: CLOUD_VERTEX_SHADER,
+        fragmentShader: CLOUD_FRAGMENT_SHADER,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.BackSide,
+        fog: false,
+      }),
+    [uniforms],
+  );
 
   const albedo = useRef(new THREE.Color());
   useFrame((state, delta) => {
@@ -220,31 +231,31 @@ export function VolumetricClouds({ rules }: VolumetricCloudsProps) {
     const mesh = meshRef.current;
     if (mesh !== null) {
       mesh.position.set(state.camera.position.x, state.camera.position.y, state.camera.position.z);
-      const far = (state.camera as THREE.PerspectiveCamera).far;
+      const far = cameraFar(state.camera);
       mesh.scale.setScalar(Number.isFinite(far) && far > 0 ? far * FAR_FRACTION : 1000);
     }
     const light = readSkyLight(state.scene) ?? fallback.current;
     const cover = light.cloudCover;
-    const u = material.uniforms;
-    (u["uCameraPos"]!.value as THREE.Vector3).copy(state.camera.position);
+    const u = uniforms;
+    u.uCameraPos.value.copy(state.camera.position);
     // The sun lights the clouds by day; once it is well down the moon takes over.
     const sunUp = THREE.MathUtils.smoothstep(light.sunDirection.y, -0.08, 0.02);
-    const lightDirection = u["uLightDirection"]!.value as THREE.Vector3;
+    const lightDirection = u.uLightDirection.value;
     if (sunUp > 0) lightDirection.copy(light.sunDirection);
     else lightDirection.copy(light.moonDirection);
     if (lightDirection.y < 0.05) lightDirection.setY(0.05).normalize();
-    const lit = u["uLight"]!.value as THREE.Color;
+    const lit = u.uLight.value;
     lit.copy(light.moon).lerp(light.sun, sunUp).multiplyScalar(1 - cover * 0.7);
-    (u["uAmbientTop"]!.value as THREE.Color).copy(light.zenith).lerp(light.horizon, 0.4).multiplyScalar(1.1);
-    (u["uAmbientBottom"]!.value as THREE.Color).copy(light.horizon).lerp(light.zenith, 0.3).multiplyScalar(0.55 - cover * 0.15);
-    (u["uHorizon"]!.value as THREE.Color).copy(light.horizon);
+    u.uAmbientTop.value.copy(light.zenith).lerp(light.horizon, 0.4).multiplyScalar(1.1);
+    u.uAmbientBottom.value.copy(light.horizon).lerp(light.zenith, 0.3).multiplyScalar(0.55 - cover * 0.15);
+    u.uHorizon.value.copy(light.horizon);
     // Rain clouds are thicker, fuller and greyer than fair-weather cumulus.
     albedo.current.set(rules.color).multiplyScalar(1 - cover * 0.45);
-    (u["uAlbedo"]!.value as THREE.Color).copy(albedo.current);
-    u["uCoverage"]!.value = rules.coverage + (1 - rules.coverage) * cover * 0.85;
-    u["uDensity"]!.value = rules.density * (1 + cover * 1.5);
-    (u["uWind"]!.value as THREE.Vector3).set(timeRef.current * rules.speed, timeRef.current * rules.speed * 0.15, timeRef.current * rules.speed * 0.6);
-    u["uFrame"]!.value = frameRef.current;
+    u.uAlbedo.value.copy(albedo.current);
+    u.uCoverage.value = rules.coverage + (1 - rules.coverage) * cover * 0.85;
+    u.uDensity.value = rules.density * (1 + cover * 1.5);
+    u.uWind.value.set(timeRef.current * rules.speed, timeRef.current * rules.speed * 0.15, timeRef.current * rules.speed * 0.6);
+    u.uFrame.value = frameRef.current;
   });
 
   return (
