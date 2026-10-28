@@ -18,6 +18,7 @@ import { buildScatterModelSources, disposeScatterModelSources, type ScatterModel
 import { writeScatterVariantLevel } from "./scatterVariants.draw";
 import { detailDrawDistance, IMPOSTOR_MIN_RADIUS, sourceRadius } from "@jgengine/core/lod/impostor.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { showCulled } from "@jgengine/core/visibility/culledTransforms.draw";
 import { ScatterImpostorField } from "./ScatterImpostorField.draw";
 import { bakeGeneratorVariants, getGenerator, prepareGeneratorVariants, type GeneratorDefinition } from "@jgengine/core/generator/generator";
 import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
@@ -285,7 +286,7 @@ function ScatterDetailInstances({ sources, batches, radius }: { sources: Scatter
       const group = groups.current[index];
       const footprint = footprints[index]!;
       if (group === null || group === undefined) continue;
-      group.visible = Math.hypot(cameraPosition.x - footprint.x, cameraPosition.z - footprint.z) - footprint.radius <= reach;
+      showCulled(group, Math.hypot(cameraPosition.x - footprint.x, cameraPosition.z - footprint.z) - footprint.radius <= reach);
     }
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);
   return (
