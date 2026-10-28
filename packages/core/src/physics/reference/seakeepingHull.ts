@@ -302,13 +302,19 @@ export function stepSeakeeping(hull: SeakeepingHull, sea: OceanSea, state: Seake
       ...rhs,
     ];
   };
-  const shifted = (k: readonly number[], h: number): SeakeepingState => ({
-    ...state,
-    position: [0, 1, 2].map((i) => (state.position[i] ?? 0) + h * (k[i] ?? 0)) as [number, number, number],
-    attitude: [0, 1, 2].map((i) => (state.attitude[i] ?? 0) + h * (k[3 + i] ?? 0)) as [number, number, number],
-    velocity: [0, 1, 2, 3, 4, 5].map((i) => (state.velocity[i] ?? 0) + h * (k[6 + i] ?? 0)) as SeakeepingState["velocity"],
-    time: state.time + h,
-  });
+  const shifted = (k: readonly number[], h: number): SeakeepingState => {
+    const add = (value: number, i: number) => value + h * (k[i] ?? 0);
+    const [x, y, z] = state.position;
+    const [roll, pitch, yaw] = state.attitude;
+    const [u, v, w, p, q, r] = state.velocity;
+    return {
+      ...state,
+      position: [add(x, 0), add(y, 1), add(z, 2)],
+      attitude: [add(roll, 3), add(pitch, 4), add(yaw, 5)],
+      velocity: [add(u, 6), add(v, 7), add(w, 8), add(p, 9), add(q, 10), add(r, 11)],
+      time: state.time + h,
+    };
+  };
   const k1 = derivative(state);
   const k2 = derivative(shifted(k1, dt / 2));
   const k3 = derivative(shifted(k2, dt / 2));
