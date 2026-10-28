@@ -364,6 +364,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createCessna172Model` (function) · `import { createCessna172Model } from "@jgengine/core/flight/reference/cessna172Aircraft"`
 
+## change-of-direction-505 — simulated 505 change-of-direction test time of a sprint profile
+
+- `test505Time` (function) · `import { test505Time } from "@jgengine/core/movement/reference/humanEnvelope"`
+
 ## character-controller — capsule walk over the physics backend — slide, step-up, slopes, crouch, platforms
 
 - `createCharacterController` (function) · `import { createCharacterController } from "@jgengine/core/movement/characterController"`
@@ -396,6 +400,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## city-lots — lay zoned building lots, corners and driveways from one city layout
 
 - `cityLots` (function) · `import { cityLots } from "@jgengine/core/city/cityLayout"`
+
+## cma-es — derivative-free ask/tell minimiser for tuning controllers and fitting models
+
+- `createCmaEvolutionStrategy` (function) · `import { createCmaEvolutionStrategy } from "@jgengine/core/math/cmaEvolutionStrategy"`
 
 ## coefficient-table — N-dimensional gridded data table with multilinear interpolation and per-axis extrapolation
 
@@ -437,6 +445,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
+
+## curve-running — fastest speed a human runner holds on a flat curve from leg force and friction
+
+- `maxCurveSpeed` (function) · `import { maxCurveSpeed } from "@jgengine/core/movement/reference/curveRunning"`
 
 ## custom-sky-light — a game's own sky lights the engine's water and clouds by publishing its sun, moon and sky colours
 
@@ -748,6 +760,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `firstPersonArms` (function) · `import { firstPersonArms } from "@jgengine/core/anim/humanoidActionClips.draw"`
 
+## fitted-human-walk — the reference human's fitted reflex walk nearest a speed on level ground, slopes or stairs
+
+- `fittedWalk` (function) · `import { fittedWalk } from "@jgengine/core/movement/reference/humanGaits"`
+
 ## flight-comparison — compare a game aircraft's flight tests with a reference aircraft and published figures
 
 - `compareFlight` (function) · `import { compareFlight } from "@jgengine/core/flight/reference/flightComparison"`
@@ -772,6 +788,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## follow-trail — trailing follower/snake formation that chases a leader
 
 - `createLeaderTrail` (function) · `import { createLeaderTrail } from "@jgengine/core/world"`
+
+## foot-ground-contact — compliant foot-ground contact with stick-slip Coulomb friction on slopes and stairs
+
+- `footContactForce` (function) · `import { footContactForce } from "@jgengine/core/movement/reference/footContact"`
 
 ## footprint-grid — multi-cell footprint occupancy/reservation on a shared build grid
 
@@ -820,6 +840,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
 
 - `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/core/map/map.view"`
+
+## gait-analysis — measure the reference human's steady gait — stride, duty factor, ground-force humps, cost of transport
+
+- `analyzeLocomotion` (function) · `import { analyzeLocomotion } from "@jgengine/core/movement/reference/humanGaitAnalysis"`
 
 ## gamepad-input — Resolve sampled gamepad input into actions with deadzones and response curves.
 
@@ -897,6 +921,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `displaceHeightfieldGeometry` (function) · `import { displaceHeightfieldGeometry } from "@jgengine/core/terrain/heightfieldGeometry.draw"`
 
+## hill-muscle — Hill-type muscle-tendon unit with tendon elasticity and activation dynamics (Geyer 2003)
+
+- `stepMuscle` (function) · `import { stepMuscle } from "@jgengine/core/movement/reference/muscleTendon"`
+
 ## hold-order — stand-ground order that holds position until preempted or canceled
 
 - `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
@@ -923,6 +951,42 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `rightingArmCurve` (function) · `import { rightingArmCurve } from "@jgengine/core/physics/reference/hullHydrostatics"`
 - `stillWater` (function) · `import { stillWater } from "@jgengine/core/physics/reference/hullHydrostatics"`
 - `summarizeStability` (function) · `import { summarizeStability } from "@jgengine/core/physics/reference/hullHydrostatics"`
+
+## human-anthropometry — scale published body-segment parameters (de Leva 1996) to a subject and build a sagittal multibody human
+
+- `planarHumanSegments` (function) · `import { planarHumanSegments } from "@jgengine/core/movement/reference/anthropometry"`
+
+## human-jump — torque-driven countermovement jump of the reference human: height, airtime, push force, touchdown speed
+
+- `simulateJump` (function) · `import { simulateJump } from "@jgengine/core/movement/reference/humanJump"`
+
+## human-reference-body — sagittal multibody human with published anthropometry, torque-limited joints and compliant foot contact
+
+- `createHumanBody` (function) · `import { createHumanBody } from "@jgengine/core/movement/reference/humanBody"`
+
+## human-reference-validation — check the locomotion reference human against published walking, running, sprint, turn and jump data
+
+- `validateHumanReference` (function) · `import { validateHumanReference } from "@jgengine/core/movement/reference/humanReferenceValidation"`
+
+## human-stopping-distance — distance and time a runner needs to stop from a speed
+
+- `stoppingDistance` (function) · `import { stoppingDistance } from "@jgengine/core/movement/reference/humanEnvelope"`
+
+## human-turn-radius — tightest turn a human runner holds at a speed, from leg force and friction
+
+- `minTurnRadius` (function) · `import { minTurnRadius } from "@jgengine/core/movement/reference/curveRunning"`
+
+## human-turnaround-time — time a runner needs to reverse direction at a speed
+
+- `turnaroundTime` (function) · `import { turnaroundTime } from "@jgengine/core/movement/reference/humanEnvelope"`
+
+## human-validation-table — markdown table of the locomotion reference against published ranges
+
+- `formatHumanValidation` (function) · `import { formatHumanValidation } from "@jgengine/core/movement/reference/humanReferenceValidation"`
+
+## human-walk-reference — walk the muscle-reflex reference human at a fitted speed on level ground, a 6% grade or stairs, and measure it
+
+- `measureWalk` (function) · `import { measureWalk } from "@jgengine/core/movement/reference/humanGaits"`
 
 ## humanoid-actions — engine-authored jump, swim, punch, swing, gather, hurt and death clips for any humanoid rig
 
@@ -981,6 +1045,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## interior-dressing — render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
 
 - `InteriorDressing` (function) · `import { InteriorDressing } from "@jgengine/core/buildings/InteriorDressing.draw"`
+
+## joint-torque-limits — torque-angle-velocity strength of the human hip, knee and ankle from published dynamometry
+
+- `maxJointTorque` (function) · `import { maxJointTorque } from "@jgengine/core/movement/reference/jointStrength"`
 
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
@@ -1044,6 +1112,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## leave-vehicle — leave a rideable beside its current pose and restore on-foot camera/movement
 
 - `leaveVehicle` (function) · `import { leaveVehicle } from "@jgengine/core/world"`
+
+## leg-muscles — drive the reference human's leg with the seven Geyer–Herr muscles from stimulations
+
+- `actuateLegMuscles` (function) · `import { actuateLegMuscles } from "@jgengine/core/movement/reference/reflexWalker"`
 
 ## light-beam — a tall glowing column marking a spot so it can be found from far away
 
@@ -1199,6 +1271,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## moving-sphere-sweep — detect contact with spheres crossing a projectile segment between simulation poses
 
 - `sweepMovingSphere` (function) · `import { sweepMovingSphere } from "@jgengine/core/physics/ballisticSweep"`
+
+## muscle-energetics — metabolic power of a Hill muscle from activation and shortening speed (Minetti & Alexander 1997)
+
+- `muscleMetabolicPower` (function) · `import { muscleMetabolicPower } from "@jgengine/core/movement/reference/muscleTendon"`
+
+## muscle-reflex-walker — Geyer–Herr muscle-reflex control of the multibody reference human (no central pattern generator)
+
+- `createReflexWalker` (function) · `import { createReflexWalker } from "@jgengine/core/movement/reference/reflexWalker"`
 
 ## nature-generator — seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
 
@@ -1375,6 +1455,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `planParticleBudget` (function) · `import { planParticleBudget } from "@jgengine/core/vfx/particleBudget"`
 
+## planar-multibody — exact planar floating-base multibody dynamics for sagittal-plane biomechanics
+
+- `createPlanarMultibody` (function) · `import { createPlanarMultibody } from "@jgengine/core/movement/reference/planarMultibody"`
+
 ## planing-hull — Savitsky planing forces, wetted length and pitching moment at a trim
 
 - `planingAtTrim` (function) · `import { planingAtTrim } from "@jgengine/core/physics/reference/planingHull"`
@@ -1544,6 +1628,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## reference-motorcycle — multibody reference motorcycle — countersteer, weave and wobble from the physics, motorcycle Magic Formula tyres
 
 - `createReferenceMotorcycle` (function) · `import { createReferenceMotorcycle } from "@jgengine/core/physics/reference/referenceMotorcycle"`
+
+## reference-slope-ground — a constant-grade sagittal ground profile for the reference human
+
+- `slopeGround` (function) · `import { slopeGround } from "@jgengine/core/movement/reference/footContact"`
+
+## reference-stair-ground — a stair-flight sagittal ground profile for the reference human
+
+- `stairGround` (function) · `import { stairGround } from "@jgengine/core/movement/reference/footContact"`
 
 ## reference-validation — check the reference car model against a real car's published 0-100, braking and skidpad numbers
 
@@ -1748,6 +1840,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SkyLight` (interface) · `import { SkyLight } from "@jgengine/core/sky/skyLight.draw"`
 
+## slope-cost-of-transport — metabolic cost of walking and running on a gradient (Minetti 2002)
+
+- `slopeCostOfTransport` (function) · `import { slopeCostOfTransport } from "@jgengine/core/movement/reference/humanEnvelope"`
+
+## slope-speed — iso-metabolic human walking and running speed on a gradient (Minetti 2002)
+
+- `slopeSpeed` (function) · `import { slopeSpeed } from "@jgengine/core/movement/reference/humanEnvelope"`
+
 ## soil-patch — editor-authorable terrain crack/moss material variation
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
@@ -1820,6 +1920,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## split-footprint-regions — split pooled regions along retained contributions without area-based capacity loss
 
 - `splitRegion` (function) · `import { splitRegion } from "@jgengine/core/world"`
+
+## spring-mass-running — steady human running from the spring-mass model: contact time, duty factor, peak force
+
+- `springMassStep` (function) · `import { springMassStep } from "@jgengine/core/movement/reference/springMassRunning"`
+
+## sprint-envelope — published human sprint acceleration, top speed, braking and turnaround limits from a force-velocity profile
+
+- `sprint` (function) · `import { sprint } from "@jgengine/core/movement/reference/humanEnvelope"`
+
+## sprint-top-speed — top running speed of a force-velocity sprint profile with air drag
+
+- `sprintTopSpeed` (function) · `import { sprintTopSpeed } from "@jgengine/core/movement/reference/humanEnvelope"`
 
 ## standard-atmosphere — calibrated airspeed from true airspeed
 

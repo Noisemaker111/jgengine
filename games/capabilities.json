@@ -1408,6 +1408,16 @@
       "intent": "Cessna 172N reference airframe — tabled lift and drag through the stall, propeller and piston engine, tricycle gear"
     },
     {
+      "id": "change-of-direction-505",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanEnvelope",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "simulated 505 change-of-direction test time of a sprint profile"
+    },
+    {
       "id": "character-controller",
       "packages": [
         "@jgengine/core"
@@ -1596,6 +1606,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "render seconds as m:ss / m:ss.ff / h:mm:ss for timers and race HUDs"
+    },
+    {
+      "id": "cma-es",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/math/cmaEvolutionStrategy",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "derivative-free ask/tell minimiser for tuning controllers and fitting models"
     },
     {
       "id": "codex",
@@ -2206,6 +2226,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "read the player's selected target (click or tab target) to drive a target frame"
+    },
+    {
+      "id": "curve-running",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/curveRunning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "fastest speed a human runner holds on a flat curve from leg force and friction"
     },
     {
       "id": "custom-sky-light",
@@ -3835,6 +3865,16 @@
       "intent": "keep a first-person body's hands and held items in view"
     },
     {
+      "id": "fitted-human-walk",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanGaits",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the reference human's fitted reflex walk nearest a speed on level ground, slopes or stairs"
+    },
+    {
       "id": "flight-comparison",
       "packages": [
         "@jgengine/core"
@@ -3893,6 +3933,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "trailing follower/snake formation that chases a leader"
+    },
+    {
+      "id": "foot-ground-contact",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/footContact",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "compliant foot-ground contact with stick-slip Coulomb friction on slopes and stairs"
     },
     {
       "id": "footprint-grid",
@@ -4013,6 +4063,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)"
+    },
+    {
+      "id": "gait-analysis",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanGaitAnalysis",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "measure the reference human's steady gait — stride, duty factor, ground-force humps, cost of transport"
     },
     {
       "id": "game-context-bridge",
@@ -4427,6 +4487,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "in-place partial update of a displaced ground plane mesh"
+    },
+    {
+      "id": "hill-muscle",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/muscleTendon",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Hill-type muscle-tendon unit with tendon elasticity and activation dynamics (Geyer 2003)"
     },
     {
       "id": "hit-zone",
@@ -4850,6 +4920,96 @@
       "intent": "still-water pressure field for hull integration"
     },
     {
+      "id": "human-anthropometry",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/anthropometry",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "scale published body-segment parameters (de Leva 1996) to a subject and build a sagittal multibody human"
+    },
+    {
+      "id": "human-jump",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanJump",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "torque-driven countermovement jump of the reference human: height, airtime, push force, touchdown speed"
+    },
+    {
+      "id": "human-reference-body",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanBody",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "sagittal multibody human with published anthropometry, torque-limited joints and compliant foot contact"
+    },
+    {
+      "id": "human-reference-validation",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanReferenceValidation",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "check the locomotion reference human against published walking, running, sprint, turn and jump data"
+    },
+    {
+      "id": "human-stopping-distance",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanEnvelope",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "distance and time a runner needs to stop from a speed"
+    },
+    {
+      "id": "human-turn-radius",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/curveRunning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "tightest turn a human runner holds at a speed, from leg force and friction"
+    },
+    {
+      "id": "human-turnaround-time",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanEnvelope",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "time a runner needs to reverse direction at a speed"
+    },
+    {
+      "id": "human-validation-table",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanReferenceValidation",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "markdown table of the locomotion reference against published ranges"
+    },
+    {
+      "id": "human-walk-reference",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanGaits",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "walk the muscle-reflex reference human at a fitted speed on level ground, a 6% grade or stairs, and measure it"
+    },
+    {
       "id": "humanoid-actions",
       "packages": [
         "@jgengine/core"
@@ -5258,6 +5418,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "block gameplay until joined and show failures with retry"
+    },
+    {
+      "id": "joint-torque-limits",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/jointStrength",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "torque-angle-velocity strength of the human hip, knee and ankle from published dynamometry"
     },
     {
       "id": "key-hint",
@@ -5688,6 +5858,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "leave a rideable beside its current pose and restore on-foot camera/movement"
+    },
+    {
+      "id": "leg-muscles",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/reflexWalker",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "drive the reference human's leg with the seven Geyer–Herr muscles from stimulations"
     },
     {
       "id": "leveling-track",
@@ -6965,6 +7145,26 @@
       "intent": "server-hosted shared world over WebSocket — `multiplayer: ws({ authority: \"server\" })`"
     },
     {
+      "id": "muscle-energetics",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/muscleTendon",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "metabolic power of a Hill muscle from activation and shortening speed (Minetti & Alexander 1997)"
+    },
+    {
+      "id": "muscle-reflex-walker",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/reflexWalker",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Geyer–Herr muscle-reflex control of the multibody reference human (no central pattern generator)"
+    },
+    {
       "id": "name-generator",
       "packages": [
         "@jgengine/core"
@@ -7847,6 +8047,16 @@
       "intent": "cap live particles to a graphics tier and drop whole effects lowest-priority-first when over budget"
     },
     {
+      "id": "planar-multibody",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/planarMultibody",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "exact planar floating-base multibody dynamics for sagittal-plane biomechanics"
+    },
+    {
       "id": "planing-hull",
       "packages": [
         "@jgengine/core"
@@ -8549,6 +8759,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "multibody reference motorcycle — countersteer, weave and wobble from the physics, motorcycle Magic Formula tyres"
+    },
+    {
+      "id": "reference-slope-ground",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/footContact",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a constant-grade sagittal ground profile for the reference human"
+    },
+    {
+      "id": "reference-stair-ground",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/footContact",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a stair-flight sagittal ground profile for the reference human"
     },
     {
       "id": "reference-validation",
@@ -9554,6 +9784,26 @@
       "intent": "one per-frame record of sun, moon, sky colour and cloud cover that water, clouds and a game's own sky share"
     },
     {
+      "id": "slope-cost-of-transport",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanEnvelope",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "metabolic cost of walking and running on a gradient (Minetti 2002)"
+    },
+    {
+      "id": "slope-speed",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanEnvelope",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "iso-metabolic human walking and running speed on a gradient (Minetti 2002)"
+    },
+    {
       "id": "social-emotes",
       "packages": [
         "@jgengine/core"
@@ -9842,6 +10092,36 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Per-seat HUD roots positioned over each split-screen viewport."
+    },
+    {
+      "id": "spring-mass-running",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/springMassRunning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "steady human running from the spring-mass model: contact time, duty factor, peak force"
+    },
+    {
+      "id": "sprint-envelope",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanEnvelope",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "published human sprint acceleration, top speed, braking and turnaround limits from a force-velocity profile"
+    },
+    {
+      "id": "sprint-top-speed",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanEnvelope",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "top running speed of a force-velocity sprint profile with air drag"
     },
     {
       "id": "sprite-2d",
