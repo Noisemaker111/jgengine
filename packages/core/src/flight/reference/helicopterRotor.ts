@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { solveLinearSystem } from "./aircraftTrim";
+import { solveLinearSystem } from "../../math/linearAlgebra";
 import type { BladeSection } from "./propeller";
 
 /** A rotor's blades, hub and the section they are made of. A counter-clockwise rotor seen from above (the US and Bo-105 sense). */
@@ -365,7 +365,10 @@ export function solveNewton(residual: (x: readonly number[]) => number[], start:
         if (line !== undefined) line[col] = ((rm[row] ?? 0) - (r[row] ?? 0)) / h;
       }
     }
-    const delta = solveLinearSystem(jacobian, r.map((value) => -value));
+    const flat = Float64Array.from(jacobian.flat());
+    const step = Float64Array.from(r, (value) => -value);
+    solveLinearSystem(flat, step, r.length);
+    const delta = Array.from(step);
     let factor = 1;
     let accepted = false;
     for (let attempt = 0; attempt < 25; attempt += 1) {

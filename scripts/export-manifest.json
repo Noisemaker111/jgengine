@@ -625,6 +625,7 @@
     "./material/toonRamp.draw",
     "./material/triplanarMaterial.draw",
     "./material/wetSurfaces.draw",
+    "./math/linearAlgebra",
     "./math/scalar",
     "./math/xyz",
     "./menu/credits",

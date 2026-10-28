@@ -1,6 +1,7 @@
-import { matrixEigenvalues, polynomialRoots, type Eigenvalue } from "./eigenvalues";
+import { polynomialRoots } from "./eigenvalues";
+import { matrixEigenvalues, solveLinearSystem, type Eigenvalue } from "../../math/linearAlgebra";
 import { createRigidBodyTree, type RigidBodyDefinition, type RigidBodyTree } from "./rigidBodyTree";
-import { createRungeKutta4, solveLinearSystem } from "./rungeKutta";
+import { createRungeKutta4 } from "./rungeKutta";
 
 /**
  * The 25 design parameters of the Whipple–Carvallo bicycle in the notation and axes of Meijaard, Papadopoulos,

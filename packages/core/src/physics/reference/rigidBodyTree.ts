@@ -1,5 +1,5 @@
 import type { Vec3 } from "../../world/geometry";
-import { solveLinearSystem } from "./rungeKutta";
+import { solveLinearSystem } from "../../math/linearAlgebra";
 
 /** How a body moves relative to its parent. */
 export type RigidJoint =

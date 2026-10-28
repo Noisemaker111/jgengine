@@ -1328,16 +1328,13 @@
 
 ## @jgengine/core/flight/reference/aircraftTrim
 
-- `Eigenvalue` (interface): interface Eigenvalue — A complex eigenvalue.
 - `FlightLinearization` (interface): interface FlightLinearization — Small-perturbation model about a trim point.
 - `FlightMode` (interface): interface FlightMode — One dynamic mode read from eigenvalues.
 - `TrimCondition` (interface): interface TrimCondition — A steady flight condition to trim for.
 - `TrimResult` (interface): interface TrimResult — A trimmed steady flight point.
 - `WindAxisState` (interface): interface WindAxisState — Flight state in wind axes and Euler angles, the form Stevens & Lewis tabulate: SI units and radians.
 - `linearizeReferenceAircraft` (function): function linearizeReferenceAircraft(aircraft: ReferenceAircraft, trim: TrimResult): FlightLinearization — Linearizes a reference aircraft about a trim point by central differences of the wind-axis equations, with propulsion and actuator states held, and names the classical modes: short period and phugoid from the longitudinal matrix, dutch roll, roll subsidence and spiral from the lateral one.
-- `matrixEigenvalues` (function): function matrixEigenvalues(matrix: readonly (readonly number[])[]): Eigenvalue[] — Eigenvalues of a small real matrix: Faddeev–LeVerrier characteristic polynomial, then Durand–Kerner roots.
 - `referenceStateFromWindAxes` (function): function referenceStateFromWindAxes(flight: WindAxisState, surfaces: ReferenceSurfaces, propulsion: readonly number[]): ReferenceAircraftState — Builds a reference state from wind-axis flight variables, still air.
-- `solveLinearSystem` (function): function solveLinearSystem(matrix: readonly (readonly number[])[], rhs: readonly number[]): number[] — Solves `A·x = b` by Gaussian elimination with partial pivoting; a singular pivot leaves that unknown at `0`.
 - `steadyAirData` (function): function steadyAirData(aircraft: ReferenceAircraft, altitude: number, airspeed: number, alpha: number, beta: number): ReferenceAirData — Air data for a reference aircraft at rest in steady flight: no body rates, height above the ground at the origin.
 - `trimReferenceAircraft` (function): function trimReferenceAircraft(aircraft: ReferenceAircraft, condition: TrimCondition, initial: { alpha?: number; throttle?: number } = {}): TrimResult — Trims a reference aircraft for steady wings-level flight at a speed, altitude and flight path angle: solves angle of attack, sideslip, throttle, elevator, aileron and rudder so every body acceleration vanishes, with the propulsion states at their steady values. Newton's method on a finite-difference Jacobian with a backtracking line search.
 - `windAxesOf` (function): function windAxesOf(state: ReferenceAircraftState): WindAxisState — Wind-axis flight variables of a reference state, still air.
@@ -2355,6 +2352,12 @@
 - `resolveMaterialAppearance` (function): function resolveMaterialAppearance(sample: EnvironmentSample, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Resolve one surface from an immutable dry baseline, avoiding cumulative drift. Wetness already includes field shelter; neither exposure nor sheltered is multiplied into it again. No accumulation or drying simulation.
 - `sampleMaterialAppearance` (function): function sampleMaterialAppearance(field: Pick<EnvironmentField, "sample">, target: MaterialAppearanceTarget, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Exactly one field sample per target; no traversal, subscription, hidden tick, or full-world scan.
 
+## @jgengine/core/math/linearAlgebra
+
+- `Eigenvalue` (interface): interface Eigenvalue — One eigenvalue `re + i·im`, 1/s for a linearised plant.
+- `matrixEigenvalues` (function): function matrixEigenvalues(matrix: ArrayLike<number>, n: number): Eigenvalue[] — Eigenvalues of a real square matrix (row-major, `n × n`): balancing, reduction to upper Hessenberg form by stabilised elimination, then the Francis double-shift QR iteration (Wilkinson & Reinsch, *Handbook for Automatic Computation* II, the EISPACK `balanc`/`elmhes`/`hqr` scheme). Complex pairs come out together. The input is not modified. Sorted by real part, then imaginary part, descending.
+- `solveLinearSystem` (function): function solveLinearSystem(m: Float64Array, b: Float64Array, n: number): void — Solve `m·x = b` in place (n×n, row-major; `m` is overwritten and `b` becomes `x`) by Gaussian elimination with partial pivoting. A singular pivot leaves that unknown at `0`.
+
 ## @jgengine/core/math/xyz
 
 - `Xyz` (interface): interface Xyz — A point or direction as named `x`/`y`/`z` fields, for wire and audio code that reads fields rather than tuple slots.
@@ -2992,8 +2995,6 @@
 
 ## @jgengine/core/physics/reference/eigenvalues
 
-- `Eigenvalue` (interface): interface Eigenvalue — One eigenvalue `re + i·im`, 1/s for a linearised plant.
-- `matrixEigenvalues` (function): function matrixEigenvalues(matrix: ArrayLike<number>, n: number): Eigenvalue[] — Eigenvalues of a real square matrix (row-major, `n × n`): balancing, reduction to upper Hessenberg form by stabilised elimination, then the Francis double-shift QR iteration (Wilkinson & Reinsch, *Handbook for Automatic Computation* II, the EISPACK `balanc`/`elmhes`/`hqr` scheme). Complex pairs come out together. The input is not modified. Sorted by real part, then imaginary part, descending.
 - `polynomialRoots` (function): function polynomialRoots(coefficients: readonly number[]): Eigenvalue[] — Roots of the real polynomial `c[0] + c[1]·λ + … + c[n]·λⁿ` (`c[n] ≠ 0`): the companion-matrix eigenvalues, then two Newton steps on the polynomial itself to recover full double precision.
 
 ## @jgengine/core/physics/reference/magicFormulaTire
@@ -3103,7 +3104,6 @@
 
 - `RungeKutta4` (interface): interface RungeKutta4 — A reusable classical fourth-order Runge–Kutta stepper over a fixed-size state vector.
 - `createRungeKutta4` (function): function createRungeKutta4(size: number): RungeKutta4 — Creates a {@link RungeKutta4} for states of `size` entries; its scratch buffers are allocated once, so a step allocates nothing.
-- `solveLinearSystem` (function): function solveLinearSystem(m: Float64Array, b: Float64Array, n: number): void — Solve `m·x = b` in place (n×n, row-major; `m` is overwritten and `b` becomes `x`) by Gaussian elimination with partial pivoting.
 
 ## @jgengine/core/physics/reference/standardManeuvers
 

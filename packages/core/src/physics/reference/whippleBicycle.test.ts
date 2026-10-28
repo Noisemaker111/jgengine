@@ -9,7 +9,7 @@ import {
   whippleEigenvalues,
   whippleLinearCoefficients,
 } from "./whippleBicycle";
-import { matrixEigenvalues, type Eigenvalue } from "./eigenvalues";
+import { matrixEigenvalues, type Eigenvalue } from "../../math/linearAlgebra";
 
 function weaveOf(roots: readonly Eigenvalue[]): Eigenvalue | undefined {
   return roots.find((root) => root.im > 1e-9);

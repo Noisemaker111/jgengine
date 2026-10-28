@@ -33,36 +33,3 @@ export function createRungeKutta4(size: number): RungeKutta4 {
   };
 }
 
-/**
- * Solve `m·x = b` in place (n×n, row-major; `m` is overwritten and `b` becomes `x`) by Gaussian elimination with
- * partial pivoting.
- * @capability linear-solve dense linear solve with partial pivoting for reference physics plants and constraints
- */
-export function solveLinearSystem(m: Float64Array, b: Float64Array, n: number): void {
-  for (let col = 0; col < n; col++) {
-    let pivot = col;
-    for (let row = col + 1; row < n; row++) if (Math.abs(m[row * n + col] ?? 0) > Math.abs(m[pivot * n + col] ?? 0)) pivot = row;
-    if (pivot !== col) {
-      for (let k = 0; k < n; k++) {
-        const t = m[col * n + k] ?? 0;
-        m[col * n + k] = m[pivot * n + k] ?? 0;
-        m[pivot * n + k] = t;
-      }
-      const t = b[col] ?? 0;
-      b[col] = b[pivot] ?? 0;
-      b[pivot] = t;
-    }
-    const d = m[col * n + col] ?? 1;
-    for (let row = col + 1; row < n; row++) {
-      const f = (m[row * n + col] ?? 0) / d;
-      if (f === 0) continue;
-      for (let k = col; k < n; k++) m[row * n + k] = (m[row * n + k] ?? 0) - f * (m[col * n + k] ?? 0);
-      b[row] = (b[row] ?? 0) - f * (b[col] ?? 0);
-    }
-  }
-  for (let row = n - 1; row >= 0; row--) {
-    let sum = b[row] ?? 0;
-    for (let k = row + 1; k < n; k++) sum -= (m[row * n + k] ?? 0) * (b[k] ?? 0);
-    b[row] = sum / (m[row * n + row] ?? 1);
-  }
-}

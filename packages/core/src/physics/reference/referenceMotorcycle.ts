@@ -1,4 +1,4 @@
-import { matrixEigenvalues, type Eigenvalue } from "./eigenvalues";
+import { matrixEigenvalues, type Eigenvalue } from "../../math/linearAlgebra";
 import { motorcycleMagicFormula, type MotorcycleTireCoefficients } from "./motorcycleTire";
 import { createRigidBodyTree, type RigidBodyDefinition, type RigidBodyTree } from "./rigidBodyTree";
 import { createRungeKutta4 } from "./rungeKutta";

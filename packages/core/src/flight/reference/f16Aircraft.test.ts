@@ -90,15 +90,15 @@ describe("F-16 trim and modes", () => {
     for (const [name, [real, imag]] of Object.entries(published)) {
       const mode = lin.modes.find((candidate) => candidate.name === name);
       expect(mode).toBeDefined();
-      within(mode?.eigenvalue.real ?? 0, real, 0.015, 2e-4);
-      within(Math.abs(mode?.eigenvalue.imag ?? 0), imag, 0.015, 2e-4);
+      within(mode?.eigenvalue.re ?? 0, real, 0.015, 2e-4);
+      within(Math.abs(mode?.eigenvalue.im ?? 0), imag, 0.015, 2e-4);
     }
   });
 
   test("at xcg 0.35 the bare airframe is statically unstable in pitch", () => {
     const aircraft = bookF16(0.35);
     const lin = linearizeReferenceAircraft(aircraft, trimReferenceAircraft(aircraft, { airspeed: 502 * FT, altitude: 0 }));
-    expect(Math.max(...lin.longitudinalEigenvalues.map((value) => value.real))).toBeGreaterThan(0.05);
+    expect(Math.max(...lin.longitudinalEigenvalues.map((value) => value.re))).toBeGreaterThan(0.05);
   });
 });
 

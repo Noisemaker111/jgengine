@@ -1,6 +1,7 @@
 import type { AxisInput } from "../../input/axisInput";
 import { magicFormula, magicFormulaContact, magicFormulaVerticalForce, type MagicFormulaCoefficients, type MagicFormulaTireStep } from "./magicFormulaTire";
-import { createRungeKutta4, solveLinearSystem } from "./rungeKutta";
+import { createRungeKutta4 } from "./rungeKutta";
+import { solveLinearSystem } from "../../math/linearAlgebra";
 import { createSuspensionSample, createSuspensionTable, solveSuspension, type SuspensionGeometry, type SuspensionSample, type SuspensionTable } from "./suspensionKinematics";
 
 /** One axle's suspension: linkage geometry plus springs, dampers, bar, stops and bushings, rated at the wheel. */
