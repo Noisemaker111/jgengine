@@ -19,9 +19,15 @@ describe("fall reference", () => {
     expect(Number.isNaN(low.headTime)).toBe(true);
   }, 30_000);
 
-  test("published falls pass; the 1 m landing is a named gap", () => {
+  test("published falls and landings pass", () => {
     const rows = validateHumanFall();
-    expect(rows.filter((r) => !r.pass).map((r) => r.metric)).toEqual(["landing1"]);
+    expect(rows.filter((r) => !r.pass).map((r) => r.metric)).toEqual([]);
+  }, 30_000);
+
+  test("wobbling soft tissue softens a hard landing", () => {
+    const wobbling = simulateFall({ tone: "landing", dropHeight: 1 });
+    const rigid = simulateFall({ tone: "landing", dropHeight: 1, wobbling: null });
+    expect(wobbling.peakFootForce).toBeLessThan(rigid.peakFootForce);
   }, 30_000);
 });
 

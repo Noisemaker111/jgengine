@@ -13,9 +13,38 @@ export const PELVIS_ON_FLOOR: ContactParameters = { stiffness: 1.5e5, damping: 0
 /** Scalp and skull on a hard floor: about 4 kN at 4 mm of compression, nearly elastic. */
 export const HEAD_ON_FLOOR: ContactParameters = { stiffness: 1.6e7, damping: 0.2, friction: 0.5, stickStiffness: 5e5, stickDamping: 1e3 };
 
+/** Soft tissue of one segment that moves against its bone: a share of the segment's mass on a nonlinear spring-damper. */
+export interface WobblingMass {
+  /** Share of the segment's mass that wobbles. */
+  share: number;
+  /** Coupling `F = K·d³ + C·ḋ` per connection, with two connections in parallel: `K` in N/m³ and `C` in N·s/m. */
+  stiffness: number;
+  damping: number;
+}
+
+/**
+ * Wobbling soft tissue of the trunk, thigh and shank from the drop-landing model of K. Gruber, H. Ruder, J. Denoth and
+ * K. Schneider ("A comparative study of impact dynamics: wobbling mass model versus rigid body models", *J. Biomech.*
+ * 31, 1998), as tabulated by M. T. G. Pain and J. H. Challis (*J. Appl. Biomech.* 20, 2004, table 1): soft-tissue
+ * shares 0.50, 0.66 and 0.46 of segment mass, coupling stiffness 2.3, 1.8 and 0.9 × 10⁸ N/m³, damping 700, 560 and
+ * 280 N·s/m.
+ */
+export const GRUBER_WOBBLING_MASSES: Record<"trunk" | "thigh" | "shank", WobblingMass> = {
+  trunk: { share: 0.5, stiffness: 2.3e8, damping: 700 },
+  thigh: { share: 10.5 / 15.8, stiffness: 1.8e8, damping: 560 },
+  shank: { share: 2.6 / 5.6, stiffness: 0.9e8, damping: 280 },
+};
+
+/**
+ * Extensor activation of a person landing on their feet, as a share of full strength: calf muscles fully pre-activated,
+ * as in drop landings (M. Santello and M. J. N. McDonagh, *Exp. Physiol.* 83, 1998), and hip and knee extensors at 0.4,
+ * which flexes the knee about 40° from 0.3 m and 110° from 1 m.
+ */
+export const LANDING_ACTIVATION = { ankle: 1, hipKnee: 0.4 } as const;
+
 /**
  * How the faller holds their joints. `limp`: no muscle torque (a faint); `rigid`: every joint servoed to standing with
- * full strength; `landing`: knees and hips bent 15° and held by a compliant servo, as a person drops onto their feet.
+ * full strength; `landing`: knees and hips bent 15° in the air; on touchdown the extensors work eccentrically at {@link LANDING_ACTIVATION}, as a person drops onto their feet.
  */
 export type FallTone = "limp" | "rigid" | "landing";
 
@@ -32,6 +61,10 @@ export interface FallOptions {
   /** Height the feet start above the floor, m (default 0: falling from standing). */
   dropHeight?: number;
   ground?: GroundProfile;
+  /** Share of full strength the extensors work at once a `landing` faller's feet touch (default {@link LANDING_ACTIVATION}). */
+  landingActivation?: { ankle: number; hipKnee: number };
+  /** Soft tissue that wobbles on the trunk, thighs and shanks (default {@link GRUBER_WOBBLING_MASSES}); `null` makes every segment rigid. */
+  wobbling?: Record<"trunk" | "thigh" | "shank", WobblingMass> | null;
 }
 
 /** What a fall does to the body. Speeds are m/s at first touch, forces N; `NaN` when that part never touched. */
@@ -52,6 +85,9 @@ export interface FallReport {
   peakFemurForce: number;
 }
 
+/** Torque sign that extends each leg joint: hip and ankle extend negative, the knee positive. */
+const EXTENSION_SIGN: Record<LegJoint, 1 | -1> = { hip: -1, knee: 1, ankle: -1 };
+
 const SEG = { trunk: 0, rightThigh: 1, rightShank: 2, rightFoot: 3, leftThigh: 4, leftShank: 5, leftFoot: 6, head: 7 } as const;
 const RANGE: Record<LegJoint | "neck", [number, number]> = { hip: [-0.6, 2.2], knee: [-2.5, 0], ankle: [-0.8, 0.45], neck: [-0.7, 0.9] };
 
@@ -64,7 +100,15 @@ interface BodyPoint {
 }
 
 /** The sagittal body of {@link planarHumanSegments} with its head split off at a neck joint, so a head strike decelerates the head alone. */
-function fallBody(mass: number, stature: number): { segments: PlanarSegment[]; legLength: number; ankleHeight: number; points: BodyPoint[] } {
+interface Wobble {
+  segment: number;
+  mass: number;
+  spec: WobblingMass;
+  position: Float64Array;
+  velocity: Float64Array;
+}
+
+function fallBody(mass: number, stature: number, wobbling: Record<"trunk" | "thigh" | "shank", WobblingMass> | null): { segments: PlanarSegment[]; legLength: number; ankleHeight: number; points: BodyPoint[]; wobbles: Wobble[] } {
   const t = DE_LEVA_MALE;
   const ls = stature / t.stature;
   const geometry = planarHumanSegments(mass, stature);
@@ -84,6 +128,17 @@ function fallBody(mass: number, stature: number): { segments: PlanarSegment[]; l
     ...geometry.segments.slice(1),
     { name: "head", parent: SEG.trunk, joint: [0, trunkLen], com: [0, headLen * (1 - t.head.comShare)], mass: headMass, inertia: headInertia },
   ];
+  // The soft tissue leaves the bone as a point mass at the segment's centre of mass; the bone keeps the segment's inertia.
+  const wobbles: Wobble[] = [];
+  if (wobbling !== null) {
+    for (const [segment, spec] of [[SEG.trunk, wobbling.trunk], [SEG.rightThigh, wobbling.thigh], [SEG.leftThigh, wobbling.thigh], [SEG.rightShank, wobbling.shank], [SEG.leftShank, wobbling.shank]] as const) {
+      const seg = segments[segment];
+      if (seg === undefined) continue;
+      const soft = seg.mass * spec.share;
+      segments[segment] = { ...seg, mass: seg.mass - soft };
+      wobbles.push({ segment, mass: soft, spec, position: new Float64Array(2), velocity: new Float64Array(2) });
+    }
+  }
   const ankleHeight = t.ankleHeight * ls;
   const depth = 0.1 * ls;
   const point = (segment: number, local: readonly [number, number], contact: ContactParameters, part: BodyPoint["part"]): BodyPoint => ({ segment, local, contact, part, state: { anchor: null } });
@@ -101,7 +156,7 @@ function fallBody(mass: number, stature: number): { segments: PlanarSegment[]; l
     points.push(point(foot, geometry.heel, SHOE_ON_CONCRETE, "foot"));
     points.push(point(foot, geometry.toe, SHOE_ON_CONCRETE, "foot"));
   }
-  return { segments, legLength: geometry.legLength, ankleHeight, points };
+  return { segments, legLength: geometry.legLength, ankleHeight, points, wobbles };
 }
 
 /** HIC over windows up to `window` s of an acceleration trace in g sampled every `dt` s. */
@@ -139,9 +194,10 @@ export function simulateFall(options: FallOptions = {}): FallReport {
   const mass = options.mass ?? 80;
   const stature = options.stature ?? 1.8;
   const tone = options.tone ?? "limp";
+  const activation = options.landingActivation ?? LANDING_ACTIVATION;
   const sign = (options.direction ?? "backward") === "backward" ? 1 : -1;
   const ground = options.ground ?? flatGround();
-  const body = fallBody(mass, stature);
+  const body = fallBody(mass, stature, options.wobbling === undefined ? GRUBER_WOBBLING_MASSES : options.wobbling);
   const model = createPlanarMultibody(body.segments);
   const dt = 1 / 8000;
   const q = new Float64Array(model.dofs);
@@ -168,6 +224,14 @@ export function simulateFall(options: FallOptions = {}): FallReport {
     for (let s = 0; s < body.segments.length; s++) u[2 + s] = push;
     u[0] = -push * (body.legLength - body.ankleHeight);
   }
+  for (const w of body.wobbles) {
+    const com = body.segments[w.segment]?.com ?? [0, 0];
+    model.point(q, w.segment, com, w.position);
+    model.pointVelocity(q, u, w.segment, com, w.velocity);
+    // Start sagged under its own weight when standing; weightless in a drop.
+    if ((options.dropHeight ?? 0) === 0) w.position[1] = (w.position[1] ?? 0) - Math.cbrt((w.mass * 9.81) / (2 * w.spec.stiffness));
+  }
+  const wobbleForce = new Float64Array(2 * body.wobbles.length);
   const massStature = mass * stature;
   const report: FallReport = { pelvisTime: Number.NaN, headTime: Number.NaN, pelvisImpactSpeed: Number.NaN, headImpactSpeed: Number.NaN, peakPelvisForce: 0, peakHeadForce: 0, peakFootForce: 0, hic15: 0, peakFemurForce: 0 };
   const headAccel: number[] = [];
@@ -228,6 +292,27 @@ export function simulateFall(options: FallOptions = {}): FallReport {
     }
     if (dropping && Number.isNaN(footDown) && (footForce[0] ?? 0) + (footForce[1] ?? 0) > 0) footDown = step * dt;
     if (dropping && step * dt > footDown + 0.4) break;
+    body.wobbles.forEach((w, i) => {
+      const com = body.segments[w.segment]?.com ?? [0, 0];
+      model.point(q, w.segment, com, p);
+      model.pointVelocity(q, u, w.segment, com, v);
+      const dx = (w.position[0] ?? 0) - (p[0] ?? 0);
+      const dy = (w.position[1] ?? 0) - (p[1] ?? 0);
+      const d2 = dx * dx + dy * dy;
+      // Two connections in parallel, each K·d³ + C·ḋ along the offset.
+      const fx = -2 * (w.spec.stiffness * d2 * dx + w.spec.damping * ((w.velocity[0] ?? 0) - (v[0] ?? 0)));
+      const fy = -2 * (w.spec.stiffness * d2 * dy + w.spec.damping * ((w.velocity[1] ?? 0) - (v[1] ?? 0)));
+      wobbleForce[2 * i] = fx;
+      wobbleForce[2 * i + 1] = fy;
+      f[0] = -fx;
+      f[1] = -fy;
+      model.addPointForce(q, w.segment, p, f, Q);
+      const leg = w.segment === SEG.rightShank ? 0 : w.segment === SEG.leftShank ? 1 : -1;
+      if (leg >= 0) {
+        distalForce[2 * leg] = (distalForce[2 * leg] ?? 0) - fx;
+        distalForce[2 * leg + 1] = (distalForce[2 * leg + 1] ?? 0) - fy;
+      }
+    });
     for (let s = 1; s < body.segments.length; s++) {
       const segment = body.segments[s];
       if (segment === undefined) continue;
@@ -239,9 +324,15 @@ export function simulateFall(options: FallOptions = {}): FallReport {
       if (joint === "neck") torque = tone === "rigid" ? -60 * angle - 4 * rate : -8 * angle - 1 * rate;
       else if (tone !== "limp") {
         const target = pose[joint];
-        const wanted = tone === "rigid" ? -3000 * (angle - target) - 120 * rate : -350 * (angle - target) - 25 * rate;
-        const capacity = wanted === 0 ? 0 : maxJointTorque(YOUNG_MALE_STRENGTH, joint, Math.sign(wanted), angle, rate, massStature);
-        torque = Math.sign(wanted) * Math.min(Math.abs(wanted), capacity);
+        if (tone === "landing" && !Number.isNaN(footDown)) {
+          // On the ground the extensors work at a fixed activation: their force–velocity curve absorbs the landing.
+          const extend = EXTENSION_SIGN[joint];
+          torque = extend * (joint === "ankle" ? activation.ankle : activation.hipKnee) * maxJointTorque(YOUNG_MALE_STRENGTH, joint, extend, angle, rate, massStature);
+        } else {
+          const wanted = tone === "rigid" ? -3000 * (angle - target) - 120 * rate : -350 * (angle - target) - 25 * rate;
+          const capacity = wanted === 0 ? 0 : maxJointTorque(YOUNG_MALE_STRENGTH, joint, Math.sign(wanted), angle, rate, massStature);
+          torque = Math.sign(wanted) * Math.min(Math.abs(wanted), capacity);
+        }
       } else torque = -2 * rate;
       const range = RANGE[joint];
       if (angle < range[0]) torque += 2000 * (range[0] - angle) - 40 * Math.min(0, rate);
@@ -253,6 +344,12 @@ export function simulateFall(options: FallOptions = {}): FallReport {
       u[k] = (u[k] ?? 0) + (acc[k] ?? 0) * dt;
       q[k] = (q[k] ?? 0) + (u[k] ?? 0) * dt;
     }
+    body.wobbles.forEach((w, i) => {
+      w.velocity[0] = (w.velocity[0] ?? 0) + ((wobbleForce[2 * i] ?? 0) / w.mass) * dt;
+      w.velocity[1] = (w.velocity[1] ?? 0) + ((wobbleForce[2 * i + 1] ?? 0) / w.mass - 9.81) * dt;
+      w.position[0] = (w.position[0] ?? 0) + (w.velocity[0] ?? 0) * dt;
+      w.position[1] = (w.position[1] ?? 0) + (w.velocity[1] ?? 0) * dt;
+    });
     model.pointVelocity(q, u, SEG.head, headCom, headVel);
     if (step > 0) headAccel.push(Math.hypot((headVel[0] ?? 0) - (lastHeadVel[0] ?? 0), (headVel[1] ?? 0) - (lastHeadVel[1] ?? 0)) / dt / 9.81);
     lastHeadVel[0] = headVel[0] ?? 0;

@@ -2292,6 +2292,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/core/placement/TransformGizmo.draw"`
 
+## trot-gallop-speed — the speed a quadruped of a given mass changes from trot to gallop (Heglund & Taylor 1988)
+
+- `trotGallopSpeed` (function) · `import { trotGallopSpeed } from "@jgengine/core/movement/reference/quadrupedGait"`
+
 ## tween-number — rolling number readout with an up/down delta flash
 
 - `TweenNumber` (function) · `import { TweenNumber } from "@jgengine/core/anim/tweenNumber.view"`
