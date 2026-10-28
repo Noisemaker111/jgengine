@@ -151,3 +151,4 @@ One PR each, in order; the gaps go first that later milestones need. Tick a mile
 - [ ] 11. Megapithecus, the Dragon and the Overseer on the boss arena feature
 - [x] 12. The south beach as ARK draws it: pale sand with pebbles and driftwood, palms near the water, a jungle wall of trees, ferns, bushes and waist-high grass (#2687)
 - [x] 13. The inland as ARK draws it: rolling hills, cliffs and gullied mountains, waist-high grass through the jungle and plains (#2687)
+- [x] 14. Rock as ARK draws it: rounded boulders with cracks and stacked ledges instead of flat low-poly facets (#2687)

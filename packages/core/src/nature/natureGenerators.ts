@@ -359,7 +359,7 @@ export const FERN_GENERATOR = defineGenerator({
 
 // --- Rock ----------------------------------------------------------------------------------------
 
-/** Rock params: size, shape, cuts, erosion, moss and clustering. */
+/** Rock params: size, shape, shading, cuts, erosion, crags, moss and clustering. */
 export const ROCK_SCHEMA = defineParamSchema({
   groups: [
     { id: "shape", label: "Shape" },
@@ -373,8 +373,10 @@ export const ROCK_SCHEMA = defineParamSchema({
     { type: "range", key: "stretch", label: "stretch", group: "shape", min: 0.5, max: 2.2, step: 0.01, default: 1.2, explore: [0.9, 1.5] },
     { type: "range", key: "flatness", label: "height", group: "shape", min: 0.25, max: 1.4, step: 0.01, default: 0.68, explore: [0.5, 0.85] },
     { type: "range", key: "roughness", label: "roughness", group: "shape", min: 0, max: 0.6, step: 0.01, default: 0.22 },
+    { type: "bool", key: "smooth", label: "smooth shading", group: "shape", default: false },
     { type: "range", key: "facets", label: "cut faces", group: "wear", min: 0, max: 12, step: 1, default: 5 },
     { type: "range", key: "erosion", label: "erosion", group: "wear", min: 0, max: 1, step: 0.01, default: 0.35 },
+    { type: "range", key: "crag", label: "crags", group: "wear", min: 0, max: 1, step: 0.01, default: 0 },
     { type: "range", key: "sink", label: "buried", group: "wear", min: 0, max: 0.45, step: 0.01, default: 0.12 },
     { type: "range", key: "moss", label: "moss", group: "wear", min: 0, max: 1, step: 0.01, default: 0.2 },
     { type: "range", key: "count", label: "stones", group: "cluster", min: 1, max: 9, step: 1, default: 1, vary: false },
@@ -404,7 +406,7 @@ export const ROCK_GENERATOR = defineGenerator({
     const builder = new NatureMeshBuilder();
     const color = hexRgb(params.color);
     const moss = hexRgb(params.mossColor);
-    const baseLevel = params.size < 0.6 || params.count > 3 ? 1 : 2;
+    const baseLevel = (params.size < 0.6 || params.count > 3 ? 1 : 2) + (params.smooth ? 1 : 0);
     const level = context.detail >= 0.75 ? baseLevel : Math.max(0, baseLevel - 1);
     for (let i = 0; i < params.count; i += 1) {
       const size = i === 0 ? params.size : params.size * lerp(0.4, 0.85, random());
@@ -419,6 +421,8 @@ export const ROCK_GENERATOR = defineGenerator({
         roughness: params.roughness,
         facets: params.facets,
         erosion: params.erosion,
+        crag: params.crag,
+        smooth: params.smooth,
         sink: params.sink,
         seed: seed + i * 101,
         random,
