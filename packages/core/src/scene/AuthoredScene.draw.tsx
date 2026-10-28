@@ -1,6 +1,7 @@
 // @skill jgengine-world
 import { AuthoredFlocks } from "@jgengine/core/ai/AuthoredFlocks.draw";
 import { AuthoredWeatherLayer } from "@jgengine/core/weather/AuthoredWeatherLayer.draw";
+import { AuthoredFires } from "@jgengine/core/fire/AuthoredFires.draw";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import type { EditorDocument, EditorMarker, EditorPath, EditorVolume } from "@jgengine/core/editor/index";
@@ -342,6 +343,7 @@ export function AuthoredScene({
   return (
     <>
       <AuthoredWeatherLayer document={liveDocument} heightAt={field.sampleHeight} diagnostics={diagnostics} />
+      <AuthoredFires document={liveDocument} heightAt={field.sampleHeight} />
       {flockModels === undefined ? null : <AuthoredFlocks models={flockModels} assets={assets} />}
       <AuthoredPaths
         document={liveDocument}

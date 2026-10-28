@@ -1,13 +1,16 @@
 import type { CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
 import { useState } from "react";
 import type { EditorSession } from "@jgengine/core/editor/commands";
-import type { EditorSimulation } from "@jgengine/core/editor/simulation";
+import type { AuthoredFireArea, EditorSimulation } from "@jgengine/core/editor/simulation";
+import { ANDERSON_FUEL_MODELS, MOISTURE_SCENARIOS, NON_BURNABLE_FUEL_MODELS, SCOTT_BURGAN_FUEL_MODELS } from "@jgengine/core/fire/fuelModels";
 import { effectNames } from "@jgengine/core/vfx/effectLibrary";
 import type { AuthoredWeatherConfig, AuthoredWeatherMode } from "@jgengine/core/weather/authoredWeather";
 import { withField } from "@jgengine/core/data/withField";
 import { useStoreSelector } from "./useStoreSelector";
 
 const modes: AuthoredWeatherMode[] = ["clear", "rain", "snow", "mixed", "dust"];
+const fuelCodes = [SCOTT_BURGAN_FUEL_MODELS, ANDERSON_FUEL_MODELS, NON_BURNABLE_FUEL_MODELS].flatMap((models) => Object.values(models).map((model) => [model.code, model.name] as const));
+const moistureScenarios = Object.keys(MOISTURE_SCENARIOS);
 
 function NumberInput({ label, value, onChange, min = 0, step = 0.1 }: { label: string; value: number; onChange: (value: number) => void; min?: number; step?: number }) {
   return <label className="flex items-center justify-between gap-2"><span>{label}</span><input aria-label={label} className="w-24 rounded border border-neutral-700 bg-neutral-900 p-1" type="number" min={min} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
@@ -115,15 +118,24 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
       <button type="button" onClick={() => update({ ...simulation, emitters: [...(simulation?.emitters ?? []), { id: id("emitter", simulation?.emitters ?? []), position: { x: 0, y: 1, z: 0 }, effect: effectNames()[0]! }] })}>Add named emitter</button>
     </fieldset>
     <fieldset hidden={!allowFire} className="space-y-2"><legend>Fire areas</legend>
-      {(simulation?.fires ?? []).map((area, index) => <div key={area.id} className="space-y-1 border-l border-neutral-700 pl-2"><span>{area.id}</span>
-        {(["x", "y", "z"] as const).map((axis) => <NumberInput key={axis} label={`${area.id} ${axis.toUpperCase()} metres`} min={-1e6} value={area.position[axis]} onChange={(value) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, position: { ...row.position, [axis]: value } } : row) })} />)}
-        <NumberInput label={`${area.id} cell size metres`} value={area.config.cellSize} onChange={(cellSize) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, config: { ...row.config, cellSize } } : row) })} />
-        <NumberInput label={`${area.id} fuel consumed/second`} value={area.config.burnRate ?? 0.25} onChange={(burnRate) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, config: { ...row.config, burnRate } } : row) })} />
-        <NumberInput label={`${area.id} rain cooling heat/second`} value={area.extinguishRate ?? 0} onChange={(extinguishRate) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, extinguishRate } : row) })} />
-        <label><input type="checkbox" checked={(area.ignitions?.length ?? 0) > 0} onChange={(event) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, ignitions: event.target.checked ? [{ col: 0, row: 0 }] : [] } : row) })} /> Ignite first cell on play</label>
-        <button type="button" onClick={() => update({ ...simulation, fires: simulation!.fires!.filter((_, i) => i !== index), ...(simulation?.emitters === undefined ? {} : { emitters: simulation.emitters.map((emitter) => emitter.fireAreaId === area.id ? withField(emitter, "fireAreaId", undefined) : emitter) }) })}>Remove fire area</button>
-      </div>)}
-      <button type="button" onClick={() => update({ ...simulation, fires: [...(simulation?.fires ?? []), { id: id("fire", simulation?.fires ?? []), position: { x: 0, y: 0, z: 0 }, config: { cols: 4, rows: 4, cellSize: 1 }, ignitions: [] }] })}>Add fire area</button>
+      <p>Standard fuel models burn under this weather's wind, rain and temperature (Rothermel spread).</p>
+      {(simulation?.fires ?? []).map((area, index) => {
+        const setArea = (next: AuthoredFireArea) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? next : row) });
+        const resize = (cols: number, rows: number) => setArea({ ...withField(area, "fuel", undefined), cols, rows, ignitions: (area.ignitions ?? []).filter((cell) => cell.col < cols && cell.row < rows) });
+        return <div key={area.id} className="space-y-1 border-l border-neutral-700 pl-2"><span>{area.id}</span>
+          {(["x", "y", "z"] as const).map((axis) => <NumberInput key={axis} label={`${area.id} ${axis.toUpperCase()} metres`} min={-1e6} value={area.position[axis]} onChange={(value) => setArea({ ...area, position: { ...area.position, [axis]: value } })} />)}
+          <NumberInput label={`${area.id} columns`} min={1} step={1} value={area.cols} onChange={(cols) => resize(cols, area.rows)} />
+          <NumberInput label={`${area.id} rows`} min={1} step={1} value={area.rows} onChange={(rows) => resize(area.cols, rows)} />
+          <NumberInput label={`${area.id} cell size metres`} value={area.cellSize} onChange={(cellSize) => setArea({ ...area, cellSize })} />
+          <label className="flex justify-between">Fuel model<select aria-label={`${area.id} fuel model`} value={area.fuels[0]} onChange={(event) => setArea({ ...area, fuels: [event.target.value, ...area.fuels.slice(1)] })}>{fuelCodes.map(([code, name]) => <option key={code} value={code}>{code} · {name}</option>)}</select></label>
+          <label className="flex justify-between">Fuel moisture<select aria-label={`${area.id} fuel moisture`} value={area.moisture ?? "D2L2"} onChange={(event) => setArea({ ...area, moisture: event.target.value })}>{moistureScenarios.map((code) => <option key={code}>{code}</option>)}</select></label>
+          <NumberInput label={`${area.id} air temperature °C`} min={-60} step={1} value={area.airTemperatureC ?? 25} onChange={(airTemperatureC) => setArea({ ...area, airTemperatureC })} />
+          <NumberInput label={`${area.id} relative humidity`} step={0.05} value={area.relativeHumidity ?? 0.3} onChange={(relativeHumidity) => setArea({ ...area, relativeHumidity })} />
+          <label><input type="checkbox" checked={(area.ignitions?.length ?? 0) > 0} onChange={(event) => setArea({ ...area, ignitions: event.target.checked ? [{ col: 0, row: 0 }] : [] })} /> Ignite first cell on play</label>
+          <button type="button" onClick={() => update({ ...simulation, fires: simulation!.fires!.filter((_, i) => i !== index), ...(simulation?.emitters === undefined ? {} : { emitters: simulation.emitters.map((emitter) => emitter.fireAreaId === area.id ? withField(emitter, "fireAreaId", undefined) : emitter) }) })}>Remove fire area</button>
+        </div>;
+      })}
+      <button type="button" onClick={() => update({ ...simulation, fires: [...(simulation?.fires ?? []), { id: id("fire", simulation?.fires ?? []), position: { x: 0, y: 0, z: 0 }, cols: 8, rows: 8, cellSize: 2, fuels: ["GR2"], ignitions: [] }] })}>Add fire area</button>
     </fieldset>
     <fieldset hidden={!allowFlocks} className="space-y-2"><legend>Flock habitats</legend>
       {(simulation?.habitats ?? []).map((habitat, index) => <div key={habitat.id} className="space-y-1 border-l border-neutral-700 pl-2"><span>{habitat.id} · {habitat.species}</span>

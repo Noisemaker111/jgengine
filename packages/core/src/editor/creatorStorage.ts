@@ -98,7 +98,7 @@ export function validateCreatorDocument(value: unknown, policy: CreatorPolicy): 
     }, 0);
     // The renderer retains up to 32 concurrent child bursts, shared by all standing emitters.
     if (weatherParticles + emitterParticles + 32 * maxChildParticles > (policy.maxSimulationParticles ?? 0)) throw new Error("Scene exceeds particle budget");
-    if ((simulation.fires ?? []).reduce((total, fire) => total + fire.config.cols * fire.config.rows, 0) > (policy.maxFireCells ?? 0)) throw new Error("Scene exceeds fire budget");
+    if ((simulation.fires ?? []).reduce((total, fire) => total + fire.cols * fire.rows, 0) > (policy.maxFireCells ?? 0)) throw new Error("Scene exceeds fire budget");
     if ((simulation.habitats ?? []).reduce((total, habitat) => total + habitat.count, 0) > (policy.maxPopulation ?? 0)) throw new Error("Scene exceeds population budget");
   }
   const inspect = (item: unknown): void => {

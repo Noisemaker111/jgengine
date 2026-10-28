@@ -1,11 +1,13 @@
 import { stepFlock, type FlockStepAgent } from "../ai/flock";
 import { seededRng } from "../random/rng";
 import { sampleForceField } from "../physics/forceVolume";
-import { decodeEditorSimulation, type EditorSimulation } from "../editor/simulation";
+import { decodeEditorSimulation, type AuthoredFireArea, type EditorSimulation } from "../editor/simulation";
 import type { EditorDocument, EditorVolume } from "../editor/types";
 import { createEmptyEditorDocument } from "../editor/document";
 import { createAuthoredWeather, createWeatherExposure, type AuthoredWeatherSample, type WeatherExposure, type WeatherExposureSnapshot, type WeatherExposureSurface } from "@jgengine/core/weather/authoredWeather";
-import { createFireGrid, type FireCell, type FireGrid } from "@jgengine/core/weather/weather";
+import { createFireLandscape, type FireLandscape, type FireLandscapeSnapshot } from "../fire/fireLandscape";
+import { MOISTURE_SCENARIOS, standardFuelModel, type FuelModel, type FuelMoisture } from "../fire/fuelModels";
+import { createFuelMoistureModel, type FuelMoistureModel, type FuelMoistureSnapshot } from "../fire/fuelMoisture";
 import type { EffectRequest, ParticleDirector } from "../vfx/particleDirector";
 import type { Vec3 } from "./geometry";
 
@@ -28,7 +30,7 @@ export interface EnvironmentAppearanceSignals {
 export interface AuthoredSimulationSnapshot {
   surfaces: WeatherExposureSnapshot;
   watched: AuthoredSurface[];
-  fires: { id: string; cells: FireCell[] }[];
+  fires: { id: string; fire: FireLandscapeSnapshot; moisture: FuelMoistureSnapshot; moistureDue: number }[];
   flocks: { id: string; agents: FlockStepAgent[]; routeIndex: number }[];
 }
 
@@ -59,7 +61,8 @@ export interface AuthoredSimulationRuntime {
   windAcceleration(position: Vec3, response: number, maxAcceleration: number): Vec3;
   /** Sum authored fields and wind (response 1/second), capped in metres/second² by game policy. */
   accelerationAt(position: Vec3, timeSeconds: number, windResponse: number, maxAcceleration: number, mask?: number, out?: [number, number, number]): Vec3;
-  fire(id: string): FireGrid | undefined;
+  /** The landscape fire of an authored fire area. */
+  fire(id: string): FireLandscape | undefined;
   /** Cosmetic poses render directly; gameplay habitats are consumed by game actor adapters. */
   flocks(): readonly AuthoredFlockState[];
   step(gameDt: number): void;
@@ -83,6 +86,51 @@ function inside(shelter: EditorVolume, x: number, y: number, z: number): boolean
   return shelter.shape === "sphere" ? dx * dx + dy * dy + dz * dz <= radius * radius : dx * dx + dz * dz <= radius * radius && Math.abs(dy) <= (shelter.height ?? 0) / 2;
 }
 
+/** Rain rate of authored weather at full intensity, mm/h (heavy rain, AMS glossary: over 7.6 mm/h). */
+const FULL_RAIN_MM_PER_HOUR = 10;
+/** Game seconds between fuel moisture updates; dead fuel moisture changes over hours. */
+const MOISTURE_STEP_SECONDS = 60;
+const DEFAULT_FIRE_MOISTURE = "D2L2";
+
+interface AuthoredFire {
+  readonly landscape: FireLandscape;
+  readonly moisture: FuelMoistureModel;
+  readonly initial: FuelMoisture;
+  readonly signature: string;
+  moistureDue: number;
+}
+
+function exposureUnder(shelters: readonly EditorVolume[], x: number, y: number, z: number): number {
+  let exposure = 1;
+  for (const shelter of shelters) {
+    if (!inside(shelter, x, y, z)) continue;
+    const authored = shelter.meta?.["exposure"];
+    const amount = typeof authored === "number" && Number.isFinite(authored) ? Math.max(0, Math.min(1, authored)) : 0;
+    exposure = Math.min(exposure, amount);
+  }
+  return exposure;
+}
+
+function buildFire(area: AuthoredFireArea, shelters: readonly EditorVolume[], signature: string): AuthoredFire {
+  const fuels: FuelModel[] = area.fuels.map((code) => {
+    const model = standardFuelModel(code);
+    if (model === undefined) throw new Error(`fire area ${area.id}: unknown fuel model ${code}`);
+    return model;
+  });
+  const cells = area.cols * area.rows;
+  const initial = MOISTURE_SCENARIOS[area.moisture ?? DEFAULT_FIRE_MOISTURE];
+  if (initial === undefined) throw new Error(`fire area ${area.id}: unknown moisture scenario ${area.moisture ?? DEFAULT_FIRE_MOISTURE}`);
+  const landscape = createFireLandscape({ cols: area.cols, rows: area.rows, cellSize: area.cellSize, originX: area.position.x, originZ: area.position.z, fuels, fuel: area.fuel ?? new Uint8Array(cells), seed: area.seed ?? area.id });
+  const exposure = new Float32Array(cells);
+  for (let row = 0; row < area.rows; row++) {
+    for (let col = 0; col < area.cols; col++) exposure[row * area.cols + col] = exposureUnder(shelters, area.position.x + (col + 0.5) * area.cellSize, area.position.y, area.position.z + (row + 0.5) * area.cellSize);
+  }
+  const moisture = createFuelMoistureModel({ cells, initial, exposure });
+  landscape.setMoistureField(moisture);
+  for (const ignition of area.ignitions ?? []) landscape.ignite(ignition.col, ignition.row);
+  return { landscape, moisture, initial, signature, moistureDue: 0 };
+}
+
 /** Compose authored weather, shelter, accumulation, named effect intents and fire with one clock.
  * @capability authored-environment compose authored weather, shelter, accumulation, fire, flocks and effects using one simulation clock
  */
@@ -93,7 +141,7 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
   let shelters: EditorVolume[] = [];
   const surfaces = createWeatherExposure({ maxSurfaces: options.maxSurfaces ?? 1024 });
   const watched = new Map<string, AuthoredSurface>();
-  let fires = new Map<string, FireGrid>();
+  let fires = new Map<string, AuthoredFire>();
   let emitterIds: string[] = [];
   let flocks: MutableAuthoredFlockState[] = [];
   let disposed = false;
@@ -117,14 +165,12 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
     const nextShelters = next.volumes.filter((volume) => volume.kind === "shelter");
     if (nextShelters.length > 256) throw new Error("authored shelters are limited to 256 volumes");
     const nextWeather = createAuthoredWeather(nextConfig.weather ?? {});
-    const nextFires = new Map<string, FireGrid>();
+    const shelterSignature = JSON.stringify(nextShelters);
+    const nextFires = new Map<string, AuthoredFire>();
     for (const area of nextConfig.fires ?? []) {
-      const grid = createFireGrid({ ...area.config, origin: [area.position.x, area.position.z], ...(area.fuel === undefined ? {} : { fuelAt: (col, row) => area.fuel![row * area.config.cols + col]! }) });
-      for (const ignition of area.ignitions ?? []) grid.igniteCell(ignition.col, ignition.row);
-      const previousArea = config.fires?.find((previous) => previous.id === area.id);
-      const previousGrid = fires.get(area.id);
-      if (previousGrid !== undefined && previousArea !== undefined && previousArea.config.cols === area.config.cols && previousArea.config.rows === area.config.rows && previousArea.config.cellSize === area.config.cellSize && JSON.stringify(previousArea.position) === JSON.stringify(area.position) && JSON.stringify(previousArea.fuel) === JSON.stringify(area.fuel) && JSON.stringify(previousArea.ignitions) === JSON.stringify(area.ignitions)) grid.restore(previousGrid.snapshot());
-      nextFires.set(area.id, grid);
+      const areaSignature = JSON.stringify(area) + shelterSignature;
+      const previous = fires.get(area.id);
+      nextFires.set(area.id, previous !== undefined && previous.signature === areaSignature ? previous : buildFire(area, nextShelters, areaSignature));
     }
     const nextFlocks = (nextConfig.habitats ?? []).map((habitat) => {
       const previous = flocks.find((state) => state.id === habitat.id);
@@ -146,7 +192,7 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
       const previous = config.emitters?.find((entry) => entry.id === emitter.id);
       if (emitterIds.includes(id) && JSON.stringify(previous) === JSON.stringify(emitter)) continue;
       const position: Vec3 = [emitter.position.x, emitter.position.y, emitter.position.z];
-      const fire = emitter.fireAreaId === undefined ? undefined : { active: emitter.options?.active !== false && nextFires.get(emitter.fireAreaId)!.burning > 0 };
+      const fire = emitter.fireAreaId === undefined ? undefined : { active: emitter.options?.active !== false && (nextFires.get(emitter.fireAreaId)?.landscape.activeCells().length ?? 0) > 0 };
       const request: EffectRequest = { position, options: { ...emitter.options, ...(fire ?? {}) } };
       if (emitter.effect !== undefined) options.particles?.attachEffect(id, emitter.effect, request);
       else options.particles?.attach(id, { ...emitter.config, position }, request.options);
@@ -164,14 +210,7 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
 
   function exposureAt(x: number, y: number, z: number): number {
     finite(x, "exposure x"); finite(y, "exposure y"); finite(z, "exposure z");
-    let exposure = 1;
-    for (const shelter of shelters) {
-      if (!inside(shelter, x, y, z)) continue;
-      const authored = shelter.meta?.["exposure"];
-      const amount = typeof authored === "number" && Number.isFinite(authored) ? Math.max(0, Math.min(1, authored)) : 0;
-      exposure = Math.min(exposure, amount);
-    }
-    return exposure;
+    return exposureUnder(shelters, x, y, z);
   }
 
   function accelerationAt(position: Vec3, timeSeconds: number, windResponse: number, maxAcceleration: number, mask = 0xffffffff, out: [number, number, number] = [0, 0, 0]): Vec3 {
@@ -191,7 +230,7 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
   function syncFireEmitters(): void {
     for (const emitter of config.emitters ?? []) {
       if (emitter.fireAreaId === undefined) continue;
-      if (emitter.options?.active !== false && fires.get(emitter.fireAreaId)!.burning > 0) options.particles?.start(`authored:${emitter.id}`);
+      if (emitter.options?.active !== false && (fires.get(emitter.fireAreaId)?.landscape.activeCells().length ?? 0) > 0) options.particles?.start(`authored:${emitter.id}`);
       else options.particles?.stop(`authored:${emitter.id}`);
     }
   }
@@ -205,9 +244,12 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
       const accumulated = surfaces.sample(surfaceId);
       let heat = 0;
       for (const area of config.fires ?? []) {
-        if (Math.abs(position[1] - area.position.y) > area.config.cellSize) continue;
-        const cell = fires.get(area.id)!.cellAt(position[0], position[2]);
-        if (cell !== null) heat = Math.max(heat, Math.min(1, cell.heat / (area.config.ignitionThreshold ?? 1)));
+        if (Math.abs(position[1] - area.position.y) > area.cellSize) continue;
+        const landscape = fires.get(area.id)?.landscape;
+        const cell = landscape === undefined ? -1 : landscape.cellIndexAt(position[0], position[2]);
+        if (landscape === undefined || cell < 0) continue;
+        const state = landscape.cell(cell % landscape.cols, Math.floor(cell / landscape.cols)).state;
+        heat = Math.max(heat, state === "flaming" ? 1 : state === "smouldering" ? 0.5 : 0);
       }
       return { timeSeconds: sample.timeSeconds, wind: [sample.wind[0], 0, sample.wind[1]], wetness: accumulated?.wetness ?? 0, snow: accumulated?.snow ?? 0, exposure, heat, temperatureOffsetC: sample.temperatureOffset ?? 0 };
     },
@@ -233,7 +275,7 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
       return [x * scale, 0, z * scale];
     },
     accelerationAt,
-    fire: (id) => fires.get(id),
+    fire: (id) => fires.get(id)?.landscape,
     flocks: () => flocks,
     step(gameDt) {
       finite(gameDt, "authored simulation dt", 0);
@@ -252,17 +294,21 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
         if (route !== undefined && lead !== undefined && Math.hypot(lead.position[0] - target[0], lead.position[1] - target[1], lead.position[2] - target[2]) < Math.max(1, habitat.steering.maxSpeed * gameDt)) state.routeIndex = (state.routeIndex + 1) % route.points.length;
       }
       for (const area of config.fires ?? []) {
-        const grid = fires.get(area.id)!;
-        const local = weather.sample(area.position.x, area.position.z, time);
-        grid.step(gameDt, { spread: 1 - local.precipitation, wind: local.wind, extinguishRate: area.extinguishRate ?? 0, wetnessAt: (col, row) => {
-          const x = area.position.x + col * area.config.cellSize, z = area.position.z + row * area.config.cellSize;
-          return weather.sample(x, z, time).rain * exposureAt(x, area.position.y, z);
-        } });
+        const fire = fires.get(area.id);
+        if (fire === undefined) continue;
+        const local = weather.sample(area.position.x + area.cols * area.cellSize * 0.5, area.position.z + area.rows * area.cellSize * 0.5, time);
+        const airTemperatureC = (area.airTemperatureC ?? 25) + (local.temperatureOffset ?? 0);
+        fire.moistureDue += gameDt;
+        if (fire.moistureDue >= MOISTURE_STEP_SECONDS) {
+          fire.moisture.step(fire.moistureDue, { airTemperatureC, relativeHumidity: area.relativeHumidity ?? 0.3, rainRateMmPerHour: local.rain * FULL_RAIN_MM_PER_HOUR, cloudCover: local.cloudCover });
+          fire.moistureDue = 0;
+        }
+        fire.landscape.step(gameDt, { twentyFootWind: Math.hypot(local.wind[0], local.wind[1]), windDirection: Math.atan2(local.wind[1], local.wind[0]), airTemperatureC, moisture: fire.initial });
       }
       syncFireEmitters();
     },
     retune(next) { if (disposed) throw new Error("authored simulation is disposed"); install(next); },
-    snapshot: () => ({ surfaces: surfaces.snapshot(), watched: Array.from(watched.values(), (surface) => ({ ...surface })), fires: Array.from(fires, ([id, grid]) => ({ id, cells: grid.snapshot() })), flocks: structuredClone(flocks.map(({ id, agents, routeIndex }) => ({ id, agents, routeIndex }))) }),
+    snapshot: () => ({ surfaces: surfaces.snapshot(), watched: Array.from(watched.values(), (surface) => ({ ...surface })), fires: Array.from(fires, ([id, fire]) => ({ id, fire: fire.landscape.snapshot(), moisture: fire.moisture.snapshot(), moistureDue: fire.moistureDue })), flocks: structuredClone(flocks.map(({ id, agents, routeIndex }) => ({ id, agents, routeIndex }))) }),
     restore(state) {
       if (disposed) throw new Error("authored simulation is disposed");
       if (!Array.isArray(state.watched) || state.watched.length > (options.maxSurfaces ?? 1024)) throw new Error("authored surface restore budget exceeded");
@@ -282,9 +328,13 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
         for (const saved of state.fires) {
           if (fireIds.has(saved.id)) throw new Error(`duplicate restored fire id: ${saved.id}`);
           fireIds.add(saved.id);
-          const grid = next.fire(saved.id);
-          if (grid === undefined) throw new Error(`unknown restored fire area: ${saved.id}`);
-          grid.restore(saved.cells);
+          const landscape = next.fire(saved.id);
+          if (landscape === undefined) throw new Error(`unknown restored fire area: ${saved.id}`);
+          landscape.restore(saved.fire);
+          const current = fires.get(saved.id);
+          if (current === undefined) throw new Error(`unknown restored fire area: ${saved.id}`);
+          createFuelMoistureModel({ cells: landscape.cols * landscape.rows, initial: current.initial }).restore(saved.moisture);
+          finite(saved.moistureDue, "restored fire moisture clock", 0, MOISTURE_STEP_SECONDS);
         }
         const restoredFlocks = state.flocks.map((saved) => {
           if (flockIds.has(saved.id)) throw new Error(`duplicate restored flock id: ${saved.id}`);
@@ -303,7 +353,13 @@ export function createAuthoredSimulation(options: { document?: EditorDocument | 
         surfaces.restore(next.surfaces.snapshot());
         watched.clear();
         for (const surface of state.watched) watched.set(surface.id, { ...surface });
-        for (const saved of state.fires) fires.get(saved.id)!.restore(saved.cells);
+        for (const saved of state.fires) {
+          const fire = fires.get(saved.id);
+          if (fire === undefined) continue;
+          fire.landscape.restore(saved.fire);
+          fire.moisture.restore(saved.moisture);
+          fire.moistureDue = saved.moistureDue;
+        }
         flocks = restoredFlocks;
         syncFireEmitters();
       } finally { next.dispose(); }

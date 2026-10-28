@@ -20,16 +20,17 @@ import {
 } from "@jgengine/core/world/envField";
 import { resolveTerrainField } from "@jgengine/core/terrain/terrain";
 import {
-  createFireGrid,
   resolveWeather,
-  type FireGrid,
   type WeatherModifierTable,
   type WeatherState,
 } from "@jgengine/core/weather/weather";
 import { useEngineState, type ReadableEngineStore } from "@jgengine/react/engineStore";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import { FireSpreadLayer } from "@jgengine/core/weather/FireSpreadLayer.draw";
+import { FireLandscapeView } from "@jgengine/core/fire/FireLandscape.draw";
+import { createFireLandscape, type FireLandscape } from "@jgengine/core/fire/fireLandscape";
+import { MOISTURE_SCENARIOS, standardFuelModel, type FuelModel, type FuelMoisture } from "@jgengine/core/fire/fuelModels";
+import { createFuelMoistureModel } from "@jgengine/core/fire/fuelMoisture";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "survivor";
@@ -37,6 +38,18 @@ const HOTBAR = "hotbar";
 const DAY_LENGTH = 24 * 3600;
 const FIRE_ORIGIN: readonly [number, number] = [-16, -16];
 const FIRE_CELL = 2;
+const FIRE_CELLS = 16;
+/** Rain rate at full weather intensity, mm/h. */
+const FULL_RAIN_MM_PER_HOUR = 10;
+const MOISTURE_STEP_SECONDS = 60;
+const weatherWind: readonly [number, number] = [1, 0.35];
+
+function fireInputs(): { grass: FuelModel; moisture: FuelMoisture } {
+  const grass = standardFuelModel("GR2");
+  const moisture = MOISTURE_SCENARIOS["D2L2"];
+  if (grass === undefined || moisture === undefined) throw new Error("survival demo: missing standard fuel data");
+  return { grass, moisture };
+}
 const CAMPFIRE: HeatSource = { x: 8, z: 0, radius: 9, strength: 26 };
 
 const weatherTable: WeatherModifierTable = {
@@ -61,7 +74,7 @@ interface SurvivalSnapshot {
 
 interface SurvivalSim {
   store: ReadableEngineStore<SurvivalSnapshot>;
-  fire: FireGrid;
+  fire: FireLandscape;
   field: EnvironmentField;
   tick(ctx: GameContext, dt: number, gameTime: number): void;
   treat(itemId: string): void;
@@ -136,18 +149,22 @@ function createSurvivalSim(): SurvivalSim {
   });
 
   const buffs: MoodleStack = createMoodleStack();
-  const fire = createFireGrid({
-    cols: 16,
-    rows: 16,
+  const { grass, moisture: initialMoisture } = fireInputs();
+  const fire = createFireLandscape({
+    cols: FIRE_CELLS,
+    rows: FIRE_CELLS,
     cellSize: FIRE_CELL,
-    origin: FIRE_ORIGIN,
-    spreadRate: 0.9,
-    burnRate: 0.05,
-    wind: [1, 0.35],
-    windBias: 0.7,
+    originX: FIRE_ORIGIN[0],
+    originZ: FIRE_ORIGIN[1],
+    fuels: [grass],
+    fuel: new Uint8Array(FIRE_CELLS * FIRE_CELLS),
+    seed: "survival-fire",
   });
+  const fuelMoisture = createFuelMoistureModel({ cells: FIRE_CELLS * FIRE_CELLS, initial: initialMoisture });
+  fire.setMoistureField(fuelMoisture);
+  let moistureDue = 0;
 
-  let weather: WeatherState = { kind: "rain", intensity: 0.55, wind: [1, 0.35] };
+  let weather: WeatherState = { kind: "rain", intensity: 0.55, wind: weatherWind };
   const field = createEnvironmentField({
     dayLength: DAY_LENGTH,
     baseTemperature: 14,
@@ -175,7 +192,7 @@ function createSurvivalSim(): SurvivalSim {
       weather,
       visibility: resolved.visibility,
       grip: resolved.grip,
-      burning: fire.burning,
+      burning: fire.activeCells().length,
     };
   }
 
@@ -209,10 +226,10 @@ function createSurvivalSim(): SurvivalSim {
       meters.refill("thirst", -66);
       meters.refill("warmth", -34);
       meters.refill("stamina", -70);
-      fire.ignite(-4, 4);
-      fire.ignite(-2, 4);
-      fire.ignite(-4, 6);
-      fire.ignite(0, 6);
+      fire.igniteAt(-4, 4);
+      fire.igniteAt(-2, 4);
+      fire.igniteAt(-4, 6);
+      fire.igniteAt(0, 6);
       notify();
     },
     tick(_ctx, dt, gameTime) {
@@ -223,10 +240,14 @@ function createSurvivalSim(): SurvivalSim {
       meters.tick(dt);
       buffs.tick(dt);
       health.tick(dt);
-      const resolved = resolveWeather(weather, weatherTable);
-      const wetnessAt = (col: number, row: number): number =>
-        field.wetness(FIRE_ORIGIN[0] + col * FIRE_CELL, FIRE_ORIGIN[1] + row * FIRE_CELL, gameTime);
-      fire.step(dt, { spread: resolved.spread, wetnessAt });
+      const rain = weather.kind === "clear" ? 0 : weather.intensity;
+      moistureDue += dt;
+      if (moistureDue >= MOISTURE_STEP_SECONDS) {
+        fuelMoisture.step(moistureDue, { airTemperatureC: sample.temperature, relativeHumidity: 0.5 + 0.5 * rain, rainRateMmPerHour: rain * FULL_RAIN_MM_PER_HOUR, cloudCover: rain });
+        moistureDue = 0;
+      }
+      const wind = weather.wind ?? [0, 0];
+      fire.step(dt, { twentyFootWind: Math.hypot(wind[0], wind[1]), windDirection: Math.atan2(wind[1], wind[0]), airTemperatureC: sample.temperature, moisture: initialMoisture });
       notify();
     },
     treat(itemId) {
@@ -297,7 +318,7 @@ function SurvivalWorld() {
   return (
     <>
       <EnvironmentScene feature={survivalWorld} />
-      <FireSpreadLayer grid={sim.fire} cellSize={FIRE_CELL} origin={FIRE_ORIGIN} heightAt={survivalField.sampleHeight} />
+      <FireLandscapeView fire={sim.fire} heightAt={survivalField.sampleHeight} wind={weatherWind} />
     </>
   );
 }

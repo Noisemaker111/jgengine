@@ -25,7 +25,7 @@ beforeAll(async () => {
     const document=createEmptyEditorDocument();document.simulation={
       weather:{ambient:{mode:'rain',intensity:1}},
       emitters:[{id:'smoke',position:{x:0,y:1,z:0},config:{max:4,rate:1}}],
-      fires:[{id:'fire',position:{x:0,y:0,z:0},config:{cols:1,rows:1,cellSize:1},ignitions:[{col:0,row:0}]}],
+      fires:[{id:'fire',position:{x:0,y:0,z:0},cols:1,rows:1,cellSize:1,fuels:['GR2'],ignitions:[{col:0,row:0}]}],
       habitats:[{id:'birds',species:'native',position:{x:0,y:2,z:0},radius:2,count:1,seed:1,role:'cosmetic',steering:{maxSpeed:1,separationRadius:1,neighborRadius:2}}]
     };
     const authored=JSON.stringify(document),records=[],removers=new Map();

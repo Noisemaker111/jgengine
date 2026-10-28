@@ -147,7 +147,6 @@ export interface FireLandscapeSnapshot {
   version: 1;
   time: number;
   rng: number;
-  epoch: number;
   fuel: string;
   arrival: string;
   tentative: string;
@@ -831,7 +830,6 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
         version: 1,
         time,
         rng: rng.state(),
-        epoch,
         fuel: encodeFireArray(fuel),
         arrival: encodeFireArray(arrival),
         tentative: encodeFireArray(tentative),
@@ -875,7 +873,7 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
       active = [...s.active];
       time = s.time;
       rng.restore(s.rng);
-      epoch = Math.max(epoch, s.epoch) + 1;
+      epoch++;
       paletteBeds.clear();
       fm10Bed = undefined;
       rebuildHeap();

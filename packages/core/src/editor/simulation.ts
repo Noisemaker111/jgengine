@@ -4,7 +4,7 @@ import { validateAuthoredWeather } from "@jgengine/core/weather/authoredWeather"
 import { validateEmitterConfig, type EmitterConfig } from "../vfx/particles";
 import { effectNames } from "../vfx/effectLibrary";
 import { validateParticleAttachOptions, type ParticleAttachOptions } from "../vfx/particleDirector";
-import type { FireGridConfig } from "@jgengine/core/weather/weather";
+import { MOISTURE_SCENARIOS, standardFuelModel } from "../fire/fuelModels";
 import type { FlockConfig } from "../ai/flock";
 import type { EditorDocument, EditorVec3 } from "./types";
 
@@ -21,14 +21,27 @@ export interface AuthoredEmitter {
   options?: ParticleAttachOptions;
 }
 
-/** A bounded fire grid; fuel and damage policy remain game content. */
+/** A bounded landscape fire (`@jgengine/core/fire`): standard fuel models per cell, burning under the authored weather. */
 export interface AuthoredFireArea {
   id: string;
-  /** Rain cooling in heat units/second at full exposure; zero disables automatic extinguishing. */
-  extinguishRate?: number;
+  /** World position of the grid's (0,0) corner, metres. */
   position: EditorVec3;
-  config: Omit<FireGridConfig, "fuelAt" | "origin" | "wind">;
+  cols: number;
+  rows: number;
+  /** Cell edge, metres. */
+  cellSize: number;
+  /** Standard fuel model codes the cells use (Scott & Burgan `GR2`, Anderson `FM4`, non-burnable `NB1`). */
+  fuels: readonly string[];
+  /** Index into `fuels` per cell, row-major; every cell uses `fuels[0]` when absent. */
   fuel?: readonly number[];
+  /** Starting fuel moisture, a Scott & Burgan scenario `D1L1`..`D4L4`. Default `D2L2`. */
+  moisture?: string;
+  /** Air temperature the fuel dries in, °C, before the weather's temperature offset. Default 25. */
+  airTemperatureC?: number;
+  /** Relative humidity the fuel dries in, 0..1. Default 0.3. */
+  relativeHumidity?: number;
+  /** Seed for ember spotting. Default the area id. */
+  seed?: string | number;
   ignitions?: readonly { col: number; row: number }[];
 }
 
@@ -112,11 +125,34 @@ function rows(value: unknown, path: string, limit: number, check: (row: Record<s
   });
 }
 
+/** Fuel model a saved scene's fire area burns when it was authored with the cellular grid's 0..1 fuel amounts. */
+const MIGRATED_FIRE_FUEL = "GR2";
+
+/** Rewrite a fire area saved by the cellular fire grid (`config: { cols, rows, cellSize, ... }`, 0..1 fuel) as a fuel-model area. */
+function migrateFireArea(entry: unknown): unknown {
+  if (entry === null || typeof entry !== "object" || Array.isArray(entry)) return entry;
+  const { config, fuel, ...rest } = entry as Record<string, unknown>;
+  delete rest["extinguishRate"];
+  if (config === null || typeof config !== "object" || Array.isArray(config)) return entry;
+  const grid = config as Record<string, unknown>;
+  const amounts = Array.isArray(fuel) ? fuel : undefined;
+  const bare = amounts?.some((amount) => amount === 0) === true;
+  return {
+    ...rest,
+    cols: grid["cols"],
+    rows: grid["rows"],
+    cellSize: grid["cellSize"],
+    fuels: bare ? [MIGRATED_FIRE_FUEL, "NB1"] : [MIGRATED_FIRE_FUEL],
+    ...(bare && amounts !== undefined ? { fuel: amounts.map((amount) => (amount === 0 ? 1 : 0)) } : {}),
+  };
+}
+
 /** Decode authoring inputs with located diagnostics and bounded work before any document mutation.
  * @capability validate-simulation diagnose authored weather, effect, fire, force and habitat documents before publication
  */
 export function decodeEditorSimulation(value: unknown, document?: Pick<EditorDocument, "paths">): EditorSimulation {
-  const source = object(value, "$.simulation");
+  const source = { ...object(value, "$.simulation") };
+  if (Array.isArray(source["fires"])) source["fires"] = source["fires"].map(migrateFireArea);
   known(source, ["weather", "forces", "emitters", "fires", "habitats"], "$.simulation");
   serializable(source, "$.simulation");
   if (source["weather"] !== undefined) {
@@ -162,30 +198,30 @@ export function decodeEditorSimulation(value: unknown, document?: Pick<EditorDoc
     }
   });
   rows(source["fires"], "$.simulation.fires", 32, (row, path) => {
-    known(row, ["id", "position", "config", "fuel", "ignitions", "extinguishRate"], path);
-    if (row["extinguishRate"] !== undefined) finite(row["extinguishRate"], `${path}.extinguishRate`, 0);
-    const config = object(row["config"], `${path}.config`);
-    known(config, ["cols", "rows", "cellSize", "ignitionThreshold", "spreadRate", "burnRate", "windBias", "maxCells"], `${path}.config`);
-    const cols = finite(config["cols"], `${path}.config.cols`, 1, 256);
-    const count = cols * finite(config["rows"], `${path}.config.rows`, 1, 256);
-    if (!Number.isInteger(cols) || !Number.isInteger(config["rows"]) || count > 16_384) throw new Error(`${path}.config: expected integral dimensions with at most 16384 cells`);
-    finite(config["cellSize"], `${path}.config.cellSize`, Number.EPSILON);
-    if (config["maxCells"] !== undefined) {
-      const capacity = finite(config["maxCells"], `${path}.config.maxCells`, count, 1_048_576);
-      if (!Number.isInteger(capacity)) throw new Error(`${path}.config.maxCells: expected an integer`);
-    }
-    for (const key of ["ignitionThreshold", "spreadRate", "burnRate", "windBias"]) if (config[key] !== undefined) finite(config[key], `${path}.config.${key}`, 0, key === "windBias" ? 1 : Infinity);
+    known(row, ["id", "position", "cols", "rows", "cellSize", "fuels", "fuel", "moisture", "airTemperatureC", "relativeHumidity", "seed", "ignitions"], path);
+    const cols = finite(row["cols"], `${path}.cols`, 1, 256);
+    const rowCount = finite(row["rows"], `${path}.rows`, 1, 256);
+    const count = cols * rowCount;
+    if (!Number.isInteger(cols) || !Number.isInteger(rowCount) || count > 16_384) throw new Error(`${path}: expected integral dimensions with at most 16384 cells`);
+    finite(row["cellSize"], `${path}.cellSize`, Number.EPSILON);
+    const fuels = row["fuels"];
+    if (!Array.isArray(fuels) || fuels.length < 1 || fuels.length > 255) throw new Error(`${path}.fuels: expected 1..255 fuel model codes`);
+    fuels.forEach((code, index) => { if (typeof code !== "string" || standardFuelModel(code) === undefined) throw new Error(`${path}.fuels[${index}]: unknown fuel model ${String(code)}`); });
     if (row["fuel"] !== undefined) {
       if (!Array.isArray(row["fuel"]) || row["fuel"].length !== count) throw new Error(`${path}.fuel: expected ${count} cell values`);
-      row["fuel"].forEach((fuel, index) => finite(fuel, `${path}.fuel[${index}]`, 0, 1));
+      row["fuel"].forEach((fuel, index) => { if (!Number.isInteger(finite(fuel, `${path}.fuel[${index}]`, 0, fuels.length - 1))) throw new Error(`${path}.fuel[${index}]: expected a fuel index`); });
     }
+    if (row["moisture"] !== undefined && (typeof row["moisture"] !== "string" || MOISTURE_SCENARIOS[row["moisture"]] === undefined)) throw new Error(`${path}.moisture: expected a moisture scenario D1L1..D4L4`);
+    if (row["airTemperatureC"] !== undefined) finite(row["airTemperatureC"], `${path}.airTemperatureC`, -60, 60);
+    if (row["relativeHumidity"] !== undefined) finite(row["relativeHumidity"], `${path}.relativeHumidity`, 0, 1);
+    if (row["seed"] !== undefined && typeof row["seed"] !== "string") finite(row["seed"], `${path}.seed`);
     if (row["ignitions"] !== undefined) {
       if (!Array.isArray(row["ignitions"]) || row["ignitions"].length > count) throw new Error(`${path}.ignitions: expected at most ${count} cells`);
       for (const cell of row["ignitions"]) {
         const point = object(cell, `${path}.ignitions`);
         known(point, ["col", "row"], `${path}.ignitions`);
         finite(point["col"], `${path}.ignitions.col`, 0, cols - 1);
-        finite(point["row"], `${path}.ignitions.row`, 0, (config["rows"] as number) - 1);
+        finite(point["row"], `${path}.ignitions.row`, 0, rowCount - 1);
         if (!Number.isInteger(point["col"]) || !Number.isInteger(point["row"])) throw new Error(`${path}.ignitions: expected integral cell coordinates`);
       }
     }

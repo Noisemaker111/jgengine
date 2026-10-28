@@ -945,9 +945,7 @@ export {
   type WaveView,
 } from "./waves/waveRunner";
 export {
-  createFireGrid,
   resolveWeather,
-  type FireGrid,
   type ResolvedWeather,
   type WeatherModifierTable,
   type WeatherState,

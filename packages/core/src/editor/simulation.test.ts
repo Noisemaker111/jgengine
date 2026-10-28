@@ -7,7 +7,7 @@ import { createMaterialTemplate } from "../material/materialAsset";
 const simulation: EditorSimulation = {
   weather: { profiles: [{ id: "storm", mode: "rain", intensity: 0.8 }], schedule: [{ atSeconds: 10, profileId: "storm", transitionSeconds: 4 }], wind: { direction: [1, 0], speed: 5 }, zones: [{ id: "valley", center: [2, 4], radius: 10, falloff: 2, wind: { speed: 2 } }] },
   emitters: [{ id: "chimney", position: { x: 1, y: 4, z: 2 }, config: { rate: 4, max: 20, seed: "smoke" }, options: { render: { shape: "smoke" }, space: "world" } }],
-  fires: [{ id: "camp", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1 }, fuel: [0.5, 1], ignitions: [{ col: 0, row: 0 }] }],
+  fires: [{ id: "camp", position: { x: 0, y: 0, z: 0 }, cols: 2, rows: 1, cellSize: 1, fuels: ["GR2", "NB1"], fuel: [0, 1], moisture: "D1L1", ignitions: [{ col: 0, row: 0 }] }],
   habitats: [{ id: "birds", species: "swallow", position: { x: 0, y: 4, z: 0 }, radius: 8, count: 4, seed: 2, role: "cosmetic", steering: { maxSpeed: 5, separationRadius: 1, neighborRadius: 5 } }],
 };
 
@@ -74,7 +74,7 @@ describe("authored simulation document", () => {
     expect(session.getState().document.markers).toHaveLength(0);
     expect(session.canUndo()).toBe(false);
     expect(publications).toBe(0);
-    expect(decodeEditorDocument({ ...createEmptyEditorDocument(), simulation: { fires: [{ id: "large", position: { x: 0, y: 0, z: 0 }, config: { cols: 256, rows: 256, cellSize: 1 } }] } }).ok).toBe(false);
+    expect(decodeEditorDocument({ ...createEmptyEditorDocument(), simulation: { fires: [{ id: "large", position: { x: 0, y: 0, z: 0 }, cols: 256, rows: 256, cellSize: 1, fuels: ["GR2"] }] } }).ok).toBe(false);
     expect(decodeEditorDocument({ ...createEmptyEditorDocument(), simulation: { habitats: [{ ...simulation.habitats![0], routeId: "missing" }] } }).ok).toBe(false);
   });
 });
@@ -85,8 +85,9 @@ test("simulation typos and runtime-invalid fire bounds are rejected before histo
     { weathre: { ambient: { mode: "rain", intensity: 1 } } },
     { weather: [] },
     { weather: { ambient: { mode: "rain", intensity: 1, tempratureOffset: 2 } } },
-    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1, maxCells: 1 } }] },
-    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, config: { cols: 2, rows: 1, cellSize: 1, maxCells: 2.5 } }] },
+    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, cols: 2, rows: 1, cellSize: 1, fuels: ["XX9"] }] },
+    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, cols: 2, rows: 1, cellSize: 1, fuels: ["GR2"], fuel: [0, 1] }] },
+    { fires: [{ id: "bad", position: { x: 0, y: 0, z: 0 }, cols: 2, rows: 1, cellSize: 1, fuels: ["GR2"], moisture: "D9L9" }] },
   ];
   for (const value of malformed) {
     const result = session.transaction([{ type: "setSimulation", simulation: value as EditorSimulation }]);
@@ -94,6 +95,14 @@ test("simulation typos and runtime-invalid fire bounds are rejected before histo
     expect(session.getState().document.simulation).toBeUndefined();
     expect(session.canUndo()).toBe(false);
   }
+});
+
+test("a scene saved with the cellular fire grid opens as a fuel-model fire area", () => {
+  const saved = { ...createEmptyEditorDocument(), simulation: { fires: [{ id: "camp", position: { x: 1, y: 0, z: 2 }, extinguishRate: 0.5, config: { cols: 2, rows: 2, cellSize: 1.5, burnRate: 0.2, ignitionThreshold: 1 }, fuel: [1, 0, 0.5, 1], ignitions: [{ col: 0, row: 0 }] }] } };
+  const decoded = decodeEditorDocument(saved);
+  expect(decoded.ok).toBe(true);
+  if (decoded.ok) expect(decoded.document.simulation!.fires).toEqual([{ id: "camp", position: { x: 1, y: 0, z: 2 }, cols: 2, rows: 2, cellSize: 1.5, fuels: ["GR2", "NB1"], fuel: [0, 1, 0, 0], ignitions: [{ col: 0, row: 0 }] }]);
+  expect(saved.simulation.fires[0]!.config.cols).toBe(2);
 });
 
 test("emitter fire bindings require a defined authored area", () => {
