@@ -14,9 +14,8 @@ export interface CellHeap {
 }
 
 /** A heap holding at most `capacity` entries at once. @internal */
+// stateless: a scratch heap each caller empties before use; it carries nothing between calls.
 export function createCellHeap(capacity: number): CellHeap {
-  // stateless: a scratch heap each caller empties before use; it carries nothing between calls.
-  // stateless: a scratch heap each caller empties before use; it carries nothing between calls.
   const keys = new Float64Array(capacity);
   const ids = new Int32Array(capacity);
   let size = 0;
