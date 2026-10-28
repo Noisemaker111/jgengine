@@ -74,7 +74,7 @@ export const SURFACE_MATERIAL_SCHEMA = defineParamSchema({
       group: "surface",
       vary: false,
       default: "512",
-      options: [{ value: "128" }, { value: "256" }, { value: "512" }, { value: "1024" }],
+      options: [{ value: "64" }, { value: "128" }, { value: "256" }, { value: "512" }, { value: "1024" }],
     },
     { type: "range", key: "scale", label: "feature scale", group: "features", min: 0.5, max: 3, step: 0.05, default: 1, explore: [0.75, 1.4] },
     { type: "range", key: "stones", label: "stones", group: "features", min: 0, max: 1, step: 0.01, default: 0.2 },
