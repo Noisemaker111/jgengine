@@ -27,11 +27,21 @@ export const ALEXANDER_JAYES_CURSORIAL: { strideLength: FroudePowerLaw; dutyFact
 };
 
 /**
- * Froude numbers of the gait changes. Walk to trot at 0.35: horses change at 0.30–0.37 (`√Fr` 0.55–0.61, as compiled
- * by C. L. Shine et al., "Grizzly bear locomotion: gaits and ground reaction forces", *J. Exp. Biol.* 218, 2015).
- * Trot to gallop at 2.5, the middle of the 2–3 Alexander and Jayes (1983) found from rodents to rhinoceroses.
+ * Froude number of the walk–trot change: horses change at 0.30–0.37 (`√Fr` 0.55–0.61, as compiled by C. L. Shine et
+ * al., "Grizzly bear locomotion: gaits and ground reaction forces", *J. Exp. Biol.* 218, 2015).
  */
-export const QUADRUPED_GAIT_TRANSITIONS = { walkTrot: 0.35, trotGallop: 2.5 };
+export const WALK_TROT_FROUDE = 0.35;
+
+/**
+ * Speed of the trot–gallop change for an animal of `mass` (kg), m/s: `1.54·M^0.216`, measured on treadmills in 16
+ * species from 30 g mice to 200 kg horses (N. C. Heglund and C. R. Taylor, "Speed, stride frequency and energy cost per
+ * stride", *J. Exp. Biol.* 138, 1988, eq. 3). Larger animals change at a higher Froude number: about 2.5 for a dog,
+ * 3.4 for a horse.
+ * @capability trot-gallop-speed the speed a quadruped of a given mass changes from trot to gallop (Heglund & Taylor 1988)
+ */
+export function trotGallopSpeed(mass: number): number {
+  return 1.54 * mass ** 0.216;
+}
 
 const G = 9.81;
 
@@ -72,12 +82,12 @@ const power = (law: FroudePowerLaw, froude: number) => law.a * froude ** law.b;
 
 /**
  * Gait, stride and duty factors of a cursorial quadruped at `speed` (m/s) from Alexander and Jayes's dynamic
- * similarity: animals of any size move alike at equal Froude numbers. Duty factors are capped at 0.9 for very slow walks.
+ * similarity: animals of any size move alike at equal Froude numbers. The gallop starts at {@link trotGallopSpeed}. Duty factors are capped at 0.9 for very slow walks.
  * @capability quadruped-stride gait, stride length, stride frequency and duty factor of a dog, horse or any quadruped at a speed
  */
 export function quadrupedStride(body: QuadrupedBody, speed: number): QuadrupedStride {
   const froude = Math.max(1e-6, froudeNumber(speed, body.hipHeight));
-  const gait: QuadrupedGait = froude < QUADRUPED_GAIT_TRANSITIONS.walkTrot ? "walk" : froude < QUADRUPED_GAIT_TRANSITIONS.trotGallop ? "trot" : "gallop";
+  const gait: QuadrupedGait = froude < WALK_TROT_FROUDE ? "walk" : speed < trotGallopSpeed(body.mass) ? "trot" : "gallop";
   const strideLength = power(ALEXANDER_JAYES_CURSORIAL.strideLength, froude) * body.hipHeight;
   return {
     gait,
@@ -156,8 +166,8 @@ export function compareQuadruped(creature: CreatureLocomotion): QuadrupedCompari
     hipHeight: creature.hipHeight,
     walkFroude: walk.froude,
     walkGait: walk.gait,
-    referenceWalkMax: speedAtFroude(QUADRUPED_GAIT_TRANSITIONS.walkTrot, creature.hipHeight),
-    referenceGallopFrom: speedAtFroude(QUADRUPED_GAIT_TRANSITIONS.trotGallop, creature.hipHeight),
+    referenceWalkMax: speedAtFroude(WALK_TROT_FROUDE, creature.hipHeight),
+    referenceGallopFrom: trotGallopSpeed(mass),
     runFroude: run?.froude ?? Number.NaN,
     runGait: run?.gait ?? "walk",
     referenceTopSpeed: top,
@@ -189,8 +199,8 @@ export function validateQuadrupedReference(): HumanValidationRow[] {
     const hi = Math.round(12 * high) / 10;
     return { metric: `topSpeed:${animal}`, label: `${animal} top speed (${mass} kg)`, unit: "km/h", reference, low: lo, high: hi, source: "Hirt et al. 2017 data, ±20%", pass: reference >= lo && reference <= hi };
   });
-  const atTransition = quadrupedStride({ mass: 500, hipHeight: 1.05 }, speedAtFroude(QUADRUPED_GAIT_TRANSITIONS.trotGallop, 1.05));
+  const atTransition = quadrupedStride({ mass: 500, hipHeight: 1.05 }, trotGallopSpeed(500));
   const duty = (atTransition.dutyFactorFore + atTransition.dutyFactorHind) / 2;
-  rows.push({ metric: "dutyTrotGallop", label: "Duty factor at the trot–gallop transition", unit: "", reference: duty, low: 0.39, high: 0.43, source: "Biewener 1983", pass: duty >= 0.39 && duty <= 0.43 });
+  rows.push({ metric: "dutyTrotGallop", label: "Duty factor at the trot–gallop transition", unit: "", reference: duty, low: 0.39, high: 0.43, source: "Biewener 1983, at the Heglund & Taylor 1988 transition speed", pass: duty >= 0.39 && duty <= 0.43 });
   return rows;
 }

@@ -11336,6 +11336,16 @@
       "intent": "event-conditioned effects with declarative predicates, lifetimes, and stacking"
     },
     {
+      "id": "trot-gallop-speed",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/quadrupedGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the speed a quadruped of a given mass changes from trot to gallop (Heglund & Taylor 1988)"
+    },
+    {
       "id": "tune-control-labels",
       "packages": [
         "@jgengine/core"

@@ -1,22 +1,23 @@
 import { describe, expect, test } from "bun:test";
 
-import { animalTopSpeed, compareQuadruped, froudeNumber, QUADRUPED_GAIT_TRANSITIONS, quadrupedMassFromHeight, quadrupedStride, speedAtFroude, validateQuadrupedReference } from "./quadrupedGait";
+import { animalTopSpeed, compareQuadruped, froudeNumber, quadrupedMassFromHeight, quadrupedStride, speedAtFroude, trotGallopSpeed, validateQuadrupedReference, WALK_TROT_FROUDE } from "./quadrupedGait";
 
 const HORSE = { mass: 500, hipHeight: 1.05 };
 
 describe("quadruped reference", () => {
-  test("gaits change at the published Froude numbers", () => {
-    const walkTrot = speedAtFroude(QUADRUPED_GAIT_TRANSITIONS.walkTrot, HORSE.hipHeight);
-    const trotGallop = speedAtFroude(QUADRUPED_GAIT_TRANSITIONS.trotGallop, HORSE.hipHeight);
+  test("gaits change at the published Froude number and transition speed", () => {
+    const walkTrot = speedAtFroude(WALK_TROT_FROUDE, HORSE.hipHeight);
+    const trotGallop = trotGallopSpeed(HORSE.mass);
     expect(froudeNumber(walkTrot, HORSE.hipHeight)).toBeCloseTo(0.35, 9);
     expect(quadrupedStride(HORSE, walkTrot * 0.99).gait).toBe("walk");
     expect(quadrupedStride(HORSE, walkTrot * 1.01).gait).toBe("trot");
     expect(quadrupedStride(HORSE, trotGallop * 1.01).gait).toBe("gallop");
-    // A horse trots from about 1.9 m/s and gallops from about 5 m/s.
+    // A horse trots from about 1.9 m/s and gallops from about 5.9 m/s; a 26 kg dog gallops from about 3.1 m/s.
     expect(walkTrot).toBeGreaterThan(1.7);
     expect(walkTrot).toBeLessThan(2.1);
-    expect(trotGallop).toBeGreaterThan(4.6);
-    expect(trotGallop).toBeLessThan(5.6);
+    expect(trotGallop).toBeGreaterThan(5.4);
+    expect(trotGallop).toBeLessThan(6.4);
+    expect(trotGallopSpeed(26)).toBeCloseTo(3.12, 1);
   });
 
   test("animals of different size stride alike at equal Froude numbers", () => {
@@ -36,10 +37,9 @@ describe("quadruped reference", () => {
     expect(quadrupedMassFromHeight(1.05)).toBeCloseTo(500, 9);
   });
 
-  test("published top speeds pass; the trot–gallop duty factor is a named gap", () => {
+  test("published top speeds and the trot–gallop duty factor pass", () => {
     const rows = validateQuadrupedReference();
-    for (const row of rows.filter((r) => r.metric.startsWith("topSpeed"))) expect(row.pass).toBe(true);
-    expect(rows.find((r) => r.metric === "dutyTrotGallop")?.pass).toBe(false);
+    expect(rows.filter((r) => !r.pass).map((r) => r.metric)).toEqual([]);
   });
 
   test("a game creature is compared with the animal of its size", () => {
