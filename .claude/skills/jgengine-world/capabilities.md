@@ -960,6 +960,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `simulateJump` (function) · `import { simulateJump } from "@jgengine/core/movement/reference/humanJump"`
 
+## human-locomotion-reference — the default real-person sprint, turn and jump models locomotion comparisons use
+
+- `defaultHumanReference` (function) · `import { defaultHumanReference } from "@jgengine/core/movement/reference/compareLocomotion"`
+
 ## human-reference-body — sagittal multibody human with published anthropometry, torque-limited joints and compliant foot contact
 
 - `createHumanBody` (function) · `import { createHumanBody } from "@jgengine/core/movement/reference/humanBody"`
@@ -971,6 +975,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## human-stopping-distance — distance and time a runner needs to stop from a speed
 
 - `stoppingDistance` (function) · `import { stoppingDistance } from "@jgengine/core/movement/reference/humanEnvelope"`
+
+## human-time-to-speed — time a runner needs from a standing start to a speed
+
+- `timeToSpeed` (function) · `import { timeToSpeed } from "@jgengine/core/movement/reference/humanEnvelope"`
 
 ## human-turn-radius — tightest turn a human runner holds at a speed, from leg force and friction
 
@@ -1146,10 +1154,26 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
 
+## locomotion-compare — score a game character's movement against human biomechanics: start, stop, turn, jump, landing and slope
+
+- `compareLocomotion` (function) · `import { compareLocomotion } from "@jgengine/core/movement/reference/compareLocomotion"`
+
+## locomotion-compare-table — markdown table of a game character's movement against the human reference
+
+- `formatLocomotionComparison` (function) · `import { formatLocomotionComparison } from "@jgengine/core/movement/reference/compareLocomotion"`
+
 ## locomotion-graph — resolve the animation graph a model config plays
 
 - `animGraphFromConfig` (function) · `import { animGraphFromConfig } from "@jgengine/core/anim/locomotionGraph"`
 - `locomotionGraph` (function) · `import { locomotionGraph } from "@jgengine/core/anim/locomotionGraph"`
+
+## locomotion-metrics — measure a game character's start, stop, turn radius, reversal, jump, landing speed and uphill speed for comparison with real people
+
+- `measureLocomotion` (function) · `import { measureLocomotion } from "@jgengine/core/movement/reference/compareLocomotion"`
+
+## locomotion-reference — what a real person achieves at a game character's speed: start, stop, turn radius, reversal, jump and uphill speed
+
+- `referenceLocomotion` (function) · `import { referenceLocomotion } from "@jgengine/core/movement/reference/compareLocomotion"`
 
 ## magic-formula-contact — relaxation-length tire contact as a pure ODE right-hand side for a multibody integrator
 

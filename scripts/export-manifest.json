@@ -724,6 +724,7 @@
     "./movement/playerMovement",
     "./movement/poseState",
     "./movement/reference/anthropometry",
+    "./movement/reference/compareLocomotion",
     "./movement/reference/curveRunning",
     "./movement/reference/footContact",
     "./movement/reference/humanBody",

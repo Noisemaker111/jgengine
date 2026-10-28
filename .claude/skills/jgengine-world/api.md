@@ -2792,6 +2792,18 @@
 - `SegmentParameters` (interface): interface SegmentParameters — One segment row of a body-segment-parameter table: shares of body mass and of segment length.
 - `planarHumanSegments` (function): function planarHumanSegments(mass = DE_LEVA_MALE.mass, stature = DE_LEVA_MALE.stature, table: AnthropometricTable = DE_LEVA_MALE): PlanarHumanGeometry — The seven-segment sagittal human of Winter's gait model — head-arms-trunk (HAT), and per leg thigh, shank and foot — built from a segment table scaled to `mass` (kg) and `stature` (m): lengths with stature, masses with mass, inertias with mass × stature². The HAT lumps head, trunk and both arms hanging at the sides, each with its own parallel-axis term. Reference pose: standing upright, hip joint centre at the origin, feet flat.
 
+## @jgengine/core/movement/reference/compareLocomotion
+
+- `HumanLocomotionReference` (interface): interface HumanLocomotionReference — The human models {@link referenceLocomotion} draws on.
+- `LocomotionComparisonRow` (interface): interface LocomotionComparisonRow — One row of {@link compareLocomotion}.
+- `LocomotionMetrics` (interface): interface LocomotionMetrics — Locomotion feel as numbers, comparable between a game character and the reference human.
+- `LocomotionProbeOptions` (interface): interface LocomotionProbeOptions extends MovementProbeOptions — Settings for {@link measureLocomotion} and {@link compareLocomotion}.
+- `compareLocomotion` (function): function compareLocomotion(subject: MovementProbeSubject = {}, options: LocomotionProbeOptions & { human?: HumanLocomotionReference } = {}): LocomotionComparisonRow[] — Measure a game character and compare it, metric by metric, with what a real person does at its top speed.
+- `defaultHumanReference` (function): function defaultHumanReference(): HumanLocomotionReference — The recreational 80 kg, 1.80 m reference: sprint profile, curve mechanics and simulated countermovement jump.
+- `formatLocomotionComparison` (function): function formatLocomotionComparison(rows: readonly LocomotionComparisonRow[]): string — Markdown table of {@link compareLocomotion} rows.
+- `measureLocomotion` (function): function measureLocomotion(subject: MovementProbeSubject = {}, options: LocomotionProbeOptions = {}): LocomotionMetrics — Measure a game character with the scenarios the reference human runs: {@link measureMovement}'s start, stop, reversal and jump, a 90° heading change at top speed, and uphill speed. The movement model keeps horizontal speed on any grade it lets the character climb, so `uphillSpeedRatio` is 1 up to `maxClimbGrade` and 0 above it.
+- `referenceLocomotion` (function): function referenceLocomotion(topSpeed: number, options: { grade?: number; human?: HumanLocomotionReference } = {}): LocomotionMetrics — What a real person does at `topSpeed`, capped at 95% of the human's own top speed (at top speed a runner has no force left to turn or speed up): start (an anticipatory postural adjustment of about 0.35 s, P. Crenna and C. Frigo, *J. Physiol.* 437, 1991, then the sprint profile), stop and reverse (a quarter stride to plant the braking foot, then the braking limit), the tightest turn leg force and friction allow, the countermovement jump, and the iso-metabolic uphill speed (Minetti 2002).
+
 ## @jgengine/core/movement/reference/curveRunning
 
 - `CHANG_KRAM_CURVE_SPEEDS` (const): const CHANG_KRAM_CURVE_SPEEDS: readonly { radius: number; speed: number }[] — Chang & Kram (2007) measured top speeds on flat curves by radius (m → m/s), and on the straight.
@@ -2831,6 +2843,7 @@
 - `sprintTopSpeed` (function): function sprintTopSpeed(profile: SprintProfile): number — Highest speed of the profile on flat ground, where horizontal force equals drag, m/s.
 - `stoppingDistance` (function): function stoppingDistance(profile: SprintProfile, speed: number): { distance: number; time: number } — Distance to stop from `speed`, m, and the time it takes, s, at the largest deceleration.
 - `test505Time` (function): function test505Time(profile: SprintProfile): number — Time of the 505 change-of-direction test (E. Draper and M. Lancaster, 1985): the 5 m into a 180° turn and the 5 m back, entered at the speed of a 10 m flying start, s.
+- `timeToSpeed` (function): function timeToSpeed(profile: SprintProfile, speed: number): number — Time to sprint from rest to `speed` (capped just under top speed), s.
 - `turnaroundTime` (function): function turnaroundTime(profile: SprintProfile, speed: number): number — Time to reverse from `speed` to the same speed the other way, s: brake to rest, then sprint back up.
 
 ## @jgengine/core/movement/reference/humanGaitAnalysis
