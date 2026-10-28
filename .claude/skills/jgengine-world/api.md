@@ -3095,9 +3095,11 @@
 ## @jgengine/core/physics/reference/boatComparison
 
 - `BoatComparisonSubject` (interface): interface BoatComparisonSubject — A reference boat with the game build of it and the published figures it carries.
+- `ManoeuvringSubject` (interface): interface ManoeuvringSubject — Turning and zig-zag trials for a subject: its MMG ship, approach speed and the free-running results, if any.
 - `ReferenceBoat` (interface): interface ReferenceBoat — A real hull the game model is measured against: its calm-water resistance and surge inertia, SI units.
 - `compareBoat` (function): function compareBoat(subject: BoatComparisonSubject, gameName = `${subject.name} (game build)`): ComparisonTable — Runs a game boat tuning and its reference hull through the same straight-line tests (calm-water resistance at set speeds, top speed and time to 90% of it on the game's own thrust law, coast-down distance to a quarter of top speed, and running trim for planing hulls) and lines them up beside published figures.
 - `holtropExampleSubject` (function): function holtropExampleSubject(): BoatComparisonSubject — Holtrop–Mennen's 1982 example ship as a reference boat, with its B-series propeller and a game build of it.
+- `kvlcc2Subject` (function): function kvlcc2Subject(): BoatComparisonSubject — The KVLCC2 L7 tanker model as a reference boat: its MMG model for resistance and manoeuvring, a game build with the same mass, rudder, steering rate and propeller (bollard thrust and zero-thrust speed at the self-propulsion revolutions), and MARIN's free-running turning and zig-zag results.
 - `referenceBoatSubjects` (function): function referenceBoatSubjects(): BoatComparisonSubject[] — The reference boats every comparison run includes.
 - `referenceSubjectFor` (function): function referenceSubjectFor(name: string, tuning: BoatTuning): BoatComparisonSubject — Builds a reference boat for any game tuning: a planing hull (`planingSpeed` set) becomes an 18° deadrise prismatic hull of its length, beam and mass; a displacement hull becomes a Holtrop–Mennen hull of its length, beam and mass with workboat coefficients (`C_B 0.55`, `C_M 0.85`, `C_WP 0.75`, LCB 1.5% aft).
 - `speedboatSubject` (function): function speedboatSubject(): BoatComparisonSubject — The 6 m outboard speedboat of the `boatDynamics` docs as a reference boat: an 18° deadrise prismatic planing hull of the same beam and mass, centre of gravity 38% of the length forward of the transom, run through Savitsky's equations.
@@ -3303,6 +3305,28 @@
 
 - `RungeKutta4` (interface): interface RungeKutta4 — A reusable classical fourth-order Runge–Kutta stepper over a fixed-size state vector.
 - `createRungeKutta4` (function): function createRungeKutta4(size: number): RungeKutta4 — Creates a {@link RungeKutta4} for states of `size` entries; its scratch buffers are allocated once, so a step allocates nothing.
+
+## @jgengine/core/physics/reference/shipManoeuvring
+
+- `KVLCC2_L7` (const): const KVLCC2_L7: MmgShip — The KVLCC2 L7 free-running model (1/45.7, MARIN) with the hull, propeller and rudder coefficients Yasukawa and Yoshimura used for their simulations (2015, Tables 1 and 3). `R'0` is the L3 captive-test value (0.022 at Re 1.9·10⁶) carried to the L7 Reynolds number with a constant form factor on Schoenherr's line, the paper's 3-D extrapolation; `x'P = −0.48` and `x'R = −0.5` are the method's standard positions. Fresh tank water.
+- `KVLCC2_L7_PUBLISHED` (const): const KVLCC2_L7_PUBLISHED: { readonly turning: readonly [{ readonly rudder: 35; readonly advance: { readonly calculated: 3.31; readonly measured: 3.25; }; readonly tacticalDiameter: { readonly calculated: 3.36; readonly measured: 3.34; }; }, { readonly rudder: -35; readonly advance: { readonly calcu… — Published turning and zig-zag results for the KVLCC2 L7 model: the MMG calculation and MARIN's free-running test (Yasukawa & Yoshimura 2015, Tables 4 and 5). Advance and tactical diameter are over `L`; overshoots in degrees.
+- `KVLCC2_L7_SPEED` (const): const KVLCC2_L7_SPEED: number — The approach speed of the KVLCC2 simulations, m/s at L7 scale (15.5 kn full scale).
+- `ManoeuvringTrialBoat` (interface): interface ManoeuvringTrialBoat — Any boat that can run a trial: steer target in rad (positive to starboard), returns the earth pose after `dt`.
+- `MmgForces` (interface): interface MmgForces — Forces at midship, N and N·m, by module.
+- `MmgHullDerivatives` (interface): interface MmgHullDerivatives — Hull force derivatives of the MMG standard method, non-dimensionalised by ½ρ·L·d·U² (forces) and ½ρ·L²·d·U² (moment).
+- `MmgPropeller` (interface): interface MmgPropeller — Propeller of an MMG ship: open-water thrust `KT = k0 + k1·J + k2·J²` and its wake and thrust deduction.
+- `MmgRudder` (interface): interface MmgRudder — Rudder of an MMG ship and its interaction with hull and propeller.
+- `MmgShip` (interface): interface MmgShip — A ship in the MMG standard method (Yasukawa & Yoshimura 2015): hull, propeller and rudder modules, each with its own coefficients, summed at midship. Axes: x forward, y to starboard, yaw positive turning to starboard.
+- `MmgState` (interface): interface MmgState — Ship state: earth position (x north, y east), heading, body velocities at midship and the steering angle.
+- `TurningCircle` (interface): interface TurningCircle — A turning-circle trial's indices, m (divide by `L` for the usual `A'D`, `D'T`).
+- `ZigZag` (interface): interface ZigZag — A zig-zag trial's overshoot angles, rad, and the times the rudder was reversed.
+- `createMmgState` (function): function createMmgState(speed: number, heading = 0): MmgState — Creates an {@link MmgState} running straight ahead at `speed` from the origin.
+- `mmgForces` (function): function mmgForces(ship: MmgShip, state: MmgState, revs: number): MmgForces — Hull, propeller and steering forces at midship for a state and propeller revolutions `revs` (rev/s). A ship with a rudder uses the MMG rudder model (normal force from the propeller race and the flow-straightened drift at the rudder); a ship without one swings the propeller thrust by the steering angle at the propeller position.
+- `mmgTrialBoat` (function): function mmgTrialBoat(ship: MmgShip, speed: number, revs = selfPropulsionRevs(ship, speed)): ManoeuvringTrialBoat & { state: MmgState } — Wraps an MMG ship as a {@link ManoeuvringTrialBoat} running at fixed propeller revolutions from straight running at `speed` (revolutions default to self-propulsion at that speed, as in the paper's trials).
+- `runTurningCircle` (function): function runTurningCircle(boat: ManoeuvringTrialBoat, rudder: number, approachSpeed: number, dt: number, maxTime: number): TurningCircle — Runs a turning-circle trial on any boat: full `rudder` from straight running at time 0, until the heading has turned 360° beyond the 180° point or `maxTime` passes. Positions are earth x forward of the approach course, y to starboard.
+- `runZigZag` (function): function runZigZag(boat: ManoeuvringTrialBoat, rudder: number, dt: number, maxTime: number, overshoots = 2): ZigZag — Runs a `rudder`/`rudder` zig-zag (IMO 10/10 or 20/20; negative starts to port) on any boat: rudder over at time 0, reversed each time the heading passes `±rudder` from the approach course, overshoot taken as the heading's peak past the check angle. Stops after `overshoots` overshoots or `maxTime`.
+- `selfPropulsionRevs` (function): function selfPropulsionRevs(ship: MmgShip, speed: number): number — Propeller revolutions, rev/s, that hold `speed` in straight running: `(1 − tP)·T = R0`.
+- `stepMmg` (function): function stepMmg(ship: MmgShip, state: MmgState, steerTarget: number, revs: number, dt: number): MmgState — Advances `state` by `dt` in place: the steering angle slews toward `steerTarget` at the ship's rate, then the equations of motion are integrated by fourth-order Runge–Kutta with the angle held over the step.
 
 ## @jgengine/core/physics/reference/shipResistance
 

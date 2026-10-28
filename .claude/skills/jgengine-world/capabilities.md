@@ -252,6 +252,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `compareBoat` (function) · `import { compareBoat } from "@jgengine/core/physics/reference/boatComparison"`
 - `holtropExampleSubject` (function) · `import { holtropExampleSubject } from "@jgengine/core/physics/reference/boatComparison"`
+- `kvlcc2Subject` (function) · `import { kvlcc2Subject } from "@jgengine/core/physics/reference/boatComparison"`
 - `referenceBoatSubjects` (function) · `import { referenceBoatSubjects } from "@jgengine/core/physics/reference/boatComparison"`
 - `referenceSubjectFor` (function) · `import { referenceSubjectFor } from "@jgengine/core/physics/reference/boatComparison"`
 - `speedboatSubject` (function) · `import { speedboatSubject } from "@jgengine/core/physics/reference/boatComparison"`
@@ -1561,6 +1562,19 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## shared-annotations — broadcast local map-drawing edits over the party feed and mirror inbound edits — collaborative annotations over any replicated feed
 
 - `createSharedAnnotations` (function) · `import { createSharedAnnotations } from "@jgengine/core/world"`
+
+## ship-manoeuvring — KVLCC2 L7 model in the MMG standard method
+
+- `KVLCC2_L7` (const) · `import { KVLCC2_L7 } from "@jgengine/core/physics/reference/shipManoeuvring"`
+- `KVLCC2_L7_PUBLISHED` (const) · `import { KVLCC2_L7_PUBLISHED } from "@jgengine/core/physics/reference/shipManoeuvring"`
+- `KVLCC2_L7_SPEED` (const) · `import { KVLCC2_L7_SPEED } from "@jgengine/core/physics/reference/shipManoeuvring"`
+- `createMmgState` (function) · `import { createMmgState } from "@jgengine/core/physics/reference/shipManoeuvring"`
+- `mmgForces` (function) · `import { mmgForces } from "@jgengine/core/physics/reference/shipManoeuvring"`
+- `mmgTrialBoat` (function) · `import { mmgTrialBoat } from "@jgengine/core/physics/reference/shipManoeuvring"`
+- `runTurningCircle` (function) · `import { runTurningCircle } from "@jgengine/core/physics/reference/shipManoeuvring"`
+- `runZigZag` (function) · `import { runZigZag } from "@jgengine/core/physics/reference/shipManoeuvring"`
+- `selfPropulsionRevs` (function) · `import { selfPropulsionRevs } from "@jgengine/core/physics/reference/shipManoeuvring"`
+- `stepMmg` (function) · `import { stepMmg } from "@jgengine/core/physics/reference/shipManoeuvring"`
 
 ## ship-resistance — Holtrop–Mennen (1982/1984) displacement-ship resistance, component by component
 

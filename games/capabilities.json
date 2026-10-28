@@ -9072,6 +9072,16 @@
       "intent": "shared/group currency pools tracking per-member contributions"
     },
     {
+      "id": "ship-manoeuvring",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/shipManoeuvring",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "KVLCC2 L7 model in the MMG standard method"
+    },
+    {
       "id": "ship-resistance",
       "packages": [
         "@jgengine/core"
