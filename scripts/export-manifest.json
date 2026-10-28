@@ -1438,6 +1438,7 @@
     "./handlers/streets",
     "./handlers/terrain",
     "./index",
+    "./libraryDrag",
     "./listDocumentTriggers",
     "./materialAssignments",
     "./materialControls",

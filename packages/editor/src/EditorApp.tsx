@@ -18,6 +18,7 @@ import { EditorCameraDriver } from "./EditorCameraDriver";
 import { EditorChrome } from "./EditorChrome";
 import { EditorLayerOverlays, PathDraftPreview } from "./DebugDraw";
 import { AssetDropZone } from "./AssetDropZone";
+import { createLibraryDropTarget, type LibraryDropTarget } from "./libraryDrag";
 import { MaterialDropZone } from "./MaterialDropZone";
 import { PerfProbe } from "./PerfProbe";
 import { ScatterPreview } from "./ScatterPreview";
@@ -195,11 +196,13 @@ function EditorWorldOverlay({
   ui,
   world,
   readout,
+  library,
 }: {
   api: EditorHostApi;
   ui: EditorUiStore;
   world?: WorldFeature | undefined;
   readout: TerrainReadoutStore;
+  library?: LibraryDropTarget | undefined;
 }) {
   const session = api.getSession();
   const ctx = useGameContext();
@@ -251,7 +254,7 @@ function EditorWorldOverlay({
       <EditorCameraDriver api={api} />
       <ViewportSelect api={api} ui={ui} />
       <MaterialDropZone api={api} />
-      <AssetDropZone api={api} />
+      <AssetDropZone api={api} library={library} />
       <TerrainSculpt api={api} ui={ui} world={world} />
       <ScatterPreview api={api} />
       <CityPreview api={api} />
@@ -430,6 +433,9 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
   const readoutStoreRef = useRef<TerrainReadoutStore | null>(null);
   if (readoutStoreRef.current === null) readoutStoreRef.current = createTerrainReadoutStore();
   const readout = readoutStoreRef.current;
+  const libraryDropRef = useRef<LibraryDropTarget | null>(null);
+  libraryDropRef.current ??= createLibraryDropTarget();
+  const libraryDrop = playerCreator === true ? undefined : libraryDropRef.current;
 
   const catalogAssets = useMemo(() => {
     try {
@@ -704,7 +710,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
     const WorldOverlay: ComponentType<WorldOverlayProps> = function EditorOverlay({ ctx }) {
       return <>
         {BaseOverlay !== undefined ? <BaseOverlay ctx={ctx} /> : null}
-        <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} readout={readout} />
+        <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} readout={readout} library={libraryDrop} />
       </>;
     };
     const registerImportedAsset = (id: string, url: string) => {
@@ -726,6 +732,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
           save={saveFn}
           networkSnapshot={networkSnapshot}
           onRegisterAsset={registerImportedAsset}
+          libraryDropTarget={libraryDrop}
           onExitEditor={onExitEditor}
           allowedKinds={allowedKinds}
           exitLabel={playerCreator ? "Return to saved scenes" : undefined}
@@ -746,7 +753,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
       // WorldOverlay above is the editor layers, not PandoraViewmodel.
       camera: inspectionCamera,
     };
-  }, [playable, host, gameId, initialCamera, cameraProjection, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip, networkSnapshot, onExitEditor, playtestPlayable, allowedKinds, playerCreator, maxImportBytes, creatorPolicy]);
+  }, [playable, host, gameId, initialCamera, cameraProjection, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip, networkSnapshot, onExitEditor, playtestPlayable, allowedKinds, playerCreator, maxImportBytes, creatorPolicy, libraryDrop]);
 
   const showElevation = useStoreSelector(ui, (s) => s.showElevation);
 

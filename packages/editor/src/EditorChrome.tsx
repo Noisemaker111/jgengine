@@ -7,7 +7,6 @@ import {
   type EditorDocument,
   type EditorSession,
 } from "@jgengine/core/editor/index";
-import type { LibraryEntry } from "@jgengine/assets/library/assetLibrary";
 import { scatterRegionEstimate, SCATTER_PATH_KIND } from "@jgengine/core/scatter/scatterRegion";
 
 import {
@@ -32,6 +31,7 @@ import {
 } from "./viewportContextMenu";
 import { buildOutlinerGroups } from "./outlinerModel";
 import type { EditorHostApi } from "./session";
+import { placeLibraryDrop, registerLibraryAsset, type LibraryDragPayload, type LibraryDropTarget } from "./libraryDrag";
 import {
   importAssetToHost,
   loadDroppedAssets,
@@ -143,6 +143,7 @@ export function EditorChrome({
   documentSave,
   draftAutosave = true,
   creatorPolicy,
+  libraryDropTarget,
 }: {
   gameId: string;
   session: EditorSession;
@@ -175,6 +176,8 @@ export function EditorChrome({
    * asset catalog so AuthoredObjects can resolve the mesh without remounting the playable.
    */
   onRegisterAsset?: (id: string, url: string) => void;
+  /** Receives shared-library cards dropped on the viewport; the chrome pulls and places them. */
+  libraryDropTarget?: LibraryDropTarget | undefined;
 }) {
   const layoutRef = useRef<ReturnType<typeof createShellLayoutStore> | null>(null);
   layoutRef.current ??= createShellLayoutStore(gameId);
@@ -640,22 +643,37 @@ export function EditorChrome({
   };
 
   const addLibraryAsset = useCallback(
-    async (entry: LibraryEntry): Promise<string | null> => {
+    async (entry: LibraryDragPayload): Promise<string | null> => {
       const url = await pullLibraryAssetToHost(entry.key);
       if (url === null) {
         notify(`Could not add ${entry.title}: no dev server answered, or the pull failed`, "error");
         return null;
       }
       if (entry.kind === "model" || entry.kind === "character") {
-        const asset: EditorAssetEntry = { id: entry.key, label: entry.title, kind: "model", url };
-        onRegisterAsset?.(asset.id, url);
+        onRegisterAsset?.(entry.key, url);
+        const asset = registerLibraryAsset(api, entry, url);
         setImportedAssets((current) => mergeEditorAssets(current, [asset]));
       }
       notify(`Added ${entry.title} (${entry.license}, ${entry.author}); quote "${entry.key}" in the game to keep it`);
       return url;
     },
-    [notify, onRegisterAsset],
+    [api, notify, onRegisterAsset],
   );
+
+  useEffect(() => {
+    if (libraryDropTarget === undefined) return;
+    libraryDropTarget.handler = (payload, point) => {
+      notify(`Pulling ${payload.title}…`);
+      void placeLibraryDrop(api, payload, point, addLibraryAsset).then((markerId) => {
+        if (markerId === null) return;
+        session.dispatch({ type: "select", ids: [markerId] });
+        notify(`Placed ${payload.title}`);
+      });
+    };
+    return () => {
+      libraryDropTarget.handler = null;
+    };
+  }, [libraryDropTarget, api, session, notify, addLibraryAsset]);
 
   const importModels = useCallback(
     async (files: readonly File[]) => {
