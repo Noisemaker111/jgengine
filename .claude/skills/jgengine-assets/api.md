@@ -60,17 +60,18 @@
 - `ReindexSpritesResult` (interface): interface ReindexSpritesResult — Per-source and total counts returned by `reindexSprites`.
 - `ResolveProvenanceOptions` (interface): interface ResolveProvenanceOptions — Override the data {@link resolveProvenance} resolves against; every field defaults to the shipped catalog.
 - `STARTER_ASSETS` (const): const STARTER_ASSETS: readonly StarterAsset[] — Flat list of every curated starter asset across themes.
-- `STARTER_PACKS` (const): const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> — Theme → assets table for browse/docs (`STARTER_PACKS.people`, …).
+- `STARTER_PACKS` (const): const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> — Theme → assets table for browse/docs (`STARTER_PACKS.props`, …).
+- `STARTER_PEOPLE` (const): const STARTER_PEOPLE: readonly string[] — The model-library people a fresh game pulls with the starter packs: realistic rigged humans, a man and a woman, that `libraryModel(name)` animates with the full humanoid clip set.
 - `STARTER_SOURCE_PACKS` (const): const STARTER_SOURCE_PACKS: readonly string[] — Source pack ids a game must pull so every starter asset URL resolves on disk.
-- `STARTER_THEMES` (const): const STARTER_THEMES: readonly StarterTheme[] — Ordered starter theme ids: people, props, nature, urban.
+- `STARTER_THEMES` (const): const STARTER_THEMES: readonly StarterTheme[] — Ordered starter theme ids: props, nature, urban.
 - `ScrapeDownload` (interface): interface ScrapeDownload { scrape: string } — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset { id: string; url: string; license: string; author: string; categories: readonly string[] } — ⚠ undocumented
 - `StarterAsset` (interface): interface StarterAsset — One curated starter model: short id, theme, live catalog target, license, suggested height.
-- `StarterTheme` (type): type StarterTheme = "people" | "props" | "nature" | "urban" — Curated drop-in starter themes for new games. Each entry maps a short semantic id (also registered as `asset:<id>`) to a live catalog GLB that is already measured (dims/anchor flow from the generated index via the alias target). Games wire them as `entityModels: { guest: "asset:person_casual" }`. Never Kenney — Quaternius / KayKit only.
+- `StarterTheme` (type): type StarterTheme = "props" | "nature" | "urban" — Curated drop-in starter themes for new games. Each entry maps a short semantic id (also registered as `asset:<id>`) to a live catalog GLB that is already measured (dims/anchor flow from the generated index via the alias target). Games wire them as `objectModels: { crate: "asset:prop_crate" }`. People are not a starter theme: a person is a realistic rigged human from the model library ({@link STARTER_PEOPLE}). Never Kenney — Quaternius / KayKit only.
 - `ValidateAssetReferencesOptions` (interface): interface ValidateAssetReferencesOptions extends ResolveProvenanceOptions — Options for {@link validateAssetReferences}: the resolution data plus an optional on-disk `present` check.
 - `ValidateAssetReferencesResult` (interface): interface ValidateAssetReferencesResult — The aggregate result of validating a set of references against the provisioning contract.
 - `VerifyResult` (interface): interface VerifyResult { ok: boolean; errors: string[] } — ⚠ undocumented
-- `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:person_casual`, `nature_tree`, …) come from {@link starterAliases}.
+- `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:prop_crate`, `nature_tree`, …) come from {@link starterAliases}.
 - `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs. A pinned id the family sweep already covers stays with the sweep, so catalog ids never appear twice.
 - `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra. See {@link BuildCatalogOptions} for filtering and opt-outs.
 - `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
@@ -78,7 +79,7 @@
 - `classifyAssetFile` (function): function classifyAssetFile(bytes: Uint8Array, _filename: string): AssetImportKind | null — Classify supported container headers from complete file bytes; filenames never override bytes. Recognizes GLB/glTF, PNG/JPEG/KTX2, Ogg/WAV/MP3, TTF/OTF/WOFF/WOFF2, HDR/EXR and JSON sprite sheets. This is format detection, not decoder validation. Images classify as texture; authors choose sprite/material in the spec.
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
-- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (people/props/nature/urban). Prefer this for scaffolds and probes so `asset:person_casual` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
+- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (props/nature/urban). Prefer this for scaffolds and probes so `asset:prop_crate` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
 - `describeAssetMatch` (function): function describeAssetMatch(match: AssetMatch): string — One line naming a match for a terminal list: kind, id and title.
 - `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
@@ -129,7 +130,7 @@
 
 ## @jgengine/assets/aliases
 
-- `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:person_casual`, `nature_tree`, …) come from {@link starterAliases}.
+- `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:prop_crate`, `nature_tree`, …) come from {@link starterAliases}.
 
 ## @jgengine/assets/assetBudget
 
@@ -216,7 +217,7 @@
 
 ## @jgengine/assets/catalogs/starter
 
-- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (people/props/nature/urban). Prefer this for scaffolds and probes so `asset:person_casual` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
+- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (props/nature/urban). Prefer this for scaffolds and probes so `asset:prop_crate` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
 
 ## @jgengine/assets/cli/find
 
@@ -384,11 +385,12 @@
 ## @jgengine/assets/packs/starter
 
 - `STARTER_ASSETS` (const): const STARTER_ASSETS: readonly StarterAsset[] — Flat list of every curated starter asset across themes.
-- `STARTER_PACKS` (const): const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> — Theme → assets table for browse/docs (`STARTER_PACKS.people`, …).
+- `STARTER_PACKS` (const): const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> — Theme → assets table for browse/docs (`STARTER_PACKS.props`, …).
+- `STARTER_PEOPLE` (const): const STARTER_PEOPLE: readonly string[] — The model-library people a fresh game pulls with the starter packs: realistic rigged humans, a man and a woman, that `libraryModel(name)` animates with the full humanoid clip set.
 - `STARTER_SOURCE_PACKS` (const): const STARTER_SOURCE_PACKS: readonly string[] — Source pack ids a game must pull so every starter asset URL resolves on disk.
-- `STARTER_THEMES` (const): const STARTER_THEMES: readonly StarterTheme[] — Ordered starter theme ids: people, props, nature, urban.
+- `STARTER_THEMES` (const): const STARTER_THEMES: readonly StarterTheme[] — Ordered starter theme ids: props, nature, urban.
 - `StarterAsset` (interface): interface StarterAsset — One curated starter model: short id, theme, live catalog target, license, suggested height.
-- `StarterTheme` (type): type StarterTheme = "people" | "props" | "nature" | "urban" — Curated drop-in starter themes for new games. Each entry maps a short semantic id (also registered as `asset:<id>`) to a live catalog GLB that is already measured (dims/anchor flow from the generated index via the alias target). Games wire them as `entityModels: { guest: "asset:person_casual" }`. Never Kenney — Quaternius / KayKit only.
+- `StarterTheme` (type): type StarterTheme = "props" | "nature" | "urban" — Curated drop-in starter themes for new games. Each entry maps a short semantic id (also registered as `asset:<id>`) to a live catalog GLB that is already measured (dims/anchor flow from the generated index via the alias target). Games wire them as `objectModels: { crate: "asset:prop_crate" }`. People are not a starter theme: a person is a realistic rigged human from the model library ({@link STARTER_PEOPLE}). Never Kenney — Quaternius / KayKit only.
 
 ## @jgengine/assets/provisioning
 

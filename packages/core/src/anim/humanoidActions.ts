@@ -65,7 +65,11 @@ export const HUMANOID_ACTION_SLOTS: readonly SkeletonSlot[] = [
 
 type Pose = Partial<Record<SkeletonSlot, HumanoidRotation>>;
 
-/** The same pose on the other side: left and right slots swap, and turns about Y and Z reverse. */
+/**
+ * The same pose on the other side: left and right slots swap, and turns about Y and Z reverse.
+ *
+ * @internal
+ */
 export function mirrorHumanoidPose(pose: Readonly<Pose>): Pose {
   const out: Pose = {};
   for (const slot of SKELETON_SLOTS) {

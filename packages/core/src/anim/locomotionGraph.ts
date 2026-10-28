@@ -241,7 +241,8 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
   const oneShots = Object.entries(input.oneShots ?? {}).filter(([, spec]) => typeof spec === "string" || spec.length > 0);
   oneShots.sort(([a], [b]) => Number(b === "death") - Number(a === "death"));
   for (const [name, spec] of oneShots) {
-    const clip = typeof spec === "string" ? spec : spec[0]!;
+    const clip = typeof spec === "string" ? spec : spec[0];
+    if (clip === undefined) continue;
     states[name] = { kind: "clip", clip, loop: false, ...(typeof spec === "string" || spec.length < 2 ? {} : { variants: [...spec] }) };
   }
   const triggered: AnimTransition[] = [];
@@ -271,17 +272,25 @@ export function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | u
   if (states === undefined || typeof states.idle !== "string" || states.idle.trim().length === 0) return undefined;
   const clip = (value: string | undefined): string | undefined =>
     typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  const run = clip(states.run);
+  const strafeLeft = clip(states.strafeLeft);
+  const strafeRight = clip(states.strafeRight);
+  const backward = clip(states.backward);
+  const turn = clip(states.turn);
+  const jump = clip(states.jump);
+  const swim = clip(states.swim);
+  const tread = clip(states.tread);
   return locomotionGraph({
     idle: states.idle,
     walk: clip(states.walk) ?? states.idle,
-    ...(clip(states.run) === undefined ? {} : { run: clip(states.run)! }),
-    ...(clip(states.strafeLeft) === undefined ? {} : { strafeLeft: clip(states.strafeLeft)! }),
-    ...(clip(states.strafeRight) === undefined ? {} : { strafeRight: clip(states.strafeRight)! }),
-    ...(clip(states.backward) === undefined ? {} : { backward: clip(states.backward)! }),
-    ...(clip(states.turn) === undefined ? {} : { turn: clip(states.turn)! }),
-    ...(clip(states.jump) === undefined ? {} : { jump: clip(states.jump)! }),
-    ...(clip(states.swim) === undefined ? {} : { swim: clip(states.swim)! }),
-    ...(clip(states.tread) === undefined ? {} : { tread: clip(states.tread)! }),
+    ...(run === undefined ? {} : { run }),
+    ...(strafeLeft === undefined ? {} : { strafeLeft }),
+    ...(strafeRight === undefined ? {} : { strafeRight }),
+    ...(backward === undefined ? {} : { backward }),
+    ...(turn === undefined ? {} : { turn }),
+    ...(jump === undefined ? {} : { jump }),
+    ...(swim === undefined ? {} : { swim }),
+    ...(tread === undefined ? {} : { tread }),
     ...(states.rootMotion === true ? { rootMotion: true } : {}),
     walkSpeed: states.walkSpeed,
     runSpeed: states.runSpeed,

@@ -220,7 +220,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `sourcesForSourceIds` (function) · `import { sourcesForSourceIds } from "@jgengine/assets/credits"`
 
-## starter-packs — themed CC0 model ids (people/props/nature/urban) ready for entityModels
+## starter-packs — themed CC0 model ids (props/nature/urban) ready for objectModels
 
 - `StarterTheme` (type) · `import { StarterTheme } from "@jgengine/assets"`
 

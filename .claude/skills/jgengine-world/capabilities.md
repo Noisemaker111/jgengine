@@ -551,6 +551,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/input/actionBindings"`
 
+## first-person-arms — keep a first-person body's hands and held items in view
+
+- `firstPersonArms` (function) · `import { firstPersonArms } from "@jgengine/core/anim/humanoidActionClips.draw"`
+
 ## flight-metrics — measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift
 
 - `measureFlight` (function) · `import { measureFlight } from "@jgengine/core/physics/handlingProbe"`
@@ -677,6 +681,16 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hotbar-slot-bindings — number-row key codes for a run of numbered actions (hotbar, build menu, tools)
 
 - `hotbarSlotBindings` (function) · `import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings"`
+
+## humanoid-actions — engine-authored jump, swim, punch, swing, gather, hurt and death clips for any humanoid rig
+
+- `HUMANOID_ACTIONS` (const) · `import { HUMANOID_ACTIONS } from "@jgengine/core/anim/humanoidActions"`
+- `buildHumanoidActionClips` (function) · `import { buildHumanoidActionClips } from "@jgengine/core/anim/humanoidActionClips.draw"`
+- `humanoidAnimation` (function) · `import { humanoidAnimation } from "@jgengine/core/anim/humanoidActions"`
+
+## humanoid-sockets — rig-independent hand sockets for held items
+
+- `addHumanoidSockets` (function) · `import { addHumanoidSockets } from "@jgengine/core/anim/humanoidActionClips.draw"`
 
 ## input-buffer — buffer early presses, coyote time, hold duration and double tap for responsive controls
 
@@ -1222,6 +1236,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `KAYKIT_SCHEME` (const) · `import { KAYKIT_SCHEME } from "@jgengine/core/anim/skeletonStandard"`
 - `SKELETON_STANDARD` (const) · `import { SKELETON_STANDARD } from "@jgengine/core/anim/skeletonStandard"`
+- `detectHumanoidRig` (function) · `import { detectHumanoidRig } from "@jgengine/core/anim/skeletonStandard"`
 - `mapRigToStandard` (function) · `import { mapRigToStandard } from "@jgengine/core/anim/skeletonStandard"`
 - `retargetBoneScales` (function) · `import { retargetBoneScales } from "@jgengine/core/anim/skeletonStandard"`
 - `retargetTracks` (function) · `import { retargetTracks } from "@jgengine/core/anim/skeletonStandard"`
