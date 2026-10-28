@@ -380,7 +380,8 @@ export function magicFormula(p: Readonly<MagicFormulaCoefficients>, input: Magic
   const alphaStar = tanAlpha * sVx;
   const gamma = input.gamma;
   const gammaStar = Math.sin(gamma);
-  const kappa = input.kappa;
+  // Rolling backward is the tyre turned about z: slips are taken in its own forward frame (κ*, α*) and forces turned back.
+  const kappa = input.kappa * sVx;
   const vc = Math.hypot(vx, tanAlpha * Math.abs(vx));
   const cosAlphaPrime = vx / (vc + EPS);
   const smooth = Math.abs(vx) < p.vxlow ? 0.5 * (1 - Math.cos((Math.PI * vx) / p.vxlow)) : 1;
@@ -446,7 +447,7 @@ export function magicFormula(p: Readonly<MagicFormulaCoefficients>, input: Magic
   const eyk = Math.min(1, p.rey1 + p.rey2 * dfz);
   const byk = (p.rby1 + p.rby4 * gammaStar * gammaStar) * Math.cos(Math.atan(p.rby2 * (alphaStar - p.rby3))) * p.lyka;
   const gyk = cosMagic(byk, p.rcy1, eyk, kappa + shyk) / cosMagic(byk, p.rcy1, eyk, shyk);
-  const fy = gyk * fy0 + svyk;
+  const fy = gyk * fy0 + svyk * sVx;
 
   // Aligning moment (4.E31–4.E49, 4.E71–4.E78), turn-slip factors ζ5–ζ8 (4.91–4.103). Mz takes Fz no lower than FZMIN.
   const fzMz = Math.max(fz, p.fzmin);
@@ -506,7 +507,7 @@ export function magicFormula(p: Readonly<MagicFormulaCoefficients>, input: Magic
         p.qsx4 * Math.cos(p.qsx5 * Math.atan((p.qsx6 * fzMx) / fn) ** 2) * Math.sin(p.qsx7 * gamma + p.qsx8 * Math.atan((p.qsx9 * fy) / fn)) +
         p.qsx10 * Math.atan((p.qsx11 * fzMx) / fn) * gamma) +
     r0 * p.lmx * (fy * (p.qsx13 + p.qsx14 * Math.abs(gamma)) - fzMx * p.qsx12 * gamma * Math.abs(gamma));
-  const my = rollingMoment(p, fz, fx, vx, kappa, gamma, pressure);
+  const my = rollingMoment(p, fz, fx, vx, input.kappa, gamma, pressure);
 
   return { fx, fy, mz, mx, my, trail, kxk, kya, mux, muy };
 }
@@ -698,6 +699,113 @@ function holdStep(x: number, a: number, b0: number, b1: number, dt: number): num
   return decay * x + b0 * f1 + ((b1 - b0) / dt) * f2;
 }
 
+/** Relaxation terms of the contact for one wheel motion: `d(state)/dt = drive − decay·state`. */
+interface ContactTerms {
+  fz: number;
+  pressure: number;
+  vx: number;
+  vy: number;
+  gamma: number;
+  vsx: number;
+  rollingRadius: number;
+  sigmaKappa: number;
+  sigmaAlpha: number;
+  decayU: number;
+  decayV: number;
+  driveU: number;
+  driveV: number;
+  drivePhi: number;
+  phit: number;
+  kVlow: number;
+}
+
+function contactTerms(p: Readonly<MagicFormulaCoefficients>, input: MagicFormulaTireStepInput, mirror: number, turnSlip: boolean, damping: number): ContactTerms {
+  const fz0 = p.fnomin * p.lfzo;
+  const fz = Math.max(0, input.fz);
+  const pressure = input.pressure ?? p.inflpres;
+  const vx = input.vx;
+  const vy = input.vy * mirror;
+  const gamma = (input.gamma ?? 0) * mirror;
+  const yawRate = (input.yawRate ?? 0) * mirror;
+  const rollingRadius = magicFormulaRollingRadius(p, fz, input.spin, pressure);
+  const vsx = vx - input.spin * rollingRadius;
+  const dpi = (pressure - p.nompres) / p.nompres;
+  const loadForStiffness = Math.max(fz, p.fzmin);
+  const kxk = slipStiffness(p, loadForStiffness, (loadForStiffness - fz0) / fz0, dpi);
+  const kya = corneringStiffness(p, loadForStiffness, Math.sin(gamma), dpi);
+  const relax = magicFormulaRelaxation(p, loadForStiffness, kxk, kya, pressure);
+  const speed = Math.abs(vx);
+  const spinSlip = turnSlip ? magicFormulaSpinSlip(p, { yawRate, spin: input.spin, gamma, vx, vy, fz }) : { phi: 0, phit: 0 };
+  return {
+    fz,
+    pressure,
+    vx,
+    vy,
+    gamma,
+    vsx,
+    rollingRadius,
+    sigmaKappa: relax.longitudinal,
+    sigmaAlpha: relax.lateral,
+    decayU: speed / relax.longitudinal,
+    decayV: speed / relax.lateral,
+    driveU: -vsx,
+    driveV: vy,
+    drivePhi: (speed / relax.lateral) * spinSlip.phi,
+    phit: spinSlip.phit,
+    kVlow: speed < p.vxlow ? 0.5 * damping * (1 + Math.cos((Math.PI * speed) / p.vxlow)) : 0,
+  };
+}
+
+function contactForces(p: Readonly<MagicFormulaCoefficients>, terms: ContactTerms, contact: Readonly<MagicFormulaContactState>, mirror: number, turnSlip: boolean): MagicFormulaTireStep {
+  const kappa = contact.u / terms.sigmaKappa - terms.kVlow * terms.vsx;
+  const alpha = Math.atan(contact.v / terms.sigmaAlpha + terms.kVlow * terms.vy);
+  const out =
+    terms.fz > 0
+      ? magicFormula(p, {
+          kappa,
+          alpha,
+          gamma: terms.gamma,
+          fz: terms.fz,
+          vx: terms.vx,
+          pressure: terms.pressure,
+          ...(turnSlip ? { phi: contact.phi, phit: terms.phit } : {}),
+        })
+      : { ...ZERO_OUTPUT };
+  return { ...out, fy: out.fy * mirror, mz: out.mz * mirror, mx: out.mx * mirror, kappa, alpha: alpha * mirror, rollingRadius: terms.rollingRadius };
+}
+
+/** Contact deflections of a transient tyre: longitudinal `u` and lateral `v`, m, and lagged spin slip `phi`, 1/m. */
+export interface MagicFormulaContactState {
+  u: number;
+  v: number;
+  phi: number;
+}
+
+/**
+ * The transient contact of {@link createMagicFormulaTire} as a pure right-hand side, for a caller that integrates the
+ * deflections itself (a multibody car's ODE): forces from the current deflections and the deflection rates
+ * `du/dt = −Vsx − |Vx|·u/σκ`, `dv/dt = Vsy − |Vx|·v/σα`, `dφ′/dt = |Vx|·(φ − φ′)/σα`. Right-tyre states live in the
+ * mirrored frame.
+ * @capability magic-formula-contact relaxation-length tire contact as a pure ODE right-hand side for a multibody integrator
+ */
+export function magicFormulaContact(
+  coefficients: Readonly<MagicFormulaCoefficients>,
+  contact: Readonly<MagicFormulaContactState>,
+  input: MagicFormulaTireStepInput,
+  options: MagicFormulaTireOptions = {},
+): { forces: MagicFormulaTireStep; du: number; dv: number; dphi: number } {
+  const p = coefficients;
+  const mirror = options.side === "right" ? -1 : 1;
+  const turnSlip = options.turnSlip ?? true;
+  const terms = contactTerms(p, input, mirror, turnSlip, options.lowSpeedDamping ?? 1 / p.vxlow);
+  return {
+    forces: contactForces(p, terms, contact, mirror, turnSlip),
+    du: terms.driveU - terms.decayU * contact.u,
+    dv: terms.driveV - terms.decayV * contact.v,
+    dphi: terms.drivePhi - terms.decayV * contact.phi,
+  };
+}
+
 /**
  * A transient Magic Formula 6.1 tyre (Pacejka 2012 §7.2, the MF-Tyre "linear relaxation" contact): the contact patch
  * deflects by `du/dt = −Vsx − |Vx|·u/σκ` and `dv/dt = Vsy − |Vx|·v/σα` with load- and pressure-dependent relaxation
@@ -713,69 +821,25 @@ export function createMagicFormulaTire(coefficients: Readonly<MagicFormulaCoeffi
   const mirror = options.side === "right" ? -1 : 1;
   const turnSlip = options.turnSlip ?? true;
   const damping = options.lowSpeedDamping ?? 1 / p.vxlow;
-  const fz0 = p.fnomin * p.lfzo;
   const state: MagicFormulaTireState = { u: 0, v: 0, phi: 0, lastU: 0, lastV: 0, lastPhi: 0, primed: false };
 
   function step(dt: number, input: MagicFormulaTireStepInput): MagicFormulaTireStep {
-    const fz = Math.max(0, input.fz);
-    const pressure = input.pressure ?? p.inflpres;
-    const vx = input.vx;
-    const vy = input.vy * mirror;
-    const gamma = (input.gamma ?? 0) * mirror;
-    const yawRate = (input.yawRate ?? 0) * mirror;
-    const rollingRadius = magicFormulaRollingRadius(p, fz, input.spin, pressure);
-    const vsx = vx - input.spin * rollingRadius;
-    const dpi = (pressure - p.nompres) / p.nompres;
-    const loadForStiffness = Math.max(fz, p.fzmin);
-    const kxk = slipStiffness(p, loadForStiffness, (loadForStiffness - fz0) / fz0, dpi);
-    const kya = corneringStiffness(p, loadForStiffness, Math.sin(gamma), dpi);
-    const relax = magicFormulaRelaxation(p, loadForStiffness, kxk, kya, pressure);
-    const speed = Math.abs(vx);
-    const spinSlip = turnSlip ? magicFormulaSpinSlip(p, { yawRate, spin: input.spin, gamma, vx, vy, fz }) : { phi: 0, phit: 0 };
-
-    const driveU = -vsx;
-    const driveV = vy;
-    const drivePhi = (speed / relax.lateral) * spinSlip.phi;
+    const terms = contactTerms(p, input, mirror, turnSlip, damping);
     if (!state.primed || !(dt > 0)) {
-      state.lastU = driveU;
-      state.lastV = driveV;
-      state.lastPhi = drivePhi;
+      state.lastU = terms.driveU;
+      state.lastV = terms.driveV;
+      state.lastPhi = terms.drivePhi;
       state.primed = true;
     }
     if (dt > 0) {
-      state.u = holdStep(state.u, speed / relax.longitudinal, state.lastU, driveU, dt);
-      state.v = holdStep(state.v, speed / relax.lateral, state.lastV, driveV, dt);
-      state.phi = holdStep(state.phi, speed / relax.lateral, state.lastPhi, drivePhi, dt);
+      state.u = holdStep(state.u, terms.decayU, state.lastU, terms.driveU, dt);
+      state.v = holdStep(state.v, terms.decayV, state.lastV, terms.driveV, dt);
+      state.phi = holdStep(state.phi, terms.decayV, state.lastPhi, terms.drivePhi, dt);
     }
-    state.lastU = driveU;
-    state.lastV = driveV;
-    state.lastPhi = drivePhi;
-
-    const kVlow = speed < p.vxlow ? 0.5 * damping * (1 + Math.cos((Math.PI * speed) / p.vxlow)) : 0;
-    const kappa = state.u / relax.longitudinal - kVlow * vsx;
-    const alpha = Math.atan(state.v / relax.lateral + kVlow * vy);
-    const out =
-      fz > 0
-        ? magicFormula(p, {
-            kappa,
-            alpha,
-            gamma,
-            fz,
-            vx,
-            pressure,
-            ...(turnSlip ? { phi: state.phi, phit: spinSlip.phit } : {}),
-          })
-        : { ...ZERO_OUTPUT };
-    return {
-      ...out,
-      fy: out.fy * mirror,
-      mz: out.mz * mirror,
-      mx: out.mx * mirror,
-      kya: out.kya,
-      kappa,
-      alpha: alpha * mirror,
-      rollingRadius,
-    };
+    state.lastU = terms.driveU;
+    state.lastV = terms.driveV;
+    state.lastPhi = terms.drivePhi;
+    return contactForces(p, terms, state, mirror, turnSlip);
   }
 
   return {
