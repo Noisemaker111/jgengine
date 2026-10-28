@@ -7,7 +7,7 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../../../script
 setDefaultTimeout(60_000);
 
 // The same landscape grows in bun (JSC) and in Chrome (V8): every process runs, with a nonlinear slope
-// exponent, tilted strata, deposition, a sea and landslides, plus D∞ routing. Any engine-dependent
+// exponent, tilted strata, deposition, a sea and landslides, plus D∞ routing, then glaciers and waves. Any engine-dependent
 // rounding shows up as a different hash.
 const root = resolve(import.meta.dir, "../../../../..").replaceAll("\\", "/");
 const scratch = `${root}/.scratch/landform-browser-test`;
@@ -39,6 +39,18 @@ export function landformCheck() {
   }
   const routing = model.routing();
   hashes.push(hashLandformArrays(dInfinityArea(landformTopology(grid), routing.drain, routing.receiver)));
+  // A range rising from the sea, high enough for glaciers, with waves on its coast.
+  const heights = [];
+  for (let row = 0; row < 30; row += 1) for (let col = 0; col < 40; col += 1) heights.push(-40 + col * 60 + 40 * Math.abs((row % 8) - 4));
+  const range = createLandscapeEvolution({
+    grid: { cols: 40, rows: 30, cellSize: 100, outlets: ["west"] },
+    seed: "range",
+    initial: { heights, roughness: 10 },
+    params: { uplift: 1e-3, erodibility: 2e-6, seaLevel: 0, timeStep: 2000, glacial: { ela: 1500 }, coastal: { cliffRetreat: 0.2 } },
+  });
+  for (let k = 0; k < 20; k += 1) range.step();
+  if (!range.fields().ice.some((h) => h > 0)) throw new Error("no glacier grew");
+  hashes.push(range.hash());
   return hashes.join(",");
 }
 `;

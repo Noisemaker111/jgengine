@@ -1019,6 +1019,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `landformKey` (function) · `import { landformKey } from "@jgengine/core/landform/generator/landformGenerator"`
 - `landformRecipe` (function) · `import { landformRecipe } from "@jgengine/core/landform/generator/landformGenerator"`
 
+## landform-glacial — glaciers that flow, slide, carve their valleys wider and deeper and lay moraines
+
+- `iceDeformationRate` (function) · `import { iceDeformationRate } from "@jgengine/core/landform/glacial/iceFlow"`
+
 ## landform-materials — per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation
 
 - `landformSurface` (function) · `import { landformSurface } from "@jgengine/core/landform/materials/landformSurface"`

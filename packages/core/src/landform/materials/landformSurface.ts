@@ -2,7 +2,7 @@
 /**
  * The ground a landform simulation leaves, as blend weights over the surface materials the engine
  * bakes (`material/surfaceMaterialGenerator`): bare rock where erosion outpaces weathering, scree and
- * gravel under cliffs and on fan heads, sand downstream, silt as mud under water and as soil on dry
+ * gravel under cliffs, on fan heads and in moraines of glacial till, sand downstream and on beaches, silt as mud under water and as soil on dry
  * floodplains, and weathered soil on gentle hills. Each cell's weights sum to 1, so terrain paints
  * them straight into a material layer stack.
  *
@@ -70,8 +70,8 @@ export function landformSurface(model: LandscapeEvolution, options: LandformSurf
     if (total <= 0) continue;
     const share = (c: number): number => ((cover[i * classes + c] ?? 0) / total) * hidden;
     const silt = share(COVER.silt);
-    weights[at + 1] = share(COVER.gravel) + share(COVER.scree);
-    weights[at + 2] = share(COVER.sand);
+    weights[at + 1] = share(COVER.gravel) + share(COVER.scree) + share(COVER.till);
+    weights[at + 2] = share(COVER.sand) + share(COVER.beach);
     weights[at + 3] = depth > 0 ? silt : 0;
     weights[at + 4] = share(COVER.soil) + (depth > 0 ? 0 : silt);
   }
