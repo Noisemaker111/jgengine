@@ -10,7 +10,3 @@ Refs #2759
 - `CoastalParams` (`@jgengine/core/landform/evolution/landscapeEvolution`): Waves on the coast: cliff retreat and platform wear (see `coastal/waveErosion`). Also `GlacialParams`.
 - `GLEN_RATE_FACTOR` (`@jgengine/core/landform/glacial/iceFlow`): Glen's flow rate factor A of temperate ice in Pa⁻³ yr⁻¹ (2.4·10⁻²⁴ Pa⁻³ s⁻¹, Cuffey & Paterson 2010). Also `ICE_WEIGHT`, `iceDeformationRate`.
 - `TILL_YIELD` (`@jgengine/core/landform/materials/sedimentCover`): What glacial till breaks into: unsorted, from boulders to rock flour.
-
-### Removed
-
-- `@jgengine/core/scatter/scatterSolids` no longer exports `SCATTER_SOLID_LAYER`, `ScatterSolidSpec`, `scatterSolids`, `syncScatterSolids`.
