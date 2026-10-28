@@ -219,10 +219,11 @@ describe("glacial erosion by first-order (Blatter–Pattyn) ice flow", () => {
 
 describe("glacial erosion as the square of sliding speed (Hallet 1979)", () => {
   // Wear that grows as u_b² once ran away here (#2790): long steps let the bed outrun the ice, till
-  // stacked kilometres high in one cell, and the cliffs it left drove sliding to km/yr.
-  test("stays bounded and gives the same valley whether 16 kyr pass in one landscape step or two", () => {
+  // stacked kilometres high in one cell, and the cliffs it left drove sliding to km/yr. Ice and bed
+  // now take turns short enough that the step length no longer matters.
+  test("stays bounded and gives the same valley whether 16 kyr pass in one landscape step or eight", () => {
     const run = (timeStep: number): { eroded: number; fastest: number; deepest: number; tallest: number } => {
-      const model = glaciate(timeStep, { ela: 1500, model: "first-order", layers: 4, erosionExponent: 2 });
+      const model = glaciate(timeStep, { ela: 1500, model: "shallow-ice", erosionExponent: 2 });
       let eroded = 0;
       let fastest = 0;
       for (let t = timeStep; t <= 16_000; t += timeStep) {
@@ -234,14 +235,15 @@ describe("glacial erosion as the square of sliding speed (Hallet 1979)", () => {
       return { eroded, fastest, deepest, tallest: Math.max(...model.fields().sediment) };
     };
     const long = run(16_000);
-    const short = run(8000);
+    const short = run(2000);
     for (const r of [long, short]) {
       expect(r.fastest).toBeLessThan(500);
       expect(r.deepest).toBeGreaterThan(500);
       expect(r.tallest).toBeLessThan(200);
     }
+    expect(long.eroded).toBeGreaterThan(1e8);
     expect(Math.abs(long.eroded / short.eroded - 1)).toBeLessThan(0.1);
-  }, 240_000);
+  }, 60_000);
 });
 
 describe("ice surface on a smooth steep bed", () => {
