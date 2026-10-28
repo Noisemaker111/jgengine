@@ -1,8 +1,10 @@
 import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 import type { ModelAttachment, ModelConfig } from "@jgengine/core/game/playableGame";
 import type { ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
+import type { ScatterSolidSpec } from "@jgengine/core/scatter/scatterSolids";
 
 import { SPECIES_MODELS } from "./data/creatureModels";
+import { HARVESTABLES } from "./data/harvestables";
 
 const NATURE = "/models/imported/quaternius-stylized-nature";
 const nature = (file: string, targetHeight: number): ModelConfig => ({ url: `${NATURE}/${file}.glb`, targetHeight });
@@ -120,3 +122,24 @@ export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> =
   crystal: ore("Pebble_Square_2", 1.4, { color: "#e9f4ff", metalness: 0.1, roughness: 0.05, emissive: "#9fd8ff", emissiveIntensity: 0.6 }),
   oil_rock: ore("Rock_Medium_2", 1.8, { color: "#2b2620", metalness: 0.1, roughness: 0.2 }),
 };
+
+/** How tall each rock stands above the sand, in metres at scale 1: the grown shapes' and ore models' heights. */
+const ROCK_HEIGHTS: Readonly<Record<string, number>> = {
+  rock: 0.8,
+  searock: 1,
+  boulder: 1.7,
+  boulder2: 1.2,
+  seaboulder: 3,
+  metal_rock: 2.6,
+  obsidian_rock: 2.2,
+  crystal: 1.4,
+  oil_rock: 1.8,
+};
+
+/**
+ * The rocks the survivor walks around instead of through, as in ARK: each blocks with a box as wide
+ * as its harvest radius and as tall as the rock. Pebbles, plants and trees stay walk-through.
+ */
+export const rockSolids: Record<string, ScatterSolidSpec> = Object.fromEntries(
+  Object.entries(ROCK_HEIGHTS).map(([item, height]) => [item, { radius: (HARVESTABLES[item]?.radius ?? 1) * 0.85, height }]),
+);

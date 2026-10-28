@@ -13,6 +13,7 @@ import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gam
 import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
+import type { ScatterSolidSpec } from "@jgengine/core/scatter/scatterSolids";
 import type { EnvironmentWorldFeature, SkyEnvironmentConfig } from "@jgengine/core/world/features";
 import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 import { lightingFromDocument, skyFromDocument } from "@jgengine/core/editor/environment";
@@ -41,6 +42,8 @@ type PresentationFields<TProbe extends ProbeReadings> = Omit<PlayableGame<TProbe
   sceneScatterModels?: Record<string, string | ModelConfig | ScatterGeneratorItem>;
   /** Most scatter instances the auto-mounted scene draws; past it the foliage thins evenly. Default 20000 — raise it for a whole-island world. */
   sceneScatterBudget?: number;
+  /** Palette items whose placements block movement, keyed by palette item id: `{ radius, height }` in metres at scale 1 (see `ScatterSolidSpec`). Unlisted items stay walk-through. */
+  sceneScatterSolids?: Readonly<Record<string, ScatterSolidSpec>>;
   /** Animated species models for cosmetic authored habitats; gameplay actors remain game-owned. */
   sceneFlockModels?: Record<string, string | ModelConfig>;
   /** Visible ground path kinds; omit to draw every non-scatter path, or restrict to keep flight/patrol guides out of world roads. */
@@ -80,6 +83,7 @@ function authoredSceneOverlay(
   placement: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions),
   scatterModels: Record<string, string | ModelConfig | ScatterGeneratorItem> | undefined,
   scatterBudget: number | undefined,
+  scatterSolids: Readonly<Record<string, ScatterSolidSpec>> | undefined,
   flockModels: Record<string, string | ModelConfig> | undefined,
   pathKinds: readonly string[] | undefined,
   assets: AssetCatalog,
@@ -102,6 +106,7 @@ function authoredSceneOverlay(
           assets={assets}
           {...(scatterModels === undefined ? {} : { scatterModels })}
           {...(scatterBudget === undefined ? {} : { scatterBudget })}
+          {...(scatterSolids === undefined ? {} : { scatterSolids })}
           {...(flockModels === undefined ? {} : { flockModels })}
           {...(pathKinds === undefined ? {} : { pathKinds })}
           {...(groundColorAt === undefined ? {} : { groundColorAt })}
@@ -136,6 +141,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef, TPro
     scenePlacement,
     sceneScatterModels,
     sceneScatterBudget,
+    sceneScatterSolids,
     sceneFlockModels,
     scenePathKinds,
     WorldOverlay,
@@ -240,6 +246,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef, TPro
             scenePlacement ?? true,
             sceneScatterModels,
             sceneScatterBudget,
+            sceneScatterSolids,
             sceneFlockModels,
             scenePathKinds,
             game.assets,

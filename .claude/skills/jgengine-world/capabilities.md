@@ -1653,6 +1653,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `scatterGeneratorVariantCount` (function) · `import { scatterGeneratorVariantCount } from "@jgengine/core/world"`
 - `scatterPlacementVariant` (function) · `import { scatterPlacementVariant } from "@jgengine/core/scatter/scatterGenerator"`
 
+## scatter-solids — scattered rocks and props block the player, NPCs and physics like any wall
+
+- `scatterSolids` (function) · `import { scatterSolids } from "@jgengine/core/scatter/scatterSolids"`
+- `syncScatterSolids` (function) · `import { syncScatterSolids } from "@jgengine/core/scatter/scatterSolids"`
+
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw"`
