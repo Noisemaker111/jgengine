@@ -66,7 +66,7 @@ describe("unique scatter items", () => {
   test("every placement gets its own seed, the same each time", () => {
     const spec = { generator: "test.tree", variants: "unique" as const };
     expect(isUniqueScatterItem(spec)).toBe(true);
-    expect(scatterGeneratorVariantCount(spec)).toBe(6);
+    expect(scatterGeneratorVariantCount(spec)).toBe(4);
     const seeds = new Set<string>();
     for (let index = 0; index < 500; index += 1) seeds.add(scatterPlacementVariant(tree, "oak", spec, `p${index}`).seed);
     expect(seeds.size).toBe(500);

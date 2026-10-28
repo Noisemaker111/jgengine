@@ -59,12 +59,18 @@ const undergrowth = (generator: string, preset: string, params: Record<string, u
 /** The island's tree look: textured leaf cards over the grown wood, lit, a touch more saturated than life. */
 const TREE_LOOK = { foliage: "leaves", shading: "lit", saturation: 1.15, brightness: 1.05, barkGrain: true };
 
-/** A tree grown by the plant simulation: a species at an age (and day of year), drawn at the leaf-card level. */
+/**
+ * A tree grown by the plant simulation: a species at an age (and day of year). Every tree grows from
+ * its own seed; the nearest few of each kind draw as their own mesh, the rest as shared stand-ins.
+ */
 const tree = (species: string, age: number, params: Record<string, unknown> = {}): ScatterGeneratorItem => ({
   generator: "plant.grown",
   params: { species, age, ...TREE_LOOK, ...params },
-  variants: 4,
+  variants: "unique",
+  heroes: 10,
+  heroDistance: 35,
   detail: 0.25,
+  heroDetail: 0.5,
 });
 
 /**

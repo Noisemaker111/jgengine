@@ -15,6 +15,8 @@ const PICK_INTERVAL_S = 0.25;
 const PICK_MOVE_M = 2;
 /** Hero meshes being grown at once; the rest wait their turn, nearest first. */
 const GROWING_AT_ONCE = 4;
+/** Seconds between hand-overs of the shown set to the stand-in field. */
+const SHOW_INTERVAL_S = 0.5;
 const SMALL_SHADOW_RADIUS = 0.6;
 
 interface HeroMesh {
@@ -42,7 +44,7 @@ export interface ScatterHeroesProps {
  */
 export function ScatterHeroes({ item, definition, spec, instances, onShown }: ScatterHeroesProps) {
   const root = useRef<THREE.Group>(null);
-  const detail = spec.detail ?? 1;
+  const detail = spec.heroDetail ?? spec.detail ?? 1;
   const heroSet = useMemo(
     () => createScatterHeroSet({ heroes: spec.heroes ?? 32, distance: spec.heroDistance ?? 40 }),
     [spec.heroes, spec.heroDistance],
@@ -53,6 +55,8 @@ export function ScatterHeroes({ item, definition, spec, instances, onShown }: Sc
   const meshes = useRef(new Map<string, HeroMesh>());
   const growing = useRef(new Set<string>());
   const wanted = useRef<readonly string[]>([]);
+  const pending = useRef<readonly string[]>([]);
+  const lastShown = useRef(Number.NEGATIVE_INFINITY);
   const shownKey = useRef("");
   const lastPick = useRef({ at: Number.NEGATIVE_INFINITY, x: Number.NaN, z: Number.NaN });
   const camera = useMemo(() => new THREE.Vector3(), []);
@@ -124,21 +128,25 @@ export function ScatterHeroes({ item, definition, spec, instances, onShown }: Sc
         dirty.current = true;
       }
     }
-    if (!dirty.current) return;
-    dirty.current = false;
-    const heroes = wanted.current;
-    const shown: string[] = [];
-    const heroSetNow = new Set(heroes);
-    for (const id of heroes) {
-      if (meshes.current.has(id)) shown.push(id);
-      else if (!growing.current.has(id) && growing.current.size < GROWING_AT_ONCE) grow(id);
+    if (dirty.current) {
+      dirty.current = false;
+      const shown: string[] = [];
+      for (const id of wanted.current) {
+        if (meshes.current.has(id)) shown.push(id);
+        else if (!growing.current.has(id) && growing.current.size < GROWING_AT_ONCE) grow(id);
+      }
+      pending.current = shown;
     }
-    for (const [id, mesh] of meshes.current) mesh.group.visible = heroSetNow.has(id);
-    const key = shown.join("|");
-    if (key !== shownKey.current) {
-      shownKey.current = key;
-      onShown(new Set(shown));
-    }
+    // Every change of the shown set rebuilds the stand-in field's instance lists, so changes are
+    // gathered and handed over at most every SHOW_INTERVAL_S; a hero draws only once its stand-in hides.
+    if (now - lastShown.current < SHOW_INTERVAL_S) return;
+    const key = pending.current.join("|");
+    if (key === shownKey.current) return;
+    shownKey.current = key;
+    lastShown.current = now;
+    const shown = new Set(pending.current);
+    for (const [id, mesh] of meshes.current) mesh.group.visible = shown.has(id);
+    onShown(shown);
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);
 
   return <group ref={root} />;
