@@ -77,8 +77,8 @@ const tree = (species: string, age: number, params: Record<string, unknown> = {}
 
 /**
  * Scatter palette item (the island's forests, rocks and bushes in editor.scene.json) → what it draws.
- * Trees are grown by the engine's plant simulation (sugar maple and white pine; bare winter maples
- * stand in for dead trees); palms, bushes, ferns, rocks and pebbles grow from its nature generators,
+ * Trees are grown by the engine's plant simulation (sugar maple and white pine; dead trees are
+ * maple snags left standing 8 years); palms, bushes, ferns, rocks and pebbles grow from its nature generators,
  * so no two neighbours match; grass, flowers and ore rocks stay catalog models.
  */
 export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> = {
@@ -89,7 +89,7 @@ export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> =
   pine: tree("pinus-strobus", 30),
   pine2: tree("pinus-strobus", 22, { leafTint: "#c4d8c8" }),
   redwood: tree("pinus-strobus", 110),
-  deadtree: tree("acer-saccharum", 20, { day: 20 }),
+  deadtree: tree("acer-saccharum", 40, { deadYears: 8 }),
   rock: grown("nature.rock", "rock", { size: 2.2, erosion: 0.2, smooth: true, crag: 0.9 }),
   boulder: grown("nature.rock", "boulder", { size: 4.6, erosion: 0.2, smooth: true, crag: 0.8 }),
   boulder2: grown("nature.rock", "slab", { size: 4.2, flatness: 0.55, moss: 0.4, smooth: true, crag: 0.8 }),

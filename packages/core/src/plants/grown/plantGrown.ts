@@ -46,6 +46,7 @@ export const PLANT_GROWN_SCHEMA = defineParamSchema({
     },
     { type: "range", key: "age", label: "age", group: "plant", min: 1, max: 300, step: 1, default: 60, unit: "years", explore: [5, 300], exploreScale: "log" },
     { type: "range", key: "day", label: "day of year", group: "plant", min: 1, max: 365, step: 1, default: 200, vary: false },
+    { type: "range", key: "deadYears", label: "dead for", group: "plant", min: 0, max: 60, step: 1, default: 0, unit: "years", vary: false },
     { type: "range", key: "light", label: "open sky", group: "site", min: 0.05, max: 1, step: 0.01, default: 1, vary: false },
     {
       type: "select",
@@ -110,7 +111,7 @@ export function plantStyleOf(params: PlantGrownParams): PlantStyle {
 function growRequest(params: PlantGrownParams, context: GeneratorContext): PlantGrowRequest {
   const species = plantSpeciesById(params.species) ?? PLANT_LIBRARY.find((known) => known.id === params.species) ?? ACER_SACCHARUM;
   const age = Math.max(1, Math.min(species.limits.maxAgeYears, Math.round(params.age)));
-  return { species, env: { ...OPEN_TEMPERATE_SITE, light: params.light }, seed: context.seed, age, day: Math.round(params.day) };
+  return { species, env: { ...OPEN_TEMPERATE_SITE, light: params.light }, seed: context.seed, age, day: Math.round(params.day), deadYears: Math.max(0, Math.round(params.deadYears)) };
 }
 
 /**
@@ -120,7 +121,7 @@ function growRequest(params: PlantGrownParams, context: GeneratorContext): Plant
  */
 export function plantStructureKey(request: PlantGrowRequest): string {
   const { species, env } = request;
-  return `plant/${species.id}@${species.version}/sim${PLANT_SIM_VERSION}/${request.seed}/${request.age}/${request.day}/${JSON.stringify(env)}`;
+  return `plant/${species.id}@${species.version}/sim${PLANT_SIM_VERSION}/${request.seed}/${request.age}/${request.day}/dead${request.deadYears}/${JSON.stringify(env)}`;
 }
 
 function meshKey(structureKey: string, style: PlantStyle, lod: number): string {
@@ -136,6 +137,11 @@ function* growJob(request: PlantGrowRequest): SlicedJob<CachedPlantStructure> {
     growth.step();
     yield;
   }
+  if (request.deadYears > 0) growth.kill();
+  for (let year = 0; year < request.deadYears; year += 1) {
+    growth.step();
+    yield;
+  }
   const structure = growth.structure(request.day);
   yield;
   return { structure, hash: hashPlantStructure(structure) };
@@ -144,6 +150,10 @@ function* growJob(request: PlantGrowRequest): SlicedJob<CachedPlantStructure> {
 function growNow(request: PlantGrowRequest): CachedPlantStructure {
   const growth = createPlantGrowth(request.species, request.env, request.seed);
   growth.step(request.age);
+  if (request.deadYears > 0) {
+    growth.kill();
+    growth.step(request.deadYears);
+  }
   const structure = growth.structure(request.day);
   return { structure, hash: hashPlantStructure(structure) };
 }

@@ -20,13 +20,13 @@ import {
 } from "./growthState";
 import { createLightField } from "./lightField";
 import { growingSeason, type GrowingSeason } from "./phenology";
-import { siteModifier, type PlantEnvironment } from "./plantEnvironment";
-import { PLANT_PI, plantCos, plantSin } from "./plantMath";
+import { OPEN_TEMPERATE_SITE, siteModifier, type PlantEnvironment } from "./plantEnvironment";
+import { PLANT_PI, plantCos, plantPow, plantSin } from "./plantMath";
 import { applyThickening, createPipeCost, pipeDemand } from "./pipeModel";
 import { bendTowardsTropisms, lateralDirection, normalize3, type TropismWeights } from "./tropism";
 
 /** Bumped whenever a rule changes what a seed grows into; part of every structure cache key. */
-export const PLANT_SIM_VERSION = 4;
+export const PLANT_SIM_VERSION = 5;
 
 /** Caps that bound one plant's memory and per-year work. */
 export interface GrowthLimits {
@@ -66,6 +66,8 @@ export interface PlantGrowth {
   reset(): void;
   /** Change the environment from the next year on (a gap opens, a drought starts). */
   retune(env: Partial<PlantEnvironment>): void;
+  /** Kill the plant now (felled by fire, girdled, drowned): it stands as a snag and decays from the next year on. */
+  kill(): void;
   environment(): PlantEnvironment;
 }
 
@@ -85,6 +87,12 @@ export interface PlantGrowthStats {
   /** Sapwood cross-section of the stem at breast height (1.3 m), m²; 0 below that height. */
   sapwoodAtBreastHeightM2: number;
   shedKg: number;
+  /**
+   * 0 while alive; once dead, the snag decay class (Maser et al. 1979; Cline et al. 1980): 1 fine twigs
+   * still on, 2 twigs gone, 3 only stout limbs left, 4 a bare trunk, often with its top broken off,
+   * 5 fallen or a stump under breast height.
+   */
+  decayClass: number;
 }
 
 const CELL_M = 0.5;
@@ -346,6 +354,48 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   function indexBuds(): void {
     budAt.fill(-1, 0, state.nodeCount);
     for (let b = 0; b < state.budCount; b += 1) budAt[state.budNode[b] ?? 0] = b;
+  }
+
+  function die(): void {
+    state.alive = 0;
+    for (let i = 0; i < state.nodeCount; i += 1) {
+      state.flags[i] = (state.flags[i] ?? 0) | NODE_DEAD;
+      state.foliage[i] = 0;
+      state.latent[i] = 0;
+      state.flowers[i] = 0;
+    }
+    state.budCount = 0;
+    state.health = 0;
+  }
+
+  /**
+   * Years a piece of dead wood of this radius stays on: twigs drop in a few years, limbs in a decade, a
+   * trunk rots through at its base in a few decades. Denser wood lasts longer, and decay doubles every
+   * 10 °C warmer (Q10 of 2; Harmon et al. 1986).
+   */
+  function deadwoodYears(radiusCm: number, standing: boolean): number {
+    if (!standing) return 2 + 2 * radiusCm;
+    const size = 2 + 2 * Math.min(radiusCm, 5) + 0.5 * Math.max(0, radiusCm - 5);
+    const warmth = plantPow(2, (environment.temperatureC - OPEN_TEMPERATE_SITE.temperatureC) / 10);
+    return (size * (species.wood.densityKgM3 / 500)) / warmth;
+  }
+
+  function radiusCmOf(i: number): number {
+    return Math.sqrt(((state.sapArea[i] ?? 0) + (state.heartArea[i] ?? 0)) / PLANT_PI) * 100;
+  }
+
+  function decayClass(): number {
+    if (state.alive === 1) return 0;
+    let top = 0;
+    let finest = Infinity;
+    for (let i = 0; i < state.nodeCount; i += 1) {
+      top = Math.max(top, state.end[i * 3 + 1] ?? 0);
+      if ((state.order[i] ?? 0) > 0) finest = Math.min(finest, radiusCmOf(i));
+    }
+    if (top < BREAST_HEIGHT_M) return 5;
+    if (finest === Infinity) return 4;
+    if (finest >= 2.5) return 3;
+    return finest >= 0.5 ? 2 : 1;
   }
 
   function isDead(i: number): boolean {
@@ -926,9 +976,10 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         removed[i] = 1;
         continue;
       }
-      if (isDead(i) && p >= 0 && !isDead(p)) {
-        const radiusCm = Math.sqrt(((state.sapArea[i] ?? 0) + (state.heartArea[i] ?? 0)) / PLANT_PI) * 100;
-        if ((state.deadAge[i] ?? 0) > 2 + 2 * radiusCm) {
+      // A living tree sheds its dead limbs; a dead one falls apart from the twigs in.
+      const standing = state.alive === 0;
+      if (isDead(i) && p >= 0 && (standing || !isDead(p))) {
+        if ((state.deadAge[i] ?? 0) > deadwoodYears(radiusCmOf(i), standing)) {
           removed[i] = 1;
           state.flags[p] = (state.flags[p] ?? 0) | NODE_SCAR;
         }
@@ -1043,6 +1094,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     const n = state.nodeCount;
     if (state.alive === 0) {
       for (let i = 0; i < n; i += 1) state.deadAge[i] = Math.min(255, (state.deadAge[i] ?? 0) + 1);
+      compact();
       return;
     }
     buildChildren();
@@ -1060,16 +1112,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     state.health = upkeep > 0 ? Math.max(0, Math.min(1, (c.growthEfficiency * totals.photosynthesis) / upkeep / 1.5)) : 1;
     if (budget <= 0 || (state.budCount === 0 && totals.leafArea <= 0)) {
       state.stressYears += 1;
-      if (state.stressYears >= 5) {
-        state.alive = 0;
-        for (let i = 0; i < state.nodeCount; i += 1) {
-          state.flags[i] = (state.flags[i] ?? 0) | NODE_DEAD;
-          state.foliage[i] = 0;
-          state.latent[i] = 0;
-        }
-        state.budCount = 0;
-        state.health = 0;
-      }
+      if (state.stressYears >= 5) die();
       ageBuds(false);
       compact();
       return;
@@ -1177,6 +1220,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       leafAreaM2: lastLeafArea,
       sapwoodAtBreastHeightM2: sapwoodAtBreastHeight(),
       shedKg: state.shedKg,
+      decayClass: decayClass(),
     }),
     snapshot() {
       const scalars: Record<string, number> = {};
@@ -1232,6 +1276,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       site = siteModifier(environment);
     },
     environment: () => copyEnvironment(environment),
+    kill() {
+      if (state.alive === 1) die();
+    },
   };
   return growth;
 }

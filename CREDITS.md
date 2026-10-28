@@ -313,6 +313,10 @@ provenance.
 - Fay 2002, veteran tree ecology, *Arboricultural Journal* 26; Lonsdale (ed.) 2013, *Ancient and
   other veteran trees*, The Tree Council: crown retrenchment of old trees.
 - Allen et al. 1998, FAO Irrigation and Drainage Paper 56: extraterrestrial radiation and day length.
+- Maser, Anderson, Cromack, Williams & Martin 1979, dead and down woody material, USDA Agriculture
+  Handbook 553 (US public domain), and Cline, Berg & Wight 1980, snag characteristics and dynamics,
+  *Journal of Wildlife Management* 44: snag decay classes. Harmon et al. 1986, ecology of coarse woody
+  debris, *Advances in Ecological Research* 15: deadwood decay rates and their temperature response.
 - **Forest stands** (`plants/stand/standSim.ts`): Pacala et al. 1996, SORTIE, *Ecological
   Monographs* 66, and Pacala, Canham & Silander 1994, light-dependent sapling growth, *Canadian
   Journal of Forest Research* 24; Kobe et al. 1995, growth-dependent sapling mortality, *Ecological

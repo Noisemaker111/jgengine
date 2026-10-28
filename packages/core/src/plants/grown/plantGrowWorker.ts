@@ -17,9 +17,13 @@ addEventListener("message", (event: MessageEvent<unknown>) => {
   if (!isPlantGrowJob(job)) return;
   let reply: PlantGrowReply;
   try {
-    const { species, env, seed, age, day } = job.request;
+    const { species, env, seed, age, day, deadYears } = job.request;
     const growth = createPlantGrowth(species, env, seed);
     growth.step(age);
+    if (deadYears > 0) {
+      growth.kill();
+      growth.step(deadYears);
+    }
     const structure = growth.structure(day);
     const hash = hashPlantStructure(structure);
     const mesh = job.mesh === null ? null : buildPlantMesh({ structure, style: job.mesh.style, detail: job.mesh.detail, structureHash: hash });
