@@ -21,9 +21,11 @@ import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { ScatterImpostorField } from "./ScatterImpostorField.draw";
 import { bakeGeneratorVariants, getGenerator, prepareGeneratorVariants, type GeneratorDefinition } from "@jgengine/core/generator/generator";
 import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
+import { ScatterHeroes } from "./ScatterHeroes.draw";
 import {
   assignScatterVariants,
   isScatterGeneratorItem,
+  isUniqueScatterItem,
   parseScatterVariantItem,
   scatterGeneratorBase,
   scatterGeneratorVariantCount,
@@ -325,6 +327,7 @@ function ScatterSourcesField({ cacheKey, sources, farSources, batches }: {
 }
 
 const IDENTITY = new THREE.Matrix4();
+const NO_HEROES: ReadonlySet<string> = new Set();
 /** Generated meshes smaller than this bounding radius (metres) skip the shadow pass. */
 const SMALL_SHADOW_RADIUS = 0.6;
 
@@ -341,6 +344,8 @@ interface ScatterGeneratorSpeciesDraw {
  * placements assigned to it. Far away every variant draws one shared impostor baked from the first,
  * so more variants cost near draws, not atlas memory. A generator with a `prepare` step (a grown
  * plant) prepares every variant off the frame first, counted as scene loading, then bakes from that.
+ * A unique species (`variants: "unique"`) also grows its near placements one by one from their own
+ * seeds ({@link ScatterHeroes}) and hides their stand-ins once each is ready.
  */
 function ScatterGeneratorSpecies({ item, species }: { item: string; species: ScatterGeneratorSpeciesDraw }) {
   const { definition, spec } = species;
@@ -383,12 +388,23 @@ function ScatterGeneratorSpecies({ item, species }: { item: string; species: Sca
     }));
   }, [definition, bake, ready]);
   useEffect(() => () => variants.forEach((sources) => sources.forEach((source) => source.geometry.dispose())), [variants]);
+  const unique = isUniqueScatterItem(spec);
+  const [heroes, setHeroes] = useState<ReadonlySet<string>>(NO_HEROES);
+  const instances = useMemo(
+    () => unique ? [...species.byVariant.values()].flatMap((batches) => batches.flatMap((batch) => batch.instances)) : [],
+    [unique, species],
+  );
+  const byVariant = useMemo(
+    () => heroes.size === 0 ? species.byVariant : new Map([...species.byVariant].map(([variant, batches]) => [variant, hideScatterPlacements(batches, heroes)])),
+    [species, heroes],
+  );
   return (
     <>
-      {[...species.byVariant.entries()].map(([variant, batches]) => {
+      {[...byVariant.entries()].map(([variant, batches]) => {
         const sources = variants[variant];
         return sources === undefined || sources.length === 0 ? null : <ScatterSourcesField key={variant} cacheKey={key} sources={sources} farSources={variants[0]} batches={batches} />;
       })}
+      {unique && ready ? <ScatterHeroes item={item} definition={definition} spec={spec} instances={instances} onShown={setHeroes} /> : null}
     </>
   );
 }

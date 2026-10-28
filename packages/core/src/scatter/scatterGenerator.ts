@@ -6,7 +6,7 @@
  * @capability scatter-generator grow a scatter palette item from a seeded generator's baked variants
  */
 import { findSchemaPreset, type ParamSchema } from "../generator/paramSchema";
-import { variantIndexAt } from "../generator/generator";
+import { generatorVariantFor, variantIndexAt, type GeneratorDefinition, type GeneratorVariant } from "../generator/generator";
 import type { ScatterInstance } from "./scatterRegion";
 
 /** A scatter palette item grown by a registered generator. */
@@ -17,8 +17,17 @@ export interface ScatterGeneratorItem {
   preset?: string;
   /** Base params over the preset (a kept variant's `meta` works as-is). */
   params?: Readonly<Record<string, unknown>>;
-  /** Distinct variants baked and spread over the placements. Default 6, clamped to 1..16. */
-  variants?: number;
+  /**
+   * Distinct variants baked and spread over the placements. Default 6, clamped to 1..16. `"unique"`
+   * grows every placement from its own seed: the nearest few ({@link ScatterGeneratorItem.heroes}) draw
+   * their own mesh, and the rest draw as 6 shared stand-ins and their impostors until the camera
+   * comes near.
+   */
+  variants?: number | "unique";
+  /** With `variants: "unique"`, most placements drawn as their own mesh at once. Default 32. */
+  heroes?: number;
+  /** With `variants: "unique"`, ground distance (m) within which a placement draws as its own mesh. Default 40. */
+  heroDistance?: number;
   /** 0..1 how far variants wander from the base params. Default 0.3. */
   explore?: number;
   /** Exact variants to bake first, as `meta` bags (the editor grid's kept tiles). */
@@ -37,7 +46,25 @@ export function isScatterGeneratorItem(value: unknown): value is ScatterGenerato
  * @capability scatter-generator grow a scatter palette item from a seeded generator's baked variants
  */
 export function scatterGeneratorVariantCount(item: ScatterGeneratorItem): number {
+  if (item.variants === "unique") return UNIQUE_STAND_INS;
   return Math.max(1, Math.min(16, Math.floor(item.variants ?? 6)));
+}
+
+/** Shared variants a unique item draws its far placements with. */
+const UNIQUE_STAND_INS = 6;
+
+/** True when every placement of the item grows from its own seed. */
+export function isUniqueScatterItem(item: ScatterGeneratorItem): boolean {
+  return item.variants === "unique";
+}
+
+/**
+ * The variant one placement of a unique item grows as: its own seed and params, from the palette
+ * item and the placement id alone, so it regrows the same anywhere.
+ * @capability scatter-generator grow a scatter palette item from a seeded generator's baked variants
+ */
+export function scatterPlacementVariant(definition: GeneratorDefinition, item: string, spec: ScatterGeneratorItem, placementId: string): GeneratorVariant {
+  return generatorVariantFor(definition, scatterGeneratorBase(spec, definition.schema), placementId, { seed: item, explore: spec.explore ?? 0.3 });
 }
 
 /**

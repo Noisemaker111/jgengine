@@ -105,7 +105,8 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
   }, [batches, sources, cache]);
   useEffect(() => () => cache.forEach((draws) => draws.forEach((draw) => draw.mesh.dispose())), [cache]);
 
-  const total = useMemo(() => batches.reduce((sum, batch) => sum + batch.matrices.length, 0), [batches]);
+  // Capacity in steps of 256, so hiding a few placements (felled trees, hero meshes) keeps the far mesh.
+  const total = useMemo(() => Math.ceil(batches.reduce((sum, batch) => sum + batch.matrices.length, 0) / 256) * 256, [batches]);
   const far = useMemo(() => {
     if (entry?.atlas == null || entry.materials === null) return null;
     const mesh = new THREE.InstancedMesh(impostorCard(entry.atlas), entry.materials.material, total);
