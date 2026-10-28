@@ -45,7 +45,7 @@ export function makehumanRecords(): LibraryRecord[] {
       id: preset.id,
       title: preset.title,
       kind: "character",
-      tags: [...new Set(["human", "rigged", "animated", preset.gender, preset.gender === "female" ? "woman" : "man", age, ...ethnic, ...preset.tags, "idle", "walk", "run"])],
+      tags: [...new Set(["human", "makehuman", "rigged", "animated", preset.gender, preset.gender === "female" ? "woman" : "man", age, ...ethnic, ...preset.tags, "idle", "walk", "run"])],
       rigged: true,
     };
   });
