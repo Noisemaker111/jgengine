@@ -36,6 +36,15 @@ export const PLANT_SOURCES = {
   "putz-1984": "Putz, Parker & Archibald 1984, Mechanical abrasion and intercrown spacing, Am. Midl. Nat. 112: crown shyness between neighbours",
   "crown-fit": "Fitted by CMA-ES (Stava et al. 2014) against the Carmean 1989 height curve, FIA site-tree diameters, Tallo heights and crown widths, Ek 1974 and the crown profile of open- and forest-grown trees (`bun run jgengine plants fit`; plants/species/data/plantLibrary.test.ts)",
   "stava-2014": "Stava, Pirk, Kratt, Chen, Měch, Deussen & Benes 2014, Inverse procedural modelling of trees, Computer Graphics Forum 33: fitting a tree model's parameters by searching until grown trees match target statistics",
+  "usda-plant-guides": "USDA NRCS Plant Guides and Plant Fact Sheets for perennial ryegrass, timothy and Kentucky bluegrass: leaf and flowering-stem heights (US public domain)",
+  "davies-1988": "Davies 1988, The regrowth of grass swards, in Jones & Lazenby (eds), The Grass Crop, Chapman & Hall: phyllochron and three live leaves per ryegrass tiller",
+  "lemaire-2000": "Lemaire & Agnusdei 2000, Leaf tissue turnover and efficiency of herbage utilization, in Grassland Ecophysiology and Grazing Ecology, CABI: leaf lifespan as phyllochron times live leaves",
+  "neuteboom-1989": "Neuteboom & Lantinga 1989, Tillering potential and relationship between leaf and tiller production in perennial ryegrass, Ann. Bot. 63: site filling",
+  "matthew-1995": "Matthew, Lemaire, Sackville Hamilton & Hernandez-Garay 1995, A modified self-thinning equation to describe size/density relationships for defoliated swards, Ann. Bot. 76",
+  "evers-2007": "Evers, Vos, Andrieu & Struik 2006, Cessation of tillering in spring wheat in relation to light interception and red:far-red ratio, Ann. Bot. 97; Evers et al. 2007, New Phytol. 176",
+  "heide-1994": "Heide 1994, Control of flowering and reproduction in temperate grasses, New Phytol. 128: vernalization and long-day requirements",
+  "oborny-2000": "Oborny, Kun, Czárán & Bokros 2000, The effect of clonal integration on plant competition for mosaic habitat space, Ecology 81: clonal spread between cells",
+  "may-2009": "May, Grimm & Jeltsch 2009, Reversed effects of grazing on plant diversity: the role of below-ground competition and size symmetry, Oikos 118 (IBC-grass): defoliation and trampling as disturbance",
 } as const;
 
 /** Id of a credited plant data or model source. */

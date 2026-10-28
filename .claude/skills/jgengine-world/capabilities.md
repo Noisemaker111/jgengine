@@ -1639,6 +1639,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `encodePlantMesh` (function) · `import { encodePlantMesh } from "@jgengine/core/plants/cache/plantCodec"`
 - `encodePlantStructure` (function) · `import { encodePlantStructure } from "@jgengine/core/plants/cache/plantCodec"`
 
+## plant-ground-cover — grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape
+
+- `GRASS_LIBRARY` (const) · `import { GRASS_LIBRARY } from "@jgengine/core/plants/groundCover/grassSpecies"`
+- `LOLIUM_PERENNE` (const) · `import { LOLIUM_PERENNE } from "@jgengine/core/plants/groundCover/grassSpecies"`
+- `PHLEUM_PRATENSE` (const) · `import { PHLEUM_PRATENSE } from "@jgengine/core/plants/groundCover/grassSpecies"`
+- `POA_PRATENSIS` (const) · `import { POA_PRATENSIS } from "@jgengine/core/plants/groundCover/grassSpecies"`
+- `createTillerField` (function) · `import { createTillerField } from "@jgengine/core/plants/groundCover/tillerSim"`
+- `tillerCellLook` (function) · `import { tillerCellLook } from "@jgengine/core/plants/groundCover/tillerSim"`
+
 ## plant-grown — place, scatter and preview simulation-grown plants of any species, age and style
 
 - `PLANT_CACHE` (const) · `import { PLANT_CACHE } from "@jgengine/core/plants/grown/plantGrown"`

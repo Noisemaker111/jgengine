@@ -233,6 +233,7 @@ export const gameRegistry: GameRegistry = {
   "vfx-library": () => import("./demo/vfxLibrary").then((module) => module.vfxLibraryGame),
   "foliage-wind": () => import("./demo/foliageWindDemo").then((module) => module.foliageWindGame),
   fire: () => import("./demo/fireDemo").then((module) => module.fireDemoGame),
+  "grass-field": () => import("./demo/grassFieldDemo").then((module) => module.grassFieldGame),
   "grass-looks": () => import("./demo/grassLooksDemo").then((module) => module.grassLooksGame),
   "generator-variants": () => import("./demo/generatorVariantsDemo").then((module) => module.generatorVariantsGame),
   "nature-variants": () => import("./demo/natureVariantsDemo").then((module) => module.natureVariantsGame),
