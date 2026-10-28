@@ -448,6 +448,7 @@ function writeSkyLight(
   state: Pick<DaylightState, "sunPosition" | "sunColor" | "moonPosition" | "moonColor" | "moonIntensity">,
   sky: { zenithColor: string; horizonColor: string; sunIntensity: number; ambientIntensity: number },
   cover: number,
+  noon: { sun: number; ambient: number },
 ): void {
   light.sunDirection.set(state.sunPosition[0], state.sunPosition[1], state.sunPosition[2]).normalize();
   light.sun.set(state.sunColor).multiplyScalar(light.sunDirection.y > -0.02 ? sky.sunIntensity : 0);
@@ -457,6 +458,9 @@ function writeSkyLight(
   writers.zenith.write(light.zenith, writers.display.set(sky.zenithColor), gl);
   writers.horizon.write(light.horizon, writers.display.set(sky.horizonColor), gl);
   light.cloudCover = cover;
+  const sunShare = light.sunDirection.y > -0.02 && noon.sun > 0 ? sky.sunIntensity / noon.sun : 0;
+  const ambientShare = noon.ambient > 0 ? sky.ambientIntensity / noon.ambient : 0;
+  light.daylight = Math.min(1, Math.max(0, sunShare, ambientShare));
 }
 
 /**
@@ -481,6 +485,7 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
   const range = skyFogRange(sky, fogRange, { near: 70, far: 260 });
   const noonSun = sky.sunIntensity ?? DEFAULT_DAY_SUN_INTENSITY;
   const noonAmbient = sky.ambientIntensity ?? DEFAULT_DAY_AMBIENT_INTENSITY;
+  const noon = useMemo(() => ({ sun: noonSun, ambient: noonAmbient }), [noonSun, noonAmbient]);
 
   const fogFallback = useMemo(
     () => ({ color: sky.fog?.color ?? initial.fogColor, near: range.near, far: range.far, density: 0 }),
@@ -508,7 +513,7 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
   useFrame((state) => {
     publishSkyLight(state.scene, skyLight);
     if (!timeOfDay && !banded && weather === undefined) {
-      writeSkyLight(skyLight, lightWriters, state.gl, initial, { zenithColor: initial.skyTop, horizonColor: initial.skyBottom, sunIntensity: initial.sunIntensity, ambientIntensity: initial.ambientIntensity }, 0);
+      writeSkyLight(skyLight, lightWriters, state.gl, initial, { zenithColor: initial.skyTop, horizonColor: initial.skyBottom, sunIntensity: initial.sunIntensity, ambientIntensity: initial.ambientIntensity }, 0, noon);
       return;
     }
     const cycle = timeOfDay ? daylightStateAt(clock!.calendar().dayFraction, sky) : initial;
@@ -550,7 +555,7 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
     }
     const hemi = hemiRef.current;
     if (hemi !== null) hemi.intensity = skyValue.ambientIntensity;
-    writeSkyLight(skyLight, lightWriters, state.gl, base, skyValue, cover);
+    writeSkyLight(skyLight, lightWriters, state.gl, base, skyValue, cover, noon);
     if (modulation !== undefined) {
       modulation.sunFactor = skyValue.sunIntensity / noonSun;
       modulation.sunColor = base.sunColor;

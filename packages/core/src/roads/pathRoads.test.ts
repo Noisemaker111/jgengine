@@ -35,4 +35,8 @@ describe("pathRoad", () => {
   test("a path with under two points draws nothing", () => {
     expect(pathRoad({ id: "x", kind: "road", points: [points[0]!] })).toBeNull();
   });
+
+  test("survey outlines shape the terrain and draw no ground strip", () => {
+    for (const kind of ["coast", "ridge", "river", "biome"]) expect(pathRoad({ id: kind, kind, points })).toBeNull();
+  });
 });

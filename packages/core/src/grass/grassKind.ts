@@ -82,6 +82,8 @@ export interface GrassLook {
   slopeThin: number;
   /** 0..1 share of the field left as open ground between tufts (dune sand, savanna soil); 0 grows everywhere. */
   bareGround: number;
+  /** Lowest ground it grows on, in metres; blades thin out over the metre above, so beach sand and shallows stay bare. */
+  growAbove: number;
   /** Width of one mow stripe in metres; 0 turns stripes off. */
   stripeWidth: number;
   /** 0..1 light/dark contrast between neighbouring mow stripes. */
@@ -142,6 +144,7 @@ export const GRASS_DEFAULTS: GrassLook = {
   patchiness: 0,
   slopeThin: 0.5,
   bareGround: 0,
+  growAbove: -100,
   stripeWidth: 0,
   stripeContrast: 0.35,
   stripeAngle: 0,
@@ -289,6 +292,7 @@ export const GRASS_SCHEMA = defineParamSchema({
     range("patchiness", "mown patches", 0, 1, 0.01, "growth"),
     range("slopeThin", "slope thinning", 0, 1, 0.01, "growth"),
     range("bareGround", "bare ground", 0, 1, 0.01, "growth"),
+    range("growAbove", "grows above", -100, 500, 0.1, "growth", "m"),
     range("stripeWidth", "stripe width", 0, 8, 0.1, "mowing", "m"),
     range("stripeContrast", "stripe contrast", 0, 1, 0.01, "mowing"),
     range("stripeAngle", "stripe heading", 0, 180, 1, "mowing", "°"),

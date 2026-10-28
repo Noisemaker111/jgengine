@@ -15,6 +15,7 @@ import { registerPlaceableGeneratorOutput } from "../scene/assetGenerator";
 import {
 
   addBlob,
+  addLeafCluster,
   addFrond,
   addStone,
   addTube,
@@ -41,6 +42,19 @@ export const NATURE_OUTPUT = "nature-mesh";
 const NATURE_LODS = [1, 0.5] as const;
 
 const GOLDEN = Math.PI * (3 - Math.sqrt(5));
+/** Triangles a full-detail variant spends on leaf blades, shared by its clusters; half detail spends less. */
+const LEAF_TRIANGLES = 1800;
+/** Most blades one cluster grows, however few clusters share the budget. */
+const MAX_CLUSTER_LEAVES = 90;
+
+/** Triangles a full-detail bush spends on leaf blades; bushes are many, so fewer than a tree's. */
+const BUSH_LEAF_TRIANGLES = 1100;
+
+/** Blades each of `clusters` grows at `detail` from a shared triangle budget. */
+function leavesPerCluster(clusters: number, detail: number, budget = LEAF_TRIANGLES): number {
+  const share = (budget * (detail >= 0.75 ? 1 : 0.4)) / Math.max(1, clusters) / 2;
+  return Math.max(4, Math.min(MAX_CLUSTER_LEAVES, Math.floor(share)));
+}
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
@@ -53,10 +67,6 @@ function spread(random: () => number, amount: number): number {
 
 function sidesFor(detail: number, max: number): number {
   return Math.max(3, Math.round(lerp(4, max, detail)));
-}
-
-function blobLevel(detail: number): number {
-  return detail >= 0.75 ? 1 : 0;
 }
 
 /** A small random colour shift so two clusters of one tree are not the same green. */
@@ -156,10 +166,12 @@ export const PALM_GENERATOR = defineGenerator({
     const trunkColor = hexRgb(params.trunkColor);
     const segments = Math.max(3, Math.round(lerp(4, 12, context.detail) * Math.min(1.5, Math.max(0.5, params.height / 8))));
     const trunk = trunkPath(params.height, params.lean, 0.1, segments, random, params.curve);
+    builder.surface("bark");
     addTube(builder, trunk, trunk.map((_, i) => {
       const t = i / (trunk.length - 1);
       return params.trunkRadius * (1 - 0.3 * t) * (i % 2 === 0 ? 1 : 1 - params.bands * 0.12) * (t < 0.1 ? 1 + (0.1 - t) * 4 : 1);
     }), { sides: sidesFor(context.detail, 8), color: (i, t) => shade(trunkColor, (i % 2 === 0 ? 1 : 1 - params.bands * 0.35) * (0.82 + t * 0.2)), seed });
+    builder.surface();
     const top = pick(trunk, trunk.length - 1);
     const frond = hexRgb(params.frondColor);
     const tip = hexRgb(params.tipColor);
@@ -208,6 +220,7 @@ export const BUSH_SCHEMA = defineParamSchema({
     { type: "range", key: "clumps", label: "clumps", group: "shape", min: 2, max: 14, step: 1, default: 6, explore: [4, 9] },
     { type: "range", key: "clumpSize", label: "clump size", group: "shape", min: 0.25, max: 0.8, step: 0.01, default: 0.48 },
     { type: "range", key: "lumpiness", label: "lumpiness", group: "shape", min: 0, max: 0.6, step: 0.01, default: 0.3 },
+    { type: "range", key: "leafSize", label: "leaf size", group: "shape", min: 0.05, max: 1, step: 0.01, default: 0.32, unit: "m", explore: [0.24, 0.42] },
     { type: "range", key: "berries", label: "berries", group: "berries", min: 0, max: 40, step: 1, default: 0, vary: false },
     { type: "range", key: "berrySize", label: "berry size", group: "berries", min: 0.02, max: 0.15, step: 0.005, default: 0.06, unit: "m" },
     { type: "color", key: "leafColor", label: "leaves", group: "colour", default: "#4a7f34", explore: { hue: 18, saturation: 0.2, lightness: 0.07 } },
@@ -244,9 +257,23 @@ export const BUSH_GENERATOR = defineGenerator({
       const y = params.height * lerp(0.3, 0.7, random());
       clumps.push({ center: [Math.cos(angle) * reach, Math.max(size * 0.55, Math.min(y, params.height - size * 0.6)), Math.sin(angle) * reach], radii: [size, size * 0.85, size * spread(random, 0.15)] });
     }
+    const leaves = leavesPerCluster(clumps.length, context.detail, BUSH_LEAF_TRIANGLES);
+    builder.surface("leaf");
     clumps.forEach((clump, index) => {
-      addBlob(builder, { center: clump.center, radii: clump.radii, level: blobLevel(context.detail), lumpiness: params.lumpiness, seed: seed + index * 31, color: tinted(leaf, random, params.tint), colorJitter: params.tint, shadeBelow: 0.45 });
+      addLeafCluster(builder, {
+        center: clump.center,
+        radii: clump.radii,
+        coreLevel: 0,
+        lumpiness: params.lumpiness,
+        seed: seed + index * 31,
+        color: tinted(leaf, random, params.tint),
+        colorJitter: params.tint,
+        shadeBelow: 0.45,
+        leaves,
+        leafSize: params.leafSize,
+      });
     });
+    builder.surface();
     const berry = hexRgb(params.berryColor);
     const berryRandom = context.random("berries");
     const berries = Math.round(params.berries * (context.detail >= 0.75 ? 1 : 0.5));

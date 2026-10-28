@@ -11,6 +11,9 @@ const DIGITS = ["Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Dig
 /** The number key for hotbar key `n` (1-9, and 10 is Digit0). */
 const digit = (n: number): (typeof DIGITS)[number] => DIGITS[n % 10] ?? "Digit0";
 
+/** Where the hut goes: flat beach sand a few metres from the spawn, x and z. */
+const HUT_SITE: [number, number] = [238, 1333];
+
 /** Metres a walking survivor covers in a second. */
 const WALK = 4.9;
 
@@ -80,9 +83,26 @@ async function walkTo(f: Flow<Probe>, near: number, what: Sight | Bearing = "poi
  */
 async function gather(f: Flow<Probe>, what: "tree" | "rock" | "bush", done: Check, maxMs = 240_000): Promise<void> {
   let misses = 0;
+  let health = (await f.probe()).health;
   for (let spent = 0; spent < maxMs; ) {
-    if (done(await f.probe())) return;
-    await walkTo(f, what === "bush" ? 1.4 : 1.7, what);
+    const now = await f.probe();
+    if (done(now)) return;
+    const evaded = await keepClear(f, now, health);
+    health = now.health;
+    if (evaded > 0) {
+      spent += evaded;
+      continue;
+    }
+    try {
+      await walkTo(f, what === "bush" ? 1.4 : 1.7, what, 60_000);
+    } catch {
+      // Walled off from this one (a cliff, a thicket): turn away and look for the next.
+      misses += 1;
+      await f.heading((await f.probe()).yaw + Math.PI);
+      await f.hold("KeyW", { ms: 3000 });
+      spent += 63_000;
+      continue;
+    }
     const at = await f.probe();
     const before = at.gathered;
     if (what === "bush") {
@@ -106,6 +126,51 @@ async function gather(f: Flow<Probe>, what: "tree" | "rock" | "bush", done: Chec
     } else misses = 0;
   }
   throw new Error(`gathering at the ${what} never finished`);
+}
+
+/**
+ * Keep clear of a hunter: turn the spear on one that is on the survivor, back off from one close by.
+ * Returns the milliseconds spent, 0 when nothing hunts nearby.
+ */
+async function keepClear(f: Flow<Probe>, p: Probe, health: number): Promise<number> {
+  const hurt = p.health < health;
+  if ((p.aimedThreat === 1 || (hurt && p.dangerDist >= 0 && p.dangerDist < 4)) && p.spearKey > 0) {
+    const held = p.holding;
+    await hand(f, (q) => q.spearKey);
+    let spent = 0;
+    for (let swing = 0; swing < 40; swing += 1) {
+      const q = await f.probe();
+      if (q.dangerDist < 0 || q.dangerDist > 5) break;
+      if (q.aimedThreat === 0) await f.heading(q.dangerYaw);
+      await f.hold("mouse0", { ms: 500 });
+      spent += 500;
+    }
+    await hand(f, () => held);
+    return spent;
+  }
+  if (p.dangerDist >= 0 && p.dangerDist < 25) {
+    await f.heading(p.dangerYaw + Math.PI);
+    await f.hold(p.stamina > 20 ? ["ShiftLeft", "KeyW"] : "KeyW", { ms: 1500 });
+    return 1500;
+  }
+  return 0;
+}
+
+/** Wait until `done` while staying alive: a tame takes minutes, and a hunter finds a survivor standing still. */
+async function guardUntil(f: Flow<Probe>, done: Check, note: string, maxMs: number): Promise<void> {
+  let health = (await f.probe()).health;
+  for (let spent = 0; spent < maxMs; ) {
+    const p = await f.probe();
+    if (done(p)) return;
+    const evaded = await keepClear(f, p, health);
+    health = p.health;
+    if (evaded > 0) spent += evaded;
+    else {
+      await f.wait(2000);
+      spent += 2000;
+    }
+  }
+  await f.expect(done, note);
 }
 
 /** Take the hotbar tool on `key` in hand (0: bare hands), pressing its number only when it is not already held. */
@@ -192,25 +257,10 @@ async function hunt(f: Flow<Probe>, done: Check, maxMs = 300_000): Promise<void>
   for (let spent = 0; spent < maxMs; ) {
     const p = await f.probe();
     if (done(p)) return;
-    const hurt = p.health < health;
+    const evaded = await keepClear(f, p, health);
     health = p.health;
-    if ((p.aimedThreat === 1 || (hurt && p.dangerDist >= 0 && p.dangerDist < 4)) && p.spearKey > 0) {
-      // A hunter on the survivor: turn on it with the spear.
-      await hand(f, kill);
-      for (let swing = 0; swing < 40; swing += 1) {
-        const q = await f.probe();
-        if (q.dangerDist < 0 || q.dangerDist > 5) break;
-        if (q.aimedThreat === 0) await f.heading(q.dangerYaw);
-        await f.hold("mouse0", { ms: 500 });
-        spent += 500;
-      }
-      continue;
-    }
-    if (p.dangerDist >= 0 && p.dangerDist < 25) {
-      // A hunter close by but not on the survivor yet: back off out of its sight.
-      await f.heading(p.dangerYaw + Math.PI);
-      await f.hold(p.stamina > 20 ? ["ShiftLeft", "KeyW"] : "KeyW", { ms: 1500 });
-      spent += 1500;
+    if (evaded > 0) {
+      spent += evaded;
       continue;
     }
     if (p.stamina < 30) {
@@ -298,9 +348,13 @@ export default defineFlow(game, {
     await chaseDown(f);
     await f.hold("KeyE", { until: (p) => p.screen === 1, timeoutMs: 3000 });
     await f.waitFor((p) => p.foodSlot >= 0, { timeoutMs: 2000 });
-    const fed = await f.probe();
-    await f.command("giveCreature", { inventoryId: "inventory", slot: fed.foodSlot });
-    await f.waitFor((p) => p.tamed === 1, { timeoutMs: 300000, note: "the dodo eats the berries on its clock and is tamed" });
+    // every berry stack it eats, as a player drags them all across
+    for (let stack = 0; stack < 8; stack += 1) {
+      const fed = await f.probe();
+      if (fed.foodSlot < 0) break;
+      await f.command("giveCreature", { inventoryId: "inventory", slot: fed.foodSlot });
+    }
+    await guardUntil(f, (p) => p.tamed === 1, "the dodo eats the berries on its clock and is tamed", 300_000);
     await f.command("closeCreature", {});
 
     // a level's stat point into health
@@ -355,7 +409,8 @@ export default defineFlow(game, {
       learned.add(piece.id);
       const at = await f.probe();
       if (at.floorDist < 0) {
-        // The foundation goes down where the survivor stands.
+        // The foundation goes down on the open sand beside the spawn, clear of the jungle's trees and slopes.
+        await walkTo(f, 1, toSpot(...HUT_SITE));
         await placePiece(f);
       } else if (piece.id === "thatch_door") {
         // The door from outside, in front of the doorway, turned back to hang it.
@@ -386,9 +441,23 @@ export default defineFlow(game, {
     }
     await f.waitFor((p) => p.taught >= 13, { timeoutMs: 3000, note: "the hut is the path's thirteenth step" });
 
-    // the Phiomia saddle: learn it, hunt for its hide with the hatchet, then fiber and wood
+    // the Phiomia saddle engram, then the path's order: tame a Phiomia (the one by the beach, before a hunt takes it), then make its saddle
     await f.command("learn", { engramId: "phiomia_saddle" });
     await f.waitFor((p) => p.taught >= 14, { timeoutMs: 3000, note: "the saddle engram is learned" });
+    await hand(f, bare);
+    await gather(f, "bush", (p) => p.berries >= 40);
+    // punch a Phiomia asleep and feed it the berries
+    await chaseDown(f, 300_000);
+    await f.hold("KeyE", { until: (p) => p.screen === 1, timeoutMs: 3000 });
+    for (let stack = 0; stack < 8; stack += 1) {
+      const p = await f.probe();
+      if (p.foodSlot < 0) break;
+      await f.command("giveCreature", { inventoryId: "inventory", slot: p.foodSlot });
+    }
+    const beside = await f.probe();
+    await guardUntil(f, (p) => p.tamed === 2, "the Phiomia eats its way to tamed", 600_000);
+    await f.command("closeCreature", {});
+    // its saddle: hide from a hunt with the hatchet, then fiber and wood
     await hand(f, hatchet);
     await hunt(f, (p) => p.hide >= 20, 900_000);
     await hand(f, bare);
@@ -397,19 +466,11 @@ export default defineFlow(game, {
     await gather(f, "tree", (p) => p.wood >= 5);
     await f.command("craft", { recipeId: "phiomia_saddle" });
     await f.waitFor((p) => p.saddleSlot >= 0, { timeoutMs: 30_000, note: "the saddle is made" });
-
-    // berries for a Phiomia, then punch one asleep and feed it
+    // back to the tame where it was won, the saddle into its inventory, then E to climb on
     await hand(f, bare);
-    await gather(f, "bush", (p) => p.berries >= 40);
-    await chaseDown(f, 300_000);
+    await walkTo(f, 1.5, toSpot(beside.x, beside.z));
+    await f.heading(beside.yaw);
     await f.hold("KeyE", { until: (p) => p.screen === 1, timeoutMs: 3000 });
-    for (let stack = 0; stack < 8; stack += 1) {
-      const p = await f.probe();
-      if (p.foodSlot < 0) break;
-      await f.command("giveCreature", { inventoryId: "inventory", slot: p.foodSlot });
-    }
-    await f.waitFor((p) => p.tamed === 2, { timeoutMs: 600_000, note: "the Phiomia eats its way to tamed" });
-    // the saddle into its inventory, then E to climb on
     await f.command("giveCreature", { inventoryId: "inventory", slot: (await f.probe()).saddleSlot });
     await f.command("closeCreature", {});
     await f.hold("KeyE", { until: (p) => p.riding === 1, timeoutMs: 3000 });
@@ -446,6 +507,9 @@ export default defineFlow(game, {
     await hand(f, bare);
     await gather(f, "bush", (p) => p.fiber >= 15);
     await learnAndCraft(f, "wooden_club", (p) => p.clubs >= 1);
+    // wood laid in for the next walls, as a survivor would before nightfall
+    await hand(f, hatchet);
+    await gather(f, "tree", (p) => p.wood >= 230);
     await f.wait(1000);
   },
 });

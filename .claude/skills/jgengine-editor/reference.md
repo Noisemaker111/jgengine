@@ -29,7 +29,7 @@ Scene and catalog modules are optional. A present module with a broken dependenc
 }
 ```
 
-Each band swatch is a display colour the pixels of that band are pulled toward by `tint` (absent band = untouched); saturation and contrast work around luma first. The runtime bakes the block into one `size³` cube LUT (`lutCubeFromGrading`, `@jgengine/core/editor/environment`, size 2..16, default 8 — a few hundred bytes of JSON, no texture asset to ship) and applies it after tone mapping; `autoExposure` is the clamped range the meter may use. The shell reads it from `editorLayers` with `colorGradeFromDocument`, so a game carries its own grade by authoring this block — never by hardcoding a LUT URL or grade in its config. Swatches must be hex colours and cube sizes outside 2..16 are rejected with their `$.environment.grading` path.
+Each band swatch is a display colour the pixels of that band are pulled toward by `tint` (absent band = untouched); saturation and contrast work around luma first. The runtime bakes the block into one `size³` cube LUT (`lutCubeFromGrading`, `@jgengine/core/editor/environment`, size 2..16, default 8 — a few hundred bytes of JSON, no texture asset to ship) and applies it after tone mapping; `autoExposure` is the clamped range the meter may use; the sky's published `daylight` scales how far it may lift a frame, so night stays dark. The shell reads it from `editorLayers` with `colorGradeFromDocument`, so a game carries its own grade by authoring this block — never by hardcoding a LUT URL or grade in its config. Swatches must be hex colours and cube sizes outside 2..16 are rejected with their `$.environment.grading` path.
 
 ## Atomic authoring batches
 

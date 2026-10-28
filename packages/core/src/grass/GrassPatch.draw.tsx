@@ -42,6 +42,8 @@ export interface GrassPatchProps extends Omit<ThreeElements["group"], "children"
   heightAt?: TerrainHeightSampler;
   /** Patch-local 0..1 coverage (roads, footings); 0 grows nothing. */
   coverageAt?: TerrainHeightSampler;
+  /** World height of the patch origin, for `look.growAbove`. Default 0. */
+  baseHeight?: number;
   /** Terrain colour the blade roots and far field blend into. */
   groundColor?: THREE.ColorRepresentation | undefined;
   castShadow?: boolean;
@@ -62,6 +64,7 @@ export function GrassPatch({
   exclude,
   heightAt,
   coverageAt,
+  baseHeight,
   groundColor,
   castShadow = false,
   receiveShadow = true,
@@ -71,8 +74,9 @@ export function GrassPatch({
   const size = resolveTerrainSize(area);
   const bake = useMemo(
     () => resolveGrassBake({ look, area, ...(seed === undefined ? {} : { seed }), ...(edgeFeather === undefined ? {} : { edgeFeather }),
-      ...(exclude === undefined ? {} : { exclude }), ...(heightAt === undefined ? {} : { heightAt }), ...(coverageAt === undefined ? {} : { coverageAt }) }),
-    [look, area, seed, edgeFeather, exclude, heightAt, coverageAt],
+      ...(exclude === undefined ? {} : { exclude }), ...(heightAt === undefined ? {} : { heightAt }), ...(coverageAt === undefined ? {} : { coverageAt }),
+      ...(baseHeight === undefined ? {} : { baseHeight }) }),
+    [look, area, seed, edgeFeather, exclude, heightAt, coverageAt, baseHeight],
   );
   const handle = useMemo(() => createGrassMaterial(look, groundColor), [look, groundColor]);
   const stream = useMemo(() => new GrassStream(bake, handle, { castShadow, receiveShadow, frustumCulled }), [bake, handle, castShadow, receiveShadow, frustumCulled]);
@@ -111,7 +115,7 @@ export function GrassPatch({
           strength={look.groundCover}
           edgeFeather={bake.edgeFeather}
           heightAt={bake.heightAt}
-          coverageAt={bake.coverageAt}
+          coverageAt={bake.turfAt}
           stripeAt={stripeAt}
           lift={grassCoverLift(look)}
           {...(coverSegments === undefined ? {} : { segments: coverSegments })}

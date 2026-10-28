@@ -19,7 +19,7 @@ const survey = surveyFromDocument(editorLayers);
 const authored = environmentContentFromDocument(editorLayers, { minBounds: { w: SIZE, d: SIZE } });
 const shaped = surveyTerrain(survey, {
   plains: { height: 7, roll: 5, frequency: 0.0045, seed: "the-island" },
-  shore: { falloff: 110, shoreHeight: 0.8, seaFloor: -28, shelf: 140, wobble: 0.35, seed: "the-island" },
+  shore: { falloff: 70, shoreHeight: 0.8, seaFloor: -28, shelf: 140, wobble: 0.35, seed: "the-island" },
 });
 
 export const world = environment({
@@ -32,9 +32,9 @@ export const world = environment({
     material: "grass",
     colors: { low: "#4f7f35", high: "#7d9a4a" },
     waterLevel: SEA_LEVEL,
-    // The sand band rides a little above the sea so beaches read wide; snow is painted by the snow biomes.
+    // ARK's beaches: a strip of sand about 25 m deep before the ground climbs into the jungle. Snow is painted by the snow biomes.
     detail: {
-      waterLevel: 2.6,
+      waterLevel: 1.6,
       snowHeight: 10_000,
       sandColor: "#d8c58f",
       // Generated PBR ground: pale beach sand with grain and pebbles, soil-and-grass inland, cliff rock on steep slopes.

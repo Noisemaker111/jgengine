@@ -136,11 +136,11 @@ test("a raptor pair left together mates and lays an egg that a campfire keeps wa
   const healthMax = game.ctx.scene.entity.stats.get(baby.id, "health")!.max;
   const me = game.ctx.scene.entity.get(game.userId)!.position;
   if (wants!.startsWith("A walk")) {
-    // Whistled to follow, it trails the survivor across the beach.
+    // Whistled to follow, it trails the survivor along the beach.
     game.ui.tryInvoke("whistleFollow", {});
     for (let step = 0; step < 40 && breedingCard(game.ctx, baby.id)!.baby!.wants !== null; step += 1) {
       const at = game.ctx.scene.entity.get(game.userId)!.position;
-      game.ctx.scene.entity.setPose(game.userId, { position: [at[0], at[1], at[2] + 1.5], rotationY: 0 });
+      game.ctx.scene.entity.setPose(game.userId, { position: [at[0] - 1.5, at[1], at[2]], rotationY: -Math.PI / 2 });
       tick(game, 0.5);
     }
   } else {
