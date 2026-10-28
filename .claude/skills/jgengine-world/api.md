@@ -2199,6 +2199,29 @@
 - `LandformEdge` (type): type LandformEdge = "north" | "south" | "east" | "west" — The square-cell grid every landform process runs on: row-major cells, the eight D8 neighbours with their distances, and which cells are base level (outlets held at a fixed height, where water and sediment leave the map).
 - `LandformGrid` (interface): interface LandformGrid — A landform grid: `cols` × `rows` square cells, `cellSize` metres a side, row 0 at the north edge.
 
+## @jgengine/core/landform/materials/landformSurface
+
+- `LANDFORM_SURFACE_KINDS` (const): const LANDFORM_SURFACE_KINDS: readonly ["rock", "gravel", "sand", "mud", "soil"] — The surface kinds a landform paints, in their order in {@link LandformSurface.weights}.
+- `LandformSurface` (interface): interface LandformSurface — A landform's ground, per cell.
+- `LandformSurfaceKind` (type): type LandformSurfaceKind = (typeof LANDFORM_SURFACE_KINDS)[number] — One surface kind a landform paints.
+- `LandformSurfaceOptions` (interface): interface LandformSurfaceOptions — Options for {@link landformSurface}.
+- `landformSurface` (function): function landformSurface(model: LandscapeEvolution, options: LandformSurfaceOptions = {}): LandformSurface — Read a landscape's ground out as surface material weights.
+
+## @jgengine/core/landform/materials/sedimentCover
+
+- `COVER_CLASSES` (const): const COVER_CLASSES: readonly ["gravel", "sand", "silt", "scree", "soil"] — Classes of loose cover, in their order in {@link SedimentCover.thickness}.
+- `CoverClass` (type): type CoverClass = (typeof COVER_CLASSES)[number] — One class of loose cover.
+- `DEFAULT_GRAIN_SIZES` (const): const DEFAULT_GRAIN_SIZES: GrainSizes — Default diameters: 20 mm gravel, 0.5 mm sand, 0.02 mm silt.
+- `DEFAULT_ROCK_YIELD` (const): const DEFAULT_ROCK_YIELD: GrainMix — What a rock breaks into when rivers cut it, unless its layer says otherwise.
+- `GRAIN_CLASSES` (const): const GRAIN_CLASSES: readonly ["gravel", "sand", "silt"] — River-carried grain sizes, in their order in grain arrays.
+- `GrainClass` (type): type GrainClass = (typeof GRAIN_CLASSES)[number] — One river-carried grain size.
+- `GrainMix` (interface): interface GrainMix — Share of each grain size, summing to 1.
+- `GrainSizes` (interface): interface GrainSizes — Representative grain diameters in metres.
+- `SCREE_YIELD` (const): const SCREE_YIELD: GrainMix — What scree breaks into when a river picks it up: angular, coarse.
+- `SOIL_YIELD` (const): const SOIL_YIELD: GrainMix — What soil is made of when a river picks it up.
+- `settlingVelocity` (function): function settlingVelocity(diameter: number): number — Settling velocity in m/s of a natural quartz grain of diameter `diameter` metres in water (Ferguson & Church 2004, with C₁ = 18 and C₂ = 1 for natural grains).
+- `weatheredDepth` (function): function weatheredDepth(depth: number, production: number, depthScale: number, dt: number): number — Soil thickness after weathering for `dt` years from `depth`, solving dh/dt = P₀ e^(−h/h₀) exactly: h' = h₀ ln(e^(h/h₀) + P₀ dt / h₀).
+
 ## @jgengine/core/landform/validation/geomorphicLaws
 
 - `ChannelSelection` (interface): interface ChannelSelection — Which cells count as channels: drainage area in m² at least `minArea`, on land, not at an outlet.

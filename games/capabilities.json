@@ -5310,6 +5310,16 @@
       "intent": "grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata"
     },
     {
+      "id": "landform-materials",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/landform/materials/sedimentCover",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation"
+    },
+    {
       "id": "lane-board",
       "packages": [
         "@jgengine/core"

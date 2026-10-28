@@ -567,6 +567,8 @@
     "./landform/flow/dInfinity",
     "./landform/flow/flowRouting",
     "./landform/grid/landformGrid",
+    "./landform/materials/landformSurface",
+    "./landform/materials/sedimentCover",
     "./landform/validation/geomorphicLaws",
     "./leaderboard/leaderboard",
     "./leaderboard/leaderboardRank",
