@@ -4960,6 +4960,26 @@
       "intent": "scale published body-segment parameters (de Leva 1996) to a subject and build a sagittal multibody human"
     },
     {
+      "id": "human-fall-reference",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanFall",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "simulate a person falling from standing or a height and measure head and pelvis impact speed, floor forces and HIC"
+    },
+    {
+      "id": "human-fall-validation",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanFall",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "check the fall and landing reference against published impact speeds and forces"
+    },
+    {
       "id": "human-jump",
       "packages": [
         "@jgengine/core"
@@ -4978,6 +4998,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "the default real-person sprint, turn and jump models locomotion comparisons use"
+    },
+    {
+      "id": "human-ragdoll",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/compareRagdollFall",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "ragdoll config with real human segment sizes and masses for createRagdoll"
     },
     {
       "id": "human-reference-body",
@@ -8791,6 +8821,36 @@
       "intent": "run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects"
     },
     {
+      "id": "ragdoll-fall-compare",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/compareRagdollFall",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "score a game ragdoll's falls and landings against a simulated real person and injury thresholds"
+    },
+    {
+      "id": "ragdoll-fall-metrics",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/compareRagdollFall",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "measure a game ragdoll's fall: impact speeds, forces and head injury criterion"
+    },
+    {
+      "id": "ragdoll-fall-table",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/compareRagdollFall",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "markdown table of a ragdoll's falls against the human reference and injury limits"
+    },
+    {
       "id": "rain-ground-ripples",
       "packages": [
         "@jgengine/core"
@@ -10588,6 +10648,16 @@
         "kind": "devtools"
       },
       "intent": "reject a status id the runtime has no definition for"
+    },
+    {
+      "id": "stock-humanoid-ragdoll",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/compareRagdollFall",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the engine's default humanoid death ragdoll, standing, for measuring falls"
     },
     {
       "id": "stop-order",

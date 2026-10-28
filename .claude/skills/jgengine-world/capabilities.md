@@ -968,6 +968,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `planarHumanSegments` (function) · `import { planarHumanSegments } from "@jgengine/core/movement/reference/anthropometry"`
 
+## human-fall-reference — simulate a person falling from standing or a height and measure head and pelvis impact speed, floor forces and HIC
+
+- `simulateFall` (function) · `import { simulateFall } from "@jgengine/core/movement/reference/humanFall"`
+
+## human-fall-validation — check the fall and landing reference against published impact speeds and forces
+
+- `validateHumanFall` (function) · `import { validateHumanFall } from "@jgengine/core/movement/reference/humanFall"`
+
 ## human-jump — torque-driven countermovement jump of the reference human: height, airtime, push force, touchdown speed
 
 - `simulateJump` (function) · `import { simulateJump } from "@jgengine/core/movement/reference/humanJump"`
@@ -975,6 +983,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## human-locomotion-reference — the default real-person sprint, turn and jump models locomotion comparisons use
 
 - `defaultHumanReference` (function) · `import { defaultHumanReference } from "@jgengine/core/movement/reference/compareLocomotion"`
+
+## human-ragdoll — ragdoll config with real human segment sizes and masses for createRagdoll
+
+- `humanRagdollConfig` (function) · `import { humanRagdollConfig } from "@jgengine/core/movement/reference/compareRagdollFall"`
 
 ## human-reference-body — sagittal multibody human with published anthropometry, torque-limited joints and compliant foot contact
 
@@ -1651,6 +1663,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRadio` (function) · `import { createRadio } from "@jgengine/core/audio/radio"`
 
+## ragdoll-fall-compare — score a game ragdoll's falls and landings against a simulated real person and injury thresholds
+
+- `compareRagdollFall` (function) · `import { compareRagdollFall } from "@jgengine/core/movement/reference/compareRagdollFall"`
+
+## ragdoll-fall-metrics — measure a game ragdoll's fall: impact speeds, forces and head injury criterion
+
+- `measureRagdollFall` (function) · `import { measureRagdollFall } from "@jgengine/core/movement/reference/compareRagdollFall"`
+
+## ragdoll-fall-table — markdown table of a ragdoll's falls against the human reference and injury limits
+
+- `formatRagdollFall` (function) · `import { formatRagdollFall } from "@jgengine/core/movement/reference/compareRagdollFall"`
+
 ## rain-ground-ripples — Render bounded rain impacts on exposed terrain using the shared precipitation clock.
 
 - `RainImpactField` (function) · `import { RainImpactField } from "@jgengine/core/weather/RainImpactField.draw"`
@@ -2000,6 +2024,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## static-shape-instances — render authored primitive transforms as static material-compatible instance batches
 
 - `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw"`
+
+## stock-humanoid-ragdoll — the engine's default humanoid death ragdoll, standing, for measuring falls
+
+- `stockHumanoidRagdoll` (function) · `import { stockHumanoidRagdoll } from "@jgengine/core/movement/reference/compareRagdollFall"`
 
 ## stop-order — halt-and-complete order that brings a unit to an immediate standstill
 

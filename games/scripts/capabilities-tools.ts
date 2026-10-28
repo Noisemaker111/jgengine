@@ -17,7 +17,7 @@ export const CAPABILITIES: VerbTable = {
     locomotion: {
       script: "games/scripts/locomotion-compare.ts",
       guardSeconds: 600,
-      detail: "[game[:entity]...] [--sprint] [--json] | --creatures <module>#<export> | --validate: each game's walking player vs a real person (start, stop, turn, jump, landing, slope); --creatures scores creatures' walk and sprint against real animals; --validate checks the references",
+      detail: "[game[:entity]...] [--sprint] [--json] | --creatures <module>#<export> | --falls | --validate: each game's walking player vs a real person (start, stop, turn, jump, landing, slope); --creatures scores creatures' walk and sprint against real animals; --falls drops the stock humanoid ragdoll vs a simulated person and injury limits; --validate checks the references",
     },
   },
   example: "bun run games:capabilities probe deepward",

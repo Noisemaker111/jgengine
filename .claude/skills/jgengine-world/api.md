@@ -2804,6 +2804,17 @@
 - `measureLocomotion` (function): function measureLocomotion(subject: MovementProbeSubject = {}, options: LocomotionProbeOptions = {}): LocomotionMetrics — Measure a game character with the scenarios the reference human runs: {@link measureMovement}'s start, stop, reversal and jump, a 90° heading change at top speed, and uphill speed. The movement model keeps horizontal speed on any grade it lets the character climb, so `uphillSpeedRatio` is 1 up to `maxClimbGrade` and 0 above it.
 - `referenceLocomotion` (function): function referenceLocomotion(topSpeed: number, options: { grade?: number; human?: HumanLocomotionReference } = {}): LocomotionMetrics — What a real person does at `topSpeed`, capped at 95% of the human's own top speed (at top speed a runner has no force left to turn or speed up): start (an anticipatory postural adjustment of about 0.35 s, P. Crenna and C. Frigo, *J. Physiol.* 437, 1991, then the sprint profile), stop and reverse (a quarter stride to plant the braking foot, then the braking limit), the tightest turn leg force and friction allow, the countermovement jump, and the iso-metabolic uphill speed (Minetti 2002).
 
+## @jgengine/core/movement/reference/compareRagdollFall
+
+- `INJURY_LIMITS` (const): const INJURY_LIMITS: { hic15: number; femurAxial: number; hipFracture: number; } — Injury assessment reference values for a mid-size adult man: HIC15 700 and femur axial force 10 kN (US FMVSS 208, 49 CFR 571.208), and a proximal femur breaking at about 7 kN when struck on the hip in a fall (A. C. Courtney et al., *J. Bone Joint Surg.* 77-A, 1995: young donors' femora, twice the strength of older ones).
+- `RagdollFallOptions` (interface): interface RagdollFallOptions — Settings for {@link measureRagdollFall}.
+- `RagdollFallRow` (interface): interface RagdollFallRow — One row of {@link compareRagdollFall}: the game ragdoll, the reference human, and the injury limit when one applies.
+- `compareRagdollFall` (function): function compareRagdollFall(options: Omit<RagdollFallOptions, "push" | "dropHeight"> = {}): RagdollFallRow[] — Fall a game ragdoll and the reference human the same three ways: a limp backward fall from standing, and drops from 0.3 m and 1 m onto the feet. Each row pairs the game number with the human's and the injury limit.
+- `formatRagdollFall` (function): function formatRagdollFall(rows: readonly RagdollFallRow[]): string — Markdown table of {@link compareRagdollFall} rows.
+- `humanRagdollConfig` (function): function humanRagdollConfig(mass = 80, stature = 1.8): RagdollConfig — A `createRagdoll` body with the reference human's proportions and segment masses (de Leva 1996): head, torso, pelvis, thighs, shanks and feet as boxes, held together by distance links like the engine's death ragdolls.
+- `measureRagdollFall` (function): function measureRagdollFall(options: RagdollFallOptions = {}): FallReport — Topple or drop a game ragdoll in a `PhysicsWorld` and measure it like {@link simulateFall}: head and pelvis impact speed and time, peak head and pelvis force from each bone's momentum change, foot force from the whole body's momentum change (split over two feet), and HIC15 from the head's acceleration. Sampled once per frame, as a game sees it.
+- `stockHumanoidRagdoll` (function): function stockHumanoidRagdoll(stature = 1.8): RagdollConfig — The ragdoll a game gets when a standing humanoid dies: `ragdollConfigFromPoses` on a full standard rig in a standing pose, `stature` m tall, with the engine's stock `HUMANOID_RAGDOLL_BODIES`.
+
 ## @jgengine/core/movement/reference/curveRunning
 
 - `CHANG_KRAM_CURVE_SPEEDS` (const): const CHANG_KRAM_CURVE_SPEEDS: readonly { radius: number; speed: number }[] — Chang & Kram (2007) measured top speeds on flat curves by radius (m → m/s), and on the straight.
@@ -2845,6 +2856,16 @@
 - `test505Time` (function): function test505Time(profile: SprintProfile): number — Time of the 505 change-of-direction test (E. Draper and M. Lancaster, 1985): the 5 m into a 180° turn and the 5 m back, entered at the speed of a 10 m flying start, s.
 - `timeToSpeed` (function): function timeToSpeed(profile: SprintProfile, speed: number): number — Time to sprint from rest to `speed` (capped just under top speed), s.
 - `turnaroundTime` (function): function turnaroundTime(profile: SprintProfile, speed: number): number — Time to reverse from `speed` to the same speed the other way, s: brake to rest, then sprint back up.
+
+## @jgengine/core/movement/reference/humanFall
+
+- `FallOptions` (interface): interface FallOptions — Settings for {@link simulateFall}; every field has a default.
+- `FallReport` (interface): interface FallReport — What a fall does to the body. Speeds are m/s at first touch, forces N; `NaN` when that part never touched.
+- `FallTone` (type): type FallTone = "limp" | "rigid" | "landing" — How the faller holds their joints. `limp`: no muscle torque (a faint); `rigid`: every joint servoed to standing with full strength; `landing`: knees and hips bent 15° and held by a compliant servo, as a person drops onto their feet.
+- `HEAD_ON_FLOOR` (const): const HEAD_ON_FLOOR: ContactParameters — Scalp and skull on a hard floor: about 4 kN at 4 mm of compression, nearly elastic.
+- `PELVIS_ON_FLOOR` (const): const PELVIS_ON_FLOOR: ContactParameters — Buttock and trochanter soft tissue on a hard floor: about 2 kN at 50 mm of compression, the force–deflection of the soft tissue over the pelvis in falls (S. N. Robinovitch, W. C. Hayes and T. A. McMahon, *J. Biomech. Eng.* 113, 1991).
+- `simulateFall` (function): function simulateFall(options: FallOptions = {}): FallReport — Fall the reference human from standing (or drop it from a height onto its feet) onto a hard floor and measure the impacts: an eight-segment sagittal body (de Leva anthropometry with the head on its own neck joint) on Hunt–Crossley contacts at the head, back, pelvis, knees and feet, limp, rigid or landing. Arms are folded into the trunk, so it is an unbroken fall. A drop ends 0.4 s after the feet touch. Foot force is read through a 10 ms average, as a force plate reports it.
+- `validateHumanFall` (function): function validateHumanFall(): HumanValidationRow[] — Validate the fall reference against published falls and landings: backward-fall pelvis and head impact speeds over the range of leg stiffness ("Leg joint stiffness affects dynamics of backward falling from standing height", *J. Biomech. Eng.* 142, 2020: head 2.65–7.88 m/s, hip 0.35–3.36 m/s), peak pelvis force in reconstructed real backward falls (4.4–7.3 kN, "Impact forces in backward falls: subject-specific video-based rigid body simulation", PMC10685694, 2023), and peak force under one foot in drop landings, within one RMSE (0.83 BW) of the pooled fit of 26 studies (W. Niu, T. Feng, C. Jiang and M. Zhang, *Biomed Res. Int.* 2014, 126860).
 
 ## @jgengine/core/movement/reference/humanGaitAnalysis
 

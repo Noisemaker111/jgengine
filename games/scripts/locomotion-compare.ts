@@ -10,10 +10,13 @@ import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import type { PlayerMovementConfig } from "@jgengine/core/game/playableGame";
 import { compareLocomotion, formatLocomotionComparison, type LocomotionComparisonRow } from "@jgengine/core/movement/reference/compareLocomotion";
 import { formatHumanValidation, validateHumanReference } from "@jgengine/core/movement/reference/humanReferenceValidation";
+import { compareRagdollFall, formatRagdollFall } from "@jgengine/core/movement/reference/compareRagdollFall";
+import { validateHumanFall } from "@jgengine/core/movement/reference/humanFall";
 import { compareQuadruped, validateQuadrupedReference, type QuadrupedComparison } from "@jgengine/core/movement/reference/quadrupedGait";
 
 const USAGE = `usage: bun run games:capabilities locomotion [game[:entity]...] [--sprint] [--json]
        bun run games:capabilities locomotion --creatures <module>#<export> [--json]
+       bun run games:capabilities locomotion --falls [--json]
        bun run games:capabilities locomotion --validate
   game        a folder under games/ (default: every game with a walking player)
   :entity     the player's catalog id, when the game sets role "player" only at spawn
@@ -21,7 +24,8 @@ const USAGE = `usage: bun run games:capabilities locomotion [game[:entity]...] [
   --json      print the rows as JSON
   --creatures every {id, walk, sprint} record in the export (a CreatureBody table) vs a real animal of the size the
               game's entityModels draw it (hip height 0.45 of targetHeight)
-  --validate  check the human and quadruped references themselves against published biomechanics (slow: walks every fitted gait)`;
+  --falls     the stock humanoid ragdoll's backward fall and drop landings vs a simulated person and injury limits
+  --validate  check the human, quadruped and fall references themselves against published biomechanics (slow: walks every fitted gait)`;
 
 const GAMES = resolve(import.meta.dir, "..");
 
@@ -144,8 +148,13 @@ async function main(argv: string[]): Promise<number> {
   }
   const creatureSpec = argv.indexOf("--creatures");
   if (creatureSpec >= 0) return creatures(argv[creatureSpec + 1] ?? "", argv.includes("--json"));
+  if (argv.includes("--falls")) {
+    const rows = compareRagdollFall();
+    console.log(argv.includes("--json") ? JSON.stringify(rows, null, 2) : formatRagdollFall(rows));
+    return 0;
+  }
   if (argv.includes("--validate")) {
-    const rows = [...validateHumanReference(), ...validateQuadrupedReference()];
+    const rows = [...validateHumanReference(), ...validateQuadrupedReference(), ...validateHumanFall()];
     console.log(formatHumanValidation(rows));
     return rows.some((row) => !row.pass) ? 1 : 0;
   }
