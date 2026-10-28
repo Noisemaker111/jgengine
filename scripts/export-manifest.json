@@ -739,6 +739,7 @@
     "./movement/reference/compareLocomotion",
     "./movement/reference/compareRagdollFall",
     "./movement/reference/curveRunning",
+    "./movement/reference/flightPower",
     "./movement/reference/footContact",
     "./movement/reference/humanBody",
     "./movement/reference/humanEnvelope",

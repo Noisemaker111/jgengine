@@ -264,6 +264,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `bipedRunningSupport` (function) · `import { bipedRunningSupport } from "@jgengine/core/movement/reference/bipedRunning"`
 
+## bird-wingbeat-frequency — cruising wingbeat frequency of a bird, bat or pterosaur from mass, span and wing area
+
+- `cruisingWingbeatFrequency` (function) · `import { cruisingWingbeatFrequency } from "@jgengine/core/movement/reference/flightPower"`
+
 ## bo105-reference — MBB Bo-105 reference helicopter validated against NASA TM-110356 rotor data
 
 - `createBo105Model` (function) · `import { createBo105Model } from "@jgengine/core/flight/reference/bo105Helicopter"`
@@ -788,6 +792,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `fittedWalk` (function) · `import { fittedWalk } from "@jgengine/core/movement/reference/humanGaits"`
 
+## flier-compare — score a game flier's speed against real flight mechanics for its mass and wings
+
+- `compareFlier` (function) · `import { compareFlier } from "@jgengine/core/movement/reference/flightPower"`
+
 ## flight-comparison — compare a game aircraft's flight tests with a reference aircraft and published figures
 
 - `compareFlight` (function) · `import { compareFlight } from "@jgengine/core/flight/reference/flightComparison"`
@@ -795,13 +803,29 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `compareRotorcraft` (function) · `import { compareRotorcraft } from "@jgengine/core/flight/reference/rotorcraftComparison"`
 - `formatFlightComparison` (function) · `import { formatFlightComparison } from "@jgengine/core/flight/reference/flightComparison"`
 
+## flight-maximum-range-speed — the airspeed that carries a flapping flier furthest on its fuel
+
+- `maximumRangeSpeed` (function) · `import { maximumRangeSpeed } from "@jgengine/core/movement/reference/flightPower"`
+
 ## flight-metrics — measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift
 
 - `measureFlight` (function) · `import { measureFlight } from "@jgengine/core/physics/handlingProbe"`
 
+## flight-minimum-power-speed — the airspeed where a flapping flier spends least power (Pennycuick)
+
+- `minimumPowerSpeed` (function) · `import { minimumPowerSpeed } from "@jgengine/core/movement/reference/flightPower"`
+
 ## flight-modes — linearize a trimmed reference aircraft and read short period, phugoid, dutch roll, roll and spiral modes
 
 - `linearizeReferenceAircraft` (function) · `import { linearizeReferenceAircraft } from "@jgengine/core/flight/reference/aircraftTrim"`
+
+## flight-power-curve — power a flapping bird, bat or pterosaur needs to fly level at an airspeed
+
+- `flightPower` (function) · `import { flightPower } from "@jgengine/core/movement/reference/flightPower"`
+
+## flight-reference-validation — check the flight reference against measured bird airspeeds and wingbeat frequencies
+
+- `validateFlightReference` (function) · `import { validateFlightReference } from "@jgengine/core/movement/reference/flightPower"`
 
 ## flight-tests — fly a reference aircraft model through the flight tests
 
@@ -1100,6 +1124,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## input-device — which device the player last used (keyboard, gamepad, touch), live, for device-correct prompts
 
 - `useInputDevice` (function) · `import { useInputDevice } from "@jgengine/core/input/inputDevice.view"`
+
+## insect-wingbeat-frequency — wingbeat frequency of an insect or any flier from its mass and wing area
+
+- `universalWingbeatFrequency` (function) · `import { universalWingbeatFrequency } from "@jgengine/core/movement/reference/flightPower"`
 
 ## instance-cells — bucket instanced placements into cullable XZ grid cells
 
