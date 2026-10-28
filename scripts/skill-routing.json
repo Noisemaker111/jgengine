@@ -49,6 +49,7 @@
     "interaction": "jgengine-world",
     "inventory": "jgengine-gameplay",
     "item": "jgengine-gameplay",
+    "landform": "jgengine-world",
     "leaderboard": "jgengine-gameplay",
     "lighting": "jgengine-world",
     "lod": "jgengine-world",

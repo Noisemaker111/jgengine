@@ -812,6 +812,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Keycap` (function) · `import { Keycap } from "@jgengine/core/input/keyHint.view"`
 
+## landform-evolution — grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
+
+- `LandformEdge` (type) · `import { LandformEdge } from "@jgengine/core/landform/grid/landformGrid"`
+- `createLandscapeEvolution` (function) · `import { createLandscapeEvolution } from "@jgengine/core/landform/evolution/landscapeEvolution"`
+- `dInfinityArea` (function) · `import { dInfinityArea } from "@jgengine/core/landform/flow/dInfinity"`
+- `fitPowerLaw` (function) · `import { fitPowerLaw } from "@jgengine/core/landform/validation/geomorphicLaws"`
+- `hackLawFit` (function) · `import { hackLawFit } from "@jgengine/core/landform/validation/geomorphicLaws"`
+- `hashLandformArrays` (function) · `import { hashLandformArrays } from "@jgengine/core/landform/evolution/landscapeEvolution"`
+- `slopeAreaFit` (function) · `import { slopeAreaFit } from "@jgengine/core/landform/validation/geomorphicLaws"`
+- `upstreamLength` (function) · `import { upstreamLength } from "@jgengine/core/landform/validation/geomorphicLaws"`
+
 ## lane-graph — directed lane topology with junctions, signals and parking for vehicle traffic
 
 - `createLaneGraph` (function) · `import { createLaneGraph } from "@jgengine/core/world"`
