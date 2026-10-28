@@ -9,7 +9,7 @@ describe("assessPrototypeLook", () => {
         name: "Box World",
         look: "flat",
         world,
-        entityModels: { player: "asset:person_casual" },
+        entityModels: { player: "asset:prop_crate" },
       });`,
     ]);
     expect(verdict.isPrototype).toBe(true);
@@ -37,7 +37,7 @@ describe("assessPrototypeLook", () => {
         look: "cinematic",
         assets: createStarterCatalog(),
         world,
-        entityModels: { player: "asset:person_casual" },
+        entityModels: { player: "asset:prop_crate" },
         objectModels: { crate: "asset:prop_crate" },
         camera: { perspective: "third" },
       });`,
@@ -103,7 +103,7 @@ describe("assessPrototypeLook", () => {
       `export const game = defineGame({
         name: "Unstyled",
         world,
-        entityModels: { player: "asset:person_casual" },
+        entityModels: { player: "asset:prop_crate" },
         camera: { perspective: "third", look: "@marker:player_spawn" },
       });`,
     ]);

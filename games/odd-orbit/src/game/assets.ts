@@ -25,7 +25,6 @@ const GROUND_MATERIAL_SOURCE = "ambientcg-gravel002";
 export const ASSET_SOURCE_IDS: readonly string[] = [
   "quaternius-modular-scifi",
   "quaternius-stylized-nature",
-  "kaykit-adventurers",
   "kaykit-furniture",
   "kaykit-space-base",
   "ambientcg-metalplates001",

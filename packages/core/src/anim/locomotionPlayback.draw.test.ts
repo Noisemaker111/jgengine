@@ -73,7 +73,7 @@ describe("physical movement animation parameters", () => {
     const tuning = resolvePlayerMovementTuning({ physics: { gravity: -16, jumpVelocity: 6 } });
     stepPlayerMovement(ctx, "knight", { held: ["crouch"], pointer: null }, DT, tuning);
     readModelAnimationParams(ctx, "knight", 0, params);
-    expect(params).toEqual({ grounded: true, verticalSpeed: 0, crouched: true, aiming: true, speed: 0 });
+    expect(params).toEqual({ grounded: true, verticalSpeed: 0, crouched: true, airborne: false, swimming: false, aiming: true, speed: 0 });
     expect(ctx.scene.entity.blackboard.get("knight", ANIM_PARAMS_KEY)).toBe(extras);
     expect(extras).toEqual({ grounded: false, verticalSpeed: 100, crouched: false, aiming: true, speed: 90 });
     ctx.scene.entity.spawn("hero", { id: "custom", position: [0, 0, 0] });

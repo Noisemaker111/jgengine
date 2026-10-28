@@ -143,6 +143,8 @@ export interface PlayerMovementTelemetry {
   grounded: boolean;
   verticalVelocity: number;
   crouching: boolean;
+  /** Floating in water under `movement.swim` this step. */
+  swimming: boolean;
   /** Accepted physical height for heightfield walking; absent for other collision paths. */
   collisionHeight?: number;
   /** Live authored height requested for this completed heightfield step. */
@@ -266,12 +268,14 @@ function updateTelemetry(
   collisionHeight?: number,
   requestedCollisionHeight?: number,
   collisionHeightBlocked?: boolean,
+  swimming = false,
 ): void {
   state.entityId = entityId;
-  const telemetry = state.telemetry ??= { grounded, verticalVelocity, crouching };
+  const telemetry = state.telemetry ??= { grounded, verticalVelocity, crouching, swimming };
   telemetry.grounded = grounded;
   telemetry.verticalVelocity = verticalVelocity;
   telemetry.crouching = crouching;
+  telemetry.swimming = swimming;
   if (collisionHeight === undefined) {
     delete telemetry.collisionHeight;
     delete telemetry.requestedCollisionHeight;
@@ -1102,7 +1106,7 @@ export function stepPlayerMovement(
     ),
     dt,
   });
-  if (motorProposalAccepted && positionAccepted(ctx, playerId, nextX, nextY, nextZ)) updateTelemetry(state, playerId, motion.grounded, motion.verticalVelocity, intent.crouching, collisionHeight, requestedCollisionHeight, collisionHeightBlocked);
+  if (motorProposalAccepted && positionAccepted(ctx, playerId, nextX, nextY, nextZ)) updateTelemetry(state, playerId, motion.grounded, motion.verticalVelocity, intent.crouching, collisionHeight, requestedCollisionHeight, collisionHeightBlocked, submerged);
   else invalidateTelemetry(state);
 }
 

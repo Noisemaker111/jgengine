@@ -41,6 +41,13 @@ export const systems = [
       });
       commands.define("harvest", { apply: (state) => (use(state), state) });
       commands.define("inventory", { apply: (state) => (toggleScreen(state, "inventory"), state) });
+      // First person looks out of the survivor's own body, so the arms and the tool in hand stay in view.
+      commands.define("view", {
+        apply(state) {
+          state.camera.setRig(state.camera.rig()?.kind === "first" ? null : "first", { firstPerson: { body: true, viewmodel: false } });
+          return state;
+        },
+      });
       commands.define<{ screen: SurvivorScreen | null }>("screen", { apply: (state, input) => (setScreen(state, input.screen), state) });
       // The number keys reach a game through item use: equip the tool or structure in that slot, or eat what is there.
       ctx.item.use.register({

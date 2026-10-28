@@ -15,11 +15,13 @@ import {
 } from "@jgengine/core/anim/animGraph";
 import {
   animGraphFromConfig,
+  LOCOMOTION_AIRBORNE_PARAM,
   LOCOMOTION_CROUCHED_PARAM,
   LOCOMOTION_DIRECTION_PARAM,
   LOCOMOTION_FACING_PARAM,
   LOCOMOTION_GROUNDED_PARAM,
   LOCOMOTION_SPEED_PARAM,
+  LOCOMOTION_SWIMMING_PARAM,
   LOCOMOTION_TURN_RATE_PARAM,
   LOCOMOTION_VERTICAL_SPEED_PARAM,
 } from "@jgengine/core/anim/locomotionGraph";
@@ -184,6 +186,8 @@ export function readModelAnimationParams(
     out[LOCOMOTION_GROUNDED_PARAM] = motion.grounded;
     out[LOCOMOTION_VERTICAL_SPEED_PARAM] = motion.verticalVelocity;
     out[LOCOMOTION_CROUCHED_PARAM] = motion.crouching;
+    out[LOCOMOTION_AIRBORNE_PARAM] = !motion.grounded;
+    out[LOCOMOTION_SWIMMING_PARAM] = motion.swimming;
   }
   out[LOCOMOTION_SPEED_PARAM] = speed;
   if (step !== undefined) {

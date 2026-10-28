@@ -4,13 +4,14 @@ import type { AssetAlias } from "../manifest";
  * Curated drop-in starter themes for new games. Each entry maps a short semantic
  * id (also registered as `asset:<id>`) to a live catalog GLB that is already
  * measured (dims/anchor flow from the generated index via the alias target).
- * Games wire them as `entityModels: { guest: "asset:person_casual" }`.
+ * Games wire them as `objectModels: { crate: "asset:prop_crate" }`. People are not a starter
+ * theme: a person is a realistic rigged human from the model library ({@link STARTER_PEOPLE}).
  * Never Kenney — Quaternius / KayKit only.
- * @capability starter-packs themed CC0 model ids (people/props/nature/urban) ready for entityModels
+ * @capability starter-packs themed CC0 model ids (props/nature/urban) ready for objectModels
  */
 
-/** people | props | nature | urban — the four curated starter themes. */
-export type StarterTheme = "people" | "props" | "nature" | "urban";
+/** props | nature | urban — the three curated starter themes. */
+export type StarterTheme = "props" | "nature" | "urban";
 
 /** One curated starter model: short id, theme, live catalog target, license, suggested height. */
 export interface StarterAsset {
@@ -26,59 +27,6 @@ export interface StarterAsset {
   author: string;
   provider: "kaykit" | "quaternius";
 }
-
-const PEOPLE: readonly StarterAsset[] = [
-  {
-    id: "person_casual",
-    theme: "people",
-    target: "kaykit-adventurers/Rogue",
-    targetHeight: 1.8,
-    title: "Casual person (rogue kit)",
-    license: "CC0-1.0",
-    author: "Kay Lousberg (KayKit)",
-    provider: "kaykit",
-  },
-  {
-    id: "person_hooded",
-    theme: "people",
-    target: "kaykit-adventurers/Rogue_Hooded",
-    targetHeight: 1.8,
-    title: "Hooded person",
-    license: "CC0-1.0",
-    author: "Kay Lousberg (KayKit)",
-    provider: "kaykit",
-  },
-  {
-    id: "person_armored",
-    theme: "people",
-    target: "kaykit-adventurers/Knight",
-    targetHeight: 1.85,
-    title: "Armored person",
-    license: "CC0-1.0",
-    author: "Kay Lousberg (KayKit)",
-    provider: "kaykit",
-  },
-  {
-    id: "person_mage",
-    theme: "people",
-    target: "kaykit-adventurers/Mage",
-    targetHeight: 1.8,
-    title: "Robe person",
-    license: "CC0-1.0",
-    author: "Kay Lousberg (KayKit)",
-    provider: "kaykit",
-  },
-  {
-    id: "person_heavy",
-    theme: "people",
-    target: "kaykit-adventurers/Barbarian",
-    targetHeight: 1.9,
-    title: "Heavy person",
-    license: "CC0-1.0",
-    author: "Kay Lousberg (KayKit)",
-    provider: "kaykit",
-  },
-];
 
 const PROPS: readonly StarterAsset[] = [
   {
@@ -230,22 +178,26 @@ const URBAN: readonly StarterAsset[] = [
 ];
 
 /** Flat list of every curated starter asset across themes. */
-export const STARTER_ASSETS: readonly StarterAsset[] = [...PEOPLE, ...PROPS, ...NATURE, ...URBAN];
+export const STARTER_ASSETS: readonly StarterAsset[] = [...PROPS, ...NATURE, ...URBAN];
 
-/** Theme → assets table for browse/docs (`STARTER_PACKS.people`, …). */
+/** Theme → assets table for browse/docs (`STARTER_PACKS.props`, …). */
 export const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> = {
-  people: PEOPLE,
   props: PROPS,
   nature: NATURE,
   urban: URBAN,
 };
 
-/** Ordered starter theme ids: people, props, nature, urban. */
-export const STARTER_THEMES: readonly StarterTheme[] = ["people", "props", "nature", "urban"];
+/** Ordered starter theme ids: props, nature, urban. */
+export const STARTER_THEMES: readonly StarterTheme[] = ["props", "nature", "urban"];
+
+/**
+ * The model-library people a fresh game pulls with the starter packs: realistic rigged humans, a
+ * man and a woman, that `libraryModel(name)` animates with the full humanoid clip set.
+ */
+export const STARTER_PEOPLE: readonly string[] = ["human/man-casual", "human/woman-casual"];
 
 /** Source pack ids a game must pull so every starter asset URL resolves on disk. */
 export const STARTER_SOURCE_PACKS: readonly string[] = [
-  "kaykit-adventurers",
   "kaykit-dungeon",
   "kaykit-furniture",
   "kaykit-city-builder",
@@ -254,8 +206,8 @@ export const STARTER_SOURCE_PACKS: readonly string[] = [
 
 /**
  * Alias rows for the curated starter ids. Registered in the package aliases table so
- * `buildCatalog` resolves `asset:person_casual`, `person_casual`, and
- * `starter/person_casual` to the same measured GLB.
+ * `buildCatalog` resolves `asset:prop_crate`, `prop_crate`, and
+ * `starter/prop_crate` to the same measured GLB.
  * @internal
  */
 export function starterAliases(): readonly AssetAlias[] {

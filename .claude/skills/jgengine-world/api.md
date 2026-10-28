@@ -420,6 +420,27 @@
 - `inferLegChains` (function): function inferLegChains(bones: readonly RigBone[]): LegChain[] — Finds leg chains on a humanoid rig by bone name: a thigh-like bone (`UpLeg`, `UpperLeg`, `Thigh`) with its first child and grandchild as shin and foot. Control, IK-target and twist bones are skipped. Returns chains in rig order; an empty array means the rig has no recognizable legs.
 - `placeFeet` (function): function placeFeet(input: FootPlacementInput, out?: FootPlacement): FootPlacement — Resolves foot placement for a rig whose clips were authored on flat ground at its origin. Each foot keeps its animated lift and moves by its ground's height above or below the origin, the sole is never left under the ground, and the pelvis drops by the deepest reach so both legs stay within length. Pure and allocation-light; the renderer applies the targets with {@link solveTwoBone}.
 
+## @jgengine/core/anim/humanoidActionClips.draw
+
+- `HUMANOID_SOCKETS` (const): const HUMANOID_SOCKETS: readonly SkeletonSlot[] — Standard slots that get a socket; each socket node takes its slot's name.
+- `addHumanoidSockets` (function): function addHumanoidSockets(instance: THREE.Object3D, source: THREE.Object3D, clips: readonly THREE.AnimationClip[]): void — Adds a socket node under each hand of a humanoid rig instance, named `hand.r` and `hand.l` (no loaded bone takes those names: the loader strips the dot). A socket sits at its joint in the character's own frame as it stands in its idle pose (metres, +Y up, +Z forward), whatever the rig's bone axes and units, so an attachment's offset and rotation mean the same on every humanoid rig. A rig the standard cannot map gets none. `source` is the loaded scene `instance` was cloned from.
+- `buildHumanoidActionClips` (function): function buildHumanoidActionClips(scene: THREE.Object3D, clips: readonly THREE.AnimationClip[], names: readonly HumanoidActionName[] = HUMANOID_ACTION_NAMES): THREE.AnimationClip[] — The authored humanoid actions as this rig's own clips, posed from its idle clip, or `[]` when the skeleton standard cannot map the rig as a full humanoid body. A clip the rig already ships under the same name is left out, so its own take wins.
+- `firstPersonArms` (function): function firstPersonArms(instance: THREE.Object3D, source: THREE.Object3D, clips: readonly THREE.AnimationClip[]): (() => void) | null — Raises a first-person body's arms into view, on top of whatever the animation posed this frame: the returned function turns each arm by {@link HUMANOID_FIRST_PERSON_CARRY}, fading out while an action swings the arms far from their idle pose, so a punch or a tool swing plays as authored. Call it after the animation writes the pose; a frame the animation skipped is left alone. `null` when the rig is not a mapped humanoid.
+- `withHumanoidActionClips` (function): function withHumanoidActionClips(scene: THREE.Object3D, clips: readonly THREE.AnimationClip[]): THREE.AnimationClip[] — A rig's clips plus the authored humanoid actions it lacks, built once per loaded model and shared by every instance of it. The source scene only supplies bone names and base transforms.
+
+## @jgengine/core/anim/humanoidActions
+
+- `HUMANOID_ACTIONS` (const): const HUMANOID_ACTIONS: Readonly<Record<HumanoidActionName, HumanoidActionClip>> — The authored action set. Jump is held while airborne, Swim and Tread loop while swimming, and the rest are one-shots that return to locomotion (Death holds its last key).
+- `HUMANOID_ACTION_NAMES` (const): const HUMANOID_ACTION_NAMES: readonly ["Jump", "Swim", "Tread", "Punch", "Swing", "Gather", "Hurt", "Death"] — Engine-authored action clips for any humanoid rig mapped onto the skeleton standard: the motions a mocap library rarely ships beside its walk cycles (jump, swim, punch, tool swing, gather, hurt, death). Each clip is plain pose data on standard slots, so one authoring serves every rig the standard maps; `buildHumanoidActionClips` (`humanoidActionClips.draw`) turns it into the rig's own clips at load time.
+- `HUMANOID_ACTION_SLOTS` (const): const HUMANOID_ACTION_SLOTS: readonly SkeletonSlot[] — Every slot an authored clip may turn.
+- `HUMANOID_FIRST_PERSON_CARRY` (const): const HUMANOID_FIRST_PERSON_CARRY: Readonly<Pose> — The arms a first-person body carries in front of it, hands low in view at chest height, so the fists and whatever they hold stay on screen while standing or walking. Turns from the idle pose.
+- `HumanoidActionClip` (interface): interface HumanoidActionClip — One authored action: its keys and whether it loops.
+- `HumanoidActionName` (type): type HumanoidActionName = (typeof HUMANOID_ACTION_NAMES)[number] — One authored action's clip name.
+- `HumanoidAnimationInput` (interface): interface HumanoidAnimationInput — Locomotion clip names and speeds a humanoid body's own library supplies.
+- `HumanoidPoseKey` (interface): interface HumanoidPoseKey — One key of an authored clip: the slots it turns and how far the hips move, in model metres.
+- `HumanoidRotation` (type): type HumanoidRotation = readonly [x: number, y: number, z: number] — Degrees about the model's X, Y and Z axes, composed in that order.
+- `humanoidAnimation` (function): function humanoidAnimation(input: HumanoidAnimationInput): ModelAnimationConfig — The animation config for a humanoid body: its own idle, walk and run, plus the authored actions as the airborne, swimming and one-shot states. One-shot keys: `attack` (Punch), `swing`, `gather`, and the reserved `hit` (Hurt) and `death`, which fire from combat on their own; play the others with `ctx.game.playEntityAnimation(id, "swing")`.
+
 ## @jgengine/core/anim/ikSolver
 
 - `FabrikOptions` (interface): interface FabrikOptions — Iteration budget and convergence threshold for {@link solveFabrik}.
@@ -436,6 +457,8 @@
 
 ## @jgengine/core/anim/locomotionGraph
 
+- `LOCOMOTION_AIRBORNE_PARAM` (const): const LOCOMOTION_AIRBORNE_PARAM: "airborne" — Off the ground, as the shared player motor reports it: `true` in a jump or a fall. Absent for a custom mover, which reads as grounded; a custom mover feeds it under `ANIM_PARAMS_KEY`.
+- `LOCOMOTION_AIRBORNE_STATE` (const): const LOCOMOTION_AIRBORNE_STATE: "airborne" — State id of the clip held while off the ground.
 - `LOCOMOTION_BACKWARD_STATE` (const): const LOCOMOTION_BACKWARD_STATE: "backward" — State id of the backwards blend.
 - `LOCOMOTION_CROUCHED_PARAM` (const): const LOCOMOTION_CROUCHED_PARAM: "crouched" — Physically resolved crouch stance from the shared player motor.
 - `LOCOMOTION_DIRECTION_PARAM` (const): const LOCOMOTION_DIRECTION_PARAM: "direction" — Signed lateral share of the character's motion: `-1` fully to its left, `+1` fully to its right, `0` straight ahead or straight back. A custom mover feeds it under `ANIM_PARAMS_KEY`.
@@ -445,6 +468,8 @@
 - `LOCOMOTION_SPEED_PARAM` (const): const LOCOMOTION_SPEED_PARAM: "speed" — The parameter name the shell feeds with the entity's smoothed ground speed.
 - `LOCOMOTION_STATE` (const): const LOCOMOTION_STATE: "locomotion" — State id of the forward idle/walk/run blend.
 - `LOCOMOTION_STRAFE_STATE` (const): const LOCOMOTION_STRAFE_STATE: "strafe" — State id of the lateral strafe blend.
+- `LOCOMOTION_SWIMMING_PARAM` (const): const LOCOMOTION_SWIMMING_PARAM: "swimming" — Swimming, as the shared player motor reports it; a custom mover feeds it under `ANIM_PARAMS_KEY`.
+- `LOCOMOTION_SWIM_STATE` (const): const LOCOMOTION_SWIM_STATE: "swim" — State id of the swim blend.
 - `LOCOMOTION_TURN_RATE_PARAM` (const): const LOCOMOTION_TURN_RATE_PARAM: "turnRate" — Signed yaw rate in radians/sec; a custom mover feeds it under `ANIM_PARAMS_KEY`.
 - `LOCOMOTION_TURN_STATE` (const): const LOCOMOTION_TURN_STATE: "turn" — State id of the on-the-spot turn blend.
 - `LOCOMOTION_VERTICAL_SPEED_PARAM` (const): const LOCOMOTION_VERTICAL_SPEED_PARAM: "verticalSpeed" — Resolved vertical velocity from the shared player motor, in world units/sec.
@@ -463,6 +488,8 @@
 
 ## @jgengine/core/anim/skeletonStandard
 
+- `BIPED_SCHEME` (const): const BIPED_SCHEME: RigScheme — 3ds Max Biped rigs (`Bip01 Pelvis`, `Bip01 L UpperArm`), which every Microsoft Rocketbox human shares: the engine's realistic default body. Biped has a clavicle and a neck the standard folds into `chest`, and no hand-slot bone, so props attach to `hand.l`/`hand.r`.
+- `HUMANOID_BODY_SLOTS` (const): const HUMANOID_BODY_SLOTS: readonly SkeletonSlot[] — Slots a rig needs before the engine poses it as a full humanoid body: limbs, spine and head.
 - `KAYKIT_SCHEME` (const): const KAYKIT_SCHEME: RigScheme — The standard itself, as a scheme: a KayKit rig already is the standard, so its own names are the candidates. Both authored (`upperleg.l`) and runtime (`upperlegl`) spellings are accepted.
 - `LOWER_BODY_MASK` (const): const LOWER_BODY_MASK: readonly string[] — Layer mask for a lower-body layer on a standard rig.
 - `LOWER_BODY_SLOTS` (const): const LOWER_BODY_SLOTS: readonly SkeletonSlot[] — Standard slots a lower-body layer drives: hips, both legs and both feet.
@@ -479,6 +506,7 @@
 - `SlotLength` (interface): interface SlotLength — A standard slot and the rest-pose length of the bone chain that reaches it.
 - `UPPER_BODY_MASK` (const): const UPPER_BODY_MASK: readonly string[] — Layer mask for an upper-body action layer (aim, reload, hit reaction) on a standard rig.
 - `UPPER_BODY_SLOTS` (const): const UPPER_BODY_SLOTS: readonly SkeletonSlot[] — Standard slots an upper-body action layer drives: spine, chest, head and both arms.
+- `detectHumanoidRig` (function): function detectHumanoidRig(bones: readonly string[]): SkeletonMap | null — The scheme that fills the most standard slots on this rig, mapped; `null` when no scheme fills every {@link HUMANOID_BODY_SLOTS} slot, so a quadruped or a partial rig is never posed as a person.
 - `mapRigToStandard` (function): function mapRigToStandard(bones: readonly string[], scheme: RigScheme | string = KAYKIT_SCHEME): SkeletonMap — Maps a rig's bone names onto {@link SKELETON_STANDARD} through one {@link RigScheme}. Each slot takes the first candidate that resolves; a candidate list is tried in order, so a scheme can name a preferred bone and fall back. Bones that fill no slot come back in `unmapped`, and slots the rig cannot fill in `missing` — the caller decides whether a partial map is usable.
 - `retargetBoneScales` (function): function retargetBoneScales(source: readonly SlotLength[], target: readonly SlotLength[]): Partial<Record<SkeletonSlot, number>> — Per-slot length ratios that stretch a source rig's bone chain onto the standard's proportions, so a retargeted clip moves both rigs the same distance rather than the same angle. Slots with no counterpart on either side are omitted; a source length of zero is skipped instead of dividing.
 - `retargetTracks` (function): function retargetTracks(tracks: readonly string[], map: SkeletonMap): (string | null)[] — Renames a clip's tracks from a rig's own bone names onto the standard's, so one authored clip plays on a mapped rig. The emitted node is the **runtime** bone name (see {@link runtimeBoneName}), which is what both the loaded scene graph and the loaded clips spell. A track whose node fills no slot is dropped (`null` in the result) rather than left pointing at a bone the rig does not have; a track whose property is not one of the four three writes is dropped too, since renaming it would not make it resolvable.
@@ -973,7 +1001,7 @@
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
 - `ChaseView` (type): type ChaseView = "chase" | "cockpit" | "hood" | "rear" — Fixed interior view for the chase rig (#27).
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
-- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; viewmodel?: boolean; collision?: false | FirstPersonCollisionConfig } — ⚠ undocumented
+- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; body?: boolean; viewmodel?: boolean; collision?: false | FirstPersonCollisionConfig } — ⚠ undocumented
 - `FirstPersonCollisionConfig` (interface): interface FirstPersonCollisionConfig — Clearance tuning for the first-person camera's collision pull-in.
 - `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
@@ -1010,6 +1038,13 @@
 
 - `FirstPersonMuzzleReader` (type): type FirstPersonMuzzleReader = (target: Vector3) => boolean — Writes a live presentation muzzle in world space; false means this rig has no muzzle available.
 - `registerFirstPersonMuzzle` (function): function registerFirstPersonMuzzle(camera: Camera, reader: FirstPersonMuzzleReader): () => void — Register a custom rig's presentation muzzle for its Three.js camera. Newest available custom reader wins over that camera's stock muzzle; call the returned cleanup on unmount.
+
+## @jgengine/core/camera/firstPersonBody.draw
+
+- `FirstPersonBodyContext` (const): const FirstPersonBodyContext: React.Context<string | null> — The entity whose own body the first-person camera looks out of, or `null` when no body is drawn in first person. The shell provides it; a model instance bound to that entity collapses its head.
+- `collapseHead` (function): function collapseHead(head: THREE.Object3D): void — Folds a head bone away for this frame; the animation writes its pose first, so call it after.
+- `humanoidHead` (function): function humanoidHead(scene: THREE.Object3D): THREE.Object3D | null — The head bone of a humanoid rig the skeleton standard maps, or `null`. Scaling it to nothing folds the head, hair and face into the neck, so a camera at eye height sees the body's arms, hands and held items without looking out through the inside of the skull.
+- `useFirstPersonBody` (function): function useFirstPersonBody(instanceId: string | undefined): boolean — True when `instanceId` is the body the first-person camera sits in.
 
 ## @jgengine/core/camera/fovPreference.view
 
@@ -3480,7 +3515,7 @@
 - `EntityRole` (type): type EntityRole = "player" | "npc" | "prop" — ⚠ undocumented
 - `EntityStore` (interface): interface EntityStore<TMeta = unknown> — Entity state, pose writes, keyed behavior notifications and snapshot/hydration under stable instance IDs.
 - `EntityStoreOptions` (interface): interface EntityStoreOptions — Commit hook for a derived index; runs after the write and before existing subscribers. `undefined` denotes a whole-store replacement. Value overwrites keep membership false.
-- `EntityUpdatePatch` (type): type EntityUpdatePatch<TMeta = unknown> = Partial< Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "size" | "meta"> > & { /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is … — ⚠ undocumented
+- `EntityUpdatePatch` (type): type EntityUpdatePatch<TMeta = unknown> = Partial< Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "size" | "meta"> > & { /** The item now in hand; `null` empties the hands. */ held?: string | null; /** Accepts the same frien… — ⚠ undocumented
 - `PoseConstraint` (type): type PoseConstraint = (frame: PoseConstraintFrame) => readonly [number, number, number] | undefined | void — Return a replacement position to constrain the step, or nothing to accept it.
 - `PoseConstraintFrame` (interface): interface PoseConstraintFrame { entityId: string; current: EntityPosition; next: EntityPosition; dt?: number } — ⚠ undocumented
 - `SceneEntity` (interface): interface SceneEntity<TMeta = unknown> { id: string; name: string; position: EntityPosition; rotationY: number; rotationX: number; rotationZ: number; velocity: EntityPosition; role: EntityRole; movement: EntityMovement; behaviors: readonly BehaviorDescriptor[]; hidden?: boolean;… — ⚠ undocumented · used by `entityMetaOf`: Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type che…

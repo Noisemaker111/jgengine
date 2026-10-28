@@ -98,7 +98,7 @@ export function assessPrototypeLook(sources: readonly string[]): PrototypeLookVe
     signals,
     reasons,
     fix: isPrototype
-      ? 'wire entityModels/objectModels (e.g. entityModels: { player: "asset:person_casual" }) and, if cinematic is not the art direction, a look (look: "photoreal" | "toon" | "comic" | ...), plus a mood for the light (mood: "day" | "bright" | "golden" | "dusk" | "overcast" | "night"). Write look: "neutral" only when unstyled output is deliberate.'
+      ? 'wire entityModels/objectModels (e.g. entityModels: { player: libraryModel("human/woman-casual") }) and, if cinematic is not the art direction, a look (look: "photoreal" | "toon" | "comic" | ...), plus a mood for the light (mood: "day" | "bright" | "golden" | "dusk" | "overcast" | "night"). Write look: "neutral" only when unstyled output is deliberate.'
       : undefined,
   };
 }

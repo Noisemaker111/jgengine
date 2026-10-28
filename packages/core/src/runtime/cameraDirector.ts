@@ -70,7 +70,7 @@ const rigConfig = shape({
   followEntityId: (value) => value === null || string(value),
   pitchClamp: (value) => Array.isArray(value) && value.length === 2 && value.every(number),
   collision: shape({ enabled: boolean, ...numbers("padding", "minTargetDistance") }),
-  firstPerson: shape({ ...numbers("eyeHeight", "sensitivity", "maxPitch"), reticle: boolean, viewmodel: boolean }),
+  firstPerson: shape({ ...numbers("eyeHeight", "sensitivity", "maxPitch"), reticle: boolean, viewmodel: boolean, body: boolean }),
   topDown: shape(topDownFields),
   rts: shape({ ...topDownFields, ...numbers("panSpeed", "rotateSpeed"), pan: boolean,
     edgeScroll: (value) => boolean(value) || shape(numbers("margin", "speed"))(value),

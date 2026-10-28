@@ -14,6 +14,12 @@ export interface LocomotionGraphInput {
   backward?: string;
   /** Clip for turning on the spot. Omitted, the turn blend uses `walk` as its pivot step. */
   turn?: string;
+  /** Clip held while the body is off the ground; adds the `airborne` state on the `airborne` parameter. */
+  jump?: string;
+  /** Clip while swimming and moving; adds the `swim` state on the `swimming` parameter. */
+  swim?: string;
+  /** Clip while swimming in place. Omitted, `swim` plays at every speed. */
+  tread?: string;
   /** Speed (world units/sec) above which the character walks. Default 0.5. */
   walkSpeed?: number | undefined;
   /** Speed above which it runs. Default 6. */
@@ -54,6 +60,13 @@ export const LOCOMOTION_VERTICAL_SPEED_PARAM = "verticalSpeed";
 /** Physically resolved crouch stance from the shared player motor. */
 export const LOCOMOTION_CROUCHED_PARAM = "crouched";
 /**
+ * Off the ground, as the shared player motor reports it: `true` in a jump or a fall. Absent for a
+ * custom mover, which reads as grounded; a custom mover feeds it under `ANIM_PARAMS_KEY`.
+ */
+export const LOCOMOTION_AIRBORNE_PARAM = "airborne";
+/** Swimming, as the shared player motor reports it; a custom mover feeds it under `ANIM_PARAMS_KEY`. */
+export const LOCOMOTION_SWIMMING_PARAM = "swimming";
+/**
  * Signed lateral share of the character's motion: `-1` fully to its left, `+1` fully to its right,
  * `0` straight ahead or straight back. A custom mover feeds it under `ANIM_PARAMS_KEY`.
  */
@@ -75,6 +88,10 @@ export const LOCOMOTION_STRAFE_STATE = "strafe";
 export const LOCOMOTION_BACKWARD_STATE = "backward";
 /** State id of the on-the-spot turn blend. */
 export const LOCOMOTION_TURN_STATE = "turn";
+/** State id of the clip held while off the ground. */
+export const LOCOMOTION_AIRBORNE_STATE = "airborne";
+/** State id of the swim blend. */
+export const LOCOMOTION_SWIM_STATE = "swim";
 
 const DEFAULT_STRAFE_GATE = 0.35;
 const DEFAULT_STRAFE_RELEASE = 0.2;
@@ -198,10 +215,34 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
     duration: fade,
   });
 
+  // Swimming outranks the ground states, and a body in the water is never airborne.
+  const grounded = Object.keys(states);
+  if (input.swim !== undefined) {
+    states[LOCOMOTION_SWIM_STATE] = {
+      kind: "blend1D",
+      param: LOCOMOTION_SPEED_PARAM,
+      points: [
+        ...(input.tread === undefined ? [] : [{ at: 0, clip: input.tread }]),
+        { at: input.tread === undefined ? 0 : walkSpeed, clip: input.swim },
+      ],
+    };
+    for (const from of grounded) directional.unshift({ from, to: LOCOMOTION_SWIM_STATE, when: [{ param: LOCOMOTION_SWIMMING_PARAM, op: "==", value: true }], duration: 0.3 });
+    directional.push({ from: LOCOMOTION_SWIM_STATE, to: LOCOMOTION_STATE, when: [{ param: LOCOMOTION_SWIMMING_PARAM, op: "==", value: false }], duration: 0.3 });
+  }
+  if (input.jump !== undefined) {
+    states[LOCOMOTION_AIRBORNE_STATE] = { kind: "clip", clip: input.jump };
+    const airborne = { param: LOCOMOTION_AIRBORNE_PARAM, op: "==", value: true } as const;
+    const swimming = { param: LOCOMOTION_SWIMMING_PARAM, op: "==", value: false } as const;
+    for (const from of grounded) directional.unshift({ from, to: LOCOMOTION_AIRBORNE_STATE, when: [airborne, swimming], duration: 0.12 });
+    directional.push({ from: LOCOMOTION_AIRBORNE_STATE, to: LOCOMOTION_STATE, when: [{ param: LOCOMOTION_AIRBORNE_PARAM, op: "==", value: false }], duration: 0.15 });
+    if (input.swim !== undefined) directional.push({ from: LOCOMOTION_AIRBORNE_STATE, to: LOCOMOTION_SWIM_STATE, when: [{ param: LOCOMOTION_SWIMMING_PARAM, op: "==", value: true }], duration: 0.3 });
+  }
+
   const oneShots = Object.entries(input.oneShots ?? {}).filter(([, spec]) => typeof spec === "string" || spec.length > 0);
   oneShots.sort(([a], [b]) => Number(b === "death") - Number(a === "death"));
   for (const [name, spec] of oneShots) {
-    const clip = typeof spec === "string" ? spec : spec[0]!;
+    const clip = typeof spec === "string" ? spec : spec[0];
+    if (clip === undefined) continue;
     states[name] = { kind: "clip", clip, loop: false, ...(typeof spec === "string" || spec.length < 2 ? {} : { variants: [...spec] }) };
   }
   const triggered: AnimTransition[] = [];
@@ -231,14 +272,25 @@ export function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | u
   if (states === undefined || typeof states.idle !== "string" || states.idle.trim().length === 0) return undefined;
   const clip = (value: string | undefined): string | undefined =>
     typeof value === "string" && value.trim().length > 0 ? value : undefined;
+  const run = clip(states.run);
+  const strafeLeft = clip(states.strafeLeft);
+  const strafeRight = clip(states.strafeRight);
+  const backward = clip(states.backward);
+  const turn = clip(states.turn);
+  const jump = clip(states.jump);
+  const swim = clip(states.swim);
+  const tread = clip(states.tread);
   return locomotionGraph({
     idle: states.idle,
     walk: clip(states.walk) ?? states.idle,
-    ...(clip(states.run) === undefined ? {} : { run: clip(states.run)! }),
-    ...(clip(states.strafeLeft) === undefined ? {} : { strafeLeft: clip(states.strafeLeft)! }),
-    ...(clip(states.strafeRight) === undefined ? {} : { strafeRight: clip(states.strafeRight)! }),
-    ...(clip(states.backward) === undefined ? {} : { backward: clip(states.backward)! }),
-    ...(clip(states.turn) === undefined ? {} : { turn: clip(states.turn)! }),
+    ...(run === undefined ? {} : { run }),
+    ...(strafeLeft === undefined ? {} : { strafeLeft }),
+    ...(strafeRight === undefined ? {} : { strafeRight }),
+    ...(backward === undefined ? {} : { backward }),
+    ...(turn === undefined ? {} : { turn }),
+    ...(jump === undefined ? {} : { jump }),
+    ...(swim === undefined ? {} : { swim }),
+    ...(tread === undefined ? {} : { tread }),
     ...(states.rootMotion === true ? { rootMotion: true } : {}),
     walkSpeed: states.walkSpeed,
     runSpeed: states.runSpeed,

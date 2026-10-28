@@ -216,12 +216,81 @@ export const QUATERNIUS_ALIEN_SCHEME: RigScheme = {
   },
 };
 
+/**
+ * 3ds Max Biped rigs (`Bip01 Pelvis`, `Bip01 L UpperArm`), which every Microsoft Rocketbox human
+ * shares: the engine's realistic default body. Biped has a clavicle and a neck the standard folds
+ * into `chest`, and no hand-slot bone, so props attach to `hand.l`/`hand.r`.
+ */
+export const BIPED_SCHEME: RigScheme = {
+  id: "biped",
+  label: "3ds Max Biped (Microsoft Rocketbox)",
+  source: "Microsoft Rocketbox (MIT)",
+  slots: {
+    root: ["Bip01"],
+    hips: ["Bip01 Pelvis"],
+    spine: ["Bip01 Spine1", "Bip01 Spine"],
+    chest: ["Bip01 Spine2", "Bip01 Spine1"],
+    head: ["Bip01 Head"],
+    "upperArm.l": ["Bip01 L UpperArm"],
+    "upperArm.r": ["Bip01 R UpperArm"],
+    "lowerArm.l": ["Bip01 L Forearm"],
+    "lowerArm.r": ["Bip01 R Forearm"],
+    "hand.l": ["Bip01 L Hand"],
+    "hand.r": ["Bip01 R Hand"],
+    "upperLeg.l": ["Bip01 L Thigh"],
+    "upperLeg.r": ["Bip01 R Thigh"],
+    "lowerLeg.l": ["Bip01 L Calf"],
+    "lowerLeg.r": ["Bip01 R Calf"],
+    "foot.l": ["Bip01 L Foot"],
+    "foot.r": ["Bip01 R Foot"],
+    "toes.l": ["Bip01 L Toe0"],
+    "toes.r": ["Bip01 R Toe0"],
+  },
+};
+
 /** Every scheme the engine ships a mapping for, keyed by {@link RigScheme.id}. */
 export const RIG_SCHEMES: Readonly<Record<string, RigScheme>> = {
   [KAYKIT_SCHEME.id]: KAYKIT_SCHEME,
   [MIXAMO_SCHEME.id]: MIXAMO_SCHEME,
+  [BIPED_SCHEME.id]: BIPED_SCHEME,
   [QUATERNIUS_ALIEN_SCHEME.id]: QUATERNIUS_ALIEN_SCHEME,
 };
+
+/** Slots a rig needs before the engine poses it as a full humanoid body: limbs, spine and head. */
+export const HUMANOID_BODY_SLOTS: readonly SkeletonSlot[] = [
+  "hips",
+  "spine",
+  "chest",
+  "head",
+  "upperArm.l",
+  "upperArm.r",
+  "lowerArm.l",
+  "lowerArm.r",
+  "hand.l",
+  "hand.r",
+  "upperLeg.l",
+  "upperLeg.r",
+  "lowerLeg.l",
+  "lowerLeg.r",
+  "foot.l",
+  "foot.r",
+];
+
+/**
+ * The scheme that fills the most standard slots on this rig, mapped; `null` when no scheme fills
+ * every {@link HUMANOID_BODY_SLOTS} slot, so a quadruped or a partial rig is never posed as a person.
+ *
+ * @capability skeleton-standard detect which humanoid naming scheme a loaded rig uses
+ */
+export function detectHumanoidRig(bones: readonly string[]): SkeletonMap | null {
+  let best: SkeletonMap | null = null;
+  for (const scheme of Object.values(RIG_SCHEMES)) {
+    const map = mapRigToStandard(bones, scheme);
+    if (!HUMANOID_BODY_SLOTS.every((slot) => map.slots[slot] !== undefined)) continue;
+    if (best === null || Object.keys(map.slots).length > Object.keys(best.slots).length) best = map;
+  }
+  return best;
+}
 
 /**
  * The runtime name GLTFLoader gives an authored bone name: three's `PropertyBinding.sanitizeNodeName`

@@ -57,6 +57,8 @@ export const game = defineGame({
     whistleFollow: ["KeyT"],
     whistleStay: ["KeyU"],
     inventory: ["KeyI", "Tab"],
+    // ARK's third/first-person swap.
+    view: ["KeyV"],
     // Building: R turns the ghost, G demolishes the piece in front.
     rotateBuild: ["KeyR"],
     demolish: ["KeyG"],

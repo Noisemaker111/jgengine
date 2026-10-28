@@ -3053,6 +3053,16 @@
       "intent": "world-anchored overhead entity frames (nameplate/healthbar), data-first + caller-composed"
     },
     {
+      "id": "entity-held-item",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scene/entityStore",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "show the item an entity holds in its hand"
+    },
+    {
       "id": "entity-meta",
       "packages": [
         "@jgengine/core"
@@ -3343,6 +3353,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger"
+    },
+    {
+      "id": "first-person-arms",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/anim/humanoidActionClips.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "keep a first-person body's hands and held items in view"
     },
     {
       "id": "flight-metrics",
@@ -4298,6 +4318,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "inline-style accessors for the HudTheme type scale, spacing, motion, elevation, and focus ring"
+    },
+    {
+      "id": "humanoid-actions",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/anim/humanoidActions",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "engine-authored jump, swim, punch, swing, gather, hurt and death clips for any humanoid rig"
+    },
+    {
+      "id": "humanoid-sockets",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/anim/humanoidActionClips.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "rig-independent hand sockets for held items"
     },
     {
       "id": "i18n",
@@ -8913,7 +8953,7 @@
       "module": "@jgengine/assets/packs/starter",
       "gameFacing": false,
       "probe": null,
-      "intent": "themed CC0 model ids (people/props/nature/urban) ready for entityModels"
+      "intent": "themed CC0 model ids (props/nature/urban) ready for objectModels"
     },
     {
       "id": "stat-block",

@@ -1,4 +1,4 @@
-import { useLoader, useThree } from "@react-three/fiber";
+import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import { Group, type Object3D, type SkinnedMesh } from "three";
 
@@ -11,6 +11,8 @@ import { detectKtx2Support, sharedGltfLoader } from "./modelLoad.draw";
 import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "./modelRender.draw";
 import { applyModelWindToScene } from "./modelWind.draw";
 import { useModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw";
+import { addHumanoidSockets, firstPersonArms, withHumanoidActionClips } from "@jgengine/core/anim/humanoidActionClips.draw";
+import { collapseHead, humanoidHead, useFirstPersonBody } from "@jgengine/core/camera/firstPersonBody.draw";
 import { applyModelNodeVisibility, modelHiddenNodesKey } from "./modelNodeVisibility.draw";
 
 /** Model loading, placement, shadows and animation for a custom renderer. */
@@ -51,6 +53,7 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
     const content = cloneModelScene(gltf.scene, { shadows: model.shadows, surfaceDetail: model.surfaceDetail });
     try {
       configure?.(content);
+      addHumanoidSockets(content, gltf.scene, gltf.animations);
       applyModelWindToScene(content, model.wind, model.wind === false || model.wind === undefined ? 4 : model.wind.height ?? 4);
       for (const diagnostic of applyModelNodeVisibility(content, hiddenNodes)) console.warn(`Model ${model.url} hiddenNodes: ${diagnostic.message}`);
       const scene = new Group().add(content);
@@ -71,7 +74,22 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
     registerCharacterRig(instanceId, parts, bones);
     return () => unregisterCharacterRig(instanceId);
   }, [content, instanceId, lodKey]);
-  useModelAnimation(content, gltf.animations, model.animation ?? (instanceId === undefined ? undefined : "auto"), instanceId);
+  const humanoid = typeof model.animation === "object" && model.animation.humanoidActions === true;
+  const clips = useMemo(() => (humanoid ? withHumanoidActionClips(gltf.scene, gltf.animations) : gltf.animations), [gltf, humanoid]);
+  useModelAnimation(content, clips, model.animation ?? (instanceId === undefined ? undefined : "auto"), instanceId);
+  const firstPersonBody = useFirstPersonBody(instanceId);
+  const head = useMemo(() => (firstPersonBody ? humanoidHead(content) : null), [content, firstPersonBody]);
+  const arms = useMemo(() => (firstPersonBody ? firstPersonArms(content, gltf.scene, gltf.animations) : null), [content, gltf, firstPersonBody]);
+  useEffect(() => {
+    if (head === null) return;
+    const rest = head.scale.clone();
+    return () => void head.scale.copy(rest);
+  }, [head]);
+  // Registered after the animation's frame callback, so it works on the pose that frame wrote.
+  useFrame(() => {
+    if (head !== null) collapseHead(head);
+    arms?.();
+  });
   return { content, scene, ...placement };
 }
 

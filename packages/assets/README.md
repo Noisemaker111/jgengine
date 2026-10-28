@@ -139,6 +139,7 @@ Build the catalog once, then address ids (or aliases) G�� resolve returns `{
 
 ```ts
 import { buildCatalog } from "@jgengine/assets";
+import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 
 const catalog = buildCatalog({ basePath: "/models" });
 
@@ -152,7 +153,7 @@ export const game: PlayableGame = {
     "quaternius-stylized-nature/Pine_1": { url: catalog.resolve("quaternius-stylized-nature/Pine_1")!.url, scale: 1.4 },
   },
   entityModels: {
-    hero: { url: catalog.resolve("kaykit-adventurers/Barbarian")!.url, scale: 1.1 },
+    hero: libraryModel("human/woman-casual"), // a realistic rigged human from the model library
   },
 };
 ```

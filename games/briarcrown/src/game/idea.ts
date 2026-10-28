@@ -37,20 +37,16 @@ export const idea: Idea = {
     "label": "Villagers",
     "walkers": [
       {
-        "model": "/models/imported/lantern-reach/players/rogue_hooded.glb",
-        "height": 1.75
+        "model": "human/woman-casual"
       },
       {
-        "model": "/models/imported/lantern-reach/players/druid.glb",
-        "height": 1.75
+        "model": "human/man-casual"
       },
       {
-        "model": "/models/imported/lantern-reach/players/ranger.glb",
-        "height": 1.75
+        "model": "human/woman-casual-2"
       },
       {
-        "model": "/models/imported/lantern-reach/players/barbarian.glb",
-        "height": 1.8
+        "model": "human/construction-worker"
       }
     ]
   },

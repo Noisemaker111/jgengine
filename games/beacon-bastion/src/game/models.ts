@@ -1,3 +1,4 @@
+import { findLibraryModelByName, libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
@@ -12,11 +13,18 @@ const DUNGEON = "kaykit-dungeon";
 /** Height of a raider at scale 1; each catalog entry's scale multiplies it. */
 const RAIDER_HEIGHT = 1.8;
 
+/** A living raider: a realistic human at its raider height, its humanoid clips on the game's clock. */
+function humanRaider(def: CreepDef): ModelConfig {
+  const human = libraryModel(def.model, { targetHeight: RAIDER_HEIGHT * def.scale });
+  const animation = typeof human.animation === "object" ? { ...human.animation, clock: "game" as const } : human.animation;
+  return { ...human, material: { color: def.color, rim: def.rim }, ...(animation === undefined ? {} : { animation }) };
+}
+
 // Preserve automatic clip roles while advancing raiders with the game's accepted clock.
 function raiderPick(def: CreepDef): ModelPick {
   return {
     model: def.model,
-    fallbackModel: def.fallbackModel,
+    ...(def.fallbackModel === undefined ? {} : { fallbackModel: def.fallbackModel }),
     style: {
       targetHeight: RAIDER_HEIGHT * def.scale,
       material: { color: def.color, rim: def.rim },
@@ -66,11 +74,16 @@ function buildEntityModels(): Record<string, ModelConfig> {
     [BASE_CATALOG_ID]: KEEP_PLAN,
     ...TOWER_PLAN,
   };
+  const humans: Record<string, ModelConfig> = {};
   for (const def of Object.values(CREEP_CATALOG)) {
-    plan[def.id] = raiderPick(def);
+    if (findLibraryModelByName(def.model) === null) plan[def.id] = raiderPick(def);
+    else humans[def.id] = humanRaider(def);
   }
-  return resolveModelPlan(assets, plan);
+  return { ...resolveModelPlan(assets, plan), ...humans };
 }
+
+/** The library humans the living raiders wear, for the credits. */
+export const RAIDER_HUMANS: readonly string[] = [...new Set(Object.values(CREEP_CATALOG).map((def) => def.model).filter((model) => findLibraryModelByName(model) !== null))];
 
 export const entityModels: Record<string, ModelConfig> = buildEntityModels();
 

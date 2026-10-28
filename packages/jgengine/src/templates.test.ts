@@ -418,6 +418,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     expect(scene.markers.some((marker) => marker.kind === "goal")).toBe(true);
     expect(fileOf(files, "src/world.ts")).toContain('mode: "flat"');
     expect(fileOf(files, "src/game/models.ts")).toContain('model: "asset:hero"');
+    expect(fileOf(render("standalone"), "src/game/models.ts")).toContain('player: libraryModel("human/man-casual")');
   });
 
   test("templates carry the gameKit-first agent onboarding", () => {

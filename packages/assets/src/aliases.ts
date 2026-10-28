@@ -4,7 +4,7 @@ import { starterAliases } from "./packs/starter";
 /**
  * Semantic keys → live catalog ids. Prefer these in games so re-homes only
  * touch this table. Never point at kenney-*. Curated starter theme ids
- * (`asset:person_casual`, `nature_tree`, …) come from {@link starterAliases}.
+ * (`asset:prop_crate`, `nature_tree`, …) come from {@link starterAliases}.
  */
 export const aliases: readonly AssetAlias[] = [
   { key: "nature/tree_pine", target: "quaternius-stylized-nature/Pine_1" },
@@ -12,10 +12,6 @@ export const aliases: readonly AssetAlias[] = [
   { key: "nature/tree_dead", target: "quaternius-stylized-nature/DeadTree_1" },
   { key: "nature/bush", target: "quaternius-stylized-nature/Bush_Common" },
   { key: "nature/rock", target: "quaternius-stylized-nature/Rock_Medium_1" },
-  { key: "character/rogue", target: "kaykit-adventurers/Rogue" },
-  { key: "character/knight", target: "kaykit-adventurers/Knight" },
-  { key: "character/mage", target: "kaykit-adventurers/Mage" },
-  { key: "character/barbarian", target: "kaykit-adventurers/Barbarian" },
   { key: "scifi/alien", target: "quaternius-modular-scifi/Alien_Cyclop" },
   { key: "scifi/chest", target: "quaternius-modular-scifi/Prop_Chest" },
   { key: "scifi/crate", target: "quaternius-modular-scifi/Prop_Crate3" },

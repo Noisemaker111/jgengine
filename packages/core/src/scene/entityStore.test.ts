@@ -28,6 +28,20 @@ describe("scene entity store", () => {
     expect(store.get(store.spawn("raptor"))?.size).toBeUndefined();
   });
 
+  test("the item in hand is set and emptied by update and kept through a snapshot", () => {
+    const store = createEntityStore();
+    const id = store.spawn("player", { position: [0, 0, 0] });
+    expect(store.get(id)?.held).toBeUndefined();
+    store.update(id, { held: "stone_pick" });
+    const copy = createEntityStore();
+    copy.hydrate(store.snapshot());
+    expect(copy.get(id)?.held).toBe("stone_pick");
+    store.update(id, { held: null });
+    expect(store.get(id)?.held).toBeUndefined();
+    store.update(id, { size: 1 });
+    expect(copy.get(id)?.held).toBe("stone_pick");
+  });
+
   test("spawn adopts a live id instead of throwing, and throw is opt-in", () => {
     const store = createEntityStore();
     store.spawn("rack.basic", { id: "hero", position: [0, 0, 0] });

@@ -24,6 +24,12 @@ export interface FirstPersonCameraConfig {
   maxPitch?: number;
   /** Show the centered crosshair overlay. Default true. */
   reticle?: boolean;
+  /**
+   * Draw the player's own body instead of hiding it: a humanoid body keeps its arms, hands and held
+   * items in view with its head folded away, so the camera never looks through the skull. Pair it
+   * with `viewmodel: false`. A body the skeleton standard cannot map is drawn whole. Default false.
+   */
+  body?: boolean;
   /** Render a viewmodel in view: the built-in three-mesh gun, or `PlayableGame.viewmodel` when set (#542). `false` renders no viewmodel regardless of `PlayableGame.viewmodel`. Default true. */
   viewmodel?: boolean;
   /**

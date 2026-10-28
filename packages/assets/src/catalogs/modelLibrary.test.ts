@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { humanoidAnimation } from "@jgengine/core/anim/humanoidActions";
 import jpeg from "jpeg-js";
 
 import { downscaleJpeg } from "../modelLibraryPull";
@@ -78,11 +79,11 @@ describe("model library", () => {
     expect(findLibraryModel("tree")[0]!.entry.name).toBe("nature/jacaranda");
   });
 
-  test("a rigged human walks on the engine's locomotion states and an animal stands still", () => {
+  test("a rigged human gets the engine's humanoid states and actions and an animal stands still", () => {
     const human = libraryModel("human/businessman");
     expect(human.url).toBe("/models/library/human/businessman/model.glb");
     expect(human.variants).toBeUndefined();
-    expect(human.animation).toEqual({ states: { idle: "Idle", walk: "Walk", run: "Run", walkSpeed: 0.3, runSpeed: 3.2 } });
+    expect(human.animation).toEqual(humanoidAnimation({ idle: "Idle", walk: "Walk", run: "Run" }));
     expect(libraryModel("creature/deer").animation).toBeUndefined();
     expect(libraryModel("scifi/server-rack").url).toBe("/models/library/scifi/server-rack/model.glb");
   });

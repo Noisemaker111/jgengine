@@ -50,7 +50,7 @@ export function crowdKindOf(model: ModelConfig): string {
  */
 export function crowdEligible(model: ModelConfig | undefined): model is ModelConfig {
   if (model === undefined || model.lod === false) return false;
-  if ((model.ik !== undefined && model.ik !== "none") || model.attachments !== undefined || model.parts !== undefined) return false;
+  if ((model.ik !== undefined && model.ik !== "none") || model.attachments !== undefined || model.held !== undefined || model.parts !== undefined) return false;
   if (model.partMotion !== undefined) return false;
   if (model.wind !== undefined && model.wind !== false) return false;
   if (model.surfaceDetail === false) return false;

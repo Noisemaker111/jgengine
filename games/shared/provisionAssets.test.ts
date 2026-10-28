@@ -30,11 +30,11 @@ describe("dev provisions what a game references", () => {
 });
 
 describe("an alias pulls the pack it resolves into", () => {
-  test("asset:person_casual in a game's source provisions the character pack behind it", () => {
+  test("asset:prop_crate in a game's source provisions the pack behind it", () => {
     const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));
     try {
-      const withAliases = { ...catalogs, sources: [...catalogs.sources, { id: "kaykit-adventurers" }], aliases: [{ key: "asset:person_casual", target: "kaykit-adventurers/Rogue" }] };
-      expect(missingPulls(`player: { model: "asset:person_casual" }`, publicDir, withAliases).map((job) => job.target)).toEqual(["kaykit-adventurers"]);
+      const withAliases = { ...catalogs, sources: [...catalogs.sources, { id: "kaykit-dungeon" }], aliases: [{ key: "asset:prop_crate", target: "kaykit-dungeon/crate" }] };
+      expect(missingPulls(`crate: { model: "asset:prop_crate" }`, publicDir, withAliases).map((job) => job.target)).toEqual(["kaykit-dungeon"]);
       expect(missingPulls(`player: { model: "asset:other" }`, publicDir, withAliases)).toEqual([]);
     } finally {
       rmSync(publicDir, { recursive: true, force: true });

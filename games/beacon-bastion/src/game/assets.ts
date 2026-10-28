@@ -6,7 +6,6 @@ export const ASSET_SOURCE_IDS = [
   "quaternius-medieval-village",
   "quaternius-stylized-nature",
   "kaykit-dungeon",
-  "kaykit-adventurers",
   "kaykit-skeletons",
 ] as const;
 

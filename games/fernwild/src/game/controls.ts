@@ -1,4 +1,7 @@
+import { libraryModelCredits } from "@jgengine/assets/catalogs/modelLibrary";
+
 import { CREATURE_MODEL_SOURCES, type CreatureModelSource } from "./data/creatureModels";
+import { SURVIVOR_MODELS } from "./models";
 
 /** One credit line per author and licence of the creature models, naming each model. */
 function creatureCredits(): string[] {
@@ -22,6 +25,7 @@ export const CONTROLS: readonly (readonly [string, string])[] = [
   ["E", "Pick bushes and stones, drink; open a downed or tamed creature, ride, get off"],
   ["T / U", "Whistle your tames to follow / stay"],
   ["I", "Inventory, crafting, stats and engrams"],
+  ["V", "First / third person"],
   ["1 - 0", "Equip a hotbar tool or eat hotbar food"],
   ["Esc", "Pause"],
 ];
@@ -40,5 +44,5 @@ export const CREDITS: readonly string[] = [
   "A love letter to ARK: Survival Evolved's systems. Not affiliated with Studio Wildcard.",
   "Nature models: Quaternius (Stylized Nature MegaKit), CC0.",
   ...creatureCredits(),
-  "Survivor model: JGengine starter pack.",
+  ...libraryModelCredits(SURVIVOR_MODELS),
 ];

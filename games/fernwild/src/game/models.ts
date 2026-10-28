@@ -1,8 +1,7 @@
-import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { resolveModelPlan } from "@jgengine/core/model/resolveModel";
+import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
+import type { ModelAttachment, ModelConfig } from "@jgengine/core/game/playableGame";
 import type { ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
 
-import { assets } from "./assets";
 import { SPECIES_MODELS } from "./data/creatureModels";
 
 const NATURE = "/models/imported/quaternius-stylized-nature";
@@ -10,12 +9,38 @@ const nature = (file: string, targetHeight: number): ModelConfig => ({ url: `${N
 /** A rock tinted to read as the ore it holds. */
 const ore = (file: string, targetHeight: number, material: NonNullable<ModelConfig["material"]>): ModelConfig => ({ ...nature(file, targetHeight), material });
 
+const SURVIVOR = "human/man-casual";
+
+/** A tool in the right fist: the haft runs down out of the grip, its head swings over and down. */
+const GRIP: [number, number, number] = [2.62, 0, 0];
+
+/** Each tool item the survivor shows in hand, and how the fist holds it; anything else leaves the fist empty. */
+const TOOLS: Record<string, { model: string; rotation: [number, number, number] }> = {
+  stone_pick: { model: "survival/stone-pick", rotation: GRIP },
+  stone_hatchet: { model: "survival/stone-hatchet", rotation: GRIP },
+  wooden_club: { model: "survival/wooden-club", rotation: GRIP },
+  spear: { model: "survival/spear", rotation: [1.75, 0, 0] },
+  torch: { model: "survival/torch", rotation: [0.35, 0, 0] },
+};
+
+const inHand = (tool: { model: string; rotation: [number, number, number] }): ModelAttachment => ({
+  slot: "hand.r",
+  model: libraryModel(tool.model),
+  position: [0, -0.09, 0.02],
+  rotation: tool.rotation,
+});
+
+const HELD: Record<string, ModelAttachment> = Object.fromEntries(Object.entries(TOOLS).map(([item, tool]) => [item, inHand(tool)]));
+
+/** The model-library names the survivor and its tools draw, for the credits. */
+export const SURVIVOR_MODELS: readonly string[] = [SURVIVOR, ...Object.values(TOOLS).map((tool) => tool.model)];
+
 /**
  * The survivor and every species: free animal models (data/creatureModels.ts), each drawn at the
  * species' standing height and tinted where a relative stands in for it.
  */
 export const entityModels: Record<string, ModelConfig> = {
-  ...resolveModelPlan(assets, { player: { model: "asset:person_casual", style: { targetHeight: 1.8 } } }),
+  player: { ...libraryModel(SURVIVOR), held: HELD },
   ...Object.fromEntries(
     Object.entries(SPECIES_MODELS).map(([species, { file, height, tint, tintMaterials }]) => [
       species,

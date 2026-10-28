@@ -76,6 +76,7 @@ export { createStarterCatalog } from "./catalogs/starter";
 export {
   STARTER_ASSETS,
   STARTER_PACKS,
+  STARTER_PEOPLE,
   STARTER_SOURCE_PACKS,
   STARTER_THEMES,
   type StarterAsset,

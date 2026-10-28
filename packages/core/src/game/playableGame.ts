@@ -195,6 +195,12 @@ export interface ModelAnimationStates {
   backward?: string;
   /** Clip while turning on the spot; omit to pivot on `walk`, driven by the `turnRate` parameter. */
   turn?: string;
+  /** Clip held while the shared player motor reports the body off the ground (a jump or a fall). */
+  jump?: string;
+  /** Clip while swimming and moving, driven by the motor's `swimming` parameter. */
+  swim?: string;
+  /** Clip while swimming in place; omit to hold `swim` at every speed. */
+  tread?: string;
   /** Play every locomotion state as root motion: the rig holds in place and the blended travel comes out as `rootDelta` for the movement owner to consume. */
   rootMotion?: boolean;
   /** Speed (world units/sec) above which the entity counts as moving. Default 0.5. */
@@ -223,6 +229,13 @@ export interface ModelAnimationConfig {
   time?: number;
   /** Speed-driven idle/walk/run clip switching, crossfaded by the shell from the entity's live movement; overrides `clip` while set. */
   states?: ModelAnimationStates | undefined;
+  /**
+   * Add the engine-authored humanoid actions (`Jump`, `Swim`, `Tread`, `Punch`, `Swing`, `Gather`,
+   * `Hurt`, `Death`, see `@jgengine/core/anim/humanoidActions`) to a humanoid rig's own clips, posed
+   * from its idle clip. A rig that already ships a clip of the same name keeps it; a rig the skeleton
+   * standard cannot map as a full body gets none. `humanoidAnimation()` builds the matching config.
+   */
+  humanoidActions?: boolean;
   /**
    * One-shot clips keyed by event name, each played once over the locomotion state then released back to it.
    * Reserved keys `hit` and `death` auto-fire on this entity's `combat.hitReaction` / `entity.died`; any other
@@ -368,6 +381,13 @@ export interface ModelConfig {  url: string;
   ik?: "auto" | "none" | ModelIkConfig;
   /** Props/weapons parented to named bones on this model's rig; each follows its bone through animation. */
   attachments?: readonly ModelAttachment[];
+  /**
+   * What this body draws in hand for each item id an entity of it may hold (`SceneEntity.held`, set
+   * with `ctx.scene.entity.update(id, { held })`). Only the held item's attachment mounts; an item
+   * with no entry, or empty hands, draws nothing. On a humanoid rig `slot: "hand.r"` / `"hand.l"` is
+   * a socket in the character's own frame (metres, +Z forward, +Y up) at the wrist in the idle pose.
+   */
+  held?: Readonly<Record<string, ModelAttachment>>;
   /** Static kit-of-parts pieces stacked at fixed local offsets — no bone/rig involved. Use this for a compound entity assembled from several modular meshes (a castle keep from base + mid + roof pieces); use `attachments` for props parented to an animated rig's bones. Tag parts with a `role` to procedurally animate a rig-less character composition. */
   parts?: readonly ModelPart[];
   /** Tuning for the procedural part-motion driver when any part carries a `role`; omit for defaults. */

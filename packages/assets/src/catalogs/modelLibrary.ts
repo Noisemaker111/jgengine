@@ -1,3 +1,4 @@
+import { humanoidAnimation } from "@jgengine/core/anim/humanoidActions";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
 import { MODEL_LIBRARY_ENTRIES } from "./modelLibraryEntries";
@@ -298,11 +299,14 @@ export function libraryModel(name: string, options: LibraryModelOptions = {}): M
     const idle = names.has("Idle") ? "Idle" : [...names][0];
     if (idle === undefined) return { url: `${dir}/model.glb`, anchor: "origin", ...size };
     const walk = names.has("Walk") ? "Walk" : idle;
+    const run = names.has("Run") ? { run: "Run" } : {};
+    // Rocketbox people share one Biped skeleton, so the engine's authored actions pose on all of them.
+    const human = entry.origin.path.startsWith("Avatars/");
     return {
       url: `${dir}/model.glb`,
       anchor: "origin",
       ...size,
-      animation: { states: { idle, walk, ...(names.has("Run") ? { run: "Run" } : {}), walkSpeed: 0.3, runSpeed: 3.2 } },
+      animation: human ? humanoidAnimation({ idle, walk, ...run }) : { states: { idle, walk, ...run, walkSpeed: 0.3, runSpeed: 3.2 } },
     };
   }
   if (entry.origin.provider === "authored") return { url: `${dir}/model.glb`, anchor: "origin", ...size };
