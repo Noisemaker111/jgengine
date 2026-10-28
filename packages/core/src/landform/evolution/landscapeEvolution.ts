@@ -77,7 +77,7 @@ export interface GlacialParams {
    * rates of temperate valley glaciers run 0.1–10 mm/yr (Hallet, Hunter & Bogen 1996).
    */
   erosion?: number;
-  /** Exponent l of sliding speed in the erosion law. Default 1; abrasion theory (Hallet 1979) and Harbor (1992) use 2. */
+  /** Exponent l of sliding speed in the erosion law. Default 1; abrasion theory (Hallet 1979) and Harbor (1992) use 2, which can still run away at grid scale over tens of kyr (#2790). */
   erosionExponent?: number;
   /** Longest implicit ice step in years; the ice flows the whole landscape step in steps up to this long. Default 50. */
   iceStep?: number;
