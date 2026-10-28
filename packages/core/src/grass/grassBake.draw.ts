@@ -53,8 +53,8 @@ export interface ResolvedGrassBake {
   coverageAt: TerrainHeightSampler;
   /** `look.growAbove` in patch-local height. */
   growAbove: number;
-  /** Coverage of the turf mat: `coverageAt`, bare below `growAbove` like the blades. */
-  turfAt: TerrainHeightSampler;
+  /** Coverage of the turf mat: `coverageAt`, bare below `growAbove` like the blades. Pass `height` when the ground there is already sampled. */
+  turfAt: (x: number, z: number, height?: number) => number;
   /** Blades per m² at full detail. */
   bladesPerM2: number;
   /** Tuft roots per m² at full detail. */
@@ -98,7 +98,7 @@ export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
     heightAt,
     coverageAt,
     growAbove,
-    turfAt: (x, z) => coverageAt(x, z) * smoothstep(growAbove, growAbove + 1, heightAt(x, z)),
+    turfAt: (x, z, height = heightAt(x, z)) => coverageAt(x, z) * smoothstep(growAbove, growAbove + 1, height),
     bladesPerM2,
     tuftsPerM2: bladesPerM2 / look.tuftBlades,
     columns,

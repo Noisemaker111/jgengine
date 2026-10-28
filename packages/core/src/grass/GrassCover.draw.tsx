@@ -93,7 +93,8 @@ export interface GrassCoverProps {
   strength: number;
   edgeFeather: number;
   heightAt: TerrainHeightSampler;
-  coverageAt: TerrainHeightSampler;
+  /** 0..1 mat coverage at a point, given the ground height there. */
+  coverageAt: (x: number, z: number, height: number) => number;
   segments?: number;
   /** Metres the mat floats above the ground; keep it under the blade height or the mat hides the blades. Default 0.035. */
   lift?: number;

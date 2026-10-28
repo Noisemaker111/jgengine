@@ -22,7 +22,8 @@ export interface GrassCoverGeometryOptions {
   /** Meters of soft fringe at the patch border, matching the blade field's own feather. */
   edgeFeather: number;
   heightAt: TerrainHeightSampler;
-  coverageAt: TerrainHeightSampler;
+  /** 0..1 mat coverage at a point, given the ground height there (already sampled, so it is not read twice). */
+  coverageAt: (x: number, z: number, height: number) => number;
   /** Lift above the ground in meters so the mat never z-fights the terrain. Default 0.035. */
   lift?: number;
   /** Grid segments per axis; defaults to one per 2 m, at least 16 so a small patch keeps its feathered edge, clamped to {@link GRASS_COVER_MAX_SEGMENTS}. */
@@ -96,24 +97,32 @@ export function createGrassCoverGeometry(options: GrassCoverGeometryOptions): Gr
   const normals = new Float32Array(count * 3);
   const colors = new Float32Array(count * 4);
   const uvs = new Float32Array(count * 2);
-  const eps = Math.max(0.25, Math.min(size.width, size.depth) / segments / 2);
+  const stepX = size.width / segments;
+  const stepZ = size.depth / segments;
+  // The ground is sampled once per vertex; normals come from the neighbouring samples, since a
+  // sampler can be costly (a whole island's height function) and a large patch has ~10k vertices.
+  const heights = new Float32Array(count);
+  for (let iz = 0; iz < cols; iz += 1) {
+    const z = -halfD + iz * stepZ;
+    for (let ix = 0; ix < cols; ix += 1) heights[iz * cols + ix] = options.heightAt(-halfW + ix * stepX, z);
+  }
+  const heightOf = (ix: number, iz: number): number => heights[Math.min(cols - 1, Math.max(0, iz)) * cols + Math.min(cols - 1, Math.max(0, ix))] ?? 0;
 
   for (let iz = 0; iz < cols; iz += 1) {
-    const z = -halfD + (iz / segments) * size.depth;
+    const z = -halfD + iz * stepZ;
     for (let ix = 0; ix < cols; ix += 1) {
-      const x = -halfW + (ix / segments) * size.width;
+      const x = -halfW + ix * stepX;
       const index = iz * cols + ix;
+      const height = heightOf(ix, iz);
       positions[index * 3] = x;
-      positions[index * 3 + 1] = options.heightAt(x, z) + lift;
+      positions[index * 3 + 1] = height + lift;
       positions[index * 3 + 2] = z;
 
-      const hL = options.heightAt(x - eps, z);
-      const hR = options.heightAt(x + eps, z);
-      const hD = options.heightAt(x, z - eps);
-      const hU = options.heightAt(x, z + eps);
-      const nx = hL - hR;
-      const nz = hD - hU;
-      const ny = 2 * eps;
+      const spanX = (Math.min(cols - 1, ix + 1) - Math.max(0, ix - 1)) * stepX;
+      const spanZ = (Math.min(cols - 1, iz + 1) - Math.max(0, iz - 1)) * stepZ;
+      const nx = (heightOf(ix - 1, iz) - heightOf(ix + 1, iz)) / spanX;
+      const nz = (heightOf(ix, iz - 1) - heightOf(ix, iz + 1)) / spanZ;
+      const ny = 1;
       const length = Math.hypot(nx, ny, nz) || 1;
       normals[index * 3] = nx / length;
       normals[index * 3 + 1] = ny / length;
@@ -122,7 +131,7 @@ export function createGrassCoverGeometry(options: GrassCoverGeometryOptions): Gr
       const edge = Math.min(halfW - Math.abs(x), halfD - Math.abs(z));
       const feather = Math.max(0.001, options.edgeFeather);
       const edgeFade = smooth(Math.min(1, Math.max(0, edge / feather)));
-      const coverage = Math.max(0, Math.min(1, options.coverageAt(x, z)));
+      const coverage = Math.max(0, Math.min(1, options.coverageAt(x, z, height)));
       const grain = valueNoise(x / 1.7, z / 1.7, options.seed);
       const patch = valueNoise(x / 11 + 31.7, z / 11 - 9.2, options.seed + 17);
       const alpha = options.strength * edgeFade * coverage * (0.82 + 0.18 * grain);

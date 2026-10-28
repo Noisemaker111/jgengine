@@ -156,7 +156,8 @@
         "craterRadius": 48,
         "craterDepth": 45,
         "lat": 43.6,
-        "lon": 37.9
+        "lon": 37.9,
+        "erosion": 0.55
       }
     },
     {
@@ -172,7 +173,8 @@
         "radius": 210,
         "sharpness": 1.7,
         "lat": 21.9,
-        "lon": 53.4
+        "lon": 53.4,
+        "erosion": 0.8
       }
     },
     {
@@ -188,7 +190,8 @@
         "radius": 225,
         "sharpness": 1.6,
         "lat": 25.7,
-        "lon": 24.7
+        "lon": 24.7,
+        "erosion": 0.8
       }
     },
     {
@@ -203,7 +206,8 @@
       "meta": {
         "radius": 180,
         "lat": 33.6,
-        "lon": 78.7
+        "lon": 78.7,
+        "erosion": 0.7
       }
     },
     {
@@ -219,7 +223,8 @@
         "radius": 180,
         "sharpness": 1.6,
         "lat": 35.6,
-        "lon": 59.1
+        "lon": 59.1,
+        "erosion": 0.75
       }
     },
     {
@@ -234,7 +239,8 @@
       "meta": {
         "radius": 150,
         "lat": 56.6,
-        "lon": 47.9
+        "lon": 47.9,
+        "erosion": 0.7
       }
     },
     {
@@ -249,7 +255,8 @@
       "meta": {
         "radius": 90,
         "lat": 74,
-        "lon": 33.8
+        "lon": 33.8,
+        "erosion": 0.5
       }
     },
     {
@@ -15288,6 +15295,356 @@
         "growAbove": 2.9,
         "seed": "south-jungle-floor"
       }
+    },
+    {
+      "id": "grass_south_inland",
+      "kind": "grass_field",
+      "shape": "box",
+      "center": {
+        "x": 240,
+        "y": 0,
+        "z": 1120
+      },
+      "halfExtents": {
+        "x": 330,
+        "y": 0.01,
+        "z": 100
+      },
+      "label": "South inland: waist-high grass past the beach",
+      "meta": {
+        "density": 0.8,
+        "bladeHeight": 0.75,
+        "heightVariation": 0.45,
+        "bladeWidth": 0.035,
+        "widthVariation": 0.4,
+        "profile": 0.2,
+        "curvature": 0.55,
+        "stiffness": 0.35,
+        "tuftSpread": 0.22,
+        "tuftBlades": 7,
+        "baseColor": "#25481f",
+        "tipColor": "#8fae4c",
+        "hueNoise": 0.2,
+        "valueNoise": 0.35,
+        "seasonNoise": 0.4,
+        "season": 0.05,
+        "dryness": 0.05,
+        "mixShare": 0.3,
+        "mixHeight": 0.9,
+        "mixWidth": 4,
+        "mixColor": "#3f7f30",
+        "clumping": 0.45,
+        "clumpSize": 2.2,
+        "patchiness": 0.2,
+        "slopeThin": 0.6,
+        "windStrength": 0.45,
+        "windGust": 0.2,
+        "translucency": 0.75,
+        "normalLift": 0.55,
+        "groundCover": 0.85,
+        "growAbove": 2.4,
+        "seed": "grass_south_inland"
+      }
+    },
+    {
+      "id": "grass_southern_jungle",
+      "kind": "grass_field",
+      "shape": "box",
+      "center": {
+        "x": 300,
+        "y": 0,
+        "z": 600
+      },
+      "halfExtents": {
+        "x": 330,
+        "y": 0.01,
+        "z": 260
+      },
+      "label": "Southern jungle grass",
+      "meta": {
+        "density": 0.8,
+        "bladeHeight": 0.75,
+        "heightVariation": 0.45,
+        "bladeWidth": 0.035,
+        "widthVariation": 0.4,
+        "profile": 0.2,
+        "curvature": 0.55,
+        "stiffness": 0.35,
+        "tuftSpread": 0.22,
+        "tuftBlades": 7,
+        "baseColor": "#25481f",
+        "tipColor": "#8fae4c",
+        "hueNoise": 0.2,
+        "valueNoise": 0.35,
+        "seasonNoise": 0.4,
+        "season": 0.05,
+        "dryness": 0.05,
+        "mixShare": 0.3,
+        "mixHeight": 0.9,
+        "mixWidth": 4,
+        "mixColor": "#3f7f30",
+        "clumping": 0.45,
+        "clumpSize": 2.2,
+        "patchiness": 0.2,
+        "slopeThin": 0.6,
+        "windStrength": 0.45,
+        "windGust": 0.2,
+        "translucency": 0.75,
+        "normalLift": 0.55,
+        "groundCover": 0.85,
+        "growAbove": 2.4,
+        "seed": "grass_southern_jungle"
+      }
+    },
+    {
+      "id": "grass_central_jungle",
+      "kind": "grass_field",
+      "shape": "box",
+      "center": {
+        "x": 60,
+        "y": 0,
+        "z": 150
+      },
+      "halfExtents": {
+        "x": 300,
+        "y": 0.01,
+        "z": 220
+      },
+      "label": "Central jungle grass",
+      "meta": {
+        "density": 0.8,
+        "bladeHeight": 0.75,
+        "heightVariation": 0.45,
+        "bladeWidth": 0.035,
+        "widthVariation": 0.4,
+        "profile": 0.2,
+        "curvature": 0.55,
+        "stiffness": 0.35,
+        "tuftSpread": 0.22,
+        "tuftBlades": 7,
+        "baseColor": "#25481f",
+        "tipColor": "#8fae4c",
+        "hueNoise": 0.2,
+        "valueNoise": 0.35,
+        "seasonNoise": 0.4,
+        "season": 0.05,
+        "dryness": 0.05,
+        "mixShare": 0.3,
+        "mixHeight": 0.9,
+        "mixWidth": 4,
+        "mixColor": "#3f7f30",
+        "clumping": 0.45,
+        "clumpSize": 2.2,
+        "patchiness": 0.2,
+        "slopeThin": 0.6,
+        "windStrength": 0.45,
+        "windGust": 0.2,
+        "translucency": 0.75,
+        "normalLift": 0.55,
+        "groundCover": 0.85,
+        "growAbove": 2.4,
+        "seed": "grass_central_jungle"
+      }
+    },
+    {
+      "id": "grass_south_plains",
+      "kind": "grass_field",
+      "shape": "box",
+      "center": {
+        "x": -180,
+        "y": 0,
+        "z": 800
+      },
+      "halfExtents": {
+        "x": 420,
+        "y": 0.01,
+        "z": 190
+      },
+      "label": "South plains: tall green grass",
+      "meta": {
+        "density": 0.7,
+        "bladeHeight": 1.05,
+        "heightVariation": 0.45,
+        "bladeWidth": 0.035,
+        "widthVariation": 0.4,
+        "profile": 0.2,
+        "curvature": 0.55,
+        "stiffness": 0.35,
+        "tuftSpread": 0.22,
+        "tuftBlades": 7,
+        "baseColor": "#3a5f22",
+        "tipColor": "#a9bd58",
+        "hueNoise": 0.2,
+        "valueNoise": 0.35,
+        "seasonNoise": 0.3,
+        "season": 0.08,
+        "dryness": 0.04,
+        "mixShare": 0.08,
+        "mixHeight": 0.9,
+        "mixWidth": 4,
+        "mixColor": "#4f8a34",
+        "clumping": 0.45,
+        "clumpSize": 2.2,
+        "patchiness": 0.2,
+        "slopeThin": 0.6,
+        "windStrength": 0.45,
+        "windGust": 0.2,
+        "translucency": 0.75,
+        "normalLift": 0.55,
+        "groundCover": 0.85,
+        "growAbove": 2.4,
+        "seed": "grass_south_plains"
+      }
+    },
+    {
+      "id": "grass_west_downs",
+      "kind": "grass_field",
+      "shape": "box",
+      "center": {
+        "x": -900,
+        "y": 0,
+        "z": 330
+      },
+      "halfExtents": {
+        "x": 260,
+        "y": 0.01,
+        "z": 330
+      },
+      "label": "West downs grass",
+      "meta": {
+        "density": 0.7,
+        "bladeHeight": 1.05,
+        "heightVariation": 0.45,
+        "bladeWidth": 0.035,
+        "widthVariation": 0.4,
+        "profile": 0.2,
+        "curvature": 0.55,
+        "stiffness": 0.35,
+        "tuftSpread": 0.22,
+        "tuftBlades": 7,
+        "baseColor": "#3a5f22",
+        "tipColor": "#a9bd58",
+        "hueNoise": 0.2,
+        "valueNoise": 0.35,
+        "seasonNoise": 0.3,
+        "season": 0.08,
+        "dryness": 0.04,
+        "mixShare": 0.08,
+        "mixHeight": 0.9,
+        "mixWidth": 4,
+        "mixColor": "#4f8a34",
+        "clumping": 0.45,
+        "clumpSize": 2.2,
+        "patchiness": 0.2,
+        "slopeThin": 0.6,
+        "windStrength": 0.45,
+        "windGust": 0.2,
+        "translucency": 0.75,
+        "normalLift": 0.55,
+        "groundCover": 0.85,
+        "growAbove": 2.4,
+        "seed": "grass_west_downs"
+      }
+    },
+    {
+      "id": "grass_eastern_forest",
+      "kind": "grass_field",
+      "shape": "box",
+      "center": {
+        "x": 1010,
+        "y": 0,
+        "z": 280
+      },
+      "halfExtents": {
+        "x": 210,
+        "y": 0.01,
+        "z": 380
+      },
+      "label": "Eastern forest grass",
+      "meta": {
+        "density": 0.75,
+        "bladeHeight": 0.95,
+        "heightVariation": 0.45,
+        "bladeWidth": 0.035,
+        "widthVariation": 0.4,
+        "profile": 0.2,
+        "curvature": 0.55,
+        "stiffness": 0.35,
+        "tuftSpread": 0.22,
+        "tuftBlades": 7,
+        "baseColor": "#3a5f22",
+        "tipColor": "#a9bd58",
+        "hueNoise": 0.2,
+        "valueNoise": 0.35,
+        "seasonNoise": 0.3,
+        "season": 0.08,
+        "dryness": 0.04,
+        "mixShare": 0.14,
+        "mixHeight": 0.9,
+        "mixWidth": 4,
+        "mixColor": "#4f8a34",
+        "clumping": 0.45,
+        "clumpSize": 2.2,
+        "patchiness": 0.2,
+        "slopeThin": 0.6,
+        "windStrength": 0.45,
+        "windGust": 0.2,
+        "translucency": 0.75,
+        "normalLift": 0.55,
+        "groundCover": 0.85,
+        "growAbove": 2.4,
+        "seed": "grass_eastern_forest"
+      }
+    },
+    {
+      "id": "grass_redwood_floor",
+      "kind": "grass_field",
+      "shape": "box",
+      "center": {
+        "x": 620,
+        "y": 0,
+        "z": -250
+      },
+      "halfExtents": {
+        "x": 260,
+        "y": 0.01,
+        "z": 240
+      },
+      "label": "Redwood floor grass",
+      "meta": {
+        "density": 0.8,
+        "bladeHeight": 0.75,
+        "heightVariation": 0.45,
+        "bladeWidth": 0.035,
+        "widthVariation": 0.4,
+        "profile": 0.2,
+        "curvature": 0.55,
+        "stiffness": 0.35,
+        "tuftSpread": 0.22,
+        "tuftBlades": 7,
+        "baseColor": "#25481f",
+        "tipColor": "#8fae4c",
+        "hueNoise": 0.2,
+        "valueNoise": 0.35,
+        "seasonNoise": 0.4,
+        "season": 0.05,
+        "dryness": 0.05,
+        "mixShare": 0.3,
+        "mixHeight": 0.9,
+        "mixWidth": 4,
+        "mixColor": "#3f7f30",
+        "clumping": 0.45,
+        "clumpSize": 2.2,
+        "patchiness": 0.2,
+        "slopeThin": 0.6,
+        "windStrength": 0.45,
+        "windGust": 0.2,
+        "translucency": 0.75,
+        "normalLift": 0.55,
+        "groundCover": 0.85,
+        "growAbove": 2.4,
+        "seed": "grass_redwood_floor"
+      }
     }
   ],
   "paths": [
@@ -16376,7 +16733,10 @@
           "z": -492
         }
       ],
-      "width": 270
+      "width": 270,
+      "meta": {
+        "erosion": 0.8
+      }
     },
     {
       "id": "ridge_central_highlands",
@@ -16398,7 +16758,10 @@
           "z": 198
         }
       ],
-      "width": 240
+      "width": 240,
+      "meta": {
+        "erosion": 0.7
+      }
     },
     {
       "id": "ridge_western_spur",
@@ -16420,7 +16783,10 @@
           "z": -360
         }
       ],
-      "width": 210
+      "width": 210,
+      "meta": {
+        "erosion": 0.7
+      }
     },
     {
       "id": "ridge_eastern_spur",
@@ -16442,7 +16808,10 @@
           "z": 0
         }
       ],
-      "width": 210
+      "width": 210,
+      "meta": {
+        "erosion": 0.7
+      }
     },
     {
       "id": "river_central",
@@ -39351,6 +39720,701 @@
             "weight": 1
           }
         ]
+      }
+    },
+    {
+      "id": "hills_southern_jungle",
+      "kind": "hills",
+      "points": [
+        {
+          "x": 660.7,
+          "y": 0,
+          "z": 693.1
+        },
+        {
+          "x": 560.7,
+          "y": 0,
+          "z": 806.6
+        },
+        {
+          "x": 391.9,
+          "y": 0,
+          "z": 850
+        },
+        {
+          "x": 208.1,
+          "y": 0,
+          "z": 835.2
+        },
+        {
+          "x": 88.6,
+          "y": 0,
+          "z": 729.4
+        },
+        {
+          "x": -20,
+          "y": 0,
+          "z": 620.6
+        },
+        {
+          "x": 51.2,
+          "y": 0,
+          "z": 514.3
+        },
+        {
+          "x": 113.3,
+          "y": 0,
+          "z": 395.3
+        },
+        {
+          "x": 299.3,
+          "y": 0,
+          "z": 403.7
+        },
+        {
+          "x": 498.9,
+          "y": 0,
+          "z": 419
+        },
+        {
+          "x": 607.1,
+          "y": 0,
+          "z": 551
+        }
+      ],
+      "label": "Southern jungle hills",
+      "meta": {
+        "height": 22,
+        "scale": 150,
+        "ridged": 0.4,
+        "falloff": 90
+      }
+    },
+    {
+      "id": "hills_west_downs",
+      "kind": "hills",
+      "points": [
+        {
+          "x": -641.4,
+          "y": 0,
+          "z": 402.4
+        },
+        {
+          "x": -661.5,
+          "y": 0,
+          "z": 537.6
+        },
+        {
+          "x": -710.8,
+          "y": 0,
+          "z": 653
+        },
+        {
+          "x": -817,
+          "y": 0,
+          "z": 715.3
+        },
+        {
+          "x": -941.8,
+          "y": 0,
+          "z": 691.2
+        },
+        {
+          "x": -1068.5,
+          "y": 0,
+          "z": 619
+        },
+        {
+          "x": -1092.8,
+          "y": 0,
+          "z": 465.2
+        },
+        {
+          "x": -1097.7,
+          "y": 0,
+          "z": 301.5
+        },
+        {
+          "x": -965.5,
+          "y": 0,
+          "z": 237.8
+        },
+        {
+          "x": -836.1,
+          "y": 0,
+          "z": 185.7
+        },
+        {
+          "x": -729.9,
+          "y": 0,
+          "z": 296.2
+        }
+      ],
+      "label": "West downs",
+      "meta": {
+        "height": 18,
+        "scale": 210,
+        "ridged": 0.15,
+        "falloff": 100
+      }
+    },
+    {
+      "id": "hills_south_plains",
+      "kind": "hills",
+      "points": [
+        {
+          "x": 314.3,
+          "y": 0,
+          "z": 853.2
+        },
+        {
+          "x": 201.2,
+          "y": 0,
+          "z": 927.4
+        },
+        {
+          "x": 43.6,
+          "y": 0,
+          "z": 993.8
+        },
+        {
+          "x": -223.1,
+          "y": 0,
+          "z": 984.9
+        },
+        {
+          "x": -455.5,
+          "y": 0,
+          "z": 935.6
+        },
+        {
+          "x": -586.1,
+          "y": 0,
+          "z": 852.7
+        },
+        {
+          "x": -528.4,
+          "y": 0,
+          "z": 772
+        },
+        {
+          "x": -426,
+          "y": 0,
+          "z": 702.5
+        },
+        {
+          "x": -194.5,
+          "y": 0,
+          "z": 704.7
+        },
+        {
+          "x": 36.7,
+          "y": 0,
+          "z": 701.7
+        },
+        {
+          "x": 165.4,
+          "y": 0,
+          "z": 775.7
+        }
+      ],
+      "label": "South plains rolls",
+      "meta": {
+        "height": 11,
+        "scale": 230,
+        "ridged": 0.1,
+        "falloff": 90
+      }
+    },
+    {
+      "id": "hills_eastern_forest",
+      "kind": "hills",
+      "points": [
+        {
+          "x": 1286.3,
+          "y": 0,
+          "z": 285.7
+        },
+        {
+          "x": 1193.2,
+          "y": 0,
+          "z": 507.1
+        },
+        {
+          "x": 1089.4,
+          "y": 0,
+          "z": 698.3
+        },
+        {
+          "x": 958.8,
+          "y": 0,
+          "z": 662.5
+        },
+        {
+          "x": 857.4,
+          "y": 0,
+          "z": 557.2
+        },
+        {
+          "x": 821.8,
+          "y": 0,
+          "z": 350.7
+        },
+        {
+          "x": 856.4,
+          "y": 0,
+          "z": 138.4
+        },
+        {
+          "x": 920.9,
+          "y": 0,
+          "z": -62.6
+        },
+        {
+          "x": 1039.1,
+          "y": 0,
+          "z": -107.4
+        },
+        {
+          "x": 1170.7,
+          "y": 0,
+          "z": -144.5
+        },
+        {
+          "x": 1229.1,
+          "y": 0,
+          "z": 60.3
+        }
+      ],
+      "label": "Eastern forest hills",
+      "meta": {
+        "height": 26,
+        "scale": 170,
+        "ridged": 0.5,
+        "falloff": 100
+      }
+    },
+    {
+      "id": "hills_redwood_slopes",
+      "kind": "hills",
+      "points": [
+        {
+          "x": 872.9,
+          "y": 0,
+          "z": -144.6
+        },
+        {
+          "x": 740.1,
+          "y": 0,
+          "z": -77.2
+        },
+        {
+          "x": 618.5,
+          "y": 0,
+          "z": -18.8
+        },
+        {
+          "x": 494.4,
+          "y": 0,
+          "z": -92
+        },
+        {
+          "x": 387.3,
+          "y": 0,
+          "z": -171.2
+        },
+        {
+          "x": 365.6,
+          "y": 0,
+          "z": -294.4
+        },
+        {
+          "x": 403.7,
+          "y": 0,
+          "z": -410.5
+        },
+        {
+          "x": 505.3,
+          "y": 0,
+          "z": -500.5
+        },
+        {
+          "x": 655,
+          "y": 0,
+          "z": -485.8
+        },
+        {
+          "x": 810.8,
+          "y": 0,
+          "z": -435.5
+        },
+        {
+          "x": 848.8,
+          "y": 0,
+          "z": -289.2
+        }
+      ],
+      "label": "Redwood slopes",
+      "meta": {
+        "height": 24,
+        "scale": 160,
+        "ridged": 0.45,
+        "falloff": 90
+      }
+    },
+    {
+      "id": "hills_north_highlands",
+      "kind": "hills",
+      "points": [
+        {
+          "x": 797.8,
+          "y": 0,
+          "z": -900
+        },
+        {
+          "x": 679.5,
+          "y": 0,
+          "z": -808.3
+        },
+        {
+          "x": 566.8,
+          "y": 0,
+          "z": -705.2
+        },
+        {
+          "x": 323.1,
+          "y": 0,
+          "z": -711.7
+        },
+        {
+          "x": 66.6,
+          "y": 0,
+          "z": -727.8
+        },
+        {
+          "x": -40.2,
+          "y": 0,
+          "z": -841.3
+        },
+        {
+          "x": -64.2,
+          "y": 0,
+          "z": -962.1
+        },
+        {
+          "x": 92.8,
+          "y": 0,
+          "z": -1057.8
+        },
+        {
+          "x": 322.3,
+          "y": 0,
+          "z": -1091.2
+        },
+        {
+          "x": 553.7,
+          "y": 0,
+          "z": -1081.1
+        },
+        {
+          "x": 679,
+          "y": 0,
+          "z": -991.5
+        }
+      ],
+      "label": "Northern highland moors",
+      "meta": {
+        "height": 30,
+        "scale": 190,
+        "ridged": 0.6,
+        "falloff": 110
+      }
+    },
+    {
+      "id": "hills_central_jungle",
+      "kind": "hills",
+      "points": [
+        {
+          "x": 427.2,
+          "y": 0,
+          "z": 63.8
+        },
+        {
+          "x": 376.8,
+          "y": 0,
+          "z": 168.8
+        },
+        {
+          "x": 304.9,
+          "y": 0,
+          "z": 273.1
+        },
+        {
+          "x": 148.6,
+          "y": 0,
+          "z": 284.8
+        },
+        {
+          "x": 3.7,
+          "y": 0,
+          "z": 291.8
+        },
+        {
+          "x": -48.1,
+          "y": 0,
+          "z": 203.1
+        },
+        {
+          "x": -88,
+          "y": 0,
+          "z": 120.7
+        },
+        {
+          "x": -13.4,
+          "y": 0,
+          "z": 38
+        },
+        {
+          "x": 85.8,
+          "y": 0,
+          "z": -28.4
+        },
+        {
+          "x": 220.6,
+          "y": 0,
+          "z": -51
+        },
+        {
+          "x": 334.8,
+          "y": 0,
+          "z": -9.7
+        }
+      ],
+      "label": "Central jungle rises",
+      "meta": {
+        "height": 16,
+        "scale": 140,
+        "ridged": 0.3,
+        "falloff": 80
+      }
+    },
+    {
+      "id": "hills_western_highlands",
+      "kind": "hills",
+      "points": [
+        {
+          "x": -728.5,
+          "y": 0,
+          "z": -172.2
+        },
+        {
+          "x": -821.6,
+          "y": 0,
+          "z": -104.4
+        },
+        {
+          "x": -928.8,
+          "y": 0,
+          "z": -52.2
+        },
+        {
+          "x": -1052.9,
+          "y": 0,
+          "z": -114.1
+        },
+        {
+          "x": -1167.4,
+          "y": 0,
+          "z": -169.4
+        },
+        {
+          "x": -1168,
+          "y": 0,
+          "z": -266.3
+        },
+        {
+          "x": -1172,
+          "y": 0,
+          "z": -358.3
+        },
+        {
+          "x": -1075,
+          "y": 0,
+          "z": -400
+        },
+        {
+          "x": -961.5,
+          "y": 0,
+          "z": -421
+        },
+        {
+          "x": -837.2,
+          "y": 0,
+          "z": -374.6
+        },
+        {
+          "x": -759.1,
+          "y": 0,
+          "z": -281.9
+        }
+      ],
+      "label": "Western highlands",
+      "meta": {
+        "height": 24,
+        "scale": 170,
+        "ridged": 0.5,
+        "falloff": 90
+      }
+    },
+    {
+      "id": "cliff_south_bluffs",
+      "kind": "cliff",
+      "points": [
+        {
+          "x": -120,
+          "y": 0,
+          "z": 975
+        },
+        {
+          "x": -330,
+          "y": 0,
+          "z": 958
+        },
+        {
+          "x": -520,
+          "y": 0,
+          "z": 985
+        },
+        {
+          "x": -700,
+          "y": 0,
+          "z": 950
+        }
+      ],
+      "label": "South bluffs",
+      "meta": {
+        "height": 18,
+        "face": 6,
+        "reach": 140
+      }
+    },
+    {
+      "id": "cliff_jungle_scarp",
+      "kind": "cliff",
+      "points": [
+        {
+          "x": 560,
+          "y": 0,
+          "z": 450
+        },
+        {
+          "x": 420,
+          "y": 0,
+          "z": 430
+        },
+        {
+          "x": 290,
+          "y": 0,
+          "z": 455
+        },
+        {
+          "x": 170,
+          "y": 0,
+          "z": 440
+        }
+      ],
+      "label": "Jungle scarp",
+      "meta": {
+        "height": 22,
+        "face": 7,
+        "reach": 160
+      }
+    },
+    {
+      "id": "cliff_redwood_wall",
+      "kind": "cliff",
+      "points": [
+        {
+          "x": 760,
+          "y": 0,
+          "z": -60
+        },
+        {
+          "x": 770,
+          "y": 0,
+          "z": -200
+        },
+        {
+          "x": 790,
+          "y": 0,
+          "z": -330
+        }
+      ],
+      "label": "Redwood wall",
+      "meta": {
+        "height": 24,
+        "face": 7,
+        "reach": 170,
+        "side": "right"
+      }
+    },
+    {
+      "id": "cliff_highland_edge",
+      "kind": "cliff",
+      "points": [
+        {
+          "x": 260,
+          "y": 0,
+          "z": -620
+        },
+        {
+          "x": 120,
+          "y": 0,
+          "z": -600
+        },
+        {
+          "x": -40,
+          "y": 0,
+          "z": -615
+        },
+        {
+          "x": -200,
+          "y": 0,
+          "z": -590
+        }
+      ],
+      "label": "Highland edge",
+      "meta": {
+        "height": 28,
+        "face": 8,
+        "reach": 200
+      }
+    },
+    {
+      "id": "cliff_east_bluffs",
+      "kind": "cliff",
+      "points": [
+        {
+          "x": 1180,
+          "y": 0,
+          "z": 620
+        },
+        {
+          "x": 1110,
+          "y": 0,
+          "z": 520
+        },
+        {
+          "x": 1060,
+          "y": 0,
+          "z": 380
+        }
+      ],
+      "label": "East bluffs",
+      "meta": {
+        "height": 20,
+        "face": 6,
+        "reach": 150
       }
     }
   ],

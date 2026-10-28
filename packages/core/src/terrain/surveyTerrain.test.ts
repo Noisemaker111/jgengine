@@ -84,3 +84,61 @@ describe("surveyTerrain", () => {
     expect(surveyIsLand(survey, 1200, 0)).toBe(false);
   });
 });
+
+describe("hills, cliffs and erosion", () => {
+  const relief: SceneDocumentLike = {
+    markers: [
+      { id: "worn", kind: SURVEY_KINDS.peak, position: { x: 0, y: 200, z: 0 }, meta: { radius: 300, erosion: 1 } },
+      { id: "smooth", kind: SURVEY_KINDS.peak, position: { x: 0, y: 200, z: 0 }, meta: { radius: 300 } },
+    ],
+    volumes: [],
+    paths: [
+      { id: "downs", kind: SURVEY_KINDS.hills, points: ring([[1000, -400], [1800, -400], [1800, 400], [1000, 400]]), meta: { height: 30, scale: 120, falloff: 60 } },
+      { id: "scarp", kind: SURVEY_KINDS.cliff, points: ring([[-1500, -600], [-1500, 600]]), meta: { height: 20, face: 4, reach: 100 } },
+    ],
+  };
+  const survey = surveyFromDocument(relief);
+  const flat = { height: 8, roll: 0, rugged: 0 };
+
+  test("reads hills and cliffs with their defaults, and erosion only where authored", () => {
+    expect(survey.hills).toEqual([{ id: "downs", ring: [[1000, -400], [1800, -400], [1800, 400], [1000, 400]], height: 30, scale: 120, ridged: 0.35, falloff: 60, seed: "downs" }]);
+    expect(survey.cliffs).toEqual([{ id: "scarp", points: [[-1500, -600], [-1500, 600]], height: 20, face: 4, reach: 100, side: 1 }]);
+    expect(survey.peaks.map((peak) => peak.erosion)).toEqual([1, undefined]);
+    expect("erosion" in (survey.peaks[1] ?? {})).toBe(false);
+  });
+
+  test("hills roll inside their outline and leave the plains flat outside it", () => {
+    const height = surveyHeightField({ ...survey, peaks: [] }, flat);
+    expect(height(900, 0)).toBeCloseTo(8, 5);
+    expect(height(1001, 0)).toBeLessThan(8.5);
+    const samples: number[] = [];
+    for (let x = 1100; x <= 1700; x += 20) for (let z = -300; z <= 300; z += 20) samples.push(height(x, z));
+    expect(Math.max(...samples)).toBeGreaterThan(8 + 30 * 0.6);
+    expect(Math.max(...samples) - Math.min(...samples)).toBeGreaterThan(12);
+    expect(Math.max(...samples)).toBeLessThanOrEqual(8 + 30 + 1e-6);
+  });
+
+  test("a cliff raises the left of its line across a steep face and eases back over its reach", () => {
+    const height = surveyHeightField({ ...survey, peaks: [] }, flat);
+    // Drawn toward +z, so its left is -x.
+    expect(height(-1490, 0)).toBeCloseTo(8, 5);
+    expect(height(-1503, 0)).toBeGreaterThan(8 + 19);
+    expect(height(-1503, 0) - height(-1497, 0)).toBeGreaterThan(18);
+    expect(height(-1560, 0)).toBeGreaterThan(8 + 5);
+    expect(height(-1620, 0)).toBeCloseTo(8, 5);
+    expect(height(-1503, 590)).toBeLessThan(height(-1503, 0));
+  });
+
+  test("erosion cuts gullies into a summit but never raises it", () => {
+    const worn = surveyHeightField({ ...survey, hills: [], cliffs: [], peaks: survey.peaks.slice(0, 1) }, flat);
+    const smooth = surveyHeightField({ ...survey, hills: [], cliffs: [], peaks: survey.peaks.slice(1) }, flat);
+    let deepest = 0;
+    for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
+      const x = Math.cos(angle) * 120;
+      const z = Math.sin(angle) * 120;
+      expect(worn(x, z)).toBeLessThanOrEqual(smooth(x, z) + 1e-6);
+      deepest = Math.max(deepest, smooth(x, z) - worn(x, z));
+    }
+    expect(deepest).toBeGreaterThan(10);
+  });
+});
