@@ -36,10 +36,6 @@ function imageIndex(entries: Record<string, Uint8Array>): Map<string, PackImage>
   return images;
 }
 
-interface TextureRef {
-  url?: string;
-}
-
 /**
  * Detach each material's colour map, remembering its file by material name: the exporter cannot
  * encode a placeholder image, so maps go back on afterwards from the archive's own bytes.
@@ -54,8 +50,8 @@ function detachMaps(root: THREE.Object3D): Map<string, string> {
         if (!(key in material)) continue;
         const texture: unknown = Reflect.get(material, key);
         if (!(texture instanceof THREE.Texture)) continue;
-        const url = (texture.userData as TextureRef).url;
-        if (key === "map" && url !== undefined) maps.set(material.name, baseName(url));
+        const url: unknown = Reflect.get(texture.userData, "url");
+        if (key === "map" && typeof url === "string") maps.set(material.name, baseName(url));
         Reflect.set(material, key, null);
       }
     }
@@ -208,6 +204,8 @@ function dropCamerasAndLights(root: THREE.Object3D): void {
  * ({@link extractGlbs}); a pack that ships neither (the older Quaternius packs: FBX and OBJ only) is
  * converted, one GLB per FBX with its rig, clips and colour maps, else one per OBJ with its MTL
  * colours. Textures are embedded, so a converted model is one file.
+ *
+ * @internal
  */
 export async function extractPackModels(archive: Uint8Array): Promise<ExtractedPack> {
   const ready = extractGlbs(archive);

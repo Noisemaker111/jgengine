@@ -58,62 +58,62 @@ import s_quaternius_stylized_nature from "./quaternius-stylized-nature.json" wit
 import s_quaternius_textured_cute_monster_pack from "./quaternius-textured-cute-monster-pack.json" with { type: "json" };
 
 export const generatedBySource: Record<string, IndexEntry[]> = {
-  "kaykit-adventurers": s_kaykit_adventurers as IndexEntry[],
-  "kaykit-city-builder": s_kaykit_city_builder as IndexEntry[],
-  "kaykit-dungeon": s_kaykit_dungeon as IndexEntry[],
-  "kaykit-furniture": s_kaykit_furniture as IndexEntry[],
-  "kaykit-skeletons": s_kaykit_skeletons as IndexEntry[],
-  "kaykit-space-base": s_kaykit_space_base as IndexEntry[],
-  "quaternius-5-low-poly-animals": s_quaternius_5_low_poly_animals as IndexEntry[],
-  "quaternius-animated-animales-low-poly": s_quaternius_animated_animales_low_poly as IndexEntry[],
-  "quaternius-animated-characters-pack": s_quaternius_animated_characters_pack as IndexEntry[],
-  "quaternius-animated-fish": s_quaternius_animated_fish as IndexEntry[],
-  "quaternius-animated-human-low-poly": s_quaternius_animated_human_low_poly as IndexEntry[],
-  "quaternius-animated-lowpoly-robot": s_quaternius_animated_lowpoly_robot as IndexEntry[],
-  "quaternius-animated-mech-pack": s_quaternius_animated_mech_pack as IndexEntry[],
-  "quaternius-fantasy-low-poly-trees-and-bushes": s_quaternius_fantasy_low_poly_trees_and_bushes as IndexEntry[],
-  "quaternius-fantasy-props": s_quaternius_fantasy_props as IndexEntry[],
-  "quaternius-furniture-low-poly": s_quaternius_furniture_low_poly as IndexEntry[],
-  "quaternius-low-poly-animated-guns": s_quaternius_low_poly_animated_guns as IndexEntry[],
-  "quaternius-low-poly-cars-0": s_quaternius_low_poly_cars_0 as IndexEntry[],
-  "quaternius-low-poly-desert-assets": s_quaternius_low_poly_desert_assets as IndexEntry[],
-  "quaternius-low-poly-food-pack": s_quaternius_low_poly_food_pack as IndexEntry[],
-  "quaternius-low-poly-furniture-1": s_quaternius_low_poly_furniture_1 as IndexEntry[],
-  "quaternius-low-poly-guns": s_quaternius_low_poly_guns as IndexEntry[],
-  "quaternius-low-poly-guns-pack": s_quaternius_low_poly_guns_pack as IndexEntry[],
-  "quaternius-low-poly-medieval-weapons": s_quaternius_low_poly_medieval_weapons as IndexEntry[],
-  "quaternius-low-poly-nature-pack-1": s_quaternius_low_poly_nature_pack_1 as IndexEntry[],
-  "quaternius-low-poly-pirate-pack": s_quaternius_low_poly_pirate_pack as IndexEntry[],
-  "quaternius-low-poly-rpg-pack": s_quaternius_low_poly_rpg_pack as IndexEntry[],
-  "quaternius-low-poly-space-assets": s_quaternius_low_poly_space_assets as IndexEntry[],
-  "quaternius-lowpoly-animated-farm-animal-pack": s_quaternius_lowpoly_animated_farm_animal_pack as IndexEntry[],
-  "quaternius-lowpoly-animated-knight": s_quaternius_lowpoly_animated_knight as IndexEntry[],
-  "quaternius-lowpoly-animated-monsters": s_quaternius_lowpoly_animated_monsters as IndexEntry[],
-  "quaternius-lowpoly-buildings": s_quaternius_lowpoly_buildings as IndexEntry[],
-  "quaternius-lowpoly-buildings-pack": s_quaternius_lowpoly_buildings_pack as IndexEntry[],
-  "quaternius-lowpoly-cars": s_quaternius_lowpoly_cars as IndexEntry[],
-  "quaternius-lowpoly-crops-pack": s_quaternius_lowpoly_crops_pack as IndexEntry[],
-  "quaternius-lowpoly-house-interior-pack": s_quaternius_lowpoly_house_interior_pack as IndexEntry[],
-  "quaternius-lowpoly-medieval-buildings": s_quaternius_lowpoly_medieval_buildings as IndexEntry[],
-  "quaternius-lowpoly-medieval-village-pack": s_quaternius_lowpoly_medieval_village_pack as IndexEntry[],
-  "quaternius-lowpoly-medieval-weapons": s_quaternius_lowpoly_medieval_weapons as IndexEntry[],
-  "quaternius-lowpoly-modular-dungeon-pack": s_quaternius_lowpoly_modular_dungeon_pack as IndexEntry[],
-  "quaternius-lowpoly-modular-sci-fi-environments": s_quaternius_lowpoly_modular_sci_fi_environments as IndexEntry[],
-  "quaternius-lowpoly-modular-street-pack": s_quaternius_lowpoly_modular_street_pack as IndexEntry[],
-  "quaternius-lowpoly-nature-pack": s_quaternius_lowpoly_nature_pack as IndexEntry[],
-  "quaternius-lowpoly-posed-humans": s_quaternius_lowpoly_posed_humans as IndexEntry[],
-  "quaternius-lowpoly-public-transport": s_quaternius_lowpoly_public_transport as IndexEntry[],
-  "quaternius-lowpoly-rpg": s_quaternius_lowpoly_rpg as IndexEntry[],
-  "quaternius-lowpoly-rpg-characters": s_quaternius_lowpoly_rpg_characters as IndexEntry[],
-  "quaternius-lowpoly-ship-pack": s_quaternius_lowpoly_ship_pack as IndexEntry[],
-  "quaternius-lowpoly-spaceships-pack": s_quaternius_lowpoly_spaceships_pack as IndexEntry[],
-  "quaternius-lowpoly-steampunk-turrets": s_quaternius_lowpoly_steampunk_turrets as IndexEntry[],
-  "quaternius-lowpoly-survival-pack": s_quaternius_lowpoly_survival_pack as IndexEntry[],
-  "quaternius-lowpoly-textured-trees": s_quaternius_lowpoly_textured_trees as IndexEntry[],
-  "quaternius-medieval-village": s_quaternius_medieval_village as IndexEntry[],
-  "quaternius-modular-scifi": s_quaternius_modular_scifi as IndexEntry[],
-  "quaternius-stylized-nature": s_quaternius_stylized_nature as IndexEntry[],
-  "quaternius-textured-cute-monster-pack": s_quaternius_textured_cute_monster_pack as IndexEntry[],
+  "kaykit-adventurers": s_kaykit_adventurers as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "kaykit-city-builder": s_kaykit_city_builder as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "kaykit-dungeon": s_kaykit_dungeon as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "kaykit-furniture": s_kaykit_furniture as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "kaykit-skeletons": s_kaykit_skeletons as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "kaykit-space-base": s_kaykit_space_base as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-5-low-poly-animals": s_quaternius_5_low_poly_animals as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-animated-animales-low-poly": s_quaternius_animated_animales_low_poly as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-animated-characters-pack": s_quaternius_animated_characters_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-animated-fish": s_quaternius_animated_fish as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-animated-human-low-poly": s_quaternius_animated_human_low_poly as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-animated-lowpoly-robot": s_quaternius_animated_lowpoly_robot as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-animated-mech-pack": s_quaternius_animated_mech_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-fantasy-low-poly-trees-and-bushes": s_quaternius_fantasy_low_poly_trees_and_bushes as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-fantasy-props": s_quaternius_fantasy_props as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-furniture-low-poly": s_quaternius_furniture_low_poly as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-animated-guns": s_quaternius_low_poly_animated_guns as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-cars-0": s_quaternius_low_poly_cars_0 as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-desert-assets": s_quaternius_low_poly_desert_assets as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-food-pack": s_quaternius_low_poly_food_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-furniture-1": s_quaternius_low_poly_furniture_1 as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-guns": s_quaternius_low_poly_guns as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-guns-pack": s_quaternius_low_poly_guns_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-medieval-weapons": s_quaternius_low_poly_medieval_weapons as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-nature-pack-1": s_quaternius_low_poly_nature_pack_1 as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-pirate-pack": s_quaternius_low_poly_pirate_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-rpg-pack": s_quaternius_low_poly_rpg_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-low-poly-space-assets": s_quaternius_low_poly_space_assets as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-animated-farm-animal-pack": s_quaternius_lowpoly_animated_farm_animal_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-animated-knight": s_quaternius_lowpoly_animated_knight as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-animated-monsters": s_quaternius_lowpoly_animated_monsters as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-buildings": s_quaternius_lowpoly_buildings as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-buildings-pack": s_quaternius_lowpoly_buildings_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-cars": s_quaternius_lowpoly_cars as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-crops-pack": s_quaternius_lowpoly_crops_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-house-interior-pack": s_quaternius_lowpoly_house_interior_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-medieval-buildings": s_quaternius_lowpoly_medieval_buildings as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-medieval-village-pack": s_quaternius_lowpoly_medieval_village_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-medieval-weapons": s_quaternius_lowpoly_medieval_weapons as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-modular-dungeon-pack": s_quaternius_lowpoly_modular_dungeon_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-modular-sci-fi-environments": s_quaternius_lowpoly_modular_sci_fi_environments as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-modular-street-pack": s_quaternius_lowpoly_modular_street_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-nature-pack": s_quaternius_lowpoly_nature_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-posed-humans": s_quaternius_lowpoly_posed_humans as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-public-transport": s_quaternius_lowpoly_public_transport as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-rpg": s_quaternius_lowpoly_rpg as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-rpg-characters": s_quaternius_lowpoly_rpg_characters as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-ship-pack": s_quaternius_lowpoly_ship_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-spaceships-pack": s_quaternius_lowpoly_spaceships_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-steampunk-turrets": s_quaternius_lowpoly_steampunk_turrets as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-survival-pack": s_quaternius_lowpoly_survival_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-lowpoly-textured-trees": s_quaternius_lowpoly_textured_trees as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-medieval-village": s_quaternius_medieval_village as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-modular-scifi": s_quaternius_modular_scifi as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-stylized-nature": s_quaternius_stylized_nature as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-textured-cute-monster-pack": s_quaternius_textured_cute_monster_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
 };
 
 export const generatedIndex: IndexEntry[] = Object.values(generatedBySource).flat();
