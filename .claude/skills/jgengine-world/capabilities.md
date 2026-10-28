@@ -1015,6 +1015,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createLandformCache` (function) · `import { createLandformCache } from "@jgengine/core/landform/generator/landformGenerator"`
 - `createLandformGenerator` (function) · `import { createLandformGenerator } from "@jgengine/core/landform/generator/landformGenerator"`
 - `createWorkerLandformGrower` (function) · `import { createWorkerLandformGrower } from "@jgengine/core/landform/generator/landformGenerator"`
+- `growLandform` (function) · `import { growLandform } from "@jgengine/core/landform/generator/landformTerrain"`
+- `landformKey` (function) · `import { landformKey } from "@jgengine/core/landform/generator/landformGenerator"`
+- `landformRecipe` (function) · `import { landformRecipe } from "@jgengine/core/landform/generator/landformGenerator"`
 
 ## landform-materials — per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation
 
