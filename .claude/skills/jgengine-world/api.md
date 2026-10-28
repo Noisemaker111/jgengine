@@ -2163,6 +2163,19 @@
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 
+## @jgengine/core/landform/dunes/duneField
+
+- `DEFAULT_DUNE_PARAMS` (const): const DEFAULT_DUNE_PARAMS: DuneParams — Werner's (1995) rules: one wind toward the east, hop 1, landing 0.6 on sand and 0.4 on bed, 15° shadow.
+- `DuneField` (interface): interface DuneField — A running dune field.
+- `DuneFieldOptions` (interface): interface DuneFieldOptions — Options for {@link createDuneField}.
+- `DuneGrid` (interface): interface DuneGrid — A dune field grid: `cols` × `rows` cells, `cellSize` metres a side, row 0 at the north edge, wrapping at every edge.
+- `DuneInitial` (interface): interface DuneInitial — Starting sand: a mean thickness spread at random, or slab counts per cell.
+- `DuneParams` (interface): interface DuneParams — Dune rules. All of them retune between sweeps.
+- `DuneSnapshot` (interface): interface DuneSnapshot — Everything that defines a dune field at one moment, as plain JSON.
+- `WindMode` (interface): interface WindMode — One wind of a regime: the bearing sand moves toward (degrees clockwise from north) and its share of the time.
+- `createDuneField` (function): function createDuneField(options: DuneFieldOptions): DuneField — Start a dune field.
+- `duneSlopeAngle` (function): function duneSlopeAngle(field: DuneField, slabDrop: number, cells = 1): number — Angle in degrees of a slope that drops `slabDrop` slabs over `cells` cells, for a field's slab thickness.
+
 ## @jgengine/core/landform/evolution/landscapeEvolution
 
 - `DEFAULT_LANDFORM_PARAMS` (const): const DEFAULT_LANDFORM_PARAMS: LandformParams — Sensible defaults for a 100 m grid: 1 mm/yr uplift, K = 2·10⁻⁵, m = 0.5, n = 1 (concavity 0.5), D = 0.01 m²/yr, repose 34°, 10 kyr steps.

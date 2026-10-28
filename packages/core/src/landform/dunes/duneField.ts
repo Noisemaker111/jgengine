@@ -373,7 +373,10 @@ export function createDuneField(options: DuneFieldOptions): DuneField {
   };
 }
 
-/** Angle in degrees of a slope that drops `slabDrop` slabs over `cells` cells, for a field's slab thickness. */
+/**
+ * Angle in degrees of a slope that drops `slabDrop` slabs over `cells` cells, for a field's slab thickness.
+ * @capability landform-dunes grow barchan, transverse, linear and star dunes from a wind regime and sand supply
+ */
 export function duneSlopeAngle(field: DuneField, slabDrop: number, cells = 1): number {
   return (plantAtan((slabDrop * field.slabThickness) / (cells * field.grid.cellSize)) * 180) / PLANT_PI;
 }

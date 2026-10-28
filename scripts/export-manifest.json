@@ -558,6 +558,7 @@
     "./item/use",
     "./item/useBehavior",
     "./item/weapon",
+    "./landform/dunes/duneField",
     "./landform/evolution/hillslopeDiffusion",
     "./landform/evolution/landscapeEvolution",
     "./landform/evolution/landsliding",

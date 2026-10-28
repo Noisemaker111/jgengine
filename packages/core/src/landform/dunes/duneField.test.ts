@@ -240,7 +240,7 @@ describe("state", () => {
     const total = (): number => field.slabs().reduce((sum, h) => sum + h, 0);
     const mass = total();
     field.step(20);
-    const saved = JSON.parse(JSON.stringify(field.snapshot())) as ReturnType<DuneField["snapshot"]>;
+    const saved = structuredClone(field.snapshot());
     field.step(15);
     const later = field.hash();
     expect(total()).toBe(mass);
