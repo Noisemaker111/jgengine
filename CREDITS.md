@@ -337,6 +337,10 @@ code is copied. Its tests check it against the expected outputs of the BehavePlu
   forest and range fires*, INT-143, reference fine fuel moisture table (the test reference); Jolly,
   Nemani & Running 2005, growing season index, *Global Change Biology* 11; Jolly et al. 2016 / NFDRS
   2016, live fuel moisture ranges; Tetens 1930, saturation vapour pressure.
+- **Fuel from plants and ground** (`fire/fuelSources.ts`): Scott & Reinhardt 2001, *Assessing crown
+  fire potential*, RMRS-RP-29 (USFS), available canopy fuel as foliage plus half the fine branchwood;
+  Jenkins, Chojnacky, Heath & Birdsey 2003, national-scale biomass estimators, *Forest Science* 49
+  and NE-GTR-319 (USFS), the test reference for foliage mass.
 
 ## Game and level design research
 

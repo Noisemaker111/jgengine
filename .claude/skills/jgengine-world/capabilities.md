@@ -599,6 +599,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `canopyFuelLoad` (function) · `import { canopyFuelLoad } from "@jgengine/core/fire/crownFire"`
 
+## fire-canopy-raster — turn placed plants' crown fuel into per-cell canopy stands for a fire landscape
+
+- `rasterizeCanopyFuel` (function) · `import { rasterizeCanopyFuel } from "@jgengine/core/fire/fuelSources"`
+
 ## fire-crown-fire — classify a surface fire as surface, torching, crowning or conditional crown fire and give the crown rate and intensity
 
 - `assessCrownFire` (function) · `import { assessCrownFire } from "@jgengine/core/fire/crownFire"`
@@ -683,6 +687,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `normalSpreadRate` (function) · `import { normalSpreadRate } from "@jgengine/core/fire/surfaceFire"`
 
+## fire-plant-fuel — crown fuel (foliage and fine branchwood mass, height, base, radius) of a grown plant
+
+- `plantCanopyFuel` (function) · `import { plantCanopyFuel } from "@jgengine/core/fire/fuelSources"`
+
 ## fire-ray-spread — rate a fire travels along a ray from its ignition point
 
 - `rayFromIgnitionRate` (function) · `import { rayFromIgnitionRate } from "@jgengine/core/fire/surfaceFire"`
@@ -707,6 +715,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `torchingTreeSpotDistance` (function) · `import { torchingTreeSpotDistance } from "@jgengine/core/fire/spotting"`
 
+## fire-sun-exposure — per-cell sun on surface fuel from terrain slope, aspect and canopy cover
+
+- `sunExposure` (function) · `import { sunExposure } from "@jgengine/core/fire/fuelSources"`
+
 ## fire-surface-fuelbed — reduce a fuel model and moisture to Rothermel reaction intensity, residence time and no-wind spread rate
 
 - `surfaceFuelbed` (function) · `import { surfaceFuelbed } from "@jgengine/core/fire/surfaceFire"`
@@ -714,6 +726,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## fire-surface-spread — Rothermel 1972 surface fire rate, heading, ellipse, Byram intensity and flame length under wind and slope
 
 - `surfaceSpread` (function) · `import { surfaceSpread } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-terrain-fuel — sample terrain height and ground-cover fuel codes into a fire landscape's elevation and fuel grids
+
+- `sampleFireGround` (function) · `import { sampleFireGround } from "@jgengine/core/fire/fuelSources"`
 
 ## fire-twenty-foot-wind — 20-ft open wind from a 10-m wind
 

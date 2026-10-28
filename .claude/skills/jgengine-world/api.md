@@ -1282,6 +1282,11 @@
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 
+## @jgengine/core/fire/FireLandscape.draw
+
+- `FireLandscapeView` (function): function FireLandscapeView({ fire, heightAt, wind = [0, 0], maxFlames = 2048, maxSmoke = 1024, overlayCellsPerFrame = 4096 }: FireLandscapeViewProps): React.JSX.Element — Draw a {@link FireLandscape}: a ground overlay of flaming, smouldering, charred and ashen cells, flame billboards as tall as each cell's flame length, and smoke puffs rising from burning cells and drifting downwind. Per-frame work is bounded by the burning cells plus `overlayCellsPerFrame`.
+- `FireLandscapeViewProps` (interface): interface FireLandscapeViewProps — Props for {@link FireLandscapeView}.
+
 ## @jgengine/core/fire/crownFire
 
 - `CANOPY_HEAT_KJ_KG` (const): const CANOPY_HEAT_KJ_KG: number — Low heat of combustion of crown foliage, kJ/kg (8000 Btu/lb, as BehavePlus).
@@ -1346,6 +1351,15 @@
 - `fuelLevelWeather` (function): function fuelLevelWeather(temperatureC: number, relativeHumidity: number, cloudCover: number, sun: number): { temperatureC: number; relativeHumidity: number } — Temperature and humidity at the surface of sunlit fuel (Cohen & Deeming 1985): sun heats the fuel above the air and dries the air next to it, more under clear sky than overcast. `sun` scales the correction from none (night or full shade) to the full table value.
 - `growingSeasonIndex` (function): function growingSeasonIndex(minimumTemperatureC: number, vaporPressureDeficitPa: number, dayLengthHours: number): number — Jolly et al. 2005 growing season index, 0..1: the product of ramps on daily minimum temperature (−2..5 °C), vapour pressure deficit (900..4100 Pa, inverted) and day length (10..11 h).
 - `vaporPressureDeficit` (function): function vaporPressureDeficit(temperatureC: number, relativeHumidity: number): number — Vapour pressure deficit, Pa, from temperature (°C) and relative humidity (0..1), Tetens saturation pressure.
+
+## @jgengine/core/fire/fuelSources
+
+- `FireGridFrame` (interface): interface FireGridFrame — Where a fire grid sits in the world.
+- `PlantCanopyFuel` (interface): interface PlantCanopyFuel — The crown fuel one grown plant carries.
+- `plantCanopyFuel` (function): function plantCanopyFuel(structure: PlantStructure, species: PlantSpecies, leafAreaM2: number, options: { fineWoodRadiusM?: number } = {}): PlantCanopyFuel — Read a grown plant's crown fuel without changing it: foliage mass is its leaf area (from `PlantGrowth.stats().leafAreaM2`) over the species' specific leaf area; fine branchwood is the skeleton segments thinner than `fineWoodRadiusM` times the species' wood density.
+- `rasterizeCanopyFuel` (function): function rasterizeCanopyFuel(frame: FireGridFrame, plants: readonly { x: number; z: number; fuel: PlantCanopyFuel }[], options: { foliarMoisture?: number } = {}): { canopies: CanopyStand[]; canopy: Int32Array } — Spread plants' crown fuel over a fire grid as canopy stands: each crown's available fuel is shared between the cells its disc overlaps, by overlap area; a cell's cover is the crown area over it (capped at 1), its height the tallest crown, its base the lowest, and its bulk density the load over that crown depth.
+- `sampleFireGround` (function): function sampleFireGround(frame: FireGridFrame, sample: { heightAt?: (x: number, z: number) => number; fuelAt: (x: number, z: number) => string }): { elevation: Float32Array; fuels: FuelModel[]; fuel: Uint8Array } — Build a fire grid's ground from samplers: elevation at each cell centre and a standard fuel model code (Scott & Burgan `GR2`, Anderson `FM8`, non-burnable `NB9`, ...) for what covers the ground. The game owns the mapping from its terrain, biomes or ground layers to fuel codes.
+- `sunExposure` (function): function sunExposure(frame: FireGridFrame, elevation: ArrayLike<number>, sun: { azimuth: number; elevation: number }, canopy?: { canopies: readonly CanopyStand[]; canopy: ArrayLike<number> }): Float32Array — Share of the sun reaching each cell's surface fuel, 0..1, for a fuel moisture model's `exposure`: the cosine of the sun on the cell's slope relative to flat ground (capped at 1), times the gaps between crowns. `sunAzimuth` is radians in the grid plane from +x towards +z; elevation is above the horizon.
 
 ## @jgengine/core/fire/spotting
 
