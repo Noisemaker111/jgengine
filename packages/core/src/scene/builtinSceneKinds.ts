@@ -40,6 +40,7 @@ export const SCATTER_SCHEMA: ParamSchema = {
     { type: "number", key: "edgeFalloff", label: "edge fade", step: 0.5, default: 0, min: 0 },
     { type: "bool", key: "alignToNormal", label: "align to slope", default: false },
     { type: "bool", key: "autoAvoid", label: "auto-avoid gameplay spots", default: true },
+    { type: "number", key: "clearance", label: "clears others (m)", step: 0.25, default: 0, min: 0 },
     { type: "seed", key: "seed", label: "seed", default: "" },
   ],
 };

@@ -100,6 +100,9 @@ export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> =
   cycad: undergrowth("nature.palm", "cycad", { height: 1.6 }, 4),
   fanpalm: grown("nature.palm", "fan", { height: 4.5 }, 4),
   treefern: grown("nature.palm", "cycad", { height: 4.2, trunkRadius: 0.18, curve: 0.15, fronds: 14, frondLength: 2.4, frondWidth: 0.55, droop: 0.55, leaflets: 14, frondColor: "#3d7a33", tipColor: "#6f9c3c" }, 4),
+  // Weathered stone standing out on the sand and in the surf, pale and barely mossed.
+  seaboulder: grown("nature.rock", "boulder", { size: 6.5, stretch: 1.15, flatness: 0.95, facets: 6, erosion: 0.6, sink: 0.25, moss: 0.08, color: "#a39b8d", colorVariance: 0.16 }),
+  searock: grown("nature.rock", "boulder", { size: 2.6, stretch: 1.3, flatness: 0.7, facets: 7, erosion: 0.5, sink: 0.2, moss: 0.05, color: "#9d9586" }, 4),
   driftwood: grown("nature.driftwood", "driftwood", {}, 4),
   log: grown("nature.driftwood", "fallen-log", {}, 3),
   bracken: undergrowth("nature.fern", "bracken", {}, 4),

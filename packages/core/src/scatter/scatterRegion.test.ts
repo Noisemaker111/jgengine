@@ -264,6 +264,44 @@ describe("path corridor clearance", () => {
   });
 });
 
+describe("scatter region clearance", () => {
+  const field = (id: string, meta: Record<string, unknown>): EditorPath => ({
+    id,
+    kind: SCATTER_PATH_KIND,
+    points: [
+      { x: -30, y: 0, z: -30 },
+      { x: 30, y: 0, z: -30 },
+      { x: 30, y: 0, z: 30 },
+      { x: -30, y: 0, z: 30 },
+    ],
+    meta,
+  });
+  const doc = (paths: EditorPath[]) => ({ version: 1 as const, markers: [], volumes: [], paths, annotations: [] });
+
+  test("a clearing region keeps other regions out of each placement's footprint", () => {
+    const boulders = field("boulders", { density: 0.004, minSpacing: 10, item: "boulder", clearance: 3, minScale: 1, maxScale: 1, seed: "b" });
+    const palms = field("palms", { density: 0.3, minSpacing: 1, item: "palm", seed: "p" });
+    const instances = resolveScatter(doc([palms, boulders]), flatField());
+    const rocks = instances.filter((i) => i.item === "boulder");
+    const trees = instances.filter((i) => i.item === "palm");
+    expect(rocks.length).toBeGreaterThan(0);
+    expect(trees.length).toBeGreaterThan(0);
+    for (const rock of rocks) expect(trees.some((tree) => Math.hypot(tree.x - rock.x, tree.z - rock.z) < 3)).toBe(false);
+    // Document order is kept: the palms layer still comes first.
+    expect(instances[0]?.item).toBe("palm");
+    const unclear = resolveScatter(doc([palms, field("boulders", { density: 0.004, minSpacing: 10, item: "boulder", minScale: 1, maxScale: 1, seed: "b" })]), flatField());
+    expect(unclear.filter((i) => i.item === "palm").length).toBeGreaterThan(trees.length);
+  });
+
+  test("a region with autoAvoid off ignores clearings", () => {
+    const boulders = field("boulders", { density: 0.004, minSpacing: 10, item: "boulder", clearance: 3, seed: "b" });
+    const free = field("free", { density: 0.3, minSpacing: 1, item: "palm", seed: "p", autoAvoid: false });
+    const alone = resolveScatter(doc([free]), flatField()).length;
+    const withRocks = resolveScatter(doc([free, boulders]), flatField()).filter((i) => i.item === "palm").length;
+    expect(withRocks).toBe(alone);
+  });
+});
+
 describe("resolveScatter sharing", () => {
   test("the renderer and gameplay get one placement list for one document and ground", () => {
     const doc = { markers: [], volumes: [], paths: [{ id: "f", kind: "scatter", points: [{ x: 0, y: 0, z: 0 }, { x: 20, y: 0, z: 0 }, { x: 20, y: 0, z: 20 }, { x: 0, y: 0, z: 20 }], meta: { density: 0.2, seed: "s" } }] };

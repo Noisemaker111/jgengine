@@ -1136,6 +1136,21 @@ export function nearestWild(
   return home === null ? null : [home[0], ctx.world.groundHeightAt(home[0], home[2]), home[2]];
 }
 
+/** The nearest live tame of `species` the survivor owns, or null. */
+export function nearestTame(ctx: GameContext, from: readonly [number, number, number], species: string): [number, number, number] | null {
+  let best: [number, number, number] | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const tame of tames(ctx)) {
+    if (tame.species !== species) continue;
+    const distance = Math.hypot(tame.at[0] - from[0], tame.at[2] - from[2]);
+    if (distance < bestDistance) {
+      best = [tame.at[0], tame.at[1], tame.at[2]];
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
 /** The nearest wild body still holding meat and hide within `within` metres of `from`, or null. */
 export function nearestCarcass(ctx: GameContext, from: readonly [number, number, number], within: number): [number, number, number] | null {
   let best: [number, number, number] | null = null;

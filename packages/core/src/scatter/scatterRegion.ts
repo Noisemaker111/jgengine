@@ -52,6 +52,11 @@ export interface ScatterRegionRules {
   avoid: readonly AvoidZone[];
   /** Honor document-wide clearance zones (tagged markers/paths) too; false = manual `avoid` only. */
   autoAvoid: boolean;
+  /**
+   * Metres, times each placement's scale, that this region's placements keep clear of every other
+   * auto-avoiding region (a boulder keeps palms out of its footprint); 0 disables.
+   */
+  clearance: number;
 }
 
 /** Defaults a bare scatter region fills with: sparse grass, lightly spaced. */
@@ -73,6 +78,7 @@ export const SCATTER_DEFAULTS: ScatterRegionRules = {
   palette: [{ item: "grass", weight: 1 }],
   avoid: [],
   autoAvoid: true,
+  clearance: 0,
 };
 
 /** Default clearance radius (m) for an auto-avoided gameplay marker with no explicit `meta.clearance`. */
@@ -268,6 +274,7 @@ export function readScatterRules(path: ScenePathLike): ScatterRegionRules | null
     palette: readScatterPalette(meta),
     avoid: readAvoidZones(meta),
     autoAvoid: metaBool(meta, "autoAvoid", SCATTER_DEFAULTS.autoAvoid),
+    clearance: Math.max(0, metaNumber(meta, "clearance", SCATTER_DEFAULTS.clearance)),
   };
 }
 
@@ -437,16 +444,44 @@ function resolveScatterUncached(
   const baseDiscs = options.avoid ?? [];
   const auto: AvoidMasks =
     options.autoAvoid === false ? { discs: [], corridors: [] } : clearanceMasksFrom(doc, options);
-  const out: ScatterInstance[] = [];
+  const regions: ScatterRegion[] = [];
   for (const path of doc.paths) {
     const region = scatterRegionFromPath(path);
-    if (region === null) continue;
+    if (region !== null) regions.push(region);
+  }
+  const resolveOne = (region: ScatterRegion, extra: readonly AvoidZone[]): ScatterInstance[] => {
     const useAuto = region.rules.autoAvoid && options.autoAvoid !== false;
     const masks: AvoidMasks = {
-      discs: useAuto ? [...baseDiscs, ...auto.discs] : baseDiscs,
+      discs: useAuto ? [...baseDiscs, ...auto.discs, ...extra] : baseDiscs,
       corridors: useAuto ? auto.corridors : [],
     };
-    out.push(...resolveScatterRegion(region, terrain, masks));
+    return resolveScatterRegion(region, terrain, masks);
+  };
+  // Clearing regions place first; each placement becomes a disc the other regions avoid.
+  const cleared = new Map<string, ScatterInstance[]>();
+  const clearDiscs: AvoidZone[] = [];
+  for (const region of regions) {
+    if (region.rules.clearance <= 0) continue;
+    const placed = resolveOne(region, []);
+    cleared.set(region.id, placed);
+    for (const instance of placed) clearDiscs.push({ x: instance.x, z: instance.z, radius: region.rules.clearance * instance.scale, feather: 0 });
+  }
+  const out: ScatterInstance[] = [];
+  for (const region of regions) {
+    const own = cleared.get(region.id);
+    if (own !== undefined) {
+      out.push(...own);
+      continue;
+    }
+    out.push(...resolveOne(region, clearDiscs.length === 0 ? [] : discsNear(clearDiscs, ringBounds(region.polygon))));
   }
   return out;
+}
+
+/** The discs that reach into `bounds`, so a region only tests the clearings it can touch. */
+function discsNear(discs: readonly AvoidZone[], bounds: ReturnType<typeof ringBounds>): AvoidZone[] {
+  return discs.filter((disc) => {
+    const reach = disc.radius + (disc.feather ?? 0);
+    return disc.x + reach >= bounds.minX && disc.x - reach <= bounds.maxX && disc.z + reach >= bounds.minZ && disc.z - reach <= bounds.maxZ;
+  });
 }
