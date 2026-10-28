@@ -279,6 +279,12 @@ no code is copied (Landlab, Fastscape and TopoToolbox were not used as sources).
   of Earth and Planetary Sciences* 32: the slope–area law and concavity range.
 - Hack 1957, studies of longitudinal stream profiles in Virginia and Maryland, USGS Professional
   Paper 294-B (US public domain); Rigon et al. 1996, on Hack's law, *Water Resources Research* 32.
+- Heimsath, Dietrich, Nishiizumi & Finkel 1997, the soil production function and landscape
+  equilibrium, *Nature* 388: soil production P = P₀ e^(−h/h₀) and its measured rate.
+- Ferguson & Church 2004, a simple universal equation for grain settling velocity, *Journal of
+  Sedimentary Research* 74: the settling speeds that sort gravel, sand and silt.
+- Sternberg 1875, untersuchungen über Längen- und Querprofil geschiebeführender Flüsse, *Zeitschrift
+  für Bauwesen* 25 (public domain): exponential downstream fining.
 - Forte, Yanites & Whipple 2016, complexities of landscape evolution during incision through layered
   stratigraphy, *Earth Surface Processes and Landforms* 41: rivers steepening in hard layers.
 
