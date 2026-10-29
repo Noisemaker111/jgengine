@@ -40,6 +40,12 @@ export interface SceneEntity<TMeta = unknown> {
    * @capability entity-held-item show the item an entity holds in its hand
    */
   held?: string;
+  /**
+   * The item ids this entity wears, drawn from its model's `worn` table on its body. Render-only,
+   * like `held`; absent means nothing worn.
+   * @capability entity-worn-items show the clothing an entity wears on its body
+   */
+  worn?: readonly string[];
   /** Game-defined per-instance data set at `spawn`/`update` and carried to `renderEntity`/queries — narrow with {@link entityMetaOf} (or a type guard) on read (#286.1); never encode state in the id/name string. */
   meta: TMeta;
 }
@@ -125,6 +131,8 @@ export type EntityUpdatePatch<TMeta = unknown> = Partial<
 > & {
   /** The item now in hand; `null` empties the hands. */
   held?: string | null;
+  /** What is now worn; `null` or `[]` takes everything off. */
+  worn?: readonly string[] | null;
   /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not derived; use `setPose` with `dt` for that. */
   position?: SpawnPositionInput;
 };
@@ -303,6 +311,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (patch.size !== undefined) current.size = patch.size;
       if (patch.held === null) delete current.held;
       else if (patch.held !== undefined) current.held = patch.held;
+      if (patch.worn === null || patch.worn?.length === 0) delete current.worn;
+      else if (patch.worn !== undefined) current.worn = [...patch.worn];
       if (patch.meta !== undefined) current.meta = patch.meta;
       if (patch.behaviors === undefined) store.set(id, current);
       else writeEntity(current, previousBehaviors);

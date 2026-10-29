@@ -547,6 +547,21 @@
 - `RagdollOptions` (interface): interface RagdollOptions — What {@link useRagdoll} needs: the rig's bone names, the physics world and what arms it.
 - `useRagdoll` (function): function useRagdoll(scene: THREE.Object3D, options: RagdollOptions): void — Turns a rigged character into a physics ragdoll when `active` goes true: the bones' world poses at that moment become box bodies joined by distance links in `world`, and every frame after, each bone's world position and aim come from its body. The physics bodies carry translation only, so each bone is oriented by rotating its death-pose direction-to-child onto the current one, which is what gives the body a skeleton instead of a pile of boxes.
 
+## @jgengine/core/anim/wearable/wornLayers.draw
+
+- `attachWornLayer` (function): function attachWornLayer(rig: THREE.Object3D, layer: WornLayer): () => void — Dress a rigged humanoid in one worn layer: every opaque skinned mesh under `rig` gets a shell of the layer's region, bound to that mesh's own skeleton, so the piece bends with every clip, IK pass and folded first-person head. Returns the undo, which takes the shells off and frees their material. A rig the humanoid standard cannot read wears nothing.
+- `useWornLayers` (function): function useWornLayers(rig: THREE.Object3D, layers: readonly WornLayer[]): void — Keep `layers` worn on `rig` while mounted; a changed list takes the old pieces off first. Pass a stable array.
+
+## @jgengine/core/anim/wearable/wornRegion
+
+- `BodyFrame` (interface): interface BodyFrame — Where the body stands in a skin's bind space: the point between the ankles, the unit up axis, and the ankle-to-head length.
+- `SkinBone` (interface): interface SkinBone — One bone of a skin: its name and the index of its parent bone in the same list, or -1.
+- `SkinGeometry` (interface): interface SkinGeometry — A skinned mesh's data, read in the skin's bind space.
+- `WEAR_REGIONS` (const): const WEAR_REGIONS: Readonly<Record<WearRegionName, WearRegion>> — The engine's region for each body area: a cap over the crown, a long-sleeved top, trousers, boots to mid-shin, gloves.
+- `WearRegion` (interface): interface WearRegion — A stretch of a humanoid body: the skin weighted to these standard bones, kept between two heights. Heights are a share of the ankle-to-head span in the bind pose: 0 at the ankles, 1 at the head bone (the top of the neck), about 1.15 at the crown. A bone the standard does not name (a finger, the neck, a face bone) counts as its nearest named ancestor, so a hand region takes the fingers too.
+- `WearRegionName` (type): type WearRegionName = "head" | "torso" | "legs" | "feet" | "hands" — A body area a worn piece can name instead of spelling out its own {@link WearRegion}.
+- `WornLayer` (interface): interface WornLayer — One piece of clothing a rigged humanoid can wear: a layer of the body's own skin, cut to a region and pushed out a little, skinned to the same skeleton so it moves with every clip.
+
 ## @jgengine/core/area/areaEffectField
 
 - `AreaEffectEvent` (interface): interface AreaEffectEvent<P> — One membership edge emitted by `step`, `removeSource`, or `clear`.
@@ -5166,7 +5181,7 @@
 - `EntityRole` (type): type EntityRole = "player" | "npc" | "prop" — ⚠ undocumented
 - `EntityStore` (interface): interface EntityStore<TMeta = unknown> — Entity state, pose writes, keyed behavior notifications and snapshot/hydration under stable instance IDs.
 - `EntityStoreOptions` (interface): interface EntityStoreOptions — Commit hook for a derived index; runs after the write and before existing subscribers. `undefined` denotes a whole-store replacement. Value overwrites keep membership false.
-- `EntityUpdatePatch` (type): type EntityUpdatePatch<TMeta = unknown> = Partial< Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "size" | "meta"> > & { /** The item now in hand; `null` empties the hands. */ held?: string | null; /** Accepts the same frien… — ⚠ undocumented
+- `EntityUpdatePatch` (type): type EntityUpdatePatch<TMeta = unknown> = Partial< Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "size" | "meta"> > & { /** The item now in hand; `null` empties the hands. */ held?: string | null; /** What is now worn; `nul… — ⚠ undocumented
 - `PoseConstraint` (type): type PoseConstraint = (frame: PoseConstraintFrame) => readonly [number, number, number] | undefined | void — Return a replacement position to constrain the step, or nothing to accept it.
 - `PoseConstraintFrame` (interface): interface PoseConstraintFrame { entityId: string; current: EntityPosition; next: EntityPosition; dt?: number } — ⚠ undocumented
 - `SceneEntity` (interface): interface SceneEntity<TMeta = unknown> { id: string; name: string; position: EntityPosition; rotationY: number; rotationX: number; rotationZ: number; velocity: EntityPosition; role: EntityRole; movement: EntityMovement; behaviors: readonly BehaviorDescriptor[]; hidden?: boolean;… — ⚠ undocumented · used by `entityMetaOf`: Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type che…

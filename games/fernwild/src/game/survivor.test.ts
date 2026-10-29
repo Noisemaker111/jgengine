@@ -156,6 +156,8 @@ test("double-clicked cloth is worn in its slot, insulates and weighs, swaps, com
   expect(ctx.player.inventory.count(HOTBAR, "cloth_hat")).toBe(0);
   expect(worn.insulation).toEqual({ heat: 4, cold: 3 });
   expect(worn.weight.value).toBe(weightBefore);
+  const body = () => ctx.scene.entity.get(ctx.player.userId)?.worn ?? [];
+  expect([...body()].sort()).toEqual(["cloth_hat", "cloth_shirt"]);
 
   // The second shirt replaces the first, which goes back into the bag.
   shuttle(ctx, BAG, slotOf("cloth_shirt"));
@@ -166,6 +168,7 @@ test("double-clicked cloth is worn in its slot, insulates and weighs, swaps, com
   takeOff(ctx, "head");
   expect(ctx.player.inventory.count(BAG, "cloth_hat")).toBe(1);
   expect(survivorView(ctx).insulation).toEqual({ heat: 2, cold: 1.5 });
+  expect(body()).toEqual(["cloth_shirt"]);
 
   const after = survivorRunner();
   tick(after, 0.1);

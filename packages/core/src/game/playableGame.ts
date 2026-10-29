@@ -1,5 +1,6 @@
 import type { ControlGroupOptions } from "../input/controlGroups";
 import type { AnimGraph } from "../anim/animGraph";
+import type { WornLayer } from "../anim/wearable/wornRegion";
 import type { AmbienceZoneDef } from "../audio/ambience";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { AudioOcclusionConfig } from "../audio/occlusion";
@@ -388,6 +389,12 @@ export interface ModelConfig {  url: string;
    * a socket in the character's own frame (metres, +Z forward, +Y up) at the wrist in the idle pose.
    */
   held?: Readonly<Record<string, ModelAttachment>>;
+  /**
+   * What this body draws for each item id an entity of it may wear (`SceneEntity.worn`, set with
+   * `ctx.scene.entity.update(id, { worn })`): a layer of the humanoid's own skin cut to a body area,
+   * skinned to the same skeleton (`@jgengine/core/anim/wearable/wornRegion`). An item with no entry draws nothing.
+   */
+  worn?: Readonly<Record<string, WornLayer>>;
   /** Static kit-of-parts pieces stacked at fixed local offsets — no bone/rig involved. Use this for a compound entity assembled from several modular meshes (a castle keep from base + mid + roof pieces); use `attachments` for props parented to an animated rig's bones. Tag parts with a `role` to procedurally animate a rig-less character composition. */
   parts?: readonly ModelPart[];
   /** Tuning for the procedural part-motion driver when any part carries a `role`; omit for defaults. */

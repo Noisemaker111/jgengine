@@ -2587,3 +2587,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `buildingSolids` (function) · `import { buildingSolids } from "@jgengine/core/world/worldSolids"`
 - `structureSolids` (function) · `import { structureSolids } from "@jgengine/core/world/worldSolids"`
 - `wallSolids` (function) · `import { wallSolids } from "@jgengine/core/world/worldSolids"`
+
+## worn-layers — draw clothing on a rigged human by body area, skinned to its skeleton
+
+- `attachWornLayer` (function) · `import { attachWornLayer } from "@jgengine/core/anim/wearable/wornLayers.draw"`

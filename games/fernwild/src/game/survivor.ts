@@ -410,6 +410,7 @@ export function wearArmour(ctx: GameContext, inventoryId: string, slot: number):
   if (result.status !== "ok") return false;
   ctx.player.inventory.take(inventoryId, stack.itemId, 1);
   if (result.replaced !== null) ctx.player.inventory.put(inventoryId, result.replaced, 1, { slot });
+  dress(ctx);
   return true;
 }
 
@@ -423,6 +424,15 @@ export function takeOff(ctx: GameContext, slotId: string): void {
     return;
   }
   gear.unequip(slotId);
+  dress(ctx);
+}
+
+/** The survivor's body wears what its gear slots hold. */
+function dress(ctx: GameContext): void {
+  const me = ctx.scene.entity.get(ctx.player.userId);
+  if (me === null) return;
+  const wearing = survivorOf(ctx).gear.worn().map((entry) => entry.itemId);
+  if ((me.worn ?? []).join() !== wearing.join()) ctx.scene.entity.update(me.id, { worn: wearing });
 }
 
 // --- engrams and crafting ----------------------------------------------------------------
@@ -571,6 +581,7 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   survivor.aim = aimAt(ctx, survivor, me.position, me.rotationY);
   const holding = heldTool(ctx, survivor).id;
   if ((me.held ?? null) !== holding) ctx.scene.entity.update(id, { held: holding });
+  dress(ctx);
 
   if (survivor.vitals.value("health") <= 0 && !survivor.dead) die(ctx, survivor);
   ctx.touch();

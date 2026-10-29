@@ -1,10 +1,13 @@
+import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
+import type { WornLayer } from "@jgengine/core/anim/wearable/wornRegion";
 import type { ModelAttachment, ModelConfig } from "@jgengine/core/game/playableGame";
 import type { ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
 import type { ScatterSolidSpec } from "@jgengine/core/scatter/scatterSolids";
 
 import { SPECIES_MODELS } from "./data/creatureModels";
 import { HARVESTABLES } from "./data/harvestables";
+import { itemDef } from "./data/items";
 
 const NATURE = "/models/imported/quaternius-stylized-nature";
 const nature = (file: string, targetHeight: number): ModelConfig => ({ url: `${NATURE}/${file}.glb`, targetHeight });
@@ -34,6 +37,25 @@ const inHand = (tool: { model: string; rotation: [number, number, number] }): Mo
 
 const HELD: Record<string, ModelAttachment> = Object.fromEntries(Object.entries(TOOLS).map(([item, tool]) => [item, inHand(tool)]));
 
+/** Rough plant-fibre weave: ambientCG's CC0 canvas scan ("ambientcg-fabric007") for the grain, each piece keeping its own dye. */
+const FIBRE = librarySurfaceScan("fabric/canvas", { tint: 0, repeat: 0.35 });
+
+/** ARK's cloth set in undyed tans and browns, each drawn over the body area its slot covers. */
+const CLOTH_DYES: Record<string, string> = {
+  cloth_hat: "#8a6a43",
+  cloth_shirt: "#a3845a",
+  cloth_pants: "#6c5034",
+  cloth_gloves: "#5c432c",
+  cloth_boots: "#4b3622",
+};
+
+const WORN: Record<string, WornLayer> = Object.fromEntries(
+  Object.entries(CLOTH_DYES).flatMap(([item, color]) => {
+    const slot = itemDef(item)?.wear?.slot;
+    return slot === undefined ? [] : [[item, { region: slot, material: { color, roughness: 0.97, scan: FIBRE } }]];
+  }),
+);
+
 /** The model-library names the survivor and its tools draw, for the credits. */
 export const SURVIVOR_MODELS: readonly string[] = [SURVIVOR, ...Object.values(TOOLS).map((tool) => tool.model)];
 
@@ -42,7 +64,7 @@ export const SURVIVOR_MODELS: readonly string[] = [SURVIVOR, ...Object.values(TO
  * species' standing height and tinted where a relative stands in for it.
  */
 export const entityModels: Record<string, ModelConfig> = {
-  player: { ...libraryModel(SURVIVOR), held: HELD },
+  player: { ...libraryModel(SURVIVOR), held: HELD, worn: WORN },
   ...Object.fromEntries(
     Object.entries(SPECIES_MODELS).map(([species, { file, height, tint, tintMaterials }]) => [
       species,
