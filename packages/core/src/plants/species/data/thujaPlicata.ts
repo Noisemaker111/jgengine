@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const THUJA_PLICATA: PlantSpecies = {
   id: "thuja-plicata",
-  version: 1,
+  version: 2,
   names: {
     scientific: "Thuja plicata Donn ex D. Don",
     common: { en: "western redcedar", fr: "thuya géant" },
@@ -17,16 +17,16 @@ export const THUJA_PLICATA: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
   growth: {
-    apicalControl: 0.5468,
+    apicalControl: 0.5959,
     apicalControlMature: 0.9,
     apicalControlHalfYears: 80,
-    internodeMax: 0.04,
-    branchAngle: 44.07,
+    internodeMax: 0.04066,
+    branchAngle: 42.82,
     lateralBudsPerNode: 3,
     maxMetamersPerShoot: 9,
-    establishmentYears: 14.24,
+    establishmentYears: 16.02,
     horizontalVigour: 0.8,
-    vigourIndexWeight: 0.7906,
+    vigourIndexWeight: 0.6342,
     tropism: {
       gravity: 0.6,
       gravityOrderDecay: 0.6,
@@ -36,10 +36,10 @@ export const THUJA_PLICATA: PlantSpecies = {
       wind: 0.2,
       setpointMax: 90,
     },
-    budLightThreshold: 0.02,
+    budLightThreshold: 0.02631,
     budDeathYears: 2,
     dormantBudYears: 2,
-    spurYears: 18,
+    spurYears: 21,
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.45,
     jitter: 0.1,
@@ -47,9 +47,9 @@ export const THUJA_PLICATA: PlantSpecies = {
   },
   carbon: {
     hydraulicHeightShare: 1,
-    lueGPerMJ: 4.115,
-    lightHalfSaturation: 1.5,
-    respiration: 1.514,
+    lueGPerMJ: 3.282,
+    lightHalfSaturation: 1.218,
+    respiration: 1.256,
     sapwoodRespiration: 0.02,
     rootRespiration: 1.5,
     rootPerFoliage: 0.5,
@@ -99,11 +99,11 @@ export const THUJA_PLICATA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 159.1, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 136.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 159.1, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 136.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

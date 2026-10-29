@@ -1,7 +1,7 @@
 import type { PlantSpecies } from "../species/plantSpecies";
-import { NODE_DEAD, type GrowthState } from "./growthState";
-import { PLANT_PI } from "./plantMath";
-import { thickenNode } from "./pipeModel";
+import { NODE_AXIS_START, NODE_DEAD, type GrowthState } from "./growthState";
+import { PLANT_PI, plantAcos, plantCos, plantSin } from "./plantMath";
+import { hasCambium, thickenNode } from "./pipeModel";
 
 const GRAVITY = 9.81;
 /** Fresh leaf mass over dry leaf mass. */
@@ -9,6 +9,13 @@ const LEAF_FRESH_FACTOR = 2.5;
 const MAX_BEND_PER_YEAR = 0.25;
 const MIN_TURN_SQ = 2.5e-15;
 const INV_FOUR_PI = 1 / (4 * PLANT_PI);
+/**
+ * Difference in maturation strain between reaction wood and the wood opposite it (Alméras & Fournier
+ * 2009 measure 0.1–0.4%): how hard a new ring pulls a leaning stem back.
+ */
+const REACTION_STRAIN = 0.003;
+/** Height a limb resting on the ground lies at, metres. */
+const GROUND_REST_M = 0.02;
 // Reciprocals of the sine and cosine series denominators: multiplies on the hottest loop.
 const INV_6 = 1 / 6;
 const INV_12 = 1 / 12;
@@ -31,6 +38,10 @@ export interface SagScratch {
   turn: Float64Array;
   /** Tips before this year's sag, 3 per node. */
   before: Float32Array;
+  /** Sapwood area each node laid down this year, m². */
+  ring: Float64Array;
+  /** First node of the stem each node belongs to. */
+  stemBase: Int32Array;
 }
 
 /**
@@ -44,6 +55,8 @@ export function createSagScratch(capacity: number): SagScratch {
     mz: new Float64Array(capacity),
     turn: new Float64Array(capacity * 4),
     before: new Float32Array(capacity * 3),
+    ring: new Float64Array(capacity),
+    stemBase: new Int32Array(capacity),
   };
 }
 
@@ -70,7 +83,7 @@ export interface SagRing {
  */
 export function applySag(state: GrowthState, species: PlantSpecies, scratch: SagScratch, ring: SagRing): void {
   const n = state.nodeCount;
-  const { mass, mx, mz, turn, before } = scratch;
+  const { mass, mx, mz, turn, before, ring: laid } = scratch;
   const woodLoad = species.wood.densityKgM3 * species.wood.greenFactor;
   const leafLoad = LEAF_FRESH_FACTOR / species.leaf.sla;
   const stiffness = species.wood.modulusGPa * 1e9;
@@ -83,9 +96,12 @@ export function applySag(state: GrowthState, species: PlantSpecies, scratch: Sag
   mx.fill(0, 0, n);
   mz.fill(0, 0, n);
   for (let i = n - 1; i >= 0; i -= 1) {
+    laid[i] = 0;
     if (((flags[i] ?? 0) & NODE_DEAD) === 0) {
       const above = foliageAbove[i] ?? 0;
-      thickenNode(state, species, i, above, (need[i] ?? 0) * share + surplusPerFoliage * above);
+      const area = (need[i] ?? 0) * share + surplusPerFoliage * above;
+      thickenNode(state, species, i, above, area);
+      laid[i] = area;
     }
     const p = parent[i] ?? -1;
     const sx = p >= 0 ? (end[p * 3] ?? 0) : 0;
@@ -199,5 +215,126 @@ export function applySag(state: GrowthState, species: PlantSpecies, scratch: Sag
     end[i3 + 1] = py + vy * len;
     end[i3 + 2] = pz + vz * len;
   }
+  if (hasCambium(species)) holdPosture(state, scratch);
 }
 
+/**
+ * Posture control (Moulia, Coutand & Lenne 2006; Alméras & Fournier 2009): reaction wood laid on one
+ * side of a stem turns it back towards the direction its base grew in (upright for the trunk, leaning
+ * out for each further basal stem), so a whip that sags in its first years still grows into an upright
+ * tree. A ring Δr wide on a stem of radius r curves it by 2·ε·Δr / r² per metre, so a young stem rights
+ * itself within a few seasons while an old trunk barely moves. Branches keep the sag and gravimorphic
+ * compensation of {@link applySag}; a limb that would still pass below the ground rests on it. Each
+ * turn swings the node's subtree, and every tip is placed again from its parent's.
+ */
+function holdPosture(state: GrowthState, scratch: SagScratch): void {
+  const n = state.nodeCount;
+  const { turn, ring, stemBase } = scratch;
+  const { end, parent, sapArea, heartArea, length, flags, dir, order } = state;
+  for (let i = 0; i < n; i += 1) {
+    const p = parent[i] ?? -1;
+    let qx = 0;
+    let qy = 0;
+    let qz = 0;
+    let qw = 1;
+    let px = 0;
+    let py = 0;
+    let pz = 0;
+    if (p >= 0) {
+      qx = turn[p * 4] ?? 0;
+      qy = turn[p * 4 + 1] ?? 0;
+      qz = turn[p * 4 + 2] ?? 0;
+      qw = turn[p * 4 + 3] ?? 1;
+      px = end[p * 3] ?? 0;
+      py = end[p * 3 + 1] ?? 0;
+      pz = end[p * 3 + 2] ?? 0;
+    }
+    const base = p >= 0 && (order[i] ?? 0) === 0 && ((flags[i] ?? 0) & NODE_AXIS_START) === 0 ? (stemBase[p] ?? i) : i;
+    stemBase[i] = base;
+    const i3 = i * 3;
+    let vx = dir[i3] ?? 0;
+    let vy = dir[i3 + 1] ?? 0;
+    let vz = dir[i3 + 2] ?? 0;
+    if (qx * qx + qy * qy + qz * qz > MIN_TURN_SQ) {
+      const cx = qy * vz - qz * vy;
+      const cy = qz * vx - qx * vz;
+      const cz = qx * vy - qy * vx;
+      vx += 2 * (qw * cx + qy * cz - qz * cy);
+      vy += 2 * (qw * cy + qz * cx - qx * cz);
+      vz += 2 * (qw * cz + qx * cy - qy * cx);
+    }
+    const area = (sapArea[i] ?? 0) + (heartArea[i] ?? 0);
+    const added = ring[i] ?? 0;
+    if ((order[i] ?? 0) === 0 && base !== i && ((flags[i] ?? 0) & NODE_DEAD) === 0 && area > 0 && added > 0) {
+      // The base's direction was already placed this pass.
+      const tx = dir[base * 3] ?? 0;
+      const ty = dir[base * 3 + 1] ?? 1;
+      const tz = dir[base * 3 + 2] ?? 0;
+      let ax = vy * tz - vz * ty;
+      let ay = vz * tx - vx * tz;
+      let az = vx * ty - vy * tx;
+      const sine = Math.sqrt(ax * ax + ay * ay + az * az);
+      if (sine > 1e-4) {
+        const off = plantAcos(Math.max(-1, Math.min(1, vx * tx + vy * ty + vz * tz)));
+        const radius = Math.sqrt(area / PLANT_PI);
+        const width = added / (2 * PLANT_PI * radius);
+        const angle = Math.min(off, ((2 * REACTION_STRAIN * width) / (radius * radius)) * (length[i] ?? 0));
+        if (angle > 1e-7) {
+          const s = plantSin(angle * 0.5) / sine;
+          ax *= s;
+          ay *= s;
+          az *= s;
+          const aw = plantCos(angle * 0.5);
+          // q = r ⊗ q: a world-frame turn of this node and everything it carries.
+          const nx = aw * qx + ax * qw + ay * qz - az * qy;
+          const ny = aw * qy - ax * qz + ay * qw + az * qx;
+          const nz = aw * qz + ax * qy - ay * qx + az * qw;
+          const nw = aw * qw - ax * qx - ay * qy - az * qz;
+          qx = nx;
+          qy = ny;
+          qz = nz;
+          qw = nw;
+          const cx = ay * vz - az * vy;
+          const cy = az * vx - ax * vz;
+          const cz = ax * vy - ay * vx;
+          const ox = vx + 2 * (aw * cx + ay * cz - az * cy);
+          const oy = vy + 2 * (aw * cy + az * cx - ax * cz);
+          const oz = vz + 2 * (aw * cz + ax * cy - ay * cx);
+          vx = ox;
+          vy = oy;
+          vz = oz;
+        }
+      }
+    }
+    turn[i * 4] = qx;
+    turn[i * 4 + 1] = qy;
+    turn[i * 4 + 2] = qz;
+    turn[i * 4 + 3] = qw;
+    const len = length[i] ?? 0;
+    let norm = Math.sqrt(vx * vx + vy * vy + vz * vz);
+    vx /= norm;
+    vy /= norm;
+    vz /= norm;
+    if (p >= 0 && len > 0 && py + vy * len < GROUND_REST_M) {
+      // The ground carries a limb that would pass through it: it runs along the surface instead.
+      const flat = Math.sqrt(vx * vx + vz * vz);
+      const rise = Math.max(-1, Math.min(1, (GROUND_REST_M - py) / len));
+      const across = Math.sqrt(1 - rise * rise);
+      if (flat > 1e-6) {
+        vx = (vx / flat) * across;
+        vz = (vz / flat) * across;
+      } else {
+        vx = across;
+        vz = 0;
+      }
+      vy = rise;
+      norm = 1;
+    }
+    dir[i3] = vx;
+    dir[i3 + 1] = vy;
+    dir[i3 + 2] = vz;
+    end[i3] = px + vx * len;
+    end[i3 + 1] = py + vy * len;
+    end[i3 + 2] = pz + vz * len;
+  }
+}

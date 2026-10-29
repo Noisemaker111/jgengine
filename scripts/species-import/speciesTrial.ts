@@ -33,7 +33,7 @@ export interface Trial {
 export const TRIAL_AGES = [20, 50, 100] as const;
 
 function grow(species: PlantSpecies, env: PlantEnvironment, seed: string, ages: readonly number[] = TRIAL_AGES): TrialReading[] {
-  const plant = createPlantGrowth(species, env, seed);
+  const plant = createPlantGrowth(species, env, seed, { individual: "typical" });
   const readings: TrialReading[] = [];
   for (const age of ages) {
     plant.step(age - plant.ageYears());
@@ -71,7 +71,7 @@ export function runTrial(species: PlantSpecies, seeds: readonly string[], shade:
   const shadeAlive: boolean[] = [];
   if (shade) {
     for (const seed of seeds) {
-      const plant = createPlantGrowth(species, { ...OPEN_TEMPERATE_SITE, light: 0.2 }, seed);
+      const plant = createPlantGrowth(species, { ...OPEN_TEMPERATE_SITE, light: 0.2 }, seed, { individual: "typical" });
       plant.step(100);
       shadeLeafAreaM2.push(plant.stats().leafAreaM2);
       shadeAlive.push(plant.stats().alive);

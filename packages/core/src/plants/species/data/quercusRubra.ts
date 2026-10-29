@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const QUERCUS_RUBRA: PlantSpecies = {
   id: "quercus-rubra",
-  version: 3,
+  version: 4,
   names: { scientific: "Quercus rubra L.", common: { en: "northern red oak", fr: "chêne rouge" } },
   ids: { usda: "QURU" },
   habit: "tree",
@@ -96,11 +96,11 @@ export const QUERCUS_RUBRA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 5.71, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 11.64, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 5.71, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 11.64, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

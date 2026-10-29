@@ -17,7 +17,7 @@ function checkTree(species: PlantSpecies): void {
     expect(validatePlantSpecies(species)).toEqual([]);
     const reference = SPECIES_REFERENCE[species.id];
     if (reference === undefined) throw new Error(`no reference for ${species.id}`);
-    const plant = createPlantGrowth(species, REFERENCE_STAND, SEED);
+    const plant = createPlantGrowth(species, REFERENCE_STAND, SEED, { individual: "typical" });
     for (const age of AGES) {
       plant.step(age - plant.ageYears());
       const { heightM, dbhCm, crownRadiusM } = plant.structure().stats;
@@ -36,7 +36,7 @@ function checkHabit(species: PlantSpecies): void {
     expect(validatePlantSpecies(species)).toEqual([]);
     const reference = HABIT_REFERENCE[species.id];
     if (reference === undefined) throw new Error(`no PLANTS reference for ${species.id}`);
-    const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, SEED);
+    const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
     for (const age of [20, 40]) {
       plant.step(age - plant.ageYears());
       const structure = plant.structure();
@@ -73,5 +73,23 @@ describe("palm trunks", () => {
       expect(Math.hypot(segments.end[i * 3] ?? 0, segments.end[i * 3 + 2] ?? 0)).toBeLessThan(stats.crownRadiusM + 1);
       expect(segments.end[i * 3 + 1] ?? 0).toBeGreaterThanOrEqual(-0.01);
     }
+  });
+});
+
+describe("posture", () => {
+  test("a sweetgum whose young leader sagged rights itself and keeps every limb above ground (seed forest-b-liquidambar-styraciflua, 60 years)", () => {
+    const sweetgum = PLANT_LIBRARY.find((species) => species.id === "liquidambar-styraciflua");
+    if (sweetgum === undefined) throw new Error("liquidambar-styraciflua missing");
+    const growth = createPlantGrowth(sweetgum, { ...OPEN_TEMPERATE_SITE, light: 1 }, "forest-b-liquidambar-styraciflua");
+    growth.step(60);
+    const { segments, stats } = growth.structure();
+    let tip = 0;
+    for (let i = 1; i < segments.order.length; i += 1) {
+      if (segments.order[i] === 0 && (segments.end[i * 3 + 1] ?? 0) > (segments.end[tip * 3 + 1] ?? 0)) tip = i;
+      expect(segments.end[i * 3 + 1] ?? 0).toBeGreaterThanOrEqual(-0.01);
+    }
+    // Without reaction wood the year-2 whip sagged 38 degrees and the tree grew lying along the ground.
+    expect(stats.heightM).toBeGreaterThan(20);
+    expect(Math.hypot(segments.end[tip * 3] ?? 0, segments.end[tip * 3 + 2] ?? 0)).toBeLessThan(0.2 * stats.heightM);
   });
 });

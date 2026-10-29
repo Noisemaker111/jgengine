@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PICEA_ENGELMANNII: PlantSpecies = {
   id: "picea-engelmannii",
-  version: 1,
+  version: 3,
   names: {
     scientific: "Picea engelmannii Parry ex Engelm.",
     common: { en: "Engelmann spruce", fr: "épinette d'Engelmann" },
@@ -23,20 +23,20 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     internodeMax: 0.04,
     branchAngle: 35,
     lateralBudsPerNode: 4,
-    maxMetamersPerShoot: 8,
-    establishmentYears: 25,
-    horizontalVigour: 0.8,
+    maxMetamersPerShoot: 7,
+    establishmentYears: 21.06,
+    horizontalVigour: 0.7286,
     vigourIndexWeight: 0.8,
     tropism: {
       gravity: 0.6,
       gravityOrderDecay: 0.6,
-      setpointAngle: 90,
+      setpointAngle: 89.85,
       setpointPerOrder: 25,
-      optimal: 0.02041,
+      optimal: 0.0173,
       wind: 0.2,
       setpointMax: 90,
     },
-    budLightThreshold: 0.02,
+    budLightThreshold: 0.02318,
     budDeathYears: 2,
     dormantBudYears: 2,
     spurYears: 30,
@@ -46,10 +46,10 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 1,
-    lueGPerMJ: 1.968,
-    lightHalfSaturation: 0.2244,
-    respiration: 0.6,
+    hydraulicHeightShare: 0.9303,
+    lueGPerMJ: 2.019,
+    lightHalfSaturation: 0.2,
+    respiration: 0.642,
     sapwoodRespiration: 0.02,
     rootRespiration: 1.5,
     rootPerFoliage: 0.5,
@@ -62,7 +62,7 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     reproductiveShare: 0.05,
     pruneDeficitYears: 2,
     coarseRootShare: 0.25,
-    hydraulicExponent: 1,
+    hydraulicExponent: 2,
   },
   wood: {
     densityKgM3: 330,
@@ -99,11 +99,11 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 74.67, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 147.4, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 74.67, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 147.4, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

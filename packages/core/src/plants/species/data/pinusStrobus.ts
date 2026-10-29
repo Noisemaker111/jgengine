@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PINUS_STROBUS: PlantSpecies = {
   id: "pinus-strobus",
-  version: 5,
+  version: 6,
   names: { scientific: "Pinus strobus L.", common: { en: "eastern white pine", fr: "pin blanc" } },
   ids: { usda: "PIST" },
   habit: "tree",
@@ -96,11 +96,11 @@ export const PINUS_STROBUS: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 5.63, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 32.55, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 5.63, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 32.55, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

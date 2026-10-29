@@ -36,7 +36,8 @@ const HELP = `bun run jgengine plants <verb> [species ids]
   write <id...|--all> write species/data records from traits, imported values and the fit
   report <id...>      grow each record and print it against its reference
 
-fit flags: --generations <n> (40) --lambda <n> (16) --workers <n> --seeds a,b --sigma <x> (0.12)`;
+fit flags: --generations <n> (40) --lambda <n> (16) --workers <n> --seeds a,b --sigma <x> (0.12)
+  --until-pass        stop a tree's fit once it is inside the library test's height, DBH and Tallo limits`;
 
 const scientificKey = (traits: SpeciesTraits): string => traits.scientific.split(" ").slice(0, 2).join(" ");
 const camel = (id: string): string => id.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
@@ -304,6 +305,7 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
       lambda: Number(flag(argv, "--lambda", "16")),
       sigma: Number(flag(argv, "--sigma", "0.12")),
       seed: 1,
+      ...(argv.includes("--until-pass") ? { until: (best: { parts: Record<string, number> }) => (best.parts["limits"] ?? 1) === 0 && (best.parts["tallo"] ?? 1) === 0 && (best.parts["dead"] ?? 0) === 0 } : {}),
       onBest: (best) => writeFileSync(out, JSON.stringify({ score: best.score, parts: best.parts, against: AGAINST, species: best.species } satisfies FitFile, null, 1)),
       onGeneration: (line) => console.log(`${id} ${line}`),
     });

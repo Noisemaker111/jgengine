@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PINUS_CONTORTA: PlantSpecies = {
   id: "pinus-contorta",
-  version: 1,
+  version: 2,
   names: {
     scientific: "Pinus contorta Douglas ex Loudon",
     common: { en: "lodgepole pine", fr: "pin tordu" },
@@ -18,20 +18,20 @@ export const PINUS_CONTORTA: PlantSpecies = {
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
   growth: {
     apicalControl: 0.95,
-    apicalControlMature: 0.7865,
-    apicalControlHalfYears: 2.747,
+    apicalControlMature: 0.7008,
+    apicalControlHalfYears: 2.13,
     internodeMax: 0.04,
     branchAngle: 35,
     lateralBudsPerNode: 4,
-    maxMetamersPerShoot: 10,
-    establishmentYears: 10.51,
-    horizontalVigour: 0.2732,
-    vigourIndexWeight: 0.0738,
+    maxMetamersPerShoot: 9,
+    establishmentYears: 4.9,
+    horizontalVigour: 0.2004,
+    vigourIndexWeight: 0.02353,
     tropism: {
-      gravity: 0.3501,
+      gravity: 0.336,
       gravityOrderDecay: 0.6,
       setpointAngle: 90,
-      setpointPerOrder: 13.45,
+      setpointPerOrder: 17.07,
       optimal: 0,
       wind: 0.2,
       setpointMax: 90,
@@ -46,10 +46,10 @@ export const PINUS_CONTORTA: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 1,
+    hydraulicHeightShare: 0.965,
     lueGPerMJ: 5,
-    lightHalfSaturation: 0.9886,
-    respiration: 0.6005,
+    lightHalfSaturation: 1.5,
+    respiration: 0.6,
     sapwoodRespiration: 0.02,
     rootRespiration: 1.5,
     rootPerFoliage: 0.5,
@@ -99,11 +99,11 @@ export const PINUS_CONTORTA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 5.86, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 9.34, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 5.86, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 9.34, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

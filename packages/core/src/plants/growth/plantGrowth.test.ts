@@ -36,7 +36,7 @@ let longRun: LongRun | undefined;
 /** One open-grown tree straight to 400 years, read along the way, shared by the tests below. */
 function growLong(): LongRun {
   if (longRun) return longRun;
-  const plant = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED);
+  const plant = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
   const heights = new Map<number, number>();
   let crownRatioAt100 = 0;
   let snapshotAt200: PlantGrowthSnapshot | undefined;
@@ -90,7 +90,7 @@ describe("plant growth", () => {
 
   test("grow to 200, snapshot, restore and grow to 400 equals growing straight to 400", () => {
     const run = growLong();
-    const resumed = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED);
+    const resumed = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
     resumed.restore(run.snapshotAt200);
     expect(resumed.ageYears()).toBe(200);
     resumed.step(200);
@@ -115,7 +115,7 @@ describe("plant growth", () => {
 
   test("tight caps bind and are never exceeded", () => {
     const limits = { maxBuds: 150, maxNodes: 1500 };
-    const plant = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED, limits);
+    const plant = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED, { limits });
     plant.step(150);
     const stats = plant.stats();
     expect(stats.maxBudsSeen).toBe(limits.maxBuds);
@@ -153,7 +153,7 @@ describe("plant growth", () => {
   test("a set point past 90 degrees lets fine shoots hang below the horizontal", () => {
     const hangingShare = (setpointMax: number): number => {
       const tropism = { ...PINUS_STROBUS.growth.tropism, setpointAngle: 80, setpointPerOrder: 30, setpointMax };
-      const plant = createPlantGrowth({ ...PINUS_STROBUS, growth: { ...PINUS_STROBUS.growth, tropism } }, OPEN_TEMPERATE_SITE, SEED);
+      const plant = createPlantGrowth({ ...PINUS_STROBUS, growth: { ...PINUS_STROBUS.growth, tropism } }, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
       plant.step(30);
       const { segments } = plant.structure();
       let hanging = 0;

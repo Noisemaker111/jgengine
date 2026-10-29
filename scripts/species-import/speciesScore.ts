@@ -53,7 +53,10 @@ export function scoreTrial(target: FitTarget, trial: Trial): TrialScore {
       add("standDbh", sq(logRatio(stand.dbhCm, dbh) / 0.12));
       add("openDbh", hinge(open.dbhCm / dbh, 1, 3, 0.3));
       const band = crownWidthBandM(reference, stand.dbhCm);
-      if (band !== null) add("tallo", hinge(Math.log(stand.crownWidthM), Math.log(band.lowM) + 0.06, Math.log(band.highM) - 0.06, 0.015) + 0.2 * sq(logRatio(stand.crownWidthM, 0.5 * (band.lowM + band.highM)) / 0.3));
+      if (band !== null) {
+        add("tallo", hinge(Math.log(stand.crownWidthM), Math.log(band.lowM) + 0.06, Math.log(band.highM) - 0.06, 0.015));
+        add("talloCentre", 0.2 * sq(logRatio(stand.crownWidthM, 0.5 * (band.lowM + band.highM)) / 0.3));
+      }
       // The library test's limits, with a margin: ±15% height and ±25% DBH.
       add("limits", hinge(Math.abs(logRatio(stand.heightM, height)), 0, 0.11, 0.01) + hinge(Math.abs(logRatio(stand.dbhCm, dbh)), 0, 0.18, 0.01));
       if (reference.openCrownWidth !== undefined) {

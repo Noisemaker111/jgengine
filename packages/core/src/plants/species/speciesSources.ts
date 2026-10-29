@@ -30,6 +30,7 @@ export const PLANT_SOURCES = {
   "fao-56": "Allen et al. 1998, FAO Irrigation and Drainage Paper 56, extraterrestrial radiation and day length",
   "fia": "USDA Forest Service, Forest Inventory and Analysis site-tree data of the states each species lists in the importer traits (US public domain)",
   "utd": "McPherson, van Doorn & Peper 2016, Urban tree database, USDA Forest Service Research Data Archive RDS-2016-0005 (US public domain): open-grown sugar maple DBH by age",
+  "almeras-2009": "Alméras & Fournier 2009, Biomechanical design and long-term stability of trees: morphological and wood traits involved in the balance between weight increase and the gravitropic reaction, J. Theor. Biol. 256; Moulia, Coutand & Lenne 2006, Am. J. Bot. 93: reaction wood righting a leaning stem",
   "baad-2015": "Falster et al. 2015, BAAD: a Biomass And Allometry Database for woody plants, Ecology 96 (CC0): leaf area per sapwood area, and leaf area per leaf mass of plants 5 m or taller",
   "thornley-1976": "Thornley 1976, Mathematical models in plant physiology, Academic Press: the rectangular-hyperbola leaf light response",
   "barthelemy-2007": "Barthélémy & Caraglio 2007, Plant architecture: a dynamic, multilevel and comprehensive approach to plant form, structure and ontogeny, Ann. Bot. 99: the establishment phase",

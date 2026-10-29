@@ -25,9 +25,10 @@ import { OPEN_TEMPERATE_SITE, siteModifier, type PlantEnvironment } from "./plan
 import { PLANT_PI, plantCos, plantPow, plantSin } from "./plantMath";
 import { applyThickening, createPipeCost, hasCambium, pipeDemand } from "./pipeModel";
 import { bendTowardsTropisms, lateralDirection, normalize3, type TropismWeights } from "./tropism";
+import { individualGrowth } from "./individualVariation";
 
 /** Bumped whenever a rule changes what a seed grows into; part of every structure cache key. */
-export const PLANT_SIM_VERSION = 5;
+export const PLANT_SIM_VERSION = 6;
 
 /** Caps that bound one plant's memory and per-year work. */
 export interface GrowthLimits {
@@ -40,6 +41,19 @@ export interface GrowthLimits {
 /** Most buds and nodes a plant may hold: 4000 and 60000. */
 export const DEFAULT_GROWTH_LIMITS: GrowthLimits = { maxBuds: 4000, maxNodes: 60000 };
 
+/** How {@link createPlantGrowth} grows a plant beyond its species, site and seed. */
+export interface PlantGrowthOptions {
+  /** Bud and node caps; {@link DEFAULT_GROWTH_LIMITS} when left out. */
+  limits?: GrowthLimits;
+  /**
+   * `"seeded"` (the default) grows the seed's own individual: branch angle, apical control, vigour,
+   * gravitropism and internode length drawn around the species record, so the seeds of one species
+   * differ in crown shape as much as measured trees do. `"typical"` grows the record itself, the
+   * species' central individual, as fits and calibration tests compare it against references.
+   */
+  individual?: "seeded" | "typical";
+}
+
 /** A grown plant's whole state as JSON-safe values: typed arrays travel as base64. */
 export interface PlantGrowthSnapshot {
   simVersion: number;
@@ -47,6 +61,7 @@ export interface PlantGrowthSnapshot {
   speciesVersion: number;
   seed: string;
   limits: GrowthLimits;
+  individual: "seeded" | "typical";
   env: PlantEnvironment;
   scalars: Readonly<Record<string, number>>;
   arrays: Readonly<Record<string, string>>;
@@ -106,6 +121,8 @@ const FROND_LIGHT_FRONDS = 48;
 const FROND_SPINE_POINTS = 3;
 /** Lean of each further basal stem of a multi-stemmed seedling from vertical, radians. */
 const BASAL_STEM_LEAN = (20 * Math.PI) / 180;
+/** A branch tip below this height, metres, lies on the ground. */
+const GROUND_TIP_M = 0.05;
 const MERGE_COS = 0.985;
 const MERGE_MAX_LENGTH_M = 3;
 /** Wood older than this may merge across a wider bend: its shape is set and only the node budget matters. */
@@ -158,7 +175,9 @@ function selectNth(values: Float64Array, count: number, nth: number): number {
  *
  * @capability plant-growth grow a tree from seed to any age with a real biology simulation; snapshot, restore, retune
  */
-export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, seed: string, limits: GrowthLimits = DEFAULT_GROWTH_LIMITS): PlantGrowth {
+export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, seed: string, options: PlantGrowthOptions = {}): PlantGrowth {
+  const limits = options.limits ?? DEFAULT_GROWTH_LIMITS;
+  const individual = options.individual ?? "seeded";
   const nodeCap = limits.maxNodes;
   const budCap = limits.maxBuds;
   let environment: PlantEnvironment = copyEnvironment(env);
@@ -174,7 +193,8 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     b: species.growth.shadow.b,
     depth: species.growth.shadow.depth,
   });
-  const g = species.growth;
+  // Each seed grows its own individual: architecture drawn around the species record.
+  const g = individual === "typical" ? species.growth : individualGrowth(species.growth, randomSeedFrom(Math.imul(seedHash ^ 0x51ed, 0x2c1b3c6d)));
   const c = species.carbon;
   const fullLeafArea = species.leaf.leavesPerNode * 0.55 * (species.leaf.sizeCm / 100) * (species.leaf.sizeCm / 100);
   // A palm's or fern's fronds lengthen through its establishment phase; every other leaf is full size.
@@ -1270,6 +1290,8 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     state.reserveKg = Math.max(0, unspent);
     ageBuds(scale > 0 && budSlotsShort);
     applySag(state, species, sag, { foliageAbove: subFoliage, need, share, surplusPerFoliage });
+    // A branch tip pressed to the ground loses its bud: dark, scraped and browsed, it grows no further.
+    dropBuds((node) => (state.order[node] ?? 0) > 0 && (state.end[node * 3 + 1] ?? 1) < GROUND_TIP_M);
     compact();
     if (state.nodeCount > maxNodesSeen) maxNodesSeen = state.nodeCount;
     if (state.budCount > maxBudsSeen) maxBudsSeen = state.budCount;
@@ -1344,6 +1366,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         speciesVersion: species.version,
         seed,
         limits: { maxBuds: budCap, maxNodes: nodeCap },
+        individual,
         env: copyEnvironment(environment),
         scalars,
         arrays: snapshotArrays(),
@@ -1355,6 +1378,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         throw new Error(`plant snapshot: species ${snapshot.speciesId}@${snapshot.speciesVersion}, expected ${species.id}@${species.version}`);
       }
       if (snapshot.seed !== seed) throw new Error(`plant snapshot: seed ${snapshot.seed}, expected ${seed}`);
+      if (snapshot.individual !== individual) throw new Error(`plant snapshot: ${snapshot.individual} individual, expected ${individual}`);
       const next = createGrowthState(nodeCap, budCap);
       for (const name of SCALAR_FIELDS) next[name] = snapshot.scalars[name] ?? 0;
       if (next.nodeCount > nodeCap || next.budCount > budCap) throw new Error("plant snapshot: larger than this plant's caps");

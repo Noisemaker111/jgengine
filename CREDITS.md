@@ -302,6 +302,8 @@ provenance.
   2014, da Vinci's rule, *PLOS ONE* 9.
 - Mäkelä 1997, carbon balance and self-pruning, *Forest Science* 43.
 - Jirasek, Prusinkiewicz & Moulia 2000, biomechanics in L-system plant models: gravitational sag.
+- Alméras & Fournier 2009, reaction wood and long-term stem stability, *Journal of Theoretical
+  Biology* 256; Moulia, Coutand & Lenne 2006, posture control, *American Journal of Botany* 93.
 - Ryan & Yoder 1997, hydraulic limits to tree height, *BioScience* 47.
 - Wareing & Nasr 1961, gravimorphism, *Annals of Botany* 25; Digby & Firn 1995, the gravitropic
   set-point angle, *Plant, Cell & Environment* 18.

@@ -94,7 +94,17 @@ export async function fitSpecies(
   start: PlantSpecies,
   scoreTrial: (trial: Trial) => TrialScore,
   evaluate: Evaluate,
-  options: { generations: number; lambda: number; sigma: number; seed: number; parameters?: readonly FitParameter[]; onBest: (best: FitProgress) => void; onGeneration?: (line: string) => void },
+  options: {
+    generations: number;
+    lambda: number;
+    sigma: number;
+    seed: number;
+    parameters?: readonly FitParameter[];
+    onBest: (best: FitProgress) => void;
+    onGeneration?: (line: string) => void;
+    /** Stop early once the best so far is good enough. */
+    until?: (best: FitProgress) => boolean;
+  },
 ): Promise<FitProgress> {
   const parameters = options.parameters ?? FIT_PARAMETERS;
   const at = (point: readonly number[]): PlantSpecies => speciesAt(start, point, parameters);
@@ -103,6 +113,7 @@ export async function fitSpecies(
   const firstScore = first === null ? { total: 1e9, parts: {} } : scoreTrial(first);
   let best: FitProgress = { generation: 0, score: firstScore.total, parts: firstScore.parts, species: at(origin) };
   options.onBest(best);
+  if (options.until?.(best) === true) return best;
   const search = createCmaEs(origin, options.sigma, options.lambda, options.seed);
   for (let generation = 1; generation <= options.generations; generation += 1) {
     const population = search.ask();
@@ -117,6 +128,10 @@ export async function fitSpecies(
       const scored = scoreTrial(trial);
       best = { generation, score: scored.total, parts: scored.parts, species: at(point) };
       options.onBest(best);
+    }
+    if (options.until?.(best) === true) {
+      options.onGeneration?.(`gen ${generation} stopped at ${best.score.toFixed(2)}: within the library test's limits`);
+      return best;
     }
     options.onGeneration?.(`gen ${generation} best ${best.score.toFixed(2)} sigma ${search.sigma.toFixed(3)} ${JSON.stringify(Object.fromEntries(Object.entries(best.parts).map(([k2, v]) => [k2, Number(v.toFixed(2))])))}`);
   }
