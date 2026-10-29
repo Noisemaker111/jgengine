@@ -13,10 +13,12 @@ import { demoGame } from "./demoGame";
 
 /** Every library species open-grown to one age, in rows a capture view frames one at a time. */
 const SHEET = { age: 60, perRow: 9, spacing: 24, rowGap: 300, detail: 0.5 };
+/** `?seed=forest-b` regrows every species from another seed; each plant's seed is `<seed>-<species id>`. */
+const SEED = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search).get("seed") ?? "library";
 
 function LibraryTree({ species, label, position }: { species: string; label: string; position: [number, number, number] }) {
   const [mesh, setMesh] = useState<PlantMesh | null>(null);
-  const meta = useMemo(() => ({ species, age: SHEET.age, seed: `library-${species}`, foliage: "leaves", shading: "lit", barkGrain: true }), [species]);
+  const meta = useMemo(() => ({ species, age: SHEET.age, seed: `${SEED}-${species}`, foliage: "leaves", shading: "lit", barkGrain: true }), [species]);
   useEffect(() => {
     let live = true;
     const done = trackSceneWork(`plant-library:${species}`);
@@ -82,7 +84,7 @@ export const plantLibraryGame: PlayableGame = {
   environment: () => <PlantLibrary />,
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", top: 12, left: 16, color: "#fff", font: "600 15px sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
-      Plant library · every species open-grown to {SHEET.age} years from its fitted record
+      Plant library · every species open-grown to {SHEET.age} years from its fitted record · seed "{SEED}"
     </div>
   ),
   capture: { views },

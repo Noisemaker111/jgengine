@@ -59,3 +59,19 @@ describe("plant species library", () => {
     else checkHabit(species);
   }
 });
+
+describe("palm trunks", () => {
+  test("a coconut's surplus carbon never balloons its newest trunk sections (seed forest-b-cocos-nucifera, 60 years)", () => {
+    const coconut = PLANT_LIBRARY.find((species) => species.id === "cocos-nucifera");
+    if (coconut === undefined) throw new Error("cocos-nucifera missing");
+    const growth = createPlantGrowth(coconut, { ...OPEN_TEMPERATE_SITE, light: 1 }, "forest-b-cocos-nucifera");
+    growth.step(60);
+    const { segments, stats } = growth.structure();
+    // A coconut trunk is 25-40 cm across; a 15 m slab of bark came from metre-wide sections.
+    expect(Math.max(...segments.radiusStart, ...segments.radiusEnd)).toBeLessThan(0.6);
+    for (let i = 0; i < segments.order.length; i += 1) {
+      expect(Math.hypot(segments.end[i * 3] ?? 0, segments.end[i * 3 + 2] ?? 0)).toBeLessThan(stats.crownRadiusM + 1);
+      expect(segments.end[i * 3 + 1] ?? 0).toBeGreaterThanOrEqual(-0.01);
+    }
+  });
+});
