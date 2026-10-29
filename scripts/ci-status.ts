@@ -282,7 +282,14 @@ export function verdictLine(status: CiStatus): string {
   const { pass, fail, pending } = status.counts;
   const counts = `${status.checks.length} check(s): ${pass} pass, ${fail} fail, ${pending} pending`;
   if (status.verdict === "fail") {
-    const named = status.checks.filter((check) => check.bucket === "fail").map((check) => `${check.name} (${check.state})`);
+    const failing = status.checks.filter((check) => check.bucket === "fail");
+    const named = failing.map((check) => `${check.name} (${check.state})`);
+    // A cancelled run reached no verdict; calling it a failure sent lanes hunting for a bug that was not there.
+    if (failing.every((check) => NO_RESULT_STATES.has(check.state.toUpperCase()))) {
+      const runs = [...new Set(failing.map((check) => check.runId).filter((id): id is number => id !== null))];
+      const rerun = runs.length > 0 ? `gh run rerun ${runs.join(" ")}` : "push again";
+      return `${counts} — cancelled before a verdict, nothing failed: ${named.join(", ")}; the landing queue runs it again (by hand: ${rerun})`;
+    }
     return `${counts} — fail: ${named.join(", ")}`;
   }
   if (status.verdict === "pending") return `${counts} — still running`;

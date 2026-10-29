@@ -40,6 +40,12 @@ test("a pull request still cancels its own superseded run", () => {
   expect(serialisedRefs(cancel)).toEqual(["refs/heads/main", "refs/heads/beta"]);
 });
 
+test("a PR body edit starts no run, so it cannot cancel the run on the same commit", () => {
+  const types = /pull_request:\s*\n(?:\s*#.*\n)*\s*types:\s*\[([^\]]*)\]/.exec(workflow)?.[1] ?? "";
+  expect(types.split(",").map((type) => type.trim())).toEqual(["opened", "synchronize", "reopened"]);
+  expect(workflow).not.toMatch(/github\.event\.pull_request\.body|PR_BODY/);
+});
+
 test("the group still keys on the ref, so one branch cannot cancel another", () => {
   expect(concurrencyBlock(workflow).group).toContain("github.ref");
 });

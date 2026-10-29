@@ -8,6 +8,7 @@ import {
   EXIT_DRAINED,
   EXIT_SOMETHING_FAILED,
   POLL_MS,
+  RERUN_GRACE_MS,
   WAIT_TIMEOUT_MS,
   drain,
   formatOutcome,
@@ -236,6 +237,46 @@ test("a run cancelled by its replacement on the same commit keeps the queue wait
 
   const settled = waitForGreen(28, io({ gh: () => ok(JSON.stringify({ number: 28, url: "u", state: "OPEN", headRefName: "agent/28", statusCheckRollup: JSON.parse(rollup([{ name: "games", conclusion: "CANCELLED" }, { name: "types", conclusion: "SUCCESS" }])) })) }));
   expect(settled.verdict).toBe("failed");
+});
+
+test("a run cancelled with nothing replacing it is run again once, never read as a failure", () => {
+  // A PR body edit started a second run on the same commit that cancelled the first; the status
+  // scripts read the cancelled checks as failures although no check had failed.
+  let step = 0;
+  const reruns: string[] = [];
+  const answers = [
+    rollup([
+      { name: "test (h)", conclusion: "CANCELLED", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/1" },
+      { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/2" },
+    ]),
+    rollup([
+      { name: "test (h)", conclusion: "CANCELLED", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/1" },
+      { name: "test (h)", conclusion: "SUCCESS", startedAt: "2026-10-28T10:05:00Z", url: "https://example.test/actions/runs/700/job/3" },
+      { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/2" },
+    ]),
+  ];
+  const gh: QueueIo["gh"] = (args) => {
+    if (args[0] === "run" && args[1] === "rerun") reruns.push(args[2]!);
+    return args.join(" ").startsWith("pr view")
+      ? ok(JSON.stringify({ number: 29, url: "u", state: "OPEN", headRefName: "agent/29", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[Math.min(step, answers.length - 1)]!) }))
+      : ok();
+  };
+  const result = waitForGreen(29, io({ gh, pause: () => (step += 1) }));
+  expect(reruns).toEqual(["700"]);
+  expect(result.verdict).toBe("green");
+
+  // Still cancelled once the rerun has had its grace: then it is reported, with the check named.
+  let clock = 0;
+  const again = waitForGreen(30, io({
+    gh: (args) => (args.join(" ").startsWith("pr view") ? ok(JSON.stringify({ number: 30, url: "u", state: "OPEN", headRefName: "agent/30", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[0]!) })) : ok()),
+    now: () => clock,
+    pause: (ms) => {
+      clock += ms;
+    },
+  }));
+  expect(again.verdict).toBe("failed");
+  expect(again.detail).toContain("test (h)");
+  expect(again.waitedMs).toBeGreaterThanOrEqual(RERUN_GRACE_MS);
 });
 
 test("a failing check ends the wait at once, and a wait that never settles gives up at the ceiling", () => {
