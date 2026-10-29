@@ -20,7 +20,7 @@ import { scoreTrial, type FitTarget } from "./speciesScore";
 import { SHADE_TOLERANCE, SPECIES_TRAITS, type CrownForm, type SpeciesTraits } from "./speciesTraits";
 import { TRIAL_AGES, runHabitTrial, runTrial, type Trial } from "./speciesTrial";
 import { talloCrownWidthClasses } from "./tallo";
-import { buildHabitRecord, HABIT_FIT_PARAMETERS, HABIT_TRAITS, habitReferenceTableSource, importHabitReference, scoreHabitTrial, type HabitTraits } from "./habitSpecies";
+import { buildHabitRecord, habitFitParameters, HABIT_TRAITS, startingHabitCarbon, startingHabitGrowth, habitReferenceTableSource, importHabitReference, scoreHabitTrial, type HabitTraits } from "./habitSpecies";
 import { HABIT_REFERENCE } from "../../packages/core/src/plants/species/habitReferenceTable";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
@@ -116,8 +116,9 @@ async function startingHabitRecord(traits: HabitTraits): Promise<PlantSpecies> {
   if (prior === undefined) throw new Error(`prior ${traits.prior} has no record`);
   const own = await loadRecord(traits.id);
   const source = own ?? prior;
-  const growth = own === undefined ? { ...prior.growth, stemLifespanYears: 10 } : own.growth;
-  return buildHabitRecord(traits, growth, source.carbon, { score: 0, against: "" }, prior, (own?.version ?? 0) + 1);
+  const growth = own === undefined ? startingHabitGrowth(traits, prior.growth) : own.growth;
+  const carbon = own === undefined ? startingHabitCarbon(traits, prior.carbon) : own.carbon;
+  return buildHabitRecord(traits, growth, carbon, { score: 0, against: "" }, prior, (own?.version ?? 0) + 1);
 }
 
 const HABIT_AGAINST = "usda-plants";
@@ -278,12 +279,12 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
       const start = resumed?.species ?? (await startingHabitRecord(habit));
       const reference = habitReferenceOf(id);
       const pool = workerPool(workers, seeds, false, true);
-      await fitSpecies(start, (trial) => scoreHabitTrial(reference, habit.limits.maxCrownRadiusM, trial), pool.evaluate, {
+      await fitSpecies(start, (trial) => scoreHabitTrial(reference, habit, trial), pool.evaluate, {
         generations: Number(flag(argv, "--generations", "40")),
         lambda: Number(flag(argv, "--lambda", "16")),
         sigma: Number(flag(argv, "--sigma", "0.12")),
         seed: 1,
-        parameters: HABIT_FIT_PARAMETERS,
+        parameters: habitFitParameters(habit),
         onBest: (best) => writeFileSync(out, JSON.stringify({ score: best.score, parts: best.parts, against: HABIT_AGAINST, species: best.species } satisfies FitFile, null, 1)),
         onGeneration: (line) => console.log(`${id} ${line}`),
       });
@@ -337,7 +338,9 @@ async function writeHabit(traits: HabitTraits): Promise<void> {
   const record = unchanged !== undefined && JSON.stringify(unchanged) === JSON.stringify(own) ? unchanged : buildHabitRecord(traits, source.growth, source.carbon, score, prior, (own?.version ?? 0) + 1);
   const reference = habitReferenceOf(id);
   const name = `${traits.common.en[0]?.toUpperCase() ?? ""}${traits.common.en.slice(1)}.`;
-  const summary = `${name} A ${traits.habit} of ${traits.basalStems} stems at the collar that die and resprout. Traits from USDA PLANTS and NRCS plant guides; growth and carbon fitted to PLANTS heights (${reference.heightAt20M} m at 20 years, ${reference.matureHeightM} m mature). Written by \`bun run jgengine plants write ${id}\`; edit the importer's traits or refit, not this file.`;
+  const form = traits.habit === "shrub" ? `A shrub of ${traits.basalStems} stems at the collar that die and resprout.` : `A ${traits.habit} of one unbranched stem under a crown of ${traits.leaf.shape.kind === "fan" ? "fan leaves" : "fronds"}.`;
+  const heights = reference.heightAt20M === null ? `${reference.matureHeightM} m mature` : `${reference.heightAt20M} m at 20 years, ${reference.matureHeightM} m mature`;
+  const summary = `${name} ${form} Traits from USDA PLANTS and NRCS plant guides; growth and carbon fitted to PLANTS heights (${heights}). Written by \`bun run jgengine plants write ${id}\`; edit the importer's traits or refit, not this file.`;
   writeFileSync(join(PLANTS, "species/data", `${camel(id)}.ts`), speciesRecordSource(traits, record, wrap(summary, 96)));
   console.log(`wrote ${id} v${record.version}`);
 }
@@ -394,7 +397,7 @@ async function runReport(ids: readonly string[], argv: readonly string[]): Promi
       const record = fitted?.species ?? (await loadRecord(id)) ?? (await startingHabitRecord(habit));
       const reference = habitReferenceOf(id);
       const trial = runHabitTrial(record, seeds);
-      const score = scoreHabitTrial(reference, habit.limits.maxCrownRadiusM, trial);
+      const score = scoreHabitTrial(reference, habit, trial);
       console.log(`${id} score ${score.total.toFixed(2)} ${JSON.stringify(score.parts)}`);
       for (const r of trial.open.flat()) console.log(`  ${r.age} y: H ${r.heightM.toFixed(2)} CW ${r.crownWidthM.toFixed(2)} stems ${r.stems}${r.alive ? "" : " dead"}`);
       continue;

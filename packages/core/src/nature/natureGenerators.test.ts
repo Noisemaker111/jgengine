@@ -6,7 +6,7 @@ import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKind
 import { isNatureMesh, type NatureMesh } from "./natureMesh";
 import { findSchemaPreset, parseParams } from "@jgengine/core/generator/paramSchema";
 import type { GeneratorDefinition } from "@jgengine/core/generator/generator";
-import { NATURE_GENERATORS, NATURE_OUTPUT, PALM_GENERATOR, ROCK_GENERATOR } from "./natureGenerators";
+import { DRIFTWOOD_GENERATOR, NATURE_GENERATORS, NATURE_OUTPUT, ROCK_GENERATOR } from "./natureGenerators";
 
 function mesh(value: unknown): NatureMesh {
   if (!isNatureMesh(value)) throw new Error("not a nature mesh");
@@ -26,7 +26,7 @@ const FULL_DETAIL_TRIANGLES = 3200;
 describe("nature generators", () => {
   test("cover every species the issue names", () => {
     const presets = new Set(SPECIES.map((species) => species.preset));
-    for (const name of ["coconut", "cycad", "fern", "rock", "boulder", "pebbles", "driftwood"]) {
+    for (const name of ["rock", "boulder", "pebbles", "driftwood"]) {
       expect(presets.has(name)).toBe(true);
     }
     expect(NATURE_GENERATORS.every((definition) => definition.output === NATURE_OUTPUT)).toBe(true);
@@ -69,9 +69,8 @@ describe("nature generators", () => {
     }
   });
 
-  test("variants keep what makes the species: cycads fruitless, boulders one stone", () => {
+  test("variants keep what makes the species: boulders one stone", () => {
     const pinned: [GeneratorDefinition, string, string][] = [
-      [PALM_GENERATOR, "cycad", "fruit"],
       [ROCK_GENERATOR, "boulder", "count"],
     ];
     for (const [definition, presetId, key] of pinned) {
@@ -90,10 +89,9 @@ describe("nature generators", () => {
     }
   });
 
-  test("palms draw their trunks with the bark surface and rocks one rock surface", () => {
-    const palm = mesh(runGenerator(PALM_GENERATOR, { preset: "coconut" }));
-    expect(palm.parts?.some((part) => part.surface === "bark")).toBe(true);
-    expect(palm.parts?.reduce((sum, part) => sum + part.count, 0)).toBe(palm.indices.length);
+  test("driftwood draws with the bark surface and rocks one rock surface", () => {
+    const log = mesh(runGenerator(DRIFTWOOD_GENERATOR, {}));
+    expect(log.surface === "bark" || (log.parts?.some((part) => part.surface === "bark") ?? false)).toBe(true);
     const rock = mesh(runGenerator(ROCK_GENERATOR, {}));
     expect(rock.parts).toBeUndefined();
     expect(rock.surface).toBe("rock");

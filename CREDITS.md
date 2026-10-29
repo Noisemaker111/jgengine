@@ -335,6 +335,11 @@ provenance.
   sprouting in woody plants, *Trends in Ecology & Evolution* 16; Wilson & Tilman 1991, shrub stem
   turnover; USDA NRCS PLANTS Database characteristics and the highbush blueberry plant guide (US
   public domain) for heights, growth form and traits.
+- **Palms and ferns** (`structure/frondPose.ts`, frond and fan leaves): Tomlinson 1990, *The
+  Structural Biology of Palms* (establishment growth, frond production and droop, no secondary
+  thickening); Hallé, Oldeman & Tomlinson 1978, Corner's architectural model; USDA NRCS PLANTS
+  Database characteristics and plant guides (US public domain) for coconut, cabbage palm, Hawaiian
+  tree fern, bracken and western sword fern.
 
 ## Landform simulation
 

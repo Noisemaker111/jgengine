@@ -11,7 +11,7 @@ import type { ScatterInstance } from "./scatterRegion";
 
 /** A scatter palette item grown by a registered generator. */
 export interface ScatterGeneratorItem {
-  /** Registered generator id, e.g. `"nature.palm"`. */
+  /** Registered generator id, e.g. `"plant.grown"` or `"nature.rock"`. */
   generator: string;
   /** Schema preset applied first, e.g. `"cycad"`. */
   preset?: string;

@@ -2,8 +2,9 @@
 import type { GrowthState } from "../growth/growthState";
 import { NODE_AXIS_START, NODE_DEAD, NODE_SCAR } from "../growth/growthState";
 import type { GrowingSeason } from "../growth/phenology";
-import { PLANT_PI } from "../growth/plantMath";
+import { PLANT_PI, plantCos, plantSin } from "../growth/plantMath";
 import type { BarkKind, LeafShapeParams, PlantSpecies, SeasonalColor } from "../species/plantSpecies";
+import { FROND_STATS_SEGMENTS, frondCount, frondLengthShare, frondPose, frondSpine, isFrondShape, type FrondPose } from "./frondPose";
 
 /** Region code per skeleton segment; a style picks material and detail by it. */
 export const PLANT_REGION = { trunk: 0, branch: 1, twig: 2, deadwood: 3, scar: 4, rootFlare: 5 } as const;
@@ -207,6 +208,38 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     if (!dead && (state.order[i] ?? 0) === 1 && (flags & NODE_AXIS_START) !== 0 && (subFoliage[i] ?? 0) >= 0.01 * totalFoliage && sy < crownBaseM) crownBaseM = sy;
   }
 
+  // Fronds reach well past the node that bears them, so they set the plant's height and crown.
+  const fronds = isFrondShape(species.leaf.shape);
+  const frondLength = (species.leaf.sizeCm / 100) * frondLengthShare(species.growth, state.year);
+  const frondPoints: number[] = [];
+  if (fronds) {
+    const pose: FrondPose = { azimuth: 0, elevation: 0, sag: 0 };
+    const spine = new Float64Array((FROND_STATS_SEGMENTS + 1) * 2);
+    for (let i = 0; i < n; i += 1) {
+      const foliage = state.foliage[i] ?? 0;
+      if (foliage <= 0) continue;
+      const count = frondCount(foliage, frondLength);
+      const rowAge = state.year - (state.born[i] ?? 0);
+      for (let k = 0; k < count; k += 1) {
+        frondPose(i, k, count, rowAge, pose);
+        frondSpine(pose, frondLength, FROND_STATS_SEGMENTS, spine);
+        const t = (k + 0.5) / count;
+        const bx = (start[i * 3] ?? 0) + ((end[i * 3] ?? 0) - (start[i * 3] ?? 0)) * t;
+        const by = (start[i * 3 + 1] ?? 0) + ((end[i * 3 + 1] ?? 0) - (start[i * 3 + 1] ?? 0)) * t;
+        const bz = (start[i * 3 + 2] ?? 0) + ((end[i * 3 + 2] ?? 0) - (start[i * 3 + 2] ?? 0)) * t;
+        if (by < crownBaseM) crownBaseM = by;
+        const ca = plantCos(pose.azimuth);
+        const sa = plantSin(pose.azimuth);
+        for (let s = 1; s <= FROND_STATS_SEGMENTS; s += 1) {
+          const h = spine[s * 2] ?? 0;
+          const y = by + (spine[s * 2 + 1] ?? 0);
+          if (y > heightM) heightM = y;
+          frondPoints.push(bx + ca * h, y, bz + sa * h);
+        }
+      }
+    }
+  }
+
   const leafOn = dayOfYear >= season.leafOnDay && dayOfYear < season.leafOffDay;
   let leafRows = 0;
   if (leafOn) for (let i = 0; i < n; i += 1) if ((state.foliage[i] ?? 0) > 0) leafRows += 1;
@@ -254,8 +287,8 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     up[row * 3] = dx;
     up[row * 3 + 1] = dy;
     up[row * 3 + 2] = dz;
-    size[row] = species.leaf.sizeCm / 100;
-    count[row] = species.leaf.leavesPerNode;
+    size[row] = fronds ? frondLength : species.leaf.sizeCm / 100;
+    count[row] = fronds ? frondCount(state.foliage[i] ?? 0, frondLength) : species.leaf.leavesPerNode;
     segment[row] = i;
     for (let level = 0; level < PLANT_CLUSTER_LEVELS; level += 1) {
       const key = keyOf[level]?.[i] ?? i;
@@ -323,6 +356,17 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     let bin = Math.floor(((y - hullBottom) / span) * CROWN_HULL_BINS);
     if (bin < 0) bin = 0;
     if (bin >= CROWN_HULL_BINS) bin = CROWN_HULL_BINS - 1;
+    const at = 2 + bin * CROWN_HULL_SECTORS + sector;
+    if (r > (crownHull[at] ?? 0)) crownHull[at] = r;
+  }
+  for (let f = 0; f < frondPoints.length; f += 3) {
+    const x = frondPoints[f] ?? 0;
+    const y = frondPoints[f + 1] ?? 0;
+    const z = frondPoints[f + 2] ?? 0;
+    const r = Math.sqrt(x * x + z * z);
+    const sector = sectorOf(x, z);
+    if (r > (sectorMax[sector] ?? 0)) sectorMax[sector] = r;
+    const bin = Math.max(0, Math.min(CROWN_HULL_BINS - 1, Math.floor(((y - hullBottom) / span) * CROWN_HULL_BINS)));
     const at = 2 + bin * CROWN_HULL_SECTORS + sector;
     if (r > (crownHull[at] ?? 0)) crownHull[at] = r;
   }

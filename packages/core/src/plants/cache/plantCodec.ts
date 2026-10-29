@@ -5,7 +5,7 @@ import type { PlantClusterLevel, PlantStructure } from "../structure/plantStruct
 
 type PackedArray = Float32Array | Float64Array | Int32Array | Uint8Array | Uint16Array | Uint32Array;
 
-const CODEC_VERSION = 3;
+const CODEC_VERSION = 4;
 const ALIGN = 8;
 
 function typeCode(array: PackedArray): number {
@@ -160,7 +160,7 @@ function readArray(bytes: Uint8Array, offset: number, code: number, length: numb
 }
 
 const BARK_KINDS: readonly BarkKind[] = ["smooth", "furrowed", "plated", "peeling", "fibrous", "scaly"];
-const LEAF_KINDS: readonly LeafShapeParams["kind"][] = ["lobed", "ovate", "lanceolate", "needle", "scale", "blade", "frond"];
+const LEAF_KINDS: readonly LeafShapeParams["kind"][] = ["lobed", "ovate", "lanceolate", "needle", "scale", "blade", "frond", "fan"];
 
 function oneOf<T extends string>(values: readonly T[], value: string, what: string): T {
   const match = values.find((candidate) => candidate === value);

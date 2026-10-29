@@ -7,14 +7,32 @@
 export interface HabitReference {
   speciesId: string;
   usda: string;
-  /** PLANTS "Height at 20 Years, Maximum", metres. */
-  heightAt20M: number;
+  /** PLANTS "Height at 20 Years, Maximum", metres; null for a fern or herb PLANTS gives none for. */
+  heightAt20M: number | null;
   /** PLANTS "Height, Mature", metres. */
   matureHeightM: number;
   /** PLANTS growth form: a multi-stemmed shrub keeps several live stems. */
   multiStem: boolean;
   /** PLANTS growth rate class. */
   growthRate: "Slow" | "Moderate" | "Rapid";
+}
+
+/**
+ * Height a habit species should reach by 20 years: PLANTS' 20-year height, or its mature height for a
+ * fern or herb that is full grown within a few years.
+ * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
+ */
+export function habitHeightAt20M(reference: HabitReference): number {
+  return reference.heightAt20M ?? reference.matureHeightM;
+}
+
+/**
+ * Most a habit species should stand at 40 years before the 15% allowance: its mature height, or its
+ * 20-year height where PLANTS lists that as the taller of the two.
+ * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
+ */
+export function habitHeightCeilingM(reference: HabitReference): number {
+  return Math.max(reference.matureHeightM, reference.heightAt20M ?? 0);
 }
 
 /**

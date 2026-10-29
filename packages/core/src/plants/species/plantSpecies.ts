@@ -7,10 +7,15 @@ export type HalleOldemanModel = "rauh" | "troll" | "corner" | "leeuwenberg" | "a
 /** Bark surface kind a style reads to pick its bark material. */
 export type BarkKind = "smooth" | "furrowed" | "plated" | "peeling" | "fibrous" | "scaly";
 
-/** A leaf outline as numbers, so a style can draw it at any detail. */
+/**
+ * A leaf outline as numbers, so a style can draw it at any detail. A frond (pinnate palm or fern leaf)
+ * or fan (palmate palm leaf) is one large leaf per metamer drawn as an arched blade: `lobes` is its
+ * pinna pairs or fan segments, `lobeDepth` how deep they split, and for a frond `aspect` is the
+ * blade's width over its length.
+ */
 export interface LeafShapeParams {
-  /** Main outline: lobed (maple, oak), ovate (beech), needle, scale, blade, frond. */
-  kind: "lobed" | "ovate" | "lanceolate" | "needle" | "scale" | "blade" | "frond";
+  /** Main outline: lobed (maple, oak), ovate (beech), needle, scale, blade, frond, fan. */
+  kind: "lobed" | "ovate" | "lanceolate" | "needle" | "scale" | "blade" | "frond" | "fan";
   lobes: number;
   /** Depth of the sinus between lobes, 0 none .. 1 to the midrib. */
   lobeDepth: number;
@@ -79,6 +84,12 @@ export interface PlantSpecies {
      * live as long as it does.
      */
     stemLifespanYears?: number;
+    /**
+     * Years a palm or fern takes to reach full frond size: its first fronds are a tenth as long and
+     * lengthen as the stem widens through its establishment phase (Tomlinson 1990). Absent for
+     * leaves that are full size from the start.
+     */
+    frondEstablishmentYears?: number;
     /**
      * Gravimorphism (Wareing & Nasr 1961): share of that maximum a horizontal shoot keeps; upright
      * shoots keep all of it, in between scales with the shoot's vertical component.

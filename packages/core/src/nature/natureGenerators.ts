@@ -1,24 +1,20 @@
 // @skill jgengine-world
 /**
- * Seeded nature generators on the generator contract: palms and cycads, ferns, rocks from
- * pebbles to boulders, and driftwood; trees are grown by the plant simulation (`plant.grown`). Each
- * is a bounded param schema (trunk shape, fronds, clumps, colour, rock shape and erosion …) whose
- * variants differ in lean, clumps, tint and wear while still reading as their species. Species
- * recipes (palm, cycad, boulder, pebbles …) are schema presets. Every generator returns a {@link NatureMesh} under
+ * Seeded nature generators on the generator contract: rocks from pebbles to boulders, and
+ * driftwood; trees, shrubs, palms and ferns are grown by the plant simulation (`plant.grown`). Each
+ * is a bounded param schema (rock shape, erosion, colour …) whose variants differ in shape, tint and
+ * wear while still reading as their kind. Recipes (boulder, pebbles …) are schema presets. Every generator returns a {@link NatureMesh} under
  * {@link NATURE_OUTPUT}, so one draw path previews, places and scatter-instances them all.
  *
- * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter
  */
 import { defineGenerator, registerGenerator, untypedGenerator, type GeneratorDefinition } from "../generator/generator";
 import { defineParamSchema } from "../generator/paramSchema";
 import { registerPlaceableGeneratorOutput } from "../scene/assetGenerator";
 import {
-  addBlob,
-  addFrond,
   addStone,
   addTube,
   hexRgb,
-  mixRgb,
   NatureMeshBuilder,
   noiseSeed,
   shade,
@@ -39,7 +35,6 @@ export const NATURE_OUTPUT = "nature-mesh";
 /** Detail levels each nature variant bakes: full near the camera, half for a mid level. */
 const NATURE_LODS = [1, 0.5] as const;
 
-const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
@@ -53,28 +48,8 @@ function sidesFor(detail: number, max: number): number {
   return Math.max(3, Math.round(lerp(4, max, detail)));
 }
 
-/** A small random colour shift so two clusters of one tree are not the same green. */
-function tinted(color: NatureRgb, random: () => number, amount: number): NatureRgb {
-  return shade(color, spread(random, amount * 0.6), [random() * 2 - 1, random() * 2 - 1, random() * 2 - 1], amount * 0.35);
-}
-
 function barkColors(bark: NatureRgb, seed: number): (index: number, t: number) => NatureRgb {
   return (index, t) => shade(bark, 0.78 + t * 0.22 + ((Math.imul(index + 1, 2654435761) ^ seed) >>> 0) / 4294967296 * 0.12);
-}
-
-/** A trunk's centreline: leaning, bending and buried a little so it never floats on a slope. */
-function trunkPath(height: number, lean: number, bend: number, segments: number, random: () => number, curve = 0): NatureVec[] {
-  const leanDir = random() * Math.PI * 2;
-  const bendDir = leanDir + (random() - 0.5) * 2.4;
-  const points: NatureVec[] = [];
-  for (let i = 0; i <= segments; i += 1) {
-    const t = i / segments;
-    const y = lerp(-0.25, height, t);
-    const reach = Math.tan(lean) * y + curve * height * 0.38 * t * t;
-    const wiggle = Math.sin(t * Math.PI * 1.3) * bend * height * 0.07;
-    points.push([Math.cos(leanDir) * reach + Math.cos(bendDir) * wiggle, y, Math.sin(leanDir) * reach + Math.sin(bendDir) * wiggle]);
-  }
-  return points;
 }
 
 function pointOnPath(path: readonly NatureVec[], t: number): NatureVec {
@@ -101,151 +76,6 @@ function limbPath(start: NatureVec, azimuth: number, elevation: number, length: 
   }
   return points;
 }
-
-// --- Palm ----------------------------------------------------------------------------------------
-
-/** Palm and cycad params: curved banded trunk, frond crown, fruit. */
-export const PALM_SCHEMA = defineParamSchema({
-  groups: [
-    { id: "trunk", label: "Trunk" },
-    { id: "fronds", label: "Fronds" },
-    { id: "colour", label: "Colour" },
-  ],
-  fields: [
-    { type: "seed", key: "seed", label: "seed", default: "" },
-    { type: "range", key: "height", label: "height", group: "trunk", min: 0.4, max: 18, step: 0.1, default: 8, unit: "m", explore: [6, 10], exploreScale: "log" },
-    { type: "range", key: "trunkRadius", label: "trunk radius", group: "trunk", min: 0.08, max: 0.8, step: 0.01, default: 0.2, unit: "m", explore: [0.16, 0.26] },
-    { type: "range", key: "curve", label: "curve", group: "trunk", min: 0, max: 1, step: 0.01, default: 0.45, explore: [0.15, 0.75] },
-    { type: "range", key: "lean", label: "lean", group: "trunk", min: 0, max: 0.6, step: 0.01, default: 0.12, unit: "rad", explore: [0, 0.3] },
-    { type: "range", key: "bands", label: "trunk rings", group: "trunk", min: 0, max: 1, step: 0.01, default: 0.35 },
-    { type: "range", key: "fronds", label: "fronds", group: "fronds", min: 3, max: 20, step: 1, default: 9, explore: [7, 12] },
-    { type: "range", key: "frondLength", label: "frond length", group: "fronds", min: 0.4, max: 6, step: 0.05, default: 3.4, unit: "m", explore: [2.6, 4.2] },
-    { type: "range", key: "frondWidth", label: "frond width", group: "fronds", min: 0.1, max: 1.6, step: 0.01, default: 0.75 },
-    { type: "range", key: "droop", label: "droop", group: "fronds", min: 0, max: 1.4, step: 0.01, default: 0.75, explore: [0.5, 1] },
-    { type: "range", key: "leaflets", label: "leaflets", group: "fronds", min: 0, max: 14, step: 1, default: 8 },
-    { type: "range", key: "fruit", label: "coconuts", group: "fronds", min: 0, max: 8, step: 1, default: 3, vary: false },
-    { type: "color", key: "trunkColor", label: "trunk", group: "colour", default: "#8a7356", explore: { hue: 8, saturation: 0.2, lightness: 0.05 } },
-    { type: "color", key: "frondColor", label: "fronds", group: "colour", default: "#4f8f3a", explore: { hue: 14, saturation: 0.2, lightness: 0.06 } },
-    { type: "color", key: "tipColor", label: "frond tips", group: "colour", default: "#8fae4a", explore: { hue: 14, saturation: 0.2, lightness: 0.06 } },
-    { type: "color", key: "fruitColor", label: "fruit", group: "colour", default: "#5b4a2a" },
-  ],
-  presets: [
-    { id: "coconut", label: "Coconut palm", values: { height: 8, curve: 0.45, fronds: 9, frondLength: 3.4, fruit: 3 } },
-    { id: "cycad", label: "Cycad", values: { height: 1.3, trunkRadius: 0.32, curve: 0.05, lean: 0.04, bands: 0.7, fronds: 16, frondLength: 1.6, frondWidth: 0.42, droop: 0.3, leaflets: 12, fruit: 0, trunkColor: "#5f5140", frondColor: "#2f6b32", tipColor: "#4d8a3a" } },
-    { id: "fan", label: "Fan palm", values: { height: 5, trunkRadius: 0.28, curve: 0.1, fronds: 14, frondLength: 1.8, frondWidth: 1.3, droop: 0.4, leaflets: 0, fruit: 0 } },
-  ],
-});
-
-/** Palms and cycads: coconut palm, cycad, fan palm. */
-export const PALM_GENERATOR = defineGenerator({
-  id: "nature.palm",
-  label: "Palm",
-  output: NATURE_OUTPUT,
-  schema: PALM_SCHEMA,
-  lods: NATURE_LODS,
-  generate(params, context): NatureMesh {
-    const random = context.random("shape");
-    const seed = noiseSeed(context.seed);
-    const builder = new NatureMeshBuilder();
-    const trunkColor = hexRgb(params.trunkColor);
-    const segments = Math.max(3, Math.round(lerp(4, 12, context.detail) * Math.min(1.5, Math.max(0.5, params.height / 8))));
-    const trunk = trunkPath(params.height, params.lean, 0.1, segments, random, params.curve);
-    builder.surface("bark");
-    addTube(builder, trunk, trunk.map((_, i) => {
-      const t = i / (trunk.length - 1);
-      return params.trunkRadius * (1 - 0.3 * t) * (i % 2 === 0 ? 1 : 1 - params.bands * 0.12) * (t < 0.1 ? 1 + (0.1 - t) * 4 : 1);
-    }), { sides: sidesFor(context.detail, 8), color: (i, t) => shade(trunkColor, (i % 2 === 0 ? 1 : 1 - params.bands * 0.35) * (0.82 + t * 0.2)), seed });
-    builder.surface();
-    const top = pick(trunk, trunk.length - 1);
-    const frond = hexRgb(params.frondColor);
-    const tip = hexRgb(params.tipColor);
-    const frondSegments = Math.max(3, Math.round(lerp(3, 7, context.detail)) + (params.leaflets > 0 ? 2 : 0));
-    for (let i = 0; i < params.fronds; i += 1) {
-      const heading = i * GOLDEN * 1.0 + random() * 0.4;
-      const pitch = lerp(0.2, 0.95, random()) + (params.height < 2 ? 0.25 : 0);
-      addFrond(builder, {
-        base: top,
-        heading,
-        pitch,
-        length: params.frondLength * spread(random, 0.15),
-        width: params.frondWidth * spread(random, 0.15),
-        droop: params.droop * spread(random, 0.2),
-        segments: params.leaflets > 0 ? Math.max(frondSegments, Math.round(params.leaflets * context.detail)) : frondSegments,
-        leaflets: params.leaflets,
-        fold: 0.45,
-        color: tinted(frond, random, 0.15),
-        tipColor: tip,
-      });
-    }
-    const fruit = hexRgb(params.fruitColor);
-    for (let i = 0; i < params.fruit; i += 1) {
-      const angle = random() * Math.PI * 2;
-      const r = params.trunkRadius * 1.1;
-      const size = Math.max(0.08, params.trunkRadius * 0.55);
-      addBlob(builder, { center: [top[0] + Math.cos(angle) * r, top[1] - size * 1.2, top[2] + Math.sin(angle) * r], radii: [size, size * 1.1, size], level: 0, lumpiness: 0.1, seed: seed + i, color: fruit, colorJitter: 0.1, shadeBelow: 0.3 });
-    }
-    return builder.build();
-  },
-});
-
-// --- Fern ----------------------------------------------------------------------------------------
-
-/** Fern params: frond rosette, arch and colours. */
-export const FERN_SCHEMA = defineParamSchema({
-  groups: [
-    { id: "fronds", label: "Fronds" },
-    { id: "colour", label: "Colour" },
-  ],
-  fields: [
-    { type: "seed", key: "seed", label: "seed", default: "" },
-    { type: "range", key: "fronds", label: "fronds", group: "fronds", min: 3, max: 22, step: 1, default: 10, explore: [7, 14] },
-    { type: "range", key: "frondLength", label: "frond length", group: "fronds", min: 0.2, max: 3, step: 0.05, default: 1.05, unit: "m", explore: [0.8, 1.4], exploreScale: "log" },
-    { type: "range", key: "frondWidth", label: "frond width", group: "fronds", min: 0.06, max: 0.8, step: 0.01, default: 0.3 },
-    { type: "range", key: "spread", label: "spread", group: "fronds", min: 0, max: 1, step: 0.01, default: 0.55, explore: [0.35, 0.75] },
-    { type: "range", key: "arch", label: "arch", group: "fronds", min: 0, max: 1.4, step: 0.01, default: 0.7, explore: [0.45, 0.95] },
-    { type: "range", key: "leaflets", label: "leaflets", group: "fronds", min: 0, max: 16, step: 1, default: 10 },
-    { type: "color", key: "color", label: "fronds", group: "colour", default: "#3f7d35", explore: { hue: 16, saturation: 0.2, lightness: 0.07 } },
-    { type: "color", key: "tipColor", label: "tips", group: "colour", default: "#7aa844", explore: { hue: 16, saturation: 0.2, lightness: 0.07 } },
-  ],
-  presets: [
-    { id: "fern", label: "Fern", values: {} },
-    { id: "tree-fern-crown", label: "Low frond clump", values: { fronds: 16, frondLength: 0.7, spread: 0.8, arch: 0.4 } },
-    { id: "bracken", label: "Bracken", values: { fronds: 7, frondLength: 1.4, frondWidth: 0.5, spread: 0.35, color: "#5d7a2e", tipColor: "#9a8a3e" } },
-  ],
-});
-
-/** Ferns: fern, low frond clump, bracken. */
-export const FERN_GENERATOR = defineGenerator({
-  id: "nature.fern",
-  label: "Fern",
-  output: NATURE_OUTPUT,
-  schema: FERN_SCHEMA,
-  lods: NATURE_LODS,
-  generate(params, context): NatureMesh {
-    const random = context.random("shape");
-    const builder = new NatureMeshBuilder();
-    const color = hexRgb(params.color);
-    const tip = hexRgb(params.tipColor);
-    const segments = Math.max(3, Math.round(lerp(3, Math.max(4, params.leaflets), context.detail)));
-    for (let i = 0; i < params.fronds; i += 1) {
-      const heading = i * GOLDEN * 1.0 + random() * 0.5;
-      addFrond(builder, {
-        base: [(random() - 0.5) * 0.08, 0, (random() - 0.5) * 0.08],
-        heading,
-        pitch: lerp(1.25, 0.35, params.spread) + (random() - 0.5) * 0.3,
-        length: params.frondLength * spread(random, 0.2),
-        width: params.frondWidth * spread(random, 0.15),
-        droop: params.arch * spread(random, 0.2),
-        segments,
-        leaflets: params.leaflets,
-        fold: 0.3,
-        color: tinted(color, random, 0.18),
-        tipColor: mixRgb(tip, color, random() * 0.4),
-      });
-    }
-    return builder.build();
-  },
-});
 
 // --- Rock ----------------------------------------------------------------------------------------
 
@@ -378,8 +208,6 @@ export const DRIFTWOOD_GENERATOR = defineGenerator({
 
 /** Every nature generator, in editor order, as the untyped registry view. */
 export const NATURE_GENERATORS: readonly GeneratorDefinition[] = [
-  untypedGenerator(PALM_GENERATOR),
-  untypedGenerator(FERN_GENERATOR),
   untypedGenerator(ROCK_GENERATOR),
   untypedGenerator(DRIFTWOOD_GENERATOR),
 ];
