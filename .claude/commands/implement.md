@@ -15,16 +15,19 @@ Target: $ARGUMENTS
 
 ## Ship the queue
 
-Group surviving issues by `workflow` PR-boundary rules, then for each group:
+The issues named in one ask are one idea: one branch, one PR, landed once at the
+end (`workflow` skill, "Scope and issue").
 
-1. Restate the acceptance criteria in a line or two from the issue thread. If an
-   issue is too vague to act on, comment on it asking for the missing detail and
-   skip it rather than guess.
-2. Deliver through the `workflow` skill (it owns claiming, branching and shipping), routing domain guidance through `jgengine` intake. Issues named here are assigned to this session, so the claim comment is only needed when parallel lanes could pick the same issue.
-3. Run independent groups as parallel subagent lanes in a single batch; keep
-   groups touching the same files in one sequential lane.
+1. Restate each issue's acceptance criteria in a line or two from its thread. If
+   an issue is too vague to act on, comment on it asking for the missing detail
+   and skip it rather than guess.
+2. Deliver through the `workflow` skill (it owns claiming, branching and shipping), routing domain guidance through `jgengine` intake. Issues named here are assigned to this session, so no claim comment is needed.
+3. Take the issues in dependency order on the one branch, committing each when
+   it works with a message line that ends `Closes #N`. Only an issue unrelated to
+   the others in every file and seam gets a branch and PR of its own.
+4. Land once with `bun run lane:close` and wait for the merge.
 
 ## Report
 
-One line per issue: PR link plus verification evidence, or why it was skipped.
+One line per issue: the PR link plus verification evidence, or why it was skipped.
 Merge and release policy: AGENTS.md.
