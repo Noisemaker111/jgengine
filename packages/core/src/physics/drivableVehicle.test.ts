@@ -4,9 +4,9 @@ import { NEUTRAL_AXIS } from "../input/axisInput";
 import { tickDrivableVehicle } from "./drivableVehicle";
 import { createTireMarks } from "./tireMarks";
 import { createVehicleDynamics } from "./vehicleDynamics";
-import { VEHICLE_STYLES, vehicleTuning } from "./vehicleSpec";
+import { vehicleTuning } from "./vehicleSpec";
 
-const TUNING = vehicleTuning({ ...VEHICLE_STYLES.arcade, topSpeed: 28, accel: 9, brake: 12, turnRate: 2 });
+const TUNING = vehicleTuning({ grip: 1.5, drift: 0.15, abs: 1, stability: 1, bodyRoll: 0.4, topSpeed: 28, accel: 9, brake: 12, turnRate: 2 });
 const DT = 1 / 60;
 
 describe("tickDrivableVehicle", () => {

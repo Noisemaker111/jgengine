@@ -126,8 +126,9 @@ function Home() {
           body={
             <>
               <p>
-                A new game already walks: capsule movement with jump, steps and slopes. Cars are force-based, with arcade,
-                sim and drift styles you adjust with grip, drift, assist and body roll. Flight comes in hover, creative,
+                A new game already walks: capsule movement with jump, steps and slopes. Cars are force-based and built from
+                separate effects, from tyre grip and weight transfer to drag and each driver aid, so any of them can be
+                switched off or retuned. Flight comes in hover, creative,
                 spectator and noclip modes, and aircraft have their own model.
               </p>
             </>

@@ -15,8 +15,18 @@ const car: VehicleDynamicsTuning = {
   driveFront: 0,
   powertrain: { kind: "direct", maxForce: 9000, maxPower: 150000 },
   brakeForce: 15000,
-  steering: { maxAngle: 0.6, highSpeedAngle: 0.15, highSpeedAt: 30, rate: 3, selfAlign: 0.3 },
-  assists: { abs: 1, tractionControl: 0.6, stability: 0.5 },
+  steering: { maxAngle: 0.6, rate: 3 },
+  effects: {
+    combinedSlip: {},
+    longitudinalLoadTransfer: {},
+    lateralLoadTransfer: {},
+    rollingResistance: {},
+    speedSensitiveSteering: { angle: 0.15, at: 30 },
+    selfAlign: { strength: 0.3 },
+    abs: { strength: 1 },
+    tractionControl: { strength: 0.6 },
+    stability: { strength: 0.5 },
+  },
 };
 const full = { throttle: 1, brake: 0, steer: 0, handbrake: 0 };
 

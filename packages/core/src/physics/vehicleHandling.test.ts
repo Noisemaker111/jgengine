@@ -4,11 +4,18 @@ import { NEUTRAL_AXIS, type AxisInput } from "../input/axisInput";
 import { measureHandling } from "./handlingProbe";
 import { createVehicleDamage, damagedSpec, type VehicleDamageZone } from "./vehicleDamage";
 import { createVehicleDynamics, type VehicleDynamics } from "./vehicleDynamics";
-import { VEHICLE_STYLES, vehicleTuning, type VehicleSpec } from "./vehicleSpec";
+import { vehicleTuning, type VehicleSpec } from "./vehicleSpec";
 
 const DT = 1 / 60;
 
-const CAR: VehicleSpec = { ...VEHICLE_STYLES.arcade, topSpeed: 34, accel: 10, brake: 14, turnRate: 2.1, turnSpeed: 9, handbrakeGrip: 0.22 };
+// Three deliberately different setups of grip, balance and aids: test fixtures that span the range, not presets.
+const SETUPS = {
+  forgiving: { grip: 1.5, drift: 0.15, abs: 1, stability: 1, tractionControl: 0.6475, selfAlign: 0.6375, steerRate: 4.4, bodyRoll: 0.4 },
+  raw: { grip: 1.05, drift: 0.25, abs: 0.25, stability: 0.55, tractionControl: 0.153125, selfAlign: 0.4, steerRate: 2.9, bodyRoll: 0.6 },
+  loose: { grip: 1.1, drift: 0.85, abs: 0.55, stability: 0.73, tractionControl: 0.221375, selfAlign: 0.655, steerRate: 3.5, bodyRoll: 0.6 },
+} as const satisfies Record<string, Partial<VehicleSpec>>;
+
+const CAR: VehicleSpec = { ...SETUPS.forgiving, topSpeed: 34, accel: 10, brake: 14, turnRate: 2.1, turnSpeed: 9, handbrakeGrip: 0.22 };
 
 const axis = (partial: Partial<AxisInput>): AxisInput => ({ ...NEUTRAL_AXIS, ...partial });
 
@@ -46,9 +53,8 @@ function scriptedLap(vehicle: VehicleDynamics, modifiers?: Parameters<VehicleDyn
   return { distance, headingTurned, peakSlip, peakLateral, topSpeed };
 }
 
-describe("the quality floor every style keeps", () => {
-  const styles = Object.entries(VEHICLE_STYLES) as [keyof typeof VEHICLE_STYLES, (typeof VEHICLE_STYLES)[keyof typeof VEHICLE_STYLES]][];
-  for (const [name, style] of styles) {
+describe("the quality floor every setup keeps", () => {
+  for (const [name, style] of Object.entries(SETUPS)) {
     test(`${name}: launches, grips, slides on the handbrake, and never spins on a held keyboard corner`, () => {
       const spec: VehicleSpec = { ...style, topSpeed: 40, accel: 8, brake: 11, turnRate: 1.8 };
       const report = measureHandling(() => createVehicleDynamics(vehicleTuning(spec)));
@@ -63,11 +69,11 @@ describe("the quality floor every style keeps", () => {
     });
   }
 
-  test("the styles feel different: arcade grips hardest, drift holds the biggest handbrake slide", () => {
+  test("the setups feel different: the forgiving one grips hardest, the loose one holds the biggest handbrake slide", () => {
     const base = { topSpeed: 40, accel: 8, brake: 11, turnRate: 1.8 };
-    const arcade = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...VEHICLE_STYLES.arcade, ...base })));
-    const sim = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...VEHICLE_STYLES.sim, ...base })));
-    const drift = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...VEHICLE_STYLES.drift, ...base })));
+    const arcade = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...SETUPS.forgiving, ...base })));
+    const sim = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...SETUPS.raw, ...base })));
+    const drift = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...SETUPS.loose, ...base })));
     expect(arcade.maxLateralG).toBeGreaterThan(sim.maxLateralG);
     expect(drift.handbrakePeakSideslipDeg).toBeGreaterThan(arcade.handbrakePeakSideslipDeg);
     expect(drift.powerSteerPeakSideslipDeg).toBeGreaterThan(arcade.powerSteerPeakSideslipDeg);
