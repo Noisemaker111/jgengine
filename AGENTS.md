@@ -6,6 +6,8 @@ This file holds how this repo builds, tests and lands, and what "done" means her
 
 JGengine is measured by the time from an idea to a deep playable game; friction an agent hits while building a game is an engine bug to fix. JGengine is built through distinct playable games in `games/`. Reviewing a game exists to improve the shared framework, so one fix reaches every game. Trace a game symptom to its real cause, the engine contract, its adoption or the game's own rules, before fixing it: an obstructed HUD does not justify game-local CSS, and apparent sinking does not justify a guessed offset.
 
+The engine is small general systems that combine into any game; it never ships a game's feature as one closed thing. A supply drop is not an engine feature. It is a game combining a schedule that spawns things at a pace from a start time, a rarity table, an access rule tied to that rarity, a loot pool per rarity, and a motion and landing animation, so the game's tick says `spawnSupplyDrop(x, y, "purple")` in a few lines it wrote. Breeding, taming, boss fights, police and every other named feature break down the same way. The test for each piece: a game that wants only part of it (simple dog breeding, a shooter's ammo crate) uses that part and throws nothing away. Much of today's code was built for one game and is being taken apart, so never copy a feature's shape because it exists; build the systems it should have been made of.
+
 ## Writing
 
 Write short everywhere a human reads, one idea per line, in plain words and the tone of a calm coworker.
@@ -45,7 +47,7 @@ Code comments default to none. Exported public API keeps tight JSDoc (it generat
 0. **Plan first.** A new game or big feature starts with the [`create-game-jg`](.claude/skills/create-game-jg/SKILL.md) skill: agree the direction with Jon or the user (references, how faithful, breadth, look, scale, players, platforms, what done means), map every feature with one `bun run jgengine has <feature> ...` call, write `games/<id>/PLAN.md` (direction, a design brief `check games-design` reads, features with engine owners, gaps as engine work, milestones that each add the next 10 minutes of play), then `jgengine create` and build milestone by milestone. A milestone is a commit on the idea's branch that ticks it in `PLAN.md`, not a PR of its own; a changed goal changes the plan first.
 1. Separate the game's rules, content and presentation from reusable behavior.
 2. Check engine `beta` before declaring a gap; if the fix exists, adopt it.
-3. Build missing shared behavior upstream with configurable policy, keeping the first adopter's behavior. Do not edit files another session owns.
+3. Build missing shared behavior upstream as the general systems it is made of, with the first game's numbers and names in that game's config, keeping its behavior. Do not edit files another session owns.
 4. Land the engine change and the game change in one PR. Games run engine source from the same commit, so npm releases never gate a games change.
 5. Delete the superseded game-local code. Report the shared owner, the cleanup and the behavior verified.
 

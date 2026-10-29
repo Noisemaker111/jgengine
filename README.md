@@ -19,6 +19,12 @@ their rules, stories, items, assets, authored worlds and presentation. The engin
 the common machinery that makes those choices work. Shared behavior must preserve
 different art directions and gameplay, not impose a common game or asset kit.
 
+A JGengine game can be anything, so the engine is small general systems (spawn schedules,
+rarity, access rules, loot pools, motion, growth stages, physical effects) that a game
+combines in a few lines into its own features. A "supply drop", "breeding" or "boss fight" is
+the game's combination, never one closed engine feature, and every part can be switched off,
+swapped or retuned.
+
 The games in [`games/`](games) are workspaces of this repo and run engine source from the
 same commit, so an engine change and the games it breaks are fixed in one PR. Outside users get
 engine changes as npm versions; a breaking change carries a semver bump and a migration note.
