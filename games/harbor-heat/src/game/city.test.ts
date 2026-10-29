@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { validateMissionCatalog } from "@jgengine/core/mission/mission";
 import { missionMarkers } from "@jgengine/core/mission/triggers";
+import { acrossSeeds } from "@jgengine/core/random/seedSweep";
 import { createWorldModel } from "@jgengine/core/worldModel/worldModel";
 import { editorLayers } from "../editorLayers";
 import { city, turfWar } from "./city";
+import { PUSHERS } from "./city/street";
 
 const markers = missionMarkers(editorLayers);
 
@@ -61,26 +63,46 @@ describe("Mainsail's world model", () => {
     expect(world.num("fronts.takings")).toBeGreaterThanOrEqual(4.5);
   });
 
-  test("once the Carmines are angry their pushes wear a held block down and they take it back", () => {
+  /** Take the Marina once, then leave it for ten minutes; `defend` drops every crew the Carmines send. */
+  const holdTheMarina = (seed: string, defend: boolean) => {
     const live = { "clock.hour": 12, "clock.night": false, "police.stars": 0, "turf.held": 0 };
     const pushes: string[] = [];
-    const world = createWorldModel(city, { markers, live: () => live, hooks: { crewPush: (call) => pushes.push(call.place ?? "") } });
+    const world = createWorldModel(city, {
+      markers,
+      seed,
+      live: () => live,
+      hooks: { crewPush: (call) => pushes.push(call.place ?? "") },
+    });
     world.emit({ kind: "ganger_down", place: "marina", faction: "carmine" });
     world.emit({ kind: "ganger_down", place: "marina", faction: "carmine" });
     world.tick(0.3);
-    expect(world.fact("marina.owner")).toBe("player");
+    const taken = world.fact("marina.owner") === "player";
     const fired: string[] = [];
-    for (let t = 0; t < 2000 && world.fact("marina.owner") === "player"; t += 1) {
-      world.set("carmine.mood", -60);
+    let answered = 0;
+    for (let t = 0; t < 600 && world.fact("marina.owner") === "player"; t += 1) {
       fired.push(...(world.tick(1).fired ?? []));
+      for (; defend && answered < pushes.length; answered += 1) {
+        for (let soldier = 0; soldier < PUSHERS; soldier += 1) world.emit({ kind: "ganger_down", place: "marina", faction: "carmine" });
+      }
     }
-    expect(world.fact("marina.owner")).toBe("carmine");
-    expect(fired).toContain("turf:marina:player:carmine");
+    return { world, taken, pushes, fired, retaken: world.fact("marina.owner") === "carmine" };
+  };
+
+  test("one lost block makes the Carmines push back, and an undefended block falls back to them in most runs", () => {
+    expect(acrossSeeds(40, (seed) => holdTheMarina(seed, false).retaken).rate).toBeGreaterThanOrEqual(0.85);
+    const run = holdTheMarina("sweep:0", false);
+    expect(run.taken).toBe(true);
+    expect(run.retaken).toBe(true);
+    expect(run.fired).toContain("turf:marina:player:carmine");
     expect(turfWar.handover("turf:marina:player:carmine")).toEqual({ block: "marina", from: "player", to: "carmine" });
-    expect(pushes.length).toBeGreaterThan(0);
-    expect(pushes.every((place) => place === "marina")).toBe(true);
-    expect(world.log().map((entry) => entry.text)).toContain("The Carmines took the Marina from you.");
-    expect(world.num("marina.grip")).toBe(40);
+    expect(run.pushes.length).toBeGreaterThan(0);
+    expect(run.pushes.every((place) => place === "marina")).toBe(true);
+    expect(run.world.log().map((entry) => entry.text)).toContain("The Carmines took the Marina from you.");
+    expect(run.world.num("marina.grip")).toBe(40);
+  });
+
+  test("dropping the crews they send holds the block in most runs", () => {
+    expect(acrossSeeds(40, (seed) => !holdTheMarina(seed, true).retaken).rate).toBeGreaterThanOrEqual(0.85);
   });
 
   test("a bought front earns more at night, stops under heavy heat, and a raid that runs out its clock wrecks it", () => {
