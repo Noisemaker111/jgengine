@@ -27,7 +27,8 @@ const CREW_RESPAWN = 45;
 const CREW_SPREAD = 9;
 /** A crew turns on the player once its gang is this angry (or the block is already shooting). */
 export const WAR_MOOD = -20;
-const PUSHERS = 3;
+/** Soldiers a push sends when the player is near; dropping all of them wins back more hold than the push took. */
+export const PUSHERS = 3;
 /** Soldiers each crew sends to a clash the player is close enough to see. */
 const CLASH_SIDE = 2;
 /** Seconds a clash's survivors hang around before going home. */

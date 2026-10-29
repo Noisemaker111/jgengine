@@ -147,3 +147,23 @@ describe("world interlocks: variants by place, triggers, targeted schedules, liv
     expect(() => defineWorldModel({ ripples: { r: {} }, schedule: { s: { every: 1, ripple: "r", chance: 2 } } })).toThrow(/chance/);
   });
 });
+
+describe("schedule luck", () => {
+  const raffle = defineWorldModel({ facts: { wins: 0 }, ripples: { win: { world: { wins: 1 } } }, schedule: { draw: { every: 1, ripple: "win", chance: 0.5 } } });
+  const wins = (seed?: string) => {
+    const world = createWorldModel(raffle, seed === undefined ? {} : { seed });
+    const sequence: number[] = [];
+    for (let t = 0; t < 40; t += 1) {
+      world.tick(1);
+      sequence.push(world.num("wins"));
+    }
+    return { world, sequence };
+  };
+
+  test("a seed is saved with the world and decides its luck; the odds hold either way", () => {
+    expect(wins("a").sequence).toEqual(wins("a").sequence);
+    expect(wins("a").sequence).not.toEqual(wins("b").sequence);
+    expect(wins("a").world.snapshot().seed).toBe("a");
+    for (const seed of ["a", "b", "c"]) expect(Math.abs(wins(seed).world.num("wins") - 20)).toBeLessThanOrEqual(1);
+  });
+});

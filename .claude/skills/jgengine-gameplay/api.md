@@ -2856,6 +2856,12 @@
 - `NonogramSolution` (type): type NonogramSolution = readonly (readonly boolean[])[] — A solved grid, row-major; `true` is a filled cell.
 - `NonogramSolveResult` (interface): interface NonogramSolveResult — Outcome of {@link solveNonogram}: the deduced board and whether propagation fully determined it.
 
+## @jgengine/core/random/fairChance
+
+- `FairChanceOptions` (interface): interface FairChanceOptions — How a run of chance rolls is dealt.
+- `fairChance` (function): function fairChance(key: string, index: number, chance: number, options: FairChanceOptions = {}): boolean — Whether roll `index` of the chance named `key` succeeds, dealt from shuffled bags like a deck of cards: over any stretch of rolls the share that succeed stays at `chance`, so a 70% roll can't miss nine times running or a 30% one hit nine times running. Stateless and replayable: the same key and index always answer the same, so a reloaded world rolls exactly as before. Put the world's seed in `key` to give each run its own luck.
+- `longestStreak` (function): function longestStreak(results: readonly boolean[]): { length: number; value: boolean | null } — The longest run of equal results in `results` and which result it was, for tests that check a random system does not hand out streaks the odds don't explain.
+
 ## @jgengine/core/random/nameGen
 
 - `NameGenerator` (interface): interface NameGenerator { name(): string } — ⚠ undocumented · used by `createNameGenerator`: Generate procedural names from templates and word banks with an injected random source.
@@ -2893,6 +2899,11 @@
 ## @jgengine/core/random/seedLink
 
 - `DEFAULT_SEED_PARAM` (const): const DEFAULT_SEED_PARAM: "seed" — ⚠ undocumented
+
+## @jgengine/core/random/seedSweep
+
+- `SeedSweep` (interface): interface SeedSweep — How a scenario did across many seeds.
+- `acrossSeeds` (function): function acrossSeeds(count: number, scenario: (seed: string) => boolean, prefix = "sweep"): SeedSweep — Run a seeded scenario once per seed (`sweep:0`, `sweep:1`, …) and report the share it held for. A test of anything random asserts this rate instead of one seed's outcome, so it can't pass on one lucky run or fail on one unlucky one: `expect(acrossSeeds(40, (seed) => carminesRetake(seed)).rate).toBeGreaterThan(0.8)`.
 
 ## @jgengine/core/relation/keyedValues
 

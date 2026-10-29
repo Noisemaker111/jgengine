@@ -267,6 +267,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `settleExpedition` (function) · `import { settleExpedition } from "@jgengine/core/gameplay"`
 
+## fair-chance — chance rolls with the right odds and no long lucky or unlucky streaks
+
+- `fairChance` (function) · `import { fairChance } from "@jgengine/core/random/fairChance"`
+- `longestStreak` (function) · `import { longestStreak } from "@jgengine/core/random/fairChance"`
+
 ## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger
 
 - `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/gameplay"`
@@ -851,6 +856,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
 
 - `Scoreboard` (function) · `import { Scoreboard } from "@jgengine/core/leaderboard/scoreboard.view"`
+
+## seed-sweep — test a random system by its odds across many seeds, not one lucky run
+
+- `acrossSeeds` (function) · `import { acrossSeeds } from "@jgengine/core/random/seedSweep"`
 
 ## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
 

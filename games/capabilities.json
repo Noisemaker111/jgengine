@@ -3505,6 +3505,16 @@
       "intent": "F-16 throttle gearing to engine power command"
     },
     {
+      "id": "fair-chance",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/random/fairChance",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "chance rolls with the right odds and no long lucky or unlucky streaks"
+    },
+    {
       "id": "fast-travel",
       "packages": [
         "@jgengine/core"
@@ -9857,6 +9867,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "2-D heave added mass and radiation damping of a ship section (Frank close-fit)"
+    },
+    {
+      "id": "seed-sweep",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/random/seedSweep",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "test a random system by its odds across many seeds, not one lucky run"
     },
     {
       "id": "seeded-random",

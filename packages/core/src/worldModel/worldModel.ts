@@ -20,6 +20,7 @@ import {
   type MissionTickInput,
   type MissionView,
 } from "../mission/mission";
+import { fairChance } from "../random/fairChance";
 import { hashUnit } from "../random/rng";
 import { cancelJob, createWorkQueue, enqueue, jobProgress, tick as tickQueue, type WorkQueueConfig, type WorkQueueState } from "../work/jobQueue";
 import type { ScenePoint3 } from "../world/sceneShapes";
@@ -290,7 +291,7 @@ export interface WorldScheduleDecl {
   on?: string;
   /** With `on`, only instances holding these facts (read relative to the instance) can be picked. */
   whenTarget?: WorldConditions;
-  /** Share of firings that happen, 0-1, rolled deterministically from the world clock (default 1). */
+  /** Share of firings that happen, 0-1 (default 1), dealt by {@link fairChance} from the world's seed and clock: the odds hold and streaks stay short. */
   chance?: number;
 }
 
@@ -404,6 +405,8 @@ export interface WorldModelState {
   orders?: Record<string, WorkQueueState<WorldOrderSpec, WorldChanges>>;
   /** Each trigger's conditions as last seen (true while they hold, and forever once a `once` trigger fired). */
   triggers?: Record<string, boolean>;
+  /** The run's luck: every schedule roll is keyed by it, so a reloaded world rolls as before and another run rolls its own. */
+  seed?: string;
 }
 
 /** How to place: `free` skips paying (a starting layout, a reward); a sale still refunds its share of the price. */
@@ -478,6 +481,8 @@ export interface WorldModelOptions {
    * conditions, lines, jobs, flows and triggers see them, and they are never saved.
    */
   live?: () => Readonly<Record<string, WorldFactValue>>;
+  /** Luck for a new world, saved with it (an existing save keeps its own). Give each run its own so runs differ, and sweep seeds in tests. */
+  seed?: string | number;
 }
 
 /** What {@link WorldModel.advance} did over the skipped time. */
@@ -774,7 +779,14 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
   const jobs = def.jobs ?? {};
   const jobIds = Object.keys(jobs);
   const missionToJob = new Map(jobIds.map((id) => [jobs[id]!.mission.id, id]));
-  const fresh = (): WorldModelState => ({ time: 0, facts: { ...startFacts }, activeJob: null, mission: null, log: [] });
+  const fresh = (): WorldModelState => ({
+    time: 0,
+    facts: { ...startFacts },
+    activeJob: null,
+    mission: null,
+    log: [],
+    ...(options.seed !== undefined ? { seed: String(options.seed) } : {}),
+  });
   let local: WorldModelState = fresh();
   const storage: WorldModelStorage = options.storage ?? { read: () => local, write: (next) => { local = next; } };
   const runtime: MissionRuntime = createMissionRuntime({
@@ -1265,13 +1277,14 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
   const fireSchedule = (id: string, timer: WorldScheduleDecl, index: number) => {
     const current = state();
     if (!test(timer.when, current)) return;
-    if (timer.chance !== undefined && roll(`${id}:${index}:chance`) >= timer.chance) return;
+    const key = current.seed === undefined ? id : `${current.seed}:${id}`;
+    if (timer.chance !== undefined && !fairChance(key, index, timer.chance)) return;
     let target: string | null = null;
     if (timer.on !== undefined) {
       const seen = allFacts(current);
       const candidates = membersOf(timer.on, current, false).filter((member) => testOn(timer.whenTarget, member, seen)).sort();
       if (candidates.length === 0) return;
-      target = candidates[Math.floor(roll(`${id}:${index}`) * candidates.length)]!;
+      target = candidates[Math.floor(roll(`${key}:${index}`) * candidates.length)]!;
     }
     model.emit({ kind: timer.ripple, ...(timer.place !== undefined ? { place: timer.place } : {}), ...(target !== null ? { target } : {}) });
   };
