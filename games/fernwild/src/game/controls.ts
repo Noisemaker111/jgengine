@@ -45,6 +45,7 @@ export const CREDITS: readonly string[] = [
   "Fernwild — made with JGengine.",
   "A love letter to ARK: Survival Evolved's systems. Not affiliated with Studio Wildcard.",
   "Nature models: Quaternius (Stylized Nature MegaKit), CC0.",
+  "Cloth texture: ambientCG (Fabric 007), CC0.",
   ...creatureCredits(),
   ...libraryModelCredits(SURVIVOR_MODELS),
   ...itemIconCredits(),

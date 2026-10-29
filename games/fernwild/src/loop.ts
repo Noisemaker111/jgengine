@@ -217,6 +217,10 @@ interface Cheat {
   broodHealth?: number;
   /** Wear these armour items from the bag, as a double-click would. */
   wear?: readonly string[];
+  /** Take off what these body slots hold, into the bag, as the inventory's take-off would. */
+  takeOff?: readonly string[];
+  /** Turn the survivor this many radians where they stand, the camera left behind: Math.PI shows their front. */
+  turn?: number;
 }
 
 function cheat(ctx: GameContext, input: Cheat): void {
@@ -271,6 +275,8 @@ function cheat(ctx: GameContext, input: Cheat): void {
     const slot = ctx.player.inventory.state(BAG).slots.findIndex((stack) => stack?.itemId === itemId);
     if (slot >= 0) wearArmour(ctx, BAG, slot);
   }
+  for (const slotId of input.takeOff ?? []) takeOff(ctx, slotId);
+  if (input.turn !== undefined && me !== null) ctx.scene.entity.update(me.id, { rotationY: me.rotationY + input.turn });
   for (const itemId of input.toHotbar ?? []) {
     const slot = ctx.player.inventory.state(BAG).slots.findIndex((stack) => stack?.itemId === itemId);
     if (slot >= 0) shuttle(ctx, BAG, slot);

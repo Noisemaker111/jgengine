@@ -3343,6 +3343,16 @@
       "intent": "grow or shrink one entity's model without a new kind, for babies growing up"
     },
     {
+      "id": "entity-worn-items",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scene/entityStore",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "show the clothing an entity wears on its body"
+    },
+    {
       "id": "environment-motion",
       "packages": [
         "@jgengine/core"
@@ -12864,6 +12874,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "distance from a camera to a shard footprint"
+    },
+    {
+      "id": "worn-layers",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/anim/wearable/wornLayers.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw clothing on a rigged human by body area, skinned to its skeleton"
     },
     {
       "id": "xp-curve",

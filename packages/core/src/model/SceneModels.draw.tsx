@@ -20,6 +20,8 @@ import { measureLocalCollisionTriangles, reportCollisionMeshOnce } from "./measu
 import { useModelInstance } from "./useModelInstance.draw";
 import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader, validateMaterialAssignmentTargets } from "@jgengine/core/material/materialAsset.draw";
 import { useFootIk } from "@jgengine/core/anim/useFootIk.draw";
+import { useWornLayers } from "@jgengine/core/anim/wearable/wornLayers.draw";
+import type { WornLayer } from "@jgengine/core/anim/wearable/wornRegion";
 import { resolveRigNode } from "./rigNode.draw";
 import { PartMotionRig } from "@jgengine/core/anim/PartMotion.draw";
 import { useCharacterGlance } from "@jgengine/core/anim/characterGlance.draw";
@@ -44,6 +46,7 @@ import {
 import { useFrameWhile } from "@jgengine/core/render/useFrameWhile.draw";
 
 /** No paint layer outside a running game: nothing to subscribe to. */
+const NOTHING_WORN: readonly WornLayer[] = [];
 const noPaintLayer = (): (() => void) => () => {};
 
 /** Draws an entity as a camera-facing sprite, playing its atlas clip when it has one. */
@@ -427,6 +430,18 @@ export function EntityModel({
   const heldId = useSyncExternalStore(subscribeHeld, () => (ctx === null || instanceId === undefined ? undefined : ctx.scene.entity.get(instanceId)?.held));
   const held = heldId === undefined ? undefined : heldTable?.[heldId];
   const attachments = held === undefined ? model.attachments ?? [] : [...(model.attachments ?? []), held];
+
+  const wornTable = model.worn;
+  const subscribeWorn = useCallback(
+    (listener: () => void) => (ctx === null || wornTable === undefined || instanceId === undefined ? () => {} : ctx.subscribe(listener)),
+    [ctx, wornTable, instanceId],
+  );
+  const wornKey = useSyncExternalStore(subscribeWorn, () => (ctx === null || instanceId === undefined || wornTable === undefined ? "" : (ctx.scene.entity.get(instanceId)?.worn ?? []).join("\n")));
+  const wornLayers = useMemo(
+    () => (wornKey === "" || wornTable === undefined ? NOTHING_WORN : wornKey.split("\n").flatMap((itemId) => wornTable[itemId] ?? [])),
+    [wornKey, wornTable],
+  );
+  useWornLayers(scene, wornLayers);
 
   const base = (
     <>

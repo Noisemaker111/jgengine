@@ -63,6 +63,8 @@
     "./anim/useFootIk.draw",
     "./anim/useModelAnimation.draw",
     "./anim/useRagdoll.draw",
+    "./anim/wearable/wornLayers.draw",
+    "./anim/wearable/wornRegion",
     "./area/areaEffectField",
     "./area/stackPolicy",
     "./assets/assetBase",
