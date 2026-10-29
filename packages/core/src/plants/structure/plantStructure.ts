@@ -212,6 +212,8 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
   // Fronds reach well past the node that bears them, so they set the plant's height and crown.
   const fronds = isFrondShape(species.leaf.shape);
   const frondLength = (species.leaf.sizeCm / 100) * frondLengthShare(species.growth, state.year);
+  // One leaf's area, as the growth model counts it.
+  const leafArea = 0.55 * (species.leaf.sizeCm / 100) * (species.leaf.sizeCm / 100);
   const frondPoints: number[] = [];
   if (fronds) {
     const pose: FrondPose = { azimuth: 0, elevation: 0, sag: 0 };
@@ -289,7 +291,8 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     up[row * 3 + 1] = dy;
     up[row * 3 + 2] = dz;
     size[row] = fronds ? frondLength : species.leaf.sizeCm / 100;
-    count[row] = fronds ? frondCount(state.foliage[i] ?? 0, frondLength) : species.leaf.leavesPerNode;
+    // Every leaf the node carries, at its real size: its leaf area over one leaf's.
+    count[row] = fronds ? frondCount(state.foliage[i] ?? 0, frondLength) : Math.max(1, Math.min(65535, Math.round((state.foliage[i] ?? 0) / leafArea)));
     segment[row] = i;
     for (let level = 0; level < PLANT_CLUSTER_LEVELS; level += 1) {
       const key = keyOf[level]?.[i] ?? i;

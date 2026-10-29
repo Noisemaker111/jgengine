@@ -55,7 +55,7 @@ export interface PlantStyle {
  */
 export const DEFAULT_PLANT_STYLE: PlantStyle = {
   foliage: "leaves",
-  leafScale: 2.6,
+  leafScale: 1,
   leafTint: "#ffffff",
   barkTint: "#ffffff",
   saturation: 1,
