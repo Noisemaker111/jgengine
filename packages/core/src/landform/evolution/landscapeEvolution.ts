@@ -72,6 +72,12 @@ export interface GlacialParams {
   /** Share of the rock a glacier plucks that it drops as till where the ice ends; meltwater carries the rest away. Default 0.25. */
   tillShare?: number;
   /**
+   * Depth in metres of the till that deforms under sliding ice and moves with it at half the sliding
+   * speed, to be laid where the ice ends. Default 0.5 (Boulton & Hindmarsh 1987).
+   */
+  deformingTill?: number;
+
+  /**
    * Erosion constant K_g of ė = K_g·u_bˡ, normal to the bed, in m^(1−l) yr^(l−1). Default 10⁻⁴·50^(1−l),
    * so 50 m/yr of sliding wears 5 mm/yr whatever l (10⁻⁴ for l = 1, Humphrey & Raymond 1994); field
    * rates of temperate valley glaciers run 0.1–10 mm/yr (Hallet, Hunter & Bogen 1996).
@@ -389,6 +395,8 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
   const iceSurface = new Float64Array(cells);
   const iceRouter = createFlowRouter(topology);
   const iceDischarge = new Float64Array(cells);
+  const onSurface = new Float64Array(cells);
+  const dragged = new Float64Array(cells);
   // The mass balance of the last glacial step, which says where carried debris melts out.
   const balance = { ela: Number.POSITIVE_INFINITY, gradient: 0.005, max: 2 };
   const waves = createWaveEroder(topology);
@@ -710,7 +718,24 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
         report.eroded += depth * cellArea;
       }
     }
-    rideIce(tillShare, report);
+    // Till under sliding ice deforms and travels with it, a layer `deformingTill` deep at half the
+    // sliding speed, so a glacier clears loose cover from its bed and pushes it to its margin.
+    const deforming = g.deformingTill ?? 0.5;
+    dragged.fill(0);
+    for (let i = 0; i < cells; i += 1) {
+      const loose = sediment[i] ?? 0;
+      if (base[i] === 1 || (ice[i] ?? 0) <= 0 || loose <= 0) continue;
+      const layer = loose < deforming ? loose : deforming;
+      const reach = (0.5 * (sliding[i] ?? 0) * layer * dt) / cellSize;
+      const depth = reach < loose ? reach : loose;
+      if (depth <= 0) continue;
+      cover.remove(i, depth);
+      sediment[i] = cover.total(i);
+      height[i] = (height[i] ?? 0) - depth;
+      dragged[i] = depth * cellArea;
+      report.eroded += depth * cellArea;
+    }
+    rideIce(tillShare, report, dragged);
     return fastest > 0;
   }
 
@@ -774,38 +799,48 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
   }
 
   // Debris in `carried` rides the ice down its surface, pits filled (Priority-Flood), and melts out
-  // where the ice melts: each cell releases the share of the arriving ice that ablates there, so till
-  // spreads over the ablation zone and what reaches the ice's edge builds the end moraine. `share` of
-  // what melts out stays as till; meltwater carries the rest away, and debris that reaches the map's
-  // edge leaves it.
-  function rideIce(share: number, report: LandformStepReport): void {
+  // where the ice melts: each cell releases the share of the arriving ice that ablates there. `share`
+  // of what melts out stays; meltwater carries the rest away. What stays emerges on the ice surface as
+  // the ice above it ablates and rides on to where the ice ends, and is laid as till on the ground in
+  // front of it: end and lateral moraines, not a blanket under the glacier that would shield its bed. Till in `atBed` goes
+  // there whole. Debris that reaches the map's edge leaves it.
+  function rideIce(share: number, report: LandformStepReport, atBed?: Float64Array): void {
     for (let i = 0; i < cells; i += 1) iceSurface[i] = (height[i] ?? 0) + (ice[i] ?? 0);
     iceRouter.route(iceSurface, Number.NEGATIVE_INFINITY);
     const { stack, receiver } = iceRouter;
     iceDischarge.fill(0);
+    if (atBed === undefined) onSurface.fill(0);
+    else onSurface.set(atBed);
     for (let k = cells - 1; k >= 0; k -= 1) {
       const i = stack[k] ?? 0;
       const load = carried[i] ?? 0;
       const next = receiver[i] ?? i;
       let released = load;
+      let melting = 0;
       if ((ice[i] ?? 0) > 0 && base[i] !== 1 && next !== i) {
         const rule = balance.gradient * ((iceSurface[i] ?? 0) - balance.ela);
         const b = (rule < balance.max ? rule : balance.max) * cellArea;
         const arriving = (iceDischarge[i] ?? 0) + (b > 0 ? b : 0);
         const melt = b < 0 ? -b : 0;
-        released = arriving > melt ? (load * melt) / arriving : load;
+        melting = arriving > melt ? melt / arriving : 1;
+        released = load * melting;
         iceDischarge[next] = (iceDischarge[next] ?? 0) + (arriving > melt ? arriving - melt : 0);
         carried[next] = (carried[next] ?? 0) + load - released;
       }
       carried[i] = 0;
-      if (released <= 0) continue;
-      if (base[i] === 1) {
-        report.exported += released;
-        continue;
-      }
       const kept = released * share;
       report.exported += released - kept;
-      layTill(i, kept, report);
+      const riding = (onSurface[i] ?? 0) + kept;
+      onSurface[i] = 0;
+      if (riding <= 0) continue;
+      if (base[i] === 1) report.exported += riding;
+      else if ((ice[i] ?? 0) > 0 && next !== i && (ice[next] ?? 0) > 0) {
+        // At the glacier's side, the ice thinning under the debris strands its share at the edge: a
+        // lateral moraine.
+        const stranded = melting > 0 && besideBare(i) ? riding * melting : 0;
+        if (stranded > 0) layTill(i, stranded, report);
+        onSurface[next] = (onSurface[next] ?? 0) + riding - stranded;
+      } else layTill((ice[i] ?? 0) > 0 && next !== i ? next : i, riding, report);
     }
   }
 
@@ -865,6 +900,14 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       i = next;
     }
     if (left > 0) layTillAt(i, left / cellArea, report);
+  }
+
+  function besideBare(i: number): boolean {
+    for (let k = 0; k < 8; k += 1) {
+      const n = neighbour[i * 8 + k] ?? -1;
+      if (n >= 0 && base[n] !== 1 && (ice[n] ?? 0) <= 0) return true;
+    }
+    return false;
   }
 
   function nearIce(i: number): boolean {

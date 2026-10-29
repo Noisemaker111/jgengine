@@ -146,7 +146,9 @@ describe("glacial erosion by shallow ice, the fast path", () => {
   }, 60_000);
 
   test("glaciers drop till where the ice ends, and every cubic metre is accounted for", () => {
-    const model = glaciate(2000);
+    // Under a 1500 m snowline the ice covers the whole map and its debris leaves at the map's edge;
+    // under 1700 m the glacier has margins inside the map to lay it on.
+    const model = glaciate(2000, { ela: 1700, model: "shallow-ice" });
     const { height, cover, ice } = model.fields();
     const volume = (): number => height.reduce((sum, h) => sum + h, 0) * DX * DX;
     const start = volume();
@@ -158,6 +160,21 @@ describe("glacial erosion by shallow ice, the fast path", () => {
     for (let i = 0; i < COLS * ROWS; i += 1) till += cover[i * classes + COVER.till] ?? 0;
     expect(till).toBeGreaterThan(0);
     expect(ice.some((h) => h > 0)).toBe(true);
+  }, 60_000);
+
+  test("debris rides to the ice's edge: sliding ice keeps its bed clear of till", () => {
+    const model = glaciate(2000, { ela: 1700, model: "shallow-ice" });
+    for (let k = 0; k < 10; k += 1) model.step();
+    const { ice, iceSliding, sediment } = model.fields();
+    let sliding = 0;
+    let covered = 0;
+    for (let i = 0; i < COLS * ROWS; i += 1) {
+      if ((ice[i] ?? 0) < 50 || (iceSliding[i] ?? 0) < 10) continue;
+      sliding += 1;
+      if ((sediment[i] ?? 0) > 1) covered += 1;
+    }
+    expect(sliding).toBeGreaterThan(100);
+    expect(covered / sliding).toBeLessThan(0.05);
   }, 60_000);
 
   test("ice is part of the state: a snapshot restores it and the run resumes bit for bit", () => {
@@ -248,8 +265,8 @@ describe("glacial erosion as the square of sliding speed (Hallet 1979)", () => {
 
 describe("ice surface on a smooth steep bed", () => {
   // A straight trough, sloping 0.3 or 0.5, under a temperate glacier 100 m thick. Mismatched face
-  // fluxes would pile ice into steps; the smooth bed allows none. The trough's walls start too steep
-  // to stand, and their debris rides the ice to its moraines, so only bare bed is measured.
+  // fluxes would pile ice into steps; the smooth bed allows none. The walls are rock that stands at
+  // 60°, so nothing falls onto the ice.
   test.each([0.3, 0.5])("at slope %p the first-order glacier's surface has no steps over 10 m", (slope) => {
     const cols = 60;
     const rows = 31;
@@ -260,17 +277,26 @@ describe("ice surface on a smooth steep bed", () => {
       grid: { cols, rows, cellSize: 100, outlets: ["west"] },
       seed: "smooth",
       initial: { heights, roughness: 0 },
-      params: { uplift: 0, erodibility: 0, diffusivity: 0, marineDiffusivity: 0, soilProduction: 0, timeStep: 1000, glacial: { ela: 1000 + slope * 4500, model: "first-order", layers: 4, erosion: 0, snowlineTemperature: 10 } },
+      params: {
+        uplift: 0,
+        erodibility: 0,
+        diffusivity: 0,
+        marineDiffusivity: 0,
+        soilProduction: 0,
+        timeStep: 1000,
+        strata: { layers: [{ id: "granite", thickness: 1, erodibility: 1, criticalAngle: 60 }] },
+        glacial: { ela: 1000 + slope * 4500, model: "first-order", layers: 4, erosion: 0, snowlineTemperature: 10 },
+      },
     });
     for (let k = 0; k < 10; k += 1) model.step();
-    const { height, ice, sediment } = model.fields();
+    const { height, ice } = model.fields();
     const surface = (i: number): number => (height[i] ?? 0) + (ice[i] ?? 0);
     let worst = 0;
     let measured = 0;
-    // Away from the outlet edge and the head, wherever ice 20 m thick spans five cells of bare bed.
+    // Away from the outlet edge and the head, wherever ice 20 m thick spans five cells.
     for (let col = 4; col < cols - 4; col += 1) {
       const i = mid * cols + col;
-      if ([-2, -1, 0, 1, 2].some((k) => (ice[i + k] ?? 0) < 20 || (sediment[i + k] ?? 0) > 0)) continue;
+      if ([-2, -1, 0, 1, 2].some((k) => (ice[i + k] ?? 0) < 20)) continue;
       measured += 1;
       worst = Math.max(worst, Math.abs(surface(i + 1) - 2 * surface(i) + surface(i - 1)));
     }

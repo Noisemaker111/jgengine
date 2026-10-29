@@ -445,6 +445,9 @@ no code is copied (Landlab, Fastscape and TopoToolbox were not used as sources).
 - Brozović, Burbank & Meigs 1997, climatic limits on landscape development in the northwestern
   Himalaya, *Science* 276; Egholm, Nielsen, Pedersen & Lesemann 2009, glacial effects limiting
   mountain height, *Nature* 460: the glacial buzzsaw capping a range near the snowline.
+- Boulton & Hindmarsh 1987, sediment deformation beneath glaciers: rheology and geological
+  consequences, *Journal of Geophysical Research* 92: a deforming till layer about half a metre deep
+  moving at about half the sliding speed, which carries a glacier's loose bed to its margin.
 - Sunamura 1992, *Geomorphology of Rocky Coasts*; Anderson, Densmore & Ellis 1999, the generation and
   degradation of marine terraces, *Basin Research* 11: cliff retreat damped by the platform it leaves,
   and platform lowering by depth.
