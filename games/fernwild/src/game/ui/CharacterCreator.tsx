@@ -22,7 +22,7 @@ const PANEL: CSSProperties = {
 };
 const HEADING: CSSProperties = { fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "#8fd3e2", fontWeight: 800 };
 const CHOICE: CSSProperties = { background: "#1f3a40", color: "#e8f1f2", border: "1px solid #6fb7c966", borderRadius: 4, padding: "6px 10px", fontSize: 13, fontWeight: 700, cursor: "pointer", textAlign: "left" };
-const PICKED: CSSProperties = { ...CHOICE, background: "#2f7d8f", borderColor: "#8fe3f2" };
+const PICKED: CSSProperties = { ...CHOICE, background: "#2f7d8f", border: "1px solid #8fe3f2" };
 const DIFFICULTY_COLOR = { Easy: "#7fd67f", Medium: "#e7c84a", Hard: "#ef6b5b" } as const;
 
 const REGION_KINDS: Record<string, MarkerKindStyle> = {

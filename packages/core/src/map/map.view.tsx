@@ -955,6 +955,15 @@ export interface WorldMapProps {
   onClose?: () => void;
 }
 
+/**
+ * Where a marker's label sits: right of the marker, or left of it in the map's right third, so a
+ * label by the east edge reads in full instead of running off the map.
+ * @internal
+ */
+export function worldMapLabelPlacement(markerX: number, mapWidth: number): { x: number; textAnchor: "start" | "end" } {
+  return markerX > mapWidth * (2 / 3) ? { x: markerX - 12, textAnchor: "end" } : { x: markerX + 12, textAnchor: "start" };
+}
+
 /** Pan/zoom transform applied to a {@link WorldMapSurface}'s content group. */
 export interface MapViewport {
   /** Uniform zoom factor; 1 = fit. */
@@ -1082,7 +1091,7 @@ export function WorldMapSurface({
                 {markerStyle.glyph}
               </text>
               {marker.label !== undefined ? (
-                <text x={at.x + 12} y={at.y + 4} fontSize={11} fill="rgba(226,232,240,0.85)">
+                <text {...worldMapLabelPlacement(at.x, width)} y={at.y + 4} fontSize={11} fill="rgba(226,232,240,0.85)">
                   {marker.label}
                 </text>
               ) : null}

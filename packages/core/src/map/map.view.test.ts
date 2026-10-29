@@ -94,6 +94,21 @@ describe("portable minimap markers", () => {
     expect(html).toContain('data-world-marker="marker"');
     expect(html).toContain("Relay");
   });
+
+  test("a label by the east edge reads leftward so it stays on the map", () => {
+    const html = renderToStaticMarkup(
+      createElement(WorldMap, {
+        markers: [
+          { id: "west", position: [-15, 0, 0], label: "West Beach" },
+          { id: "east", position: [18, 0, 0], label: "East Beach" },
+        ],
+        bounds: { minX: -20, minZ: -20, maxX: 20, maxZ: 20 },
+        width: 240,
+      }),
+    );
+    expect(html).toMatch(/text-anchor="start"[^>]*>West Beach/);
+    expect(html).toMatch(/text-anchor="end"[^>]*>East Beach/);
+  });
 });
 
 describe("MinimapChrome", () => {
