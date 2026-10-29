@@ -5,6 +5,7 @@ import type { ModelAttachment, ModelConfig } from "@jgengine/core/game/playableG
 import type { ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
 import type { ScatterSolidSpec } from "@jgengine/core/scatter/scatterSolids";
 
+import { BODIES } from "./character";
 import { SPECIES_MODELS } from "./data/creatureModels";
 import { HARVESTABLES } from "./data/harvestables";
 import { itemDef } from "./data/items";
@@ -56,15 +57,15 @@ const WORN: Record<string, WornLayer> = Object.fromEntries(
   }),
 );
 
-/** The model-library names the survivor and its tools draw, for the credits. */
-export const SURVIVOR_MODELS: readonly string[] = [SURVIVOR, ...Object.values(TOOLS).map((tool) => tool.model)];
+/** The model-library names the survivor, its creator bodies and its tools draw, for the credits. */
+export const SURVIVOR_MODELS: readonly string[] = [...new Set([SURVIVOR, ...BODIES.map((body) => body.model), ...Object.values(TOOLS).map((tool) => tool.model)])];
 
 /**
  * The survivor and every species: free animal models (data/creatureModels.ts), each drawn at the
  * species' standing height and tinted where a relative stands in for it.
  */
 export const entityModels: Record<string, ModelConfig> = {
-  player: { ...libraryModel(SURVIVOR), held: HELD, worn: WORN },
+  player: { ...libraryModel(SURVIVOR), held: HELD, worn: WORN, looks: Object.fromEntries(BODIES.map((body) => [body.id, libraryModel(body.model)])) },
   ...Object.fromEntries(
     Object.entries(SPECIES_MODELS).map(([species, { file, height, tint, tintMaterials }]) => [
       species,

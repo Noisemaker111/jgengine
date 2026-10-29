@@ -117,13 +117,9 @@ function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode
     setSettingUp(true);
   };
   if (settingUp && setup !== undefined) {
-    return (
-      <div style={menuStyle(content)}>
-        {setup(
-          () => void startNewGame(ctx),
-          () => setSettingUp(false),
-        )}
-      </div>
+    return setup(
+      () => void startNewGame(ctx),
+      () => setSettingUp(false),
     );
   }
   return (

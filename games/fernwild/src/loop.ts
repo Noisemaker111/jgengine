@@ -12,6 +12,7 @@ import { closeCreature, creaturesSave, destroyWild, feedNarcotic, forceTame, giv
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
+import { characterSave, createSurvivor, resetCharacter, type SurvivorLook } from "./game/character";
 import { closeNote, dossierSave, readNote, resetDossier, tickDossier } from "./game/dossier";
 import { callSupplyDrop, openCrate, resetSupplyDrops, supplyDropsSave, tickSupplyDrops } from "./game/supplyDrops";
 import type { NewGameConfig } from "@jgengine/core/game/newGame";
@@ -25,6 +26,15 @@ type Aim = { yaw?: number };
 
 /** The survivor: vitals, gathering, crafting, engrams and levels, ticked ten times a second of game time. */
 export const systems = [
+  // Who the survivor is and where they woke: set once by the creator (or a proof), kept in the save.
+  defineSystem({
+    id: "character",
+    create(ctx) {
+      ctx.game.commands.define<Partial<SurvivorLook>>("createSurvivor", { apply: (state, input) => (createSurvivor(state, input), state) });
+    },
+    save: characterSave,
+    reset: resetCharacter,
+  }),
   defineSystem({
     id: "survivor",
     tick: { type: "fixed", rate: 10 },

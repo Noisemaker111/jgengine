@@ -1,18 +1,18 @@
 import type { OnboardingConfig, OnboardingPoint } from "@jgengine/core/onboarding/onboarding";
 import { createOnboardingSystem } from "@jgengine/core/onboarding/onboardingSystem";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { authoredSpawnPosition, markersOfKind } from "@jgengine/core/world/authoredSpawn";
+import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 
 import { editorLayers } from "../editorLayers";
 import { BAG, HOTBAR } from "./bags";
 import { piecesBuilt } from "./base";
 import { cavesOf } from "./caves";
+import { startArea } from "./character";
 import { inWater } from "./climate";
 import { creaturesView, nearestWild, tames } from "./creatures";
 import { dossierView, nearestUnreadNote } from "./dossier";
 import { grantXp, knowsEngram, nearestHarvestable, survivorView } from "./survivor";
 
-const SPAWN = authoredSpawnPosition(editorLayers) ?? [0, 0, 0];
 const GREEN_OBELISK = markersOfKind(editorLayers, "obelisk").find((marker) => marker.meta?.["color"] === "green");
 
 const held = (ctx: GameContext, userId: string, item: string): number => {
@@ -72,7 +72,7 @@ export const FIRST_DAY: OnboardingConfig<GameContext> = {
   id: "first-day",
   title: "Survivor's path",
   style: "teaching-area",
-  area: { center: [SPAWN[0], SPAWN[2]], radius: 260, label: "the beach" },
+  area: (ctx) => startArea(ctx),
   steps: [
     {
       id: "thatch",
