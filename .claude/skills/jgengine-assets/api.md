@@ -760,7 +760,7 @@
 
 - `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget | undefined; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): Rea… — Draws an entity's model at the given LOD level, with animation, paint layer and bounds measurement.
 - `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
-- `IsolatedEntityModel` (function): function IsolatedEntityModel({ model: baseModel, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`.
+- `IsolatedEntityModel` (function): function IsolatedEntityModel(props: IsolatedEntityModelProps): React.JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`.
 - `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
 - `useEntityLookModel` (function): function useEntityLookModel(model: ModelConfig | undefined, instanceId: string | undefined): ModelConfig | undefined — `model` as the live entity `instanceId` draws it: its current `look` laid over the model ({@link modelForLook}), re-rendering only when the look changes. Without an entity, the model itself.
 
