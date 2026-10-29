@@ -23,7 +23,7 @@ import { createLightField } from "./lightField";
 import { growingSeason, type GrowingSeason } from "./phenology";
 import { OPEN_TEMPERATE_SITE, siteModifier, type PlantEnvironment } from "./plantEnvironment";
 import { PLANT_PI, plantCos, plantPow, plantSin } from "./plantMath";
-import { applyThickening, createPipeCost, pipeDemand } from "./pipeModel";
+import { applyThickening, createPipeCost, hasCambium, pipeDemand } from "./pipeModel";
 import { bendTowardsTropisms, lateralDirection, normalize3, type TropismWeights } from "./tropism";
 
 /** Bumped whenever a rule changes what a seed grows into; part of every structure cache key. */
@@ -181,6 +181,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   const leafAreaIn = (year: number): number => fullLeafArea * frondLengthShare(g, year) ** 2;
   let leafAreaPerNode = leafAreaIn(0);
   const frondShoots = isFrondShape(species.leaf.shape);
+  const cambium = hasCambium(species);
   // A frond spreads its leaf area along its whole length, so its shade and light are sampled there.
   const frondCells = new Int32Array(frondShoots ? nodeCap * FROND_LIGHT_SAMPLES : 0);
   const frondPoseScratch: FrondPose = { azimuth: 0, elevation: 0, sag: 0 };
@@ -1260,9 +1261,10 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     let unspent = left - finalThickening * share;
     // Unspent carbon is stored as reserve up to what living tissue can hold; beyond that it goes into
     // wider rings, laid down in proportion to the leaf area each internode carries (Pressler's rule).
+    // A palm or fern has no cambium to lay rings with, so its surplus is respired.
     let surplusPerFoliage = 0;
     if (unspent > totals.storeKg) {
-      if (pressler.pressler > 0) surplusPerFoliage = (unspent - totals.storeKg) / pressler.pressler;
+      if (cambium && pressler.pressler > 0) surplusPerFoliage = (unspent - totals.storeKg) / pressler.pressler;
       unspent = totals.storeKg;
     }
     state.reserveKg = Math.max(0, unspent);
