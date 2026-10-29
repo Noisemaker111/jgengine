@@ -15,7 +15,7 @@ export const TSUGA_HETEROPHYLLA: PlantSpecies = {
   },
   ids: { usda: "TSHE" },
   habit: "tree",
-  architecture: { model: "massart", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "massart", phyllotaxis: "whorled", divergence: 137.5, crownForm: "weeping" },
   growth: {
     apicalControl: 0.5071,
     apicalControlMature: 0.6879,
@@ -79,7 +79,7 @@ export const TSUGA_HETEROPHYLLA: PlantSpecies = {
     sla: 11,
     lifespanYears: 5,
     leavesPerNode: 10,
-    color: { spring: "#88b070", summer: "#2f553c", autumn: "#2f553c" },
+    color: { spring: "#88b070", summer: "#2f553c", autumn: "#2f553c", autumnShade: "#2f553c" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 25, furrowDepth: 0.5, color: "#5a4a40" },
   reproduction: { firstFlowerYears: 25, seedMassMg: 1.7 },

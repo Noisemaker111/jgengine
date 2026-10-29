@@ -12,7 +12,7 @@ export const QUERCUS_COCCINEA: PlantSpecies = {
   names: { scientific: "Quercus coccinea Münchh.", common: { en: "scarlet oak", fr: "chêne écarlate" } },
   ids: { usda: "QUCO2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.4836,
@@ -76,7 +76,7 @@ export const QUERCUS_COCCINEA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#c0261c" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#c0201c", autumnShade: "#b05a2a" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 20, furrowDepth: 0.4, color: "#45403b" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 1800 },

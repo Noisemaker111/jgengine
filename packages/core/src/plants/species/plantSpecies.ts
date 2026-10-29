@@ -4,6 +4,13 @@ import type { PlantSourceId } from "./speciesSources";
 /** Hallé–Oldeman architectural model of a genus (Hallé, Oldeman & Tomlinson 1978). */
 export type HalleOldemanModel = "rauh" | "troll" | "corner" | "leeuwenberg" | "attims" | "massart" | "scarrone" | "roux" | "tomlinson";
 
+/**
+ * Where a tree's crown carries its spread (Brown, McAlpine & Kormanik 1967): a decurrent tree loses
+ * its leader and divides into a few large limbs, an excurrent one keeps one stem to the top. Columnar
+ * is a narrow crown of near-even width; weeping is excurrent with shoots hanging below the horizontal.
+ */
+export type CrownForm = "decurrent" | "excurrent" | "columnar" | "weeping";
+
 /** Bark surface kind a style reads to pick its bark material. */
 export type BarkKind = "smooth" | "furrowed" | "plated" | "peeling" | "fibrous" | "scaly";
 
@@ -24,11 +31,17 @@ export interface LeafShapeParams {
   petioleFraction: number;
 }
 
-/** Leaf colours across the season as hex strings. */
+/**
+ * Leaf colours across the season as hex strings. In autumn a sunlit leaf builds anthocyanin and turns
+ * `autumn` (red to purple in maples, oaks and ash), while a shaded one only loses its chlorophyll and
+ * shows the carotenoid `autumnShade` (yellow to orange) beneath (Schaberg et al. 2003; Lee & Gould
+ * 2002). A species without red leaves gives the two close together; an evergreen gives its summer colour.
+ */
 export interface SeasonalColor {
   spring: string;
   summer: string;
   autumn: string;
+  autumnShade: string;
 }
 
 /**
@@ -47,6 +60,8 @@ export interface PlantSpecies {
     phyllotaxis: "alternate" | "opposite" | "whorled" | "spiral";
     /** Rotation between successive nodes, degrees (90 for decussate opposite leaves). */
     divergence: number;
+    /** A tree's crown form, from Silvics of North America; absent for shrubs, palms, ferns and herbs. */
+    crownForm?: CrownForm;
   };
   growth: {
     /** Borchert–Honda apical control λ in 0..1 of a young plant: the main axis's weight against its laterals. */

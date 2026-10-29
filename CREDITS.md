@@ -304,6 +304,13 @@ provenance.
 - Jirasek, Prusinkiewicz & Moulia 2000, biomechanics in L-system plant models: gravitational sag.
 - Alméras & Fournier 2009, reaction wood and long-term stem stability, *Journal of Theoretical
   Biology* 256; Moulia, Coutand & Lenne 2006, posture control, *American Journal of Botany* 93.
+- Zimmermann & Brown 1971, *Trees: Structure and Function*; Gilman 2011, *An Illustrated Guide to
+  Pruning*: scaffold limbs and codominant forks. Horn 1971, *The Adaptive Geometry of Trees*:
+  monolayer crowns. Schomaker et al. 2007, crown-condition classification, USDA Forest Service
+  GTR SRS-102 (US public domain): foliage transparency.
+- Schaberg et al. 2003, red autumn foliage of sugar maple, *Tree Physiology* 23; Lee & Gould 2002,
+  leaf anthocyanins, *Advances in Botanical Research* 37. Autumn colours per species from Gilman &
+  Watson 1993–1994, USDA Forest Service tree fact sheets (US public domain).
 - Ryan & Yoder 1997, hydraulic limits to tree height, *BioScience* 47.
 - Wareing & Nasr 1961, gravimorphism, *Annals of Botany* 25; Digby & Firn 1995, the gravitropic
   set-point angle, *Plant, Cell & Environment* 18.

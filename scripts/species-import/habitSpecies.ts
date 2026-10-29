@@ -17,7 +17,7 @@ function frond(kind: "frond" | "fan", sizeCm: number, aspect: number, lobes: num
     sla,
     lifespanYears,
     leavesPerNode: 1,
-    color: { spring: summer, summer, autumn },
+    color: { spring: summer, summer, autumn, autumnShade: autumn },
   };
 }
 
@@ -64,7 +64,7 @@ const VACCINIUM_CORYMBOSUM: HabitTraits = {
   limits: { maxAgeYears: 60, maxHeightM: 4.5, maxDbhCm: 6, maxCrownRadiusM: 2 },
   densityKgM3: 600,
   modulusGPa: 9,
-  leaf: broadleaf("ovate", 6, 0.45, 0, 0, 1, "#b8352a", 18),
+  leaf: broadleaf("ovate", 6, 0.45, 0, 0, 1, ["#b8352a", "#c8602e"], 18),
   bark: bark("smooth", 60, 0.1, "#7a6658"),
   reproduction: { firstFlowerYears: 3, flowerColor: "#f4f1e4", fruitColor: "#3b4f8f", seedMassMg: 0.4 },
   phenology: spring(220),

@@ -15,7 +15,7 @@ export const ABIES_GRANDIS: PlantSpecies = {
   },
   ids: { usda: "ABGR" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.6617,
     apicalControlMature: 0.3,
@@ -79,7 +79,7 @@ export const ABIES_GRANDIS: PlantSpecies = {
     sla: 6.4,
     lifespanYears: 7,
     leavesPerNode: 10,
-    color: { spring: "#88b070", summer: "#2f5a3a", autumn: "#2f5a3a" },
+    color: { spring: "#88b070", summer: "#2f5a3a", autumn: "#2f5a3a", autumnShade: "#2f5a3a" },
   },
   bark: { kind: "smooth", smoothUntilYears: 40, furrowDepth: 0.3, color: "#6e6a64" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 20 },

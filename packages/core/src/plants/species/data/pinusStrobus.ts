@@ -12,7 +12,7 @@ export const PINUS_STROBUS: PlantSpecies = {
   names: { scientific: "Pinus strobus L.", common: { en: "eastern white pine", fr: "pin blanc" } },
   ids: { usda: "PIST" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.8028,
     apicalControlMature: 0.474,
@@ -76,7 +76,7 @@ export const PINUS_STROBUS: PlantSpecies = {
     sla: 12,
     lifespanYears: 2.5,
     leavesPerNode: 6,
-    color: { spring: "#7fa86a", summer: "#3d6b4a", autumn: "#4a6b45" },
+    color: { spring: "#7fa86a", summer: "#3d6b4a", autumn: "#4a6b45", autumnShade: "#4a6b45" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 20, furrowDepth: 0.7, color: "#5a4f47" },
   reproduction: { firstFlowerYears: 10, seedMassMg: 17 },

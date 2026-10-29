@@ -15,7 +15,7 @@ export const TILIA_AMERICANA: PlantSpecies = {
   },
   ids: { usda: "TIAM" },
   habit: "tree",
-  architecture: { model: "troll", phyllotaxis: "alternate", divergence: 180 },
+  architecture: { model: "troll", phyllotaxis: "alternate", divergence: 180, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.785,
     apicalControlMature: 0.5767,
@@ -79,7 +79,7 @@ export const TILIA_AMERICANA: PlantSpecies = {
     sla: 25,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a8c86a", summer: "#3f7334", autumn: "#c9b23b" },
+    color: { spring: "#a8c86a", summer: "#3f7334", autumn: "#c9b23b", autumnShade: "#d6c45a" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 20, furrowDepth: 0.5, color: "#5c564f" },
   reproduction: { firstFlowerYears: 15, flowerColor: "#e6dc8c", seedMassMg: 90 },

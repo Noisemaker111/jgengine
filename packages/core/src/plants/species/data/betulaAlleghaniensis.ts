@@ -15,7 +15,7 @@ export const BETULA_ALLEGHANIENSIS: PlantSpecies = {
   },
   ids: { usda: "BEAL2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.8226,
     apicalControlMature: 0.5586,
@@ -79,7 +79,7 @@ export const BETULA_ALLEGHANIENSIS: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 2,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#e0bd2e" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#e0bd2e", autumnShade: "#e8d050" },
   },
   bark: { kind: "peeling", smoothUntilYears: 60, furrowDepth: 0.2, color: "#c9b28a" },
   reproduction: { firstFlowerYears: 40, seedMassMg: 1 },

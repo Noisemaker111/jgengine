@@ -15,7 +15,7 @@ export const LIRIODENDRON_TULIPIFERA: PlantSpecies = {
   },
   ids: { usda: "LITU" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.9225,
     apicalControlMature: 0.6763,
@@ -79,7 +79,7 @@ export const LIRIODENDRON_TULIPIFERA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#e5c537" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#e5c537", autumnShade: "#e4d45e" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 15, furrowDepth: 0.5, color: "#7c766c" },
   reproduction: { firstFlowerYears: 15, flowerColor: "#e2b54a", seedMassMg: 30 },

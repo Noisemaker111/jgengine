@@ -15,7 +15,7 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
   },
   ids: { usda: "PIEN" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.3,
@@ -79,7 +79,7 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     sla: 6,
     lifespanYears: 8,
     leavesPerNode: 10,
-    color: { spring: "#88b070", summer: "#4a6a6a", autumn: "#4a6a6a" },
+    color: { spring: "#88b070", summer: "#4a6a6a", autumn: "#4a6a6a", autumnShade: "#4a6a6a" },
   },
   bark: { kind: "scaly", smoothUntilYears: 25, furrowDepth: 0.2, color: "#7a6458" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 3.3 },

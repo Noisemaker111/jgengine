@@ -15,7 +15,7 @@ export const TSUGA_CANADENSIS: PlantSpecies = {
   },
   ids: { usda: "TSCA" },
   habit: "tree",
-  architecture: { model: "massart", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "massart", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.8543,
     apicalControlMature: 0.4983,
@@ -79,7 +79,7 @@ export const TSUGA_CANADENSIS: PlantSpecies = {
     sla: 11,
     lifespanYears: 4,
     leavesPerNode: 10,
-    color: { spring: "#88b070", summer: "#2e5238", autumn: "#2e5238" },
+    color: { spring: "#88b070", summer: "#2e5238", autumn: "#2e5238", autumnShade: "#2e5238" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 20, furrowDepth: 0.6, color: "#5e4a3f" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 2.4 },

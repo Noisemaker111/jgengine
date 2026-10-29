@@ -15,7 +15,7 @@ export const POPULUS_DELTOIDES: PlantSpecies = {
   },
   ids: { usda: "PODE3" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.509,
@@ -79,7 +79,7 @@ export const POPULUS_DELTOIDES: PlantSpecies = {
     sla: 18,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#e0c43c" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#e0c43c", autumnShade: "#e8d460" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 15, furrowDepth: 0.7, color: "#6f6a62" },
   reproduction: { firstFlowerYears: 10, seedMassMg: 1 },

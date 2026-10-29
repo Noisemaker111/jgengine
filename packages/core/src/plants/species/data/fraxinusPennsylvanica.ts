@@ -12,7 +12,7 @@ export const FRAXINUS_PENNSYLVANICA: PlantSpecies = {
   names: { scientific: "Fraxinus pennsylvanica Marshall", common: { en: "green ash", fr: "frêne rouge" } },
   ids: { usda: "FRPE" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90 },
+  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.6787,
     apicalControlMature: 0.825,
@@ -76,7 +76,7 @@ export const FRAXINUS_PENNSYLVANICA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 2,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d6c14a" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d6c14a", autumnShade: "#dcd068" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 15, furrowDepth: 0.5, color: "#6c665e" },
   reproduction: { firstFlowerYears: 10, seedMassMg: 30 },

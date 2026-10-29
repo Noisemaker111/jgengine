@@ -15,7 +15,7 @@ export const POPULUS_GRANDIDENTATA: PlantSpecies = {
   },
   ids: { usda: "POGR4" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.8743,
     apicalControlMature: 0.5665,
@@ -79,7 +79,7 @@ export const POPULUS_GRANDIDENTATA: PlantSpecies = {
     sla: 18,
     lifespanYears: 0.5,
     leavesPerNode: 2,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#e4c03a" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#e4c03a", autumnShade: "#ecd65a" },
   },
   bark: { kind: "smooth", smoothUntilYears: 40, furrowDepth: 0.3, color: "#b8b9a3" },
   reproduction: { firstFlowerYears: 15, seedMassMg: 0.1 },

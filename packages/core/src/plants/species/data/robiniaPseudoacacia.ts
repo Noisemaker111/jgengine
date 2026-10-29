@@ -15,7 +15,7 @@ export const ROBINIA_PSEUDOACACIA: PlantSpecies = {
   },
   ids: { usda: "ROPS" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.8258,
     apicalControlMature: 0.4799,
@@ -79,7 +79,7 @@ export const ROBINIA_PSEUDOACACIA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#c9b84a" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#c9b84a", autumnShade: "#d4c866" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 10, furrowDepth: 0.9, color: "#4a3f36" },
   reproduction: { firstFlowerYears: 6, flowerColor: "#f4f1e4", seedMassMg: 18 },

@@ -12,7 +12,7 @@ export const FRAXINUS_AMERICANA: PlantSpecies = {
   names: { scientific: "Fraxinus americana L.", common: { en: "white ash", fr: "frêne blanc" } },
   ids: { usda: "FRAM2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90 },
+  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.5932,
@@ -76,7 +76,7 @@ export const FRAXINUS_AMERICANA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 2,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#7a3f63" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#7a3f63", autumnShade: "#d4b44a" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 15, furrowDepth: 0.6, color: "#6e675f" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 45 },

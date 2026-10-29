@@ -80,7 +80,7 @@ export const SABAL_PALMETTO: PlantSpecies = {
     sla: 8,
     lifespanYears: 3,
     leavesPerNode: 1,
-    color: { spring: "#4f6f35", summer: "#4f6f35", autumn: "#4f6f35" },
+    color: { spring: "#4f6f35", summer: "#4f6f35", autumn: "#4f6f35", autumnShade: "#4f6f35" },
   },
   bark: { kind: "fibrous", smoothUntilYears: 999, furrowDepth: 0.1, color: "#7d7466" },
   reproduction: { firstFlowerYears: 15, flowerColor: "#efe8c8", fruitColor: "#1f1b17", seedMassMg: 120 },

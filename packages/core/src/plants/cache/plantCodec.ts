@@ -5,7 +5,7 @@ import type { PlantClusterLevel, PlantStructure } from "../structure/plantStruct
 
 type PackedArray = Float32Array | Float64Array | Int32Array | Uint8Array | Uint16Array | Uint32Array;
 
-const CODEC_VERSION = 4;
+const CODEC_VERSION = 5;
 const ALIGN = 8;
 
 function typeCode(array: PackedArray): number {
@@ -263,7 +263,7 @@ export function decodePlantStructure(bytes: Uint8Array): { structure: PlantStruc
       count: data.u16("reproductive.count"),
     },
     leafShape: readLeafShape(leafShape),
-    leafColor: { spring: str(leafColor, "spring"), summer: str(leafColor, "summer"), autumn: str(leafColor, "autumn") },
+    leafColor: { spring: str(leafColor, "spring"), summer: str(leafColor, "summer"), autumn: str(leafColor, "autumn"), autumnShade: str(leafColor, "autumnShade") },
     organColor: { flower: str(organColor, "flower"), fruit: str(organColor, "fruit") },
     bark: { kind: oneOf(BARK_KINDS, str(bark, "kind"), "bark kind"), furrow: num(bark, "furrow"), color: str(bark, "color") },
   };

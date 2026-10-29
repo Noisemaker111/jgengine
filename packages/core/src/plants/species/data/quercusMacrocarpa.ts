@@ -12,7 +12,7 @@ export const QUERCUS_MACROCARPA: PlantSpecies = {
   names: { scientific: "Quercus macrocarpa Michx.", common: { en: "bur oak", fr: "chêne à gros fruits" } },
   ids: { usda: "QUMA2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.8445,
@@ -76,7 +76,7 @@ export const QUERCUS_MACROCARPA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#9a6a2a" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#9a6a2a", autumnShade: "#b49a42" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 10, furrowDepth: 0.8, color: "#4d4741" },
   reproduction: { firstFlowerYears: 35, seedMassMg: 6000 },

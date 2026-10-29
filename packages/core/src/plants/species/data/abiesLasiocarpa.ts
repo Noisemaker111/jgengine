@@ -15,7 +15,7 @@ export const ABIES_LASIOCARPA: PlantSpecies = {
   },
   ids: { usda: "ABLA" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "columnar" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.6954,
@@ -79,7 +79,7 @@ export const ABIES_LASIOCARPA: PlantSpecies = {
     sla: 8,
     lifespanYears: 10,
     leavesPerNode: 10,
-    color: { spring: "#88b070", summer: "#3f5e58", autumn: "#3f5e58" },
+    color: { spring: "#88b070", summer: "#3f5e58", autumn: "#3f5e58", autumnShade: "#3f5e58" },
   },
   bark: { kind: "smooth", smoothUntilYears: 60, furrowDepth: 0.2, color: "#8a8780" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 8 },

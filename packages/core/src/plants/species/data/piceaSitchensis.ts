@@ -15,7 +15,7 @@ export const PICEA_SITCHENSIS: PlantSpecies = {
   },
   ids: { usda: "PISI" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.7955,
     apicalControlMature: 0.9,
@@ -79,7 +79,7 @@ export const PICEA_SITCHENSIS: PlantSpecies = {
     sla: 6,
     lifespanYears: 7,
     leavesPerNode: 10,
-    color: { spring: "#88b070", summer: "#3f6a62", autumn: "#3f6a62" },
+    color: { spring: "#88b070", summer: "#3f6a62", autumn: "#3f6a62", autumnShade: "#3f6a62" },
   },
   bark: { kind: "scaly", smoothUntilYears: 25, furrowDepth: 0.2, color: "#7b6a5d" },
   reproduction: { firstFlowerYears: 25, seedMassMg: 2.2 },

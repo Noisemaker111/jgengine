@@ -12,7 +12,7 @@ export const PINUS_PALUSTRIS: PlantSpecies = {
   names: { scientific: "Pinus palustris Mill.", common: { en: "longleaf pine", fr: "pin des marais" } },
   ids: { usda: "PIPA2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.8605,
     apicalControlMature: 0.8373,
@@ -76,7 +76,7 @@ export const PINUS_PALUSTRIS: PlantSpecies = {
     sla: 7,
     lifespanYears: 2,
     leavesPerNode: 2,
-    color: { spring: "#88b070", summer: "#3f6b3a", autumn: "#3f6b3a" },
+    color: { spring: "#88b070", summer: "#3f6b3a", autumn: "#3f6b3a", autumnShade: "#3f6b3a" },
   },
   bark: { kind: "plated", smoothUntilYears: 10, furrowDepth: 0.5, color: "#6b4a35" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 95 },

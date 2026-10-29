@@ -15,7 +15,7 @@ export const PICEA_GLAUCA: PlantSpecies = {
   },
   ids: { usda: "PIGL" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.8904,
     apicalControlMature: 0.7713,
@@ -79,7 +79,7 @@ export const PICEA_GLAUCA: PlantSpecies = {
     sla: 8.1,
     lifespanYears: 7,
     leavesPerNode: 10,
-    color: { spring: "#8cb28a", summer: "#3b5e4f", autumn: "#3b5e4f" },
+    color: { spring: "#8cb28a", summer: "#3b5e4f", autumn: "#3b5e4f", autumnShade: "#3b5e4f" },
   },
   bark: { kind: "scaly", smoothUntilYears: 25, furrowDepth: 0.3, color: "#7a6f66" },
   reproduction: { firstFlowerYears: 30, seedMassMg: 2 },

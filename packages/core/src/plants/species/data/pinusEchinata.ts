@@ -12,7 +12,7 @@ export const PINUS_ECHINATA: PlantSpecies = {
   names: { scientific: "Pinus echinata Mill.", common: { en: "shortleaf pine", fr: "pin jaune" } },
   ids: { usda: "PIEC2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.7256,
     apicalControlMature: 0.8087,
@@ -76,7 +76,7 @@ export const PINUS_ECHINATA: PlantSpecies = {
     sla: 9,
     lifespanYears: 3,
     leavesPerNode: 6,
-    color: { spring: "#88b070", summer: "#3f6840", autumn: "#3f6840" },
+    color: { spring: "#88b070", summer: "#3f6840", autumn: "#3f6840", autumnShade: "#3f6840" },
   },
   bark: { kind: "plated", smoothUntilYears: 10, furrowDepth: 0.5, color: "#6e4c38" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 10 },

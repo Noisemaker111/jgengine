@@ -15,7 +15,7 @@ export const PSEUDOTSUGA_MENZIESII: PlantSpecies = {
   },
   ids: { usda: "PSME" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.7617,
@@ -79,7 +79,7 @@ export const PSEUDOTSUGA_MENZIESII: PlantSpecies = {
     sla: 5.8,
     lifespanYears: 7,
     leavesPerNode: 10,
-    color: { spring: "#88b070", summer: "#3d6440", autumn: "#3d6440" },
+    color: { spring: "#88b070", summer: "#3d6440", autumn: "#3d6440", autumnShade: "#3d6440" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 30, furrowDepth: 0.9, color: "#5b4436" },
   reproduction: { firstFlowerYears: 15, seedMassMg: 11 },

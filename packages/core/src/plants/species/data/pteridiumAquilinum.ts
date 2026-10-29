@@ -76,7 +76,7 @@ export const PTERIDIUM_AQUILINUM: PlantSpecies = {
     sla: 8,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#5c8a2c", summer: "#5c8a2c", autumn: "#9a6a30" },
+    color: { spring: "#5c8a2c", summer: "#5c8a2c", autumn: "#9a6a30", autumnShade: "#9a6a30" },
   },
   bark: { kind: "smooth", smoothUntilYears: 999, furrowDepth: 0, color: "#6b5a3a" },
   reproduction: { firstFlowerYears: 999, seedMassMg: 0.0001 },

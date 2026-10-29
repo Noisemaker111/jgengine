@@ -12,7 +12,7 @@ export const PINUS_VIRGINIANA: PlantSpecies = {
   names: { scientific: "Pinus virginiana Mill.", common: { en: "Virginia pine", fr: "pin de Virginie" } },
   ids: { usda: "PIVI2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.9151,
     apicalControlMature: 0.8085,
@@ -76,7 +76,7 @@ export const PINUS_VIRGINIANA: PlantSpecies = {
     sla: 8,
     lifespanYears: 3,
     leavesPerNode: 6,
-    color: { spring: "#88b070", summer: "#4f6e3f", autumn: "#4f6e3f" },
+    color: { spring: "#88b070", summer: "#4f6e3f", autumn: "#4f6e3f", autumnShade: "#4f6e3f" },
   },
   bark: { kind: "scaly", smoothUntilYears: 10, furrowDepth: 0.3, color: "#6b5241" },
   reproduction: { firstFlowerYears: 5, seedMassMg: 8 },

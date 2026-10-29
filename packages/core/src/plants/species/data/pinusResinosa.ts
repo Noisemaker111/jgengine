@@ -12,7 +12,7 @@ export const PINUS_RESINOSA: PlantSpecies = {
   names: { scientific: "Pinus resinosa Aiton", common: { en: "red pine", fr: "pin rouge" } },
   ids: { usda: "PIRE" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.5525,
@@ -76,7 +76,7 @@ export const PINUS_RESINOSA: PlantSpecies = {
     sla: 9,
     lifespanYears: 4.5,
     leavesPerNode: 6,
-    color: { spring: "#86a96d", summer: "#38633f", autumn: "#3f6a44" },
+    color: { spring: "#86a96d", summer: "#38633f", autumn: "#3f6a44", autumnShade: "#3f6a44" },
   },
   bark: { kind: "plated", smoothUntilYears: 15, furrowDepth: 0.4, color: "#8b5a3c" },
   reproduction: { firstFlowerYears: 15, seedMassMg: 8.7 },

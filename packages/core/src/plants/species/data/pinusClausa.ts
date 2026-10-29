@@ -15,7 +15,7 @@ export const PINUS_CLAUSA: PlantSpecies = {
   },
   ids: { usda: "PICL" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.8115,
     apicalControlMature: 0.8472,
@@ -79,7 +79,7 @@ export const PINUS_CLAUSA: PlantSpecies = {
     sla: 8,
     lifespanYears: 3,
     leavesPerNode: 6,
-    color: { spring: "#88b070", summer: "#4a6a3c", autumn: "#4a6a3c" },
+    color: { spring: "#88b070", summer: "#4a6a3c", autumn: "#4a6a3c", autumnShade: "#4a6a3c" },
   },
   bark: { kind: "scaly", smoothUntilYears: 10, furrowDepth: 0.3, color: "#6e5a4c" },
   reproduction: { firstFlowerYears: 5, seedMassMg: 9 },

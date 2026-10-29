@@ -1,3 +1,4 @@
+import type { PlantSpecies } from "../species/plantSpecies";
 import { CROWN_HULL_BINS, CROWN_HULL_SECTORS, type PlantStructure } from "../structure/plantStructure";
 
 /** Leaf area of one leaf of size `sizeM`, as the growth model counts it. */
@@ -8,23 +9,25 @@ const PROJECTION = 0.5;
 /** Measures of how a crown is built, beyond its size: where it forks, its main limbs and how open it is. */
 export interface CrownArchitecture {
   /**
-   * Height of the lowest fork, as a share of tree height: where a scaffold limb at least `forkRatio`
-   * of the trunk's diameter there leaves it (a codominant split). 1 for a stem the leader runs
-   * straight up.
+   * Diameter of the stoutest limb leaving the trunk in the lower `forkHeight` of the tree, over the
+   * trunk's diameter where it leaves: 0.6 or more is a codominant fork (Gilman 2011), well under it a
+   * leader running straight up.
    */
-  forkHeightShare: number;
+  forkRatio: number;
   /** Limbs leaving the trunk at least `scaffoldRatio` of its breast-height diameter across. */
   scaffoldLimbs: number;
   /** Share of leaf area within `shellDepthShare` of the crown radius of the crown's outer surface. */
   shellShare: number;
   /** Share of the crown's side-on outline where sky shows through leaves and wood. */
   gapFraction: number;
+  /** Mean angle from vertical of the limbs leaving the trunk at their base, degrees, weighted by cross-section. */
+  limbAngleDeg: number;
 }
 
 /** Thresholds {@link crownArchitecture} reads limbs and the leaf shell with. */
 export interface CrownArchitectureOptions {
-  /** Limb over trunk diameter that counts as a fork; default 0.6. */
-  forkRatio?: number;
+  /** Share of the tree's height, from the ground, a fork is looked for in; default 0.6. */
+  forkHeight?: number;
   /** Limb over breast-height trunk diameter that counts as a scaffold limb; default 1/3. */
   scaffoldRatio?: number;
   /** Depth of the outer leaf shell as a share of crown radius; default 0.25. */
@@ -46,28 +49,45 @@ export interface CrownArchitectureOptions {
  * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
  */
 export function crownArchitecture(structure: PlantStructure, options: CrownArchitectureOptions = {}): CrownArchitecture {
-  const forkRatio = options.forkRatio ?? 0.6;
+  const forkHeight = options.forkHeight ?? 0.6;
   const scaffoldRatio = options.scaffoldRatio ?? 1 / 3;
   const { start, end, radiusStart, radiusEnd, parent, order } = structure.segments;
   const height = Math.max(1e-6, structure.stats.heightM);
   const breastRadius = Math.max(1e-6, (structure.stats.dbhCm / 200) || (radiusStart[0] ?? 0));
-  let forkY = height;
+  let fork = 0;
   let scaffolds = 0;
+  let angleSum = 0;
+  let angleWeight = 0;
+  // Each stem segment's thickest child carries the stem on; every other child is a limb leaving it,
+  // a branch or a codominant stem alike.
+  const carrier = new Int32Array(order.length).fill(-1);
   for (let i = 0; i < order.length; i += 1) {
-    if (order[i] !== 1) continue;
     const p = parent[i] ?? -1;
     if (p < 0 || order[p] !== 0) continue;
+    const held = carrier[p] ?? -1;
+    if (held < 0 || (radiusStart[i] ?? 0) > (radiusStart[held] ?? 0)) carrier[p] = i;
+  }
+  for (let i = 0; i < order.length; i += 1) {
+    const p = parent[i] ?? -1;
+    if (p < 0 || order[p] !== 0 || carrier[p] === i) continue;
     const limb = radiusStart[i] ?? 0;
-    if (limb < scaffoldRatio * breastRadius) continue;
-    scaffolds += 1;
-    const y = start[i * 3 + 1] ?? 0;
-    if (limb >= forkRatio * Math.max(1e-6, radiusEnd[p] ?? 0) && y < forkY) forkY = y;
+    const dx = (end[i * 3] ?? 0) - (start[i * 3] ?? 0);
+    const dy = (end[i * 3 + 1] ?? 0) - (start[i * 3 + 1] ?? 0);
+    const dz = (end[i * 3 + 2] ?? 0) - (start[i * 3 + 2] ?? 0);
+    const along = Math.hypot(dx, dy, dz);
+    if (along > 0) {
+      angleSum += limb * limb * Math.acos(Math.max(-1, Math.min(1, dy / along)));
+      angleWeight += limb * limb;
+    }
+    if ((start[i * 3 + 1] ?? 0) <= forkHeight * height) fork = Math.max(fork, limb / Math.max(1e-6, radiusEnd[p] ?? 0));
+    if (limb >= scaffoldRatio * breastRadius) scaffolds += 1;
   }
   return {
-    forkHeightShare: Math.min(1, forkY / height),
+    forkRatio: fork,
     scaffoldLimbs: scaffolds,
     shellShare: shellShare(structure, options.shellDepthShare ?? 0.25),
     gapFraction: gapFraction(structure, options.views ?? 4, options.cells ?? 64, start, end, radiusStart, radiusEnd),
+    limbAngleDeg: angleWeight > 0 ? (angleSum / angleWeight) * (180 / Math.PI) : 0,
   };
 }
 
@@ -160,4 +180,58 @@ function gapFraction(structure: PlantStructure, views: number, cells: number, st
     }
   }
   return crownCells > 0 ? gapSum / crownCells : 0;
+}
+
+/** The measures of a {@link CrownArchitecture}, in a fixed order. */
+export const CROWN_ARCHITECTURE_MEASURES = ["forkRatio", "scaffoldLimbs", "shellShare", "gapFraction", "limbAngleDeg"] as const satisfies readonly (keyof CrownArchitecture)[];
+
+/** Age in years an open-grown tree is held to its {@link CrownArchitectureTarget}. */
+export const CROWN_ARCHITECTURE_AGE = 40;
+
+/** Closed band `[low, high]` a measure must fall in. */
+export type MeasureBand = readonly [low: number, high: number];
+
+/** Bands a species' open-grown crown falls in at {@link CROWN_ARCHITECTURE_AGE}; an absent band is not checked. */
+export type CrownArchitectureTarget = Partial<Record<keyof CrownArchitecture, MeasureBand>>;
+
+/**
+ * What an open-grown tree's crown is built like at {@link CROWN_ARCHITECTURE_AGE} years, by crown form
+ * and shade tolerance. A decurrent tree grown in the open forks in its lower 60% into three or more
+ * scaffold limbs at 25–65 degrees from vertical (Zimmermann & Brown 1971; Gilman 2011, open-grown
+ * shade trees), and an excurrent or columnar one keeps its leader to the top with branches near
+ * level. A broadleaf crown in leaf shows sky through 15–55% of its outline: healthy hardwoods rate
+ * 10–30% foliage transparency within the foliated crown (Schomaker et al. 2007, FIA crown
+ * transparency), and the outline adds the gaps between limbs. A shade-tolerant broadleaf holds its
+ * leaves as a monolayer in the outer shell (Horn 1971), more than a crown filled evenly would (0.58
+ * in the outer quarter). Shrubs, palms and herbs have no target.
+ * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
+ */
+export function crownArchitectureTarget(species: Pick<PlantSpecies, "architecture" | "tolerance" | "leaf">): CrownArchitectureTarget {
+  const form = species.architecture.crownForm;
+  if (form === undefined) return {};
+  if (form !== "decurrent") return { forkRatio: [0, 0.6], limbAngleDeg: [45, 110] };
+  const broadleaf = species.leaf.lifespanYears <= 1;
+  return {
+    forkRatio: [0.6, 2],
+    scaffoldLimbs: [3, 12],
+    limbAngleDeg: [25, 65],
+    ...(broadleaf ? { gapFraction: [0.15, 0.55] as const } : {}),
+    ...(broadleaf && species.tolerance.shade >= 0.7 ? { shellShare: [0.6, 1] as const } : {}),
+  };
+}
+
+/**
+ * The measures of `architecture` outside their band in `target`, as readable lines; empty when the
+ * crown meets it.
+ * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
+ */
+export function crownArchitectureMisses(target: CrownArchitectureTarget, architecture: CrownArchitecture): string[] {
+  const misses: string[] = [];
+  for (const key of CROWN_ARCHITECTURE_MEASURES) {
+    const band = target[key];
+    if (band === undefined) continue;
+    const value = architecture[key];
+    if (value < band[0] || value > band[1]) misses.push(`${key} ${Number(value.toFixed(3))} outside ${band[0]}..${band[1]}`);
+  }
+  return misses;
 }

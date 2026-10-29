@@ -13,7 +13,7 @@ export const ACER_SACCHARINUM: PlantSpecies = {
   names: { scientific: "Acer saccharinum L.", common: { en: "silver maple", fr: "érable argenté" } },
   ids: { usda: "ACSA2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90 },
+  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.3123,
@@ -77,7 +77,7 @@ export const ACER_SACCHARINUM: PlantSpecies = {
     sla: 25,
     lifespanYears: 0.5,
     leavesPerNode: 2,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d8b23a" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d8a23a", autumnShade: "#dcc458" },
   },
   bark: { kind: "peeling", smoothUntilYears: 20, furrowDepth: 0.3, color: "#8a847c" },
   reproduction: { firstFlowerYears: 11, flowerColor: "#a4442c", seedMassMg: 260 },

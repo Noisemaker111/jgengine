@@ -1,12 +1,15 @@
 import { openGrownCrownWidthM } from "../../packages/core/src/plants/validation/crownAllometry";
 import { crownWidthBandM, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../../packages/core/src/plants/species/speciesReference";
-import type { CrownForm } from "./speciesTraits";
+import type { CrownForm } from "../../packages/core/src/plants/species/plantSpecies";
+import { CROWN_ARCHITECTURE_AGE, CROWN_ARCHITECTURE_MEASURES, type CrownArchitecture, type CrownArchitectureTarget } from "../../packages/core/src/plants/validation/crownArchitecture";
 import type { Trial, TrialReading } from "./speciesTrial";
 
 /** What a fit holds one species to beyond its reference tables. */
 export interface FitTarget {
   reference: SpeciesReference;
   form: CrownForm;
+  /** Fork, limbs, openness and leaf shell of the open-grown tree at the architecture age. */
+  architecture: CrownArchitectureTarget;
   maxCrownRadiusM: number;
   /** Shade-tolerant species must keep a leafy crown for 100 years under 0.2 light. */
   shadeTolerant: boolean;
@@ -22,6 +25,25 @@ function shapePenalty(form: CrownForm, r: TrialReading): number {
   // A column keeps its width up the crown and stays under 0.4 of the tree's height across.
   if (form === "columnar") return hinge(r.centroid, 0.25, 0.55, 0.03) + hinge(r.shoulder, 0.5, 2, 0.03) + (r.age >= 50 ? hinge(r.crownWidthM / Math.max(0.1, r.heightM), 0, 0.4, 0.03) : 0);
   return hinge(r.centroid, 0, 0.33, 0.03) + (r.age >= 50 ? hinge(r.shoulder, 0, 0.42, 0.03) : 0);
+}
+
+/** How far a measure may stray outside its band before it costs as much as a 1-sigma height miss. */
+const ARCHITECTURE_SCALE: Readonly<Record<keyof CrownArchitecture, number>> = {
+  forkRatio: 0.05,
+  scaffoldLimbs: 1,
+  shellShare: 0.03,
+  gapFraction: 0.03,
+  limbAngleDeg: 4,
+};
+
+function architecturePenalty(target: CrownArchitectureTarget, measured: CrownArchitecture | undefined): number {
+  if (measured === undefined) return 0;
+  let sum = 0;
+  for (const key of CROWN_ARCHITECTURE_MEASURES) {
+    const band = target[key];
+    if (band !== undefined) sum += hinge(measured[key], band[0], band[1], ARCHITECTURE_SCALE[key]);
+  }
+  return sum;
 }
 
 /** A trial's total misfit and its parts; lower is better. */
@@ -67,10 +89,11 @@ export function scoreTrial(target: FitTarget, trial: Trial): TrialScore {
       add("crownRatio", hinge(open.crownRatio, 0.57, 1, 0.04) + (age >= 50 ? hinge(stand.crownRatio, 0, 0.5, 0.04) : 0));
       add("shape", shapePenalty(target.form, open) + shapePenalty(target.form, stand));
     }
+    add("architecture", architecturePenalty(target.architecture, trial.open[s]?.find((r) => r.age === CROWN_ARCHITECTURE_AGE)?.architecture));
     const shadeLeaf = trial.shadeLeafAreaM2[s];
     // A shaded sapling keeps a leafy crown but never outgrows an open-grown tree of its age.
     const openLeaf = trial.open[s]?.find((r) => r.age === 100)?.leafAreaM2 ?? 0;
-    if (target.shadeTolerant && shadeLeaf !== undefined) add("shade", hinge(Math.log(Math.max(0.01, shadeLeaf)), Math.log(3), Math.log(Math.max(3, 0.5 * openLeaf)), 0.5) + (trial.shadeAlive[s] === true ? 0 : 20));
+    if (target.shadeTolerant && shadeLeaf !== undefined) add("shade", hinge(Math.log(Math.max(0.01, shadeLeaf)), Math.log(3), Math.log(Math.max(3, 0.5 * openLeaf)), 0.5) + (trial.shadeAlive[s] === true ? 0 : 20) + (trial.deepShadeAlive[s] === false ? 20 : 0));
   }
   let total = 0;
   for (const key of Object.keys(parts)) {

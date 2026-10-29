@@ -15,7 +15,7 @@ export const PICEA_MARIANA: PlantSpecies = {
   },
   ids: { usda: "PIMA" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "columnar" },
   growth: {
     apicalControl: 0.6683,
     apicalControlMature: 0.894,
@@ -79,7 +79,7 @@ export const PICEA_MARIANA: PlantSpecies = {
     sla: 7,
     lifespanYears: 8,
     leavesPerNode: 10,
-    color: { spring: "#88b070", summer: "#34503f", autumn: "#34503f" },
+    color: { spring: "#88b070", summer: "#34503f", autumn: "#34503f", autumnShade: "#34503f" },
   },
   bark: { kind: "scaly", smoothUntilYears: 20, furrowDepth: 0.2, color: "#5e5149" },
   reproduction: { firstFlowerYears: 10, seedMassMg: 1.1 },

@@ -12,7 +12,7 @@ export const PINUS_TAEDA: PlantSpecies = {
   names: { scientific: "Pinus taeda L.", common: { en: "loblolly pine", fr: "pin à encens" } },
   ids: { usda: "PITA" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.604,
     apicalControlMature: 0.8105,
@@ -76,7 +76,7 @@ export const PINUS_TAEDA: PlantSpecies = {
     sla: 4.3,
     lifespanYears: 2,
     leavesPerNode: 6,
-    color: { spring: "#88b070", summer: "#3e6a3e", autumn: "#3e6a3e" },
+    color: { spring: "#88b070", summer: "#3e6a3e", autumn: "#3e6a3e", autumnShade: "#3e6a3e" },
   },
   bark: { kind: "plated", smoothUntilYears: 10, furrowDepth: 0.6, color: "#5c4537" },
   reproduction: { firstFlowerYears: 10, seedMassMg: 25 },

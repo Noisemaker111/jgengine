@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { OPEN_TEMPERATE_SITE } from "../../growth/plantEnvironment";
 import { createPlantGrowth } from "../../growth/plantGrowth";
 import { PLANT_REGION } from "../../structure/plantStructure";
+import { CROWN_ARCHITECTURE_AGE, crownArchitecture, crownArchitectureMisses, crownArchitectureTarget } from "../../validation/crownArchitecture";
 import { PLANT_LIBRARY } from "./plantLibrary";
 import { basalStemCount, habitHeightAt20M, habitHeightCeilingM, SHRUB_STEMS } from "../habitReference";
 import { HABIT_REFERENCE } from "../habitReferenceTable";
@@ -31,6 +32,15 @@ function checkTree(species: PlantSpecies): void {
   }, 60_000);
 }
 
+function checkArchitecture(species: PlantSpecies): void {
+  test(`${species.id}: an open-grown ${species.architecture.crownForm ?? "tree"} tree at ${CROWN_ARCHITECTURE_AGE} years has its published fork, limbs, openness and leaf shell`, () => {
+    expect(species.architecture.crownForm, "crown form").toBeDefined();
+    const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
+    plant.step(CROWN_ARCHITECTURE_AGE);
+    expect(crownArchitectureMisses(crownArchitectureTarget(species), crownArchitecture(plant.structure()))).toEqual([]);
+  }, 60_000);
+}
+
 function checkHabit(species: PlantSpecies): void {
   test(`${species.id}: an open-grown ${species.habit} is within 15% of its USDA PLANTS height at 20 years, holds its mature height at 40 and keeps its stems`, () => {
     expect(validatePlantSpecies(species)).toEqual([]);
@@ -55,8 +65,12 @@ function checkHabit(species: PlantSpecies): void {
 
 describe("plant species library", () => {
   for (const species of PLANT_LIBRARY) {
-    if (species.habit === "tree") checkTree(species);
-    else checkHabit(species);
+    if (species.habit === "tree") {
+      checkTree(species);
+      checkArchitecture(species);
+    } else {
+      checkHabit(species);
+    }
   }
 });
 

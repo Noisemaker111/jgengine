@@ -15,7 +15,7 @@ export const THUJA_OCCIDENTALIS: PlantSpecies = {
   },
   ids: { usda: "THOC2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "columnar" },
   growth: {
     apicalControl: 0.7053,
     apicalControlMature: 0.4226,
@@ -79,7 +79,7 @@ export const THUJA_OCCIDENTALIS: PlantSpecies = {
     sla: 7,
     lifespanYears: 3,
     leavesPerNode: 12,
-    color: { spring: "#88b070", summer: "#4d6b3e", autumn: "#4d6b3e" },
+    color: { spring: "#88b070", summer: "#4d6b3e", autumn: "#4d6b3e", autumnShade: "#4d6b3e" },
   },
   bark: { kind: "fibrous", smoothUntilYears: 5, furrowDepth: 0.4, color: "#8a6f5c" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 1.3 },

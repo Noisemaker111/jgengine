@@ -889,10 +889,15 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     return add;
   }
 
-  /** Tropism weights per branch order for the current environment; cleared when the wind changes. */
+  /** Tropism weights per branch order for the current environment and year; cleared when either changes. */
   const weightsByOrder: (TropismWeights | undefined)[] = [];
+  let weightsYear = -1;
 
   function weightsFor(order: number): TropismWeights {
+    if (weightsYear !== state.year) {
+      weightsByOrder.length = 0;
+      weightsYear = state.year;
+    }
     const cached = weightsByOrder[order];
     if (cached) return cached;
     const weights = computeWeights(order);
@@ -905,7 +910,11 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     for (let k = 0; k < order; k += 1) gravity *= g.tropism.gravityOrderDecay;
     const windAngle = (environment.wind.dir * PLANT_PI) / 180;
     const strength = environment.wind.strength * g.tropism.wind;
-    const setpointDeg = order === 0 ? 0 : Math.min(g.tropism.setpointMax, g.tropism.setpointAngle + (order - 1) * g.tropism.setpointPerOrder);
+    // Apical control holds laterals out at their set point; as it fades they turn up into codominant
+    // stems, so a decurrent crown divides into upright limbs while an excurrent one keeps level branches
+    // (Wilson 2000, apical control of branch angle).
+    const release = apicalControlAt(g, state.year) / Math.max(1e-6, g.apicalControl);
+    const setpointDeg = order === 0 ? 0 : Math.min(g.tropism.setpointMax, g.tropism.setpointAngle * release + (order - 1) * g.tropism.setpointPerOrder);
     const setpoint = (setpointDeg * PLANT_PI) / 180;
     return {
       optimal: g.tropism.optimal,
@@ -953,6 +962,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   function grow(scale: number): number {
     if (scale <= 0) return 0;
     const year = state.year;
+    const lambda = apicalControlAt(g, year);
     const budsBefore = state.budCount;
     let shortMetamers = 0;
     for (let k = 0; k < candidates.count; k += 1) {
@@ -996,7 +1006,13 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
           axisDir[0] = heading[0] ?? 0;
           axisDir[1] = heading[1] ?? 1;
           axisDir[2] = heading[2] ?? 0;
-          const order = Math.min(255, (state.order[node] ?? 0) + 1);
+          // Under apical control λ below 0.5 a lateral draws more vigour per unit light than the stem it
+          // leaves, so one breaking near a stem's tip overtops the leader: it keeps the stem's order and
+          // grows upright beside it as a codominant stem, and a decurrent crown divides into several
+          // (Brown, McAlpine & Kormanik 1967; Zimmermann & Brown 1971).
+          const parentOrder = state.order[node] ?? 0;
+          const codominant = parentOrder === 0 && lambda < 0.5 && year - (state.born[node] ?? 0) <= 1;
+          const order = codominant ? 0 : Math.min(255, parentOrder + 1);
           const tip = growShoot(node, order, NODE_AXIS_START, metamers, axisDir, azimuth + PLANT_PI / 2, next);
           addBud(tip);
         }

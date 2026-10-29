@@ -15,7 +15,7 @@ export const LIQUIDAMBAR_STYRACIFLUA: PlantSpecies = {
   },
   ids: { usda: "LIST2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.6372,
     apicalControlMature: 0.5694,
@@ -79,7 +79,7 @@ export const LIQUIDAMBAR_STYRACIFLUA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#a32a3a" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#8e1f3c", autumnShade: "#e08a24" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 15, furrowDepth: 0.5, color: "#57514a" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 6 },

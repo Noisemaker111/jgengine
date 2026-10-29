@@ -15,7 +15,7 @@ export const FAGUS_GRANDIFOLIA: PlantSpecies = {
   },
   ids: { usda: "FAGR" },
   habit: "tree",
-  architecture: { model: "troll", phyllotaxis: "alternate", divergence: 180 },
+  architecture: { model: "troll", phyllotaxis: "alternate", divergence: 180, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.612,
@@ -79,7 +79,7 @@ export const FAGUS_GRANDIFOLIA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#c9952f" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#c9952f", autumnShade: "#d8b04e" },
   },
   bark: { kind: "smooth", smoothUntilYears: 400, furrowDepth: 0.05, color: "#9a9a95" },
   reproduction: { firstFlowerYears: 40, seedMassMg: 280 },

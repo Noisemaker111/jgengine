@@ -15,7 +15,7 @@ export const CARYA_OVATA: PlantSpecies = {
   },
   ids: { usda: "CAOV2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.931,
     apicalControlMature: 0.5958,
@@ -79,7 +79,7 @@ export const CARYA_OVATA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d9b22e" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d9a22e", autumnShade: "#e0c04c" },
   },
   bark: { kind: "peeling", smoothUntilYears: 30, furrowDepth: 0.6, color: "#6c655c" },
   reproduction: { firstFlowerYears: 40, seedMassMg: 5000 },

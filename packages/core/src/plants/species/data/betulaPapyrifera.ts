@@ -15,7 +15,7 @@ export const BETULA_PAPYRIFERA: PlantSpecies = {
   },
   ids: { usda: "BEPA" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 120 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 120, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.8498,
     apicalControlMature: 0.5709,
@@ -79,7 +79,7 @@ export const BETULA_PAPYRIFERA: PlantSpecies = {
     sla: 19.4,
     lifespanYears: 0.5,
     leavesPerNode: 2,
-    color: { spring: "#b5cf6a", summer: "#4f7d34", autumn: "#e3b62b" },
+    color: { spring: "#b5cf6a", summer: "#4f7d34", autumn: "#e3b62b", autumnShade: "#ecd04a" },
   },
   bark: { kind: "peeling", smoothUntilYears: 200, furrowDepth: 0.1, color: "#e8e4dc" },
   reproduction: { firstFlowerYears: 15, seedMassMg: 0.3 },

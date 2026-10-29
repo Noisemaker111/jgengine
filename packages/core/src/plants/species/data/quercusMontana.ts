@@ -12,7 +12,7 @@ export const QUERCUS_MONTANA: PlantSpecies = {
   names: { scientific: "Quercus montana Willd.", common: { en: "chestnut oak", fr: "chêne châtaignier" } },
   ids: { usda: "QUMO4" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.8144,
     apicalControlMature: 0.7014,
@@ -76,7 +76,7 @@ export const QUERCUS_MONTANA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#a8652a" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#a8652a", autumnShade: "#b88a3a" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 20, furrowDepth: 0.9, color: "#4b443e" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 6000 },

@@ -13,6 +13,8 @@ import { demoGame } from "./demoGame";
 const SPACING = 22;
 const ROW_GAP = 40;
 const DETAIL = 0.5;
+/** `?seed=forest-b` grows every plant here from another seed. */
+const SEED = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search).get("seed") ?? "life-cycle";
 /** One 40-year sugar maple through a year, the same tree standing dead and falling apart, then a blueberry clump. */
 const ROWS: { label: string; meta: Record<string, number | string> }[][] = [
   [
@@ -30,7 +32,7 @@ const ROWS: { label: string; meta: Record<string, number | string> }[][] = [
   [
     { label: "Blueberry 3 y", meta: { species: "vaccinium-corymbosum", age: 3, day: 200 } },
     { label: "6 y · flowers", meta: { species: "vaccinium-corymbosum", age: 6, day: 150 } },
-    { label: "12 y · berries", meta: { species: "vaccinium-corymbosum", age: 12, day: 215, leafScale: 2 } },
+    { label: "12 y · berries", meta: { species: "vaccinium-corymbosum", age: 12, day: 215 } },
     { label: "25 y · autumn", meta: { species: "vaccinium-corymbosum", age: 25, day: 268 } },
   ],
   [
@@ -52,7 +54,7 @@ const PALM_X = -120;
 
 function Tree({ meta, label, position }: { meta: Record<string, number | string>; label: string; position: [number, number, number] }) {
   const [mesh, setMesh] = useState<PlantMesh | null>(null);
-  const params = useMemo(() => ({ species: "acer-saccharum", age: 40, seed: "life-cycle", foliage: "leaves", shading: "lit", barkGrain: true, ...meta }), [meta]);
+  const params = useMemo(() => ({ species: "acer-saccharum", age: 40, seed: SEED, foliage: "leaves", shading: "lit", barkGrain: true, ...meta }), [meta]);
   useEffect(() => {
     let live = true;
     const done = trackSceneWork(`plant-life-cycle:${label}`);

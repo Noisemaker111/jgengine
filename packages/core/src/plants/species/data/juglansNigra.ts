@@ -12,7 +12,7 @@ export const JUGLANS_NIGRA: PlantSpecies = {
   names: { scientific: "Juglans nigra L.", common: { en: "black walnut", fr: "noyer noir" } },
   ids: { usda: "JUNI" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.4718,
@@ -76,7 +76,7 @@ export const JUGLANS_NIGRA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d8c046" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d8c046", autumnShade: "#ddd268" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 15, furrowDepth: 0.8, color: "#2f2a26" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 11000 },

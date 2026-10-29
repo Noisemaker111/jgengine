@@ -12,7 +12,7 @@ export const ACER_SACCHARUM: PlantSpecies = {
   names: { scientific: "Acer saccharum Marshall", common: { en: "sugar maple", fr: "érable à sucre" } },
   ids: { usda: "ACSA3" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90 },
+  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.9021,
     apicalControlMature: 0.6637,
@@ -76,7 +76,7 @@ export const ACER_SACCHARUM: PlantSpecies = {
     sla: 22,
     lifespanYears: 0.5,
     leavesPerNode: 2,
-    color: { spring: "#9cc25a", summer: "#3f7a2c", autumn: "#d9541e" },
+    color: { spring: "#9cc25a", summer: "#3f7a2c", autumn: "#c42a1a", autumnShade: "#eea21f" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 25, furrowDepth: 0.6, color: "#6d6359" },
   reproduction: { firstFlowerYears: 22, flowerColor: "#c9c96a", seedMassMg: 65 },

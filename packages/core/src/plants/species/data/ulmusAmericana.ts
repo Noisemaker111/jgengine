@@ -12,7 +12,7 @@ export const ULMUS_AMERICANA: PlantSpecies = {
   names: { scientific: "Ulmus americana L.", common: { en: "American elm", fr: "orme d'Amérique" } },
   ids: { usda: "ULAM" },
   habit: "tree",
-  architecture: { model: "troll", phyllotaxis: "alternate", divergence: 180 },
+  architecture: { model: "troll", phyllotaxis: "alternate", divergence: 180, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.9462,
     apicalControlMature: 0.6664,
@@ -76,7 +76,7 @@ export const ULMUS_AMERICANA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d9bd3c" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d9bd3c", autumnShade: "#e0cc5c" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 15, furrowDepth: 0.6, color: "#5e574f" },
   reproduction: { firstFlowerYears: 15, seedMassMg: 6 },

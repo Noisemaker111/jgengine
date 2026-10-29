@@ -12,7 +12,7 @@ export const ACER_RUBRUM: PlantSpecies = {
   names: { scientific: "Acer rubrum L.", common: { en: "red maple", fr: "érable rouge" } },
   ids: { usda: "ACRU" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90 },
+  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.8835,
     apicalControlMature: 0.592,
@@ -76,7 +76,7 @@ export const ACER_RUBRUM: PlantSpecies = {
     sla: 19.8,
     lifespanYears: 0.5,
     leavesPerNode: 2,
-    color: { spring: "#a9c46c", summer: "#4b7b34", autumn: "#c4271d" },
+    color: { spring: "#a9c46c", summer: "#4b7b34", autumn: "#b8191c", autumnShade: "#e3762a" },
   },
   bark: { kind: "plated", smoothUntilYears: 30, furrowDepth: 0.35, color: "#7d7a74" },
   reproduction: { firstFlowerYears: 4, flowerColor: "#b02a2a", seedMassMg: 20 },

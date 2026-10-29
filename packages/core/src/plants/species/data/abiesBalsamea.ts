@@ -12,7 +12,7 @@ export const ABIES_BALSAMEA: PlantSpecies = {
   names: { scientific: "Abies balsamea (L.) Mill.", common: { en: "balsam fir", fr: "sapin baumier" } },
   ids: { usda: "ABBA" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.6963,
     apicalControlMature: 0.8899,
@@ -76,7 +76,7 @@ export const ABIES_BALSAMEA: PlantSpecies = {
     sla: 11.5,
     lifespanYears: 8,
     leavesPerNode: 10,
-    color: { spring: "#7fb07a", summer: "#2f5a3a", autumn: "#2f5a3a" },
+    color: { spring: "#7fb07a", summer: "#2f5a3a", autumn: "#2f5a3a", autumnShade: "#2f5a3a" },
   },
   bark: { kind: "smooth", smoothUntilYears: 40, furrowDepth: 0.2, color: "#7a7570" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 7.5 },

@@ -12,7 +12,7 @@ export const FRAXINUS_NIGRA: PlantSpecies = {
   names: { scientific: "Fraxinus nigra Marshall", common: { en: "black ash", fr: "frêne noir" } },
   ids: { usda: "FRNI" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90 },
+  architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.6015,
@@ -76,7 +76,7 @@ export const FRAXINUS_NIGRA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 2,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#c7a83b" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#c7a83b", autumnShade: "#d4c25a" },
   },
   bark: { kind: "scaly", smoothUntilYears: 15, furrowDepth: 0.3, color: "#8d877e" },
   reproduction: { firstFlowerYears: 30, seedMassMg: 60 },

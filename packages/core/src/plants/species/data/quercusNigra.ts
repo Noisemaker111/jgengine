@@ -12,7 +12,7 @@ export const QUERCUS_NIGRA: PlantSpecies = {
   names: { scientific: "Quercus nigra L.", common: { en: "water oak", fr: "chêne aquatique" } },
   ids: { usda: "QUNI" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.6986,
     apicalControlMature: 0.6347,
@@ -76,7 +76,7 @@ export const QUERCUS_NIGRA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#8a6a2a" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#8a6a2a", autumnShade: "#a89040" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 10, furrowDepth: 0.4, color: "#4a4540" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 900 },

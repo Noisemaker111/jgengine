@@ -15,7 +15,7 @@ export const THUJA_PLICATA: PlantSpecies = {
   },
   ids: { usda: "THPL" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.5959,
     apicalControlMature: 0.9,
@@ -79,7 +79,7 @@ export const THUJA_PLICATA: PlantSpecies = {
     sla: 7,
     lifespanYears: 4,
     leavesPerNode: 12,
-    color: { spring: "#88b070", summer: "#3a6236", autumn: "#3a6236" },
+    color: { spring: "#88b070", summer: "#3a6236", autumn: "#3a6236", autumnShade: "#3a6236" },
   },
   bark: { kind: "fibrous", smoothUntilYears: 5, furrowDepth: 0.5, color: "#7a4e38" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 1.1 },

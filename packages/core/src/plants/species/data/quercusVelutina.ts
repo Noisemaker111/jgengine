@@ -12,7 +12,7 @@ export const QUERCUS_VELUTINA: PlantSpecies = {
   names: { scientific: "Quercus velutina Lam.", common: { en: "black oak", fr: "chêne noir" } },
   ids: { usda: "QUVE" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.7724,
@@ -76,7 +76,7 @@ export const QUERCUS_VELUTINA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#8b2f1c" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#8b2f1c", autumnShade: "#a87a32" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 15, furrowDepth: 0.6, color: "#2f2b28" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 2100 },

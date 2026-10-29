@@ -6,8 +6,9 @@ import { availableParallelism } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
+import type { CrownForm, PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
 import { siteIndexHeightM, type SiteIndexCurve } from "../../packages/core/src/plants/validation/heightAgeCurves";
+import { crownArchitectureTarget } from "../../packages/core/src/plants/validation/crownArchitecture";
 import { growthCurveAt, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../../packages/core/src/plants/species/speciesReference";
 import { SPECIES_REFERENCE } from "../../packages/core/src/plants/species/speciesReferenceTable";
 import { parseCsv, csvNumber } from "./csv";
@@ -17,7 +18,7 @@ import { siteTreesOf, standReference } from "./siteTrees";
 import { fitSpecies, type Evaluate } from "./speciesFit";
 import { buildSpeciesRecord, speciesRecordSource, type FittedParameters, type ImportedValues } from "./speciesRecord";
 import { scoreTrial, type FitTarget } from "./speciesScore";
-import { SHADE_TOLERANCE, SPECIES_TRAITS, type CrownForm, type SpeciesTraits } from "./speciesTraits";
+import { SHADE_TOLERANCE, SPECIES_TRAITS, type SpeciesTraits } from "./speciesTraits";
 import { TRIAL_AGES, runHabitTrial, runTrial, type Trial } from "./speciesTrial";
 import { talloCrownWidthClasses } from "./tallo";
 import { buildHabitRecord, habitFitParameters, HABIT_TRAITS, startingHabitCarbon, startingHabitGrowth, habitReferenceTableSource, importHabitReference, scoreHabitTrial, type HabitTraits } from "./habitSpecies";
@@ -37,7 +38,7 @@ const HELP = `bun run jgengine plants <verb> [species ids]
   report <id...>      grow each record and print it against its reference
 
 fit flags: --generations <n> (40) --lambda <n> (16) --workers <n> --seeds a,b --sigma <x> (0.12)
-  --until-pass        stop a tree's fit once it is inside the library test's height, DBH and Tallo limits`;
+  --until-pass        stop a tree's fit once it is inside the library test's height, DBH, Tallo and crown-architecture limits`;
 
 const scientificKey = (traits: SpeciesTraits): string => traits.scientific.split(" ").slice(0, 2).join(" ");
 const camel = (id: string): string => id.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
@@ -191,7 +192,8 @@ function importedValues(traits: SpeciesTraits, reference: SpeciesReference): Imp
 }
 
 function fitTarget(traits: SpeciesTraits, record: PlantSpecies, reference: SpeciesReference): FitTarget {
-  return { reference, form: traits.form, maxCrownRadiusM: record.limits.maxCrownRadiusM, shadeTolerant: SHADE_TOLERANCE[traits.shade] >= 0.7 };
+  const architecture = crownArchitectureTarget({ architecture: { ...record.architecture, crownForm: traits.form }, tolerance: { ...record.tolerance, shade: SHADE_TOLERANCE[traits.shade] }, leaf: record.leaf });
+  return { reference, form: traits.form, architecture, maxCrownRadiusM: record.limits.maxCrownRadiusM, shadeTolerant: SHADE_TOLERANCE[traits.shade] >= 0.7 };
 }
 
 async function loadRecord(id: string): Promise<PlantSpecies | undefined> {
@@ -305,7 +307,7 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
       lambda: Number(flag(argv, "--lambda", "16")),
       sigma: Number(flag(argv, "--sigma", "0.12")),
       seed: 1,
-      ...(argv.includes("--until-pass") ? { until: (best: { parts: Record<string, number> }) => (best.parts["limits"] ?? 1) === 0 && (best.parts["tallo"] ?? 1) === 0 && (best.parts["dead"] ?? 0) === 0 } : {}),
+      ...(argv.includes("--until-pass") ? { until: (best: { parts: Record<string, number> }) => (best.parts["limits"] ?? 1) === 0 && (best.parts["tallo"] ?? 1) === 0 && (best.parts["architecture"] ?? 0) === 0 && (best.parts["dead"] ?? 0) === 0 } : {}),
       onBest: (best) => writeFileSync(out, JSON.stringify({ score: best.score, parts: best.parts, against: AGAINST, species: best.species } satisfies FitFile, null, 1)),
       onGeneration: (line) => console.log(`${id} ${line}`),
     });

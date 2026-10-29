@@ -15,7 +15,7 @@ export const POPULUS_TREMULOIDES: PlantSpecies = {
   },
   ids: { usda: "POTR5" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.8376,
     apicalControlMature: 0.5114,
@@ -79,7 +79,7 @@ export const POPULUS_TREMULOIDES: PlantSpecies = {
     sla: 18,
     lifespanYears: 0.5,
     leavesPerNode: 2,
-    color: { spring: "#b9d27a", summer: "#4c7a3d", autumn: "#e8c330" },
+    color: { spring: "#b9d27a", summer: "#4c7a3d", autumn: "#e8c330", autumnShade: "#efd85a" },
   },
   bark: { kind: "smooth", smoothUntilYears: 60, furrowDepth: 0.2, color: "#c9cdb7" },
   reproduction: { firstFlowerYears: 15, seedMassMg: 0.12 },

@@ -12,7 +12,7 @@ export const PINUS_BANKSIANA: PlantSpecies = {
   names: { scientific: "Pinus banksiana Lamb.", common: { en: "jack pine", fr: "pin gris" } },
   ids: { usda: "PIBA2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.7716,
     apicalControlMature: 0.3474,
@@ -76,7 +76,7 @@ export const PINUS_BANKSIANA: PlantSpecies = {
     sla: 8,
     lifespanYears: 3,
     leavesPerNode: 6,
-    color: { spring: "#88b070", summer: "#4d6e3e", autumn: "#4d6e3e" },
+    color: { spring: "#88b070", summer: "#4d6e3e", autumn: "#4d6e3e", autumnShade: "#4d6e3e" },
   },
   bark: { kind: "scaly", smoothUntilYears: 10, furrowDepth: 0.3, color: "#6b5546" },
   reproduction: { firstFlowerYears: 5, seedMassMg: 3.5 },

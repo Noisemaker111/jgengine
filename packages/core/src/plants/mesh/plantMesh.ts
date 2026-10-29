@@ -282,16 +282,22 @@ function leafRowColors(structure: PlantStructure): Float32Array {
   const out = new Float32Array(rows * 3);
   const spring = hexRgb(structure.leafColor.spring);
   const summer = hexRgb(structure.leafColor.summer);
-  const autumn = hexRgb(structure.leafColor.autumn);
+  const autumnSun = hexRgb(structure.leafColor.autumn);
+  const autumnShade = hexRgb(structure.leafColor.autumnShade);
+  const autumn = new Float64Array(3);
   const color = new Float64Array(3);
   const { colorState, crownDepth, health } = structure.leaves;
   for (let row = 0; row < rows; row += 1) {
     const chlorophyll = colorState[row * 4] ?? 1;
     const senescence = colorState[row * 4 + 3] ?? 0;
+    const anthocyanin = colorState[row * 4 + 2] ?? 0;
     const young = senescence > 0 ? 0 : Math.min(1, (1 - chlorophyll) / 0.3);
     mixInto(color, summer, spring, young);
     const base: NatureRgb = [color[0] ?? 0, color[1] ?? 0, color[2] ?? 0];
-    mixInto(color, base, autumn, senescence);
+    // Chlorophyll goes to show the carotenoid yellow, and anthocyanin reddens it from there.
+    mixInto(autumn, base, autumnShade, senescence);
+    const yellowed: NatureRgb = [autumn[0] ?? 0, autumn[1] ?? 0, autumn[2] ?? 0];
+    mixInto(color, yellowed, autumnSun, anthocyanin);
     const weak: NatureRgb = [color[0] ?? 0, color[1] ?? 0, color[2] ?? 0];
     mixInto(color, weak, DRY_LEAF, (1 - (health[row] ?? 1)) * 0.5);
     const shadeIn = 1 - 0.4 * (crownDepth[row] ?? 0);

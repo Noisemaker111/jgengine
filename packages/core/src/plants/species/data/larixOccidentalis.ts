@@ -15,7 +15,7 @@ export const LARIX_OCCIDENTALIS: PlantSpecies = {
   },
   ids: { usda: "LAOC" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.7674,
     apicalControlMature: 0.5965,
@@ -79,7 +79,7 @@ export const LARIX_OCCIDENTALIS: PlantSpecies = {
     sla: 14,
     lifespanYears: 0.5,
     leavesPerNode: 15,
-    color: { spring: "#a3c472", summer: "#6a9450", autumn: "#dba938" },
+    color: { spring: "#a3c472", summer: "#6a9450", autumn: "#dba938", autumnShade: "#e4c252" },
   },
   bark: { kind: "plated", smoothUntilYears: 20, furrowDepth: 0.7, color: "#8a5a3e" },
   reproduction: { firstFlowerYears: 25, seedMassMg: 3.3 },

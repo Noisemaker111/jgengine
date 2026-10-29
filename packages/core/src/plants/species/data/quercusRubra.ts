@@ -12,7 +12,7 @@ export const QUERCUS_RUBRA: PlantSpecies = {
   names: { scientific: "Quercus rubra L.", common: { en: "northern red oak", fr: "chêne rouge" } },
   ids: { usda: "QURU" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.9438,
     apicalControlMature: 0.7323,
@@ -76,7 +76,7 @@ export const QUERCUS_RUBRA: PlantSpecies = {
     sla: 18,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a3b85c", summer: "#3e6b2e", autumn: "#9e2b1d" },
+    color: { spring: "#a3b85c", summer: "#3e6b2e", autumn: "#9e2b1d", autumnShade: "#a5662c" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 20, furrowDepth: 0.5, color: "#4f4a45" },
   reproduction: { firstFlowerYears: 25, seedMassMg: 3500 },

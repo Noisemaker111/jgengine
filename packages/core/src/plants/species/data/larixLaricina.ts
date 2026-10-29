@@ -15,7 +15,7 @@ export const LARIX_LARICINA: PlantSpecies = {
   },
   ids: { usda: "LALA" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.8745,
     apicalControlMature: 0.4974,
@@ -79,7 +79,7 @@ export const LARIX_LARICINA: PlantSpecies = {
     sla: 14,
     lifespanYears: 0.5,
     leavesPerNode: 15,
-    color: { spring: "#a6c873", summer: "#6e9a52", autumn: "#d9a83a" },
+    color: { spring: "#a6c873", summer: "#6e9a52", autumn: "#d9a83a", autumnShade: "#e2c050" },
   },
   bark: { kind: "scaly", smoothUntilYears: 15, furrowDepth: 0.3, color: "#7b5a48" },
   reproduction: { firstFlowerYears: 15, seedMassMg: 1.7 },

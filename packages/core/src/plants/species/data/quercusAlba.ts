@@ -12,7 +12,7 @@ export const QUERCUS_ALBA: PlantSpecies = {
   names: { scientific: "Quercus alba L.", common: { en: "white oak", fr: "chêne blanc" } },
   ids: { usda: "QUAL" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.7839,
     apicalControlMature: 0.7586,
@@ -76,7 +76,7 @@ export const QUERCUS_ALBA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#8c3a24" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#7e2a3a", autumnShade: "#9a5e2e" },
   },
   bark: { kind: "scaly", smoothUntilYears: 20, furrowDepth: 0.4, color: "#a39d93" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 3500 },

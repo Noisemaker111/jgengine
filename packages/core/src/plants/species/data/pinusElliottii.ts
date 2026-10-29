@@ -12,7 +12,7 @@ export const PINUS_ELLIOTTII: PlantSpecies = {
   names: { scientific: "Pinus elliottii Engelm.", common: { en: "slash pine", fr: "pin d'Elliott" } },
   ids: { usda: "PIEL" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.8644,
     apicalControlMature: 0.7674,
@@ -76,7 +76,7 @@ export const PINUS_ELLIOTTII: PlantSpecies = {
     sla: 8,
     lifespanYears: 2,
     leavesPerNode: 6,
-    color: { spring: "#88b070", summer: "#3e6c3c", autumn: "#3e6c3c" },
+    color: { spring: "#88b070", summer: "#3e6c3c", autumn: "#3e6c3c", autumnShade: "#3e6c3c" },
   },
   bark: { kind: "plated", smoothUntilYears: 10, furrowDepth: 0.5, color: "#6a4935" },
   reproduction: { firstFlowerYears: 10, seedMassMg: 33 },

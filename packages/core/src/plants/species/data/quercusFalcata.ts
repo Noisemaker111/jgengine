@@ -12,7 +12,7 @@ export const QUERCUS_FALCATA: PlantSpecies = {
   names: { scientific: "Quercus falcata Michx.", common: { en: "southern red oak", fr: "chêne falqué" } },
   ids: { usda: "QUFA" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.7984,
@@ -76,7 +76,7 @@ export const QUERCUS_FALCATA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#9a4a24" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#9a4a24", autumnShade: "#a88038" },
   },
   bark: { kind: "furrowed", smoothUntilYears: 15, furrowDepth: 0.6, color: "#3f3a34" },
   reproduction: { firstFlowerYears: 25, seedMassMg: 1100 },
