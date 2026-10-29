@@ -58,7 +58,7 @@ import { fileURLToPath } from "node:url";
 import { bendsSection, findBends, withBends } from "./bends";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
 import { apiNoteBullets, engineSeamLine, noteMessages, renderChangeNote } from "./change-note";
-import { rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
+import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose } from "./verbosity";
@@ -971,7 +971,7 @@ export function syncOntoBase(options: {
       refusal: `rebase onto origin/${base} hit a conflict${files}: ${rebased.detail}\n   Resolve it, push, and run land again.`,
     };
   }
-  if (rebased.regenerate.length > 0) {
+  if (needsRegenerate(rebased, diffPaths(base, runGit))) {
     const failed = regenerateAndCommit(runGit, exec);
     if (failed !== null) return { rebased: true, refusal: failed };
   }

@@ -7,13 +7,14 @@
 // A generated file takes the base's copy while the rebase runs and is regenerated once at the end;
 // a change note (`changes/<branch>.md`) is the lane's own, so it keeps the lane's copy.
 import type { Run } from "./land";
+import { GEN_TARGETS } from "./run-stages";
 
-/** Files a generator writes; `bun run gen` rewrites every one. */
-export const GENERATED_PATHS: readonly RegExp[] = [
-  /^\.claude\/skills\/[^/]+\/(api|capabilities)\.md$/,
-  /^scripts\/(export-manifest|api-doc-baseline|api-orphan-baseline)\.json$/,
-  /^games\/capabilities\.json$/,
-];
+/**
+ * Files a generator writes; `bun run gen` rewrites every one. Read from the gen table itself: a
+ * hand-kept copy here missed skill-routing.json and the type-escape baseline, so those conflicted
+ * on every rebase two lanes shared.
+ */
+export const GENERATED_PATHS: readonly RegExp[] = GEN_TARGETS.flatMap((target) => target.outputs ?? []);
 
 /** Files only the lane writes, so a conflict there keeps the lane's side. */
 export const LANE_OWNED_PATHS: readonly RegExp[] = [/^changes\/[^/]+\.md$/];
@@ -85,6 +86,15 @@ export function rebaseResolvingGenerated(git: (args: string[]) => Run, onto: str
     return { ok: false, conflicts: [], regenerate: [], detail: (step.stderr || step.stdout).trim() };
   }
   return { ok: true, conflicts: [], regenerate: [...regenerated].sort(), detail: "" };
+}
+
+/**
+ * Whether a rebase that just finished must be followed by `bun run gen`: a generated file
+ * conflicted, or the branch carries a generated file of its own, which git may have merged line by
+ * line with the base's into text no generator writes (a CI drift failure after a clean rebase).
+ */
+export function needsRegenerate(rebase: GeneratedRebase, branchPaths: readonly string[]): boolean {
+  return rebase.regenerate.length > 0 || branchPaths.some(isGenerated);
 }
 
 /**

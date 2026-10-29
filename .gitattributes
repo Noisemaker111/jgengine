@@ -1,1 +1,4 @@
 * text=auto eol=lf
+# Every PR that adds a source appends its own section, and two appends at the same spot used to
+# conflict on every rebase; union keeps both sections, in any rebase or merge, by hand or by land.
+CREDITS.md merge=union
