@@ -17,6 +17,11 @@ export interface VehicleTireTuning {
   slideGrip: number;
   /** Peak longitudinal friction μ for drive and braking (default `peakGrip`; a road tyre's is about 15% higher). */
   longitudinalGrip?: number;
+  /**
+   * Cornering stiffness per unit load, 1/rad: lateral force per radian of slip at small slip over wheel load (a road
+   * tyre ~`15`, a race slick ~`25`). Omit for the stiffness `peakSlipAngle` and `slideGrip` imply on their own.
+   */
+  corneringStiffness?: number;
 }
 
 /** Engine and gearbox. Drive force at the wheels = torque · curve(rpm) · gear · finalDrive · efficiency / wheelRadius. */
@@ -173,7 +178,7 @@ export interface VehicleRollingResistanceEffect {
 export interface VehicleRotatingInertiaEffect {
   /** Engine, flywheel and clutch at the crank, kg·m² (0.1–0.2 for a road car); reflected through the gear in use. Gearbox only. */
   engine?: number;
-  /** All wheels, tyres, hubs and brake rotors together, kg·m² (about 4 for a road car). */
+  /** All wheels, tyres, hubs and brake rotors together, kg·m² (about 4 for a road car). Unlike the engine, they stay coupled under hard braking. */
   wheels?: number;
 }
 
@@ -413,12 +418,17 @@ export function withVehicleEffects(
   changes: { [Name in VehicleEffectName]?: VehicleEffects[Name] | false },
 ): VehicleDynamicsTuning {
   const effects: VehicleEffects = { ...tuning.effects };
-  const target = effects as Record<string, unknown>;
-  for (const [name, value] of Object.entries(changes)) {
-    if (value === false) delete target[name];
-    else if (value !== undefined) target[name] = value;
-  }
+  for (const key of Object.keys(changes)) if (isEffectName(changes, key)) setEffect(effects, key, changes[key]);
   return { ...tuning, effects };
+}
+
+function isEffectName(changes: { [Name in VehicleEffectName]?: unknown }, key: string): key is VehicleEffectName {
+  return Object.hasOwn(changes, key);
+}
+
+function setEffect<Name extends VehicleEffectName>(effects: VehicleEffects, name: Name, value: VehicleEffects[Name] | false | undefined): void {
+  if (value === false) delete effects[name];
+  else if (value !== undefined) effects[name] = value;
 }
 
 /** Air-control input, each `-1..1`: `pitch > 0` noses down, `yaw > 0` turns like `steer > 0`, `roll > 0` drops the left side. */
@@ -611,20 +621,30 @@ const SLIP_REFERENCE_SPEED = 2;
 const DEFAULT_SUBSTEP = 1 / 240;
 const NO_EFFECTS: VehicleEffects = {};
 
+/** Simplified Pacejka `sin(C·atan(Bα − E·(Bα − atan Bα)))`; `peakX` is `Bα` at the peak. */
 interface CurveShape {
   b: number;
   c: number;
+  e: number;
+  peakX: number;
 }
 
 function tireShape(tire: VehicleTireTuning): CurveShape {
   const slide = Math.min(0.999, Math.max(0.01, tire.slideGrip));
   const c = 1 + (2 / Math.PI) * Math.acos(slide);
-  const b = Math.tan(Math.PI / (2 * c)) / Math.max(0.005, tire.peakSlipAngle);
-  return { b, c };
+  const peakSlip = Math.max(0.005, tire.peakSlipAngle);
+  const crest = Math.tan(Math.PI / (2 * c));
+  if (tire.corneringStiffness === undefined) return { b: crest / peakSlip, c, e: 0, peakX: crest };
+  // Stiffness sets B; the curvature E then puts the peak back at `peakSlipAngle` (E < 1 keeps the curve single-peaked).
+  const b = Math.max(1e-3, tire.corneringStiffness) / (Math.max(1e-3, tire.peakGrip) * c);
+  const peakX = b * peakSlip;
+  const e = Math.min(0.95, (peakX - crest) / Math.max(1e-6, peakX - Math.atan(peakX)));
+  return { b, c, e, peakX };
 }
 
-function lateralCurve(b: number, c: number, alpha: number): number {
-  return Math.sin(c * Math.atan(b * alpha));
+function lateralCurve(b: number, shape: CurveShape, alpha: number): number {
+  const x = b * alpha;
+  return Math.sin(shape.c * Math.atan(x - shape.e * (x - Math.atan(x))));
 }
 
 /** One axle's two tyres at their own loads, after load sensitivity: their summed grip and the curve each runs. */
@@ -820,7 +840,7 @@ export function createVehicleDynamics(
   /** Lateral force of an axle's two tyres at slip `alpha`, as a share of the axle's lateral capacity (signed like the curve). */
   function axleCurve(grip: AxleGrip, shape: CurveShape, alpha: number): number {
     if (grip.capY <= 0) return 0;
-    return (grip.capOuter * lateralCurve(grip.bOuter, shape.c, alpha) + grip.capInner * lateralCurve(grip.bInner, shape.c, alpha)) / grip.capY;
+    return (grip.capOuter * lateralCurve(grip.bOuter, shape, alpha) + grip.capInner * lateralCurve(grip.bInner, shape, alpha)) / grip.capY;
   }
 
   function substep(
@@ -1054,6 +1074,14 @@ export function createVehicleDynamics(
         brakeR = limitRear + (brakeR - limitRear) * (1 - strength);
         out.abs = true;
       }
+      // Engine-drag control: engine braking is trimmed to what the brakes leave, so it cannot lock the driven wheels.
+      const moving = Math.sign(u) || 1;
+      const dragFront = Math.max(0, -moving * longFront);
+      const dragRear = Math.max(0, -moving * longRear);
+      const roomFront = Math.max(0, longRoomFront - brakeF);
+      const roomRear = Math.max(0, longRoomRear - brakeR);
+      if (dragFront > roomFront) longFront = -moving * (roomFront + (dragFront - roomFront) * (1 - strength));
+      if (dragRear > roomRear) longRear = -moving * (roomRear + (dragRear - roomRear) * (1 - strength));
     }
     const differential = fx_.differential;
     if (differential !== undefined && differential.kind !== "locked") {
@@ -1190,7 +1218,7 @@ export function createVehicleDynamics(
       }
     }
 
-    const longMass = m + reflectedMass(fx_.rotatingInertia, grounded);
+    const longMass = m + reflectedMass(fx_.rotatingInertia, grounded, brakeInput);
     let du = forceLong / longMass - r * v;
     const dv = forceLat / m + r * u;
     // Brakes and rolling resistance cannot reverse the car inside one substep (a slope can).
@@ -1284,12 +1312,13 @@ export function createVehicleDynamics(
   }
 
   /** Mass the spinning parts add to a speed change: `(I_wheels + I_engine·G²·η) / r²`, the engine only while coupled. */
-  function reflectedMass(inertia: VehicleRotatingInertiaEffect | undefined, grounded: boolean): number {
+  function reflectedMass(inertia: VehicleRotatingInertiaEffect | undefined, grounded: boolean, brakeInput: number): number {
     if (inertia === undefined || !grounded) return 0;
     const pt = tuning.powertrain;
     const radius = pt.kind === "gearbox" ? Math.max(0.05, pt.wheelRadius) : 0.33;
     let reflected = Math.max(0, inertia.wheels ?? 0);
-    if (pt.kind === "gearbox" && state.shiftRemaining <= 0) {
+    // The driver declutches on a hard stop, so the engine stops slowing with the wheels.
+    if (pt.kind === "gearbox" && state.shiftRemaining <= 0 && brakeInput < 0.5) {
       const ratio = (state.reversing ? pt.reverseGear : (pt.gears[state.gearIndex] ?? 1)) * pt.finalDrive;
       reflected += Math.max(0, inertia.engine ?? 0) * ratio * ratio * (pt.efficiency ?? 0.85);
     }
@@ -1605,7 +1634,7 @@ function combine(
 }
 
 function peakAngle(shape: CurveShape): number {
-  return Math.tan(Math.PI / (2 * shape.c)) / shape.b;
+  return shape.peakX / shape.b;
 }
 
 function forwardOf(heading: number): readonly [number, number] {

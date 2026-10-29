@@ -10,6 +10,7 @@ import {
   type VehicleDynamicsStep,
   type VehicleDynamicsTuning,
   type VehicleEffects,
+  type VehicleGearboxTuning,
 } from "./vehicleDynamics";
 import { vehicleTuning } from "./vehicleSpec";
 
@@ -29,24 +30,22 @@ const bare: VehicleDynamicsTuning = {
   brakeForce: 14000,
   steering: { maxAngle: 0.6, rate: 20, returnRate: 20 },
 };
-const bareGearbox: VehicleDynamicsTuning = {
-  ...bare,
-  powertrain: {
-    kind: "gearbox",
-    peakTorque: 300,
-    torqueCurve: { points: [[0, 0.6], [0.5, 1], [1, 0.8]] },
-    idleRpm: 900,
-    redlineRpm: 7000,
-    shiftUpRpm: 6600,
-    shiftDownRpm: 3000,
-    shiftSeconds: 0.1,
-    gears: [3.4, 2.2, 1.6, 1.2, 1],
-    reverseGear: 3.3,
-    finalDrive: 3.9,
-    wheelRadius: 0.31,
-    engineBrakeTorque: 0,
-  },
+const gearbox: VehicleGearboxTuning = {
+  kind: "gearbox",
+  peakTorque: 300,
+  torqueCurve: { points: [[0, 0.6], [0.5, 1], [1, 0.8]] },
+  idleRpm: 900,
+  redlineRpm: 7000,
+  shiftUpRpm: 6600,
+  shiftDownRpm: 3000,
+  shiftSeconds: 0.1,
+  gears: [3.4, 2.2, 1.6, 1.2, 1],
+  reverseGear: 3.3,
+  finalDrive: 3.9,
+  wheelRadius: 0.31,
+  engineBrakeTorque: 0,
 };
+const bareGearbox: VehicleDynamicsTuning = { ...bare, powertrain: gearbox };
 
 const axis = (partial: Partial<AxisInput>): AxisInput => ({ ...NEUTRAL_AXIS, ...partial });
 const on = (effects: VehicleEffects, base: VehicleDynamicsTuning = bare): VehicleDynamicsTuning => withVehicleEffects(base, effects);
@@ -178,6 +177,19 @@ describe("vehicle effects: each is its own term", () => {
     expect(stoppingDistance(on({ abs: { holds: 0.97 } }), 25)).toBeLessThan(stoppingDistance(on({ abs: {} }), 25) * 0.9);
   });
 
+  test("abs trims engine braking too, so a gearbox car with wheelSlide never locks its driven wheels", () => {
+    const engineBraking: VehicleDynamicsTuning = { ...bare, powertrain: { ...gearbox, engineBrakeTorque: 200 } };
+    const locked = (tuning: VehicleDynamicsTuning) => {
+      const car = createVehicleDynamics(tuning);
+      for (let i = 0; i < 1200; i += 1) if (car.tick(DT, axis({ throttle: 1 })).forwardSpeed > 20) break;
+      let lock = false;
+      for (let i = 0; i < 60; i += 1) lock ||= car.tick(DT, axis({ brake: 1 })).wheelLock;
+      return lock;
+    };
+    expect(locked(on({ wheelSlide: {}, abs: { holds: 0.97 } }, engineBraking))).toBe(false);
+    expect(locked(on({ wheelSlide: {} }, engineBraking))).toBe(true);
+  });
+
   test("brakeLag lets the pressure build over its time constant", () => {
     const firstDecel = (tuning: VehicleDynamicsTuning) => -hold(rolling(tuning, 20), { brake: 0.4 }, 2 * DT).longitudinalAccel;
     expect(firstDecel(on({ brakeLag: { seconds: 0.1 } }))).toBeLessThan(firstDecel(bare) * 0.5);
@@ -203,6 +215,33 @@ describe("vehicle effects: each is its own term", () => {
     const plain = toSpeed(bareGearbox);
     expect(toSpeed(on({ rotatingInertia: { engine: 0.15, wheels: 4 } }, bareGearbox))).toBeGreaterThan(plain * 1.1);
     expect(toSpeed(on({ rotatingInertia: { wheels: 4 } }, bareGearbox))).toBeGreaterThan(plain);
+  });
+
+  test("rotatingInertia: a hard stop declutches the engine, but the wheels still have to be slowed", () => {
+    const stop = (tuning: VehicleDynamicsTuning) => {
+      const car = createVehicleDynamics(tuning);
+      for (let i = 0; i < 1200; i += 1) if (car.tick(DT, axis({ throttle: 1 })).forwardSpeed > 20) break;
+      const start = car.pose().position[2];
+      let step = car.tick(DT, axis({ brake: 1 }));
+      for (let i = 0; i < 600 && step.forwardSpeed > 0.3; i += 1) step = car.tick(DT, axis({ brake: 1 }));
+      return step.position[2] - start;
+    };
+    const plain = stop(bareGearbox);
+    expect(stop(on({ rotatingInertia: { engine: 0.5 } }, bareGearbox))).toBeCloseTo(plain, 0);
+    expect(stop(on({ rotatingInertia: { wheels: 8 } }, bareGearbox))).toBeGreaterThan(plain * 1.03);
+  });
+
+  test("corneringStiffness sets the small-slip slope and keeps the peak at peakSlipAngle", () => {
+    const tyre = (corneringStiffness?: number): VehicleDynamicsTuning => ({
+      ...bare,
+      front: corneringStiffness === undefined ? bare.front : { ...bare.front, corneringStiffness },
+    });
+    const slip = (tuning: VehicleDynamicsTuning) => Math.abs(steady(tuning, 15, 0.06).slipAngleRear);
+    // The shape alone gives about 20 per rad here; 10 needs about twice the slip for the same light corner.
+    expect(slip(tyre(10))).toBeGreaterThan(slip(tyre()) * 1.6);
+    expect(slip(tyre(20))).toBeCloseTo(slip(tyre()), 2);
+    const soft = measureHandling(() => createVehicleDynamics(tyre(10))).maxLateralG;
+    expect(soft).toBeCloseTo(measureHandling(() => createVehicleDynamics(tyre())).maxLateralG, 1);
   });
 
   test("tireRelaxation delays the lateral force after a steer step", () => {
