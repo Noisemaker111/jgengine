@@ -21,8 +21,8 @@ export const SYSTEMS: readonly EngineSystem[] = [
   },
   {
     name: "Vehicles",
-    line: "Force-based cars: tire grip, load transfer, gearbox and assists, tuned with physical numbers and retunable mid-drive.",
-    knobs: ["grip", "drift", "assist", "bodyRoll", "topSpeed"],
+    line: "Force-based cars where every effect is its own switch: tire grip, load transfer, drag, differential, ABS and more, tuned with physical numbers and retunable mid-drive.",
+    knobs: ["grip", "drift", "effects", "abs", "topSpeed"],
     ref: "jgengine-world/vehicle-dynamics",
   },
   {

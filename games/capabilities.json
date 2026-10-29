@@ -1418,6 +1418,16 @@
       "intent": "apply capture effectiveness to grant and distribute bonus levels"
     },
     {
+      "id": "car-effect-metrics",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/carEffectProbe",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "measure a car sim one effect at a time — roll, load transfer, pitch, coast-down, launch, yaw gain, response lag, power-on and brake-in-turn"
+    },
+    {
       "id": "career-bank",
       "packages": [
         "@jgengine/core"
@@ -12167,7 +12177,17 @@
       "module": "@jgengine/core/physics/vehicleDynamics",
       "gameFacing": false,
       "probe": null,
-      "intent": "force-based car handling — tires, load transfer, drivetrain, assists — tuned with physical numbers"
+      "intent": "force-based car handling built from separate effects — tyres, load transfer, drivetrain, aero, compliance, aids — each switchable and tuned with physical numbers"
+    },
+    {
+      "id": "vehicle-effects",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/vehicleDynamics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "switch a car's physical effects and aids off, swap or retune them one at a time"
     },
     {
       "id": "vehicle-parts",
@@ -12197,7 +12217,7 @@
       "module": "@jgengine/core/physics/vehicleSpec",
       "gameFacing": false,
       "probe": null,
-      "intent": "describe a car by feel (top speed, accel, grip, turn rate, drift, assists) and get force-based handling tuned from it"
+      "intent": "describe a car by feel (top speed, accel, grip, turn rate, balance, each aid) and get force-based handling built from separate effects"
     },
     {
       "id": "vfx-preset-resolve",
