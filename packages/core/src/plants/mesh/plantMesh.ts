@@ -2,6 +2,7 @@
 import { normalizeToonRamp, type ToonRamp } from "../../material/toonRamp";
 import { hexRgb, icosphere, type NatureMesh, type NatureRgb } from "../../nature/natureMesh";
 import type { LeafShapeParams } from "../species/plantSpecies";
+import { frondPose, frondSpine, isFrondShape, type FrondPose } from "../structure/frondPose";
 import { hashPlantStructure, PLANT_CLUSTER_LEVELS, PLANT_ORGAN, PLANT_REGION, type PlantStructure } from "../structure/plantStructure";
 import { PLANT_LEAF_ATLAS_CELL_COUNT, PLANT_LEAF_ATLAS_CELLS } from "./plantLeafAtlas";
 
@@ -858,6 +859,112 @@ function addOrgans(build: FoliageBuild, lod: number, textured: boolean, reserve:
   }
 }
 
+/** Spine steps of one frond at each level. */
+const FROND_SEGMENTS = [8, 6, 4, 2] as const;
+/** Width of the stalk below a frond's blade, as a share of the blade's width. */
+const FROND_STALK_WIDTH = 0.08;
+
+/**
+ * Palm and fern fronds as arched blades: each frond's spine rises from the stem and bends under its
+ * own weight, and a V-folded ribbon along it carries the atlas leaf cell, which draws the pinnae (or
+ * the fan's folded segments) in its alpha. Fewer spine steps at farther levels, fronds sampled down
+ * only when even two steps overrun the budget.
+ */
+function addFronds(build: FoliageBuild, lod: number, textured: boolean): void {
+  const { structure, writer, style } = build;
+  const { size, count, segment } = structure.leaves;
+  const { start, end, bornYear, radiusEnd } = structure.segments;
+  const rows = size.length;
+  if (rows === 0) return;
+  const fan = structure.leafShape.kind === "fan";
+  const aspect = fan ? 1 : Math.max(0.05, structure.leafShape.aspect);
+  const petiole = Math.max(0, Math.min(0.8, structure.leafShape.petioleFraction));
+  const fold = fan ? 0.18 : 0.4;
+  const across = lod >= 3 ? 2 : 3;
+  const perStep = across === 3 ? 4 : 2;
+  let fronds = 0;
+  for (let row = 0; row < rows; row += 1) fronds += count[row] ?? 1;
+  let steps: number = FROND_SEGMENTS[lod] ?? 2;
+  while (steps > 2 && fronds * steps * perStep > build.budget) steps -= 1;
+  const keep = Math.min(1, (0.97 * build.budget) / Math.max(1, fronds * steps * perStep));
+  const spine = new Float64Array((steps + 1) * 2);
+  const pose: FrondPose = { azimuth: 0, elevation: 0, sag: 0 };
+  const color = new Float64Array(3);
+  const normal = new Float64Array(3);
+  const u0 = cellU(PLANT_LEAF_ATLAS_CELLS.leaf);
+  const uSpan = cellU(1);
+  // The atlas leaf runs from 0.1 to 0.9 of its cell, its stalk just below.
+  const stalkV = 0.1 - Math.min(0.08, 0.8 * Math.max(0.02, petiole * 0.5));
+  for (let row = 0; row < rows; row += 1) {
+    const seg = segment[row] ?? 0;
+    const n = count[row] ?? 1;
+    const rowAge = structure.ageYears - (bornYear[seg] ?? 0);
+    const length = (size[row] ?? 1) * style.leafScale;
+    const bladeWidth = length * (1 - petiole) * aspect;
+    const radius = radiusEnd[seg] ?? 0;
+    for (let k = 0; k < n; k += 1) {
+      if (keep < 1 && hash01(build.seed ^ 0x3f1d, row * 4099 + k) >= keep) continue;
+      if (writer.triangles + steps * perStep > build.budget) return;
+      frondPose(seg, k, n, rowAge, pose);
+      frondSpine(pose, length, steps, spine);
+      const t = (k + 0.5) / n;
+      const ca = Math.cos(pose.azimuth);
+      const sa = Math.sin(pose.azimuth);
+      const bx = (start[seg * 3] ?? 0) + ((end[seg * 3] ?? 0) - (start[seg * 3] ?? 0)) * t + ca * radius;
+      const by = (start[seg * 3 + 1] ?? 0) + ((end[seg * 3 + 1] ?? 0) - (start[seg * 3 + 1] ?? 0)) * t;
+      const bz = (start[seg * 3 + 2] ?? 0) + ((end[seg * 3 + 2] ?? 0) - (start[seg * 3 + 2] ?? 0)) * t + sa * radius;
+      color[0] = build.rowColors[row * 3] ?? 0;
+      color[1] = build.rowColors[row * 3 + 1] ?? 0;
+      color[2] = build.rowColors[row * 3 + 2] ?? 0;
+      grade(color, build.grade, hash01(build.seed + k, row));
+      let previous = -1;
+      for (let i = 0; i <= steps; i += 1) {
+        const h = spine[i * 2] ?? 0;
+        const y = spine[i * 2 + 1] ?? 0;
+        // Tangent in the frond's vertical plane, and the blade's upper face square to it.
+        const j = Math.min(steps, i + 1);
+        const p = Math.max(0, j - 1);
+        const th = (spine[j * 2] ?? 0) - (spine[p * 2] ?? 0);
+        const ty = (spine[j * 2 + 1] ?? 0) - (spine[p * 2 + 1] ?? 0);
+        const tl = Math.max(1e-9, Math.sqrt(th * th + ty * ty));
+        const nh = -ty / tl;
+        const ny = th / tl;
+        normalizeInto(normal, ca * nh, ny + 0.4, sa * nh);
+        const along = i / steps;
+        const blade = along >= petiole;
+        const half = 0.5 * bladeWidth * (blade ? 1 : FROND_STALK_WIDTH);
+        const drop = fold * half;
+        const cx = bx + ca * h;
+        const cz = bz + sa * h;
+        const v = blade ? 0.1 + 0.8 * ((along - petiole) / Math.max(1e-6, 1 - petiole)) : stalkV + (0.1 - stalkV) * (along / Math.max(1e-6, petiole));
+        const uHalf = 0.4 * (blade ? 1 : FROND_STALK_WIDTH);
+        const ex = -sa * half;
+        const ez = ca * half;
+        const dx = ca * nh * drop;
+        const dy = ny * drop;
+        const dz = sa * nh * drop;
+        const first = writer.vertex(cx + ex - dx, by + y - dy, cz + ez - dz, normal[0] ?? 0, normal[1] ?? 1, normal[2] ?? 0, color);
+        if (textured) writer.uv(u0 + uSpan * (0.5 - uHalf), v);
+        if (across === 3) {
+          writer.vertex(cx, by + y, cz, normal[0] ?? 0, normal[1] ?? 1, normal[2] ?? 0, color);
+          if (textured) writer.uv(u0 + uSpan * 0.5, v);
+        }
+        writer.vertex(cx - ex - dx, by + y - dy, cz - ez - dz, normal[0] ?? 0, normal[1] ?? 1, normal[2] ?? 0, color);
+        if (textured) writer.uv(u0 + uSpan * (0.5 + uHalf), v);
+        if (previous >= 0) {
+          for (let c = 0; c < across - 1; c += 1) {
+            const a = previous + c;
+            const b = first + c;
+            writer.triangle(a, a + 1, b + 1);
+            writer.triangle(a, b + 1, b);
+          }
+        }
+        previous = first;
+      }
+    }
+  }
+}
+
 function addFoliage(build: FoliageBuild, lod: number): void {
   if (build.structure.leaves.size.length === 0) return;
   const clumps = build.style.foliage === "clumps";
@@ -918,7 +1025,8 @@ export function buildPlantMesh(input: PlantMeshInput): PlantMesh {
     budget: budget - barkWriter.triangles,
   };
   const reserve = organReserve(structure, lod, foliage.budget);
-  addFoliage({ ...foliage, budget: foliage.budget - reserve }, lod);
+  if (isFrondShape(structure.leafShape)) addFronds({ ...foliage, budget: foliage.budget - reserve }, lod, style.foliage === "leaves");
+  else addFoliage({ ...foliage, budget: foliage.budget - reserve }, lod);
   addOrgans(foliage, lod, style.foliage === "leaves", reserve);
   const bark = barkWriter.build(style.barkGrain && style.shading === "lit" ? "bark" : undefined);
   const leaves = leafWriter.build();

@@ -1440,11 +1440,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createReflexWalker` (function) · `import { createReflexWalker } from "@jgengine/core/movement/reference/reflexWalker"`
 
-## nature-generator — seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
+## nature-generator — seeded rocks, pebbles and driftwood with editor variants and instanced scatter
 
 - `addBlob` (function) · `import { addBlob } from "@jgengine/core/world"`
 - `addCone` (function) · `import { addCone } from "@jgengine/core/world"`
-- `addFrond` (function) · `import { addFrond } from "@jgengine/core/world"`
 - `addStone` (function) · `import { addStone } from "@jgengine/core/world"`
 - `addTube` (function) · `import { addTube } from "@jgengine/core/world"`
 - `isNatureMesh` (function) · `import { isNatureMesh } from "@jgengine/core/world"`
@@ -1668,6 +1667,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `PlantStyle` (interface) · `import { PlantStyle } from "@jgengine/core/plants/mesh/plantMesh"`
 - `bakePlantLeafAtlas` (function) · `import { bakePlantLeafAtlas } from "@jgengine/core/plants/mesh/plantLeafAtlas"`
 - `buildPlantMesh` (function) · `import { buildPlantMesh } from "@jgengine/core/plants/mesh/plantMesh"`
+- `isFrondShape` (function) · `import { isFrondShape } from "@jgengine/core/plants/structure/frondPose"`
 - `isPlantMesh` (function) · `import { isPlantMesh } from "@jgengine/core/plants/mesh/plantMesh"`
 - `plantLeafAtlas` (function) · `import { plantLeafAtlas } from "@jgengine/core/plants/mesh/plantLeafAtlas"`
 - `plantLeafAtlasKey` (function) · `import { plantLeafAtlasKey } from "@jgengine/core/plants/mesh/plantLeafAtlas"`
@@ -1706,6 +1706,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `crownWidthBandM` (function) · `import { crownWidthBandM } from "@jgengine/core/plants/species/speciesReference"`
 - `forestGrownCrownWidthM` (function) · `import { forestGrownCrownWidthM } from "@jgengine/core/plants/validation/crownAllometry"`
 - `growthCurveAt` (function) · `import { growthCurveAt } from "@jgengine/core/plants/species/speciesReference"`
+- `habitHeightAt20M` (function) · `import { habitHeightAt20M } from "@jgengine/core/plants/species/habitReference"`
+- `habitHeightCeilingM` (function) · `import { habitHeightCeilingM } from "@jgengine/core/plants/species/habitReference"`
 - `histogramDistance` (function) · `import { histogramDistance } from "@jgengine/core/plants/validation/plantSilhouette"`
 - `openGrownCrownWidthM` (function) · `import { openGrownCrownWidthM } from "@jgengine/core/plants/validation/crownAllometry"`
 - `plantSilhouettes` (function) · `import { plantSilhouettes } from "@jgengine/core/plants/validation/plantSilhouette"`

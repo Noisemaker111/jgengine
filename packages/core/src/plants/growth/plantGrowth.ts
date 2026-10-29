@@ -1,6 +1,7 @@
 // @skill jgengine-world
 import { hashString, randomSeedFrom, stepRandomSeed, type RandomSeed } from "../../random/rng";
 import type { PlantSpecies } from "../species/plantSpecies";
+import { frondCount, frondLengthShare, frondPose, frondSpine, isFrondShape, type FrondPose } from "../structure/frondPose";
 import { buildPlantStructure, type PlantStructure } from "../structure/plantStructure";
 import { applySag, createSagScratch } from "./biomechanics";
 import { createShootCandidates, solveShootScale } from "./carbonBalance";
@@ -98,6 +99,11 @@ export interface PlantGrowthStats {
 const CELL_M = 0.5;
 const BREAST_HEIGHT_M = 1.3;
 const SEEDLING_LENGTH_M = 0.04;
+/** Fronds of a node read for light; its leaf area is spread over up to FROND_LIGHT_FRONDS fronds. */
+const FROND_LIGHT_SAMPLES = 6;
+const FROND_LIGHT_FRONDS = 48;
+/** Points along each frond its leaf area is spread over. */
+const FROND_SPINE_POINTS = 3;
 /** Lean of each further basal stem of a multi-stemmed seedling from vertical, radians. */
 const BASAL_STEM_LEAN = (20 * Math.PI) / 180;
 const MERGE_COS = 0.985;
@@ -170,9 +176,54 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   });
   const g = species.growth;
   const c = species.carbon;
-  const leafAreaPerNode = g.lateralBudsPerNode > 0
-    ? species.leaf.leavesPerNode * 0.55 * (species.leaf.sizeCm / 100) * (species.leaf.sizeCm / 100)
-    : 0;
+  const fullLeafArea = species.leaf.leavesPerNode * 0.55 * (species.leaf.sizeCm / 100) * (species.leaf.sizeCm / 100);
+  // A palm's or fern's fronds lengthen through its establishment phase; every other leaf is full size.
+  const leafAreaIn = (year: number): number => fullLeafArea * frondLengthShare(g, year) ** 2;
+  let leafAreaPerNode = leafAreaIn(0);
+  const frondShoots = isFrondShape(species.leaf.shape);
+  // A frond spreads its leaf area along its whole length, so its shade and light are sampled there.
+  const frondCells = new Int32Array(frondShoots ? nodeCap * FROND_LIGHT_SAMPLES : 0);
+  const frondPoseScratch: FrondPose = { azimuth: 0, elevation: 0, sag: 0 };
+  const frondSpineScratch = new Float64Array((FROND_SPINE_POINTS + 1) * 2);
+
+  function depositFronds(i: number, x: number, y: number, z: number, foliage: number): void {
+    const length = (species.leaf.sizeCm / 100) * frondLengthShare(g, state.year);
+    const count = frondCount(foliage, length);
+    const drawn = count < FROND_LIGHT_FRONDS ? count : FROND_LIGHT_FRONDS;
+    const share = foliage / (drawn * FROND_SPINE_POINTS);
+    const rowAge = state.year - (state.born[i] ?? 0);
+    const every = Math.max(1, Math.floor(drawn / FROND_LIGHT_SAMPLES));
+    let sampled = 0;
+    for (let f = 0; f < drawn; f += 1) {
+      const k = Math.floor(((f + 0.5) * count) / drawn);
+      frondPose(i, k, count, rowAge, frondPoseScratch);
+      frondSpine(frondPoseScratch, length, FROND_SPINE_POINTS, frondSpineScratch);
+      const ca = plantCos(frondPoseScratch.azimuth);
+      const sa = plantSin(frondPoseScratch.azimuth);
+      for (let p = 1; p <= FROND_SPINE_POINTS; p += 1) {
+        const h = frondSpineScratch[p * 2] ?? 0;
+        const cell = field.deposit(x + ca * h, y + (frondSpineScratch[p * 2 + 1] ?? 0), z + sa * h, share);
+        // Each sampled frond is read for light at its middle.
+        if (p === 2 && f % every === 0 && sampled < FROND_LIGHT_SAMPLES) {
+          frondCells[i * FROND_LIGHT_SAMPLES + sampled] = cell;
+          sampled += 1;
+        }
+      }
+    }
+    if (sampled < FROND_LIGHT_SAMPLES) frondCells[i * FROND_LIGHT_SAMPLES + sampled] = -2;
+  }
+
+  function frondLight(i: number, sky: number, extinction: number): number {
+    let sum = 0;
+    let samples = 0;
+    for (let s = 0; s < FROND_LIGHT_SAMPLES; s += 1) {
+      const cell = frondCells[i * FROND_LIGHT_SAMPLES + s] ?? -2;
+      if (cell === -2) break;
+      sum += field.lightAtCell(cell, sky, extinction);
+      samples += 1;
+    }
+    return samples > 0 ? sum / samples : 0;
+  }
   const shootArea = PLANT_PI * species.wood.shootRadiusM * species.wood.shootRadiusM;
   const divergence = (species.architecture.divergence * PLANT_PI) / 180;
   const branchAngle = (g.branchAngle * PLANT_PI) / 180;
@@ -291,6 +342,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
 
   function germinate(): void {
     state = createGrowthState(nodeCap, budCap);
+    syncLeafArea();
     let cursor = streamFor(0x7fffffff, 0);
     const [spin, next] = stepRandomSeed(cursor);
     cursor = next;
@@ -618,7 +670,8 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         const my = 0.5 * ((pi >= 0 ? (end[pi * 3 + 1] ?? 0) : 0) + (end[i * 3 + 1] ?? 0));
         const mx = 0.5 * ((pi >= 0 ? (end[pi * 3] ?? 0) : 0) + (end[i * 3] ?? 0));
         const mz = 0.5 * ((pi >= 0 ? (end[pi * 3 + 2] ?? 0) : 0) + (end[i * 3 + 2] ?? 0));
-        midCell[i] = field.deposit(mx, my, mz, foliage);
+        if (frondShoots) depositFronds(i, mx, my, mz, foliage);
+        else midCell[i] = field.deposit(mx, my, mz, foliage);
         if (my < lowest) lowest = my;
       }
       const y = end[i * 3 + 1] ?? 0;
@@ -636,7 +689,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       const nodeFlags = flags[i] ?? 0;
       if ((nodeFlags & NODE_DEAD) !== 0) continue;
       if ((leaves[i] ?? 0) > 0) {
-        const light = field.lightAtCell(midCell[i] ?? -1, sky, extinction);
+        const light = frondShoots ? frondLight(i, sky, extinction) : field.lightAtCell(midCell[i] ?? -1, sky, extinction);
         state.light[i] = light;
         if (light < g.budLightThreshold) {
           // Short shoots starve in deep shade and never leaf again.
@@ -701,8 +754,15 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   }
 
   /** Carbon of one new metamer itself: its leaves, their fine roots and its wood with coarse roots. */
-  const metamerCostKg = (leafAreaPerNode / species.leaf.sla) * (1 + c.rootPerFoliage) +
-    shootArea * g.internodeMax * species.wood.densityKgM3 * (1 + c.coarseRootShare);
+  const metamerWoodKg = shootArea * g.internodeMax * species.wood.densityKgM3 * (1 + c.coarseRootShare);
+  let metamerCostKg = (leafAreaPerNode / species.leaf.sla) * (1 + c.rootPerFoliage) + metamerWoodKg;
+
+  /** Leaf area and metamer cost of the fronds grown this year. */
+  function syncLeafArea(): void {
+    if (g.frondEstablishmentYears === undefined) return;
+    leafAreaPerNode = leafAreaIn(state.year);
+    metamerCostKg = (leafAreaPerNode / species.leaf.sla) * (1 + c.rootPerFoliage) + metamerWoodKg;
+  }
 
   function collectCandidates(): void {
     let count = 0;
@@ -1035,6 +1095,8 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         continue;
       }
       if (isDead(i)) continue;
+      // Each year's palm or fern shoot keeps its own fronds, so they age and fall as one cohort.
+      if (frondShoots) continue;
       if ((childCount[i] ?? 0) === 0) {
         foldTwig(i);
         continue;
@@ -1134,6 +1196,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
 
   function stepYear(): void {
     state.year += 1;
+    syncLeafArea();
     const n = state.nodeCount;
     if (state.alive === 0) {
       for (let i = 0; i < n; i += 1) state.deadAge[i] = Math.min(255, (state.deadAge[i] ?? 0) + 1);
@@ -1301,6 +1364,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         new Uint8Array(next[name].buffer).set(bytes);
       }
       state = next;
+      syncLeafArea();
       environment = copyEnvironment(snapshot.env);
       weightsByOrder.length = 0;
       season = growingSeason(species, environment);

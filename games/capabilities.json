@@ -7512,7 +7512,7 @@
       "module": "@jgengine/core/nature/natureMesh",
       "gameFacing": false,
       "probe": null,
-      "intent": "seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter"
+      "intent": "seeded rocks, pebbles and driftwood with editor variants and instanced scatter"
     },
     {
       "id": "nav-crowd",

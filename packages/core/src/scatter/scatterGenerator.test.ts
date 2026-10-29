@@ -15,7 +15,7 @@ const placement = (id: string, item: string): ScatterInstance => ({ id, regionId
 
 describe("scatter generator items", () => {
   test("tell generator mappings from model mappings", () => {
-    expect(isScatterGeneratorItem({ generator: "nature.palm" })).toBe(true);
+    expect(isScatterGeneratorItem({ generator: "nature.rock" })).toBe(true);
     expect(isScatterGeneratorItem({ url: "/models/palm.glb" })).toBe(false);
     expect(isScatterGeneratorItem("asset:palm")).toBe(false);
   });

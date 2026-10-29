@@ -55,8 +55,6 @@ export const objectModels: Record<string, ModelConfig> = {};
 
 /** A palette item grown by an engine nature generator: a few seeded variants of one species. */
 const grown = (generator: string, preset: string, params: Record<string, unknown> = {}, variants = 6): ScatterGeneratorItem => ({ generator, preset, params, variants });
-/** Undergrowth stands by the thousand, so it grows at the generators' lighter leaf budget. */
-const undergrowth = (generator: string, preset: string, params: Record<string, unknown> = {}, variants = 6): ScatterGeneratorItem => ({ ...grown(generator, preset, params, variants), detail: 0.5 });
 
 /** The island's tree look: textured leaf cards over the grown wood, lit, a touch more saturated than life. */
 const TREE_LOOK = { foliage: "leaves", shading: "lit", saturation: 1.15, brightness: 1.05, barkGrain: true };
@@ -76,8 +74,8 @@ const tree = (species: string, age: number, params: Record<string, unknown> = {}
 });
 
 /**
- * A shrub grown by the plant simulation: a species at an age. Bushes stand by the thousand, so they
- * share a few seeded variants at the lighter leaf budget.
+ * Undergrowth grown by the plant simulation (a shrub, fern or young palm): a species at an age. It
+ * stands by the thousand, so it shares a few seeded variants at the lighter leaf budget.
  */
 const shrub = (species: string, age: number, params: Record<string, unknown> = {}, variants = 6): ScatterGeneratorItem => ({
   generator: "plant.grown",
@@ -88,13 +86,13 @@ const shrub = (species: string, age: number, params: Record<string, unknown> = {
 
 /**
  * Scatter palette item (the island's forests, rocks and bushes in editor.scene.json) → what it draws.
- * Trees are grown by the engine's plant simulation (sugar maple and white pine; dead trees are
- * maple snags left standing 8 years) and so are the berry bushes (highbush blueberry); palms, ferns,
- * rocks and pebbles grow from its nature generators,
+ * Every plant is grown by the engine's plant simulation: sugar maple and white pine (dead trees are
+ * maple snags left standing 8 years), highbush blueberry bushes, coconut and cabbage palms, Hawaiian
+ * tree ferns, sword fern and bracken. Rocks, pebbles and driftwood grow from its nature generators,
  * so no two neighbours match; grass, flowers and ore rocks stay catalog models.
  */
 export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> = {
-  palm: grown("nature.palm", "coconut", { height: 9, frondLength: 3.6 }),
+  palm: tree("cocos-nucifera", 9),
   tree: tree("acer-saccharum", 25),
   tree2: tree("acer-saccharum", 34, { leafTint: "#d2e6c0" }),
   tree3: tree("acer-saccharum", 28, { leafTint: "#eef8c4" }),
@@ -107,22 +105,22 @@ export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> =
   boulder2: grown("nature.rock", "slab", { size: 4.2, flatness: 0.55, moss: 0.4, smooth: true, crag: 0.8 }),
   bush: shrub("vaccinium-corymbosum", 4),
   berrybush: shrub("vaccinium-corymbosum", 4, { leafScale: 3.2 }),
-  fern: undergrowth("nature.fern", "fern", { frondLength: 1.4 }),
+  fern: shrub("polystichum-munitum", 8),
   pebble: grown("nature.rock", "pebbles", { size: 0.42, color: "#b9b2a4", smooth: true }, 4),
   pebble2: grown("nature.rock", "pebbles", { size: 0.48, count: 4, color: "#cfc7b6", smooth: true }, 4),
   // The south beach and the jungle wall behind it.
-  cycad: undergrowth("nature.palm", "cycad", { height: 1.6 }, 4),
-  fanpalm: grown("nature.palm", "fan", { height: 4.5 }, 4),
-  treefern: grown("nature.palm", "cycad", { height: 4.2, trunkRadius: 0.18, curve: 0.15, fronds: 14, frondLength: 2.4, frondWidth: 0.55, droop: 0.55, leaflets: 14, frondColor: "#3d7a33", tipColor: "#6f9c3c" }, 4),
+  cycad: shrub("cocos-nucifera", 3, {}, 4),
+  fanpalm: shrub("sabal-palmetto", 20, {}, 4),
+  treefern: shrub("cibotium-glaucum", 25, {}, 4),
   // Weathered stone standing out on the sand and in the surf, pale and barely mossed.
   seaboulder: grown("nature.rock", "boulder", { size: 6.5, stretch: 1.15, flatness: 0.95, facets: 6, erosion: 0.6, sink: 0.25, moss: 0.08, color: "#a39b8d", colorVariance: 0.16, smooth: true, crag: 0.6 }),
   searock: grown("nature.rock", "boulder", { size: 2.6, stretch: 1.3, flatness: 0.7, facets: 7, erosion: 0.5, sink: 0.2, moss: 0.05, color: "#9d9586", smooth: true, crag: 0.5 }, 4),
   driftwood: grown("nature.driftwood", "driftwood", {}, 4),
   log: grown("nature.driftwood", "fallen-log", {}, 3),
-  bracken: undergrowth("nature.fern", "bracken", {}, 4),
+  bracken: shrub("pteridium-aquilinum", 6, {}, 4),
   shrub: shrub("vaccinium-corymbosum", 6, { leafTint: "#d8ecc8" }, 4),
-  jungletree: grown("nature.palm", "coconut", { height: 15, frondLength: 4.2, fruit: 0, frondColor: "#3d7430" }),
-  youngtree: grown("nature.palm", "fan", { height: 6, frondColor: "#3f7a30" }, 4),
+  jungletree: tree("cocos-nucifera", 16, { leafTint: "#cfe0b8" }),
+  youngtree: shrub("sabal-palmetto", 28, {}, 4),
   grass: nature("Grass_Common_Tall", 0.7),
   flowers: nature("Flower_4_Group", 0.6),
   tallgrass: nature("Grass_Wispy_Tall", 1),

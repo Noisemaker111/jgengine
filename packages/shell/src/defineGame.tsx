@@ -38,7 +38,7 @@ type PresentationFields<TProbe extends ProbeReadings> = Omit<PlayableGame<TProbe
   GameUI?: ComponentType;
   /** Tunes how the auto-mounted `AuthoredScene` places catalog-id markers into the object store. Default `true`; `excludeKinds` replaces the resolver's mob/boss exclusions, so include those when adding game-owned spawn kinds. Pass `false` when the game places all content itself. */
   scenePlacement?: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions);
-  /** What the auto-mounted scene's scatter palette items draw, keyed by palette item id: a GLB (`ModelConfig`, or a string id resolved through the game's asset catalog) or a generator (`{ generator: "nature.palm", preset, params, variants }`, see `ScatterGeneratorItem`). Unmatched items keep the built-in proxy meshes. */
+  /** What the auto-mounted scene's scatter palette items draw, keyed by palette item id: a GLB (`ModelConfig`, or a string id resolved through the game's asset catalog) or a generator (`{ generator: "plant.grown", params, variants }`, see `ScatterGeneratorItem`). Unmatched items keep the built-in proxy meshes. */
   sceneScatterModels?: Record<string, string | ModelConfig | ScatterGeneratorItem>;
   /** Most scatter instances the auto-mounted scene draws; past it the foliage thins evenly. Default 20000 — raise it for a whole-island world. */
   sceneScatterBudget?: number;

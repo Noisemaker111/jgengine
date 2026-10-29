@@ -52,6 +52,11 @@ import { LARIX_LARICINA } from "./larixLaricina";
 import { LARIX_OCCIDENTALIS } from "./larixOccidentalis";
 import { ROBINIA_PSEUDOACACIA } from "./robiniaPseudoacacia";
 import { VACCINIUM_CORYMBOSUM } from "./vacciniumCorymbosum";
+import { COCOS_NUCIFERA } from "./cocosNucifera";
+import { SABAL_PALMETTO } from "./sabalPalmetto";
+import { CIBOTIUM_GLAUCUM } from "./cibotiumGlaucum";
+import { PTERIDIUM_AQUILINUM } from "./pteridiumAquilinum";
+import { POLYSTICHUM_MUNITUM } from "./polystichumMunitum";
 
 /**
  * Every species record the engine ships, registered with the grown-plant generator. Written by
@@ -112,4 +117,9 @@ export const PLANT_LIBRARY: readonly PlantSpecies[] = [
   LARIX_OCCIDENTALIS,
   ROBINIA_PSEUDOACACIA,
   VACCINIUM_CORYMBOSUM,
+  COCOS_NUCIFERA,
+  SABAL_PALMETTO,
+  CIBOTIUM_GLAUCUM,
+  PTERIDIUM_AQUILINUM,
+  POLYSTICHUM_MUNITUM,
 ];

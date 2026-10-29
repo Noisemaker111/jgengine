@@ -49,10 +49,24 @@ function leafShade(shape: LeafShapeParams, u: number, v: number): number {
       return du * du + dv * dv <= 1 ? 0.95 : -1;
     }
     case "frond": {
-      if (Math.abs(u) < 0.02) return 0.7;
-      const envelope = 0.5 * Math.sin(Math.PI * Math.min(1, v * 1.05));
-      const pinna = Math.abs(Math.sin(v * Math.PI * 9));
-      return Math.abs(u) <= envelope * (0.35 + 0.65 * pinna) ? 0.95 : -1;
+      if (Math.abs(u) < 0.03) return 0.7;
+      // Pinnae angle forward from the rachis; the blade is widest at about a third of its length.
+      const envelope = 0.5 * Math.sin(Math.PI * Math.min(1, v ** 0.75 * 1.02));
+      const pairs = Math.max(6, Math.min(28, shape.lobes));
+      const pinna = Math.abs(Math.sin((v - Math.abs(u) * 0.6) * Math.PI * pairs));
+      return Math.abs(u) <= envelope && pinna > shape.lobeDepth * 0.7 ? 0.85 + 0.15 * (1 - Math.abs(u) / 0.5) : -1;
+    }
+    case "fan": {
+      // A palmate fan: folded segments radiate from the petiole tip over a half disc, split at the rim.
+      const r = Math.sqrt((u / 0.5) * (u / 0.5) + v * v);
+      if (v < 0) return Math.abs(u) < 0.03 ? 0.6 : -1;
+      if (r > 1) return -1;
+      const angle = Math.atan2(u / 0.5, v);
+      const segments = Math.max(6, Math.min(40, shape.lobes));
+      const t = ((angle + Math.PI / 2) / Math.PI) * segments;
+      const offCentre = Math.abs(t - Math.floor(t) - 0.5) * 2;
+      if (r > 1 - shape.lobeDepth * 0.5 * (1 - offCentre) - 0.02) return offCentre > 0.85 ? -1 : r > 1 - shape.lobeDepth * 0.5 ? -1 : 0.9;
+      return Math.floor(t) % 2 === 0 ? 0.95 : 0.78;
     }
     case "lobed": {
       if (shape.lobes > 5) {

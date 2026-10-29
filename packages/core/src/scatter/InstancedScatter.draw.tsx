@@ -436,7 +436,7 @@ export interface InstancedScatterProps {
   /**
    * Per-species override: return a real catalog `ModelConfig` for an item to GPU-instance the actual
    * GLB, or a {@link ScatterGeneratorItem} to grow it from a generator's baked variants. `null` (or
-   * omitting the prop) grows an item named after a registered mesh generator (`"nature.palm"`) from
+   * omitting the prop) grows an item named after a registered mesh generator (`"nature.rock"`) from
    * that generator, and draws anything else as the stylized `buildScatterProxy`.
    */
   resolveItem?: (item: string) => ModelConfig | ScatterGeneratorItem | null;

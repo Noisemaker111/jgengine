@@ -3176,12 +3176,8 @@
 
 - `DRIFTWOOD_GENERATOR` (const): const DRIFTWOOD_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 0.5; readonly max: 8… — Driftwood and fallen logs.
 - `DRIFTWOOD_SCHEMA` (const): const DRIFTWOOD_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 0.5; readonly max: 8; readonly step: 0.05; … — Driftwood params: a weathered log lying on the ground.
-- `FERN_GENERATOR` (const): const FERN_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "fronds"; readonly label: "fronds"; readonly group: "fronds"; readonly min: 3; readonly max: 22; rea… — Ferns: fern, low frond clump, bracken.
-- `FERN_SCHEMA` (const): const FERN_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "fronds"; readonly label: "fronds"; readonly group: "fronds"; readonly min: 3; readonly max: 22; readonly step: 1; readonly… — Fern params: frond rosette, arch and colours.
 - `NATURE_GENERATORS` (const): const NATURE_GENERATORS: readonly GeneratorDefinition[] — Every nature generator, in editor order, as the untyped registry view.
 - `NATURE_OUTPUT` (const): const NATURE_OUTPUT: "nature-mesh" — The generator output family every nature generator returns: a {@link NatureMesh}.
-- `PALM_GENERATOR` (const): const PALM_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 0.4; readonly max: 18; re… — Palms and cycads: coconut palm, cycad, fan palm.
-- `PALM_SCHEMA` (const): const PALM_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 0.4; readonly max: 18; readonly step: 0.1; reado… — Palm and cycad params: curved banded trunk, frond crown, fruit.
 - `ROCK_GENERATOR` (const): const ROCK_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "size"; readonly label: "size"; readonly group: "shape"; readonly min: 0.05; readonly max: 10; reado… — Rocks: rock, boulder, pebbles, slab.
 - `ROCK_SCHEMA` (const): const ROCK_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "size"; readonly label: "size"; readonly group: "shape"; readonly min: 0.05; readonly max: 10; readonly step: 0.01; readonl… — Rock params: size, shape, shading, cuts, erosion, crags, moss and clustering.
 
@@ -3189,7 +3185,6 @@
 
 - `BlobOptions` (interface): interface BlobOptions — Options for {@link addBlob}.
 - `ConeOptions` (interface): interface ConeOptions — Options for {@link addCone}.
-- `FrondOptions` (interface): interface FrondOptions — Options for {@link addFrond}.
 - `NatureMesh` (interface): interface NatureMesh — Indexed triangle mesh with per-vertex sRGB colours, in metres with the base at y = 0.
 - `NatureMeshPart` (interface): interface NatureMeshPart — One run of a nature mesh's index buffer drawn with one surface (none: plain vertex colour).
 - `NatureRgb` (type): type NatureRgb = readonly [number, number, number] — An sRGB colour, 0..1 per channel.
@@ -3199,7 +3194,6 @@
 - `TubeOptions` (interface): interface TubeOptions — Options for {@link addTube}.
 - `addBlob` (function): function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void — A lumpy ellipsoid: a leaf cluster, a bush clump, a coconut.
 - `addCone` (function): function addCone(builder: NatureMeshBuilder, options: ConeOptions): void — A closed, drooping cone: one conifer tier.
-- `addFrond` (function): function addFrond(builder: NatureMeshBuilder, options: FrondOptions): void — A folded, drooping leaf blade: palm and cycad fronds, fern fronds, broad bush leaves. Both faces are emitted (the shared material is single-sided) with normals leaning up, so the underside of a raised frond reads as lit foliage rather than a black sliver.
 - `addStone` (function): function addStone(builder: NatureMeshBuilder, options: StoneOptions): void — One stone: an icosphere displaced by noise, sliced by `facets` random planes (sharp edges), with `erosion` blending the cuts back toward smooth, moss on the faces that look up, and a flat buried base. `crag` adds ridged cracks and stacked ledges; vertices are shared when `smooth` is set, else each face keeps its own and the stone shades faceted like a low-poly rock.
 - `addTube` (function): function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], radii: readonly number[], options: TubeOptions): void — A tapered tube along `path` with radius `radii[i]` at each point: trunks, branches, logs. Rings follow the path's tangent with a rotation-minimising frame so a bent trunk does not twist.
 - `isNatureMesh` (function): function isNatureMesh(value: unknown): value is NatureMesh — True when a generator output is a {@link NatureMesh}.
@@ -4388,6 +4382,14 @@
 
 - `CARYA_OVATA` (const): const CARYA_OVATA: PlantSpecies — Shagbark hickory. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1452 FIA site trees on site index 54 ft and 50 Tallo crowns. Written by `bun run jgengine plants write carya-ovata`; edit the importer's traits or refit, not this file.
 
+## @jgengine/core/plants/species/data/cibotiumGlaucum
+
+- `CIBOTIUM_GLAUCUM` (const): const CIBOTIUM_GLAUCUM: PlantSpecies — Hawaiian tree fern. A fern of one unbranched stem under a crown of fronds. Traits from USDA PLANTS and NRCS plant guides; growth and carbon fitted to PLANTS heights (3.66 m at 20 years, 2.44 m mature). Written by `bun run jgengine plants write cibotium-glaucum`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/cocosNucifera
+
+- `COCOS_NUCIFERA` (const): const COCOS_NUCIFERA: PlantSpecies — Coconut palm. A palm of one unbranched stem under a crown of fronds. Traits from USDA PLANTS and NRCS plant guides; growth and carbon fitted to PLANTS heights (18.29 m at 20 years, 18.29 m mature). Written by `bun run jgengine plants write cocos-nucifera`; edit the importer's traits or refit, not this file.
+
 ## @jgengine/core/plants/species/data/fagusGrandifolia
 
 - `FAGUS_GRANDIFOLIA` (const): const FAGUS_GRANDIFOLIA: PlantSpecies — American beech. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 535 FIA site trees on site index 60 ft and 723 Tallo crowns. Written by `bun run jgengine plants write fagus-grandifolia`; edit the importer's traits or refit, not this file.
@@ -4484,6 +4486,10 @@
 
 - `PLANT_LIBRARY` (const): const PLANT_LIBRARY: readonly PlantSpecies[] — Every species record the engine ships, registered with the grown-plant generator. Written by `bun run jgengine plants write`.
 
+## @jgengine/core/plants/species/data/polystichumMunitum
+
+- `POLYSTICHUM_MUNITUM` (const): const POLYSTICHUM_MUNITUM: PlantSpecies — Western sword fern. A fern of one unbranched stem under a crown of fronds. Traits from USDA PLANTS and NRCS plant guides; growth and carbon fitted to PLANTS heights (1.07 m mature). Written by `bun run jgengine plants write polystichum-munitum`; edit the importer's traits or refit, not this file.
+
 ## @jgengine/core/plants/species/data/populusDeltoides
 
 - `POPULUS_DELTOIDES` (const): const POPULUS_DELTOIDES: PlantSpecies — Eastern cottonwood. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 418 FIA site trees on site index 70 ft and 18 Tallo crowns. Written by `bun run jgengine plants write populus-deltoides`; edit the importer's traits or refit, not this file.
@@ -4503,6 +4509,10 @@
 ## @jgengine/core/plants/species/data/pseudotsugaMenziesii
 
 - `PSEUDOTSUGA_MENZIESII` (const): const PSEUDOTSUGA_MENZIESII: PlantSpecies — Douglas-fir. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 33633 FIA site trees on site index 109 ft and 4251 Tallo crowns. Written by `bun run jgengine plants write pseudotsuga-menziesii`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/pteridiumAquilinum
+
+- `PTERIDIUM_AQUILINUM` (const): const PTERIDIUM_AQUILINUM: PlantSpecies — Bracken. A fern of one unbranched stem under a crown of fronds. Traits from USDA PLANTS and NRCS plant guides; growth and carbon fitted to PLANTS heights (2.01 m mature). Written by `bun run jgengine plants write pteridium-aquilinum`; edit the importer's traits or refit, not this file.
 
 ## @jgengine/core/plants/species/data/quercusAlba
 
@@ -4540,6 +4550,10 @@
 
 - `ROBINIA_PSEUDOACACIA` (const): const ROBINIA_PSEUDOACACIA: PlantSpecies — Black locust. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 381 FIA site trees on site index 71 ft and 110 Tallo crowns. Written by `bun run jgengine plants write robinia-pseudoacacia`; edit the importer's traits or refit, not this file.
 
+## @jgengine/core/plants/species/data/sabalPalmetto
+
+- `SABAL_PALMETTO` (const): const SABAL_PALMETTO: PlantSpecies — Cabbage palm. A palm of one unbranched stem under a crown of fan leaves. Traits from USDA PLANTS and NRCS plant guides; growth and carbon fitted to PLANTS heights (4.57 m at 20 years, 27.43 m mature). Written by `bun run jgengine plants write sabal-palmetto`; edit the importer's traits or refit, not this file.
+
 ## @jgengine/core/plants/species/data/thujaOccidentalis
 
 - `THUJA_OCCIDENTALIS` (const): const THUJA_OCCIDENTALIS: PlantSpecies — Northern white-cedar. Columnar: a narrow crown of near-even width from base to top. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4882 FIA site trees on site index 29 ft and 78 Tallo crowns. Written by `bun run jgengine plants write thuja-occidentalis`; edit the importer's traits or refit, not this file.
@@ -4574,6 +4588,8 @@
 - `HabitReference` (interface): interface HabitReference — What USDA PLANTS says a shrub, palm, fern or herb grows into, for species no forest inventory measures: imported by `bun run jgengine plants import` and checked by the species library test. Heights are open-grown on a good site, as PLANTS characteristics describe them.
 - `SHRUB_STEMS` (const): const SHRUB_STEMS: { readonly min: 3; readonly max: 30; } — Most stems a multi-stemmed shrub should keep alive at 20 years, and fewest.
 - `basalStemCount` (function): function basalStemCount(segments: { parent: Int32Array; order: Uint8Array; region: Uint8Array }, deadwoodRegion: number): number — Live basal stems of a grown structure: the order-0 segments rising straight from the collar.
+- `habitHeightAt20M` (function): function habitHeightAt20M(reference: HabitReference): number — Height a habit species should reach by 20 years: PLANTS' 20-year height, or its mature height for a fern or herb that is full grown within a few years.
+- `habitHeightCeilingM` (function): function habitHeightCeilingM(reference: HabitReference): number — Most a habit species should stand at 40 years before the 15% allowance: its mature height, or its 20-year height where PLANTS lists that as the taller of the two.
 
 ## @jgengine/core/plants/species/habitReferenceTable
 
@@ -4583,7 +4599,7 @@
 
 - `BarkKind` (type): type BarkKind = "smooth" | "furrowed" | "plated" | "peeling" | "fibrous" | "scaly" — Bark surface kind a style reads to pick its bark material.
 - `HalleOldemanModel` (type): type HalleOldemanModel = "rauh" | "troll" | "corner" | "leeuwenberg" | "attims" | "massart" | "scarrone" | "roux" | "tomlinson" — Hallé–Oldeman architectural model of a genus (Hallé, Oldeman & Tomlinson 1978).
-- `LeafShapeParams` (interface): interface LeafShapeParams — A leaf outline as numbers, so a style can draw it at any detail.
+- `LeafShapeParams` (interface): interface LeafShapeParams — A leaf outline as numbers, so a style can draw it at any detail. A frond (pinnate palm or fern leaf) or fan (palmate palm leaf) is one large leaf per metamer drawn as an arched blade: `lobes` is its pinna pairs or fan segments, `lobeDepth` how deep they split, and for a frond `aspect` is the blade's width over its length.
 - `PlantSpecies` (interface): interface PlantSpecies — One species' biology as plain data: architecture, carbon economy, wood, leaves and limits. Every value is a measured trait or a fitted parameter, never a look; styles live elsewhere.
 - `SeasonalColor` (interface): interface SeasonalColor — Leaf colours across the season as hex strings.
 - `plantSpeciesById` (function): function plantSpeciesById(id: string): PlantSpecies | undefined — A registered species, or undefined.
@@ -4622,6 +4638,11 @@
 - `StandTreeState` (interface): interface StandTreeState — One tree's state in a {@link StandSnapshot}.
 - `createStand` (function): function createStand(options: StandOptions): Stand — Create a forest plot. Trees advance along their species' dominant-tree curves by `site × lightResponse(light)` years per year; mortality follows suppression and age; seeds fall from trees past first flowering into 5 m seedling-bank cells.
 - `standTreeGrowth` (function): function standTreeGrowth(options: Pick<StandOptions, "species" | "seed" | "site">, tree: StandTree, treesPerHa: number): StandTreeGrowth — The full-detail growth inputs of one stand tree (Tier B): its species, its own seed, its age, and a site whose open sky is the light it got over its life and whose spacing is its neighbours'.
+
+## @jgengine/core/plants/structure/frondPose
+
+- `FrondPose` (interface): interface FrondPose — Where frond `k` of a row points: azimuth round the stem, rise above horizontal and sag to its tip.
+- `isFrondShape` (function): function isFrondShape(shape: LeafShapeParams): boolean — Whether a leaf shape is a frond (pinnate palm and fern leaves) or a fan (palmate palm leaves): one large leaf per metamer, drawn as an arched blade rather than a card.
 
 ## @jgengine/core/plants/structure/plantStructure
 
@@ -6341,8 +6362,6 @@
 - `EntityStore` (interface): interface EntityStore<TMeta = unknown> — Entity state, pose writes, keyed behavior notifications and snapshot/hydration under stable instance IDs.
 - `EnvironmentField` (interface): interface EnvironmentField { sample(x: number, z: number, time: number, y?: number): EnvironmentSample; temperature(x: number, z: number, time: number, y?: number): number; wetness(x: number, z: number, time: number): number; lightExposure(x: number, z: number, time:… — ⚠ undocumented · used by `createEnvironmentField`: A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time.
 - `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature { kind: "environment"; terrain?: TerrainEnvironmentDescriptor; islands?: readonly TerrainIslandDescriptor[]; sky?: SkyEnvironmentDescriptor; weather?: readonly WeatherEnvironmentDescriptor[]; vegetation?: readonly VegetationEnvironmentDescr… — ⚠ undocumented · used by `environment`: Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
-- `FERN_GENERATOR` (const): const FERN_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "fronds"; readonly label: "fronds"; readonly group: "fronds"; readonly min: 3; readonly max: 22; rea… — Ferns: fern, low frond clump, bracken.
-- `FERN_SCHEMA` (const): const FERN_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "fronds"; readonly label: "fronds"; readonly group: "fronds"; readonly min: 3; readonly max: 22; readonly step: 1; readonly… — Fern params: frond rosette, arch and colours.
 - `FactionDef` (interface): interface FactionDef { id: string; relations?: Readonly<Record<string, FactionRelation>>; towardSelf?: FactionRelation; towardOthers?: FactionRelation } — ⚠ undocumented
 - `FallbackPolicy` (type): type FallbackPolicy<P extends SamplePoint = SamplePoint> = | "none" | "last-candidate" | { readonly point: P } — What to return when the attempt budget is exhausted. `"none"` yields no point (honest failure); `"last-candidate"` returns the final rejected draw (post-projection); `{ point }` returns a caller fixed fallback (a hand-placed safe spot). Explicit, so a caller never mistakes a fallback for a hit.
 - `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
@@ -6366,7 +6385,6 @@
 - `FreeFlightTuning` (interface): interface FreeFlightTuning — Data-first tuning for one free-flight profile.
 - `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void; snapshot(): FreezeMonitorState; restore(next: FreezeMonitorState): void } — ⚠ undocumented
 - `FreezeViolation` (interface): interface FreezeViolation { id: string; speed: number; movedSeconds: number } — ⚠ undocumented
-- `FrondOptions` (interface): interface FrondOptions — Options for {@link addFrond}.
 - `Frustum` (interface): interface Frustum { readonly planes: Float64Array; readonly corners: Float64Array; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number } — ⚠ undocumented
 - `FrustumProjection` (interface): interface FrustumProjection { inView: boolean; distance: number; screenX: number; screenY: number } — ⚠ undocumented
 - `FrustumSample` (interface): interface FrustumSample { id: string; inView: boolean; distance: number; screenX: number; screenY: number; framing: number; dwellSeconds: number } — ⚠ undocumented · used by `frustumSampleDisplayEqual` (@jgengine/core/sensor/frustumSampleEqual): True when two frustum samples would draw the same, so a HUD can skip a re-render.
@@ -6528,8 +6546,6 @@
 - `OrderTargeting` (interface): interface OrderTargeting — Narrow targeting adapter for engagement verbs. `acquire` returns the id of a hostile within `radius` (nearest, or whatever policy the game injects), and `positionOf` locates a known target. Actual damage/effects stay game-side.
 - `OrderTickReport` (interface): interface OrderTickReport<TPayload = unknown> — What one `tick` did this frame, for tests and game reactions (play a bark on activation, flash on completion). Bounded per tick.
 - `OrderVec3` (type): type OrderVec3 = readonly [number, number, number] — Composable entity orders: a serializable command queue with lifecycle, preemption, and pluggable order kinds (#912). Player- or AI-issued intent ("move here", "attack that", "patrol this route") becomes reusable data instead of a hard-coded RTS verb kit. The queue owns issue -> activate -> tick -> complete/cancel lifecycle and deterministic preemption policy; each order KIND owns what "running" means, composed over narrow world adapters. Engine code never branches on `move`, `attack`, or any game verb -- kinds are looked up by string in a registry, so a game adds a verb by registering data.
-- `PALM_GENERATOR` (const): const PALM_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 0.4; readonly max: 18; re… — Palms and cycads: coconut palm, cycad, fan palm.
-- `PALM_SCHEMA` (const): const PALM_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 0.4; readonly max: 18; readonly step: 0.1; reado… — Palm and cycad params: curved banded trunk, frond crown, fruit.
 - `PARTS_OUTPUT` (const): const PARTS_OUTPUT: "parts" — The output family of a generator that returns {@link GeneratedAsset} parts.
 - `POLE_LINE_SCHEMA` (const): const POLE_LINE_SCHEMA: ParamSchema — The pole-line parameter schema — drives the inspector and `meta` parse via the studio seam.
 - `POSE_HITBOX` (const): const POSE_HITBOX: Record<MovementPose, PoseHitbox> — ⚠ undocumented
@@ -6851,7 +6867,6 @@
 - `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
 - `addBlob` (function): function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void — A lumpy ellipsoid: a leaf cluster, a bush clump, a coconut.
 - `addCone` (function): function addCone(builder: NatureMeshBuilder, options: ConeOptions): void — A closed, drooping cone: one conifer tier.
-- `addFrond` (function): function addFrond(builder: NatureMeshBuilder, options: FrondOptions): void — A folded, drooping leaf blade: palm and cycad fronds, fern fronds, broad bush leaves. Both faces are emitted (the shared material is single-sided) with normals leaning up, so the underside of a raised frond reads as lit foliage rather than a black sliver.
 - `addStone` (function): function addStone(builder: NatureMeshBuilder, options: StoneOptions): void — One stone: an icosphere displaced by noise, sliced by `facets` random planes (sharp edges), with `erosion` blending the cuts back toward smooth, moss on the faces that look up, and a flat buried base. `crag` adds ridged cracks and stacked ledges; vertices are shared when `smooth` is set, else each face keeps its own and the stone shades faceted like a low-poly rock.
 - `addTube` (function): function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], radii: readonly number[], options: TubeOptions): void — A tapered tube along `path` with radius `radii[i]` at each point: trunks, branches, logs. Rings follow the path's tangent with a rotation-minimising frame so a bent trunk does not twist.
 - `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a patrol, wander, pursuit or decision graph behavior one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. Instances that are paused or disabled through {@link behaviorControl} retain their state and are skipped. The shell/host call this each frame; a game never does.

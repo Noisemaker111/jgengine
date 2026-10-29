@@ -41,7 +41,7 @@ export interface NatureMeshPart {
 
 /**
  * True when a generator output is a {@link NatureMesh}.
- * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter
  */
 export function isNatureMesh(value: unknown): value is NatureMesh {
   return typeof value === "object" && value !== null && "positions" in value && value.positions instanceof Float32Array && "indices" in value && value.indices instanceof Uint32Array;
@@ -256,7 +256,7 @@ export interface TubeOptions {
 /**
  * A tapered tube along `path` with radius `radii[i]` at each point: trunks, branches, logs. Rings
  * follow the path's tangent with a rotation-minimising frame so a bent trunk does not twist.
- * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter
  */
 export function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], radii: readonly number[], options: TubeOptions): void {
   if (path.length < 2) return;
@@ -373,7 +373,7 @@ export interface BlobOptions {
 
 /**
  * A lumpy ellipsoid: a leaf cluster, a bush clump, a coconut.
- * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter
  */
 export function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void {
   const { vertices, faces } = icosphere(options.level);
@@ -406,7 +406,7 @@ export interface ConeOptions {
 
 /**
  * A closed, drooping cone: one conifer tier.
- * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter
  */
 export function addCone(builder: NatureMeshBuilder, options: ConeOptions): void {
   const sides = Math.max(4, Math.floor(options.sides));
@@ -427,81 +427,6 @@ export function addCone(builder: NatureMeshBuilder, options: ConeOptions): void 
     const b = pick(rim, (s + 1) % rim.length);
     builder.triangle(apex, b, a);
     builder.triangle(under, a, b);
-  }
-}
-
-/** Options for {@link addFrond}. */
-export interface FrondOptions {
-  base: NatureVec;
-  /** Unit direction in the XZ plane the frond reaches toward. */
-  heading: number;
-  /** Start pitch in radians above horizontal. */
-  pitch: number;
-  length: number;
-  width: number;
-  /** How far the tip curls down, 0..1.5. */
-  droop: number;
-  segments: number;
-  /** Leaflet teeth per side; 0 for a smooth blade. */
-  leaflets: number;
-  /** Fold of the blade along its rib, 0 flat to 1 a deep V. */
-  fold: number;
-  color: NatureRgb;
-  tipColor: NatureRgb;
-}
-
-/**
- * A folded, drooping leaf blade: palm and cycad fronds, fern fronds, broad bush leaves. Both faces
- * are emitted (the shared material is single-sided) with normals leaning up, so the underside of a
- * raised frond reads as lit foliage rather than a black sliver.
- * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
- */
-export function addFrond(builder: NatureMeshBuilder, options: FrondOptions): void {
-  const segments = Math.max(2, Math.floor(options.segments));
-  const dirX = Math.cos(options.heading);
-  const dirZ = Math.sin(options.heading);
-  const sideX = -dirZ;
-  const sideZ = dirX;
-  let x = options.base[0];
-  let y = options.base[1];
-  let z = options.base[2];
-  const step = options.length / segments;
-  let previous: [number, number, number, number, number, number] | null = null;
-  for (let i = 0; i <= segments; i += 1) {
-    const t = i / segments;
-    const pitch = options.pitch - options.droop * t * t * 2.2;
-    if (i > 0) {
-      x += dirX * Math.cos(pitch) * step;
-      z += dirZ * Math.cos(pitch) * step;
-      y += Math.sin(pitch) * step;
-    }
-    const profile = Math.sin(Math.PI * Math.min(1, 0.12 + t * 0.95));
-    const tooth = options.leaflets > 0 && i % 2 === 1 ? 0.45 : 1;
-    const half = (options.width / 2) * profile * tooth;
-    const lift = half * options.fold * 0.6;
-    const color = mixRgb(options.color, options.tipColor, t);
-    const ribAt: NatureVec = [x, y, z];
-    const leftAt: NatureVec = [x + sideX * half, y - lift, z + sideZ * half];
-    const rightAt: NatureVec = [x - sideX * half, y - lift, z - sideZ * half];
-    const rib = builder.vertex(ribAt, shade(color, 1.05), 0.45);
-    const left = builder.vertex(leftAt, shade(color, 0.92), 0.45);
-    const right = builder.vertex(rightAt, shade(color, 0.92), 0.45);
-    const under = shade(color, 0.8);
-    const ribB = builder.vertex(ribAt, under, 0.9);
-    const leftB = builder.vertex(leftAt, under, 0.9);
-    const rightB = builder.vertex(rightAt, under, 0.9);
-    if (previous !== null) {
-      const [pr, pl, pp, prB, plB, ppB] = previous;
-      builder.triangle(pr, left, rib);
-      builder.triangle(pr, pl, left);
-      builder.triangle(pr, rib, right);
-      builder.triangle(pr, right, pp);
-      builder.triangle(prB, ribB, leftB);
-      builder.triangle(prB, leftB, plB);
-      builder.triangle(prB, rightB, ribB);
-      builder.triangle(prB, ppB, rightB);
-    }
-    previous = [rib, left, right, ribB, leftB, rightB];
   }
 }
 
@@ -541,7 +466,7 @@ function ridged(seed: number, x: number, y: number, z: number): number {
  * `erosion` blending the cuts back toward smooth, moss on the faces that look up, and a flat buried
  * base. `crag` adds ridged cracks and stacked ledges; vertices are shared when `smooth` is set, else
  * each face keeps its own and the stone shades faceted like a low-poly rock.
- * @capability nature-generator seeded palms, ferns, rocks and pebbles with editor variants and instanced scatter
+ * @capability nature-generator seeded rocks, pebbles and driftwood with editor variants and instanced scatter
  */
 export function addStone(builder: NatureMeshBuilder, options: StoneOptions): void {
   const { vertices, faces } = icosphere(options.level);

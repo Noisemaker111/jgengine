@@ -4,6 +4,24 @@ import { NODE_DEAD, type GrowthState } from "./growthState";
 import { plantPow } from "./plantMath";
 
 /**
+ * Whether a species has a vascular cambium. Palms and ferns have none (Tomlinson 1990): each stem
+ * section reaches its width just below the crown and never widens after.
+ * @internal
+ */
+export function hasCambium(species: PlantSpecies): boolean {
+  return species.habit !== "palm" && species.habit !== "fern";
+}
+
+/**
+ * Whether node `i` can still widen: always with a cambium, and for a palm or fern only while the
+ * fronds of its own shoot are alive.
+ * @internal
+ */
+export function canWiden(state: GrowthState, species: PlantSpecies, cambium: boolean, i: number): boolean {
+  return cambium || state.year - (state.born[i] ?? 0) <= species.growth.spurYears + 1;
+}
+
+/**
  * Pipe-model thickening (Shinozaki 1964; LIGNUM; Mäkelä 1997). Each internode needs sapwood area in
  * proportion to the leaf area above it. A share of old sapwood turns to heartwood each year, and any
  * sapwood above the requirement does too, so the cross-section never shrinks. At a branch join the
@@ -26,6 +44,7 @@ export function pipeDemand(
   const { sapwoodPerFoliage, sapwoodTurnover, pipeExponent } = species.carbon;
   const woodKgPerM3 = species.wood.densityKgM3 * (1 + species.carbon.coarseRootShare);
   const { flags, sapArea, heartArea, length, parent, foliage } = state;
+  const cambium = hasCambium(species);
   const toChild = pipeExponent / 2;
   const toParent = 2 / pipeExponent;
   let carbon = 0;
@@ -39,9 +58,9 @@ export function pipeDemand(
       foliageAbove[i] = above;
       const p = parent[i] ?? -1;
       if (p >= 0) foliageAbove[p] = (foliageAbove[p] ?? 0) + above;
-      if (!dead) pressler += above * (length[i] ?? 0) * woodKgPerM3;
+      if (!dead && canWiden(state, species, cambium, i)) pressler += above * (length[i] ?? 0) * woodKgPerM3;
     }
-    if (dead) continue;
+    if (dead || !canWiden(state, species, cambium, i)) continue;
     const sap = sapArea[i] ?? 0;
     const retained = sap * (1 - sapwoodTurnover);
     const required = sapwoodPerFoliage * (foliageAbove[i] ?? 0);
@@ -78,6 +97,7 @@ export function pipeDemand(
  * @internal
  */
 export function thickenNode(state: GrowthState, species: PlantSpecies, i: number, foliageAbove: number, area: number): void {
+  if (!canWiden(state, species, hasCambium(species), i)) return;
   const { sapwoodPerFoliage, sapwoodTurnover } = species.carbon;
   const sap = state.sapArea[i] ?? 0;
   let heart = (state.heartArea[i] ?? 0) + sap * sapwoodTurnover;
@@ -133,6 +153,8 @@ class PipeCostWalk implements PipeCost {
   private readonly sapwoodPerFoliage: number;
   private readonly sapwoodTurnover: number;
   private readonly woodKgPerM3: number;
+  private readonly species: PlantSpecies;
+  private readonly cambium: boolean;
   private n = 0;
   private base = 0;
   private linear = 0;
@@ -148,6 +170,8 @@ class PipeCostWalk implements PipeCost {
     this.sapwoodPerFoliage = species.carbon.sapwoodPerFoliage;
     this.sapwoodTurnover = species.carbon.sapwoodTurnover;
     this.woodKgPerM3 = species.wood.densityKgM3 * (1 + species.carbon.coarseRootShare);
+    this.species = species;
+    this.cambium = hasCambium(species);
   }
 
   prepare(state: GrowthState, foliageAbove: Float64Array, nodes: Int32Array, count: number): void {
@@ -159,7 +183,7 @@ class PipeCostWalk implements PipeCost {
     let n = 0;
     let base = 0;
     for (let i = 0; i < state.nodeCount; i += 1) {
-      const dead = ((state.flags[i] ?? 0) & NODE_DEAD) !== 0;
+      const dead = ((state.flags[i] ?? 0) & NODE_DEAD) !== 0 || !canWiden(state, this.species, this.cambium, i);
       const need = dead ? Number.NEGATIVE_INFINITY : sapwoodPerFoliage * (foliageAbove[i] ?? 0) - (state.sapArea[i] ?? 0) * (1 - sapwoodTurnover);
       const wood = dead ? 0 : (state.length[i] ?? 0) * woodKgPerM3;
       if ((slot[i] ?? -1) < 0) {

@@ -3,7 +3,7 @@ import { OPEN_TEMPERATE_SITE } from "../../growth/plantEnvironment";
 import { createPlantGrowth } from "../../growth/plantGrowth";
 import { PLANT_REGION } from "../../structure/plantStructure";
 import { PLANT_LIBRARY } from "./plantLibrary";
-import { basalStemCount, SHRUB_STEMS } from "../habitReference";
+import { basalStemCount, habitHeightAt20M, habitHeightCeilingM, SHRUB_STEMS } from "../habitReference";
 import { HABIT_REFERENCE } from "../habitReferenceTable";
 import { validatePlantSpecies, type PlantSpecies } from "../plantSpecies";
 import { crownWidthBandM, REFERENCE_STAND, standDbhAtCm, standHeightAtM } from "../speciesReference";
@@ -41,8 +41,8 @@ function checkHabit(species: PlantSpecies): void {
       plant.step(age - plant.ageYears());
       const structure = plant.structure();
       const { heightM, crownRadiusM } = structure.stats;
-      if (age === 20) expect(Math.abs(heightM / reference.heightAt20M - 1), `20 y height ${heightM.toFixed(2)} m`).toBeLessThan(0.15);
-      else expect(heightM / reference.matureHeightM, `40 y height ${heightM.toFixed(2)} m`).toBeLessThan(1.15);
+      if (age === 20) expect(Math.abs(heightM / habitHeightAt20M(reference) - 1), `20 y height ${heightM.toFixed(2)} m`).toBeLessThan(0.15);
+      else expect(heightM / habitHeightCeilingM(reference), `40 y height ${heightM.toFixed(2)} m`).toBeLessThan(1.15);
       expect(crownRadiusM, `${age} y crown radius`).toBeLessThanOrEqual(species.limits.maxCrownRadiusM * 1.1);
       if (reference.multiStem) {
         const stems = basalStemCount(structure.segments, PLANT_REGION.deadwood);
