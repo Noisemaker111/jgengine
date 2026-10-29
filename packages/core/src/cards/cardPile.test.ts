@@ -5,11 +5,11 @@ import {
   createCardPileState,
   draw,
   moveCards,
-  pileRng,
-  shuffleWithRng,
   shuffleZone,
   zoneOf,
 } from "@jgengine/core/cards/cardPile";
+import { shuffleWithRng } from "@jgengine/core/random/pick";
+import { seededRng } from "@jgengine/core/random/rng";
 
 const deckIds = Array.from({ length: 10 }, (_, i) => `c${i}`);
 
@@ -38,11 +38,9 @@ describe("shuffle determinism", () => {
     expect([...shuffled.zones.deck].sort()).toEqual([...deckIds].sort());
   });
 
-  test("numeric and string seeds both drive the same rng contract", () => {
-    const r1 = pileRng(7);
-    const r2 = pileRng(7);
-    expect(r1()).toBe(r2());
-    expect(shuffleWithRng(deckIds, pileRng(1))).toEqual(shuffleWithRng(deckIds, pileRng(1)));
+  test("a numeric seed shuffles exactly like the shared seeded stream", () => {
+    expect(shuffleZone(fresh(), "deck", 7).zones.deck).toEqual(shuffleWithRng(deckIds, seededRng(7)));
+    expect(shuffleZone(fresh(), "deck", 7).zones.deck).not.toEqual(shuffleZone(fresh(), "deck", 8).zones.deck);
   });
 });
 
@@ -70,7 +68,8 @@ describe("draw / discard / exhaust transitions", () => {
     expect(result.drawn).toHaveLength(3);
     expect(result.reshuffled).toBe(true);
     expect(result.state.zones.discard).toHaveLength(0);
-    expect([...result.state.zones.hand].sort()).toEqual(["a", "x", "y"].sort());
+    expect([...result.state.zones.hand].sort()).toEqual(["a", "y", "z"]);
+    expect(result.state.zones.deck).toEqual(["x"]);
   });
 
   test("draw stops when deck empty and no reshuffle source", () => {

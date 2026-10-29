@@ -1,4 +1,5 @@
 import type { WorldBounds } from "./features";
+import { hashString } from "../random/rng";
 import {
   fractalNoise,
   withNormal,
@@ -104,7 +105,7 @@ export function createRegionField<T = unknown>(config: RegionFieldConfig<T>): Re
   const warp = config.warp ?? 40;
 
   const heightConfigs = regions.map((region) => ({
-    seed: seed ^ hashId(region.id),
+    seed: seed ^ hashString(region.id),
     frequency: region.height.frequency,
     octaves: region.height.octaves ?? 4,
     lacunarity: region.height.lacunarity ?? 2,
@@ -231,15 +232,6 @@ function addScaled(into: [number, number, number], from: readonly [number, numbe
   into[0] += from[0] * weight;
   into[1] += from[1] * weight;
   into[2] += from[2] * weight;
-}
-
-function hashId(id: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < id.length; index += 1) {
-    hash ^= id.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash | 0;
 }
 
 export function isRegionField(field: TerrainField): field is RegionField {

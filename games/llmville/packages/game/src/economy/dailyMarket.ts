@@ -1,3 +1,5 @@
+import { hashString } from "@jgengine/core/random/rng";
+
 export const DAILY_MODIFIER_TYPES = [
   "reasoning_demand_spike",
   "batch_bounty",
@@ -86,14 +88,6 @@ const DAILY_MODIFIER_POOL: readonly DailyMarketModifier[] = [
   },
 ] as const;
 
-function hashSeed(seed: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash = Math.imul(hash ^ seed.charCodeAt(index), 16777619);
-  }
-  return hash >>> 0;
-}
-
 export function formatDailyMarketDateKey(date: Date): string {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
@@ -104,6 +98,6 @@ export function formatDailyMarketDateKey(date: Date): string {
 /** Same modifier for every player on a given UTC calendar day. */
 export function getDailyModifier(date: Date = new Date()): DailyMarketModifier {
   const seed = formatDailyMarketDateKey(date);
-  const index = hashSeed(seed) % DAILY_MODIFIER_POOL.length;
+  const index = hashString(seed) % DAILY_MODIFIER_POOL.length;
   return DAILY_MODIFIER_POOL[index] ?? DAILY_MODIFIER_POOL[0]!;
 }

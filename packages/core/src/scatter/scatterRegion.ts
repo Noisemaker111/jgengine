@@ -6,6 +6,7 @@ import {
   type Vec2,
 } from "../world/geometry";
 import { pickWeighted } from "../random/pick";
+import { hashUnit } from "../random/rng";
 import { distanceToRing, pointInPolygon, polygonArea, ringBounds } from "../world/polygon";
 import { scatter } from "./scatter";
 import { SCATTER_INSTANCE_BUDGET } from "./scatterCoverage";
@@ -122,15 +123,6 @@ export interface ScatterTerrain {
   sampleNormal(x: number, z: number): TerrainNormal;
 }
 
-function hash(text: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) / 4294967296;
-}
-
 /**
  * Deterministic placements for one scatter region: scatter its polygon footprint at `density`
  * items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements
@@ -167,12 +159,12 @@ export function resolveScatterRegion(
     if (hasMasks) {
       const influence = masksInfluence(point.x, point.z, masks);
       if (influence >= 1) continue;
-      if (influence > 0 && hash(`${region.id}:avoid:${point.index}`) < influence) continue;
+      if (influence > 0 && hashUnit(`${region.id}:avoid:${point.index}`) < influence) continue;
     }
 
     if (rules.edgeFalloff > 0) {
       const edge = distanceToRing(region.polygon, p[0], p[1]);
-      if (edge < rules.edgeFalloff && hash(`${region.id}:edge:${point.index}`) > edge / rules.edgeFalloff) continue;
+      if (edge < rules.edgeFalloff && hashUnit(`${region.id}:edge:${point.index}`) > edge / rules.edgeFalloff) continue;
     }
 
     let y = rules.verticalOffset;
@@ -192,9 +184,9 @@ export function resolveScatterRegion(
       y = height + rules.verticalOffset;
     }
 
-    const scaleRoll = hash(`${region.id}:${rules.seed}:scale:${point.index}`);
-    const yawRoll = hash(`${region.id}:${rules.seed}:yaw:${point.index}`);
-    const itemRoll = hash(`${region.id}:${rules.seed}:item:${point.index}`);
+    const scaleRoll = hashUnit(`${region.id}:${rules.seed}:scale:${point.index}`);
+    const yawRoll = hashUnit(`${region.id}:${rules.seed}:yaw:${point.index}`);
+    const itemRoll = hashUnit(`${region.id}:${rules.seed}:item:${point.index}`);
     instances.push({
       id: `${region.id}/${point.index}`,
       regionId: region.id,

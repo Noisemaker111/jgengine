@@ -1,3 +1,4 @@
+import { hashString } from "@jgengine/core/random/rng";
 import type { NeedId } from "./needs/needs";
 import type { MemberState } from "./session/types";
 
@@ -48,18 +49,12 @@ export const TRAITS: Record<TraitId, TraitDef> = {
   thrifty: { id: "thrifty", label: "Thrifty", blurb: "Can haggle a trader down; spots spoilage early." },
 };
 
-function hash(text: string): number {
-  let a = 2166136261;
-  for (let i = 0; i < text.length; i++) a = Math.imul(a ^ text.charCodeAt(i), 16777619) >>> 0;
-  return a;
-}
-
 /** Two compatible traits for a being, fixed by its seed. */
 export function rollTraits(seed: string): TraitId[] {
-  const first = TRAIT_IDS[hash(`${seed}:t1`) % TRAIT_IDS.length]!;
+  const first = TRAIT_IDS[hashString(`${seed}:t1`) % TRAIT_IDS.length]!;
   const blocked = new Set<TraitId>([first, ...(TRAITS[first].excludes ?? [])]);
   const rest = TRAIT_IDS.filter((id) => !blocked.has(id) && !(TRAITS[id].excludes ?? []).includes(first));
-  return [first, rest[hash(`${seed}:t2`) % rest.length]!];
+  return [first, rest[hashString(`${seed}:t2`) % rest.length]!];
 }
 
 export function traitsOf(member: Pick<MemberState, "traits">): readonly TraitDef[] {

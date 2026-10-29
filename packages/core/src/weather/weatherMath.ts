@@ -1,3 +1,5 @@
+import { seededRng } from "../random/rng";
+
 /** Drop budget a rain field allocates before `density` scales it down. */
 export const DEFAULT_RAIN_COUNT = 2000;
 /** Flake budget a snow field allocates before `density` scales it down. */
@@ -37,11 +39,7 @@ export function createWeatherSeedAttributes(maxCount: number, seed: number): Wea
   const count = Math.max(0, Math.floor(maxCount));
   const spawn = new Float32Array(count * 3);
   const drift = new Float32Array(count);
-  let state = seed >>> 0;
-  const next = () => {
-    state = (state * 1664525 + 1013904223) >>> 0;
-    return state / 4294967296;
-  };
+  const next = seededRng(seed);
   for (let index = 0; index < count; index += 1) {
     spawn[index * 3] = next();
     spawn[index * 3 + 1] = next();

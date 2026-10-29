@@ -232,8 +232,6 @@
 - `draw` (function): function draw(state: CardPileState, n: number, options: { from: ZoneName; to: ZoneName; handLimit?: number; reshuffleFrom?: ZoneName; seed?: string | number; }): DrawResult — ⚠ undocumented
 - `moveCards` (function): function moveCards(state: CardPileState, ids: readonly string[], from: ZoneName, to: ZoneName, position: "top" | "bottom" = "top"): PileResult — ⚠ undocumented
 - `peek` (function): function peek(state: CardPileState, zone: ZoneName, n = 1): readonly string[] — ⚠ undocumented
-- `pileRng` (function): function pileRng(seed: string | number): () => number — ⚠ undocumented
-- `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — ⚠ undocumented
 - `shuffleZone` (function): function shuffleZone(state: CardPileState, zone: ZoneName, seed: string | number): CardPileState — ⚠ undocumented
 - `zoneOf` (function): function zoneOf(state: CardPileState, cardId: string): ZoneName | null — ⚠ undocumented
 
@@ -1914,7 +1912,6 @@
 - `peek` (function): function peek(state: CardPileState, zone: ZoneName, n = 1): readonly string[] — ⚠ undocumented
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
 - `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible.
-- `pileRng` (function): function pileRng(seed: string | number): () => number — ⚠ undocumented
 - `placementOf` (function): function placementOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RacePlacement | null — One racer's {@link RacePlacement} within a finish order, or `null` if they never crossed the line.
 - `playControlsActive` (function): function playControlsActive(ctx: GameContext): boolean — ⚠ undocumented
 - `priorityOrdering` (function): function priorityOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Priority-first ordering (higher priority sooner), FIFO within equal priority.
@@ -1963,7 +1960,7 @@
 - `setTouchControlsMode` (function): function setTouchControlsMode(ctx: GameContext, mode: string | null): void — Activate a named touch control mode, or `null` to return to the base config.
 - `setValue` (function): function setValue(record: Record<string, number>, key: string, value: number, bounds?: NumericBounds): number — Set `key` to `value` (clamped to `bounds`), writing the record in place. Returns the stored value.
 - `settleExpedition` (function): function settleExpedition<TCtx>(config: ExpeditionConfig<TCtx>, state: ExpeditionState, nowMs: number): ExpeditionState — Replay due event ticks using the existing stepped catch-up primitive. Order is loot → hazard → ordered supplies → death → capacity recall. Unprocessed ticks retain their frontier; returning never rolls or takes damage. Auto-recall uses the triggering tick's time, including offline arrival in the same call.
-- `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — ⚠ undocumented
+- `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — A shuffled copy of `values` (Fisher–Yates) drawn from `rng`; the same seeded stream always gives the same order.
 - `slotAccepts` (function): function slotAccepts(slot: MountSlotDef, category: string): boolean — Attach parts into an item's mount slots and resolve the combined stats.
 - `splitSegments` (function): function splitSegments(splits: readonly number[], start = 0): number[] — Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`): `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
 - `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
@@ -2870,6 +2867,7 @@
 
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
 - `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible.
+- `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — A shuffled copy of `values` (Fisher–Yates) drawn from `rng`; the same seeded stream always gives the same order.
 
 ## @jgengine/core/random/resolveRng
 
@@ -2881,6 +2879,8 @@
 - `RandomSeed` (type): type RandomSeed = number & { readonly __randomSeed: unique symbol } — Opaque, serializable PRNG cursor for state machines that must persist their own random stream (a spawn director, a heat/pursuit meter) instead of holding a closure — the state round-trips through save/load and multiplayer sync, so it can't carry a function. Never read or do arithmetic on the raw value directly; thread it through {@link stepRandomSeed} only.
 - `SeededRng` (interface): interface SeededRng — A {@link seededRng} stream: callable like any `() => number`, with its cursor readable and restorable for snapshots and replay.
 - `hashString` (function): function hashString(text: string): number — Deterministic 32-bit FNV-1a hash of a string → unsigned int. Same text, same number, on every platform — the stable seed behind per-id jitter, spread offsets, and content-addressed variation.
+- `hashUnit` (function): function hashUnit(text: string): number — A stable roll in `[0, 1)` for one key — one deterministic draw with no stream to keep. The hash is avalanched first, so keys that differ only in a trailing index (`lot:3`, `lot:4`) roll independently.
+- `hashWords` (function): function hashWords(words: ArrayLike<number>, from: number = FNV_OFFSET): number — FNV-1a over a sequence of integers (bytes or 32-bit words) → unsigned int. Pass a previous result as `from` to keep hashing across several arrays. The digest behind replay and simulation snapshots.
 - `randomSeedFrom` (function): function randomSeedFrom(seed: number): RandomSeed — Wraps an already-integer seed (e.g. a `config.seed`) as a {@link RandomSeed} — no hashing.
 - `restoreRng` (function): function restoreRng(rng: () => number, cursor: number): void — Restore a seeded stream's cursor; a no-op for generators that carry no state.
 - `rngStateOf` (function): function rngStateOf(rng: () => number): number | null — The cursor of a seeded stream, or `null` for a generator that carries no state (an injected closure, `Math.random`).

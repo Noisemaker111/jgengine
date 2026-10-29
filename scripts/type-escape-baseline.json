@@ -1731,7 +1731,6 @@
   "packages/core/src/ui/kit/uiKits.view.test.tsx": {"cast":5,"nonNull":2},
   "packages/core/src/ui/kit/uiKitSignal.view.tsx": {"cast":1},
   "packages/core/src/ui/kit/uiKitsPreview.view.tsx": {"cast":1},
-  "packages/core/src/ui/loadingTips.ts": {"nonNull":2},
   "packages/core/src/ui/panelModel.ts": {"nonNull":1},
   "packages/core/src/ui/panels.view.tsx": {"cast":1},
   "packages/core/src/ui/scrollRail.view.test.ts": {"nonNull":1,"cast":1},

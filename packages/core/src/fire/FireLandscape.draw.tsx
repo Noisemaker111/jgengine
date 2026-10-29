@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import type { FireLandscape } from "./fireLandscape";
+import { seededRng } from "../random/rng";
 
 /** Props for {@link FireLandscapeView}. */
 export interface FireLandscapeViewProps {
@@ -207,7 +208,7 @@ export function FireLandscapeView({ fire, heightAt, wind = [0, 0], maxFlames = 2
     [smoke],
   );
 
-  const cursor = useRef({ row: 0, lastTime: Number.NaN, seed: 0x9e3779b9, spawnDebt: 0 });
+  const cursor = useRef({ row: 0, lastTime: Number.NaN, random: seededRng("fire-smoke"), spawnDebt: 0 });
 
   useFrame((state, delta) => {
     const c = cursor.current;
@@ -259,10 +260,7 @@ export function FireLandscapeView({ fire, heightAt, wind = [0, 0], maxFlames = 2
     if (time !== undefined) time.value = state.clock.elapsedTime;
 
     const dt = Math.min(0.1, delta);
-    const next = (): number => {
-      c.seed = (Math.imul(c.seed, 1664525) + 1013904223) >>> 0;
-      return c.seed / 4294967296;
-    };
+    const next = c.random;
     let alive = 0;
     for (let p = 0; p < smoke.alive; p++) {
       const age = (smoke.age[p] ?? 0) + dt;

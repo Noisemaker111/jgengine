@@ -1,4 +1,5 @@
 import { clamp } from "../math/scalar";
+import { hashString } from "../random/rng";
 
 export type MassingComposition =
   | "bar"
@@ -72,9 +73,6 @@ export type MassingBody = {
   branch?: boolean;
   crown?: boolean;
 };
-
-export const hashMassingSeed = (text: string): number =>
-  [...text].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
 
 export const massingBase = (spec: Pick<MassingSpec, "pilotis" | "height">, cap = 0.28): number =>
   Math.min(Math.max(0, spec.pilotis), Math.max(0, spec.height) * cap);
@@ -152,7 +150,7 @@ export function composeMassing(b: MassingSpec): MassingBody[] {
     });
 
   if (composition === "capsule") {
-    const seed = hashMassingSeed(b.seed);
+    const seed = hashString(b.seed);
     const density = (b.moduleDensity - 1) / 4;
     const desiredRows = Math.round(clamp(5 + Math.min(5, floorCount * 0.18) + density * 5, 5, 14));
     const lanes = 1 + Number(b.moduleDensity >= 3 && b.depth > 18) + Number(b.moduleDensity === 5 && b.depth > 38);
@@ -339,7 +337,7 @@ export function composeMassing(b: MassingSpec): MassingBody[] {
   }
 
   if (composition === "megastructure") {
-    const seed = hashMassingSeed(b.seed);
+    const seed = hashString(b.seed);
     const bays = Math.round(clamp(Math.round(b.width / Math.max(10, b.baySpacing * 2.25)) + b.moduleDensity - 2, 3, 10));
     const bayW = b.width / bays;
     const levels = Math.round(clamp(tierCount + b.moduleDensity - 2, 3, 9));
@@ -425,7 +423,7 @@ export function composeMassing(b: MassingSpec): MassingBody[] {
   }
 
   if (isVillageMassing(b)) {
-    const seed = hashMassingSeed(b.seed);
+    const seed = hashString(b.seed);
     const columns = Math.round(clamp(b.moduleDensity + Math.floor(b.articulation / 42), 4, 7));
     const rows = Math.round(clamp(Math.ceil(b.depth / 9), 2, 6));
     const cellW = b.width / columns;

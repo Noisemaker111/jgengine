@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
+import { hashUnit } from "@jgengine/core/random/rng";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { reservePhase } from "../../handroll";
 import { zoneLevelAt } from "../../world/zones";
@@ -25,11 +26,6 @@ export const LEASH_RADIUS = 46;
 
 export { rememberHome };
 
-function idHash(id: string): number {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) | 0;
-  return hash;
-}
 
 function distance2d(a: EntityPosition, b: EntityPosition): number {
   return Math.hypot(a[0] - b[0], a[2] - b[2]);
@@ -39,12 +35,12 @@ function wander(ctx: GameContext, def: EnemyDef, id: string, position: EntityPos
   const home = homeOf(ctx, id) ?? position;
   let plan = wanderTargetsOf(ctx).get(id);
   if (plan === undefined || nowMs > plan.untilMs) {
-    const hash = idHash(`${id}:${Math.floor(nowMs / 4000)}`);
-    const angle = ((hash % 360) / 360) * Math.PI * 2;
-    const radius = 3 + (Math.abs(hash >> 4) % 6);
+    const key = `${id}:${Math.floor(nowMs / 4000)}`;
+    const angle = hashUnit(`${key}:angle`) * Math.PI * 2;
+    const radius = 3 + Math.floor(hashUnit(`${key}:radius`) * 6);
     plan = {
       target: [home[0] + Math.cos(angle) * radius, home[1], home[2] + Math.sin(angle) * radius],
-      untilMs: nowMs + 3500 + (Math.abs(hash) % 2500),
+      untilMs: nowMs + 3500 + hashUnit(`${key}:pause`) * 2500,
     };
     wanderTargetsOf(ctx).set(id, plan);
   }

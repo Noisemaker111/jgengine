@@ -1,12 +1,48 @@
+const FNV_OFFSET = 2166136261;
+const FNV_PRIME = 16777619;
+
 /**
  * Deterministic 32-bit FNV-1a hash of a string → unsigned int. Same text, same number, on every
  * platform — the stable seed behind per-id jitter, spread offsets, and content-addressed variation.
+ *
+ * @capability seeded-random injected deterministic randomness for game logic — never `Math.random` in a simulation
  */
 export function hashString(text: string): number {
-  let h = 2166136261 >>> 0;
+  let h = FNV_OFFSET;
   for (let i = 0; i < text.length; i++) {
     h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+    h = Math.imul(h, FNV_PRIME);
+  }
+  return h >>> 0;
+}
+
+/**
+ * A stable roll in `[0, 1)` for one key — one deterministic draw with no stream to keep. The hash is
+ * avalanched first, so keys that differ only in a trailing index (`lot:3`, `lot:4`) roll independently.
+ *
+ * @capability seeded-random injected deterministic randomness for game logic — never `Math.random` in a simulation
+ */
+export function hashUnit(text: string): number {
+  let h = hashString(text);
+  h ^= h >>> 16;
+  h = Math.imul(h, 2246822507);
+  h ^= h >>> 13;
+  h = Math.imul(h, 3266489909);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+
+/**
+ * FNV-1a over a sequence of integers (bytes or 32-bit words) → unsigned int. Pass a previous result as
+ * `from` to keep hashing across several arrays. The digest behind replay and simulation snapshots.
+ *
+ * @capability seeded-random injected deterministic randomness for game logic — never `Math.random` in a simulation
+ */
+export function hashWords(words: ArrayLike<number>, from: number = FNV_OFFSET): number {
+  let h = from >>> 0;
+  for (let i = 0; i < words.length; i++) {
+    h ^= words[i] ?? 0;
+    h = Math.imul(h, FNV_PRIME);
   }
   return h >>> 0;
 }

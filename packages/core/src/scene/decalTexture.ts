@@ -1,4 +1,5 @@
 import type { DecalStyle } from "@jgengine/core/world/decalKind";
+import { hashString } from "@jgengine/core/random/rng";
 
 /** Row-major RGBA bytes plus their edge length, ready for a `THREE.DataTexture`. */
 export interface DecalTextureData {
@@ -32,15 +33,6 @@ function fbm(x: number, y: number, seed: number): number {
   return noise(x, y, seed) * 0.62 + noise(x * 2.1 + 7.3, y * 2.1 - 3.1, seed + 11) * 0.26 + noise(x * 4.3 - 1.7, y * 4.3 + 5.9, seed + 23) * 0.12;
 }
 
-function seedOf(text: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
 function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0 || 1e-6)));
   return t * t * (3 - 2 * t);
@@ -53,7 +45,7 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
  * @internal
  */
 export function createDecalTexture(style: DecalStyle, seed: string, size = 128): DecalTextureData {
-  const seedNumber = seedOf(seed.length > 0 ? seed : style);
+  const seedNumber = hashString(seed.length > 0 ? seed : style);
   const data = new Uint8Array(size * size * 4);
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {

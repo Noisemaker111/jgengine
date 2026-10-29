@@ -10,6 +10,7 @@ import {
   type WorkQueueConfig,
   type WorkQueueState,
 } from "@jgengine/core/work/jobQueue";
+import { hashString } from "@jgengine/core/random/rng";
 import { markPlayerDirty } from "@jgengine/core/runtime/snapshot";
 import type { GameRuntimeSnapshot, RuntimePlayerRow } from "@jgengine/core/runtime/snapshot";
 import {
@@ -165,12 +166,7 @@ export function writeTrainingState(
 export function trainingRngUnits(seed: string): number[] {
   const units: number[] = [];
   for (let index = 0; index < TRAINED_MODEL_RNG_UNIT_COUNT; index += 1) {
-    let hash = 2166136261;
-    const source = `${seed}:roll:${index}`;
-    for (let cursor = 0; cursor < source.length; cursor += 1) {
-      hash = Math.imul(hash ^ source.charCodeAt(cursor), 16777619);
-    }
-    units.push((hash >>> 0) * 2 ** -32);
+    units.push(hashString(`${seed}:roll:${index}`) * 2 ** -32);
   }
   return units;
 }

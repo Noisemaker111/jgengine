@@ -69,9 +69,11 @@ describe("Mainsail's world model", () => {
     world.emit({ kind: "ganger_down", place: "marina", faction: "carmine" });
     world.tick(0.3);
     expect(world.fact("marina.owner")).toBe("player");
-    world.set("carmine.mood", -60);
     const fired: string[] = [];
-    for (let t = 0; t < 2000 && world.fact("marina.owner") === "player"; t += 1) fired.push(...(world.tick(1).fired ?? []));
+    for (let t = 0; t < 2000 && world.fact("marina.owner") === "player"; t += 1) {
+      world.set("carmine.mood", -60);
+      fired.push(...(world.tick(1).fired ?? []));
+    }
     expect(world.fact("marina.owner")).toBe("carmine");
     expect(fired).toContain("turf:marina:player:carmine");
     expect(turfWar.handover("turf:marina:player:carmine")).toEqual({ block: "marina", from: "player", to: "carmine" });

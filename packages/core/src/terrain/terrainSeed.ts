@@ -1,15 +1,11 @@
+import { hashString } from "../random/rng";
+
 /** A terrain seed: a number, or a string hashed to one. */
 export type TerrainSeed = number | string;
 
 /** @internal */
 export function seedToUint32(seed: TerrainSeed = 1): number {
-  if (typeof seed === "number") return seed >>> 0;
-  let hash = 2166136261;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash ^= seed.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
+  return typeof seed === "number" ? seed >>> 0 : hashString(seed);
 }
 
 /** @internal */

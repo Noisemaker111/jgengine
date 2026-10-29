@@ -8,6 +8,24 @@ export function pickUniform<T>(rng: () => number, items: readonly T[]): T | unde
   return items[Math.min(items.length - 1, Math.floor(rng() * items.length))];
 }
 
+/**
+ * A shuffled copy of `values` (Fisher–Yates) drawn from `rng`; the same seeded stream always gives the same order.
+ *
+ * @capability weighted-pick pick one item from a set with an injected random source
+ */
+export function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] {
+  const out = values.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const a = out[i];
+    const b = out[j];
+    if (a === undefined || b === undefined) continue;
+    out[i] = b;
+    out[j] = a;
+  }
+  return out;
+}
+
 /** Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible. */
 export function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined {
   let total = 0;

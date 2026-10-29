@@ -5,6 +5,7 @@ import type { EditorDocument } from "@jgengine/core/editor/index";
 import { createTraffic, laneGraphFromDocument, type LaneGraph, type Traffic } from "@jgengine/core/world";
 import { cityRoadWidth, type CityLayout } from "@jgengine/core/city/cityLayout";
 import { nearestOnPath } from "@jgengine/core/roads/roads";
+import { hashString } from "@jgengine/core/random/rng";
 
 import { editorLayers } from "../../editorLayers";
 import { cityLayout, LOT_ROADS } from "./cityLayout";
@@ -162,7 +163,7 @@ function seedFleet(traffic: Traffic, graph: LaneGraph, count: number): void {
   // instead of filling one street type first.
   const lanes = graph
     .laneIds()
-    .map((id) => ({ id, key: hashLane(id) }))
+    .map((id) => ({ id, key: hashString(id) }))
     .sort((a, b) => a.key - b.key || (a.id < b.id ? -1 : 1))
     .map((entry) => entry.id);
   let total = 0;
@@ -180,16 +181,6 @@ function seedFleet(traffic: Traffic, graph: LaneGraph, count: number): void {
     }
     cursor -= lane.length;
   }
-}
-
-/** FNV-style hash of a lane id — a deterministic shuffle with no generator state to keep. */
-function hashLane(id: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < id.length; index += 1) {
-    hash ^= id.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
 }
 
 /** How many of the authored kerb spaces start the scene already occupied. */

@@ -30,6 +30,12 @@ test("createWeatherSeedAttributes is deterministic", () => {
   const second = createWeatherSeedAttributes(3, 1234);
   expect(Array.from(first.spawn)).toEqual(Array.from(second.spawn));
   expect(Array.from(first.drift)).toEqual(Array.from(second.drift));
+  const other = createWeatherSeedAttributes(3, 1235);
+  expect(Array.from(other.spawn)).not.toEqual(Array.from(first.spawn));
+  for (const value of [...first.spawn, ...first.drift]) {
+    expect(value).toBeGreaterThanOrEqual(0);
+    expect(value).toBeLessThan(1);
+  }
 });
 
 test("lightning envelope freezes, rewinds and repeats from simulation time and seed", async () => {

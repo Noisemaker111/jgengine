@@ -3,7 +3,7 @@ import { pointInPolygon } from "../world/polygon";
 import { buildPolylineIndex, type PolylineIndex } from "../world/polylineIndex";
 import type { SceneDocumentLike, ScenePathLike } from "../world/sceneShapes";
 import type { TerrainPathProfile } from "./pathTerrain";
-import { fractalNoise, seedFrom } from "./terrain";
+import { fractalNoise, seedFrom, seedPhase } from "./terrain";
 
 /** Scene kinds a surveyed landmass reads: shore outlines, summits, mountain chains, hills, cliffs, rivers and biome outlines. */
 export const SURVEY_KINDS = {
@@ -241,15 +241,6 @@ function roll(x: number, z: number, frequency: number, phase: number): number {
   const b = Math.sin((x * 0.6 + z) * frequency * 2.1 + phase * 1.9) * 0.5;
   const c = Math.sin((x - z * 0.7) * frequency * 4.3 + phase * 2.9) * 0.25;
   return (a + b + c) / 1.75;
-}
-
-function seedPhase(seed: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return ((h >>> 0) / 4294967296) * Math.PI * 2;
 }
 
 interface Bounds {

@@ -3,6 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
+import { hashString } from "@jgengine/core/random/rng";
 import { zoneLevelAt } from "../../world/zones";
 import { enemyWeapons, levelDamageMult, type EnemyDef } from "./catalog";
 
@@ -205,7 +206,5 @@ function sideStep(
 }
 
 function hashedSide(id: string): number {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) | 0;
-  return hash % 2 === 0 ? 1 : -1;
+  return hashString(id) % 2 === 0 ? 1 : -1;
 }

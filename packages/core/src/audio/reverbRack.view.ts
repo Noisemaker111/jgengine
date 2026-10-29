@@ -2,6 +2,7 @@ import type { EnclosureSample, ReverbPreset } from "@jgengine/core/audio/reverb"
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 
 import type { Xyz } from "@jgengine/core/math/xyz";
+import { seededRng } from "@jgengine/core/random/rng";
 
 /** Tail length (seconds), how fast it dies (higher = quicker), wet level, and tone (lowpass Hz). */
 const PRESETS: Record<Exclude<ReverbPreset, "none">, { seconds: number; decay: number; wet: number; tone: number }> = {
@@ -18,12 +19,11 @@ const BLEND_TC = 0.35;
 function impulse(context: BaseAudioContext, seconds: number, decay: number): AudioBuffer {
   const length = Math.max(1, Math.floor(context.sampleRate * seconds));
   const buffer = context.createBuffer(2, length, context.sampleRate);
-  let seed = 0x9e3779b9;
+  const noise = seededRng("reverb-impulse");
   for (let channel = 0; channel < 2; channel++) {
     const data = buffer.getChannelData(channel);
     for (let i = 0; i < length; i++) {
-      seed = (seed * 1664525 + 1013904223) >>> 0;
-      data[i] = ((seed / 0xffffffff) * 2 - 1) * (1 - i / length) ** decay;
+      data[i] = (noise() * 2 - 1) * (1 - i / length) ** decay;
     }
   }
   return buffer;

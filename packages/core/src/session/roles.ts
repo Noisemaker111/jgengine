@@ -1,4 +1,4 @@
-import { shuffleWithRng } from "../cards/cardPile";
+import { shuffleWithRng } from "../random/pick";
 import { resolveRng } from "../random/resolveRng";
 
 export interface RoleSpec {

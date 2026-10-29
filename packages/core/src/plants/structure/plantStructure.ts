@@ -1,4 +1,5 @@
 // @skill jgengine-world
+import { hashWords } from "../../random/rng";
 import type { GrowthState } from "../growth/growthState";
 import { NODE_AXIS_START, NODE_DEAD, NODE_SCAR } from "../growth/growthState";
 import type { GrowingSeason } from "../growth/phenology";
@@ -444,15 +445,12 @@ export function crownRatio(structure: PlantStructure): number {
  * @capability plant-structure a grown plant as a skeleton with regions, leaves, clusters and a crown envelope
  */
 export function hashPlantStructure(structure: PlantStructure): string {
-  let a = 0x811c9dc5;
-  let b = 0x01000193 ^ 0x5bd1e995;
-  const feedByte = (byte: number): void => {
-    a = Math.imul(a ^ byte, 16777619);
-    b = Math.imul(b ^ byte, 0x01000193 ^ 0x2f);
-  };
+  let a = hashWords([]);
+  let b = hashWords([0x5bd1e995]);
   const feedBytes = (view: ArrayBufferView): void => {
     const bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
-    for (let i = 0; i < bytes.length; i += 1) feedByte(bytes[i] ?? 0);
+    a = hashWords(bytes, a);
+    b = hashWords(bytes, b);
   };
   const scratch = new Float64Array(1);
   const feedNumber = (value: number): void => {
@@ -460,7 +458,7 @@ export function hashPlantStructure(structure: PlantStructure): string {
     feedBytes(scratch);
   };
   const feedText = (text: string): void => {
-    for (let i = 0; i < text.length; i += 1) feedByte(text.charCodeAt(i) & 0xff);
+    feedBytes(new TextEncoder().encode(text));
   };
   feedText(structure.speciesId);
   feedText(structure.seed);

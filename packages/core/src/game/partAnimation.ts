@@ -1,3 +1,5 @@
+import { hashString } from "../random/rng";
+
 /**
  * Procedural animation for part-composed (rig-less) models — characters kit-bashed from
  * primitives/`ModelPart`s with no skeleton or clips. Pure, deterministic curve sampling:
@@ -101,9 +103,7 @@ export function createPartPose(): PartPose {
  * so a crowd of identical part-composed characters doesn't animate in lockstep.
  */
 export function partMotionPhase(id: string): number {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
-  return (hash % 1000) / 1000;
+  return (hashString(id) % 1000) / 1000;
 }
 
 const SPLAT_FLATTEN = 0.7;

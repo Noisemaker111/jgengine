@@ -16,7 +16,7 @@
  * @capability landform-dunes grow barchan, transverse, linear and star dunes from a wind regime and sand supply
  */
 
-import { seededRng } from "../../random/rng";
+import { hashWords, seededRng } from "../../random/rng";
 import { plantAtan, plantCos, plantSin, PLANT_PI } from "../../plants/growth/plantMath";
 import { LANDFORM_MAX_SIDE } from "../grid/landformGrid";
 
@@ -363,12 +363,7 @@ export function createDuneField(options: DuneFieldOptions): DuneField {
       random.restore(seededRng(`${seed}/dunes`).state());
     },
     hash() {
-      let h = 2166136261 >>> 0;
-      for (let i = 0; i < cells; i += 1) {
-        h ^= slabs[i] ?? 0;
-        h = Math.imul(h, 16777619) >>> 0;
-      }
-      return `${h.toString(16).padStart(8, "0")}${(events >>> 0).toString(16)}`;
+      return `${hashWords(slabs).toString(16).padStart(8, "0")}${(events >>> 0).toString(16)}`;
     },
   };
 }
