@@ -8,8 +8,10 @@ permissions:
 on:
   push:
     branches: [main, beta]
+  # No `edited`: no step reads the PR body, and a body edit started a second run on the same commit
+  # that cancelled the running one, which the queue then read as a failure.
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
 
 # One run per ref at a time. A pull request cancels its own superseded run: nobody reads the
 # old one, and the newest commit is the one that matters. `main` and `beta` do not cancel,

@@ -225,6 +225,25 @@ describe("one query, one answer", () => {
     expect(text).toContain("1 pass, 1 fail, 0 pending — fail: test (ui) (FAILURE)");
   });
 
+  test("a run cancelled before a verdict says nothing failed, and names the rerun", () => {
+    const text = formatText(
+      summarizeChecks({
+        pr: 1,
+        url: "",
+        branch: "agent/x",
+        state: "OPEN",
+        rollup: [
+          { name: "test (h)", conclusion: "CANCELLED", detailsUrl: "https://example.test/actions/runs/700/job/1" },
+          { name: "quick", conclusion: "SUCCESS", detailsUrl: "https://example.test/actions/runs/700/job/2" },
+        ],
+        wallMs: 500,
+      }),
+    );
+    expect(text).toContain("cancelled before a verdict, nothing failed: test (h) (CANCELLED)");
+    expect(text).toContain("gh run rerun 700");
+    expect(text).not.toContain("— fail:");
+  });
+
   test("a PR number costs one gh call", () => {
     const calls: string[][] = [];
     const answer = ask({ pr: 7, json: false }, io((args) => {

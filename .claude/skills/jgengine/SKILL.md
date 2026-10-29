@@ -27,7 +27,7 @@ finished solution.
 
 ## 1. Establish the target
 
-A new game or a big new feature starts with the `create-game-jg` skill: agree the direction with the user, map every feature with `jgengine has`, write `PLAN.md` with its design brief, then `jgengine create` and build it one milestone per PR, each the next 10 minutes of play. Load it before anything below.
+A new game or a big new feature starts with the `create-game-jg` skill: agree the direction with the user, map every feature with `jgengine has`, write `PLAN.md` with its design brief, then `jgengine create` and build it milestone by milestone, each the next 10 minutes of play and a commit on the one branch, which lands as one PR at the end. Load it before anything below.
 
 Treat the pitch as a unique composition of needs, not a genre to fill in — never reach for a genre kit, preset, archetype, or class template ("default sports car", "default RPG", "default FPS") in the SDK or skills (see [AGENTS.md](../../../AGENTS.md)). Use `game-design` to turn the pitch into a testable player promise, verbs, loops, progression, failure, and completion scenario. Use `level-design` when play depends on authored spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
 

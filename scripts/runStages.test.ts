@@ -6,8 +6,36 @@ import {
   ALL_CHECKS, CHECKS, checkPlan, fixHint, formatSummary, GEN_TARGETS, genPlan, jobChecks, parseCheckArgs, rerunHint, runPlan,
   SDK_CHECKS, type Stage,
 } from "./run-stages.ts";
+import { CORE_BARRELS } from "./gen-barrels";
+import { isGenerated } from "./generated-rebase";
 
 const stage = (name: string, needs?: string[]): Stage => ({ name, command: "bun", args: [], needs });
+
+describe("generated files a rebase regenerates", () => {
+  // A hand-kept copy of this list missed skill-routing.json and the type-escape baseline, so those
+  // conflicted on every rebase two lanes shared; the list now comes from this table.
+  test("every generator but the tsconfig one names its files, and the rebase list is exactly those", () => {
+    for (const target of GEN_TARGETS) {
+      if (target.name === "source-paths") expect(target.outputs).toBeUndefined();
+      else expect(target.outputs?.length ?? 0).toBeGreaterThan(0);
+    }
+    for (const path of [
+      "scripts/skill-routing.json",
+      "scripts/type-escape-baseline.json",
+      "scripts/export-manifest.json",
+      "games/capabilities.json",
+      ".claude/skills/jgengine-world/api.md",
+      ".claude/skills/jgengine-ui/capabilities.md",
+    ]) {
+      expect(isGenerated(path)).toBe(true);
+    }
+    for (const path of ["tsconfig.json", "CREDITS.md", "packages/core/src/world/terrain.ts", "changes/agent-x.md"]) expect(isGenerated(path)).toBe(false);
+  });
+
+  test("the barrel outputs are the barrels gen-barrels writes", () => {
+    for (const { barrel } of CORE_BARRELS) expect(isGenerated(`packages/core/src/${barrel}.ts`)).toBe(true);
+  });
+});
 
 describe("runPlan", () => {
   test("a failing stage does not stop independent stages behind it", async () => {

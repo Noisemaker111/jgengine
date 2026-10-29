@@ -154,6 +154,12 @@ export interface GenTarget {
   readonly script: string;
   /** Runs after these targets: barrels first, since every later generator reads the export surface. */
   readonly after?: readonly string[];
+  /**
+   * The committed files this generator owns outright. A rebase conflict in one is no conflict: land
+   * and the landing queue take the base's copy and rerun `bun run gen` (`scripts/generated-rebase.ts`).
+   * A file people also edit by hand (a tsconfig, a source file's `@skill` tag) is not listed.
+   */
+  readonly outputs?: readonly RegExp[];
 }
 
 /**
@@ -162,13 +168,23 @@ export interface GenTarget {
  */
 export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "source-paths", script: "scripts/sourcePaths.ts" },
-  { name: "skill-routing", script: "scripts/gen-skill-routing.ts" },
-  { name: "barrels", script: "scripts/gen-barrels.ts", after: ["skill-routing"] },
-  { name: "capabilities", script: "scripts/gen-capability-index.ts", after: ["barrels"] },
-  { name: "skill-api", script: "scripts/gen-skill-api-safe.ts", after: ["barrels"] },
-  { name: "export-manifest", script: "scripts/gen-export-manifest.ts", after: ["barrels"] },
-  { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"] },
-  { name: "type-escapes", script: "scripts/type-escapes.ts", after: ["barrels"] },
+  { name: "skill-routing", script: "scripts/gen-skill-routing.ts", outputs: [/^scripts\/skill-routing\.json$/] },
+  {
+    name: "barrels",
+    script: "scripts/gen-barrels.ts",
+    after: ["skill-routing"],
+    outputs: [/^packages\/core\/src\/(?:world|combat|gameplay|multiplayer|ui)\.ts$/],
+  },
+  { name: "capabilities", script: "scripts/gen-capability-index.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/[^/]+\/capabilities\.md$/] },
+  {
+    name: "skill-api",
+    script: "scripts/gen-skill-api-safe.ts",
+    after: ["barrels"],
+    outputs: [/^\.claude\/skills\/[^/]+\/api\.md$/, /^scripts\/(?:api-doc-baseline|api-orphan-baseline)\.json$/],
+  },
+  { name: "export-manifest", script: "scripts/gen-export-manifest.ts", after: ["barrels"], outputs: [/^scripts\/export-manifest\.json$/] },
+  { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"], outputs: [/^games\/capabilities\.json$/] },
+  { name: "type-escapes", script: "scripts/type-escapes.ts", after: ["barrels"], outputs: [/^scripts\/type-escape-baseline\.json$/] },
 ];
 
 export function genPlan(targets: readonly GenTarget[]): Stage[] {

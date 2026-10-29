@@ -9,9 +9,9 @@ Use this for backlog missions and every game improvement that exposes framework 
 
 ## Plan the pass
 
-1. List open issues, drop stale or duplicate ones, and group the rest by shared root cause or seam using `workflow` PR-boundary rules.
+1. List open issues, drop stale or duplicate ones, and group the rest by shared root cause or seam using `workflow` PR-boundary rules. Each group is one idea: one branch, its issues as commits, one PR landed once when the group works.
 2. Order the queue so early fixes create seams later fixes reuse: infrastructure-shaped issues first, consumers after.
-3. Run genuinely independent groups as parallel subagent lanes; keep issues sharing a seam in one sequential lane.
+3. Run genuinely independent groups as parallel subagent lanes, one worktree and one PR each, never two lanes in the same package; keep issues sharing a seam in one sequential lane and one PR.
 4. Assign package capabilities with named game adopters, not independent copies of the same fix per game. Check installed versions and existing APIs before designing a new seam.
 
 ## Ship one issue

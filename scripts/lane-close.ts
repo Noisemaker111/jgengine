@@ -16,6 +16,8 @@
 // says so and the lane still exits 0. The queue for that PR starts in the background,
 // and the last line names the one command that prints its outcome.
 import { spawnSync } from "node:child_process";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { assertCheckoutReady } from "./checkout-ready";
@@ -247,7 +249,11 @@ export function queueInBackground(pr: number, io: LaneIo): string {
   if (started.status !== 0 || id.length === 0) {
     return `lane:close: #${pr} waits on auto-merge; ask for its checks with bun run ci:status --pr ${pr}`;
   }
-  return `lane:close: #${pr} lands in the background, so keep working; its one-line outcome: bun run background await ${id}`;
+  return (
+    `lane:close: #${pr} is handed to the landing queue and is not merged yet. ` +
+    `Next, in the foreground with a 10-minute timeout: bun run background await ${id} --timeout 540 ` +
+    "(it prints the merge, or a failure to fix on this branch; run it again if it is still waiting). The idea is done when it is merged."
+  );
 }
 
 /**
@@ -284,13 +290,34 @@ function main(rawArgv: readonly string[]): void {
     process.exit(run.status ?? 1);
   }
   if (printHelpIfAsked("lane-close", LANE_CLOSE_USAGE, argv)) process.exit(EXIT_CLOSED);
-  assertCheckoutReady("lane:close", root);
   const parsed = parseOrRefuse(argv);
   if ("problem" in parsed) {
     console.error(`lane:close: ${parsed.problem}`);
     process.exit(EXIT_CANNOT_ANSWER);
   } else {
+    // A shell that gives up on a foreground command after two minutes moves this to the background,
+    // and the agent then ended its turn with the landing half done.
+    console.log(`lane:close: ${LANE_CLOSE_DURATION}`);
+    markRunning(root);
+    assertCheckoutReady("lane:close", root);
     process.exit(closeLane(parsed.args, realIo()));
+  }
+}
+
+export const LANE_CLOSE_DURATION =
+  "this takes several minutes (gen, every gate, the tests, then the hand-off). Run it in the foreground with a 10-minute timeout; if your shell moved it to the background, wait for it to finish before ending the turn.";
+
+/** `.scratch/lane-close.json` while a close runs: the repo's Stop hook reads it, so a turn cannot end mid-landing. */
+export const RUNNING_MARKER = join(".scratch", "lane-close.json");
+
+function markRunning(checkout: string): void {
+  const marker = join(checkout, RUNNING_MARKER);
+  try {
+    mkdirSync(dirname(marker), { recursive: true });
+    writeFileSync(marker, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }));
+    process.on("exit", () => rmSync(marker, { force: true }));
+  } catch {
+    // The marker only helps the Stop hook; a close never fails for want of it.
   }
 }
 

@@ -70,7 +70,7 @@ One file, these sections, in this order:
 - `## Gaps`: every gap and partial as new engine work: what to build, in which
   `packages/<pkg>/src/<feature>/` folder, with this game as its first adopter. `bun run check
   games-design` reads this heading as the game's gap to target; write `- none` when there is none.
-- `## Milestones`: `- [ ] 1. ...` checkboxes, one PR each, in build order (the gaps a later milestone
+- `## Milestones`: `- [ ] 1. ...` checkboxes, one commit (or a few) each on the game's one branch, in build order (the gaps a later milestone
   needs come first). Each milestone is the next 10 minutes of play, not one more system: what a
   player starting from a new game now does, learns and unlocks, and how far into the brief's first
   10 minutes (then the session and long loop) it reaches. Milestone 1 is the core loop playable from
@@ -86,10 +86,12 @@ editor scene); a grid, card, tile or other board game with no 3D scene takes `--
 `games/`; `npx jgengine create` outside the repo) is the one way to start a game: never copy another
 game's folder. The game's `jgengine.json` says what it is and uses; change it and run `jgengine sync`.
 
-Then take the milestones in order. Each PR builds one milestone, ticks it in `PLAN.md`, and builds
-its engine gap upstream first (root `AGENTS.md`, "Game changes improve the framework"). When the
-build teaches something that changes the direction, brief, features or order, edit `PLAN.md` in
-that PR.
+Then take the milestones in order, all on the one branch the game was asked for in. Each milestone
+builds its engine gap upstream first (root `AGENTS.md`, "Game changes improve the framework"), is
+committed when it plays, and ticks itself in `PLAN.md` in that commit. When the build teaches
+something that changes the direction, brief, features or order, edit `PLAN.md` in the same commit.
+The branch lands once, with `bun run lane:close`, when the milestones asked for are done; a
+milestone is never a PR of its own.
 
 The proof is `proofs/flows/from-zero.flow.ts`: a new game with no save or prepared state, played
 through real input (no teleports, clock scaling or dev commands), with a probe reporting `taught`,

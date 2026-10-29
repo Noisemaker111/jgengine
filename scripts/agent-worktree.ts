@@ -18,7 +18,7 @@
 import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 
-import { hasInstall } from "./checkout-ready";
+import { hasInstall, missingDependencies } from "./checkout-ready";
 
 export const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
@@ -176,6 +176,8 @@ export type WorktreeReadyOptions = {
   install?: (target: string) => void;
   /** Ignored-file listing used to find dev-runner assets. Defaults to `git ls-files`. */
   ignored?: (mainRoot: string) => string[];
+  /** Declared packages the tree cannot resolve. Defaults to `missingDependencies`. */
+  missing?: (root: string) => string[];
 };
 
 function gitIgnored(mainRoot: string): string[] {
@@ -209,14 +211,23 @@ export function ensureWorktreeReady(cwd: string, options: WorktreeReadyOptions =
 
   // A linked tree whose lock moved on (a lane that added a package) would install into the main
   // checkout's store through the link, so it gets its own install instead.
-  const staleLink = isLink(join(cwd, "node_modules")) && !locksMatch(mainRoot, cwd);
-  if (hasInstall(cwd) && !staleLink) return { mainRoot, deps: [], assets: [], installed: false, unchanged: true };
+  const linked = isLink(join(cwd, "node_modules"));
+  const staleLink = linked && !locksMatch(mainRoot, cwd);
+  // tsgo alone said "installed" while a game's own packages were missing (a branch checked out after
+  // the install, or the main checkout's older per-game folders copied in), so every declared package counts.
+  const incomplete = hasInstall(cwd) && !staleLink && (options.missing ?? missingDependencies)(cwd).length > 0;
+  if (hasInstall(cwd) && !staleLink && !incomplete) return { mainRoot, deps: [], assets: [], installed: false, unchanged: true };
 
   const result: WorktreeReadiness = { mainRoot, deps: [], assets: [], installed: false, unchanged: false };
-  if (staleLink) unlinkDeps(cwd);
-  if (canLinkDeps(mainRoot, cwd)) {
-    result.deps = linkDeps(mainRoot, cwd);
-  } else {
+  // A shared install that lacks a package cannot be fixed by linking it again, and installing through
+  // the link would rewrite the main checkout's store, so the worktree gets its own.
+  if (staleLink || (incomplete && linked)) unlinkDeps(cwd);
+  if (!incomplete && canLinkDeps(mainRoot, cwd)) result.deps = linkDeps(mainRoot, cwd);
+  if (result.deps.length > 0 && (options.missing ?? missingDependencies)(cwd).length > 0) {
+    unlinkDeps(cwd);
+    result.deps = [];
+  }
+  if (result.deps.length === 0) {
     (options.install ?? ((target: string) => {
       const install = Bun.spawnSync(["bun", "install", "--frozen-lockfile"], {
         cwd: target,

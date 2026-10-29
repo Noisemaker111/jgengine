@@ -8,6 +8,7 @@ import {
   EXIT_DRAINED,
   EXIT_SOMETHING_FAILED,
   POLL_MS,
+  RERUN_GRACE_MS,
   WAIT_TIMEOUT_MS,
   drain,
   formatOutcome,
@@ -238,6 +239,46 @@ test("a run cancelled by its replacement on the same commit keeps the queue wait
   expect(settled.verdict).toBe("failed");
 });
 
+test("a run cancelled with nothing replacing it is run again once, never read as a failure", () => {
+  // A PR body edit started a second run on the same commit that cancelled the first; the status
+  // scripts read the cancelled checks as failures although no check had failed.
+  let step = 0;
+  const reruns: string[] = [];
+  const answers = [
+    rollup([
+      { name: "test (h)", conclusion: "CANCELLED", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/1" },
+      { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/2" },
+    ]),
+    rollup([
+      { name: "test (h)", conclusion: "CANCELLED", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/1" },
+      { name: "test (h)", conclusion: "SUCCESS", startedAt: "2026-10-28T10:05:00Z", url: "https://example.test/actions/runs/700/job/3" },
+      { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/2" },
+    ]),
+  ];
+  const gh: QueueIo["gh"] = (args) => {
+    if (args[0] === "run" && args[1] === "rerun") reruns.push(args[2] ?? "");
+    return args.join(" ").startsWith("pr view")
+      ? ok(JSON.stringify({ number: 29, url: "u", state: "OPEN", headRefName: "agent/29", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[Math.min(step, answers.length - 1)] ?? "[]") }))
+      : ok();
+  };
+  const result = waitForGreen(29, io({ gh, pause: () => (step += 1) }));
+  expect(reruns).toEqual(["700"]);
+  expect(result.verdict).toBe("green");
+
+  // Still cancelled once the rerun has had its grace: then it is reported, with the check named.
+  let clock = 0;
+  const again = waitForGreen(30, io({
+    gh: (args) => (args.join(" ").startsWith("pr view") ? ok(JSON.stringify({ number: 30, url: "u", state: "OPEN", headRefName: "agent/30", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[0] ?? "[]") })) : ok()),
+    now: () => clock,
+    pause: (ms) => {
+      clock += ms;
+    },
+  }));
+  expect(again.verdict).toBe("failed");
+  expect(again.detail).toContain("test (h)");
+  expect(again.waitedMs).toBeGreaterThanOrEqual(RERUN_GRACE_MS);
+});
+
 test("a failing check ends the wait at once, and a wait that never settles gives up at the ceiling", () => {
   let paused = 0;
   const failed = waitForGreen(22, io({
@@ -453,6 +494,8 @@ test("a branch the base moved under is rebased in a scratch checkout, and one al
   });
 
   const behindTip = gitOk(bare, ["rev-parse", "refs/heads/agent/behind"]);
+  // The lane's tree has moved on to other work, so the queue must not rebase in it.
+  gitOk(work, ["checkout", "-q", "beta"]);
   const rebased = rebaseOntoBase({ branch: "agent/behind", base: "beta", io: ioFor("agent/behind") });
   expect(rebased).toEqual({ rebased: true, refusal: null });
   const pushedTip = gitOk(bare, ["rev-parse", "refs/heads/agent/behind"]);
@@ -474,6 +517,57 @@ test("a branch the base moved under is rebased in a scratch checkout, and one al
   });
   expect(current).toEqual({ rebased: false, refusal: null });
   expect(checkouts).toBe(0);
+}, 60_000);
+
+test("a generated file both sides changed never stops the queue: it takes the base's copy and regenerates in the lane's tree", () => {
+  // The queue's own rebase was a plain `git rebase`, so two lanes that each added an export stopped
+  // there on export-manifest.json and api.md, and the lane resolved generated text by hand.
+  const home = join(SCRATCH, `queue-gen-${crypto.randomUUID()}`);
+  made.push(home);
+  mkdirSync(join(home, "work", "scripts"), { recursive: true });
+  const bare = join(home, "origin.git");
+  const work = join(home, "work");
+  gitOk(home, ["init", "-q", "--bare", "-b", "beta", bare]);
+  gitOk(work, ["init", "-q", "-b", "beta"]);
+  commit(work, "scripts/export-manifest.json", "[\"a\"]\n", "base");
+  gitOk(work, ["remote", "add", "origin", bare]);
+  gitOk(work, ["push", "-q", "-u", "origin", "beta"]);
+  gitOk(work, ["checkout", "-q", "-b", "agent/gen"]);
+  commit(work, "scripts/export-manifest.json", "[\"a\", \"lane\"]\n", "lane export");
+  gitOk(work, ["push", "-q", "-u", "origin", "agent/gen"]);
+
+  const mover = join(home, "mover");
+  gitOk(home, ["clone", "-q", bare, mover]);
+  commit(mover, "scripts/export-manifest.json", "[\"a\", \"other\"]\n", "another lane's export");
+  gitOk(mover, ["push", "-q", "origin", "beta"]);
+  const movedTip = gitOk(mover, ["rev-parse", "HEAD"]);
+
+  const generated: string[][] = [];
+  const result = rebaseOntoBase({
+    branch: "agent/gen",
+    base: "beta",
+    io: {
+      gh: () => ok(),
+      git: (_dir, args) => gitIn(work, args),
+      pause: () => {},
+      now: () => 0,
+      log: () => {},
+      error: () => {},
+      checkout: () => {
+        throw new Error("the lane's own clean tree at the pushed tip is where the queue rebases");
+      },
+      exec: (command) => {
+        generated.push([...command]);
+        writeFileSync(join(work, "scripts", "export-manifest.json"), "[\"a\", \"lane\", \"other\"]\n");
+        return ok();
+      },
+    },
+  });
+  expect(result).toEqual({ rebased: true, refusal: null });
+  expect(generated).toEqual([["bun", "run", "gen"]]);
+  const pushedTip = gitOk(bare, ["rev-parse", "refs/heads/agent/gen"]);
+  expect(gitIn(bare, ["merge-base", "--is-ancestor", movedTip, pushedTip]).status).toBe(0);
+  expect(gitOk(bare, ["show", `${pushedTip}:scripts/export-manifest.json`])).toBe("[\"a\", \"lane\", \"other\"]");
 }, 60_000);
 
 test("the queue holds the repo's one sleep, and that sleep names its reason", () => {

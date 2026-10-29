@@ -24,9 +24,10 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { attemptsOf, judgeChecks } from "./ci-status";
+import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
-import { MERGE_ATTEMPTS, QUEUE_LABEL, baseMoved, checkVerdict, duration, formatFailures } from "./land";
+import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
+import { MERGE_ATTEMPTS, QUEUE_LABEL, baseMoved, checkVerdict, duration, formatFailures, runAt } from "./land";
 import type { GhCheck, Run } from "./land";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -37,6 +38,8 @@ export const EXIT_SOMETHING_FAILED = 1;
 /** CI settles in 2.6–3.0 minutes here; 25 minutes is the ceiling before the queue gives up on a PR. */
 export const WAIT_TIMEOUT_MS = 25 * 60_000;
 export const POLL_MS = 10_000;
+/** How long a rerun of a cancelled run gets to register its jobs before its cancellations count. */
+export const RERUN_GRACE_MS = 120_000;
 
 export type Gh = (args: string[]) => Run;
 export type Git = (cwd: string, args: string[]) => Run;
@@ -137,8 +140,10 @@ export interface QueueIo {
   now: () => number;
   log: (line: string) => void;
   error: (line: string) => void;
-  /** An isolated checkout of a branch to rebase in, so the lane's own tree is never rewritten. */
+  /** An isolated checkout of a branch to rebase in, when the lane's own tree is elsewhere or busy. */
   checkout?: (branch: string) => { dir: string; release: () => void } | null;
+  /** Runs a generator after a rebase; `bun run gen` in the rebased tree by default. */
+  exec?: (command: readonly string[]) => Run;
 }
 
 function details(result: Run): string {
@@ -198,6 +203,7 @@ export interface WaitResult {
 export function waitForGreen(number: number, io: QueueIo): WaitResult {
   const startedAt = io.now();
   let runIds: number[] = [];
+  let rerunAt: number | null = null;
   for (;;) {
     const view = readView(io.gh, number);
     if (view === null) {
@@ -216,8 +222,29 @@ export function waitForGreen(number: number, io: QueueIo): WaitResult {
     // 25 Oct) leaves its jobs cancelled before the replacement has any: while every failure is a
     // cancellation and something still runs, the verdict is not in yet.
     const cancelled = new Set(report.checks.filter((check) => check.bucket === "cancel" || check.state === "CANCELLED").map((check) => check.name));
-    const onlySuperseded = verdict.failures.every((failure) => cancelled.has(failure.name)) && verdict.pending.length > 0;
-    if (verdict.failures.length > 0 && !onlySuperseded) {
+    const allCancelled = verdict.failures.every((failure) => cancelled.has(failure.name));
+    const onlySuperseded = allCancelled && verdict.pending.length > 0;
+    // Cancelled with nothing running to replace it (a PR body edit used to do this): no check failed,
+    // the run just never reached a verdict, so it is run again once rather than read as a failure.
+    // A rerun takes a moment to register its jobs; until then the old cancellations are all there is.
+    let rerunning = rerunAt !== null && allCancelled && io.now() - rerunAt < RERUN_GRACE_MS;
+    if (verdict.failures.length > 0 && allCancelled && verdict.pending.length === 0 && rerunAt === null) {
+      const cancelledRuns = [
+        ...new Set(
+          report.checks
+            .filter((check) => cancelled.has(check.name))
+            .map((check) => runIdFrom(check.link ?? ""))
+            .filter((id): id is number => id !== null),
+        ),
+      ];
+      if (cancelledRuns.length > 0) {
+        rerunAt = io.now();
+        for (const id of cancelledRuns) io.gh(["run", "rerun", String(id)]);
+        io.log(`#${number}: run ${cancelledRuns.join(", ")} was cancelled before a verdict; running it again`);
+        rerunning = true;
+      }
+    }
+    if (verdict.failures.length > 0 && !onlySuperseded && !rerunning) {
       return {
         verdict: "failed",
         checks: report.checks,
@@ -268,13 +295,38 @@ export function rebaseOntoBase(options: { branch: string; base: string; io: Queu
   }
   if (count === 0) return { rebased: false, refusal: null };
 
-  const checkout = (io.checkout ?? worktreeCheckout(io))(branch);
+  // The lane's own tree, when it is this branch, clean and exactly the pushed tip: the lane has handed
+  // off and is waiting, and only this tree has the installed generators a rebase may need.
+  const ownBranch = io.git(root, ["rev-parse", "--abbrev-ref", "HEAD"]).stdout.trim();
+  const ownTip = io.git(root, ["rev-parse", "HEAD"]).stdout.trim();
+  const ownDirty = io.git(root, ["status", "--porcelain"]);
+  const inPlace = ownBranch === branch && ownTip === tip.stdout.trim() && ownDirty.status === 0 && ownDirty.stdout.trim() === "";
+  const checkout = inPlace ? { dir: root, release: () => {} } : (io.checkout ?? worktreeCheckout(io))(branch);
   if (checkout === null) return { rebased: false, refusal: `could not check out ${branch} to rebase it` };
   try {
-    const rebased = io.git(checkout.dir, ["rebase", `origin/${base}`]);
-    if (rebased.status !== 0) {
-      io.git(checkout.dir, ["rebase", "--abort"]);
-      return { rebased: false, refusal: `rebase onto origin/${base} hit a conflict: ${details(rebased)}` };
+    const git = (args: string[]): Run => io.git(checkout.dir, args);
+    // Generated files and the lane's own note never stop the queue: the same resolution land uses.
+    const rebased = rebaseResolvingGenerated(git, `origin/${base}`);
+    if (!rebased.ok) {
+      const files = rebased.conflicts.length > 0 ? ` in ${rebased.conflicts.join(", ")}` : "";
+      return { rebased: false, refusal: `rebase onto origin/${base} hit a conflict${files}: ${rebased.detail}` };
+    }
+    const branchPaths = git(["diff", "--name-only", `origin/${base}...HEAD`]).stdout.split("\n").map((line) => line.trim()).filter(Boolean);
+    // Without the lane's tree there is no generator to run: a clean textual merge is pushed as it
+    // always was, and only a generated file that actually conflicted sends the lane back.
+    if (inPlace ? needsRegenerate(rebased, branchPaths) : rebased.regenerate.length > 0) {
+      if (!inPlace) {
+        git(["reset", "--hard", tip.stdout.trim()]);
+        return {
+          rebased: false,
+          refusal: `the base moved and ${branch}'s generated files need \`bun run gen\` on the merged source; run bun run lane:close again in ${branch}'s own tree`,
+        };
+      }
+      const failed = regenerateAndCommit(git, io.exec ?? (([program = "bun", ...args]) => runAt(checkout.dir, program, args, 20 * 60_000)));
+      if (failed !== null) {
+        git(["reset", "--hard", tip.stdout.trim()]);
+        return { rebased: false, refusal: failed };
+      }
     }
     const pushed = io.git(checkout.dir, [
       "push",

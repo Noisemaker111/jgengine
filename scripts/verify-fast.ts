@@ -12,6 +12,8 @@
 //
 // The type-checks and gates start before the tests, and the run stops at the first failure: a
 // type error is reported in seconds instead of after minutes of tests that were never the problem.
+// `--cheap` (the landing's preflight) runs every gate CI's quick and types jobs run and reports
+// every failure in one pass instead.
 //
 // Exit: 0 verified, 1 a step failed, 2 a changed runtime file reached no test (a
 // change this cannot attribute is never a silent pass). With `--json` the exit is
@@ -32,7 +34,7 @@ import { checkCommand, findCheck, jobChecks } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { siteGames } from "./siteGames";
-import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
+import { EXIT_UNJUDGED, runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 
 const VERIFY_FAST_USAGE = {
@@ -97,6 +99,8 @@ export interface Step extends ScheduledStep {
   fix?: string | undefined;
   /** The units this step settles; each is remembered as passed when the step passes. */
   units?: Unit[];
+  /** The exit code by which the step says it could not decide here (see `StepResult.unjudged`). */
+  unjudgedExit?: number;
 }
 
 /** One test file, type-check, gate or boot, and the changed paths that can decide its result. */
@@ -331,7 +335,6 @@ export function gatesFor(changed: readonly string[]): string[] {
   const gates = new Set(["artifacts", "path-portability", "concept-homes", "layers"]);
   const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
   if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("capture-hygiene");
-  if (shippedSource.length > 0) gates.add("changelog");
   if (changed.some((path) => path.startsWith("packages/"))) {
     gates.add("export-manifest");
     gates.add("skill-api");
@@ -349,6 +352,34 @@ export function gatesFor(changed: readonly string[]): string[] {
   if (changed.some((path) => isTestFile(path))) gates.add("test-spawn-timeouts");
   if (changed.some((path) => /\.browser\.test\.[cm]?[jt]sx?$/.test(path))) gates.add("browser-test-budget");
   return [...gates];
+}
+
+/**
+ * The `quick` and `types` CI checks preflight never runs, each with the reason. Every other check
+ * those jobs run, preflight runs once on any code change (`landingGates`), so a gate that would
+ * fail in CI fails at the landing first and every one is named in the same run. A new check in
+ * those jobs either runs at the landing or is listed here (verify-fast.test.ts holds the pair).
+ */
+export const CI_ONLY_GATES: Readonly<Record<string, string>> = {
+  types: "verify:fast type-checks every package the change reaches instead of the whole repository",
+  "type-escapes": "bun run gen runs it first in preflight, and it fails there on a gained escape",
+  capabilities: "bun run gen rewrites capabilities.md first in preflight",
+  "source-paths": "bun run gen rewrites the tsconfig paths first in preflight",
+  changelog: "lane:close writes changes/<branch>.md itself after preflight, so a branch that commits as it goes has no note yet",
+};
+
+const CODE_PATH = /^(packages|games|scripts|apps|examples|registry)\/.+\.(?:[cm]?[jt]sx?|json)$/;
+
+/**
+ * Every check CI's `quick` and `types` jobs run that is not in `CI_ONLY_GATES`, when the change
+ * touches code or a package manifest. While iterating, `gatesFor` keeps the inner loop to seconds;
+ * the landing pays the rest once, in parallel, instead of learning about them one CI run at a time.
+ */
+export function landingGates(changed: readonly string[]): string[] {
+  const iterating = gatesFor(changed);
+  if (!changed.some((path) => CODE_PATH.test(path) || basename(path) === "package.json")) return iterating;
+  const ci = [...jobChecks("quick"), ...jobChecks("types")].map((check) => check.name);
+  return [...new Set([...iterating, ...ci.filter((name) => CI_ONLY_GATES[name] === undefined)])];
 }
 
 /**
@@ -649,6 +680,9 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       exclusive: true,
       cost: 90,
       units: loads,
+      // Exclusive only among these steps: another agent's work can still hold the PC, and then a
+      // slower load is reported not judged rather than failing an unchanged engine.
+      unjudgedExit: EXIT_UNJUDGED,
     });
   }
   return options.cheap === true ? steps.filter((step) => step.first === true) : steps;
@@ -862,7 +896,16 @@ async function run(step: Step, root: string, signal?: AbortSignal): Promise<Step
   if (killed && code !== 0) {
     return { name: step.name, ok: false, ms: Date.now() - started, output: "stopped: another step failed first", stopped: true };
   }
-  return { name: step.name, ok: code === 0, ms: Date.now() - started, output: `${stdout}${stderr}`.trim() };
+  return stepResult(step, code, Date.now() - started, `${stdout}${stderr}`.trim());
+}
+
+/** A finished step's result: an `unjudgedExit` is not a failure, and carries the step's last line as its reason. */
+export function stepResult(step: Pick<Step, "name" | "unjudgedExit">, code: number, ms: number, output: string): StepResult {
+  if (step.unjudgedExit !== undefined && code === step.unjudgedExit) {
+    const reason = output.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).at(-1) ?? "not judged";
+    return { name: step.name, ok: true, ms, output, unjudged: reason };
+  }
+  return { name: step.name, ok: code === 0, ms, output };
 }
 
 /**
@@ -993,7 +1036,7 @@ async function main(argv: readonly string[]): Promise<number> {
   const graph = buildImportGraph(root, tree, {
     packages: allWorkspaces.flatMap((workspace) => (workspace.name === undefined ? [] : [{ name: workspace.name, dir: workspace.dir }])),
   });
-  const plan = verifyPlan({
+  const planned = verifyPlan({
     changed,
     deleted: deletedFiles(root, base),
     testFiles: walkTestFiles(root, [...TEST_ROOTS, "games"]),
@@ -1001,6 +1044,8 @@ async function main(argv: readonly string[]): Promise<number> {
     graph,
     exempt: pureRenames(root, base),
   });
+  // `--cheap` is the landing's half (`bun run preflight`): every CI gate, not the iteration subset.
+  const plan = cheap ? { ...planned, gates: landingGates(planned.changed) } : planned;
   const cache = argv.includes("--no-cache")
     ? null
     : openPassCache({
@@ -1040,7 +1085,7 @@ async function main(argv: readonly string[]): Promise<number> {
 `, "utf8");
     if (cache === null) return;
     for (const result of passed) {
-      if (!result.ok) continue;
+      if (!result.ok || result.unjudged !== undefined) continue;
       for (const settled of steps.find((step) => step.name === result.name)?.units ?? []) cache.record(settled.id, settled.inputs);
     }
     cache.save();
@@ -1090,13 +1135,18 @@ async function main(argv: readonly string[]): Promise<number> {
 
   // The type-checks and gates start first and the run stops at the first failure, so a type
   // error or a drifted file is named in seconds and the tests behind it never start. Each
-  // result prints the moment it is known.
+  // result prints the moment it is known. `--cheap` runs only those seconds-long steps, so it
+  // runs every one: a landing that fixed one gate only to meet the next cost a close per gate.
   const results = await runSteps(
     steps,
     DEFAULT_JOBS,
     async (step, signal) => {
       const result = await run(step, root, signal);
       if (result.stopped === true) return result;
+      if (result.unjudged !== undefined) {
+        say(`NOT JUDGED  ${result.name}  ${(result.ms / 1000).toFixed(1)}s — ${result.unjudged}`);
+        return result;
+      }
       (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
       if (!result.ok) {
         if (result.output.length > 0) printFailure(root, result.name, result.output);
@@ -1104,14 +1154,17 @@ async function main(argv: readonly string[]): Promise<number> {
       }
       return result;
     },
-    { failFast: true },
+    { failFast: !cheap },
   );
   remember(results);
   const failures = results.filter((result) => !result.ok && result.blockedBy === undefined && result.stopped !== true).map((result) => result.name);
   const notRun = results.filter((result) => result.blockedBy !== undefined || result.stopped === true).map((result) => result.name);
   const seconds = (Date.now() - started) / 1000;
-  const passed = results.length - failures.length - notRun.length;
-  console.log(`\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}`);
+  const unjudged = results.filter((result) => result.unjudged !== undefined).map((result) => result.name);
+  const passed = results.length - failures.length - notRun.length - unjudged.length;
+  console.log(
+    `\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}${unjudged.length > 0 ? `, ${unjudged.length} not judged (${unjudged.join(", ")}: run again on a quieter PC)` : ""}`,
+  );
   if (failures.length > 0) {
     console.log(`failed: ${failures.join(", ")}`);
     if (notRun.length > 0) {

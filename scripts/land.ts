@@ -58,7 +58,7 @@ import { fileURLToPath } from "node:url";
 import { bendsSection, findBends, withBends } from "./bends";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
 import { apiNoteBullets, engineSeamLine, noteMessages, renderChangeNote } from "./change-note";
-import { rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
+import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose } from "./verbosity";
@@ -333,7 +333,11 @@ export function fragmentBody(text: string): string {
 /** The generated API surfaces (`.claude/skills/<skill>/api.md`) a diff changed. */
 const API_SURFACE = /^\.claude\/skills\/[^/]+\/api\.md$/;
 
-/** Changelog bullets for the exports this diff added and removed, read from the generated api.md files. */
+/**
+ * Changelog bullets for the exports this diff added and removed, read from the generated api.md files.
+ * "Before" is the branch point, not the base's tip: against the tip, every export another PR added
+ * to beta since read as removed here, and every one it dropped as added (#2708).
+ */
 export function apiChangesIn(
   changed: readonly string[],
   base: string,
@@ -342,9 +346,11 @@ export function apiChangesIn(
 ): { added: string[]; removed: string[] } {
   const surfaces = changed.filter((path) => API_SURFACE.test(path));
   if (surfaces.length === 0) return { added: [], removed: [] };
+  const forked = runGit(["merge-base", `origin/${base}`, "HEAD"]);
+  const from = forked.status === 0 && forked.stdout.trim().length > 0 ? forked.stdout.trim() : `origin/${base}`;
   const before = surfaces
     .map((path) => {
-      const shown = runGit(["show", `origin/${base}:${path}`]);
+      const shown = runGit(["show", `${from}:${path}`]);
       return shown.status === 0 ? shown.stdout : "";
     })
     .join("\n");
@@ -965,7 +971,7 @@ export function syncOntoBase(options: {
       refusal: `rebase onto origin/${base} hit a conflict${files}: ${rebased.detail}\n   Resolve it, push, and run land again.`,
     };
   }
-  if (rebased.regenerate.length > 0) {
+  if (needsRegenerate(rebased, diffPaths(base, runGit))) {
     const failed = regenerateAndCommit(runGit, exec);
     if (failed !== null) return { rebased: true, refusal: failed };
   }

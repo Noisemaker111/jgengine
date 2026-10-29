@@ -7,6 +7,8 @@ import { describe, expect, test } from "bun:test";
 
 import {
   bootsFor,
+  CI_ONLY_GATES,
+  landingGates,
   verifyPlan,
   MAX_BOOTS,
   changedFiles,
@@ -21,6 +23,7 @@ import {
   ownTests,
   pureRenames,
   splitByCost,
+  stepResult,
   TESTS_PER_LANE,
   workspaceOf,
   workspaces,
@@ -28,10 +31,11 @@ import {
   type Step,
   type Workspace,
 } from "./verify-fast";
-import { runSteps, type StepResult } from "./stepScheduler";
+import { EXIT_UNJUDGED, runSteps, type StepResult } from "./stepScheduler";
 import { buildImportGraph, specifiers, type ImportGraph } from "./import-graph";
 import { matchingShard, walkTestFiles } from "./test-shard";
 import { REPRESENTATIVE_GAME } from "./ci-scope";
+import { findCheck, jobChecks } from "./run-stages";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
@@ -311,9 +315,10 @@ describe("attribution fails loudly", () => {
 });
 
 describe("static gates", () => {
-  test("a package source change pays the changelog and artifact gates", () => {
+  test("a package source change pays the artifact gates, and never the changelog gate lane:close satisfies itself", () => {
     const gates = gatesFor(["packages/core/src/world/terrain.ts"]);
-    expect(gates).toContain("changelog");
+    expect(gates).not.toContain("changelog");
+    expect(landingGates(["packages/core/src/world/terrain.ts"])).not.toContain("changelog");
     expect(gates).toContain("artifacts");
     expect(gates).toContain("concept-homes");
     expect(gates).not.toContain("skills");
@@ -347,6 +352,24 @@ describe("static gates", () => {
     expect(fastSteps(plan, { cheap: true }).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
     expect(fastSteps(plan).some((step) => step.name.startsWith("test "))).toBe(true);
     expect(fastSteps(plan).filter((step) => step.first === true).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
+  });
+
+  // stateful-ratchet and the scaffold-launch fetch scan failed only in CI: the landing ran a
+  // hand-picked subset of what CI runs, so each lane met them one CI run at a time.
+  test("the landing runs every quick and types check CI runs, except the ones with a stated reason", () => {
+    const landing = landingGates(["games/fernwild/src/main.ts"]);
+    for (const check of [...jobChecks("quick"), ...jobChecks("types")]) {
+      const reason = CI_ONLY_GATES[check.name];
+      if (reason === undefined) expect(landing).toContain(check.name);
+      else expect(landing).not.toContain(check.name);
+    }
+    expect(landing).toContain("stateful-ratchet");
+    expect(landing).toContain("scaffold-launch");
+    for (const name of Object.keys(CI_ONLY_GATES)) expect(findCheck(name)).toBeDefined();
+  });
+
+  test("a docs-only landing pays only the iteration gates", () => {
+    expect(landingGates(["README.md"])).toEqual(gatesFor(["README.md"]));
   });
 
   test("a scripts change pays the capture hygiene gate", () => {
@@ -800,7 +823,7 @@ describe("local boots", () => {
     ]);
     expect(steps[1]?.needs).toEqual(["provision scrap-signal"]);
     // The load guard times the same game against its baseline with the machine to itself.
-    expect(steps[2]).toMatchObject({ needs: ["provision scrap-signal"], exclusive: true });
+    expect(steps[2]).toMatchObject({ needs: ["provision scrap-signal"], exclusive: true, unjudgedExit: EXIT_UNJUDGED });
     // The boot runs beside the tests: its deadline waits out a busy page instead of the suite.
     const withTests = fastSteps({ ...emptyPlan, tests: ["a.test.ts"], boots: ["scrap-signal"] });
     expect(withTests.find((step) => step.name === "boot probe scrap-signal")?.needs).toEqual(["provision scrap-signal"]);
@@ -812,6 +835,16 @@ describe("local boots", () => {
     expect(steps.map((step) => step.name)).toEqual(["provision scrap-signal", "boot probe scrap-signal"]);
     const onlyLoad = fastSteps(plan, { fresh: (id) => id === "boot:scrap-signal" });
     expect(onlyLoad.map((step) => step.name)).toEqual(["provision scrap-signal", "load guard scrap-signal"]);
+  });
+
+  test("a load guard another agent's work kept from judging neither fails the run nor counts as passed", () => {
+    // 28 Oct: four plant fits held the PC at 100% and harbor-heat's guard failed an unchanged engine.
+    const guard = { name: "load guard harbor-heat", unjudgedExit: EXIT_UNJUDGED };
+    const busy = stepResult(guard, EXIT_UNJUDGED, 10, "load: harbor-heat run 1 ...\nload guard not judged: other work held this PC 100% busy");
+    expect(busy).toMatchObject({ ok: true, unjudged: "load guard not judged: other work held this PC 100% busy" });
+    expect(stepResult(guard, 1, 10, "load: 1 failure(s)")).toEqual({ name: guard.name, ok: false, ms: 10, output: "load: 1 failure(s)" });
+    expect(stepResult({ name: "test x" }, EXIT_UNJUDGED, 10, "")).toMatchObject({ ok: false });
+    expect(stepResult(guard, 0, 10, "").unjudged).toBeUndefined();
   });
 
   test("the games job's capability gates run here with CI's arguments", () => {

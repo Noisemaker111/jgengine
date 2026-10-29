@@ -281,6 +281,34 @@ test("-m writes the note: sections from prefixes, the API the diff added, the se
   expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe(before.replace("- Wolves sleep in dens\n", "- Wolves sleep in dens\n- Dens show on the map\n"));
 });
 
+test("exports beta gained or dropped after the branch point are never this branch's Added or Removed (#2708)", () => {
+  const { work } = originWithBeta();
+  const surface = (body: string) =>
+    `<!-- GENERATED -->\n\n# jgengine-world — exported API surface\n\n## @jgengine/core/den/den\n\n${body}`;
+  const den = "- `oldDen` (function): function oldDen(): void — Old den.\n";
+  mkdirSync(join(work, ".claude", "skills", "jgengine-world"), { recursive: true });
+  const api = join(work, ".claude", "skills", "jgengine-world", "api.md");
+  writeFileSync(api, surface(den));
+  gitOk(work, ["add", "-A"]);
+  gitOk(work, ["commit", "-q", "-m", "api"]);
+  gitOk(work, ["push", "-q", "origin", "beta"]);
+  gitOk(work, ["checkout", "-q", "-b", "agent/lane-x"]);
+  // Another PR lands on beta after the branch point: it adds plantFor and removes oldDen.
+  gitOk(work, ["checkout", "-q", "beta"]);
+  writeFileSync(api, surface("- `plantFor` (function): function plantFor(): void — A plant.\n"));
+  gitOk(work, ["commit", "-q", "-am", "plants"]);
+  gitOk(work, ["push", "-q", "origin", "beta"]);
+  gitOk(work, ["checkout", "-q", "agent/lane-x"]);
+  writeFileSync(api, surface(`${den}- \`bikeFor\` (function): function bikeFor(): void — A bike.\n`));
+
+  expect(commitIn(work, [], ["Bikes lean into turns"]).kind).toBe("committed");
+  const note = readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8");
+  expect(note).toContain("`bikeFor`");
+  expect(note).not.toContain("plantFor");
+  expect(note).not.toContain("oldDen");
+  expect(note).not.toContain("### Removed");
+});
+
 test("a second close keeps the note the first wrote; -m adds to it, never wiping it", () => {
   // A re-close with -m once replaced #2626's whole note.
   const { work } = originWithBeta();

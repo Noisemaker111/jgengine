@@ -5,6 +5,8 @@
 import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+import { dependencyPlan, probeInstall } from "./worktree-doctor";
+
 /** Distinct from 1/2/3: this checkout is not set up, the change was never checked. */
 export const EXIT_NOT_SET_UP = 78;
 
@@ -24,14 +26,35 @@ export function tsgoBin(root: string): string {
   return join(root, "node_modules", ".bin", process.platform === "win32" ? "tsgo.exe" : "tsgo");
 }
 
-/** True when `root` has its dependencies installed (or linked). */
+/** True when `root` has an install at all (or a linked one). Whether it is complete is `missingDependencies`. */
 export function hasInstall(root: string): boolean {
   return existsSync(tsgoBin(root));
 }
 
 /**
- * Cheap readiness probe: `bun install` writes this binary, so its absence means the
- * checkout was never installed (or lost its store), not that a test failed.
+ * Every package a `package.json` in this checkout declares that its `node_modules` cannot resolve,
+ * as `<workspace>/<package>`. One `tsgo` binary said "installed" while a game's own packages were
+ * missing: a branch checked out or rebased after the install adds a dependency (`@react-three/drei`
+ * in `games/scrap-signal`), or a linked worktree copies the main checkout's older per-game folders.
+ * About 700 `existsSync` calls, so every readiness check can afford it.
+ */
+export function missingDependencies(root: string): string[] {
+  try {
+    return probeInstall(root, dependencyPlan(root)).missing;
+  } catch {
+    return [];
+  }
+}
+
+export function missingText(missing: readonly string[]): string {
+  const shown = missing.slice(0, 3).join(", ");
+  return `${missing.length} declared package(s) are not installed (${shown}${missing.length > 3 ? ", ..." : ""})`;
+}
+
+/**
+ * Readiness probe: `bun install` writes the tsgo binary, so its absence means the checkout was
+ * never installed (or lost its store); a declared package that does not resolve means the tree
+ * changed after its install. Either is an unset-up checkout, not a failed change.
  */
 export function checkoutProblem(root: string): CheckoutProblem | null {
   const modules = join(root, "node_modules");
@@ -41,6 +64,8 @@ export function checkoutProblem(root: string): CheckoutProblem | null {
   if (!hasInstall(root)) {
     return { detail: "node_modules is incomplete (node_modules/.bin/tsgo is not there)", fix: "bun install" };
   }
+  const missing = missingDependencies(root);
+  if (missing.length > 0) return { detail: missingText(missing), fix: "bun scripts/ensure-ready.ts --install-only" };
   return null;
 }
 
@@ -61,8 +86,21 @@ export function checkoutFixText(script: string, root: string, problem: CheckoutP
  */
 export function assertCheckoutReady(script: string, root = process.cwd()): void {
   const target = process.env["JG_CHECKOUT_ROOT"] ?? root;
-  const problem = checkoutProblem(target);
+  let problem = checkoutProblem(target);
   if (problem === null) return;
+  // An installed tree that lost some packages is repaired here rather than handed back as a wall:
+  // ten sessions in two days stopped on the same missing package and found the same fix.
+  if (hasInstall(target) && existsSync(join(target, "scripts", "ensure-ready.ts"))) {
+    console.error(`${script}: ${problem.detail}; installing them first`);
+    const repaired = Bun.spawnSync(["bun", "scripts/ensure-ready.ts", "--install-only"], {
+      cwd: target,
+      stdout: "inherit",
+      stderr: "inherit",
+      timeout: 600_000,
+    });
+    problem = repaired.exitCode === 0 ? checkoutProblem(target) : problem;
+    if (problem === null) return;
+  }
   console.error(checkoutFixText(script, target, problem));
   process.exit(EXIT_NOT_SET_UP);
 }

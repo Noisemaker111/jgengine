@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { shootCommand, LOAD_GUARD_SECONDS } from "./shoot";
-import { bestOf, judgeLoad, judgeOpen, parseLoadArgs, renderTable, revealSummary, summarizeRuns, type LoadSample } from "./load-check";
+import { BUSY_LIMIT, bestOf, busyShare, cpuTimes, guardVerdict, judgeLoad, judgeOpen, parseLoadArgs, renderTable, revealSummary, summarizeRuns, type LoadSample } from "./load-check";
 import { siteGames } from "./siteGames";
 
 const known = ["apex-nights", "hold-the-line", "saltwick"];
@@ -62,6 +62,25 @@ describe("judgeLoad", () => {
     expect(judgeLoad("saltwick", base, now(1100, 4000))).toEqual(["saltwick: worst freeze 1100 ms, baseline 600 ms, limit 1000 ms"]);
     expect(judgeLoad("saltwick", base, now(600, 5600))).toEqual(["saltwick: scene ready 5600 ms, baseline 4000 ms, limit 5500 ms"]);
     expect(judgeLoad("saltwick", base, now(600, null))).toEqual(["saltwick: scene ready never happened (baseline 4000 ms)"]);
+  });
+
+  test("a slower load fails on a quiet PC and is not judged on one other work holds busy", () => {
+    const slower = judgeLoad("harbor-heat", { worstClick: 700, sceneReady: 9441 }, now(702, 18279));
+    expect(guardVerdict(slower, 0.2)).toEqual({ failures: slower, unjudged: [] });
+    expect(guardVerdict(slower, 1)).toEqual({
+      failures: [],
+      unjudged: ["harbor-heat: scene ready 18279 ms, baseline 9441 ms, limit 12273 ms, but other work held this PC 100% busy"],
+    });
+    expect(guardVerdict([], 1)).toEqual({ failures: [], unjudged: [] });
+  });
+
+  test("the PC's busy share comes from the CPU time every core spent between two samples", () => {
+    const core = (user: number, idle: number) => ({ times: { user, nice: 0, sys: 0, idle, irq: 0 } });
+    const before = cpuTimes([core(100, 900), core(100, 900)]);
+    const after = cpuTimes([core(190, 910), core(190, 910)]);
+    expect(busyShare(before, after)).toBe(0.9);
+    expect(busyShare(before, before)).toBe(0);
+    expect(BUSY_LIMIT).toBeLessThan(1);
   });
 
   test("a baseline that never reached the scene does not judge it", () => {

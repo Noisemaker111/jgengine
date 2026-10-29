@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 
@@ -22,6 +22,67 @@ try {
   /* no stdin — treat as empty */
 }
 if (input.stop_hook_active) process.exit(0);
+
+// A landing still in flight in this checkout: agents ended the turn while lane:close or its queue
+// was running, and Jon had to say "keep going". One nudge per stop; the second stop is let through.
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+const readJson = (file) => {
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    return null;
+  }
+};
+const top = git("rev-parse", "--show-toplevel");
+if (top !== null) {
+  const closing = readJson(path.join(top, ".scratch", "lane-close.json"));
+  let landing = closing !== null && Number.isInteger(closing.pid) && alive(closing.pid) ? "bun run lane:close is still running" : null;
+  if (landing === null) {
+    const bg = path.join(top, ".scratch", "bg");
+    let ids = [];
+    try {
+      ids = readdirSync(bg);
+    } catch {
+      ids = [];
+    }
+    for (const id of ids) {
+      const dir = path.join(bg, id);
+      let command = "";
+      try {
+        command = readFileSync(path.join(dir, "cmd.txt"), "utf8");
+      } catch {
+        continue;
+      }
+      if (!command.includes("land-queue.ts") || existsSync(path.join(dir, "exit"))) continue;
+      let runner = Number.NaN;
+      try {
+        runner = Number(readFileSync(path.join(dir, "runner"), "utf8").trim());
+      } catch {
+        continue;
+      }
+      if (Number.isInteger(runner) && alive(runner)) {
+        landing = `the landing queue is still merging this branch's PR (task ${id}): run \`bun run background await ${id} --timeout 540\` in the foreground`;
+        break;
+      }
+    }
+  }
+  if (landing !== null) {
+    process.stdout.write(
+      JSON.stringify({
+        decision: "block",
+        reason: `The landing is not finished: ${landing}. Wait for it and report the merge (or fix what it names on this branch) before ending the turn.`,
+      }),
+    );
+    process.exit(0);
+  }
+}
 
 const branch = git("rev-parse", "--abbrev-ref", "HEAD");
 if (!branch || branch === "HEAD") process.exit(0);
