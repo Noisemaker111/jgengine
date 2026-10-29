@@ -330,7 +330,13 @@ provenance.
   Evers et al. 2007, red:far-red light and tillering; Heide 1994, flowering in temperate grasses, *New
   Phytologist* 128; Oborny, Kun, Czárán & Bokros 2000, clonal spread; May, Grimm & Jeltsch 2009,
   IBC-grass, *Oikos* 118 (paper only: grazing, trampling and mowing as defoliation); USDA NRCS plant
-  guides (US public domain) for ryegrass, timothy and Kentucky bluegrass.
+  guides (US public domain) for ryegrass, timothy, Kentucky bluegrass, white clover, dandelion and
+  oxeye daisy.
+- **Herbs and moss in the tiller field** (`plants/groundCover/groundCoverSpecies.ts`): Grime, Hodgson &
+  Hunt 2007, *Comparative Plant Ecology*, 2nd ed.; Thomas 1987, the structure of the mature white clover
+  plant, in Baker & Williams (eds), *White Clover*; Atherton, Bosanquet & Lawley 2010, *Mosses and
+  Liverworts of Britain and Ireland*, British Bryological Society; Marschall & Proctor 2004, light
+  responses of bryophytes, *Annals of Botany* 94.
 - **Shrubs** (`growth.stemLifespanYears`, `species/habitReference.ts`): Bond & Midgley 2001, ecology of
   sprouting in woody plants, *Trends in Ecology & Evolution* 16; Wilson & Tilman 1991, shrub stem
   turnover; USDA NRCS PLANTS Database characteristics and the highbush blueberry plant guide (US

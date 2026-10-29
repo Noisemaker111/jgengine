@@ -877,7 +877,7 @@
     "./placement/placementController",
     "./plants/cache/plantCache",
     "./plants/cache/plantCodec",
-    "./plants/groundCover/grassSpecies",
+    "./plants/groundCover/groundCoverSpecies",
     "./plants/groundCover/tillerSim",
     "./plants/grown/plantGrowPool",
     "./plants/grown/plantGrowWorker",
