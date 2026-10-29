@@ -73,6 +73,20 @@ describe("onboarding", () => {
     expect(runtime.waypoints.tracked()?.label).toBe("Back to the beach");
   });
 
+  test("an area given per player follows where that player started", () => {
+    const startedAt = (x: number) => {
+      const run = boot({ ...STEPS, area: (state, userId) => ({ center: [state.scene.entity.spawnPoseOf(userId)?.position[0] ?? 0, 0], radius: 50, label: "your beach" }) });
+      run.ctx.scene.entity.setSpawnPose("p1", { position: [400, 0, 0], rotationY: 0 });
+      run.ctx.scene.entity.setPose("p1", { position: [x, 0, 0] });
+      run.tick();
+      return run.runtime;
+    };
+    expect(startedAt(420).waypoints.tracked()?.label).not.toBe("Back to your beach");
+    const away = startedAt(0);
+    expect(away.pointing()).toEqual([400, 0, 0]);
+    expect(away.waypoints.tracked()?.label).toBe("Back to your beach");
+  });
+
   test("a step marked inArea: false points at its target past the teaching area", () => {
     const steps = STEPS.steps.map((step) => (step.id === "kill" ? { ...step, inArea: false } : step));
     const { ctx, tick, runtime } = boot({ ...STEPS, steps });

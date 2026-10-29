@@ -42,6 +42,33 @@ describe("scene entity store", () => {
     expect(copy.get(id)?.held).toBe("stone_pick");
   });
 
+  test("the look and what is worn are set by spawn and update and kept through a snapshot", () => {
+    const store = createEntityStore();
+    const id = store.spawn("player", { position: [0, 0, 0], look: "woman" });
+    store.update(id, { worn: ["cloth_shirt"] });
+    const copy = createEntityStore();
+    copy.hydrate(store.snapshot());
+    expect(copy.get(id)?.look).toBe("woman");
+    expect(copy.get(id)?.worn).toEqual(["cloth_shirt"]);
+    store.update(id, { look: "man" });
+    expect(store.get(id)?.look).toBe("man");
+    store.update(id, { look: null });
+    expect(store.get(id)?.look).toBeUndefined();
+    expect(copy.get(id)?.look).toBe("woman");
+  });
+
+  test("setSpawnPose moves where resetToSpawn returns the entity, not the entity", () => {
+    const store = createEntityStore();
+    const id = store.spawn("player", { position: [1, 0, 1], rotationY: 0 });
+    expect(store.setSpawnPose(id, { position: [50, 2, -40], rotationY: 1.5 })).toBe(true);
+    expect(store.get(id)?.position).toEqual([1, 0, 1]);
+    store.setPose(id, { position: [9, 0, 9] });
+    store.resetToSpawn(id);
+    expect(store.get(id)?.position).toEqual([50, 2, -40]);
+    expect(store.get(id)?.rotationY).toBe(1.5);
+    expect(store.setSpawnPose("missing", { position: [0, 0, 0], rotationY: 0 })).toBe(false);
+  });
+
   test("spawn adopts a live id instead of throwing, and throw is opt-in", () => {
     const store = createEntityStore();
     store.spawn("rack.basic", { id: "hero", position: [0, 0, 0] });

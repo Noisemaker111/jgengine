@@ -5,7 +5,7 @@ import { applyQuestRewards } from "../mission/quest";
 import { createObjectiveBanner, type ObjectiveBannerController } from "../mission/objectiveBanner";
 import type { GameContext } from "../runtime/gameContext";
 import type { SnapshotModule } from "../runtime/worldSnapshot";
-import { createOnboarding, validateOnboarding, type Onboarding, type OnboardingConfig, type OnboardingPoint, type OnboardingSnapshot, type OnboardingStep } from "./onboarding";
+import { createOnboarding, onboardingAreaFor, validateOnboarding, type Onboarding, type OnboardingConfig, type OnboardingPoint, type OnboardingSnapshot, type OnboardingStep } from "./onboarding";
 
 /** The id of the waypoint and minimap marker the onboarding owns. */
 export const ONBOARDING_MARK = "onboarding";
@@ -146,7 +146,7 @@ export function createOnboardingSystem(config: OnboardingConfig<GameContext>, op
         let showPointer = false;
         let showMarker = false;
         if (me !== null && view !== null) {
-          const area = config.area;
+          const area = onboardingAreaFor(config, ctx, ctx.player.userId);
           const outside = config.style === "teaching-area" && area !== undefined && view.step.inArea !== false && (me.position[0] - area.center[0]) ** 2 + (me.position[2] - area.center[1]) ** 2 > area.radius ** 2;
           if (outside) {
             at = [area.center[0], ctx.world.groundHeightAt(area.center[0], area.center[1]), area.center[1]];

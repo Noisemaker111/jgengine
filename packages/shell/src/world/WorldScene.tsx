@@ -29,7 +29,7 @@ import { DefaultSurface, detailMaps } from "@jgengine/core/material/defaultSurfa
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { WindClock } from "@jgengine/core/model/modelWind.draw";
 import { MeasuredBoundsGroup } from "@jgengine/core/model/measureBounds.draw";
-import { EntitySprite, IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
+import { EntitySprite, IsolatedEntityModel, useEntityLookModel } from "@jgengine/core/model/SceneModels.draw";
 import { CharacterCrowd } from "@jgengine/core/anim/CharacterCrowd.draw";
 import {
   CharacterCrowdRegistry,
@@ -45,6 +45,7 @@ import {
   type CharacterLodTier,
 } from "@jgengine/core/lod/characterLod";
 import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
+import { modelLooks } from "@jgengine/core/model/modelLook";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { setCulled } from "@jgengine/core/visibility/culledTransforms.draw";
 import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "@jgengine/core/anim/entityPose";
@@ -64,7 +65,7 @@ const GROUND_SEGMENTS = 80;
 function EntityMarker({
   entity,
   custom,
-  model,
+  model: baseModel,
   sprite,
   isLocal,
   targeted,
@@ -86,6 +87,7 @@ function EntityMarker({
   const modelRef = useRef<THREE.Group>(null);
   const ctx = useGameContext();
   const visibleRef = useRenderVisibility();
+  const model = useEntityLookModel(baseModel, entity.id);
   const entityId = entity.id;
   const role = entity.role;
   const name = entity.name;
@@ -450,7 +452,7 @@ function WorldActors({
         if ((custom === undefined || custom === null) && model === undefined && sprite === undefined) {
           reportFallbackSeam("entity", "omittedMapping");
         }
-        if (crowdEligible(model)) crowdModels.set(crowdKindOf(model), model);
+        for (const body of model === undefined ? [] : modelLooks(model)) if (crowdEligible(body)) crowdModels.set(crowdKindOf(body), body);
         return (
           <EntityMarker
             key={entityId}

@@ -18,6 +18,7 @@ import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds.draw";
 import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
 import { measureLocalCollisionTriangles, reportCollisionMeshOnce } from "./measureCollisionMesh.draw";
 import { useModelInstance } from "./useModelInstance.draw";
+import { modelForLook } from "./modelLook";
 import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader, validateMaterialAssignmentTargets } from "@jgengine/core/material/materialAsset.draw";
 import { useFootIk } from "@jgengine/core/anim/useFootIk.draw";
 import { useWornLayers } from "@jgengine/core/anim/wearable/wornLayers.draw";
@@ -148,9 +149,24 @@ export function IsolatedModelPart({
   );
 }
 
-/** Draws one entity model from its own loaded copy, for models that cannot share a batched instance. */
+const noLookChanges = () => () => {};
+
+/**
+ * `model` as the live entity `instanceId` draws it: its current `look` laid over the model
+ * ({@link modelForLook}), re-rendering only when the look changes. Without an entity, the model itself.
+ */
+export function useEntityLookModel(model: ModelConfig | undefined, instanceId: string | undefined): ModelConfig | undefined {
+  const ctx = useOptionalGameContext();
+  const look = useSyncExternalStore(
+    ctx === null || instanceId === undefined || model?.looks === undefined ? noLookChanges : ctx.subscribe,
+    () => (ctx === null || instanceId === undefined ? undefined : ctx.scene.entity.get(instanceId)?.look),
+  );
+  return useMemo(() => (model === undefined ? undefined : modelForLook(model, look)), [model, look]);
+}
+
+/** Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`. */
 export function IsolatedEntityModel({
-  model,
+  model: baseModel,
   instanceId,
   measure,
   fallback,
@@ -160,6 +176,7 @@ export function IsolatedEntityModel({
   measure?: MeasureTarget;
   fallback?: ReactNode;
 }) {
+  const model = useEntityLookModel(baseModel, instanceId) ?? baseModel;
   const levels = model.variants !== undefined && instanceId !== undefined;
   return (
     <ModelFallbackBoundary fallback={fallback ?? null} url={model.url} seam={measure?.target}>
