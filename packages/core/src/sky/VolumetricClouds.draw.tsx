@@ -6,6 +6,7 @@ import type { VolumetricCloudsRules } from "@jgengine/core/sky/volumetricClouds"
 import { cloudNoiseVolume, CLOUD_NOISE_SIZE } from "@jgengine/core/sky/volumetricClouds";
 
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { hashString } from "@jgengine/core/random/rng";
 import { createSkyLight, readSkyLight } from "./skyLight.draw";
 
 /** Props for {@link VolumetricClouds}: fully resolved cloud rules. Light and cover come from the scene's {@link readSkyLight}. */
@@ -16,14 +17,6 @@ export interface VolumetricCloudsProps {
 /** The proxy sphere sits at this fraction of the camera far plane, so nearer geometry hides the clouds before their shader runs. */
 const FAR_FRACTION = 0.9;
 
-function hashSeed(text: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return ((h >>> 0) % 1000) / 1000;
-}
 
 let sharedNoise: THREE.Data3DTexture | null = null;
 
@@ -206,7 +199,7 @@ export function VolumetricClouds({ rules }: VolumetricCloudsProps) {
       uFade: { value: rules.fade },
       uWind: { value: new THREE.Vector3() },
       uFrame: { value: 0 },
-      uSeed: { value: hashSeed(rules.seed) },
+      uSeed: { value: (hashString(rules.seed) % 1000) / 1000 },
     }),
     [rules],
   );

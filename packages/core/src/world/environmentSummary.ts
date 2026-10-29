@@ -19,6 +19,7 @@ import type {
   WorldBounds,
 } from "./features";
 import type { Aabb } from "./geometry";
+import { hashUnit } from "../random/rng";
 import { polylineLength } from "../roads/roads";
 import { resolveTerrainField, resolveTerrainPalette, type TerrainPalette } from "../terrain/terrain";
 
@@ -58,20 +59,6 @@ function kitVariants(kit: BuildingKit | undefined): { variants?: Partial<Buildin
   if (kit === undefined) return {};
   const variants = buildingKitVariantCounts(kit);
   return Object.keys(variants).length === 0 ? {} : { variants };
-}
-
-function hashU32(input: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < input.length; i += 1) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  hash ^= hash >>> 16;
-  hash = Math.imul(hash, 2246822507);
-  hash ^= hash >>> 13;
-  hash = Math.imul(hash, 3266489909);
-  hash ^= hash >>> 16;
-  return hash >>> 0;
 }
 
 /**
@@ -116,7 +103,7 @@ function buildLot(
 ): GeneratedBuilding {
   const lo = Math.min(floorsMin, floorsMax);
   const hi = Math.max(floorsMin, floorsMax);
-  const floors = lo + Math.floor((hashU32(`${seed}:floors:${index}`) / 4294967296) * (hi - lo + 1));
+  const floors = lo + Math.floor(hashUnit(`${seed}:floors:${index}`) * (hi - lo + 1));
   const baysWide = Math.max(1, Math.floor(lot.footprint.w / bayWidth));
   const baysDeep = Math.max(1, Math.floor(lot.footprint.d / bayWidth));
   const building = generateBuilding({

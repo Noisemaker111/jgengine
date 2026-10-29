@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { hashString, seededRng } from "@jgengine/core/random/rng";
 import { lightningStrikeEnvelope } from "./weatherMath";
 import type { WeatherVector } from "./weatherUniforms.draw";
 
@@ -32,24 +33,6 @@ interface LightningSegment {
 
 const DEFAULT_COLOR = "#bdd4ff";
 
-function createRandom(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state * 1664525 + 1013904223) >>> 0;
-    return state / 4294967296;
-  };
-}
-
-function hashStrikeKey(value: string | number): number {
-  const text = String(value);
-  let hash = 2166136261;
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
 function vectorFromTuple(value: WeatherVector): THREE.Vector3 {
   return new THREE.Vector3(value[0], value[1], value[2]);
 }
@@ -66,7 +49,7 @@ function createLightningSegments(
   branches: number,
   jaggedness: number,
 ): LightningSegment[] {
-  const random = createRandom(seed);
+  const random = seededRng(seed);
   const start = vectorFromTuple(origin);
   const end = vectorFromTuple(target);
   const direction = new THREE.Vector3().subVectors(end, start).normalize();
@@ -170,7 +153,7 @@ export function LightningStrike({
     }
     writeLightningGeometry(
       geometry,
-      createLightningSegments(origin, target, seed ^ hashStrikeKey(strikeKey), branches, jaggedness),
+      createLightningSegments(origin, target, seed ^ hashString(String(strikeKey)), branches, jaggedness),
     );
     startRef.current = startedAt ?? timeSeconds?.() ?? localTime.current;
   }, [branches, duration, geometry, jaggedness, material, origin, seed, strikeKey, target, visible, startedAt, timeSeconds]);
@@ -178,7 +161,7 @@ export function LightningStrike({
   useFrame((_state, delta) => {
     localTime.current += delta;
     const now = timeSeconds?.() ?? localTime.current;
-    const amount = visible && startRef.current !== null ? lightningStrikeEnvelope(now, startRef.current, duration, seed ^ hashStrikeKey(strikeKey)) : 0;
+    const amount = visible && startRef.current !== null ? lightningStrikeEnvelope(now, startRef.current, duration, seed ^ hashString(String(strikeKey))) : 0;
     material.opacity = amount * glow;
     if (lightRef.current !== null) lightRef.current.intensity = amount * impactLight;
   });

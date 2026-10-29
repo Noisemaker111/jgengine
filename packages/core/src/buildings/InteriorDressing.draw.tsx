@@ -7,6 +7,7 @@ import { nearestFixtures, type InteriorDecal, type InteriorDecalStyle, type Inte
 
 import type { AuthoredSurfaceConfig } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
 import { createDecalTexture } from "@jgengine/core/scene/decalTexture";
+import { hashUnit } from "@jgengine/core/random/rng";
 import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
@@ -211,12 +212,6 @@ export function practicalFlicker(t: number, phase: number): number {
   return 0.92 + 0.08 * Math.sin(t * 47 + phase * 6.28);
 }
 
-function phaseOf(id: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < id.length; i += 1) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
-  return (h >>> 0) / 4294967296;
-}
-
 /** Props for {@link PracticalLights}. */
 export interface PracticalLightsProps {
   fixtures: readonly InteriorFixture[];
@@ -291,7 +286,7 @@ export function PracticalLights({ fixtures, count = 6, shadowed = 0, color = "#f
         flickers.current[index] = null;
         return;
       }
-      const phase = fixture.state === "flicker" ? phaseOf(fixture.id) : null;
+      const phase = fixture.state === "flicker" ? hashUnit(fixture.id) : null;
       flickers.current[index] = phase;
       light.intensity = phase === null ? intensity : intensity * practicalFlicker(clock.elapsedTime, phase);
       light.position.set(...fixture.light);

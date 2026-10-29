@@ -1,4 +1,6 @@
 // @skill jgengine-world
+import { hashUnit } from "../random/rng";
+
 export interface LodBand {
   maxDistance: number;
   interval: number;
@@ -26,15 +28,6 @@ export interface LodScheduler {
 }
 
 const MAX_ACCUMULATED_SECONDS = 60;
-
-function hashSeed(text: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < text.length; i++) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
 
 /**
  * Index of the band `distance` falls in, `-1` past the last band. Bands must already be sorted near
@@ -64,7 +57,7 @@ export function createLodScheduler(config: LodSchedulerConfig): LodScheduler {
 
   function phaseOffset(id: string, interval: number | null): number {
     if (interval === null || interval <= 0) return 0;
-    return (hashSeed(id) / 4294967296) * interval;
+    return hashUnit(id) * interval;
   }
 
   return {

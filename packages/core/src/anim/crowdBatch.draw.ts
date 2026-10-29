@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import { animationPhaseOf } from "@jgengine/core/lod/characterLod";
+import { hashString } from "@jgengine/core/random/rng";
 import {
   crowdClipForSpeed,
   type CrowdMember,
@@ -52,9 +53,7 @@ const scratchScale = new THREE.Vector3();
  * @internal
  */
 export function poseTimeOffset(id: string): number {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) | 0;
-  return (Math.abs(hash) % 1000) / 1000 + 0.05;
+  return (hashString(id) % 1000) / 1000 + 0.05;
 }
 
 /**

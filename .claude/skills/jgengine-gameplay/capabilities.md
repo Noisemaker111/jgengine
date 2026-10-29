@@ -854,6 +854,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
 
+- `hashString` (function) · `import { hashString } from "@jgengine/core/random/rng"`
+- `hashUnit` (function) · `import { hashUnit } from "@jgengine/core/random/rng"`
+- `hashWords` (function) · `import { hashWords } from "@jgengine/core/random/rng"`
 - `seededRng` (function) · `import { seededRng } from "@jgengine/core/gameplay"`
 
 ## server-session — join a multiplayer host with status, retry, and teardown
@@ -1093,6 +1096,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weighted-pick — pick one item from a set with an injected random source
 
 - `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/gameplay"`
+- `shuffleWithRng` (function) · `import { shuffleWithRng } from "@jgengine/core/gameplay"`
 
 ## wild-stat-levels — spread a creature's levels over its stats at random so same-level creatures differ
 

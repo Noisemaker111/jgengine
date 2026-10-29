@@ -4,6 +4,7 @@
  * windows, storefronts, roof and decor — each tagged with a kit slot `world/buildingKit` binds to a
  * model. Deterministic and renderer-agnostic.
  */
+import { hashUnit } from "../random/rng";
 import { footprintAabb, type Aabb, type Footprint, type Vec2, type Vec3 } from "../world/geometry";
 
 export type BuildingSeed = number | string;
@@ -416,22 +417,8 @@ export function resolveBuildingPalette(
   return { ...preset, ...overrides };
 }
 
-function hashU32(input: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < input.length; index += 1) {
-    hash ^= input.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  hash ^= hash >>> 16;
-  hash = Math.imul(hash, 2246822507);
-  hash ^= hash >>> 13;
-  hash = Math.imul(hash, 3266489909);
-  hash ^= hash >>> 16;
-  return hash >>> 0;
-}
-
 function hash01(seed: BuildingSeed, key: string): number {
-  return hashU32(`${seed}:${key}`) / 4294967296;
+  return hashUnit(`${seed}:${key}`);
 }
 
 function probability(value: number): number {

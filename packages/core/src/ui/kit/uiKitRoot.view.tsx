@@ -17,6 +17,7 @@ import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import type { GamepadGlyphName } from "@jgengine/core/input/gamepadModel";
 
 import { useHudInteract } from "@jgengine/core/hud/hudInteract.view";
+import { hashString } from "@jgengine/core/random/rng";
 import { actionGlyph, useInputDevice } from "../../input/inputDevice.view";
 import { KitFrame, type KitFrameLook } from "./kitFrame.view";
 import {
@@ -68,9 +69,7 @@ const EMPTY_BINDINGS: ActionCodesMap = {};
 const injected = new Map<Document, Set<string>>();
 
 function cssKey(kit: UiKit): string {
-  let hash = 5381;
-  for (let index = 0; index < kit.css.length; index += 1) hash = ((hash << 5) + hash + kit.css.charCodeAt(index)) | 0;
-  return `${kit.id}:${(hash >>> 0).toString(36)}`;
+  return `${kit.id}:${hashString(kit.css).toString(36)}`;
 }
 
 /** Inserts a kit's stylesheet into the document once. Safe to call repeatedly and during SSR (no-op). */

@@ -1,3 +1,4 @@
+import { hashString } from "@jgengine/core/random/rng";
 import { computeReputationGain } from "@llmville/game/economy/reputation";
 import { estimateModelIncomePerSecond } from "@llmville/game/economy/servingEconomy";
 import { SECONDS_PER_HOUR } from "@llmville/game/economy/hourlyRates";
@@ -56,14 +57,7 @@ export interface TrainingJobSpec {
   startedAt: number;
 }
 
-const seededFloat = (seed: string, salt: string) => {
-  let hash = 2166136261;
-  const source = `${seed}:${salt}`;
-  for (let index = 0; index < source.length; index += 1) {
-    hash = Math.imul(hash ^ source.charCodeAt(index), 16777619);
-  }
-  return ((hash >>> 0) % 10000) / 10000;
-};
+const seededFloat = (seed: string, salt: string) => (hashString(`${seed}:${salt}`) % 10000) / 10000;
 
 const seededPick = <T,>(seed: string, salt: string, options: readonly T[]) =>
   options[Math.min(Math.floor(seededFloat(seed, salt) * options.length), options.length - 1)] ?? options[0];

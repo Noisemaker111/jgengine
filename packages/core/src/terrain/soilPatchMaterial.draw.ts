@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import type { SoilRules } from "@jgengine/core/world/soilKind";
+import { hashString } from "@jgengine/core/random/rng";
 
 /**
  * Worley (F1/F2 cellular) crack mask + FBM moss mask — the same noise-driven-shader technique as
@@ -62,15 +63,6 @@ float jgSoilCrackMask(vec2 p, float scale){
 }
 `;
 
-function hashSeed(text: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) % 100000;
-}
-
 /** Optional noise-eroded edge-fade config for {@link createSoilPatchMaterial} — the patch dissolves into the ground at its border. */
 export interface SoilPatchEdge {
   /** Patch center on XZ, world units — with `halfSize`, drives the noise-eroded edge fade. */
@@ -93,7 +85,7 @@ export interface SoilPatchEdge {
  * @internal
  */
 export function createSoilPatchMaterial(rules: SoilRules, edge?: SoilPatchEdge): THREE.MeshStandardMaterial {
-  const seedOffset = hashSeed(rules.seed);
+  const seedOffset = hashString(rules.seed) % 100000;
   const material = new THREE.MeshStandardMaterial({
     color: rules.baseColor,
     roughness: 0.92,

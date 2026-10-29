@@ -628,6 +628,9 @@
       "type": "registry:ui",
       "title": "Combat Float Layer",
       "description": "Absolute-positioned layer of animated damage/heal/crit/info/error text floats, each jittered around a screen position \u2014 presentational, list-driven.",
+      "dependencies": [
+        "@jgengine/core"
+      ],
       "files": [
         {
           "path": "jgengine/combat-float-layer.tsx",

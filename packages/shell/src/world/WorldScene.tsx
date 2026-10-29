@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, type ComponentType, type ReactNode } from "
 import * as THREE from "three";
 
 import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
+import { hashString } from "@jgengine/core/random/rng";
 import { resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects";
 import { useLiveEditorDocument } from "@jgengine/core/scene/AuthoredScene.draw";
 import { StaticObjectModels, useStaticObjectBatchProbe } from "@jgengine/core/instancing/StaticObjectModels.draw";
@@ -53,9 +54,7 @@ import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "@jgengine/core/input/poi
 
 /** Deterministic HSL color from a stable instance id (default entity/object tint). */
 function colorFromId(id: string): string {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
-  return `hsl(${hash % 360}, 65%, 55%)`;
+  return `hsl(${hashString(id) % 360}, 65%, 55%)`;
 }
 
 const EMPTY_DOCUMENT = createEmptyEditorDocument();

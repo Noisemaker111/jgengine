@@ -1,4 +1,5 @@
-import { hashString } from "../random/rng";
+import { shuffleWithRng } from "../random/pick";
+import { seededRng } from "../random/rng";
 
 /**
  * The tip rotation behind a loading screen: a deterministic shuffle of the game's tips, shown one at a
@@ -39,16 +40,7 @@ export interface TipRotation {
 }
 
 function shuffled(count: number, seed: string | number): number[] {
-  const order = [...Array(count).keys()];
-  let state = hashString(String(seed)) >>> 0;
-  for (let i = order.length - 1; i > 0; i -= 1) {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    const j = state % (i + 1);
-    const swap = order[i]!;
-    order[i] = order[j]!;
-    order[j] = swap;
-  }
-  return order;
+  return shuffleWithRng([...Array(count).keys()], seededRng(seed));
 }
 
 /**

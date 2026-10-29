@@ -1,5 +1,6 @@
 import type { Aabb, Vec2 } from "../world/geometry";
 import { scatter } from "../scatter/scatter";
+import { hashUnit } from "../random/rng";
 import { pointInPolygon, ringBounds } from "../world/polygon";
 import type {
   EditorDirective,
@@ -40,15 +41,6 @@ export interface MaterializedInstance {
 export interface DirectiveFootprint {
   area: Aabb;
   polygon?: Vec2[];
-}
-
-function hash(text: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) / 4294967296;
 }
 
 /**
@@ -126,8 +118,8 @@ export function materializeScatterDirective(
   const out: MaterializedInstance[] = [];
   for (const point of points) {
     if (footprint.polygon !== undefined && !pointInPolygon(footprint.polygon, point.x, point.z)) continue;
-    const scaleRoll = hash(`${seed}:scale:${point.index}`);
-    const yawRoll = hash(`${seed}:yaw:${point.index}`);
+    const scaleRoll = hashUnit(`${seed}:scale:${point.index}`);
+    const yawRoll = hashUnit(`${seed}:yaw:${point.index}`);
     out.push({
       id: `${directive.id}#${point.index}`,
       directiveId: directive.id,
@@ -177,7 +169,7 @@ export function materializePopulationDirective(
     if (footprint.polygon !== undefined && !pointInPolygon(footprint.polygon, point.x, point.z)) continue;
     const available = directive.species.filter((s) => (remaining.get(s.id) ?? 0) > 0);
     if (available.length === 0) break;
-    const picked = pickSpecies(available, hash(`${seed}:species:${point.index}`));
+    const picked = pickSpecies(available, hashUnit(`${seed}:species:${point.index}`));
     remaining.set(picked.id, (remaining.get(picked.id) ?? 0) - 1);
     out.push({
       id: `${directive.id}#${point.index}`,
@@ -187,7 +179,7 @@ export function materializePopulationDirective(
       x: point.x,
       z: point.z,
       y: 0,
-      rotationY: hash(`${seed}:yaw:${point.index}`) * Math.PI * 2,
+      rotationY: hashUnit(`${seed}:yaw:${point.index}`) * Math.PI * 2,
       scale: 1,
     });
   }

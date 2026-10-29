@@ -1,5 +1,6 @@
 // @skill jgengine-world
 import { normalizeToonRamp, type ToonRamp } from "../../material/toonRamp";
+import { hashString } from "../../random/rng";
 import { hexRgb, icosphere, type NatureMesh, type NatureRgb } from "../../nature/natureMesh";
 import type { LeafShapeParams } from "../species/plantSpecies";
 import { frondPose, frondSpine, isFrondShape, type FrondPose } from "../structure/frondPose";
@@ -235,11 +236,6 @@ function hash01(a: number, b: number): number {
   return ((h ^ (h >>> 15)) >>> 0) / 4294967296;
 }
 
-function seedNumber(text: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < text.length; i += 1) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
-  return h | 0;
-}
 
 /** Colour post-process a style applies to every vertex colour. */
 interface ColorGrade {
@@ -1007,7 +1003,7 @@ export function buildPlantMesh(input: PlantMeshInput): PlantMesh {
   const lod = plantMeshLod(input.detail ?? 1);
   const budget = PLANT_MESH_TRIANGLE_BUDGETS[lod] ?? 1_500;
   const barkBudget = Math.floor(budget * (BARK_SHARE[lod] ?? 0.25));
-  const seed = seedNumber(structure.seed);
+  const seed = hashString(structure.seed) | 0;
   const saturation = Math.max(0, Math.min(2, style.saturation));
   const brightness = Math.max(0.2, Math.min(2, style.brightness));
   const jitter = Math.max(0, Math.min(0.5, style.colorJitter));

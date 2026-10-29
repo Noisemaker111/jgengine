@@ -15,8 +15,6 @@ export {
   draw,
   moveCards,
   peek,
-  pileRng,
-  shuffleWithRng,
   type CardPile,
   type CardPileState,
 } from "./cards/cardPile";
@@ -627,7 +625,7 @@ export {
 } from "./progression/xpCurve";
 export { type CellGrid } from "./puzzle/cellGrid";
 export { createNameGenerator } from "./random/nameGen";
-export { pickUniform, pickWeighted } from "./random/pick";
+export { pickUniform, pickWeighted, shuffleWithRng } from "./random/pick";
 export { seededStreams } from "./random/rng";
 export {
   addValue,

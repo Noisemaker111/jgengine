@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { hashString } from "@jgengine/core/random/rng";
 
 export interface CombatFloatEntry {
   id: string;
@@ -11,9 +12,7 @@ export interface CombatFloatEntry {
 const HUD_TEXT_SHADOW = "0 1px 2px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.55)";
 
 function jitterFromId(id: string): number {
-  let hash = 0;
-  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  return ((hash % 21) + 21) % 21;
+  return hashString(id) % 21;
 }
 
 function combatFloatStyle(kind: NonNullable<CombatFloatEntry["kind"]>): CSSProperties {

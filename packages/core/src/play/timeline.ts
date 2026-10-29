@@ -1,3 +1,4 @@
+import { hashString } from "../random/rng";
 import type { PlayValue } from "./script";
 
 /** What a timeline row records: a scripted action, a command result, a world event, or an assertion reading. */
@@ -45,12 +46,7 @@ export interface PlayRunResult {
  */
 export function playTimelineDigest(timeline: readonly PlayTimelineEntry[]): string {
   const text = JSON.stringify(timeline.map((entry) => [entry.tick, entry.kind, entry.label, entry.values ?? null]));
-  let hash = 0x811c9dc5;
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193) >>> 0;
-  }
-  return hash.toString(16).padStart(8, "0");
+  return hashString(text).toString(16).padStart(8, "0");
 }
 
 function formatValue(value: PlayValue | undefined): string {

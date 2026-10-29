@@ -10,6 +10,7 @@ import { placeAlongPath } from "../instancing/pathInstances";
 import { sagCurve, type Vec3 } from "./catenary";
 import { registerSceneKind, type SceneKindObject, type SceneKindResolveContext } from "../scene/sceneKinds";
 import { type ParamSchema, type ParsedParams } from "../generator/paramSchema";
+import { seededRng } from "../random/rng";
 
 /**
  * The editor path kind marking a polyline as a pole/cable run.
@@ -56,6 +57,7 @@ export const POLE_LINE_SCHEMA: ParamSchema = {
     { type: "range", key: "cableRadius", label: "cable radius", min: 0.01, max: 0.5, step: 0.01, default: 0.05, unit: "m", group: "cables" },
     { type: "range", key: "sag", label: "sag", min: 0, max: 6, step: 0.1, default: 0.8, unit: "m", group: "cables" },
     { type: "range", key: "sagPerMeter", label: "sag / m", min: 0, max: 0.3, step: 0.005, default: 0.04, group: "cables" },
+    { type: "range", key: "sagJitter", label: "sag variation", min: 0, max: 1, step: 0.05, default: 0.2, group: "cables" },
     { type: "range", key: "cableSegments", label: "cable smoothness", min: 2, max: 48, step: 1, default: 12, group: "cables" },
     { type: "seed", key: "seed", label: "seed", default: "", group: "cables" },
     { type: "action", key: "randomizeCables", label: "randomize cables", action: "randomize", group: "cables" },
@@ -69,7 +71,8 @@ export const POLE_LINE_SCHEMA: ParamSchema = {
 /**
  * Resolve poles + cables from a document object's points and parsed params. Poles come from the
  * generic `placeAlongPath` sampler; between each consecutive pair, `wireCount` parallel cables are
- * strung with lateral offset and quadratic-Bézier `sag` (deeper on longer spans). Pure data.
+ * strung with lateral offset and quadratic-Bézier `sag` (deeper on longer spans). Each span's sag
+ * varies by up to `sagJitter` of itself, drawn from `seed` (the object id when blank). Pure data.
  */
 export function resolvePoleLine(object: SceneKindObject, params: ParsedParams, context?: SceneKindResolveContext): ResolvedPoleLine {
   const spacing = params["spacing"] as number;
@@ -81,6 +84,10 @@ export function resolvePoleLine(object: SceneKindObject, params: ParsedParams, c
   const sagPerMeter = params["sagPerMeter"] as number;
   const cableSegments = Math.round(params["cableSegments"] as number);
   const snap = params["snapToTerrain"] as boolean;
+  const jitterParam = params["sagJitter"];
+  const sagJitter = typeof jitterParam === "number" ? jitterParam : 0;
+  const seedParam = params["seed"];
+  const seed = typeof seedParam === "string" ? seedParam : "";
 
   const placed = placeAlongPath(object.points ?? [], {
     spacing,
@@ -90,6 +97,7 @@ export function resolvePoleLine(object: SceneKindObject, params: ParsedParams, c
 
   const cables: Cable[] = [];
   if (wireCount > 0) {
+    const random = seededRng(`${seed.length > 0 ? seed : object.id}/sag`);
     for (let i = 0; i + 1 < poles.length; i += 1) {
       const a = poles[i]!;
       const b = poles[i + 1]!;
@@ -98,7 +106,7 @@ export function resolvePoleLine(object: SceneKindObject, params: ParsedParams, c
       const span = Math.hypot(dx, dz) || 1;
       const perpX = -dz / span;
       const perpZ = dx / span;
-      const drop = sag + sagPerMeter * span;
+      const drop = (sag + sagPerMeter * span) * (1 + sagJitter * (random() * 2 - 1));
       const half = (wireCount - 1) / 2;
       for (let w = 0; w < wireCount; w += 1) {
         const offset = (w - half) * wireSpacing;

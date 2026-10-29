@@ -25,6 +25,7 @@ import { buildPolylineIndex } from "../world/polylineIndex";
 import { distanceToRing, pointInPolygon, polygonSignedArea } from "../world/polygon";
 import type { Vec2 } from "../world/geometry";
 import { buildSpatialBuckets } from "../spatial/spatialBuckets";
+import { hashString } from "../random/rng";
 import type { TerraformSnapshot } from "./terraform";
 
 /** A surface normal vector at a terrain sample point. */
@@ -107,14 +108,7 @@ export function fractalNoise(x: number, z: number, config: FractalNoiseConfig): 
 /** @internal */
 export function seedFrom(value: string | number | undefined, fallback: number): number {
   if (typeof value === "number") return value | 0;
-  if (typeof value === "string") {
-    let hash = 2166136261;
-    for (let index = 0; index < value.length; index += 1) {
-      hash ^= value.charCodeAt(index);
-      hash = Math.imul(hash, 16777619);
-    }
-    return hash | 0;
-  }
+  if (typeof value === "string") return hashString(value) | 0;
   return fallback;
 }
 
@@ -1276,13 +1270,9 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
   };
 }
 
-function coastHash(seed: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return ((h >>> 0) / 4294967296) * Math.PI * 2;
+/** A seed's phase angle in `[0, 2π)` — the offset coast wobble and survey plains start their waves from. @internal */
+export function seedPhase(seed: string): number {
+  return (hashString(seed) / 4294967296) * Math.PI * 2;
 }
 
 function smooth01(t: number): number {
@@ -1308,7 +1298,7 @@ export function withCoast(height: (x: number, z: number) => number, coast: Terra
   const floor = coast.seaFloor ?? -30;
   const shelf = Math.max(1, coast.shelf ?? 120);
   const wobble = coast.wobble ?? 0.25;
-  const phase = coastHash(coast.seed ?? "coast");
+  const phase = seedPhase(coast.seed ?? "coast");
   const shape = (inside: number, x: number, z: number): number => {
     if (inside >= 0) {
       const land = Math.max(height(x, z), shore);

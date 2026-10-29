@@ -20,6 +20,7 @@ import {
   type MissionTickInput,
   type MissionView,
 } from "../mission/mission";
+import { hashUnit } from "../random/rng";
 import { cancelJob, createWorkQueue, enqueue, jobProgress, tick as tickQueue, type WorkQueueConfig, type WorkQueueState } from "../work/jobQueue";
 import type { ScenePoint3 } from "../world/sceneShapes";
 
@@ -1260,14 +1261,7 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
   };
 
   /** A stable 0-1 roll for one key, so a replayed or reloaded world rolls the same. */
-  const roll = (key: string): number => {
-    let hash = 0x811c9dc5;
-    for (let index = 0; index < key.length; index += 1) {
-      hash ^= key.charCodeAt(index);
-      hash = Math.imul(hash, 0x01000193);
-    }
-    return (hash >>> 0) / 0x100000000;
-  };
+  const roll = hashUnit;
   const fireSchedule = (id: string, timer: WorldScheduleDecl, index: number) => {
     const current = state();
     if (!test(timer.when, current)) return;

@@ -24,7 +24,7 @@
  * @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
  */
 import { plantPow } from "../../plants/growth/plantMath";
-import { seededRng } from "../../random/rng";
+import { hashWords, seededRng } from "../../random/rng";
 import { createWaveEroder } from "../coastal/waveErosion";
 import { createFlowRouter, type FlowRouting } from "../flow/flowRouting";
 import { temperateBed } from "../glacial/basalTemperature";
@@ -314,13 +314,7 @@ function copyParams(params: LandformParams): LandformParams {
 export function hashLandformArrays(...arrays: readonly Float64Array[]): string {
   let out = "";
   for (const array of arrays) {
-    const words = new Uint32Array(array.buffer, array.byteOffset, array.length * 2);
-    let h = 2166136261 >>> 0;
-    for (let i = 0; i < words.length; i += 1) {
-      h ^= words[i] ?? 0;
-      h = Math.imul(h, 16777619) >>> 0;
-    }
-    out += h.toString(16).padStart(8, "0");
+    out += hashWords(new Uint32Array(array.buffer, array.byteOffset, array.length * 2)).toString(16).padStart(8, "0");
   }
   return out;
 }
