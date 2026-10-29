@@ -1,6 +1,6 @@
 # JGengine repository governance
 
-This file holds how this repo builds, tests and lands, and what "done" means here; nothing that applies to every repo (those rules live in `~/.config/opencode-normal/AGENTS.md`). [README.md](README.md) owns project facts: packages, layering, commands and publishing. Do not restate them here or in skills.
+This file holds how this repo builds, tests and lands, and what "done" means here; nothing that applies to every repo (those rules live in `~/.config/opencode/AGENTS.md`). [README.md](README.md) owns project facts: packages, layering, commands and publishing. Do not restate them here or in skills.
 
 ## Project purpose
 
