@@ -3,7 +3,7 @@ import { createRaceState, type RaceState } from "@jgengine/core/game/race";
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { createVehicleDynamics, type VehicleDynamics, type VehicleDynamicsModifiers } from "@jgengine/core/physics/vehicleDynamics";
-import { VEHICLE_STYLES, vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
+import { vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { createSessionLoop, type SessionLoop } from "@jgengine/core/run/sessionLoop";
@@ -37,7 +37,13 @@ const PAYOUT = [1, 0.55, 0.3] as const;
 
 /** The stock car: quick, grippy, forgiving. Upgrades scale it; nothing else does. */
 export const BASE: VehicleSpec = {
-  ...VEHICLE_STYLES.arcade,
+  drift: 0.15,
+  bodyRoll: 0.4,
+  abs: 1,
+  tractionControl: 0.6475,
+  stability: 1,
+  selfAlign: 0.6375,
+  steerRate: 4.4,
   topSpeed: 36,
   accel: 10,
   brake: 20,

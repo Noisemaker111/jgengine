@@ -30,7 +30,7 @@ export interface DemoPart {
 }
 
 const PART_BY_KEY: { readonly [K in DemoKey]: DemoPart & { key: K } } = {
-  car: { key: "car", label: "Car physics", does: "The engine's car laps a track by itself. Press W, A, S, D on it to drive, or change the tires.", why: "car", symbols: ["createVehicleDynamics", "vehicleTuning", "VEHICLE_STYLES"], source: /@jgengine\/core\/physics\/(vehicle|drivableVehicle)/ },
+  car: { key: "car", label: "Car physics", does: "The engine's car laps a track by itself. Press W, A, S, D on it to drive, or change the tires.", why: "car", symbols: ["createVehicleDynamics", "vehicleTuning", "withVehicleEffects"], source: /@jgengine\/core\/physics\/(vehicle|drivableVehicle)/ },
   projectiles: { key: "projectiles", label: "Projectiles", does: "One weapon definition. Make it a shotgun, a rocket or a taco launcher and the engine flies every pellet.", why: "projectiles", symbols: ["createWeaponSystem", "createDamageRuntime"], source: /@jgengine\/core\/combat\/weapon/ },
   keys: { key: "keys", label: "Key bindings", does: "Actions list their keys and the controls menu comes free. Rebind one and the next press uses it.", why: "controls", symbols: ["createRebindSession", "KeybindingMenu", "applyBindingOverrides"], source: /@jgengine\/core\/input\/(rebindSession|bindingOverrides)|keybindingMenu/ },
   grass: { key: "grass", label: "Grass", does: "The engine's own grass renderer. Pick a preset or move a knob and the field is rebuilt.", why: "meadow", symbols: ["GrassStream", "readGrassLook", "resolveGrassBake", "createGrassMaterial", "GRASS_PRESETS"], source: /@jgengine\/core\/grass\/|"grass"\s*:/ },

@@ -1,5 +1,5 @@
 import { DEFAULT_GRIP_CURVE, gripCurvePeak, type GripCurve } from "./gripCurve";
-import type { VehicleDynamicsTuning } from "./vehicleDynamics";
+import { withVehicleEffects, type VehicleDynamicsTuning, type VehicleEffectName, type VehicleEffects } from "./vehicleDynamics";
 
 const GRAVITY = 9.81;
 
@@ -21,8 +21,8 @@ export interface VehicleSpecGearbox {
 /**
  * The feel knobs for a car, in numbers a designer can reason about. {@link vehicleTuning} turns a spec into
  * the force-based {@link VehicleDynamicsTuning} `createVehicleDynamics` runs, so every car — kart, street
- * car, bus or drift machine — rides the same tire model and a spec only says how it should feel.
- * Start from a {@link VEHICLE_STYLES} preset and override what the game needs.
+ * car, bus or drift machine — rides the same tire model and a spec only says how it should feel. Each driver
+ * aid is its own number, and `effects` switches any physical effect off or retunes it.
  */
 export interface VehicleSpec {
   /** Top speed, m/s. A governor holds it, so drive stays smooth up to it. */
@@ -45,12 +45,22 @@ export interface VehicleSpec {
    * {@link DEFAULT_GRIP_CURVE}, a street tire.
    */
   gripCurve?: GripCurve;
-  /** `0` planted … `1` loose: less rear grip, a sharper handbrake, more slide before stability steps in. Default `0.2`. */
+  /** Rear balance, `0` planted … `1` loose: less rear grip, more front roll stiffness share, a sharper handbrake. Default `0.2`. */
   drift?: number;
   /** Rear grip left under full handbrake, `0..1` (default from `drift`). */
   handbrakeGrip?: number;
-  /** Driver aids `0` (raw) … `1` (arcade): ABS, traction control, stability and self-centring steering. Default `0.7`. */
-  assist?: number;
+  /** Anti-lock brakes, `0` off … `1` full (default `0.7`). */
+  abs?: number;
+  /** Traction control, `0` off … `1` full (default `0.49·(1 − drift/2)`). */
+  tractionControl?: number;
+  /** Stability control, `0` off … `1` an arcade car that cannot spin (default `0.82`). */
+  stability?: number;
+  /** Sideslip stability control allows before it steps in, rad (default `0.15 + 0.45·drift`). */
+  maxSideslip?: number;
+  /** Caster self-alignment: share of a slide the front wheels steer into on their own (default `0.495 + 0.25·drift`). */
+  selfAlign?: number;
+  /** Rack speed toward full lock, rad/s (default `3.8`; returns 1.5× faster). */
+  steerRate?: number;
   /** Mass, kg (default `1300`). Heavier cars shove lighter ones and carry more into walls. */
   weight?: number;
   /** Peak power, W (default enough for `accel` to taper gently toward `topSpeed`). */
@@ -75,18 +85,12 @@ export interface VehicleSpec {
   comHeight?: number;
   /** Aero downforce area, m² — grip that grows with speed (default `0`). */
   downforce?: number;
+  /**
+   * Effects to switch off (`false`), replace or add on top of the ones the spec derives: `{ aeroDrag: false }` for a
+   * car that never feels the air, `{ tireRelaxation: { length: 0.3 } }` for a lazier turn-in.
+   */
+  effects?: { [Name in VehicleEffectName]?: VehicleEffects[Name] | false };
 }
-
-/**
- * Starting points for {@link VehicleSpec}: spread one, then set the numbers a car needs. `arcade` grips
- * hard and forgives everything, `sim` keeps aids light so the car has to be driven, `drift` hangs the rear
- * out and holds a slide.
- */
-export const VEHICLE_STYLES = {
-  arcade: { grip: 1.5, drift: 0.15, assist: 1, bodyRoll: 0.4 },
-  sim: { grip: 1.05, drift: 0.25, assist: 0.25, bodyRoll: 0.6 },
-  drift: { grip: 1.1, drift: 0.85, assist: 0.55, bodyRoll: 0.6 },
-} as const satisfies Record<string, Partial<VehicleSpec>>;
 
 const DEFAULT_TORQUE: GripCurve = { points: [[0, 0.7], [0.35, 0.95], [0.6, 1], [0.85, 0.92], [1, 0.7]] };
 
@@ -98,7 +102,7 @@ function clamp(value: number, low: number, high: number): number {
  * Build the physical tuning for a {@link VehicleSpec}. Pure and deterministic, so a parts change or a dent
  * re-derives the tuning and `retune` swaps it in without costing the car its momentum.
  *
- * @capability vehicle-spec describe a car by feel (top speed, accel, grip, turn rate, drift, assists) and get force-based handling tuned from it
+ * @capability vehicle-spec describe a car by feel (top speed, accel, grip, turn rate, balance, each aid) and get force-based handling built from separate effects
  */
 export function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning {
   const mass = Math.max(1, spec.weight ?? 1300);
@@ -108,7 +112,6 @@ export function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning {
   const curve = gripCurvePeak(spec.gripCurve ?? DEFAULT_GRIP_CURVE);
   const grip = Math.max(0.05, spec.grip * (curve.peakGrip > 0 ? curve.peakGrip : 1));
   const drift = clamp(spec.drift ?? 0.2, 0, 1);
-  const assist = clamp(spec.assist ?? 0.7, 0, 1);
   const topSpeed = Math.max(0.5, spec.topSpeed);
   const accel = Math.max(0, spec.accel);
   const peakSlipAngle = clamp(Math.atan(curve.peakSlip), 0.06, 0.5);
@@ -124,7 +127,29 @@ export function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning {
   const maxAngle = clamp(Math.atan((Math.max(0.05, spec.turnRate) * wheelbase) / turnSpeed), 0.12, 0.75);
   // At top speed the lock the grip can use plus a little past peak slip: more is just a slide.
   const highSpeedAngle = clamp((wheelbase * grip * GRAVITY) / (topSpeed * topSpeed) + peakSlipAngle * 0.9, 0.04, maxAngle);
-  const rate = 2.4 + 2 * assist;
+  const rate = Math.max(0.1, spec.steerRate ?? 3.8);
+  const frontShare = 0.55 - 0.1 * drift;
+
+  const abs = clamp(spec.abs ?? 0.7, 0, 1);
+  const tractionControl = clamp(spec.tractionControl ?? 0.49 * (1 - 0.5 * drift), 0, 1);
+  const stability = clamp(spec.stability ?? 0.82, 0, 1);
+  const selfAlign = clamp(spec.selfAlign ?? 0.495 + 0.25 * drift, 0, 1);
+  const downforce = Math.max(0, spec.downforce ?? 0);
+  const effects: VehicleEffects = {
+    combinedSlip: {},
+    longitudinalLoadTransfer: {},
+    lateralLoadTransfer: { frontShare },
+    loadSensitivity: { grip: 0.05 },
+    aeroDrag: { area: 0.6 },
+    rollingResistance: { coefficient: 0.015 },
+    speedSensitiveSteering: { angle: highSpeedAngle, at: topSpeed * 0.8 },
+    // Even a raw car keeps a floor of stability: a keyboard player cannot catch a spin by feel.
+    stability: { strength: stability, maxSideslip: spec.maxSideslip ?? 0.15 + 0.45 * drift },
+  };
+  if (downforce > 0) effects.downforce = { area: downforce };
+  if (selfAlign > 0) effects.selfAlign = { strength: selfAlign };
+  if (abs > 0) effects.abs = { strength: abs };
+  if (tractionControl > 0) effects.tractionControl = { strength: tractionControl };
 
   const gearbox = spec.gearbox;
   const tuning: VehicleDynamicsTuning = {
@@ -134,8 +159,6 @@ export function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning {
     comHeight,
     trackWidth,
     yawInertiaIndex: 1,
-    rollStiffnessFront: 0.55 - 0.1 * drift,
-    loadSensitivity: 0.2,
     front: { peakGrip: grip, peakSlipAngle, slideGrip },
     rear: { peakGrip: grip * (1.1 - 0.15 * drift), peakSlipAngle: peakSlipAngle * (1 + 0.1 * drift), slideGrip: slideGrip * (1 - 0.1 * drift) },
     driveFront: clamp(driveFront, 0, 1),
@@ -146,22 +169,8 @@ export function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning {
     brakeForce: mass * Math.max(0, spec.brake),
     brakeFront: 0.62,
     handbrakeGrip: clamp(spec.handbrakeGrip ?? 0.5 - 0.1 * drift, 0, 1),
-    steering: {
-      maxAngle,
-      highSpeedAngle,
-      highSpeedAt: topSpeed * 0.8,
-      rate,
-      returnRate: rate * 1.5,
-      selfAlign: clamp(0.25 + 0.35 * assist + 0.25 * drift, 0, 1),
-    },
-    assists: {
-      abs: assist,
-      tractionControl: 0.7 * assist * (1 - 0.5 * drift),
-      // Even a raw car keeps a floor of stability: a keyboard player cannot catch a spin by feel.
-      stability: 0.4 + 0.6 * assist,
-      maxSideslip: 0.15 + 0.45 * drift,
-    },
-    aero: { dragArea: 0.6, downforceArea: Math.max(0, spec.downforce ?? 0) },
+    steering: { maxAngle, rate, returnRate: rate * 1.5 },
+    effects,
     speedLimit: topSpeed,
     reverseSpeed: spec.reverseSpeed ?? Math.min(9, topSpeed * 0.3),
     rollStiffness: (mass * GRAVITY * comHeight) / (0.015 + 0.08 * roll),
@@ -178,10 +187,11 @@ export function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning {
       travel: 0.12 + 0.15 * s,
       rideHeight: Math.max(0.25, comHeight * 0.9),
       antiRoll: springRate * (1.4 - roll),
+      antiRollFront: frontShare,
     };
   }
   if (spec.hop !== undefined) tuning.jump = { speed: spec.hop.speed, ...(spec.hop.gravity === undefined ? {} : { gravity: spec.hop.gravity }) };
-  return tuning;
+  return spec.effects === undefined ? tuning : withVehicleEffects(tuning, spec.effects);
 }
 
 function gearboxTuning(box: VehicleSpecGearbox, mass: number, accel: number, topSpeed: number): VehicleDynamicsTuning["powertrain"] {
@@ -191,10 +201,11 @@ function gearboxTuning(box: VehicleSpecGearbox, mass: number, accel: number, top
   const wheelRadius = box.wheelRadius ?? 0.33;
   const torqueCurve = box.torqueCurve ?? DEFAULT_TORQUE;
   const efficiency = 0.85;
+  const first = gears[0] ?? 1;
+  const top = gears[gears.length - 1] ?? first;
   // Top gear reaches redline a touch past top speed, so the governor, not the limiter, sets the ceiling.
-  const top = gears[gears.length - 1]!;
   const finalDrive = box.finalDrive ?? (redlineRpm * 2 * Math.PI * wheelRadius) / (60 * topSpeed * 1.08 * top);
-  const peakTorque = (mass * accel * wheelRadius) / (gears[0]! * finalDrive * efficiency);
+  const peakTorque = (mass * accel * wheelRadius) / (first * finalDrive * efficiency);
   return {
     kind: "gearbox",
     peakTorque,
@@ -205,7 +216,7 @@ function gearboxTuning(box: VehicleSpecGearbox, mass: number, accel: number, top
     shiftDownRpm: Math.max(idleRpm + 600, redlineRpm * 0.35),
     shiftSeconds: box.shiftSeconds ?? 0.14,
     gears,
-    reverseGear: gears[0]!,
+    reverseGear: first,
     finalDrive,
     wheelRadius,
     efficiency,

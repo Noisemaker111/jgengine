@@ -615,7 +615,7 @@ export {
   type VehicleSetup,
   type VehicleStat,
 } from "./physics/vehicleParts";
-export { VEHICLE_STYLES, vehicleTuning, type VehicleSpec, type VehicleSpecGearbox } from "./physics/vehicleSpec";
+export { vehicleTuning, type VehicleSpec, type VehicleSpecGearbox } from "./physics/vehicleSpec";
 export { createContributionPool, createPlotPermissions, type BuildRole } from "./placement/buildPermissions";
 export {
   isPlaceWorld,

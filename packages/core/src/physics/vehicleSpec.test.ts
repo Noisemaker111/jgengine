@@ -2,11 +2,11 @@ import { describe, expect, test } from "bun:test";
 
 import { NEUTRAL_AXIS, type AxisInput } from "../input/axisInput";
 import { createVehicleDynamics } from "./vehicleDynamics";
-import { VEHICLE_STYLES, vehicleTuning, type VehicleSpec } from "./vehicleSpec";
+import { vehicleTuning, type VehicleSpec } from "./vehicleSpec";
 
 const DT = 1 / 60;
 const axis = (partial: Partial<AxisInput>): AxisInput => ({ ...NEUTRAL_AXIS, ...partial });
-const CAR: VehicleSpec = { ...VEHICLE_STYLES.arcade, topSpeed: 30, accel: 8, brake: 12, turnRate: 1.8 };
+const CAR: VehicleSpec = { grip: 1.5, drift: 0.15, abs: 1, stability: 1, bodyRoll: 0.4, topSpeed: 30, accel: 8, brake: 12, turnRate: 1.8 };
 
 function speedAfter(spec: VehicleSpec, seconds: number, options = {}, modifiers = {}): number {
   const car = createVehicleDynamics(vehicleTuning(spec), options);
@@ -48,8 +48,26 @@ describe("vehicleTuning", () => {
     const planted = vehicleTuning({ ...CAR, drift: 0 });
     const loose = vehicleTuning({ ...CAR, drift: 1 });
     expect(loose.rear!.peakGrip).toBeLessThan(planted.rear!.peakGrip);
-    expect(loose.assists!.maxSideslip!).toBeGreaterThan(planted.assists!.maxSideslip!);
-    expect(loose.handbrakeGrip!).toBeLessThan(planted.handbrakeGrip!);
+    expect(loose.effects?.stability?.maxSideslip ?? 0).toBeGreaterThan(planted.effects?.stability?.maxSideslip ?? 0);
+    expect(loose.handbrakeGrip ?? 0).toBeLessThan(planted.handbrakeGrip ?? 0);
+  });
+
+  test("each aid is its own number and 0 leaves it out", () => {
+    const raw = vehicleTuning({ ...CAR, abs: 0, tractionControl: 0, selfAlign: 0 });
+    expect(raw.effects?.abs).toBeUndefined();
+    expect(raw.effects?.tractionControl).toBeUndefined();
+    expect(raw.effects?.selfAlign).toBeUndefined();
+    const full = vehicleTuning({ ...CAR, abs: 1, tractionControl: 0.4 });
+    expect(full.effects?.abs?.strength).toBe(1);
+    expect(full.effects?.tractionControl?.strength).toBe(0.4);
+  });
+
+  test("spec effects switch a derived effect off, replace it or add a new one", () => {
+    const tuning = vehicleTuning({ ...CAR, effects: { aeroDrag: false, rollingResistance: { coefficient: 0.01 }, tireRelaxation: { length: 0.3 } } });
+    expect(tuning.effects?.aeroDrag).toBeUndefined();
+    expect(tuning.effects?.rollingResistance?.coefficient).toBe(0.01);
+    expect(tuning.effects?.tireRelaxation?.length).toBe(0.3);
+    expect(tuning.effects?.combinedSlip).toBeDefined();
   });
 });
 

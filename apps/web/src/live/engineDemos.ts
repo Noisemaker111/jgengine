@@ -54,7 +54,6 @@ export const ENGINE_DEMOS: Record<DemoKey, EngineDemo> = {
     },
     live: {
       values: { topSpeed: {}, accel: {}, turnRate: {}, grip: {}, drift: {} },
-      swaps: [{ from: "VEHICLE_STYLES.drift", to: (d) => `VEHICLE_STYLES.${String(d["style"])}` }],
     },
   },
   grass: {

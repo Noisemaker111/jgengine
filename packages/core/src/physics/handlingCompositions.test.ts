@@ -2,10 +2,18 @@ import { describe, expect, test } from "bun:test";
 
 import { createBoatDynamics, type BoatTuning } from "./boatDynamics";
 import { measureHandling, measureLean, measureRide, type HandlingReport } from "./handlingProbe";
-import { createVehicleDynamics, type VehicleDynamicsTuning, type VehicleGearboxTuning } from "./vehicleDynamics";
+import { createVehicleDynamics, type VehicleDynamicsTuning, type VehicleEffects, type VehicleGearboxTuning } from "./vehicleDynamics";
 
 // Seven compositions of the same fields. Test fixtures, not presets: they prove the probes tell apart the
 // vehicles an open-world game mixes, each from its physical numbers.
+
+const tyres: VehicleEffects = {
+  combinedSlip: {},
+  longitudinalLoadTransfer: {},
+  lateralLoadTransfer: {},
+  loadSensitivity: { grip: 0.05 },
+  rollingResistance: {},
+};
 
 const roadGearbox: VehicleGearboxTuning = {
   kind: "gearbox",
@@ -33,9 +41,16 @@ const car: VehicleDynamicsTuning = {
   driveFront: 1,
   powertrain: roadGearbox,
   brakeForce: 14000,
-  steering: { maxAngle: 0.6, highSpeedAngle: 0.14, highSpeedAt: 30, rate: 3, returnRate: 5, selfAlign: 0.6 },
-  assists: { abs: 1, tractionControl: 0.6, stability: 0.8, maxSideslip: 0.25 },
-  aero: { dragArea: 0.7 },
+  steering: { maxAngle: 0.6, rate: 3, returnRate: 5 },
+  effects: {
+    ...tyres,
+    speedSensitiveSteering: { angle: 0.14, at: 30 },
+    selfAlign: { strength: 0.6 },
+    abs: { strength: 1 },
+    tractionControl: { strength: 0.6 },
+    stability: { strength: 0.8, maxSideslip: 0.25 },
+    aeroDrag: { area: 0.7 },
+  },
 };
 
 const kart: VehicleDynamicsTuning = {
@@ -49,9 +64,9 @@ const kart: VehicleDynamicsTuning = {
   driveFront: 0,
   powertrain: { kind: "direct", maxForce: 1300, maxPower: 11000, reverseScale: 0, coastForce: 60 },
   brakeForce: 2200,
-  steering: { maxAngle: 0.5, highSpeedAngle: 0.35, highSpeedAt: 22, rate: 9, selfAlign: 0.2 },
+  steering: { maxAngle: 0.5, rate: 9 },
   speedLimit: 24,
-  aero: { dragArea: 0.45 },
+  effects: { ...tyres, speedSensitiveSteering: { angle: 0.35, at: 22 }, selfAlign: { strength: 0.2 }, aeroDrag: { area: 0.45 } },
 };
 
 const rally: VehicleDynamicsTuning = {
@@ -66,9 +81,14 @@ const rally: VehicleDynamicsTuning = {
   powertrain: { ...roadGearbox, peakTorque: 420, shiftSeconds: 0.08, gears: [3.2, 2.2, 1.65, 1.3, 1.05, 0.88] },
   brakeForce: 13000,
   handbrakeGrip: 0.2,
-  steering: { maxAngle: 0.7, highSpeedAngle: 0.3, highSpeedAt: 30, rate: 5, returnRate: 6, selfAlign: 0.8 },
-  assists: { abs: 0.5 },
-  aero: { dragArea: 0.75 },
+  steering: { maxAngle: 0.7, rate: 5, returnRate: 6 },
+  effects: {
+    ...tyres,
+    speedSensitiveSteering: { angle: 0.3, at: 30 },
+    selfAlign: { strength: 0.8 },
+    abs: { strength: 0.5 },
+    aeroDrag: { area: 0.75 },
+  },
   suspension: { springRate: 30000, damperRate: 3200, travel: 0.25, rideHeight: 0.55, antiRoll: 12000 },
 };
 
@@ -83,8 +103,14 @@ const sim: VehicleDynamicsTuning = {
   driveFront: 0,
   powertrain: { ...roadGearbox, peakTorque: 520, redlineRpm: 8200, shiftUpRpm: 7900, shiftDownRpm: 3800, shiftSeconds: 0.06 },
   brakeForce: 22000,
-  steering: { maxAngle: 0.5, highSpeedAngle: 0.1, highSpeedAt: 40, rate: 4, returnRate: 5, selfAlign: 0.3 },
-  aero: { dragArea: 0.6, downforceArea: 1.2 },
+  steering: { maxAngle: 0.5, rate: 4, returnRate: 5 },
+  effects: {
+    ...tyres,
+    speedSensitiveSteering: { angle: 0.1, at: 40 },
+    selfAlign: { strength: 0.3 },
+    aeroDrag: { area: 0.6 },
+    downforce: { area: 1.2 },
+  },
   suspension: { springRate: 90000, damperRate: 7000, travel: 0.08, rideHeight: 0.35, antiRoll: 60000 },
 };
 
@@ -107,9 +133,14 @@ const monsterTruck: VehicleDynamicsTuning = {
     wheelRadius: 0.8,
   },
   brakeForce: 32000,
-  steering: { maxAngle: 0.55, highSpeedAngle: 0.25, highSpeedAt: 25, rate: 2, returnRate: 3, selfAlign: 0.4 },
-  assists: { stability: 0.6, maxSideslip: 0.3 },
-  aero: { dragArea: 4.5 },
+  steering: { maxAngle: 0.55, rate: 2, returnRate: 3 },
+  effects: {
+    ...tyres,
+    speedSensitiveSteering: { angle: 0.25, at: 25 },
+    selfAlign: { strength: 0.4 },
+    stability: { strength: 0.6, maxSideslip: 0.3 },
+    aeroDrag: { area: 4.5 },
+  },
   suspension: { springRate: 70000, damperRate: 9000, travel: 0.6, rideHeight: 1.2, antiRoll: 20000 },
 };
 
@@ -133,10 +164,16 @@ const motorcycle: VehicleDynamicsTuning = {
     wheelRadius: 0.31,
   },
   brakeForce: 3800,
-  steering: { maxAngle: 0.5, highSpeedAngle: 0.5, highSpeedAt: 30, rate: 3 },
+  steering: { maxAngle: 0.5, rate: 3 },
   lean: { maxLean: 0.85, leanRate: 4 },
-  assists: { abs: 1, tractionControl: 0.6, antiWheelie: 1, antiStoppie: 1 },
-  aero: { dragArea: 0.35 },
+  effects: {
+    ...tyres,
+    abs: { strength: 1 },
+    tractionControl: { strength: 0.6 },
+    antiWheelie: { strength: 1 },
+    antiStoppie: { strength: 1 },
+    aeroDrag: { area: 0.35 },
+  },
 };
 
 const boat: BoatTuning = { massKg: 900, length: 6, beam: 2.3, maxThrust: 7000, propSpeed: 30, planingSpeed: 8, steering: { kind: "outboard" } };
