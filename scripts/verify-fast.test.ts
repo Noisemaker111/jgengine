@@ -23,6 +23,7 @@ import {
   ownTests,
   pureRenames,
   splitByCost,
+  stepResult,
   TESTS_PER_LANE,
   workspaceOf,
   workspaces,
@@ -30,7 +31,7 @@ import {
   type Step,
   type Workspace,
 } from "./verify-fast";
-import { runSteps, type StepResult } from "./stepScheduler";
+import { EXIT_UNJUDGED, runSteps, type StepResult } from "./stepScheduler";
 import { buildImportGraph, specifiers, type ImportGraph } from "./import-graph";
 import { matchingShard, walkTestFiles } from "./test-shard";
 import { REPRESENTATIVE_GAME } from "./ci-scope";
@@ -822,7 +823,7 @@ describe("local boots", () => {
     ]);
     expect(steps[1]?.needs).toEqual(["provision scrap-signal"]);
     // The load guard times the same game against its baseline with the machine to itself.
-    expect(steps[2]).toMatchObject({ needs: ["provision scrap-signal"], exclusive: true });
+    expect(steps[2]).toMatchObject({ needs: ["provision scrap-signal"], exclusive: true, unjudgedExit: EXIT_UNJUDGED });
     // The boot runs beside the tests: its deadline waits out a busy page instead of the suite.
     const withTests = fastSteps({ ...emptyPlan, tests: ["a.test.ts"], boots: ["scrap-signal"] });
     expect(withTests.find((step) => step.name === "boot probe scrap-signal")?.needs).toEqual(["provision scrap-signal"]);
@@ -834,6 +835,16 @@ describe("local boots", () => {
     expect(steps.map((step) => step.name)).toEqual(["provision scrap-signal", "boot probe scrap-signal"]);
     const onlyLoad = fastSteps(plan, { fresh: (id) => id === "boot:scrap-signal" });
     expect(onlyLoad.map((step) => step.name)).toEqual(["provision scrap-signal", "load guard scrap-signal"]);
+  });
+
+  test("a load guard another agent's work kept from judging neither fails the run nor counts as passed", () => {
+    // 28 Oct: four plant fits held the PC at 100% and harbor-heat's guard failed an unchanged engine.
+    const guard = { name: "load guard harbor-heat", unjudgedExit: EXIT_UNJUDGED };
+    const busy = stepResult(guard, EXIT_UNJUDGED, 10, "load: harbor-heat run 1 ...\nload guard not judged: other work held this PC 100% busy");
+    expect(busy).toMatchObject({ ok: true, unjudged: "load guard not judged: other work held this PC 100% busy" });
+    expect(stepResult(guard, 1, 10, "load: 1 failure(s)")).toEqual({ name: guard.name, ok: false, ms: 10, output: "load: 1 failure(s)" });
+    expect(stepResult({ name: "test x" }, EXIT_UNJUDGED, 10, "")).toMatchObject({ ok: false });
+    expect(stepResult(guard, 0, 10, "").unjudged).toBeUndefined();
   });
 
   test("the games job's capability gates run here with CI's arguments", () => {

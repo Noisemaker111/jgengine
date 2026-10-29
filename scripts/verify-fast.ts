@@ -34,7 +34,7 @@ import { checkCommand, findCheck, jobChecks } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { siteGames } from "./siteGames";
-import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
+import { EXIT_UNJUDGED, runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 
 const VERIFY_FAST_USAGE = {
@@ -99,6 +99,8 @@ export interface Step extends ScheduledStep {
   fix?: string | undefined;
   /** The units this step settles; each is remembered as passed when the step passes. */
   units?: Unit[];
+  /** The exit code by which the step says it could not decide here (see `StepResult.unjudged`). */
+  unjudgedExit?: number;
 }
 
 /** One test file, type-check, gate or boot, and the changed paths that can decide its result. */
@@ -678,6 +680,9 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       exclusive: true,
       cost: 90,
       units: loads,
+      // Exclusive only among these steps: another agent's work can still hold the PC, and then a
+      // slower load is reported not judged rather than failing an unchanged engine.
+      unjudgedExit: EXIT_UNJUDGED,
     });
   }
   return options.cheap === true ? steps.filter((step) => step.first === true) : steps;
@@ -891,7 +896,16 @@ async function run(step: Step, root: string, signal?: AbortSignal): Promise<Step
   if (killed && code !== 0) {
     return { name: step.name, ok: false, ms: Date.now() - started, output: "stopped: another step failed first", stopped: true };
   }
-  return { name: step.name, ok: code === 0, ms: Date.now() - started, output: `${stdout}${stderr}`.trim() };
+  return stepResult(step, code, Date.now() - started, `${stdout}${stderr}`.trim());
+}
+
+/** A finished step's result: an `unjudgedExit` is not a failure, and carries the step's last line as its reason. */
+export function stepResult(step: Pick<Step, "name" | "unjudgedExit">, code: number, ms: number, output: string): StepResult {
+  if (step.unjudgedExit !== undefined && code === step.unjudgedExit) {
+    const reason = output.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).at(-1) ?? "not judged";
+    return { name: step.name, ok: true, ms, output, unjudged: reason };
+  }
+  return { name: step.name, ok: code === 0, ms, output };
 }
 
 /**
@@ -1071,7 +1085,7 @@ async function main(argv: readonly string[]): Promise<number> {
 `, "utf8");
     if (cache === null) return;
     for (const result of passed) {
-      if (!result.ok) continue;
+      if (!result.ok || result.unjudged !== undefined) continue;
       for (const settled of steps.find((step) => step.name === result.name)?.units ?? []) cache.record(settled.id, settled.inputs);
     }
     cache.save();
@@ -1129,6 +1143,10 @@ async function main(argv: readonly string[]): Promise<number> {
     async (step, signal) => {
       const result = await run(step, root, signal);
       if (result.stopped === true) return result;
+      if (result.unjudged !== undefined) {
+        say(`NOT JUDGED  ${result.name}  ${(result.ms / 1000).toFixed(1)}s — ${result.unjudged}`);
+        return result;
+      }
       (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
       if (!result.ok) {
         if (result.output.length > 0) printFailure(root, result.name, result.output);
@@ -1142,8 +1160,11 @@ async function main(argv: readonly string[]): Promise<number> {
   const failures = results.filter((result) => !result.ok && result.blockedBy === undefined && result.stopped !== true).map((result) => result.name);
   const notRun = results.filter((result) => result.blockedBy !== undefined || result.stopped === true).map((result) => result.name);
   const seconds = (Date.now() - started) / 1000;
-  const passed = results.length - failures.length - notRun.length;
-  console.log(`\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}`);
+  const unjudged = results.filter((result) => result.unjudged !== undefined).map((result) => result.name);
+  const passed = results.length - failures.length - notRun.length - unjudged.length;
+  console.log(
+    `\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}${unjudged.length > 0 ? `, ${unjudged.length} not judged (${unjudged.join(", ")}: run again on a quieter PC)` : ""}`,
+  );
   if (failures.length > 0) {
     console.log(`failed: ${failures.join(", ")}`);
     if (notRun.length > 0) {

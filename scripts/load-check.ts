@@ -4,6 +4,7 @@
 // cold as a first visit. Local only: it needs a real GPU and a window, so CI never runs it.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { cpus } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -16,6 +17,7 @@ import { killPid, pickDebugPort, removeProfileDir, startBrowser, waitForPidExit 
 import { printHelpIfAsked } from "./script-help";
 import { BOOT_SEQUENCE_ATTRIBUTE, bootSequenceErrors, parseBootSequence } from "../packages/core/src/boot/bootSequence";
 import { siteGames } from "./siteGames";
+import { EXIT_UNJUDGED } from "./stepScheduler";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const webRoot = join(repoRoot, "apps", "web");
@@ -374,6 +376,54 @@ export function judgeLoad(game: string, base: LoadBaseline["games"][string], now
   return failures;
 }
 
+/**
+ * Above this share of the PC's CPU in use by other work, a slower load cannot be told from
+ * contention. Measured 28 Oct: with four plant fits and two glacier runs holding a 24-thread PC at
+ * 100%, harbor-heat reached its scene in 18.3 s against a 9.4 s baseline on an unchanged engine.
+ */
+export const BUSY_LIMIT = 0.5;
+
+export interface CpuTimes {
+  busy: number;
+  idle: number;
+}
+
+/** Busy and idle CPU time summed over every core, from `os.cpus()`. */
+export function cpuTimes(cores: readonly { times: { user: number; nice: number; sys: number; idle: number; irq: number } }[]): CpuTimes {
+  let busy = 0;
+  let idle = 0;
+  for (const { times } of cores) {
+    busy += times.user + times.nice + times.sys + times.irq;
+    idle += times.idle;
+  }
+  return { busy, idle };
+}
+
+/** The share of the PC's CPU in use between two `cpuTimes` snapshots, 0..1. */
+export function busyShare(before: CpuTimes, after: CpuTimes): number {
+  const busy = after.busy - before.busy;
+  const total = busy + (after.idle - before.idle);
+  return total <= 0 ? 0 : Math.min(1, Math.max(0, busy / total));
+}
+
+/** How busy the PC is right now, with nothing of the guard's own running: two seconds of samples. */
+async function machineBusy(): Promise<number> {
+  const before = cpuTimes(cpus());
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  return busyShare(before, cpuTimes(cpus()));
+}
+
+/**
+ * The guard's verdict on a load slower than its baseline: a failure on a quiet PC, and not judged
+ * on one other work kept busy, since the wall clock then measures the neighbours.
+ */
+export function guardVerdict(judged: readonly string[], busy: number): { failures: string[]; unjudged: string[] } {
+  if (judged.length === 0) return { failures: [], unjudged: [] };
+  if (busy <= BUSY_LIMIT) return { failures: [...judged], unjudged: [] };
+  const share = `${Math.round(busy * 100)}%`;
+  return { failures: [], unjudged: judged.map((line) => `${line}, but other work held this PC ${share} busy`) };
+}
+
 /** The better of two runs per measure, so one noisy run cannot fail the guard. */
 export function bestOf(a: LoadSample, b: LoadSample): LoadSample {
   const min = (x: number | null, y: number | null) => (x === null ? y : y === null ? x : Math.min(x, y));
@@ -582,6 +632,7 @@ async function main(): Promise<number> {
   const rows: LoadSample[] = [];
   const allSamples: LoadSample[] = [];
   const failures: string[] = [];
+  const unjudged: string[] = [];
   const log = (game: string, run: number, sample: LoadSample) =>
     console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms, after reveal ${revealSummary(sample.revealFrames, sample.revealCovered)}, effects on ${sample.effectsAfterReveal == null ? "-" : `${sample.effectsAfterReveal >= 0 ? "+" : ""}${sample.effectsAfterReveal}`} ms, ${sample.sceneColors ?? "-"} colours, ${sample.glErrors ?? 0} GL errors, boot ${sample.boot ?? "-"}${sample.error === undefined ? "" : ` (${sample.error})`}`);
   try {
@@ -608,7 +659,12 @@ async function main(): Promise<number> {
             row = bestOf(row, again);
             judged = judgeLoad(game, accepted, row);
           }
-          failures.push(...judged);
+          // A load that never happened or drew blank fails however busy the PC is; only a slower one is weighed.
+          const timed = judged.filter((line) => / ms, baseline \d+ ms, limit \d+ ms$/.test(line));
+          failures.push(...judged.filter((line) => !timed.includes(line)));
+          const verdict = guardVerdict(timed, timed.length === 0 ? 0 : await machineBusy());
+          failures.push(...verdict.failures);
+          unjudged.push(...verdict.unjudged);
         }
       }
       rows.push(row);
@@ -634,6 +690,14 @@ async function main(): Promise<number> {
     for (const failure of failures) console.error(`  ${failure}`);
     console.error("load guard: find the slow shader or task with `bun run shoot --load <game> --trace`; a deliberate cost re-records with --save-baseline");
     return 1;
+  }
+  if (unjudged.length > 0) {
+    for (const line of unjudged) console.error(`  ${line}`);
+    const slower = [...new Set(unjudged.map((line) => line.slice(0, line.indexOf(":"))))];
+    console.error(
+      `load guard not judged: ${slower.join(", ")} loaded slower than the baseline while other work held this PC over ${Math.round(BUSY_LIMIT * 100)}% busy, so contention cannot be told from a regression; run \`bun run shoot --load ${slower.join(",")} --guard\` on a quieter PC`,
+    );
+    return EXIT_UNJUDGED;
   }
   return 0;
 }
