@@ -322,7 +322,7 @@ export function rebaseOntoBase(options: { branch: string; base: string; io: Queu
           refusal: `the base moved and ${branch}'s generated files need \`bun run gen\` on the merged source; run bun run lane:close again in ${branch}'s own tree`,
         };
       }
-      const failed = regenerateAndCommit(git, io.exec ?? ((command) => runAt(checkout.dir, command[0]!, command.slice(1), 20 * 60_000)));
+      const failed = regenerateAndCommit(git, io.exec ?? (([program = "bun", ...args]) => runAt(checkout.dir, program, args, 20 * 60_000)));
       if (failed !== null) {
         git(["reset", "--hard", tip.stdout.trim()]);
         return { rebased: false, refusal: failed };

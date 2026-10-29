@@ -256,9 +256,9 @@ test("a run cancelled with nothing replacing it is run again once, never read as
     ]),
   ];
   const gh: QueueIo["gh"] = (args) => {
-    if (args[0] === "run" && args[1] === "rerun") reruns.push(args[2]!);
+    if (args[0] === "run" && args[1] === "rerun") reruns.push(args[2] ?? "");
     return args.join(" ").startsWith("pr view")
-      ? ok(JSON.stringify({ number: 29, url: "u", state: "OPEN", headRefName: "agent/29", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[Math.min(step, answers.length - 1)]!) }))
+      ? ok(JSON.stringify({ number: 29, url: "u", state: "OPEN", headRefName: "agent/29", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[Math.min(step, answers.length - 1)] ?? "[]") }))
       : ok();
   };
   const result = waitForGreen(29, io({ gh, pause: () => (step += 1) }));
@@ -268,7 +268,7 @@ test("a run cancelled with nothing replacing it is run again once, never read as
   // Still cancelled once the rerun has had its grace: then it is reported, with the check named.
   let clock = 0;
   const again = waitForGreen(30, io({
-    gh: (args) => (args.join(" ").startsWith("pr view") ? ok(JSON.stringify({ number: 30, url: "u", state: "OPEN", headRefName: "agent/30", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[0]!) })) : ok()),
+    gh: (args) => (args.join(" ").startsWith("pr view") ? ok(JSON.stringify({ number: 30, url: "u", state: "OPEN", headRefName: "agent/30", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[0] ?? "[]") })) : ok()),
     now: () => clock,
     pause: (ms) => {
       clock += ms;

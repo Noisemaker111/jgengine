@@ -232,7 +232,10 @@ describe("one query, one answer", () => {
         url: "",
         branch: "agent/x",
         state: "OPEN",
-        rollup: [{ name: "test (h)", conclusion: "CANCELLED", detailsUrl: "https://example.test/actions/runs/700/job/1" }, ROLLUP[0]!],
+        rollup: [
+          { name: "test (h)", conclusion: "CANCELLED", detailsUrl: "https://example.test/actions/runs/700/job/1" },
+          { name: "quick", conclusion: "SUCCESS", detailsUrl: "https://example.test/actions/runs/700/job/2" },
+        ],
         wallMs: 500,
       }),
     );
