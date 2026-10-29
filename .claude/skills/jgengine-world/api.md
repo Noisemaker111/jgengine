@@ -4227,13 +4227,18 @@
 - `encodePlantMesh` (function): function encodePlantMesh(mesh: PlantMesh): Uint8Array — A styled plant mesh as bytes for a {@link PlantCacheStorage}.
 - `encodePlantStructure` (function): function encodePlantStructure(structure: PlantStructure, hash: string): Uint8Array — A grown plant's structure as bytes, with its hash, for a {@link PlantCacheStorage}.
 
-## @jgengine/core/plants/groundCover/grassSpecies
+## @jgengine/core/plants/groundCover/groundCoverSpecies
 
-- `GRASS_LIBRARY` (const): const GRASS_LIBRARY: readonly GrassSpecies[] — Every grass record shipped with the engine.
-- `GrassSpecies` (interface): interface GrassSpecies — A grass as data for the tiller field: how fast its tillers make leaves and daughters, how tall its leaves and flowering stems grow, what makes it flower, and how it spreads. A new grass is one record.
-- `LOLIUM_PERENNE` (const): const LOLIUM_PERENNE: GrassSpecies — Perennial ryegrass: the bunch grass of most lawns and sown pastures. Phyllochron and three live leaves from Davies 1988 and Lemaire & Agnusdei 2000; vernalization and long-day flowering from Heide 1994.
-- `PHLEUM_PRATENSE` (const): const PHLEUM_PRATENSE: GrassSpecies — Timothy: a tall hay-meadow bunch grass that flowers in long days with no winter cold needed (Heide 1994).
-- `POA_PRATENSIS` (const): const POA_PRATENSIS: GrassSpecies — Kentucky bluegrass: a rhizomatous lawn and pasture grass that knits trampled ground back together.
+- `GRASS_LIBRARY` (const): const GRASS_LIBRARY: readonly GroundCoverSpecies[] — The grasses shipped with the engine.
+- `GROUND_COVER_LIBRARY` (const): const GROUND_COVER_LIBRARY: readonly GroundCoverSpecies[] — Every ground-cover record shipped with the engine: grasses, herbs and mosses.
+- `GroundCoverSpecies` (interface): interface GroundCoverSpecies — A grass, herb or moss as data for the tiller field: how fast its shoots make leaves and daughters, how tall its leaves and flowering stems grow, what makes it flower, and how it spreads. A tiller is a grass tiller, a herb's rosette or a moss shoot. A new ground-cover plant is one record.
+- `LEUCANTHEMUM_VULGARE` (const): const LEUCANTHEMUM_VULGARE: GroundCoverSpecies — Oxeye daisy: a meadow herb whose rosettes need a winter's cold and long June days before they send up knee-high stems of white flowers; mowing keeps it a flat rosette.
+- `LOLIUM_PERENNE` (const): const LOLIUM_PERENNE: GroundCoverSpecies — Perennial ryegrass: the bunch grass of most lawns and sown pastures. Phyllochron and three live leaves from Davies 1988 and Lemaire & Agnusdei 2000; vernalization and long-day flowering from Heide 1994.
+- `PHLEUM_PRATENSE` (const): const PHLEUM_PRATENSE: GroundCoverSpecies — Timothy: a tall hay-meadow bunch grass that flowers in long days with no winter cold needed (Heide 1994).
+- `POA_PRATENSIS` (const): const POA_PRATENSIS: GroundCoverSpecies — Kentucky bluegrass: a rhizomatous lawn and pasture grass that knits trampled ground back together.
+- `RHYTIDIADELPHUS_SQUARROSUS` (const): const RHYTIDIADELPHUS_SQUARROSUS: GroundCoverSpecies — Springy turf-moss: the moss of shaded, damp and compacted lawns. It grows in cool weather, creeps by branching shoots and seldom fruits (Atherton et al. 2010); like most mosses it saturates at a fraction of full sun (Marschall & Proctor 2004), so it takes the ground grass gives up in shade.
+- `TARAXACUM_OFFICINALE` (const): const TARAXACUM_OFFICINALE: GroundCoverSpecies — Dandelion: a rosette herb that flowers in the lengthening days of spring on hollow stalks and spreads its seed on the wind, so it finds every gap in a lawn.
+- `TRIFOLIUM_REPENS` (const): const TRIFOLIUM_REPENS: GroundCoverSpecies — White clover: a lawn and pasture legume that creeps by stolons rooting at each node and flowers through long summer days on stalks just above its leaves (Thomas 1987).
 
 ## @jgengine/core/plants/groundCover/tillerSim
 
@@ -4241,10 +4246,10 @@
 - `TillerCell` (interface): interface TillerCell — One cell: its cohorts in species order, plus totals.
 - `TillerCohort` (interface): interface TillerCohort — One species in one cell.
 - `TillerField` (interface): interface TillerField — A stateful grass field: step it by weeks, act on it, read it, snapshot and restore it.
-- `TillerFieldOptions` (interface): interface TillerFieldOptions — Grass as a field of tillers: every cell holds, per species, its tillers per m², the height of its leaf canopy, the share of tillers flowering and their stem height. A week at a time tillers make leaves on thermal time, make daughters while light reaches their base (site filling, cut off by a closing canopy), thin to the size/density line, flower after winter cold and long days, set seed and die, and spread by rhizomes into neighbouring cells. Mowing, trampling and grazing act on it, so a lawn, a meadow and a worn path all come out of the same field.
+- `TillerFieldOptions` (interface): interface TillerFieldOptions — Ground cover as a field of tillers: every cell holds, per species, its tillers per m² (grass tillers, herb rosettes or moss shoots), the height of its leaf canopy, the share flowering and their stem height. A week at a time tillers make leaves on thermal time, make daughters while light reaches their base (site filling, cut off by a closing canopy), thin to the size/density line, flower after winter cold and long days, set seed, and spread by rhizomes, stolons or seed into neighbouring cells. Grass tillers die when they seed; herb rosettes live on. Moss fills the ground the sward leaves bare on the light that passes its leaves. Mowing, trampling and grazing act on it, so a lawn, a flowering meadow, a worn path and a mossy shaded lawn all come out of the same field.
 - `TillerFieldSnapshot` (interface): interface TillerFieldSnapshot — A tiller field's whole state as JSON-safe values.
 - `createTillerField` (function): function createTillerField(options: TillerFieldOptions): TillerField — Create a grass field of tiller cohorts, sown on 1 January with every species' tillers at a short, half-full sward.
-- `tillerCellLook` (function): function tillerCellLook(field: TillerField, species: readonly GrassSpecies[], col: number, row: number, base: GrassLook): GrassLook — The look of one grass cell for the `grass/` renderer: density from tillers per m² against the most its leaf height allows, blade height from leaves and flowering stems, flowers while heads are out, gold once seed has set and through autumn, colours from the cell's leading species. Every other field keeps `base`.
+- `tillerCellLook` (function): function tillerCellLook(field: TillerField, species: readonly GroundCoverSpecies[], col: number, row: number, base: GrassLook): GrassLook — The look of one ground-cover cell for the `grass/` renderer: density from each cohort's cover, blade height and width from the species holding the most ground (the next drawn at its own height and width), colours from the species holding the most ground and the next, flowers in the colours of the two species most in flower (herbs before grasses), gold once a grass has seeded and through autumn. Every other field keeps `base`.
 
 ## @jgengine/core/plants/grown/plantGrowPool
 

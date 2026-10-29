@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { GRASS_DEFAULTS } from "../../grass/grassKind";
-import { GRASS_LIBRARY, LOLIUM_PERENNE, PHLEUM_PRATENSE, POA_PRATENSIS } from "./grassSpecies";
+import { GRASS_LIBRARY, GROUND_COVER_LIBRARY, LEUCANTHEMUM_VULGARE, LOLIUM_PERENNE, PHLEUM_PRATENSE, POA_PRATENSIS, RHYTIDIADELPHUS_SQUARROSUS, TRIFOLIUM_REPENS } from "./groundCoverSpecies";
 import { createTillerField, tillerCellLook, type TillerFieldSnapshot } from "./tillerSim";
 
 const ALL = { col: 0, row: 0, cols: 99, rows: 99 };
@@ -89,6 +89,65 @@ describe("tiller field", () => {
     expect(shadedLook.density).toBeLessThan(openLook.density);
   });
 
+  test("moss takes over a shaded lawn and stays sparse in sun", () => {
+    const species = [LOLIUM_PERENNE, POA_PRATENSIS, TRIFOLIUM_REPENS, RHYTIDIADELPHUS_SQUARROSUS];
+    const grow = (light: number) => {
+      const field = createTillerField({ species, cols: 1, rows: 1 });
+      field.setLight(ALL, light);
+      for (let week = 0; week < 104 + MIDSUMMER; week += 1) {
+        field.step();
+        if (week % 2 === 1 && week % 52 > 12 && week % 52 < 44) field.mow(ALL, 0.04);
+      }
+      return field;
+    };
+    const sunny = grow(1).cell(0, 0).cohorts;
+    const shaded = grow(0.15);
+    const shadedCohorts = shaded.cell(0, 0).cohorts;
+    const moss = (cohorts: typeof sunny) => cohorts[3]?.cover ?? 0;
+    const sward = (cohorts: typeof sunny) => Math.max(...cohorts.slice(0, 3).map((cohort) => cohort.cover));
+    expect(moss(sunny)).toBeLessThan(0.3);
+    expect(moss(sunny)).toBeLessThan(sward(sunny));
+    expect(moss(shadedCohorts)).toBeGreaterThan(0.7);
+    expect(moss(shadedCohorts)).toBeGreaterThan(sward(shadedCohorts));
+    expect(tillerCellLook(shaded, species, 0, 0, GRASS_DEFAULTS).baseColor).toBe(RHYTIDIADELPHUS_SQUARROSUS.colors.leaf);
+  });
+
+  test("meadow daisies flower in June and their rosettes outlive the seed, while mowing keeps them flat", () => {
+    const species = [PHLEUM_PRATENSE, LOLIUM_PERENNE, LEUCANTHEMUM_VULGARE];
+    const meadow = createTillerField({ species, cols: 1, rows: 1 });
+    meadow.step(52 + 20);
+    let bloomWeek = -1;
+    let rosettes = 0;
+    let flowerColors = new Set<string>();
+    for (let week = 52 + 20; week < 52 + 34; week += 1) {
+      meadow.step();
+      const daisy = meadow.cell(0, 0).cohorts[2];
+      if (bloomWeek < 0 && daisy?.inFlower === true) {
+        bloomWeek = week % 52;
+        rosettes = daisy.tillersPerM2;
+        const look = tillerCellLook(meadow, species, 0, 0, GRASS_DEFAULTS);
+        flowerColors = new Set([look.flowerColor, look.flowerColor2]);
+      }
+    }
+    // Late June to mid July.
+    expect(bloomWeek).toBeGreaterThanOrEqual(23);
+    expect(bloomWeek).toBeLessThanOrEqual(29);
+    expect(flowerColors.has(LEUCANTHEMUM_VULGARE.colors.flower)).toBe(true);
+    const after = meadow.cell(0, 0).cohorts;
+    expect(after[2]?.seeded).toBe(true);
+    expect(after[2]?.tillersPerM2).toBeGreaterThan(0.9 * rosettes);
+    expect(after[1]?.seeded).toBe(true);
+
+    const lawn = createTillerField({ species, cols: 1, rows: 1 });
+    for (let week = 0; week < 52 + MIDSUMMER; week += 1) {
+      lawn.step();
+      if (week % 2 === 1) lawn.mow(ALL, 0.04);
+    }
+    const mown = lawn.cell(0, 0).cohorts[2];
+    expect(mown?.inFlower).toBe(false);
+    expect(mown?.cover).toBeGreaterThan(0.1);
+  });
+
   test("grazing shortens the sward and a drier site grows less", () => {
     const grazed = createTillerField({ species: [LOLIUM_PERENNE], cols: 1, rows: 1 });
     const dry = createTillerField({ species: [LOLIUM_PERENNE], cols: 1, rows: 1 });
@@ -105,7 +164,7 @@ describe("tiller field", () => {
   });
 
   test("snapshot, restore and reset replay the same field", () => {
-    const options = { species: GRASS_LIBRARY, cols: 3, rows: 3 };
+    const options = { species: GROUND_COVER_LIBRARY, cols: 3, rows: 3 };
     const straight = createTillerField(options);
     straight.step(30);
     straight.trample({ col: 1, row: 0, rows: 3 }, 0.8);

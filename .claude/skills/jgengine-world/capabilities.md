@@ -1639,10 +1639,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## plant-ground-cover — grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape
 
-- `GRASS_LIBRARY` (const) · `import { GRASS_LIBRARY } from "@jgengine/core/plants/groundCover/grassSpecies"`
-- `LOLIUM_PERENNE` (const) · `import { LOLIUM_PERENNE } from "@jgengine/core/plants/groundCover/grassSpecies"`
-- `PHLEUM_PRATENSE` (const) · `import { PHLEUM_PRATENSE } from "@jgengine/core/plants/groundCover/grassSpecies"`
-- `POA_PRATENSIS` (const) · `import { POA_PRATENSIS } from "@jgengine/core/plants/groundCover/grassSpecies"`
+- `GRASS_LIBRARY` (const) · `import { GRASS_LIBRARY } from "@jgengine/core/plants/groundCover/groundCoverSpecies"`
+- `GROUND_COVER_LIBRARY` (const) · `import { GROUND_COVER_LIBRARY } from "@jgengine/core/plants/groundCover/groundCoverSpecies"`
+- `LEUCANTHEMUM_VULGARE` (const) · `import { LEUCANTHEMUM_VULGARE } from "@jgengine/core/plants/groundCover/groundCoverSpecies"`
+- `LOLIUM_PERENNE` (const) · `import { LOLIUM_PERENNE } from "@jgengine/core/plants/groundCover/groundCoverSpecies"`
+- `PHLEUM_PRATENSE` (const) · `import { PHLEUM_PRATENSE } from "@jgengine/core/plants/groundCover/groundCoverSpecies"`
+- `POA_PRATENSIS` (const) · `import { POA_PRATENSIS } from "@jgengine/core/plants/groundCover/groundCoverSpecies"`
+- `RHYTIDIADELPHUS_SQUARROSUS` (const) · `import { RHYTIDIADELPHUS_SQUARROSUS } from "@jgengine/core/plants/groundCover/groundCoverSpecies"`
+- `TARAXACUM_OFFICINALE` (const) · `import { TARAXACUM_OFFICINALE } from "@jgengine/core/plants/groundCover/groundCoverSpecies"`
+- `TRIFOLIUM_REPENS` (const) · `import { TRIFOLIUM_REPENS } from "@jgengine/core/plants/groundCover/groundCoverSpecies"`
 - `createTillerField` (function) · `import { createTillerField } from "@jgengine/core/plants/groundCover/tillerSim"`
 - `tillerCellLook` (function) · `import { tillerCellLook } from "@jgengine/core/plants/groundCover/tillerSim"`
 

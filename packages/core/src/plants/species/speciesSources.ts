@@ -47,6 +47,10 @@ export const PLANT_SOURCES = {
   "heide-1994": "Heide 1994, Control of flowering and reproduction in temperate grasses, New Phytol. 128: vernalization and long-day requirements",
   "oborny-2000": "Oborny, Kun, Czárán & Bokros 2000, The effect of clonal integration on plant competition for mosaic habitat space, Ecology 81: clonal spread between cells",
   "may-2009": "May, Grimm & Jeltsch 2009, Reversed effects of grazing on plant diversity: the role of below-ground competition and size symmetry, Oikos 118 (IBC-grass): defoliation and trampling as disturbance",
+  "grime-2007": "Grime, Hodgson & Hunt 2007, Comparative Plant Ecology: a functional approach to common British species, 2nd ed., Castlepoint Press: height, flowering season, spread and shade response of herbs and mosses",
+  "thomas-1987": "Thomas 1987, The structure of the mature plant, in Baker & Williams (eds), White Clover, CAB International: stolon branching, leaf appearance and flowering of white clover",
+  "atherton-2010": "Atherton, Bosanquet & Lawley (eds) 2010, Mosses and Liverworts of Britain and Ireland: a field guide, British Bryological Society: moss shoot length, habitat and fruiting",
+  "marschall-2004": "Marschall & Proctor 2004, Are bryophytes shade plants? Photosynthetic light responses and proportions of chlorophyll a, chlorophyll b and total carotenoids, Ann. Bot. 94: mosses saturate at low light",
 } as const;
 
 /** Id of a credited plant data or model source. */

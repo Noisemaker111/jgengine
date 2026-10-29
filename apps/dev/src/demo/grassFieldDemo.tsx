@@ -3,13 +3,15 @@ import { useMemo } from "react";
 
 import { GRASS_DEFAULTS, type GrassLook } from "@jgengine/core/grass/grassKind";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
-import { LOLIUM_PERENNE, PHLEUM_PRATENSE, POA_PRATENSIS } from "@jgengine/core/plants/groundCover/grassSpecies";
+import { GROUND_COVER_LIBRARY } from "@jgengine/core/plants/groundCover/groundCoverSpecies";
 import { createTillerField, tillerCellLook, type TillerField } from "@jgengine/core/plants/groundCover/tillerSim";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 import { demoGame } from "./demoGame";
 
-const SPECIES = [LOLIUM_PERENNE, PHLEUM_PRATENSE, POA_PRATENSIS];
+const SPECIES = GROUND_COVER_LIBRARY;
+/** Seed mix by species: ryegrass, timothy, bluegrass, clover, dandelion, oxeye daisy, moss. */
+const SOWN = [3, 2, 3, 1, 0.3, 1, 0.5];
 const ALL = { col: 0, row: 0 };
 const PATCH = 6;
 const GAP = 1.5;
@@ -34,7 +36,7 @@ const SCENES: Scene[] = [
 ];
 
 function grownLook(scene: Scene): GrassLook {
-  const field = createTillerField({ species: SPECIES, cols: 1, rows: 1 });
+  const field = createTillerField({ species: SPECIES, cols: 1, rows: 1, sown: SOWN });
   if (scene.light !== undefined) field.setLight(ALL, scene.light);
   for (let week = 0; week < WEEKS; week += 1) {
     scene.care(field, week);
@@ -66,7 +68,7 @@ function GrassFields() {
   );
 }
 
-/** Four grass fields grown from the same tiller sim and seed mix, cared for four ways, read at midsummer. */
+/** Four ground-cover fields grown from the same tiller sim and seed mix, cared for four ways, read at midsummer. */
 export const grassFieldGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "grass-field" },
@@ -78,7 +80,7 @@ export const grassFieldGame: PlayableGame = {
   environment: () => <GrassFields />,
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", top: 12, left: 16, color: "#fff", font: "600 15px sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
-      Ryegrass, timothy and bluegrass sown the same way, grown 18 months
+      Grasses, clover, dandelion, oxeye daisy and moss sown the same way, grown 18 months
     </div>
   ),
   capture: { views: { overview: { look: "0,0.3,0", lookFrom: "17,8,0" } } },

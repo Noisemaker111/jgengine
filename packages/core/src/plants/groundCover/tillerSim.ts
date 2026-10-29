@@ -2,18 +2,20 @@ import type { GrassLook } from "../../grass/grassKind";
 import { dailyTemperatureC, solarDay } from "../growth/phenology";
 import { OPEN_TEMPERATE_SITE, siteModifier, type PlantEnvironment } from "../growth/plantEnvironment";
 import { plantExp, plantPow } from "../growth/plantMath";
-import type { GrassSpecies } from "./grassSpecies";
+import type { GroundCoverSpecies } from "./groundCoverSpecies";
 
 /**
- * Grass as a field of tillers: every cell holds, per species, its tillers per m², the height of its
- * leaf canopy, the share of tillers flowering and their stem height. A week at a time tillers make
- * leaves on thermal time, make daughters while light reaches their base (site filling, cut off by a
- * closing canopy), thin to the size/density line, flower after winter cold and long days, set seed
- * and die, and spread by rhizomes into neighbouring cells. Mowing, trampling and grazing act on it,
- * so a lawn, a meadow and a worn path all come out of the same field.
+ * Ground cover as a field of tillers: every cell holds, per species, its tillers per m² (grass tillers,
+ * herb rosettes or moss shoots), the height of its leaf canopy, the share flowering and their stem
+ * height. A week at a time tillers make leaves on thermal time, make daughters while light reaches
+ * their base (site filling, cut off by a closing canopy), thin to the size/density line, flower after
+ * winter cold and long days, set seed, and spread by rhizomes, stolons or seed into neighbouring cells.
+ * Grass tillers die when they seed; herb rosettes live on. Moss fills the ground the sward leaves bare
+ * on the light that passes its leaves. Mowing, trampling and grazing act on it, so a lawn, a flowering
+ * meadow, a worn path and a mossy shaded lawn all come out of the same field.
  */
 export interface TillerFieldOptions {
-  species: readonly GrassSpecies[];
+  species: readonly GroundCoverSpecies[];
   cols: number;
   rows: number;
   /** Cell side, metres. Default 0.5. */
@@ -34,6 +36,8 @@ export interface CellArea {
 /** One species in one cell. */
 export interface TillerCohort {
   tillersPerM2: number;
+  /** 0..1: tillers against the most the cohort's leaf height allows, the share of ground it holds. */
+  cover: number;
   leafHeightM: number;
   /** Share of tillers on flowering stems, and the stems' height. */
   floweringShare: number;
@@ -47,6 +51,7 @@ export interface TillerCohort {
 /** One cell: its cohorts in species order, plus totals. */
 export interface TillerCell {
   cohorts: TillerCohort[];
+  /** Tillers of every species summed; a moss's many small shoots dwarf a grass's count, so compare `cover`. */
   tillersPerM2: number;
   /** Tallest of the leaf canopy and any flowering stems, metres. */
   heightM: number;
@@ -87,6 +92,8 @@ export interface TillerField {
 }
 
 /** Values per cohort: tillers, leaf height, flowering share, stem height, thermal time since flowering began, phase. */
+/** Narrowest blade the look draws: a moss shoot with its spreading leaves is about this wide. */
+const MIN_BLADE_WIDTH_M = 0.004;
 const STRIDE = 6;
 const TILLERS = 0;
 const LEAF = 1;
@@ -97,6 +104,8 @@ const PHASE = 5;
 const VEGETATIVE = 0;
 const FLOWERING = 1;
 const DONE = 2;
+/** The flowering stems were cut, broken or eaten before seed ripened. */
+const CUT = 3;
 /** Thermal time from a flowering stem's start to heading, and to ripe seed (°C·d above base). */
 const HEADING_TT = 450;
 const SEED_TT = 900;
@@ -114,7 +123,7 @@ function weekTemperatureC(site: PlantEnvironment, week: number): number {
 }
 
 /** Most tillers per m² at a leaf height (Matthew et al. 1995: tiller size ∝ density^-3/2), levelling off in a close-cut turf. */
-function maxTillers(species: GrassSpecies, leafM: number): number {
+function maxTillers(species: GroundCoverSpecies, leafM: number): number {
   return species.densityConstant * plantPow(Math.max(0.03, leafM), -2 / 3);
 }
 
@@ -129,6 +138,7 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
   const cellCount = cols * rows;
   const values = new Float64Array(cellCount * speciesCount * STRIDE);
   const inflow = new Float64Array(cellCount * speciesCount);
+  const ceilings = new Float64Array(cellCount * speciesCount);
   const light = new Float64Array(cellCount);
   const compaction = new Float64Array(cellCount);
   let site: PlantEnvironment = { ...(options.site ?? OPEN_TEMPERATE_SITE) };
@@ -161,13 +171,13 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
     for (let r = r0; r < r1; r += 1) for (let c = c0; c < c1; c += 1) visit(r * cols + c);
   }
 
-  /** Kill a cohort's flowering tillers: cut below the head, broken or eaten. */
-  function behead(base: number): void {
+  /** Take a cohort's flowering stems: cut below the head, broken or eaten. A grass tiller dies with its head. */
+  function behead(base: number, kind: GroundCoverSpecies | undefined): void {
     if ((values[base + PHASE] ?? 0) !== FLOWERING) return;
-    values[base + TILLERS] = (values[base + TILLERS] ?? 0) * (1 - (values[base + SHARE] ?? 0));
+    if (kind?.habit === "graminoid") values[base + TILLERS] = (values[base + TILLERS] ?? 0) * (1 - (values[base + SHARE] ?? 0));
     values[base + SHARE] = 0;
     values[base + STEM] = 0;
-    values[base + PHASE] = DONE;
+    values[base + PHASE] = CUT;
   }
 
   function stepWeek(): void {
@@ -186,18 +196,29 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
       const packed = compaction[c] ?? 0;
       // Leaf area above the tiller bases sets how much red light reaches them (Evers et al. 2007).
       let cellLai = 0;
+      let swardLai = 0;
+      let swardCover = 0;
       for (let s = 0; s < speciesCount; s += 1) {
         const grass = species[s];
         if (grass === undefined) continue;
         const base = (c * speciesCount + s) * STRIDE;
-        cellLai += (values[base + TILLERS] ?? 0) * grass.liveLeaves * (values[base + LEAF] ?? 0) * grass.leafWidthM * 0.5;
+        const lai = (values[base + TILLERS] ?? 0) * grass.liveLeaves * (values[base + LEAF] ?? 0) * grass.leafWidthM * 0.5;
+        cellLai += lai;
+        if (grass.habit === "moss") continue;
+        swardLai += lai;
+        swardCover += (values[base + TILLERS] ?? 0) / maxTillers(grass, values[base + LEAF] ?? 0);
       }
+      // A moss mat lies under the sward: it gets the light the sward's leaves pass and the ground they leave bare.
+      const underSward = lit * plantExp(-0.5 * swardLai);
+      const bareGround = 1 - 0.9 * Math.min(1, swardCover);
       const redFarRed = plantExp(-0.5 * cellLai);
       const tilleringLight = Math.min(1, Math.max(0, (redFarRed - 0.3) / 0.7));
       for (let s = 0; s < speciesCount; s += 1) {
         const grass = species[s];
         if (grass === undefined) continue;
         const base = (c * speciesCount + s) * STRIDE;
+        const moss = grass.habit === "moss";
+        const groundLight = moss ? underSward : lit;
         let tillers = values[base + TILLERS] ?? 0;
         let leaf = values[base + LEAF] ?? 0;
         const thermal = 7 * Math.max(0, temperature - grass.baseTemperatureC) * siteRate;
@@ -207,8 +228,9 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
           // sward regrows from its cut height, not straight back to full length (Davies 1988).
           const reach = grass.maxLeafLengthM * siteRate;
           if (leaf < reach) leaf = Math.min(reach, leaf * plantPow(1 + LEAF_STEP, leaves));
-          const shaded = Math.min(1, lit / grass.shadeTolerance);
-          tillers += tillers * grass.siteFilling * leaves * tilleringLight * shaded * (1 - packed);
+          const shaded = Math.min(1, groundLight / grass.shadeTolerance);
+          const tillering = moss ? bareGround : tilleringLight * (1 - packed);
+          tillers += tillers * grass.siteFilling * leaves * tillering * shaded;
           // Below its shade tolerance a tiller cannot pay for its leaves and dies back.
           tillers *= plantExp(-SHADE_DEATH * leaves * (1 - shaded));
         } else if (temperature < 0) {
@@ -216,8 +238,9 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
           leaf = Math.max(MIN_LEAF_M, leaf * 0.97);
         }
         // Shade lowers the size/density line: under a closed canopy the sward thins.
-        const shade = Math.min(1, lit / grass.shadeTolerance);
-        const ceiling = maxTillers(grass, leaf) * shade;
+        const shade = Math.min(1, groundLight / grass.shadeTolerance);
+        const ceiling = maxTillers(grass, leaf) * shade * (moss ? bareGround : 1);
+        ceilings[c * speciesCount + s] = ceiling;
         if (tillers > ceiling) tillers -= (tillers - ceiling) * 0.25;
         const phase = values[base + PHASE] ?? 0;
         const vernalized = coldWeeks >= grass.vernalizationWeeks;
@@ -232,10 +255,10 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
           const stem = values[base + STEM] ?? 0;
           values[base + STEM] = stem + (grass.culmHeightM * siteRate - stem) * (1 - plantExp(-thermal / 250));
           if (flowerTt >= SEED_TT) {
-            // Seed ripens and the flowering tillers die; seed lands in the cell and its neighbours.
+            // Seed ripens and a grass's flowering tillers die; seed lands in the cell and its neighbours.
             const seeding = tillers * (values[base + SHARE] ?? 0);
-            tillers -= seeding;
-            spread(c, s, seeding * 0.05, true);
+            if (grass.habit === "graminoid") tillers -= seeding;
+            spread(c, s, seeding * grass.seedEstablishment, true);
             values[base + SHARE] = 0;
             values[base + PHASE] = DONE;
           }
@@ -250,9 +273,9 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
     for (let k = 0; k < cellCount * speciesCount; k += 1) {
       const add = inflow[k] ?? 0;
       if (add <= 0) continue;
-      const grass = species[k % speciesCount];
       const base = k * STRIDE;
-      const room = grass === undefined ? 0 : maxTillers(grass, values[base + LEAF] ?? START_LEAF_M) - (values[base + TILLERS] ?? 0);
+      // New tillers root only where the cell's own light and bare ground would let them grow.
+      const room = (ceilings[k] ?? 0) - (values[base + TILLERS] ?? 0);
       if (room > 0) values[base + TILLERS] = (values[base + TILLERS] ?? 0) + Math.min(room, add);
     }
     week += 1;
@@ -280,7 +303,7 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
         for (let s = 0; s < speciesCount; s += 1) {
           const base = (c * speciesCount + s) * STRIDE;
           values[base + LEAF] = Math.max(MIN_LEAF_M, Math.min(values[base + LEAF] ?? 0, heightM));
-          if ((values[base + STEM] ?? 0) > heightM) behead(base);
+          if ((values[base + STEM] ?? 0) > heightM) behead(base, species[s]);
         }
       });
     },
@@ -291,7 +314,7 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
           const base = (c * speciesCount + s) * STRIDE;
           values[base + TILLERS] = (values[base + TILLERS] ?? 0) * (1 - 0.3 * hit);
           values[base + LEAF] = Math.max(MIN_LEAF_M, (values[base + LEAF] ?? 0) * (1 - 0.4 * hit));
-          if (hit > 0.5) behead(base);
+          if (hit > 0.5) behead(base, species[s]);
         }
         compaction[c] = Math.min(1, (compaction[c] ?? 0) + 0.2 * hit);
       });
@@ -302,7 +325,7 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
         for (let s = 0; s < speciesCount; s += 1) {
           const base = (c * speciesCount + s) * STRIDE;
           values[base + LEAF] = Math.max(MIN_LEAF_M, (values[base + LEAF] ?? 0) * (1 - bite));
-          if (bite > 0.3) behead(base);
+          if (bite > 0.3) behead(base, species[s]);
         }
       });
     },
@@ -320,8 +343,10 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
         const base = (c * speciesCount + s) * STRIDE;
         const phase = values[base + PHASE] ?? 0;
         const stem = phase === FLOWERING ? values[base + STEM] ?? 0 : 0;
+        const kind = species[s];
         const cohort: TillerCohort = {
           tillersPerM2: values[base + TILLERS] ?? 0,
+          cover: kind === undefined ? 0 : Math.min(1, (values[base + TILLERS] ?? 0) / maxTillers(kind, values[base + LEAF] ?? 0)),
           leafHeightM: values[base + LEAF] ?? 0,
           floweringShare: phase === FLOWERING ? values[base + SHARE] ?? 0 : 0,
           stemHeightM: stem,
@@ -353,56 +378,73 @@ export function createTillerField(options: TillerFieldOptions): TillerField {
 }
 
 /**
- * The look of one grass cell for the `grass/` renderer: density from tillers per m² against the most
- * its leaf height allows, blade height from leaves and flowering stems, flowers while heads are out, gold once
- * seed has set and through autumn, colours from the cell's leading species. Every other field keeps `base`.
+ * The look of one ground-cover cell for the `grass/` renderer: density from each cohort's cover, blade
+ * height and width from the species holding the most ground (the next drawn at its own height and
+ * width), colours from the species holding the most ground and the
+ * next, flowers in the colours of the two species most in flower (herbs before grasses), gold once a
+ * grass has seeded and through autumn. Every other field keeps `base`.
  * @capability plant-ground-cover grow lawns, meadows and paths as tiller fields that mowing, trampling, grazing and shade shape
  */
-export function tillerCellLook(field: TillerField, species: readonly GrassSpecies[], col: number, row: number, base: GrassLook): GrassLook {
+export function tillerCellLook(field: TillerField, species: readonly GroundCoverSpecies[], col: number, row: number, base: GrassLook): GrassLook {
   const cell = field.cell(col, row);
-  let lead = 0;
-  let second = -1;
-  cell.cohorts.forEach((cohort, s) => {
-    if (cohort.tillersPerM2 > (cell.cohorts[lead]?.tillersPerM2 ?? 0)) {
-      second = lead;
-      lead = s;
-    } else if (s !== lead && (second < 0 || cohort.tillersPerM2 > (cell.cohorts[second]?.tillersPerM2 ?? 0))) second = s;
-  });
-  const grass = species[lead];
-  const cohort = cell.cohorts[lead];
+  const cohorts = cell.cohorts;
+  const lead = ranked(cohorts.map((c) => c.cover));
+  // A herb's petals show over grass heads, so any herb in flower outranks the grasses.
+  const bloom = ranked(cohorts.map((c, s) => (c.inFlower ? c.cover * c.floweringShare + (species[s]?.habit === "forb" ? 1 : 0) : 0)));
+  const grass = species[lead[0]];
+  const cohort = cohorts[lead[0]];
   if (grass === undefined || cohort === undefined) return base;
-  // Fullness against the self-thinning line at each cohort's own leaf height: a full meadow and a full
-  // lawn both read 1, though the lawn holds three times the tillers.
   let fullness = 0;
-  cell.cohorts.forEach((c, s) => {
-    const kind = species[s];
-    if (kind !== undefined) fullness += c.tillersPerM2 / maxTillers(kind, c.leafHeightM);
-  });
   let flowering = 0;
   let seeded = 0;
-  for (const c of cell.cohorts) {
-    const share = cell.tillersPerM2 > 0 ? c.tillersPerM2 / cell.tillersPerM2 : 0;
+  for (const c of cohorts) fullness += c.cover;
+  cohorts.forEach((c, s) => {
+    const share = fullness > 0 ? c.cover / fullness : 0;
     if (c.inFlower) flowering += share * c.floweringShare;
-    if (c.seeded) seeded += share;
-  }
+    if (c.seeded && species[s]?.habit === "graminoid") seeded += share;
+  });
   const day = field.dayOfYear();
   const autumn = day > 260 ? Math.min(1, (day - 260) / 60) : day < 90 ? 1 : 0;
-  const secondGrass = second >= 0 ? species[second] : undefined;
-  const secondShare = second >= 0 && cell.tillersPerM2 > 0 ? (cell.cohorts[second]?.tillersPerM2 ?? 0) / cell.tillersPerM2 : 0;
+  const second = species[lead[1]];
+  const leadHeight = cohortHeight(cohort);
+  const leadWidth = Math.max(MIN_BLADE_WIDTH_M, grass.leafWidthM * 1.5);
+  const secondShare = second !== undefined && fullness > 0 ? (cohorts[lead[1]]?.cover ?? 0) / fullness : 0;
+  const bloomFirst = (bloom[0] >= 0 ? species[bloom[0]] : undefined) ?? grass;
+  const bloomSecond = (bloom[1] >= 0 && (cohorts[bloom[1]]?.inFlower ?? false) ? species[bloom[1]] : undefined) ?? bloomFirst;
   return {
     ...base,
     density: Math.min(1, fullness),
-    bladeHeight: Math.max(0.01, cell.heightM),
+    bladeHeight: leadHeight,
     heightVariation: Math.min(0.8, 0.1 + 0.6 * (cohort.leafHeightM / grass.maxLeafLengthM)),
-    bladeWidth: grass.leafWidthM * 1.5,
+    bladeWidth: leadWidth,
+    mixHeight: second === undefined ? base.mixHeight : Math.min(30, Math.max(0.1, cohortHeight(cohorts[lead[1]]) / leadHeight)),
+    mixWidth: second === undefined ? base.mixWidth : Math.max(MIN_BLADE_WIDTH_M, second.leafWidthM * 1.5) / leadWidth,
     baseColor: grass.colors.leaf,
     tipColor: grass.colors.tip,
     flowerShare: Math.min(1, flowering),
-    flowerColor: grass.colors.flower,
-    flowerColor2: secondGrass?.colors.flower ?? grass.colors.flower,
+    flowerColor: bloomFirst.colors.flower,
+    flowerColor2: bloomSecond.colors.flower,
     season: autumn > 0 ? 0.5 + 0.5 * autumn : 0.5 * Math.min(1, seeded * 2),
     mixShare: secondShare,
-    mixColor: secondGrass?.colors.tip ?? grass.colors.tip,
+    mixColor: second?.colors.tip ?? grass.colors.tip,
     groundCover: Math.min(1, 0.2 + fullness),
   };
+}
+
+/** Height of a cohort's leaves, or its flowering stems while it has them. */
+function cohortHeight(cohort: TillerCohort | undefined): number {
+  return Math.max(0.01, cohort?.leafHeightM ?? 0, cohort?.stemHeightM ?? 0);
+}
+
+/** Indices of the largest and second-largest values (-1 when there is none). */
+function ranked(values: readonly number[]): [number, number] {
+  let first = -1;
+  let second = -1;
+  values.forEach((value, i) => {
+    if (first < 0 || value > (values[first] ?? 0)) {
+      second = first;
+      first = i;
+    } else if (second < 0 || value > (values[second] ?? 0)) second = i;
+  });
+  return [first, second];
 }
