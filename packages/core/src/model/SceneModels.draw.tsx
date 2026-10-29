@@ -157,9 +157,11 @@ const noLookChanges = () => () => {};
  */
 export function useEntityLookModel(model: ModelConfig | undefined, instanceId: string | undefined): ModelConfig | undefined {
   const ctx = useOptionalGameContext();
+  const readLook = () => (ctx === null || instanceId === undefined ? undefined : ctx.scene.entity.get(instanceId)?.look);
   const look = useSyncExternalStore(
     ctx === null || instanceId === undefined || model?.looks === undefined ? noLookChanges : ctx.subscribe,
-    () => (ctx === null || instanceId === undefined ? undefined : ctx.scene.entity.get(instanceId)?.look),
+    readLook,
+    readLook,
   );
   return useMemo(() => (model === undefined ? undefined : modelForLook(model, look)), [model, look]);
 }
@@ -174,14 +176,17 @@ interface IsolatedEntityModelProps {
 /** A model with looks bound to a live entity: draws the look that entity wears now. */
 function LookedEntityModel(props: IsolatedEntityModelProps & { instanceId: string }) {
   const model = useEntityLookModel(props.model, props.instanceId) ?? props.model;
-  return <IsolatedEntityModel {...props} model={model} />;
+  return <DrawnEntityModel {...props} model={model} />;
 }
 
 /** Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`. */
-export function IsolatedEntityModel({ model, instanceId, measure, fallback }: IsolatedEntityModelProps) {
-  if (model.looks !== undefined && instanceId !== undefined) {
-    return <LookedEntityModel model={model} instanceId={instanceId} {...(measure === undefined ? {} : { measure })} fallback={fallback} />;
-  }
+export function IsolatedEntityModel(props: IsolatedEntityModelProps) {
+  const { instanceId } = props;
+  if (props.model.looks !== undefined && instanceId !== undefined) return <LookedEntityModel {...props} instanceId={instanceId} />;
+  return DrawnEntityModel(props);
+}
+
+function DrawnEntityModel({ model, instanceId, measure, fallback }: IsolatedEntityModelProps) {
   const levels = model.variants !== undefined && instanceId !== undefined;
   return (
     <ModelFallbackBoundary fallback={fallback ?? null} url={model.url} seam={measure?.target}>
