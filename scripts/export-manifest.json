@@ -711,6 +711,7 @@
     "./model/modelAssets",
     "./model/modelBindPose.draw",
     "./model/modelLoad.draw",
+    "./model/modelLook",
     "./model/modelMeshMerge.draw",
     "./model/modelNodeVisibility.draw",
     "./model/modelRender.draw",

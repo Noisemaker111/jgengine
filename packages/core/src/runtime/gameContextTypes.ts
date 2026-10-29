@@ -304,6 +304,7 @@ export interface SceneEntityContext {
   subscribeMembership: EntityStore["subscribeMembership"];
   subscribeBehaviors: EntityStore["subscribeBehaviors"];
   spawnPoseOf(instanceId: string): SpawnPose | null;
+  setSpawnPose: EntityStore["setSpawnPose"];
   resetToSpawn(instanceId: string): boolean;
   resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number;
   blackboard: EntityBlackboard;

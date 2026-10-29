@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import { Suspense, type ReactNode } from "react";
+import { createElement, Suspense, type ReactNode } from "react";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import {
@@ -8,7 +8,9 @@ import {
   fallbackSeamsSnapshot,
 } from "@jgengine/core/devtools/fallbackSeams";
 
-import { IsolatedModelPart, ModelFallbackBoundary } from "./SceneModels.draw";
+import { renderToStaticMarkup } from "react-dom/server";
+
+import { IsolatedEntityModel, IsolatedModelPart, ModelFallbackBoundary } from "./SceneModels.draw";
 
 // The shell has no React renderer in test (no react-dom / test-renderer), so the boundary is
 // exercised through the same lifecycle React drives: construct, apply getDerivedStateFromError,
@@ -115,5 +117,12 @@ describe("IsolatedModelPart", () => {
     expect(element.props.fallback).toBeNull();
     expect(element.props.children.type).toBe(Suspense);
     expect(element.props.children.props.fallback).toBeNull();
+  });
+});
+
+describe("IsolatedEntityModel looks", () => {
+  test("an entity that has not picked a look draws the base model once", () => {
+    const survivor: ModelConfig = { ...MODEL, looks: { woman: { url: "/models/woman.glb" } } };
+    expect(() => renderToStaticMarkup(createElement(IsolatedEntityModel, { model: survivor, instanceId: "player" }))).not.toThrow();
   });
 });

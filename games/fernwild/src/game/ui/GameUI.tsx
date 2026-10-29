@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { GameFlowUI } from "@jgengine/core/menu/gameFlowMenus.view";
 
 import { BRIEFING, CONTROLS, CREDITS } from "../controls";
+import { CharacterCreator } from "./CharacterCreator";
 import { Hud } from "./Hud";
 
 /** Title over the standing island, the survivor HUD while playing, the pause menu over it. */
@@ -17,6 +18,7 @@ export function GameUI(): ReactNode {
         controls: CONTROLS,
         briefing: BRIEFING,
         credits: CREDITS,
+        newGameSetup: (begin, back) => <CharacterCreator begin={begin} back={back} />,
       }}
     />
   );

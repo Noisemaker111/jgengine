@@ -395,6 +395,12 @@ export interface ModelConfig {  url: string;
    * skinned to the same skeleton (`@jgengine/core/anim/wearable/wornRegion`). An item with no entry draws nothing.
    */
   worn?: Readonly<Record<string, WornLayer>>;
+  /**
+   * Alternative bodies an entity of this model may draw, by name (`SceneEntity.look`, set with
+   * `ctx.scene.entity.update(id, { look })`): each look's fields are laid over this model, so
+   * `{ ...libraryModel("human/woman-casual") }` swaps the body and keeps `held` and `worn`.
+   */
+  looks?: Readonly<Record<string, Partial<Omit<ModelConfig, "looks">>>>;
   /** Static kit-of-parts pieces stacked at fixed local offsets — no bone/rig involved. Use this for a compound entity assembled from several modular meshes (a castle keep from base + mid + roof pieces); use `attachments` for props parented to an animated rig's bones. Tag parts with a `role` to procedurally animate a rig-less character composition. */
   parts?: readonly ModelPart[];
   /** Tuning for the procedural part-motion driver when any part carries a `role`; omit for defaults. */

@@ -58,6 +58,21 @@ export interface OnboardingStep<C> {
   grants?: QuestRewards;
 }
 
+/** Where a `"teaching-area"` onboarding guides: centre XZ and radius in metres, and what to call it. */
+export interface OnboardingArea {
+  center: readonly [number, number];
+  radius: number;
+  label?: string;
+}
+
+/**
+ * The teaching area for one player: the config's own, or what its function gives for them.
+ * @internal
+ */
+export function onboardingAreaFor<C>(config: OnboardingConfig<C>, ctx: C, userId: string): OnboardingArea | undefined {
+  return typeof config.area === "function" ? config.area(ctx, userId) : config.area;
+}
+
 /** A game's whole onboarding, declared as data. */
 export interface OnboardingConfig<C> {
   id: string;
@@ -67,8 +82,11 @@ export interface OnboardingConfig<C> {
   steps: readonly OnboardingStep<C>[];
   /** Whether the player may skip it. Default `true`. */
   skippable?: boolean;
-  /** `"teaching-area"`: the area the guidance lives in, centre XZ and radius in metres. */
-  area?: { center: readonly [number, number]; radius: number; label?: string };
+  /**
+   * `"teaching-area"`: the area the guidance lives in, centre XZ and radius in metres; a function
+   * gives each player their own (around the start region they chose).
+   */
+  area?: OnboardingArea | ((ctx: C, userId: string) => OnboardingArea);
   /** `"tutorial-level"`: move the player into the real game once every step is done or skipped. */
   finish?: (ctx: C, userId: string) => void;
   /** Finders for `{ kind }` targets that are not entities (scatter rocks, resource nodes), by kind. */

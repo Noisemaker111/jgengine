@@ -46,6 +46,12 @@ export interface SceneEntity<TMeta = unknown> {
    * @capability entity-worn-items show the clothing an entity wears on its body
    */
   worn?: readonly string[];
+  /**
+   * Which of its model's `looks` this entity draws (a body picked in a character creator, a skin);
+   * render-only, like `size`. Absent, or a name the model lacks, draws the model itself.
+   * @capability entity-look pick one of a model's alternative bodies per entity, for character creators and skins
+   */
+  look?: string;
   /** Game-defined per-instance data set at `spawn`/`update` and carried to `renderEntity`/queries — narrow with {@link entityMetaOf} (or a type guard) on read (#286.1); never encode state in the id/name string. */
   meta: TMeta;
 }
@@ -87,6 +93,7 @@ export interface SpawnOptions<TMeta = unknown> {
   behaviors?: readonly BehaviorDescriptor[] | undefined;
   hidden?: boolean | undefined;
   size?: number | undefined;
+  look?: string | undefined;
   meta?: TMeta | undefined;
   /**
    * When `id` is already spawned: `"keep"` (default — adopt the live body and return its id, so a
@@ -133,6 +140,8 @@ export type EntityUpdatePatch<TMeta = unknown> = Partial<
   held?: string | null;
   /** What is now worn; `null` or `[]` takes everything off. */
   worn?: readonly string[] | null;
+  /** The look now drawn; `null` goes back to the model itself. */
+  look?: string | null;
   /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not derived; use `setPose` with `dt` for that. */
   position?: SpawnPositionInput;
 };
@@ -188,6 +197,12 @@ export interface EntityStore<TMeta = unknown> {
    */
   hydrate(entities: readonly SceneEntity<TMeta>[]): void;
   spawnPoseOf(id: string): SpawnPose | null;
+  /**
+   * Move where `resetToSpawn` returns this entity (a chosen start region, a sleeping bag); the entity
+   * itself stays put. False for an id that is not spawned.
+   * @capability entity-spawn-pose move where an entity respawns without respawning it
+   */
+  setSpawnPose(id: string, pose: SpawnPose): boolean;
   resetToSpawn(id: string): boolean;
   blackboard: EntityBlackboard;
 }
@@ -283,6 +298,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
         behaviors: options.behaviors ?? [],
         ...(options.hidden === undefined ? {} : { hidden: options.hidden }),
         ...(options.size === undefined ? {} : { size: options.size }),
+        ...(options.look === undefined ? {} : { look: options.look }),
         meta: options.meta as TMeta,
       });
       return id;
@@ -313,6 +329,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       else if (patch.held !== undefined) current.held = patch.held;
       if (patch.worn === null || patch.worn?.length === 0) delete current.worn;
       else if (patch.worn !== undefined) current.worn = [...patch.worn];
+      if (patch.look === null) delete current.look;
+      else if (patch.look !== undefined) current.look = patch.look;
       if (patch.meta !== undefined) current.meta = patch.meta;
       if (patch.behaviors === undefined) store.set(id, current);
       else writeEntity(current, previousBehaviors);
@@ -415,6 +433,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
           ...(entity.hidden === undefined ? {} : { hidden: entity.hidden }),
           ...(entity.size === undefined ? {} : { size: entity.size }),
           ...(entity.held === undefined ? {} : { held: entity.held }),
+          ...(entity.worn === undefined ? {} : { worn: [...entity.worn] }),
+          ...(entity.look === undefined ? {} : { look: entity.look }),
           meta: entity.meta,
         });
         if (!spawnPoses.has(entity.id)) {
@@ -424,6 +444,11 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
     },
     spawnPoseOf(id) {
       return spawnPoses.get(id) ?? null;
+    },
+    setSpawnPose(id, pose) {
+      if (!store.has(id)) return false;
+      spawnPoses.set(id, { position: [pose.position[0], pose.position[1], pose.position[2]], rotationY: pose.rotationY });
+      return true;
     },
     resetToSpawn(id) {
       const pose = spawnPoses.get(id);

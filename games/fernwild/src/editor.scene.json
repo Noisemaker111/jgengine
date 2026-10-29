@@ -15253,6 +15253,90 @@
           }
         ]
       }
+    },
+    {
+      "id": "spawn_south_1",
+      "kind": "player_spawn",
+      "position": {
+        "x": -342,
+        "y": 1.2,
+        "z": 849
+      },
+      "rotationY": 3.071,
+      "label": "South Zone 1",
+      "meta": {
+        "clearance": 1.5
+      }
+    },
+    {
+      "id": "spawn_south_3",
+      "kind": "player_spawn",
+      "position": {
+        "x": 719,
+        "y": 1,
+        "z": 962
+      },
+      "rotationY": -2.354,
+      "label": "South Zone 3",
+      "meta": {
+        "clearance": 1.5
+      }
+    },
+    {
+      "id": "spawn_east_1",
+      "kind": "player_spawn",
+      "position": {
+        "x": 1247.2,
+        "y": 1.6,
+        "z": 358.3
+      },
+      "rotationY": -1.821,
+      "label": "East Zone 1",
+      "meta": {
+        "clearance": 1.5
+      }
+    },
+    {
+      "id": "spawn_east_2",
+      "kind": "player_spawn",
+      "position": {
+        "x": 1304,
+        "y": 2.2,
+        "z": 2.9
+      },
+      "rotationY": -1.593,
+      "label": "East Zone 2",
+      "meta": {
+        "clearance": 1.5
+      }
+    },
+    {
+      "id": "spawn_north_1",
+      "kind": "player_spawn",
+      "position": {
+        "x": 395.4,
+        "y": 1.5,
+        "z": -1187.1
+      },
+      "rotationY": -0.529,
+      "label": "North Zone 1",
+      "meta": {
+        "clearance": 1.5
+      }
+    },
+    {
+      "id": "spawn_north_2",
+      "kind": "player_spawn",
+      "position": {
+        "x": -275.1,
+        "y": 1.9,
+        "z": -1160
+      },
+      "rotationY": -0.004,
+      "label": "North Zone 2",
+      "meta": {
+        "clearance": 1.5
+      }
     }
   ],
   "volumes": [

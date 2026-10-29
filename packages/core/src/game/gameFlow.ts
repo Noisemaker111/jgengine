@@ -12,6 +12,11 @@ export function openTitle(ctx: GameContext): void {
   setGamePhase(ctx, "menu");
 }
 
+/** Whether a run already played in this world, so a new one has to restart the page first. */
+export function runPlayed(ctx: GameContext): boolean {
+  return session(ctx).ran;
+}
+
 /** Start the clock and enter the `"playing"` phase. */
 export function playGame(ctx: GameContext): void {
   session(ctx).ran = true;

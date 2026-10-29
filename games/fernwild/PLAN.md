@@ -152,3 +152,5 @@ One PR each, in order; the gaps go first that later milestones need. Tick a mile
 - [x] 12. The south beach as ARK draws it: pale sand with pebbles and driftwood, palms near the water, a jungle wall of trees, ferns, bushes and waist-high grass (#2687)
 - [x] 13. The inland as ARK draws it: rolling hills, cliffs and gullied mountains, waist-high grass through the jungle and plains (#2687)
 - [x] 14. Rock as ARK draws it: rounded boulders with cracks and stacked ledges instead of flat low-poly facets (#2687)
+- [x] 15. Clothes drawn on the survivor's body (#2811)
+- [x] 16. Survivor creation and the spawn screen: name, four bodies, height, and seven beaches graded Easy to Hard on the island map; death wakes you on the beach you chose

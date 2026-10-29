@@ -9,6 +9,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { itemDef, itemLabel } from "../data/items";
 import type { SurvivorScreen } from "../screens";
 import { BAG, HOTBAR } from "../bags";
+import { survivorLook } from "../character";
 import { dossierPages } from "../dossier";
 import { entityModels } from "../models";
 import { craftable } from "../survivor";
@@ -123,6 +124,7 @@ function Portrait(): ReactNode {
 function Survivor(): ReactNode {
   const game = useGame();
   const view = useSurvivor();
+  const name = useGameStore((ctx) => survivorLook(ctx).name);
   const current: Record<string, string> = {
     health: `${Math.floor(view.health.value)} / ${view.health.max}`,
     stamina: `${Math.floor(view.stamina.value)} / ${view.stamina.max}`,
@@ -134,7 +136,9 @@ function Survivor(): ReactNode {
   const xpShare = Math.max(0, Math.min(1, (view.xp - view.xpFrom) / Math.max(1, view.xpNext - view.xpFrom)));
   return (
     <div style={{ ...PANEL, width: 400 }}>
-      <span style={{ ...HEADING, textAlign: "center", fontSize: 14 }}>Survivor - Lvl {view.level}</span>
+      <span style={{ ...HEADING, textAlign: "center", fontSize: 14 }}>
+        {name} - Lvl {view.level}
+      </span>
       <Paperdoll
         slots={view.gear.map((slot) => ({
           id: slot.id,

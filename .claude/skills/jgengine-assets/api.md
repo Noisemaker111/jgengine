@@ -760,8 +760,9 @@
 
 - `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget | undefined; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): Rea… — Draws an entity's model at the given LOD level, with animation, paint layer and bounds measurement.
 - `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
-- `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance.
+- `IsolatedEntityModel` (function): function IsolatedEntityModel(props: IsolatedEntityModelProps): React.JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`.
 - `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
+- `useEntityLookModel` (function): function useEntityLookModel(model: ModelConfig | undefined, instanceId: string | undefined): ModelConfig | undefined — `model` as the live entity `instanceId` draws it: its current `look` laid over the model ({@link modelForLook}), re-rendering only when the look changes. Without an entity, the model itself.
 
 ## @jgengine/core/model/measureBounds.draw
 
@@ -790,6 +791,11 @@
 - `modelLoadIdleMs` (function): function modelLoadIdleMs(): number — How long the shared GLB loader has been idle, in ms — `0` while any model is still in flight. A capture host reads this to wait for streaming to finish instead of guessing a settle delay: models that pop in after the shot are why an establishing capture used to come back half-empty until someone hand-tuned `--settle`.
 - `modelLoadStarts` (function): function modelLoadStarts(): number — How many times the shared GLB loader has gone from idle to busy since boot. A capture host compares two readings around a rendered frame to tell whether that frame started new model streaming, which an idle reading alone cannot show.
 - `setModelTriangleBudget` (function): function setModelTriangleBudget(triangles: number): void — Retune the per-model triangle budget (a cinematic game may raise it; a mobile target lowers it). Non-finite or non-positive values restore the default.
+
+## @jgengine/core/model/modelLook
+
+- `modelForLook` (function): function modelForLook(model: ModelConfig, look: string | undefined): ModelConfig — The model one entity draws for its `look` (`SceneEntity.look`): that entry of `model.looks` laid over the model, so a look swaps the body while keeping the model's held, worn and attachment tables unless it names its own. No look, or a name the model lacks, returns the model itself.
+- `modelLooks` (function): function modelLooks(model: ModelConfig): ModelConfig[] — Every body a model can draw: itself, then each of its looks, for preloading or crowd batching.
 
 ## @jgengine/core/model/modelRender.draw
 

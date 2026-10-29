@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 
-import { continueGame, newGame, openTitle, playGame, saveNow, togglePause } from "@jgengine/core/game/gameFlow";
+import { continueGame, newGame, openTitle, playGame, runPlayed, saveNow, togglePause } from "@jgengine/core/game/gameFlow";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { useGamePhase } from "@jgengine/react/hooks";
@@ -35,6 +35,22 @@ export interface GameFlowMenuContent {
   briefing?: readonly string[];
   /** The Credits pane, one line each. Omit to drop the Credits verb. */
   credits?: readonly string[];
+  /**
+   * A screen between New game and play (a character creator, a start-region choice), drawn in place
+   * of the title over the standing world. Call `begin()` once the choices are applied to start the
+   * run, or `back()` to return to the title. Omit to go straight into play.
+   */
+  newGameSetup?: (begin: () => void, back: () => void) => ReactNode;
+}
+
+/** Session key that reopens the setup after the page restarts for a second New game. */
+const SETUP_AFTER_RESTART = "jgengine:new-game-setup";
+
+function setupAfterRestart(): boolean {
+  if (typeof sessionStorage === "undefined") return false;
+  const pending = sessionStorage.getItem(SETUP_AFTER_RESTART) === "1";
+  sessionStorage.removeItem(SETUP_AFTER_RESTART);
+  return pending;
 }
 
 function menuStyle(content: GameFlowMenuContent) {
@@ -83,9 +99,29 @@ function CreditsLines({ lines }: { lines: readonly string[] }): ReactNode {
 function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode {
   const ctx = useGameContext();
   const [saved, setSaved] = useState(false);
+  const setup = content.newGameSetup;
+  const [settingUp, setSettingUp] = useState(() => setup !== undefined && setupAfterRestart());
   useEffect(() => {
     void ctx.game.save?.hasSave().then(setSaved);
   }, [ctx]);
+  const startNew = (): void => {
+    if (setup === undefined) {
+      void startNewGame(ctx);
+      return;
+    }
+    if (runPlayed(ctx)) {
+      sessionStorage.setItem(SETUP_AFTER_RESTART, "1");
+      location.reload();
+      return;
+    }
+    setSettingUp(true);
+  };
+  if (settingUp && setup !== undefined) {
+    return setup(
+      () => void startNewGame(ctx),
+      () => setSettingUp(false),
+    );
+  }
   return (
     <GameMenu
       label={content.name}
@@ -111,7 +147,7 @@ function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode
       }
       onSelect={(id) => {
         if (id === "continue") void continueGame(ctx);
-        if (id === "new") void startNewGame(ctx);
+        if (id === "new") startNew();
       }}
     />
   );
