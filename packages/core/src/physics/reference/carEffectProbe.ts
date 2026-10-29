@@ -226,18 +226,15 @@ export function measureCarEffects(create: () => CarEffectSubject, options: CarEf
     if (steer > 0 && steer < 1) {
       const car = create();
       let current = launchTo(car, speed, dt);
-      let throttle = 0.3;
-      for (let i = 0; i < Math.ceil(1 / dt); i += 1) {
-        const hold = holdSpeed(speed, current);
-        throttle = hold.throttle;
-        current = car.tick(dt, axis(hold.throttle, hold.brake, 0)).forwardSpeed;
-      }
       const ramp = 0.15;
       const lateral: number[] = [];
       const tail: Step[] = [];
       const total = Math.ceil(4 / dt);
       for (let i = 1; i <= total; i += 1) {
-        const step = car.tick(dt, axis(throttle, 0, steer * Math.min(1, (i * dt) / ramp)));
+        // Speed is held through the step so cornering drag cannot drift the lateral acceleration it times.
+        const hold = holdSpeed(speed, current);
+        const step = car.tick(dt, axis(hold.throttle, hold.brake, steer * Math.min(1, (i * dt) / ramp)));
+        current = step.forwardSpeed;
         lateral.push(Math.abs(step.lateralAccel));
         if (i > total - Math.ceil(1 / dt)) tail.push(step);
       }
