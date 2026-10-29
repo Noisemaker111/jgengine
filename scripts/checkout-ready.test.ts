@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "bun:test";
 
-import { checkoutProblem, EXIT_NOT_SET_UP } from "./checkout-ready";
+import { checkoutProblem, EXIT_NOT_SET_UP, missingDependencies, tsgoBin } from "./checkout-ready";
 
 const checkoutRoot = fileURLToPath(new URL("..", import.meta.url));
 const scratch = join(checkoutRoot, ".scratch");
@@ -51,6 +51,24 @@ describe("probe", () => {
 
   test("this checkout is set up", () => {
     expect(checkoutProblem(checkoutRoot)).toBeNull();
+  });
+
+  test("a declared package the tree cannot resolve is a checkout problem, though tsgo is there", () => {
+    const { root, cleanup } = bareCheckout();
+    try {
+      writeFileSync(join(root, "package.json"), JSON.stringify({ workspaces: ["games/*"] }));
+      mkdirSync(join(root, "games", "g"), { recursive: true });
+      writeFileSync(join(root, "games", "g", "package.json"), JSON.stringify({ dependencies: { "@react-three/drei": "10" } }));
+      mkdirSync(join(root, "node_modules", ".bin"), { recursive: true });
+      writeFileSync(tsgoBin(root), "");
+      expect(missingDependencies(root)).toEqual(["games/g/@react-three/drei"]);
+      expect(checkoutProblem(root)?.detail).toContain("games/g/@react-three/drei");
+      mkdirSync(join(root, "games", "g", "node_modules", "@react-three", "drei"), { recursive: true });
+      writeFileSync(join(root, "games", "g", "node_modules", "@react-three", "drei", "package.json"), "{}");
+      expect(checkoutProblem(root)).toBeNull();
+    } finally {
+      cleanup();
+    }
   });
 });
 

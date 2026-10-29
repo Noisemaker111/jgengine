@@ -12,7 +12,7 @@
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { hasInstall } from "./checkout-ready";
+import { hasInstall, missingDependencies, missingText } from "./checkout-ready";
 
 const root = process.cwd();
 const checkOnly = process.argv.includes("--check");
@@ -161,11 +161,17 @@ if (import.meta.main) {
     process.exit(1);
   }
 
-  const ready = hasTsgo() && !existsSync(installingPath);
+  // "check ok" once meant only that tsgo was there, and ten sessions then met a game's missing package.
+  const missing = hasTsgo() ? missingDependencies(root) : [];
+  const ready = hasTsgo() && !existsSync(installingPath) && missing.length === 0;
   if (checkOnly) {
     if (ready) {
-      console.log("agent-bootstrap: check ok (deps installed; @jgengine/* resolves to source)");
+      console.log("agent-bootstrap: check ok (every declared package installed; @jgengine/* resolves to source)");
       process.exit(0);
+    }
+    if (missing.length > 0 && !lockAlive()) {
+      console.error(`agent-bootstrap: not ready — ${missingText(missing)}. Run \`bun run agent:bootstrap\`.`);
+      process.exit(1);
     }
     if (lockAlive()) {
       const pid = readFileSync(lockPath, "utf8").trim();
@@ -199,8 +205,16 @@ if (import.meta.main) {
     writeFileSync(installingPath, String(process.pid));
     run("bun install --frozen-lockfile", ["bun", "install", "--frozen-lockfile"], 600_000);
     rmSync(installingPath, { force: true });
+  } else if (missing.length > 0) {
+    console.log(`agent-bootstrap: ${missingText(missing)}`);
+    const repaired = Bun.spawnSync(["bun", "scripts/ensure-ready.ts", "--install-only"], { cwd: root, stdout: "inherit", stderr: "inherit", timeout: 600_000 });
+    const still = missingDependencies(root);
+    if (repaired.exitCode !== 0 || still.length > 0) {
+      console.error(`agent-bootstrap: still not ready — ${still.length > 0 ? missingText(still) : `ensure-ready exited ${repaired.exitCode}`}`);
+      process.exit(1);
+    }
   } else {
-    console.log("agent-bootstrap: node_modules present (tsgo found)");
+    console.log("agent-bootstrap: node_modules present (every declared package installed)");
   }
 
   if (!withBuild) {

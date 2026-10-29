@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { ensureWorktreeReady } from "./agent-worktree";
-import { hasInstall } from "./checkout-ready";
+import { hasInstall, missingDependencies, missingText } from "./checkout-ready";
 import { scanStalePackages } from "./distStaleness";
 
 function run(label: string, cmd: string[], timeoutMs: number): void {
@@ -26,7 +26,7 @@ function run(label: string, cmd: string[], timeoutMs: number): void {
 // them, so every test/build/smoke run in such a tree failed on missing deps or
 // an empty game list. Link from the main checkout (instant) before installing.
 const readiness = ensureWorktreeReady(process.cwd(), {
-  install: () => run("dependencies cannot be linked (bun.lock differs from the main checkout) — running bun install", ["bun", "install"], 300_000),
+  install: () => run("dependencies cannot be linked (bun.lock differs from the main checkout, or a package is missing) — running bun install", ["bun", "install"], 300_000),
 });
 if (readiness !== null && !readiness.unchanged) {
   const did: string[] = [];
@@ -38,6 +38,9 @@ if (readiness !== null && !readiness.unchanged) {
 
 if (!hasInstall(process.cwd())) {
   run("node_modules incomplete (tsgo missing) — running bun install", ["bun", "install"], 300_000);
+} else {
+  const missing = missingDependencies(process.cwd());
+  if (missing.length > 0) run(`${missingText(missing)} — running bun install`, ["bun", "install"], 300_000);
 }
 
 function workspacePatterns(): string[] {
