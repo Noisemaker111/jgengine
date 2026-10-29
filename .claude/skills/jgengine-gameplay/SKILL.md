@@ -159,6 +159,8 @@ quota errors, checkpoint retry, and save status UI.
 - Pure-data operations are the reusable core; stateful conveniences wrap them.
 - Transactions validate before mutation and return inspectable outcomes.
 - Random selection accepts injected RNG and stable ordering.
+- A chance the player feels over many tries (a crit, a drop, a gang push) rolls through `fairChance` (`random/fairChance`): the same odds, dealt like cards, so no long lucky or unlucky streaks. World-model `schedule` chances already do.
+- A test of anything random asserts its odds with `acrossSeeds` (`random/seedSweep`), never one seed's outcome: one seed can pass on a lucky streak and hide a broken balance.
 - Large collections use indexes, queues, or bounded reconciliation rather than repeated scans.
 
 Quest journals index active objectives by kill target and collected item. Bind
