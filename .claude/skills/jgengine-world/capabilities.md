@@ -392,6 +392,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/core/scene/sceneCapture.draw"`
 
+## car-effect-metrics — measure a car sim one effect at a time — roll, load transfer, pitch, coast-down, launch, yaw gain, response lag, power-on and brake-in-turn
+
+- `measureCarEffects` (function) · `import { measureCarEffects } from "@jgengine/core/physics/reference/carEffectProbe"`
+
 ## cave-draw — draw a cave's rock from its layout
 
 - `Cave` (function) · `import { Cave } from "@jgengine/core/cave/Cave.draw"`
@@ -2445,9 +2449,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createVehicleDamage` (function) · `import { createVehicleDamage } from "@jgengine/core/world"`
 
-## vehicle-dynamics — force-based car handling — tires, load transfer, drivetrain, assists — tuned with physical numbers
+## vehicle-dynamics — force-based car handling built from separate effects — tyres, load transfer, drivetrain, aero, compliance, aids — each switchable and tuned with physical numbers
 
 - `createVehicleDynamics` (function) · `import { createVehicleDynamics } from "@jgengine/core/world"`
+
+## vehicle-effects — switch a car's physical effects and aids off, swap or retune them one at a time
+
+- `withVehicleEffects` (function) · `import { withVehicleEffects } from "@jgengine/core/physics/vehicleDynamics"`
 
 ## vehicle-parts — compose data-driven tuning parts (tires, engine, brakes) onto a vehicle spec and read the resulting feel
 
@@ -2457,7 +2465,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createVehicleSeats` (function) · `import { createVehicleSeats } from "@jgengine/core/world"`
 
-## vehicle-spec — describe a car by feel (top speed, accel, grip, turn rate, drift, assists) and get force-based handling tuned from it
+## vehicle-spec — describe a car by feel (top speed, accel, grip, turn rate, balance, each aid) and get force-based handling built from separate effects
 
 - `vehicleTuning` (function) · `import { vehicleTuning } from "@jgengine/core/world"`
 

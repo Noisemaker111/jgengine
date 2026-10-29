@@ -832,6 +832,7 @@
     "./physics/ragdoll",
     "./physics/reference/boatComparison",
     "./physics/reference/bondedRock",
+    "./physics/reference/carEffectProbe",
     "./physics/reference/compareHandling",
     "./physics/reference/discreteElementExperiments",
     "./physics/reference/discreteElements",
