@@ -1,13 +1,23 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { assignShards, matchingShard, preparation, SHARDS, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
+import { assignShards, bunCrashed, matchingShard, preparation, SHARDS, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
   { name: "hot", label: "the core combat tests", include: ["packages/core/src/combat"] },
   { name: "core", label: "packages/core", include: ["packages/core"] },
   { name: "rest", label: "everything else", include: ["packages", "scripts"] },
 ];
+
+// Run 40757914741 on 28 Oct: shard h's one bun process printed "panic: abort() called / oh no: Bun
+// has crashed" after 1072 passing files, and beta read red with no test failed.
+test("a Bun crash with no failed test is run again; a failed test never is", () => {
+  const crash = "(pass) a > b [1ms]\n============\npanic: abort() called\noh no: Bun has crashed. This indicates a bug in Bun, not your code.\n";
+  expect(bunCrashed(crash, 1)).toBe(true);
+  expect(bunCrashed(`(fail) a > c [3ms]\n${crash}`, 1)).toBe(false);
+  expect(bunCrashed("(fail) a > c [3ms]\n 1 fail\n", 1)).toBe(false);
+  expect(bunCrashed(crash, 0)).toBe(false);
+});
 
 test("the first matching include owns a file, so a prefix never runs twice", () => {
   const assigned = assignShards(

@@ -193,7 +193,7 @@ function counts(files: readonly string[], shards: readonly Shard[]): string[] {
   return shards.map((shard) => `${shard.name} (${shard.label}): ${assigned.get(shard.name)!.length} file(s)`);
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const files = walkTestFiles();
 
@@ -234,11 +234,39 @@ function main(): void {
     const prepared = spawnSync("bun", args, { cwd: root, stdio: "inherit" });
     if (prepared.status !== 0) process.exit(prepared.status ?? 1);
   }
-  const run = spawnSync("bun", ["test", "--timeout", "20000", ...assigned], {
-    cwd: root,
-    stdio: "inherit",
-  });
-  process.exit(run.status ?? 1);
+  let status = await runTests(assigned);
+  if (status.bunCrashed) {
+    // Bun itself aborted, so no test reached a verdict; the same files run once more.
+    console.log(`test-shard ${name}: Bun crashed (not a test failure); running the shard once more`);
+    status = await runTests(assigned);
+  }
+  process.exit(status.code);
 }
 
-if (import.meta.main) main();
+/** Bun's own crash banner: printed by the runtime, never by a test. */
+export const BUN_CRASH = /oh no: Bun has crashed|panic: abort\(\) called|Bun has crashed\. This indicates a bug in Bun/;
+
+/**
+ * Whether a run's output shows Bun aborting rather than a test failing. A `(fail)` line means a test
+ * reached a verdict, so that run fails on its own and is never repeated.
+ */
+export function bunCrashed(output: string, code: number): boolean {
+  return code !== 0 && BUN_CRASH.test(output) && !/^\(fail\) /m.test(output);
+}
+
+/** `bun test` on the files, streamed to this job's log as it runs and kept for the crash check. */
+async function runTests(files: readonly string[]): Promise<{ code: number; bunCrashed: boolean }> {
+  const child = Bun.spawn(["bun", "test", "--timeout", "20000", ...files], { cwd: root, stdout: "pipe", stderr: "pipe" });
+  let tail = "";
+  const tee = async (stream: ReadableStream<Uint8Array>, sink: NodeJS.WriteStream): Promise<void> => {
+    const decoder = new TextDecoder();
+    for await (const chunk of stream) {
+      sink.write(chunk);
+      tail = (tail + decoder.decode(chunk, { stream: true })).slice(-200_000);
+    }
+  };
+  const [, , code] = await Promise.all([tee(child.stdout, process.stdout), tee(child.stderr, process.stderr), child.exited]);
+  return { code, bunCrashed: bunCrashed(tail, code) };
+}
+
+if (import.meta.main) await main();
