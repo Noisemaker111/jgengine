@@ -73,15 +73,18 @@ export function startRegion(id: string): StartRegion | undefined {
   return START_REGIONS.find((region) => region.id === id);
 }
 
+/** What a creator command or an old save may carry: any field, of any type. */
+export type LookInput = Partial<Record<keyof SurvivorLook, unknown>>;
+
 /** A creator choice made safe: a known body and region, a height on the slider, a name trimmed to fit. */
-export function cleanLook(input: Partial<SurvivorLook>): SurvivorLook {
-  const name = (input.name ?? "").trim().slice(0, NAME_LIMIT);
+export function cleanLook(input: LookInput): SurvivorLook {
+  const name = typeof input.name === "string" ? input.name.trim().slice(0, NAME_LIMIT) : "";
   const height = typeof input.height === "number" && Number.isFinite(input.height) ? Math.min(HEIGHT.max, Math.max(HEIGHT.min, input.height)) : 1;
   return {
     name: name === "" ? DEFAULT_LOOK.name : name,
     body: BODIES.find((body) => body.id === input.body)?.id ?? DEFAULT_LOOK.body,
     height: Math.round(height * 100) / 100,
-    region: startRegion(input.region ?? "")?.id ?? DEFAULT_LOOK.region,
+    region: START_REGIONS.find((region) => region.id === input.region)?.id ?? DEFAULT_LOOK.region,
   };
 }
 
@@ -96,7 +99,7 @@ function showLook(ctx: GameContext, look: SurvivorLook): void {
 }
 
 /** Make the survivor and wake them in the chosen region, facing inland as the marker does. */
-export function createSurvivor(ctx: GameContext, input: Partial<SurvivorLook>): SurvivorLook {
+export function createSurvivor(ctx: GameContext, input: LookInput): SurvivorLook {
   const look = cleanLook(input);
   made(ctx).look = look;
   showLook(ctx, look);
@@ -118,7 +121,7 @@ export function characterSave(ctx: GameContext) {
   return {
     key: "fernwild.character",
     snapshot: (): SurvivorLook => ({ ...survivorLook(ctx) }),
-    hydrate: (data: Partial<SurvivorLook>) => {
+    hydrate: (data: LookInput) => {
       const look = cleanLook(data);
       made(ctx).look = look;
       showLook(ctx, look);

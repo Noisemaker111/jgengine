@@ -827,6 +827,7 @@
 - `newGame` (function): function newGame(ctx: GameContext, restart?: () => void): Promise<void> — A fresh run: clears the save, then plays. When a run already played in this world, `restart` is called instead so nothing carries over (the browser host passes a page reload).
 - `openTitle` (function): function openTitle(ctx: GameContext): void — Stop the clock and show the title (`"menu"` phase).
 - `playGame` (function): function playGame(ctx: GameContext): void — Start the clock and enter the `"playing"` phase.
+- `runPlayed` (function): function runPlayed(ctx: GameContext): boolean — Whether a run already played in this world, so a new one has to restart the page first.
 - `saveNow` (function): function saveNow(ctx: GameContext, notice = "Saved"): Promise<void> — Save now and post a "Saved" notice.
 - `togglePause` (function): function togglePause(ctx: GameContext): void — Pause from `"playing"`, resume from `"paused"`; any other phase is left alone.
 
@@ -2660,6 +2661,7 @@
 ## @jgengine/core/onboarding/onboarding
 
 - `Onboarding` (interface): interface Onboarding<C> — One player's run through an {@link OnboardingConfig}.
+- `OnboardingArea` (interface): interface OnboardingArea — Where a `"teaching-area"` onboarding guides: centre XZ and radius in metres, and what to call it.
 - `OnboardingConfig` (interface): interface OnboardingConfig<C> — A game's whole onboarding, declared as data.
 - `OnboardingDone` (type): type OnboardingDone<C> = | { event: keyof GameEventMap; match?: Readonly<Record<string, string | number | boolean>>; count?: number } /** A condition on the world becomes true. */ | { when: (ctx: C, userId: string) => boolean } /** A measured amount reaches `count` (shown as "3/10" in the tracker). … — When a step is done.
 - `OnboardingPoint` (type): type OnboardingPoint = readonly [number, number, number] — World position `[x, y, z]`.

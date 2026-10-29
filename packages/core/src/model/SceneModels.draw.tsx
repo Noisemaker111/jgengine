@@ -164,19 +164,24 @@ export function useEntityLookModel(model: ModelConfig | undefined, instanceId: s
   return useMemo(() => (model === undefined ? undefined : modelForLook(model, look)), [model, look]);
 }
 
-/** Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`. */
-export function IsolatedEntityModel({
-  model: baseModel,
-  instanceId,
-  measure,
-  fallback,
-}: {
+interface IsolatedEntityModelProps {
   model: ModelConfig;
   instanceId?: string | undefined;
   measure?: MeasureTarget;
   fallback?: ReactNode;
-}) {
-  const model = useEntityLookModel(baseModel, instanceId) ?? baseModel;
+}
+
+/** A model with looks bound to a live entity: draws the look that entity wears now. */
+function LookedEntityModel(props: IsolatedEntityModelProps & { instanceId: string }) {
+  const model = useEntityLookModel(props.model, props.instanceId) ?? props.model;
+  return <IsolatedEntityModel {...props} model={model} />;
+}
+
+/** Draws one entity model from its own loaded copy, for models that cannot share a batched instance; a live `instanceId` draws its `look`. */
+export function IsolatedEntityModel({ model, instanceId, measure, fallback }: IsolatedEntityModelProps) {
+  if (model.looks !== undefined && instanceId !== undefined) {
+    return <LookedEntityModel model={model} instanceId={instanceId} {...(measure === undefined ? {} : { measure })} fallback={fallback} />;
+  }
   const levels = model.variants !== undefined && instanceId !== undefined;
   return (
     <ModelFallbackBoundary fallback={fallback ?? null} url={model.url} seam={measure?.target}>

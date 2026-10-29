@@ -12,7 +12,7 @@ import { closeCreature, creaturesSave, destroyWild, feedNarcotic, forceTame, giv
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
-import { characterSave, createSurvivor, resetCharacter, type SurvivorLook } from "./game/character";
+import { characterSave, createSurvivor, resetCharacter, type LookInput } from "./game/character";
 import { closeNote, dossierSave, readNote, resetDossier, tickDossier } from "./game/dossier";
 import { callSupplyDrop, openCrate, resetSupplyDrops, supplyDropsSave, tickSupplyDrops } from "./game/supplyDrops";
 import type { NewGameConfig } from "@jgengine/core/game/newGame";
@@ -30,7 +30,7 @@ export const systems = [
   defineSystem({
     id: "character",
     create(ctx) {
-      ctx.game.commands.define<Partial<SurvivorLook>>("createSurvivor", { apply: (state, input) => (createSurvivor(state, input), state) });
+      ctx.game.commands.define<LookInput>("createSurvivor", { apply: (state, input) => (createSurvivor(state, input), state) });
     },
     save: characterSave,
     reset: resetCharacter,

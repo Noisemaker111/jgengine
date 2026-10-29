@@ -3283,6 +3283,16 @@
       "intent": "show the item an entity holds in its hand"
     },
     {
+      "id": "entity-look",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/model/modelLook",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "pick one of a model's alternative bodies per entity, for character creators and skins"
+    },
+    {
       "id": "entity-meta",
       "packages": [
         "@jgengine/core"
@@ -3341,6 +3351,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "grow or shrink one entity's model without a new kind, for babies growing up"
+    },
+    {
+      "id": "entity-spawn-pose",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scene/entityStore",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "move where an entity respawns without respawning it"
     },
     {
       "id": "entity-worn-items",

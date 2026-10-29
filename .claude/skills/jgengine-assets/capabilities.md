@@ -72,6 +72,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `describeAssetMatch` (function) · `import { describeAssetMatch } from "@jgengine/assets"`
 
+## entity-look — pick one of a model's alternative bodies per entity, for character creators and skins
+
+- `modelForLook` (function) · `import { modelForLook } from "@jgengine/core/model/modelLook"`
+
 ## find-assets — look up many asset names at once: licence, game path, on-disk state and where else to look
 
 - `findAssets` (function) · `import { findAssets } from "@jgengine/assets/findAssets"`

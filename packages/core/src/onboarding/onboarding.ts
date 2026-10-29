@@ -65,7 +65,10 @@ export interface OnboardingArea {
   label?: string;
 }
 
-/** The teaching area for one player: the config's own, or what its function gives for them. */
+/**
+ * The teaching area for one player: the config's own, or what its function gives for them.
+ * @internal
+ */
 export function onboardingAreaFor<C>(config: OnboardingConfig<C>, ctx: C, userId: string): OnboardingArea | undefined {
   return typeof config.area === "function" ? config.area(ctx, userId) : config.area;
 }
