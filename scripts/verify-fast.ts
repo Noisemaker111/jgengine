@@ -12,6 +12,8 @@
 //
 // The type-checks and gates start before the tests, and the run stops at the first failure: a
 // type error is reported in seconds instead of after minutes of tests that were never the problem.
+// `--cheap` (the landing's preflight) runs every gate CI's quick and types jobs run and reports
+// every failure in one pass instead.
 //
 // Exit: 0 verified, 1 a step failed, 2 a changed runtime file reached no test (a
 // change this cannot attribute is never a silent pass). With `--json` the exit is
@@ -331,7 +333,6 @@ export function gatesFor(changed: readonly string[]): string[] {
   const gates = new Set(["artifacts", "path-portability", "concept-homes", "layers"]);
   const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
   if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("capture-hygiene");
-  if (shippedSource.length > 0) gates.add("changelog");
   if (changed.some((path) => path.startsWith("packages/"))) {
     gates.add("export-manifest");
     gates.add("skill-api");
@@ -349,6 +350,34 @@ export function gatesFor(changed: readonly string[]): string[] {
   if (changed.some((path) => isTestFile(path))) gates.add("test-spawn-timeouts");
   if (changed.some((path) => /\.browser\.test\.[cm]?[jt]sx?$/.test(path))) gates.add("browser-test-budget");
   return [...gates];
+}
+
+/**
+ * The `quick` and `types` CI checks preflight never runs, each with the reason. Every other check
+ * those jobs run, preflight runs once on any code change (`landingGates`), so a gate that would
+ * fail in CI fails at the landing first and every one is named in the same run. A new check in
+ * those jobs either runs at the landing or is listed here (verify-fast.test.ts holds the pair).
+ */
+export const CI_ONLY_GATES: Readonly<Record<string, string>> = {
+  types: "verify:fast type-checks every package the change reaches instead of the whole repository",
+  "type-escapes": "bun run gen runs it first in preflight, and it fails there on a gained escape",
+  capabilities: "bun run gen rewrites capabilities.md first in preflight",
+  "source-paths": "bun run gen rewrites the tsconfig paths first in preflight",
+  changelog: "lane:close writes changes/<branch>.md itself after preflight, so a branch that commits as it goes has no note yet",
+};
+
+const CODE_PATH = /^(packages|games|scripts|apps|examples|registry)\/.+\.(?:[cm]?[jt]sx?|json)$/;
+
+/**
+ * Every check CI's `quick` and `types` jobs run that is not in `CI_ONLY_GATES`, when the change
+ * touches code or a package manifest. While iterating, `gatesFor` keeps the inner loop to seconds;
+ * the landing pays the rest once, in parallel, instead of learning about them one CI run at a time.
+ */
+export function landingGates(changed: readonly string[]): string[] {
+  const iterating = gatesFor(changed);
+  if (!changed.some((path) => CODE_PATH.test(path) || basename(path) === "package.json")) return iterating;
+  const ci = [...jobChecks("quick"), ...jobChecks("types")].map((check) => check.name);
+  return [...new Set([...iterating, ...ci.filter((name) => CI_ONLY_GATES[name] === undefined)])];
 }
 
 /**
@@ -993,7 +1022,7 @@ async function main(argv: readonly string[]): Promise<number> {
   const graph = buildImportGraph(root, tree, {
     packages: allWorkspaces.flatMap((workspace) => (workspace.name === undefined ? [] : [{ name: workspace.name, dir: workspace.dir }])),
   });
-  const plan = verifyPlan({
+  const planned = verifyPlan({
     changed,
     deleted: deletedFiles(root, base),
     testFiles: walkTestFiles(root, [...TEST_ROOTS, "games"]),
@@ -1001,6 +1030,8 @@ async function main(argv: readonly string[]): Promise<number> {
     graph,
     exempt: pureRenames(root, base),
   });
+  // `--cheap` is the landing's half (`bun run preflight`): every CI gate, not the iteration subset.
+  const plan = cheap ? { ...planned, gates: landingGates(planned.changed) } : planned;
   const cache = argv.includes("--no-cache")
     ? null
     : openPassCache({
@@ -1090,7 +1121,8 @@ async function main(argv: readonly string[]): Promise<number> {
 
   // The type-checks and gates start first and the run stops at the first failure, so a type
   // error or a drifted file is named in seconds and the tests behind it never start. Each
-  // result prints the moment it is known.
+  // result prints the moment it is known. `--cheap` runs only those seconds-long steps, so it
+  // runs every one: a landing that fixed one gate only to meet the next cost a close per gate.
   const results = await runSteps(
     steps,
     DEFAULT_JOBS,
@@ -1104,7 +1136,7 @@ async function main(argv: readonly string[]): Promise<number> {
       }
       return result;
     },
-    { failFast: true },
+    { failFast: !cheap },
   );
   remember(results);
   const failures = results.filter((result) => !result.ok && result.blockedBy === undefined && result.stopped !== true).map((result) => result.name);

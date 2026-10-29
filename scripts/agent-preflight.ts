@@ -1,10 +1,13 @@
 // `bun run preflight`: the cheap checks `bun run lane:close` runs before anything slow, as one
-// command an author can run on its own. In order, stopping at the first that fails:
+// command an author can run on its own. In order:
 //
 //   1. the install: node_modules present and linked, bun.lock in step with every package.json
 //   2. no conflict markers left in a changed file
 //   3. `bun run gen`: every generated file rewritten, so a stale one never fails a landing
-//   4. `bun run verify:fast --cheap`: the type-checks and gates the change reaches
+//   4. `bun run verify:fast --cheap`: the type-checks the change reaches and every gate CI's
+//      quick and types jobs run, all of them, so every failure shows in one pass
+//
+// 1 and 2 stop the run; 3 and 4 both run and report together.
 //
 // It runs no tests and boots no game, so a mistake shows in under a minute instead of after the
 // test suite. lane:close runs exactly this first, then the tests, then lands.
@@ -163,12 +166,13 @@ function main(rawArgv: readonly string[]): number {
     console.log("preflight: install ok");
     return 0;
   }
-  if (!step("gen", ["run", "gen"])) {
-    console.error("preflight: gen failed; fix what it names, then run preflight again.");
-    return 1;
-  }
-  if (!step("verify:fast --cheap", ["run", "verify:fast", "--cheap"])) {
-    console.error("preflight: a type-check or gate failed; fix what it names, then run preflight again.");
+  // Both run whatever the first says: a landing that fixed gen only to meet a gate, then the next
+  // gate, paid one close per failure. Every failure is named in this one pass.
+  const failed: string[] = [];
+  if (!step("gen", ["run", "gen"])) failed.push("gen (a generator, or a file that gained a type escape)");
+  if (!step("verify:fast --cheap", ["run", "verify:fast", "--cheap"])) failed.push("verify:fast --cheap (type-checks and every gate CI runs)");
+  if (failed.length > 0) {
+    console.error(`preflight failed: ${failed.join("; ")}. Everything above is every failure, not the first; fix them all, then close again.`);
     return 1;
   }
   console.log(`preflight ok in ${((Date.now() - started) / 1000).toFixed(1)}s: install, conflict markers, gen, type-checks and gates`);

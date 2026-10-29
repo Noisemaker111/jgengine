@@ -7,6 +7,8 @@ import { describe, expect, test } from "bun:test";
 
 import {
   bootsFor,
+  CI_ONLY_GATES,
+  landingGates,
   verifyPlan,
   MAX_BOOTS,
   changedFiles,
@@ -32,6 +34,7 @@ import { runSteps, type StepResult } from "./stepScheduler";
 import { buildImportGraph, specifiers, type ImportGraph } from "./import-graph";
 import { matchingShard, walkTestFiles } from "./test-shard";
 import { REPRESENTATIVE_GAME } from "./ci-scope";
+import { findCheck, jobChecks } from "./run-stages";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
@@ -311,9 +314,10 @@ describe("attribution fails loudly", () => {
 });
 
 describe("static gates", () => {
-  test("a package source change pays the changelog and artifact gates", () => {
+  test("a package source change pays the artifact gates, and never the changelog gate lane:close satisfies itself", () => {
     const gates = gatesFor(["packages/core/src/world/terrain.ts"]);
-    expect(gates).toContain("changelog");
+    expect(gates).not.toContain("changelog");
+    expect(landingGates(["packages/core/src/world/terrain.ts"])).not.toContain("changelog");
     expect(gates).toContain("artifacts");
     expect(gates).toContain("concept-homes");
     expect(gates).not.toContain("skills");
@@ -347,6 +351,24 @@ describe("static gates", () => {
     expect(fastSteps(plan, { cheap: true }).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
     expect(fastSteps(plan).some((step) => step.name.startsWith("test "))).toBe(true);
     expect(fastSteps(plan).filter((step) => step.first === true).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
+  });
+
+  // stateful-ratchet and the scaffold-launch fetch scan failed only in CI: the landing ran a
+  // hand-picked subset of what CI runs, so each lane met them one CI run at a time.
+  test("the landing runs every quick and types check CI runs, except the ones with a stated reason", () => {
+    const landing = landingGates(["games/fernwild/src/main.ts"]);
+    for (const check of [...jobChecks("quick"), ...jobChecks("types")]) {
+      const reason = CI_ONLY_GATES[check.name];
+      if (reason === undefined) expect(landing).toContain(check.name);
+      else expect(landing).not.toContain(check.name);
+    }
+    expect(landing).toContain("stateful-ratchet");
+    expect(landing).toContain("scaffold-launch");
+    for (const name of Object.keys(CI_ONLY_GATES)) expect(findCheck(name)).toBeDefined();
+  });
+
+  test("a docs-only landing pays only the iteration gates", () => {
+    expect(landingGates(["README.md"])).toEqual(gatesFor(["README.md"]));
   });
 
   test("a scripts change pays the capture hygiene gate", () => {
