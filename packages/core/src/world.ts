@@ -601,7 +601,7 @@ export {
   type VehicleStat,
 } from "./physics/vehicleParts";
 export { vehicleTuning, type VehicleSpec, type VehicleSpecGearbox } from "./physics/vehicleSpec";
-export { createContributionPool, createPlotPermissions, type BuildRole } from "./placement/buildPermissions";
+export { createContributionPool, createPlotPermissions, type BuildRoleLadder } from "./placement/buildPermissions";
 export {
   isPlaceWorld,
   resolveWorldPhysics,

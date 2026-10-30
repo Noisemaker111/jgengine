@@ -100,7 +100,7 @@ function objectById(catalogId: string): GameContextObjectEntry | null {
   return TRANSIENT_OBJECTS.has(catalogId) ? {} : { scenery: true };
 }
 
-export const content: GameContextContent = { itemById, entityById, objectById };
+export const content: GameContextContent = { defaultRarity: "common", itemById, entityById, objectById };
 
 export function itemNameById(itemId: string): string {
   return gunById(itemId)?.name ?? gearById(itemId)?.name ?? itemId;

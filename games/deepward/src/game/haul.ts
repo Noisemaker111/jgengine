@@ -5,6 +5,8 @@ import type { Item } from "./items";
 
 /** Cache weight in the same unit the rolled items carry. Twelve squares is the grid; this is the load. */
 export const CACHE_WEIGHT = 12;
+/** Deepward's carrying bands: encumbered from 85% of the cache, slowing toward half speed at the limit. */
+const ENCUMBRANCE = { soft: 0.85, floor: 0.5 } as const;
 /** Slot counts only bound the shared inventory model; Deepward's grid decides what actually fits. */
 const RUN_SLOTS = 16;
 const STASH_SLOTS = 2048;
@@ -33,6 +35,7 @@ function haulOf(cache: readonly Item[], stash: readonly Item[], incoming: readon
     stashId: "stash",
     weightOf: id => masses.get(id) ?? 0,
     capacity: CACHE_WEIGHT,
+    encumbrance: ENCUMBRANCE,
     storage: null,
   });
   if (!haul.restore({ run: slotsOf(cache, RUN_SLOTS), stash: slotsOf(stash, STASH_SLOTS) })) throw new Error("deepward: cache records are not a valid haul");

@@ -178,8 +178,11 @@ function insulation(survivor: Survivor): { heat: number; cold: number } {
   return { heat, cold };
 }
 
+/** Fernwild's carrying bands: encumbered from 85% of the weight stat, slowing toward half speed at the limit. */
+const ENCUMBRANCE = { soft: 0.85, floor: 0.5 } as const;
+
 function encumbrance(ctx: GameContext, survivor: Survivor) {
-  return resolveEncumbrance(totalLoad([...carried(ctx), ...worn(survivor)], (id) => itemDef(id)?.weight ?? 0), statValue(survivor, "weight"));
+  return resolveEncumbrance(totalLoad([...carried(ctx), ...worn(survivor)], (id) => itemDef(id)?.weight ?? 0), statValue(survivor, "weight"), ENCUMBRANCE);
 }
 
 /** Put items in the bag; whatever does not fit is lost with a notice. */

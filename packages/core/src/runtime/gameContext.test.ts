@@ -14,6 +14,7 @@ import { resolveTerrainField } from "../terrain/terrain";
 import { createGameContext, type GameContextContent } from "./gameContext";
 
 const CONTENT: GameContextContent = {
+  defaultRarity: "common",
   itemById(itemId) {
     if (itemId === "zap") return { use: "zap", weapon: { damage: 50 } };
     return null;
@@ -551,6 +552,7 @@ describe("createGameContext", () => {
 
   test("world drops scatter from the seeded world stream, not Math.random", () => {
     const worldContent: GameContextContent = {
+      defaultRarity: "common",
       entityById(catalogId) {
         if (catalogId === "hero") return { stats: { health: { max: 20 } } };
         if (catalogId !== "slime") return null;

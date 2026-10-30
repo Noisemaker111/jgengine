@@ -1,7 +1,6 @@
 import { normalizeOnDeath, type OnDeathSpec } from "../../combat/death";
 import type { Drop } from "../../loot/lootTable";
 import {
-  DEFAULT_RARITY,
   resolveDeathDrops,
   type WorldItemSpawnInput,
 } from "../../loot/groundItem";
@@ -34,6 +33,17 @@ export function allowsUnownedWorldDrops(onDeath: OnDeathSpec | undefined): boole
   return normalized.dropMode === "world" && normalized.drops.some((rule) => rule.when?.reason === "any");
 }
 
+/** The game's rarity for one dropped item: its catalog entry, else the game's declared baseline. */
+function worldDropRarity(content: GameContextContent, itemId: string): string {
+  const rarity = content.itemById?.(itemId)?.rarity ?? content.defaultRarity;
+  if (rarity === undefined) {
+    throw new RangeError(
+      `world drop "${itemId}" needs a rarity: set its catalog entry or content.defaultRarity`,
+    );
+  }
+  return rarity;
+}
+
 /**
  * Pure death→loot policy: scatter world items or grant straight into player bags.
  * Unowned deaths require explicit opt-in and never grant currency. Extracted from `createGameContext`
@@ -53,7 +63,7 @@ export function applyLethalLoot(input: LethalLootInput): void {
       mode: "world",
       origin: input.position,
       rng: input.rng,
-      resolveRarity: (itemId) => input.content.itemById?.(itemId)?.rarity ?? DEFAULT_RARITY,
+      resolveRarity: (itemId) => worldDropRarity(input.content, itemId),
       resolveBaseType: (itemId) => input.content.itemById?.(itemId)?.baseType ?? itemId,
       scatter: normalizedOnDeath.scatter,
       ...(input.catalogId !== undefined ? { source: input.catalogId } : {}),

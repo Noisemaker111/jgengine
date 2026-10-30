@@ -38,7 +38,8 @@ export interface CharacterLoadInput {
   capacity: number;
   /** Fraction of worn gear weight that counts against capacity (default `1`). */
   wornFactor?: number | undefined;
-  encumbrance?: EncumbranceConfig;
+  /** Where this carrier's encumbered band and slow floor sit — the game's own tuning. */
+  encumbrance: EncumbranceConfig;
 }
 
 /** A carrier's load: the encumbrance state, how it splits into carried and worn, and capacity left. */

@@ -7,6 +7,8 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 export const CONTRABAND = "contraband_crate";
 export const CONTRABAND_MASS = 5;
 export const CARGO_CAPACITY = 12;
+/** Harbor's cargo bands: encumbered from 85% of the hold, slowing toward half speed at the limit. */
+const CARGO_ENCUMBRANCE = { soft: 0.85, floor: 0.5 } as const;
 
 export interface CargoView {
   carried: number;
@@ -30,6 +32,7 @@ const haul = createRunHaul({
   stashId: "lockup",
   weightOf: (id) => (id === CONTRABAND ? CONTRABAND_MASS : 1),
   capacity: CARGO_CAPACITY,
+  encumbrance: CARGO_ENCUMBRANCE,
   storage,
   key: "harbor-heat.cargo-lockup",
 });

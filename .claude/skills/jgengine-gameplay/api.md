@@ -1981,13 +1981,13 @@
 
 ## @jgengine/core/inventory/encumbrance
 
-- `EncumbranceConfig` (interface): interface EncumbranceConfig — Tuning for where the encumbrance bands sit and how hard the carrier is slowed. Both fields are load *fractions* / multipliers in `0..1`, never absolute mass.
+- `EncumbranceConfig` (interface): interface EncumbranceConfig — Tuning for where the encumbrance bands sit and how hard the carrier is slowed. Both fields are load *fractions* / multipliers in `0..1`, never absolute mass, and both are required so a game states its own bands instead of inheriting someone else's.
 - `EncumbranceState` (interface): interface EncumbranceState — Serializable snapshot of a carrier's load versus capacity and the movement consequences.
 - `EncumbranceTier` (type): type EncumbranceTier = "unencumbered" | "encumbered" | "immobile" — Coarse carry state: free-moving, slowed, or pinned in place.
 - `LoadEntry` (interface): interface LoadEntry — One carried stack: an item id and how many of it the carrier holds.
 - `MassResolver` (type): type MassResolver = (itemId: string) => number — Resolves the per-unit mass of an item id. Injected so mass tables stay decoupled from this module.
-- `encumbranceMoveMultiplier` (function): function encumbranceMoveMultiplier(fraction: number, config?: EncumbranceConfig): number — Progressive move-speed multiplier for a raw load fraction: 1 while at/below `soft`, a linear decay from 1 down toward `floor` across the `soft..1` band, and 0 once at/over capacity. Pure and side-effect free — the curve `resolveEncumbrance` reads for `moveMultiplier`.
-- `resolveEncumbrance` (function): function resolveEncumbrance(mass: number, capacity: number, config?: EncumbranceConfig): EncumbranceState — Resolve carried mass against carrying capacity into a serializable encumbrance state: load fraction, tier, and the movement consequences (`canSprint`/`canJump`/`immobile` gates plus a progressive `moveMultiplier`). Below `soft` the carrier is unencumbered and unhindered; from `soft` up to capacity it is encumbered — no sprint or jump, and speed decays from 1 toward `floor`; at or above capacity it is immobile (multiplier 0). Deterministic and allocation-light; pair with {@link totalLoad} to derive `mass` from an inventory and a mass table. A capacity of 0 or less pins any positive load as immobile (`fraction` 1) so the state stays finite/serializable.
+- `encumbranceMoveMultiplier` (function): function encumbranceMoveMultiplier(fraction: number, config: EncumbranceConfig): number — Progressive move-speed multiplier for a raw load fraction: 1 while at/below `soft`, a linear decay from 1 down toward `floor` across the `soft..1` band, and 0 once at/over capacity. Pure and side-effect free — the curve `resolveEncumbrance` reads for `moveMultiplier`.
+- `resolveEncumbrance` (function): function resolveEncumbrance(mass: number, capacity: number, config: EncumbranceConfig): EncumbranceState — Resolve carried mass against carrying capacity into a serializable encumbrance state: load fraction, tier, and the movement consequences (`canSprint`/`canJump`/`immobile` gates plus a progressive `moveMultiplier`). Below `soft` the carrier is unencumbered and unhindered; from `soft` up to capacity it is encumbered — no sprint or jump, and speed decays from 1 toward `floor`; at or above capacity it is immobile (multiplier 0). Deterministic and allocation-light; pair with {@link totalLoad} to derive `mass` from an inventory and a mass table. A capacity of 0 or less pins any positive load as immobile (`fraction` 1) so the state stays finite/serializable.
 - `totalLoad` (function): function totalLoad(entries: readonly LoadEntry[], massOf: MassResolver): number — Sum the mass of every carried stack using an injected per-unit mass resolver. Bounded by the number of entries; allocates nothing. Missing or negative unit masses are treated as 0.
 
 ## @jgengine/core/inventory/equipment
@@ -2278,7 +2278,6 @@
 ## @jgengine/core/loot/groundItem
 
 - `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented
-- `DEFAULT_RARITY` (const): const DEFAULT_RARITY: "common" — ⚠ undocumented
 - `DEFAULT_SCATTER` (const): const DEFAULT_SCATTER: ScatterOptions — ⚠ undocumented
 - `RarityStyle` (interface): interface RarityStyle — Per-rarity look of a dropped item: beam, color and label. Set via `defineGame({ worldItem: { rarityStyle } })`.
 - `ResolveDeathDropsOptions` (interface): interface ResolveDeathDropsOptions { mode: "grant" | "world"; origin: EntityPosition; resolveRarity(itemId: string): string; resolveBaseType?(itemId: string): string; scatter?: ScatterOptions | undefined; rng?(): number; source?: string } — ⚠ undocumented
@@ -2289,7 +2288,7 @@
 - `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/react): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
 - `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput { itemId: string; position: EntityPosition; rarity?: string; baseType?: string; count?: number; affixTier?: number; source?: string } — ⚠ undocumented
 - `WorldItemStore` (interface): interface WorldItemStore { spawn(input: WorldItemSpawnInput): WorldItemRecord; get(instanceId: string): WorldItemRecord | null; list(): readonly WorldItemRecord[]; nearestInRadius(from: EntityPosition, radius: number, filter?: (record: WorldItemRecord) => boolean):… — ⚠ undocumented
-- `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps { spawnEntity(position: EntityPosition): string; despawnEntity(instanceId: string): boolean; resolvePosition(instanceId: string): EntityPosition | undefined; now?(): number } — ⚠ undocumented
+- `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps { defaultRarity?: string; spawnEntity(position: EntityPosition): string; despawnEntity(instanceId: string): boolean; resolvePosition(instanceId: string): EntityPosition | undefined; now?(): number } — ⚠ undocumented
 
 ## @jgengine/core/loot/haul
 

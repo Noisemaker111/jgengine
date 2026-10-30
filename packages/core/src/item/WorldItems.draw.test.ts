@@ -22,7 +22,7 @@ interface Stage {
 function fixture(): GameContext {
   return createGameContext({
     definition: defineGameDefinition({ name: "World item markers", assets: createAssetCatalog(), multiplayer: "off", persist: false }),
-    content: {},
+    content: { defaultRarity: "common" },
     player: { userId: "player", isNew: true },
   });
 }

@@ -22,7 +22,7 @@ function bootContext(): GameContext {
       features: { quest: true, trade: true, unlocks: true },
       inventories,
     }),
-    content: {},
+    content: { defaultRarity: "common" },
     player: { userId: "p1", isNew: true },
   });
   ctx.scene.entity.spawn("player", { id: "p1", position: [0, 0, 0] });

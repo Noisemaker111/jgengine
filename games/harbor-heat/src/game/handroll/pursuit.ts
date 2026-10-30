@@ -6,7 +6,7 @@ import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 import { annulusRegion, sampleBatch } from "@jgengine/core/world/spatialSample";
 import { createPerception, type PerceptionCandidate, type PerceptionService } from "@jgengine/core/sensor/perception";
 import { advancePursuit, armPursuit, createPursuitState, type PursuitState } from "@jgengine/core/ai/pursuit";
-import { DIFFICULTY_TIERS, type DifficultyProfile } from "@jgengine/core/ai/difficulty";
+import type { DifficultyProfile } from "@jgengine/core/ai/difficulty";
 import { createDriverState, driveStep, type DriverGoal, type DriverState, type DriverTuning, type PaceBand } from "@jgengine/core/ai/driver";
 import { seededRng } from "@jgengine/core/random/rng";
 import { vehicleById } from "../entities/vehicles/catalog";
@@ -16,9 +16,33 @@ import { MAX_STARS, PURSUIT_STARS, wantedStore, type SearchAreaSnapshot, type Wa
 
 /** Cruiser driving skill by wanted stars: 3★ rookies drive sloppy, 5★ interceptors drive sharp. */
 const CRUISER_SKILL: readonly DifficultyProfile[] = [
-  DIFFICULTY_TIERS.easy,
-  DIFFICULTY_TIERS.standard,
-  DIFFICULTY_TIERS.expert,
+  {
+    reactionSeconds: 0.9,
+    decisionNoise: 0.35,
+    executionJitter: 0.3,
+    abilityDiscipline: 0.2,
+    perceptionScale: 0.7,
+    planDepth: 1,
+    planWidth: 2,
+  },
+  {
+    reactionSeconds: 0.35,
+    decisionNoise: 0.12,
+    executionJitter: 0.12,
+    abilityDiscipline: 0.55,
+    perceptionScale: 1,
+    planDepth: 2,
+    planWidth: 4,
+  },
+  {
+    reactionSeconds: 0.08,
+    decisionNoise: 0,
+    executionJitter: 0.02,
+    abilityDiscipline: 0.85,
+    perceptionScale: 1.3,
+    planDepth: 4,
+    planWidth: 8,
+  },
 ];
 const cruiserSkill = (stars: number): DifficultyProfile =>
   CRUISER_SKILL[Math.max(0, Math.min(CRUISER_SKILL.length - 1, stars - PURSUIT_STARS))]!;

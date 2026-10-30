@@ -2791,7 +2791,7 @@
       "module": "@jgengine/core/ai/difficulty",
       "gameFacing": false,
       "probe": null,
-      "intent": "derive a per-game decision-quality profile from a canonical tier"
+      "intent": "derive a tuned decision-quality profile from one of the game's own tiers"
     },
     {
       "id": "difficulty-reaction-gate",
@@ -2812,16 +2812,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "fresh serializable reaction-gate state for one observed value"
-    },
-    {
-      "id": "difficulty-tiers",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/difficulty",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "canonical easy/standard/expert decision-quality profiles for any opponent"
     },
     {
       "id": "disposable-resource",

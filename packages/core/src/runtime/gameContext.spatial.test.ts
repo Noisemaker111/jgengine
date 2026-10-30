@@ -4,7 +4,7 @@ import { defineGameDefinition } from "../game/defineGame";
 import { createAssetCatalog } from "../scene/assetCatalog";
 
 function context() {
-  return createGameContext({ definition: defineGameDefinition({ name: "spatial-work", assets: createAssetCatalog(), multiplayer: "off" }), content: {}, player: { userId: "probe", isNew: true } });
+  return createGameContext({ definition: defineGameDefinition({ name: "spatial-work", assets: createAssetCatalog(), multiplayer: "off" }), content: { defaultRarity: "common" }, player: { userId: "probe", isNew: true } });
 }
 
 test("runtime 5000-entity queries read only the moved/local candidates before subscribers", () => {

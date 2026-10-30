@@ -1,4 +1,4 @@
-import { difficultyProfile, type DifficultyProfile, type DifficultyTier } from "@jgengine/core/ai/difficulty";
+import { difficultyProfile, type DifficultyProfile } from "@jgengine/core/ai/difficulty";
 import {
   createDriverState,
   driveStep,
@@ -26,13 +26,47 @@ import { createVehicleController, type VehicleController, type VehicleTelemetry 
  * `VehicleDynamics` kart the player drives. This module is the grid, the lines, and the contact rule.
  */
 
+/** The yard's three decision-quality tiers, sloppiest first. */
+type RivalTier = "easy" | "standard" | "expert";
+
+/** How each of the yard's tiers decides: reaction delay, steering wobble and planned depth. */
+const RIVAL_DIFFICULTY: Readonly<Record<RivalTier, DifficultyProfile>> = {
+  easy: {
+    reactionSeconds: 0.9,
+    decisionNoise: 0.35,
+    executionJitter: 0.3,
+    abilityDiscipline: 0.2,
+    perceptionScale: 0.7,
+    planDepth: 1,
+    planWidth: 2,
+  },
+  standard: {
+    reactionSeconds: 0.35,
+    decisionNoise: 0.12,
+    executionJitter: 0.12,
+    abilityDiscipline: 0.55,
+    perceptionScale: 1,
+    planDepth: 2,
+    planWidth: 4,
+  },
+  expert: {
+    reactionSeconds: 0.08,
+    decisionNoise: 0,
+    executionJitter: 0.02,
+    abilityDiscipline: 0.85,
+    perceptionScale: 1.3,
+    planDepth: 4,
+    planWidth: 8,
+  },
+};
+
 /** The kart a rival drives, and the line it drives. All numbers are authored feel. */
 export interface RivalDef {
   id: string;
   name: string;
   entityKind: string;
   /** Decision quality: reaction delay, steering wobble, how late obstacles are perceived. */
-  tier: DifficultyTier;
+  tier: RivalTier;
   /** Fraction of the composed top speed the driver holds on a straight. */
   pace: number;
   /** Pure-pursuit distance, metres. Longer cuts a wide, clean entry; shorter hunts segment to segment. */
@@ -195,7 +229,7 @@ interface Rival {
 
 function createRival(def: RivalDef, groundHeightAt: (x: number, z: number) => number, seed: string, track: Track): Rival {
   const tuning = tuningFrom(def.parts.map((id) => partById(id)!));
-  const profile = difficultyProfile(def.tier);
+  const profile = difficultyProfile(RIVAL_DIFFICULTY, def.tier);
   const grid = track.point(MAIN_ROUTE, def.grid.z, def.grid.x);
   const aim = track.point(MAIN_ROUTE, def.grid.z + def.lookahead, def.grid.x);
   return {

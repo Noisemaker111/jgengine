@@ -544,7 +544,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `pickScored` (function) · `import { pickScored } from "@jgengine/core/ai/difficulty"`
 
-## difficulty-profile — derive a per-game decision-quality profile from a canonical tier
+## difficulty-profile — derive a tuned decision-quality profile from one of the game's own tiers
 
 - `difficultyProfile` (function) · `import { difficultyProfile } from "@jgengine/core/ai/difficulty"`
 
@@ -555,10 +555,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## difficulty-reaction-gate-state — fresh serializable reaction-gate state for one observed value
 
 - `createReactionGate` (function) · `import { createReactionGate } from "@jgengine/core/ai/difficulty"`
-
-## difficulty-tiers — canonical easy/standard/expert decision-quality profiles for any opponent
-
-- `DIFFICULTY_TIERS` (const) · `import { DIFFICULTY_TIERS } from "@jgengine/core/ai/difficulty"`
 
 ## doppler-pitch — pitch a moving sound up as it approaches and down as it passes, from listener and emitter velocity
 

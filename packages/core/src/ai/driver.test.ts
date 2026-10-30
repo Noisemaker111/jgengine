@@ -14,8 +14,19 @@ import {
 const noRng = () => 0.5;
 const TUNING: DriverTuning = { maxSpeed: 20 };
 
+/** The test's own starting profile, the way a game supplies one. */
+const BASIC: DifficultyProfile = {
+  reactionSeconds: 0.9,
+  decisionNoise: 0.35,
+  executionJitter: 0.3,
+  abilityDiscipline: 0.2,
+  perceptionScale: 0.7,
+  planDepth: 1,
+  planWidth: 2,
+};
+
 const exact = (overrides: Partial<DifficultyProfile> = {}): DifficultyProfile =>
-  difficultyProfile("expert", { reactionSeconds: 0, decisionNoise: 0, executionJitter: 0, ...overrides });
+  difficultyProfile({ basic: BASIC }, "basic", { reactionSeconds: 0, decisionNoise: 0, executionJitter: 0, ...overrides });
 
 const pose = (x: number, z: number, heading: number, speed: number): DriverPose => ({ x, z, heading, speed });
 

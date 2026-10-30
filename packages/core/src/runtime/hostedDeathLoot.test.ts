@@ -7,6 +7,7 @@ import type { OnDeathSpec } from "../combat/death";
 
 function fixture(onDeath: OnDeathSpec) {
   const content: GameContextContent = {
+    defaultRarity: "common",
     entityById: (id) => id === "victim"
       ? { stats: { health: { max: 10 } }, receive: { damage: { order: ["health"] } }, onDeath }
       : { stats: { health: { max: 20 } } },
