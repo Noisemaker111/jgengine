@@ -137,6 +137,28 @@ describe("pure decay meters", () => {
     expect(filled.warmth).toBe(100);
   });
 
+  test("a meter stops exactly at each bound, including a negative min", () => {
+    const bounded: readonly DecayMeterConfig[] = [
+      { id: "oxygen", max: 10, rate: 60 },
+      { id: "temperature", max: 40, min: -20, start: 30, rate: 50 },
+    ];
+    let values = decayMeters(initDecayMeters(bounded), bounded, 2);
+    expect(values).toEqual({ oxygen: 0, temperature: -20 });
+    values = refillMeter(values, bounded, "temperature", 1_000);
+    expect(values.temperature).toBe(40);
+    values = refillMeter(values, bounded, "oxygen", -1_000);
+    expect(values.oxygen).toBe(0);
+    expect(refillMeter(values, bounded, "oxygen", 3).oxygen).toBe(3);
+  });
+
+  test("a start outside the meter range is clamped into it", () => {
+    const outOfRange: readonly DecayMeterConfig[] = [
+      { id: "overfull", max: 10, start: 40, rate: 0 },
+      { id: "underfull", max: 10, min: 5, start: 0, rate: 0 },
+    ];
+    expect(initDecayMeters(outOfRange)).toEqual({ overfull: 10, underfull: 5 });
+  });
+
   test("refillMeter tops up one meter, clamped, immutably", () => {
     const values = { hunger: 30, warmth: 50 };
     expect(refillMeter(values, defs, "hunger", 50)).toEqual({ hunger: 80, warmth: 50 });

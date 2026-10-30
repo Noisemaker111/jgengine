@@ -72,6 +72,35 @@ describe("accumulatorMeter", () => {
     expect(meter.broke()).toBe(false);
   });
 
+  test("an over-fill stops at max and reset mode carries only what fits", () => {
+    const hold = createAccumulatorMeter({ max: 100 });
+    const full = hold.add(140);
+    expect(full.value).toBe(100);
+    expect(full.overflow).toBe(0);
+
+    const reset = createAccumulatorMeter({ max: 100, mode: "reset" });
+    const carried = reset.add(240);
+    expect(carried.fired).toBe(true);
+    expect(carried.overflow).toBe(140);
+    expect(carried.value).toBe(100);
+    expect(reset.add(5).value).toBe(5);
+  });
+
+  test("decay and draining stop at zero, and restored values clamp to the bounds", () => {
+    const meter = createAccumulatorMeter({ max: 100, decayPerSecond: 30 });
+    meter.add(10);
+    meter.tick(100);
+    expect(meter.value()).toBe(0);
+    expect(meter.add(-50).value).toBe(0);
+    expect(meter.fraction()).toBe(0);
+
+    meter.restore({ value: 500, broken: false, idleMs: -5 });
+    expect(meter.value()).toBe(100);
+    meter.drain(-1_000);
+    expect(meter.value()).toBe(100);
+    expect(meter.state().idleMs).toBe(0);
+  });
+
   test("JSON restore preserves the hold latch even after a partial drain", () => {
     const config = { max: 100, decayPerSecond: 10, decayDelayMs: 1000 };
     const original = createAccumulatorMeter(config);

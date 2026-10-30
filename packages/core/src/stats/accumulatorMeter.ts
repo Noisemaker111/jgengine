@@ -1,5 +1,6 @@
 // @skill jgengine-combat
 import { tierAt } from "../threshold/thresholds";
+import { changeStatPool, createStatPool, type StatPool } from "./statPool";
 
 export interface MeterTier {
   id: string;
@@ -66,59 +67,58 @@ export function createAccumulatorMeter(config: AccumulatorMeterConfig): Accumula
   const decayPerSecond = config.decayPerSecond ?? 0;
   const decayDelayMs = config.decayDelayMs ?? 0;
 
-  let value = 0;
+  let pool: StatPool = createStatPool({ current: 0, max: config.max, min: 0 });
   let broken = false;
   let idleMs = 0;
 
-  function clamp(next: number): number {
-    return Math.max(0, Math.min(config.max, next));
-  }
-
   return {
-    state: () => ({ value, broken, idleMs }),
+    state: () => ({ value: pool.current, broken, idleMs }),
     restore(next) {
-      value = clamp(next.value);
+      pool = createStatPool({ current: next.value, max: config.max, min: 0 });
       broken = next.broken;
       idleMs = Math.max(0, next.idleMs);
     },
     value() {
-      return value;
+      return pool.current;
     },
     fraction() {
-      return config.max <= 0 ? 0 : value / config.max;
+      return config.max <= 0 ? 0 : pool.current / config.max;
     },
     tier() {
-      return tierIdAt(value, tiers);
+      return tierIdAt(pool.current, tiers);
     },
     broke() {
       return broken;
     },
     add(amount) {
       idleMs = 0;
-      const tierBefore = tierIdAt(value, tiers);
-      const raw = value + amount;
-      const fired = amount > 0 && raw >= config.max && !(mode === "hold" && broken);
+      const tierBefore = tierIdAt(pool.current, tiers);
+      const change = changeStatPool(pool, amount);
+      // A positive add reached the cap exactly when the pool comes to rest at max;
+      // what did not fit is the amount to carry in reset mode.
+      const atCap = amount > 0 && change.hitMax;
+      const fired = atCap && !(mode === "hold" && broken);
       if (mode === "reset" && fired) {
-        value = clamp(raw - config.max);
+        pool = createStatPool({ current: change.overflow, max: config.max, min: 0 });
       } else {
-        value = clamp(raw);
+        pool = change.pool;
         if (fired && mode === "hold") broken = true;
       }
-      const tierAfter = tierIdAt(value, tiers);
+      const tierAfter = tierIdAt(pool.current, tiers);
       return {
-        value,
+        value: pool.current,
         fired,
-        overflow: fired && mode === "reset" ? Math.max(0, raw - config.max) : 0,
+        overflow: fired && mode === "reset" ? change.overflow : 0,
         tier: tierAfter,
         tierChanged: tierAfter !== tierBefore,
       };
     },
     drain(amount) {
-      value = clamp(value - amount);
-      if (value <= 0) broken = false;
+      pool = changeStatPool(pool, -amount).pool;
+      if (pool.current <= 0) broken = false;
     },
     reset() {
-      value = 0;
+      pool = createStatPool({ current: 0, max: config.max, min: 0 });
       broken = false;
       idleMs = 0;
     },
@@ -126,7 +126,7 @@ export function createAccumulatorMeter(config: AccumulatorMeterConfig): Accumula
       if (dtSeconds <= 0) return;
       idleMs += dtSeconds * 1000;
       if (broken || decayPerSecond <= 0 || idleMs < decayDelayMs) return;
-      value = clamp(value - decayPerSecond * dtSeconds);
+      pool = changeStatPool(pool, -decayPerSecond * dtSeconds).pool;
     },
   };
 }

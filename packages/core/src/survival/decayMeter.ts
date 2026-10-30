@@ -1,5 +1,5 @@
 import type { Moodle, MoodleSeverity } from "./moodle";
-import { clamp } from "../math/scalar";
+import { changeStatPool, createStatPool } from "../stats/statPool";
 
 export interface MeterThreshold {
   /** Moodle id raised while the meter is on the wrong side of `at`. */
@@ -54,8 +54,13 @@ function meterMin(def: DecayMeterConfig): number {
   return def.min ?? 0;
 }
 
+function bounded(def: DecayMeterConfig, value: number, amount: number): number {
+  const pool = createStatPool({ current: value, max: def.max, min: meterMin(def) });
+  return changeStatPool(pool, amount).pool.current;
+}
+
 function initialValue(def: DecayMeterConfig): number {
-  return clamp(def.start ?? def.max, meterMin(def), def.max);
+  return bounded(def, def.start ?? def.max, 0);
 }
 
 function valueOf(values: DecayMeterValues, def: DecayMeterConfig): number {
@@ -119,11 +124,7 @@ export function decayMeters(
   if (dt <= 0) return values;
   const out: DecayMeterValues = {};
   for (const def of defs) {
-    out[def.id] = clamp(
-      valueOf(values, def) - def.rate * modifierFor(modifier, def.id) * dt,
-      meterMin(def),
-      def.max,
-    );
+    out[def.id] = bounded(def, valueOf(values, def), -def.rate * modifierFor(modifier, def.id) * dt);
   }
   return out;
 }
@@ -141,7 +142,7 @@ export function refillMeter(
   amount: number,
 ): DecayMeterValues {
   const def = findDef(defs, id);
-  return { ...values, [id]: clamp(valueOf(values, def) + amount, meterMin(def), def.max) };
+  return { ...values, [id]: bounded(def, valueOf(values, def), amount) };
 }
 
 /**
