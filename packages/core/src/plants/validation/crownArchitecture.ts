@@ -237,8 +237,9 @@ export function crownShapeBands(form: CrownForm, ageYears: number): CrownShapeBa
  * Guardrails an open-grown tree's crown stays inside at {@link CROWN_ARCHITECTURE_AGE} years, by crown
  * form and shade tolerance: loose bands that catch a crown of the wrong kind, not a species' exact
  * shape, which its own traits set. A decurrent tree grown in the open divides into codominant stems
- * within the lower 60% of its height, where an open-grown crown's base already sits (Zimmermann &
- * Brown 1971; Gilman 2011), and carries its spread no lower than a cone would (centroid 0.37; a cone
+ * within the lower 60% of its height, where an open-grown crown's base already sits, but above a
+ * trunk of at least a tenth of its height: a seedling leader divides only once it weakens with age
+ * (Zimmermann & Brown 1971; Brown, McAlpine & Kormanik 1967; Gilman 2011), and carries its spread no lower than a cone would (centroid 0.37; a cone
  * is 0.25). An excurrent, columnar or weeping tree keeps its leader, and an excurrent one tapers to it.
  * A broadleaf crown in leaf shows sky through 15–70% of its outline: healthy hardwoods rate 10–30%
  * foliage transparency within the foliated crown (Schomaker et al. 2007), and the outline adds the
@@ -254,7 +255,7 @@ export function crownArchitectureTarget(species: Pick<PlantSpecies, "architectur
   const broadleaf = species.leaf.lifespanYears <= 1;
   return {
     forkRatio: [CODOMINANT_RATIO, Number.POSITIVE_INFINITY],
-    forkHeightShare: [0, 0.6],
+    forkHeightShare: [0.1, 0.6],
     centroid: [0.37, 1],
     ...(broadleaf ? { gapFraction: [0.15, 0.7] as const } : {}),
     ...(broadleaf && species.tolerance.shade >= 0.7 ? { shellShare: [0.6, 1] as const } : {}),

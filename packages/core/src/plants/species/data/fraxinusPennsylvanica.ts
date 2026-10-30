@@ -8,13 +8,13 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const FRAXINUS_PENNSYLVANICA: PlantSpecies = {
   id: "fraxinus-pennsylvanica",
-  version: 7,
+  version: 9,
   names: { scientific: "Fraxinus pennsylvanica Marshall", common: { en: "green ash", fr: "frêne rouge" } },
   ids: { usda: "FRPE" },
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90, crownForm: "decurrent" },
   growth: {
-    apicalControl: 0.5373,
+    apicalControl: 0.75,
     apicalControlMature: 0.74,
     apicalControlHalfYears: 2.506,
     internodeMax: 0.154,
@@ -96,11 +96,11 @@ export const FRAXINUS_PENNSYLVANICA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 146.3, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 150.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 146.3, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 150.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

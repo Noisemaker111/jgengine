@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PICEA_SITCHENSIS: PlantSpecies = {
   id: "picea-sitchensis",
-  version: 6,
+  version: 8,
   names: {
     scientific: "Picea sitchensis (Bong.) Carrière",
     common: { en: "Sitka spruce", fr: "épinette de Sitka" },
@@ -17,21 +17,21 @@ export const PICEA_SITCHENSIS: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
-    apicalControl: 0.7704,
+    apicalControl: 0.8524,
     apicalControlMature: 0.9,
-    apicalControlHalfYears: 1.231,
-    internodeMax: 0.05246,
-    branchAngle: 79.63,
+    apicalControlHalfYears: 15.27,
+    internodeMax: 0.05417,
+    branchAngle: 53.67,
     lateralBudsPerNode: 4,
     maxMetamersPerShoot: 10,
     establishmentYears: 0,
-    horizontalVigour: 0.2869,
-    vigourIndexWeight: 0.8,
+    horizontalVigour: 0.386,
+    vigourIndexWeight: 0.6502,
     tropism: {
-      gravity: 0.4215,
+      gravity: 0.4525,
       gravityOrderDecay: 0.6,
-      setpointAngle: 58.81,
-      setpointPerOrder: 9.343,
+      setpointAngle: 90,
+      setpointPerOrder: 0,
       optimal: 0,
       wind: 0.2,
       setpointMax: 90,
@@ -46,10 +46,10 @@ export const PICEA_SITCHENSIS: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 0.754,
+    hydraulicHeightShare: 0.679,
     lueGPerMJ: 5,
-    lightHalfSaturation: 0.8727,
-    respiration: 0.7506,
+    lightHalfSaturation: 1.5,
+    respiration: 0.7158,
     sapwoodRespiration: 0.02,
     rootRespiration: 1.5,
     rootPerFoliage: 0.5,
@@ -99,11 +99,11 @@ export const PICEA_SITCHENSIS: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 110.3, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 132.2, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 110.3, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 132.2, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

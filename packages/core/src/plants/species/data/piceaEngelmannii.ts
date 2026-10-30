@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PICEA_ENGELMANNII: PlantSpecies = {
   id: "picea-engelmannii",
-  version: 7,
+  version: 8,
   names: {
     scientific: "Picea engelmannii Parry ex Engelm.",
     common: { en: "Engelmann spruce", fr: "épinette d'Engelmann" },

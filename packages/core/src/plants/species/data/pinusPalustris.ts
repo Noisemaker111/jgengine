@@ -8,14 +8,14 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PINUS_PALUSTRIS: PlantSpecies = {
   id: "pinus-palustris",
-  version: 4,
+  version: 5,
   names: { scientific: "Pinus palustris Mill.", common: { en: "longleaf pine", fr: "pin des marais" } },
   ids: { usda: "PIPA2" },
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
-    apicalControl: 0.7331,
-    apicalControlMature: 0.7684,
+    apicalControl: 0.75,
+    apicalControlMature: 0.75,
     apicalControlHalfYears: 80,
     internodeMax: 0.07261,
     branchAngle: 45.76,
@@ -96,11 +96,11 @@ export const PINUS_PALUSTRIS: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 19.12, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 21.81, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 19.12, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 21.81, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

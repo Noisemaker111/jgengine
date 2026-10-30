@@ -8,14 +8,14 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PINUS_TAEDA: PlantSpecies = {
   id: "pinus-taeda",
-  version: 3,
+  version: 4,
   names: { scientific: "Pinus taeda L.", common: { en: "loblolly pine", fr: "pin à encens" } },
   ids: { usda: "PITA" },
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.8374,
-    apicalControlMature: 0.9,
+    apicalControlMature: 0.8374,
     apicalControlHalfYears: 80,
     internodeMax: 0.09593,
     branchAngle: 77.37,
@@ -97,11 +97,11 @@ export const PINUS_TAEDA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 41.98, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 48.7, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 41.98, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 48.7, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

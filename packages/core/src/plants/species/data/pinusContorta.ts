@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PINUS_CONTORTA: PlantSpecies = {
   id: "pinus-contorta",
-  version: 4,
+  version: 5,
   names: {
     scientific: "Pinus contorta Douglas ex Loudon",
     common: { en: "lodgepole pine", fr: "pin tordu" },
@@ -17,26 +17,26 @@ export const PINUS_CONTORTA: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
-    apicalControl: 0.5895,
-    apicalControlMature: 0.8906,
+    apicalControl: 0.75,
+    apicalControlMature: 0.75,
     apicalControlHalfYears: 1,
     internodeMax: 0.04,
     branchAngle: 35,
     lateralBudsPerNode: 4,
     maxMetamersPerShoot: 9,
-    establishmentYears: 7.915,
-    horizontalVigour: 0.3751,
-    vigourIndexWeight: 0.4033,
+    establishmentYears: 0,
+    horizontalVigour: 0.6297,
+    vigourIndexWeight: 0.3197,
     tropism: {
-      gravity: 0.2643,
+      gravity: 0.3573,
       gravityOrderDecay: 0.6,
-      setpointAngle: 77.43,
-      setpointPerOrder: 13.2,
+      setpointAngle: 82.61,
+      setpointPerOrder: 0,
       optimal: 0,
       wind: 0.2,
       setpointMax: 90,
     },
-    budLightThreshold: 0.05161,
+    budLightThreshold: 0.03043,
     budDeathYears: 2,
     dormantBudYears: 2,
     spurYears: 2,
@@ -46,7 +46,7 @@ export const PINUS_CONTORTA: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 0.9872,
+    hydraulicHeightShare: 1,
     lueGPerMJ: 5,
     lightHalfSaturation: 1.5,
     respiration: 0.6,
@@ -99,11 +99,11 @@ export const PINUS_CONTORTA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 16.06, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 12.82, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 16.06, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 12.82, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

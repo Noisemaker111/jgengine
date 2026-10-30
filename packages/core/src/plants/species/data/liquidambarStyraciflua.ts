@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const LIQUIDAMBAR_STYRACIFLUA: PlantSpecies = {
   id: "liquidambar-styraciflua",
-  version: 4,
+  version: 5,
   names: {
     scientific: "Liquidambar styraciflua L.",
     common: { en: "sweetgum", fr: "copalme d'Amérique" },
@@ -17,8 +17,8 @@ export const LIQUIDAMBAR_STYRACIFLUA: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "excurrent" },
   growth: {
-    apicalControl: 0.5,
-    apicalControlMature: 0.7717,
+    apicalControl: 0.75,
+    apicalControlMature: 0.75,
     apicalControlHalfYears: 2.854,
     internodeMax: 0.1566,
     branchAngle: 60.25,
@@ -99,11 +99,11 @@ export const LIQUIDAMBAR_STYRACIFLUA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 23.06, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 36.12, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 23.06, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 36.12, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };
