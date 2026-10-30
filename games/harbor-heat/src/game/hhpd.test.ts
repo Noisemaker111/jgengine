@@ -51,6 +51,13 @@ function boot() {
   return ctx;
 }
 
+/** The player's world position, for tests that stage a getaway. */
+function playerAt(ctx: Booted): readonly [number, number, number] {
+  const player = ctx.scene.entity.get(ctx.player.userId);
+  if (player === null) throw new Error("the player is not in the scene");
+  return player.position;
+}
+
 describe("HHPD heat is witness-gated", () => {
   test("a crime nobody sees raises no heat; the same crime in front of a witness does", () => {
     const ctx = boot();
@@ -130,17 +137,18 @@ describe("HHPD heat is witness-gated", () => {
     step(ctx, handroll);
     handroll.addHeat(ctx, 500);
     step(ctx, handroll);
-    const fresh = handroll.wanted().search!;
+    const fresh = handroll.wanted().search;
+    if (fresh === null) throw new Error("HHPD should be searching the last sighting");
     expect(fresh.radius).toBe(46);
 
     // Nobody is looking any more: the circle grows 1.4 m a second from the tier's own radius.
     unwatch(ctx);
-    const at = ctx.scene.entity.get(ctx.player.userId)!.position;
+    const at = playerAt(ctx);
     ctx.scene.entity.setPose(ctx.player.userId, {
       position: [at[0] + 200, ctx.world.groundHeightAt(at[0] + 200, at[2]), at[2]],
     });
     run(ctx, handroll, 4);
-    expect(handroll.wanted().search!.radius).toBeCloseTo(46 + 4 * 1.4, 0);
+    expect(handroll.wanted().search?.radius).toBeCloseTo(46 + 4 * 1.4, 0);
 
     for (let second = 0; second < 60; second += 1) {
       run(ctx, handroll, 1);
