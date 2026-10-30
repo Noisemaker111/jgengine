@@ -1282,6 +1282,7 @@
     "./time/calendarClock",
     "./time/gameClock",
     "./time/idleProgress",
+    "./time/pacedSchedule",
     "./time/rateWindow",
     "./time/serverTick",
     "./time/simClock",
