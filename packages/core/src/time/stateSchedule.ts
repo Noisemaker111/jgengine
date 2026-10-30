@@ -158,7 +158,7 @@ export interface PhaseScheduleConfig<T> {
 }
 
 /** One phase change a {@link PhaseSchedule.tick} made. */
-export interface PhaseStep<T> {
+export interface PhaseTransition<T> {
   from: T;
   to: T;
   /** True when the change wrapped from the last phase back to the first. */
@@ -195,7 +195,7 @@ export interface PhaseSchedule<T> {
   /** Jump to the phase whose state is `state`, clearing its elapsed time; false when the list has no such phase. */
   enter(state: T): boolean;
   /** Advance by `dt` through every timed phase it ends, in order. Phases without a duration never end here. */
-  tick(dt: number): PhaseStep<T>[];
+  tick(dt: number): PhaseTransition<T>[];
   /** Back to the first phase, elapsed cleared, `ended()` false. */
   reset(): void;
   snapshot(): PhaseScheduleState;
@@ -281,7 +281,7 @@ export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSch
       return true;
     },
     tick(dt) {
-      const steps: PhaseStep<T>[] = [];
+      const steps: PhaseTransition<T>[] = [];
       if (!(dt > 0) || ended) return steps;
       elapsedSeconds += dt;
       let guard = phases.length * 2 + 2;

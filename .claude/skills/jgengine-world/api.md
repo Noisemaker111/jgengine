@@ -5888,7 +5888,7 @@
 - `PhaseScheduleConfig` (interface): interface PhaseScheduleConfig<T> — Named states one after another, each ended by its own duration or by the caller.
 - `PhaseScheduleState` (interface): interface PhaseScheduleState — Plain JSON position in a phase schedule.
 - `PhaseSpec` (interface): interface PhaseSpec<T> — One phase of a {@link PhaseSchedule}: a named state that ends on its own duration or when the caller advances it.
-- `PhaseStep` (interface): interface PhaseStep<T> — One phase change a {@link PhaseSchedule.tick} made.
+- `PhaseTransition` (interface): interface PhaseTransition<T> — One phase change a {@link PhaseSchedule.tick} made.
 - `SchedulePhase` (interface): interface SchedulePhase<T> { state: T; durationSeconds: number } — ⚠ undocumented
 - `ScheduleSample` (interface): interface ScheduleSample<T> { state: T; index: number; elapsedSeconds: number; remainingSeconds: number; fraction: number } — ⚠ undocumented
 - `ScheduleWindow` (interface): interface ScheduleWindow { start: number; end: number } — ⚠ undocumented · used by `nextClearWindow`: Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window.
