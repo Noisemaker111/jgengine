@@ -41,6 +41,15 @@ describe("evaluatePredicate", () => {
     expect(evaluatePredicate({ has: "absent" }, facts)).toBe(false);
   });
 
+  test("includes passes when the list fact holds the value", () => {
+    const bag = { unlocked: ["bench", "anvil"], empty: [], wrong: "bench" };
+    expect(evaluatePredicate({ includes: ["unlocked", "bench"] }, bag)).toBe(true);
+    expect(evaluatePredicate({ includes: ["unlocked", "forge"] }, bag)).toBe(false);
+    expect(evaluatePredicate({ includes: ["empty", "bench"] }, bag)).toBe(false);
+    expect(evaluatePredicate({ includes: ["wrong", "bench"] }, bag)).toBe(false);
+    expect(evaluatePredicate({ includes: ["absent", "bench"] }, bag)).toBe(false);
+  });
+
   test("numeric comparators reject non-numeric or missing values", () => {
     expect(evaluatePredicate({ gt: ["element", 0] }, facts)).toBe(false);
     expect(evaluatePredicate({ gte: ["absent", 0] }, facts)).toBe(false);
