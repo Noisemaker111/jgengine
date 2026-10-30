@@ -1,4 +1,5 @@
 import { SECONDS_PER_GAME_DAY } from "../time/gameClock";
+import { createStateSchedule, type StateSchedule } from "../time/stateSchedule";
 
 /** One authored stop in a day: where the agent belongs, and when it wants to get there. */
 export interface RoutineStopSpec {
@@ -86,6 +87,11 @@ function localAt(time: number, cycleSeconds: number): { cycle: number; local: nu
   return { cycle, local: time - cycle, tolerance: Math.max(1e-9, Math.abs(time) * Number.EPSILON * 8) };
 }
 
+/** One stretch of the day: standing at a stop, or walking from it to the next one. */
+type RoutineSlot =
+  | { readonly kind: "hold"; readonly stop: number }
+  | { readonly kind: "travel"; readonly from: number };
+
 /**
  * Resolve an authored routine into a timeline driven by the world clock.
  *
@@ -152,50 +158,61 @@ export function resolveRoutine(config: RoutineConfig): RoutineTimeline {
     refill: spec.refill === undefined ? null : { ...spec.refill },
   }));
 
+  function stopAt(index: number): RoutineStop {
+    const stop = stops[index];
+    if (stop === undefined) throw new Error(`routine has no stop ${index}`);
+    return stop;
+  }
+
+  const slots: RoutineSlot[] = [];
+  const slotSeconds: number[] = [];
+  for (let i = 0; i < stops.length; i += 1) {
+    const stop = stopAt(i);
+    const next = stopAt((i + 1) % stops.length);
+    const holdSeconds = stop.departAt - stop.arriveAt;
+    if (holdSeconds > 0) {
+      slots.push({ kind: "hold", stop: i });
+      slotSeconds.push(holdSeconds);
+    }
+    const walkSeconds = next.arriveAt + (next.index === 0 ? cycleSeconds : 0) - stop.departAt;
+    if (walkSeconds > 0) {
+      slots.push({ kind: "travel", from: i });
+      slotSeconds.push(walkSeconds);
+    }
+  }
+  const day: StateSchedule<RoutineSlot> = createStateSchedule<RoutineSlot>({
+    phases: slots.map((state, at) => ({ state, durationSeconds: slotSeconds[at] ?? 0 })),
+    offsetSeconds: -stopAt(0).arriveAt,
+  });
+
   function phaseAt(time: number): RoutinePhase {
     const { cycle, local, tolerance } = localAt(time, cycleSeconds);
-    if (stops.length === 1) {
-      const only = stops[0]!;
+    const slot = day.stateAt(local + tolerance);
+    if (slot.kind === "hold") {
+      const stop = stopAt(slot.stop);
       return {
-        stop: 0,
-        place: only.place,
+        stop: stop.index,
+        place: stop.place,
         nextPlace: null,
-        activity: only.activity,
+        activity: stop.activity,
         travelling: false,
         progress: 0,
-        since: cycle + only.arriveAt,
-        until: cycle + only.arriveAt + cycleSeconds,
+        since: cycle + stop.arriveAt,
+        until: cycle + stop.departAt,
       };
     }
-    for (const stop of stops) {
-      if (local >= stop.arriveAt - tolerance && local < stop.departAt - tolerance) {
-        return {
-          stop: stop.index,
-          place: stop.place,
-          nextPlace: null,
-          activity: stop.activity,
-          travelling: false,
-          progress: 0,
-          since: cycle + stop.arriveAt,
-          until: cycle + stop.departAt,
-        };
-      }
-    }
-    let from = stops.length - 1;
-    for (let i = 0; i < stops.length; i += 1) {
-      if (stops[i]!.departAt <= local + tolerance) from = i;
-    }
-    const next = (from + 1) % stops.length;
-    const departLocal = stops[from]!.departAt;
-    const arriveLocal = stops[next]!.arriveAt + (next === 0 ? cycleSeconds : 0);
+    const from = stopAt(slot.from);
+    const next = stopAt((slot.from + 1) % stops.length);
+    const departLocal = from.departAt;
+    const arriveLocal = next.arriveAt + (next.index === 0 ? cycleSeconds : 0);
     const span = arriveLocal - departLocal;
     const start = departLocal > local ? departLocal - cycleSeconds : departLocal;
     const raw = span <= 0 ? 1 : (local - start) / span;
     const progress = Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 1;
     return {
-      stop: from,
-      place: stops[from]!.place,
-      nextPlace: stops[next]!.place,
+      stop: from.index,
+      place: from.place,
+      nextPlace: next.place,
       activity: null,
       travelling: true,
       progress,
