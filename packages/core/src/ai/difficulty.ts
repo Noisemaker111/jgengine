@@ -15,6 +15,8 @@
  * behind {@link advanceReactionGate}, and score ability windows into {@link shouldUseAbility}.
  */
 
+import { pickUniform } from "../random/pick";
+
 /** The three canonical decision-quality tiers. */
 export type DifficultyTier = "easy" | "standard" | "expert";
 
@@ -177,8 +179,7 @@ export function pickScored<T>(
 ): T | null {
   if (options.length === 0) return null;
   if (profile.decisionNoise > 0 && rng() < profile.decisionNoise) {
-    const index = Math.min(options.length - 1, Math.floor(rng() * options.length));
-    return options[index]!.option;
+    return pickUniform(rng, options)?.option ?? null;
   }
   let best = options[0]!;
   for (let i = 1; i < options.length; i++) {
