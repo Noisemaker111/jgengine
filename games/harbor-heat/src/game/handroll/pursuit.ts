@@ -83,7 +83,7 @@ const TIERS: readonly ThresholdBoundary<WantedTier>[] = [
   { at: 450, id: { stars: 5, response: "roadblock", officers: 4, searchRadius: 46 } },
 ];
 
-/** A slow bleed once the trail goes cold, a beat of "still hot" after the last crime, and five tiers of response. */
+/** A slow bleed once the trail goes cold, and a beat of "still hot" after the last crime. */
 const HUNT: AlertTuning<WantedTier> = {
   tiers: TIERS,
   decayPerSecond: 9,
