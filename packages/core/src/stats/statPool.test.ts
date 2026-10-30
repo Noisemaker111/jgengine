@@ -6,6 +6,7 @@ import {
   createMeter,
   createStatPool,
   patchStatPool,
+  statPoolFraction,
   tickMeter,
   type StatPool,
   type StatPoolAccess,
@@ -118,6 +119,12 @@ describe("ticking meters", () => {
 
     const regenerated = tickMeter(waiting.meter, rates, 1);
     expect(regenerated.meter.pool.current).toBe(8);
+  });
+
+  test("reads any pool as a fill fraction over its own range", () => {
+    expect(statPoolFraction(createStatPool({ current: 25, max: 100 }))).toBe(0.25);
+    expect(statPoolFraction(createStatPool({ current: 5, min: -5, max: 5 }))).toBe(1);
+    expect(statPoolFraction(createStatPool({ max: 0 }))).toBe(0);
   });
 
   test("decay does not restart the regen delay", () => {
