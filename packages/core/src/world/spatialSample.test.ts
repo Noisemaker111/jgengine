@@ -7,6 +7,8 @@ import {
   boxRegion,
   customRegion,
   discRegion,
+  distanceBiasRegion,
+  distanceBiasStrength,
   pointSetRegion,
   polygonRegion,
   rectRegion,
@@ -126,6 +128,33 @@ describe("region distribution policies", () => {
     const region = pointSetRegion([[0, 0], [10, 10]], { weights: [0, 1] });
     const rng = seededRng("ps");
     for (let i = 0; i < 30; i += 1) expect(region.sample(rng)).toEqual([10, 10]);
+  });
+
+  test("distance bias region leans away from or toward avoided positions", () => {
+    const points = [[0, 0], [50, 0]] as const;
+    const avoid = [[0, 0]] as const;
+    const far = distanceBiasRegion(points, { avoid, bias: "far", strength: "strong" });
+    const near = distanceBiasRegion(points, { avoid, bias: "near", strength: "strong" });
+    let farHits = 0;
+    let nearHits = 0;
+    for (let value = 0; value < 1; value += 0.05) {
+      if (far.sample(() => value)[0] === 50) farHits += 1;
+      if (near.sample(() => value)[0] === 0) nearHits += 1;
+    }
+    expect(farHits).toBeGreaterThan(10);
+    expect(nearHits).toBeGreaterThan(10);
+  });
+
+  test("distance bias region without avoided positions draws uniformly", () => {
+    const region = distanceBiasRegion([[0, 0], [50, 0]], { bias: "far" });
+    expect(region.sample(() => 0.75)).toEqual([50, 0]);
+    expect(distanceBiasRegion([], { bias: "near" }).isEmpty).toBe(true);
+  });
+
+  test("distance bias strength names a magnitude", () => {
+    expect(distanceBiasStrength(0.4)).toBe("subtle");
+    expect(distanceBiasStrength(1)).toBe("moderate");
+    expect(distanceBiasStrength(2)).toBe("strong");
   });
 });
 

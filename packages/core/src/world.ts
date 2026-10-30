@@ -907,7 +907,6 @@ export {
   advanceSpawnDirector,
   advanceWave,
   createSpawnDirectorState,
-  pickSpawnPoint,
   raiseAlert,
   type SpawnDirectorConfig,
   type SpawnDirectorState,
@@ -915,6 +914,12 @@ export {
   type SpawnRequest,
   type WaveManifest,
 } from "./waves/spawnDirector";
+export {
+  selectSpawnPoint,
+  type SpawnPointBiasStrength,
+  type SpawnPointDistanceBias,
+  type SpawnPointSelectionOptions,
+} from "./waves/spawnPoint";
 export {
   createWaveRunner,
   type WaveRunner,
@@ -1007,6 +1012,8 @@ export {
   boxRegion,
   customRegion,
   discRegion,
+  distanceBiasRegion,
+  distanceBiasStrength,
   pointSetRegion,
   polygonRegion,
   rectRegion,
@@ -1017,6 +1024,8 @@ export {
   sphereRegion,
   weightedRegion,
   type AreaDistribution,
+  type DistanceBias,
+  type DistanceBiasStrength,
   type FallbackPolicy,
   type Point3,
   type RadialDistribution,

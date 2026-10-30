@@ -311,6 +311,56 @@ export interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> {
   weight: number;
 }
 
+/** Which way a candidate's chance leans, relative to the avoided positions. */
+export type DistanceBias = "near" | "far" | "none";
+
+/** How sharply distance skews the choice: a shallower or steeper power of the distance. */
+export type DistanceBiasStrength = "subtle" | "moderate" | "strong";
+
+const DISTANCE_EXPONENT: Record<DistanceBiasStrength, number> = { subtle: 0.5, moderate: 1, strong: 2 };
+
+/** The strength a caller's magnitude names: at or below 0.5 subtle, at or above 1.5 strong. */
+export function distanceBiasStrength(magnitude: number): DistanceBiasStrength {
+  return magnitude <= 0.5 ? "subtle" : magnitude >= 1.5 ? "strong" : "moderate";
+}
+
+/**
+ * A fixed candidate table whose members are weighted by their distance from the `avoid` positions —
+ * the "spawn away from the players" placement policy over a point set. `"none"`, or no avoided
+ * positions, draws uniformly. Otherwise a candidate weighs `max(floor, (1 + nearest) ** exponent)`
+ * with `nearest` its distance to the closest avoided point in XZ, so `"near"` leans toward them and
+ * `"far"` away; `floor` keeps a candidate reachable rather than impossible. One rng draw.
+ *
+ * @capability spatial-region-distance sample a candidate point table weighted by distance from avoided positions
+ */
+export function distanceBiasRegion(
+  points: readonly Vec2[],
+  options: {
+    avoid?: readonly Vec2[];
+    /** Default `"none"` — a flat candidate table. */
+    bias?: DistanceBias;
+    /** Default `"moderate"`. */
+    strength?: DistanceBiasStrength;
+    /** Weight floor so no candidate is impossible; default `1e-6`. */
+    floor?: number;
+  } = {},
+): SampleRegion<Vec2> {
+  const avoid = options.avoid ?? [];
+  const bias = options.bias ?? "none";
+  if (points.length === 0 || bias === "none" || avoid.length === 0) return pointSetRegion(points);
+  const exponent = bias === "far" ? DISTANCE_EXPONENT[options.strength ?? "moderate"] : -DISTANCE_EXPONENT[options.strength ?? "moderate"];
+  const floor = options.floor ?? 1e-6;
+  const weights = points.map((point) => {
+    let nearest = Number.POSITIVE_INFINITY;
+    for (const avoided of avoid) {
+      const distance = Math.hypot(point[0] - avoided[0], point[1] - avoided[1]);
+      if (distance < nearest) nearest = distance;
+    }
+    return Math.max(floor, (1 + nearest) ** exponent);
+  });
+  return pointSetRegion(points, { weights });
+}
+
 /**
  * A fixed set of candidate points sampled by (optionally weighted) selection — the "spawn point
  * table" region. `contains` is exact membership. Empty when the set is empty.

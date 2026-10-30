@@ -47,6 +47,7 @@ export {
   selectSpawnPoint,
   type SpawnPointSelectionOptions,
   type SpawnPointDistanceBias,
+  type SpawnPointBiasStrength,
 } from "./waves/spawnPoint";
 
 export { contextVerb } from "./interaction/contextMenu";

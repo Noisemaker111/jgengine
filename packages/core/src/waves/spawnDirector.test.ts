@@ -3,7 +3,6 @@ import {
   advanceSpawnDirector,
   advanceWave,
   createSpawnDirectorState,
-  pickSpawnPoint,
   raiseAlert,
   type SpawnDirectorConfig,
 } from "@jgengine/core/waves/spawnDirector";
@@ -205,35 +204,5 @@ describe("spawnDirector spawn points", () => {
     const a = advanceSpawnDirector(config, createSpawnDirectorState(config), 0.1, { alive: 0 }).spawns;
     const b = advanceSpawnDirector(config, createSpawnDirectorState(config), 0.1, { alive: 0 }).spawns;
     expect(a).toEqual(b);
-  });
-});
-
-describe("pickSpawnPoint", () => {
-  const points = [
-    [0, 0],
-    [50, 0],
-  ] as const;
-  const players = [[0, 0]] as const;
-
-  test("positive bias favours points near players", () => {
-    let near = 0;
-    for (let roll = 0; roll < 1; roll += 0.05) {
-      const point = pickSpawnPoint([...points], [...players], { roll, bias: 4 });
-      if (point && point[0] === 0) near += 1;
-    }
-    expect(near).toBeGreaterThan(10);
-  });
-
-  test("negative bias favours points far from players", () => {
-    let far = 0;
-    for (let roll = 0; roll < 1; roll += 0.05) {
-      const point = pickSpawnPoint([...points], [...players], { roll, bias: -4 });
-      if (point && point[0] === 50) far += 1;
-    }
-    expect(far).toBeGreaterThan(10);
-  });
-
-  test("returns null with no candidate points", () => {
-    expect(pickSpawnPoint([], [...players], { roll: 0.5 })).toBeNull();
   });
 });
