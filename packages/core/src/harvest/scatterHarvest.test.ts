@@ -28,6 +28,15 @@ describe("createScatterHarvest", () => {
     expect(harvest.strike({ x: 0, z: 0, yaw: Math.PI, reach: 2, tool: HAND })?.item).toBe("rock");
   });
 
+  test("a wide trunk is struck from past arm's reach", () => {
+    const harvest = createScatterHarvest({
+      kinds: { oak: { budget: 2, resources: [{ kind: "wood", amount: 1 }], respawn: 5, radius: 1 } },
+      rng: () => 0,
+    });
+    harvest.setPlacements([{ id: "oak/0", item: "oak", x: 0, z: 2.5 }]);
+    expect(harvest.strike({ x: 0, z: 0, yaw: 0, reach: 2, tool: HAND })?.id).toBe("oak/0");
+  });
+
   test("a spent node leaves the world and regrows", () => {
     const clearing = createScatterClearing();
     const harvest = createScatterHarvest({ kinds: KINDS, clearing, rng: () => 0 });
