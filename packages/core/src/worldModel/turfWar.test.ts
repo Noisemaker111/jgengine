@@ -14,6 +14,7 @@ const war = defineTurfWar({
   },
   sides: ["player", "red", "blue"],
   labels: { player: "You", red: "The Reds", blue: "The Blues" },
+  contestedGrip: 30,
   onTake: { player: { "red.mood": -10 } },
   fronts: {
     blue_push: { by: "blue", into: ["red", "player"], every: 10, hit: 20, note: "Blues are pushing into {place}.", world: { "war.tension": 5 }, hook: "push" },
@@ -102,9 +103,21 @@ describe("turf war", () => {
   });
 
   test("a lowercase label that opens the log line is capitalised, and stays lowercase mid-line", () => {
-    const lower = defineTurfWar({ blocks: { a: {} }, sides: ["player", "red"], labels: { player: "you", red: "the Reds" } });
+    const lower = defineTurfWar({ blocks: { a: {} }, sides: ["player", "red"], labels: { player: "you", red: "the Reds" }, contestedGrip: 30 });
     expect(lower.triggers["turf:a:red:player"]?.note).toBe("You took {place} from the Reds.");
     expect(lower.triggers["turf:a:player:red"]?.note).toBe("The Reds took {place} from you.");
+  });
+
+  test("a war sets the grip at which a block reads as contested", () => {
+    const model = createWorldModel(defineWorldModel({
+      factions: { red: { facts: { mood: 0 } } },
+      places: { a: { label: "a", position: [0, 0], radius: 10, owner: "red", facts: { grip: grip(10) } } },
+      facts: { "a.attacker": "player" },
+    }));
+    const tight = defineTurfWar({ blocks: { a: {} }, sides: ["player", "red"], contestedGrip: 5 });
+    const loose = defineTurfWar({ blocks: { a: {} }, sides: ["player", "red"], contestedGrip: 30 });
+    expect(tight.view(model)[0]?.contested).toBe(false);
+    expect(loose.view(model)[0]?.contested).toBe(true);
   });
 
   test("bad declarations fail loudly", () => {

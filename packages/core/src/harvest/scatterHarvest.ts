@@ -1,5 +1,6 @@
 // @skill jgengine-gameplay
 import type { ScatterClearing } from "../scatter/scatterClearing";
+import { createSpatialIndex } from "../spatial/spatialIndex";
 import {
   createResourceNodeField,
   type ResourceGrant,
@@ -91,6 +92,9 @@ function angleBetween(a: number, b: number): number {
   return Math.abs(diff);
 }
 
+/** Metres of slack around a strike's reach the query covers before the trunk radii are added. */
+const REACH_SLACK = 4;
+
 /**
  * Turn scatter into resources: every placed tree, rock or bush of a listed species is a depletable,
  * respawning node (backed by {@link createResourceNodeField} resolved on first hit, so ten thousand trees
@@ -104,8 +108,20 @@ export function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarve
   let kinds = config.kinds;
   const cellSize = config.cellSize ?? 16;
   const byId = new Map<string, HarvestPlacement>();
-  let cells = new Map<string, HarvestPlacement[]>();
-  const cellKey = (cx: number, cz: number): string => `${cx},${cz}`;
+  const index = createSpatialIndex({ cellSize });
+  const candidates: string[] = [];
+  /** Widest trunk radius any standing placement adds to a strike's reach. */
+  let widestRadius = 0.5;
+
+  const measure = (): void => {
+    let widest = 0.5;
+    for (const placement of byId.values()) {
+      const kind = kinds[placement.item];
+      if (kind === undefined) continue;
+      widest = Math.max(widest, (kind.radius ?? 0.5) * (placement.scale ?? 1));
+    }
+    widestRadius = widest;
+  };
 
   const defOf = (id: string): ResourceNodeDef | null => {
     const placement = byId.get(id);
@@ -123,27 +139,23 @@ export function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarve
     const cone = strike.cone ?? 0.9;
     let best: HarvestPlacement | null = null;
     let bestDistance = Number.POSITIVE_INFINITY;
-    const span = Math.ceil((strike.reach + 4) / cellSize);
-    const cx = Math.floor(strike.x / cellSize);
-    const cz = Math.floor(strike.z / cellSize);
-    for (let ix = cx - span; ix <= cx + span; ix += 1) {
-      for (let iz = cz - span; iz <= cz + span; iz += 1) {
-        for (const placement of cells.get(cellKey(ix, iz)) ?? []) {
-          const kind = kinds[placement.item];
-          if (kind === undefined) continue;
-          // Geometry first: most of a cell is out of reach, and that test is cheaper than the filters.
-          const dx = placement.x - strike.x;
-          const dz = placement.z - strike.z;
-          const distance = Math.hypot(dx, dz);
-          const radius = (kind.radius ?? 0.5) * (placement.scale ?? 1);
-          if (distance - radius > strike.reach) continue;
-          if (distance > radius && angleBetween(Math.atan2(dx, dz), strike.yaw) > cone) continue;
-          if ((strike.accepts !== undefined && !strike.accepts(placement.item)) || field.isDepleted(placement.id)) continue;
-          if (distance < bestDistance) {
-            best = placement;
-            bestDistance = distance;
-          }
-        }
+    const ids = index.querySphere(strike.x, 0, strike.z, strike.reach + REACH_SLACK + widestRadius, candidates);
+    for (const id of ids) {
+      const placement = byId.get(id);
+      if (placement === undefined) continue;
+      const kind = kinds[placement.item];
+      if (kind === undefined) continue;
+      // Geometry first: most of the query is out of reach, and that test is cheaper than the filters.
+      const dx = placement.x - strike.x;
+      const dz = placement.z - strike.z;
+      const distance = Math.hypot(dx, dz);
+      const radius = (kind.radius ?? 0.5) * (placement.scale ?? 1);
+      if (distance - radius > strike.reach) continue;
+      if (distance > radius && angleBetween(Math.atan2(dx, dz), strike.yaw) > cone) continue;
+      if ((strike.accepts !== undefined && !strike.accepts(placement.item)) || field.isDepleted(placement.id)) continue;
+      if (distance < bestDistance) {
+        best = placement;
+        bestDistance = distance;
       }
     }
     return best;
@@ -152,15 +164,24 @@ export function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarve
   return {
     setPlacements(placements) {
       byId.clear();
-      const harvestable = placements.filter((placement) => kinds[placement.item] !== undefined);
-      for (const placement of harvestable) byId.set(placement.id, placement);
-      cells = new Map();
-      for (const placement of harvestable) {
-        const key = cellKey(Math.floor(placement.x / cellSize), Math.floor(placement.z / cellSize));
-        const cell = cells.get(key);
-        if (cell === undefined) cells.set(key, [placement]);
-        else cell.push(placement);
+      index.clear();
+      for (const placement of placements) {
+        if (kinds[placement.item] === undefined) continue;
+        byId.set(placement.id, placement);
+        index.insert(placement.id, {
+          centerX: placement.x,
+          centerY: 0,
+          centerZ: placement.z,
+          radius: 0,
+          minX: placement.x,
+          minY: 0,
+          minZ: placement.z,
+          maxX: placement.x,
+          maxY: 0,
+          maxZ: placement.z,
+        });
       }
+      measure();
     },
     target,
     strike(strike) {
@@ -181,7 +202,9 @@ export function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarve
     isDepleted: (id) => (byId.has(id) ? field.isDepleted(id) : false),
     retune(next) {
       kinds = next;
+      measure();
     },
+
     snapshot: () => ({ nodes: field.snapshot() }),
     restore(state) {
       field = build();

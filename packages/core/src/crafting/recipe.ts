@@ -1,6 +1,7 @@
 import type { Vec2 } from "../world/geometry";
 import type { InventoryLayout, InventoryState, ItemTraits } from "../inventory/inventoryModel";
 import { countItem, putItem, takeItem } from "../inventory/inventoryModel";
+import { evaluatePredicate, type Predicate } from "../rules/predicate";
 
 export interface RecipeItem {
   itemId: string;
@@ -66,21 +67,26 @@ export function stationSatisfied(recipe: RecipeDef, context: CraftContext): bool
     );
   }
   const stations = context.stations ?? [];
+  const found: string[] = [];
+  let nearestSq = Number.POSITIVE_INFINITY;
   for (const station of stations) {
     if (station.catalogId !== recipe.station) continue;
-    if (range === Infinity || origin === undefined) return true;
+    found.push(station.catalogId);
+    if (origin === undefined) continue;
     const dx = station.position[0] - origin[0];
     const dz = station.position[1] - origin[1];
-    if (dx * dx + dz * dz <= range * range) return true;
+    nearestSq = Math.min(nearestSq, dx * dx + dz * dz);
   }
-  return false;
+  const inReach: Predicate = { all: [{ includes: ["stations", recipe.station] }, { lte: ["distanceSq", range * range] }] };
+  return evaluatePredicate(inReach, { stations: found, distanceSq: nearestSq });
 }
 
 function lockedRequirements(recipe: RecipeDef, context: CraftContext): readonly string[] {
-  if (recipe.requires === undefined || recipe.requires.length === 0) return [];
+  const requires = recipe.requires;
+  if (requires === undefined || requires.length === 0) return [];
   const unlocked = context.unlocked;
-  if (unlocked === undefined) return recipe.requires;
-  return recipe.requires.filter((id) => !unlocked(id));
+  const facts = { unlocked: unlocked === undefined ? [] : requires.filter((id) => unlocked(id)) };
+  return requires.filter((id) => !evaluatePredicate({ includes: ["unlocked", id] }, facts));
 }
 
 function outputsFit(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef): boolean {

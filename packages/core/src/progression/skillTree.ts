@@ -1,5 +1,6 @@
 import type { AbilityCastType } from "../combat/abilityKit";
 import { devtools } from "../devtools/devtools";
+import { evaluatePredicate, type Predicate } from "../rules/predicate";
 import type { StatModifier, StatModifierSet } from "../stats/statModifiers";
 
 /** One node that must be at or above `rank` for a node or synergy to open; `rank` defaults to `1`. */
@@ -133,6 +134,16 @@ function requirementRank(requirement: SkillRequirement): number {
   return requirement.rank ?? 1;
 }
 
+/** A requirement is met once that node's rank reaches the required rank. */
+function rankReached(requirement: SkillRequirement): Predicate {
+  return { gte: ["rank", requirementRank(requirement)] };
+}
+
+/** Facts one requirement reads: the rank held in the node it names. */
+function requirementMet(requirement: SkillRequirement, rank: number): boolean {
+  return evaluatePredicate(rankReached(requirement), { rank });
+}
+
 function mergePassives<TStat extends string>(
   target: StatModifierSet<TStat>,
   source: StatModifierSet<TStat> | undefined,
@@ -259,9 +270,12 @@ export function createSkillTree<TStat extends string = string>(
     if (rank(nodeId) >= maxRank) return { ok: false, reason: "max-rank", detail: `"${nodeId}" is already at rank ${maxRank}` };
     if (points < cost) return { ok: false, reason: "no-points", detail: `"${nodeId}" costs ${cost}, ${points} available` };
     for (const requirement of node.requires ?? []) {
-      const needed = requirementRank(requirement);
-      if (rank(requirement.nodeId) < needed) {
-        return { ok: false, reason: "requires", detail: `"${nodeId}" needs rank ${needed} of "${requirement.nodeId}"` };
+      if (!requirementMet(requirement, rank(requirement.nodeId))) {
+        return {
+          ok: false,
+          reason: "requires",
+          detail: `"${nodeId}" needs rank ${requirementRank(requirement)} of "${requirement.nodeId}"`,
+        };
       }
     }
     const branchPoints = node.requiresPointsInBranch ?? 0;
@@ -298,7 +312,9 @@ export function createSkillTree<TStat extends string = string>(
 
     const live: string[] = [];
     for (const synergy of synergies) {
-      const satisfied = synergy.requires.every((requirement) => rank(requirement.nodeId) >= requirementRank(requirement));
+      const satisfied = synergy.requires.every((requirement) =>
+        requirementMet(requirement, rank(requirement.nodeId)),
+      );
       if (!satisfied) continue;
       live.push(synergy.id);
       mergePassives(stats, synergy.passives, 1);

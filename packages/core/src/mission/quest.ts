@@ -1,5 +1,6 @@
 import type { GameEvents } from "../game/events";
 import { clamp } from "../math/scalar";
+import { evaluatePredicate, type Predicate } from "../rules/predicate";
 
 /** One quest objective: a kind (kill, collect, …), its target or item, how many, and optional party sharing. */
 export interface QuestObjective {
@@ -99,6 +100,14 @@ export interface QuestJournal {
 interface QuestState {
   status: QuestStatus;
   progress: Map<string, number>;
+}
+
+/** A prerequisite is met when that quest is completed, or the game says its unlock is held. */
+const REQUIREMENT_MET: Predicate = { any: [{ eq: ["status", "completed"] }, { eq: ["unlocked", true] }] };
+
+/** Facts one prerequisite reads: the quest's own status and whether the game holds its unlock. */
+function requirementFacts(status: QuestStatus | undefined, unlocked: boolean) {
+  return { status, unlocked };
 }
 
 /**
@@ -222,8 +231,8 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
   }
 
   function requirementMet(userId: string, requirementId: string): boolean {
-    if (users.get(userId)?.get(requirementId)?.status === "completed") return true;
-    return deps.hasUnlock?.(userId, requirementId) ?? false;
+    const status = users.get(userId)?.get(requirementId)?.status;
+    return evaluatePredicate(REQUIREMENT_MET, requirementFacts(status, deps.hasUnlock?.(userId, requirementId) ?? false));
   }
 
   function canAccept(userId: string, questId: string): { reason: string } | null {
@@ -670,9 +679,13 @@ export function createQuestEvaluator(
     if (state?.status === "active") return { reason: `quest "${questId}" already active` };
     if (state?.status === "completed") return { reason: `quest "${questId}" already completed` };
     for (const requirementId of def.requires ?? []) {
-      const met =
-        working.get(requirementId)?.status === "completed" ||
-        (options?.hasUnlock?.(requirementId) ?? false);
+      const met = evaluatePredicate(
+        REQUIREMENT_MET,
+        requirementFacts(
+          working.get(requirementId)?.status,
+          options?.hasUnlock?.(requirementId) ?? false,
+        ),
+      );
       if (!met) return { reason: `quest "${questId}" requires "${requirementId}"` };
     }
     return null;

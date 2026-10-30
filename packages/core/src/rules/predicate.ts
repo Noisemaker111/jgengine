@@ -13,7 +13,9 @@ export type PredicatePath = string;
 
 /**
  * One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a
- * dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value.
+ * dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value;
+ * `in` asks whether a scalar fact is one of a listed set, and `includes` whether a list fact holds a
+ * named value.
  */
 export type Predicate =
   | { readonly all: readonly Predicate[] }
@@ -26,6 +28,7 @@ export type Predicate =
   | { readonly lt: readonly [PredicatePath, number] }
   | { readonly lte: readonly [PredicatePath, number] }
   | { readonly in: readonly [PredicatePath, readonly PredicateValue[]] }
+  | { readonly includes: readonly [PredicatePath, PredicateValue] }
   | { readonly has: PredicatePath };
 
 /** Plain, serializable bag of facts a predicate reads by dot path. */
@@ -50,6 +53,10 @@ function asNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+function asList(value: unknown): readonly unknown[] | undefined {
+  return Array.isArray(value) ? value : undefined;
+}
+
 /**
  * Evaluate a predicate against a fact bag. An omitted predicate matches unconditionally, so callers
  * can treat "no condition" and "always" identically. Pure and deterministic — no allocation beyond
@@ -69,6 +76,10 @@ export function evaluatePredicate(predicate: Predicate | undefined, facts: Predi
   if ("eq" in predicate) return readPath(facts, predicate.eq[0]) === predicate.eq[1];
   if ("ne" in predicate) return readPath(facts, predicate.ne[0]) !== predicate.ne[1];
   if ("in" in predicate) return predicate.in[1].includes(readPath(facts, predicate.in[0]) as PredicateValue);
+  if ("includes" in predicate) {
+    const list = asList(readPath(facts, predicate.includes[0]));
+    return list !== undefined && list.includes(predicate.includes[1]);
+  }
   if ("gt" in predicate) {
     const value = asNumber(readPath(facts, predicate.gt[0]));
     return value !== undefined && value > predicate.gt[1];

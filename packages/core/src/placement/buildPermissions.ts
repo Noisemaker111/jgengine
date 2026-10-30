@@ -1,7 +1,13 @@
+import { evaluatePredicate, type Predicate } from "../rules/predicate";
+
 /** A player's build rights on a plot: owner, editor or viewer. */
 export type BuildRole = "owner" | "editor" | "viewer";
 
 const ROLE_RANK: Record<BuildRole, number> = { viewer: 0, editor: 1, owner: 2 };
+
+/** Editing needs the `editor` rank or above; looking needs any role at all. */
+const CAN_EDIT: Predicate = { gte: ["rank", ROLE_RANK.editor] };
+const CAN_VIEW: Predicate = { has: "role" };
 
 /** Initial owner, guild and per-player roles for one build plot. */
 export interface PlotPermissionConfig {
@@ -70,10 +76,10 @@ export function createPlotPermissions(config: PlotPermissionConfig): PlotPermiss
     roleOf,
     canEdit(actor) {
       const role = roleOf(actor);
-      return role !== null && ROLE_RANK[role] >= ROLE_RANK.editor;
+      return evaluatePredicate(CAN_EDIT, { rank: role === null ? -1 : ROLE_RANK[role] });
     },
     canView(actor) {
-      return roleOf(actor) !== null;
+      return evaluatePredicate(CAN_VIEW, { role: roleOf(actor) });
     },
     grant(userId, role) {
       if (userId === ownerId) return;
