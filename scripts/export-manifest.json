@@ -36,7 +36,6 @@
     "./ai/temperament",
     "./ai/threat",
     "./ai/utilityBrain",
-    "./airdrop/airdrop",
     "./anim/CharacterCrowd.draw",
     "./anim/CorpseRagdolls.draw",
     "./anim/PartMotion.draw",

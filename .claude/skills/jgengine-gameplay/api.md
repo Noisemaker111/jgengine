@@ -95,17 +95,6 @@
 - `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
 - `createAgentSystem` (function): function createAgentSystem(config: AgentSystemConfig): AgentSystem — One call for a whole cast: a game hands over its needs, options, mood weights, schedules and one target selector, and gets back a running system with a single `tick(dt)` and a save blob that goes into the game's own save.
 
-## @jgengine/core/airdrop/airdrop
-
-- `Airdrop` (interface): interface Airdrop — A crate on its way down, or landed and waiting to be opened.
-- `AirdropField` (interface): interface AirdropField — The live supply drops of a world, made by {@link createAirdropField}.
-- `AirdropOptions` (interface): interface AirdropOptions — {@link createAirdropField} setup.
-- `AirdropSite` (interface): interface AirdropSite — A place drops come down, and the tiers it sends with their odds.
-- `AirdropSnapshot` (interface): interface AirdropSnapshot — A save of every crate falling and landed and each site's next release time.
-- `AirdropTick` (interface): interface AirdropTick — What changed on one {@link AirdropField.tick}.
-- `AirdropTier` (interface): interface AirdropTier — One kind of drop: who may open it and the loot it rolls when it lands.
-- `createAirdropField` (function): function createAirdropField(options: AirdropOptions): AirdropField — Supply drops: crates that come down at authored sites on a timer, a tier rolled per site by weight, fall for a while, land with loot rolled for their tier, open only for players of the tier's level, and break apart if left too long. Each site holds one crate at a time and sends the next a while after the last is emptied or gone.
-
 ## @jgengine/core/basebuilding/BaseStructures.draw
 
 - `BaseStructures` (function): function BaseStructures({ building, colorOf, ghost, validColor = "#34d399", invalidColor = "#f87171" }: BaseStructuresProps): React.JSX.Element — Draws a base-building model: every placed piece as its solid boxes, darkened as it loses health, plus the build ghost tinted valid or invalid. Re-renders only when the model's version moves or the ghost changes.
