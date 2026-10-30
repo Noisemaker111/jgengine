@@ -21,6 +21,18 @@ export interface StaggerMeter {
   fraction(): number;
   recover(): void;
   tick(dtSeconds: number): void;
+  snapshot(): StaggerMeterState;
+  restore(state: StaggerMeterState): void;
+}
+
+/** A stagger gauge's saved state: its meter and whether it has broken. Plain data. */
+export interface StaggerMeterState {
+  meter: MeterState;
+  broken: boolean;
+}
+
+function copyMeter(meter: MeterState): MeterState {
+  return { pool: { ...meter.pool }, sinceDrop: meter.sinceDrop, sinceFill: meter.sinceFill };
 }
 
 function decayRates(config: { decayPerSecond?: number; decayDelayMs?: number }): MeterRates {
@@ -65,6 +77,11 @@ export function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter {
       // A broken gauge holds its value; the timers still advance so decay resumes from its delay.
       meter = tickMeter(meter, broken ? {} : rates, dtSeconds).meter;
     },
+    snapshot: () => ({ meter: copyMeter(meter), broken }),
+    restore(state) {
+      meter = copyMeter(state.meter);
+      broken = state.broken;
+    },
   };
 }
 
@@ -86,6 +103,9 @@ export interface BuildupMeter {
   value(): number;
   fraction(): number;
   tick(dtSeconds: number): void;
+  /** The buildup's meter, as plain data. */
+  snapshot(): MeterState;
+  restore(state: MeterState): void;
 }
 
 /**
@@ -118,6 +138,10 @@ export function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter {
     },
     tick(dtSeconds) {
       meter = tickMeter(meter, rates, dtSeconds).meter;
+    },
+    snapshot: () => copyMeter(meter),
+    restore(state) {
+      meter = copyMeter(state);
     },
   };
 }
