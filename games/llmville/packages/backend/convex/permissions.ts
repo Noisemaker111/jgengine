@@ -1,3 +1,4 @@
+import { createPlotPermissions, type BuildRoleLadder } from "@jgengine/core/placement/buildPermissions";
 import { ConvexError } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -79,31 +80,59 @@ async function isGuestActor(ctx: MutationCtx | QueryCtx, actorExternalId: string
   return authUser?.isAnonymous === true;
 }
 
+type LabRole = "visitor" | "bot" | "owner";
+
+/** Every signed-in player looks at every lab; the owner and the owner's connected bot build in it. */
+const LAB_ROLES: BuildRoleLadder<LabRole> = {
+  ladder: ["visitor", "bot", "owner"],
+  editor: "bot",
+  guildDefault: "visitor",
+  everyone: "visitor",
+};
+
 /**
- * Returns true if the actor can read the game: the owner, the owner's connected
- * bot, or any signed-in non-banned visitor — everyone shares the one world.
+ * One actor's rights on one lab. A guest, or anyone whose owner is banned from the lab, holds no
+ * role; the owner's bot builds only while it presents its current token.
  */
+async function labAccess(
+  ctx: MutationCtx | QueryCtx,
+  game: Doc<"games">,
+  actorExternalId: string,
+): Promise<{ canView: boolean; canEdit: boolean }> {
+  const owner = isOwner(game, actorExternalId);
+  const bot = !owner && (await botHasAccess(ctx, game, actorExternalId));
+  const blocked =
+    !owner &&
+    !bot &&
+    ((await isGuestActor(ctx, actorExternalId)) ||
+      (game.bannedExternalIds ?? []).includes(ownerExternalIdForActor(actorExternalId)));
+  const lab = createPlotPermissions({
+    ...LAB_ROLES,
+    plotId: game._id,
+    ownerId: game.createdBy,
+    roles: bot ? { [actorExternalId]: "bot" } : {},
+    banned: blocked ? [actorExternalId] : [],
+  });
+  const actor = { userId: actorExternalId };
+  return { canView: lab.canView(actor), canEdit: lab.canEdit(actor) };
+}
+
+/** Returns true if the actor can read the game: the owner, the owner's connected bot, or any signed-in non-banned visitor. */
 export async function canRead(
   ctx: MutationCtx | QueryCtx,
   game: Doc<"games">,
   actorExternalId: string,
 ): Promise<boolean> {
-  if (isOwner(game, actorExternalId)) return true;
-  if (await botHasAccess(ctx, game, actorExternalId)) return true;
-  if (await isGuestActor(ctx, actorExternalId)) return false;
-  return !(game.bannedExternalIds ?? []).includes(ownerExternalIdForActor(actorExternalId));
+  return (await labAccess(ctx, game, actorExternalId)).canView;
 }
 
-/**
- * Returns true if the actor can edit the game: the owner, or the owner's
- * currently connected bot presenting its current token.
- */
+/** Returns true if the actor can edit the game: the owner, or the owner's connected bot presenting its current token. */
 export async function canEdit(
   ctx: MutationCtx | QueryCtx,
   game: Doc<"games">,
   actorExternalId: string,
 ): Promise<boolean> {
-  return isOwner(game, actorExternalId) || (await botHasAccess(ctx, game, actorExternalId));
+  return (await labAccess(ctx, game, actorExternalId)).canEdit;
 }
 
 const UNAUTHORIZED = "Unauthorized";
@@ -150,6 +179,7 @@ export async function getReadAccess(
   const actorExternalId = await resolveActor(ctx, fallbackExternalId);
   if (actorExternalId === null) return null;
   const game = await ctx.db.get("games", gameId);
-  if (game === null || !(await canRead(ctx, game, actorExternalId))) return null;
-  return { actorExternalId, canEdit: await canEdit(ctx, game, actorExternalId) };
+  if (game === null) return null;
+  const access = await labAccess(ctx, game, actorExternalId);
+  return access.canView ? { actorExternalId, canEdit: access.canEdit } : null;
 }
