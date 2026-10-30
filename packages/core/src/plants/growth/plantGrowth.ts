@@ -729,8 +729,10 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     }
     // A shoot starves in deep shade, and one shaded far below the plant's best-lit shoots is shed even
     // in light a lone sapling would live on: the tree feeds its best-paying shoots first, so the
-    // interior of an open crown goes leafless and its limbs show.
-    const shedBelow = Math.max(g.budLightThreshold, crownShedShare * brightest);
+    // interior of an open crown goes leafless and its limbs show. The best-lit half of the light range
+    // is never shed, so a plant in deep shade starves slowly on its carbon balance rather than dropping
+    // every leaf in one year.
+    const shedBelow = Math.min(Math.max(g.budLightThreshold, crownShedShare * brightest), 0.5 * brightest);
     for (let i = 0; i < n; i += 1) {
       if ((leaves[i] ?? 0) > 0 && (state.light[i] ?? 0) < shedBelow) {
         flags[i] = (flags[i] ?? 0) | NODE_NO_SPUR;

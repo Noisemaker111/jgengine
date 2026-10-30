@@ -24,8 +24,8 @@ function carmeanOf(speciesId: string): SiteIndexCurve {
 interface LongRun {
   heights: Map<number, number>;
   crownRatioAt100: number;
-  snapshotAt200: PlantGrowthSnapshot;
-  hashAt400: string;
+  snapshotAtHalf: PlantGrowthSnapshot;
+  hashAtEnd: string;
   maxNodes: number;
   maxBuds: number;
   alive: boolean;
@@ -33,27 +33,31 @@ interface LongRun {
 
 let longRun: LongRun | undefined;
 
-/** One open-grown tree straight to 400 years, read along the way, shared by the tests below. */
+/** Sugar maple commonly lives 300 to 400 years (Silvics of North America), so every tree is alive at 300. */
+const LONG_RUN_YEARS = 300;
+const HALF_RUN_YEARS = LONG_RUN_YEARS / 2;
+
+/** One open-grown tree straight to {@link LONG_RUN_YEARS}, read along the way, shared by the tests below. */
 function growLong(): LongRun {
   if (longRun) return longRun;
   const plant = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
   const heights = new Map<number, number>();
   let crownRatioAt100 = 0;
-  let snapshotAt200: PlantGrowthSnapshot | undefined;
-  for (let year = 1; year <= 400; year += 1) {
+  let snapshotAtHalf: PlantGrowthSnapshot | undefined;
+  for (let year = 1; year <= LONG_RUN_YEARS; year += 1) {
     plant.step();
     if (year === 50 || year === 100) heights.set(year, plant.structure().stats.heightM);
     if (year === 100) crownRatioAt100 = crownRatio(plant.structure());
     // Round-trip through JSON: a snapshot is plain data.
-    if (year === 200) snapshotAt200 = JSON.parse(JSON.stringify(plant.snapshot()));
+    if (year === HALF_RUN_YEARS) snapshotAtHalf = JSON.parse(JSON.stringify(plant.snapshot()));
   }
-  if (!snapshotAt200) throw new Error("no snapshot at 200 years");
+  if (!snapshotAtHalf) throw new Error(`no snapshot at ${HALF_RUN_YEARS} years`);
   const stats = plant.stats();
   longRun = {
     heights,
     crownRatioAt100,
-    snapshotAt200,
-    hashAt400: hashPlantStructure(plant.structure()),
+    snapshotAtHalf,
+    hashAtEnd: hashPlantStructure(plant.structure()),
     maxNodes: stats.maxNodesSeen,
     maxBuds: stats.maxBudsSeen,
     alive: stats.alive,
@@ -88,13 +92,13 @@ describe("plant growth", () => {
     expect(hashPlantStructure(plant.structure())).toBe(first);
   });
 
-  test("grow to 200, snapshot, restore and grow to 400 equals growing straight to 400", () => {
+  test(`grow to ${HALF_RUN_YEARS}, snapshot, restore and grow to ${LONG_RUN_YEARS} equals growing straight to ${LONG_RUN_YEARS}`, () => {
     const run = growLong();
     const resumed = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
-    resumed.restore(run.snapshotAt200);
-    expect(resumed.ageYears()).toBe(200);
-    resumed.step(200);
-    expect(hashPlantStructure(resumed.structure())).toBe(run.hashAt400);
+    resumed.restore(run.snapshotAtHalf);
+    expect(resumed.ageYears()).toBe(HALF_RUN_YEARS);
+    resumed.step(LONG_RUN_YEARS - HALF_RUN_YEARS);
+    expect(hashPlantStructure(resumed.structure())).toBe(run.hashAtEnd);
     expect(run.alive).toBe(true);
   }, 120_000);
 
@@ -192,7 +196,7 @@ describe("plant growth", () => {
 
   test("an open-grown tree keeps a longer crown than one grown in a closed stand", () => {
     const run = growLong();
-    const stand = createPlantGrowth(ACER_SACCHARUM, { ...OPEN_TEMPERATE_SITE, stand: { spacingIndex: 0.25 } }, SEED);
+    const stand = createPlantGrowth(ACER_SACCHARUM, { ...OPEN_TEMPERATE_SITE, stand: { spacingIndex: 0.25 } }, SEED, { individual: "typical" });
     stand.step(100);
     expect(run.crownRatioAt100).toBeGreaterThan(crownRatio(stand.structure()) + 0.2);
   }, 120_000);

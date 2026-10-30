@@ -26,7 +26,7 @@ interface Reading {
 }
 
 function grow(species: PlantSpecies, env: PlantEnvironment): Reading[] {
-  const plant = createPlantGrowth(species, env, SEED);
+  const plant = createPlantGrowth(species, env, SEED, { individual: "typical" });
   const readings: Reading[] = [];
   for (const age of AGES) {
     plant.step(age - plant.ageYears());
