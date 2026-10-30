@@ -1,3 +1,5 @@
+import { createPacedSchedule, type PacedSchedule } from "../time/pacedSchedule";
+
 /**
  * The clock between waves: once a wave has finished arriving, the next one goes out on its own when
  * the intermission runs down, and calling it early pays for the seconds skipped. Tower defense's
@@ -67,6 +69,11 @@ function finite(value: number, fallback: number): number {
   return Number.isFinite(value) ? value : fallback;
 }
 
+/** One event at `at` on the caller's clock — the schedule part with a single event and no repeat. */
+function deadlineAt(at: number): PacedSchedule {
+  return createPacedSchedule({ firstAt: at, every: 0, count: 1 }, () => 0);
+}
+
 /**
  * Build the clock between waves.
  *
@@ -74,7 +81,11 @@ function finite(value: number, fallback: number): number {
  */
 export function createWaveCountdown(config: WaveCountdownConfig): WaveCountdown {
   let current = config;
-  let state: WaveCountdownState = { armed: false, nextWave: 0, remaining: 0, total: 0 };
+  let armed = false;
+  let nextWave = 0;
+  let total = 0;
+  let now = 0;
+  let clock = deadlineAt(0);
 
   const intermissionFor = (wave: number): number => {
     const raw = typeof current.intermission === "function" ? current.intermission(wave) : current.intermission;
@@ -88,47 +99,50 @@ export function createWaveCountdown(config: WaveCountdownConfig): WaveCountdown 
     return bonus.max === undefined ? raw : Math.min(Math.max(0, bonus.max), raw);
   };
 
+  const remainingNow = (): number => (armed ? clock.remaining(now) ?? 0 : 0);
+
   return {
-    arm(nextWave) {
-      const total = intermissionFor(nextWave);
-      state = { armed: true, nextWave, remaining: total, total };
+    arm(wave) {
+      total = intermissionFor(wave);
+      nextWave = wave;
+      now = 0;
+      clock = deadlineAt(total);
+      armed = true;
     },
     disarm() {
-      state = { ...state, armed: false, remaining: 0 };
+      armed = false;
     },
     tick(dtSeconds) {
-      if (!state.armed) return false;
-      const remaining = state.remaining - Math.max(0, finite(dtSeconds, 0));
-      if (remaining > 0) {
-        state = { ...state, remaining };
-        return false;
-      }
-      state = { ...state, armed: false, remaining: 0 };
+      if (!armed) return false;
+      now += Math.max(0, finite(dtSeconds, 0));
+      if (clock.due(now).length === 0) return false;
+      armed = false;
       return true;
     },
     callEarly() {
-      if (!state.armed) return null;
-      const call: EarlyCall = { wave: state.nextWave, secondsSkipped: state.remaining, bonus: bonusFor(state.remaining) };
-      state = { ...state, armed: false, remaining: 0 };
+      if (!armed) return null;
+      const remaining = remainingNow();
+      const call: EarlyCall = { wave: nextWave, secondsSkipped: remaining, bonus: bonusFor(remaining) };
+      armed = false;
       return call;
     },
     bonusNow() {
-      return state.armed ? bonusFor(state.remaining) : 0;
+      return armed ? bonusFor(remainingNow()) : 0;
     },
     view() {
-      const elapsed = !state.armed || state.total <= 0 ? 1 : 1 - state.remaining / state.total;
-      return { ...state, elapsed, bonus: state.armed ? bonusFor(state.remaining) : 0 };
+      const remaining = remainingNow();
+      const elapsed = !armed || total <= 0 ? 1 : 1 - remaining / total;
+      return { armed, nextWave, remaining, total, elapsed, bonus: armed ? bonusFor(remaining) : 0 };
     },
     snapshot() {
-      return { ...state };
+      return { armed, nextWave, remaining: remainingNow(), total };
     },
     restore(next) {
-      state = {
-        armed: next.armed === true,
-        nextWave: Math.max(0, Math.round(finite(next.nextWave, 0))),
-        remaining: Math.max(0, finite(next.remaining, 0)),
-        total: Math.max(0, finite(next.total, 0)),
-      };
+      armed = next.armed === true;
+      nextWave = Math.max(0, Math.round(finite(next.nextWave, 0)));
+      total = Math.max(0, finite(next.total, 0));
+      now = 0;
+      clock = deadlineAt(Math.max(0, finite(next.remaining, 0)));
     },
     retune(next) {
       current = next;
