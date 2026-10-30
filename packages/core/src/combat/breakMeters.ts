@@ -1,4 +1,12 @@
-import { type AccumulatorMeter, createAccumulatorMeter } from "../stats/accumulatorMeter";
+import {
+  changeMeter,
+  createMeter,
+  createStatPool,
+  statPoolFraction,
+  tickMeter,
+  type MeterRates,
+  type MeterState,
+} from "../stats/statPool";
 
 export interface StaggerMeterConfig {
   max: number;
@@ -15,37 +23,47 @@ export interface StaggerMeter {
   tick(dtSeconds: number): void;
 }
 
+function decayRates(config: { decayPerSecond?: number; decayDelayMs?: number }): MeterRates {
+  return {
+    decay: Math.max(0, config.decayPerSecond ?? 0),
+    decayDelay: Math.max(0, config.decayDelayMs ?? 0) / 1000,
+  };
+}
+
 /**
  * Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
  *
  * @capability stagger-meter build toward a stagger/poise-break threshold from landed hits
  */
 export function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter {
-  const meter: AccumulatorMeter = createAccumulatorMeter({
-    max: config.max,
-    mode: "hold",
-    decayPerSecond: config.decayPerSecond ?? 0,
-    decayDelayMs: config.decayDelayMs ?? 0,
-  });
+  const rates = decayRates(config);
+  let meter: MeterState = createMeter({ current: 0, max: config.max, min: 0 });
+  let broken = false;
 
   return {
     add(amount) {
-      return meter.add(amount).fired;
+      const change = changeMeter(meter, amount);
+      meter = change.meter;
+      const fired = amount > 0 && change.change.hitMax && !broken;
+      if (fired) broken = true;
+      return fired;
     },
     broke() {
-      return meter.broke();
+      return broken;
     },
     value() {
-      return meter.value();
+      return meter.pool.current;
     },
     fraction() {
-      return meter.fraction();
+      return statPoolFraction(meter.pool);
     },
     recover() {
-      meter.reset();
+      meter = createMeter({ current: 0, max: config.max, min: 0 });
+      broken = false;
     },
     tick(dtSeconds) {
-      meter.tick(dtSeconds);
+      // A broken gauge holds its value; the timers still advance so decay resumes from its delay.
+      meter = tickMeter(meter, broken ? {} : rates, dtSeconds).meter;
     },
   };
 }
@@ -76,25 +94,30 @@ export interface BuildupMeter {
  * @capability stagger-meter accumulate an ailment buildup (bleed, freeze) until it procs
  */
 export function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter {
-  const meter: AccumulatorMeter = createAccumulatorMeter({
-    max: config.max,
-    mode: "reset",
-    decayPerSecond: config.decayPerSecond ?? 0,
-    decayDelayMs: config.decayDelayMs ?? 0,
-  });
+  const rates = decayRates(config);
+  let meter: MeterState = createMeter({ current: 0, max: config.max, min: 0 });
 
   return {
     add(amount) {
-      return meter.add(amount).fired ? { status: config.status, durationMs: config.durationMs } : null;
+      const change = changeMeter(meter, amount);
+      meter = change.meter;
+      if (!(amount > 0 && change.change.hitMax)) return null;
+      // The proc consumes the fill; whatever did not fit starts the next buildup.
+      meter = {
+        sinceDrop: meter.sinceDrop,
+        sinceFill: meter.sinceFill,
+        pool: createStatPool({ current: change.change.overflow, max: meter.pool.max, min: meter.pool.min }),
+      };
+      return { status: config.status, durationMs: config.durationMs };
     },
     value() {
-      return meter.value();
+      return meter.pool.current;
     },
     fraction() {
-      return meter.fraction();
+      return statPoolFraction(meter.pool);
     },
     tick(dtSeconds) {
-      meter.tick(dtSeconds);
+      meter = tickMeter(meter, rates, dtSeconds).meter;
     },
   };
 }
