@@ -1,12 +1,9 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
-import {
-  createPoliceResponse,
-  DEFAULT_POLICE_TUNING,
-  type PoliceResponse,
-  type PoliceResponseState,
-  type PoliceTuning,
-} from "@jgengine/core/ai/policeResponse";
+import { createAlertLevel, type AlertLevel, type AlertLevelState, type AlertStep, type AlertTuning } from "@jgengine/core/ai/alertLevel";
+import { createPacedSchedule, type PacedSchedule, type PacedScheduleState } from "@jgengine/core/time/pacedSchedule";
+import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
+import { annulusRegion, sampleBatch } from "@jgengine/core/world/spatialSample";
 import { createPerception, type PerceptionCandidate, type PerceptionService } from "@jgengine/core/sensor/perception";
 import { advancePursuit, armPursuit, createPursuitState, type PursuitState } from "@jgengine/core/ai/pursuit";
 import { DIFFICULTY_TIERS, type DifficultyProfile } from "@jgengine/core/ai/difficulty";
@@ -15,7 +12,7 @@ import { seededRng } from "@jgengine/core/random/rng";
 import { vehicleById } from "../entities/vehicles/catalog";
 import type { Driving } from "./driving";
 import { landHit } from "../combat/hitModel";
-import { MAX_STARS, PURSUIT_STARS, wantedStore, type WantedSnapshot } from "./shared";
+import { MAX_STARS, PURSUIT_STARS, wantedStore, type SearchAreaSnapshot, type WantedSnapshot } from "./shared";
 
 /** Cruiser driving skill by wanted stars: 3★ rookies drive sloppy, 5★ interceptors drive sharp. */
 const CRUISER_SKILL: readonly DifficultyProfile[] = [
@@ -63,28 +60,52 @@ export function cruiserGoal(
   };
 }
 
-/**
- * Harbor Heat's HHPD policy over the shared response: five tiers, a slow bleed once the trail goes
- * cold, and a spawn ring big enough that a cruiser arrives from the next block rather than on top of
- * the player.
- */
-const POLICE_TUNING: Partial<PoliceTuning> = {
-  tiers: [
-    { response: "investigate", threshold: 50, pursuers: 1, searchRadius: 26, roadblocks: 0 },
-    { response: "investigate", threshold: 120, pursuers: 2, searchRadius: 30, roadblocks: 0 },
-    { response: "pursue", threshold: 210, pursuers: 2, searchRadius: 34, roadblocks: 0 },
-    { response: "pursue", threshold: 320, pursuers: 3, searchRadius: 40, roadblocks: 0 },
-    { response: "roadblock", threshold: 450, pursuers: 4, searchRadius: 46, roadblocks: 2 },
-  ],
+/** One step on HHPD's wanted ladder: the stars it shows, what HHPD is doing, and what it puts on the street. */
+export interface WantedTier {
+  /** Stars the HUD shows at this step; every rule (cruisers, arrest fines, courier heat) reads this same number. */
+  stars: number;
+  response: WantedSnapshot["response"];
+  /** Officers this step wants on foot. */
+  officers: number;
+  /** Radius, metres, of the last-sighting search while the trail is fresh. */
+  searchRadius: number;
+}
+
+/** Below the first step HHPD is only on patrol: no stars, no search, nobody looking for you. */
+const PATROL: WantedTier = { stars: 0, response: "patrol", officers: 0, searchRadius: 0 };
+
+/** HHPD's five steps: who turns up, how many, and how wide they work the last sighting. */
+const TIERS: readonly ThresholdBoundary<WantedTier>[] = [
+  { at: 50, id: { stars: 1, response: "investigate", officers: 1, searchRadius: 26 } },
+  { at: 120, id: { stars: 2, response: "investigate", officers: 2, searchRadius: 30 } },
+  { at: 210, id: { stars: 3, response: "pursue", officers: 2, searchRadius: 34 } },
+  { at: 320, id: { stars: 4, response: "pursue", officers: 3, searchRadius: 40 } },
+  { at: 450, id: { stars: 5, response: "roadblock", officers: 4, searchRadius: 46 } },
+];
+
+/** A slow bleed once the trail goes cold, a beat of "still hot" after the last crime, and five tiers of response. */
+const HUNT: AlertTuning<WantedTier> = {
+  tiers: TIERS,
   decayPerSecond: 9,
   decayDelaySeconds: 3,
   escapeSeconds: 8,
+  sightGraceSeconds: 0.25,
   standDownSeconds: 4,
-  searchGrowthPerSecond: 1.4,
-  searchRadiusMax: 90,
-  spawnRingRadius: [44, 62],
-  seed: 20260712,
+  hiddenRate: 3,
 };
+
+/** Where the search stops growing, and how fast it grows while the trail stays cold. */
+const SEARCH_RADIUS_MAX = 90;
+const SEARCH_GROWTH_PER_SECOND = 1.4;
+
+/** Where a new unit arrives: from the next block, never on top of the player. */
+const SPAWN_RING: readonly [number, number] = [44, 62];
+const RING_SEED = 20260712;
+
+/** Seconds between officer waves at a star count; the floor keeps a five-star street from becoming a wall of cops. */
+const officerPace = (stars: number): number => Math.max(2, 8 - stars * 1.2);
+/** Seconds between interceptor arrivals once the chase is on. */
+const CRUISER_PACE_SECONDS = 9;
 
 /**
  * A witness is anyone who can see the street: pedestrians, named residents and officers. HHPD only
@@ -105,27 +126,30 @@ const COP_SIGHT_RANGE = 26;
 /** How far past the last sighting the player can get before cruisers lose the chase and search again. */
 const CHASE_RADIUS = 34;
 
+/** The stars a tier shows, or none below the first step. */
+function starsOf(tier: WantedTier | null): number {
+  return tier === null ? 0 : Math.min(MAX_STARS, tier.stars);
+}
+
 /**
- * The pursuit slice: HHPD's wanted response over the shared `ai/policeResponse` primitive, the cops
- * that search the last sighting, and the cruiser cars — all keyed off the player's world position,
- * which it reads through the {@link Driving} seam. Heat only rises while a witness has the player in
- * view, the search area sits where that witness last saw them, and the heat bleeds once nobody does.
- * Cruiser cars reuse driving's vehicle registry (`makeCarSim`/`refreshClamp`/`dropCarSim`).
- */
-/**
- * What a reload has to keep or the difficulty silently changes: the heat curve, the sight timer, the
- * search area's anchor and the tier's own counters, plus the pursuit's peak tier and cadence clocks.
- * The per-officer AI state (`copPursuit`, `copSearchAngle`, `cruiserDrivers`) is keyed by entity id and
- * rebuilt from the officers that respawn, so it is deliberately not carried.
+ * What a reload has to keep or the difficulty silently changes: the alert level's own state (the
+ * heat curve, the sight timer, the last sighting and the counters), the dispatch clocks, the
+ * pursuit's peak tier, and the spawn ring's stream cursor. The per-officer AI state (`copPursuit`,
+ * `copSearchAngle`, `cruiserDrivers`) is keyed by entity id and rebuilt from the officers that
+ * respawn, so it is deliberately not carried.
  */
 export interface PursuitSave {
-  police: PoliceResponseState;
+  /** The alert level: heat, its clocks, the last sighting and the counters. */
+  alert: AlertLevelState<WantedTier>;
   peakStars: number;
   lastNoticeTier: number;
-  copTimer: number;
-  copCounter: number;
-  cruiserTimer: number;
+  /** The officer wave clock, so a reload does not restart a wave. */
+  officerPace: PacedScheduleState;
+  officerCounter: number;
+  cruiserPace: PacedScheduleState;
   cruiserCounter: number;
+  /** The ring stream's cursor, so a reload keeps the same arrival points. */
+  ringCursor: number;
 }
 
 /** Whether a would-be witness keeps quiet: a resident on a block the player holds, say. */
@@ -151,6 +175,13 @@ export interface Pursuit {
   tickCruisers(ctx: GameContext, dt: number): void;
 }
 
+/**
+ * The pursuit slice: HHPD's wanted response over the shared `ai/alertLevel` primitive, the cops that
+ * search the last sighting, and the cruiser cars — all keyed off the player's world position, which it
+ * reads through the {@link Driving} seam. Heat only rises while a witness has the player in view, the
+ * search area sits where that witness last saw them, and the heat bleeds once nobody does. Cruiser
+ * cars reuse driving's vehicle registry (`makeCarSim`/`refreshClamp`/`dropCarSim`).
+ */
 export function createPursuit(driving: Driving): Pursuit {
   let witnessRoster: string[] = [];
   let hiddenNow = false;
@@ -161,22 +192,30 @@ export function createPursuit(driving: Driving): Pursuit {
     hearingRange: 0,
     memorySeconds: 12,
   });
-  function freshPolice(): PoliceResponse {
-    return createPoliceResponse({
+  function freshAlert(): AlertLevel<WantedTier> {
+    return createAlertLevel<WantedTier>({
       witness: perception,
       observers: () => witnessRoster,
-      suspectId: "sighting-player",
-      ...POLICE_TUNING,
+      targetId: "sighting-player",
+      tuning: HUNT,
     });
   }
-  let police: PoliceResponse = freshPolice();
+  let alert = freshAlert();
   let peakStars = 0;
-  let copTimer = 0;
-  let copCounter = 0;
   let lastNoticeTier = 0;
+  let lastArea: SearchAreaSnapshot | null = null;
   const rng = seededRng("harbor-heat-cops");
+  /** The arrival ring keeps its own stream so a reload repeats where units came from. */
+  const ringRng = seededRng(RING_SEED);
+  const officerClock: PacedSchedule = createPacedSchedule({ firstAt: 0, every: officerPace(0) }, rng, { maxPerTick: 1 });
+  const cruiserClock: PacedSchedule = createPacedSchedule({ firstAt: 0, every: CRUISER_PACE_SECONDS }, rng, { maxPerTick: 1 });
+  /**
+   * The world clock does not start at zero, so both dispatch clocks take their start from the first
+   * tick of the pursuit (and again after a bust) rather than from time zero.
+   */
+  let clocksStarted = false;
+  let officerCounter = 0;
   let cruiserCounter = 0;
-  let cruiserTimer = 0;
   /** Per-cop attack-cooldown state, owned by the pursuit primitive instead of stashed on `entity.meta`. */
   const copPursuit = new Map<string, PursuitState>();
   /** Per-cop search beat: the little arc it walks inside the search area while the trail is cold. */
@@ -190,31 +229,39 @@ export function createPursuit(driving: Driving): Pursuit {
   }
 
   function publishWanted(ctx: GameContext): void {
-    const area = police.searchArea();
     wantedStore.write(ctx, {
-      heat: police.wanted().heat,
-      stars: tierStars(police.wanted().tier?.threshold ?? 0),
+      heat: alert.current().value,
+      stars: starsOf(alert.current().tier),
       peakStars,
-      response: police.wanted().response,
-      search: area === null ? null : { center: [area.center[0], area.center[1]], radius: area.radius, lastSeenAt: area.lastSeenAt },
+      response: alert.current().tier?.response ?? PATROL.response,
+      search: lastArea,
     } satisfies WantedSnapshot);
   }
 
-  /**
-   * Tiers are the authored table; stars are its index, so the HUD keeps five pips while every rule
-   * (cruisers, arrest fines, courier heat) reads the same 0..5 number.
-   */
-  function tierStars(threshold: number): number {
-    const tiers = POLICE_TUNING.tiers ?? DEFAULT_POLICE_TUNING.tiers;
-    let stars = 0;
-    for (const tier of tiers) if (threshold >= tier.threshold) stars += 1;
-    return Math.min(MAX_STARS, stars);
+  /** The circle HHPD works: the tier's own radius, grown while the trail stays cold. */
+  function searchAreaOf(step: AlertStep<WantedTier>): SearchAreaSnapshot | null {
+    const tier = step.tier;
+    const anchor = step.anchor;
+    if (tier === null || anchor === null) return null;
+    return {
+      center: [anchor.at[0], anchor.at[1]],
+      radius: Math.min(SEARCH_RADIUS_MAX, tier.searchRadius + step.outOfSightSeconds * SEARCH_GROWTH_PER_SECOND),
+      lastSeenAt: anchor.lastSeenAt,
+    };
   }
 
-  function tierThresholdAt(heat: number): number {
-    let threshold = 0;
-    for (const tier of POLICE_TUNING.tiers ?? DEFAULT_POLICE_TUNING.tiers) if (heat >= tier.threshold) threshold = tier.threshold;
-    return threshold;
+  /** Heat at the first step of a star count, for pricing a pay-off down to it. */
+  function heatForStars(stars: number): number {
+    let at = 0;
+    for (const tier of TIERS) if (tier.id.stars <= stars) at = tier.at;
+    return at;
+  }
+
+  /** One arrival point on the ring around `center`, drawn from the seeded ring stream. */
+  function spawnPointAround(center: readonly [number, number]): readonly [number, number] {
+    const region = annulusRegion(center, SPAWN_RING[0], SPAWN_RING[1], { distribution: "radial" });
+    const placed = sampleBatch({ region, rng: ringRng, count: 1 }).points[0];
+    return placed ?? center;
   }
 
   /** Ask every witness near the player what it can see; bounded by roster size, never the whole city. */
@@ -245,12 +292,11 @@ export function createPursuit(driving: Driving): Pursuit {
     const nowMs = clockMs(ctx);
     observeWitnesses(ctx, nowMs);
 
-    const area = police.searchArea();
-    const around: readonly [number, number] = area === null ? [playerPos[0], playerPos[2]] : area.center;
-    const step = police.tick(dt, { nowMs, activePursuers: cops.length, around, hidden: hiddenNow });
-    const wanted = police.wanted();
-    const stars = tierStars(wanted.tier?.threshold ?? 0);
+    const step = alert.tick(dt, { nowMs, activeUnits: cops.length, hidden: hiddenNow });
+    const tier = step.tier;
+    const stars = starsOf(tier);
     peakStars = Math.max(peakStars, stars);
+    lastArea = searchAreaOf(step);
     publishWanted(ctx);
 
     announceTier(ctx, stars);
@@ -268,19 +314,30 @@ export function createPursuit(driving: Driving): Pursuit {
       return;
     }
 
-    if (step.wantPursuers > 0) {
-      copTimer -= dt;
-      if (copTimer <= 0) {
-        copTimer = Math.max(2, 8 - stars * 1.2);
-        copCounter += 1;
-        const [x, z] = step.spawnPoints[0] ?? around;
-        ctx.scene.entity.spawn(stars >= 4 ? "cop_swat" : "cop_patrol", {
-          id: `cop_${copCounter}`,
-          position: [x, ctx.world.groundHeightAt(x, z), z],
-          role: "npc",
-        });
-      }
+    const now = ctx.time.now();
+    if (!clocksStarted) {
+      clocksStarted = true;
+      officerClock.retune({ firstAt: now });
+      cruiserClock.retune({ firstAt: now });
+      officerClock.reset();
+      cruiserClock.reset();
     }
+    const wantOfficers = Math.max(0, (tier === null ? 0 : tier.officers) - cops.length);
+    if (wantOfficers === 0) {
+      officerClock.pause(now);
+      return;
+    }
+    officerClock.resume(now);
+    officerClock.retune({ every: officerPace(stars) });
+    if (officerClock.due(now).length === 0) return;
+    officerCounter += 1;
+    const center: readonly [number, number] = lastArea === null ? [playerPos[0], playerPos[2]] : lastArea.center;
+    const [x, z] = spawnPointAround(center);
+    ctx.scene.entity.spawn(stars >= 4 ? "cop_swat" : "cop_patrol", {
+      id: `cop_${officerCounter}`,
+      position: [x, ctx.world.groundHeightAt(x, z), z],
+      role: "npc",
+    });
   }
 
   /** One line in Harbor's voice when HHPD changes what it is doing, plus the engine's own deny cue. */
@@ -314,7 +371,7 @@ export function createPursuit(driving: Driving): Pursuit {
     const playerPos = driving.playerWorldPos(ctx);
     if (playerPos === null) return;
     const cops = ctx.scene.entity.list().filter((e) => isCopName(e.name));
-    const area = police.searchArea();
+    const area = lastArea;
 
     for (const cop of cops) {
       const dist = Math.hypot(cop.position[0] - playerPos[0], cop.position[2] - playerPos[2]);
@@ -387,11 +444,10 @@ export function createPursuit(driving: Driving): Pursuit {
   }
 
   function tickCruisers(ctx: GameContext, dt: number): void {
-    const wanted = police.wanted();
-    const level = tierStars(wanted.tier?.threshold ?? 0);
+    const level = starsOf(alert.current().tier);
     const playerPos = driving.playerWorldPos(ctx);
     if (playerPos === null) return;
-    const area = police.searchArea();
+    const area = lastArea;
     const searchCenter: readonly [number, number] = area === null ? [playerPos[0], playerPos[2]] : area.center;
     /**
      * Cruisers drive to the last sighting; they only turn for the player once they can see them. The
@@ -402,24 +458,20 @@ export function createPursuit(driving: Driving): Pursuit {
     const target: readonly [number, number] = chasing ? [playerPos[0], playerPos[2]] : searchCenter;
     const cruisers = ctx.scene.entity.list().filter((e) => e.id.startsWith("cruiser_"));
 
-    if (level >= PURSUIT_STARS) {
-      cruiserTimer -= dt;
-      if (cruiserTimer <= 0 && cruisers.length < level - 1) {
-        cruiserTimer = 9;
-        cruiserCounter += 1;
-        const angle = rng() * Math.PI * 2;
-        const x = target[0] + Math.sin(angle) * 60;
-        const z = target[1] + Math.cos(angle) * 60;
-        const id = `cruiser_${cruiserCounter}`;
-        ctx.scene.entity.spawn("car_cop", { id, position: [x, ctx.world.groundHeightAt(x, z), z], role: "prop" });
-        const copDef = vehicleById("car_cop")!;
-        if (copDef.dynamics.type === "ground") {
-          driving.cruiserVehicles.set(
-            id,
-            driving.makeCarSim(id, copDef.dynamics.tuning, copDef.collisionRadius, [x, 0, z], Math.atan2(target[0] - x, target[1] - z)),
-          );
-          cruiserDrivers.set(id, createDriverState(target[0], target[1]));
-        }
+    if (level >= PURSUIT_STARS && cruisers.length < level - 1 && cruiserClock.due(ctx.time.now()).length > 0) {
+      cruiserCounter += 1;
+      const angle = rng() * Math.PI * 2;
+      const x = target[0] + Math.sin(angle) * 60;
+      const z = target[1] + Math.cos(angle) * 60;
+      const id = `cruiser_${cruiserCounter}`;
+      ctx.scene.entity.spawn("car_cop", { id, position: [x, ctx.world.groundHeightAt(x, z), z], role: "prop" });
+      const copDef = vehicleById("car_cop")!;
+      if (copDef.dynamics.type === "ground") {
+        driving.cruiserVehicles.set(
+          id,
+          driving.makeCarSim(id, copDef.dynamics.tuning, copDef.collisionRadius, [x, 0, z], Math.atan2(target[0] - x, target[1] - z)),
+        );
+        cruiserDrivers.set(id, createDriverState(target[0], target[1]));
       }
     }
 
@@ -478,12 +530,12 @@ export function createPursuit(driving: Driving): Pursuit {
 
   return {
     addHeat(_ctx, amount) {
-      if (amount > 0) police.reportCrime(amount);
+      if (amount > 0) alert.report(amount);
     },
     forgiveHeat(ctx, amount) {
-      const left = police.forgive(Math.max(0, amount));
+      alert.forgive(Math.max(0, amount));
       publishWanted(ctx);
-      return tierStars(tierThresholdAt(left));
+      return starsOf(alert.current().tier);
     },
     setHidden(hidden) {
       hiddenNow = hidden;
@@ -492,49 +544,54 @@ export function createPursuit(driving: Driving): Pursuit {
     setWitnessFilter(filter) {
       quiet = filter;
     },
-    heatForStars(stars) {
-      const tiers = POLICE_TUNING.tiers ?? DEFAULT_POLICE_TUNING.tiers;
-      return stars <= 0 ? 0 : (tiers[Math.min(tiers.length, stars) - 1]?.threshold ?? 0);
-    },
+    heatForStars,
     clearWanted(ctx) {
-      police = freshPolice();
+      alert = freshAlert();
       witnessRoster = [];
       peakStars = 0;
       lastNoticeTier = 0;
+      lastArea = null;
+      clocksStarted = false;
+      officerClock.reset();
+      cruiserClock.reset();
       copPursuit.clear();
       copSearchAngle.clear();
       cruiserDrivers.clear();
       publishWanted(ctx);
     },
     snapshot: () => ({
-      police: police.state(),
+      alert: alert.state(),
       peakStars,
       lastNoticeTier,
-      copTimer,
-      copCounter,
-      cruiserTimer,
+      officerPace: officerClock.snapshot(),
+      officerCounter,
+      cruiserPace: cruiserClock.snapshot(),
       cruiserCounter,
+      ringCursor: ringRng.state(),
     }),
     restore(ctx, state) {
-      police.restore(state.police);
+      alert.restore(state.alert);
       peakStars = state.peakStars;
       lastNoticeTier = state.lastNoticeTier;
-      copTimer = state.copTimer;
-      copCounter = state.copCounter;
-      cruiserTimer = state.cruiserTimer;
+      officerClock.restore(state.officerPace);
+      officerCounter = state.officerCounter;
+      cruiserClock.restore(state.cruiserPace);
       cruiserCounter = state.cruiserCounter;
+      ringRng.restore(state.ringCursor);
+      // A restored document carries the clocks forward from the saved instant, never a fresh start.
+      clocksStarted = true;
+      lastArea = null;
       // Publish the restored heat so the HUD and every rule read what the reload kept.
       publishWanted(ctx);
     },
     wanted: () => {
-      const current = police.wanted();
-      const area = police.searchArea();
+      const current = alert.current();
       return {
-        heat: current.heat,
-        stars: tierStars(current.tier?.threshold ?? 0),
+        heat: current.value,
+        stars: starsOf(current.tier),
         peakStars,
-        response: current.response,
-        search: area === null ? null : { center: [area.center[0], area.center[1]], radius: area.radius, lastSeenAt: area.lastSeenAt },
+        response: current.tier?.response ?? PATROL.response,
+        search: lastArea,
       };
     },
     tickWanted,

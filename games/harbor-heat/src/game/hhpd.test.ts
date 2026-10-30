@@ -86,8 +86,9 @@ describe("HHPD heat is witness-gated", () => {
     expect(seen!.radius).toBeGreaterThan(0);
 
     // The player breaks line of sight and runs: HHPD keeps searching where they were seen.
+    unwatch(ctx);
     ctx.scene.entity.setPose(ctx.player.userId, {
-      position: [sighting[0] + 70, ctx.world.groundHeightAt(sighting[0] + 70, sighting[2]), sighting[2]],
+      position: [sighting[0] + 200, ctx.world.groundHeightAt(sighting[0] + 200, sighting[2]), sighting[2]],
     });
     run(ctx, handroll, 1 + STEP);
     const search = handroll.wanted().search!;
@@ -119,6 +120,53 @@ describe("HHPD heat is witness-gated", () => {
     expect(handroll.wanted().heat).toBeLessThan(midHeat);
     expect(handroll.wanted().stars).toBe(0);
     expect(ctx.scene.entity.list().filter((e) => e.name.startsWith("cop_") || e.id.startsWith("cruiser_"))).toHaveLength(0);
+  });
+
+  test("the search area grows while the trail is cold and never passes its cap", () => {
+    const ctx = boot();
+    const handroll = handrollOf(ctx);
+    unwatch(ctx);
+    watch(ctx);
+    step(ctx, handroll);
+    handroll.addHeat(ctx, 500);
+    step(ctx, handroll);
+    const fresh = handroll.wanted().search!;
+    expect(fresh.radius).toBe(46);
+
+    // Nobody is looking any more: the circle grows 1.4 m a second from the tier's own radius.
+    unwatch(ctx);
+    const at = ctx.scene.entity.get(ctx.player.userId)!.position;
+    ctx.scene.entity.setPose(ctx.player.userId, {
+      position: [at[0] + 200, ctx.world.groundHeightAt(at[0] + 200, at[2]), at[2]],
+    });
+    run(ctx, handroll, 4);
+    expect(handroll.wanted().search!.radius).toBeCloseTo(46 + 4 * 1.4, 0);
+
+    for (let second = 0; second < 60; second += 1) {
+      run(ctx, handroll, 1);
+      const search = handroll.wanted().search;
+      if (search !== null) expect(search.radius).toBeLessThanOrEqual(90);
+    }
+  });
+
+  test("officer waves arrive on the star count's own pace", () => {
+    const ctx = boot();
+    const handroll = handrollOf(ctx);
+    const officers = (): number =>
+      ctx.scene.entity.list().filter((e) => e.name === "cop_patrol" || e.name === "cop_swat").length;
+    unwatch(ctx);
+    watch(ctx);
+    step(ctx, handroll);
+    // Two stars want two officers, and the wave pace there is 5.6 seconds.
+    handroll.addHeat(ctx, 130);
+    step(ctx, handroll);
+    expect(handroll.wanted().stars).toBe(2);
+    expect(officers()).toBe(1);
+
+    run(ctx, handroll, 5);
+    expect(officers()).toBe(1);
+    run(ctx, handroll, 1);
+    expect(officers()).toBe(2);
   });
 });
 

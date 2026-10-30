@@ -25,7 +25,7 @@ import {
 } from "./runState";
 
 /** The document's own format version; bump it with {@link migrateHarborSave} when a section changes shape. */
-export const HARBOR_SAVE_VERSION = 1;
+export const HARBOR_SAVE_VERSION = 2;
 
 /**
  * Where every stateful system Harbor Heat mounts keeps its state across a reload. The document holds
@@ -102,8 +102,8 @@ export function isKnownStore(key: string): boolean {
 
 function isPursuitSave(value: unknown): value is PursuitSave {
   if (!isRecord(value)) return false;
-  const police = value["police"];
-  return isRecord(police) && typeof police["heat"] === "object";
+  const alert = value["alert"];
+  return isRecord(alert) && typeof alert["value"] === "number";
 }
 
 function isMissionSave(value: unknown): value is MissionFlags {
