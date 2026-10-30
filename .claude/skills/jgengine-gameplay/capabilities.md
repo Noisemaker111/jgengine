@@ -896,9 +896,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createStanding` (function) · `import { createStanding } from "@jgengine/core/progression/standing"`
 
-## stat-graph — derive game-defined stats from named inputs with provenance and preview
+## stat-graph — fold ordered add, multiply, override and clamp contributions onto one value
 
+- `applyStatOp` (function) · `import { applyStatOp } from "@jgengine/core/progression/statGraph"`
+- `boundStatValue` (function) · `import { boundStatValue } from "@jgengine/core/progression/statGraph"`
 - `createStatGraph` (function) · `import { createStatGraph } from "@jgengine/core/gameplay"`
+- `foldStatContributions` (function) · `import { foldStatContributions } from "@jgengine/core/progression/statGraph"`
 
 ## stat-graph-bridge — feed an existing StatModifierSet into a stat-graph source
 

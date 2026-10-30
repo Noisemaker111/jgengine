@@ -210,16 +210,6 @@
 - `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
 - `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
 
-## @jgengine/core/cards/modifierPipeline
-
-- `Modifier` (interface): interface Modifier<V> { id: string; source?: string; apply: (value: V, context: PipelineContext<V>) => V } — ⚠ undocumented
-- `ModifierPipeline` (interface): interface ModifierPipeline<V> { add(modifier: Modifier<V>): void; insertAt(index: number, modifier: Modifier<V>): void; remove(id: string): boolean; clear(): void; list(): readonly Modifier<V>[]; run(base: V): PipelineResult<V> } — ⚠ undocumented
-- `PipelineContext` (interface): interface PipelineContext<V> { base: V; index: number; trace: readonly TraceStep<V>[] } — ⚠ undocumented
-- `PipelineResult` (interface): interface PipelineResult<V> { base: V; value: V; trace: readonly TraceStep<V>[] } — ⚠ undocumented
-- `TraceStep` (interface): interface TraceStep<V> { id: string; source?: string | undefined; index: number; before: V; after: V; changed: boolean } — ⚠ undocumented
-- `createModifierPipeline` (function): function createModifierPipeline<V>(initial: readonly Modifier<V>[] = [], equals: (a: V, b: V) => boolean = Object.is): ModifierPipeline<V> — ⚠ undocumented
-- `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
-
 ## @jgengine/core/chat/chat
 
 - `Chat` (interface): interface Chat { register(def: ChatChannelDef): void; channels(): ChatChannelDef[]; send(fromUserId: string, body: string): ChatSendResult; send(fromUserId: string, channelId: string, body: string): ChatSendResult; recent(options?: {limit?: number; channe… — ⚠ undocumented
@@ -1894,7 +1884,6 @@
 - `rideQueueCostWeight` (function): function rideQueueCostWeight(taste: RideTaste): number — Score points per second of queue wait: a guest's own tolerance is the denominator. A guest who merges rides into a brain that also scores food and exits uses this as its `costWeight`.
 - `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
 - `rollLoot` (function): function rollLoot(catalog: LootCatalog, rng: () => number, options: LootRollOptions = {}): LootItem — Roll one item from a catalog: a base and maker, a weighted rarity, one part per slot, rarity-count affixes, level-scaled stats and a name composed from maker, rarity, part, affix words and base. Deterministic for a given `rng`; every field it reads is caller data. Validate a catalog built outside {@link createLootRoller} once with {@link assertLootCatalog} before rolling from it.
-- `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
 - `scoreLootStats` (function): function scoreLootStats(stats: Readonly<Record<string, number>>, options: Pick<LootComparisonOptions, "weights" | "lowerIsBetter"> = {}): number — One stat block's weighted score: the sum of `value × weight`, negated for stats listed in `lowerIsBetter`. Pair it with {@link lootStatContributions} when a caller also needs the split.
 - `seededRng` (function): function seededRng(seed: string | number): SeededRng — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
@@ -2733,6 +2722,7 @@
 
 ## @jgengine/core/progression/statGraph
 
+- `StatBounds` (interface): interface StatBounds — Bounds of a caller-owned value, applied in the order min, max, then rounding.
 - `StatContribution` (interface): interface StatContribution — One folded contribution to a value, retained so a sheet can explain "why is this value 42?" — every step carries the source that produced it.
 - `StatContributionStep` (interface): interface StatContributionStep extends StatContribution — One line of a provenance trace: a contribution plus the running total after it folds in.
 - `StatDeriveContext` (interface): interface StatDeriveContext — The read-only view a derived formula gets: resolved values of its declared dependencies.
@@ -2745,7 +2735,10 @@
 - `StatOp` (type): type StatOp = "add" | "mul" | "override" | "clampMin" | "clampMax" — How a single contribution folds into a running value.
 - `StatSheet` (interface): interface StatSheet — A live per-entity instance of a {@link StatGraph}: mutable base values and modifier sources over a shared schema.
 - `StatSheetState` (interface): interface StatSheetState — Plain-data, JSON-safe sheet state: input base values plus registered modifier sources.
+- `applyStatOp` (function): function applyStatOp(value: number, op: StatOp, operand: number): number — Apply one {@link StatOp} to a running value — the engine's one definition of what add, multiply, override and clamp mean.
+- `boundStatValue` (function): function boundStatValue(value: number, bounds: StatBounds): number — Clamp and round a value to {@link StatBounds} — the same bounds a stat input or derived node applies.
 - `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.
+- `foldStatContributions` (function): function foldStatContributions(base: number, contributions: Iterable<StatContribution>): number — Fold contributions onto `base` in the order given, with no reordering — the stack a caller applies to one number (a damage roll, a move speed, a loot weight) without building a graph. A stat graph sorts its sources by op first; an ordered stack keeps the caller's sequence.
 - `statModifierContributions` (function): function statModifierContributions<TStat extends string>(source: string, set: StatModifierSet<TStat>): Record<string, StatContribution[]> — Bridge the shared {@link StatModifierSet} shape (add/multiply, used by talents, items, and buffs) into stat-graph contributions, so a ranked talent tree or gear roll feeds the graph as one named source instead of a parallel store.
 
 ## @jgengine/core/progression/statPoints

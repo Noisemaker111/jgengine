@@ -162,7 +162,6 @@
     "./camera/shake/shakeChannel.draw",
     "./cards/cardPile",
     "./cards/cards.view",
-    "./cards/modifierPipeline",
     "./cave/Cave.draw",
     "./cave/caveLayout",
     "./cave/caveMesh",
