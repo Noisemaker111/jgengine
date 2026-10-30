@@ -3,8 +3,13 @@ import { describe, expect, test } from "bun:test";
 import { createStanding } from "@jgengine/core/progression/standing";
 import { createUpgradeTree, type UpgradeNodeDef, type UpgradeState } from "@jgengine/core/progression/upgrades";
 
+const YARD_TIERS = [
+  { id: "unknown", min: 0, relation: "neutral" as const },
+  { id: "known", min: 20, relation: "friendly" as const },
+];
+
 const STANDING = createStanding({
-  tracks: [{ id: "yard" }],
+  tracks: [{ id: "yard", tiers: YARD_TIERS }],
   outcomes: [{ id: "escape", impacts: { yard: 10 } }],
 });
 

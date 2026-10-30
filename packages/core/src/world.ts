@@ -166,12 +166,7 @@ export {
   type SequenceState,
 } from "./cutscene/sequenceDirector";
 export { createFactionGraph, createFactionRoster, type FactionDef } from "./faction/factions";
-export {
-  DEFAULT_REPUTATION_TIERS,
-  createReputationLedger,
-  effectiveRelation,
-  tierForStanding,
-} from "./faction/reputation";
+export { createReputationLedger, effectiveRelation, tierForStanding } from "./faction/reputation";
 export { createFireLandscape, type FireLandscape } from "./fire/fireLandscape";
 export {
   aircraftAttitudeQuaternion,

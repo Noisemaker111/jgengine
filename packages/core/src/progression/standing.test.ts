@@ -77,11 +77,12 @@ describe("standing", () => {
   });
 
   test("authored content is checked at load", () => {
-    expect(() => createStanding({ tracks: [{ id: "a" }, { id: "a" }] })).toThrow(/declared twice/);
-    expect(() => createStanding({ tracks: [{ id: "a" }], outcomes: [{ id: "x", impacts: { b: 1 } }] })).toThrow(/unknown track "b"/);
-    expect(() => createStanding({ tracks: [{ id: "a", min: 5, max: 1 }] })).toThrow(/min <= max/);
-    expect(() => createStanding({ tracks: [{ id: "a", initial: 9, max: 5 }] })).toThrow(/outside its bounds/);
-    expect(() => createStanding({ tracks: [{ id: "a" }], outcomes: [{ id: "x", impacts: {} }] })).toThrow(/moves no track/);
+    expect(() => createStanding({ tracks: [{ id: "a", tiers: DISTRICT_TIERS }, { id: "a", tiers: DISTRICT_TIERS }] })).toThrow(/declared twice/);
+    expect(() => createStanding({ tracks: [{ id: "a", tiers: DISTRICT_TIERS }], outcomes: [{ id: "x", impacts: { b: 1 } }] })).toThrow(/unknown track "b"/);
+    expect(() => createStanding({ tracks: [{ id: "a", tiers: DISTRICT_TIERS, min: 5, max: 1 }] })).toThrow(/min <= max/);
+    expect(() => createStanding({ tracks: [{ id: "a", tiers: DISTRICT_TIERS, initial: 9, max: 5 }] })).toThrow(/outside its bounds/);
+    expect(() => createStanding({ tracks: [{ id: "a", tiers: DISTRICT_TIERS }], outcomes: [{ id: "x", impacts: {} }] })).toThrow(/moves no track/);
+    expect(() => createStanding({ tracks: [{ id: "a", tiers: [] }] })).toThrow(/at least one tier/);
   });
 
   test("snapshot and restore round-trip every track and discard unknown ones", () => {

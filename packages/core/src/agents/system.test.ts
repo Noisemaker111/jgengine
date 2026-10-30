@@ -14,11 +14,16 @@ const OPTIONS: readonly UtilityOption[] = [
   { id: "idle", base: 0.01 },
 ];
 
+const TIERS = [
+  { at: 60, id: "good", label: "Good" },
+  { at: 0, id: "low", label: "Low" },
+];
+
 function park(extra: Partial<Parameters<typeof createAgentSystem>[0]> = {}) {
   return createAgentSystem({
     needs: NEEDS,
     options: OPTIONS,
-    mood: { weights: [{ need: "hunger", weight: 2 }, { need: "fun", weight: 1 }] },
+    mood: { tiers: TIERS, weights: [{ need: "hunger", weight: 2 }, { need: "fun", weight: 1 }] },
     clock: { now: () => 0 },
     ...extra,
   });
@@ -113,6 +118,7 @@ describe("createAgentSystem", () => {
     const system = createAgentSystem({
       needs: NEEDS,
       options: OPTIONS,
+      mood: { tiers: TIERS },
       clock: { now: () => now },
       members: [
         {
@@ -148,6 +154,7 @@ describe("createAgentSystem", () => {
     const second = createAgentSystem({
       needs: NEEDS,
       options: OPTIONS,
+      mood: { tiers: TIERS },
       rng: () => 0.5,
       storage: { read: () => state, write: () => {} },
       members: [{ id: "a" }],

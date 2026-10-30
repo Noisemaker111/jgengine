@@ -1,30 +1,36 @@
 import { describe, expect, test } from "bun:test";
 import {
   createReputationLedger,
-  DEFAULT_REPUTATION_TIERS,
   effectiveRelation,
+  type ReputationTier,
   tierForStanding,
 } from "@jgengine/core/faction/reputation";
 
+const TIERS: readonly ReputationTier[] = [
+  { id: "outcast", min: -100, relation: "hostile" },
+  { id: "neutral", min: 0, relation: "neutral" },
+  { id: "friend", min: 100, relation: "friendly" },
+  { id: "ally", min: 200, relation: "friendly" },
+];
+
 describe("tierForStanding", () => {
-  test("maps standings to the classic reputation ladder", () => {
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, 0).id).toBe("neutral");
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, 2999).id).toBe("neutral");
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, 3000).id).toBe("friendly");
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, 42000).id).toBe("exalted");
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, -6000).id).toBe("hostile");
+  test("maps standings to the caller's ladder", () => {
+    expect(tierForStanding(TIERS, 0).id).toBe("neutral");
+    expect(tierForStanding(TIERS, 99).id).toBe("neutral");
+    expect(tierForStanding(TIERS, 100).id).toBe("friend");
+    expect(tierForStanding(TIERS, 200).id).toBe("ally");
+    expect(tierForStanding(TIERS, -50).id).toBe("outcast");
   });
 
   test("standings below the lowest tier clamp to the bottom tier", () => {
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, -999999).id).toBe("hated");
+    expect(tierForStanding(TIERS, -999999).id).toBe("outcast");
   });
 
   test("a standing exactly on a tier floor takes that tier, one below stays under it", () => {
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, 9000).id).toBe("honored");
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, 8999).id).toBe("friendly");
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, -3000).id).toBe("unfriendly");
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, -42000).id).toBe("hated");
-    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, -42001).id).toBe("hated");
+    expect(tierForStanding(TIERS, 100).id).toBe("friend");
+    expect(tierForStanding(TIERS, 99.99).id).toBe("neutral");
+    expect(tierForStanding(TIERS, -100).id).toBe("outcast");
+    expect(tierForStanding(TIERS, -100.01).id).toBe("outcast");
   });
 
   test("a tier list with nothing in it is refused", () => {
@@ -34,7 +40,7 @@ describe("tierForStanding", () => {
 
 describe("reputation ledger", () => {
   test("default standing is zero / neutral", () => {
-    const ledger = createReputationLedger();
+    const ledger = createReputationLedger({ tiers: TIERS });
     expect(ledger.standing("player", "gravecallers")).toBe(0);
     expect(ledger.tier("player", "gravecallers").id).toBe("neutral");
     expect(ledger.relation("player", "gravecallers")).toBe("neutral");
@@ -42,40 +48,40 @@ describe("reputation ledger", () => {
   });
 
   test("gains accumulate and cross tier thresholds", () => {
-    const ledger = createReputationLedger();
-    expect(ledger.gain("player", "wardens", 3000)).toBe(3000);
-    expect(ledger.tier("player", "wardens").id).toBe("friendly");
+    const ledger = createReputationLedger({ tiers: TIERS });
+    expect(ledger.gain("player", "wardens", 100)).toBe(100);
+    expect(ledger.tier("player", "wardens").id).toBe("friend");
     expect(ledger.relation("player", "wardens")).toBe("friendly");
-    ledger.gain("player", "wardens", 6000);
-    expect(ledger.tier("player", "wardens").id).toBe("honored");
+    ledger.gain("player", "wardens", 100);
+    expect(ledger.tier("player", "wardens").id).toBe("ally");
   });
 
   test("initial standings seed a starting relation", () => {
-    const ledger = createReputationLedger({ initial: { gravecallers: -6000 } });
-    expect(ledger.standing("player", "gravecallers")).toBe(-6000);
+    const ledger = createReputationLedger({ tiers: TIERS, initial: { gravecallers: -50 } });
+    expect(ledger.standing("player", "gravecallers")).toBe(-50);
     expect(ledger.relation("player", "gravecallers")).toBe("hostile");
     expect(ledger.hasStanding("player", "gravecallers")).toBe(true);
   });
 
   test("clamps to configured bounds", () => {
-    const ledger = createReputationLedger({ min: -6000, max: 42000 });
-    expect(ledger.gain("player", "wardens", 999999)).toBe(42000);
-    expect(ledger.gain("player", "gravecallers", -999999)).toBe(-6000);
+    const ledger = createReputationLedger({ tiers: TIERS, min: -100, max: 200 });
+    expect(ledger.gain("player", "wardens", 999999)).toBe(200);
+    expect(ledger.gain("player", "gravecallers", -999999)).toBe(-100);
   });
 
   test("standings snapshot merges initial and earned values", () => {
-    const ledger = createReputationLedger({ initial: { gravecallers: -6000, wardens: 0 } });
-    ledger.gain("player", "wardens", 9000);
-    expect(ledger.standings("player")).toEqual({ gravecallers: -6000, wardens: 9000 });
+    const ledger = createReputationLedger({ tiers: TIERS, initial: { gravecallers: -50, wardens: 0 } });
+    ledger.gain("player", "wardens", 150);
+    expect(ledger.standings("player")).toEqual({ gravecallers: -50, wardens: 150 });
   });
 
   test("reset clears one or all factions", () => {
-    const ledger = createReputationLedger();
-    ledger.set("player", "wardens", 9000);
-    ledger.set("player", "gravecallers", -3000);
+    const ledger = createReputationLedger({ tiers: TIERS });
+    ledger.set("player", "wardens", 200);
+    ledger.set("player", "gravecallers", -50);
     ledger.reset("player", "wardens");
     expect(ledger.hasStanding("player", "wardens")).toBe(false);
-    expect(ledger.standing("player", "gravecallers")).toBe(-3000);
+    expect(ledger.standing("player", "gravecallers")).toBe(-50);
     ledger.reset("player");
     expect(ledger.hasStanding("player", "gravecallers")).toBe(false);
   });
@@ -83,18 +89,18 @@ describe("reputation ledger", () => {
 
 describe("effectiveRelation", () => {
   test("reputation standing overrides the base faction relation", () => {
-    const ledger = createReputationLedger({ initial: { gravecallers: -6000 } });
+    const ledger = createReputationLedger({ tiers: TIERS, initial: { gravecallers: -50 } });
     expect(
       effectiveRelation({ base: "hostile", ledger, actorId: "player", factionId: "gravecallers" }),
     ).toBe("hostile");
-    ledger.gain("player", "gravecallers", 9000);
+    ledger.gain("player", "gravecallers", 200);
     expect(
       effectiveRelation({ base: "hostile", ledger, actorId: "player", factionId: "gravecallers" }),
     ).toBe("friendly");
   });
 
   test("falls back to the base relation when the actor has no standing", () => {
-    const ledger = createReputationLedger();
+    const ledger = createReputationLedger({ tiers: TIERS });
     expect(
       effectiveRelation({ base: "hostile", ledger, actorId: "player", factionId: "wildlife" }),
     ).toBe("hostile");
@@ -103,14 +109,14 @@ describe("effectiveRelation", () => {
 
 describe("reputation ledger snapshot", () => {
   test("snapshot and restore replay bit-exactly", () => {
-    const ledger = createReputationLedger({ initial: { guild: 100 }, min: -5000, max: 5000 });
-    ledger.gain("p1", "guild", 2500);
-    ledger.set("p2", "bandits", -4000);
+    const ledger = createReputationLedger({ tiers: TIERS, initial: { guild: 50 }, min: -100, max: 200 });
+    ledger.gain("p1", "guild", 100);
+    ledger.set("p2", "bandits", -80);
     const saved = ledger.snapshot();
     const frozen = JSON.parse(JSON.stringify(saved));
     const play = () => [
-      ledger.gain("p1", "guild", 3000),
-      ledger.gain("p2", "bandits", -2000),
+      ledger.gain("p1", "guild", 100),
+      ledger.gain("p2", "bandits", -20),
       ledger.tier("p1", "guild").id,
       ledger.standings("p2"),
       ledger.hasStanding("p3", "bandits"),
