@@ -1719,7 +1719,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `SHRUB_STEMS` (const) · `import { SHRUB_STEMS } from "@jgengine/core/plants/species/habitReference"`
 - `basalStemCount` (function) · `import { basalStemCount } from "@jgengine/core/plants/species/habitReference"`
 - `branchAzimuthHistogram` (function) · `import { branchAzimuthHistogram } from "@jgengine/core/plants/validation/plantSilhouette"`
+- `crownArchitecture` (function) · `import { crownArchitecture } from "@jgengine/core/plants/validation/crownArchitecture"`
+- `crownArchitectureMisses` (function) · `import { crownArchitectureMisses } from "@jgengine/core/plants/validation/crownArchitecture"`
+- `crownArchitectureTarget` (function) · `import { crownArchitectureTarget } from "@jgengine/core/plants/validation/crownArchitecture"`
 - `crownProfile` (function) · `import { crownProfile } from "@jgengine/core/plants/validation/crownAllometry"`
+- `crownShapeBands` (function) · `import { crownShapeBands } from "@jgengine/core/plants/validation/crownArchitecture"`
 - `crownWidthBandM` (function) · `import { crownWidthBandM } from "@jgengine/core/plants/species/speciesReference"`
 - `forestGrownCrownWidthM` (function) · `import { forestGrownCrownWidthM } from "@jgengine/core/plants/validation/crownAllometry"`
 - `growthCurveAt` (function) · `import { growthCurveAt } from "@jgengine/core/plants/species/speciesReference"`
