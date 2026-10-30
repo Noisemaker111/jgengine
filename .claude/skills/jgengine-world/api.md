@@ -5884,11 +5884,17 @@
 ## @jgengine/core/time/stateSchedule
 
 - `ClearWindowScan` (interface): interface ClearWindowScan { fromSeconds: number; horizonSeconds: number; stepSeconds: number; minDurationSeconds?: number } — ⚠ undocumented · used by `nextClearWindow`: Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window.
+- `PhaseSchedule` (interface): interface PhaseSchedule<T> — The stateful sibling of {@link StateSchedule}: where that one answers "which state is `t`" for any absolute time, this one holds where the phases actually are. A phase with `durationSeconds` ends by itself inside `tick(dt)`; a phase without one holds until the caller says `advance()`, so a match's buy→live→end cycle and a ride's load→ride→unload cycle are the same list with different durations. `snapshot()`/`restore()` round-trip where it stands, so a save resumes mid-phase.
+- `PhaseScheduleConfig` (interface): interface PhaseScheduleConfig<T> — Named states one after another, each ended by its own duration or by the caller.
+- `PhaseScheduleState` (interface): interface PhaseScheduleState — Plain JSON position in a phase schedule.
+- `PhaseSpec` (interface): interface PhaseSpec<T> — One phase of a {@link PhaseSchedule}: a named state that ends on its own duration or when the caller advances it.
+- `PhaseTransition` (interface): interface PhaseTransition<T> — One phase change a {@link PhaseSchedule.tick} made.
 - `SchedulePhase` (interface): interface SchedulePhase<T> { state: T; durationSeconds: number } — ⚠ undocumented
 - `ScheduleSample` (interface): interface ScheduleSample<T> { state: T; index: number; elapsedSeconds: number; remainingSeconds: number; fraction: number } — ⚠ undocumented
 - `ScheduleWindow` (interface): interface ScheduleWindow { start: number; end: number } — ⚠ undocumented · used by `nextClearWindow`: Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window.
 - `StateSchedule` (interface): interface StateSchedule<T> — A deterministic timeline of states — position-in-schedule is a pure function of absolute time, so a forecast preview and the live state can never disagree. One primitive behind zoned weather shifts, hazard cycles, and timetabled machinery: `stateAt`/`sampleAt` for the live state, `nextTransitionAt` for countdowns, `windowsOf`/`nextWindow` for "when is it safe" forecasts.
 - `StateScheduleConfig` (interface): interface StateScheduleConfig<T> { phases: readonly SchedulePhase<T>[]; loop?: boolean; offsetSeconds?: number } — ⚠ undocumented
+- `createPhaseSchedule` (function): function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSchedule<T> — A stateful timeline of named phases, ended by their own durations or by `advance()`.
 - `createStateSchedule` (function): function createStateSchedule<T>(config: StateScheduleConfig<T>): StateSchedule<T> — ⚠ undocumented
 - `nextClearWindow` (function): function nextClearWindow(isClear: (t: number) => boolean, scan: ClearWindowScan): ScheduleWindow | null — Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window. Sampling-based: pick `stepSeconds` at or below half the shortest gap that matters.
 

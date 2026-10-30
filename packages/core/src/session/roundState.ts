@@ -1,3 +1,5 @@
+import { createPhaseSchedule } from "../time/stateSchedule";
+
 export type RoundPhase = string;
 
 /** Default phase-duration shape for the built-in buy/live/end cycle; pass a wider `Record<string, number>` when using a custom `phaseOrder`. */
@@ -145,19 +147,17 @@ export function createRoundState<TPhase extends string>(config: RoundConfig<TPha
   }
 
   let round = 1;
-  let phase: TPhase = order[0]!;
-  let timeLeft = durations[phase] ?? 0;
   let matchOver = false;
   let pendingWinner: string | null = null;
   const hooks = new Set<PhaseEndHook<TPhase>>();
+  const lastPhase = order[order.length - 1]!;
+  const phases = createPhaseSchedule<TPhase>({
+    phases: order.map((state) => ({ state, durationSeconds: durations[state] ?? 0 })),
+    loop: true,
+  });
 
-  function durationOf(next: TPhase): number {
-    return durations[next] ?? 0;
-  }
-
-  function nextPhaseOf(current: TPhase): TPhase {
-    const idx = order.indexOf(current);
-    return idx >= order.length - 1 ? order[0]! : order[idx + 1]!;
+  function remainingSeconds(): number {
+    return matchOver ? 0 : phases.remainingSeconds() ?? 0;
   }
 
   function economyFor(team: string): RoundEconomy {
@@ -184,37 +184,33 @@ export function createRoundState<TPhase extends string>(config: RoundConfig<TPha
     return economy;
   }
 
-  function enter(next: TPhase, events: RoundEvent<TPhase>[]): void {
-    phase = next;
-    timeLeft = durationOf(next);
+  function entry(next: TPhase, events: RoundEvent<TPhase>[]): void {
     events.push({ kind: "phase.start", round, phase: next });
   }
 
-  function endPhase(events: RoundEvent<TPhase>[]): void {
-    const ending = phase;
-    if (ending === order[order.length - 1]) {
+  function endPhase(from: TPhase, to: TPhase, wrapped: boolean, events: RoundEvent<TPhase>[]): void {
+    if (wrapped) {
       if (config.maxRounds !== undefined && round >= config.maxRounds) {
         matchOver = true;
-        events.push({ kind: "phase.end", round, phase: ending, nextPhase: order[0]! });
+        events.push({ kind: "phase.end", round, phase: from, nextPhase: to });
         events.push({ kind: "match.end", round });
-        for (const hook of hooks) hook(ending, order[0]!, round);
+        for (const hook of hooks) hook(from, to, round);
         return;
       }
       round += 1;
       pendingWinner = null;
     }
-    const next = nextPhaseOf(ending);
-    const endedRound = ending === order[order.length - 1] ? round - 1 : round;
-    events.push({ kind: "phase.end", round: endedRound, phase: ending, nextPhase: next });
-    for (const hook of hooks) hook(ending, next, endedRound);
-    enter(next, events);
+    const endedRound = wrapped ? round - 1 : round;
+    events.push({ kind: "phase.end", round: endedRound, phase: from, nextPhase: to });
+    for (const hook of hooks) hook(from, to, endedRound);
+    entry(to, events);
   }
 
   function currentSnapshot(): RoundSnapshot<TPhase> {
     return {
       round,
-      phase,
-      timeLeft: Math.max(0, timeLeft),
+      phase: phases.state(),
+      timeLeft: Math.max(0, remainingSeconds()),
       scores: { ...scores },
       lossStreaks: { ...lossStreaks },
       roles: { ...roles },
@@ -224,14 +220,15 @@ export function createRoundState<TPhase extends string>(config: RoundConfig<TPha
   }
 
   function concludeRoundImpl(winner: string): RoundEvent<TPhase>[] {
-    if (matchOver || !isConcludable(order, phase)) return [];
+    if (matchOver || !isConcludable(order, phases.state())) return [];
     const events: RoundEvent<TPhase>[] = [];
+    const from = phases.state();
     pendingWinner = winner;
     scores[winner] = (scores[winner] ?? 0) + 1;
     events.push({ kind: "round.win", round, winner });
     const economy = settleEconomy(winner);
     events.push({ kind: "round.economy", round, winner, economy });
-    endPhase(events);
+    endPhase(from, phases.advance(), from === lastPhase, events);
     return events;
   }
 
@@ -239,14 +236,13 @@ export function createRoundState<TPhase extends string>(config: RoundConfig<TPha
     tick(dt) {
       if (dt <= 0 || matchOver) return [];
       const events: RoundEvent<TPhase>[] = [];
-      timeLeft -= dt;
-      let guard = 0;
-      while (timeLeft <= 0 && !matchOver && guard < order.length + 2) {
-        const carry = timeLeft;
-        if (isConcludable(order, phase)) pendingWinner = null;
-        endPhase(events);
-        if (!matchOver) timeLeft += carry;
-        guard += 1;
+      for (const step of phases.tick(dt)) {
+        if (isConcludable(order, step.from)) pendingWinner = null;
+        endPhase(step.from, step.to, step.wrapped, events);
+        if (matchOver) {
+          phases.enter(lastPhase);
+          break;
+        }
       }
       return events;
     },
@@ -262,17 +258,23 @@ export function createRoundState<TPhase extends string>(config: RoundConfig<TPha
         hooks.delete(hook);
       };
     },
-    phase: () => phase,
+    phase: () => phases.state(),
     round: () => round,
-    timeLeft: () => Math.max(0, timeLeft),
+    timeLeft: () => Math.max(0, remainingSeconds()),
     score: (team) => scores[team] ?? 0,
     economyFor,
     roleOf: (team) => roles[team],
     snapshot: currentSnapshot,
     restore(next) {
+      const index = order.indexOf(next.phase);
+      const at = index < 0 ? 0 : index;
+      const duration = durations[order[at]!] ?? 0;
+      phases.restore({
+        index: at,
+        elapsedSeconds: Math.max(0, duration - Math.max(0, next.timeLeft)),
+        ended: next.matchOver,
+      });
       round = next.round;
-      phase = next.phase;
-      timeLeft = next.timeLeft;
       matchOver = next.matchOver;
       pendingWinner = next.pendingWinner;
       Object.assign(scores, next.scores);
