@@ -1,23 +1,26 @@
 // @skill jgengine-gameplay
 import { changeMeter, createMeter, tickMeter, type MeterState } from "../stats/statPool";
+import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 
 type Vec3 = readonly [number, number, number];
 
+/** An egg's temperature band in °C, inclusive, and the seconds it survives out of that band before it is lost. */
+export interface BreedingEggSpec {
+  band: readonly [number, number];
+  healthSeconds: number;
+}
+
 /** How one species breeds. */
 export interface BreedingSpecies {
-  /** Egg layers lay a fertilised egg that must stay in its band; carriers grow the young inside the mother and give birth. */
-  mode: "egg" | "carry";
   /** Seconds a pair must stay together to conceive. */
   mateSeconds: number;
   /** How close, in metres, a pair must stand to mate. */
   mateRange: number;
   /** Seconds from conception to laying, or from conception to birth. */
   carrySeconds: number;
-  /** An egg's temperature band in °C, inclusive. Null for a carrier. */
-  incubation: readonly [number, number] | null;
-  /** Seconds an egg survives out of its band before it is lost. */
-  eggHealthSeconds: number;
-  /** Seconds from birth to grown. */
+  /** Set when the young are laid as an egg that hatches in a temperature band; null when the mother carries them to birth. */
+  egg: BreedingEggSpec | null;
+  /** Seconds from birth or hatching to fully grown. */
   maturationSeconds: number;
   /** Seconds a mother waits, between these two, after laying or giving birth before she can mate again. */
   cooldownSeconds: readonly [number, number];
@@ -47,14 +50,16 @@ export interface BreedingSpeeds {
 export interface BreedingOptions<P> {
   /** How a species breeds; null for one that cannot. */
   species(id: string): BreedingSpecies | null;
-  /** What each young one of a pairing will be, rolled when the mother conceives. */
+  /** What each young one of a pairing will be, rolled when the mother conceives; the genes are the game's (inheritValues). */
   conceive(mother: string, father: string, rng: () => number): P;
   /** Seconds between a young one's care requests. */
   careIntervalSeconds: number;
   /** The kinds of care it may ask for, one at random each time. */
   careKinds: readonly string[];
-  /** Chance of twins and of triplets; omitted means one. */
-  multiples?: { twins: number; triplets: number };
+  /** The game's own stage cut points over how far a young one has grown (0-1), resolved with tierAt. */
+  stages: readonly ThresholdBoundary[];
+  /** How many young one pairing has, from the game's own odds; omitted means one. */
+  litter?(rng: () => number): number;
 }
 
 /** A fertilized egg lying where it was laid, carrying its young one's genes `P`; it progresses only inside its incubation band. */
@@ -63,7 +68,7 @@ export interface BreedingEgg<P> {
   species: string;
   mother: string;
   at: Vec3;
-  baby: P;
+  offspring: P;
   /** Incubation done, 0 to 1. */
   progress: number;
   /** Egg health, 0 to 1; it drops out of its temperature and the egg is lost at 0. */
@@ -74,16 +79,18 @@ export interface BreedingEgg<P> {
 export interface BreedingPregnancy<P> {
   mother: string;
   species: string;
-  babies: P[];
+  offspring: P[];
   /** Carrying done, 0 to 1. */
   progress: number;
 }
 
-/** A young one growing into an adult: how far it has grown (0-1), its bond (0-1), the care it wants now and when it next asks. */
-export interface BreedingBaby {
+/** A young one growing up: its stage, how far it has grown (0-1), its bond (0-1), the care it wants now and when it next asks. */
+export interface BreedingOffspring {
   id: string;
   species: string;
-  /** Maturation, 0 to 1. */
+  /** The stage its growth puts it in, from the game's stage list; empty when none is reached. */
+  stage: string;
+  /** Growing, 0 to 1. */
   matured: number;
   /** How much of the bond it has earned, 0 to 1. */
   bond: number;
@@ -99,33 +106,33 @@ export type BreedingEvent<P> =
   | { type: "laid"; egg: BreedingEgg<P> }
   | { type: "hatched"; egg: BreedingEgg<P> }
   | { type: "eggLost"; egg: BreedingEgg<P> }
-  | { type: "born"; mother: string; species: string; baby: P }
-  | { type: "wants"; baby: string; care: string }
-  | { type: "grown"; baby: string; bond: number };
+  | { type: "born"; mother: string; species: string; offspring: P }
+  | { type: "wants"; offspring: string; care: string }
+  | { type: "grown"; offspring: string; bond: number };
 
-/** Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, babies and speeds. */
+/** Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, the growing young and speeds. */
 export interface BreedingSnapshot<P> {
   seq: number;
   mating: Record<string, { father: string; progress: number }>;
   cooldowns: Record<string, number>;
   pregnancies: BreedingPregnancy<P>[];
   eggs: BreedingEgg<P>[];
-  babies: BreedingBaby[];
+  offspring: BreedingOffspring[];
   speeds: BreedingSpeeds;
 }
 
-/** The breeding of a world's tames, made by {@link createBreedingField}. */
+/** The breeding of a world's creatures, made by {@link createBreedingField}. */
 export interface BreedingField<P> {
   /**
    * Pairs mating: each ready mother with the nearest willing male of her kind in range fills her mating bar; apart,
    * it starts over. A full bar lays an egg where she stands or makes her pregnant.
    */
   mate(candidates: readonly MateCandidate[], now: number, dt: number, rng: () => number): BreedingEvent<P>[];
-  /** Eggs incubate in their temperature (and lose health out of it), mothers carry, babies grow and ask for care. */
+  /** Eggs incubate in their temperature (and lose health out of it), mothers carry, the young grow and ask for care. */
   tick(now: number, dt: number, temperatureAt: (at: Vec3) => number, rng: () => number): BreedingEvent<P>[];
-  /** Start raising a hatched or newborn baby: it grows from 0 and first asks for care one interval in. */
-  raise(id: string, species: string, now: number): BreedingBaby;
-  /** Give a baby care: the kind it asked for adds its share of bond and clears the request. Returns the bond gained. */
+  /** Start raising a hatched or newborn young one: it grows from 0 and first asks for care one interval in. */
+  raise(id: string, species: string, now: number): BreedingOffspring;
+  /** Give a young one care: the kind it asked for adds its share of bond and clears the request. Returns the bond gained. */
   care(id: string, kind: string): number;
   /** A mother's mating bar, 0 to 1, or null when she is not mating. */
   matingProgress(mother: string): number | null;
@@ -135,9 +142,10 @@ export interface BreedingField<P> {
   eggs(): readonly Readonly<BreedingEgg<P>>[];
   /** Take an egg out of the world (picked up, eaten); returns it. */
   removeEgg(id: string): BreedingEgg<P> | null;
-  baby(id: string): Readonly<BreedingBaby> | null;
-  babies(): readonly Readonly<BreedingBaby>[];
-  /** A creature gone (killed, released): its mating, pregnancy and baby record go too. */
+  /** The young ones still growing. */
+  offspring(): readonly Readonly<BreedingOffspring>[];
+  offspringOf(id: string): Readonly<BreedingOffspring> | null;
+  /** A creature gone (killed, released): its mating, pregnancy and growing record go too. */
   forget(id: string): void;
   speeds(): BreedingSpeeds;
   setSpeeds(speeds: Partial<BreedingSpeeds>): void;
@@ -151,7 +159,7 @@ interface EggState<P> {
   species: string;
   mother: string;
   at: Vec3;
-  baby: P;
+  offspring: P;
   progress: MeterState;
   health: MeterState;
 }
@@ -159,11 +167,11 @@ interface EggState<P> {
 interface PregnancyState<P> {
   mother: string;
   species: string;
-  babies: P[];
+  offspring: P[];
   progress: MeterState;
 }
 
-interface BabyState {
+interface OffspringState {
   id: string;
   species: string;
   matured: MeterState;
@@ -190,34 +198,26 @@ const viewEgg = <P>(egg: EggState<P>): BreedingEgg<P> => ({
   species: egg.species,
   mother: egg.mother,
   at: egg.at,
-  baby: egg.baby,
+  offspring: egg.offspring,
   progress: fraction(egg.progress),
   health: fraction(egg.health),
 });
 
-const viewBaby = (baby: BabyState): BreedingBaby => ({
-  id: baby.id,
-  species: baby.species,
-  matured: fraction(baby.matured),
-  bond: fraction(baby.bond),
-  wants: baby.wants,
-  nextCareAt: baby.nextCareAt,
-});
-
 /**
- * Tame pairs left together mate, a mother lays a fertilised egg that hatches only kept in its temperature or carries a
- * baby to birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace and
- * ask for care on an interval; each answered request adds its share of bond, full bond when every request in its growing
- * time was answered. Species times, care kinds, the size of a litter and what a young one is all come from the game.
- * @capability breeding tame pairs mate, eggs incubate by temperature or mothers carry, the young grow and bond through care
+ * Pairs left together mate, a mother lays an egg that hatches only in its temperature band or carries her young to
+ * birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace through the
+ * game's stage list and ask for care on an interval; each answered request adds its share of the bond. Species times,
+ * care kinds, stages, the size of a litter and what a young one is all come from the game.
+ * @capability breeding pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care
  */
 export function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> {
-  const multiples = options.multiples ?? { twins: 0, triplets: 0 };
+  const litter = options.litter ?? (() => 1);
+
   let mating = new Map<string, MateState>();
   let cooldowns = new Map<string, number>();
   let pregnancies = new Map<string, PregnancyState<P>>();
   let eggs = new Map<string, EggState<P>>();
-  let babies = new Map<string, BabyState>();
+  let offspring = new Map<string, OffspringState>();
   let speeds: BreedingSpeeds = { ...ONE };
   let seq = 0;
 
@@ -230,13 +230,21 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
     const [low, high] = species.cooldownSeconds;
     cooldowns.set(mother, now + (low + rng() * (high - low)) / speeds.pair);
   };
-  const litter = (rng: () => number): number => {
-    const roll = rng();
-    return roll < multiples.triplets ? 3 : roll < multiples.triplets + multiples.twins ? 2 : 1;
-  };
-  // Answering every request over the growing time earns the whole bond.
+  // Each answered request adds the share of the bond that one care interval is worth.
   const bondShare = (species: BreedingSpecies): number =>
     Math.min(1, options.careIntervalSeconds / speeds.bond / (species.maturationSeconds / speeds.grow));
+  const view = (young: OffspringState): BreedingOffspring => {
+    const matured = fraction(young.matured);
+    return {
+      id: young.id,
+      species: young.species,
+      stage: tierAt(options.stages, matured)?.id ?? "",
+      matured,
+      bond: fraction(young.bond),
+      wants: young.wants,
+      nextCareAt: young.nextCareAt,
+    };
+  };
 
   return {
     mate(candidates, now, dt, rng) {
@@ -272,13 +280,13 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
         const count = litter(rng);
         const brood = Array.from({ length: count }, () => options.conceive(mother.id, sire.id, rng));
         events.push({ type: "conceived", mother: mother.id, father: sire.id, species: mother.species, count });
-        if (def.mode === "carry") {
-          pregnancies.set(mother.id, { mother: mother.id, species: mother.species, babies: brood, progress: zeroed() });
+        if (def.egg === null) {
+          pregnancies.set(mother.id, { mother: mother.id, species: mother.species, offspring: brood, progress: zeroed() });
           continue;
         }
-        for (const baby of brood) {
+        for (const young of brood) {
           seq += 1;
-          const egg: EggState<P> = { id: `egg_${seq}`, species: mother.species, mother: mother.id, at: [mother.at[0], mother.at[1], mother.at[2]], baby, progress: zeroed(), health: ofValue(1) };
+          const egg: EggState<P> = { id: `egg_${seq}`, species: mother.species, mother: mother.id, at: [mother.at[0], mother.at[1], mother.at[2]], offspring: young, progress: zeroed(), health: ofValue(1) };
           eggs.set(egg.id, egg);
           events.push({ type: "laid", egg: viewEgg(egg) });
         }
@@ -292,10 +300,11 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
       const events: BreedingEvent<P>[] = [];
       for (const egg of [...eggs.values()]) {
         const def = speciesOf(egg.species);
-        const [low, high] = def.incubation ?? [-Infinity, Infinity];
+        const spec = def.egg;
+        const band = spec?.band ?? [-Infinity, Infinity];
         const temperature = temperatureAt(egg.at);
-        if (temperature >= low && temperature <= high) egg.progress = fill(egg.progress, speeds.carry / def.carrySeconds, dt);
-        else egg.health = drain(egg.health, 1 / def.eggHealthSeconds, dt);
+        if (temperature >= band[0] && temperature <= band[1]) egg.progress = fill(egg.progress, speeds.carry / def.carrySeconds, dt);
+        else egg.health = drain(egg.health, 1 / (spec?.healthSeconds ?? 1), dt);
         if (fraction(egg.health) <= 0) {
           eggs.delete(egg.id);
           events.push({ type: "eggLost", egg: viewEgg(egg) });
@@ -309,39 +318,39 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
         carried.progress = fill(carried.progress, speeds.carry / def.carrySeconds, dt);
         if (fraction(carried.progress) < 1) continue;
         pregnancies.delete(carried.mother);
-        for (const baby of carried.babies) events.push({ type: "born", mother: carried.mother, species: carried.species, baby });
+        for (const young of carried.offspring) events.push({ type: "born", mother: carried.mother, species: carried.species, offspring: young });
         rest(carried.mother, def, now, rng);
       }
-      for (const baby of [...babies.values()]) {
-        const def = speciesOf(baby.species);
-        baby.matured = fill(baby.matured, speeds.grow / def.maturationSeconds, dt);
-        if (fraction(baby.matured) >= 1) {
-          babies.delete(baby.id);
-          events.push({ type: "grown", baby: baby.id, bond: fraction(baby.bond) });
+      for (const young of [...offspring.values()]) {
+        const def = speciesOf(young.species);
+        young.matured = fill(young.matured, speeds.grow / def.maturationSeconds, dt);
+        if (fraction(young.matured) >= 1) {
+          offspring.delete(young.id);
+          events.push({ type: "grown", offspring: young.id, bond: fraction(young.bond) });
           continue;
         }
-        if (now >= baby.nextCareAt) {
+        if (now >= young.nextCareAt) {
           // A new request replaces one left unanswered: no penalty, no gain.
           const kinds = options.careKinds;
-          baby.wants = kinds[Math.min(kinds.length - 1, Math.floor(rng() * kinds.length))] ?? null;
-          baby.nextCareAt = now + options.careIntervalSeconds / speeds.bond;
-          if (baby.wants !== null) events.push({ type: "wants", baby: baby.id, care: baby.wants });
+          young.wants = kinds[Math.min(kinds.length - 1, Math.floor(rng() * kinds.length))] ?? null;
+          young.nextCareAt = now + options.careIntervalSeconds / speeds.bond;
+          if (young.wants !== null) events.push({ type: "wants", offspring: young.id, care: young.wants });
         }
       }
       return events;
     },
     raise(id, species, now) {
       speciesOf(species);
-      const baby: BabyState = { id, species, matured: zeroed(), bond: zeroed(), wants: null, nextCareAt: now + options.careIntervalSeconds / speeds.bond };
-      babies.set(id, baby);
-      return viewBaby(baby);
+      const young: OffspringState = { id, species, matured: zeroed(), bond: zeroed(), wants: null, nextCareAt: now + options.careIntervalSeconds / speeds.bond };
+      offspring.set(id, young);
+      return view(young);
     },
     care(id, kind) {
-      const baby = babies.get(id);
-      if (baby === undefined || baby.wants !== kind) return 0;
-      const grown = changeMeter(baby.bond, bondShare(speciesOf(baby.species)));
-      baby.bond = grown.meter;
-      baby.wants = null;
+      const young = offspring.get(id);
+      if (young === undefined || young.wants !== kind) return 0;
+      const grown = changeMeter(young.bond, bondShare(speciesOf(young.species)));
+      young.bond = grown.meter;
+      young.wants = null;
       return grown.change.applied;
     },
     matingProgress(mother) {
@@ -351,7 +360,7 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
     cooldown: (mother, now) => Math.max(0, (cooldowns.get(mother) ?? 0) - now),
     pregnancy(mother) {
       const carried = pregnancies.get(mother);
-      return carried === undefined ? null : { mother: carried.mother, species: carried.species, babies: carried.babies, progress: fraction(carried.progress) };
+      return carried === undefined ? null : { mother: carried.mother, species: carried.species, offspring: carried.offspring, progress: fraction(carried.progress) };
     },
     eggs: () => [...eggs.values()].map(viewEgg),
     removeEgg(id) {
@@ -359,17 +368,17 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
       eggs.delete(id);
       return egg === undefined ? null : viewEgg(egg);
     },
-    baby(id) {
-      const baby = babies.get(id);
-      return baby === undefined ? null : viewBaby(baby);
+    offspring: () => [...offspring.values()].map(view),
+    offspringOf(id) {
+      const young = offspring.get(id);
+      return young === undefined ? null : view(young);
     },
-    babies: () => [...babies.values()].map(viewBaby),
     forget(id) {
       mating.delete(id);
       for (const [mother, bar] of mating) if (bar.father === id) mating.delete(mother);
       cooldowns.delete(id);
       pregnancies.delete(id);
-      babies.delete(id);
+      offspring.delete(id);
     },
     speeds: () => ({ ...speeds }),
     setSpeeds(next) {
@@ -380,9 +389,9 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
         seq,
         mating: Object.fromEntries([...mating].map(([mother, bar]) => [mother, { father: bar.father, progress: fraction(bar.meter) }])),
         cooldowns: Object.fromEntries(cooldowns),
-        pregnancies: [...pregnancies.values()].map((carried) => ({ mother: carried.mother, species: carried.species, babies: carried.babies, progress: fraction(carried.progress) })),
+        pregnancies: [...pregnancies.values()].map((carried) => ({ mother: carried.mother, species: carried.species, offspring: carried.offspring, progress: fraction(carried.progress) })),
         eggs: [...eggs.values()].map(viewEgg),
-        babies: [...babies.values()].map(viewBaby),
+        offspring: [...offspring.values()].map(view),
         speeds,
       }),
     restore(snapshot) {
@@ -390,15 +399,15 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
       seq = copy.seq;
       mating = new Map(Object.entries(copy.mating).map(([mother, bar]) => [mother, { father: bar.father, meter: ofValue(bar.progress) }]));
       cooldowns = new Map(Object.entries(copy.cooldowns));
-      pregnancies = new Map(copy.pregnancies.map((carried) => [carried.mother, { mother: carried.mother, species: carried.species, babies: carried.babies, progress: ofValue(carried.progress) }]));
+      pregnancies = new Map(copy.pregnancies.map((carried) => [carried.mother, { mother: carried.mother, species: carried.species, offspring: carried.offspring, progress: ofValue(carried.progress) }]));
       eggs = new Map(
         copy.eggs.map((egg) => [
           egg.id,
-          { id: egg.id, species: egg.species, mother: egg.mother, at: egg.at, baby: egg.baby, progress: ofValue(egg.progress), health: ofValue(egg.health) },
+          { id: egg.id, species: egg.species, mother: egg.mother, at: egg.at, offspring: egg.offspring, progress: ofValue(egg.progress), health: ofValue(egg.health) },
         ]),
       );
-      babies = new Map(
-        copy.babies.map((baby) => [baby.id, { id: baby.id, species: baby.species, matured: ofValue(baby.matured), bond: ofValue(baby.bond), wants: baby.wants, nextCareAt: baby.nextCareAt }]),
+      offspring = new Map(
+        copy.offspring.map((young) => [young.id, { id: young.id, species: young.species, matured: ofValue(young.matured), bond: ofValue(young.bond), wants: young.wants, nextCareAt: young.nextCareAt }]),
       );
       speeds = copy.speeds;
     },
@@ -407,7 +416,7 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
       cooldowns = new Map();
       pregnancies = new Map();
       eggs = new Map();
-      babies = new Map();
+      offspring = new Map();
       speeds = { ...ONE };
       seq = 0;
     },

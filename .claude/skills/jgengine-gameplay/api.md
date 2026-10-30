@@ -183,17 +183,18 @@
 
 ## @jgengine/core/breeding/breeding
 
-- `BreedingBaby` (interface): interface BreedingBaby — A young one growing into an adult: how far it has grown (0-1), its bond (0-1), the care it wants now and when it next asks.
 - `BreedingEgg` (interface): interface BreedingEgg<P> — A fertilized egg lying where it was laid, carrying its young one's genes `P`; it progresses only inside its incubation band.
-- `BreedingEvent` (type): type BreedingEvent<P> = | { type: "conceived"; mother: string; father: string; species: string; count: number } | { type: "laid"; egg: BreedingEgg<P> } | { type: "hatched"; egg: BreedingEgg<P> } | { type: "eggLost"; egg: BreedingEgg<P> } | { type: "born"; mother: string; species: string; baby: P } |… — What happened this tick.
-- `BreedingField` (interface): interface BreedingField<P> — The breeding of a world's tames, made by {@link createBreedingField}.
+- `BreedingEggSpec` (interface): interface BreedingEggSpec — An egg's temperature band in °C, inclusive, and the seconds it survives out of that band before it is lost.
+- `BreedingEvent` (type): type BreedingEvent<P> = | { type: "conceived"; mother: string; father: string; species: string; count: number } | { type: "laid"; egg: BreedingEgg<P> } | { type: "hatched"; egg: BreedingEgg<P> } | { type: "eggLost"; egg: BreedingEgg<P> } | { type: "born"; mother: string; species: string; offspring: … — What happened this tick.
+- `BreedingField` (interface): interface BreedingField<P> — The breeding of a world's creatures, made by {@link createBreedingField}.
+- `BreedingOffspring` (interface): interface BreedingOffspring — A young one growing up: its stage, how far it has grown (0-1), its bond (0-1), the care it wants now and when it next asks.
 - `BreedingOptions` (interface): interface BreedingOptions<P> — {@link createBreedingField} setup.
 - `BreedingPregnancy` (interface): interface BreedingPregnancy<P> — A mother carrying her young, with their genes `P` and how far along the carrying is (0-1).
-- `BreedingSnapshot` (interface): interface BreedingSnapshot<P> — Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, babies and speeds.
+- `BreedingSnapshot` (interface): interface BreedingSnapshot<P> — Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, the growing young and speeds.
 - `BreedingSpecies` (interface): interface BreedingSpecies — How one species breeds.
 - `BreedingSpeeds` (interface): interface BreedingSpeeds — How much faster each part of breeding runs than its times say. All start at 1.
 - `MateCandidate` (interface): interface MateCandidate — A creature offered for mating this tick.
-- `createBreedingField` (function): function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> — Tame pairs left together mate, a mother lays a fertilised egg that hatches only kept in its temperature or carries a baby to birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace and ask for care on an interval; each answered request adds its share of bond, full bond when every request in its growing time was answered. Species times, care kinds, the size of a litter and what a young one is all come from the game.
+- `createBreedingField` (function): function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> — Pairs left together mate, a mother lays an egg that hatches only in its temperature band or carries her young to birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace through the game's stage list and ask for care on an interval; each answered request adds its share of the bond. Species times, care kinds, stages, the size of a litter and what a young one is all come from the game.
 
 ## @jgengine/core/cards/cardPile
 

@@ -120,10 +120,10 @@ describe("harbor-heat save document", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     const stored = (await harborSave(host).peek("default")) as {
-      systems: { wanted?: { police?: { heat?: { heat?: number } } }; convoy?: unknown };
+      systems: { wanted?: { alert?: { value?: number } }; convoy?: unknown };
     } | null;
     expect(stored).not.toBeNull();
-    expect(stored!.systems.wanted?.police?.heat?.heat).toBeCloseTo(heat, 6);
+    expect(stored!.systems.wanted?.alert?.value).toBeCloseTo(heat, 6);
   });
 
   test("the parcel and the mission flags survive a reload", async () => {
