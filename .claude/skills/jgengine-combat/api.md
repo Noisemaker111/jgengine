@@ -388,11 +388,12 @@
 
 ## @jgengine/core/combat/breakMeters
 
-- `BuildupMeter` (interface): interface BuildupMeter { add(amount: number): BuildupProc | null; value(): number; fraction(): number; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createBuildupMeter`: Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
+- `BuildupMeter` (interface): interface BuildupMeter { add(amount: number): BuildupProc | null; value(): number; fraction(): number; tick(dtSeconds: number): void; snapshot(): MeterState; restore(state: MeterState): void } — ⚠ undocumented · used by `createBuildupMeter`: Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
 - `BuildupMeterConfig` (interface): interface BuildupMeterConfig { status: string; max: number; durationMs: number; decayPerSecond?: number; decayDelayMs?: number } — ⚠ undocumented · used by `createBuildupMeter`: Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
 - `BuildupProc` (interface): interface BuildupProc { status: string; durationMs: number } — ⚠ undocumented
-- `StaggerMeter` (interface): interface StaggerMeter { add(amount: number): boolean; broke(): boolean; value(): number; fraction(): number; recover(): void; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createStaggerMeter`: Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
+- `StaggerMeter` (interface): interface StaggerMeter { add(amount: number): boolean; broke(): boolean; value(): number; fraction(): number; recover(): void; tick(dtSeconds: number): void; snapshot(): StaggerMeterState; restore(state: StaggerMeterState): void } — ⚠ undocumented · used by `createStaggerMeter`: Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
 - `StaggerMeterConfig` (interface): interface StaggerMeterConfig { max: number; decayPerSecond?: number; decayDelayMs?: number } — ⚠ undocumented · used by `createStaggerMeter`: Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
+- `StaggerMeterState` (interface): interface StaggerMeterState — A stagger gauge's saved state: its meter and whether it has broken. Plain data.
 - `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
 - `createStaggerMeter` (function): function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter — Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
 
