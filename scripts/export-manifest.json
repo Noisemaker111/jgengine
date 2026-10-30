@@ -395,7 +395,6 @@
     "./fracture/fragmentSize",
     "./fracture/rockFracture",
     "./fracture/rockFractureGenerator",
-    "./game/breeding",
     "./game/clipRoles",
     "./game/connectedPlayers",
     "./game/contentValidation",
