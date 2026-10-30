@@ -18,7 +18,6 @@ export {
   type CardPile,
   type CardPileState,
 } from "./cards/cardPile";
-export { runPipeline } from "./cards/modifierPipeline";
 export {
   DEFAULT_CHAT_BODY_LENGTH,
   DEFAULT_CHAT_HISTORY_LIMIT,
