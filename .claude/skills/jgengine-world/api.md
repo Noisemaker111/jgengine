@@ -3646,6 +3646,13 @@
 - `packSpecimen` (function): function packSpecimen(shape: SpecimenShape, options: { grainsAcross: number; density: number; seed: string; jitter?: number; flattenY?: boolean }): GrainPacking — Pack a specimen: a face-centred cubic lattice of `grainsAcross` grains per diameter, each point jittered by up to `jitter` of the spacing, radii grown until grains touch their nearest neighbour (sizes vary about 1.6 to 1), and bonds between every pair closer than 1.2 spacings. `flattenY` grinds the top and bottom flat, as a lab specimen's loaded faces are: grains near them move until they touch the plane, shrinking where that would overlap a neighbour.
 - `uniaxialModulus` (function): function uniaxialModulus(model: BondedRockModel, options: SpecimenTestOptions = {}): ModulusResult — Young's modulus of a bonded cylinder (height twice its diameter) squeezed slowly between steel platens with unbreakable bonds: the secant slope of axial stress against platen strain between 40% and 100% of 10⁻⁴ strain.
 
+## @jgengine/core/physics/reference/carEffectProbe
+
+- `CarEffectMetrics` (interface): interface CarEffectMetrics — One number per car effect, each from a test that isolates it as far as driving can: a steady circle for roll, sideslip and lateral load transfer, steady braking for pitch and longitudinal transfer, coasting for drag and rolling resistance, full throttle for the drivetrain, and corner transients for combined slip.
+- `CarEffectProbeOptions` (interface): interface CarEffectProbeOptions — Settings for {@link measureCarEffects}.
+- `CarEffectSubject` (interface): interface CarEffectSubject — A car sim {@link measureCarEffects} can drive: `VehicleDynamics` and the reference car both fit.
+- `measureCarEffects` (function): function measureCarEffects(create: () => CarEffectSubject, options: CarEffectProbeOptions): CarEffectMetrics — Drives fresh cars from `create` through one test per car effect and reports a number for each, so a game car and the reference car can be lined up effect by effect: roll and sideslip gradients, lateral and longitudinal load transfer, pitch, coast-down at two speeds, launch and in-gear acceleration, yaw gain, lateral response time, and the corner transients (power on, brake in turn, lift off).
+
 ## @jgengine/core/physics/reference/compareHandling
 
 - `BikeHandlingComparison` (interface): interface BikeHandlingComparison — Result of {@link compareBikeTuning}.
@@ -4053,24 +4060,47 @@
 
 ## @jgengine/core/physics/vehicleDynamics
 
-- `VehicleAeroTuning` (interface): interface VehicleAeroTuning — Aero and resistance. Uses air density 1.225 kg/m³.
+- `VehicleAbsEffect` (interface): interface VehicleAbsEffect — Anti-lock brakes: brake force held below the tyre's remaining grip so the front keeps steering.
+- `VehicleAeroDragEffect` (interface): interface VehicleAeroDragEffect — Aerodynamic drag `½·ρ·CdA·v²`, air density 1.225 kg/m³.
 - `VehicleAirInput` (interface): interface VehicleAirInput — Air-control input, each `-1..1`: `pitch > 0` noses down, `yaw > 0` turns like `steer > 0`, `roll > 0` drops the left side.
 - `VehicleAirTuning` (interface): interface VehicleAirTuning — Control of the body while airborne (needs `suspension`, the only way to leave the ground).
-- `VehicleAssistTuning` (interface): interface VehicleAssistTuning — Electronic and arcade assists; each is a strength `0..1`, `0`/omitted = off.
+- `VehicleAntiStoppieEffect` (interface): interface VehicleAntiStoppieEffect — Anti-stoppie: braking capped below the deceleration that lifts the rear (`g·a/h`); reports as `absActive`.
+- `VehicleAntiWheelieEffect` (interface): interface VehicleAntiWheelieEffect — Anti-wheelie: drive capped below the acceleration that lifts the front (`g·b/h`); reports as `tractionLimited`.
+- `VehicleBrakeLagEffect` (interface): interface VehicleBrakeLagEffect — Brake hydraulics: pressure follows the pedal with a lag.
+- `VehicleCamberEffect` (interface): interface VehicleCamberEffect — Camber thrust: a tyre leaning into the turn pushes harder, one leaning out pushes less.
+- `VehicleCombinedSlipEffect` (interface): interface VehicleCombinedSlipEffect — Friction ellipse: drive and brake force use up the same tyre's cornering grip. Omit for tyres that corner at full grip whatever the pedals do.
+- `VehicleComplianceSteerEffect` (interface): interface VehicleComplianceSteerEffect — Steer from bushing and steering-system compliance: the wheels give way under cornering force.
+- `VehicleDifferentialEffect` (type): type VehicleDifferentialEffect = | { kind: "open" } /** Torque may differ by up to `bias` times between sides (Torsen, clutch LSD). */ | { kind: "limitedSlip"; bias: number } /** * Both wheels turn together: every bit of grip drives, but the axle fights the car's yaw (spool understeer). * `slipStiff… — The driven axle's differential: how drive is shared between its left and right wheels.
 - `VehicleDirectDriveTuning` (interface): interface VehicleDirectDriveTuning — Single-speed drive (electric, kart, arcade ball-car): force capped by power, so top speed comes out of drag.
+- `VehicleDownforceEffect` (interface): interface VehicleDownforceEffect — Aerodynamic downforce `½·ρ·ClA·v²`, pressing the tyres harder as speed rises.
 - `VehicleDynamics` (interface): interface VehicleDynamics — Force-based planar car: a two-axle ("bicycle") model where yaw comes from tire forces rather than being commanded, so understeer, oversteer, lift-off rotation, trail-braking, power slides and handbrake turns emerge from the numbers instead of from special cases. Deterministic for a given `dt` sequence; ticks are split into fixed substeps. Pairs with `tickDrivableVehicle` for the entity pose and `measureHandling` for asserting feel.
 - `VehicleDynamicsModifiers` (interface): interface VehicleDynamicsModifiers — Per-tick overrides layered over tuning: boost, grip zones, damage. Each scale defaults to `1`.
 - `VehicleDynamicsOptions` (interface): interface VehicleDynamicsOptions — World hooks for one vehicle instance.
 - `VehicleDynamicsState` (interface): interface VehicleDynamicsState — Serializable integrator state: everything {@link VehicleDynamics.restore} needs to resume bit-for-bit.
 - `VehicleDynamicsStep` (interface): interface VehicleDynamicsStep — Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read.
-- `VehicleDynamicsTuning` (interface): interface VehicleDynamicsTuning — Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N, N·m, rad, s), so a feel target maps to a knob a person can reason about: more rear grip or a lower centre of mass for stability, softer tires for forgiveness, more drive to the rear for power oversteer.
+- `VehicleDynamicsTuning` (interface): interface VehicleDynamicsTuning — Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N, N·m, rad, s). The body, tyres, powertrain, brakes and rack are always there; every other physical effect and aid is a separate term in `effects`, off unless listed.
+- `VehicleEffectName` (type): type VehicleEffectName = keyof VehicleEffects — The name of one {@link VehicleEffects} term.
+- `VehicleEffects` (interface): interface VehicleEffects — Every physical effect and driver aid the car model can run, each its own term. An omitted effect is off: a game composes the car it wants by listing effects and setting their numbers, so a drift car can drop `combinedSlip`, a kart can ignore `aeroDrag`, and a sim car can add `tireRelaxation` and `complianceSteer`.
 - `VehicleGearboxTuning` (interface): interface VehicleGearboxTuning — Engine and gearbox. Drive force at the wheels = torque · curve(rpm) · gear · finalDrive · efficiency / wheelRadius.
 - `VehicleJumpTuning` (interface): interface VehicleJumpTuning — Jumps from the ground and in the air.
+- `VehicleLateralLoadTransferEffect` (interface): interface VehicleLateralLoadTransferEffect — Load moves to the outside wheels in a corner, by `m·a·comHeight / trackWidth`.
 - `VehicleLeanTuning` (interface): interface VehicleLeanTuning — Single-track lean for motorcycles, bicycles and scooters. Steer input asks for a lean angle; the front wheel then takes whatever angle a balanced turn at that lean needs (curvature = g·tan(lean) / v²), with a brief countersteer as the lean starts. Tire grip still limits the turn, so over-leaning on a low-grip surface slides.
-- `VehicleSteeringTuning` (interface): interface VehicleSteeringTuning — Steering rack: lock, speed-sensitive lock, rack speed, and caster self-alignment.
+- `VehicleLoadSensitivityEffect` (interface): interface VehicleLoadSensitivityEffect — Tyre load sensitivity: a tyre grips less per newton the harder it is pressed, so an axle with load moved across it holds less in total. Each wheel is evaluated at its own load.
+- `VehicleLongitudinalLoadTransferEffect` (interface): interface VehicleLongitudinalLoadTransferEffect — Load moves forward under braking and back under drive, by `m·a·comHeight / wheelbase`.
+- `VehicleRollSteerEffect` (interface): interface VehicleRollSteerEffect — Steer from suspension geometry as the body rolls.
+- `VehicleRollingResistanceEffect` (interface): interface VehicleRollingResistanceEffect — Tyre rolling resistance, `Crr · load`.
+- `VehicleRotatingInertiaEffect` (interface): interface VehicleRotatingInertiaEffect — Spinning parts take part of every speed change: the car behaves heavier than its mass, most in low gears.
+- `VehicleSelfAlignEffect` (interface): interface VehicleSelfAlignEffect — Caster self-alignment: the front wheels steer into a slide on their own.
+- `VehicleSpeedSensitiveSteeringEffect` (interface): interface VehicleSpeedSensitiveSteeringEffect — Speed-sensitive lock: full lock is cut back as speed rises so a full input at speed stays near the grip limit.
+- `VehicleStabilityEffect` (interface): interface VehicleStabilityEffect — Stability (yaw) control: a corrective yaw torque once sideslip passes `maxSideslip`.
+- `VehicleSteeringTuning` (interface): interface VehicleSteeringTuning — Steering rack: lock and rack speed. Speed-sensitive lock and caster self-alignment are effects of their own.
 - `VehicleSuspensionTuning` (interface): interface VehicleSuspensionTuning — Four sprung corners. With this block the chassis heaves, pitches and rolls on real springs, axle loads come from spring forces instead of a filtered estimate, slopes pull the car downhill, and the car can leave the ground and land. Omit it for the flat-ground model.
+- `VehicleTireRelaxationEffect` (interface): interface VehicleTireRelaxationEffect — Tyre relaxation: the carcass has to roll a distance before the slip angle builds, so lateral force lags steering.
 - `VehicleTireTuning` (interface): interface VehicleTireTuning — One axle's tire, in physical terms. Lateral force follows a simplified Pacejka curve `μ·Fz·sin(C·atan(B·α))` whose `B`/`C` are solved from `peakSlipAngle` and `slideGrip`, so the three numbers read the way a driver feels them: how much grip, how early it peaks, how much is left sliding.
+- `VehicleTractionControlEffect` (interface): interface VehicleTractionControlEffect — Traction control: drive force capped below the driven axle's remaining grip.
+- `VehicleWheelSlideEffect` (interface): interface VehicleWheelSlideEffect — A wheel that locks under braking or spins under drive slides, and a sliding tyre grips less than its peak.
 - `createVehicleDynamics` (function): function createVehicleDynamics(initialTuning: VehicleDynamicsTuning, options: VehicleDynamicsOptions = {}): VehicleDynamics — Creates a {@link VehicleDynamics}.
+- `withVehicleEffects` (function): function withVehicleEffects(tuning: VehicleDynamicsTuning, changes: { [Name in VehicleEffectName]?: VehicleEffects[Name] | false }): VehicleDynamicsTuning — The same tuning with some effects switched off, replaced or retuned: `false` removes a term, an object replaces it. Pure, so a settings toggle or a pickup can `retune(withVehicleEffects(base, { aeroDrag: false }))` mid-drive.
 
 ## @jgengine/core/physics/vehicleObstacles
 
@@ -4092,8 +4122,7 @@
 
 ## @jgengine/core/physics/vehicleSpec
 
-- `VEHICLE_STYLES` (const): const VEHICLE_STYLES: { readonly arcade: { readonly grip: 1.5; readonly drift: 0.15; readonly assist: 1; readonly bodyRoll: 0.4; }; readonly sim: { readonly grip: 1.05; readonly drift: 0.25; readonly assist: 0.25; readonly bodyRoll: 0.6; }; readonly drift: { readonly grip: 1.1; readonly drift: 0.85;… — Starting points for {@link VehicleSpec}: spread one, then set the numbers a car needs. `arcade` grips hard and forgives everything, `sim` keeps aids light so the car has to be driven, `drift` hangs the rear out and holds a slide.
-- `VehicleSpec` (interface): interface VehicleSpec — The feel knobs for a car, in numbers a designer can reason about. {@link vehicleTuning} turns a spec into the force-based {@link VehicleDynamicsTuning} `createVehicleDynamics` runs, so every car — kart, street car, bus or drift machine — rides the same tire model and a spec only says how it should feel. Start from a {@link VEHICLE_STYLES} preset and override what the game needs.
+- `VehicleSpec` (interface): interface VehicleSpec — The feel knobs for a car, in numbers a designer can reason about. {@link vehicleTuning} turns a spec into the force-based {@link VehicleDynamicsTuning} `createVehicleDynamics` runs, so every car — kart, street car, bus or drift machine — rides the same tire model and a spec only says how it should feel. Each driver aid is its own number, and `effects` switches any physical effect off or retunes it.
 - `VehicleSpecGearbox` (interface): interface VehicleSpecGearbox — An optional gearbox for a {@link VehicleSpec}: the HUD gets a gear and rpm, and shifts cost a beat of drive.
 - `vehicleTuning` (function): function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning — Build the physical tuning for a {@link VehicleSpec}. Pure and deterministic, so a parts change or a dent re-derives the tuning and `retune` swaps it in without costing the car its momentum.
 
@@ -6810,7 +6839,6 @@
 - `UtilitySwitchReason` (type): type UtilitySwitchReason = "initial" | "score" | "interrupt" | "unavailable" — Why the brain's pick changed on the tick it changed.
 - `UtilityTerm` (interface): interface UtilityTerm — One need's contribution to an option's appeal.
 - `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
-- `VEHICLE_STYLES` (const): const VEHICLE_STYLES: { readonly arcade: { readonly grip: 1.5; readonly drift: 0.15; readonly assist: 1; readonly bodyRoll: 0.4; }; readonly sim: { readonly grip: 1.05; readonly drift: 0.25; readonly assist: 0.25; readonly bodyRoll: 0.6; }; readonly drift: { readonly grip: 1.1; readonly drift: 0.85;… — Starting points for {@link VehicleSpec}: spread one, then set the numbers a car needs. `arcade` grips hard and forgives everything, `sim` keeps aids light so the car has to be driven, `drift` hangs the rear out and holds a slide.
 - `VISIBILITY_HIDDEN` (const): const VISIBILITY_HIDDEN: 0 — Numeric code for a cell no group member has seen, or has fully forgotten.
 - `VISIBILITY_OBSERVED` (const): const VISIBILITY_OBSERVED: 2 — Numeric code for a cell a group currently observes.
 - `VISIBILITY_REMEMBERED` (const): const VISIBILITY_REMEMBERED: 1 — Numeric code for a cell seen before but not currently in view (last-known).
@@ -6828,7 +6856,7 @@
 - `VehicleDynamicsModifiers` (interface): interface VehicleDynamicsModifiers — Per-tick overrides layered over tuning: boost, grip zones, damage. Each scale defaults to `1`.
 - `VehicleDynamicsOptions` (interface): interface VehicleDynamicsOptions — World hooks for one vehicle instance.
 - `VehicleDynamicsStep` (interface): interface VehicleDynamicsStep — Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read.
-- `VehicleDynamicsTuning` (interface): interface VehicleDynamicsTuning — Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N, N·m, rad, s), so a feel target maps to a knob a person can reason about: more rear grip or a lower centre of mass for stability, softer tires for forgiveness, more drive to the rear for power oversteer.
+- `VehicleDynamicsTuning` (interface): interface VehicleDynamicsTuning — Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N, N·m, rad, s). The body, tyres, powertrain, brakes and rack are always there; every other physical effect and aid is a separate term in `effects`, off unless listed.
 - `VehicleFeel` (interface): interface VehicleFeel — Comparable handling numbers derived from a spec — what "the numbers and the feel" means to a shop screen, a HUD or a test. Grip is reported as the curve's own shape, so a compound change shows up as a moved peak rather than a single scalar.
 - `VehicleImpact` (interface): interface VehicleImpact — A single blocked-move event a car can react to (#1051): crash damage, screen shake, a metal-crunch cue. Reported once, when a move is first vetoed, then consumed by {@link VehicleObstacleClamp.takeImpact}.
 - `VehicleMoveClamp` (type): type VehicleMoveClamp = ( from: readonly [number, number], to: readonly [number, number], ) => readonly [number, number] & { readonly motion?: readonly [number, number] } — Veto or clamp a planar move before it commits — walls, closed gates, arena bounds. Given the attempted `from`→`to` on the XZ plane, return the destination actually allowed; velocity is rederived from the permitted displacement, so motion blocked on an axis stops on that axis. A result may carry `motion`, the permitted XZ displacement before position recovery, when the endpoint also depenetrates the body.
@@ -6837,7 +6865,7 @@
 - `VehiclePartEffect` (interface): interface VehiclePartEffect — How one part moves a stat: multiply the base by `scale`, then add `add`. Both default to no change.
 - `VehicleSeats` (class): class VehicleSeats — Composes `scene/mount`'s control-transfer bookkeeping with the seat/camera/movement-mode transition every enter/exit-vehicle flow needs (#533.2): boarding resolves a free seat and reports the camera target, drive target, and rider movement-lock patch in one call; leaving computes a side-door placement next to the vehicle and reports the same triad in reverse. Pure — no entity/camera side effects — the caller applies `riderMovementPatch`/`placement`/`cameraTarget` via its own `ctx`.
 - `VehicleSetup` (interface): interface VehicleSetup — A composed vehicle: the spec to build the sim from, the feel it produces, and what was installed.
-- `VehicleSpec` (interface): interface VehicleSpec — The feel knobs for a car, in numbers a designer can reason about. {@link vehicleTuning} turns a spec into the force-based {@link VehicleDynamicsTuning} `createVehicleDynamics` runs, so every car — kart, street car, bus or drift machine — rides the same tire model and a spec only says how it should feel. Start from a {@link VEHICLE_STYLES} preset and override what the game needs.
+- `VehicleSpec` (interface): interface VehicleSpec — The feel knobs for a car, in numbers a designer can reason about. {@link vehicleTuning} turns a spec into the force-based {@link VehicleDynamicsTuning} `createVehicleDynamics` runs, so every car — kart, street car, bus or drift machine — rides the same tire model and a spec only says how it should feel. Each driver aid is its own number, and `effects` switches any physical effect off or retunes it.
 - `VehicleSpecGearbox` (interface): interface VehicleSpecGearbox — An optional gearbox for a {@link VehicleSpec}: the HUD gets a gear and rpm, and shifts cost a beat of drive.
 - `VehicleStat` (type): type VehicleStat = | "topSpeed" | "accel" | "brake" | "reverseSpeed" | "turnRate" | "grip" | "drift" | "handbrakeGrip" | "coast" | "weight" — A tunable vehicle number a part can move; each names a numeric {@link VehicleSpec} field.
 - `VisibilityCells` (interface): interface VisibilityCells — Dense per-cell readout for one group, shaped for minimap/overlay drawing.

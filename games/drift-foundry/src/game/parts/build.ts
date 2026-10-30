@@ -1,7 +1,7 @@
 import { DEFAULT_GRIP_CURVE } from "@jgengine/core/physics/gripCurve";
 import { damagedSpec, type VehicleDamageEffectResolved } from "@jgengine/core/physics/vehicleDamage";
 import type { VehicleDynamicsTuning } from "@jgengine/core/physics/vehicleDynamics";
-import { VEHICLE_STYLES, vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
+import { vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
 import {
   applyVehicleParts,
   feelOf,
@@ -68,7 +68,12 @@ const MIN_TURN_RATE = 0.6;
  * into an ice rink.
  */
 export const BASE_HANDLING: VehicleSpec = {
-  ...VEHICLE_STYLES.arcade,
+  bodyRoll: 0.4,
+  abs: 1,
+  tractionControl: 0.5775,
+  stability: 1,
+  selfAlign: 0.6875,
+  steerRate: 4.4,
   topSpeed: 6.5,
   accel: 9,
   brake: 9 * BRAKE_ACCEL_FACTOR,

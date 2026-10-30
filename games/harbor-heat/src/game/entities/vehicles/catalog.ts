@@ -1,4 +1,4 @@
-import { VEHICLE_STYLES, type AircraftAssistTuning, type GripCurve, type RigidAircraftTuning, type VehicleSpec } from "@jgengine/core/world";
+import { type AircraftAssistTuning, type GripCurve, type RigidAircraftTuning, type VehicleSpec } from "@jgengine/core/world";
 
 export type VehicleHandling =
   | { type: "ground"; tuning: VehicleSpec }
@@ -86,9 +86,13 @@ function car(spec: CarSpec): VehicleSpec {
   return {
     // Street cars on real tyre μ, a little looser than arcade so launch bite and handbrake slides read
     // as player skill, not ESC.
-    ...VEHICLE_STYLES.arcade,
-    assist: 0.55,
     drift: 0.3,
+    bodyRoll: 0.4,
+    abs: 0.55,
+    tractionControl: 0.32725,
+    stability: 0.73,
+    selfAlign: 0.5175,
+    steerRate: 3.5,
     topSpeed: spec.topSpeed,
     accel: spec.engineForce / spec.massKg,
     brake: spec.brakeForce / spec.massKg,

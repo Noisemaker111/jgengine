@@ -1,19 +1,20 @@
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
-import { VEHICLE_STYLES, vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
+import { vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
 import { DEFAULT_DRIVE_CODES, defineGame, defineSystem } from "@jgengine/shell/gameKit";
 
-// Tire grip, weight transfer, drift and steering help come
-// from the style. Set the numbers you care about.
+// Tire grip, weight transfer and drag come built in. Set the numbers
+// you care about; any effect can be switched off or retuned.
 const car = createVehicleDynamics(
   vehicleTuning({
-    ...VEHICLE_STYLES.drift,
     topSpeed: 34,
     accel: 10,
     brake: 16,
     turnRate: 2.4,
     grip: 1.1,
     drift: 0.85,
+    // Each aid is its own number: abs, tractionControl, stability, selfAlign.
+    stability: 0.73,
   }),
 );
 

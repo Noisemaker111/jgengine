@@ -5,7 +5,14 @@
 ## The seams
 
 - **Sim.** `createVehicleDynamics(tuning, { surfaceFriction?, dragAt?, obstacles?, bodyRadius?, clampMove?, groundHeight? })` from `@jgengine/core/physics/vehicleDynamics`. Yaw comes from tire forces, so balance, slides and recovery are outcomes of the numbers, not special cases. It has `snapshot()`/`restore()` for prediction and replay, `retune()` for upgrades and damage, and per-tick modifiers (`driveScale`, `gripScale`, `steerScale`, `brakeScale`, `speedLimitScale` for nitro or a slow zone, `thrust` for boost). The step's `slip` (`0..1`) is how hard the tires are sliding — key squeal, smoke and drift scoring off it.
-- **Spec.** `vehicleTuning(spec)` (`@jgengine/core/physics/vehicleSpec`) builds that tuning from feel numbers: `topSpeed`, `accel`, `brake`, `turnRate` (at `turnSpeed`), `grip` in g, `gripCurve`, `drift` (0 planted … 1 loose), `assist` (0 raw … 1 arcade), `weight`, `power`, `coast`, `bodyRoll`, `suspension` (0 none … 1 soft), `hop`, `gearbox`. Start from `VEHICLE_STYLES.arcade`, `.sim` or `.drift` and override. Every style keeps the floor in `vehicleHandling.test.ts`: it launches, grips, slides on the handbrake, catches the slide, and never spins on a held keyboard corner. Drop to raw `VehicleDynamicsTuning` fields only when a spec knob cannot say it.
+- **Effects.** Every physical effect and driver aid is its own entry in `tuning.effects`, with its own numbers; one that is left out is off. Physics: `combinedSlip`, `wheelSlide`, `longitudinalLoadTransfer`, `lateralLoadTransfer`, `loadSensitivity`, `tireRelaxation`, `camber`, `complianceSteer`, `rollSteer`, `aeroDrag`, `downforce`, `rollingResistance`, `rotatingInertia`, `differential`, `brakeLag`. Aids: `selfAlign`, `speedSensitiveSteering`, `abs`, `tractionControl`, `stability`, `antiWheelie`, `antiStoppie`.
+  - `withVehicleEffects(tuning, { aeroDrag: false, abs: { holds: 0.97 } })` switches one off (`false`), swaps it or retunes it, and returns a new tuning; pass it to `retune()` for a settings toggle mid-drive.
+  - A drift car can drop `combinedSlip`, a kart can skip `aeroDrag`, and a sim car can add `tireRelaxation`, `complianceSteer` and a `differential`. Tyres may also set `longitudinalGrip` and `corneringStiffness`.
+  - `vehicleEffects.test.ts` checks that each effect moves its number when on, and that leaving it out removes it.
+- **Spec.** `vehicleTuning(spec)` (`@jgengine/core/physics/vehicleSpec`) builds that tuning from feel numbers: `topSpeed`, `accel`, `brake`, `turnRate` (at `turnSpeed`), `grip` in g, `gripCurve`, `drift` (0 planted … 1 loose), `weight`, `power`, `coast`, `bodyRoll`, `suspension` (0 none … 1 soft), `hop`, `gearbox`.
+  - Each aid is its own number, and `0` leaves it out: `abs`, `tractionControl`, `stability` (with `maxSideslip`), `selfAlign`, `steerRate`.
+  - `effects` on the spec switches off, replaces or adds any effect the spec derives (`{ aeroDrag: false, tireRelaxation: { length: 0.3 } }`).
+  - Every spec in `vehicleHandling.test.ts` launches, grips, slides on the handbrake, catches the slide, and never spins on a held keyboard corner. Drop to raw `VehicleDynamicsTuning` fields only when a spec knob cannot say it.
 - **Parts.** `applyVehicleParts(base, parts)` (`@jgengine/core/physics/vehicleParts`) folds data-driven parts onto a spec — `{ id, slot, effects: { accel: { scale, add } }, gripCurve? }` — in install order, and returns the composed spec plus a comparable `VehicleFeel`. `withPart` swaps one part in its slot, `feelOf(spec)` reads the numbers out of anything, and `vehicle.retune(vehicleTuning(setup.spec))` installs it mid-play without losing momentum.
 - **Damage.** `createVehicleDamage({ zones, disableAt?, onTransition? })` (`@jgengine/core/physics/vehicleDamage`) takes local hit points and impulses, steps fixed zones through thresholds, and returns bounded `deformation()` (a per-zone offset the renderer applies, plus `detached`) and `effect()` (grip/drive/brake/top-speed scales, `steerPull`, `drag`). Feed `effect()` through `vehicleTuning(damagedSpec(base, effect))` + `retune` for lasting damage, or `modifiers()` for one frame; `damagedAxis(axis, effect)` applies the bent-frame pull. It serializes, so a save or a host correction resumes mid-crash. There is no mesh editing: every zone has one authored `deform` limit.
   - The dent is rendered by the game's own `renderEntity` (it already receives the entity each render) — the zone's `offset` displaces that part, and `detached` hides it. No shell seam is needed.
@@ -19,7 +26,7 @@
   - Steer asks for a lean, and the bar steers the balanced turn that lean needs.
   - The bike tips the other way briefly as the lean starts, which is countersteer.
   - The step reports the balance lean `atan(lateral g)` as `lean`, with `bodyRoll = -lean`. The requested lean is capped at what grip can hold.
-  - `wheelie`/`stoppie` flags come from axle loads. `assists.antiWheelie` and `assists.antiStoppie` cap drive and braking just under the pitch-over limit, and on springs they also back off as the axle goes light. A sprung bike needs them to stay playable.
+  - `wheelie`/`stoppie` flags come from axle loads. `effects.antiWheelie` and `effects.antiStoppie` cap drive and braking just under the pitch-over limit, and on springs they also back off as the axle goes light. A sprung bike needs them to stay playable.
   - `measureLean` reports steady lean, time to lean and counter-lean.
 - **Pose.** `tickDrivableVehicle(car, dt, ctx.input.axis(bindings, ranges), { groundHeight, modifiers })` returns a `setPose` patch. Pitch and roll come from load transfer, or from the springs when `suspension` is set.
 - **Skid marks and tire smoke.** Add `tires: { id: vehicleId, time: ctx.time.now(), marks: ctx.tireMarks, particles: ctx.particles }` to `tickDrivableVehicle`. Sliding, spinning or locked wheels lay fading rubber that the shell draws on the ground, and hard slides play `smoke/tire`. `markFrom`/`smokeFrom` set the slip each starts at.
@@ -42,6 +49,8 @@
 - **Proof.** For jumps and air control, `measureAir` reports apex height and time, double-jump height, and air rotation rates.
 - **Proof.** `measureHandling(() => createVehicleDynamics(tuning), options?)` from `@jgengine/core/physics/handlingProbe` returns deterministic numbers. Assert them in a test. For a sprung car, `measureRide` adds settle time, brake dive, roll per g and landing bounces.
 - **Real-physics check.** `bun run games:capabilities handling <module>#<export>` runs every car tuning in that export through 0–100, braking, skidpad and the ISO 4138 / 7401 / 3888-1 tests next to a multibody reference model of a real car and its published numbers (`compareVehicleTuning` in `@jgengine/core/physics/reference/compareHandling`). Read the gaps as a feel decision: an arcade car may grip past a road car on purpose, but write that down.
+  - `measureCarEffects` (`@jgengine/core/physics/reference/carEffectProbe`) reads the effect-level numbers on the same subjects: roll, pitch and sideslip per g, load transfer, coast-down at two speeds, launch, yaw gain, lateral response time and the corner transients (power on, brake in turn, lift off).
+  - `carEffectProbe.test.ts` composes the MX-5 from its data with every effect on and pins it near the reference; use it as the worked example of setting each effect from real numbers.
 - **Proof.** `feelOf(setup.spec)` gives comparable numbers per build, and a test drives the same scripted inputs on two `surfaceFriction` values (or before/after `damagedSpec`) and asserts the grip difference — slip retained, heading turned, and top speed reached.
 
 ## Workflow
@@ -64,25 +73,29 @@
 
 | Symptom | Knob (direction) |
 | --- | --- |
-| `understeerGradient` too high | front tire `peakSlipAngle` ↓ or rear ↑ (tire stiffness split is what moves it at moderate g) |
-| Pushes wide, won't turn in | `rollStiffnessFront` ↓, rear `peakGrip` ↓ relative to front, `yawInertiaIndex` ↓, `steering.rate` ↑ |
-| Snaps into oversteer | `rollStiffnessFront` ↑, rear `peakGrip` ↑, `slideGrip` ↑ (gentler breakaway), `assists.stability` ↑ |
-| Spins holding throttle and steer | `assists.tractionControl` ↑ (budgets for cornering grip), `driveFront` ↑, peak torque ↓ |
-| Slides feel uncatchable | `steering.selfAlign` ↑ (caster catches the slide), `slideGrip` ↑, `assists.maxSideslip` ↑ with `stability` ↑ |
-| Too twitchy at speed | `steering.highSpeedAngle` ↓, `steering.rate` ↓, `yawInertiaIndex` ↑, shaper steer `digital.riseRate` ↓ |
+| `understeerGradient` too high | front tire `peakSlipAngle` ↓ or rear ↑ (tire stiffness split is what moves it at moderate g); `complianceSteer.front` ↓ |
+| `understeerGradient` near 0 on a road car | add `complianceSteer` (front ~`4e-6` rad/N) and `rollSteer`; a real road car sits at 1–3 °/g |
+| Pushes wide, won't turn in | `lateralLoadTransfer.frontShare` ↓, rear `peakGrip` ↓ relative to front, `yawInertiaIndex` ↓, `steering.rate` ↑ |
+| Snaps into oversteer | `lateralLoadTransfer.frontShare` ↑, rear `peakGrip` ↑, `slideGrip` ↑ (gentler breakaway), `effects.stability` ↑ |
+| Spins holding throttle and steer | `effects.tractionControl` ↑ (budgets for cornering grip), `driveFront` ↑, peak torque ↓; an `open` or `limitedSlip` differential |
+| Slides feel uncatchable | `effects.selfAlign` ↑ (caster catches the slide), `slideGrip` ↑, `stability.maxSideslip` ↑ with `stability.strength` ↑ |
+| Too twitchy at speed | `speedSensitiveSteering.angle` ↓, `steering.rate` ↓, `yawInertiaIndex` ↑, shaper steer `digital.riseRate` ↓ |
+| Grips too well for a road car | `loadSensitivity` with `nominalLoad` (each wheel at its own load), `combinedSlip`, `wheelSlide` |
+| Launches and stops too quickly | `rotatingInertia` (engine ~`0.13` kg·m², wheels ~`4.6`), `wheelSlide`, `longitudinalGrip` |
 | Keyboard steering is all-or-nothing | shaper steer `digital.riseRate` 2–4/s, `returnRate` 5–8/s |
 | Stick feels twitchy on centre | shaper steer `analog.curve` 1.3–2, `analog.deadzone` 0.05–0.12 |
 | Sluggish, boat-like | `yawInertiaIndex` ↓, `peakSlipAngle` ↓ (stiffer tire), `comHeight` ↓ |
 | Handbrake does nothing / spins every time | `handbrakeGrip` ↓ / ↑, with `selfAlign` to set how it recovers |
-| No top speed ceiling / wrong ceiling | `aero.dragArea`, power (`maxPower` or torque × gearing); `speedLimit` only for a hard governor |
+| No top speed ceiling / wrong ceiling | `aeroDrag.area`, power (`maxPower` or torque × gearing); `speedLimit` only for a hard governor |
+| Coasts forever / stops too soon off throttle | `aeroDrag`, `rollingResistance`, engine braking (`engineBrakeTorque` or `coastForce`); leave any out for no loss |
 | Boost or supersonic above the cap | `modifiers.thrust` (bypasses tires and the governor) |
 | Floaty, wallowy body | `suspension.springRate` ↑, `damperRate` ↑ |
 | Harsh, skips over bumps | `springRate` ↓, `travel` ↑ |
 | Landings bounce back into the air | `suspension.reboundRate` ↑ (defaults to 1.5 × `damperRate`), `travel` ↑ |
-| Leans too much / feels flat | `suspension.antiRoll` ↑ / ↓; `rollStiffnessFront` still sets which axle takes it |
+| Leans too much / feels flat | `suspension.antiRoll` ↑ / ↓ (`antiRollFront` sets which axle takes it); `rollStiffness` without springs |
 | Jump too floaty / too short | `jump.speed` (apex ≈ speed² / 2g); `jump.count: 2` plus `window` for a double jump |
 | Air rotation too twitchy / sluggish | `air.*Accel` for how fast it builds, `air.maxRate` for the ceiling, `air.damping` for how fast it stops |
-| Bike wheelies on launch / flips over the bars braking | `assists.antiWheelie` / `assists.antiStoppie` ↑ (1 keeps both wheels down; 0.6 lets it lift briefly) |
+| Bike wheelies on launch / flips over the bars braking | `antiWheelie` / `antiStoppie` `strength` ↑ (1 keeps both wheels down; 0.6 lets it lift briefly) |
 | Bike tips in lazily / nervously | `lean.leanRate` ↑ / ↓ (2 tourer … 5 sport); `lean.countersteer` sets the wrong-way tip at the start |
 | Rolls over in corners | `comHeight` ↓ or `trackWidth` ↑: it tips over at about `trackWidth / (2 · comHeight)` g |
 

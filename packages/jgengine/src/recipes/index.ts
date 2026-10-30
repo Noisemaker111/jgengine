@@ -529,11 +529,11 @@ export function rollGun(seed: string) {
 const ENTER_VEHICLE = `import { DEFAULT_WALK_CODES, defineGame, defineSystem } from "@jgengine/shell/gameKit";
 import { boardVehicle, createVehicleSeats, leaveVehicle, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
 import { createVehicleDynamics, type VehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
-import { VEHICLE_STYLES, vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
+import { vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import type { GameContext } from "@jgengine/shell/gameKit";
 
-const TUNING = vehicleTuning({ ...VEHICLE_STYLES.arcade, topSpeed: 28, accel: 9, brake: 14, turnRate: 2.2 });
+const TUNING = vehicleTuning({ topSpeed: 28, accel: 9, brake: 14, turnRate: 2.2, grip: 1.5, abs: 1, stability: 1 });
 const DRIVE = {
   throttle: { positive: ["moveForward"] }, brake: { positive: ["moveBack"] },
   steer: { positive: ["moveRight"], negative: ["moveLeft"] }, handbrake: { positive: ["jump"] },

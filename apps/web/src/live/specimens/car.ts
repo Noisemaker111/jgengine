@@ -5,16 +5,31 @@
  */
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
-import { VEHICLE_STYLES, vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
+import { vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
 
 import { at } from "../at";
 import { drawKeycaps, drawPill, heldKeys, mountCanvas2d, takeover } from "../canvas2d";
 import type { Trace } from "../trace";
 
-export type CarStyle = keyof typeof VEHICLE_STYLES;
+/**
+ * The demo's three driver-aid setups; grip and drift come from the dials. A looser car (more drift) gets less
+ * traction control and more caster, so the slide it is built for is still catchable.
+ */
+const CAR_AIDS = {
+  arcade: { abs: 1, stability: 1, selfAlign: 0.6, tractionControl: 0.7, steerRate: 4.4, bodyRoll: 0.4 },
+  sim: { abs: 0.25, stability: 0.55, selfAlign: 0.3375, tractionControl: 0.175, steerRate: 2.9, bodyRoll: 0.6 },
+  drift: { abs: 0.55, stability: 0.73, selfAlign: 0.4425, tractionControl: 0.385, steerRate: 3.5, bodyRoll: 0.6 },
+} as const satisfies Record<string, Partial<VehicleSpec>>;
+
+function aidsFor(style: CarStyle, drift: number): Partial<VehicleSpec> {
+  const aids = CAR_AIDS[style];
+  return { ...aids, tractionControl: aids.tractionControl * (1 - 0.5 * drift), selfAlign: aids.selfAlign + 0.25 * drift };
+}
+
+export type CarStyle = keyof typeof CAR_AIDS;
 
 export function isCarStyle(value: unknown): value is CarStyle {
-  return typeof value === "string" && Object.hasOwn(VEHICLE_STYLES, value);
+  return typeof value === "string" && Object.hasOwn(CAR_AIDS, value);
 }
 
 export interface CarDials {
@@ -66,7 +81,7 @@ function buildTrack(): { x: number; z: number }[] {
 const TRACK = buildTrack();
 
 function tuningFrom(d: CarDials) {
-  return vehicleTuning({ ...VEHICLE_STYLES[d.style], topSpeed: d.topSpeed, accel: d.accel, brake: 16, turnRate: d.turnRate, grip: d.grip, drift: d.drift });
+  return vehicleTuning({ ...aidsFor(d.style, d.drift), topSpeed: d.topSpeed, accel: d.accel, brake: 16, turnRate: d.turnRate, grip: d.grip, drift: d.drift });
 }
 
 function headingOf(a: { x: number; z: number }, b: { x: number; z: number }): number {
@@ -78,7 +93,7 @@ function wrapAngle(a: number): number {
 }
 
 export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpecimen {
-  let dials: CarDials = { style: "drift", topSpeed: 34, accel: 10, turnRate: 2.4, grip: VEHICLE_STYLES.drift.grip, drift: VEHICLE_STYLES.drift.drift };
+  let dials: CarDials = { style: "drift", topSpeed: 34, accel: 10, turnRate: 2.4, grip: 1.1, drift: 0.85 };
   const car = createVehicleDynamics(tuningFrom(dials));
   const start = at(TRACK, 0);
   const resetCar = () => car.resetTo([start.x, 0, start.z], headingOf(start, at(TRACK, 3)));

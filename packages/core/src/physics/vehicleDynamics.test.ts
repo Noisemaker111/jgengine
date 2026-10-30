@@ -7,11 +7,21 @@ import { measureAir, measureCourse, measureHandling, measureLean, measureRide } 
 import {
   createVehicleDynamics,
   type VehicleDynamicsTuning,
+  type VehicleEffects,
   type VehicleGearboxTuning,
   type VehicleSuspensionTuning,
+  withVehicleEffects,
 } from "./vehicleDynamics";
 
 const DT = 1 / 60;
+
+const tyres: VehicleEffects = {
+  combinedSlip: {},
+  longitudinalLoadTransfer: {},
+  lateralLoadTransfer: {},
+  loadSensitivity: { grip: 0.05 },
+  rollingResistance: {},
+};
 
 const gearbox: VehicleGearboxTuning = {
   kind: "gearbox",
@@ -36,14 +46,20 @@ const gripRwd: VehicleDynamicsTuning = {
   frontWeight: 0.52,
   comHeight: 0.48,
   trackWidth: 1.6,
-  rollStiffnessFront: 0.55,
   front: { peakGrip: 1.1, peakSlipAngle: 0.1, slideGrip: 0.75 },
   driveFront: 0,
   powertrain: gearbox,
   brakeForce: 16000,
-  steering: { maxAngle: 0.6, highSpeedAngle: 0.12, highSpeedAt: 35, rate: 2.2, returnRate: 3, selfAlign: 0.15 },
-  assists: { abs: 1 },
-  aero: { dragArea: 0.65, downforceArea: 0.3 },
+  steering: { maxAngle: 0.6, rate: 2.2, returnRate: 3 },
+  effects: {
+    ...tyres,
+    lateralLoadTransfer: { frontShare: 0.55 },
+    speedSensitiveSteering: { angle: 0.12, at: 35 },
+    selfAlign: { strength: 0.15 },
+    abs: { strength: 1 },
+    aeroDrag: { area: 0.65 },
+    downforce: { area: 0.3 },
+  },
 };
 
 const forgivingStreet: VehicleDynamicsTuning = {
@@ -59,9 +75,16 @@ const forgivingStreet: VehicleDynamicsTuning = {
   powertrain: gearbox,
   brakeForce: 17000,
   handbrakeGrip: 0.25,
-  steering: { maxAngle: 0.65, highSpeedAngle: 0.2, highSpeedAt: 30, rate: 4, returnRate: 6, selfAlign: 0.7 },
-  assists: { abs: 1, tractionControl: 0.5, stability: 0.9, maxSideslip: 0.35 },
-  aero: { dragArea: 0.7 },
+  steering: { maxAngle: 0.65, rate: 4, returnRate: 6 },
+  effects: {
+    ...tyres,
+    speedSensitiveSteering: { angle: 0.2, at: 30 },
+    selfAlign: { strength: 0.7 },
+    abs: { strength: 1 },
+    tractionControl: { strength: 0.5 },
+    stability: { strength: 0.9, maxSideslip: 0.35 },
+    aeroDrag: { area: 0.7 },
+  },
   rollStiffness: 14000,
 };
 
@@ -77,10 +100,15 @@ const ballCar: VehicleDynamicsTuning = {
   powertrain: { kind: "direct", maxForce: 3400, maxPower: 120000, reverseScale: 0.8, coastForce: 150 },
   brakeForce: 6000,
   handbrakeGrip: 0.15,
-  steering: { maxAngle: 0.7, highSpeedAngle: 0.45, highSpeedAt: 23, rate: 12, selfAlign: 0.3 },
+  steering: { maxAngle: 0.7, rate: 12 },
   speedLimit: 23,
   reverseSpeed: 13,
-  assists: { stability: 0.5, maxSideslip: 0.5 },
+  effects: {
+    ...tyres,
+    speedSensitiveSteering: { angle: 0.45, at: 23 },
+    selfAlign: { strength: 0.3 },
+    stability: { strength: 0.5, maxSideslip: 0.5 },
+  },
   rollStiffness: 1e9,
   pitchStiffness: 1e9,
 };
@@ -241,8 +269,10 @@ describe("createVehicleDynamics — handling emerges from physical knobs", () =>
   });
 
   test("roll-stiffness distribution moves the balance between understeer and oversteer", () => {
-    const pushy = measureHandling(() => createVehicleDynamics({ ...gripRwd, rollStiffnessFront: 0.8, loadSensitivity: 0.4 }));
-    const loose = measureHandling(() => createVehicleDynamics({ ...gripRwd, rollStiffnessFront: 0.4, loadSensitivity: 0.4 }));
+    const balanced = (frontShare: number) =>
+      withVehicleEffects(gripRwd, { lateralLoadTransfer: { frontShare }, loadSensitivity: { grip: 0.1 } });
+    const pushy = measureHandling(() => createVehicleDynamics(balanced(0.8)));
+    const loose = measureHandling(() => createVehicleDynamics(balanced(0.4)));
     expect(loose.stepPeakSideslipDeg).toBeGreaterThan(pushy.stepPeakSideslipDeg * 1.5);
     expect(loose.stepSteadyYawRate).toBeGreaterThan(pushy.stepSteadyYawRate);
     // A front-limited car tucks in when lifting, because the load shift hands grip back to the front axle.
@@ -282,7 +312,7 @@ describe("createVehicleDynamics — handling emerges from physical knobs", () =>
 
   test("traction control budgets for cornering grip, so full throttle with full steer no longer spins a RWD car", () => {
     const bare = measureHandling(() => createVehicleDynamics(gripRwd));
-    const assisted = measureHandling(() => createVehicleDynamics({ ...gripRwd, assists: { abs: 1, tractionControl: 0.6 } }));
+    const assisted = measureHandling(() => createVehicleDynamics(withVehicleEffects(gripRwd, { tractionControl: { strength: 0.6 } })));
     expect(bare.powerSteerSpun).toBe(true);
     expect(assisted.powerSteerSpun).toBe(false);
     expect(assisted.powerSteerPeakSideslipDeg).toBeLessThan(15);
@@ -290,7 +320,7 @@ describe("createVehicleDynamics — handling emerges from physical knobs", () =>
 
   test("ABS keeps the front steering under full brake", () => {
     const headingChange = (abs: number) => {
-      const car = createVehicleDynamics({ ...gripRwd, assists: { abs } });
+      const car = createVehicleDynamics(withVehicleEffects(gripRwd, { abs: abs > 0 && { strength: abs } }));
       for (let i = 0; i < 600; i += 1) if (car.tick(DT, axis({ throttle: 1 })).forwardSpeed > 25) break;
       const start = car.pose().heading;
       for (let i = 0; i < 60; i += 1) car.tick(DT, axis({ brake: 1, steer: 1 }));
@@ -301,7 +331,8 @@ describe("createVehicleDynamics — handling emerges from physical knobs", () =>
 });
 
 const roadSprings: VehicleSuspensionTuning = { springRate: 32000, damperRate: 3200, travel: 0.14, rideHeight: 0.48, antiRoll: 30000 };
-const sprung: VehicleDynamicsTuning = { ...gripRwd, assists: { abs: 1, tractionControl: 0.6, stability: 0.5 }, suspension: roadSprings };
+const sprungAids = { tractionControl: { strength: 0.6 }, stability: { strength: 0.5 } };
+const sprung: VehicleDynamicsTuning = { ...withVehicleEffects(gripRwd, sprungAids), suspension: { ...roadSprings, antiRollFront: 0.55 } };
 
 describe("createVehicleDynamics — suspension", () => {
   test("rests level at its ride height with the static weight split across the corners", () => {
@@ -377,7 +408,7 @@ describe("createVehicleDynamics — suspension", () => {
 
   test("measureRide separates a stiff race setup from a soft road setup", () => {
     const soft = measureRide(() => createVehicleDynamics({ ...sprung, suspension: { springRate: 18000, damperRate: 1400, travel: 0.2, rideHeight: 0.5 } }));
-    const stiff = measureRide(() => createVehicleDynamics({ ...sprung, suspension: { springRate: 70000, damperRate: 6500, travel: 0.07, rideHeight: 0.4, antiRoll: 90000 } }));
+    const stiff = measureRide(() => createVehicleDynamics({ ...sprung, suspension: { springRate: 70000, damperRate: 6500, travel: 0.07, rideHeight: 0.4, antiRoll: 90000, antiRollFront: 0.55 } }));
     expect(stiff.settleSeconds).toBeLessThan(soft.settleSeconds);
     expect(stiff.brakeDiveDeg).toBeLessThan(soft.brakeDiveDeg);
     expect(stiff.rollGradient).toBeLessThan(soft.rollGradient / 2);
@@ -386,7 +417,7 @@ describe("createVehicleDynamics — suspension", () => {
   });
 
   test("springs keep the flat-ground handling numbers close to the unsprung model", () => {
-    const flat = measureHandling(() => createVehicleDynamics({ ...gripRwd, assists: sprung.assists }));
+    const flat = measureHandling(() => createVehicleDynamics(withVehicleEffects(gripRwd, sprungAids)));
     const withSprings = measureHandling(() => createVehicleDynamics(sprung));
     expect(Math.abs(withSprings.maxLateralG - flat.maxLateralG)).toBeLessThan(0.08);
     expect(Math.abs(withSprings.zeroTo100 - flat.zeroTo100)).toBeLessThan(0.3);
@@ -516,10 +547,9 @@ const sportBike: VehicleDynamicsTuning = {
   powertrain: { kind: "direct", maxForce: 4200, maxPower: 110000 },
   brakeForce: 3200,
   brakeFront: 0.75,
-  steering: { maxAngle: 0.5, highSpeedAngle: 0.5, highSpeedAt: 30, rate: 3 },
+  steering: { maxAngle: 0.5, rate: 3 },
   lean: { maxLean: 0.85, leanRate: 5 },
-  assists: { abs: 1, tractionControl: 0.5 },
-  aero: { dragArea: 0.35 },
+  effects: { ...tyres, abs: { strength: 1 }, tractionControl: { strength: 0.5 }, aeroDrag: { area: 0.35 } },
 };
 
 describe("createVehicleDynamics — lean (motorcycles)", () => {
@@ -559,7 +589,12 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
   });
 
   test("hard launch lifts the front and hard front braking lifts the rear", () => {
-    const hooligan: VehicleDynamicsTuning = { ...sportBike, wheelbase: 1.35, comHeight: 0.8, assists: {}, powertrain: { kind: "direct", maxForce: 5200, maxPower: 150000 } };
+    const hooligan: VehicleDynamicsTuning = {
+      ...withVehicleEffects(sportBike, { abs: false, tractionControl: false }),
+      wheelbase: 1.35,
+      comHeight: 0.8,
+      powertrain: { kind: "direct", maxForce: 5200, maxPower: 150000 },
+    };
     const launch = createVehicleDynamics(hooligan);
     let wheelie = false;
     for (let i = 0; i < 90; i += 1) wheelie ||= launch.tick(DT, axis({ throttle: 1 })).wheelie;
@@ -574,10 +609,9 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
 
   test("anti-wheelie and anti-stoppie keep both wheels down on the same hooligan bike", () => {
     const hooligan: VehicleDynamicsTuning = {
-      ...sportBike,
+      ...withVehicleEffects(sportBike, { abs: false, tractionControl: false, antiWheelie: { strength: 1 }, antiStoppie: { strength: 1 } }),
       wheelbase: 1.35,
       comHeight: 0.8,
-      assists: { antiWheelie: 1, antiStoppie: 1 },
       powertrain: { kind: "direct", maxForce: 5200, maxPower: 150000 },
     };
     const launch = createVehicleDynamics(hooligan);
@@ -611,8 +645,9 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
       brakeFront: 1,
       suspension: { springRate: 9000, damperRate: 900, travel: 0.12, rideHeight: 0.35, antiRoll: 0 },
     };
-    function lifts(assists: VehicleDynamicsTuning["assists"]) {
-      const bike = createVehicleDynamics({ ...sprung, assists }, { groundHeight: () => 0 });
+    function lifts(guarded: boolean) {
+      const aids = guarded ? { antiWheelie: { strength: 1 }, antiStoppie: { strength: 1 } } : {};
+      const bike = createVehicleDynamics(withVehicleEffects(sprung, { abs: false, tractionControl: false, ...aids }), { groundHeight: () => 0 });
       for (let i = 0; i < 60; i += 1) bike.tick(DT, axis({}));
       let front = 0;
       let rear = 0;
@@ -627,10 +662,10 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
       }
       return { front, rear };
     }
-    const bare = lifts({});
+    const bare = lifts(false);
     expect(bare.front).toBeGreaterThan(10);
     expect(bare.rear).toBeGreaterThan(5);
-    expect(lifts({ antiWheelie: 1, antiStoppie: 1 })).toEqual({ front: 0, rear: 0 });
+    expect(lifts(true)).toEqual({ front: 0, rear: 0 });
   });
 
   test("springs do not read the lean as body roll: a sprung bike leans like a rigid one", () => {
