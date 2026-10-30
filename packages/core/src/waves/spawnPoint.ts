@@ -30,7 +30,7 @@ export function selectSpawnPoint(options: SpawnPointSelectionOptions): NavPoint 
     ...(options.avoid === undefined ? {} : { avoid: options.avoid }),
   });
   if (region.isEmpty) return null;
-  const picked = region.sample(options.random);
+  const picked = region.sample(() => Math.max(0, Math.min(1, options.random())));
   // The candidate table copies its points; hand back the caller's own entry so a lane lookup by identity works.
   return options.candidates.find((candidate) => candidate[0] === picked[0] && candidate[1] === picked[1]) ?? picked;
 }
