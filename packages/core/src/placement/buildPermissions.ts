@@ -11,6 +11,8 @@ export interface BuildRoleLadder<R extends string> {
   editor: R;
   /** The ladder role a guild joins at when `setGuild` names none. */
   guildDefault: R;
+  /** The ladder role anyone without a grant holds, e.g. a shared world every visitor may look at. Omit for none. */
+  everyone?: R;
 }
 
 /** Looking needs any role at all. */
@@ -23,15 +25,18 @@ export interface PlotPermissionConfig<R extends string> extends BuildRoleLadder<
   guildId?: string;
   roles?: Readonly<Record<string, R>>;
   guildRole?: R;
+  /** Players who hold no role on this plot, whatever their grant, guild or the `everyone` role says. Never the owner. */
+  banned?: readonly string[];
 }
 
-/** Serializable copy of a plot's owner, guild and roles. */
+/** Serializable copy of a plot's owner, guild, roles and bans. */
 export interface PlotPermissionSnapshot<R extends string> {
   plotId: string;
   ownerId: string;
   guildId?: string;
   roles: Readonly<Record<string, R>>;
   guildRole?: R;
+  banned?: readonly string[];
 }
 
 /** The player asking to build, with their guild if any. */
@@ -47,6 +52,9 @@ export interface PlotPermissions<R extends string> {
   canView(actor: BuildActor): boolean;
   grant(userId: string, role: R): void;
   revoke(userId: string): void;
+  /** Strip every role from a player until {@link unban}; banning the owner does nothing. */
+  ban(userId: string): void;
+  unban(userId: string): void;
   setGuild(guildId: string | null, role?: R): void;
   transferOwner(userId: string): void;
   snapshot(): PlotPermissionSnapshot<R>;
@@ -74,6 +82,10 @@ export function createPlotPermissions<R extends string>(
   if (ladder.indexOf(config.guildDefault) < 0) {
     throw new RangeError(`guild role "${config.guildDefault}" is not on the plot's role ladder`);
   }
+  const everyone = config.everyone;
+  if (everyone !== undefined && ladder.indexOf(everyone) < 0) {
+    throw new RangeError(`everyone role "${everyone}" is not on the plot's role ladder`);
+  }
   /** Editing needs the `editor` rank or above. */
   const canEditRule: Predicate = { gte: ["rank", editorRank] };
 
@@ -81,9 +93,11 @@ export function createPlotPermissions<R extends string>(
   let guildId = config.guildId;
   let guildRole = config.guildRole;
   const roles = new Map<string, R>(Object.entries(config.roles ?? {}));
+  const banned = new Set<string>(config.banned ?? []);
 
   function roleOf(actor: BuildActor): R | null {
     if (actor.userId === ownerId) return topRole;
+    if (banned.has(actor.userId)) return null;
     const explicit = roles.get(actor.userId);
     if (explicit !== undefined) return explicit;
     if (
@@ -94,7 +108,7 @@ export function createPlotPermissions<R extends string>(
     ) {
       return guildRole;
     }
-    return null;
+    return everyone ?? null;
   }
 
   return {
@@ -113,6 +127,12 @@ export function createPlotPermissions<R extends string>(
     revoke(userId) {
       roles.delete(userId);
     },
+    ban(userId) {
+      if (userId !== ownerId) banned.add(userId);
+    },
+    unban(userId) {
+      banned.delete(userId);
+    },
     setGuild(nextGuildId, role) {
       guildId = nextGuildId ?? undefined;
       guildRole =
@@ -120,6 +140,7 @@ export function createPlotPermissions<R extends string>(
     },
     transferOwner(userId) {
       roles.delete(userId);
+      banned.delete(userId);
       ownerId = userId;
     },
     snapshot() {
@@ -129,6 +150,7 @@ export function createPlotPermissions<R extends string>(
         ...(guildId === undefined ? {} : { guildId }),
         roles: Object.fromEntries(roles),
         ...(guildRole === undefined ? {} : { guildRole }),
+        ...(banned.size === 0 ? {} : { banned: [...banned] }),
       };
     },
     restore(next) {
@@ -138,6 +160,10 @@ export function createPlotPermissions<R extends string>(
       roles.clear();
       for (const [userId, role] of Object.entries(next.roles)) {
         if (userId !== next.ownerId) roles.set(userId, role);
+      }
+      banned.clear();
+      for (const userId of next.banned ?? []) {
+        if (userId !== next.ownerId) banned.add(userId);
       }
     },
   };
