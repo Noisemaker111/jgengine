@@ -1,4 +1,5 @@
 import type { NavPoint } from "../nav/navGrid";
+import { pickWeighted } from "../random/pick";
 import { randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
 import { distanceBiasStrength, type DistanceBias } from "../world/spatialSample";
 import { selectSpawnPoint } from "./spawnPoint";
@@ -136,12 +137,8 @@ function pickEntry(
   }
   if (affordable.length === 0 || total <= 0) return null;
   const [roll, nextRng] = stepRandomSeed(rng);
-  let cursor = roll * total;
-  for (const entry of affordable) {
-    cursor -= entry.weight ?? 1;
-    if (cursor <= 0) return { entry, rng: nextRng };
-  }
-  return { entry: affordable[affordable.length - 1]!, rng: nextRng };
+  const entry = pickWeighted(() => roll, affordable, (candidate) => candidate.weight ?? 1);
+  return entry === undefined ? null : { entry, rng: nextRng };
 }
 
 /** Advance the director by `dt` seconds: earn budget, spend it on spawns under the alive cap, and roll waves over. */
