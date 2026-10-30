@@ -19,11 +19,35 @@ their rules, stories, items, assets, authored worlds and presentation. The engin
 the common machinery that makes those choices work. Shared behavior must preserve
 different art directions and gameplay, not impose a common game or asset kit.
 
-A JGengine game can be anything, so the engine is small general systems (spawn schedules,
-rarity, access rules, loot pools, motion, growth stages, physical effects) that a game
+A JGengine game can be anything, so the engine is small general parts that a game
 combines in a few lines into its own features. A "supply drop", "breeding" or "boss fight" is
 the game's combination, never one closed engine feature, and every part can be switched off,
 swapped or retuned.
+
+### The parts
+
+Most game features are made of these ten parts plus the engine's entities, containers and
+world. Each has one home; a feature that needs one uses that home and never writes its own.
+
+| Part | What it is | Examples it covers | Home |
+| --- | --- | --- | --- |
+| Meter | a number with a range that drains, fills or regenerates | health, hunger, ammo, combo, torpor, heat, stamina | `stats/statPool.ts` |
+| Ladder | ordered steps over a number, named by the game | rarity, tiers, ranks, levels, mood bands, wanted stars | `threshold/thresholds.ts` |
+| Phases | named states one after another, by time or by event | growth stages, boss phases, day parts, a match's rounds | `time/stateSchedule.ts` |
+| Schedule | something happens at a pace from a start time | waves, supply drops, weather, events, respawns | planned, `time/` |
+| Placement | where something appears | spawn points, scatter, drop zones, safe spots | `world/spatialSample.ts`, `game/spawnPoints.ts` |
+| Table | a weighted choice the game fills | loot per rarity, which enemy, which mutation | `random/pick.ts` |
+| Requirement | a condition over facts the game names | level gates, keys, quest prerequisites, unlocks | `rules/predicate.ts` |
+| Modifiers | stacked add, multiply, override and clamp on a value | buffs, gear stats, difficulty, upgrades, imprinting | `progression/statGraph.ts` |
+| Inheritance | a child's values from its parents with variation | breeding, crossing plants, procedural offspring | `breeding/inheritance.ts`, moving to its own folder |
+| Motion track | a thing follows a path over time and arrives | a drop falling, a thrown item, a door, a cutscene move | planned, `movement/` |
+
+A supply drop is a Schedule (when), Placement (where), Ladder (rarity), Requirement (who may
+open which rarity), Table (loot per rarity) and Motion track (the fall and landing), so a game
+writes `spawnSupplyDrop(x, y, "purple")` itself in a few lines. Simple dog breeding is
+Inheritance plus a Phases list for puppy to adult; it needs none of the rest. Much of today's
+engine still has its own copies of these parts inside one-game features; they are being
+replaced by the parts, and new code never adds another copy.
 
 The games in [`games/`](games) are workspaces of this repo and run engine source from the
 same commit, so an engine change and the games it breaks are fixed in one PR. Outside users get
