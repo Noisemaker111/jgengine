@@ -75,7 +75,20 @@ describe("body temperature", () => {
   });
 
   test("cold burns food, insulation and fortitude widen the band, exposure hurts", () => {
-    const config = { comfortC: [10, 30] as const };
+    const config = {
+      comfortC: [10, 30] as const,
+      bands: {
+        comfortable: "comfortable",
+        cold: [{ id: "cold", at: 0 }, { id: "freezing", at: 15 }],
+        hot: [{ id: "hot", at: 0 }, { id: "scorching", at: 15 }],
+      },
+      drainPerDegree: 0.05,
+      coldDrains: "food",
+      heatDrains: "water",
+      damageAfterC: 15,
+      damagePerDegree: 0.1,
+      fortitudeC: 0.2,
+    };
     expect(bodyComfort(20, config).band).toBe("comfortable");
     const cold = bodyComfort(0, config);
     expect(cold.band).toBe("cold");
