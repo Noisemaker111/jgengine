@@ -1,7 +1,7 @@
 import { openGrownCrownWidthM } from "../../packages/core/src/plants/validation/crownAllometry";
 import { crownWidthBandM, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../../packages/core/src/plants/species/speciesReference";
 import type { CrownForm } from "../../packages/core/src/plants/species/plantSpecies";
-import { CROWN_ARCHITECTURE_MEASURES, CROWN_ARCHITECTURE_MISSES_ALLOWED, crownShapeBands, type CrownArchitecture, type CrownArchitectureTarget, type MeasureBand } from "../../packages/core/src/plants/validation/crownArchitecture";
+import { CROWN_ARCHITECTURE_MEASURES, CROWN_ARCHITECTURE_MISSES_ALLOWED, crownArchitectureMisses, crownShapeBands, type CrownArchitecture, type CrownArchitectureTarget, type MeasureBand } from "../../packages/core/src/plants/validation/crownArchitecture";
 import type { Trial, TrialReading } from "./speciesTrial";
 
 /** What a fit holds one species to beyond its reference tables. */
@@ -60,10 +60,18 @@ function architecturePenalty(target: CrownArchitectureTarget, measured: CrownArc
   return sum;
 }
 
-/** Guardrail misfit of the seeded individuals, leaving out the worst ones the library test allows to miss. */
+/** Score of each check the library test would fail, so a fit never trades a failing check for a closer fit elsewhere. */
+const TEST_MISS_COST = 10;
+
+/**
+ * Guardrail misfit of the seeded individuals, leaving out the worst ones the library test allows to
+ * miss, plus a fixed cost for each further seed that misses.
+ */
 function seededArchitecturePenalty(target: CrownArchitectureTarget, individuals: readonly CrownArchitecture[]): number {
   const penalties = individuals.map((measured) => architecturePenalty(target, measured)).sort((a, b) => a - b);
-  return penalties.slice(0, Math.max(0, penalties.length - CROWN_ARCHITECTURE_MISSES_ALLOWED)).reduce((sum, p) => sum + p, 0);
+  const misses = individuals.filter((measured) => crownArchitectureMisses(target, measured).length > 0).length;
+  const near = penalties.slice(0, Math.max(0, penalties.length - CROWN_ARCHITECTURE_MISSES_ALLOWED)).reduce((sum, p) => sum + p, 0);
+  return near + TEST_MISS_COST * Math.max(0, misses - CROWN_ARCHITECTURE_MISSES_ALLOWED);
 }
 
 /** A trial's total misfit and its parts; lower is better. */
@@ -101,6 +109,9 @@ export function scoreTrial(target: FitTarget, trial: Trial): TrialScore {
       }
       // The library test's limits, with a margin: ±15% height and ±25% DBH.
       add("limits", hinge(Math.abs(logRatio(stand.heightM, height)), 0, 0.11, 0.01) + hinge(Math.abs(logRatio(stand.dbhCm, dbh)), 0, 0.18, 0.01));
+      const outsideTallo = band !== null && (stand.crownWidthM < band.lowM || stand.crownWidthM > band.highM);
+      const testMisses = (Math.abs(stand.heightM / height - 1) >= 0.15 ? 1 : 0) + (Math.abs(stand.dbhCm / dbh - 1) >= 0.25 ? 1 : 0) + (outsideTallo ? 1 : 0);
+      add("testMisses", TEST_MISS_COST * testMisses);
       if (reference.openCrownWidth !== undefined) {
         const ek = openGrownCrownWidthM(reference.openCrownWidth, open.dbhCm);
         add("openCrown", hinge(open.crownWidthM / ek, 0.85, 1.18, 0.05));
