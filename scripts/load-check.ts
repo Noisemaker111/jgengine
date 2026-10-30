@@ -637,6 +637,8 @@ async function main(): Promise<number> {
     console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms, after reveal ${revealSummary(sample.revealFrames, sample.revealCovered)}, effects on ${sample.effectsAfterReveal == null ? "-" : `${sample.effectsAfterReveal >= 0 ? "+" : ""}${sample.effectsAfterReveal}`} ms, ${sample.sceneColors ?? "-"} colours, ${sample.glErrors ?? 0} GL errors, boot ${sample.boot ?? "-"}${sample.error === undefined ? "" : ` (${sample.error})`}`);
   try {
     for (const game of args.games) {
+      // Other sessions' work comes in bursts, so the PC is sampled before the runs as well as after.
+      const busyBefore = args.guard ? await machineBusy() : 0;
       const samples: LoadSample[] = [];
       for (let run = 0; run < args.runs; run += 1) {
         const sample = await measureOnce(server.base, game, pathOf(game), args, runDir);
@@ -662,7 +664,7 @@ async function main(): Promise<number> {
           // A load that never happened or drew blank fails however busy the PC is; only a slower one is weighed.
           const timed = judged.filter((line) => / ms, baseline \d+ ms, limit \d+ ms$/.test(line));
           failures.push(...judged.filter((line) => !timed.includes(line)));
-          const verdict = guardVerdict(timed, timed.length === 0 ? 0 : await machineBusy());
+          const verdict = guardVerdict(timed, timed.length === 0 ? 0 : Math.max(busyBefore, await machineBusy()));
           failures.push(...verdict.failures);
           unjudged.push(...verdict.unjudged);
         }
