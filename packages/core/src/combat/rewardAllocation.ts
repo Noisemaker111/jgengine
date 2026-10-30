@@ -1,3 +1,4 @@
+import { pickUniform } from "../random/pick";
 import { hashString, seededStreams } from "../random/rng";
 
 /**
@@ -265,7 +266,7 @@ function allocateClaimed(request: AllocationRequest): AllocationOutcome {
       reservedFor = spec.reservedFor;
     } else if (recipients.length > 0) {
       const pick = seededStreams(request.allocationSeed)("claim:reserve")();
-      reservedFor = recipients[Math.min(recipients.length - 1, Math.floor(pick * recipients.length))]?.id ?? null;
+      reservedFor = pickUniform(() => pick, recipients)?.id ?? null;
     }
   }
   const pool: ClaimablePool = {

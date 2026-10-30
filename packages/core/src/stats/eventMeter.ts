@@ -1,17 +1,23 @@
+import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 import {
-  createAccumulatorMeter,
-  type AccumulatorMeter,
-  type AccumulatorMeterState,
-  type MeterMode,
-  type MeterTier,
-} from "./accumulatorMeter";
+  changeMeter,
+  createMeter,
+  createStatPool,
+  statPoolFraction,
+  tickMeter,
+  type MeterRates,
+  type MeterState,
+} from "./statPool";
+
+/** What a full meter does with the next gain: hold the fill until consumed, or carry the excess into a fresh cycle. */
+export type EventMeterMode = "hold" | "reset";
 
 export interface EventMeterConfig {
   max: number;
-  mode?: MeterMode;
+  mode?: EventMeterMode;
   decayPerSecond?: number;
   decayDelayMs?: number;
-  tiers?: readonly MeterTier[];
+  tiers?: readonly ThresholdBoundary[];
   gains: Record<string, number>;
   resets?: readonly string[];
 }
@@ -29,11 +35,14 @@ export interface EventMeterFeedResult {
   tierChanged: boolean;
 }
 
-/** Event meter persistence uses the underlying accumulator's complete state. */
-export type EventMeterState = AccumulatorMeterState;
+/** Event meter persistence: the meter's bounded value and timing, plus its `hold` latch. */
+export interface EventMeterState {
+  meter: MeterState;
+  held: boolean;
+}
 
 export interface EventMeter {
-  /** Detached value, hold latch, and decay-delay timer. */
+  /** Detached value, hold latch, and decay-delay timers. */
   state(): EventMeterState;
   /** Restore using the caller's existing event and decay configuration. */
   restore(next: EventMeterState): void;
@@ -49,10 +58,6 @@ export interface EventMeter {
   tick(dtSeconds: number, decayEnabled?: boolean): void;
 }
 
-function readyOf(meter: AccumulatorMeter, mode: MeterMode): boolean {
-  return mode === "hold" ? meter.broke() : meter.value() >= 0 && meter.fraction() >= 1;
-}
-
 /**
  * A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shooters and fighters hand-roll.
  *
@@ -61,74 +66,115 @@ function readyOf(meter: AccumulatorMeter, mode: MeterMode): boolean {
 export function createEventMeter(config: EventMeterConfig): EventMeter {
   const mode = config.mode ?? "hold";
   const resets = new Set(config.resets ?? []);
-  const meter = createAccumulatorMeter({
-    max: config.max,
-    mode,
-    decayPerSecond: config.decayPerSecond,
-    decayDelayMs: config.decayDelayMs,
-    tiers: config.tiers,
-  });
+  const tiers = config.tiers ?? [];
+  const rates: MeterRates = {
+    decay: config.decayPerSecond ?? 0,
+    decayDelay: Math.max(0, config.decayDelayMs ?? 0) / 1000,
+  };
+  let meter = createMeter({ current: 0, max: config.max, min: 0 });
+  let held = false;
+
+  const tierId = (): string | null => tierAt(tiers, meter.pool.current)?.id ?? null;
+  const ready = (): boolean =>
+    mode === "hold" ? held : meter.pool.current >= 0 && statPoolFraction(meter.pool) >= 1;
+
+  /** Fill by `amount`; report the fill and, in `reset` mode, carry what did not fit into the next cycle. */
+  function add(amount: number): { value: number; fired: boolean; overflow: number; tierChanged: boolean } {
+    const before = tierId();
+    const change = changeMeter(meter, amount);
+    meter = change.meter;
+    const fired = amount > 0 && change.change.hitMax && !(mode === "hold" && held);
+    let overflow = 0;
+    if (fired && mode === "reset") {
+      overflow = change.change.overflow;
+      meter = {
+        sinceDrop: meter.sinceDrop,
+        sinceFill: meter.sinceFill,
+        pool: createStatPool({ current: overflow, max: meter.pool.max, min: meter.pool.min }),
+      };
+    } else if (fired) {
+      held = true;
+    }
+    return { value: meter.pool.current, fired, overflow, tierChanged: tierId() !== before };
+  }
+
+  function reset(): void {
+    meter = createMeter({ current: 0, max: config.max, min: 0 });
+    held = false;
+  }
 
   return {
-    state: meter.state,
-    restore: meter.restore,
+    state: () => ({
+      meter: {
+        pool: { ...meter.pool },
+        sinceDrop: meter.sinceDrop,
+        sinceFill: meter.sinceFill,
+      },
+      held,
+    }),
+    restore(next) {
+      meter = {
+        pool: createStatPool({ current: next.meter.pool.current, max: config.max, min: 0 }),
+        sinceDrop: Math.max(0, next.meter.sinceDrop),
+        sinceFill: Math.max(0, next.meter.sinceFill),
+      };
+      held = next.held;
+    },
     value() {
-      return meter.value();
+      return meter.pool.current;
     },
     fraction() {
-      return meter.fraction();
+      return statPoolFraction(meter.pool);
     },
-    tier() {
-      return meter.tier();
-    },
-    ready() {
-      return readyOf(meter, mode);
-    },
+    tier: tierId,
+    ready,
     feed(tag, scale = 1) {
-      const tierBefore = meter.tier();
+      const tierBefore = tierId();
       if (resets.has(tag)) {
-        meter.reset();
+        reset();
         return {
           tag,
           reset: true,
           amount: 0,
-          value: meter.value(),
-          fraction: meter.fraction(),
+          value: meter.pool.current,
+          fraction: statPoolFraction(meter.pool),
           fired: false,
-          ready: readyOf(meter, mode),
+          ready: ready(),
           overflow: 0,
-          tier: meter.tier(),
-          tierChanged: meter.tier() !== tierBefore,
+          tier: tierId(),
+          tierChanged: tierId() !== tierBefore,
         };
       }
       const amount = (config.gains[tag] ?? 0) * scale;
-      const result = meter.add(amount);
+      const result = add(amount);
       return {
         tag,
         reset: false,
         amount,
         value: result.value,
-        fraction: meter.fraction(),
+        fraction: statPoolFraction(meter.pool),
         fired: result.fired,
-        ready: readyOf(meter, mode),
+        ready: ready(),
         overflow: result.overflow,
-        tier: result.tier,
+        tier: tierId(),
         tierChanged: result.tierChanged,
       };
     },
     consume() {
-      if (!readyOf(meter, mode)) return false;
-      meter.reset();
+      if (!ready()) return false;
+      reset();
       return true;
     },
     drain(amount) {
-      meter.drain(amount);
+      meter = changeMeter(meter, -amount).meter;
+      if (meter.pool.current <= 0) held = false;
     },
-    reset() {
-      meter.reset();
-    },
+    reset,
     tick(dtSeconds, decayEnabled = true) {
-      if (decayEnabled) meter.tick(dtSeconds);
+      if (!decayEnabled) return;
+      // A held fill neither decays nor loses the clock; the timers still advance so decay resumes
+      // from the configured delay once the value drops.
+      meter = tickMeter(meter, held ? {} : rates, dtSeconds).meter;
     },
   };
 }

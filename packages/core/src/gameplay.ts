@@ -798,7 +798,7 @@ export {
   bodyComfort,
   type AmbientInput,
   type BodyComfort,
-  type ComfortBand,
+  type ComfortBands,
   type ComfortConfig,
   type Insulation,
 } from "./survival/bodyTemperature";

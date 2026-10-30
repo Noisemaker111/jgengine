@@ -1,4 +1,4 @@
-import { clamp } from "../math/scalar";
+import { changeStatPool, createStatPool, statPoolFraction, type StatPool } from "../stats/statPool";
 
 /** A per-second change one vital applies to another while a condition holds. */
 export interface VitalLink {
@@ -112,8 +112,7 @@ function modifierOf(modifier: VitalRateModifier | undefined, id: string): number
 export function createVitals(initial: readonly VitalDef[]): Vitals {
   let defs = [...initial];
   let byId = new Map(defs.map((def) => [def.id, def]));
-  const values = new Map<string, number>();
-  const maxes = new Map<string, number>();
+  const pools = new Map<string, StatPool>();
   const cooldowns = new Map<string, number>();
   const raised = new Set<string>();
 
@@ -123,29 +122,33 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
     return found;
   };
   const minOf = (id: string): number => def(id).min ?? 0;
-  const maxOf = (id: string): number => maxes.get(id) ?? def(id).max;
-  const valueOf = (id: string): number => values.get(id) ?? clamp(def(id).start ?? def(id).max, minOf(id), maxOf(id));
+  const freshPool = (entry: VitalDef): StatPool =>
+    createStatPool({ current: entry.start ?? entry.max, max: entry.max, min: entry.min ?? 0 });
+  const poolOf = (id: string): StatPool => {
+    const existing = pools.get(id);
+    if (existing !== undefined) return existing;
+    const created = freshPool(def(id));
+    pools.set(id, created);
+    return created;
+  };
+  const maxOf = (id: string): number => poolOf(id).max;
+  const valueOf = (id: string): number => poolOf(id).current;
   const write = (id: string, next: number): number => {
-    const before = valueOf(id);
-    const after = clamp(next, minOf(id), maxOf(id));
-    values.set(id, after);
-    return after - before;
+    const change = changeStatPool(poolOf(id), next - poolOf(id).current);
+    pools.set(id, change.pool);
+    return change.applied;
   };
 
   const seed = (): void => {
-    values.clear();
-    maxes.clear();
+    pools.clear();
     cooldowns.clear();
     raised.clear();
-    for (const entry of defs) {
-      maxes.set(entry.id, entry.max);
-      values.set(entry.id, clamp(entry.start ?? entry.max, entry.min ?? 0, entry.max));
-    }
+    for (const entry of defs) pools.set(entry.id, freshPool(entry));
     refreshFlags();
   };
 
   function flagLevel(entry: VitalDef, flag: VitalFlag, on: boolean): boolean {
-    const min = entry.min ?? 0;
+    const min = minOf(entry.id);
     const span = maxOf(entry.id) - min;
     const fraction = span > 0 ? (valueOf(entry.id) - min) / span : 0;
     const level = on ? (flag.off ?? flag.on) : flag.on;
@@ -175,10 +178,7 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
   return {
     value: valueOf,
     max: maxOf,
-    fraction(id) {
-      const span = maxOf(id) - minOf(id);
-      return span > 0 ? (valueOf(id) - minOf(id)) / span : 0;
-    },
+    fraction: (id) => statPoolFraction(poolOf(id)),
     flags: () => [...raised],
     has: (flag) => raised.has(flag),
     spend(id, amount) {
@@ -190,13 +190,14 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
     },
     change(id, delta) {
       const applied = write(id, valueOf(id) + delta);
-      if (applied < 0 && def(id).regenDelay !== undefined) cooldowns.set(id, def(id).regenDelay!);
+      if (applied < 0 && def(id).regenDelay !== undefined) cooldowns.set(id, def(id).regenDelay ?? 0);
       return applied;
     },
     setMax(id, max, fill = false) {
       const before = maxOf(id);
-      maxes.set(id, Math.max(minOf(id), max));
-      write(id, fill ? valueOf(id) + (max - before) : valueOf(id));
+      const current = valueOf(id);
+      pools.set(id, { current, max: Math.max(minOf(id), max), min: poolOf(id).min });
+      write(id, fill ? current + (max - before) : current);
     },
     tick(dt, options = {}) {
       if (!(dt > 0)) return [];
@@ -228,7 +229,8 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
       }
       for (const link of options.extra ?? []) {
         const applied = write(link.vital, valueOf(link.vital) + link.rate * dt);
-        if (applied < 0 && byId.get(link.vital)?.regenDelay !== undefined) cooldowns.set(link.vital, byId.get(link.vital)!.regenDelay!);
+        const wait = byId.get(link.vital)?.regenDelay;
+        if (applied < 0 && wait !== undefined) cooldowns.set(link.vital, wait);
       }
       return refreshFlags();
     },
@@ -236,23 +238,29 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
       defs = [...next];
       byId = new Map(defs.map((entry) => [entry.id, entry]));
       for (const entry of defs) {
-        if (!maxes.has(entry.id)) maxes.set(entry.id, entry.max);
-        if (!values.has(entry.id)) values.set(entry.id, clamp(entry.start ?? entry.max, entry.min ?? 0, entry.max));
+        if (!pools.has(entry.id)) pools.set(entry.id, freshPool(entry));
       }
       refreshFlags();
     },
     state() {
       return {
-        values: Object.fromEntries(values),
-        maxes: Object.fromEntries(maxes),
+        values: Object.fromEntries([...pools].map(([id, pool]) => [id, pool.current])),
+        maxes: Object.fromEntries([...pools].map(([id, pool]) => [id, pool.max])),
         cooldowns: Object.fromEntries(cooldowns),
         flags: [...raised],
       };
     },
     restore(state) {
       seed();
-      for (const [id, max] of Object.entries(state.maxes)) if (byId.has(id) && Number.isFinite(max)) maxes.set(id, max);
-      for (const [id, value] of Object.entries(state.values)) if (byId.has(id) && Number.isFinite(value)) write(id, value);
+      for (const [id, max] of Object.entries(state.maxes)) {
+        if (byId.has(id) && Number.isFinite(max)) {
+          const pool = poolOf(id);
+          pools.set(id, { current: pool.current, max, min: pool.min });
+        }
+      }
+      for (const [id, value] of Object.entries(state.values)) {
+        if (byId.has(id) && Number.isFinite(value)) write(id, value);
+      }
       for (const [id, wait] of Object.entries(state.cooldowns)) if (byId.has(id) && Number.isFinite(wait)) cooldowns.set(id, wait);
       raised.clear();
       for (const flag of state.flags) raised.add(flag);

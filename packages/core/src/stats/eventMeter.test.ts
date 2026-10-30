@@ -128,8 +128,8 @@ describe("eventMeter persistence and decay policy", () => {
     const decoded = JSON.parse(JSON.stringify(saved));
     const resumed = createEventMeter(config);
     resumed.restore(decoded);
-    decoded.idleMs = 0;
-    saved.value = 0;
+    decoded.meter.sinceFill = 0;
+    saved.meter.pool.current = 0;
     expect(resumed.state()).toEqual(original.state());
     resumed.tick(10, false);
     expect(resumed.state()).toEqual(original.state());
@@ -154,6 +154,9 @@ describe("eventMeter persistence and decay policy", () => {
     expect(resumed.value()).toBe(75);
     expect(resumed.ready()).toBe(true);
     expect(resumed.consume()).toBe(true);
-    expect(resumed.state()).toEqual({ value: 0, broken: false, idleMs: 0 });
+    expect(resumed.state()).toEqual({
+      meter: { pool: { current: 0, max: 100, min: 0 }, sinceDrop: 0, sinceFill: 0 },
+      held: false,
+    });
   });
 });

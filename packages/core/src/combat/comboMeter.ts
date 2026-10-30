@@ -1,3 +1,5 @@
+import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
+
 /**
  * One tier threshold in a {@link ComboMeter}. Tiers gate on the integer combo
  * `count` (not a filled fraction), and `id` is a free string the game owns and
@@ -129,14 +131,9 @@ function sortTiers(tiers: readonly ComboTier[] | undefined): ComboTier[] {
   return tiers === undefined ? [] : [...tiers].sort((a, b) => a.threshold - b.threshold);
 }
 
-/** Index of the highest tier whose `threshold` `count` has reached, or `-1` below the first. */
-function activeIndex(count: number, tiers: readonly ComboTier[]): number {
-  let idx = -1;
-  for (let i = 0; i < tiers.length; i += 1) {
-    if (count >= tiers[i]!.threshold) idx = i;
-    else break;
-  }
-  return idx;
+/** The sorted tiers as ladder boundaries, so the active tier is read from the shared ladder part. */
+function boundariesOf(tiers: readonly ComboTier[]): readonly ThresholdBoundary<ComboTier>[] {
+  return tiers.map((tier) => ({ id: tier, at: tier.threshold }));
 }
 
 /**
@@ -160,6 +157,7 @@ export function createComboMeter(config: ComboMeterConfig): ComboMeter {
   const now = config.now ?? Date.now;
   let windowMs = Math.max(0, config.windowMs);
   let tiers = sortTiers(config.tiers);
+  let boundaries = boundariesOf(tiers);
   let dropStep = config.dropStep;
   let multiplierPerTier = config.multiplierPerTier;
   let multiplierCurve = config.multiplierCurve;
@@ -223,8 +221,19 @@ export function createComboMeter(config: ComboMeterConfig): ComboMeter {
     if (processExpiry()) notify();
   }
 
+  /** The tier the count has reached, read from the shared ladder part. */
+  function tierOf(c: number): ComboTier | null {
+    return tierAt(boundaries, c)?.id ?? null;
+  }
+
+  /** The reached tier's index in the sorted list, or `-1` below the first tier. */
+  function tierIndexAt(c: number): number {
+    const tier = tierOf(c);
+    return tier === null ? -1 : tiers.indexOf(tier);
+  }
+
   function multiplierAt(c: number): number {
-    const idx = activeIndex(c, tiers);
+    const idx = tierIndexAt(c);
     if (idx >= 0) {
       const explicit = tiers[idx]!.multiplier;
       if (explicit !== undefined) return explicit;
@@ -265,8 +274,7 @@ export function createComboMeter(config: ComboMeterConfig): ComboMeter {
     },
     tier() {
       pull();
-      const idx = activeIndex(count, tiers);
-      return idx >= 0 ? tiers[idx]!.id : null;
+      return tierOf(count)?.id ?? null;
     },
     multiplier() {
       pull();
@@ -282,11 +290,11 @@ export function createComboMeter(config: ComboMeterConfig): ComboMeter {
     },
     view() {
       pull();
-      const idx = activeIndex(count, tiers);
+      const idx = tierIndexAt(count);
       const rem = remaining();
       pooledView.count = count;
       pooledView.peak = peak;
-      pooledView.tier = idx >= 0 ? tiers[idx]!.id : null;
+      pooledView.tier = tierOf(count)?.id ?? null;
       pooledView.tierIndex = idx;
       pooledView.multiplier = multiplierAt(count);
       pooledView.remainingMs = rem;
@@ -303,7 +311,10 @@ export function createComboMeter(config: ComboMeterConfig): ComboMeter {
     },
     configure(patch) {
       if (patch.windowMs !== undefined) windowMs = Math.max(0, patch.windowMs);
-      if (patch.tiers !== undefined) tiers = sortTiers(patch.tiers);
+      if (patch.tiers !== undefined) {
+        tiers = sortTiers(patch.tiers);
+        boundaries = boundariesOf(tiers);
+      }
       if ("dropStep" in patch) dropStep = patch.dropStep;
       if ("multiplierPerTier" in patch) multiplierPerTier = patch.multiplierPerTier;
       if ("multiplierCurve" in patch) multiplierCurve = patch.multiplierCurve;
@@ -320,8 +331,7 @@ export function createComboMeter(config: ComboMeterConfig): ComboMeter {
     snapshot() {
       syncWall();
       processExpiry();
-      const idx = activeIndex(count, tiers);
-      return { count, peak, remainingMs: remaining(), tier: idx >= 0 ? tiers[idx]!.id : null };
+      return { count, peak, remainingMs: remaining(), tier: tierOf(count)?.id ?? null };
     },
     restore(snapshot) {
       syncWall();

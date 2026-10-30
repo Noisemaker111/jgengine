@@ -1,5 +1,6 @@
 // @skill jgengine-gameplay
 import { clamp } from "../math/scalar";
+import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 
 /** What sets the air temperature at a spot: its climate plus the hour, the weather, the height and nearby heat. */
 export interface AmbientInput {
@@ -38,21 +39,36 @@ export function ambientTemperature(input: AmbientInput): number {
   return input.baseC + daily + (input.weatherC ?? 0) - altitude + wet + (input.heatC ?? 0);
 }
 
-/** How well a body copes: its comfortable band, what its gear and stats add, and what each degree outside costs. */
+/**
+ * One ladder of comfort steps outside the comfortable band. The game names every step; the engine
+ * only reads which step the body is in.
+ */
+export interface ComfortBands {
+  /** Label while the body sits inside its comfortable band. */
+  comfortable: string;
+  /** Steps below the cold edge, in degrees below it; crossing each step moves the body outward. */
+  cold: readonly ThresholdBoundary[];
+  /** Steps above the hot edge, in degrees above it. */
+  hot: readonly ThresholdBoundary[];
+}
+
+/** How well a body copes: its comfortable band, the steps either side, and what each degree outside costs. */
 export interface ComfortConfig {
   /** Comfortable band in °C with no insulation, e.g. `[10, 30]`. */
   comfortC: readonly [number, number];
-  /** Extra drain multiplier per °C outside the band (0.05 = +5% per degree). Default 0.05. */
-  drainPerDegree?: number;
+  /** Band labels either side of the comfortable band. */
+  bands: ComfortBands;
+  /** Extra drain multiplier per °C outside the band (0.05 = +5% per degree). */
+  drainPerDegree: number;
   /** Which vital each side burns faster: cold eats food, heat drinks water. */
-  coldDrains?: string;
-  heatDrains?: string;
-  /** °C outside the band where the body starts taking damage. Default 15. */
-  damageAfterC?: number;
-  /** Health per second per °C past `damageAfterC`. Default 0.1. */
-  damagePerDegree?: number;
-  /** °C each fortitude point widens both sides of the band. Default 0.2. */
-  fortitudeC?: number;
+  coldDrains: string;
+  heatDrains: string;
+  /** °C outside the band where the body starts taking damage. */
+  damageAfterC: number;
+  /** Health per second per °C past `damageAfterC`. */
+  damagePerDegree: number;
+  /** °C each fortitude point widens both sides of the band. */
+  fortitudeC: number;
 }
 
 /** A body's insulation from worn gear and stats. */
@@ -65,12 +81,9 @@ export interface Insulation {
   fortitude?: number;
 }
 
-/** Comfort band a body is in. */
-export type ComfortBand = "freezing" | "cold" | "comfortable" | "hot" | "scorching";
-
 /** What the temperature does to a body right now. */
 export interface BodyComfort {
-  band: ComfortBand;
+  band: string;
   ambientC: number;
   /** Degrees below the cold edge of the widened band (0 when not cold). */
   coldBy: number;
@@ -89,19 +102,19 @@ export interface BodyComfort {
  * @capability body-temperature hypothermia and hyperthermia from ambient temperature, insulation and fortitude, as vital drain and exposure damage
  */
 export function bodyComfort(ambientC: number, config: ComfortConfig, insulation: Insulation = {}): BodyComfort {
-  const widen = (insulation.fortitude ?? 0) * (config.fortitudeC ?? 0.2);
+  const widen = (insulation.fortitude ?? 0) * config.fortitudeC;
   const low = config.comfortC[0] - (insulation.cold ?? 0) - widen;
   const high = config.comfortC[1] + (insulation.heat ?? 0) + widen;
   const coldBy = Math.max(0, low - ambientC);
   const heatBy = Math.max(0, ambientC - high);
-  const perDegree = config.drainPerDegree ?? 0.05;
-  const margin = config.damageAfterC ?? 15;
   const drain: Record<string, number> = {};
-  if (coldBy > 0) drain[config.coldDrains ?? "food"] = 1 + coldBy * perDegree;
-  if (heatBy > 0) drain[config.heatDrains ?? "water"] = 1 + heatBy * perDegree;
-  const past = Math.max(coldBy, heatBy) - margin;
-  const damagePerSecond = past > 0 ? past * (config.damagePerDegree ?? 0.1) : 0;
-  const band: ComfortBand =
-    coldBy > margin ? "freezing" : coldBy > 0 ? "cold" : heatBy > margin ? "scorching" : heatBy > 0 ? "hot" : "comfortable";
+  if (coldBy > 0) drain[config.coldDrains] = 1 + coldBy * config.drainPerDegree;
+  if (heatBy > 0) drain[config.heatDrains] = 1 + heatBy * config.drainPerDegree;
+  const past = Math.max(coldBy, heatBy) - config.damageAfterC;
+  const damagePerSecond = past > 0 ? past * config.damagePerDegree : 0;
+  const band =
+    tierAt(config.bands.cold, coldBy, { inclusive: false })?.id ??
+    tierAt(config.bands.hot, heatBy, { inclusive: false })?.id ??
+    config.bands.comfortable;
   return { band, ambientC, coldBy, heatBy, drain, damagePerSecond: clamp(damagePerSecond, 0, Number.MAX_VALUE) };
 }

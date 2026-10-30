@@ -1,3 +1,11 @@
+import {
+  changeStatPool,
+  createStatPool,
+  patchStatPool,
+  statPoolFraction,
+  type StatPool,
+} from "../stats/statPool";
+
 /**
  * External storage a {@link RegenShield} reads and writes instead of keeping the value itself —
  * an entity stat, a replicated store, a save record. This is the same port `Magazine` exposes as
@@ -94,38 +102,42 @@ export interface RegenShieldRates {
  * @capability regen-shield a rechargeable overshield that absorbs damage and refills after a lull
  */
 export function createRegenShield(config: RegenShieldConfig): RegenShield {
-  const pool = config.pool;
-  const regenPerSecond = Math.max(0, config.regenPerSecond);
-  const regenDelayMs = Math.max(0, config.regenDelayMs);
+  const port = config.pool;
+  const baseRegenPerSecond = Math.max(0, config.regenPerSecond);
+  const baseDelayMs = Math.max(0, config.regenDelayMs);
+  let activeDelayMs = baseDelayMs;
+  /** Grace clock in milliseconds, so a save round-trips the exact remaining delay. */
+  let sinceDamageMs = baseDelayMs;
+  let ownPool: StatPool = createStatPool({ current: config.current, max: Math.max(0, config.max), min: 0 });
 
-  function clamp(value: number, ceiling: number): number {
-    return Math.max(0, Math.min(ceiling, value));
+  function readPool(): StatPool {
+    if (port === undefined) return ownPool;
+    return createStatPool({ current: port.current(), max: Math.max(0, port.max()), min: 0 });
   }
 
-  let ownMax = Math.max(0, config.max);
-  let ownCurrent = clamp(config.current ?? ownMax, ownMax);
-  let sinceDamageMs = regenDelayMs;
-  /** Grace period currently in force — the configured one until a `tick` overrides it. */
-  let activeDelayMs = regenDelayMs;
-
-  const readMax = (): number => (pool === undefined ? ownMax : Math.max(0, pool.max()));
-  const readCurrent = (): number => (pool === undefined ? ownCurrent : clamp(pool.current(), readMax()));
-  function write(value: number): void {
-    const next = clamp(value, readMax());
-    if (pool === undefined) ownCurrent = next;
-    else pool.set(next);
+  function readCurrent(): number {
+    return readPool().current;
   }
 
-  /**
-   * Last value this shield knows about, so a pool-backed shield can tell its own writes apart from
-   * damage applied elsewhere. `null` until the first observation, so the first tick never reads a
-   * cold start as a hit.
-   */
-  let observed: number | null = pool === undefined ? null : readCurrent();
+  function readMax(): number {
+    return readPool().max;
+  }
+
+  /** Adopt a computed pool, writing through the port when the shield does not own the value. */
+  function write(pool: StatPool): void {
+    if (port === undefined) ownPool = pool;
+    else port.set(pool.current);
+  }
+
+  let observed: number | null = port === undefined ? null : readCurrent();
+
+  function observe(): void {
+    if (port !== undefined) observed = readCurrent();
+  }
 
   /** Detect an external decrease in a pool-backed value and restart the grace period if one happened. */
   function syncExternal(): void {
-    if (pool === undefined) return;
+    if (port === undefined) return;
     const live = readCurrent();
     if (observed !== null && live < observed) sinceDamageMs = 0;
     observed = live;
@@ -134,25 +146,31 @@ export function createRegenShield(config: RegenShieldConfig): RegenShield {
   function refill(amount: number): void {
     if (amount <= 0) return;
     syncExternal();
-    write(readCurrent() + amount);
-    observed = pool === undefined ? observed : readCurrent();
+    write(changeStatPool(readPool(), amount).pool);
+    observe();
   }
 
   function restore(next: RegenShieldState): boolean;
   function restore(amount: number): void;
   function restore(next: RegenShieldState | number): boolean | void {
     if (typeof next === "number") return refill(next);
-    if (pool !== undefined && readMax() !== next.max) return false;
-    if (pool === undefined) ownMax = Math.max(0, next.max);
-    write(next.current);
+    if (port !== undefined && readMax() !== next.max) return false;
+    if (port === undefined) ownPool = createStatPool({ current: next.current, max: Math.max(0, next.max), min: 0 });
+    else write(createStatPool({ current: next.current, max: readMax(), min: 0 }));
     sinceDamageMs = Math.max(0, next.sinceDamageMs);
     activeDelayMs = Math.max(0, next.activeDelayMs);
-    observed = pool === undefined ? null : next.observed;
+    observed = port === undefined ? null : next.observed;
     return true;
   }
 
   return {
-    state: () => ({ max: readMax(), current: readCurrent(), sinceDamageMs, activeDelayMs, observed }),
+    state: () => ({
+      max: readMax(),
+      current: readCurrent(),
+      sinceDamageMs,
+      activeDelayMs,
+      observed,
+    }),
     restore,
     refill,
     current: readCurrent,
@@ -160,42 +178,41 @@ export function createRegenShield(config: RegenShieldConfig): RegenShield {
     setMax(value) {
       // A pool owns its own bounds (an entity stat's max, a save record's cap); resizing it here
       // would silently disagree with whatever else writes that storage.
-      if (pool !== undefined) return;
-      ownMax = Math.max(0, value);
-      ownCurrent = clamp(ownCurrent, ownMax);
+      if (port !== undefined) return;
+      ownPool = patchStatPool(ownPool, { max: Math.max(0, value) });
     },
-    fraction: () => (readMax() <= 0 ? 0 : readCurrent() / readMax()),
+    fraction: () => statPoolFraction(readPool()),
     isFull: () => readCurrent() >= readMax(),
     isBroken: () => readCurrent() <= 0,
     suppressed: () => sinceDamageMs < activeDelayMs,
     damage(amount) {
       if (amount <= 0) return 0;
       syncExternal();
+      const pool = readPool();
+      const overflow = Math.max(0, amount - pool.current);
+      write(changeStatPool(pool, -amount).pool);
       sinceDamageMs = 0;
-      const live = readCurrent();
-      const overflow = Math.max(0, amount - live);
-      write(live - amount);
-      observed = pool === undefined ? observed : readCurrent();
+      observe();
       return overflow;
     },
     set(value) {
-      write(value);
-      observed = pool === undefined ? observed : readCurrent();
+      write(createStatPool({ current: value, max: readMax(), min: 0 }));
+      observe();
     },
     noteDamage() {
       syncExternal();
       sinceDamageMs = 0;
     },
     tick(dtSeconds, rates) {
-      activeDelayMs = Math.max(0, rates?.regenDelayMs ?? regenDelayMs);
+      activeDelayMs = Math.max(0, rates?.regenDelayMs ?? baseDelayMs);
       if (dtSeconds <= 0) return;
       // Advance time first, THEN observe: damage that landed since the last tick resets the timer to
       // zero for this tick, so the tick that sees a hit never also regenerates over it.
       sinceDamageMs += dtSeconds * 1000;
       syncExternal();
       if (sinceDamageMs < activeDelayMs) return;
-      write(readCurrent() + Math.max(0, rates?.regenPerSecond ?? regenPerSecond) * dtSeconds);
-      observed = pool === undefined ? observed : readCurrent();
+      write(changeStatPool(readPool(), Math.max(0, rates?.regenPerSecond ?? baseRegenPerSecond) * dtSeconds).pool);
+      observe();
     },
   };
 }

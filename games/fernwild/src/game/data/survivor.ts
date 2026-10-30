@@ -68,6 +68,11 @@ export function survivorVitals(): VitalDef[] {
 /** Hypothermia burns food, heat drinks water; fortitude widens the band (ARK). Thresholds approx. */
 export const COMFORT: ComfortConfig = {
   comfortC: [12, 32],
+  bands: {
+    comfortable: "comfortable",
+    cold: [{ id: "cold", at: 0 }, { id: "freezing", at: 14 }],
+    hot: [{ id: "hot", at: 0 }, { id: "scorching", at: 14 }],
+  },
   drainPerDegree: 0.08,
   coldDrains: "food",
   heatDrains: "water",

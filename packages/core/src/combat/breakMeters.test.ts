@@ -1,6 +1,39 @@
 import { describe, expect, test } from "bun:test";
 import { createBuildupMeter, createStaggerMeter } from "@jgengine/core/combat/breakMeters";
 
+describe("saved state", () => {
+  test("a restored stagger meter keeps its value, break and decay delay", () => {
+    const meter = createStaggerMeter({ max: 100, decayPerSecond: 10, decayDelayMs: 1000 });
+    meter.add(100);
+    const copy = createStaggerMeter({ max: 100, decayPerSecond: 10, decayDelayMs: 1000 });
+    copy.restore(JSON.parse(JSON.stringify(meter.snapshot())));
+    expect(copy.value()).toBe(100);
+    expect(copy.broke()).toBe(true);
+    const config = { max: 100, decayPerSecond: 10, decayDelayMs: 1000 };
+    const straight = createStaggerMeter(config);
+    const resumed = createStaggerMeter(config);
+    straight.add(50);
+    resumed.add(50);
+    straight.tick(0.6);
+    resumed.tick(0.6);
+    const saved = JSON.parse(JSON.stringify(resumed.snapshot()));
+    resumed.tick(3);
+    resumed.restore(saved);
+    for (const meter of [straight, resumed]) meter.tick(0.6);
+    expect(resumed.value()).toBe(straight.value());
+    expect(resumed.value()).toBeLessThan(50);
+  });
+
+  test("a restored buildup meter keeps its fill", () => {
+    const meter = createBuildupMeter({ status: "bleed", max: 10, durationMs: 1000 });
+    meter.add(7);
+    const copy = createBuildupMeter({ status: "bleed", max: 10, durationMs: 1000 });
+    copy.restore(JSON.parse(JSON.stringify(meter.snapshot())));
+    expect(copy.value()).toBe(7);
+    expect(copy.add(3)).toEqual({ status: "bleed", durationMs: 1000 });
+  });
+});
+
 describe("stagger meter", () => {
   test("fills from hits and breaks at threshold, then recovers", () => {
     const meter = createStaggerMeter({ max: 100 });

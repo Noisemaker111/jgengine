@@ -1133,8 +1133,8 @@
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent { id: number; shape: TelegraphShape; position: [number, number, number]; dir?: number; windupMs: number; kind: string } — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
 - `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
-- `ComfortBand` (type): type ComfortBand = "freezing" | "cold" | "comfortable" | "hot" | "scorching" — Comfort band a body is in.
-- `ComfortConfig` (interface): interface ComfortConfig — How well a body copes: its comfortable band, what its gear and stats add, and what each degree outside costs.
+- `ComfortBands` (interface): interface ComfortBands — One ladder of comfort steps outside the comfortable band. The game names every step; the engine only reads which step the body is in.
+- `ComfortConfig` (interface): interface ComfortConfig — How well a body copes: its comfortable band, the steps either side, and what each degree outside costs.
 - `CompatibilityRule` (type): type CompatibilityRule = RequireRule | ForbidRule — A cross-slot compatibility rule constraining which part/tag/family combinations a modular item may hold.
 - `CompiledSystemSchedule` (interface): interface CompiledSystemSchedule — Deterministic compiled schedule: stage buckets, multi-subscribe channels, dependency validation. Order never depends on import order — only stage tables + explicit before/after constraints.
 - `ComposedMissionOptions` (interface): interface ComposedMissionOptions — Options shared by every composed mission.
@@ -3253,8 +3253,8 @@
 
 - `AmbientInput` (interface): interface AmbientInput — What sets the air temperature at a spot: its climate plus the hour, the weather, the height and nearby heat.
 - `BodyComfort` (interface): interface BodyComfort — What the temperature does to a body right now.
-- `ComfortBand` (type): type ComfortBand = "freezing" | "cold" | "comfortable" | "hot" | "scorching" — Comfort band a body is in.
-- `ComfortConfig` (interface): interface ComfortConfig — How well a body copes: its comfortable band, what its gear and stats add, and what each degree outside costs.
+- `ComfortBands` (interface): interface ComfortBands — One ladder of comfort steps outside the comfortable band. The game names every step; the engine only reads which step the body is in.
+- `ComfortConfig` (interface): interface ComfortConfig — How well a body copes: its comfortable band, the steps either side, and what each degree outside costs.
 - `Insulation` (interface): interface Insulation — A body's insulation from worn gear and stats.
 - `ambientTemperature` (function): function ambientTemperature(input: AmbientInput): number — Air temperature at one spot in °C from climate, hour, weather, altitude, wetness and heat sources. Pure — sample it per player per second, not per frame.
 - `bodyComfort` (function): function bodyComfort(ambientC: number, config: ComfortConfig, insulation: Insulation = {}): BodyComfort — Turn an ambient temperature into its cost for one body: a comfortable band widened by insulation and fortitude, drain multipliers on the vitals each side burns, and exposure damage past a margin.

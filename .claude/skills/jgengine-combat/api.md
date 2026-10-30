@@ -388,11 +388,12 @@
 
 ## @jgengine/core/combat/breakMeters
 
-- `BuildupMeter` (interface): interface BuildupMeter { add(amount: number): BuildupProc | null; value(): number; fraction(): number; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createBuildupMeter`: Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
+- `BuildupMeter` (interface): interface BuildupMeter { add(amount: number): BuildupProc | null; value(): number; fraction(): number; tick(dtSeconds: number): void; snapshot(): MeterState; restore(state: MeterState): void } — ⚠ undocumented · used by `createBuildupMeter`: Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
 - `BuildupMeterConfig` (interface): interface BuildupMeterConfig { status: string; max: number; durationMs: number; decayPerSecond?: number; decayDelayMs?: number } — ⚠ undocumented · used by `createBuildupMeter`: Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
 - `BuildupProc` (interface): interface BuildupProc { status: string; durationMs: number } — ⚠ undocumented
-- `StaggerMeter` (interface): interface StaggerMeter { add(amount: number): boolean; broke(): boolean; value(): number; fraction(): number; recover(): void; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createStaggerMeter`: Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
+- `StaggerMeter` (interface): interface StaggerMeter { add(amount: number): boolean; broke(): boolean; value(): number; fraction(): number; recover(): void; tick(dtSeconds: number): void; snapshot(): StaggerMeterState; restore(state: StaggerMeterState): void } — ⚠ undocumented · used by `createStaggerMeter`: Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
 - `StaggerMeterConfig` (interface): interface StaggerMeterConfig { max: number; decayPerSecond?: number; decayDelayMs?: number } — ⚠ undocumented · used by `createStaggerMeter`: Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
+- `StaggerMeterState` (interface): interface StaggerMeterState — A stagger gauge's saved state: its meter and whether it has broken. Plain data.
 - `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
 - `createStaggerMeter` (function): function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter — Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
 
@@ -960,9 +961,10 @@
 ## @jgengine/core/stats/eventMeter
 
 - `EventMeter` (interface): interface EventMeter { state(): EventMeterState; restore(next: EventMeterState): void; value(): number; fraction(): number; tier(): string | null; ready(): boolean; feed(tag: string, scale?: number): EventMeterFeedResult; consume(): boolean; drain(amount: numbe… — ⚠ undocumented · used by `createEventMeter`: A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shoot…
-- `EventMeterConfig` (interface): interface EventMeterConfig { max: number; mode?: MeterMode; decayPerSecond?: number; decayDelayMs?: number; tiers?: readonly MeterTier[]; gains: Record<string, number>; resets?: readonly string[] } — ⚠ undocumented · used by `createEventMeter`: A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shoot…
+- `EventMeterConfig` (interface): interface EventMeterConfig { max: number; mode?: EventMeterMode; decayPerSecond?: number; decayDelayMs?: number; tiers?: readonly ThresholdBoundary[]; gains: Record<string, number>; resets?: readonly string[] } — ⚠ undocumented · used by `createEventMeter`: A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shoot…
 - `EventMeterFeedResult` (interface): interface EventMeterFeedResult { tag: string; reset: boolean; amount: number; value: number; fraction: number; fired: boolean; ready: boolean; overflow: number; tier: string | null; tierChanged: boolean } — ⚠ undocumented
-- `EventMeterState` (type): type EventMeterState = AccumulatorMeterState — Event meter persistence uses the underlying accumulator's complete state.
+- `EventMeterMode` (type): type EventMeterMode = "hold" | "reset" — What a full meter does with the next gain: hold the fill until consumed, or carry the excess into a fresh cycle.
+- `EventMeterState` (interface): interface EventMeterState — Event meter persistence: the meter's bounded value and timing, plus its `hold` latch.
 - `createEventMeter` (function): function createEventMeter(config: EventMeterConfig): EventMeter — A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shooters and fighters hand-roll.
 
 ## @jgengine/core/stats/rollCheck
@@ -1010,6 +1012,7 @@
 - `createMeter` (function): function createMeter(input: StatPoolInput): MeterState — A new meter, full unless `current` says otherwise.
 - `createStatPool` (function): function createStatPool(input: StatPoolInput): StatPool — Normalize caller data into a complete plain-data pool.
 - `patchStatPool` (function): function patchStatPool(pool: StatPool, patch: StatPoolPatch): StatPool — Apply new bounds/current to a pool, clamping the result and leaving the input untouched.
+- `statPoolFraction` (function): function statPoolFraction(pool: StatPool): number — The pool's fill as `0..1` over its own `min..max`; `0` when the range is empty.
 - `tickMeter` (function): function tickMeter(meter: MeterState, rates: MeterRates, dt: number): { meter: MeterState; change: StatPoolChange } — Advance `dt` seconds: decay if its delay has passed, then regen if its delay has passed.
 
 ## @jgengine/core/waves/encounter

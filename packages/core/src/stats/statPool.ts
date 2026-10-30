@@ -78,6 +78,16 @@ export function patchStatPool(pool: StatPool, patch: StatPoolPatch): StatPool {
 }
 
 /**
+ * The pool's fill as `0..1` over its own `min..max`; `0` when the range is empty.
+ *
+ * @capability stat-pool-fraction read any bounded resource as a fill fraction for a bar or gauge
+ */
+export function statPoolFraction(pool: StatPool): number {
+  const span = pool.max - pool.min;
+  return span > 0 ? (pool.current - pool.min) / span : 0;
+}
+
+/**
  * Pure bounded delta transition with the exact applied amount and boundary flags.
  *
  * @capability stat-pool-change immutably increase or decrease any named bounded resource with clamp evidence
