@@ -238,7 +238,7 @@ export function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLev
   const targetId = config.targetId;
 
   let tuning = resolveTuning(config.tuning, undefined);
-  let meter: MeterState = createMeter({ current: 0, max: unclampedMax(tuning) });
+  let meter: MeterState = createMeter({ current: 0, max: resolvedMax(tuning) });
   let outOfSightSeconds = 0;
   let standDownElapsed = 0;
   let escaped = false;
@@ -249,7 +249,7 @@ export function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLev
   let observersChecked = 0;
   let slowestTickMs = 0;
 
-  function unclampedMax(from: AlertTuning<Tier>): number {
+  function resolvedMax(from: AlertTuning<Tier>): number {
     return from.maxValue ?? Number.POSITIVE_INFINITY;
   }
 
@@ -379,7 +379,7 @@ export function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLev
       tuning = resolveTuning(tuning, patch);
       meter = {
         ...meter,
-        pool: patchStatPool(meter.pool, { max: unclampedMax(tuning) }),
+        pool: patchStatPool(meter.pool, { max: resolvedMax(tuning) }),
       };
     },
     state() {
@@ -398,7 +398,7 @@ export function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLev
     restore(next) {
       tuning = resolveTuning(next.tuning, undefined);
       meter = {
-        pool: createStatPool({ current: next.value, max: unclampedMax(tuning), min: 0 }),
+        pool: createStatPool({ current: next.value, max: resolvedMax(tuning), min: 0 }),
         sinceDrop: Math.max(0, next.sinceDrop),
         sinceFill: Math.max(0, next.sinceFill),
       };

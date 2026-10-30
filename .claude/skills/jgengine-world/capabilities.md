@@ -37,6 +37,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `steadyAirData` (function) · `import { steadyAirData } from "@jgengine/core/flight/reference/aircraftTrim"`
 - `trimReferenceAircraft` (function) · `import { trimReferenceAircraft } from "@jgengine/core/flight/reference/aircraftTrim"`
 
+## alert-level — witness-gated alert value, labelled cut points and a stand-down beat
+
+- `createAlertLevel` (function) · `import { createAlertLevel } from "@jgengine/core/world"`
+
 ## ambience-zones — a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting.
 
 - `AmbienceZoneDef` (interface) · `import { AmbienceZoneDef } from "@jgengine/core/audio/ambience"`
@@ -1740,14 +1744,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## pole-line — editor-authorable poles + sagging cables along a path
 
 - `POLE_LINE_KIND` (const) · `import { POLE_LINE_KIND } from "@jgengine/core/world/poleLineKind"`
-
-## police-response — witness-gated heat, tiered police response, last-sighting search areas and lane-graph roadblocks
-
-- `createPoliceResponse` (function) · `import { createPoliceResponse } from "@jgengine/core/world"`
-
-## police-roads — lane-graph roadblock sites and an indexed nearby-lane query for search areas
-
-- `policeRoadsFromLaneGraph` (function) · `import { policeRoadsFromLaneGraph } from "@jgengine/core/world"`
 
 ## polynomial-roots — all complex roots of a real polynomial to double precision
 

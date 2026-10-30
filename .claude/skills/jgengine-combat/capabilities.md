@@ -266,7 +266,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `changeMeter` (function) · `import { changeMeter } from "@jgengine/core/stats/statPool"`
 
-## meter-rates — tick a bounded value's regen, decay and regen delay over time
+## meter-rates — tick a bounded value's regen, decay and their delays over time
 
 - `tickMeter` (function) · `import { tickMeter } from "@jgengine/core/stats/statPool"`
 
