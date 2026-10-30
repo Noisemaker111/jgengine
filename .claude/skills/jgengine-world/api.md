@@ -4142,7 +4142,7 @@
 - `ContributionPool` (interface): interface ContributionPool — Shared resource pool players pay into until a build goal is met.
 - `ContributionResult` (interface): interface ContributionResult — What one contribution did: amount accepted, overflow returned and whether the goal is now met.
 - `PlotPermissionConfig` (interface): interface PlotPermissionConfig<R extends string> extends BuildRoleLadder<R> — Initial owner, guild and per-player roles for one build plot.
-- `PlotPermissionSnapshot` (interface): interface PlotPermissionSnapshot<R extends string> — Serializable copy of a plot's owner, guild and roles.
+- `PlotPermissionSnapshot` (interface): interface PlotPermissionSnapshot<R extends string> — Serializable copy of a plot's owner, guild, roles and bans.
 - `PlotPermissions` (interface): interface PlotPermissions<R extends string> — Live permissions for one plot: role lookups, edit and view checks, grants, ownership transfer and snapshot/restore.
 - `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — Creates a shared contribution pool for a build goal.
 - `createPlotPermissions` (function): function createPlotPermissions<R extends string>(config: PlotPermissionConfig<R>): PlotPermissions<R> — Creates the build permissions for one plot over the caller's own role ladder. `editor` and `guildDefault` must be roles on the ladder; an owner always carries the top role.
