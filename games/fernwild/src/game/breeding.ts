@@ -1,4 +1,4 @@
-import { babyStage, createBreedingField, type BreedingField, type BreedingSnapshot, type BreedingSpeeds } from "@jgengine/core/breeding/breeding";
+import { createBreedingField, type BreedingField, type BreedingSnapshot, type BreedingSpeeds } from "@jgengine/core/breeding/breeding";
 import { inheritValues } from "@jgengine/core/inheritance/inheritance";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -10,10 +10,11 @@ import { aimedCreature, creatureAlive, foodMaxOf, genesOf, setImprint, spawnBaby
 import {
   BABY_FOOD_DRAIN_SECONDS,
   breedingOf,
+  BREEDING_STAGES,
   CARE_INTERVAL,
   CARE_KINDS,
   CREATURE_FOOD,
-  EGG_HEALTH_SECONDS,
+  litterOf,
   MUTATIONS,
   NEWBORN_FOOD,
   NEWBORN_SIZE,
@@ -53,7 +54,8 @@ const nurseryOf = perContext(
       },
       careIntervalSeconds: CARE_INTERVAL,
       careKinds: CARE_KINDS,
-      eggHealthSeconds: EGG_HEALTH_SECONDS,
+      stages: BREEDING_STAGES,
+      litter: litterOf,
     }),
     food: new Map(),
     walked: new Map(),
@@ -94,37 +96,44 @@ export function tickBreeding(ctx: GameContext, dt: number): void {
   const nursery = nurseryOf(ctx);
   const now = ctx.time.now();
   const all = tames(ctx);
-  const growing = new Set(nursery.field.babies().map((baby) => baby.id));
+  const growing = new Set(nursery.field.offspring().map((baby) => baby.id));
   const candidates = all.filter((tame) => tame.mating && !growing.has(tame.id));
   for (const event of nursery.field.mate(candidates, now, dt, ctx.rng)) {
     if (event.type === "conceived") {
-      const def = breedingOf(event.species, 1);
-      ctx.game.notices.push({ text: def?.mode === "gestation" ? `Your ${label(event.species)} is pregnant` : `Your ${label(event.species)}s mated`, tone: "success" });
-    } else if (event.type === "laid") ctx.game.notices.push({ text: `A fertilized ${label(event.egg.species)} egg was laid. Keep it ${breedingOf(event.egg.species, 1)!.incubation!.join("–")} °C`, tone: "success" });
+      const carries = breedingOf(event.species, 1)?.egg === null;
+      ctx.game.notices.push({ text: carries ? `Your ${label(event.species)} is pregnant` : `Your ${label(event.species)}s mated`, tone: "success" });
+    } else if (event.type === "laid") {
+      const band = breedingOf(event.egg.species, 1)?.egg?.band.join("–") ?? "";
+      ctx.game.notices.push({ text: `A fertilized ${label(event.egg.species)} egg was laid. Keep it ${band} °C`, tone: "success" });
+    }
   }
   for (const event of nursery.field.tick(now, dt, (at) => climateAt(ctx, at).temperature, ctx.rng)) {
     if (event.type === "hatched") {
-      bringIntoWorld(ctx, event.egg.species, event.egg.at, event.egg.baby);
+      bringIntoWorld(ctx, event.egg.species, event.egg.at, event.egg.offspring);
       ctx.game.notices.push({ text: `A baby ${label(event.egg.species)} hatched!`, tone: "success" });
-    } else if (event.type === "eggLost") ctx.game.notices.push({ text: `A ${label(event.egg.species)} egg was too ${climateAt(ctx, event.egg.at).temperature < breedingOf(event.egg.species, 1)!.incubation![0] ? "cold" : "hot"} and is lost`, tone: "deny" });
-    else if (event.type === "born") {
+    } else if (event.type === "eggLost") {
+      const band = breedingOf(event.egg.species, 1)?.egg?.band;
+      const temperature = climateAt(ctx, event.egg.at).temperature;
+      const tooCold = band !== undefined && temperature < band[0];
+      ctx.game.notices.push({ text: `A ${label(event.egg.species)} egg was too ${tooCold ? "cold" : "hot"} and is lost`, tone: "deny" });
+    } else if (event.type === "born") {
       // A mother who died carrying takes her baby with her.
       const mother = all.find((tame) => tame.id === event.mother);
       if (mother === undefined) continue;
-      bringIntoWorld(ctx, event.species, mother.at, event.baby);
+      bringIntoWorld(ctx, event.species, mother.at, event.offspring);
       ctx.game.notices.push({ text: `A baby ${label(event.species)} was born!`, tone: "success" });
     } else if (event.type === "wants") {
-      const baby = nursery.field.baby(event.baby);
-      if (event.care === "walk") nursery.walked.delete(event.baby);
+      const baby = nursery.field.offspringOf(event.offspring);
+      if (event.care === "walk") nursery.walked.delete(event.offspring);
       ctx.game.notices.push({ text: `Your baby ${label(baby?.species ?? "")} wants ${event.care === "feed" ? itemLabel(favouriteFood(baby?.species ?? "")) : `a ${event.care}`}`, tone: "info" });
     } else if (event.type === "grown") {
-      ctx.scene.entity.update(event.baby, { size: 1 });
-      nursery.food.delete(event.baby);
-      nursery.walked.delete(event.baby);
-      ctx.game.notices.push({ text: `Your bred tame is fully grown, ${Math.round(event.imprint * 100)}% imprinted`, tone: "success" });
+      ctx.scene.entity.update(event.offspring, { size: 1 });
+      nursery.food.delete(event.offspring);
+      nursery.walked.delete(event.offspring);
+      ctx.game.notices.push({ text: `Your bred tame is fully grown, ${Math.round(event.bond * 100)}% imprinted`, tone: "success" });
     }
   }
-  for (const baby of nursery.field.babies()) {
+  for (const baby of nursery.field.offspring()) {
     if (!creatureAlive(ctx, baby.id)) {
       nursery.field.forget(baby.id);
       nursery.food.delete(baby.id);
@@ -150,15 +159,16 @@ function giveCare(ctx: GameContext, id: string, kind: string): void {
   const nursery = nurseryOf(ctx);
   const gained = nursery.field.care(id, kind);
   if (gained <= 0) return;
-  const baby = nursery.field.baby(id)!;
-  setImprint(ctx, id, baby.imprint);
-  ctx.scene.entity.floatText({ instanceId: id, text: `Imprinting ${Math.round(baby.imprint * 100)}%`, kind: "pickup" });
+  const isBaby = nursery.field.offspringOf(id);
+  if (isBaby === null) return;
+  setImprint(ctx, id, isBaby.bond);
+  ctx.scene.entity.floatText({ instanceId: id, text: `Imprinting ${Math.round(isBaby.bond * 100)}%`, kind: "pickup" });
 }
 
 /** The baby in front of the survivor, close enough to cuddle or feed. */
 function babyInReach(ctx: GameContext) {
   const id = aimedCreature(ctx);
-  const baby = id === null ? null : nurseryOf(ctx).field.baby(id);
+  const baby = id === null ? null : nurseryOf(ctx).field.offspringOf(id);
   const me = ctx.scene.entity.get(ctx.player.userId);
   const entity = id === null ? null : ctx.scene.entity.get(id);
   if (baby === null || me === null || entity === null) return null;
@@ -197,7 +207,7 @@ export function eggs(ctx: GameContext) {
 /** ARK's breeding multipliers as an admin setting: hatch, maturation, mating interval and care all this much faster. */
 export function setBreedingSpeed(ctx: GameContext, multiplier: number): void {
   const speed = Math.max(0.001, multiplier);
-  const speeds: BreedingSpeeds = { mating: speed, hatch: speed, mature: speed, care: speed };
+  const speeds: BreedingSpeeds = { pair: speed, carry: speed, grow: speed, bond: speed };
   nurseryOf(ctx).field.setSpeeds(speeds);
 }
 
@@ -208,24 +218,24 @@ export function breedingCard(ctx: GameContext, id: string) {
   const tame = tames(ctx).find((entry) => entry.id === id);
   if (tame === undefined) return null;
   const def = breedingOf(tame.species, tame.radius);
-  const baby = nursery.field.baby(id);
+  const baby = nursery.field.offspringOf(id);
   const pregnancy = nursery.field.pregnancy(id);
   const speeds = nursery.field.speeds();
   return {
     breeds: def !== null,
-    mode: def?.mode ?? null,
-    incubation: def?.incubation ?? null,
+    mode: def === null ? null : def.egg === null ? "carry" : "egg",
+    incubation: def?.egg?.band ?? null,
     mating: nursery.field.matingProgress(id),
     cooldown: Math.ceil(nursery.field.cooldown(id, now)),
-    pregnancy: pregnancy === null ? null : { progress: pregnancy.progress, secondsLeft: Math.ceil(((1 - pregnancy.progress) * def!.carrySeconds) / speeds.hatch) },
+    pregnancy: pregnancy === null || def === null ? null : { progress: pregnancy.progress, secondsLeft: Math.ceil(((1 - pregnancy.progress) * def.carrySeconds) / speeds.carry) },
     baby:
-      baby === null
+      baby === null || def === null
         ? null
         : {
-            stage: babyStage(baby.matured),
+            stage: baby.stage,
             matured: baby.matured,
-            secondsLeft: Math.ceil(((1 - baby.matured) * def!.maturationSeconds) / speeds.mature),
-            imprint: baby.imprint,
+            secondsLeft: Math.ceil(((1 - baby.matured) * def.maturationSeconds) / speeds.grow),
+            imprint: baby.bond,
             wants: baby.wants === "feed" ? `Feed it ${itemLabel(favouriteFood(baby.species))}` : baby.wants === "cuddle" ? "A cuddle" : baby.wants === "walk" ? `A walk: whistle it to follow and walk ${WALK_METRES} m` : null,
             nextCare: Math.max(0, Math.ceil(baby.nextCareAt - now)),
             food: Math.round(nursery.food.get(id) ?? 0),
@@ -255,12 +265,12 @@ export function breedingView(ctx: GameContext) {
       nearest = { progress: egg.progress, health: egg.health, temperature: climateAt(ctx, egg.at).temperature };
     }
   }
-  const babies = nursery.field.babies();
+  const babies = nursery.field.offspring();
   return {
     eggs: nursery.field.eggs().length,
     egg: nearest,
     babies: babies.length,
-    baby: babies[0] === undefined ? null : { id: babies[0].id, matured: babies[0].matured, imprint: babies[0].imprint, wants: babies[0].wants, size: ctx.scene.entity.get(babies[0].id)?.size ?? 1 },
+    baby: babies[0] === undefined ? null : { id: babies[0].id, matured: babies[0].matured, imprint: babies[0].bond, wants: babies[0].wants, size: ctx.scene.entity.get(babies[0].id)?.size ?? 1 },
     mating: tames(ctx).some((tame) => (nursery.field.matingProgress(tame.id) ?? 0) > 0),
   };
 }
@@ -273,7 +283,7 @@ interface BreedingSave {
 
 export function breedingSave(ctx: GameContext) {
   return {
-    key: "fernwild.breeding",
+    key: "fernwild.breeding2",
     snapshot: (): BreedingSave => {
       const nursery = nurseryOf(ctx);
       return { field: nursery.field.snapshot(), food: Object.fromEntries(nursery.food), walked: structuredClone(Object.fromEntries(nursery.walked)) };
