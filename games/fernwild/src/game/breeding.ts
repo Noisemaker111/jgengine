@@ -1,5 +1,5 @@
 import { babyStage, createBreedingField, type BreedingField, type BreedingSnapshot, type BreedingSpeeds } from "@jgengine/core/breeding/breeding";
-import { inheritStats } from "@jgengine/core/breeding/inheritance";
+import { inheritValues } from "@jgengine/core/inheritance/inheritance";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
@@ -48,8 +48,8 @@ const nurseryOf = perContext(
       conceive(mother, father, rng) {
         const mum = genesOf(ctx, mother)!;
         const dad = genesOf(ctx, father)!;
-        const inherited = inheritStats(mum.wild, dad.wild, rng, { mutations: { ...MUTATIONS, stats: WILD_STATS } });
-        return { sex: rng() < 0.5 ? "female" : "male", wild: inherited.points, mutations: mum.mutations + dad.mutations + inherited.mutations.length };
+        const inherited = inheritValues(mum.wild, dad.wild, rng, { defaultRule: { pick: "either", higherChance: 0.55 }, mutation: { ...MUTATIONS, fields: WILD_STATS } });
+        return { sex: rng() < 0.5 ? "female" : "male", wild: inherited.values, mutations: mum.mutations + dad.mutations + inherited.mutations.length };
       },
       careIntervalSeconds: CARE_INTERVAL,
       careKinds: CARE_KINDS,

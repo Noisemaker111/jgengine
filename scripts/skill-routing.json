@@ -47,6 +47,7 @@
     "harvest": "jgengine-gameplay",
     "hud": "jgengine-ui",
     "i18n": "jgengine-ui",
+    "inheritance": "jgengine-gameplay",
     "input": "jgengine-world",
     "instancing": "jgengine-world",
     "interaction": "jgengine-world",
