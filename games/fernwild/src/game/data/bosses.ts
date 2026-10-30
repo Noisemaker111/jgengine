@@ -1,10 +1,17 @@
-import type { BossPhase } from "@jgengine/core/ai/director/boss";
-import type { BossArenaTier } from "@jgengine/core/bossArena/bossArena";
+import type { PhaseLike } from "@jgengine/core/ai/phaseLadder";
+import type { Predicate } from "@jgengine/core/rules/predicate";
+import type { SummonTier } from "@jgengine/core/summonedEncounter/summonedEncounter";
 
 /** One of the Broodmother's difficulties: what summoning her costs, what she is, and what beating her gives. */
-export interface BroodTier extends BossArenaTier {
+export interface BroodTier extends SummonTier {
   id: "gamma" | "beta" | "alpha";
   label: string;
+  /** Survivor level the summoner needs. */
+  minLevel: number;
+  /** Item id → count the summon takes from the survivor. */
+  cost: Readonly<Record<string, number>>;
+  /** The level half of the summon's requirement. */
+  requirement: Predicate;
   /** The species she spawns as. */
   species: string;
   /** Item id → count every survivor in the arena gets when she dies. */
@@ -13,16 +20,17 @@ export interface BroodTier extends BossArenaTier {
 
 const ARTIFACTS = { artifact_clever: 1, artifact_hunter: 1, artifact_massive: 1 } as const;
 const trophies = (each: number) => ({ argentavis_talon: each, sarcosuchus_skin: each, sauropod_vertebra: each, titanoboa_venom: each });
+const levelAtLeast = (level: number): Predicate => ({ gte: ["level", level] });
 
 /**
  * The Broodmother Lysrix at the Green Obelisk (ARK wiki, The Island): the survivor level each difficulty asks, its
- * tribute (the Clever, Hunter and Massive artifacts, plus five or ten of each of four trophies past Gamma), and what
+ * cost (the Clever, Hunter and Massive artifacts, plus five or ten of each of four trophies past Gamma), and what
  * each survivor takes home: Element, a Spider Flag and her trophy.
  */
 export const BROOD_TIERS: readonly BroodTier[] = [
-  { id: "gamma", label: "Gamma", minLevel: 30, tribute: { ...ARTIFACTS }, species: "broodmother_gamma", rewards: { element: 20, spider_flag: 1, broodmother_trophy_gamma: 1 } },
-  { id: "beta", label: "Beta", minLevel: 50, tribute: { ...ARTIFACTS, ...trophies(5) }, species: "broodmother_beta", rewards: { element: 56, spider_flag: 1, broodmother_trophy_beta: 1 } },
-  { id: "alpha", label: "Alpha", minLevel: 70, tribute: { ...ARTIFACTS, ...trophies(10) }, species: "broodmother_alpha", rewards: { element: 148, spider_flag: 1, broodmother_trophy_alpha: 1 } },
+  { id: "gamma", label: "Gamma", minLevel: 30, cost: { ...ARTIFACTS }, requirement: levelAtLeast(30), species: "broodmother_gamma", rewards: { element: 20, spider_flag: 1, broodmother_trophy_gamma: 1 } },
+  { id: "beta", label: "Beta", minLevel: 50, cost: { ...ARTIFACTS, ...trophies(5) }, requirement: levelAtLeast(50), species: "broodmother_beta", rewards: { element: 56, spider_flag: 1, broodmother_trophy_beta: 1 } },
+  { id: "alpha", label: "Alpha", minLevel: 70, cost: { ...ARTIFACTS, ...trophies(10) }, requirement: levelAtLeast(70), species: "broodmother_alpha", rewards: { element: 148, spider_flag: 1, broodmother_trophy_alpha: 1 } },
 ];
 
 export function broodTier(id: string): BroodTier | null {
@@ -46,12 +54,16 @@ export const BROOD_LAIR = {
 export const PORTAL_RANGE = 30;
 /** ARK lets nothing heavier than its drag weight through the portal. */
 export const DRAG_WEIGHT = 560;
+/** Survivors, and companions, one fight admits. */
+export const BROOD_CAPS = { survivor: 10, companion: 20 } as const;
+/** Seconds the portal counts down, and seconds the winners stay in her lair. */
+export const BROOD_CLOCK = { portalSeconds: 25, victorySeconds: 60 } as const;
 
 /**
  * Her phases: she calls Araneo out of the walls as she weakens, and spits and webs faster. The wiki names the
  * Araneo, the web that slows and the acid; how many come and when, and the spit's timing, are approximate.
  */
-export interface BroodPhase extends BossPhase {
+export interface BroodPhase extends PhaseLike {
   /** Araneo that crawl out when this phase starts. */
   brood: number;
   /** Seconds between her web-and-acid spits. */
@@ -59,9 +71,9 @@ export interface BroodPhase extends BossPhase {
 }
 
 export const BROOD_PHASES: readonly BroodPhase[] = [
-  { id: "hunt", atHealth: 1, behaviour: {}, brood: 4, spitEvery: 12 },
-  { id: "brood", atHealth: 0.66, behaviour: {}, tell: { id: "The Broodmother calls her brood", telegraphSeconds: 3 }, brood: 6, spitEvery: 9 },
-  { id: "frenzy", atHealth: 0.33, behaviour: {}, tell: { id: "The Broodmother is enraged", telegraphSeconds: 3 }, brood: 8, spitEvery: 6 },
+  { id: "hunt", at: 1, brood: 4, spitEvery: 12 },
+  { id: "brood", at: 0.66, tell: { id: "The Broodmother calls her brood", seconds: 3 }, brood: 6, spitEvery: 9 },
+  { id: "frenzy", at: 0.33, tell: { id: "The Broodmother is enraged", seconds: 3 }, brood: 8, spitEvery: 6 },
 ];
 
 /** Her spit: how far it reaches (across her whole lair), the acid's damage and torpor, and how long and how hard the web slows. Approximate. */

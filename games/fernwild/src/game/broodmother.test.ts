@@ -53,7 +53,7 @@ function atObelisk(): HeadlessRunner {
 test("every tribute, reward and trophy is a real item, and each trophy comes off a real species", () => {
   for (const tier of BROOD_TIERS) {
     expect(speciesDef(tier.species)?.torporImmune).toBe(true);
-    for (const item of [...Object.keys(tier.tribute), ...Object.keys(tier.rewards)]) expect(itemDef(item)).not.toBeNull();
+    for (const item of [...Object.keys(tier.cost), ...Object.keys(tier.rewards)]) expect(itemDef(item)).not.toBeNull();
   }
   for (const [species, trophy] of Object.entries(TROPHY_DROPS)) {
     expect(speciesDef(species)).not.toBeNull();

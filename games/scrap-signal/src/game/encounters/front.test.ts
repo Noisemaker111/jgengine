@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createBossState } from "@jgengine/core/ai/director/boss";
+import { createPhaseClock } from "@jgengine/core/ai/phaseLadder";
 import { expandWave } from "@jgengine/core/waves/encounter";
 import type { FighterState } from "@jgengine/core/ai/director/roles";
 
@@ -108,7 +108,7 @@ describe("the pressure cap", () => {
 
 describe("the Foreman's phases", () => {
   test("health thresholds change the phase, fire each tell once, and never rewind", () => {
-    const opening = createBossState(FOREMAN_PHASES);
+    const opening = createPhaseClock(FOREMAN_PHASES);
     expect(opening.phaseId).toBe("stoke");
 
     const steady = stepForeman(opening, 1, 0.2);

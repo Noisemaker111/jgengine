@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { createGameSave } from "@jgengine/core/save/saveDocument";
 import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 import type { HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
-import { createBossState } from "@jgengine/core/ai/director/boss";
+import { createPhaseClock } from "@jgengine/core/ai/phaseLadder";
 
 import { STARTING_LIVES } from "./entities/base/catalog";
 import { keep, towerLevel } from "./keep";
@@ -41,7 +41,7 @@ function playedIntoWave(): void {
   session.boss = {
     instanceId: "warden-1",
     unitId: WARDEN_ID,
-    state: createBossState(bossProfile(WARDEN_ID)!.phases),
+    state: createPhaseClock(bossProfile(WARDEN_ID)!.phases),
     stance: "opening",
   };
 }

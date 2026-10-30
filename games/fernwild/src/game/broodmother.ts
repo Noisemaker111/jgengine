@@ -1,16 +1,17 @@
-import { advanceBoss, createBossState, type BossState } from "@jgengine/core/ai/director/boss";
-import { arenaWall, createBossArena, type ArenaCandidate, type BossArena, type BossArenaState } from "@jgengine/core/bossArena/bossArena";
+import { advancePhase, createPhaseClock, type PhaseClockState } from "@jgengine/core/ai/phaseLadder";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { teleportPlayer } from "@jgengine/core/movement/teleport";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { ridingOf } from "@jgengine/core/scene/riding";
+import { createSummonedEncounter, type SummonCandidate, type SummonedEncounter, type SummonedEncounterState } from "@jgengine/core/summonedEncounter/summonedEncounter";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
+import { ringWallSolids } from "@jgengine/core/world/worldSolids";
 
 import { editorLayers } from "../editorLayers";
 import { BAG, HOTBAR } from "./bags";
 import { creatureAlive, creatureHealth, moveCreature, removeCreatureNow, slayCreature, spawnCreature, tames } from "./creatures";
-import { BROOD_LAIR, BROOD_PHASES, BROOD_TIERS, broodTier, PORTAL_RANGE, SPIT } from "./data/bosses";
+import { BROOD_CAPS, BROOD_CLOCK, BROOD_LAIR, BROOD_PHASES, BROOD_TIERS, broodTier, PORTAL_RANGE, SPIT } from "./data/bosses";
 import { itemLabel } from "./data/items";
 import { setScreen } from "./screens";
 import { drugSurvivor, give, survivorLevel, takeAnywhere, webSurvivor } from "./survivor";
@@ -25,10 +26,10 @@ export const SPIT_FLIGHT = 0.6;
 export const FIRST_SPIT = 3;
 
 interface Brood {
-  arena: BossArena;
+  arena: SummonedEncounter<SummonCandidate>;
   /** The Broodmother's creature id while she is in the lair. */
   boss: string | null;
-  phase: BossState | null;
+  phase: PhaseClockState | null;
   /** The Araneo she has called. */
   brood: string[];
   nextSpit: number;
@@ -40,12 +41,23 @@ interface Brood {
 
 const broodOf = perContext((ctx: GameContext): Brood => {
   ctx.world.solids.set(SOLIDS_LAYER, lairWall(ctx));
-  return { arena: createBossArena({ tiers: BROOD_TIERS }), boss: null, phase: null, brood: [], nextSpit: 0, spit: null, tell: null };
+  return { arena: lairEncounter(), boss: null, phase: null, brood: [], nextSpit: 0, spit: null, tell: null };
 });
+
+/** Her lair's fight: a survivor level the summon asks, the artifact cost, the portal, and the trip home. */
+function lairEncounter(): SummonedEncounter<SummonCandidate> {
+  return createSummonedEncounter<SummonCandidate>({
+    tiers: BROOD_TIERS,
+    portalSeconds: BROOD_CLOCK.portalSeconds,
+    partyCaps: BROOD_CAPS,
+    lead: "survivor",
+    victorySeconds: BROOD_CLOCK.victorySeconds,
+  });
+}
 
 /** The lair's ring wall, standing on its islet. */
 export function lairWall(ctx: GameContext) {
-  return arenaWall({ center: BROOD_LAIR.center, radius: BROOD_LAIR.radius, height: BROOD_LAIR.wallHeight, thickness: 5, sides: 36, ground: ctx.world.groundHeightAt });
+  return ringWallSolids({ center: BROOD_LAIR.center, radius: BROOD_LAIR.radius, height: BROOD_LAIR.wallHeight, thickness: 5, sides: 36, groundHeight: ctx.world.groundHeightAt });
 }
 
 /** The Green Obelisk: where the terminal stands, on the ground under the floating spire. */
@@ -95,10 +107,10 @@ export function useObelisk(ctx: GameContext): void {
 export function summonBroodmother(ctx: GameContext, tierId: string): void {
   const tier = broodTier(tierId);
   if (tier === null || !nearTerminal(ctx)) return;
-  const result = broodOf(ctx).arena.summon(tier.id, { count: (item) => carried(ctx, item), take: (item, count) => void takeAnywhere(ctx, item, count) }, survivorLevel(ctx), ctx.time.now());
+  const result = broodOf(ctx).arena.summon(tier.id, { count: (item) => carried(ctx, item), take: (item, count) => void takeAnywhere(ctx, item, count) }, { level: survivorLevel(ctx) }, ctx.time.now());
   if (!result.ok) {
     const check = result.check;
-    const why = result.reason === "busy" ? "The Broodmother is already summoned" : check !== undefined && check.levelShort > 0 ? `Requires level ${tier.minLevel}` : `Missing ${check?.missing.map((entry) => `${entry.need - entry.have} ${itemLabel(entry.item)}`).join(", ") ?? "tribute"}`;
+    const why = result.reason === "busy" ? "The Broodmother is already summoned" : check !== undefined && !check.requirementMet ? `Requires level ${tier.minLevel}` : `Missing ${check?.missing.map((entry) => `${entry.need - entry.have} ${itemLabel(entry.item)}`).join(", ") ?? "tribute"}`;
     ctx.game.notices.push({ text: why, tone: "deny" });
     return;
   }
@@ -113,14 +125,14 @@ export function obeliskView(ctx: GameContext) {
   return {
     busy: arena.state().phase !== "idle",
     tiers: BROOD_TIERS.map((tier) => {
-      const check = arena.check(tier.id, (item) => carried(ctx, item), level);
+      const check = arena.check(tier.id, (item) => carried(ctx, item), { level });
       return {
         id: tier.id,
         label: tier.label,
         minLevel: tier.minLevel,
-        levelOk: check.levelShort === 0,
+        levelOk: check.requirementMet,
         ok: check.ok,
-        tribute: Object.entries(tier.tribute).map(([item, need]) => ({ item, label: itemLabel(item), need, have: carried(ctx, item) })),
+        tribute: Object.entries(tier.cost).map(([item, need]) => ({ item, label: itemLabel(item), need, have: carried(ctx, item) })),
         rewards: Object.entries(tier.rewards).map(([item, count]) => ({ item, label: itemLabel(item), count })),
       };
     }),
@@ -130,11 +142,11 @@ export function obeliskView(ctx: GameContext) {
 // --- the fight -------------------------------------------------------------------------------------
 
 /** Everyone the portal can take: the survivor and each living tame of theirs within range of the obelisk. */
-function gather(ctx: GameContext): ArenaCandidate[] {
+function gather(ctx: GameContext): SummonCandidate[] {
   const obelisk = greenObelisk(ctx);
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null || flat(me.position, obelisk) > PORTAL_RANGE) return [];
-  const out: ArenaCandidate[] = [{ id: ctx.player.userId, kind: "survivor", at: [me.position[0], me.position[1], me.position[2]] }];
+  const out: SummonCandidate[] = [{ id: ctx.player.userId, kind: "survivor", at: [me.position[0], me.position[1], me.position[2]] }];
   for (const tame of tames(ctx)) if (flat(tame.at, obelisk) <= PORTAL_RANGE) out.push({ id: tame.id, kind: "companion", at: [tame.at[0], tame.at[1], tame.at[2]] });
   return out;
 }
@@ -156,7 +168,7 @@ function clearLair(ctx: GameContext, brood: Brood): void {
   brood.tell = null;
 }
 
-function enter(ctx: GameContext, brood: Brood, tierId: string, admitted: readonly ArenaCandidate[], refused: number): void {
+function enter(ctx: GameContext, brood: Brood, tierId: string, admitted: readonly SummonCandidate[], refused: number): void {
   const tier = broodTier(tierId)!;
   // ARK's portal pulls riders off their mounts; both go through.
   ridingOf(ctx).dismount(ctx.player.userId);
@@ -168,7 +180,7 @@ function enter(ctx: GameContext, brood: Brood, tierId: string, admitted: readonl
     .forEach((entry, index) => moveCreature(ctx, entry.id, lairSpot(0.8, Math.PI + (index % 2 === 0 ? 1 : -1) * (0.3 + Math.floor(index / 2) * 0.15))));
   // She waits in the middle of her lair.
   brood.boss = spawnCreature(ctx, tier.species, lairSpot(0, 0), { level: 1 });
-  brood.phase = createBossState(BROOD_PHASES);
+  brood.phase = createPhaseClock(BROOD_PHASES);
   // She greets them with a spit before she closes in.
   brood.nextSpit = ctx.time.now() + FIRST_SPIT;
   callBrood(ctx, brood, BROOD_PHASES[0]!.brood);
@@ -182,16 +194,16 @@ function fight(ctx: GameContext, brood: Brood, dt: number): void {
   const me = ctx.scene.entity.get(ctx.player.userId);
   // A survivor no longer in the lair (dead, back on the beach) has left the fight; so has a tame that died.
   if (arena.inside(ctx.player.userId) && (me === null || !inLair(me.position))) arena.leave(ctx.player.userId);
-  for (const id of arena.state().companions) if (!creatureAlive(ctx, id)) arena.leave(id);
+  for (const id of arena.state().party["companion"] ?? []) if (!creatureAlive(ctx, id)) arena.leave(id);
   const health = brood.boss === null ? null : creatureHealth(ctx, brood.boss);
   if (health === null || brood.phase === null || arena.state().phase !== "fight") return;
-  const step = advanceBoss(BROOD_PHASES, brood.phase, health, dt);
+  const step = advancePhase(BROOD_PHASES, brood.phase, health, dt);
   brood.phase = step.state;
   if (step.tell !== null) {
-    brood.tell = { text: step.tell.id, until: now + (step.tell.telegraphSeconds ?? 1.5) };
+    brood.tell = { text: step.tell.id, until: now + step.tell.seconds };
     ctx.game.notices.push({ text: step.tell.id, tone: "deny" });
   }
-  const phase = BROOD_PHASES[step.state.phase]!;
+  const phase = step.phase;
   if (step.changed) callBrood(ctx, brood, phase.brood);
   const boss = ctx.scene.entity.get(brood.boss!);
   if (now >= brood.nextSpit && boss !== null && me !== null && arena.inside(ctx.player.userId)) {
@@ -212,20 +224,21 @@ export function tickBroodmother(ctx: GameContext, dt: number): void {
   const now = ctx.time.now();
   if (brood.tell !== null && brood.tell.until <= now) brood.tell = null;
   if (brood.arena.state().phase === "fight") fight(ctx, brood, dt);
-  const events = brood.arena.tick(now, { bossAlive: () => brood.boss !== null && creatureAlive(ctx, brood.boss), gather: () => gather(ctx) });
+  const events = brood.arena.tick(now, { targetAlive: () => brood.boss !== null && creatureAlive(ctx, brood.boss), gather: () => gather(ctx) });
   for (const event of events) {
     const tier = broodTier(event.tier)!;
     if (event.type === "entered") enter(ctx, brood, event.tier, event.admitted, event.refused.length);
     else if (event.type === "closed") ctx.game.notices.push({ text: "The portal closed with nobody near the obelisk. The tribute is spent.", tone: "deny" });
     else if (event.type === "won") {
-      if (event.survivors.includes(ctx.player.userId)) for (const [item, count] of Object.entries(tier.rewards)) give(ctx, item, count);
+      if ((event.party["survivor"] ?? []).includes(ctx.player.userId)) for (const [item, count] of Object.entries(tier.rewards)) give(ctx, item, count);
       // Her brood dies with her.
       for (const id of brood.brood) slayCreature(ctx, id);
       ctx.game.notices.push({ text: `The ${tier.label} Broodmother is dead! ${Object.entries(tier.rewards).map(([item, count]) => `${count} ${itemLabel(item)}`).join(", ")}. Back to the obelisk in a minute.`, tone: "success" });
     } else if (event.type === "lost") {
-      for (const id of event.companions) slayCreature(ctx, id);
+      const companions = event.party["companion"] ?? [];
+      for (const id of companions) slayCreature(ctx, id);
       clearLair(ctx, brood);
-      ctx.game.notices.push({ text: event.companions.length > 0 ? `The Broodmother won. ${event.companions.length} tames left in her lair are lost.` : "The Broodmother won.", tone: "deny" });
+      ctx.game.notices.push({ text: companions.length > 0 ? `The Broodmother won. ${companions.length} tames left in her lair are lost.` : "The Broodmother won.", tone: "deny" });
     } else if (event.type === "returned") {
       const obelisk = greenObelisk(ctx);
       for (const entry of event.returns) {
@@ -253,8 +266,8 @@ export function broodView(ctx: GameContext) {
     boss: brood.boss === null ? null : { id: brood.boss, health: creatureHealth(ctx, brood.boss) ?? 0, phase: brood.phase?.phaseId ?? null },
     brood: brood.brood.filter((id) => creatureAlive(ctx, id)).length,
     tell: brood.tell?.text ?? null,
-    survivors: state.survivors.length,
-    companions: state.companions.length,
+    survivors: state.party["survivor"]?.length ?? 0,
+    companions: state.party["companion"]?.length ?? 0,
   };
 }
 
@@ -278,16 +291,16 @@ export function setBroodHealth(ctx: GameContext, share: number): void {
 }
 
 interface BroodSave {
-  arena: BossArenaState;
+  arena: SummonedEncounterState;
   boss: string | null;
-  phase: BossState | null;
+  phase: PhaseClockState | null;
   brood: string[];
   nextSpit: number;
 }
 
 export function broodSave(ctx: GameContext) {
   return {
-    key: "fernwild.broodmother",
+    key: "fernwild.brood",
     snapshot: (): BroodSave => {
       const brood = broodOf(ctx);
       return { arena: brood.arena.snapshot(), boss: brood.boss, phase: brood.phase, brood: [...brood.brood], nextSpit: brood.nextSpit };

@@ -1,6 +1,6 @@
 import type { PathFollowState } from "@jgengine/core/nav/pathFollow";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import type { BossState } from "@jgengine/core/ai/director/boss";
+import type { PhaseClockState } from "@jgengine/core/ai/phaseLadder";
 import type { Encounter } from "@jgengine/core/waves/encounter";
 import type { PressurePlan } from "@jgengine/core/waves/pressure";
 import { createAbilityKit, type AbilityKit } from "@jgengine/core/combat/abilityKit";
@@ -32,7 +32,7 @@ export interface CreepRuntime {
 export interface BossRuntime {
   instanceId: string;
   unitId: string;
-  state: BossState;
+  state: PhaseClockState;
   stance: string;
 }
 
