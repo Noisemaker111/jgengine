@@ -9,6 +9,8 @@ Engine seam: packages/core/src/placement/buildPermissions.ts
 ### Added
 
 - plot permissions take an everyone role and a saved ban list; llmville's lab access (owner, owner's bot, visitors, bans) now runs on them
+- plot permissions take an everyone role and a saved ban list
+- llmville's lab access (owner, the owner's bot, visitors, guests and bans) runs on the engine's plot permissions, with a test for each case
 
 ### Removed
 
