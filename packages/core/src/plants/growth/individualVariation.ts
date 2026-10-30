@@ -5,12 +5,13 @@ import { plantCos, plantExp, plantLog, PLANT_PI } from "./plantMath";
 /**
  * How far one individual's architecture strays from its species record, as standard deviations.
  * Trees of one species and size differ in crown width by about a quarter either way (Jucker et al.
- * 2022, Tallo); these spreads are set so the seeds of one species span that band
- * (plants/growth/individualVariation.test.ts).
+ * 2022, Tallo), across sites and competition as well as individuals; these spreads are set so one
+ * site's seeds differ visibly in crown width inside that band while staying within a fifth of the
+ * typical tree's height (plants/growth/individualVariation.test.ts).
  */
 const INDIVIDUAL_SPREAD = {
   /** Degrees added to the branch angle and to the lateral set point. */
-  angleDeg: 15,
+  angleDeg: 8,
   /**
    * Log-scale spread of what mature apical control lets through to laterals, 1 - apical control. A
    * seedling's leader is strong in every tree (Brown, McAlpine & Kormanik 1967), so individuals differ
@@ -22,7 +23,7 @@ const INDIVIDUAL_SPREAD = {
   /** Log-scale spread of gravitropic pull. */
   gravity: 0.4,
   /** Log-scale spread of internode length. */
-  internode: 0.15,
+  internode: 0.06,
 } as const;
 
 /**
