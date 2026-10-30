@@ -37,6 +37,8 @@ export interface StatPoolChange {
   pool: StatPool;
   /** Actual applied amount after clamping. */
   applied: number;
+  /** Requested amount that did not fit: `amount - applied`. */
+  overflow: number;
   hitMin: boolean;
   hitMax: boolean;
 }
@@ -89,6 +91,7 @@ export function changeStatPool(pool: StatPool, amount: number): StatPoolChange {
     // clamp to a bound) so reference-equality guards in HUD hooks don't churn.
     pool: applied === 0 ? pool : next,
     applied,
+    overflow: amount - applied,
     hitMin: next.current === next.min,
     hitMax: next.current === next.max,
   };
@@ -113,4 +116,77 @@ export function applyStatPoolDelta<TOwnerId extends string, TStatId extends stri
   const change = changeStatPool(pool, amount);
   access.set(ownerId, statId, change.pool);
   return { status: "ok", ...change };
+}
+
+/** How a meter changes by itself over time. All per second; every field optional. */
+export interface MeterRates {
+  /** Toward max, only once `regenDelay` seconds have passed since the last drop. */
+  regen?: number | undefined;
+  /** Toward min, always. */
+  decay?: number | undefined;
+  /** Seconds after a drop before regen starts. Default 0. */
+  regenDelay?: number | undefined;
+}
+
+/** Plain JSON meter: the pool plus seconds since its last drop. */
+export interface MeterState {
+  pool: StatPool;
+  sinceDrop: number;
+}
+
+/** A new meter, full unless `current` says otherwise.
+ *
+ * @capability meter create a ticking bounded value
+ */
+export function createMeter(input: StatPoolInput): MeterState {
+  return { pool: createStatPool(input), sinceDrop: 0 };
+}
+
+/** Advance `dt` seconds: decay, then regen if the delay has passed.
+ *
+ * @capability meter-rates tick a bounded value's regen, decay and regen delay over time
+ */
+export function tickMeter(
+  meter: MeterState,
+  rates: MeterRates,
+  dt: number,
+): { meter: MeterState; change: StatPoolChange } {
+  // A decay is not a drop, so it must not restart the regen delay.
+  const sinceDrop = meter.sinceDrop + dt;
+  const decayAmount = rates.decay === undefined ? 0 : -rates.decay * dt;
+  const decay = changeStatPool(meter.pool, decayAmount);
+  const regenAmount =
+    rates.regen !== undefined && sinceDrop >= (rates.regenDelay ?? 0) ? rates.regen * dt : 0;
+  const regen = changeStatPool(decay.pool, regenAmount);
+  const pool = regen.pool;
+  const next: MeterState = pool === meter.pool && sinceDrop === meter.sinceDrop
+    ? meter
+    : { pool, sinceDrop };
+  return {
+    meter: next,
+    change: {
+      previous: meter.pool,
+      pool,
+      applied: decay.applied + regen.applied,
+      overflow: decay.overflow + regen.overflow,
+      hitMin: pool.current === pool.min,
+      hitMax: pool.current === pool.max,
+    },
+  };
+}
+
+/** Add `amount` now (negative drains). A drop (applied < 0) resets sinceDrop to 0.
+ *
+ * @capability meter-change drain or fill a ticking meter, restarting its regen delay on a drop
+ */
+export function changeMeter(
+  meter: MeterState,
+  amount: number,
+): { meter: MeterState; change: StatPoolChange } {
+  const change = changeStatPool(meter.pool, amount);
+  const sinceDrop = change.applied < 0 ? 0 : meter.sinceDrop;
+  const next: MeterState = change.pool === meter.pool && sinceDrop === meter.sinceDrop
+    ? meter
+    : { pool: change.pool, sinceDrop };
+  return { meter: next, change };
 }

@@ -5714,6 +5714,36 @@
       "intent": "the walking player slides against a mesh collider's compound `boxes` — a capsule walks THROUGH an opted-in archway opening and is stopped by its pillars/lintel instead of one outer box."
     },
     {
+      "id": "meter",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/stats/statPool",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "create a ticking bounded value"
+    },
+    {
+      "id": "meter-change",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/stats/statPool",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "drain or fill a ticking meter, restarting its regen delay on a drop"
+    },
+    {
+      "id": "meter-rates",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/stats/statPool",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "tick a bounded value's regen, decay and regen delay over time"
+    },
+    {
       "id": "minimap",
       "packages": [
         "@jgengine/core"

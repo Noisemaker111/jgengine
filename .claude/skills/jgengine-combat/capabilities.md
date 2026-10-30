@@ -258,6 +258,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createMagazine` (function) · `import { createMagazine } from "@jgengine/core/combat"`
 
+## meter — create a ticking bounded value
+
+- `createMeter` (function) · `import { createMeter } from "@jgengine/core/stats/statPool"`
+
+## meter-change — drain or fill a ticking meter, restarting its regen delay on a drop
+
+- `changeMeter` (function) · `import { changeMeter } from "@jgengine/core/stats/statPool"`
+
+## meter-rates — tick a bounded value's regen, decay and regen delay over time
+
+- `tickMeter` (function) · `import { tickMeter } from "@jgengine/core/stats/statPool"`
+
 ## on-death-drops — make a killed enemy drop loot on the ground or into the killer's bag via catalog onDeath
 
 - `OnDeathSpec` (interface) · `import { OnDeathSpec } from "@jgengine/core/combat"`
