@@ -1,12 +1,12 @@
 import { describe, expect, mock, test } from "bun:test";
 
 let anonymous = false;
-mock.module("./auth", () => ({
+mock.module("../convex/auth", () => ({
   authComponent: { safeGetAuthUser: async () => ({ isAnonymous: anonymous }) },
 }));
 
-const { canEdit, canRead } = await import("./permissions");
-const { BOT_NONCE_CLAIM, botActorExternalId } = await import("./botActor");
+const { canEdit, canRead } = await import("../convex/permissions");
+const { BOT_NONCE_CLAIM, botActorExternalId } = await import("../convex/botActor");
 
 type Ctx = Parameters<typeof canRead>[0];
 type Game = Parameters<typeof canRead>[1];
