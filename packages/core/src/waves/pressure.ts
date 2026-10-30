@@ -4,6 +4,8 @@
  * a callback, so a test can sweep it and a probe can print it.
  */
 
+import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
+
 /** What the director reads about the player before it chooses a tier. */
 export interface PressureReading {
   /** Player health fraction `0..1`. A healthier player is leaned on harder. */
@@ -89,6 +91,17 @@ function timeTerm(elapsed: number, rule: ResolvedRule): number {
   return clamp01((elapsed - rule.timeFloorSeconds) / span);
 }
 
+/** Cut points splitting the index `0..1` into `maxTier + 1` equal bands, cached per cap. */
+const BANDS = new Map<number, readonly ThresholdBoundary<number>[]>();
+
+function bandsFor(maxTier: number): readonly ThresholdBoundary<number>[] {
+  const cached = BANDS.get(maxTier);
+  if (cached !== undefined) return cached;
+  const bands = Array.from({ length: maxTier + 1 }, (_, tier) => ({ id: tier, at: tier / (maxTier + 1) }));
+  BANDS.set(maxTier, bands);
+  return bands;
+}
+
 /**
  * Turn one reading into a bounded pressure plan.
  *
@@ -119,7 +132,7 @@ export function evaluatePressure(reading: PressureReading, rule: PressureRule = 
             totalWeight,
         );
 
-  const tier = Math.min(resolved.maxTier, Math.max(0, Math.floor(index * (resolved.maxTier + 1))));
+  const tier = tierAt(bandsFor(resolved.maxTier), index)?.id ?? 0;
   return {
     tier,
     index,
