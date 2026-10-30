@@ -1,3 +1,10 @@
+import {
+  createStatGraph,
+  statModifierContributions,
+  type StatGraph,
+  type StatSheet,
+} from "../progression/statGraph";
+
 export interface StatModifier {
   add?: number;
   multiply?: number;
@@ -60,9 +67,22 @@ export function createStats<TStat extends string>(
   base: Record<TStat, number>,
   options?: CreateStatsOptions,
 ): Stats<TStat> {
+  const clock = options?.now;
   let baseValues: Record<TStat, number> = { ...base };
   const sourceEntries = new Map<string, StatSourceEntry<TStat>>();
-  const clock = options?.now;
+  /** Every stat id the graph knows: base values plus whatever a modifier source names. */
+  const statIds = new Set<string>(Object.keys(baseValues));
+  let sheet: StatSheet = emptySheet();
+
+  /** A sheet over every stat any base value or modifier source names. */
+  function emptySheet(): StatSheet {
+    const graph: StatGraph = createStatGraph({ inputs: [...statIds].map((id) => ({ id })) });
+    const created = graph.create(baseValues);
+    for (const [sourceId, entry] of sourceEntries) {
+      created.addSource(sourceId, statModifierContributions(sourceId, entry.modifiers));
+    }
+    return created;
+  }
 
   function resolveNow(nowMs: number | undefined): number | undefined {
     return nowMs ?? clock?.();
@@ -77,39 +97,40 @@ export function createStats<TStat extends string>(
     for (const [sourceId, entry] of sourceEntries) {
       if (isExpired(entry, nowMs)) {
         sourceEntries.delete(sourceId);
+        sheet.removeSource(sourceId);
         pruned.push(sourceId);
       }
     }
     return pruned;
   }
 
-  function resolve(stat: TStat, nowMs: number | undefined): number {
-    let total = baseValues[stat];
-    let multiplier = 1;
-
-    for (const entry of sourceEntries.values()) {
-      if (isExpired(entry, nowMs)) continue;
-      const modifier = entry.modifiers[stat];
-      if (!modifier) continue;
-      if (modifier.add !== undefined) total += modifier.add;
-      if (modifier.multiply !== undefined) multiplier *= modifier.multiply;
-    }
-
-    return total * multiplier;
-  }
-
   return {
     setBase(stat, value) {
-      baseValues[stat] = value;
+      baseValues = { ...baseValues, [stat]: value };
+      if (statIds.has(stat)) sheet.setBase(stat, value);
+      else {
+        statIds.add(stat);
+        sheet = emptySheet();
+      }
     },
     getBase(stat) {
-      return baseValues[stat];
+      return sheet.getBase(stat);
     },
     addSource(sourceId, modifiers, sourceOptions) {
       sourceEntries.set(sourceId, { modifiers, expiresAtMs: sourceOptions?.expiresAtMs });
+      let announced = false;
+      for (const stat of Object.keys(modifiers)) {
+        if (statIds.has(stat)) continue;
+        statIds.add(stat);
+        announced = true;
+      }
+      // A source that names a new stat widens the graph's vocabulary; otherwise the sheet takes it as is.
+      if (announced) sheet = emptySheet();
+      else sheet.addSource(sourceId, statModifierContributions(sourceId, modifiers));
     },
     removeSource(sourceId) {
       sourceEntries.delete(sourceId);
+      sheet.removeSource(sourceId);
     },
     hasSource(sourceId, nowMs) {
       const entry = sourceEntries.get(sourceId);
@@ -117,6 +138,7 @@ export function createStats<TStat extends string>(
       const time = resolveNow(nowMs);
       if (isExpired(entry, time)) {
         sourceEntries.delete(sourceId);
+        sheet.removeSource(sourceId);
         return false;
       }
       return true;
@@ -124,7 +146,7 @@ export function createStats<TStat extends string>(
     get(stat, nowMs) {
       const time = resolveNow(nowMs);
       if (time !== undefined) dropExpired(time);
-      return resolve(stat, time);
+      return sheet.get(stat);
     },
     pruneExpired(nowMs) {
       return dropExpired(nowMs);
@@ -145,12 +167,16 @@ export function createStats<TStat extends string>(
     restore(snapshot) {
       baseValues = { ...snapshot.base };
       sourceEntries.clear();
+      statIds.clear();
+      for (const id of Object.keys(baseValues)) statIds.add(id);
       for (const source of snapshot.sources) {
         sourceEntries.set(source.id, {
           modifiers: cloneModifierSet(source.modifiers),
           expiresAtMs: source.expiresAtMs,
         });
+        for (const stat of Object.keys(source.modifiers)) statIds.add(stat);
       }
+      sheet = emptySheet();
     },
   };
 }
