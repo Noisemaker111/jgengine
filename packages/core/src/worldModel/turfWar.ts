@@ -25,7 +25,7 @@ export interface TurfFrontDecl {
   chance?: number;
   /** Grip one push takes off the block (default 15). */
   hit?: number;
-  /** Only push while these facts hold, e.g. `{ "carmine.mood": { atMost: -20 } }`. */
+  /** Only push while these facts hold, e.g. `{ "red.mood": { atMost: -20 } }`. */
   when?: WorldConditions;
   /** Push only from a border block the side holds (default true); false strikes any block it doesn't own. */
   fromBorders?: boolean;
@@ -46,7 +46,7 @@ export interface TurfWarDecl {
   labels?: Readonly<Record<string, string>>;
   /** Grip a block holds right after it changes hands (default 40). Grip facts need `min: 0`. */
   takenGrip?: number;
-  /** Absolute changes when a side takes a block, keyed by the taker, e.g. `{ player: { "carmine.mood": -10 } }`. */
+  /** Absolute changes when a side takes a block, keyed by the taker, e.g. `{ player: { "red.mood": -10 } }`. */
   onTake?: Readonly<Record<string, WorldChanges>>;
   /** Changes when a side loses a block, keyed by the loser. */
   onLose?: Readonly<Record<string, WorldChanges>>;
