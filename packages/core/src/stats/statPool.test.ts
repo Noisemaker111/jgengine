@@ -148,6 +148,44 @@ describe("ticking meters", () => {
     expect(meter.sinceDrop).toBe(0.5);
   });
 
+  test("decay waits decayDelay seconds after the last fill", () => {
+    const rates = { decay: 1, decayDelay: 1 };
+    let meter = changeMeter(createMeter({ current: 6, max: 10 }), 2).meter;
+    expect(meter.sinceFill).toBe(0);
+
+    const early = tickMeter(meter, rates, 0.5);
+    expect(early.meter.pool.current).toBe(8);
+    expect(early.meter.sinceFill).toBe(0.5);
+
+    const started = tickMeter(early.meter, rates, 0.5);
+    expect(started.meter.pool.current).toBe(7.5);
+    expect(started.meter.sinceFill).toBe(1);
+
+    meter = started.meter;
+    for (let i = 0; i < 20; i++) meter = tickMeter(meter, rates, 1).meter;
+    expect(meter.pool.current).toBe(0);
+  });
+
+  test("a fill restarts the decay delay while a drain leaves it running", () => {
+    const rates = { decay: 1, decayDelay: 2 };
+    let meter = changeMeter(createMeter({ max: 10 }), -4).meter;
+    meter = tickMeter(meter, rates, 1).meter;
+    expect(meter.pool.current).toBe(6);
+
+    meter = tickMeter(meter, rates, 1).meter;
+    expect(meter.pool.current).toBe(5);
+
+    meter = changeMeter(meter, -1).meter;
+    meter = tickMeter(meter, rates, 0.5).meter;
+    expect(meter.pool.current).toBe(3.5);
+
+    meter = changeMeter(meter, 1).meter;
+    meter = tickMeter(meter, rates, 1).meter;
+    expect(meter.pool.current).toBe(4.5);
+    meter = tickMeter(meter, rates, 1).meter;
+    expect(meter.pool.current).toBe(3.5);
+  });
+
   test("returns the same meter on a no-op tick at max", () => {
     const full = createMeter({ max: 10 });
     const ticked = tickMeter(full, { regen: 5 }, 0);
