@@ -324,7 +324,7 @@ export function parseCheckArgs(argv: readonly string[]): CheckRequest {
  * Generators write separate files, so independent targets run side by side (after `barrels`, which
  * they all read); checks run one at a time in table order, as they always have.
  */
-export const GEN_JOBS = Math.max(2, Math.min(6, Math.floor(availableParallelism() / 2)));
+export const GEN_JOBS = Math.max(2, Math.min(4, Math.floor(availableParallelism() / 2)));
 
 async function runStages(label: string, stages: readonly Stage[], root: string, jobs: number): Promise<number> {
   const digests: string[] = [];

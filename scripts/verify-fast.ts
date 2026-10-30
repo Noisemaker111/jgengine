@@ -115,7 +115,7 @@ export interface Unit {
  * scenario hit its own 30 s give-up), and twelve made the frame gate's browser launches
  * fail; six is the widest that ran every step green here. `--jobs` overrides it.
  */
-export const DEFAULT_JOBS = Math.max(2, Math.min(6, Math.floor(availableParallelism() / 2)));
+export const DEFAULT_JOBS = Math.max(2, Math.min(4, Math.floor(availableParallelism() / 2)));
 
 export interface Workspace {
   dir: string;
