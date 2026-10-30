@@ -481,7 +481,7 @@ export function broodSave(ctx: GameContext) {
     },
     hydrate: (data: BroodSave) => {
       const brood = broodOf(ctx);
-      brood.fight = data.fight;
+      brood.fight = { ...newBroodFight(), ...data.fight };
       brood.boss = data.boss;
       brood.phase = data.phase;
       brood.brood = [...data.brood];
