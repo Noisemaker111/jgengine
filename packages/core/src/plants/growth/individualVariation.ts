@@ -11,7 +11,11 @@ import { plantCos, plantExp, plantLog, PLANT_PI } from "./plantMath";
 const INDIVIDUAL_SPREAD = {
   /** Degrees added to the branch angle and to the lateral set point. */
   angleDeg: 15,
-  /** Log-scale spread of what apical control lets through to laterals, 1 - apical control (young and mature). */
+  /**
+   * Log-scale spread of what mature apical control lets through to laterals, 1 - apical control. A
+   * seedling's leader is strong in every tree (Brown, McAlpine & Kormanik 1967), so individuals differ
+   * only in how much of it they lose with age; a weaker seedling leader would fork at the ground.
+   */
   apicalLeak: 0.3,
   /** Log-scale spread of the vigour sent to horizontal shoots. */
   horizontalVigour: 0.35,
@@ -40,7 +44,6 @@ export function individualGrowth(growth: PlantSpecies["growth"], seed: RandomSee
   const angle = spread.angleDeg * normal();
   return {
     ...growth,
-    apicalControl: 1 - (1 - growth.apicalControl) * leak,
     apicalControlMature: 1 - (1 - growth.apicalControlMature) * leak,
     branchAngle: Math.max(5, Math.min(110, growth.branchAngle + angle)),
     horizontalVigour: growth.horizontalVigour * plantExp(spread.horizontalVigour * normal()),
