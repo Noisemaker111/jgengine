@@ -1621,7 +1621,7 @@
   "packages/core/src/sim/queue.ts": {"nonNull":6},
   "packages/core/src/sim/rides.test.ts": {"nonNull":18},
   "packages/core/src/sim/routine.test.ts": {"nonNull":7},
-  "packages/core/src/sim/routine.ts": {"nonNull":19},
+  "packages/core/src/sim/routine.ts": {"nonNull":13},
   "packages/core/src/sky/Daylight.draw.tsx": {"cast":9,"nonNull":9},
   "packages/core/src/sky/daylightCycle.test.ts": {"nonNull":24},
   "packages/core/src/sky/daylightCycle.ts": {"nonNull":3},
