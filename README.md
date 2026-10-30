@@ -40,7 +40,7 @@ world. Each has one home; a feature that needs one uses that home and never writ
 | Table | a weighted choice the game fills | loot per rarity, which enemy, which mutation | `random/pick.ts` |
 | Requirement | a condition over facts the game names | level gates, keys, quest prerequisites, unlocks | `rules/predicate.ts` |
 | Modifiers | stacked add, multiply, override and clamp on a value | buffs, gear stats, difficulty, upgrades, imprinting | `progression/statGraph.ts` |
-| Inheritance | a child's values from its parents with variation | breeding, crossing plants, procedural offspring | `breeding/inheritance.ts`, moving to its own folder |
+| Inheritance | a child's values from its parents with variation | breeding, crossing plants, procedural offspring | `inheritance/inheritance.ts` |
 | Motion track | a thing follows a path over time and arrives | a drop falling, a thrown item, a door, a cutscene move | planned, `movement/` |
 
 A supply drop is a Schedule (when), Placement (where), Ladder (rarity), Requirement (who may
