@@ -7909,6 +7909,16 @@
       "intent": "strike scatter trees, rocks and bushes for tool-biased resources; spent ones vanish and regrow"
     },
     {
+      "id": "scatter-points",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/inheritance/inheritance",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "spread points over fields at random so equal totals differ"
+    },
+    {
       "id": "scene-capture-binding",
       "packages": [
         "@jgengine/core"
@@ -8744,16 +8754,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "feed an existing StatModifierSet into a stat-graph source"
-    },
-    {
-      "id": "stat-inheritance",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/breeding/inheritance",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "breed two parents' stat points into a baby's, favouring the stronger, with rare mutations"
     },
     {
       "id": "stat-points",
@@ -10008,6 +10008,16 @@
       "intent": "diagnose authored weather, effect, fire, force and habitat documents before publication"
     },
     {
+      "id": "value-inheritance",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/inheritance/inheritance",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a child's values from two parents per field, picked or blended, with rare mutations"
+    },
+    {
       "id": "vehicle-backend-link",
       "packages": [
         "@jgengine/core"
@@ -10404,16 +10414,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "pick one item from a set with an injected random source"
-    },
-    {
-      "id": "wild-stat-levels",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/breeding/inheritance",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "spread a creature's levels over its stats at random so same-level creatures differ"
     },
     {
       "id": "window",

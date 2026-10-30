@@ -11,7 +11,7 @@ import { createStatPoints, type StatPointSheet } from "@jgengine/core/progressio
 import { createCompanionRoster, type CompanionCommand, type CompanionRecord } from "@jgengine/core/scene/companion";
 import { ridingOf, type SeatOffset } from "@jgengine/core/scene/riding";
 import type { MountedRider } from "@jgengine/core/scene/mount";
-import { scatterLevels } from "@jgengine/core/breeding/inheritance";
+import { scatterPoints } from "@jgengine/core/inheritance/inheritance";
 import { createKnockoutTaming, type TamingFeeder, type TamingState } from "@jgengine/core/taming/knockoutTaming";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { createResourceNodeField, type ResourceGrant, type ResourceNodeState, type ToolProfile } from "@jgengine/core/world/resourceNode";
@@ -270,7 +270,7 @@ export function spawnCreature(
   const world = worldOf(ctx);
   const id = `${species}_${(world.seq += 1)}`;
   const sex = ctx.rng() < 0.5 ? "female" : "male";
-  const genes = options.genes ?? { sex: options.sex ?? sex, wild: scatterLevels((options.level ?? rollLevel(ctx)) - 1, WILD_STATS, ctx.rng), mutations: 0 };
+  const genes = options.genes ?? { sex: options.sex ?? sex, wild: scatterPoints((options.level ?? rollLevel(ctx)) - 1, WILD_STATS, ctx.rng), mutations: 0 };
   const level = 1 + WILD_STATS.reduce((sum, stat) => sum + genes.wild[stat], 0);
   ctx.scene.entity.spawn(species, { id, position, rotationY: ctx.rng() * Math.PI * 2, role: "npc", ...(options.size === undefined ? {} : { size: options.size }) });
   const creature: Creature = {
@@ -538,7 +538,7 @@ export function levelTame(ctx: GameContext, stat: TameStat): void {
 function tame(ctx: GameContext, creature: Creature, effectiveness: number, bonus: number): void {
   creature.level += bonus;
   // ARK's taming bonus levels land on random stats like wild ones, and pass to babies the same way.
-  const extra = scatterLevels(bonus, WILD_STATS, ctx.rng);
+  const extra = scatterPoints(bonus, WILD_STATS, ctx.rng);
   for (const stat of WILD_STATS) creature.wild[stat] += extra[stat];
   makeTame(ctx, creature);
   ctx.game.notices.push({ text: `${defOf(creature).label} tamed! Level ${creature.level} (+${bonus} from ${Math.round(effectiveness * 100)}% taming effectiveness)`, tone: "success" });
