@@ -2911,12 +2911,13 @@
 
 ## @jgengine/core/remains/remains
 
-- `Remains` (interface): interface Remains — What someone left where they fell: whose it is, where, what it holds and until when it lasts.
-- `RemainsField` (interface): interface RemainsField — The remains lying in a world: left on death, taken back from, and gone when they fall apart.
+- `Remains` (interface): interface Remains<T = undefined> — A heap of stacks left at a place: what it holds, when it falls apart, and whatever was kept with it.
+- `RemainsField` (interface): interface RemainsField<T = undefined> — The remains lying in a world: left on death, taken back from, and gone when they fall apart.
+- `RemainsLeaveInput` (interface): interface RemainsLeaveInput<T = undefined> — What {@link RemainsField.leave} is given.
 - `RemainsOptions` (interface): interface RemainsOptions — {@link createRemainsField} knobs.
-- `RemainsSnapshot` (interface): interface RemainsSnapshot — Everything a remains field holds, for a save.
+- `RemainsSnapshot` (interface): interface RemainsSnapshot<T = undefined> — Everything a remains field holds, for a save.
 - `RemainsStack` (interface): interface RemainsStack — One stack held in remains: an item id and how many.
-- `createRemainsField` (function): function createRemainsField(options: RemainsOptions): RemainsField — Remains: when someone dies, what they carried stays where they fell in one lootable heap (ARK's body and death cache, a corpse run in any game). The owner, or anyone the game allows, walks back and takes it; after `lastsSeconds` it falls apart and its contents are lost. Pure state on the game's clock; saving is a snapshot.
+- `createRemainsField` (function): function createRemainsField<T = undefined>(options: RemainsOptions): RemainsField<T> — Remains: a heap of stacks left at a place that can be taken from, and falls apart after a while (a body where someone died, a crate where it landed). The owner, or anyone the game allows, walks back and takes it; after `lastsSeconds` it falls apart and its contents are lost. Keep anything about it the game needs in its typed `data`. Pure state on the game's clock; saving is a snapshot.
 
 ## @jgengine/core/rules/predicate
 
