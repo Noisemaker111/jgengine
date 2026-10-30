@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { inheritValues } from "../inheritance/inheritance";
-import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
+import type { ThresholdBoundary } from "../threshold/thresholds";
 import { createBreedingField, type BreedingSpecies, type MateCandidate } from "./breeding";
 
 function rngOf(seed: number): () => number {
@@ -12,8 +11,14 @@ function rngOf(seed: number): () => number {
   };
 }
 
-const BUG: BreedingSpecies = { mode: "egg", mateSeconds: 10, mateRange: 4, carrySeconds: 100, incubation: [20, 30], eggHealthSeconds: 50, maturationSeconds: 1000, cooldownSeconds: [100, 200] };
-const BEAST: BreedingSpecies = { mode: "carry", mateSeconds: 10, mateRange: 5, carrySeconds: 200, incubation: null, eggHealthSeconds: 50, maturationSeconds: 2000, cooldownSeconds: [100, 200] };
+const BUG: BreedingSpecies = { mateSeconds: 10, mateRange: 4, carrySeconds: 100, egg: { band: [20, 30], healthSeconds: 50 }, maturationSeconds: 1000, cooldownSeconds: [100, 200] };
+const BEAST: BreedingSpecies = { mateSeconds: 10, mateRange: 5, carrySeconds: 200, egg: null, maturationSeconds: 2000, cooldownSeconds: [100, 200] };
+
+/** A made-up two-stage list: the engine never names a stage. */
+const STAGES: readonly ThresholdBoundary[] = [
+  { id: "small", at: 0 },
+  { id: "large", at: 0.5 },
+];
 
 const field = () =>
   createBreedingField<{ from: string }>({
@@ -21,6 +26,7 @@ const field = () =>
     conceive: (mother, father) => ({ from: `${mother}+${father}` }),
     careIntervalSeconds: 200,
     careKinds: ["cuddle", "walk"],
+    stages: STAGES,
   });
 
 const pair = (gap: number, species = "bug", who = "her", mate = "him"): MateCandidate[] => [
@@ -44,7 +50,7 @@ describe("breeding", () => {
     const events = breeding.mate(pair(3), 17, 5, rng);
     expect(events.map((event) => event.type)).toEqual(["conceived", "laid"]);
     expect(breeding.eggs()).toHaveLength(1);
-    expect(breeding.eggs()[0]?.baby).toEqual({ from: "her+him" });
+    expect(breeding.eggs()[0]?.offspring).toEqual({ from: "her+him" });
     expect(breeding.cooldown("her", 17)).toBeGreaterThanOrEqual(100);
     expect(breeding.cooldown("her", 17)).toBeLessThanOrEqual(200);
     expect(breeding.mate(pair(3), 20, 20, rng)).toEqual([]);
@@ -80,15 +86,15 @@ describe("breeding", () => {
     expect(breeding.tick(100, 100, () => 0, rng)).toEqual([]);
     expect(breeding.pregnancy("her")?.progress).toBeCloseTo(0.5, 6);
     const born = breeding.tick(200, 100, () => 0, rng);
-    expect(born).toEqual([{ type: "born", mother: "her", species: "beast", baby: { from: "her+him" } }]);
+    expect(born).toEqual([{ type: "born", mother: "her", species: "beast", offspring: { from: "her+him" } }]);
     expect(breeding.pregnancy("her")).toBeNull();
     expect(breeding.cooldown("her", 200)).toBeGreaterThan(0);
   });
 
-  test("the young grow, ask for care every interval, and answering every request bonds them fully", () => {
+  test("the young grow through the game's stages, ask for care every interval, and answering every request bonds them", () => {
     const breeding = field();
     const rng = rngOf(11);
-    breeding.raise("kid", "bug", 0);
+    expect(breeding.raise("kid", "bug", 0).stage).toBe("small");
     let asked = 0;
     let bond = 0;
     let grown: number | null = null;
@@ -96,6 +102,7 @@ describe("breeding", () => {
       for (const event of breeding.tick(t, 10, () => 0, rng)) {
         if (event.type === "wants") {
           asked += 1;
+          if (asked === 3) expect(breeding.offspringOf("kid")?.stage).toBe("large");
           // Wrong care does nothing; the asked one adds a share of the whole bond.
           expect(breeding.care("kid", event.care === "cuddle" ? "walk" : "cuddle")).toBe(0);
           bond += breeding.care("kid", event.care);
@@ -107,7 +114,7 @@ describe("breeding", () => {
     expect(asked).toBe(4);
     expect(bond).toBeCloseTo(0.8, 6);
     expect(grown).toBeCloseTo(bond, 6);
-    expect(breeding.baby("kid")).toBeNull();
+    expect(breeding.offspringOf("kid")).toBeNull();
   });
 
   test("faster paces shorten everything, and the save keeps eggs, pregnancies and the young", () => {
@@ -122,54 +129,41 @@ describe("breeding", () => {
     breeding.mate(pair(2, "beast", "her2", "him2"), 10, 10, rng);
     const copy = field();
     copy.restore(breeding.snapshot());
-    expect(copy.baby("kid")?.nextCareAt).toBeCloseTo(30, 6);
+    expect(copy.offspringOf("kid")?.nextCareAt).toBeCloseTo(30, 6);
     expect(copy.pregnancy("her2")?.species).toBe("beast");
     expect(copy.speeds().grow).toBe(10);
     copy.forget("kid");
-    expect(copy.babies()).toHaveLength(0);
+    expect(copy.offspring()).toHaveLength(0);
     expect(() => breeding.raise("x", "worm", 0)).toThrow("cannot breed");
   });
 
-  test("twins and triplets come at their odds", () => {
+  test("the game's litter decides how many young one pairing has, one by default", () => {
+    const counts = [1, 2, 3];
+    let pick = 0;
     const breeding = createBreedingField({
       species: () => BUG,
       conceive: () => 1,
       careIntervalSeconds: 1,
       careKinds: [],
-      multiples: { twins: 0.25, triplets: 0.05 },
+      stages: STAGES,
+      litter: () => {
+        const count = counts[pick] ?? 1;
+        pick = (pick + 1) % counts.length;
+        return count;
+      },
     });
     const rng = rngOf(17);
-    const litters = [0, 0, 0];
-    for (let n = 0; n < 4000; n += 1) {
-      const conceived = breeding.mate(pair(2), n * 1e6, 10, rng).find((event) => event.type === "conceived");
-      if (conceived?.type === "conceived") {
-        const index = conceived.count - 1;
-        litters[index] = (litters[index] ?? 0) + 1;
-      }
+    const sizes: number[] = [];
+    for (let n = 0; n < 3; n += 1) {
+      const events = breeding.mate(pair(2), n * 1e6, 10, rng);
+      const conceived = events.find((event) => event.type === "conceived");
+      const count = conceived?.type === "conceived" ? conceived.count : 0;
+      sizes.push(count);
+      expect(events.filter((event) => event.type === "laid")).toHaveLength(count);
     }
-    expect((litters[1] ?? 0) / 4000).toBeGreaterThan(0.23);
-    expect((litters[1] ?? 0) / 4000).toBeLessThan(0.27);
-    expect((litters[2] ?? 0) / 4000).toBeGreaterThan(0.04);
-    expect((litters[2] ?? 0) / 4000).toBeLessThan(0.06);
-  });
-});
-
-describe("simple dog breeding", () => {
-  test("two parents pass their values on, and a puppy becomes an adult by its age", () => {
-    const sire = { size: 60, speed: 40, coat: 10 };
-    const dam = { size: 50, speed: 55, coat: 10 };
-    const puppy = inheritValues(sire, dam, rngOf(29), { defaultRule: { pick: "either", higherChance: 0.55 } });
-    expect([sire.size, dam.size]).toContain(puppy.values.size);
-    expect([sire.speed, dam.speed]).toContain(puppy.values.speed);
-    expect(puppy.mutations).toEqual([]);
-    // A two-step stage list is all the growing needs.
-    const stages: ThresholdBoundary[] = [
-      { id: "puppy", at: 0 },
-      { id: "adult", at: 1 },
-    ];
-    const stageAt = (months: number) => tierAt(stages, months / 12)?.id ?? "";
-    expect(stageAt(0)).toBe("puppy");
-    expect(stageAt(11.9)).toBe("puppy");
-    expect(stageAt(12)).toBe("adult");
+    expect(sizes).toEqual([1, 2, 3]);
+    const alone = field();
+    alone.mate(pair(2), 0, 10, rngOf(19));
+    expect(alone.eggs()).toHaveLength(1);
   });
 });

@@ -295,7 +295,7 @@
   "games/fernwild/src/game/base.test.ts": {"nonNull":11},
   "games/fernwild/src/game/base.ts": {"nonNull":2},
   "games/fernwild/src/game/breeding.test.ts": {"nonNull":43},
-  "games/fernwild/src/game/breeding.ts": {"nonNull":8},
+  "games/fernwild/src/game/breeding.ts": {"nonNull":2},
   "games/fernwild/src/game/broodmother.test.ts": {"nonNull":13},
   "games/fernwild/src/game/broodmother.ts": {"nonNull":14},
   "games/fernwild/src/game/caves.test.ts": {"nonNull":4},

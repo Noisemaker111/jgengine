@@ -65,7 +65,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBossArena` (function) · `import { createBossArena } from "@jgengine/core/bossArena/bossArena"`
 
-## breeding — tame pairs mate, eggs incubate by temperature or mothers carry, the young grow and bond through care
+## breeding — pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care
 
 - `createBreedingField` (function) · `import { createBreedingField } from "@jgengine/core/breeding/breeding"`
 
