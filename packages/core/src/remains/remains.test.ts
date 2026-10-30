@@ -48,4 +48,42 @@ describe("remains", () => {
     other.reset();
     expect(other.list()).toHaveLength(0);
   });
+
+  test("the payload kept with remains survives leave, list, nearest, a partial take and a save", () => {
+    interface Drop {
+      crateId: string;
+      site: string;
+      tier: string;
+      releasedAt: number;
+    }
+    const drop: Drop = { crateId: "drop_1", site: "south_coast", tier: "white", releasedAt: 5 };
+    const field = createRemainsField<Drop>({ lastsSeconds: 60 });
+    const left = field.leave({ owner: drop.crateId, at: [4, 1, 4], contents: [{ item: "stone", count: 2 }], now: 5, data: drop });
+    if (left === null) throw new Error("two stones are left where the crate was");
+    expect(left.data).toEqual(drop);
+    expect(field.list()[0]?.data).toEqual(drop);
+    expect(field.nearest([4, 0, 4], 3)?.data).toEqual(drop);
+    // Remains that survive a partial take keep their payload.
+    expect(field.take(left.id, () => 1)).toEqual([{ item: "stone", count: 1 }]);
+    expect(field.list()[0]?.data).toEqual(drop);
+    const saved = field.snapshot();
+    const other = createRemainsField<Drop>({ lastsSeconds: 60 });
+    other.restore(saved);
+    expect(other.list()[0]?.data).toEqual(drop);
+    expect(other.nearest([4, 0, 4], 3)?.data).toEqual(drop);
+    // Emptied remains are gone, and expiring hands back what was kept with them.
+    expect(other.take(left.id, (stack) => stack.count)).toEqual([{ item: "stone", count: 1 }]);
+    expect(other.list()).toHaveLength(0);
+    other.leave({ owner: "b", at: [0, 0, 0], contents: [{ item: "wood", count: 1 }], now: 10, data: { ...drop, crateId: "drop_2", tier: "red" } });
+    expect(other.expire(1000).map((entry) => entry.data?.crateId)).toEqual(["drop_2"]);
+  });
+
+  test("a plain field carries no payload, so its callers and saves are unchanged", () => {
+    const field = createRemainsField({ lastsSeconds: 60 });
+    const left = field.leave({ owner: "a", at: [0, 0, 0], contents: [{ item: "stone", count: 1 }], now: 0 });
+    if (left === null) throw new Error("a stone is left where the owner fell");
+    expect(left.data).toBeUndefined();
+    expect(field.nearest([0, 0, 0], 1)?.data).toBeUndefined();
+    expect(field.snapshot().remains[0]?.data).toBeUndefined();
+  });
 });

@@ -26,7 +26,7 @@ swapped or retuned.
 
 ### The parts
 
-Most game features are made of these ten parts plus the engine's entities, containers and
+Most game features are made of these eleven parts plus the engine's entities, containers and
 world. Each has one home; a feature that needs one uses that home and never writes its own.
 
 | Part | What it is | Examples it covers | Home |
@@ -35,6 +35,7 @@ world. Each has one home; a feature that needs one uses that home and never writ
 | Ladder | ordered steps over a number, named by the game | rarity, tiers, ranks, levels, mood bands, wanted stars | `threshold/thresholds.ts` |
 | Phases | named states one after another, by time or by event | growth stages, boss phases, day parts, a match's rounds | `time/stateSchedule.ts` |
 | Schedule | something happens at a pace from a start time | waves, supply drops, weather, events, respawns | planned, `time/` |
+| Slots | named spots that each hold one thing, ready again a while after it is gone | supply crates, resource nodes, herd dens, boss spawns | `time/refillSlots.ts` |
 | Placement | where something appears | spawn points, scatter, drop zones, safe spots | `world/spatialSample.ts`, `game/spawnPoints.ts` |
 | Table | a weighted choice the game fills | loot per rarity, which enemy, which mutation | `random/pick.ts` |
 | Requirement | a condition over facts the game names | level gates, keys, quest prerequisites, unlocks | `rules/predicate.ts` |
@@ -43,7 +44,8 @@ world. Each has one home; a feature that needs one uses that home and never writ
 | Motion track | a thing follows a path over time and arrives | a drop falling, a thrown item, a door, a cutscene move | planned, `movement/` |
 
 A supply drop is a Schedule (when), Placement (where), Ladder (rarity), Requirement (who may
-open which rarity), Table (loot per rarity) and Motion track (the fall and landing), so a game
+open which rarity), Table (loot per rarity) and Motion track (the fall and landing), with each
+site's crate held in Slots (one per site, refilled a while after it goes), so a game
 writes `spawnSupplyDrop(x, y, "purple")` itself in a few lines. Simple dog breeding is
 Inheritance plus a Phases list for puppy to adult; it needs none of the rest. Much of today's
 engine still has its own copies of these parts inside one-game features; they are being

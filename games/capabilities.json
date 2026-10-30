@@ -9271,6 +9271,16 @@
       "intent": "check the reference car model against a real car's published 0-100, braking and skidpad numbers"
     },
     {
+      "id": "refill-slots",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/time/refillSlots",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "named slots that each hold one thing and refill a random while after it is gone"
+    },
+    {
       "id": "refusal-feedback",
       "packages": [
         "@jgengine/core"
