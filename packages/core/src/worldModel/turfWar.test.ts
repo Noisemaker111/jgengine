@@ -107,6 +107,18 @@ describe("turf war", () => {
     expect(lower.triggers["turf:a:player:red"]?.note).toBe("The Reds took {place} from you.");
   });
 
+  test("a war sets the grip at which a block reads as contested", () => {
+    const model = createWorldModel(defineWorldModel({
+      factions: { red: { facts: { mood: 0 } } },
+      places: { a: { label: "a", position: [0, 0], radius: 10, owner: "red", facts: { grip: grip(10) } } },
+      facts: { "a.attacker": "player" },
+    }));
+    const tight = defineTurfWar({ blocks: { a: {} }, sides: ["player", "red"], contestedGrip: 5 });
+    const loose = defineTurfWar({ blocks: { a: {} }, sides: ["player", "red"] });
+    expect(tight.view(model)[0]?.contested).toBe(false);
+    expect(loose.view(model)[0]?.contested).toBe(true);
+  });
+
   test("bad declarations fail loudly", () => {
     expect(() => defineTurfWar({ blocks: { a: {} }, sides: ["x"] })).toThrow("at least two sides");
     expect(() => defineTurfWar({ blocks: { a: { borders: ["b"] } }, sides: ["x", "y"] })).toThrow('unknown block "b"');
