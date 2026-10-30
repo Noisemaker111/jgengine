@@ -1665,8 +1665,6 @@
   "packages/core/src/talents/talentTree.view.tsx": {"nonNull":5},
   "packages/core/src/talents/talentTreeView.test.ts": {"nonNull":5},
   "packages/core/src/talents/talentTreeView.ts": {"cast":2,"nonNull":1},
-  "packages/core/src/taming/knockoutTaming.test.ts": {"nonNull":9},
-  "packages/core/src/taming/knockoutTaming.ts": {"nonNull":3},
   "packages/core/src/terrain/groundEdgeFade.draw.test.ts": {"nonNull":5,"cast":4},
   "packages/core/src/terrain/groundEdgeFade.draw.ts": {"nonNull":12,"cast":1},
   "packages/core/src/terrain/heightfieldGeometry.draw.test.ts": {"cast":14,"nonNull":3},

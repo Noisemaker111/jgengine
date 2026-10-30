@@ -3265,6 +3265,17 @@
 - `StoreHandle` (interface): interface StoreHandle<T> — A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single type parameter is fixed at definition; `read`/`write`/`update` never widen to `unknown`, so no call site repeats `store.get(key) as T`. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `store.get`/`store.set` pair gives up the moment it forks run state into a module-level singleton.
 - `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a React selector, no allocation on a hot path). A value that carries functions (a closure-based run store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in place. Hold such objects with `perContext` when they need no store notifications.
 
+## @jgengine/core/subdual/subdualFeeding
+
+- `FeedingDose` (interface): interface FeedingDose — A dose that releases into the subdual meter over some seconds.
+- `FeedingFood` (interface): interface FeedingFood — One food a subdued creature will eat. The order foods are listed in is the order it prefers them; every number is the caller's.
+- `FeedingSupply` (interface): interface FeedingSupply — What a subdued creature holds, as the feeding loop reads and spends it.
+- `SubdualFeeding` (interface): interface SubdualFeeding — Winning over creatures by keeping them subdued and feeding them: hits and doses fill a subdual meter, the creature goes down once it reaches its capacity, it eats what it holds on its own clock (the first food in the caller's list it has), each meal fills the progress meter and costs quality, damage taken while down costs quality too, and it gets away — losing the progress — when the subdual meter empties. Levels scale the caller's tables, never a formula here.
+- `SubdualFeedingConfig` (interface): interface SubdualFeedingConfig — How one kind of creature goes down and is won over. Every rate, list and threshold is the caller's.
+- `SubdualFeedingEvent` (type): type SubdualFeedingEvent = | { type: "subdued" } | { type: "ate"; itemId: string } | { type: "released" } | { type: "won"; quality: number } — What changed this tick.
+- `SubdualFeedingState` (interface): interface SubdualFeedingState — One tracked creature's progress. Plain data, JSON round-trips.
+- `createSubdualFeeding` (function): function createSubdualFeeding(configs: Readonly<Record<string, SubdualFeedingConfig>>): SubdualFeeding — Track subdual, feeding and quality for every creature the caller names.
+
 ## @jgengine/core/survival/bodyTemperature
 
 - `AmbientInput` (interface): interface AmbientInput — What sets the air temperature at a spot: its climate plus the hour, the weather, the height and nearby heat.
@@ -3393,22 +3404,6 @@
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> { rank(nodeId: string): number; pointsAvailable(): number; pointsSpent(): number; pointsInBranch(branch: string): number; grantPoints(amount: number): void; canAllocate(nodeId: string): TalentAllocateResult; allocate(nodeId: string): Talent… — ⚠ undocumented · used by `talentTreeView` (@jgengine/core/gameplay): Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-dep…
 - `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> { nodes: readonly TalentNodeDef<TStat>[]; points?: number } — ⚠ undocumented
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
-
-## @jgengine/core/taming/knockoutTaming
-
-- `KnockoutTaming` (interface): interface KnockoutTaming — Knockout taming for a world of creatures: hits and narcotics pile torpor on, a full bar knocks the creature out, it eats what you put in its inventory on its own clock, each meal fills the taming bar by one table-count's worth and costs effectiveness, and it wakes (losing the tame) if torpor drains away first. The numbers are the species' taming table, not a formula to tune.
-- `KnockoutTamingConfig` (interface): interface KnockoutTamingConfig — A species' knockout taming rules: its torpor, how it wakes, what it eats and in what order.
-- `Narcotic` (interface): interface Narcotic — Torpor the survivor can force into a downed creature: a narcotic's amount spread over seconds.
-- `TamingEvent` (type): type TamingEvent = | { type: "knockedOut" } | { type: "ate"; itemId: string } | { type: "woke" } | { type: "tamed"; effectiveness: number; bonusLevels: number } — What changed this tick.
-- `TamingFeeder` (interface): interface TamingFeeder — The food it would eat now from what it holds, and how much a meal of it is worth.
-- `TamingFood` (interface): interface TamingFood — How one food tames one species, read straight off a taming table: how many it takes and how long it takes at level 1 and at level 30. Between and past those levels the count and time scale linearly, which is how ARK-style tables grow.
-- `TamingState` (interface): interface TamingState — One downed or wild creature's taming progress. Plain data, JSON round-trips.
-- `bonusLevels` (function): function bonusLevels(level: number, effectiveness: number): number — ARK's bonus levels: half the wild level, scaled by effectiveness, floored.
-- `createKnockoutTaming` (function): function createKnockoutTaming(species: Readonly<Record<string, KnockoutTamingConfig>>): KnockoutTaming — Track torpor and taming for every downed creature of the given species: hits add torpor, held food feeds it.
-- `maxTorpor` (function): function maxTorpor(config: KnockoutTamingConfig, level: number): number — Max torpor at `level`.
-- `mealInterval` (function): function mealInterval(food: TamingFood, level: number): number — Seconds between meals of `food` at `level`: the table's time spread over its count.
-- `tamingEffectiveness` (function): function tamingEffectiveness(state: TamingState): number — Taming effectiveness from spent weights: 1 at a perfect tame.
-- `tamingScale` (function): function tamingScale(at1: number, at30: number, level: number): number — Interpolate a level-1 / level-30 pair to `level`.
 
 ## @jgengine/core/threshold/thresholdTracker
 

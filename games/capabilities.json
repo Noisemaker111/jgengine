@@ -5982,16 +5982,6 @@
       "intent": "a HUD wave clock — countdown or enemies left, a note, and the wave banner"
     },
     {
-      "id": "knockout-taming",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/taming/knockoutTaming",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "knock a creature out with torpor and tame it by feeding, with taming effectiveness and bonus levels"
-    },
-    {
       "id": "land-area-damage",
       "packages": [
         "@jgengine/core"
@@ -11016,6 +11006,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "cinematic lighting rig + backdrop + turntable for parametric studios"
+    },
+    {
+      "id": "subdual-feeding",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/subdual/subdualFeeding",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "win over a creature by keeping it subdued and feeding it, with its quality and doses"
     },
     {
       "id": "supply-demand-pricing",

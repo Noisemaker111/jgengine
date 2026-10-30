@@ -402,16 +402,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `KillFeed` (function) · `import { KillFeed } from "@jgengine/core/feed/killFeed.view"`
 
-## knockout-taming — knock a creature out with torpor and tame it by feeding, with taming effectiveness and bonus levels
-
-- `KnockoutTaming` (interface) · `import { KnockoutTaming } from "@jgengine/core/taming/knockoutTaming"`
-- `bonusLevels` (function) · `import { bonusLevels } from "@jgengine/core/taming/knockoutTaming"`
-- `createKnockoutTaming` (function) · `import { createKnockoutTaming } from "@jgengine/core/taming/knockoutTaming"`
-- `maxTorpor` (function) · `import { maxTorpor } from "@jgengine/core/taming/knockoutTaming"`
-- `mealInterval` (function) · `import { mealInterval } from "@jgengine/core/taming/knockoutTaming"`
-- `tamingEffectiveness` (function) · `import { tamingEffectiveness } from "@jgengine/core/taming/knockoutTaming"`
-- `tamingScale` (function) · `import { tamingScale } from "@jgengine/core/taming/knockoutTaming"`
-
 ## lap-splits — per-lap durations from a cumulative split book
 
 - `lapDurations` (function) · `import { lapDurations } from "@jgengine/core/gameplay"`
@@ -949,6 +939,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## stat-points — level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap
 
 - `createStatPoints` (function) · `import { createStatPoints } from "@jgengine/core/progression/statPoints"`
+
+## subdual-feeding — win over a creature by keeping it subdued and feeding it, with its quality and doses
+
+- `createSubdualFeeding` (function) · `import { createSubdualFeeding } from "@jgengine/core/subdual/subdualFeeding"`
 
 ## supply-demand-pricing — price goods from finite stock and live demand on a stated curve
 
