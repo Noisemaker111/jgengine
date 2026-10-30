@@ -333,6 +333,26 @@ describe("createPhaseSchedule", () => {
     expect(schedule.ended()).toBe(false);
   });
 
+  test("snapshot and restore round-trip a drop-mode schedule at a zero-length phase", () => {
+    const schedule = createPhaseSchedule({
+      phases: [
+        { state: "a", durationSeconds: 0 },
+        { state: "b", durationSeconds: 4 },
+        { state: "c", durationSeconds: 0 },
+      ],
+      loop: true,
+      overshoot: "drop",
+    });
+    expect(schedule.tick(0.1)).toEqual([{ from: "a", to: "b", wrapped: false }]);
+    const saved = schedule.snapshot();
+    expect(schedule.tick(4)).toEqual([{ from: "b", to: "c", wrapped: false }]);
+    expect(schedule.state()).toBe("c");
+    schedule.restore(saved);
+    expect(schedule.state()).toBe("b");
+    expect(schedule.index()).toBe(1);
+    expect(schedule.remainingSeconds()).toBe(4);
+  });
+
   test("rejects an empty list and a negative duration", () => {
     expect(() => createPhaseSchedule({ phases: [] })).toThrow();
     expect(() => createPhaseSchedule({ phases: [{ state: "x", durationSeconds: -1 }] })).toThrow();
