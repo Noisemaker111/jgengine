@@ -53,6 +53,7 @@ export const turfWar = defineTurfWar({
   },
   sides: ["player", "carmine", "riptide"],
   labels: { player: "you", carmine: "the Carmines", riptide: "the Riptides" },
+  contestedGrip: 30,
   onTake: { player: { "locals.mood": 5 } },
   onLose: { carmine: { "carmine.mood": -30 }, riptide: { "riptide.mood": -30 } },
   fronts: {

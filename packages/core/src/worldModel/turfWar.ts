@@ -46,8 +46,8 @@ export interface TurfWarDecl {
   labels?: Readonly<Record<string, string>>;
   /** Grip a block holds right after it changes hands (default 40). Grip facts need `min: 0`. */
   takenGrip?: number;
-  /** Grip below which a block someone else is pushing reads as contested (default 30). */
-  contestedGrip?: number;
+  /** Grip below which a block someone else is pushing reads as contested. */
+  contestedGrip: number;
   /** Absolute changes when a side takes a block, keyed by the taker, e.g. `{ player: { "red.mood": -10 } }`. */
   onTake?: Readonly<Record<string, WorldChanges>>;
   /** Changes when a side loses a block, keyed by the loser. */
@@ -136,7 +136,6 @@ export function defineTurfWar(decl: TurfWarDecl): TurfWar {
   }
   const label = (side: string) => decl.labels?.[side] ?? side;
   const takenGrip = decl.takenGrip ?? 40;
-  const contestedGrip = decl.contestedGrip ?? 30;
   const note = decl.note ?? "{taker} took {place} from {loser}.";
 
   const triggers: Record<string, WorldTriggerDecl> = {};
@@ -228,7 +227,7 @@ export function defineTurfWar(decl: TurfWarDecl): TurfWar {
         const attacker = world.fact(`${id}.attacker`);
         const pusher = typeof attacker === "string" ? attacker : "";
         const grip = world.num(`${id}.grip`);
-        return { id, owner, grip, attacker: pusher, contested: pusher !== "" && pusher !== owner && grip < contestedGrip };
+        return { id, owner, grip, attacker: pusher, contested: pusher !== "" && pusher !== owner && grip < decl.contestedGrip };
       }),
     held: (world, side) => blocks.filter((id) => ownerOf(world, id) === side).length,
   };
