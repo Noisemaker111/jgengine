@@ -25,7 +25,7 @@ export interface StaggerMeter {
 
 function decayRates(config: { decayPerSecond?: number; decayDelayMs?: number }): MeterRates {
   return {
-    decay: Math.max(0, config.decayPerSecond ?? 0),
+    decay: config.decayPerSecond ?? 0,
     decayDelay: Math.max(0, config.decayDelayMs ?? 0) / 1000,
   };
 }

@@ -68,7 +68,7 @@ export function createEventMeter(config: EventMeterConfig): EventMeter {
   const resets = new Set(config.resets ?? []);
   const tiers = config.tiers ?? [];
   const rates: MeterRates = {
-    decay: Math.max(0, config.decayPerSecond ?? 0),
+    decay: config.decayPerSecond ?? 0,
     decayDelay: Math.max(0, config.decayDelayMs ?? 0) / 1000,
   };
   let meter = createMeter({ current: 0, max: config.max, min: 0 });
