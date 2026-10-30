@@ -27,6 +27,10 @@ import { HABIT_REFERENCE } from "../../packages/core/src/plants/species/habitRef
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const PLANTS = join(ROOT, "packages/core/src/plants");
 const FIT_DIR = join(ROOT, ".scratch/species-fit");
+// A fresh fit searches widely; one resuming a saved fit searches near it, since with ~20 parameters a
+// wide step lands every trial far from a good start and the search drifts away from it.
+const FRESH_SIGMA = "0.12";
+const RESUMED_SIGMA = "0.04";
 const INCH_CM = 2.54;
 const FOOT_M = 0.3048;
 
@@ -37,7 +41,7 @@ const HELP = `bun run jgengine plants <verb> [species ids]
   write <id...|--all> write species/data records from traits, imported values and the fit
   report <id...>      grow each record and print it against its reference
 
-fit flags: --generations <n> (40) --lambda <n> (16) --workers <n> --seeds a,b --sigma <x> (0.12)
+fit flags: --generations <n> (40) --lambda <n> (16) --workers <n> --seeds a,b --sigma <x> (0.12, or 0.04 resuming a saved fit)
   --until-pass        stop a tree's fit once it is inside the library test's height, DBH, Tallo and crown-architecture limits`;
 
 const scientificKey = (traits: SpeciesTraits): string => traits.scientific.split(" ").slice(0, 2).join(" ");
@@ -286,7 +290,7 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
       await fitSpecies(start, (trial) => scoreHabitTrial(reference, habit, trial), pool.evaluate, {
         generations: Number(flag(argv, "--generations", "40")),
         lambda: Number(flag(argv, "--lambda", "16")),
-        sigma: Number(flag(argv, "--sigma", "0.12")),
+        sigma: Number(flag(argv, "--sigma", resumed === undefined ? FRESH_SIGMA : RESUMED_SIGMA)),
         seed: 1,
         parameters: habitFitParameters(habit),
         onBest: (best) => writeFileSync(out, JSON.stringify({ score: best.score, parts: best.parts, against: HABIT_AGAINST, species: best.species } satisfies FitFile, null, 1)),
@@ -307,7 +311,7 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
     await fitSpecies(start, (trial) => scoreTrial(target, trial), pool.evaluate, {
       generations: Number(flag(argv, "--generations", "40")),
       lambda: Number(flag(argv, "--lambda", "16")),
-      sigma: Number(flag(argv, "--sigma", "0.12")),
+      sigma: Number(flag(argv, "--sigma", resumed === undefined ? FRESH_SIGMA : RESUMED_SIGMA)),
       seed: 1,
       ...(argv.includes("--until-pass") ? { until: (best: { parts: Record<string, number> }) => (best.parts["limits"] ?? 1) === 0 && (best.parts["tallo"] ?? 1) === 0 && (best.parts["architecture"] ?? 0) === 0 && (best.parts["dead"] ?? 0) === 0 } : {}),
       onBest: (best) => writeFileSync(out, JSON.stringify({ score: best.score, parts: best.parts, against: AGAINST, species: best.species } satisfies FitFile, null, 1)),
