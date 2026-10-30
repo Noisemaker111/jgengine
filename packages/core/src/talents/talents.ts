@@ -1,4 +1,5 @@
 // @skill jgengine-gameplay
+import { evaluatePredicate } from "../rules/predicate";
 import type { StatModifierSet } from "../stats/statModifiers";
 
 export type TalentRequirement = string | { nodeId: string; rank: number };
@@ -82,7 +83,7 @@ export function createTalentTree<TStat extends string = string>(
   function requirementUnmet(requirement: TalentRequirement): boolean {
     const reqNodeId = typeof requirement === "string" ? requirement : requirement.nodeId;
     const reqRank = typeof requirement === "string" ? 1 : requirement.rank;
-    return rank(reqNodeId) < reqRank;
+    return !evaluatePredicate({ gte: ["rank", reqRank] }, { rank: rank(reqNodeId) });
   }
 
   function canAllocate(nodeId: string): TalentAllocateResult {
