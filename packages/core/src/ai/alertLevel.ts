@@ -33,7 +33,7 @@ export interface AlertAnchor {
   sourceTick: number;
 }
 
-/** Every number an alert level runs on; the game supplies each one. */
+/** Everything an alert level runs on; the game supplies it all. */
 export interface AlertTuning<Tier> {
   /** Labelled cut points, ascending by `at`. Below the lowest there is no tier at all. */
   tiers: readonly ThresholdBoundary<Tier>[];
