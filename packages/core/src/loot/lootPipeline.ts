@@ -1,4 +1,5 @@
-import { pickLootWeighted, type Drop, type LootEntry, type LootTableDef } from "./lootTable";
+import { pickWeighted } from "../random/pick";
+import type { Drop, LootEntry, LootTableDef } from "./lootTable";
 
 /**
  * One eligible entry inside a {@link LootRollPlan}: the original table entry plus its live
@@ -193,10 +194,8 @@ interface RolledDrop {
 }
 
 /** Pick one eligible plan entry by effective weight, in the same RNG order as `createLootRegistry`. */
-function pickWeighted(entries: LootPlanEntry[], rng: () => number): LootPlanEntry | null {
-  const eligible = entries.filter((candidate) => candidate.eligible && candidate.weight > 0);
-  if (eligible.length === 0) return null;
-  return pickLootWeighted(eligible, (candidate) => candidate.weight, rng) ?? null;
+function pickPlanEntry(entries: LootPlanEntry[], rng: () => number): LootPlanEntry | null {
+  return pickWeighted(rng, entries, (candidate) => (candidate.eligible ? candidate.weight : 0)) ?? null;
 }
 
 /** Roll a prepared plan into drops, consuming `rng` in the same order as the base loot table primitive. */
@@ -212,7 +211,7 @@ function rollPlan(plan: LootRollPlan, rng: () => number): RolledDrop[] {
         }
       }
     } else {
-      const picked = pickWeighted(plan.entries, rng);
+      const picked = pickPlanEntry(plan.entries, rng);
       if (picked === null) continue;
       const count = resolveCount(picked.entry.count, rng);
       rolled.push({ drop: dropFromEntry(picked.entry, count, rng), planEntry: picked });

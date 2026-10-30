@@ -36,4 +36,19 @@ describe("pickWeighted", () => {
     ];
     for (let i = 0; i < 50; i += 1) expect(pickWeighted(rng, items, (x) => x.w)!.id).toBe("on");
   });
+  test("a roll exactly on a boundary goes to the later item", () => {
+    const items = [
+      { id: "a", w: 1 },
+      { id: "b", w: 1 },
+    ];
+    expect(pickWeighted(() => 0, items, (x) => x.w)?.id).toBe("a");
+    expect(pickWeighted(() => 0.5, items, (x) => x.w)?.id).toBe("b");
+  });
+  test("never returns a zero-weight item at the end", () => {
+    const items = [
+      { id: "on", w: 1 },
+      { id: "off", w: 0 },
+    ];
+    expect(pickWeighted(() => 0.9999999999, items, (x) => x.w)?.id).toBe("on");
+  });
 });

@@ -26,7 +26,10 @@ export function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] 
   return out;
 }
 
-/** Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible. */
+/**
+ * Pick one item with probability proportional to `weightOf(item)`, each on a half-open interval so a roll exactly on
+ * a boundary goes to the later item. Skips non-positive weights; undefined when nothing is eligible.
+ */
 export function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined {
   let total = 0;
   for (const item of items) {
@@ -39,7 +42,11 @@ export function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf
     const weight = weightOf(item);
     if (weight <= 0) continue;
     roll -= weight;
-    if (roll <= 0) return item;
+    if (roll < 0) return item;
   }
-  return items[items.length - 1];
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    const item = items[index];
+    if (item !== undefined && weightOf(item) > 0) return item;
+  }
+  return undefined;
 }

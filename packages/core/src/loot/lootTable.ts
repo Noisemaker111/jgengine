@@ -1,3 +1,4 @@
+import { pickWeighted } from "../random/pick";
 import { resolveRng } from "../random/resolveRng";
 /** One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds. */
 export interface LootEntry {
@@ -92,24 +93,6 @@ function resolveCount(count: number | [number, number], rng: () => number): numb
   return min + Math.floor(rng() * (max - min + 1));
 }
 
-/**
- * Pick one entry by weight on half-open intervals (`roll < 0`), the order every loot roller consumes
- * `rng` in, so a table and a pipeline stage over the same entries drop the same thing. Returns the
- * last candidate on float drift and `undefined` when nothing has weight.
- *
- * @internal
- */
-export function pickLootWeighted<T>(candidates: readonly T[], weightOf: (candidate: T) => number, rng: () => number): T | undefined {
-  const total = candidates.reduce((sum, candidate) => sum + weightOf(candidate), 0);
-  if (candidates.length === 0) return undefined;
-  let roll = rng() * total;
-  for (const candidate of candidates) {
-    roll -= weightOf(candidate);
-    if (roll < 0) return candidate;
-  }
-  return candidates[candidates.length - 1];
-}
-
 function rollEntry(entry: LootEntry, rng: () => number): Drop {
   const count = resolveCount(entry.count, rng);
   if (entry.generate !== undefined) return { item: entry.generate(rng), count };
@@ -159,7 +142,8 @@ export function createLootRegistry(options: LootRegistryOptions = {}): LootRegis
             if (rng() < (entry.chance ?? 0)) drops.push(rollEntry(entry, rng));
           }
         } else {
-          drops.push(rollEntry(pickLootWeighted(table.entries, (entry) => entry.weight ?? 0, rng)!, rng));
+          const entry = pickWeighted(rng, table.entries, (candidate) => candidate.weight ?? 0);
+          if (entry !== undefined) drops.push(rollEntry(entry, rng));
         }
       }
       return drops;

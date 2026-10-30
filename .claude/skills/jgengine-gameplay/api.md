@@ -1894,7 +1894,7 @@
 - `pauseRule` (function): function pauseRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Pause a rule: its cursor is retained but it fires nothing until {@link resumeRule}.
 - `peek` (function): function peek(state: CardPileState, zone: ZoneName, n = 1): readonly string[] — ⚠ undocumented
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
-- `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible.
+- `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`, each on a half-open interval so a roll exactly on a boundary goes to the later item. Skips non-positive weights; undefined when nothing is eligible.
 - `placementOf` (function): function placementOf(finishOrder: readonly string[], racerId: string, options?: PlacementOptions): RacePlacement | null — One racer's {@link RacePlacement} within a finish order, or `null` if they never crossed the line.
 - `playControlsActive` (function): function playControlsActive(ctx: GameContext): boolean — ⚠ undocumented
 - `priorityOrdering` (function): function priorityOrdering<TSpec, TReserve = undefined>(a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>): number — Priority-first ordering (higher priority sooner), FIFO within equal priority.
@@ -2865,7 +2865,7 @@
 ## @jgengine/core/random/pick
 
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
-- `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible.
+- `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`, each on a half-open interval so a roll exactly on a boundary goes to the later item. Skips non-positive weights; undefined when nothing is eligible.
 - `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — A shuffled copy of `values` (Fisher–Yates) drawn from `rng`; the same seeded stream always gives the same order.
 
 ## @jgengine/core/random/resolveRng

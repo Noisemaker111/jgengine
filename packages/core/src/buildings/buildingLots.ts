@@ -13,6 +13,7 @@
  */
 import { rectClearsPolyline, rectsSeparated, type OrientedRect } from "../world/polygon";
 import type { WorldBounds } from "../world/features";
+import { pickWeighted } from "../random/pick";
 import { seededStreams } from "../random/rng";
 import type { Vec2 } from "../world/geometry";
 
@@ -217,15 +218,7 @@ export function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingL
     .filter((v) => v.w > 0.5 && v.d > 0.5)
     .map((v) => ({ w: v.w * widthScale, d: v.d, weight: Math.max(0, (v as PlotVariant).weight ?? 1) }));
   if (variants.length === 0) variants.push({ ...DEFAULT_FOOTPRINT, weight: 1 });
-  const totalWeight = variants.reduce((sum, v) => sum + v.weight!, 0) || 1;
-  const pickVariant = (roll: number): PlotVariant => {
-    let cursor = roll * totalWeight;
-    for (const v of variants) {
-      cursor -= v.weight!;
-      if (cursor <= 0) return v;
-    }
-    return variants[0]!;
-  };
+  const pickVariant = (roll: number): PlotVariant => pickWeighted(() => roll, variants, (v) => v.weight ?? 0) ?? variants[0] ?? DEFAULT_FOOTPRINT;
   const spacing = Math.max(0, options.spacing ?? 2) * spacingScale;
   const setback = Math.max(0, options.setback ?? 3);
   const bothSides = options.bothSides ?? true;
