@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const TILIA_AMERICANA: PlantSpecies = {
   id: "tilia-americana",
-  version: 5,
+  version: 6,
   names: {
     scientific: "Tilia americana L.",
     common: { en: "American basswood", fr: "tilleul d'Amérique" },
@@ -99,11 +99,11 @@ export const TILIA_AMERICANA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 173.5, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 171.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 173.5, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 171.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

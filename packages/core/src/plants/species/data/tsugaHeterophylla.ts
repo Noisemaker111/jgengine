@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const TSUGA_HETEROPHYLLA: PlantSpecies = {
   id: "tsuga-heterophylla",
-  version: 3,
+  version: 4,
   names: {
     scientific: "Tsuga heterophylla (Raf.) Sarg.",
     common: { en: "western hemlock", fr: "pruche de l'Ouest" },

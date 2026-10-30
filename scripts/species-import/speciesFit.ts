@@ -18,7 +18,9 @@ export interface FitParameter {
  * other value is a measured trait.
  */
 export const FIT_PARAMETERS: readonly FitParameter[] = [
-  { path: "growth.apicalControl", lo: 0.5, hi: 0.95 },
+  // Every tree grows a strong leader while young; decurrent ones lose it only with age (Brown,
+  // McAlpine & Kormanik 1967), so a fit may not buy a low fork with a weak seedling leader.
+  { path: "growth.apicalControl", lo: 0.75, hi: 0.95 },
   { path: "growth.apicalControlMature", lo: 0.3, hi: 0.9 },
   { path: "growth.apicalControlHalfYears", lo: 1, hi: 80, log: true },
   { path: "growth.internodeMax", lo: 0.04, hi: 0.2, log: true },
@@ -73,6 +75,8 @@ function fromUnit(p: FitParameter, u: number): number {
 export function speciesAt(base: PlantSpecies, point: readonly number[], parameters: readonly FitParameter[] = FIT_PARAMETERS): PlantSpecies {
   const species = structuredClone(base);
   parameters.forEach((p, i) => writePath(species, p.path, fromUnit(p, point[i] ?? 0.5)));
+  // Apical control only weakens with age (validatePlantSpecies).
+  species.growth.apicalControlMature = Math.min(species.growth.apicalControlMature, species.growth.apicalControl);
   return species;
 }
 

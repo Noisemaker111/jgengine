@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PICEA_ENGELMANNII: PlantSpecies = {
   id: "picea-engelmannii",
-  version: 6,
+  version: 7,
   names: {
     scientific: "Picea engelmannii Parry ex Engelm.",
     common: { en: "Engelmann spruce", fr: "épinette d'Engelmann" },
@@ -17,21 +17,21 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
-    apicalControl: 0.9351,
-    apicalControlMature: 0.3082,
-    apicalControlHalfYears: 52.72,
+    apicalControl: 0.8794,
+    apicalControlMature: 0.3,
+    apicalControlHalfYears: 80,
     internodeMax: 0.04,
-    branchAngle: 62.35,
+    branchAngle: 49.51,
     lateralBudsPerNode: 4,
-    maxMetamersPerShoot: 8,
-    establishmentYears: 25,
-    horizontalVigour: 0.03,
-    vigourIndexWeight: 0.8,
+    maxMetamersPerShoot: 7,
+    establishmentYears: 23.38,
+    horizontalVigour: 0.04018,
+    vigourIndexWeight: 0.6106,
     tropism: {
-      gravity: 0.5808,
+      gravity: 0.6,
       gravityOrderDecay: 0.6,
-      setpointAngle: 86.08,
-      setpointPerOrder: 17.82,
+      setpointAngle: 90,
+      setpointPerOrder: 25,
       optimal: 0,
       wind: 0.2,
       setpointMax: 90,
@@ -46,8 +46,8 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 0.5019,
-    lueGPerMJ: 1.816,
+    hydraulicHeightShare: 0.4631,
+    lueGPerMJ: 1.8,
     lightHalfSaturation: 0.2,
     respiration: 0.6,
     sapwoodRespiration: 0.02,
@@ -99,11 +99,11 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 306, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 164.7, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 306, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 164.7, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

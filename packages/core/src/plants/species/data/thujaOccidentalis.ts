@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const THUJA_OCCIDENTALIS: PlantSpecies = {
   id: "thuja-occidentalis",
-  version: 6,
+  version: 7,
   names: {
     scientific: "Thuja occidentalis L.",
     common: { en: "northern white-cedar", fr: "thuya occidental" },

@@ -69,7 +69,8 @@ export interface PlantSpecies {
     /**
      * λ the plant settles to with age. Decurrent trees (maples, oaks) lose much of their apical control
      * as they mature and laterals overtake the leader into a rounded crown; excurrent trees (pines,
-     * firs) keep most of it and stay conical (Brown, McAlpine & Kormanik 1967; Wilson 2000).
+     * firs) keep most of it and stay conical (Brown, McAlpine & Kormanik 1967; Wilson 2000). Never
+     * above {@link apicalControl}.
      */
     apicalControlMature: number;
     /** Age in years at which λ has moved halfway from {@link apicalControl} to {@link apicalControlMature}. */
@@ -281,6 +282,8 @@ export function validatePlantSpecies(species: PlantSpecies): string[] {
     const value = read(species);
     if (!Number.isFinite(value) || value < min || value > max) problems.push(`${path} = ${value}, expected ${min}..${max}`);
   }
+  // Apical control only weakens with age: a plant never regains a leader it has lost.
+  if (species.growth.apicalControlMature > species.growth.apicalControl) problems.push(`growth.apicalControlMature ${species.growth.apicalControlMature} exceeds growth.apicalControl ${species.growth.apicalControl}`);
   return problems;
 }
 
