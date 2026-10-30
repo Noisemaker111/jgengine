@@ -206,12 +206,14 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
 
   const pickSpecies = (region: PopulationRegionConfig): string | null => {
     const counts = state.alive[region.region] ?? {};
+    let total = 0;
     const eligible: PopulationSpeciesEntry[] = [];
     for (const entry of region.species) {
       if ((counts[entry.species] ?? 0) >= entry.cap) continue;
       eligible.push(entry);
+      total += entry.weight ?? 1;
     }
-    if (eligible.length === 0) return null;
+    if (eligible.length === 0 || total <= 0) return null;
     const [roll, nextRng] = stepRandomSeed(state.rng);
     state.rng = nextRng;
     return pickWeighted(() => roll, eligible, (entry) => entry.weight ?? 1)?.species ?? null;
