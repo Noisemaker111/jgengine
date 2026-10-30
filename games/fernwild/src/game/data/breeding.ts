@@ -1,4 +1,5 @@
 import type { BreedingSpecies } from "@jgengine/core/breeding/breeding";
+import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 
 import type { TameStat } from "./species";
 
@@ -80,8 +81,28 @@ export function breedingOf(species: string, radius: number): BreedingSpecies | n
   const row = ROWS[species];
   if (row === undefined) return null;
   const [mode, incubation, carry, maturation] = row;
-  return { mode, incubation, carrySeconds: time(carry), maturationSeconds: time(maturation), mateSeconds: MATE_SECONDS, mateRange: radius * 2 + 2, cooldownSeconds: COOLDOWN };
+  return {
+    mode: mode === "gestation" ? "carry" : "egg",
+    incubation,
+    eggHealthSeconds: EGG_HEALTH_SECONDS,
+    carrySeconds: time(carry),
+    maturationSeconds: time(maturation),
+    mateSeconds: MATE_SECONDS,
+    mateRange: radius * 2 + 2,
+    cooldownSeconds: COOLDOWN,
+  };
 }
+
+/** ARK's baby stages: a baby to 10% grown, a juvenile to 50%, then an adolescent until it is grown. */
+export const BREEDING_STAGES: readonly ThresholdBoundary[] = [
+  { id: "baby", at: 0 },
+  { id: "juvenile", at: 0.1 },
+  { id: "adolescent", at: 0.5 },
+  { id: "adult", at: 1 },
+];
+
+/** Chance of twins and of triplets when a pair conceives (ARK). */
+export const MULTIPLES = { twins: 0.1, triplets: 0.02 } as const;
 
 /** ARK's imprint interval: a baby asks for care every 8 hours. */
 export const CARE_INTERVAL = time("8:00");
