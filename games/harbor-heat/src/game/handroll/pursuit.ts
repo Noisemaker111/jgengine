@@ -211,7 +211,7 @@ export function createPursuit(driving: Driving): Pursuit {
   const cruiserClock: PacedSchedule = createPacedSchedule({ firstAt: 0, every: CRUISER_PACE_SECONDS }, rng, { maxPerTick: 1 });
   /**
    * The world clock does not start at zero, so both dispatch clocks take their start from the first
-   * tick of the pursuit (and again after a bust) rather than from time zero.
+   * tick of the pursuit rather than from time zero.
    */
   let clocksStarted = false;
   let officerCounter = 0;
@@ -551,9 +551,6 @@ export function createPursuit(driving: Driving): Pursuit {
       peakStars = 0;
       lastNoticeTier = 0;
       lastArea = null;
-      clocksStarted = false;
-      officerClock.reset();
-      cruiserClock.reset();
       copPursuit.clear();
       copSearchAngle.clear();
       cruiserDrivers.clear();
