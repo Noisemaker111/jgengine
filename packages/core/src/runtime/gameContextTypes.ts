@@ -133,6 +133,12 @@ export interface GameContextObjectEntry {
 }
 
 export interface GameContextContent {
+  /**
+   * Rarity a dropped world item gets when its catalog entry names none — the game's own baseline.
+   * A world drop or spawn with no rarity anywhere is rejected, so a game that drops items without
+   * a per-item rarity declares this.
+   */
+  defaultRarity?: string;
   itemById?(itemId: string): GameContextItemEntry | null | undefined;
   entityById?(catalogId: string): GameContextEntityEntry | null | undefined;
   objectById?(catalogId: string): GameContextObjectEntry | null | undefined;

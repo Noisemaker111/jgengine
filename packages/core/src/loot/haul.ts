@@ -1,4 +1,5 @@
 import { canCarry, characterLoad, type WeightLookup } from "../inventory/carryLoad";
+import type { EncumbranceConfig } from "../inventory/encumbrance";
 import type { InventorySet, InventoryState, InventorySlot } from "../inventory/inventoryModel";
 import type { ItemStack } from "../inventory/storageTier";
 import type { KeyValueStorage } from "../game/keyValueStore";
@@ -34,6 +35,8 @@ export interface RunHaulConfig<TId extends string> {
   weightOf: WeightLookup;
   /** Carrying capacity in the same unit as `weightOf`. */
   capacity: number;
+  /** Where the run's encumbered band and slow floor sit — the game's own tuning. */
+  encumbrance: EncumbranceConfig;
   /** Worn item ids, one unit each; they weigh against capacity. */
   worn?: readonly string[];
   /** Fraction of worn weight that counts (default `1`). */
@@ -93,6 +96,7 @@ export function createRunHaul<TId extends string>(config: RunHaulConfig<TId>): R
     wornFactor: config.wornFactor,
     weightOf: config.weightOf,
     capacity: config.capacity,
+    encumbrance: config.encumbrance,
   });
 
   const persist = (): void => {

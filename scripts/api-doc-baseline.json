@@ -1041,7 +1041,6 @@
   "@jgengine/core/lod/lod#LodSchedulerConfig",
   "@jgengine/core/lod/lod#createLodScheduler",
   "@jgengine/core/loot/groundItem#DEFAULT_PICKUP_RADIUS",
-  "@jgengine/core/loot/groundItem#DEFAULT_RARITY",
   "@jgengine/core/loot/groundItem#DEFAULT_SCATTER",
   "@jgengine/core/loot/groundItem#ResolveDeathDropsOptions",
   "@jgengine/core/loot/groundItem#ResolvedDeathDrops",

@@ -4,11 +4,19 @@ import {
   encumbranceMoveMultiplier,
   resolveEncumbrance,
   totalLoad,
+  type EncumbranceConfig,
   type LoadEntry,
 } from "./encumbrance";
 
 const MASSES: Record<string, number> = { ingot: 10, plank: 2, feather: 0.1, phantom: 0 };
 const massOf = (itemId: string): number => MASSES[itemId] ?? 0;
+
+/** The test's own bands: encumbered from 85% load, slowing toward half speed at capacity. */
+const TUNING: EncumbranceConfig = { soft: 0.85, floor: 0.5 };
+const resolve = (mass: number, capacity: number, config: EncumbranceConfig = TUNING) =>
+  resolveEncumbrance(mass, capacity, config);
+const moveMultiplier = (fraction: number, config: EncumbranceConfig = TUNING) =>
+  encumbranceMoveMultiplier(fraction, config);
 
 describe("totalLoad", () => {
   test("sums unit mass times quantity across stacks", () => {
@@ -44,7 +52,7 @@ describe("totalLoad", () => {
 
 describe("resolveEncumbrance tiers and gates", () => {
   test("just below soft is unencumbered and unhindered", () => {
-    const state = resolveEncumbrance(84, 100);
+    const state = resolve(84, 100);
     expect(state.tier).toBe("unencumbered");
     expect(state.fraction).toBeCloseTo(0.84, 10);
     expect(state.moveMultiplier).toBe(1);
@@ -54,7 +62,7 @@ describe("resolveEncumbrance tiers and gates", () => {
   });
 
   test("exactly at soft is encumbered but not yet slowed", () => {
-    const state = resolveEncumbrance(85, 100);
+    const state = resolve(85, 100);
     expect(state.tier).toBe("encumbered");
     expect(state.moveMultiplier).toBe(1);
     expect(state.canSprint).toBe(false);
@@ -63,7 +71,7 @@ describe("resolveEncumbrance tiers and gates", () => {
   });
 
   test("just above soft is encumbered and progressively slowed", () => {
-    const state = resolveEncumbrance(86, 100);
+    const state = resolve(86, 100);
     expect(state.tier).toBe("encumbered");
     expect(state.moveMultiplier).toBeLessThan(1);
     expect(state.moveMultiplier).toBeGreaterThan(0.5);
@@ -71,7 +79,7 @@ describe("resolveEncumbrance tiers and gates", () => {
   });
 
   test("at capacity is immobile with zero movement", () => {
-    const state = resolveEncumbrance(100, 100);
+    const state = resolve(100, 100);
     expect(state.tier).toBe("immobile");
     expect(state.fraction).toBe(1);
     expect(state.moveMultiplier).toBe(0);
@@ -81,7 +89,7 @@ describe("resolveEncumbrance tiers and gates", () => {
   });
 
   test("above capacity stays immobile with an overloaded fraction", () => {
-    const state = resolveEncumbrance(150, 100);
+    const state = resolve(150, 100);
     expect(state.tier).toBe("immobile");
     expect(state.fraction).toBe(1.5);
     expect(state.moveMultiplier).toBe(0);
@@ -89,7 +97,7 @@ describe("resolveEncumbrance tiers and gates", () => {
   });
 
   test("negative mass clamps to an empty, unencumbered load", () => {
-    const state = resolveEncumbrance(-20, 100);
+    const state = resolve(-20, 100);
     expect(state.mass).toBe(0);
     expect(state.fraction).toBe(0);
     expect(state.tier).toBe("unencumbered");
@@ -100,48 +108,48 @@ describe("resolveEncumbrance tiers and gates", () => {
 describe("progressive slow curve", () => {
   test("halfway through the soft..capacity band lands halfway to the floor", () => {
     // soft 0.85, floor 0.5: midpoint fraction 0.925 -> 1 - 0.5*0.5 = 0.75
-    const state = resolveEncumbrance(92.5, 100);
+    const state = resolve(92.5, 100);
     expect(state.fraction).toBeCloseTo(0.925, 10);
     expect(state.moveMultiplier).toBeCloseTo(0.75, 10);
   });
 
   test("multiplier decreases monotonically as load rises through the band", () => {
-    const a = resolveEncumbrance(88, 100).moveMultiplier;
-    const b = resolveEncumbrance(94, 100).moveMultiplier;
-    const c = resolveEncumbrance(99, 100).moveMultiplier;
+    const a = resolve(88, 100).moveMultiplier;
+    const b = resolve(94, 100).moveMultiplier;
+    const c = resolve(99, 100).moveMultiplier;
     expect(a).toBeGreaterThan(b);
     expect(b).toBeGreaterThan(c);
     expect(c).toBeGreaterThan(0.5);
   });
 
   test("helper matches resolveEncumbrance for the same fraction", () => {
-    expect(encumbranceMoveMultiplier(0.925)).toBeCloseTo(resolveEncumbrance(92.5, 100).moveMultiplier, 10);
+    expect(moveMultiplier(0.925)).toBeCloseTo(resolve(92.5, 100).moveMultiplier, 10);
   });
 
   test("helper is flat below soft and zero at/over capacity", () => {
-    expect(encumbranceMoveMultiplier(0)).toBe(1);
-    expect(encumbranceMoveMultiplier(0.85)).toBe(1);
-    expect(encumbranceMoveMultiplier(1)).toBe(0);
-    expect(encumbranceMoveMultiplier(2)).toBe(0);
+    expect(moveMultiplier(0)).toBe(1);
+    expect(moveMultiplier(0.85)).toBe(1);
+    expect(moveMultiplier(1)).toBe(0);
+    expect(moveMultiplier(2)).toBe(0);
   });
 });
 
 describe("config overrides", () => {
   test("custom soft threshold moves the encumbered boundary", () => {
-    expect(resolveEncumbrance(60, 100, { soft: 0.5 }).tier).toBe("encumbered");
-    expect(resolveEncumbrance(60, 100, { soft: 0.75 }).tier).toBe("unencumbered");
+    expect(resolve(60, 100, { soft: 0.5, floor: 0.5 }).tier).toBe("encumbered");
+    expect(resolve(60, 100, { soft: 0.75, floor: 0.5 }).tier).toBe("unencumbered");
   });
 
   test("custom floor changes how hard a near-full load is slowed", () => {
     // fraction 0.9 -> t = (0.9-0.8)/0.2 = 0.5 -> 1 - (1-0.2)*0.5 = 0.6
-    const state = resolveEncumbrance(90, 100, { soft: 0.8, floor: 0.2 });
+    const state = resolve(90, 100, { soft: 0.8, floor: 0.2 });
     expect(state.moveMultiplier).toBeCloseTo(0.6, 10);
   });
 });
 
 describe("capacity edge cases", () => {
   test("zero capacity pins any positive load as immobile with a finite fraction", () => {
-    const state = resolveEncumbrance(5, 0);
+    const state = resolve(5, 0);
     expect(state.fraction).toBe(1);
     expect(state.tier).toBe("immobile");
     expect(state.moveMultiplier).toBe(0);
@@ -149,13 +157,13 @@ describe("capacity edge cases", () => {
   });
 
   test("zero capacity with no load is an empty unencumbered state", () => {
-    const state = resolveEncumbrance(0, 0);
+    const state = resolve(0, 0);
     expect(state.fraction).toBe(0);
     expect(state.tier).toBe("unencumbered");
   });
 
   test("state round-trips through JSON unchanged", () => {
-    const state = resolveEncumbrance(5, 0);
+    const state = resolve(5, 0);
     expect(JSON.parse(JSON.stringify(state))).toEqual(state);
   });
 
@@ -164,7 +172,7 @@ describe("capacity edge cases", () => {
       { itemId: "ingot", quantity: 9 },
       { itemId: "plank", quantity: 3 },
     ];
-    const state = resolveEncumbrance(totalLoad(entries, massOf), 100);
+    const state = resolve(totalLoad(entries, massOf), 100);
     expect(state.mass).toBe(96);
     expect(state.tier).toBe("encumbered");
   });

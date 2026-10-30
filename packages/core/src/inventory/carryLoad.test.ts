@@ -8,6 +8,8 @@ const weightOf = (itemId: string): number => MASSES[itemId] ?? 0;
 
 const traits: ItemTraits = { stackLimit: () => 20 };
 const bagLayout: InventoryLayout = { slots: 4 };
+/** The test's own bands: encumbered from 85% load, slowing toward half speed at capacity. */
+const TUNING = { soft: 0.85, floor: 0.5 } as const;
 
 function bagWith(itemId: string, count: number): InventoryState {
   const result = putItem(createEmptyInventory(bagLayout), bagLayout, traits, itemId, count);
@@ -32,7 +34,7 @@ describe("carriedEntries", () => {
 
 describe("characterLoad", () => {
   test("weighs carried stacks against capacity and reports what is left", () => {
-    const load = characterLoad({ carried: [bagWith("ingot", 3)], weightOf, capacity: 100 });
+    const load = characterLoad({ carried: [bagWith("ingot", 3)], weightOf, capacity: 100, encumbrance: TUNING });
     expect(load.carriedMass).toBe(30);
     expect(load.wornMass).toBe(0);
     expect(load.mass).toBe(30);
@@ -41,9 +43,9 @@ describe("characterLoad", () => {
   });
 
   test("worn gear adds weight at the configured factor", () => {
-    const full = characterLoad({ carried: [], worn: ["plate"], weightOf, capacity: 100 });
+    const full = characterLoad({ carried: [], worn: ["plate"], weightOf, capacity: 100, encumbrance: TUNING });
     expect(full.wornMass).toBe(12);
-    const light = characterLoad({ carried: [], worn: ["plate"], weightOf, capacity: 100, wornFactor: 0.5 });
+    const light = characterLoad({ carried: [], worn: ["plate"], weightOf, capacity: 100, encumbrance: TUNING, wornFactor: 0.5 });
     expect(light.wornMass).toBe(6);
     expect(light.mass).toBe(6);
   });
@@ -52,23 +54,23 @@ describe("characterLoad", () => {
     const set = createInventorySet({ bag: { slots: 4 }, stash: { slots: 4 } }, traits);
     set.put("bag", "ingot", 1);
     set.put("stash", "ingot", 9);
-    const load = characterLoad({ carried: [set.state("bag")], weightOf, capacity: 100 });
+    const load = characterLoad({ carried: [set.state("bag")], weightOf, capacity: 100, encumbrance: TUNING });
     expect(load.mass).toBe(10);
   });
 
   test("weight crosses the soft band: sprint and jump go, speed drops, then the carrier is immobile", () => {
-    const light = characterLoad({ carried: [bagWith("plank", 10)], weightOf, capacity: 100 });
+    const light = characterLoad({ carried: [bagWith("plank", 10)], weightOf, capacity: 100, encumbrance: TUNING });
     expect(light.tier).toBe("unencumbered");
     expect(light.moveMultiplier).toBe(1);
 
-    const heavy = characterLoad({ carried: [bagWith("ingot", 9)], weightOf, capacity: 100 });
+    const heavy = characterLoad({ carried: [bagWith("ingot", 9)], weightOf, capacity: 100, encumbrance: TUNING });
     expect(heavy.tier).toBe("encumbered");
     expect(heavy.canSprint).toBe(false);
     expect(heavy.canJump).toBe(false);
     expect(heavy.moveMultiplier).toBeGreaterThan(0);
     expect(heavy.moveMultiplier).toBeLessThan(1);
 
-    const pinned = characterLoad({ carried: [bagWith("ingot", 10)], weightOf, capacity: 100 });
+    const pinned = characterLoad({ carried: [bagWith("ingot", 10)], weightOf, capacity: 100, encumbrance: TUNING });
     expect(pinned.tier).toBe("immobile");
     expect(pinned.moveMultiplier).toBe(0);
     expect(pinned.immobile).toBe(true);
@@ -77,12 +79,12 @@ describe("characterLoad", () => {
 
   test("capacity is caller data: raising it from gear or level lifts the tier back down", () => {
     const state = bagWith("ingot", 9);
-    expect(characterLoad({ carried: [state], weightOf, capacity: 100 }).tier).toBe("encumbered");
-    expect(characterLoad({ carried: [state], weightOf, capacity: 200 }).tier).toBe("unencumbered");
+    expect(characterLoad({ carried: [state], weightOf, capacity: 100, encumbrance: TUNING }).tier).toBe("encumbered");
+    expect(characterLoad({ carried: [state], weightOf, capacity: 200, encumbrance: TUNING }).tier).toBe("unencumbered");
   });
 
   test("a negative remaining never wraps: overloaded carriers report the debt", () => {
-    const load = characterLoad({ carried: [bagWith("ingot", 12)], weightOf, capacity: 100 });
+    const load = characterLoad({ carried: [bagWith("ingot", 12)], weightOf, capacity: 100, encumbrance: TUNING });
     expect(load.remaining).toBe(-20);
     expect(load.fraction).toBeGreaterThan(1);
   });
@@ -90,19 +92,19 @@ describe("characterLoad", () => {
 
 describe("canCarry", () => {
   test("accepts a pickup that still fits and refuses one that does not", () => {
-    const load = characterLoad({ carried: [bagWith("ingot", 9)], weightOf, capacity: 100 });
+    const load = characterLoad({ carried: [bagWith("ingot", 9)], weightOf, capacity: 100, encumbrance: TUNING });
     expect(canCarry(load, 10)).toBe(true);
     expect(canCarry(load, 10.5)).toBe(false);
   });
 
   test("an empty carrier at capacity 0 accepts nothing positive", () => {
-    const load = characterLoad({ carried: [], weightOf, capacity: 0 });
+    const load = characterLoad({ carried: [], weightOf, capacity: 0, encumbrance: TUNING });
     expect(canCarry(load, 1)).toBe(false);
     expect(canCarry(load, 0)).toBe(true);
   });
 
   test("nonsense added mass counts as nothing", () => {
-    const load = characterLoad({ carried: [], weightOf, capacity: 10 });
+    const load = characterLoad({ carried: [], weightOf, capacity: 10, encumbrance: TUNING });
     expect(canCarry(load, Number.NaN)).toBe(true);
     expect(canCarry(load, -5)).toBe(true);
   });

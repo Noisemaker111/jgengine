@@ -1,30 +1,37 @@
 import { evaluatePredicate, type Predicate } from "../rules/predicate";
 
-/** A player's build rights on a plot: owner, editor or viewer. */
-export type BuildRole = "owner" | "editor" | "viewer";
+/**
+ * The roles one game's build plots use, from fewest build rights to most, and which role carries
+ * which right. The ladder is the game's data: a plot can have any named roles.
+ */
+export interface BuildRoleLadder<R extends string> {
+  /** Every role a plot can carry, fewest build rights first. The last role is the owner's. */
+  ladder: readonly R[];
+  /** The lowest ladder role that may edit; it and every role above it can build. */
+  editor: R;
+  /** The ladder role a guild joins at when `setGuild` names none. */
+  guildDefault: R;
+}
 
-const ROLE_RANK: Record<BuildRole, number> = { viewer: 0, editor: 1, owner: 2 };
-
-/** Editing needs the `editor` rank or above; looking needs any role at all. */
-const CAN_EDIT: Predicate = { gte: ["rank", ROLE_RANK.editor] };
+/** Looking needs any role at all. */
 const CAN_VIEW: Predicate = { has: "role" };
 
 /** Initial owner, guild and per-player roles for one build plot. */
-export interface PlotPermissionConfig {
+export interface PlotPermissionConfig<R extends string> extends BuildRoleLadder<R> {
   plotId: string;
   ownerId: string;
   guildId?: string;
-  roles?: Readonly<Record<string, BuildRole>>;
-  guildRole?: BuildRole;
+  roles?: Readonly<Record<string, R>>;
+  guildRole?: R;
 }
 
 /** Serializable copy of a plot's owner, guild and roles. */
-export interface PlotPermissionSnapshot {
+export interface PlotPermissionSnapshot<R extends string> {
   plotId: string;
   ownerId: string;
   guildId?: string;
-  roles: Readonly<Record<string, BuildRole>>;
-  guildRole?: BuildRole;
+  roles: Readonly<Record<string, R>>;
+  guildRole?: R;
 }
 
 /** The player asking to build, with their guild if any. */
@@ -34,31 +41,49 @@ export interface BuildActor {
 }
 
 /** Live permissions for one plot: role lookups, edit and view checks, grants, ownership transfer and snapshot/restore. */
-export interface PlotPermissions {
-  roleOf(actor: BuildActor): BuildRole | null;
+export interface PlotPermissions<R extends string> {
+  roleOf(actor: BuildActor): R | null;
   canEdit(actor: BuildActor): boolean;
   canView(actor: BuildActor): boolean;
-  grant(userId: string, role: BuildRole): void;
+  grant(userId: string, role: R): void;
   revoke(userId: string): void;
-  setGuild(guildId: string | null, role?: BuildRole): void;
+  setGuild(guildId: string | null, role?: R): void;
   transferOwner(userId: string): void;
-  snapshot(): PlotPermissionSnapshot;
+  snapshot(): PlotPermissionSnapshot<R>;
   /** Replace owner, guild and grants from a {@link snapshot}; plot identity stays the config's. */
-  restore(next: PlotPermissionSnapshot): void;
+  restore(next: PlotPermissionSnapshot<R>): void;
 }
 
 /**
- * Creates the build permissions for one plot.
+ * Creates the build permissions for one plot over the caller's own role ladder. `editor` and
+ * `guildDefault` must be roles on the ladder; an owner always carries the top role.
+ *
  * @capability plot-permissions Owner, editor and guild build rights on a plot
  */
-export function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions {
+export function createPlotPermissions<R extends string>(
+  config: PlotPermissionConfig<R>,
+): PlotPermissions<R> {
+  const { ladder } = config;
+  const ownerRole = ladder[ladder.length - 1];
+  if (ownerRole === undefined) throw new RangeError("A plot role ladder needs at least one role");
+  const topRole: R = ownerRole;
+  const editorRank = ladder.indexOf(config.editor);
+  if (editorRank < 0) {
+    throw new RangeError(`editor role "${config.editor}" is not on the plot's role ladder`);
+  }
+  if (ladder.indexOf(config.guildDefault) < 0) {
+    throw new RangeError(`guild role "${config.guildDefault}" is not on the plot's role ladder`);
+  }
+  /** Editing needs the `editor` rank or above. */
+  const canEditRule: Predicate = { gte: ["rank", editorRank] };
+
   let ownerId = config.ownerId;
   let guildId = config.guildId;
   let guildRole = config.guildRole;
-  const roles = new Map<string, BuildRole>(Object.entries(config.roles ?? {}));
+  const roles = new Map<string, R>(Object.entries(config.roles ?? {}));
 
-  function roleOf(actor: BuildActor): BuildRole | null {
-    if (actor.userId === ownerId) return "owner";
+  function roleOf(actor: BuildActor): R | null {
+    if (actor.userId === ownerId) return topRole;
     const explicit = roles.get(actor.userId);
     if (explicit !== undefined) return explicit;
     if (
@@ -76,7 +101,7 @@ export function createPlotPermissions(config: PlotPermissionConfig): PlotPermiss
     roleOf,
     canEdit(actor) {
       const role = roleOf(actor);
-      return evaluatePredicate(CAN_EDIT, { rank: role === null ? -1 : ROLE_RANK[role] });
+      return evaluatePredicate(canEditRule, { rank: role === null ? -1 : ladder.indexOf(role) });
     },
     canView(actor) {
       return evaluatePredicate(CAN_VIEW, { role: roleOf(actor) });
@@ -90,7 +115,8 @@ export function createPlotPermissions(config: PlotPermissionConfig): PlotPermiss
     },
     setGuild(nextGuildId, role) {
       guildId = nextGuildId ?? undefined;
-      guildRole = nextGuildId === null ? undefined : role ?? guildRole ?? "editor";
+      guildRole =
+        nextGuildId === null ? undefined : role ?? guildRole ?? config.guildDefault;
     },
     transferOwner(userId) {
       roles.delete(userId);

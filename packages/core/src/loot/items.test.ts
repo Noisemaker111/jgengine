@@ -145,11 +145,13 @@ describe("comparison against equipped", () => {
 describe("run haul", () => {
   const masses: Record<string, number> = { spare: 2, engine: 8, core: 1 };
   const weightOf = (id: string) => masses[id] ?? 0;
+  /** The test's own bands: encumbered from 85% load, slowing toward half speed at capacity. */
+  const TUNING = { soft: 0.85, floor: 0.5 } as const;
 
   test("carrying refuses weight beyond capacity without mutating", () => {
     const inventories = createInventorySet({ run: { slots: 4 }, stash: { slots: 4 } }, traits());
     const haul = createRunHaul({
-      inventories, runId: "run", stashId: "stash", weightOf, capacity: 9,
+      inventories, runId: "run", stashId: "stash", weightOf, capacity: 9, encumbrance: TUNING,
       storage: memoryStorage(),
     });
     expect(haul.carry("engine")).toMatchObject({ ok: true, mass: 8, remaining: 1 });
@@ -163,7 +165,7 @@ describe("run haul", () => {
     const storage = memoryStorage();
     const first = createInventorySet({ run: { slots: 4 }, stash: { slots: 4 } }, traits());
     const haul = createRunHaul({
-      inventories: first, runId: "run", stashId: "stash", weightOf, capacity: 20,
+      inventories: first, runId: "run", stashId: "stash", weightOf, capacity: 20, encumbrance: TUNING,
       storage, key: "test.stash",
     });
     expect(haul.carry("spare", 2).ok).toBe(true);
@@ -176,7 +178,7 @@ describe("run haul", () => {
 
     const reloaded = createInventorySet({ run: { slots: 4 }, stash: { slots: 4 } }, traits());
     const second = createRunHaul({
-      inventories: reloaded, runId: "run", stashId: "stash", weightOf, capacity: 20,
+      inventories: reloaded, runId: "run", stashId: "stash", weightOf, capacity: 20, encumbrance: TUNING,
       storage, key: "test.stash",
     });
     expect(second.load()).toBe(true);
@@ -193,7 +195,7 @@ describe("run haul", () => {
   test("mass reads carried weight and the untouched stash separately", () => {
     const inventories = createInventorySet({ run: { slots: 4 }, stash: { slots: 4 } }, traits());
     const haul = createRunHaul({
-      inventories, runId: "run", stashId: "stash", weightOf, capacity: 30,
+      inventories, runId: "run", stashId: "stash", weightOf, capacity: 30, encumbrance: TUNING,
       storage: null,
     });
     haul.carry("spare", 2);

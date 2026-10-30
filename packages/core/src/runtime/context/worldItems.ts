@@ -13,6 +13,8 @@ import type { WorldItemPickupResult } from "../gameContext";
 
 /** @internal What the ground-item surface needs from the live context: entity spawn/despawn, the event bus, loot granting, and change notification. */
 export interface WorldItemContextDeps {
+  /** Rarity a spawn gets when the caller names none — the game's content baseline. */
+  defaultRarity?: string;
   entities: EntityStore;
   events: GameEvents;
   despawnEntity: (instanceId: string) => boolean;
@@ -31,6 +33,7 @@ export interface WorldItemContext {
 export function createWorldItemContext(d: WorldItemContextDeps): WorldItemContext {
   const worldItems = notifyAfter(
     createWorldItemStore({
+      ...(d.defaultRarity === undefined ? {} : { defaultRarity: d.defaultRarity }),
       spawnEntity: (position) => d.entities.spawn(WORLD_ITEM_ENTITY_NAME, { position, role: "prop" }),
       despawnEntity: d.despawnEntity,
       resolvePosition: (instanceId) => d.entities.get(instanceId)?.position,

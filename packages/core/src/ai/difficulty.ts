@@ -5,8 +5,8 @@
  * scored options, executing with error, spending abilities, and planning ahead. The same profile
  * tunes an RTS grunt, a street enemy, a boss's special-ability discipline, or a turn-based
  * lookahead player; the game supplies the domain (candidates, scores, moves) and this module
- * degrades or sharpens the choice. Three canonical tiers ({@link DIFFICULTY_TIERS}) cover
- * "kinda dumb / smart / super smart"; per-game overrides stay data.
+ * degrades or sharpens the choice. The game also supplies its own tier list, so the names and
+ * numbers of its difficulty levels stay its data.
  *
  * Everything is deterministic under an injected rng, work is bounded by the profile, and state
  * (the reaction gate) is one small serializable object. Compose with the existing substrates
@@ -16,9 +16,6 @@
  */
 
 import { pickUniform } from "../random/pick";
-
-/** The three canonical decision-quality tiers. */
-export type DifficultyTier = "easy" | "standard" | "expert";
 
 /**
  * Serializable decision-quality data. All fields are plain numbers so a profile can live in a
@@ -47,58 +44,19 @@ export interface DifficultyProfile {
   planWidth: number;
 }
 
-const TIERS: Record<DifficultyTier, DifficultyProfile> = {
-  easy: {
-    reactionSeconds: 0.9,
-    decisionNoise: 0.35,
-    executionJitter: 0.3,
-    abilityDiscipline: 0.2,
-    perceptionScale: 0.7,
-    planDepth: 1,
-    planWidth: 2,
-  },
-  standard: {
-    reactionSeconds: 0.35,
-    decisionNoise: 0.12,
-    executionJitter: 0.12,
-    abilityDiscipline: 0.55,
-    perceptionScale: 1,
-    planDepth: 2,
-    planWidth: 4,
-  },
-  expert: {
-    reactionSeconds: 0.08,
-    decisionNoise: 0,
-    executionJitter: 0.02,
-    abilityDiscipline: 0.85,
-    perceptionScale: 1.3,
-    planDepth: 4,
-    planWidth: 8,
-  },
-};
-
-for (const tier of Object.values(TIERS)) Object.freeze(tier);
-
 /**
- * The canonical easy/standard/expert profiles. Frozen — use {@link difficultyProfile} to derive
- * a tweaked copy instead of mutating.
+ * A fresh profile from the caller's own tier list, with optional overrides — the tier names and
+ * numbers stay the game's data: `difficultyProfile(TIERS, "boss", { reactionSeconds: 0.2 })`.
+ * The source profile is copied, never mutated.
  *
- * @capability difficulty-tiers canonical easy/standard/expert decision-quality profiles for any opponent
+ * @capability difficulty-profile derive a tuned decision-quality profile from one of the game's own tiers
  */
-export const DIFFICULTY_TIERS: Readonly<Record<DifficultyTier, DifficultyProfile>> =
-  Object.freeze(TIERS);
-
-/**
- * A fresh profile from a canonical tier with optional per-game overrides — e.g. an "easy" boss
- * that still reacts fast: `difficultyProfile("easy", { reactionSeconds: 0.2 })`.
- *
- * @capability difficulty-profile derive a per-game decision-quality profile from a canonical tier
- */
-export function difficultyProfile(
-  tier: DifficultyTier,
+export function difficultyProfile<T extends string>(
+  tiers: Readonly<Record<T, DifficultyProfile>>,
+  tier: T,
   overrides?: Partial<DifficultyProfile>,
 ): DifficultyProfile {
-  return { ...DIFFICULTY_TIERS[tier], ...overrides };
+  return { ...tiers[tier], ...overrides };
 }
 
 /**

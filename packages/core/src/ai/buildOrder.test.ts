@@ -11,8 +11,30 @@ import {
   type BuildPlanner,
   type BuildPlannerView,
 } from "./buildOrder";
-import { DIFFICULTY_TIERS, difficultyProfile } from "./difficulty";
+import { difficultyProfile, type DifficultyProfile } from "./difficulty";
 import { seededRng } from "../random/rng";
+
+/** The test's own tier list, the way a game supplies one. */
+const TIERS: Readonly<Record<"easy" | "expert", DifficultyProfile>> = {
+  easy: {
+    reactionSeconds: 0.9,
+    decisionNoise: 0.35,
+    executionJitter: 0.3,
+    abilityDiscipline: 0.2,
+    perceptionScale: 0.7,
+    planDepth: 1,
+    planWidth: 2,
+  },
+  expert: {
+    reactionSeconds: 0.08,
+    decisionNoise: 0,
+    executionJitter: 0.02,
+    abilityDiscipline: 0.85,
+    perceptionScale: 1.3,
+    planDepth: 4,
+    planWidth: 8,
+  },
+};
 
 const catalog: BuildCatalog = {
   town_hall: { kind: "building", cost: { gold: 400 }, supplyProvided: 10 },
@@ -176,7 +198,7 @@ describe("build planner", () => {
     const draws = [0.1, 0.99];
     const planner = createBuildPlanner(
       { catalog, composition: { grunt: 1, archer: 1 } },
-      { profile: difficultyProfile("easy", { reactionSeconds: 0 }), rng: () => draws[i++ % 2]! },
+      { profile: difficultyProfile(TIERS, "easy", { reactionSeconds: 0 }), rng: () => draws[i++ % 2]! },
     );
     const w = world({ town_hall: 1, barracks: 1, archer: 3 });
     expect(planner.decide(view(w), 0)).toEqual({ kind: "make", id: "archer", reason: "composition" });
@@ -195,15 +217,15 @@ describe("build planner", () => {
       id: "peon",
       reason: "workers",
     });
-    expect(createBuildPlanner(config, { profile: DIFFICULTY_TIERS.easy }).tuning().saveFor).toBe(false);
-    expect(createBuildPlanner(config, { profile: DIFFICULTY_TIERS.expert }).tuning().saveFor).toBe(true);
+    expect(createBuildPlanner(config, { profile: TIERS.easy }).tuning().saveFor).toBe(false);
+    expect(createBuildPlanner(config, { profile: TIERS.expert }).tuning().saveFor).toBe(true);
   });
 
   test("easy decides less often than expert over the same span", () => {
     const decisionsOver = (tier: "easy" | "expert"): number => {
       const planner = createBuildPlanner(
         { catalog, workers: { id: "peon", target: 1000 }, supplyBuffer: 2 },
-        { profile: DIFFICULTY_TIERS[tier] },
+        { profile: TIERS[tier] },
       );
       const w = world();
       let acted = 0;
@@ -218,9 +240,9 @@ describe("build planner", () => {
     const expert = decisionsOver("expert");
     expect(easy).toBeGreaterThan(20);
     expect(expert).toBeGreaterThan(easy * 5);
-    const easyTuning = createBuildPlanner({ catalog }, { profile: DIFFICULTY_TIERS.easy }).tuning();
+    const easyTuning = createBuildPlanner({ catalog }, { profile: TIERS.easy }).tuning();
     expect(easyTuning.decisionInterval).toBeCloseTo(1.8);
-    expect(easyTuning.decisionNoise).toBe(DIFFICULTY_TIERS.easy.decisionNoise);
+    expect(easyTuning.decisionNoise).toBe(TIERS.easy.decisionNoise);
   });
 
   test("snapshot and restore resume identically", () => {
@@ -231,7 +253,7 @@ describe("build planner", () => {
       composition: { grunt: 2, archer: 1, knight: 1 },
       supplyBuffer: 3,
     };
-    const options = () => ({ profile: DIFFICULTY_TIERS.easy, rng: seededRng(7) });
+    const options = () => ({ profile: TIERS.easy, rng: seededRng(7) });
     const original = createBuildPlanner(config, options());
     const w = world(undefined, 3000);
     const tick = (planner: BuildPlanner, target: World, frames: number, start: number): BuildDecision[] => {
@@ -249,7 +271,7 @@ describe("build planner", () => {
     const savedWorld: World = JSON.parse(JSON.stringify(w));
     const expected = tick(original, w, 200, 40);
 
-    const resumed = createBuildPlanner(config, { profile: DIFFICULTY_TIERS.easy, rng: seededRng(999) });
+    const resumed = createBuildPlanner(config, { profile: TIERS.easy, rng: seededRng(999) });
     resumed.restore(saved);
     expect(tick(resumed, savedWorld, 200, 40)).toEqual(expected);
   });
@@ -258,7 +280,7 @@ describe("build planner", () => {
     const planner = createBuildPlanner({ catalog, composition: { grunt: 1 } });
     const w = world({ town_hall: 1, barracks: 1 });
     expect(planner.decide(view(w), 0)).toMatchObject({ id: "grunt" });
-    planner.retune({ catalog, composition: { archer: 1 } }, DIFFICULTY_TIERS.expert);
+    planner.retune({ catalog, composition: { archer: 1 } }, TIERS.expert);
     expect(planner.tuning().decisionInterval).toBeCloseTo(0.16);
     expect(planner.decide(view(w), 1)).toMatchObject({ id: "archer" });
   });

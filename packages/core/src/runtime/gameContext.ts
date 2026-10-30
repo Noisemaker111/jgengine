@@ -91,7 +91,7 @@ type GameFeatureKey = Exclude<keyof GameFeatures, "cosmetics">;
 export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(
   options: GameContextOptions<TAssetRef, TMultiplayer>,
 ): GameContext {
-  const { definition, content, player } = options;
+  const { definition, content = {}, player } = options;
   const now = options.now ?? Date.now;
   const occluder = options.occluder;
   // Per-world deterministic stream — never Math.random on simulation paths (#1545).
@@ -308,6 +308,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   };
 
   const { worldItems, spawnWorldItem, pickupWorldItem } = createWorldItemContext({
+    ...(content.defaultRarity === undefined ? {} : { defaultRarity: content.defaultRarity }),
     entities,
     events,
     despawnEntity,

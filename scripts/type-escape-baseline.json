@@ -683,7 +683,7 @@
   "packages/core/src/ai/crowd.test.ts": {"nonNull":4},
   "packages/core/src/ai/crowd.ts": {"nonNull":24},
   "packages/core/src/ai/decisionGraph.ts": {"nonNull":13},
-  "packages/core/src/ai/difficulty.test.ts": {"nonNull":1,"cast":1},
+  "packages/core/src/ai/difficulty.test.ts": {"nonNull":1},
   "packages/core/src/ai/difficulty.ts": {"nonNull":2},
   "packages/core/src/ai/director/roles.test.ts": {"nonNull":2},
   "packages/core/src/ai/director/roles.ts": {"nonNull":1},

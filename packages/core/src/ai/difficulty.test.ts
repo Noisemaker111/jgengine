@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  DIFFICULTY_TIERS,
   advanceReactionGate,
   createReactionGate,
   difficultyProfile,
@@ -14,35 +13,63 @@ import {
   type ScoredOption,
 } from "./difficulty";
 
+/** The test's own tier list, the way a game supplies one. */
+const TIERS: Readonly<Record<"sloppy" | "steady" | "sharp", DifficultyProfile>> = {
+  sloppy: {
+    reactionSeconds: 0.9,
+    decisionNoise: 0.35,
+    executionJitter: 0.3,
+    abilityDiscipline: 0.2,
+    perceptionScale: 0.7,
+    planDepth: 1,
+    planWidth: 2,
+  },
+  steady: {
+    reactionSeconds: 0.35,
+    decisionNoise: 0.12,
+    executionJitter: 0.12,
+    abilityDiscipline: 0.55,
+    perceptionScale: 1,
+    planDepth: 2,
+    planWidth: 4,
+  },
+  sharp: {
+    reactionSeconds: 0.08,
+    decisionNoise: 0,
+    executionJitter: 0.02,
+    abilityDiscipline: 0.85,
+    perceptionScale: 1.3,
+    planDepth: 4,
+    planWidth: 8,
+  },
+};
+
 const rngOf = (...values: number[]) => {
   let i = 0;
   return () => values[Math.min(i++, values.length - 1)]!;
 };
 
 const exact = (overrides: Partial<DifficultyProfile>): DifficultyProfile =>
-  difficultyProfile("expert", { decisionNoise: 0, executionJitter: 0, ...overrides });
+  difficultyProfile(TIERS, "sharp", { decisionNoise: 0, executionJitter: 0, ...overrides });
 
 describe("tiers and profiles", () => {
-  test("tiers are ordered from sloppy to sharp", () => {
-    const { easy, standard, expert } = DIFFICULTY_TIERS;
-    expect(easy.reactionSeconds).toBeGreaterThan(standard.reactionSeconds);
-    expect(standard.reactionSeconds).toBeGreaterThan(expert.reactionSeconds);
-    expect(easy.decisionNoise).toBeGreaterThan(standard.decisionNoise);
-    expect(expert.decisionNoise).toBe(0);
-    expect(easy.planDepth).toBeLessThan(standard.planDepth);
-    expect(standard.planDepth).toBeLessThan(expert.planDepth);
-    expect(easy.abilityDiscipline).toBeLessThan(expert.abilityDiscipline);
-    expect(easy.perceptionScale).toBeLessThan(expert.perceptionScale);
+  test("the caller's tiers can run from sloppy to sharp", () => {
+    const { sloppy, steady, sharp } = TIERS;
+    expect(sloppy.reactionSeconds).toBeGreaterThan(steady.reactionSeconds);
+    expect(steady.reactionSeconds).toBeGreaterThan(sharp.reactionSeconds);
+    expect(sloppy.decisionNoise).toBeGreaterThan(steady.decisionNoise);
+    expect(sharp.decisionNoise).toBe(0);
+    expect(sloppy.planDepth).toBeLessThan(steady.planDepth);
+    expect(steady.planDepth).toBeLessThan(sharp.planDepth);
+    expect(sloppy.abilityDiscipline).toBeLessThan(sharp.abilityDiscipline);
+    expect(sloppy.perceptionScale).toBeLessThan(sharp.perceptionScale);
   });
 
-  test("difficultyProfile copies a tier and applies overrides without mutating the canon", () => {
-    const boss = difficultyProfile("easy", { reactionSeconds: 0.2 });
+  test("difficultyProfile copies a tier and applies overrides without mutating the source", () => {
+    const boss = difficultyProfile(TIERS, "sloppy", { reactionSeconds: 0.2 });
     expect(boss.reactionSeconds).toBe(0.2);
-    expect(boss.decisionNoise).toBe(DIFFICULTY_TIERS.easy.decisionNoise);
-    expect(DIFFICULTY_TIERS.easy.reactionSeconds).toBe(0.9);
-    expect(() => {
-      (DIFFICULTY_TIERS.easy as DifficultyProfile).reactionSeconds = 0;
-    }).toThrow();
+    expect(boss.decisionNoise).toBe(TIERS.sloppy.decisionNoise);
+    expect(TIERS.sloppy.reactionSeconds).toBe(0.9);
   });
 });
 

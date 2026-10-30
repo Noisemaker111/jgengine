@@ -6,7 +6,6 @@ import { resolveRng } from "../random/resolveRng";
 
 /** Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object). */
 export const WORLD_ITEM_ENTITY_NAME = "world_item";
-export const DEFAULT_RARITY = "common";
 export const DEFAULT_PICKUP_RADIUS = 2;
 
 export interface ScatterOptions {
@@ -52,6 +51,7 @@ export interface WorldItemRecord {
 export interface WorldItemSpawnInput {
   itemId: string;
   position: EntityPosition;
+  /** Rarity id the game reads for beams and filters; omit to use the store's `defaultRarity`. */
   rarity?: string;
   baseType?: string;
   count?: number;
@@ -60,6 +60,8 @@ export interface WorldItemSpawnInput {
 }
 
 export interface WorldItemStoreDeps {
+  /** Rarity a spawn gets when the caller names none — the game's own baseline. A spawn with neither is rejected. */
+  defaultRarity?: string;
   spawnEntity(position: EntityPosition): string;
   despawnEntity(instanceId: string): boolean;
   resolvePosition(instanceId: string): EntityPosition | undefined;
@@ -120,11 +122,15 @@ export function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore {
 
   return {
     spawn(input) {
+      const rarity = input.rarity ?? deps.defaultRarity;
+      if (rarity === undefined) {
+        throw new RangeError(`world item "${input.itemId}" needs a rarity: pass one or set content.defaultRarity`);
+      }
       const instanceId = deps.spawnEntity(input.position);
       const record: WorldItemRecord = {
         instanceId,
         itemId: input.itemId,
-        rarity: input.rarity ?? DEFAULT_RARITY,
+        rarity,
         baseType: input.baseType ?? input.itemId,
         count: input.count ?? 1,
         droppedAt: now(),

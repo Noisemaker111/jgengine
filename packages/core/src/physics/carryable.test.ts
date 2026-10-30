@@ -4,6 +4,7 @@ import { Carryable, carrySpeedMultiplier } from "./carryable";
 import { PhysicsWorld } from "./physicsWorld";
 
 const BOUNDS = { min: [-20, 0, -20] as const, max: [20, 20, 20] as const };
+const CARRY_CONFIG = { maxForce: 1000, carryCapacity: 8 } as const;
 
 function world(): PhysicsWorld {
   return new PhysicsWorld({ capacity: 64, bounds: BOUNDS, gravity: 0, sleepThresholdSteps: 100000 });
@@ -26,7 +27,7 @@ describe("Carryable", () => {
   test("a held body follows its hold point", () => {
     const w = world();
     const body = w.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3], mass: 2 });
-    const carry = new Carryable(w, body, { maxForce: 1000 });
+    const carry = new Carryable(w, body, CARRY_CONFIG);
     carry.grab(1, 0, 5, 0);
     for (let i = 0; i < 240; i += 1) {
       carry.setHoldPoint(1, 3, 5, -2);
@@ -41,7 +42,7 @@ describe("Carryable", () => {
   test("two owners pull toward the midpoint of their hold points", () => {
     const w = world();
     const body = w.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3], mass: 4 });
-    const carry = new Carryable(w, body, { maxForce: 1000 });
+    const carry = new Carryable(w, body, CARRY_CONFIG);
     carry.grab(1, 0, 5, 0);
     carry.grab(2, 4, 5, 0);
     expect(carry.owners).toBe(2);
@@ -55,7 +56,7 @@ describe("Carryable", () => {
   test("throw releases the constraint and imparts velocity", () => {
     const w = world();
     const body = w.addBody({ position: [0, 5, 0], halfExtents: [0.3, 0.3, 0.3] });
-    const carry = new Carryable(w, body, {});
+    const carry = new Carryable(w, body, { carryCapacity: 8 });
     carry.grab(1, 0, 5, 0);
     carry.throw(8, 0, 0);
     expect(carry.held).toBe(false);

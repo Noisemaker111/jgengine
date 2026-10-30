@@ -7,8 +7,8 @@ export interface CarryableConfig {
   followDamping?: number;
   /** Clamp on the follow impulse so a heavy item lags instead of teleporting. Default 40. */
   maxForce?: number;
-  /** Mass one owner hauls at full speed; heavier → encumbered / needs more owners. Default 8. */
-  carryCapacity?: number;
+  /** Mass one owner hauls at full speed; heavier → encumbered / needs more owners. The game's own carrying number. */
+  carryCapacity: number;
 }
 
 /**
@@ -39,13 +39,13 @@ export class Carryable {
   private readonly holds = new Map<number, [number, number, number]>();
   private joint = -1;
 
-  constructor(world: PhysicsWorld, body: number, config: CarryableConfig = {}) {
+  constructor(world: PhysicsWorld, body: number, config: CarryableConfig) {
     this.world = world;
     this.body = body;
     this.stiffness = config.followStiffness ?? 60;
     this.damping = config.followDamping ?? 12;
     this.maxForce = config.maxForce ?? 40;
-    this.capacity = config.carryCapacity ?? 8;
+    this.capacity = config.carryCapacity;
   }
 
   get held(): boolean {

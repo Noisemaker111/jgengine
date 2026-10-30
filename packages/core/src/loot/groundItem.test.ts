@@ -60,11 +60,12 @@ describe("selectNearestWorldItem", () => {
   });
 });
 
-function createTestStore() {
+function createTestStore(defaultRarity: string | undefined) {
   const entityPositions = new Map<string, [number, number, number]>();
   const despawned: string[] = [];
   let counter = 0;
   const deps: WorldItemStoreDeps = {
+    ...(defaultRarity === undefined ? {} : { defaultRarity }),
     spawnEntity(position) {
       const id = `wi-${counter++}`;
       entityPositions.set(id, position);
@@ -82,7 +83,7 @@ function createTestStore() {
 
 describe("createWorldItemStore", () => {
   test("spawn records rarity/baseType defaults and count", () => {
-    const { store } = createTestStore();
+    const { store } = createTestStore("common");
     const record = store.spawn({ itemId: "sword_iron", position: [0, 0, 0] });
     expect(record.rarity).toBe("common");
     expect(record.baseType).toBe("sword_iron");
@@ -90,8 +91,15 @@ describe("createWorldItemStore", () => {
     expect(store.get(record.instanceId)).toEqual(record);
   });
 
+  test("a spawn with no rarity and no declared baseline is rejected", () => {
+    const { store } = createTestStore(undefined);
+    expect(() => store.spawn({ itemId: "sword_iron", position: [0, 0, 0] })).toThrow(
+      /needs a rarity/,
+    );
+  });
+
   test("spawn honors explicit rarity/baseType/count/affixTier/source", () => {
-    const { store } = createTestStore();
+    const { store } = createTestStore("common");
     const record = store.spawn({
       itemId: "sword_iron",
       position: [0, 0, 0],
@@ -112,14 +120,14 @@ describe("createWorldItemStore", () => {
   });
 
   test("list reflects all spawned items", () => {
-    const { store } = createTestStore();
+    const { store } = createTestStore("common");
     store.spawn({ itemId: "a", position: [0, 0, 0] });
     store.spawn({ itemId: "b", position: [1, 0, 0] });
     expect(store.list()).toHaveLength(2);
   });
 
   test("nearestInRadius resolves live entity position and honors a filter", () => {
-    const { store } = createTestStore();
+    const { store } = createTestStore("common");
     const near = store.spawn({ itemId: "a", rarity: "common", position: [1, 0, 0] });
     store.spawn({ itemId: "b", rarity: "legendary", position: [1.5, 0, 0] });
     expect(store.nearestInRadius([0, 0, 0], 5)).toBe(near.instanceId);
@@ -129,7 +137,7 @@ describe("createWorldItemStore", () => {
   });
 
   test("take removes the record and despawns the entity", () => {
-    const { store, despawned } = createTestStore();
+    const { store, despawned } = createTestStore("common");
     const record = store.spawn({ itemId: "a", position: [0, 0, 0] });
     const taken = store.take(record.instanceId);
     expect(taken).toEqual(record);
@@ -139,7 +147,7 @@ describe("createWorldItemStore", () => {
   });
 
   test("remove despawns the entity and drops the record with no grant involved", () => {
-    const { store, despawned } = createTestStore();
+    const { store, despawned } = createTestStore("common");
     const record = store.spawn({ itemId: "a", position: [0, 0, 0] });
     const removed = store.remove(record.instanceId);
     expect(removed).toEqual(record);
@@ -148,7 +156,7 @@ describe("createWorldItemStore", () => {
   });
 
   test("remove leaves no orphaned record once the entity is despawned", () => {
-    const { store } = createTestStore();
+    const { store } = createTestStore("common");
     const a = store.spawn({ itemId: "a", position: [0, 0, 0] });
     const b = store.spawn({ itemId: "b", position: [1, 0, 0] });
     store.remove(a.instanceId);
