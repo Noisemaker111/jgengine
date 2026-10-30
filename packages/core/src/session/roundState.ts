@@ -157,7 +157,7 @@ export function createRoundState<TPhase extends string>(config: RoundConfig<TPha
   });
 
   function remainingSeconds(): number {
-    return phases.remainingSeconds() ?? 0;
+    return matchOver ? 0 : phases.remainingSeconds() ?? 0;
   }
 
   function economyFor(team: string): RoundEconomy {
@@ -260,7 +260,7 @@ export function createRoundState<TPhase extends string>(config: RoundConfig<TPha
     },
     phase: () => phases.state(),
     round: () => round,
-    timeLeft: () => Math.max(0, matchOver ? 0 : remainingSeconds()),
+    timeLeft: () => Math.max(0, remainingSeconds()),
     score: (team) => scores[team] ?? 0,
     economyFor,
     roleOf: (team) => roles[team],

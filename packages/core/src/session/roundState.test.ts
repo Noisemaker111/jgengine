@@ -73,6 +73,9 @@ describe("round state machine", () => {
     const events = round.tick(3);
     expect(events.some((e) => e.kind === "match.end")).toBe(true);
     expect(round.snapshot().matchOver).toBe(true);
+    expect(round.phase()).toBe("end");
+    expect(round.timeLeft()).toBe(0);
+    expect(round.snapshot().timeLeft).toBe(0);
     expect(round.tick(10)).toEqual([]);
   });
 
