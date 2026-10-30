@@ -1404,6 +1404,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
 
+## motion-track — move a thing along a path over time and report its arrival
+
+- `createMotionTrack` (function) · `import { createMotionTrack } from "@jgengine/core/movement/motionTrack"`
+
 ## motorcycle-modes — weave and wobble eigenvalues of a multibody motorcycle at any speed
 
 - `motorcycleStraightRunningModes` (function) · `import { motorcycleStraightRunningModes } from "@jgengine/core/physics/reference/referenceMotorcycle"`

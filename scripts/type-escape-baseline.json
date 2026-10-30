@@ -792,7 +792,6 @@
   "packages/core/src/bossArena/bossArena.test.ts": {"nonNull":4},
   "packages/core/src/breeding/breeding.test.ts": {"nonNull":10,"cast":2},
   "packages/core/src/breeding/breeding.ts": {"nonNull":1},
-  "packages/core/src/breeding/inheritance.ts": {"cast":3,"nonNull":2},
   "packages/core/src/buildings/buildingIndex.ts": {"nonNull":2},
   "packages/core/src/buildings/buildingKit.draw.test.ts": {"nonNull":4},
   "packages/core/src/buildings/buildingKit.ts": {"cast":3},
