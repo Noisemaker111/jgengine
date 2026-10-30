@@ -143,6 +143,168 @@ export function createStateSchedule<T>(config: StateScheduleConfig<T>): StateSch
   };
 }
 
+/** One phase of a {@link PhaseSchedule}: a named state that ends on its own duration or when the caller advances it. */
+export interface PhaseSpec<T> {
+  state: T;
+  /** Seconds this phase holds before it ends on its own; omit it for a phase that only `advance()` ends. */
+  durationSeconds?: number;
+}
+
+/** Named states one after another, each ended by its own duration or by the caller. */
+export interface PhaseScheduleConfig<T> {
+  phases: readonly PhaseSpec<T>[];
+  /** Wrap from the last phase back to the first (default `false`: the last phase ends the schedule). */
+  loop?: boolean;
+}
+
+/** One phase change a {@link PhaseSchedule.tick} made. */
+export interface PhaseStep<T> {
+  from: T;
+  to: T;
+  /** True when the change wrapped from the last phase back to the first. */
+  wrapped: boolean;
+}
+
+/** Plain JSON position in a phase schedule. */
+export interface PhaseScheduleState {
+  index: number;
+  elapsedSeconds: number;
+  /** True once the last phase of a non-looping schedule has ended. */
+  ended: boolean;
+}
+
+/**
+ * The stateful sibling of {@link StateSchedule}: where that one answers "which state is `t`" for any
+ * absolute time, this one holds where the phases actually are. A phase with `durationSeconds` ends by
+ * itself inside `tick(dt)`; a phase without one holds until the caller says `advance()`, so a match's
+ * buy→live→end cycle and a ride's load→ride→unload cycle are the same list with different durations.
+ * `snapshot()`/`restore()` round-trip where it stands, so a save resumes mid-phase.
+ */
+export interface PhaseSchedule<T> {
+  readonly size: number;
+  state(): T;
+  index(): number;
+  /** Seconds left in the current phase; `null` while it waits for `advance()`, `0` once it has ended. */
+  remainingSeconds(): number | null;
+  /** Elapsed fraction of a timed phase in `[0, 1]`; `0` on a phase that waits for `advance()`. */
+  fraction(): number;
+  /** True once the last phase of a non-looping schedule ended; `advance()` is then a no-op. */
+  ended(): boolean;
+  /** End the current phase now. Returns the state entered; stays put at the end of a non-looping schedule. */
+  advance(): T;
+  /** Jump to the phase whose state is `state`, clearing its elapsed time; false when the list has no such phase. */
+  enter(state: T): boolean;
+  /** Advance by `dt` through every timed phase it ends, in order. Phases without a duration never end here. */
+  tick(dt: number): PhaseStep<T>[];
+  /** Back to the first phase, elapsed cleared, `ended()` false. */
+  reset(): void;
+  snapshot(): PhaseScheduleState;
+  restore(state: PhaseScheduleState): void;
+}
+
+/**
+ * A stateful timeline of named phases, ended by their own durations or by `advance()`.
+ *
+ * @capability phase-schedule advance named phases by time or by event, with snapshot/restore
+ */
+export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSchedule<T> {
+  const phases = config.phases.map((phase, index) => {
+    const durationSeconds = phase.durationSeconds;
+    if (durationSeconds === undefined) return { state: phase.state, durationSeconds: null };
+    if (!Number.isFinite(durationSeconds) || durationSeconds < 0) {
+      throw new Error(`schedule phase ${index} needs a finite duration of at least zero, got ${durationSeconds}`);
+    }
+    return { state: phase.state, durationSeconds };
+  });
+  if (phases.length === 0) throw new Error("phase schedule needs at least one phase");
+  const loop = config.loop ?? false;
+  const last = phases.length - 1;
+  let index = 0;
+  let elapsedSeconds = 0;
+  let ended = false;
+
+  function durationAt(at: number): number | null {
+    return phases[at]?.durationSeconds ?? null;
+  }
+
+  function enterAt(next: number, carrySeconds: number): void {
+    index = next;
+    elapsedSeconds = carrySeconds;
+    ended = false;
+  }
+
+  function advance(): T {
+    const current = phases[index]!.state;
+    if (ended) return current;
+    if (index === last && !loop) {
+      ended = true;
+      return current;
+    }
+    enterAt(index === last ? 0 : index + 1, 0);
+    return phases[index]!.state;
+  }
+
+  return {
+    size: phases.length,
+    state: () => phases[index]!.state,
+    index: () => index,
+    remainingSeconds() {
+      if (ended) return 0;
+      const duration = durationAt(index);
+      return duration === null ? null : Math.max(0, duration - elapsedSeconds);
+    },
+    fraction() {
+      if (ended) return 1;
+      const duration = durationAt(index);
+      if (duration === null) return 0;
+      if (duration <= 0) return 1;
+      return Math.max(0, Math.min(1, elapsedSeconds / duration));
+    },
+    ended: () => ended,
+    advance,
+    enter(state) {
+      const found = phases.findIndex((phase) => phase.state === state);
+      if (found < 0) return false;
+      enterAt(found, 0);
+      return true;
+    },
+    tick(dt) {
+      const steps: PhaseStep<T>[] = [];
+      if (!(dt > 0) || ended) return steps;
+      elapsedSeconds += dt;
+      let guard = phases.length * 2 + 2;
+      while (guard > 0) {
+        guard -= 1;
+        const duration = durationAt(index);
+        if (duration === null || elapsedSeconds < duration) break;
+        if (index === last && !loop) {
+          elapsedSeconds = duration;
+          ended = true;
+          break;
+        }
+        const carry = elapsedSeconds - duration;
+        const from = phases[index]!.state;
+        enterAt(index === last ? 0 : index + 1, carry);
+        steps.push({ from, to: phases[index]!.state, wrapped: index === 0 });
+      }
+      return steps;
+    },
+    reset() {
+      index = 0;
+      elapsedSeconds = 0;
+      ended = false;
+    },
+    snapshot: () => ({ index, elapsedSeconds, ended }),
+    restore(state) {
+      index = Number.isFinite(state.index) ? Math.max(0, Math.min(last, Math.floor(state.index))) : 0;
+      const duration = durationAt(index);
+      const elapsed = Number.isFinite(state.elapsedSeconds) ? Math.max(0, state.elapsedSeconds) : 0;
+      elapsedSeconds = duration === null ? 0 : Math.min(duration, elapsed);
+      ended = state.ended;
+    },
+  };
+}
+
 export interface ClearWindowScan {
   fromSeconds: number;
   horizonSeconds: number;
