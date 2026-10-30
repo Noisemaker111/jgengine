@@ -169,11 +169,13 @@ export function resolveRoutine(config: RoutineConfig): RoutineTimeline {
   for (let i = 0; i < stops.length; i += 1) {
     const stop = stopAt(i);
     const next = stopAt((i + 1) % stops.length);
-    const holdSeconds = stop.departAt - stop.arriveAt;
+    // A lone stop never walks to itself: it holds the whole cycle.
+    const holdSeconds = stops.length === 1 ? cycleSeconds : stop.departAt - stop.arriveAt;
     if (holdSeconds > 0) {
       slots.push({ kind: "hold", stop: i });
       slotSeconds.push(holdSeconds);
     }
+    if (stops.length === 1) continue;
     const walkSeconds = next.arriveAt + (next.index === 0 ? cycleSeconds : 0) - stop.departAt;
     if (walkSeconds > 0) {
       slots.push({ kind: "travel", from: i });
@@ -198,7 +200,7 @@ export function resolveRoutine(config: RoutineConfig): RoutineTimeline {
         travelling: false,
         progress: 0,
         since: cycle + stop.arriveAt,
-        until: cycle + stop.departAt,
+        until: cycle + (stops.length === 1 ? stop.arriveAt + cycleSeconds : stop.departAt),
       };
     }
     const from = stopAt(slot.from);

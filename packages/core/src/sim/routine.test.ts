@@ -96,6 +96,12 @@ describe("resolveRoutine", () => {
     const stay = resolveRoutine({ stops: [{ place: "chair", arriveAt: 0 }] });
     expect(stay.phaseAt(DAY * 2)).toMatchObject({ place: "chair", travelling: false, stop: 0 });
     expect(stay.nextChangeAfter(1234)).toBe(DAY);
+
+    const lone = resolveRoutine({ stops: [{ place: "chair", arriveAt: 100, travelSeconds: 50 }] });
+    for (const time of [100, DAY - 10, DAY + 60, DAY + 120]) {
+      expect(lone.phaseAt(time)).toMatchObject({ place: "chair", travelling: false, stop: 0 });
+    }
+    expect(lone.phaseAt(DAY + 120).until).toBe(2 * DAY + 100);
   });
 
   test("refuses a day it cannot walk: unsorted stops, times outside the cycle, too little room", () => {
