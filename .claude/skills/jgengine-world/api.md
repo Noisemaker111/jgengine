@@ -17,7 +17,7 @@
 - `AlertStats` (interface): interface AlertStats — Counters a devtools probe, a HUD or a test reads.
 - `AlertStep` (interface): interface AlertStep<Tier> — One tick's answer: the value, the tier, the anchor and the escape.
 - `AlertTickContext` (interface): interface AlertTickContext — Per-tick world facts {@link AlertLevel.tick} needs but cannot derive itself.
-- `AlertTuning` (interface): interface AlertTuning<Tier> — Every number an alert level runs on; the game supplies each one.
+- `AlertTuning` (interface): interface AlertTuning<Tier> — Everything an alert level runs on; the game supplies it all.
 - `AlertWitness` (interface): interface AlertWitness — The sight seam: what each observer remembers of the target, asked one observer at a time. Pass `createPerception` (`sensor/perception`) straight in — a report counts when an observer still holds the target in view, so there is no second sight path to keep in step.
 - `createAlertLevel` (function): function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLevel<Tier> — An alert level any stealth, heist or pursuit game can use, over the meter and ladder parts: reports raise a bounded value only while an observer holds the target in view, the value bleeds on the caller's curve once the target has been out of every observer's sight, labelled cut points decide what the alert resolves to, and a stand-down countdown tells the caller when to call its units off. The value, its rates, the cut points and every label are caller policy; sight facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
 
@@ -6278,7 +6278,7 @@
 - `AlertStats` (interface): interface AlertStats — Counters a devtools probe, a HUD or a test reads.
 - `AlertStep` (interface): interface AlertStep<Tier> — One tick's answer: the value, the tier, the anchor and the escape.
 - `AlertTickContext` (interface): interface AlertTickContext — Per-tick world facts {@link AlertLevel.tick} needs but cannot derive itself.
-- `AlertTuning` (interface): interface AlertTuning<Tier> — Every number an alert level runs on; the game supplies each one.
+- `AlertTuning` (interface): interface AlertTuning<Tier> — Everything an alert level runs on; the game supplies it all.
 - `AlertWitness` (interface): interface AlertWitness — The sight seam: what each observer remembers of the target, asked one observer at a time. Pass `createPerception` (`sensor/perception`) straight in — a report counts when an observer still holds the target in view, so there is no second sight path to keep in step.
 - `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
 - `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
