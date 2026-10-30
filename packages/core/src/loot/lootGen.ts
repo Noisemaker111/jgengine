@@ -1,6 +1,7 @@
 import { devtools } from "../devtools/devtools";
 import type { AffixPool, ItemBaseDef, RarityTier, RolledAffix } from "../item/affix";
 import { slotAccepts, type MountSlotDef, type PartDef } from "../item/modularItem";
+import { foldStatContributions, type StatContribution, type StatOp } from "../progression/statGraph";
 import { pickWeighted } from "../random/pick";
 
 /** Cap on affixes one item may roll, so a bad catalog cannot make a drop cost unbounded work. */
@@ -437,29 +438,28 @@ export function rollLoot(catalog: LootCatalog, rng: () => number, options: LootR
     });
   }
 
-  const stats: Record<string, number> = {};
-  const add = (stat: string, amount: number) => {
-    stats[stat] = (stats[stat] ?? 0) + amount;
-  };
-  const mul = (stat: string, factor: number) => {
-    stats[stat] = (stats[stat] ?? 0) * factor;
+  const stacks = new Map<string, StatContribution[]>();
+  const contribute = (stat: string, op: StatOp, value: number, source: string): void => {
+    const contribution: StatContribution = { source, op, value };
+    const existing = stacks.get(stat);
+    if (existing === undefined) stacks.set(stat, [contribution]);
+    else existing.push(contribution);
   };
 
   const rarityScale = resolveStatScale(rarity);
-  for (const [stat, value] of Object.entries(base.baseStats)) add(stat, value * rarityScale * scale);
+  for (const [stat, value] of Object.entries(base.baseStats)) contribute(stat, "add", value * rarityScale * scale, "base");
   for (const installed of parts) {
     const part = catalog.parts.find((entry) => entry.id === installed.partId);
     if (part === undefined) continue;
-    for (const [stat, value] of Object.entries(part.stats ?? {})) add(stat, value * scale);
-    for (const [stat, factor] of Object.entries(part.multipliers ?? {})) mul(stat, factor);
+    for (const [stat, value] of Object.entries(part.stats ?? {})) contribute(stat, "add", value * scale, installed.partId);
+    for (const [stat, factor] of Object.entries(part.multipliers ?? {})) contribute(stat, "mul", factor, installed.partId);
   }
-  for (const [stat, value] of Object.entries(manufacturer.bias ?? {})) add(stat, value * scale);
-  for (const [stat, factor] of Object.entries(manufacturer.scale ?? {})) mul(stat, factor);
-  for (const affix of affixes) {
-    if (affix.op === "mul") mul(affix.stat, affix.value);
-    else add(affix.stat, affix.value);
-  }
-  for (const stat of Object.keys(stats)) stats[stat] = Math.round(stats[stat]! * 1000) / 1000;
+  for (const [stat, value] of Object.entries(manufacturer.bias ?? {})) contribute(stat, "add", value * scale, manufacturer.id);
+  for (const [stat, factor] of Object.entries(manufacturer.scale ?? {})) contribute(stat, "mul", factor, manufacturer.id);
+  for (const affix of affixes) contribute(affix.stat, affix.op, affix.value, affix.id);
+
+  const stats: Record<string, number> = {};
+  for (const [stat, stack] of stacks) stats[stat] = Math.round(foldStatContributions(0, stack) * 1000) / 1000;
   const mass = Math.round((base.mass ?? 1) * (1 + 0.1 * (level - 1)) * 100) / 100;
 
   return {
