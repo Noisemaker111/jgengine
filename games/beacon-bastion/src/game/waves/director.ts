@@ -1,7 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { EncounterOrder } from "@jgengine/core/waves/encounter";
-import { advanceBoss, createBossState } from "@jgengine/core/ai/director/boss";
 import { evaluatePressure, type PressurePlan } from "@jgengine/core/waves/pressure";
 import { advancePathFollow, createPathFollow, type PathFollowState } from "@jgengine/core/nav/pathFollow";
 import { vec3 } from "@jgengine/core/world/vec3";
@@ -9,7 +8,7 @@ import { vec3 } from "@jgengine/core/world/vec3";
 import { councilScale, difficultyOf } from "../campaign";
 import { creepDef } from "../entities/enemies/catalog";
 import { gameClockMs, session, nextCreepInstanceId, newShield, newSpeedStats, type CreepRuntime } from "../session";
-import { bossProfile, PRESSURE_RULE, TOTAL_WAVES } from "./manifest";
+import { advanceBossPhase, bossProfile, createBossPhaseState, PRESSURE_RULE, TOTAL_WAVES } from "./manifest";
 import { KEEP_POINT, routeOf, SPAWN_POINT_KEY } from "../world/path";
 import { finishRun } from "./legacy";
 import { keep, runEnded } from "../keep";
@@ -102,7 +101,7 @@ function spawnCreep(ctx: GameContext, order: EncounterOrder): void {
   const instanceId = spawnRaider(ctx, order.unit, order.entry ?? SPAWN_POINT_KEY);
   const profile = bossProfile(order.unit);
   if (profile !== null) {
-    session.boss = { instanceId, unitId: order.unit, state: createBossState(profile.phases), stance: "opening" };
+    session.boss = { instanceId, unitId: order.unit, state: createBossPhaseState(profile.phases), stance: "opening" };
     const tell = profile.tells["arrival"];
     if (tell !== undefined) ctx.game.notices.push({ text: tell, ttlMs: 2500 });
   }
@@ -130,7 +129,7 @@ function tickBoss(ctx: GameContext, dt: number): void {
     return;
   }
   const fraction = health.max <= 0 ? 0 : Math.max(0, health.current) / health.max;
-  const step = advanceBoss(profile.phases, boss.state, fraction, dt);
+  const step = advanceBossPhase(profile.phases, boss.state, fraction, dt);
   if (step.changed) {
     const stance = profile.stance[step.phase.id];
     if (stance !== undefined) {

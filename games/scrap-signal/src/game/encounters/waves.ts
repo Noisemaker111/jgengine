@@ -1,4 +1,4 @@
-import type { BossPhase } from "@jgengine/core/ai/director/boss";
+import type { SquadRole } from "@jgengine/core/combat/squadTactics";
 import type { EncounterDefinition } from "@jgengine/core/waves/encounter";
 import type { PressureRule } from "@jgengine/core/waves/pressure";
 
@@ -92,11 +92,22 @@ export const FRONT_PRESSURE: PressureRule = {
 /** The Ripper pack's alpha: a convoy-fed maw that leads the front's last wave. */
 export const FOREMAN_ID = "foreman_maw";
 
+/** One of the Foreman's phases: the health it starts at, how he fights, and what he says entering it. */
+export interface ForemanPhase {
+  id: string;
+  /** Health fraction at or below which this phase is in effect, `0..1`. The opening phase is `1`. */
+  atHealth: number;
+  /** The role dials he fights with while this phase holds: the same dials a squad role uses. */
+  behaviour: Omit<SquadRole, "id" | "count">;
+  /** What he announces on entering the phase, and how long the player has to read it. */
+  tell: { id: string; telegraphSeconds: number };
+}
+
 /**
- * Three authored phases. Thresholds, monotone order and the tell fire are the engine's; what each
- * phase *does* is the stance table below, which is this game's content.
+ * Three authored phases. What each phase *does* is the stance table below, which is this game's
+ * content; the health each starts at is what his clock reads.
  */
-export const FOREMAN_PHASES: readonly BossPhase[] = [
+export const FOREMAN_PHASES: readonly ForemanPhase[] = [
   {
     id: "stoke",
     atHealth: 1,

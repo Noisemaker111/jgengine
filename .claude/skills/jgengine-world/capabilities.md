@@ -311,14 +311,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
 
-## boss-phase-state — fresh serializable boss phase state that opens in the first phase
-
-- `createBossState` (function) · `import { createBossState } from "@jgengine/core/ai/director/boss"`
-
-## boss-phases — data-authored boss phases that change behaviour and fire a tell at health thresholds
-
-- `advanceBoss` (function) · `import { advanceBoss } from "@jgengine/core/ai/director/boss"`
-
 ## bounded-grid-route — distinguish no path from exhausted grid search work
 
 - `findPathResult` (function) · `import { findPathResult } from "@jgengine/core/nav/navGrid"`
@@ -1912,6 +1904,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## rigid-body-tree — exact multibody dynamics of a tree of rigid bodies — mass matrix, bias forces, point Jacobians
 
 - `createRigidBodyTree` (function) · `import { createRigidBodyTree } from "@jgengine/core/physics/reference/rigidBodyTree"`
+
+## ring-wall — solid ring wall round a circular floor, following the ground
+
+- `ringWall` (function) · `import { ringWall } from "@jgengine/core/world/ringWall"`
 
 ## road-ribbons — draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
 

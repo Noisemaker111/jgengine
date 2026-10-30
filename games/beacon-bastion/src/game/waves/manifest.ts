@@ -1,4 +1,4 @@
-import type { BossPhase } from "@jgengine/core/ai/director/boss";
+import { crossThresholds } from "@jgengine/core/threshold/thresholds";
 import type { EncounterDefinition, EncounterWave } from "@jgengine/core/waves/encounter";
 import type { PressureRule } from "@jgengine/core/waves/pressure";
 
@@ -119,6 +119,43 @@ export interface BossStance {
   summon?: readonly { unit: string; count: number }[];
 }
 
+/** The warning a boss gives as a phase opens, and how long the player has to read it. */
+export interface BossTell {
+  /** The key into the profile's `tells` table. */
+  id: string;
+  /** Seconds the tell stays up. */
+  telegraphSeconds: number;
+}
+
+/** One authored phase: the health it starts at and the tell that announces it. */
+export interface BossPhase {
+  id: string;
+  /** Health fraction at or below which this phase is in effect, `0..1`. The opening phase is `1`. */
+  atHealth: number;
+  tell: BossTell;
+}
+
+/** Which phase a boss holds, the tell still showing and how long it has left. */
+export interface BossPhaseState {
+  /** Id of the phase in effect. */
+  phaseId: string;
+  /** Tell still showing, or null. */
+  tellId: string | null;
+  /** Seconds left on the showing tell. */
+  tellRemaining: number;
+}
+
+/** One step of a boss's clock. */
+export interface BossPhaseStep {
+  state: BossPhaseState;
+  /** The phase in effect after the step. */
+  phase: BossPhase;
+  /** True on the step the phase changed. */
+  changed: boolean;
+  /** The tell to fire now, or null. Only set on a change, so a caller never replays a tell. */
+  tell: BossTell | null;
+}
+
 export interface BossProfile {
   /** Thresholds and tells, high to low. */
   phases: readonly BossPhase[];
@@ -128,14 +165,49 @@ export interface BossProfile {
   tells: Record<string, string>;
 }
 
+/** Fresh phase state for a phase list, opening in the first phase with no tell showing. */
+export function createBossPhaseState(phases: readonly BossPhase[]): BossPhaseState {
+  const opening = phases[0];
+  if (opening === undefined) throw new Error("a boss needs at least one phase");
+  return { phaseId: opening.id, tellId: null, tellRemaining: 0 };
+}
+
+/** The phase a boss fights in at a health fraction: the health it has lost puts it on a rung, and it never falls back one. */
+export function bossPhaseAt(phases: readonly BossPhase[], held: string, health: number): BossPhase {
+  const value = Number.isFinite(health) ? Math.max(0, Math.min(1, health)) : 1;
+  const steps = phases.map((phase, index) => ({ id: index, at: phase.atHealth }));
+  const crossed = crossThresholds(steps, 1, value, { inclusive: false });
+  const deepest = crossed[crossed.length - 1];
+  const heldIndex = phases.findIndex((phase) => phase.id === held);
+  const phase = phases[Math.max(0, heldIndex, deepest === undefined ? 0 : deepest.id)] ?? phases[0];
+  if (phase === undefined) throw new Error("a boss needs at least one phase");
+  return phase;
+}
+
 /**
- * The Warden's three phases. Thresholds and tells are engine data; what a phase *does* is this
- * game's stance table below, so the phase change is visible on the field.
+ * Advance a boss by `dt` at a health fraction. A phase changes when health reaches its threshold and
+ * changes *behaviour with it* (the stance and escort the profile gives that phase), announced by a
+ * tell the player has time to answer. Phase order is monotone, so a heal does not rewind the boss and
+ * a caller cannot stack tells by re-entering the same threshold.
+ */
+export function advanceBossPhase(phases: readonly BossPhase[], state: BossPhaseState, health: number, dt: number): BossPhaseStep {
+  const phase = bossPhaseAt(phases, state.phaseId, health);
+  if (phase.id !== state.phaseId) {
+    return { state: { phaseId: phase.id, tellId: phase.tell.id, tellRemaining: phase.tell.telegraphSeconds }, phase, changed: true, tell: phase.tell };
+  }
+  const step = Number.isFinite(dt) && dt > 0 ? dt : 0;
+  const tellRemaining = Math.max(0, state.tellRemaining - step);
+  return { state: { phaseId: phase.id, tellId: tellRemaining <= 0 ? null : state.tellId, tellRemaining }, phase, changed: false, tell: null };
+}
+
+/**
+ * The Warden's three phases. The health each starts at is what its clock reads; what a phase *does* is
+ * this game's stance table below, so the phase change is visible on the field.
  */
 const WARDEN_PHASES: readonly BossPhase[] = [
-  { id: "opening", atHealth: 1, behaviour: {}, tell: { id: "arrival", telegraphSeconds: 2.5 } },
-  { id: "enraged", atHealth: 0.6, behaviour: {}, tell: { id: "roar", telegraphSeconds: 2.5 } },
-  { id: "last-stand", atHealth: 0.25, behaviour: {}, tell: { id: "dig-in", telegraphSeconds: 2.5 } },
+  { id: "opening", atHealth: 1, tell: { id: "arrival", telegraphSeconds: 2.5 } },
+  { id: "enraged", atHealth: 0.6, tell: { id: "roar", telegraphSeconds: 2.5 } },
+  { id: "last-stand", atHealth: 0.25, tell: { id: "dig-in", telegraphSeconds: 2.5 } },
 ];
 
 const WARDEN_STANCE: Record<string, BossStance> = {
@@ -153,9 +225,9 @@ const WARDEN_TELL_TEXT: Record<string, string> = {
 
 /** The composed boss: slower to anger, faster once it does, and it digs in earlier. */
 const WARLORD_PHASES: readonly BossPhase[] = [
-  { id: "opening", atHealth: 1, behaviour: {}, tell: { id: "arrival", telegraphSeconds: 3 } },
-  { id: "enraged", atHealth: 0.65, behaviour: {}, tell: { id: "roar", telegraphSeconds: 2.5 } },
-  { id: "last-stand", atHealth: 0.3, behaviour: {}, tell: { id: "dig-in", telegraphSeconds: 2 } },
+  { id: "opening", atHealth: 1, tell: { id: "arrival", telegraphSeconds: 3 } },
+  { id: "enraged", atHealth: 0.65, tell: { id: "roar", telegraphSeconds: 2.5 } },
+  { id: "last-stand", atHealth: 0.3, tell: { id: "dig-in", telegraphSeconds: 2 } },
 ];
 
 const WARLORD_STANCE: Record<string, BossStance> = {

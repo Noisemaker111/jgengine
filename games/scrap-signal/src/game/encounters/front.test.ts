@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createBossState } from "@jgengine/core/ai/director/boss";
 import { expandWave } from "@jgengine/core/waves/encounter";
 import type { FighterState } from "@jgengine/core/ai/director/roles";
 
@@ -108,35 +107,48 @@ describe("the pressure cap", () => {
 
 describe("the Foreman's phases", () => {
   test("health thresholds change the phase, fire each tell once, and never rewind", () => {
-    const opening = createBossState(FOREMAN_PHASES);
-    expect(opening.phaseId).toBe("stoke");
+    const opening = FOREMAN_PHASES[0];
+    if (opening === undefined) throw new Error("the Foreman has no phases");
+    expect(opening.id).toBe("stoke");
 
-    const steady = stepForeman(opening, 1, 0.2);
+    const steady = stepForeman(opening.id, 1);
     expect(steady.changed).toBe(false);
-    expect(steady.tell).toBeNull();
+    expect(steady.phase.id).toBe("stoke");
 
-    const second = stepForeman(opening, 0.55, 0.2);
+    const second = stepForeman(opening.id, 0.55);
     expect(second.changed).toBe(true);
     expect(second.phase.id).toBe("stampede");
-    expect(second.tell?.id).toBe("lunge");
+    expect(second.phase.tell.id).toBe("lunge");
     expect(FOREMAN_TELL_TEXT.lunge).toBeTruthy();
     // The phase changed the fight, not just the label.
     expect(second.phase.behaviour.discipline?.fireInterval).toBeLessThan(
-      FOREMAN_PHASES[0]!.behaviour.discipline?.fireInterval ?? 0,
+      opening.behaviour.discipline?.fireInterval ?? 0,
     );
 
-    const held = stepForeman(second.state, 0.5, 0.2);
+    const held = stepForeman(second.phase.id, 0.5);
     expect(held.changed).toBe(false);
-    expect(held.tell).toBeNull();
+    expect(held.phase.id).toBe("stampede");
 
     // A heal does not rewind, and it cannot re-fire the tell.
-    const healed = stepForeman(second.state, 0.95, 0.2);
+    const healed = stepForeman(second.phase.id, 0.95);
+    expect(healed.changed).toBe(false);
     expect(healed.phase.id).toBe("stampede");
-    expect(healed.tell).toBeNull();
 
-    const last = stepForeman(second.state, 0.2, 0.2);
+    const last = stepForeman(second.phase.id, 0.2);
+    expect(last.changed).toBe(true);
     expect(last.phase.id).toBe("starving");
-    expect(last.tell?.id).toBe("starve");
+    expect(last.phase.tell.id).toBe("starve");
+  });
+
+  test("the phases run high to low and the opening starts at full health", () => {
+    const [opening, ...later] = FOREMAN_PHASES;
+    if (opening === undefined) throw new Error("the Foreman has no phases");
+    expect(opening.atHealth).toBe(1);
+    let previous = opening.atHealth;
+    for (const phase of later) {
+      expect(phase.atHealth).toBeLessThan(previous);
+      previous = phase.atHealth;
+    }
   });
 });
 

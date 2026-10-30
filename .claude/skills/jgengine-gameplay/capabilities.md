@@ -37,10 +37,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ambientTemperature` (function) · `import { ambientTemperature } from "@jgengine/core/gameplay"`
 
-## arena-wall — solid ring wall round a circular arena floor, following the ground
-
-- `arenaWall` (function) · `import { arenaWall } from "@jgengine/core/bossArena/bossArena"`
-
 ## auction-book — timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement
 
 - `createAuctionBook` (function) · `import { createAuctionBook } from "@jgengine/core/gameplay"`
@@ -60,10 +56,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## body-temperature — hypothermia and hyperthermia from ambient temperature, insulation and fortitude, as vital drain and exposure damage
 
 - `bodyComfort` (function) · `import { bodyComfort } from "@jgengine/core/gameplay"`
-
-## boss-arena — summoned boss fights: tribute and level gates, a portal that takes survivors and companions in, win, wipe and the trip home
-
-- `createBossArena` (function) · `import { createBossArena } from "@jgengine/core/bossArena/bossArena"`
 
 ## breeding — tame pairs mate, eggs incubate by temperature or mothers gestate, babies grow and imprint through care
 

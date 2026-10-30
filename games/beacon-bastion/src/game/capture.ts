@@ -42,7 +42,7 @@ function stageBossWave(ctx: GameContext): void {
   const health = ctx.scene.entity.stats.get(boss.instanceId, "health");
   if (health === null || health.max <= 0) return;
   // Put the Warden under its second threshold so the next simulated tick runs the real
-  // `advanceBoss` transition and raises its tell, rather than photographing a phase banner.
+  // phase change and raises its tell, rather than photographing a phase banner.
   ctx.scene.entity.stats.set(boss.instanceId, "health", { current: Math.round(health.max * 0.55) });
   advance(ctx, STEP * 2);
 }

@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { createGameSave } from "@jgengine/core/save/saveDocument";
 import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 import type { HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
-import { createBossState } from "@jgengine/core/ai/director/boss";
 
 import { STARTING_LIVES } from "./entities/base/catalog";
 import { keep, towerLevel } from "./keep";
@@ -10,7 +9,7 @@ import { resetSession, session } from "./session";
 import { advanceKeep, beaconRunner } from "./testing";
 import { captureDefense, defenseSystem, legacySystem, validDefenseSave, worldSystem } from "./save";
 import { drawRelics, freshLegacy, legacy, openingGold, upgradeLegacy, writeLegacy } from "./waves/legacy";
-import { WARDEN_ID, bossProfile } from "./waves/manifest";
+import { WARDEN_ID, bossProfile, createBossPhaseState } from "./waves/manifest";
 
 let runner: HeadlessRunner;
 const world = () => keep.of(runner.ctx);
@@ -41,7 +40,7 @@ function playedIntoWave(): void {
   session.boss = {
     instanceId: "warden-1",
     unitId: WARDEN_ID,
-    state: createBossState(bossProfile(WARDEN_ID)!.phases),
+    state: createBossPhaseState(bossProfile(WARDEN_ID)!.phases),
     stance: "opening",
   };
 }

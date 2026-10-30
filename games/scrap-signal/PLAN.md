@@ -114,7 +114,7 @@ The kinds are counted from the game's data: `quests` is every quest in the catal
 | hub vendors | `@jgengine/core/economy/transactionLedger` | covered |
 | bank | `@jgengine/core/inventory/inventoryModel` | covered: a named inventory the hub terminal opens |
 | zone gates | `@jgengine/core/progression/gates` | covered |
-| bosses | `@jgengine/core/ai/director/boss` | covered |
+| bosses | `@jgengine/core/threshold/thresholds` | covered: the health ladder picks the phase, the game's data says what it does |
 | second wind | `@jgengine/core/combat/downed` | covered |
 | onboarding hints | `@jgengine/core/onboarding/onboardingSystem` (blended style) and `OnboardingHud` | covered |
 | quest marker | `@jgengine/core/map/waypointMarkers.view` | covered: the game picks the point, the engine draws the pin and edge arrow |

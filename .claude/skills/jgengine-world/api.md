@@ -87,17 +87,6 @@
 - `planLookahead` (function): function planLookahead<S, M>(root: S, domain: LookaheadDomain<S, M>, profile: DifficultyProfile, rng: () => number): M | null — Pick the agent's next move by bounded lookahead: a depth-limited negamax (or single-perspective sequence search when `adversarial: false`) over the caller's {@link LookaheadDomain}, exploring at most `profile.planWidth` moves per ply to `profile.planDepth` plies, with the final root choice run through {@link pickScored} so `decisionNoise` still injects tier-appropriate blunders. Depth `1` is greedy — an easy profile literally cannot see the fork coming; an expert profile finds multi-ply tactics. Work is bounded by `planWidth ** planDepth` domain calls; run it at decision cadence (turns, ability windows, order re-evaluation), not per frame.
 - `shouldUseAbility` (function): function shouldUseAbility(opportunity: number, profile: DifficultyProfile, rng: () => number): boolean — Should the agent spend an ability now? `opportunity` is the caller-scored quality of this moment in `0..1` (targets clumped for the AoE, player mid-animation, burn phase). The perceived opportunity is fuzzed by `decisionNoise` and compared against `abilityDiscipline`: an easy profile (low discipline, high noise) wastes cooldowns on weak moments and sometimes sits on a perfect window; an expert profile fires exactly on strong windows. One rng draw when noisy.
 
-## @jgengine/core/ai/director/boss
-
-- `BossBehaviour` (type): type BossBehaviour = Omit<SquadRole, "id" | "count"> — The role shape a boss fights with in one phase: the same dials a squad role uses.
-- `BossPhase` (interface): interface BossPhase — One authored phase: the health it starts at, how the boss fights, and its tell.
-- `BossState` (interface): interface BossState — Serializable boss state: which phase holds, how long it has held, and the tell still on screen.
-- `BossStep` (interface): interface BossStep — One step of the boss clock.
-- `BossTell` (interface): interface BossTell — The warning a boss gives while it changes phase, and how long the player has to read it.
-- `advanceBoss` (function): function advanceBoss(phases: readonly BossPhase[], state: BossState, health: number, dt: number): BossStep — Advance the boss by `dt` at a health fraction and return the phase in effect.
-- `bossPhase` (function): function bossPhase(phases: readonly BossPhase[], health: number): BossPhase — The phase a boss fights with at a health fraction. Pure read for a HUD; never mutates.
-- `createBossState` (function): function createBossState(phases: readonly BossPhase[]): BossState — Fresh boss state for a phase list, opening in phase 0 with no tell showing.
-
 ## @jgengine/core/ai/director/roles
 
 - `FightIntent` (type): type FightIntent = "retreat" | "hold" | "flank" | "cover" | "assault" — The five duties a fighter can be given in a fight. A duty is *who does what*; the squad role a game dials (range, angles, fire discipline) is *how that duty fights* and stays content.
@@ -7657,6 +7646,11 @@
 - `ResourceYield` (interface): interface ResourceYield — One resource kind a node can yield and its base per-harvest amount (before tool bias and harvester multiplier).
 - `ToolProfile` (interface): interface ToolProfile — How a tool extracts from a node — its per-hit power and per-resource yield bias. Two profiles over the same multi-resource node return different resources and amounts: the generic pick-vs-hatchet mechanic.
 - `createResourceNodeField` (function): function createResourceNodeField(config: ResourceNodeFieldConfig): ResourceNodeField — A field of depletable, respawning harvest nodes with tool-dependent yields — the generic rock / tree / bush / vein / corpse. Each node holds a finite budget across one or more resource kinds. A harvest applies a {@link ToolProfile} whose per-resource biases decide *which* resources and *how much* the same node returns (pick favors ore, hatchet favors wood), scaled by a creature/harvester multiplier and optional deterministic rng variance; the budget drops by the tool's power. When a node empties it starts a respawn timer that `tick(dt)` counts down and refills — unless respawn is suppressed by the per-node flag or the injected predicate (a structure claimed the spot). All state is plain and serializable for save-load and multiplayer sync via {@link snapshot}/{@link hydrate}.
+
+## @jgengine/core/world/ringWall
+
+- `RingWallOptions` (interface): interface RingWallOptions — Where a ring wall stands and how high it rises.
+- `ringWall` (function): function ringWall(options: RingWallOptions): WorldSolid[] — A solid ring wall round a circular floor: `sides` slabs, each standing on the lowest ground under it so no gap opens on a slope. Feed it to `ctx.world.solids.set`.
 
 ## @jgengine/core/world/sceneShapes
 

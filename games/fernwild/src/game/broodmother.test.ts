@@ -6,11 +6,11 @@ import { editorLayers } from "../editorLayers";
 import { onNewPlayer, survivorStart, systems } from "../loop";
 import { time, world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
-import { broodView, FIRST_SPIT, greenObelisk, obeliskPrompts, obeliskView } from "./broodmother";
+import { admitToLair, broodPhaseAt, broodView, fightSecondsLeft, FIRST_SPIT, greenObelisk, isInside, leaveFight, newBroodFight, obeliskPrompts, obeliskView, summonBrood, tickBroodFight, tributeCheck, type LairCandidate } from "./broodmother";
 import { SURVIVOR } from "./data/survivor";
 import { content } from "./content";
 import { creaturesView, tames } from "./creatures";
-import { BROOD_LAIR, BROOD_PHASES, BROOD_TIERS, TROPHY_DROPS } from "./data/bosses";
+import { BROOD_LAIR, BROOD_PHASES, BROOD_TIERS, broodTier, PORTAL, TROPHY_DROPS } from "./data/bosses";
 import { itemDef, itemTraits } from "./data/items";
 import { speciesDef } from "./data/species";
 import { survivorLevel, survivorView } from "./survivor";
@@ -188,3 +188,104 @@ test("a dead Argentavis carries its talon: E on the body opens it, and the talon
   tick(game, 0.1);
   expect(carried(game, "argentavis_talon")).toBe(1);
 });
+
+/** What the survivor carries, for a tribute: how many of an item, and taking them. */
+function bag(items: Record<string, number>) {
+  const held = { ...items };
+  return { held, count: (item: string) => held[item] ?? 0, take: (item: string, count: number) => void (held[item] = (held[item] ?? 0) - count) };
+}
+
+const AT = [10, 2, 20] as const;
+const survivor: LairCandidate = { id: "me", kind: "survivor", at: AT };
+
+test("a short tribute or level summons nothing and takes nothing", () => {
+  const gamma = broodTier("gamma");
+  if (gamma === null) throw new Error("Fernwild has no Gamma difficulty");
+  const items = bag({ artifact_clever: 1 });
+  const result = summonBrood(newBroodFight(), "gamma", items, 40, 0);
+  expect(result).toEqual({ ok: false, reason: "tribute", check: { ok: false, missing: [{ item: "artifact_hunter", need: 1, have: 0 }, { item: "artifact_massive", need: 1, have: 0 }], levelShort: 0 } });
+  expect(items.held).toEqual({ artifact_clever: 1 });
+  expect(tributeCheck(gamma, bag({ artifact_clever: 1, artifact_hunter: 1, artifact_massive: 1 }).count, 25)).toEqual({ ok: false, missing: [], levelShort: 5 });
+  expect(summonBrood(newBroodFight(), "gamma", bag({ artifact_clever: 1, artifact_hunter: 1, artifact_massive: 1 }), 25, 0)).toMatchObject({ ok: false, reason: "tribute" });
+  expect(summonBrood(newBroodFight(), "omega", bag({}), 30, 0)).toEqual({ ok: false, reason: "unknown" });
+});
+
+test("the portal takes the tribute, counts down, then takes everyone in range up to the caps", () => {
+  const items = bag({ artifact_clever: 2, artifact_hunter: 1, artifact_massive: 1 });
+  const summon = summonBrood(newBroodFight(), "gamma", items, 30, 100);
+  expect(summon.ok).toBe(true);
+  if (!summon.ok) return;
+  expect(items.held).toEqual({ artifact_clever: 1, artifact_hunter: 0, artifact_massive: 0 });
+  expect(summonBrood(summon.fight, "gamma", bag({ artifact_clever: 1, artifact_hunter: 1, artifact_massive: 1 }), 30, 101)).toEqual({ ok: false, reason: "busy" });
+  const crowd: LairCandidate[] = [
+    survivor,
+    { id: "friend", kind: "survivor", at: AT },
+    ...Array.from({ length: PORTAL.maxSurvivors - 2 }, (_unused, index) => ({ id: `survivor-${index}`, kind: "survivor" as const, at: AT })),
+    { id: "third", kind: "survivor", at: AT },
+    { id: "rex", kind: "companion", at: AT },
+    ...Array.from({ length: PORTAL.maxCompanions - 1 }, (_unused, index) => ({ id: `tame-${index}`, kind: "companion" as const, at: AT })),
+    { id: "wolf", kind: "companion", at: AT },
+  ];
+  const idle = tickBroodFight(summon.fight, 124, true, () => crowd);
+  expect(idle.events).toEqual([]);
+  expect(fightSecondsLeft(summon.fight, 124)).toBe(1);
+  const entered = tickBroodFight(summon.fight, 125, true, () => crowd);
+  expect(entered.events[0]).toMatchObject({ type: "entered", tier: "gamma", refused: ["third", "wolf"] });
+  expect(entered.fight.phase).toBe("fight");
+  expect(entered.fight.survivors).toHaveLength(PORTAL.maxSurvivors);
+  expect(entered.fight.companions).toHaveLength(PORTAL.maxCompanions);
+  expect(isInside(entered.fight, "rex")).toBe(true);
+  expect(isInside(entered.fight, "wolf")).toBe(false);
+});
+
+test("a portal with no survivor in range closes and the tribute is spent", () => {
+  const summon = summonBrood(newBroodFight(), "gamma", bag({ artifact_clever: 1, artifact_hunter: 1, artifact_massive: 1 }), 30, 0);
+  expect(summon.ok).toBe(true);
+  if (!summon.ok) return;
+  const tick = tickBroodFight(summon.fight, PORTAL.seconds, true, () => [{ id: "rex", kind: "companion", at: AT }]);
+  expect(tick.events).toEqual([{ type: "closed", tier: "gamma" }]);
+  expect(tick.fight).toEqual(newBroodFight());
+});
+
+test("a win holds the winners a minute, then sends each back where they stood", () => {
+  const summon = summonBrood(newBroodFight(), "gamma", bag({ artifact_clever: 1, artifact_hunter: 1, artifact_massive: 1 }), 30, 0);
+  if (!summon.ok) throw new Error("the gamma tribute should summon her");
+  const rex: LairCandidate = { id: "rex", kind: "companion", at: [1, 1, 1] };
+  const fight = tickBroodFight(summon.fight, PORTAL.seconds, true, () => [survivor, rex]).fight;
+  expect(tickBroodFight(fight, 40, true, () => [survivor]).events).toEqual([]);
+  const won = tickBroodFight(fight, 41, false, () => [survivor]);
+  expect(won.events).toEqual([{ type: "won", tier: "gamma", survivors: ["me"], companions: ["rex"] }]);
+  expect(fightSecondsLeft(won.fight, 41)).toBe(PORTAL.victorySeconds);
+  expect(tickBroodFight(won.fight, 100, false, () => []).events).toEqual([]);
+  const returned = tickBroodFight(won.fight, 101, false, () => []);
+  expect(returned.events).toEqual([{ type: "returned", tier: "gamma", returns: [{ id: "me", kind: "survivor", to: AT }, { id: "rex", kind: "companion", to: [1, 1, 1] }] }]);
+  expect(returned.fight).toEqual(newBroodFight());
+});
+
+test("when the last survivor falls the fight is lost with the companions inside", () => {
+  const summon = summonBrood(newBroodFight(), "gamma", bag({ artifact_clever: 1, artifact_hunter: 1, artifact_massive: 1 }), 30, 0);
+  if (!summon.ok) throw new Error("the gamma tribute should summon her");
+  const fight = tickBroodFight(summon.fight, PORTAL.seconds, true, () => [survivor, { id: "rex", kind: "companion", at: AT }]).fight;
+  const left = leaveFight(fight, "me");
+  expect(tickBroodFight(left, 26, true, () => []).events).toEqual([{ type: "lost", tier: "gamma", companions: ["rex"] }]);
+});
+
+test("a saved fight resumes where it stood", () => {
+  const summon = summonBrood(newBroodFight(), "gamma", bag({ artifact_clever: 1, artifact_hunter: 1, artifact_massive: 1 }), 30, 0);
+  if (!summon.ok) throw new Error("the gamma tribute should summon her");
+  const fight = tickBroodFight(summon.fight, PORTAL.seconds, true, () => [survivor]).fight;
+  const saved = JSON.parse(JSON.stringify(fight));
+  expect(isInside(saved, "me")).toBe(true);
+  expect(tickBroodFight(saved, 30, false, () => []).events[0]?.type).toBe("won");
+});
+
+test("her phases follow her health down and never step back up", () => {
+  expect(broodPhaseAt(null, 1).id).toBe("hunt");
+  expect(broodPhaseAt("hunt", 0.67).id).toBe("hunt");
+  expect(broodPhaseAt("hunt", 0.66).id).toBe("brood");
+  expect(broodPhaseAt("brood", 0.33).id).toBe("frenzy");
+  expect(broodPhaseAt(null, 0).id).toBe("frenzy");
+  expect(broodPhaseAt("frenzy", 1).id).toBe("frenzy");
+  expect(broodPhaseAt(null, Number.NaN).id).toBe("hunt");
+});
+
