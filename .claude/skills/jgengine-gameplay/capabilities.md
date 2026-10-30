@@ -37,10 +37,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ambientTemperature` (function) · `import { ambientTemperature } from "@jgengine/core/gameplay"`
 
-## arena-wall — solid ring wall round a circular arena floor, following the ground
-
-- `arenaWall` (function) · `import { arenaWall } from "@jgengine/core/bossArena/bossArena"`
-
 ## auction-book — timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement
 
 - `createAuctionBook` (function) · `import { createAuctionBook } from "@jgengine/core/gameplay"`
@@ -60,10 +56,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## body-temperature — hypothermia and hyperthermia from ambient temperature, insulation and fortitude, as vital drain and exposure damage
 
 - `bodyComfort` (function) · `import { bodyComfort } from "@jgengine/core/gameplay"`
-
-## boss-arena — summoned boss fights: tribute and level gates, a portal that takes survivors and companions in, win, wipe and the trip home
-
-- `createBossArena` (function) · `import { createBossArena } from "@jgengine/core/bossArena/bossArena"`
 
 ## breeding — pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care
 
@@ -919,6 +911,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## subdual-feeding — win over a creature by keeping it subdued and feeding it, with its quality and doses
 
 - `createSubdualFeeding` (function) · `import { createSubdualFeeding } from "@jgengine/core/subdual/subdualFeeding"`
+
+## summoned-encounter — a fight started by meeting a cost at a place: a portal, party caps, win, wipe and the trip home
+
+- `createSummonedEncounter` (function) · `import { createSummonedEncounter } from "@jgengine/core/summonedEncounter/summonedEncounter"`
 
 ## supply-demand-pricing — price goods from finite stock and live demand on a stated curve
 

@@ -203,9 +203,12 @@ describe("the Warden's phases", () => {
   });
 
   test("the phases are authored high to low and the opening starts at full health", () => {
-    expect(wardenProfile.phases[0]!.atHealth).toBe(1);
+    expect(wardenProfile.phases[0]!.at).toBe(1);
     for (let index = 1; index < wardenProfile.phases.length; index += 1) {
-      expect(wardenProfile.phases[index]!.atHealth).toBeLessThan(wardenProfile.phases[index - 1]!.atHealth);
+      const phase = wardenProfile.phases[index];
+      const previous = wardenProfile.phases[index - 1];
+      if (phase === undefined || previous === undefined) throw new Error("phase list has a hole");
+      expect(phase.at).toBeLessThan(previous.at);
     }
     expect(Object.keys(wardenProfile.stance)).toEqual(wardenProfile.phases.map((phase) => phase.id));
   });

@@ -1,4 +1,5 @@
-import type { BossPhase } from "@jgengine/core/ai/director/boss";
+import type { PhaseLike } from "@jgengine/core/ai/phaseLadder";
+import type { SquadRole } from "@jgengine/core/combat/squadTactics";
 import type { EncounterDefinition } from "@jgengine/core/waves/encounter";
 import type { PressureRule } from "@jgengine/core/waves/pressure";
 
@@ -92,28 +93,34 @@ export const FRONT_PRESSURE: PressureRule = {
 /** The Ripper pack's alpha: a convoy-fed maw that leads the front's last wave. */
 export const FOREMAN_ID = "foreman_maw";
 
+/** One Foreman phase: its health cut point, the role shape it fights with, and its tell. */
+export interface ForemanPhase extends PhaseLike {
+  /** The same dials a squad role uses. */
+  behaviour: Omit<SquadRole, "id" | "count">;
+}
+
 /**
- * Three authored phases. Thresholds, monotone order and the tell fire are the engine's; what each
+ * Three authored phases. Cut points, monotone order and the tell fire are the engine's; what each
  * phase *does* is the stance table below, which is this game's content.
  */
-export const FOREMAN_PHASES: readonly BossPhase[] = [
+export const FOREMAN_PHASES: readonly ForemanPhase[] = [
   {
     id: "stoke",
-    atHealth: 1,
+    at: 1,
     behaviour: { preferredRange: 3.2, discipline: { fireInterval: 1.4 } },
-    tell: { id: "wake", telegraphSeconds: 2.2 },
+    tell: { id: "wake", seconds: 2.2 },
   },
   {
     id: "stampede",
-    atHealth: 0.6,
+    at: 0.6,
     behaviour: { preferredRange: 2.8, discipline: { fireInterval: 1.1 } },
-    tell: { id: "lunge", telegraphSeconds: 2.2 },
+    tell: { id: "lunge", seconds: 2.2 },
   },
   {
     id: "starving",
-    atHealth: 0.25,
+    at: 0.25,
     behaviour: { preferredRange: 2.4, discipline: { fireInterval: 0.8 } },
-    tell: { id: "starve", telegraphSeconds: 2.2 },
+    tell: { id: "starve", seconds: 2.2 },
   },
 ];
 
