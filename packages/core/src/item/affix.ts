@@ -1,4 +1,5 @@
 import { pickWeighted } from "../random/pick";
+import { foldStatContributions, type StatContribution } from "../progression/statGraph";
 
 export type AffixOp = "add" | "mul";
 
@@ -75,6 +76,20 @@ function assertConfig(config: RollerConfig): void {
   }
 }
 
+/** Per-stat modifier stack: every add before every multiply, as the roller has always folded them. */
+function affixStacks(affixes: readonly RolledAffix[]): Map<string, StatContribution[]> {
+  const byStat = new Map<string, StatContribution[]>();
+  const push = (affix: RolledAffix): void => {
+    const contribution: StatContribution = { source: affix.id, op: affix.op, value: affix.value };
+    const existing = byStat.get(affix.stat);
+    if (existing === undefined) byStat.set(affix.stat, [contribution]);
+    else existing.push(contribution);
+  };
+  for (const affix of affixes) if (affix.op === "add") push(affix);
+  for (const affix of affixes) if (affix.op === "mul") push(affix);
+  return byStat;
+}
+
 export interface AffixRoller {
   rollRarity(rng: () => number): RarityTier;
   roll(base: ItemBaseDef, rarityId: string, rng: () => number): RolledItem;
@@ -121,12 +136,7 @@ export function createAffixRoller(config: RollerConfig): AffixRoller {
     const scale = rarity.statScale ?? 1;
     const stats: Record<string, number> = {};
     for (const [key, value] of Object.entries(base.baseStats)) stats[key] = value * scale;
-    for (const affix of affixes) {
-      if (affix.op === "add") stats[affix.stat] = (stats[affix.stat] ?? 0) + affix.value;
-    }
-    for (const affix of affixes) {
-      if (affix.op === "mul") stats[affix.stat] = (stats[affix.stat] ?? 0) * affix.value;
-    }
+    for (const [stat, stack] of affixStacks(affixes)) stats[stat] = foldStatContributions(stats[stat] ?? 0, stack);
     return stats;
   }
 

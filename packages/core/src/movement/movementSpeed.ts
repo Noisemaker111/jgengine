@@ -1,4 +1,5 @@
 import type { StatValue } from "../scene/entityStats";
+import { boundStatValue, foldStatContributions, type StatContribution } from "../progression/statGraph";
 
 export interface MovementSpeedModifiers {
   multiplier?: number | undefined;
@@ -7,9 +8,11 @@ export interface MovementSpeedModifiers {
 
 /** `base * (multiplier ?? 1) + (flatBonus ?? 0)`, clamped to never go negative. */
 export function deriveWalkSpeed(base: number, modifiers: MovementSpeedModifiers): number {
-  const multiplier = modifiers.multiplier ?? 1;
-  const flatBonus = modifiers.flatBonus ?? 0;
-  return Math.max(0, base * multiplier + flatBonus);
+  const stack: readonly StatContribution[] = [
+    { source: "multiplier", op: "mul", value: modifiers.multiplier ?? 1 },
+    { source: "flatBonus", op: "add", value: modifiers.flatBonus ?? 0 },
+  ];
+  return boundStatValue(foldStatContributions(base, stack), { min: 0 });
 }
 
 export interface MovementSpeedDeps {

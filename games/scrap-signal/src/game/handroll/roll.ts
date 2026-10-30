@@ -1,4 +1,5 @@
 import { generate, type GenProvenance, type GenSchema } from "@jgengine/core/item/itemgen";
+import { pickUniform, pickWeighted } from "@jgengine/core/random/pick";
 import {
   ELEMENTS,
   ELEMENT_PREFIX,
@@ -59,19 +60,15 @@ export function gunSerialOf(id: string): number {
 }
 
 function pick<T>(rng: () => number, list: readonly T[]): T {
-  const entry = list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
+  const entry = pickUniform(rng, list);
   if (entry === undefined) throw new Error("pick: empty list");
   return entry;
 }
 
+/** Rarity by weight, where luck lifts every tier but common. */
 export function rollRarity(rng: () => number, luck = 1): Rarity {
-  const total = RARITY_TIERS.reduce((sum, tier) => sum + tier.weight * (tier.id === "common" ? 1 : luck), 0);
-  let roll = rng() * total;
-  for (const tier of RARITY_TIERS) {
-    roll -= tier.weight * (tier.id === "common" ? 1 : luck);
-    if (roll <= 0) return tier.id;
-  }
-  return "common";
+  const picked = pickWeighted(rng, RARITY_TIERS, (tier) => tier.weight * (tier.id === "common" ? 1 : luck));
+  return picked?.id ?? "common";
 }
 
 /** A tier's place from common (0) to legendary (4). */

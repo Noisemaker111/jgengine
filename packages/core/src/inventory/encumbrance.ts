@@ -1,3 +1,5 @@
+import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
+
 /** One carried stack: an item id and how many of it the carrier holds. */
 export interface LoadEntry {
   itemId: string;
@@ -101,8 +103,12 @@ export function resolveEncumbrance(
   const safeMass = mass > 0 ? mass : 0;
   const fraction = capacity > 0 ? safeMass / capacity : safeMass > 0 ? 1 : 0;
 
-  const immobile = fraction >= 1;
-  const tier: EncumbranceTier = immobile ? "immobile" : fraction >= soft ? "encumbered" : "unencumbered";
+  const bands: readonly ThresholdBoundary<EncumbranceTier>[] = [
+    { id: "encumbered", at: soft },
+    { id: "immobile", at: 1 },
+  ];
+  const tier = tierAt(bands, fraction)?.id ?? "unencumbered";
+  const immobile = tier === "immobile";
   const unencumbered = tier === "unencumbered";
 
   return {

@@ -113,42 +113,8 @@ export interface StatGraph {
 
 const OP_ORDER: Record<StatOp, number> = { override: 0, add: 1, mul: 2, clampMin: 3, clampMax: 4 };
 
-function applyOp(acc: number, op: StatOp, value: number): number {
-  switch (op) {
-    case "add":
-      return acc + value;
-    case "mul":
-      return acc * value;
-    case "override":
-      return value;
-    case "clampMin":
-      return Math.max(acc, value);
-    case "clampMax":
-      return Math.min(acc, value);
-  }
-}
-
 function normalizeEntry(entry: StatModEntry): StatContribution[] {
   return Array.isArray(entry) ? [...entry] : [entry as StatContribution];
-}
-
-function applyBounds(
-  value: number,
-  bounds: { min?: number; max?: number; round?: "floor" | "ceil" | "round" },
-): number {
-  let out = value;
-  if (bounds.min !== undefined) out = Math.max(bounds.min, out);
-  if (bounds.max !== undefined) out = Math.min(bounds.max, out);
-  switch (bounds.round) {
-    case "floor":
-      return Math.floor(out);
-    case "ceil":
-      return Math.ceil(out);
-    case "round":
-      return Math.round(out);
-    default:
-      return out;
-  }
 }
 
 /**
@@ -268,16 +234,16 @@ export function createStatGraph(def: StatGraphDef): StatGraph {
           typeof out === "number" ? [{ source: "formula", op: "add" as StatOp, value: out }] : out;
         acc = 0;
         for (const c of contribs) {
-          acc = applyOp(acc, c.op, c.value);
+          acc = applyStatOp(acc, c.op, c.value);
           steps.push({ ...c, subtotal: acc });
         }
       }
       for (const c of externalSteps(id)) {
-        acc = applyOp(acc, c.op, c.value);
+        acc = applyStatOp(acc, c.op, c.value);
         steps.push({ ...c, subtotal: acc });
       }
       const bounds = inputDef ?? derived.get(id)!;
-      const bounded = applyBounds(acc, bounds);
+      const bounded = boundStatValue(acc, bounds);
       if (bounded !== acc) {
         steps.push({ source: "bounds", op: "override", value: bounded, subtotal: bounded });
       }
@@ -424,4 +390,66 @@ export function statModifierContributions<TStat extends string>(
     if (list.length > 0) out[stat] = list;
   }
   return out;
+}
+
+/**
+ * Apply one {@link StatOp} to a running value — the engine's one definition of what add,
+ * multiply, override and clamp mean.
+ *
+ * @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value
+ */
+export function applyStatOp(value: number, op: StatOp, operand: number): number {
+  switch (op) {
+    case "add":
+      return value + operand;
+    case "mul":
+      return value * operand;
+    case "override":
+      return operand;
+    case "clampMin":
+      return Math.max(value, operand);
+    case "clampMax":
+      return Math.min(value, operand);
+  }
+}
+
+/**
+ * Fold contributions onto `base` in the order given, with no reordering — the stack a caller
+ * applies to one number (a damage roll, a move speed, a loot weight) without building a graph.
+ * A stat graph sorts its sources by op first; an ordered stack keeps the caller's sequence.
+ *
+ * @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value
+ */
+export function foldStatContributions(base: number, contributions: Iterable<StatContribution>): number {
+  let value = base;
+  for (const contribution of contributions) value = applyStatOp(value, contribution.op, contribution.value);
+  return value;
+}
+
+/** Bounds of a caller-owned value, applied in the order min, max, then rounding. */
+export interface StatBounds {
+  min?: number;
+  max?: number;
+  round?: "floor" | "ceil" | "round";
+}
+
+/**
+ * Clamp and round a value to {@link StatBounds} — the same bounds a stat input or derived node applies.
+ *
+ * @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value
+ */
+export function boundStatValue(value: number, bounds: StatBounds): number {
+  let out = value;
+  if (bounds.min !== undefined) out = Math.max(bounds.min, out);
+  if (bounds.max !== undefined) out = Math.min(bounds.max, out);
+  switch (bounds.round) {
+    case "floor":
+      return Math.floor(out);
+    case "ceil":
+      return Math.ceil(out);
+    case "round":
+      return Math.round(out);
+    default:
+      return out;
+  }
 }

@@ -193,11 +193,6 @@ interface RolledDrop {
   planEntry: LootPlanEntry;
 }
 
-/** Pick one eligible plan entry by effective weight, in the same RNG order as `createLootRegistry`. */
-function pickPlanEntry(entries: LootPlanEntry[], rng: () => number): LootPlanEntry | null {
-  return pickWeighted(rng, entries, (candidate) => (candidate.eligible ? candidate.weight : 0)) ?? null;
-}
-
 /** Roll a prepared plan into drops, consuming `rng` in the same order as the base loot table primitive. */
 function rollPlan(plan: LootRollPlan, rng: () => number): RolledDrop[] {
   const rolled: RolledDrop[] = [];
@@ -211,8 +206,8 @@ function rollPlan(plan: LootRollPlan, rng: () => number): RolledDrop[] {
         }
       }
     } else {
-      const picked = pickPlanEntry(plan.entries, rng);
-      if (picked === null) continue;
+      const picked = pickWeighted(rng, plan.entries, (candidate) => (candidate.eligible ? candidate.weight : 0));
+      if (picked === undefined) continue;
       const count = resolveCount(picked.entry.count, rng);
       rolled.push({ drop: dropFromEntry(picked.entry, count, rng), planEntry: picked });
     }

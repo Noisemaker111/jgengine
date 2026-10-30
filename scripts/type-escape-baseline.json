@@ -1155,7 +1155,7 @@
   "packages/core/src/loot/haul.ts": {"cast":2},
   "packages/core/src/loot/items.test.ts": {"cast":1,"nonNull":6},
   "packages/core/src/loot/lootGen.test.ts": {"nonNull":22},
-  "packages/core/src/loot/lootGen.ts": {"nonNull":8},
+  "packages/core/src/loot/lootGen.ts": {"nonNull":7},
   "packages/core/src/loot/lootPipeline.ts": {"nonNull":1},
   "packages/core/src/map/fastTravel.test.ts": {"cast":2,"nonNull":3},
   "packages/core/src/map/fastTravel.ts": {"nonNull":2},
