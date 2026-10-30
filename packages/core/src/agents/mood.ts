@@ -1,5 +1,6 @@
 import { clamp } from "../math/scalar";
 import type { NeedSet } from "../sim/needs";
+import { tierAt } from "../threshold/thresholds";
 
 /** One need's say in the mood score; weights are relative, so they need no fixed total. */
 export interface MoodWeight {
@@ -48,9 +49,12 @@ export interface MoodSnapshot {
  * @capability mood a mood derived from how satisfied an agent's needs are
  */
 export function moodTierOf(score: number, tiers: readonly MoodTier[] = DEFAULT_MOOD_TIERS): MoodTier {
-  let best: MoodTier | null = null;
-  for (const tier of tiers) if (score >= tier.at && (best === null || tier.at > best.at)) best = tier;
-  return best ?? tiers[tiers.length - 1] ?? { at: 0, id: "low", label: "Low" };
+  const best = tierAt(
+    tiers.map((tier) => ({ at: tier.at, id: tier })),
+    score,
+  );
+  if (best !== null) return best.id;
+  return tiers[tiers.length - 1] ?? { at: 0, id: "low", label: "Low" };
 }
 
 /**

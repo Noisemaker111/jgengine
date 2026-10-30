@@ -18,6 +18,18 @@ describe("tierForStanding", () => {
   test("standings below the lowest tier clamp to the bottom tier", () => {
     expect(tierForStanding(DEFAULT_REPUTATION_TIERS, -999999).id).toBe("hated");
   });
+
+  test("a standing exactly on a tier floor takes that tier, one below stays under it", () => {
+    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, 9000).id).toBe("honored");
+    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, 8999).id).toBe("friendly");
+    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, -3000).id).toBe("unfriendly");
+    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, -42000).id).toBe("hated");
+    expect(tierForStanding(DEFAULT_REPUTATION_TIERS, -42001).id).toBe("hated");
+  });
+
+  test("a tier list with nothing in it is refused", () => {
+    expect(() => tierForStanding([], 0)).toThrow(RangeError);
+  });
 });
 
 describe("reputation ledger", () => {
