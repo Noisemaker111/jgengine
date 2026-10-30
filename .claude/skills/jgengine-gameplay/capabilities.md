@@ -849,6 +849,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createScatterHarvest` (function) · `import { createScatterHarvest } from "@jgengine/core/harvest/scatterHarvest"`
 
+## scatter-points — spread points over fields at random so equal totals differ
+
+- `scatterPoints` (function) · `import { scatterPoints } from "@jgengine/core/inheritance/inheritance"`
+
 ## scoreboard — pure tie-aware ranking selector over the leaderboard model — standard/dense ranks, local-entry highlight, top-N, medal tokens for a reskinnable table
 
 - `rankLeaderboard` (function) · `import { rankLeaderboard } from "@jgengine/core/gameplay"`
@@ -945,10 +949,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## stat-graph-bridge — feed an existing StatModifierSet into a stat-graph source
 
 - `statModifierContributions` (function) · `import { statModifierContributions } from "@jgengine/core/gameplay"`
-
-## stat-inheritance — breed two parents' stat points into a baby's, favouring the stronger, with rare mutations
-
-- `inheritStats` (function) · `import { inheritStats } from "@jgengine/core/breeding/inheritance"`
 
 ## stat-points — level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap
 
@@ -1086,6 +1086,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useShopStock` (function) · `import { useShopStock } from "@jgengine/core/inventory/shopGrid.view"`
 
+## value-inheritance — a child's values from two parents per field, picked or blended, with rare mutations
+
+- `inheritValues` (function) · `import { inheritValues } from "@jgengine/core/inheritance/inheritance"`
+
 ## visitor-population — a crowd whose on-site and daily counts are the bodies the game made
 
 - `createVisitorPopulation` (function) · `import { createVisitorPopulation } from "@jgengine/core/gameplay"`
@@ -1106,10 +1110,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/gameplay"`
 - `shuffleWithRng` (function) · `import { shuffleWithRng } from "@jgengine/core/gameplay"`
-
-## wild-stat-levels — spread a creature's levels over its stats at random so same-level creatures differ
-
-- `scatterLevels` (function) · `import { scatterLevels } from "@jgengine/core/breeding/inheritance"`
 
 ## work-active-jobs — list jobs currently progressing in a work queue
 

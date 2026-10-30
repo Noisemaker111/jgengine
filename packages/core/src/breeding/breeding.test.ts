@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
 import { babyStage, createBreedingField, type BreedingSpecies, type MateCandidate } from "./breeding";
-import { inheritStats, scatterLevels } from "./inheritance";
 
 function rngOf(seed: number): () => number {
   let state = seed;
@@ -152,41 +151,5 @@ describe("breeding", () => {
     expect(litters[1]! / 4000).toBeLessThan(0.12);
     expect(litters[2]! / 4000).toBeGreaterThan(0.01);
     expect(litters[2]! / 4000).toBeLessThan(0.03);
-  });
-});
-
-describe("inheritance", () => {
-  test("each stat comes whole from one parent, the stronger 55% of the time", () => {
-    const rng = rngOf(19);
-    let higher = 0;
-    const trials = 4000;
-    for (let n = 0; n < trials; n += 1) {
-      const { points, mutations } = inheritStats({ health: 10, melee: 2 }, { health: 4, melee: 9 }, rng);
-      expect(mutations).toEqual([]);
-      expect([10, 4]).toContain(points.health);
-      expect([2, 9]).toContain(points.melee);
-      if (points.health === 10) higher += 1;
-    }
-    expect(higher / trials).toBeGreaterThan(0.52);
-    expect(higher / trials).toBeLessThan(0.58);
-  });
-
-  test("a mutation adds its levels to one stat, at its chance a roll", () => {
-    const rng = rngOf(23);
-    let mutated = 0;
-    for (let n = 0; n < 4000; n += 1) {
-      const { points, mutations } = inheritStats({ health: 5, melee: 5 }, { health: 5, melee: 5 }, rng, { mutations: { rolls: 3, chance: 0.025, levels: 2, stats: ["health", "melee"] } });
-      expect(points.health + points.melee).toBe(10 + mutations.length * 2);
-      mutated += mutations.length;
-    }
-    // Three rolls at 2.5%: about 0.075 a baby.
-    expect(mutated / 4000).toBeGreaterThan(0.06);
-    expect(mutated / 4000).toBeLessThan(0.09);
-  });
-
-  test("a creature's levels spread over its stats and add up", () => {
-    const points = scatterLevels(29, ["health", "stamina", "weight"], rngOf(29));
-    expect(points.health + points.stamina + points.weight).toBe(29);
-    expect(Object.values(points).filter((value) => value > 0).length).toBeGreaterThan(1);
   });
 });

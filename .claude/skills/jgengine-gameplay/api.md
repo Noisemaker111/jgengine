@@ -208,13 +208,6 @@
 - `babyStage` (function): function babyStage(matured: number): BabyStage — The stage a baby is at for how far it has matured (0-1).
 - `createBreedingField` (function): function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> — ARK-style breeding: tame pairs left together mate, a mother lays a fertilised egg that hatches only kept in its temperature or carries a baby to birth, then waits a while before mating again. Babies, rolled at conception, grow through baby, juvenile and adolescent to adult and ask for care on an interval; each answered request adds its share of imprint, full imprint when every request in its growing time was answered.
 
-## @jgengine/core/breeding/inheritance
-
-- `InheritanceOptions` (interface): interface InheritanceOptions<S extends string> — {@link inheritStats} odds.
-- `Inherited` (interface): interface Inherited<S extends string> — What a baby got from its parents: its points per stat and the stats that mutated, in roll order.
-- `inheritStats` (function): function inheritStats<S extends string>(mother: Readonly<Record<S, number>>, father: Readonly<Record<S, number>>, rng: () => number, options: InheritanceOptions<S> = {}): Inherited<S> — A baby's stat points from its two parents, stat by stat as ARK breeds them: each stat whole from one parent, the stronger one more often, then a few small chances of a mutation adding points to one stat.
-- `scatterLevels` (function): function scatterLevels<S extends string>(levels: number, stats: readonly S[], rng: () => number): Record<S, number> — A creature's levels past the first spread over its stats one at a time at random, the way ARK hands out a wild creature's levels: two of the same level differ in what they are good at.
-
 ## @jgengine/core/cards/cardPile
 
 - `CardPile` (interface): interface CardPile { state(): CardPileState; zones(): readonly ZoneName[]; count(zone: ZoneName): number; peek(zone: ZoneName, n?: number): readonly string[]; zoneOf(cardId: string): ZoneName | null; shuffle(zone: ZoneName | undefined, seed: string | number):… — ⚠ undocumented
@@ -2001,6 +1994,15 @@
 - `ScatterHarvestConfig` (interface): interface ScatterHarvestConfig — Construction options for {@link createScatterHarvest}.
 - `ScatterHarvestState` (interface): interface ScatterHarvestState — Plain save data: the touched nodes only.
 - `createScatterHarvest` (function): function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarvest — Turn scatter into resources: every placed tree, rock or bush of a listed species is a depletable, respawning node (backed by {@link createResourceNodeField} resolved on first hit, so ten thousand trees cost nothing until someone swings). A strike picks the nearest standing placement inside reach and a facing cone, applies the tool's biases (a hatchet favours wood, a pick favours stone, a fist gets thatch), and a spent node is hidden through {@link ScatterClearing} until it regrows.
+
+## @jgengine/core/inheritance/inheritance
+
+- `InheritMutation` (interface): interface InheritMutation<K extends string> — Rare extra changes after inheritance: `rolls` tries, each with `chance`, adding `amount` to one random field of `fields`.
+- `InheritOptions` (interface): interface InheritOptions<K extends string> — How a child's values come from two parents.
+- `InheritRule` (type): type InheritRule = | { pick: "either"; higherChance?: number } /** a*weight + b*(1-weight) (weight default 0.5), plus a uniform random offset in ±spread (default 0). */ | { pick: "blend"; weight?: number; spread?: number } — How one field passes from parents to child.
+- `Inherited` (interface): interface Inherited<K extends string> — The child's values and the fields that mutated, in roll order.
+- `inheritValues` (function): function inheritValues<K extends string>(a: Readonly<Record<K, number>>, b: Readonly<Record<K, number>>, rng: () => number, options: InheritOptions<K> = {}): Inherited<K> — A child's values from two parents, field by field: each field picked whole from one parent or blended between them, then a few rare mutation rolls adding to random fields.
+- `scatterPoints` (function): function scatterPoints<K extends string>(points: number, fields: readonly K[], rng: () => number): Record<K, number> — Spread `points` one at a time over `fields` at random, so two with the same total differ.
 
 ## @jgengine/core/inventory/carryLoad
 

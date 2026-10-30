@@ -2854,6 +2854,13 @@
 - `TrailPose` (interface): interface TrailPose { position: TrailPoint; heading: number } — ⚠ undocumented
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 
+## @jgengine/core/movement/motionTrack
+
+- `MotionTrack` (interface): interface MotionTrack — A path and its timing that report where the thing is and when it arrives.
+- `MotionTrackConfig` (interface): interface MotionTrackConfig — A path and its timing. Give exactly one of `duration` or `speed`.
+- `MotionTrackState` (interface): interface MotionTrackState — Plain JSON state of a motion track.
+- `createMotionTrack` (function): function createMotionTrack(config: MotionTrackConfig): MotionTrack — Moves a thing along a path of points over time and reports when it arrives.
+
 ## @jgengine/core/movement/movementModel
 
 - `AnalogMoveIntent` (interface): interface AnalogMoveIntent — Analog movement vector (camera-relative, each axis in [-1, 1]) from a continuous source — a virtual joystick or gamepad stick. When present it replaces the digital WASD axes so a slight tilt walks slightly instead of slamming a full strafe.
@@ -5855,6 +5862,13 @@
 - `IdleWindowConfig` (interface): interface IdleWindowConfig { maxSeconds?: number; efficiency?: number } — ⚠ undocumented
 - `LinearCatchUpInput` (interface): interface LinearCatchUpInput { current: number; ratePerSecond: number; min?: number; max?: number } — ⚠ undocumented
 - `SteppedCatchUpResult` (interface): interface SteppedCatchUpResult { steps: number; remainderSeconds: number } — ⚠ undocumented
+
+## @jgengine/core/time/pacedSchedule
+
+- `PacedSchedule` (interface): interface PacedSchedule — A pace from a start time: ask what is due, pause, resume, retune the pace, or save its state.
+- `PacedScheduleConfig` (interface): interface PacedScheduleConfig — When a paced schedule fires. Times are seconds on the caller's clock.
+- `PacedScheduleState` (interface): interface PacedScheduleState — Plain JSON state of a paced schedule.
+- `createPacedSchedule` (function): function createPacedSchedule(config: PacedScheduleConfig, rng: () => number, options?: { maxPerTick?: number }): PacedSchedule — A pace from a start time: every `due(now)` call returns the events that have come due, drawing each jittered gap from the injected rng. No timers; the caller passes `now`.
 
 ## @jgengine/core/time/rateWindow
 

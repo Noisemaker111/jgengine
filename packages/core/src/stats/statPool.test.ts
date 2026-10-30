@@ -1,9 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
   applyStatPoolDelta,
+  changeMeter,
   changeStatPool,
+  createMeter,
   createStatPool,
   patchStatPool,
+  tickMeter,
   type StatPool,
   type StatPoolAccess,
 } from "@jgengine/core/stats/statPool";
@@ -32,9 +35,21 @@ describe("portable stat pools", () => {
       previous: retuned,
       pool: { current: 13, max: 20, min: 0 },
       applied: -7,
+      overflow: 0,
       hitMin: false,
       hitMax: false,
     });
+  });
+
+  test("reports the amount that did not fit as overflow", () => {
+    const pool = createStatPool({ current: 8, max: 10 });
+    const overfilled = changeStatPool(pool, 5);
+    const overdrawn = changeStatPool(pool, -20);
+
+    expect(overfilled.applied).toBe(2);
+    expect(overfilled.overflow).toBe(3);
+    expect(overdrawn.applied).toBe(-8);
+    expect(overdrawn.overflow).toBe(-12);
   });
 
   test("reports the actual clamped amount and boundaries", () => {
@@ -73,6 +88,74 @@ describe("portable stat pools", () => {
     };
 
     expect(JSON.parse(JSON.stringify(save))).toEqual(save);
+  });
+});
+
+describe("ticking meters", () => {
+  test("decays toward min and clamps there", () => {
+    const rates = { decay: 1 };
+    const full = createMeter({ max: 10 });
+
+    let meter = full;
+    for (let i = 0; i < 3; i++) meter = tickMeter(meter, rates, 1).meter;
+    expect(meter.pool.current).toBe(7);
+
+    const nearlyEmpty = createMeter({ current: 1, max: 10 });
+    const drained = tickMeter(nearlyEmpty, rates, 5);
+    expect(drained.meter.pool.current).toBe(0);
+    expect(drained.change.hitMin).toBe(true);
+    expect(drained.change.overflow).toBe(-4);
+  });
+
+  test("regens only once the regen delay has passed", () => {
+    const rates = { regen: 2, regenDelay: 1 };
+    const dropped = changeMeter(createMeter({ max: 10 }), -4).meter;
+    expect(dropped.pool.current).toBe(6);
+
+    const waiting = tickMeter(dropped, rates, 0.5);
+    expect(waiting.meter.pool.current).toBe(6);
+    expect(waiting.meter.sinceDrop).toBe(0.5);
+
+    const regenerated = tickMeter(waiting.meter, rates, 1);
+    expect(regenerated.meter.pool.current).toBe(8);
+  });
+
+  test("decay does not restart the regen delay", () => {
+    const rates = { regen: 1, decay: 1, regenDelay: 1 };
+    let meter = createMeter({ current: 8, max: 10 });
+
+    meter = tickMeter(meter, rates, 1).meter;
+    expect(meter.pool.current).toBe(8);
+    expect(meter.sinceDrop).toBe(1);
+
+    meter = tickMeter(meter, rates, 1).meter;
+    expect(meter.pool.current).toBe(8);
+    expect(meter.sinceDrop).toBe(2);
+  });
+
+  test("a drop restarts the regen delay but a fill does not", () => {
+    const rates = { regen: 1, regenDelay: 1 };
+    let meter = tickMeter(createMeter({ current: 4, max: 10 }), {}, 2).meter;
+    expect(meter.sinceDrop).toBe(2);
+
+    meter = changeMeter(meter, -3).meter;
+    expect(meter.pool.current).toBe(1);
+    expect(meter.sinceDrop).toBe(0);
+
+    meter = tickMeter(meter, rates, 0.5).meter;
+    meter = changeMeter(meter, 2).meter;
+    expect(meter.pool.current).toBe(3);
+    expect(meter.sinceDrop).toBe(0.5);
+  });
+
+  test("returns the same meter on a no-op tick at max", () => {
+    const full = createMeter({ max: 10 });
+    const ticked = tickMeter(full, { regen: 5 }, 0);
+
+    expect(ticked.meter).toBe(full);
+    expect(ticked.change.pool).toBe(full.pool);
+    expect(ticked.change.applied).toBe(0);
+    expect(ticked.change.hitMax).toBe(true);
   });
 });
 

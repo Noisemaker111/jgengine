@@ -95,7 +95,7 @@ export const IMPRINTED_STATS: readonly TameStat[] = ["health", "food", "weight",
 /** An egg out of its temperature survives this long (approximate: ARK drains an egg's health over minutes). */
 export const EGG_HEALTH_SECONDS = 600;
 /** ARK's mutations: three rolls at 2.5%, each two more levels in one stat. */
-export const MUTATIONS = { rolls: 3, chance: 0.025, levels: 2 } as const;
+export const MUTATIONS = { rolls: 3, chance: 0.025, amount: 2 } as const;
 /** How big a newborn is next to its parents; it grows to full size as it matures (approximate). */
 export const NEWBORN_SIZE = 0.25;
 /**
