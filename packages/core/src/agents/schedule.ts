@@ -1,4 +1,5 @@
 import { resolveRoutine, type RoutineStopSpec } from "../sim/routine";
+import { createStateSchedule, type StateSchedule } from "../time/stateSchedule";
 
 /**
  * One authored stop in an agent's day. The shape is the routine owner's (`sim/routine`) plus a
@@ -53,10 +54,11 @@ export interface AgentSchedule {
   nextChangeAfter(time: number): number;
 }
 
-/** One compiled beat: places and the seconds each holds. */
+/** One compiled beat: the places a working stop walks, each on the beat's own clock. */
 interface CompiledBeat {
   readonly places: readonly string[];
-  readonly dwellSeconds: number;
+  /** The places one after another, one full pass of the beat; `null` when the beat has no length to step. */
+  readonly schedule: StateSchedule<string> | null;
 }
 
 /**
@@ -78,24 +80,27 @@ export function createAgentSchedule(config: AgentScheduleConfig): AgentSchedule 
     const places = stop.beat !== undefined && stop.beat.length > 0 ? [...stop.beat] : null;
     if (places === null) return null;
     const span = Math.max(0, resolved.departAt - resolved.arriveAt);
-    const dwell = stop.beatDwellSeconds ?? span / places.length;
-    return { places, dwellSeconds: Math.max(dwell, 0) };
+    const dwell = Math.max(stop.beatDwellSeconds ?? span / places.length, 0);
+    const schedule =
+      dwell > 0
+        ? createStateSchedule({
+            phases: places.map((place) => ({ state: place, durationSeconds: dwell })),
+          })
+        : null;
+    return { places, schedule };
   });
 
   const postAt = (time: number, phase: ReturnType<typeof timeline.phaseAt>): string | null => {
     if (phase.travelling) return null;
     const beat = beats[phase.stop] ?? null;
     if (beat === null) return phase.place;
-    if (!(beat.dwellSeconds > 0)) return beat.places[0] ?? phase.place;
-    const elapsed = Math.max(0, time - phase.since);
-    const step = Math.floor(elapsed / beat.dwellSeconds) % beat.places.length;
-    return beat.places[step] ?? phase.place;
+    if (beat.schedule === null) return beat.places[0] ?? phase.place;
+    return beat.schedule.stateAt(Math.max(0, time - phase.since));
   };
 
-  const beatOf = (phase: { stop: number; travelling: boolean }): CompiledBeat | null => {
+  const beatOf = (phase: { stop: number; travelling: boolean }): StateSchedule<string> | null => {
     if (phase.travelling) return null;
-    const beat = beats[phase.stop] ?? null;
-    return beat !== null && beat.dwellSeconds > 0 ? beat : null;
+    return beats[phase.stop]?.schedule ?? null;
   };
 
   return {
@@ -123,7 +128,7 @@ export function createAgentSchedule(config: AgentScheduleConfig): AgentSchedule 
       if (beat === null) return phaseEnd;
       const phase = timeline.phaseAt(time);
       const elapsed = Math.max(0, time - phase.since);
-      const beatEnd = phase.since + (Math.floor(elapsed / beat.dwellSeconds) + 1) * beat.dwellSeconds;
+      const beatEnd = phase.since + beat.nextTransitionAt(elapsed);
       return beatEnd > time ? Math.min(phaseEnd, beatEnd) : phaseEnd;
     },
   };
