@@ -10,11 +10,14 @@ import {
 import { devtools } from "../devtools/devtools";
 import { clamp } from "../math/scalar";
 import { resolveRng } from "../random/resolveRng";
+import { createPhaseSchedule, type PhaseSchedule } from "../time/stateSchedule";
 import { createWaitQueue, type QueueWait, type WaitQueue, type WaitQueueSnapshot } from "./queue";
 import type { NeedSet } from "./needs";
 
 /** Where a ride is in its cycle. */
 export type RidePhase = "idle" | "loading" | "riding" | "unloading" | "broken";
+
+const RIDE_PHASE_ORDER: readonly RidePhase[] = ["idle", "loading", "riding", "unloading", "broken"];
 
 /** What a ride is worth to a guest. All three come from the ride's own data. */
 export interface RideRatings {
@@ -201,8 +204,8 @@ export const DEFAULT_RIDE_BREAKDOWN: RideBreakdown = {
 interface RideState {
   def: RideDefinition;
   queue: WaitQueue;
-  phase: RidePhase;
-  timer: number;
+  /** The ride's cycle: idle waits for a line, then load → ride → unload, and broken is entered out of order. */
+  schedule: PhaseSchedule<RidePhase>;
   riders: string[];
   cycles: number;
   wear: number;
@@ -246,6 +249,34 @@ function validateDefinition(def: RideDefinition): void {
   }
 }
 
+function secondsOf(def: RideDefinition, phase: RidePhase): number {
+  switch (phase) {
+    case "idle":
+      return 0;
+    case "loading":
+      return Math.max(0, def.loadSeconds);
+    case "riding":
+      return Math.max(0, def.rideSeconds);
+    case "unloading":
+      return Math.max(0, def.unloadSeconds);
+    case "broken":
+      return Math.max(0, def.breakdown?.repairSeconds ?? 0);
+  }
+}
+
+/** One ride's cycle: a phase ends on its own seconds, and only a line of guests or a repair starts the next one. */
+function rideSchedule(def: RideDefinition): PhaseSchedule<RidePhase> {
+  return createPhaseSchedule<RidePhase>({
+    phases: RIDE_PHASE_ORDER.map((phase) => ({
+      state: phase,
+      ...(phase === "idle" ? {} : { durationSeconds: secondsOf(def, phase) }),
+      ...(phase === "unloading" || phase === "broken" ? { next: "idle" } : {}),
+    })),
+    loop: true,
+    overshoot: "drop",
+  });
+}
+
 /**
  * Create the rides a park runs. Each ride cycles on its own data, boards from its own line up to its
  * own capacity, wears against its own breakdown curve and reports its repairs through the sink, so
@@ -266,8 +297,7 @@ export function createRideSystem(config: RideSystemConfig): RideSystem {
     const state: RideState = {
       def,
       queue: createWaitQueue({ seedServiceSeconds }),
-      phase: "idle",
-      timer: 0,
+      schedule: rideSchedule(def),
       riders: [],
       cycles: 0,
       wear: 0,
@@ -298,7 +328,7 @@ export function createRideSystem(config: RideSystemConfig): RideSystem {
     let queued = 0;
     let boarded = 0;
     for (const state of rides) {
-      if (state.phase === "broken") broken += 1;
+      if (state.schedule.state() === "broken") broken += 1;
       queued += state.queue.size();
       boarded += state.boarded;
     }
@@ -320,8 +350,7 @@ export function createRideSystem(config: RideSystemConfig): RideSystem {
       sink?.onBoard?.(state.def.id, guestId, elapsed);
     }
     if (boarded > 0) state.queue.recordBoard(elapsed, boarded);
-    state.phase = "loading";
-    state.timer = Math.max(0, state.def.loadSeconds);
+    state.schedule.advance();
   }
 
   function finishCycle(state: RideState, sink: RideTickSink | undefined): void {
@@ -334,44 +363,37 @@ export function createRideSystem(config: RideSystemConfig): RideSystem {
     if (breakdown !== undefined) {
       const chance = clamp(breakdown.baseChance + breakdown.wearChance * state.wear, 0, 1);
       if (chance > 0 && rollRng() < chance) {
-        state.phase = "broken";
-        state.timer = Math.max(0, breakdown.repairSeconds);
+        state.schedule.retune("broken", Math.max(0, breakdown.repairSeconds));
+        state.schedule.goTo("broken");
         state.breakdowns += 1;
         sink?.onBreak?.(id, elapsed);
-        return;
       }
     }
-    state.phase = "idle";
-    state.timer = 0;
   }
 
   function tickRide(state: RideState, dt: number, sink: RideTickSink | undefined): void {
-    if (state.phase === "idle") {
+    const schedule = state.schedule;
+    if (schedule.state() === "idle") {
       if (state.queue.size() > 0) board(state, sink);
       return;
     }
-    state.timer -= dt;
-    if (state.timer > 0) return;
-    switch (state.phase) {
-      case "broken": {
-        const cost = state.def.breakdown?.repairCost ?? 0;
-        state.repairSpend += cost;
-        state.phase = "idle";
-        state.timer = 0;
-        sink?.onRepaired?.(state.def.id, cost, elapsed);
-        return;
+    for (const step of schedule.tick(dt)) {
+      switch (step.from) {
+        case "broken": {
+          const id = state.def.id;
+          const cost = state.def.breakdown?.repairCost ?? 0;
+          state.repairSpend += cost;
+          sink?.onRepaired?.(id, cost, elapsed);
+          break;
+        }
+        case "unloading":
+          finishCycle(state, sink);
+          break;
+        case "idle":
+        case "loading":
+        case "riding":
+          break;
       }
-      case "loading":
-        state.phase = "riding";
-        state.timer = Math.max(0, state.def.rideSeconds);
-        return;
-      case "riding":
-        state.phase = "unloading";
-        state.timer = Math.max(0, state.def.unloadSeconds);
-        return;
-      case "unloading":
-        finishCycle(state, sink);
-        return;
     }
   }
 
@@ -380,8 +402,8 @@ export function createRideSystem(config: RideSystemConfig): RideSystem {
       id: state.def.id,
       ratings: state.def.ratings,
       capacity: state.def.capacity,
-      phase: state.phase,
-      phaseSeconds: state.timer,
+      phase: state.schedule.state(),
+      phaseSeconds: state.schedule.remainingSeconds() ?? 0,
       riders: state.riders.length,
       queue: { size: state.queue.size(), wait: state.queue.wait() },
       cycles: state.cycles,
@@ -460,6 +482,10 @@ export function createRideSystem(config: RideSystemConfig): RideSystem {
       validateDefinition(next);
       state.def = next;
       defs[index] = next;
+      state.schedule.retune("loading", secondsOf(next, "loading"));
+      state.schedule.retune("riding", secondsOf(next, "riding"));
+      state.schedule.retune("unloading", secondsOf(next, "unloading"));
+      state.schedule.retune("broken", secondsOf(next, "broken"));
       revision += 1;
       return true;
     },
@@ -472,7 +498,7 @@ export function createRideSystem(config: RideSystemConfig): RideSystem {
       let breakdowns = 0;
       let spend = 0;
       for (const state of rides) {
-        if (state.phase === "broken") broken += 1;
+        if (state.schedule.state() === "broken") broken += 1;
         riders += state.riders.length;
         queued += state.queue.size();
         boarded += state.boarded;
@@ -487,8 +513,8 @@ export function createRideSystem(config: RideSystemConfig): RideSystem {
         elapsed,
         rides: rides.map((state) => ({
           definition: cloneDefinition(state.def),
-          phase: state.phase,
-          timer: state.timer,
+          phase: state.schedule.state(),
+          timer: state.schedule.remainingSeconds() ?? 0,
           riders: [...state.riders],
           cycles: state.cycles,
           wear: state.wear,
@@ -507,11 +533,16 @@ export function createRideSystem(config: RideSystemConfig): RideSystem {
       ids.length = 0;
       for (const saved of next.rides) {
         const def = cloneDefinition(saved.definition);
+        const schedule = rideSchedule(def);
+        const at = RIDE_PHASE_ORDER.indexOf(saved.phase);
+        const index = at < 0 ? 0 : at;
+        const duration = secondsOf(def, RIDE_PHASE_ORDER[index] ?? "idle");
+        const timer = Number.isFinite(saved.timer) ? Math.max(0, saved.timer) : 0;
+        schedule.restore({ index, elapsedSeconds: Math.max(0, duration - timer), ended: false });
         const state: RideState = {
           def,
           queue: createWaitQueue({ seedServiceSeconds }),
-          phase: saved.phase,
-          timer: saved.timer,
+          schedule,
           riders: [...saved.riders],
           cycles: saved.cycles,
           wear: saved.wear,
