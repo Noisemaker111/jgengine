@@ -16,6 +16,13 @@ const needs = [
   { id: "energy", max: 100, rate: 0.5 },
 ];
 
+// The mood bands are the game's own: labels and cut points on the 0-100 score.
+const moodTiers = [
+  { at: 70, id: "bright", label: "Bright" },
+  { at: 30, id: "flat", label: "Flat" },
+  { at: 0, id: "low", label: "Low" },
+];
+
 const agent = createAgent({
   id: "guest:1",
   needs,
@@ -34,7 +41,7 @@ const agent = createAgent({
     ],
     travelSeconds: (from, to) => distances.get(`${from}>${to}`) ?? 60,
   },
-  mood: { weights: [{ need: "hunger", weight: 2 }, { need: "fun", weight: 1 }] },
+  mood: { tiers: moodTiers, weights: [{ need: "hunger", weight: 2 }, { need: "fun", weight: 1 }] },
   rng: ctx.rng,
 });
 
