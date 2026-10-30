@@ -45,7 +45,7 @@ export interface CodeWords {
 
 /**
  * Each capability with the words its code says about it. Names are strong evidence on their own
- * ("supply drops" finds `airdrops/`). Doc comments are weak evidence ("bow" of a boat, a terrain
+ * ("state schedule" finds `stateSchedule/`). Doc comments are weak evidence ("bow" of a boat, a terrain
  * "saddle"), used only by {@link matchFeature} to finish a match the names started.
  */
 export function withCodeWords(capabilities: readonly CapabilityEntry[], code: readonly IndexedFile[]): CodeWords[] {
@@ -66,7 +66,7 @@ export function withCodeWords(capabilities: readonly CapabilityEntry[], code: re
 }
 
 /**
- * Folder and file names plus the tails of their compound words, so "drops" reaches `airdrops/` and
+ * Folder and file names plus the tails of their compound words, so "schedule" reaches `stateSchedule` and
  * "building" reaches `basebuilding`. Only names get tails: in prose, "rate" would reach "generate".
  */
 function compoundTails(names: string): string {

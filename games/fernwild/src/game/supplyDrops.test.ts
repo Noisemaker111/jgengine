@@ -9,7 +9,7 @@ import { content } from "./content";
 import { itemDef, itemTraits } from "./data/items";
 import { SUPPLY_TIERS } from "./data/supplyDrops";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
-import { DROP_HEIGHT, FALL_SECONDS, nearestSupplyDrop, rollCrate, supplyDropPrompts, supplyDrops, supplySites } from "./supplyDrops";
+import { DROP_HEIGHT, FALL_SECONDS, CRATE_LASTS, SUPPLY_RESPAWN, nearestSupplyDrop, resetSupplyDrops, rollCrate, supplyDropPrompts, supplyDrops, supplyDropsSave, supplySites } from "./supplyDrops";
 import { survivorLevel } from "./survivor";
 
 function runner(): HeadlessRunner {
@@ -38,6 +38,16 @@ const skip = (game: HeadlessRunner, seconds: number) => {
 };
 
 const carried = (game: HeadlessRunner, item: string) => [BAG, HOTBAR].reduce((sum, id) => sum + game.ctx.player.inventory.count(id, item), 0);
+
+function siteNamed(game: HeadlessRunner, id: string) {
+  const site = supplySites(game.ctx).find((entry) => entry.id === id);
+  if (site === undefined) throw new Error(`no drop site ${id}`);
+  return site;
+}
+
+/** Every crate within a metre of a site, falling or landed. */
+const atSite = (game: HeadlessRunner, site: { at: readonly [number, number, number] }) =>
+  supplyDrops(game.ctx).filter((drop) => Math.hypot(drop.position[0] - site.at[0], drop.position[2] - site.at[2]) < 1);
 
 test("every crate's loot is something the survivor can hold, and the colours climb from the beaches to the snow", () => {
   for (const tier of SUPPLY_TIERS) for (const entry of tier.loot) expect(itemDef(entry.item!)).not.toBeNull();
@@ -115,6 +125,15 @@ test("a crate falls from the sky over two minutes, a fresh survivor can't open i
   expect(after).toBeGreaterThan(before);
   expect(supplyDropPrompts(game.ctx)).toHaveLength(0);
   expect(supplyDrops(game.ctx).some((drop) => Math.hypot(drop.position[0] - site.at[0], drop.position[2] - site.at[2]) < 1)).toBe(false);
+  // Its site waits RESPAWN, then sends the next one.
+  skip(game, SUPPLY_RESPAWN[0] - 60);
+  expect(atSite(game, site)).toHaveLength(0);
+  let back = false;
+  for (let waited = 0; waited < SUPPLY_RESPAWN[1] && !back; waited += 300) {
+    skip(game, 300);
+    back = atSite(game, site).length > 0;
+  }
+  expect(back).toBe(true);
 });
 
 test("a red crate in the snow stays shut to a level 30 survivor", () => {
@@ -131,4 +150,55 @@ test("a red crate in the snow stays shut to a level 30 survivor", () => {
   tick(game, 0.1);
   expect(game.ctx.game.notices.list().at(-1)?.text).toBe("Red crate: requires level 60");
   expect(nearestSupplyDrop(game.ctx)).toMatchObject({ tier: "red", landed: true });
+});
+
+test("a crate left alone breaks apart after CRATE_LASTS, and its site sends the next within RESPAWN", () => {
+  const game = runner();
+  tick(game, 0.1);
+  const site = siteNamed(game, "drop_south_coast_1");
+  game.ui.tryInvoke("cheat", { teleport: [site.at[0] + 1.5, site.at[2]] });
+  tick(game, 0.1);
+  game.ui.tryInvoke("cheat", { drop: "white" });
+  skip(game, FALL_SECONDS + 1);
+  expect(nearestSupplyDrop(game.ctx)).toMatchObject({ tier: "white", landed: true });
+  expect(atSite(game, site)).toHaveLength(1);
+  // Down for most of its life, gone once its time is up.
+  skip(game, CRATE_LASTS - FALL_SECONDS - 200);
+  expect(atSite(game, site)).toHaveLength(1);
+  skip(game, 400);
+  expect(atSite(game, site)).toHaveLength(0);
+  // The site waits RESPAWN, then sends the next.
+  skip(game, SUPPLY_RESPAWN[0] - 60);
+  expect(atSite(game, site)).toHaveLength(0);
+  let back = false;
+  for (let waited = 0; waited < SUPPLY_RESPAWN[1] && !back; waited += 300) {
+    skip(game, 300);
+    back = atSite(game, site).length > 0;
+  }
+  expect(back).toBe(true);
+});
+
+test("a save mid-fall keeps the crate's height and the time it lands", () => {
+  const game = runner();
+  tick(game, 0.1);
+  const site = siteNamed(game, "drop_south_coast_1");
+  game.ui.tryInvoke("cheat", { teleport: [site.at[0] + 1.5, site.at[2]] });
+  tick(game, 0.1);
+  game.ui.tryInvoke("cheat", { drop: "white" });
+  tick(game, 0.6);
+  const crate = atSite(game, site).find((drop) => !drop.landed);
+  expect(crate).toBeDefined();
+  const altitude = nearestSupplyDrop(game.ctx)?.altitude ?? 0;
+  expect(altitude).toBeGreaterThan(DROP_HEIGHT - 5);
+  const save = supplyDropsSave(game.ctx).snapshot();
+  resetSupplyDrops(game.ctx);
+  expect(atSite(game, site)).toHaveLength(0);
+  supplyDropsSave(game.ctx).hydrate(save);
+  expect(atSite(game, site).find((drop) => drop.id === crate?.id)).toMatchObject({ landed: false });
+  expect(nearestSupplyDrop(game.ctx)?.altitude).toBeCloseTo(altitude, 5);
+  // It still lands when it would have: in the air until the last seconds, down after.
+  skip(game, (FALL_SECONDS * altitude) / DROP_HEIGHT - 10);
+  expect(nearestSupplyDrop(game.ctx)).toMatchObject({ tier: "white", landed: false });
+  skip(game, 20);
+  expect(nearestSupplyDrop(game.ctx)).toMatchObject({ tier: "white", landed: true });
 });
