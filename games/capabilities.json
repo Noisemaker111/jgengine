@@ -285,16 +285,6 @@
       "intent": "air data for a steady flight condition, to settle propulsion or rotor states"
     },
     {
-      "id": "airdrops",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/airdrop/airdrop",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "timed supply crates falling at authored sites, tiered by level, holding rolled loot, expiring when ignored"
-    },
-    {
       "id": "ambience-zones",
       "packages": [
         "@jgengine/core"
