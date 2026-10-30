@@ -6405,6 +6405,16 @@
       "intent": "format a placement number as 1st/2nd/3rd for HUD ranks"
     },
     {
+      "id": "paced-schedule",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/time/pacedSchedule",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "fire events at a pace from a start time with jitter, count, pause and save"
+    },
+    {
       "id": "panel-close",
       "packages": [
         "@jgengine/core"

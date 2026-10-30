@@ -888,6 +888,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createOrderRegistry` (function) · `import { createOrderRegistry } from "@jgengine/core/world"`
 
+## paced-schedule — fire events at a pace from a start time with jitter, count, pause and save
+
+- `createPacedSchedule` (function) · `import { createPacedSchedule } from "@jgengine/core/time/pacedSchedule"`
+
 ## particle-binding-validation — validate named particle follow spaces, render outputs, environment influence, and bounded collision child effects
 
 - `validateParticleAttachOptions` (function) · `import { validateParticleAttachOptions } from "@jgengine/core/vfx/particleDirector"`

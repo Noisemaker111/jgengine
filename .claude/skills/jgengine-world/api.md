@@ -3908,6 +3908,13 @@
 - `LinearCatchUpInput` (interface): interface LinearCatchUpInput { current: number; ratePerSecond: number; min?: number; max?: number } — ⚠ undocumented
 - `SteppedCatchUpResult` (interface): interface SteppedCatchUpResult { steps: number; remainderSeconds: number } — ⚠ undocumented
 
+## @jgengine/core/time/pacedSchedule
+
+- `PacedSchedule` (interface): interface PacedSchedule — A pace from a start time: ask what is due, pause, resume, retune the pace, or save its state.
+- `PacedScheduleConfig` (interface): interface PacedScheduleConfig — When a paced schedule fires. Times are seconds on the caller's clock.
+- `PacedScheduleState` (interface): interface PacedScheduleState — Plain JSON state of a paced schedule.
+- `createPacedSchedule` (function): function createPacedSchedule(config: PacedScheduleConfig, rng: () => number, options?: { maxPerTick?: number }): PacedSchedule — A pace from a start time: every `due(now)` call returns the events that have come due, drawing each jittered gap from the injected rng. No timers; the caller passes `now`.
+
 ## @jgengine/core/time/rateWindow
 
 - `RateWindowDecision` (interface): interface RateWindowDecision — Admission result, next stored timestamps, and wait before retrying.
