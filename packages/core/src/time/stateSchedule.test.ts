@@ -212,6 +212,127 @@ describe("createPhaseSchedule", () => {
     expect(schedule.ended()).toBe(false);
   });
 
+  test("goTo enters a phase off the ordered list and its next decides what follows", () => {
+    const schedule = createPhaseSchedule({
+      phases: [
+        { state: "idle" },
+        { state: "loading", durationSeconds: 1 },
+        { state: "unloading", durationSeconds: 1, next: "idle" },
+        { state: "broken", durationSeconds: 2, next: "idle" },
+      ],
+      loop: true,
+    });
+    expect(schedule.goTo("broken")).toBe(true);
+    expect(schedule.state()).toBe("broken");
+    expect(schedule.remainingSeconds()).toBe(2);
+    expect(schedule.goTo("lost")).toBe(false);
+    expect(schedule.state()).toBe("broken");
+    expect(schedule.tick(2)).toEqual([{ from: "broken", to: "idle", wrapped: true }]);
+  });
+
+  test("a next override skips the list order without reporting a wrap", () => {
+    const schedule = createPhaseSchedule({
+      phases: [
+        { state: "idle" },
+        { state: "loading", durationSeconds: 1 },
+        { state: "broken", durationSeconds: 2, next: "idle" },
+      ],
+      loop: true,
+    });
+    schedule.goTo("loading");
+    expect(schedule.tick(1)).toEqual([{ from: "loading", to: "broken", wrapped: false }]);
+    expect(schedule.tick(2)).toEqual([{ from: "broken", to: "idle", wrapped: true }]);
+  });
+
+  test("an explicit id addresses a phase whose state is not a name", () => {
+    const schedule = createPhaseSchedule<number>({
+      phases: [
+        { state: 0, id: "start" },
+        { state: 1, id: "run", durationSeconds: 3 },
+      ],
+      loop: true,
+    });
+    expect(schedule.goTo("run")).toBe(true);
+    expect(schedule.state()).toBe(1);
+    expect(schedule.retune("run", 5)).toBe(true);
+    expect(schedule.remainingSeconds()).toBe(5);
+  });
+
+  test("rejects a next phase that does not exist", () => {
+    expect(() => createPhaseSchedule({ phases: [{ state: "a", next: "b" }] })).toThrow("unknown next phase");
+  });
+
+  test("retune changes a phase's seconds in play and keeps its elapsed time", () => {
+    const schedule = loading();
+    schedule.tick(1);
+    expect(schedule.retune("loading", 4)).toBe(true);
+    expect(schedule.state()).toBe("loading");
+    expect(schedule.remainingSeconds()).toBe(3);
+    expect(schedule.fraction()).toBeCloseTo(0.25, 5);
+    expect(schedule.retune("lost", 4)).toBe(false);
+    expect(() => schedule.retune("loading", -1)).toThrow("at least zero");
+    expect(() => schedule.retune("loading", Number.NaN)).toThrow("at least zero");
+    expect(schedule.state()).toBe("loading");
+    expect(schedule.tick(3)).toEqual([{ from: "loading", to: "riding", wrapped: false }]);
+  });
+
+  test("drop step mode ends the tick at its first phase change", () => {
+    const schedule = createPhaseSchedule({
+      phases: [
+        { state: "load", durationSeconds: 1 },
+        { state: "ride", durationSeconds: 1 },
+        { state: "unload", durationSeconds: 1 },
+      ],
+      loop: true,
+      overshoot: "drop",
+    });
+    expect(schedule.tick(2.5)).toEqual([{ from: "load", to: "ride", wrapped: false }]);
+    expect(schedule.state()).toBe("ride");
+    expect(schedule.remainingSeconds()).toBe(1);
+    expect(schedule.tick(0.5)).toEqual([]);
+    expect(schedule.remainingSeconds()).toBeCloseTo(0.5, 5);
+    expect(schedule.tick(0.5)).toEqual([{ from: "ride", to: "unload", wrapped: false }]);
+    expect(schedule.remainingSeconds()).toBe(1);
+  });
+
+  test("a zero-length phase passes through on the next tick in drop mode too", () => {
+    const schedule = createPhaseSchedule({
+      phases: [
+        { state: "cue", durationSeconds: 0 },
+        { state: "wait" },
+        { state: "go", durationSeconds: 0 },
+        { state: "rest" },
+      ],
+      overshoot: "drop",
+    });
+    expect(schedule.tick(0.1)).toEqual([{ from: "cue", to: "wait", wrapped: false }]);
+    expect(schedule.state()).toBe("wait");
+    expect(schedule.tick(5)).toEqual([]);
+    expect(schedule.advance()).toBe("go");
+    expect(schedule.tick(0.1)).toEqual([{ from: "go", to: "rest", wrapped: false }]);
+  });
+
+  test("snapshot and restore round-trip a jumped-to, retuned phase", () => {
+    const schedule = createPhaseSchedule({
+      phases: [
+        { state: "idle" },
+        { state: "loading", durationSeconds: 2 },
+        { state: "broken", durationSeconds: 10, next: "idle" },
+      ],
+      loop: true,
+    });
+    schedule.goTo("broken");
+    schedule.retune("broken", 6);
+    schedule.tick(2.5);
+    const saved = schedule.snapshot();
+    schedule.goTo("idle");
+    schedule.restore(saved);
+    expect(schedule.state()).toBe("broken");
+    expect(schedule.index()).toBe(2);
+    expect(schedule.remainingSeconds()).toBeCloseTo(3.5, 5);
+    expect(schedule.ended()).toBe(false);
+  });
+
   test("rejects an empty list and a negative duration", () => {
     expect(() => createPhaseSchedule({ phases: [] })).toThrow();
     expect(() => createPhaseSchedule({ phases: [{ state: "x", durationSeconds: -1 }] })).toThrow();

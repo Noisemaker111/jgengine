@@ -148,6 +148,13 @@ export interface PhaseSpec<T> {
   state: T;
   /** Seconds this phase holds before it ends on its own; omit it for a phase that only `advance()` ends. */
   durationSeconds?: number;
+  /**
+   * Name `goTo` and `retune` address this phase by; defaults to `state` when it is a string.
+   * Two phases with the same name are addressed by the first one.
+   */
+  id?: string;
+  /** Name of the phase that follows this one instead of the next in list order. */
+  next?: string;
 }
 
 /** Named states one after another, each ended by its own duration or by the caller. */
@@ -155,6 +162,11 @@ export interface PhaseScheduleConfig<T> {
   phases: readonly PhaseSpec<T>[];
   /** Wrap from the last phase back to the first (default `false`: the last phase ends the schedule). */
   loop?: boolean;
+  /**
+   * What a tick does with the time a phase had left over: `carry` (default) spends it in the phases
+   * it reaches, `drop` ends the tick at its first phase change and discards the rest.
+   */
+  overshoot?: "carry" | "drop";
 }
 
 /** One phase change a {@link PhaseSchedule.tick} made. */
@@ -178,7 +190,9 @@ export interface PhaseScheduleState {
  * absolute time, this one holds where the phases actually are. A phase with `durationSeconds` ends by
  * itself inside `tick(dt)`; a phase without one holds until the caller says `advance()`, so a match's
  * buy→live→end cycle and a ride's load→ride→unload cycle are the same list with different durations.
- * `snapshot()`/`restore()` round-trip where it stands, so a save resumes mid-phase.
+ * `goTo` jumps to any named phase and `retune` changes its seconds in play, so a ride's breakdown is
+ * the same list entered out of order. `snapshot()`/`restore()` round-trip where it stands, so a save
+ * resumes mid-phase.
  */
 export interface PhaseSchedule<T> {
   readonly size: number;
@@ -194,6 +208,10 @@ export interface PhaseSchedule<T> {
   advance(): T;
   /** Jump to the phase whose state is `state`, clearing its elapsed time; false when the list has no such phase. */
   enter(state: T): boolean;
+  /** Jump to the phase named `id`, clearing its elapsed time; false when no phase has that name. */
+  goTo(id: string): boolean;
+  /** Change how long the phase named `id` holds, in play; the running phase keeps its elapsed time. False for an unknown name. */
+  retune(id: string, seconds: number): boolean;
   /** Advance by `dt` through every timed phase it ends, in order. Phases without a duration never end here. */
   tick(dt: number): PhaseTransition<T>[];
   /** Back to the first phase, elapsed cleared, `ended()` false. */
@@ -202,10 +220,13 @@ export interface PhaseSchedule<T> {
   restore(state: PhaseScheduleState): void;
 }
 
-/** A phase after validation: its state and the seconds it holds, or `null` when it waits for `advance()`. */
+/** A phase after validation: its state, its name, the seconds it holds (`null` waits for `advance()`) and the phase that follows it. */
 interface PhaseClock<T> {
   readonly state: T;
-  readonly durationSeconds: number | null;
+  readonly key: string | null;
+  durationSeconds: number | null;
+  /** The phase named by this phase's own `next`, or `null` to follow list order. */
+  nextAt: number | null;
 }
 
 function phaseClock<T>(phases: readonly PhaseClock<T>[], at: number): PhaseClock<T> {
@@ -223,13 +244,23 @@ export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSch
   if (config.phases.length === 0) throw new Error("phase schedule needs at least one phase");
   const phases: PhaseClock<T>[] = config.phases.map((phase, index) => {
     const durationSeconds = phase.durationSeconds;
-    if (durationSeconds === undefined) return { state: phase.state, durationSeconds: null };
-    if (!Number.isFinite(durationSeconds) || durationSeconds < 0) {
+    let duration: number | null;
+    if (durationSeconds === undefined) duration = null;
+    else if (!Number.isFinite(durationSeconds) || durationSeconds < 0) {
       throw new Error(`schedule phase ${index} needs a finite duration of at least zero, got ${durationSeconds}`);
-    }
-    return { state: phase.state, durationSeconds };
+    } else duration = durationSeconds;
+    const key = phase.id ?? (typeof phase.state === "string" ? phase.state : null);
+    return { state: phase.state, key, durationSeconds: duration, nextAt: null };
   });
+  for (let at = 0; at < phases.length; at += 1) {
+    const named = config.phases[at]?.next;
+    if (named === undefined) continue;
+    const found = phases.findIndex((phase) => phase.key === named);
+    if (found < 0) throw new Error(`schedule phase ${at} names an unknown next phase "${named}"`);
+    phaseClock(phases, at).nextAt = found;
+  }
   const loop = config.loop ?? false;
+  const drop = config.overshoot === "drop";
   const last = phases.length - 1;
   let index = 0;
   let elapsedSeconds = 0;
@@ -243,17 +274,17 @@ export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSch
     ended = false;
   }
 
-  function nextIndex(): number {
-    return index === last ? 0 : index + 1;
+  function followingIndex(): number {
+    return current.nextAt ?? (index === last ? 0 : index + 1);
   }
 
   function advance(): T {
     if (ended) return current.state;
-    if (index === last && !loop) {
+    if (current.nextAt === null && index === last && !loop) {
       ended = true;
       return current.state;
     }
-    enterAt(nextIndex(), 0);
+    enterAt(followingIndex(), 0);
     return current.state;
   }
 
@@ -280,6 +311,21 @@ export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSch
       enterAt(found, 0);
       return true;
     },
+    goTo(id) {
+      const found = phases.findIndex((phase) => phase.key === id);
+      if (found < 0) return false;
+      enterAt(found, 0);
+      return true;
+    },
+    retune(id, seconds) {
+      if (!Number.isFinite(seconds) || seconds < 0) {
+        throw new Error(`schedule phase "${id}" needs a finite duration of at least zero, got ${seconds}`);
+      }
+      const found = phases.findIndex((phase) => phase.key === id);
+      if (found < 0) return false;
+      phaseClock(phases, found).durationSeconds = seconds;
+      return true;
+    },
     tick(dt) {
       const steps: PhaseTransition<T>[] = [];
       if (!(dt > 0) || ended) return steps;
@@ -289,16 +335,17 @@ export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSch
         guard -= 1;
         const duration = current.durationSeconds;
         if (duration === null || elapsedSeconds < duration) break;
-        if (index === last && !loop) {
+        if (current.nextAt === null && index === last && !loop) {
           elapsedSeconds = duration;
           ended = true;
           break;
         }
         const from = current.state;
         const wrapped = index === last;
-        const carry = elapsedSeconds - duration;
-        enterAt(nextIndex(), carry);
+        const carry = drop ? 0 : elapsedSeconds - duration;
+        enterAt(followingIndex(), carry);
         steps.push({ from, to: current.state, wrapped });
+        if (drop) break;
       }
       return steps;
     },
