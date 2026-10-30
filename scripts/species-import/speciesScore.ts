@@ -1,7 +1,7 @@
 import { openGrownCrownWidthM } from "../../packages/core/src/plants/validation/crownAllometry";
 import { crownWidthBandM, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../../packages/core/src/plants/species/speciesReference";
 import type { CrownForm } from "../../packages/core/src/plants/species/plantSpecies";
-import { CROWN_ARCHITECTURE_AGE, CROWN_ARCHITECTURE_MEASURES, type CrownArchitecture, type CrownArchitectureTarget } from "../../packages/core/src/plants/validation/crownArchitecture";
+import { CROWN_ARCHITECTURE_AGE, CROWN_ARCHITECTURE_MEASURES, crownShapeBands, type CrownArchitecture, type CrownArchitectureTarget, type MeasureBand } from "../../packages/core/src/plants/validation/crownArchitecture";
 import type { Trial, TrialReading } from "./speciesTrial";
 
 /** What a fit holds one species to beyond its reference tables. */
@@ -19,21 +19,36 @@ const sq = (x: number): number => x * x;
 const hinge = (x: number, lo: number, hi: number, scale: number): number => (x < lo ? sq((lo - x) / scale) : x > hi ? sq((x - hi) / scale) : 0);
 const logRatio = (a: number, b: number): number => Math.log(Math.max(1e-6, a) / Math.max(1e-6, b));
 
-/** Crown-shape bands of each form (Brown, McAlpine & Kormanik 1967), as the crown tests check them. */
+const inBand = (x: number, b: MeasureBand | undefined, scale: number): number => (b === undefined ? 0 : hinge(x, b[0], b[1], scale));
+
+/** Crown-shape bands of each form, as the crown tests check them. */
 function shapePenalty(form: CrownForm, r: TrialReading): number {
-  if (form === "decurrent") return hinge(r.centroid, 0.4, 0.66, 0.03) + hinge(r.shoulder, r.age >= 50 ? 0.64 : 0.49, 2, 0.03);
-  // A column keeps its width up the crown and stays under 0.4 of the tree's height across.
-  if (form === "columnar") return hinge(r.centroid, 0.25, 0.55, 0.03) + hinge(r.shoulder, 0.5, 2, 0.03) + (r.age >= 50 ? hinge(r.crownWidthM / Math.max(0.1, r.heightM), 0, 0.4, 0.03) : 0);
-  return hinge(r.centroid, 0, 0.33, 0.03) + (r.age >= 50 ? hinge(r.shoulder, 0, 0.42, 0.03) : 0);
+  const bands = crownShapeBands(form, r.age);
+  return inBand(r.centroid, bands.centroid, 0.03) + inBand(r.shoulder, bands.shoulder, 0.03) + inBand(r.crownWidthM / Math.max(0.1, r.heightM), bands.widthPerHeight, 0.03);
 }
 
 /** How far a measure may stray outside its band before it costs as much as a 1-sigma height miss. */
 const ARCHITECTURE_SCALE: Readonly<Record<keyof CrownArchitecture, number>> = {
-  forkRatio: 0.05,
-  scaffoldLimbs: 1,
-  shellShare: 0.03,
-  gapFraction: 0.03,
-  limbAngleDeg: 4,
+  forkRatio: 0.015,
+  forkHeightShare: 0.015,
+  scaffoldLimbs: 0.25,
+  shellShare: 0.01,
+  gapFraction: 0.01,
+  limbAngleDeg: 1.5,
+  centroid: 0.01,
+  shoulder: 0.01,
+};
+
+/** Margin the fit keeps inside each band, as the height and DBH terms do, so a fitted tree passes the test. */
+const ARCHITECTURE_MARGIN: Readonly<Record<keyof CrownArchitecture, number>> = {
+  forkRatio: 0.06,
+  forkHeightShare: 0.04,
+  scaffoldLimbs: 0.5,
+  shellShare: 0.02,
+  gapFraction: 0.02,
+  limbAngleDeg: 3,
+  centroid: 0.02,
+  shoulder: 0.02,
 };
 
 function architecturePenalty(target: CrownArchitectureTarget, measured: CrownArchitecture | undefined): number {
@@ -41,7 +56,7 @@ function architecturePenalty(target: CrownArchitectureTarget, measured: CrownArc
   let sum = 0;
   for (const key of CROWN_ARCHITECTURE_MEASURES) {
     const band = target[key];
-    if (band !== undefined) sum += hinge(measured[key], band[0], band[1], ARCHITECTURE_SCALE[key]);
+    if (band !== undefined) sum += hinge(measured[key], band[0] + ARCHITECTURE_MARGIN[key], band[1] - ARCHITECTURE_MARGIN[key], ARCHITECTURE_SCALE[key]);
   }
   return sum;
 }

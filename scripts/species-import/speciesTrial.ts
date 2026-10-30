@@ -30,7 +30,7 @@ export interface Trial {
   stand: TrialReading[][];
   shadeLeafAreaM2: number[];
   shadeAlive: boolean[];
-  /** Whether the sapling lives 30 years under 0.05 light, as advance regrowth under a closed canopy. */
+  /** Whether the sapling lives 15 years under 0.05 light, as a suppressed tree under a closed canopy does. */
   deepShadeAlive: boolean[];
   ms: number;
 }
@@ -83,7 +83,7 @@ export function runTrial(species: PlantSpecies, seeds: readonly string[], shade:
       shadeLeafAreaM2.push(plant.stats().leafAreaM2);
       shadeAlive.push(plant.stats().alive);
       const deep = createPlantGrowth(species, { ...OPEN_TEMPERATE_SITE, light: 0.05 }, seed, { individual: "typical" });
-      deep.step(30);
+      deep.step(15);
       deepShadeAlive.push(deep.stats().alive);
     }
   }

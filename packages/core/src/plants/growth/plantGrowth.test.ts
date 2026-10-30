@@ -172,6 +172,24 @@ describe("plant growth", () => {
     expect(hangingShare(150)).toBeGreaterThan(2 * hangingShare(90) + 0.02);
   }, 120_000);
 
+  test("this year's new shoots are drawn lit like the buds they grew from, not as deep shade", () => {
+    const plant = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
+    plant.step(20);
+    const { leaves, segments } = plant.structure();
+    let newest = 0;
+    for (let row = 0; row < leaves.segment.length; row += 1) newest = Math.max(newest, segments.bornYear[leaves.segment[row] ?? 0] ?? 0);
+    let depth = 0;
+    let rows = 0;
+    for (let row = 0; row < leaves.segment.length; row += 1) {
+      if ((segments.bornYear[leaves.segment[row] ?? 0] ?? 0) !== newest) continue;
+      depth += leaves.crownDepth[row] ?? 1;
+      rows += 1;
+    }
+    expect(rows).toBeGreaterThan(0);
+    // Unlit, every new shoot read as fully shaded (depth 1) and drew darkest at the crown's surface.
+    expect(depth / rows).toBeLessThan(0.8);
+  });
+
   test("an open-grown tree keeps a longer crown than one grown in a closed stand", () => {
     const run = growLong();
     const stand = createPlantGrowth(ACER_SACCHARUM, { ...OPEN_TEMPERATE_SITE, stand: { spacingIndex: 0.25 } }, SEED);

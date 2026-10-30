@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const TSUGA_HETEROPHYLLA: PlantSpecies = {
   id: "tsuga-heterophylla",
-  version: 1,
+  version: 2,
   names: {
     scientific: "Tsuga heterophylla (Raf.) Sarg.",
     common: { en: "western hemlock", fr: "pruche de l'Ouest" },
@@ -99,11 +99,11 @@ export const TSUGA_HETEROPHYLLA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 46.72, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 68.97, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 46.72, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 68.97, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

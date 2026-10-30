@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PINUS_CLAUSA: PlantSpecies = {
   id: "pinus-clausa",
-  version: 1,
+  version: 2,
   names: {
     scientific: "Pinus clausa (Chapm. ex Engelm.) Vasey ex Sarg.",
     common: { en: "sand pine", fr: "pin des sables" },
@@ -99,11 +99,11 @@ export const PINUS_CLAUSA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 7.97, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 18.53, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 7.97, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 18.53, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

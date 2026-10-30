@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const THUJA_PLICATA: PlantSpecies = {
   id: "thuja-plicata",
-  version: 2,
+  version: 4,
   names: {
     scientific: "Thuja plicata Donn ex D. Don",
     common: { en: "western redcedar", fr: "thuya géant" },
@@ -99,11 +99,11 @@ export const THUJA_PLICATA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 136.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 156.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 136.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 156.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

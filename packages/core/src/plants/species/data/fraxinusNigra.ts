@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const FRAXINUS_NIGRA: PlantSpecies = {
   id: "fraxinus-nigra",
-  version: 2,
+  version: 3,
   names: { scientific: "Fraxinus nigra Marshall", common: { en: "black ash", fr: "frêne noir" } },
   ids: { usda: "FRNI" },
   habit: "tree",
@@ -96,11 +96,11 @@ export const FRAXINUS_NIGRA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 56.24, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 57.93, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 56.24, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 57.93, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

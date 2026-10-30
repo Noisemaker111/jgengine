@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const QUERCUS_MACROCARPA: PlantSpecies = {
   id: "quercus-macrocarpa",
-  version: 2,
+  version: 4,
   names: { scientific: "Quercus macrocarpa Michx.", common: { en: "bur oak", fr: "chêne à gros fruits" } },
   ids: { usda: "QUMA2" },
   habit: "tree",
@@ -96,11 +96,11 @@ export const QUERCUS_MACROCARPA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 45.98, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 207.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 45.98, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 207.6, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const POPULUS_DELTOIDES: PlantSpecies = {
   id: "populus-deltoides",
-  version: 1,
+  version: 2,
   names: {
     scientific: "Populus deltoides W. Bartram ex Marshall",
     common: { en: "eastern cottonwood", fr: "peuplier deltoïde" },
@@ -18,21 +18,21 @@ export const POPULUS_DELTOIDES: PlantSpecies = {
   architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
-    apicalControlMature: 0.509,
-    apicalControlHalfYears: 2.174,
-    internodeMax: 0.1009,
-    branchAngle: 35,
+    apicalControlMature: 0.5288,
+    apicalControlHalfYears: 5.63,
+    internodeMax: 0.08999,
+    branchAngle: 38.49,
     lateralBudsPerNode: 1,
     maxMetamersPerShoot: 8,
-    establishmentYears: 0,
-    horizontalVigour: 0.1546,
-    vigourIndexWeight: 0.7466,
+    establishmentYears: 2.796,
+    horizontalVigour: 0.2165,
+    vigourIndexWeight: 0.7783,
     tropism: {
-      gravity: 0.1218,
+      gravity: 0.175,
       gravityOrderDecay: 0.4,
       setpointAngle: 90,
-      setpointPerOrder: 10.66,
-      optimal: 0.2408,
+      setpointPerOrder: 5.51,
+      optimal: 0.2929,
       wind: 0.15,
       setpointMax: 90,
     },
@@ -46,10 +46,10 @@ export const POPULUS_DELTOIDES: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 0.4826,
-    lueGPerMJ: 3.186,
-    lightHalfSaturation: 0.3908,
-    respiration: 0.6822,
+    hydraulicHeightShare: 0.4733,
+    lueGPerMJ: 3.173,
+    lightHalfSaturation: 0.48,
+    respiration: 0.7802,
     sapwoodRespiration: 0.02,
     rootRespiration: 2,
     rootPerFoliage: 0.6,
@@ -62,7 +62,7 @@ export const POPULUS_DELTOIDES: PlantSpecies = {
     reproductiveShare: 0.06,
     pruneDeficitYears: 2,
     coarseRootShare: 0.25,
-    hydraulicExponent: 2,
+    hydraulicExponent: 4,
   },
   wood: {
     densityKgM3: 370,
@@ -99,11 +99,11 @@ export const POPULUS_DELTOIDES: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 9.18, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 9.77, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 9.18, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 9.77, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

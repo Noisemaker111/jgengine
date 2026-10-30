@@ -1,5 +1,7 @@
 import type { PlantSpecies } from "../species/plantSpecies";
+import type { CrownForm } from "../species/plantSpecies";
 import { CROWN_HULL_BINS, CROWN_HULL_SECTORS, type PlantStructure } from "../structure/plantStructure";
+import { crownProfile } from "./crownAllometry";
 
 /** Leaf area of one leaf of size `sizeM`, as the growth model counts it. */
 const LEAF_AREA_PER_SIZE_SQ = 0.55;
@@ -14,7 +16,9 @@ export interface CrownArchitecture {
    * leader running straight up.
    */
   forkRatio: number;
-  /** Limbs leaving the trunk at least `scaffoldRatio` of its breast-height diameter across. */
+  /** Height of the lowest codominant fork (a limb {@link CODOMINANT_RATIO} of its stem or more) over the tree's height; 1 with none. */
+  forkHeightShare: number;
+  /** Limbs leaving a stem in the lower `forkHeight` of the tree at least `scaffoldRatio` of its diameter there. */
   scaffoldLimbs: number;
   /** Share of leaf area within `shellDepthShare` of the crown radius of the crown's outer surface. */
   shellShare: number;
@@ -22,13 +26,20 @@ export interface CrownArchitecture {
   gapFraction: number;
   /** Mean angle from vertical of the limbs leaving the trunk at their base, degrees, weighted by cross-section. */
   limbAngleDeg: number;
+  /** Where the crown carries its spread, 0 at its base and 1 at its top ({@link crownProfile}). */
+  centroid: number;
+  /** Radius three quarters up the crown over its widest radius ({@link crownProfile}). */
+  shoulder: number;
 }
+
+/** A limb this share of the diameter of the stem it leaves, or more, is a codominant stem (Gilman 2011). */
+export const CODOMINANT_RATIO = 0.6;
 
 /** Thresholds {@link crownArchitecture} reads limbs and the leaf shell with. */
 export interface CrownArchitectureOptions {
   /** Share of the tree's height, from the ground, a fork is looked for in; default 0.6. */
   forkHeight?: number;
-  /** Limb over breast-height trunk diameter that counts as a scaffold limb; default 1/3. */
+  /** Limb over the diameter of the stem it leaves that counts as a scaffold limb; default 1/3. */
   scaffoldRatio?: number;
   /** Depth of the outer leaf shell as a share of crown radius; default 0.25. */
   shellDepthShare?: number;
@@ -53,8 +64,8 @@ export function crownArchitecture(structure: PlantStructure, options: CrownArchi
   const scaffoldRatio = options.scaffoldRatio ?? 1 / 3;
   const { start, end, radiusStart, radiusEnd, parent, order } = structure.segments;
   const height = Math.max(1e-6, structure.stats.heightM);
-  const breastRadius = Math.max(1e-6, (structure.stats.dbhCm / 200) || (radiusStart[0] ?? 0));
   let fork = 0;
+  let lowestFork = height;
   let scaffolds = 0;
   let angleSum = 0;
   let angleWeight = 0;
@@ -79,15 +90,21 @@ export function crownArchitecture(structure: PlantStructure, options: CrownArchi
       angleSum += limb * limb * Math.acos(Math.max(-1, Math.min(1, dy / along)));
       angleWeight += limb * limb;
     }
-    if ((start[i * 3 + 1] ?? 0) <= forkHeight * height) fork = Math.max(fork, limb / Math.max(1e-6, radiusEnd[p] ?? 0));
-    if (limb >= scaffoldRatio * breastRadius) scaffolds += 1;
+    const ratio = limb / Math.max(1e-6, radiusEnd[p] ?? 0);
+    const y = start[i * 3 + 1] ?? 0;
+    if (ratio >= CODOMINANT_RATIO && y < lowestFork) lowestFork = y;
+    if (y > forkHeight * height) continue;
+    fork = Math.max(fork, ratio);
+    if (ratio >= scaffoldRatio) scaffolds += 1;
   }
   return {
     forkRatio: fork,
+    forkHeightShare: Math.max(0, lowestFork) / height,
     scaffoldLimbs: scaffolds,
     shellShare: shellShare(structure, options.shellDepthShare ?? 0.25),
     gapFraction: gapFraction(structure, options.views ?? 4, options.cells ?? 64, start, end, radiusStart, radiusEnd),
     limbAngleDeg: angleWeight > 0 ? (angleSum / angleWeight) * (180 / Math.PI) : 0,
+    ...crownProfile(structure),
   };
 }
 
@@ -183,7 +200,7 @@ function gapFraction(structure: PlantStructure, views: number, cells: number, st
 }
 
 /** The measures of a {@link CrownArchitecture}, in a fixed order. */
-export const CROWN_ARCHITECTURE_MEASURES = ["forkRatio", "scaffoldLimbs", "shellShare", "gapFraction", "limbAngleDeg"] as const satisfies readonly (keyof CrownArchitecture)[];
+export const CROWN_ARCHITECTURE_MEASURES = ["forkRatio", "forkHeightShare", "scaffoldLimbs", "shellShare", "gapFraction", "limbAngleDeg", "centroid", "shoulder"] as const satisfies readonly (keyof CrownArchitecture)[];
 
 /** Age in years an open-grown tree is held to its {@link CrownArchitectureTarget}. */
 export const CROWN_ARCHITECTURE_AGE = 40;
@@ -194,27 +211,55 @@ export type MeasureBand = readonly [low: number, high: number];
 /** Bands a species' open-grown crown falls in at {@link CROWN_ARCHITECTURE_AGE}; an absent band is not checked. */
 export type CrownArchitectureTarget = Partial<Record<keyof CrownArchitecture, MeasureBand>>;
 
+/** Crown-shape bands of one crown form at one age; `widthPerHeight` bounds crown width over tree height. */
+export interface CrownShapeBands {
+  centroid: MeasureBand;
+  shoulder?: MeasureBand;
+  widthPerHeight?: MeasureBand;
+}
+
+/**
+ * Where a crown of each form carries its spread at `ageYears` (Brown, McAlpine & Kormanik 1967). A decurrent crown carries it near mid-crown with full
+ * shoulders, rounder with age: its centroid sits between the paraboloid's 0.33 and the sphere's 0.5,
+ * and its shoulder above the paraboloid's 0.5 once mature. An excurrent crown tapers like a cone to
+ * its leader. A columnar crown keeps its width up the crown and stays under 0.4 of the tree's height
+ * across once mature.
+ * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
+ */
+export function crownShapeBands(form: CrownForm, ageYears: number): CrownShapeBands {
+  const mature = ageYears >= 50;
+  if (form === "decurrent") return { centroid: [0.4, 0.66], shoulder: [mature ? 0.64 : 0.49, 2] };
+  if (form === "columnar") return { centroid: [0.25, 0.55], shoulder: [0.5, 2], ...(mature ? { widthPerHeight: [0, 0.4] as const } : {}) };
+  return { centroid: [0, 0.33], ...(mature ? { shoulder: [0, 0.42] as const } : {}) };
+}
+
 /**
  * What an open-grown tree's crown is built like at {@link CROWN_ARCHITECTURE_AGE} years, by crown form
- * and shade tolerance. A decurrent tree grown in the open forks in its lower 60% into three or more
+ * and shade tolerance. A decurrent tree grown in the open divides low, within the lower half of its
+ * height where an open-grown crown's base already sits (crown ratio over 0.57), into three to twelve
  * scaffold limbs at 25–65 degrees from vertical (Zimmermann & Brown 1971; Gilman 2011, open-grown
  * shade trees), and an excurrent or columnar one keeps its leader to the top with branches near
  * level. A broadleaf crown in leaf shows sky through 15–55% of its outline: healthy hardwoods rate
  * 10–30% foliage transparency within the foliated crown (Schomaker et al. 2007, FIA crown
  * transparency), and the outline adds the gaps between limbs. A shade-tolerant broadleaf holds its
  * leaves as a monolayer in the outer shell (Horn 1971), more than a crown filled evenly would (0.58
- * in the outer quarter). Shrubs, palms and herbs have no target.
+ * in the outer quarter). Crown shape follows {@link crownShapeBands}. Shrubs, palms and herbs have no
+ * target.
  * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
  */
 export function crownArchitectureTarget(species: Pick<PlantSpecies, "architecture" | "tolerance" | "leaf">): CrownArchitectureTarget {
   const form = species.architecture.crownForm;
   if (form === undefined) return {};
-  if (form !== "decurrent") return { forkRatio: [0, 0.6], limbAngleDeg: [45, 110] };
+  const shape = crownShapeBands(form, CROWN_ARCHITECTURE_AGE);
+  const shapeTarget: CrownArchitectureTarget = { centroid: shape.centroid, ...(shape.shoulder !== undefined ? { shoulder: shape.shoulder } : {}) };
+  if (form !== "decurrent") return { forkRatio: [0, CODOMINANT_RATIO], limbAngleDeg: [45, 110], ...shapeTarget };
   const broadleaf = species.leaf.lifespanYears <= 1;
   return {
-    forkRatio: [0.6, 2],
+    forkRatio: [CODOMINANT_RATIO, 2],
+    forkHeightShare: [0, 0.5],
     scaffoldLimbs: [3, 12],
     limbAngleDeg: [25, 65],
+    ...shapeTarget,
     ...(broadleaf ? { gapFraction: [0.15, 0.55] as const } : {}),
     ...(broadleaf && species.tolerance.shade >= 0.7 ? { shellShare: [0.6, 1] as const } : {}),
   };

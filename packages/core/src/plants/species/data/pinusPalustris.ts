@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PINUS_PALUSTRIS: PlantSpecies = {
   id: "pinus-palustris",
-  version: 2,
+  version: 3,
   names: { scientific: "Pinus palustris Mill.", common: { en: "longleaf pine", fr: "pin des marais" } },
   ids: { usda: "PIPA2" },
   habit: "tree",
@@ -96,11 +96,11 @@ export const PINUS_PALUSTRIS: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 2.05, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 10.35, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 2.05, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 10.35, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

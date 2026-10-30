@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const TSUGA_CANADENSIS: PlantSpecies = {
   id: "tsuga-canadensis",
-  version: 1,
+  version: 3,
   names: {
     scientific: "Tsuga canadensis (L.) Carrière",
     common: { en: "eastern hemlock", fr: "pruche du Canada" },
@@ -99,11 +99,11 @@ export const TSUGA_CANADENSIS: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 30.54, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 129.4, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 30.54, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 129.4, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

@@ -201,6 +201,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   const leafAreaIn = (year: number): number => fullLeafArea * frondLengthShare(g, year) ** 2;
   let leafAreaPerNode = leafAreaIn(0);
   const frondShoots = isFrondShape(species.leaf.shape);
+  const crownShedShare = species.habit === "tree" && !frondShoots ? crownShedLightShare(species.tolerance.shade) : 0;
   const cambium = hasCambium(species);
   // A frond spreads its leaf area along its whole length, so its shade and light are sampled there.
   const frondCells = new Int32Array(frondShoots ? nodeCap * FROND_LIGHT_SAMPLES : 0);
@@ -343,7 +344,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     state.metamers[i] = metamers;
     state.latent[i] = g.lateralBudsPerNode;
     state.latentAge[i] = 0;
-    state.light[i] = 0;
+    // A new shoot is lit as the bud it grew from until next year's flush reads its own light.
+    const budLight = parent >= 0 ? (tipLight[parent] ?? 0) : 0;
+    state.light[i] = budLight > 0 ? budLight : parent >= 0 ? (state.light[parent] ?? 0) : 0;
     state.vigour[i] = 0;
     state.moment[i] = 0;
     state.deficit[i] = 0;
@@ -704,22 +707,28 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     // In an even-aged stand every neighbour is a copy of this plant spacingIndex × its height away.
     field.setPeriod(environment.stand ? Math.max(1, environment.stand.spacingIndex * top) : 0);
     const sky = environment.light;
+    let brightest = 0;
     for (let i = 0; i < n; i += 1) {
       state.light[i] = 0;
       tipLight[i] = 0;
-      const nodeFlags = flags[i] ?? 0;
-      if ((nodeFlags & NODE_DEAD) !== 0) continue;
+      if (((flags[i] ?? 0) & NODE_DEAD) !== 0) continue;
       if ((leaves[i] ?? 0) > 0) {
         const light = frondShoots ? frondLight(i, sky, extinction) : field.lightAtCell(midCell[i] ?? -1, sky, extinction);
         state.light[i] = light;
-        if (light < g.budLightThreshold) {
-          // Short shoots starve in deep shade and never leaf again.
-          flags[i] = nodeFlags | NODE_NO_SPUR;
-          leaves[i] = 0;
-        }
+        if (light > brightest) brightest = light;
       }
       if ((budAt[i] ?? -1) >= 0 || (latent[i] ?? 0) > 0) {
         tipLight[i] = field.lightAt(end[i * 3] ?? 0, end[i * 3 + 1] ?? 0, end[i * 3 + 2] ?? 0, sky, extinction);
+      }
+    }
+    // A shoot starves in deep shade, and one shaded far below the plant's best-lit shoots is shed even
+    // in light a lone sapling would live on: the tree feeds its best-paying shoots first, so the
+    // interior of an open crown goes leafless and its limbs show.
+    const shedBelow = Math.max(g.budLightThreshold, crownShedShare * brightest);
+    for (let i = 0; i < n; i += 1) {
+      if ((leaves[i] ?? 0) > 0 && (state.light[i] ?? 0) < shedBelow) {
+        flags[i] = (flags[i] ?? 0) | NODE_NO_SPUR;
+        leaves[i] = 0;
       }
     }
   }
@@ -1440,6 +1449,18 @@ function copyEnvironment(env: PlantEnvironment): PlantEnvironment {
 }
 
 /** λ at an age: from the young value towards the mature one, halfway at `apicalControlHalfYears`. */
+/**
+ * Share of a tree's best-lit shoot's light below which a shoot sheds its leaves, from shade tolerance
+ * 0..1: 0.05 for the most tolerant, 0.25 for the least. A shoot pays its way only above its effective
+ * compensation point, which counts the wood that feeds it (Givnish 1988), and a tree sends water and
+ * nutrients to its best-paying shoots first, so tolerant trees prune at lower light (Kothari et al.
+ * 2025). The ends are set so tolerant broadleaves hold their leaves in an outer shell (Horn 1971).
+ */
+function crownShedLightShare(shadeTolerance: number): number {
+  const t = Math.min(1, Math.max(0, shadeTolerance));
+  return 0.25 - 0.2 * t;
+}
+
 function apicalControlAt(g: PlantSpecies["growth"], ageYears: number): number {
   const half = g.apicalControlHalfYears;
   return g.apicalControlMature + ((g.apicalControl - g.apicalControlMature) * half) / (half + ageYears);
