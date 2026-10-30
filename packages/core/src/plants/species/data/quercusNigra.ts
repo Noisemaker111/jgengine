@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const QUERCUS_NIGRA: PlantSpecies = {
   id: "quercus-nigra",
-  version: 11,
+  version: 12,
   names: { scientific: "Quercus nigra L.", common: { en: "water oak", fr: "chêne aquatique" } },
   ids: { usda: "QUNI" },
   habit: "tree",
@@ -96,11 +96,11 @@ export const QUERCUS_NIGRA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 17.06, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 27.06, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 17.06, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 27.06, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };
