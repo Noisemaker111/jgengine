@@ -8169,6 +8169,16 @@
       "intent": "data-authored phases that change caller data and fire a tell at value cut points"
     },
     {
+      "id": "phase-schedule",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/time/stateSchedule",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "advance named phases by time or by event, with snapshot/restore"
+    },
+    {
       "id": "photo-mode",
       "packages": [
         "@jgengine/core"

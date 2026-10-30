@@ -202,13 +202,26 @@ export interface PhaseSchedule<T> {
   restore(state: PhaseScheduleState): void;
 }
 
+/** A phase after validation: its state and the seconds it holds, or `null` when it waits for `advance()`. */
+interface PhaseClock<T> {
+  readonly state: T;
+  readonly durationSeconds: number | null;
+}
+
+function phaseClock<T>(phases: readonly PhaseClock<T>[], at: number): PhaseClock<T> {
+  const phase = phases[at];
+  if (phase === undefined) throw new Error(`phase schedule has no phase ${at}`);
+  return phase;
+}
+
 /**
  * A stateful timeline of named phases, ended by their own durations or by `advance()`.
  *
  * @capability phase-schedule advance named phases by time or by event, with snapshot/restore
  */
 export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSchedule<T> {
-  const phases = config.phases.map((phase, index) => {
+  if (config.phases.length === 0) throw new Error("phase schedule needs at least one phase");
+  const phases: PhaseClock<T>[] = config.phases.map((phase, index) => {
     const durationSeconds = phase.durationSeconds;
     if (durationSeconds === undefined) return { state: phase.state, durationSeconds: null };
     if (!Number.isFinite(durationSeconds) || durationSeconds < 0) {
@@ -216,46 +229,45 @@ export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSch
     }
     return { state: phase.state, durationSeconds };
   });
-  if (phases.length === 0) throw new Error("phase schedule needs at least one phase");
   const loop = config.loop ?? false;
   const last = phases.length - 1;
   let index = 0;
   let elapsedSeconds = 0;
   let ended = false;
+  let current = phaseClock(phases, 0);
 
-  function durationAt(at: number): number | null {
-    return phases[at]?.durationSeconds ?? null;
-  }
-
-  function enterAt(next: number, carrySeconds: number): void {
-    index = next;
+  function enterAt(at: number, carrySeconds: number): void {
+    current = phaseClock(phases, at);
+    index = at;
     elapsedSeconds = carrySeconds;
     ended = false;
   }
 
+  function nextIndex(): number {
+    return index === last ? 0 : index + 1;
+  }
+
   function advance(): T {
-    const current = phases[index]!.state;
-    if (ended) return current;
+    if (ended) return current.state;
     if (index === last && !loop) {
       ended = true;
-      return current;
+      return current.state;
     }
-    enterAt(index === last ? 0 : index + 1, 0);
-    return phases[index]!.state;
+    enterAt(nextIndex(), 0);
+    return current.state;
   }
 
   return {
     size: phases.length,
-    state: () => phases[index]!.state,
+    state: () => current.state,
     index: () => index,
     remainingSeconds() {
       if (ended) return 0;
-      const duration = durationAt(index);
-      return duration === null ? null : Math.max(0, duration - elapsedSeconds);
+      return current.durationSeconds === null ? null : Math.max(0, current.durationSeconds - elapsedSeconds);
     },
     fraction() {
       if (ended) return 1;
-      const duration = durationAt(index);
+      const duration = current.durationSeconds;
       if (duration === null) return 0;
       if (duration <= 0) return 1;
       return Math.max(0, Math.min(1, elapsedSeconds / duration));
@@ -275,29 +287,29 @@ export function createPhaseSchedule<T>(config: PhaseScheduleConfig<T>): PhaseSch
       let guard = phases.length * 2 + 2;
       while (guard > 0) {
         guard -= 1;
-        const duration = durationAt(index);
+        const duration = current.durationSeconds;
         if (duration === null || elapsedSeconds < duration) break;
         if (index === last && !loop) {
           elapsedSeconds = duration;
           ended = true;
           break;
         }
+        const from = current.state;
+        const wrapped = index === last;
         const carry = elapsedSeconds - duration;
-        const from = phases[index]!.state;
-        enterAt(index === last ? 0 : index + 1, carry);
-        steps.push({ from, to: phases[index]!.state, wrapped: index === 0 });
+        enterAt(nextIndex(), carry);
+        steps.push({ from, to: current.state, wrapped });
       }
       return steps;
     },
     reset() {
-      index = 0;
-      elapsedSeconds = 0;
-      ended = false;
+      enterAt(0, 0);
     },
     snapshot: () => ({ index, elapsedSeconds, ended }),
     restore(state) {
-      index = Number.isFinite(state.index) ? Math.max(0, Math.min(last, Math.floor(state.index))) : 0;
-      const duration = durationAt(index);
+      const at = Number.isFinite(state.index) ? Math.max(0, Math.min(last, Math.floor(state.index))) : 0;
+      enterAt(at, 0);
+      const duration = current.durationSeconds;
       const elapsed = Number.isFinite(state.elapsedSeconds) ? Math.max(0, state.elapsedSeconds) : 0;
       elapsedSeconds = duration === null ? 0 : Math.min(duration, elapsed);
       ended = state.ended;

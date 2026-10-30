@@ -1569,6 +1569,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `advancePhase` (function) · `import { advancePhase } from "@jgengine/core/ai/phaseLadder"`
 
+## phase-schedule — advance named phases by time or by event, with snapshot/restore
+
+- `createPhaseSchedule` (function) · `import { createPhaseSchedule } from "@jgengine/core/time/stateSchedule"`
+
 ## physics-backend — one interface over interchangeable rigid-body solvers — bodies, joints, raycast, shapecast, snapshot
 
 - `PhysicsBackend` (interface) · `import { PhysicsBackend } from "@jgengine/core/physics/physicsBackend"`

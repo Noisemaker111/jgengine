@@ -1598,7 +1598,7 @@
   "packages/core/src/session/roles.test.ts": {"nonNull":2},
   "packages/core/src/session/roles.ts": {"nonNull":6},
   "packages/core/src/session/roundState.test.ts": {"nonNull":8},
-  "packages/core/src/session/roundState.ts": {"cast":2,"nonNull":10},
+  "packages/core/src/session/roundState.ts": {"cast":2,"nonNull":7},
   "packages/core/src/settings/accessibilitySettings.test.ts": {"nonNull":2},
   "packages/core/src/settings/accessibilitySettings.ts": {"cast":1},
   "packages/core/src/settings/accessibilitySettingsMount.view.test.ts": {"cast":11,"any":11},
