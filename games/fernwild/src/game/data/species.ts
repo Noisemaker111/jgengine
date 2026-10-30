@@ -1,5 +1,7 @@
 import type { TemperamentConfig } from "@jgengine/core/ai/temperament";
-import type { KnockoutTamingConfig, TamingFood } from "@jgengine/core/taming/knockoutTaming";
+import type { FeedingFood, SubdualFeedingConfig } from "@jgengine/core/subdual/subdualFeeding";
+
+import { food, tamingTable } from "./taming";
 
 /** How a wild creature treats the survivor, by ARK's temperament names. */
 export type Temperament = "oblivious" | "skittish" | "docile" | "territorial" | "aggressive";
@@ -33,7 +35,7 @@ export interface SpeciesDef {
   killXp: number;
   /** Bite: damage at level 1, seconds between bites, reach in metres. Null when it never fights. */
   attack: { damage: number; interval: number; reach: number } | null;
-  taming: KnockoutTamingConfig;
+  taming: SubdualFeedingConfig;
   /** Saddle item that makes it rideable; null when it cannot be ridden. */
   saddle: string | null;
   /** The saddle's engram: level it opens at, engram points and what it costs. Null when it has no saddle. */
@@ -47,17 +49,6 @@ export interface SpeciesDef {
   /** Clubs, darts and narcotics never put it down (ARK's bosses). */
   torporImmune?: boolean;
 }
-
-const food = (countAt1: number, secondsAt1: number, countAt30: number, secondsAt30: number, ineffectiveness?: number): TamingFood => ({
-  countAt1,
-  secondsAt1,
-  countAt30,
-  secondsAt30,
-  ...(ineffectiveness === undefined ? {} : { ineffectiveness }),
-});
-
-/** ARK's knocked-out torpor drain: 0.3 a second at level 1, 0.5 at level 30. */
-const DRAIN = { at1: 0.3, at30: 0.5 };
 
 /** Wild creatures roll levels 1-30 like ARK's Island at difficulty 1. */
 export const WILD_LEVELS = { min: 1, max: 30 } as const;
@@ -88,11 +79,7 @@ const DETAILED: Readonly<Record<string, SpeciesDef>> = {
     sprintStamina: 0,
     killXp: 2,
     attack: null,
-    taming: {
-      torpor: { base: 30, perLevel: 1.8 },
-      torporDrain: DRAIN,
-      foods: { mejoberry: food(4, 49, 10, 121), amarberry: food(6, 48, 15, 120), azulberry: food(6, 48, 15, 120), tintoberry: food(6, 48, 15, 120) },
-    },
+    taming: tamingTable({ base: 30, perLevel: 1.8 }, { mejoberry: food(4, 49, 10, 121), amarberry: food(6, 48, 15, 120), azulberry: food(6, 48, 15, 120), tintoberry: food(6, 48, 15, 120) }),
     saddle: null,
     saddleEngram: null,
     seat: [0, 0.6, 0],
@@ -115,11 +102,7 @@ const DETAILED: Readonly<Record<string, SpeciesDef>> = {
     sprintStamina: 20,
     killXp: 4,
     attack: { damage: 10, interval: 1.2, reach: 2.2 },
-    taming: {
-      torpor: { base: 240, perLevel: 14.4 },
-      torporDrain: DRAIN,
-      foods: { mejoberry: food(27, 162, 63, 378), amarberry: food(41, 164, 95, 380), azulberry: food(41, 164, 95, 380), tintoberry: food(41, 164, 95, 380) },
-    },
+    taming: tamingTable({ base: 240, perLevel: 14.4 }, { mejoberry: food(27, 162, 63, 378), amarberry: food(41, 164, 95, 380), azulberry: food(41, 164, 95, 380), tintoberry: food(41, 164, 95, 380) }),
     saddle: "phiomia_saddle",
     saddleEngram: { level: 5, points: 6, cost: { hide: 20, fiber: 15, wood: 5 } },
     seat: [0, 1.55, -0.1],
@@ -143,11 +126,7 @@ const DETAILED: Readonly<Record<string, SpeciesDef>> = {
     sprintStamina: 6,
     killXp: 12,
     attack: { damage: 15, interval: 0.8, reach: 2.2 },
-    taming: {
-      torpor: { base: 180, perLevel: 10.8 },
-      torporDrain: DRAIN,
-      foods: { raw_prime_meat: food(3, 151, 5, 251, 0.02), raw_meat: food(7, 351, 15, 751), cooked_meat: food(13, 326, 30, 751) },
-    },
+    taming: tamingTable({ base: 180, perLevel: 10.8 }, { raw_prime_meat: food(3, 151, 5, 251, 0.02), raw_meat: food(7, 351, 15, 751), cooked_meat: food(13, 326, 30, 751) }),
     saddle: "raptor_saddle",
     saddleEngram: { level: 18, points: 9, cost: { hide: 110, fiber: 65, wood: 20 } },
     seat: [0, 1.25, -0.25],
@@ -246,7 +225,7 @@ function fromRow(id: string, row: Row): SpeciesDef {
   // Meals scale with the torpor a body carries, as ARK's do: a raptor (180 torpor) eats 7 raw meat at level 1.
   const meals = Math.max(2, round(torpor / 26));
   const seconds = (count: number) => round(count * 50);
-  const foods: Record<string, TamingFood> =
+  const foods: Record<string, FeedingFood> =
     diet === "carnivore"
       ? {
           raw_prime_meat: food(Math.max(1, round(meals * 0.4)), seconds(meals * 0.4), Math.max(2, round(meals * 0.75)), seconds(meals * 0.75), 0.02),
@@ -276,7 +255,7 @@ function fromRow(id: string, row: Row): SpeciesDef {
     sprintStamina: big ? 15 : 8,
     killXp: Math.max(2, round(health / 20)),
     attack: { damage: melee, interval: big ? 1.4 : 1, reach: round(1.4 + radius * 0.6, 0.1) },
-    taming: { torpor: { base: torpor, perLevel: torporPerLevel }, torporDrain: DRAIN, foods },
+    taming: tamingTable({ base: torpor, perLevel: torporPerLevel }, foods),
     saddle: saddleLevel === null ? null : `${id}_saddle`,
     saddleEngram:
       saddleLevel === null
@@ -311,7 +290,7 @@ function broodmother(tier: "gamma" | "beta" | "alpha", health: number, healthPer
     sprintStamina: 0,
     killXp: 32,
     attack: { damage: melee, interval: 2, reach: 3 },
-    taming: { torpor: { base: 100000, perLevel: 6000 }, torporDrain: DRAIN, foods: {} },
+    taming: tamingTable({ base: 100000, perLevel: 6000 }, {}),
     saddle: null,
     saddleEngram: null,
     seat: [0, 0, 0],
