@@ -1,6 +1,5 @@
 import {
   createReputationLedger,
-  DEFAULT_REPUTATION_TIERS,
   type ReputationLedger,
   type ReputationTier,
 } from "../faction/reputation";
@@ -9,8 +8,8 @@ import {
 export interface StandingTrackDef {
   id: string;
   label?: string;
-  /** Tiers this track crosses, ascending by `min`; defaults to the shared reputation ladder. */
-  tiers?: readonly ReputationTier[];
+  /** Tiers this track crosses, ascending by `min`. Required: the game's own names and cut points. */
+  tiers: readonly ReputationTier[];
   /** Standing every actor starts at (default `0`). */
   initial?: number;
   /** Floor and ceiling; omitted means unbounded. */
@@ -106,7 +105,7 @@ export function assertStandingConfig(config: StandingConfig): void {
         `Standing track "${id}" initial ${track.initial} is outside its bounds`,
       );
     }
-    const tiers = track.tiers ?? DEFAULT_REPUTATION_TIERS;
+    const tiers = track.tiers;
     check(tiers.length > 0, `Standing track "${id}" needs at least one tier`);
     const tierIds = new Set<string>();
     for (const tier of tiers) {
@@ -151,7 +150,7 @@ export function createStanding(config: StandingConfig): Standing {
     ledgers.set(
       track.id,
       createReputationLedger({
-        tiers: track.tiers ?? DEFAULT_REPUTATION_TIERS,
+        tiers: track.tiers,
         initial: { [track.id]: track.initial ?? 0 },
         ...(track.min === undefined ? {} : { min: track.min }),
         ...(track.max === undefined ? {} : { max: track.max }),

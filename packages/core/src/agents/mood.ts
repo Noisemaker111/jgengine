@@ -25,49 +25,41 @@ export interface Mood {
   readonly label: string;
 }
 
-/**
- * Five bands a park guest, a household being or a soldier can share. A game overrides them when its
- * own tone needs different words; the numeric bands are what HUD counters and tests read.
- */
-export const DEFAULT_MOOD_TIERS: readonly MoodTier[] = [
-  { at: 82, id: "radiant", label: "Radiant" },
-  { at: 64, id: "content", label: "Content" },
-  { at: 45, id: "fine", label: "Fine" },
-  { at: 26, id: "glum", label: "Glum" },
-  { at: 0, id: "low", label: "Low" },
-];
-
 /** Serializable mood state: the game-raised biases that sit on top of need satisfaction. */
 export interface MoodSnapshot {
   sources: Record<string, number>;
 }
 
 /**
- * The band a score reads as, from tiers sorted by `at` descending. Unknown or unsorted tiers fall
- * back to the lowest declared band rather than throwing, because a HUD reads this every frame.
+ * The band a score reads as, from the caller's own tiers. A score below every tier reads as the
+ * lowest tier in the list; an empty list throws `RangeError`.
  *
  * @capability mood a mood derived from how satisfied an agent's needs are
  */
-export function moodTierOf(score: number, tiers: readonly MoodTier[] = DEFAULT_MOOD_TIERS): MoodTier {
+export function moodTierOf(score: number, tiers: readonly MoodTier[]): MoodTier {
+  let lowest = tiers[0];
+  if (lowest === undefined) throw new RangeError("A mood tier list needs at least one tier");
   const best = tierAt(
     tiers.map((tier) => ({ at: tier.at, id: tier })),
     score,
   );
   if (best !== null) return best.id;
-  return tiers[tiers.length - 1] ?? { at: 0, id: "low", label: "Low" };
+  for (const tier of tiers) if (tier.at < lowest.at) lowest = tier;
+  return lowest;
 }
 
 /**
- * A mood read from a need set: each declared need contributes its `0..1` satisfaction times its
- * weight, normalized by the total weight, so an agent with four needs and one with six read on the
- * same 0-100 scale. Pure and allocation-light - the per-frame read a HUD and a thought bubble share.
+ * A mood read from a need set, on the caller's own tier list: each declared need contributes its
+ * `0..1` satisfaction times its weight, normalized by the total weight, so an agent with four needs
+ * and one with six read on the same 0-100 scale. Pure and allocation-light - the per-frame read a
+ * HUD and a thought bubble share.
  *
  * @capability mood a mood derived from how satisfied an agent's needs are
  */
 export function readMood(
   needs: Pick<NeedSet, "ids" | "fraction">,
   weights: readonly MoodWeight[],
-  tiers: readonly MoodTier[] = DEFAULT_MOOD_TIERS,
+  tiers: readonly MoodTier[],
   sources?: Readonly<Record<string, number>>,
 ): Mood {
   let total = 0;
@@ -104,20 +96,21 @@ export interface MoodReader {
 }
 
 /**
- * Create the mood an agent carries. Needs are the agent's own (shared with its utility brain), and
- * every bias is named data the game can remove again - there is no decaying hidden penalty.
+ * Create the mood an agent carries. Needs are the agent's own (shared with its utility brain), the
+ * tiers are the game's own bands, and every bias is named data the game can remove again - there is
+ * no decaying hidden penalty.
  *
  * @capability mood a mood derived from how satisfied an agent's needs are
  */
 export function createMoodReader(config: {
   readonly needs: Pick<NeedSet, "ids" | "fraction">;
   readonly weights?: readonly MoodWeight[];
-  readonly tiers?: readonly MoodTier[];
+  readonly tiers: readonly MoodTier[];
 }): MoodReader {
   let weights: readonly MoodWeight[] =
     config.weights ??
     config.needs.ids().map((need) => ({ need, weight: 1 }));
-  let tiers: readonly MoodTier[] = config.tiers ?? DEFAULT_MOOD_TIERS;
+  let tiers: readonly MoodTier[] = config.tiers;
   let sources: Record<string, number> = {};
 
   return {

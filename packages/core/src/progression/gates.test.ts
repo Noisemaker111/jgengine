@@ -10,8 +10,13 @@ const CATALOG = createUnlockCatalog([
   { id: "deco_garden", category: "scenery" },
 ]);
 
+const TRACK_TIERS = [
+  { id: "new", min: 0, relation: "neutral" as const },
+  { id: "known", min: 15, relation: "friendly" as const },
+];
+
 const STANDING = createStanding({
-  tracks: [{ id: "park" }],
+  tracks: [{ id: "park", tiers: TRACK_TIERS }],
   outcomes: [{ id: "good_day", impacts: { park: 5 } }],
 });
 
@@ -57,7 +62,7 @@ describe("gate set", () => {
   });
 
   test("facts can be read straight off a standing ledger", () => {
-    const standing = createStanding({ tracks: [{ id: "park" }] });
+    const standing = createStanding({ tracks: [{ id: "park", tiers: TRACK_TIERS }] });
     standing.adjust("jon", "park", 12);
     const read = gateFacts(standing, "jon", { cash: 700 });
     expect(read.standing("park")).toBe(12);

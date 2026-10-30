@@ -7,17 +7,6 @@ export interface ReputationTier {
   relation: FactionRelation;
 }
 
-export const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] = [
-  { id: "hated", min: -42000, relation: "hostile" },
-  { id: "hostile", min: -6000, relation: "hostile" },
-  { id: "unfriendly", min: -3000, relation: "neutral" },
-  { id: "neutral", min: 0, relation: "neutral" },
-  { id: "friendly", min: 3000, relation: "friendly" },
-  { id: "honored", min: 9000, relation: "friendly" },
-  { id: "revered", min: 21000, relation: "friendly" },
-  { id: "exalted", min: 42000, relation: "friendly" },
-];
-
 /**
  * Map a faction standing value to its named reputation tier.
  *
@@ -35,7 +24,8 @@ export function tierForStanding(tiers: readonly ReputationTier[], standing: numb
 }
 
 export interface ReputationLedgerConfig {
-  tiers?: readonly ReputationTier[];
+  /** Named bands this caller's standings cross, ascending by `min`. */
+  tiers: readonly ReputationTier[];
   initial?: Readonly<Record<string, number>>;
   min?: number;
   max?: number;
@@ -59,8 +49,12 @@ export interface ReputationLedger {
   restore(next: ReputationLedgerState): void;
 }
 
-export function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger {
-  const tiers = [...(config.tiers ?? DEFAULT_REPUTATION_TIERS)].sort((a, b) => a.min - b.min);
+/**
+ * A standing ledger over the caller's own tier list: `tiers` is required, so the game says which
+ * names and cut points its standings cross.
+ */
+export function createReputationLedger(config: ReputationLedgerConfig): ReputationLedger {
+  const tiers = [...config.tiers].sort((a, b) => a.min - b.min);
   const initial = config.initial ?? {};
   const min = config.min ?? Number.NEGATIVE_INFINITY;
   const max = config.max ?? Number.POSITIVE_INFINITY;

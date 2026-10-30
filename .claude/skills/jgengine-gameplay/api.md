@@ -35,15 +35,14 @@
 
 ## @jgengine/core/agents/mood
 
-- `DEFAULT_MOOD_TIERS` (const): const DEFAULT_MOOD_TIERS: readonly MoodTier[] — Five bands a park guest, a household being or a soldier can share. A game overrides them when its own tone needs different words; the numeric bands are what HUD counters and tests read.
 - `Mood` (interface): interface Mood — What the agent feels right now, on the caller's own tier labels.
 - `MoodReader` (interface): interface MoodReader — A mood reader that keeps the game-raised biases, so a queue or a litter patch moves mood too.
 - `MoodSnapshot` (interface): interface MoodSnapshot — Serializable mood state: the game-raised biases that sit on top of need satisfaction.
 - `MoodTier` (interface): interface MoodTier — One labelled band of the 0-100 mood score.
 - `MoodWeight` (interface): interface MoodWeight — One need's say in the mood score; weights are relative, so they need no fixed total.
-- `createMoodReader` (function): function createMoodReader(config: { readonly needs: Pick<NeedSet, "ids" | "fraction">; readonly weights?: readonly MoodWeight[]; readonly tiers?: readonly MoodTier[]; }): MoodReader — Create the mood an agent carries. Needs are the agent's own (shared with its utility brain), and every bias is named data the game can remove again - there is no decaying hidden penalty.
-- `moodTierOf` (function): function moodTierOf(score: number, tiers: readonly MoodTier[] = DEFAULT_MOOD_TIERS): MoodTier — The band a score reads as, from tiers sorted by `at` descending. Unknown or unsorted tiers fall back to the lowest declared band rather than throwing, because a HUD reads this every frame.
-- `readMood` (function): function readMood(needs: Pick<NeedSet, "ids" | "fraction">, weights: readonly MoodWeight[], tiers: readonly MoodTier[] = DEFAULT_MOOD_TIERS, sources?: Readonly<Record<string, number>>): Mood — A mood read from a need set: each declared need contributes its `0..1` satisfaction times its weight, normalized by the total weight, so an agent with four needs and one with six read on the same 0-100 scale. Pure and allocation-light - the per-frame read a HUD and a thought bubble share.
+- `createMoodReader` (function): function createMoodReader(config: { readonly needs: Pick<NeedSet, "ids" | "fraction">; readonly weights?: readonly MoodWeight[]; readonly tiers: readonly MoodTier[]; }): MoodReader — Create the mood an agent carries. Needs are the agent's own (shared with its utility brain), the tiers are the game's own bands, and every bias is named data the game can remove again - there is no decaying hidden penalty.
+- `moodTierOf` (function): function moodTierOf(score: number, tiers: readonly MoodTier[]): MoodTier — The band a score reads as, from the caller's own tiers. A score below every tier reads as the lowest tier in the list; an empty list throws `RangeError`.
+- `readMood` (function): function readMood(needs: Pick<NeedSet, "ids" | "fraction">, weights: readonly MoodWeight[], tiers: readonly MoodTier[], sources?: Readonly<Record<string, number>>): Mood — A mood read from a need set, on the caller's own tier list: each declared need contributes its `0..1` satisfaction times its weight, normalized by the total weight, so an agent with four needs and one with six read on the same 0-100 scale. Pure and allocation-light - the per-frame read a HUD and a thought bubble share.
 
 ## @jgengine/core/agents/relationships
 
