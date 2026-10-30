@@ -307,8 +307,9 @@ provenance.
 - Zimmermann & Brown 1971, *Trees: Structure and Function*; Gilman 2011, *An Illustrated Guide to
   Pruning*: scaffold limbs and codominant forks. Horn 1971, *The Adaptive Geometry of Trees*:
   monolayer crowns. Schomaker et al. 2007, crown-condition classification, USDA Forest Service
-  GTR SRS-102 (US public domain): foliage transparency. Brown, McAlpine & Kormanik 1967, apical
-  dominance and crown form, *American Journal of Botany* 54: decurrent and excurrent crown shape.
+  GTR SRS-102 (US public domain): foliage transparency.
+- Franklin 2008, shade avoidance, *New Phytologist* 179: neighbours' shade strengthens apical
+  dominance, so stand-grown trees divide less.
 - Givnish 1988, adaptation to sun and shade, *Australian Journal of Plant Physiology* 15: the
   effective light compensation point. Kothari et al. 2025, self-pruning and branch carbon balance,
   *Functional Ecology*: shade-tolerant trees shed shaded shoots at lower light.

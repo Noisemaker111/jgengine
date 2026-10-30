@@ -925,10 +925,10 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     for (let k = 0; k < order; k += 1) gravity *= g.tropism.gravityOrderDecay;
     const windAngle = (environment.wind.dir * PLANT_PI) / 180;
     const strength = environment.wind.strength * g.tropism.wind;
-    // Apical control holds laterals out at their set point; as it fades they turn up into codominant
-    // stems, so a decurrent crown divides into upright limbs while an excurrent one keeps level branches
-    // (Wilson 2000, apical control of branch angle).
-    const release = apicalControlAt(g, state.year) / Math.max(1e-6, g.apicalControl);
+    // Apical control holds laterals out at their set point; as it fades a decurrent crown's turn up into
+    // codominant stems and upright limbs, while an excurrent crown keeps level branches (Wilson 2000,
+    // apical control of branch angle).
+    const release = divides ? apicalControlAt(g, state.year) / Math.max(1e-6, g.apicalControl) : 1;
     const setpointDeg = order === 0 ? 0 : Math.min(g.tropism.setpointMax, g.tropism.setpointAngle * release + (order - 1) * g.tropism.setpointPerOrder);
     const setpoint = (setpointDeg * PLANT_PI) / 180;
     return {
@@ -1025,9 +1025,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
           // may overtop the leader: it keeps the stem's order and grows upright beside it as a codominant
           // stem, and a decurrent crown divides into several (Brown, McAlpine & Kormanik 1967; Zimmermann
           // & Brown 1971). The chance rises smoothly as λ falls, so a small change of λ makes a small
-          // change of crown, and falls with the bud's
-          // light: neighbours' shade strengthens apical dominance (Franklin 2008), so a stand-grown tree
-          // keeps a single bole where the same tree in the open divides.
+          // change of crown, and falls with the bud's light: neighbours' shade strengthens apical
+          // dominance (Franklin 2008), so a stand-grown tree keeps a single bole where the same tree in
+          // the open divides.
           const parentOrder = state.order[node] ?? 0;
           const [roll, after] = stepRandomSeed(next);
           const codominant = divides && parentOrder === 0 && year - (state.born[node] ?? 0) <= 1 && roll < codominantChance(g.apicalControl, lambda, tipLight[node] ?? 0) / lateralsPerShoot;
