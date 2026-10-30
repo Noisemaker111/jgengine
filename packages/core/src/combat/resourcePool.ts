@@ -1,3 +1,11 @@
+import {
+  changeStatPool,
+  createStatPool,
+  patchStatPool,
+  statPoolFraction,
+  type StatPool,
+} from "../stats/statPool";
+
 export interface ResourcePoolConfig {
   max: number;
   initial?: number;
@@ -46,70 +54,54 @@ export interface ResourcePool {
  * @capability resource-pool a regenerating pool like mana or stamina that actions spend from
  */
 export function createResourcePool(config: ResourcePoolConfig): ResourcePool {
-  let max = Math.max(0, config.max);
   let regenPerSecond = Math.max(0, config.regenPerSecond ?? 0);
   let decayPerSecond = Math.max(0, config.decayPerSecond ?? 0);
-  let current = clamp(config.initial ?? max, max);
-
-  function clamp(value: number, ceiling: number): number {
-    return Math.max(0, Math.min(ceiling, value));
-  }
+  let pool: StatPool = createStatPool({ current: config.initial, max: Math.max(0, config.max), min: 0 });
 
   return {
-    current() {
-      return current;
-    },
-    max() {
-      return max;
-    },
+    current: () => pool.current,
+    max: () => pool.max,
     setMax(value) {
-      max = Math.max(0, value);
-      current = clamp(current, max);
+      pool = patchStatPool(pool, { max: Math.max(0, value) });
     },
-    fraction() {
-      return max <= 0 ? 0 : current / max;
-    },
+    fraction: () => statPoolFraction(pool),
     canSpend(amount) {
-      return amount <= 0 || amount <= current;
+      return amount <= 0 || amount <= pool.current;
     },
     spend(amount) {
       if (amount <= 0) return true;
-      if (amount > current) return false;
-      current = clamp(current - amount, max);
+      if (amount > pool.current) return false;
+      pool = changeStatPool(pool, -amount).pool;
       return true;
     },
     gain(amount) {
-      if (amount > 0) current = clamp(current + amount, max);
-      return current;
+      if (amount > 0) pool = changeStatPool(pool, amount).pool;
+      return pool.current;
     },
     set(value) {
-      current = clamp(value, max);
+      pool = patchStatPool(pool, { current: value });
     },
     tick(dtSeconds) {
       if (dtSeconds <= 0) return;
-      const net = (regenPerSecond - decayPerSecond) * dtSeconds;
-      current = clamp(current + net, max);
+      pool = changeStatPool(pool, (regenPerSecond - decayPerSecond) * dtSeconds).pool;
     },
-    isFull() {
-      return current >= max;
-    },
-    isEmpty() {
-      return current <= 0;
-    },
-    snapshot() {
-      return { current, max, regenPerSecond, decayPerSecond };
-    },
+    isFull: () => pool.current >= pool.max,
+    isEmpty: () => pool.current <= 0,
+    snapshot: () => ({
+      current: pool.current,
+      max: pool.max,
+      regenPerSecond,
+      decayPerSecond,
+    }),
     restore(state) {
-      max = Math.max(0, state.max);
       regenPerSecond = Math.max(0, state.regenPerSecond);
       decayPerSecond = Math.max(0, state.decayPerSecond);
-      current = clamp(state.current, max);
+      pool = createStatPool({ current: state.current, max: Math.max(0, state.max), min: 0 });
     },
     retune(patch) {
-      if (patch.max !== undefined) max = Math.max(0, patch.max);
       if (patch.regenPerSecond !== undefined) regenPerSecond = Math.max(0, patch.regenPerSecond);
       if (patch.decayPerSecond !== undefined) decayPerSecond = Math.max(0, patch.decayPerSecond);
-      current = clamp(current, max);
+      if (patch.max !== undefined) pool = patchStatPool(pool, { max: Math.max(0, patch.max) });
     },
   };
 }
