@@ -1,11 +1,11 @@
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { createLootRegistry } from "@jgengine/core/loot/lootTable";
-import { createMotionTrack, type MotionTrack } from "@jgengine/core/movement/motionTrack";
+import { createMotionTrack } from "@jgengine/core/movement/motionTrack";
 import { pickWeighted } from "@jgengine/core/random/pick";
 import { createRemainsField, type Remains, type RemainsField, type RemainsSnapshot, type RemainsStack } from "@jgengine/core/remains/remains";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
-import { createPacedSchedule, type PacedSchedule, type PacedScheduleState } from "@jgengine/core/time/pacedSchedule";
+import { createRefillSlots, type RefillSlotsState } from "@jgengine/core/time/refillSlots";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 
 import { editorLayers } from "../editorLayers";
@@ -24,6 +24,7 @@ export const CRATE_LASTS = 1200;
 /** Seconds a site waits, between these two, after its crate is gone before the next one starts down. */
 export const SUPPLY_RESPAWN: readonly [number, number] = [600, 1800];
 const OPEN_REACH = 3;
+const TIER_IDS = new Set(SUPPLY_TIERS.map((tier) => tier.id));
 
 const lootOf = perContext((ctx) => {
   const loot = createLootRegistry({ rng: ctx.rng });
@@ -54,7 +55,15 @@ export function supplySites(ctx: GameContext): SupplySite[] {
   });
 }
 
-/** A crate on its way down: the plain data a save keeps, and its track rebuilt on restore. */
+/** What a crate's remains carry: the crate, its site, its tier and when it started down. */
+interface CrateData {
+  crateId: string;
+  site: string;
+  tier: string;
+  releasedAt: number;
+}
+
+/** A crate at its site: it starts down at `releasedAt` and lies where it lands. */
 interface SupplyCrate {
   id: string;
   site: string;
@@ -75,24 +84,66 @@ interface SupplyDrop {
   until: number | null;
 }
 
-/** A save of the falling crates, each site's next release and the landed crates. */
+/** A save of which sites hold a crate, when it started down, and what is in it. */
 export interface SupplyDropSave {
   seq: number;
-  falling: SupplyCrate[];
-  sites: Record<string, PacedScheduleState>;
-  landed: RemainsSnapshot;
+  sites: RefillSlotsState;
+  crates: RemainsSnapshot<CrateData>;
 }
 
-/** A crate's site, tier and release time, kept in its remains owner as `id|site|tier|releasedAt`. */
-function ownerOf(crate: SupplyCrate): string {
-  return `${crate.id}|${crate.site}|${crate.tier}|${crate.releasedAt}`;
+/** The crate a landed remains entry belongs to. */
+const crateOf = (data: CrateData): SupplyCrate => ({ id: data.crateId, site: data.site, tier: data.tier, releasedAt: data.releasedAt });
+
+/** The payload a crate keeps with its remains. */
+const dataOf = (crate: SupplyCrate): CrateData => ({ crateId: crate.id, site: crate.site, tier: crate.tier, releasedAt: crate.releasedAt });
+
+const present = (drop: SupplyDrop | null): drop is SupplyDrop => drop !== null;
+
+/** The tier a site sends, drawn from its weights. */
+function pickTier(site: SupplySite, rng: () => number): string {
+  const chosen = pickWeighted(rng, site.tiers, (entry) => entry.weight);
+  if (chosen === undefined) throw new Error(`supply drop site ${site.id} has no tier weight`);
+  return chosen.tier;
 }
 
-function crateOf(owner: string): SupplyCrate | null {
-  const [id, site, tier, released] = owner.split("|");
-  if (id === undefined || site === undefined || tier === undefined || released === undefined) return null;
-  const releasedAt = Number(released);
-  return Number.isFinite(releasedAt) ? { id, site, tier, releasedAt } : null;
+/** A site's first ready time: spread back over a crate's life, so a world already under way has crates down. */
+const seedReadyAt = (now: number, rng: () => number): number => now - rng() * (FALL_SECONDS + CRATE_LASTS) + rng() * SUPPLY_RESPAWN[1] * 0.5;
+
+/** A crate in the air where its fall has it at `now`. */
+function flyingView(crate: SupplyCrate, now: number, site: SupplySite): SupplyDrop {
+  const [x, y, z] = site.at;
+  const position: [number, number, number] = [0, 0, 0];
+  createMotionTrack({ points: [[x, y + DROP_HEIGHT, z], [x, y, z]], duration: FALL_SECONDS, startAt: crate.releasedAt }).sampleInto(now, position);
+  return { ...crate, position, altitude: position[1] - y, landed: false, contents: [], until: null };
+}
+
+/** A crate down, where its remains lie. */
+function landedView(crate: SupplyCrate, entry: Remains<CrateData>): SupplyDrop {
+  return { ...crate, position: [entry.at[0], entry.at[1], entry.at[2]], altitude: 0, landed: true, contents: entry.contents, until: entry.until };
+}
+
+/** A crate where it is at `now`: on its way down, or down where its remains lie. */
+function crateView(entry: Remains<CrateData>, now: number, siteOf: ReadonlyMap<string, SupplySite>): SupplyDrop | null {
+  const data = entry.data;
+  if (data === undefined) return null;
+  const site = siteOf.get(data.site);
+  const crate = crateOf(data);
+  return site !== undefined && now < entry.leftAt + FALL_SECONDS ? flyingView(crate, now, site) : landedView(crate, entry);
+}
+
+/** The closest landed crate within `reach` of `at` on the ground plane. */
+function nearestLanded(drops: readonly SupplyDrop[], at: readonly [number, number, number], reach: number): SupplyDrop | null {
+  let best: SupplyDrop | null = null;
+  let bestDistance = reach;
+  for (const drop of drops) {
+    if (!drop.landed) continue;
+    const distance = Math.hypot(drop.position[0] - at[0], drop.position[2] - at[2]);
+    if (distance <= bestDistance) {
+      best = drop;
+      bestDistance = distance;
+    }
+  }
+  return best;
 }
 
 /**
@@ -101,148 +152,58 @@ function crateOf(owner: string): SupplyCrate | null {
  */
 function createSupplyDropField(ctx: GameContext, sites: readonly SupplySite[]) {
   const siteOf = new Map(sites.map((site) => [site.id, site]));
-  const tierIds = new Set(SUPPLY_TIERS.map((tier) => tier.id));
-  for (const site of sites) for (const entry of site.tiers) if (!tierIds.has(entry.tier)) throw new Error(`supply drop site ${site.id}: unknown tier ${entry.tier}`);
-  const schedules = new Map<string, PacedSchedule>(sites.map((site) => [site.id, createPacedSchedule({ firstAt: 0, every: 0 }, ctx.rng)]));
-  let falling = new Map<string, { crate: SupplyCrate; track: MotionTrack }>();
-  let landed: RemainsField = createRemainsField({ lastsSeconds: CRATE_LASTS });
+  for (const site of sites) for (const entry of site.tiers) if (!TIER_IDS.has(entry.tier)) throw new Error(`supply drop site ${site.id}: unknown tier ${entry.tier}`);
+  const slots = createRefillSlots({ slots: sites.map((site) => site.id), refillSeconds: SUPPLY_RESPAWN }, ctx.rng);
+  const crates: RemainsField<CrateData> = createRemainsField<CrateData>({ lastsSeconds: FALL_SECONDS + CRATE_LASTS });
   let seq = 0;
   let seeded = false;
-
-  const wait = (rng: () => number): number => SUPPLY_RESPAWN[0] + rng() * (SUPPLY_RESPAWN[1] - SUPPLY_RESPAWN[0]);
-  const pickTier = (site: SupplySite, rng: () => number): string => {
-    const chosen = pickWeighted(rng, site.tiers, (entry) => entry.weight);
-    if (chosen === undefined) throw new Error(`supply drop site ${site.id} has no tier weight`);
-    return chosen.tier;
-  };
-  const nextRelease = (site: string, at: number): void => {
-    const schedule = schedules.get(site);
-    if (schedule === undefined) return;
-    schedule.retune({ firstAt: at });
-    schedule.reset();
-  };
-  const trackOf = (crate: SupplyCrate): MotionTrack | null => {
-    const site = siteOf.get(crate.site);
-    if (site === undefined) return null;
-    const [x, y, z] = site.at;
-    return createMotionTrack({ points: [[x, y + DROP_HEIGHT, z], [x, y, z]], duration: FALL_SECONDS, startAt: crate.releasedAt });
-  };
-  const view = (crate: SupplyCrate, track: MotionTrack, now: number): SupplyDrop => {
-    const position: [number, number, number] = [0, 0, 0];
-    track.sampleInto(now, position);
-    return { ...crate, position, altitude: position[1] - (siteOf.get(crate.site)?.at[1] ?? 0), landed: false, contents: [], until: null };
-  };
-  const down = (crate: SupplyCrate, entry: Remains): SupplyDrop => ({
-    ...crate, position: [entry.at[0], entry.at[1], entry.at[2]], altitude: 0, landed: true, contents: entry.contents, until: entry.until,
-  });
-  const landedOf = (id: string): Remains | undefined => landed.list().find((entry) => crateOf(entry.owner)?.id === id);
-  const busySites = (): Set<string> => {
-    const busy = new Set<string>();
-    for (const entry of falling.values()) busy.add(entry.crate.site);
-    for (const entry of landed.list()) {
-      const crate = crateOf(entry.owner);
-      if (crate !== null) busy.add(crate.site);
-    }
-    return busy;
-  };
-  const release = (site: SupplySite, at: number, tier: string): SupplyCrate => {
-    seq += 1;
-    const crate: SupplyCrate = { id: `drop_${seq}`, site: site.id, tier, releasedAt: at };
-    const track = trackOf(crate);
-    if (track !== null) falling.set(crate.id, { crate, track });
-    return crate;
-  };
+  const leaveCrate = (site: SupplySite, crate: SupplyCrate): boolean =>
+    crates.leave({ owner: crate.id, at: site.at, contents: rollCrate(ctx, crate.tier, ctx.rng), now: crate.releasedAt, data: dataOf(crate) }) !== null;
+  const views = (now: number): SupplyDrop[] => crates.list().map((entry) => crateView(entry, now, siteOf)).filter(present);
 
   return {
     tick(now: number, rng: () => number): void {
-      if (!seeded) {
-        seeded = true;
-        // A world already under way: release times spread back over a crate's life, so some have landed.
-        for (const site of sites) nextRelease(site.id, now - rng() * (FALL_SECONDS + CRATE_LASTS) + rng() * SUPPLY_RESPAWN[1] * 0.5);
+      if (!seeded) for (const site of sites) slots.readyAt(site.id, seedReadyAt(now, rng));
+      const readyAt = slots.snapshot().slots;
+      for (const id of slots.ready(now)) {
+        const site = siteOf.get(id);
+        if (site === undefined) continue;
+        const crate: SupplyCrate = { id: `drop_${++seq}`, site: id, tier: pickTier(site, rng), releasedAt: readyAt[id]?.readyAt ?? now };
+        if (leaveCrate(site, crate)) slots.fill(id);
+        else slots.empty(id, now);
       }
-      const busy = busySites();
-      for (const site of sites) {
-        if (busy.has(site.id)) continue;
-        const schedule = schedules.get(site.id);
-        if (schedule === undefined) continue;
-        const at = schedule.snapshot().nextAt;
-        if (schedule.due(now).length > 0) release(site, at, pickTier(site, rng));
-      }
-      for (const [id, { crate, track }] of [...falling]) {
-        if (!track.justArrived(now)) continue;
-        falling.delete(id);
-        const site = siteOf.get(crate.site);
-        const left = site === undefined ? null : landed.leave({ owner: ownerOf(crate), at: site.at, contents: rollCrate(ctx, crate.tier, rng), now: track.arrivesAt() });
-        if (left === null) nextRelease(crate.site, now + wait(rng));
-      }
-      for (const gone of landed.expire(now)) {
-        const crate = crateOf(gone.owner);
-        if (crate !== null) nextRelease(crate.site, now + wait(rng));
-      }
+      for (const gone of crates.expire(now)) if (gone.data !== undefined) slots.empty(gone.data.site, now);
+      seeded = true;
     },
-    list(now: number): SupplyDrop[] {
-      return [
-        ...[...falling.values()].map(({ crate, track }) => view(crate, track, now)),
-        ...landed.list().flatMap((entry) => {
-          const crate = crateOf(entry.owner);
-          return crate === null ? [] : [down(crate, entry)];
-        }),
-      ];
-    },
-    nearest(at: readonly [number, number, number], reach: number): SupplyDrop | null {
-      const entry = landed.nearest(at, reach);
-      const crate = entry === null ? null : crateOf(entry.owner);
-      return crate === null || entry === null ? null : down(crate, entry);
-    },
-    take(id: string, accept: (stack: RemainsStack) => number, now: number, rng: () => number): RemainsStack[] {
-      const entry = landedOf(id);
-      if (entry === undefined) return [];
-      const taken = landed.take(entry.id, accept);
-      const crate = crateOf(entry.owner);
-      if (crate !== null && landedOf(id) === undefined) nextRelease(crate.site, now + wait(rng));
+    list: views,
+    nearest: (at: readonly [number, number, number], reach: number, now: number) => nearestLanded(views(now), at, reach),
+    take(id: string, accept: (stack: RemainsStack) => number, now: number): RemainsStack[] {
+      const entry = crates.list().find((one) => one.data?.crateId === id);
+      if (entry?.data === undefined) return [];
+      const taken = crates.take(entry.id, accept);
+      if (!crates.list().some((one) => one.id === entry.id)) slots.empty(entry.data.site, now);
       return taken;
     },
     call(siteId: string, now: number, rng: () => number, tier?: string): SupplyDrop | null {
       const site = siteOf.get(siteId);
       if (site === undefined) return null;
-      if (tier !== undefined && !tierIds.has(tier)) throw new Error(`supply drop: unknown tier ${tier}`);
-      for (const [id, { crate }] of [...falling]) if (crate.site === siteId) falling.delete(id);
-      for (const entry of [...landed.list()]) {
-        const crate = crateOf(entry.owner);
-        if (crate?.site === siteId) landed.take(entry.id, (stack) => stack.count);
-      }
-      const chosen = tier ?? pickTier(site, rng);
-      const crate = release(site, now, chosen);
-      const entry = falling.get(crate.id);
-      return entry === undefined ? null : view(entry.crate, entry.track, now);
+      if (tier !== undefined && !TIER_IDS.has(tier)) throw new Error(`supply drop: unknown tier ${tier}`);
+      for (const entry of [...crates.list()]) if (entry.data?.site === siteId) crates.take(entry.id, (stack) => stack.count);
+      const crate: SupplyCrate = { id: `drop_${++seq}`, site: siteId, tier: tier ?? pickTier(site, rng), releasedAt: now };
+      const left = leaveCrate(site, crate);
+      if (left) slots.fill(siteId);
+      return left ? flyingView(crate, now, site) : null;
     },
-    snapshot(): SupplyDropSave {
-      return {
-        seq,
-        falling: [...falling.values()].map(({ crate }) => ({ ...crate })),
-        sites: Object.fromEntries([...schedules].map(([site, schedule]) => [site, schedule.snapshot()])),
-        landed: landed.snapshot(),
-      };
-    },
+    snapshot: (): SupplyDropSave => ({ seq, sites: slots.snapshot(), crates: crates.snapshot() }),
     restore(save: SupplyDropSave): void {
       seq = save.seq;
-      falling = new Map();
-      for (const crate of save.falling) {
-        const track = siteOf.has(crate.site) ? trackOf(crate) : null;
-        if (track !== null) falling.set(crate.id, { crate: { ...crate }, track });
-      }
-      for (const site of sites) {
-        const schedule = schedules.get(site.id);
-        const saved = save.sites[site.id];
-        if (schedule !== undefined && saved !== undefined) schedule.restore(saved);
-      }
-      landed.restore(save.landed);
+      slots.restore(save.sites);
+      crates.restore(save.crates);
       seeded = true;
     },
-    reset(): void {
-      falling = new Map();
-      landed = createRemainsField({ lastsSeconds: CRATE_LASTS });
-      for (const schedule of schedules.values()) schedule.reset();
+    reset: () => {
+      crates.reset();
+      slots.reset();
       seq = 0;
       seeded = false;
     },
@@ -264,7 +225,7 @@ export function supplyDrops(ctx: GameContext): { id: string; tier: string; color
 
 function crateNear(ctx: GameContext): SupplyDrop | null {
   const me = ctx.scene.entity.get(ctx.player.userId);
-  return me === null ? null : dropsOf(ctx).nearest(me.position, OPEN_REACH);
+  return me === null ? null : dropsOf(ctx).nearest(me.position, OPEN_REACH, ctx.time.now());
 }
 
 /** E at a landed crate: if you are of its level, take all that fits; the rest stays in it. */
@@ -277,7 +238,7 @@ export function openCrate(ctx: GameContext): void {
     ctx.game.notices.push({ text: `${tier.label} crate: requires level ${tier.minLevel}`, tone: "deny" });
     return;
   }
-  const taken = dropsOf(ctx).take(crate.id, (stack) => stow(ctx, stack.item, stack.count), ctx.time.now(), ctx.rng);
+  const taken = dropsOf(ctx).take(crate.id, (stack) => stow(ctx, stack.item, stack.count), ctx.time.now());
   const still = dropsOf(ctx).list(ctx.time.now()).some((drop) => drop.id === crate.id);
   const stacks = taken.length;
   ctx.game.notices.push(
@@ -317,9 +278,8 @@ export function callSupplyDrop(ctx: GameContext, tier?: string): string | null {
 export function nearestSupplyDrop(ctx: GameContext): { tier: string; distance: number; landed: boolean; altitude: number } | null {
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null) return null;
-  const now = ctx.time.now();
   let best: { tier: string; distance: number; landed: boolean; altitude: number } | null = null;
-  for (const drop of dropsOf(ctx).list(now)) {
+  for (const drop of dropsOf(ctx).list(ctx.time.now())) {
     const distance = Math.hypot(drop.position[0] - me.position[0], drop.position[2] - me.position[2]);
     if (best === null || distance < best.distance) best = { tier: drop.tier, distance, landed: drop.landed, altitude: drop.altitude };
   }
@@ -328,7 +288,7 @@ export function nearestSupplyDrop(ctx: GameContext): { tier: string; distance: n
 
 export function supplyDropsSave(ctx: GameContext) {
   return {
-    key: "fernwild.supplyDrops2",
+    key: "fernwild.supplyDrops3",
     snapshot: (): SupplyDropSave => dropsOf(ctx).snapshot(),
     hydrate: (data: SupplyDropSave) => dropsOf(ctx).restore(data),
   };
