@@ -10774,6 +10774,16 @@
       "intent": "immutably increase or decrease any named bounded resource with clamp evidence"
     },
     {
+      "id": "stat-pool-fraction",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/stats/statPool",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "read any bounded resource as a fill fraction for a bar or gauge"
+    },
+    {
       "id": "stat-pool-patch",
       "packages": [
         "@jgengine/core"

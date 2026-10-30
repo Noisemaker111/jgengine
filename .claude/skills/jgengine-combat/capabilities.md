@@ -353,6 +353,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `changeStatPool` (function) · `import { changeStatPool } from "@jgengine/core/combat"`
 
+## stat-pool-fraction — read any bounded resource as a fill fraction for a bar or gauge
+
+- `statPoolFraction` (function) · `import { statPoolFraction } from "@jgengine/core/stats/statPool"`
+
 ## stat-pool-patch — immutably retune a bounded resource's current value or bounds
 
 - `patchStatPool` (function) · `import { patchStatPool } from "@jgengine/core/combat"`
