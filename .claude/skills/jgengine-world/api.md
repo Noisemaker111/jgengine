@@ -5876,6 +5876,14 @@
 - `RateWindowPolicy` (interface): interface RateWindowPolicy — Maximum accepted operations in a sliding duration.
 - `decideRateWindow` (function): function decideRateWindow(timestamps: readonly number[], nowMs: number, policy: RateWindowPolicy): RateWindowDecision — A sliding rate window; persist timestamps only alongside the accepted operation.
 
+## @jgengine/core/time/refillSlots
+
+- `RefillSlotState` (interface): interface RefillSlotState — One slot's state: whether it holds its thing and, while empty, when it is ready.
+- `RefillSlots` (interface): interface RefillSlots — Slots that each hold one thing, emptied when it is gone and ready again after a random wait.
+- `RefillSlotsConfig` (interface): interface RefillSlotsConfig — Named slots that each hold one thing and refill a while after it is gone.
+- `RefillSlotsState` (interface): interface RefillSlotsState — Plain JSON state: per slot whether it is filled and, if empty, when it is ready.
+- `createRefillSlots` (function): function createRefillSlots(config: RefillSlotsConfig, rng: () => number): RefillSlots — Slots that each hold one thing: a crate per drop site, a node per node spot, a herd per den. Ask `ready(now)` for those whose thing is gone and whose wait is over, `fill` one that holds again, and `empty(slot, now)` when its thing is taken or expires; the wait is a uniform draw from the injected rng.
+
 ## @jgengine/core/time/serverTick
 
 - `PlanServerTickOptions` (type): type PlanServerTickOptions = { /** Cap catch-up runs per system per heartbeat to avoid spiral-of-death. Default 3. */ maxCatchUp?: number; } — ⚠ undocumented · used by `planServerTick`: Decides which systems a heartbeat should run.

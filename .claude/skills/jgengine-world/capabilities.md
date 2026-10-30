@@ -1869,6 +1869,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `validateReferenceCars` (function) · `import { validateReferenceCars } from "@jgengine/core/physics/reference/compareHandling"`
 - `validateReferenceMotorcycles` (function) · `import { validateReferenceMotorcycles } from "@jgengine/core/physics/reference/compareHandling"`
 
+## refill-slots — named slots that each hold one thing and refill a random while after it is gone
+
+- `createRefillSlots` (function) · `import { createRefillSlots } from "@jgengine/core/time/refillSlots"`
+
 ## reputation — faction standing that crosses named reputation tiers
 
 - `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`

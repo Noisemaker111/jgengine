@@ -1283,6 +1283,7 @@
     "./time/idleProgress",
     "./time/pacedSchedule",
     "./time/rateWindow",
+    "./time/refillSlots",
     "./time/serverTick",
     "./time/simClock",
     "./time/stateSchedule",
