@@ -106,7 +106,7 @@ interface QuestState {
 const REQUIREMENT_MET: Predicate = { any: [{ eq: ["status", "completed"] }, { eq: ["unlocked", true] }] };
 
 /** Facts one prerequisite reads: the quest's own status and whether the game holds its unlock. */
-function requirementFacts(status: QuestStatus | undefined, unlocked: boolean): { status: QuestStatus | undefined; unlocked: boolean } {
+function requirementFacts(status: QuestStatus | undefined, unlocked: boolean) {
   return { status, unlocked };
 }
 

@@ -67,18 +67,18 @@ export function stationSatisfied(recipe: RecipeDef, context: CraftContext): bool
     );
   }
   const stations = context.stations ?? [];
-  const kinds: string[] = [];
+  const found: string[] = [];
   let nearestSq = Number.POSITIVE_INFINITY;
   for (const station of stations) {
     if (station.catalogId !== recipe.station) continue;
-    kinds.push(station.catalogId);
+    found.push(station.catalogId);
     if (origin === undefined) continue;
     const dx = station.position[0] - origin[0];
     const dz = station.position[1] - origin[1];
     nearestSq = Math.min(nearestSq, dx * dx + dz * dz);
   }
   const inReach: Predicate = { all: [{ includes: ["stations", recipe.station] }, { lte: ["distanceSq", range * range] }] };
-  return evaluatePredicate(inReach, { stations: kinds, distanceSq: nearestSq });
+  return evaluatePredicate(inReach, { stations: found, distanceSq: nearestSq });
 }
 
 function lockedRequirements(recipe: RecipeDef, context: CraftContext): readonly string[] {
