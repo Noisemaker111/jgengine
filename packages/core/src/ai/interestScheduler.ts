@@ -1,4 +1,5 @@
 import { hashString } from "../random/rng";
+import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 
 /**
  * Interest scheduling: the scale primitive that lets far-away agents sleep instead of running
@@ -87,6 +88,17 @@ function nominalInterval(config: InterestSchedulerConfig): number {
   return config.activeInterval ?? config.tiers?.[0]?.interval ?? 0;
 }
 
+/** Cadence tiers as ascending cut points on the negated proximity, cached per tier list. */
+const intervalLadders = new WeakMap<readonly InterestTier[], readonly ThresholdBoundary<number>[]>();
+
+function intervalLadder(tiers: readonly InterestTier[]): readonly ThresholdBoundary<number>[] {
+  const cached = intervalLadders.get(tiers);
+  if (cached !== undefined) return cached;
+  const ladder = tiers.map((tier): ThresholdBoundary<number> => ({ id: Math.max(0, tier.interval), at: -tier.within }));
+  intervalLadders.set(tiers, ladder);
+  return ladder;
+}
+
 /**
  * Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the
  * agent id) so siblings created together do not all fire their first active tick on the same frame.
@@ -105,9 +117,8 @@ export function createInterestGateState(config: InterestSchedulerConfig, phase =
 
 function intervalFor(config: InterestSchedulerConfig, proximity: number | null): number {
   if (config.tiers !== undefined && proximity !== null) {
-    for (const tier of config.tiers) {
-      if (proximity <= tier.within) return Math.max(0, tier.interval);
-    }
+    const band = tierAt(intervalLadder(config.tiers), -proximity);
+    if (band !== null) return band.id;
   }
   return Math.max(0, config.activeInterval ?? 0);
 }

@@ -1,5 +1,8 @@
 import type { NavPoint } from "../nav/navGrid";
+import { pickWeighted } from "../random/pick";
 import { randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
+import { distanceBiasStrength, type DistanceBias } from "../world/spatialSample";
+import { selectSpawnPoint } from "./spawnPoint";
 
 /** One kind a wave can spend budget on: its cost, pick weight and the first wave it may appear in. */
 export interface SpawnEntry {
@@ -62,32 +65,6 @@ export interface SpawnRequest {
   laneId?: number;
 }
 
-/** Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted. */
-export type SpawnPointDistanceBias = "near" | "far" | "none";
-
-/** How strongly `distanceBias` weights candidates by distance from `avoid` — a named intent, not a weighting exponent. */
-export type SpawnPointBiasStrength = "subtle" | "moderate" | "strong";
-
-const BIAS_STRENGTH_EXPONENT: Record<SpawnPointBiasStrength, number> = {
-  subtle: 0.5,
-  moderate: 1,
-  strong: 2,
-};
-
-function biasStrengthFromMagnitude(magnitude: number): SpawnPointBiasStrength {
-  return magnitude <= 0.5 ? "subtle" : magnitude >= 1.5 ? "strong" : "moderate";
-}
-
-/** Semantic options for selecting a spawn point without exposing weighting internals. */
-export interface SpawnPointSelectionOptions {
-  candidates: readonly NavPoint[];
-  avoid?: readonly NavPoint[];
-  random: () => number;
-  distanceBias?: SpawnPointDistanceBias;
-  /** Default `"moderate"`. */
-  biasStrength?: SpawnPointBiasStrength;
-}
-
 /** One director step: the next state and the spawns to perform. */
 export interface DirectorStep {
   state: SpawnDirectorState;
@@ -99,6 +76,11 @@ const DEFAULT_ALERT_DECAY = 0.1;
 
 function clamp01(value: number): number {
   return value < 0 ? 0 : value > 1 ? 1 : value;
+}
+
+/** The semantic distance preference a signed `spawnPointBias` names. */
+function distanceBiasOf(bias: number): DistanceBias {
+  return bias < 0 ? "far" : bias > 0 ? "near" : "none";
 }
 
 /** A fresh director at the first wave with that wave's budget. */
@@ -155,12 +137,8 @@ function pickEntry(
   }
   if (affordable.length === 0 || total <= 0) return null;
   const [roll, nextRng] = stepRandomSeed(rng);
-  let cursor = roll * total;
-  for (const entry of affordable) {
-    cursor -= entry.weight ?? 1;
-    if (cursor <= 0) return { entry, rng: nextRng };
-  }
-  return { entry: affordable[affordable.length - 1]!, rng: nextRng };
+  const entry = pickWeighted(() => roll, affordable, (candidate) => candidate.weight ?? 1);
+  return entry === undefined ? null : { entry, rng: nextRng };
 }
 
 /** Advance the director by `dt` seconds: earn budget, spend it on spawns under the alive cap, and roll waves over. */
@@ -225,12 +203,12 @@ export function advanceSpawnDirector(
       const [roll, nextRng] = stepRandomSeed(rng);
       rng = nextRng;
       const bias = config.spawnPointBias ?? 1;
-      const point = pickSpawnPoint({
+      const point = selectSpawnPoint({
         candidates: spawnPoints,
         avoid: playerPositions,
         random: () => roll,
-        distanceBias: bias < 0 ? "far" : bias > 0 ? "near" : "none",
-        biasStrength: biasStrengthFromMagnitude(Math.abs(bias)),
+        distanceBias: distanceBiasOf(bias),
+        biasStrength: distanceBiasStrength(Math.abs(bias)),
       });
       if (point !== null) {
         spawn.point = point;
@@ -249,57 +227,3 @@ export function advanceSpawnDirector(
   };
 }
 
-/** Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness. */
-export function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null;
-/** @deprecated Pass one SpawnPointSelectionOptions object instead. */
-export function pickSpawnPoint(
-  points: readonly NavPoint[],
-  players: readonly NavPoint[],
-  options: { roll: number; bias?: number },
-): NavPoint | null;
-export function pickSpawnPoint(
-  optionsOrPoints: SpawnPointSelectionOptions | readonly NavPoint[],
-  legacyPlayers: readonly NavPoint[] = [],
-  legacyOptions: { roll: number; bias?: number } = { roll: 0 },
-): NavPoint | null {
-  let options: SpawnPointSelectionOptions;
-  if (Array.isArray(optionsOrPoints)) {
-    const legacyBias = legacyOptions.bias ?? 1;
-    options = {
-      candidates: optionsOrPoints as readonly NavPoint[],
-      avoid: legacyPlayers,
-      random: () => legacyOptions.roll,
-      distanceBias: legacyBias < 0 ? "far" : legacyBias > 0 ? "near" : "none",
-      biasStrength: biasStrengthFromMagnitude(Math.abs(legacyBias)),
-    };
-  } else {
-    options = optionsOrPoints as SpawnPointSelectionOptions;
-  }
-  const { candidates, avoid = [], random, distanceBias = "near", biasStrength = "moderate" } = options;
-  if (candidates.length === 0) return null;
-  if (distanceBias === "none" || avoid.length === 0) {
-    return candidates[Math.min(candidates.length - 1, Math.floor(clamp01(random()) * candidates.length))]!;
-  }
-
-  const strength = BIAS_STRENGTH_EXPONENT[biasStrength];
-  const exponent = distanceBias === "far" ? strength : -strength;
-  const weights: number[] = [];
-  let total = 0;
-  for (const point of candidates) {
-    let nearest = Number.POSITIVE_INFINITY;
-    for (const avoidedPoint of avoid) {
-      const distance = Math.hypot(point[0] - avoidedPoint[0], point[1] - avoidedPoint[1]);
-      if (distance < nearest) nearest = distance;
-    }
-    const weight = Math.max(1e-6, (1 + nearest) ** exponent);
-    weights.push(weight);
-    total += weight;
-  }
-
-  let cursor = clamp01(random()) * total;
-  for (let index = 0; index < candidates.length; index += 1) {
-    cursor -= weights[index]!;
-    if (cursor <= 0) return candidates[index]!;
-  }
-  return candidates[candidates.length - 1]!;
-}

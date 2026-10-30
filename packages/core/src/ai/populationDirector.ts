@@ -1,5 +1,7 @@
 import type { NavPoint } from "../nav/navGrid";
+import { pickUniform, pickWeighted } from "../random/pick";
 import { randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
+import { createPacedSchedule, type PacedSchedule } from "../time/pacedSchedule";
 
 /** One species that ambiently populates a region: how heavily it is favoured and its alive ceiling. */
 export interface PopulationSpeciesEntry {
@@ -111,8 +113,15 @@ export interface PopulationDirector {
 
 const DEFAULT_MAX_SPAWNS_PER_TICK = 32;
 
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
+/** One queued refill: the region it refills and the one-shot deadline it waits on. */
+interface QueuedRefill {
+  region: string;
+  deadline: PacedSchedule;
+}
+
+/** A refill slot ready at `at` on the director's clock. */
+function refillAt(at: number): PacedSchedule {
+  return createPacedSchedule({ firstAt: at, every: 0, count: 1 }, () => 0);
 }
 
 function cloneState(state: PopulationDirectorState): PopulationDirectorState {
@@ -149,6 +158,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
     queue: [],
     rng: randomSeedFrom(config.seed ?? 1),
   };
+  let queue: QueuedRefill[] = [];
 
   const totalCap = (region: PopulationRegionConfig): number => {
     let sum = 0;
@@ -166,7 +176,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
 
   const queuedCount = (regionId: string): number => {
     let sum = 0;
-    for (const slot of state.queue) if (slot.region === regionId) sum += 1;
+    for (const slot of queue) if (slot.region === regionId) sum += 1;
     return sum;
   };
 
@@ -185,9 +195,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
   const ensureDeficitQueued = (region: PopulationRegionConfig, readyAt: number): void => {
     const deficit = totalCap(region) - totalAlive(region.region) - queuedCount(region.region);
     if (deficit <= 0) return;
-    const next = state.queue.slice();
-    for (let i = 0; i < deficit; i += 1) next.push({ region: region.region, readyAt });
-    state.queue = next;
+    for (let i = 0; i < deficit; i += 1) queue.push({ region: region.region, deadline: refillAt(readyAt) });
   };
 
   // Prime each region to fill toward its caps on the first ticks.
@@ -208,12 +216,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
     if (eligible.length === 0 || total <= 0) return null;
     const [roll, nextRng] = stepRandomSeed(state.rng);
     state.rng = nextRng;
-    let cursor = roll * total;
-    for (const entry of eligible) {
-      cursor -= entry.weight ?? 1;
-      if (cursor <= 0) return entry.species;
-    }
-    return eligible[eligible.length - 1]!.species;
+    return pickWeighted(() => roll, eligible, (entry) => entry.weight ?? 1)?.species ?? null;
   };
 
   const choosePoint = (
@@ -228,7 +231,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
       const chosen = ctx.pickSpawnPoint(region.region, points, roll);
       return chosen ?? undefined;
     }
-    return points[Math.min(points.length - 1, Math.floor(clamp01(roll) * points.length))]!;
+    return pickUniform(() => roll, points);
   };
 
   return {
@@ -237,7 +240,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
       state.elapsed += dt;
       const now = state.elapsed;
       const requests: PopulationSpawnRequest[] = [];
-      const remaining: PopulationRespawnSlot[] = [];
+      const remaining: QueuedRefill[] = [];
       const awake = new Map<string, boolean>();
       const isAwake = (region: string): boolean => {
         if (ctx?.isActive === undefined) return true;
@@ -245,14 +248,15 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
         if (known === undefined) awake.set(region, (known = ctx.isActive(region)));
         return known;
       };
-      const queue = state.queue;
-      const due = (slot: PopulationRespawnSlot): boolean => slot.readyAt <= now && isAwake(slot.region);
+      const pending = queue;
+      const due = (slot: QueuedRefill): boolean =>
+        slot.deadline.remaining(now) === 0 && isAwake(slot.region);
       // Most ticks nothing is due: leave the queue as it is rather than copying every sleeping slot.
-      const first = queue.findIndex(due);
+      const first = pending.findIndex(due);
       if (first < 0) return requests;
-      for (let index = 0; index < first; index += 1) remaining.push(queue[index]!);
-      for (let index = first; index < queue.length; index += 1) {
-        const slot = queue[index]!;
+      for (let index = 0; index < first; index += 1) remaining.push(pending[index]!);
+      for (let index = first; index < pending.length; index += 1) {
+        const slot = pending[index]!;
         if (requests.length >= maxSpawnsPerTick || !due(slot)) {
           remaining.push(slot);
           continue;
@@ -267,7 +271,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
         if (point !== undefined) request.point = point;
         requests.push(request);
       }
-      state.queue = remaining;
+      queue = remaining;
       return requests;
     },
 
@@ -279,9 +283,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
       }
       const regionConfig = regions.get(region);
       if (regionConfig === undefined) return;
-      const next = state.queue.slice();
-      next.push({ region, readyAt: state.elapsed + (options?.delay ?? delayFor(regionConfig)) });
-      state.queue = next;
+      queue.push({ region, deadline: refillAt(state.elapsed + (options?.delay ?? delayFor(regionConfig))) });
     },
 
     notifySpawned(region, species, _id) {
@@ -305,11 +307,14 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
     },
 
     snapshot() {
-      return cloneState(state);
+      const snapshot = cloneState(state);
+      snapshot.queue = queue.map((slot) => ({ region: slot.region, readyAt: slot.deadline.snapshot().nextAt }));
+      return snapshot;
     },
 
     hydrate(next) {
       state = cloneState(next);
+      queue = next.queue.map((slot) => ({ region: slot.region, deadline: refillAt(slot.readyAt) }));
     },
   };
 }

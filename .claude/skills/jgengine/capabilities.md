@@ -214,6 +214,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSimSnapshotRegistry` (function) · `import { createSimSnapshotRegistry } from "@jgengine/core/runtime/simSnapshot"`
 
+## spawn-point-select — select a spawn location by its distance preference from avoided positions
+
+- `selectSpawnPoint` (function) · `import { selectSpawnPoint } from "@jgengine/core/authoring"`
+
 ## tune-control-labels — find a Tune panel field by its control name (drive --fill, screen readers)
 
 - `tuneControlLabels` (function) · `import { tuneControlLabels } from "@jgengine/core/devtools/TunePanel.view"`
