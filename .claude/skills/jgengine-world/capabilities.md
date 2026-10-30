@@ -2158,6 +2158,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `customRegion` (function) · `import { customRegion } from "@jgengine/core/world"`
 
+## spatial-region-distance — sample a candidate point table weighted by distance from avoided positions
+
+- `distanceBiasRegion` (function) · `import { distanceBiasRegion } from "@jgengine/core/world"`
+
 ## spatial-region-point-set — sample from a fixed, optionally weighted candidate point table
 
 - `pointSetRegion` (function) · `import { pointSetRegion } from "@jgengine/core/world"`
@@ -2189,6 +2193,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## spatial-sample-stratified — evenly cover an area with one jittered point per grid cell, deterministic
 
 - `sampleStratified` (function) · `import { sampleStratified } from "@jgengine/core/world"`
+
+## spawn-point-select — select a spawn location by its distance preference from avoided positions
+
+- `selectSpawnPoint` (function) · `import { selectSpawnPoint } from "@jgengine/core/world"`
 
 ## split-footprint-regions — split pooled regions along retained contributions without area-based capacity loss
 

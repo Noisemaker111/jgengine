@@ -1059,7 +1059,7 @@
 ## @jgengine/core/waves/pressure
 
 - `PressurePlan` (interface): interface PressurePlan — One bounded answer to "how hard now", plus the effects the encounter layer applies.
-- `PressureReading` (interface): interface PressureReading — Encounter pressure: how hard a director leans on a player who is struggling, read from the player's own state, quantized to a tier, and bounded by the rule's cap. The plan is a value, not a callback, so a test can sweep it and a probe can print it.
+- `PressureReading` (interface): interface PressureReading — What the director reads about the player before it chooses a tier.
 - `PressureRule` (interface): interface PressureRule — The weights and window that turn a reading into an index, plus the hard cap.
 - `evaluatePressure` (function): function evaluatePressure(reading: PressureReading, rule: PressureRule = {}): PressurePlan — Turn one reading into a bounded pressure plan.
 
@@ -1070,21 +1070,19 @@
 - `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig — The whole wave plan plus the pacing knobs: alive cap, escalation, alert and per-player budget, looping and spawn points.
 - `SpawnDirectorState` (interface): interface SpawnDirectorState — Where the director is: current wave, clocks, spare budget, alert level and spawn counts. Serializable.
 - `SpawnEntry` (interface): interface SpawnEntry — One kind a wave can spend budget on: its cost, pick weight and the first wave it may appear in.
-- `SpawnPointBiasStrength` (type): type SpawnPointBiasStrength = "subtle" | "moderate" | "strong" — How strongly `distanceBias` weights candidates by distance from `avoid` — a named intent, not a weighting exponent.
-- `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
-- `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
 - `SpawnRequest` (interface): interface SpawnRequest — One spawn the caller should perform: which entry, what it cost, which wave, and where.
 - `WaveManifest` (interface): interface WaveManifest — One wave: the budget it opens with, the kinds it may buy, and how long it runs or how fast it refills.
 - `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — Advance the director by `dt` seconds: earn budget, spend it on spawns under the alive cap, and roll waves over.
 - `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — Move to the next wave (or loop, or finish), resetting the wave clock and budget.
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — A fresh director at the first wave with that wave's budget.
-- `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
 - `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — Raise the alert level (clamped to 0..1), which adds budget while it decays.
 
 ## @jgengine/core/waves/spawnPoint
 
-- `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
+- `SpawnPointBiasStrength` (type): type SpawnPointBiasStrength = "subtle" | "moderate" | "strong" — How strongly the distance preference weighs candidates — a named intent, not a weighting exponent.
+- `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Which way a spawn's chance leans, relative to `avoid`: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
+- `selectSpawnPoint` (function): function selectSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Select a spawn point by game intent, keeping the weighting in the placement part's candidate table.
 
 ## @jgengine/core/waves/waveCountdown
 

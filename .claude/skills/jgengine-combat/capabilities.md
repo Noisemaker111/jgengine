@@ -324,6 +324,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `rollSpawnInstance` (function) · `import { rollSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`
 
+## spawn-point-select — select a spawn location by its distance preference from avoided positions
+
+- `selectSpawnPoint` (function) · `import { selectSpawnPoint } from "@jgengine/core/waves/spawnPoint"`
+
 ## spawn-stat-values — resolve a creature's per-stat values from its distributed points
 
 - `resolveSpawnStats` (function) · `import { resolveSpawnStats } from "@jgengine/core/stats/spawnLevelStats"`

@@ -21,7 +21,7 @@ export interface SpawnPointSelectionOptions {
 /**
  * Select a spawn point by game intent, keeping the weighting in the placement part's candidate table.
  *
- * @capability spawn-points select a spawn location by its distance preference from avoided positions
+ * @capability spawn-point-select select a spawn location by its distance preference from avoided positions
  */
 export function selectSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null {
   const region = distanceBiasRegion(options.candidates, {

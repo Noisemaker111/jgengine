@@ -10352,6 +10352,16 @@
       "intent": "wrap a caller-defined sampler and bounds test as a region"
     },
     {
+      "id": "spatial-region-distance",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/world/spatialSample",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "sample a candidate point table weighted by distance from avoided positions"
+    },
+    {
       "id": "spatial-region-point-set",
       "packages": [
         "@jgengine/core"
@@ -10460,6 +10470,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "distribute a wild creature's spawn level into random per-stat points"
+    },
+    {
+      "id": "spawn-point-select",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/waves/spawnPoint",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "select a spawn location by its distance preference from avoided positions"
     },
     {
       "id": "spawn-points",
