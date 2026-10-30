@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const ABIES_GRANDIS: PlantSpecies = {
   id: "abies-grandis",
-  version: 16,
+  version: 17,
   names: {
     scientific: "Abies grandis (Douglas ex D. Don) Lindl.",
     common: { en: "grand fir", fr: "sapin grandissime" },
@@ -17,22 +17,22 @@ export const ABIES_GRANDIS: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
-    apicalControl: 0.6415,
-    apicalControlMature: 0.3417,
-    apicalControlHalfYears: 80,
+    apicalControl: 0.6935,
+    apicalControlMature: 0.3,
+    apicalControlHalfYears: 76.6,
     internodeMax: 0.04,
-    branchAngle: 80.2,
+    branchAngle: 85,
     lateralBudsPerNode: 4,
     maxMetamersPerShoot: 9,
-    establishmentYears: 0,
+    establishmentYears: 0.2797,
     horizontalVigour: 0.8,
-    vigourIndexWeight: 0.5756,
+    vigourIndexWeight: 0.6334,
     tropism: {
-      gravity: 0.4557,
+      gravity: 0.3383,
       gravityOrderDecay: 0.6,
       setpointAngle: 90,
-      setpointPerOrder: 21.57,
-      optimal: 0,
+      setpointPerOrder: 18.81,
+      optimal: 0.04932,
       wind: 0.2,
       setpointMax: 90,
     },
@@ -46,10 +46,10 @@ export const ABIES_GRANDIS: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 0.8307,
-    lueGPerMJ: 4.202,
-    lightHalfSaturation: 1.5,
-    respiration: 2.497,
+    hydraulicHeightShare: 0.9755,
+    lueGPerMJ: 4.075,
+    lightHalfSaturation: 1.264,
+    respiration: 2.546,
     sapwoodRespiration: 0.02,
     rootRespiration: 1.5,
     rootPerFoliage: 0.5,
@@ -62,7 +62,7 @@ export const ABIES_GRANDIS: PlantSpecies = {
     reproductiveShare: 0.05,
     pruneDeficitYears: 2,
     coarseRootShare: 0.25,
-    hydraulicExponent: 4,
+    hydraulicExponent: 3,
   },
   wood: {
     densityKgM3: 350,
@@ -100,11 +100,11 @@ export const ABIES_GRANDIS: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 103.4, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 95.74, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 103.4, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 95.74, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };
