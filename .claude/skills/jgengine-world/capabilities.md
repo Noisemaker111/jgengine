@@ -37,6 +37,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `steadyAirData` (function) · `import { steadyAirData } from "@jgengine/core/flight/reference/aircraftTrim"`
 - `trimReferenceAircraft` (function) · `import { trimReferenceAircraft } from "@jgengine/core/flight/reference/aircraftTrim"`
 
+## alert-level — witness-gated alert value, labelled cut points and a stand-down beat
+
+- `createAlertLevel` (function) · `import { createAlertLevel } from "@jgengine/core/world"`
+
 ## ambience-zones — a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting.
 
 - `AmbienceZoneDef` (interface) · `import { AmbienceZoneDef } from "@jgengine/core/audio/ambience"`
@@ -310,14 +314,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
-
-## boss-phase-state — fresh serializable boss phase state that opens in the first phase
-
-- `createBossState` (function) · `import { createBossState } from "@jgengine/core/ai/director/boss"`
-
-## boss-phases — data-authored boss phases that change behaviour and fire a tell at health thresholds
-
-- `advanceBoss` (function) · `import { advanceBoss } from "@jgengine/core/ai/director/boss"`
 
 ## bounded-grid-route — distinguish no path from exhausted grid search work
 
@@ -1565,6 +1561,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPerception` (function) · `import { createPerception } from "@jgengine/core/world"`
 
+## phase-clock — fresh serializable phase clock that opens in the first phase
+
+- `createPhaseClock` (function) · `import { createPhaseClock } from "@jgengine/core/ai/phaseLadder"`
+
+## phase-ladder — data-authored phases that change caller data and fire a tell at value cut points
+
+- `advancePhase` (function) · `import { advancePhase } from "@jgengine/core/ai/phaseLadder"`
+
 ## physics-backend — one interface over interchangeable rigid-body solvers — bodies, joints, raycast, shapecast, snapshot
 
 - `PhysicsBackend` (interface) · `import { PhysicsBackend } from "@jgengine/core/physics/physicsBackend"`
@@ -1741,14 +1745,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `POLE_LINE_KIND` (const) · `import { POLE_LINE_KIND } from "@jgengine/core/world/poleLineKind"`
 
-## police-response — witness-gated heat, tiered police response, last-sighting search areas and lane-graph roadblocks
-
-- `createPoliceResponse` (function) · `import { createPoliceResponse } from "@jgengine/core/world"`
-
-## police-roads — lane-graph roadblock sites and an indexed nearby-lane query for search areas
-
-- `policeRoadsFromLaneGraph` (function) · `import { policeRoadsFromLaneGraph } from "@jgengine/core/world"`
-
 ## polynomial-roots — all complex roots of a real polynomial to double precision
 
 - `polynomialRoots` (function) · `import { polynomialRoots } from "@jgengine/core/physics/reference/eigenvalues"`
@@ -1912,6 +1908,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## rigid-body-tree — exact multibody dynamics of a tree of rigid bodies — mass matrix, bias forces, point Jacobians
 
 - `createRigidBodyTree` (function) · `import { createRigidBodyTree } from "@jgengine/core/physics/reference/rigidBodyTree"`
+
+## ring-wall — solid ring wall round a circular floor, following the ground
+
+- `ringWallSolids` (function) · `import { ringWallSolids } from "@jgengine/core/world/worldSolids"`
 
 ## road-ribbons — draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
 

@@ -3,6 +3,12 @@ import { describe, expect, test } from "bun:test";
 import { seededRng } from "../random/rng";
 import type { UtilityOption } from "../ai/utilityBrain";
 import { createAgent, type AgentSnapshot } from "./agent";
+import type { MoodTier } from "./mood";
+
+const TIERS: readonly MoodTier[] = [
+  { at: 60, id: "good", label: "Good" },
+  { at: 0, id: "low", label: "Low" },
+];
 
 const OPTIONS: readonly UtilityOption[] = [
   { id: "eat", terms: [{ need: "hunger", curve: { kind: "linear", from: 0.2, to: 0.95 } }] },
@@ -22,7 +28,7 @@ function guest(rngSeed?: string) {
     id: "guest:1",
     needs: NEEDS,
     options: OPTIONS,
-    mood: { weights: [{ need: "hunger", weight: 2 }, { need: "fun", weight: 1 }, { need: "energy", weight: 1 }] },
+    mood: { tiers: TIERS, weights: [{ need: "hunger", weight: 2 }, { need: "fun", weight: 1 }, { need: "energy", weight: 1 }] },
     ...(rngSeed === undefined ? {} : { rng: seededRng(rngSeed), jitter: 0.4 }),
     switchMargin: 0,
   });
@@ -33,7 +39,7 @@ function savingGuest() {
     id: "guest:1",
     needs: NEEDS,
     options: OPTIONS,
-    mood: { weights: [{ need: "hunger", weight: 2 }, { need: "fun", weight: 1 }, { need: "energy", weight: 1 }] },
+    mood: { tiers: TIERS, weights: [{ need: "hunger", weight: 2 }, { need: "fun", weight: 1 }, { need: "energy", weight: 1 }] },
     switchMargin: 0,
   });
 }
@@ -64,7 +70,7 @@ describe("createAgent need, mood and action loop", () => {
         { id: "energy", max: 100, rate: 0, start: 90 },
       ],
       options: OPTIONS,
-      mood: { weights: [{ need: "hunger", weight: 2 }, { need: "fun", weight: 1 }, { need: "energy", weight: 1 }] },
+      mood: { tiers: TIERS, weights: [{ need: "hunger", weight: 2 }, { need: "fun", weight: 1 }, { need: "energy", weight: 1 }] },
       switchMargin: 0,
     });
     const targets = [
@@ -92,6 +98,7 @@ describe("createAgent need, mood and action loop", () => {
         { id: "energy", max: 100, rate: 4, start: 100 },
       ],
       options: OPTIONS,
+      mood: { tiers: TIERS },
       switchMargin: 0,
     });
     const targets = [{ option: "seat", target: "bench" }];
@@ -121,6 +128,7 @@ describe("createAgent fallback and schedule", () => {
         { id: "energy", max: 100, rate: 0, start: 100 },
       ],
       options: OPTIONS,
+      mood: { tiers: TIERS },
       switchMargin: 0,
     });
     const first = agent.update({
@@ -160,6 +168,7 @@ describe("createAgent fallback and schedule", () => {
         { id: "energy", max: 100, rate: 0, start: 80 },
       ],
       options: OPTIONS,
+      mood: { tiers: TIERS },
       schedule: {
         cycleSeconds: 240,
         stops: [
@@ -188,6 +197,7 @@ describe("createAgent fallback and schedule", () => {
       id: "guest:4",
       needs: NEEDS,
       options: OPTIONS,
+      mood: { tiers: TIERS },
       schedule: {
         cycleSeconds: 100,
         stops: [

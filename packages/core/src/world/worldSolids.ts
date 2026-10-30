@@ -386,6 +386,51 @@ export interface WallSolidOptions {
   groundHeight?: (x: number, z: number) => number;
 }
 
+/** Ring wall options: a closed wall round a circular floor. */
+export interface RingWallOptions {
+  /** XZ of the ring's center. */
+  center: readonly [number, number];
+  /** Radius of the open floor inside the wall, metres. */
+  radius: number;
+  height: number;
+  /** Wall thickness, metres. */
+  thickness: number;
+  /** Straight slabs round the ring. */
+  sides: number;
+  /** Ground height under a point; each slab stands on the lowest ground of its own footprint. Default flat `0`. */
+  groundHeight?: (x: number, z: number) => number;
+}
+
+/**
+ * A closed ring wall: `sides` solid slabs round a circular floor, each standing on the lowest ground
+ * under it so no gap opens on a slope. Feed it to `ctx.world.solids.set`.
+ *
+ * @capability ring-wall solid ring wall round a circular floor, following the ground
+ */
+export function ringWallSolids(options: RingWallOptions): WorldSolid[] {
+  const ground = options.groundHeight ?? (() => 0);
+  const sides = Math.max(3, Math.round(options.sides));
+  const ring = options.radius + options.thickness / 2;
+  // Each slab spans its side plus a little, so the corners close.
+  const length = 2 * ring * Math.tan(Math.PI / sides) + options.thickness * 0.5;
+  const out: WorldSolid[] = [];
+  for (let side = 0; side < sides; side += 1) {
+    const angle = ((side + 0.5) / sides) * Math.PI * 2;
+    const x = options.center[0] + Math.cos(angle) * ring;
+    const z = options.center[1] + Math.sin(angle) * ring;
+    const along = [-Math.sin(angle), Math.cos(angle)] as const;
+    const half = length / 2;
+    const base = Math.min(ground(x, z), ground(x + along[0] * half, z + along[1] * half), ground(x - along[0] * half, z - along[1] * half));
+    out.push({
+      center: [x, base + options.height / 2 - 1, z],
+      halfExtents: [half, options.height / 2 + 1, options.thickness / 2],
+      // Local x runs along the slab: rotationY maps local +x to (cos, -sin) in XZ.
+      rotationY: -Math.atan2(along[1], along[0]),
+    });
+  }
+  return out;
+}
+
 /**
  * One oriented solid per wall segment (see `wallSegments` in `world/walls`).
  * @capability world-solids-from-data derive collision boxes from generated buildings and wall runs

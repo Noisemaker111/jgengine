@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createPoliceResponse } from "../ai/policeResponse";
+import { createAlertLevel } from "../ai/alertLevel";
 import { createUtilityBrain } from "../ai/utilityBrain";
 import { createDamageRuntime } from "../combat/damage/damageRuntime";
 import { createLoanBook } from "../economy/loanBook";
@@ -51,7 +51,7 @@ const SYSTEM_NAMES = [
   "inventory",
   "missions",
   "economy",
-  "police",
+  "alert",
   "rides",
 ];
 
@@ -270,12 +270,22 @@ function createSim(seed: string, backend: SaveBackend): Sim {
   const loans = createLoanBook({ ledger });
   loans.originate({ id: "expansion", principal: 20_000, ratePerPeriod: 0.02, periods: 12, periodSeconds: 20, startSeconds: 10 });
 
-  const police = createPoliceResponse({
+  const alert = createAlertLevel<string>({
     witness: perception,
     observers: () => ["cop"],
-    suspectId: "suspect",
-    seed: 3,
-    spawnRingRadius: [30, 50],
+    targetId: "suspect",
+    tuning: {
+      tiers: [
+        { at: 20, id: "watch" },
+        { at: 60, id: "chase" },
+      ],
+      decayPerSecond: 6,
+      decayDelaySeconds: 1,
+      escapeSeconds: 4,
+      sightGraceSeconds: 0.25,
+      standDownSeconds: 2,
+      hiddenRate: 2,
+    },
   });
 
   const rides = createRideSystem({
@@ -342,7 +352,7 @@ function createSim(seed: string, backend: SaveBackend): Sim {
           loans.restore(next.loans);
         },
       },
-      { name: "police", snapshot: () => police.state(), restore: (next) => police.restore(next) },
+      { name: "alert", snapshot: () => alert.state(), restore: (next) => alert.restore(next) },
       { name: "rides", snapshot: () => rides.snapshot(), restore: (next) => rides.restore(next) },
     ],
   });
@@ -398,8 +408,8 @@ function createSim(seed: string, backend: SaveBackend): Sim {
     if (tick % 4 === 0) market.recordDemand("grain", 1, 0);
     if (tick % 6 === 0) market.sell("grain", 1);
 
-    if (tick % 8 === 0) police.reportCrime(15);
-    police.tick(DT, { nowMs: t * 1_000, activePursuers: 1, around: [10, 0] });
+    if (tick % 8 === 0) alert.report(15);
+    alert.tick(DT, { nowMs: t * 1_000, activeUnits: 1 });
 
     if (tick % 3 === 0) rides.join("coaster", `guest-${tick}`);
     rides.tick(DT);

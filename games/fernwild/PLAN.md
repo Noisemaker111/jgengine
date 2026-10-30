@@ -111,7 +111,7 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 | harvesting — trees, bushes, rocks by tool, ARK's yields | `scatter-harvest` · `import { createScatterHarvest } from "@jgengine/core/harvest/scatterHarvest"`<br>`resource-node` · `import { createResourceNodeField } from "@jgengine/core/world/resourceNode"` | covered |
 | crafting — engrams, recipes, a crafting queue | `recipe-catalog-validation` · `import { validateRecipeCatalog } from "@jgengine/core/crafting/recipeCatalog"` | covered |
 | progression — ARK's XP table, stat points, engram points | `content-progression-validation` · `import { validateContentProgression } from "@jgengine/core/game/contentValidation"`<br>`progression-curve` · `import { evalCurve } from "@jgengine/core/gameplay"` | covered |
-| taming — knock-out taming, torpor, narcotics, taming effectiveness | `knockout-taming` · `import { KnockoutTaming } from "@jgengine/core/taming/knockoutTaming"` | covered |
+| taming — knock-out taming, torpor, narcotics, taming effectiveness | `subdual-feeding` · `import { createSubdualFeeding } from "@jgengine/core/subdual/subdualFeeding"` | covered |
 | riding — saddles, mounted steering and attacks | `riding` · `import { Riding } from "@jgengine/core/scene/riding"`<br>`ride-choice` · `import { createRideChooser } from "@jgengine/core/gameplay"` | covered |
 | base building — thatch, wood and stone tiers with snap sockets | `base-building` · `import { createBaseBuilding } from "@jgengine/core/basebuilding/baseBuilding"`<br>`base-structures-draw` · `import { BaseStructures } from "@jgengine/core/basebuilding/BaseStructures.draw"` | covered |
 | death — a body and beam to recover your items | `death-system` · `import { createDeathSystem } from "@jgengine/core/combat"`<br>`on-death-drops` · `import { OnDeathSpec } from "@jgengine/core/combat"` | covered |
@@ -119,11 +119,11 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 | weather — biome climate, day and night, rain, snow, storms | `authored-weather` · `import { createAuthoredWeather } from "@jgengine/core/weather/authoredWeather"`<br>`authored-weather-rendering` · `import { AuthoredWeatherLayer } from "@jgengine/core/weather/AuthoredWeatherLayer.draw"` | covered |
 | airdrop — supply drops: coloured crates by place and level | `paced-schedule` · `import { createPacedSchedule } from "@jgengine/core/time/pacedSchedule"`<br>`motion-track` · `import { createMotionTrack } from "@jgengine/core/movement/motionTrack"`<br>`weighted-pick` · `import { pickWeighted } from "@jgengine/core/random/pick"`<br>`remains-field` · `import { createRemainsField } from "@jgengine/core/remains/remains"` | covered |
 | breeding — mating, eggs, incubation, imprinting, mutations | `breeding` · `import { createBreedingField } from "@jgengine/core/breeding/breeding"`<br>`value-inheritance` · `import { inheritValues } from "@jgengine/core/inheritance/inheritance"`<br>`resolve` · `import { tierAt } from "@jgengine/core/threshold/thresholds"` | covered |
-| boss fight — the Broodmother summoned at an obelisk with artifacts, an arena, Araneo minions, rewards | `boss-arena` · `import { createBossArena } from "@jgengine/core/bossArena/bossArena"` | covered |
+| boss fight — the Broodmother summoned at an obelisk with artifacts, an arena, Araneo minions, rewards | `summoned-encounter` · `import { createSummonedEncounter } from "@jgengine/core/summonedEncounter/summonedEncounter"`<br>`phase-ladder` · `import { advancePhase } from "@jgengine/core/ai/phaseLadder"` | covered |
 | metal tier — metal tools and structures, smithy, forge | `mood` · `import { createMoodReader } from "@jgengine/core/agents/mood"`<br>`resolve` · `import { tierAt } from "@jgengine/core/gameplay"` | partial |
 | cooking — cooking pot, kibble for taming | `scripts/` | partial |
 | explorer notes — notes across the island and the experience they give | `editor-material-controls` · `import { materialAuthoringNotes } from "@jgengine/editor/materialControls"`<br>`damage-type-unknown` · `import { UnknownDamageTypeError } from "@jgengine/core/combat"` | partial |
-| more bosses — Megapithecus and the Dragon, the Overseer in the Tek cave | `boss-arena` · `import { createBossArena } from "@jgengine/core/bossArena/bossArena"`<br>`boss-phase-state` · `import { createBossState } from "@jgengine/core/ai/director/boss"` | partial |
+| more bosses — Megapithecus and the Dragon, the Overseer in the Tek cave | `summoned-encounter` · `import { createSummonedEncounter } from "@jgengine/core/summonedEncounter/summonedEncounter"`<br>`phase-ladder` · `import { createPhaseClock } from "@jgengine/core/ai/phaseLadder"` | partial |
 
 ## Gaps
 
@@ -132,7 +132,7 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 - metal tier — metal tools and structures, smithy, forge: only part ships (mood); extend that owner or confirm it covers the feature.
 - cooking — cooking pot, kibble for taming: only part ships (scripts/); extend that owner or confirm it covers the feature.
 - explorer notes — notes across the island and the experience they give: only part ships (editor-material-controls); extend that owner or confirm it covers the feature.
-- more bosses — Megapithecus and the Dragon, the Overseer in the Tek cave: only part ships (boss-arena); extend that owner or confirm it covers the feature.
+- more bosses — Megapithecus and the Dragon, the Overseer in the Tek cave: only part ships (summoned-encounter); extend that owner or confirm it covers the feature.
 
 ## Milestones
 

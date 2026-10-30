@@ -1,4 +1,4 @@
-import type { BossPhase } from "@jgengine/core/ai/director/boss";
+import type { PhaseLike } from "@jgengine/core/ai/phaseLadder";
 import type { EncounterDefinition, EncounterWave } from "@jgengine/core/waves/encounter";
 import type { PressureRule } from "@jgengine/core/waves/pressure";
 
@@ -120,8 +120,8 @@ export interface BossStance {
 }
 
 export interface BossProfile {
-  /** Thresholds and tells, high to low. */
-  phases: readonly BossPhase[];
+  /** Cut points and tells, high to low. */
+  phases: readonly PhaseLike[];
   /** What each phase looks like on the approach: how fast it walks, what the HUD calls it, and what it calls up. */
   stance: Record<string, BossStance>;
   /** The banner text for a tell. */
@@ -129,13 +129,13 @@ export interface BossProfile {
 }
 
 /**
- * The Warden's three phases. Thresholds and tells are engine data; what a phase *does* is this
+ * The Warden's three phases. Cut points and tells are engine data; what a phase *does* is this
  * game's stance table below, so the phase change is visible on the field.
  */
-const WARDEN_PHASES: readonly BossPhase[] = [
-  { id: "opening", atHealth: 1, behaviour: {}, tell: { id: "arrival", telegraphSeconds: 2.5 } },
-  { id: "enraged", atHealth: 0.6, behaviour: {}, tell: { id: "roar", telegraphSeconds: 2.5 } },
-  { id: "last-stand", atHealth: 0.25, behaviour: {}, tell: { id: "dig-in", telegraphSeconds: 2.5 } },
+const WARDEN_PHASES: readonly PhaseLike[] = [
+  { id: "opening", at: 1, tell: { id: "arrival", seconds: 2.5 } },
+  { id: "enraged", at: 0.6, tell: { id: "roar", seconds: 2.5 } },
+  { id: "last-stand", at: 0.25, tell: { id: "dig-in", seconds: 2.5 } },
 ];
 
 const WARDEN_STANCE: Record<string, BossStance> = {
@@ -152,10 +152,10 @@ const WARDEN_TELL_TEXT: Record<string, string> = {
 };
 
 /** The composed boss: slower to anger, faster once it does, and it digs in earlier. */
-const WARLORD_PHASES: readonly BossPhase[] = [
-  { id: "opening", atHealth: 1, behaviour: {}, tell: { id: "arrival", telegraphSeconds: 3 } },
-  { id: "enraged", atHealth: 0.65, behaviour: {}, tell: { id: "roar", telegraphSeconds: 2.5 } },
-  { id: "last-stand", atHealth: 0.3, behaviour: {}, tell: { id: "dig-in", telegraphSeconds: 2 } },
+const WARLORD_PHASES: readonly PhaseLike[] = [
+  { id: "opening", at: 1, tell: { id: "arrival", seconds: 3 } },
+  { id: "enraged", at: 0.65, tell: { id: "roar", seconds: 2.5 } },
+  { id: "last-stand", at: 0.3, tell: { id: "dig-in", seconds: 2 } },
 ];
 
 const WARLORD_STANCE: Record<string, BossStance> = {

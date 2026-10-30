@@ -18,6 +18,7 @@ import { wallSegments } from "./walls";
 import {
   buildingSolids,
   createWorldSolids,
+  ringWallSolids,
   structureSolids,
   wallSolids,
   worldSolidBounds,
@@ -195,6 +196,30 @@ describe("solid derivers", () => {
     expect(blocks(5, 5)).toBe(true);
     expect(blocks(1, 1)).toBe(true);
     expect(blocks(8, 2)).toBe(false);
+  });
+
+  test("a ring wall is a closed ring of slabs just outside the floor, each standing on the lowest ground under it", () => {
+    const solids = ringWallSolids({ center: [100, -50], radius: 40, height: 20, thickness: 4, sides: 16, groundHeight: (x) => (x > 100 ? 5 : 0) });
+    expect(solids).toHaveLength(16);
+    for (const solid of solids) {
+      const distance = Math.hypot(solid.center[0] - 100, solid.center[2] + 50);
+      expect(distance).toBeCloseTo(42, 5);
+      // The slab runs along the ring: local +x (cos, -sin of rotationY) is perpendicular to the radius.
+      const yaw = solid.rotationY ?? 0;
+      const radial = [(solid.center[0] - 100) / distance, (solid.center[2] + 50) / distance];
+      const [radialX, radialZ] = radial;
+      if (radialX === undefined || radialZ === undefined) throw new Error("ring slab center is missing");
+      expect(Math.abs(Math.cos(yaw) * radialX - Math.sin(yaw) * radialZ)).toBeLessThan(1e-9);
+      // Neighbouring slabs overlap, so nothing slips between them.
+      expect(solid.halfExtents[0] * 2).toBeGreaterThan(2 * 42 * Math.tan(Math.PI / 16));
+    }
+    const east = solids.find((solid) => solid.center[0] > 140);
+    // Sunk two metres into the ground it stands on, so no gap shows under it.
+    if (east === undefined) throw new Error("no slab on the east side");
+    expect(east.center[1] - east.halfExtents[1]).toBe(3);
+    const west = solids.find((solid) => solid.center[0] < 60);
+    if (west === undefined) throw new Error("no slab on the west side");
+    expect(west.center[1] - west.halfExtents[1]).toBe(-2);
   });
 });
 

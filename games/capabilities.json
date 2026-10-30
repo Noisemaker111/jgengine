@@ -285,6 +285,18 @@
       "intent": "air data for a steady flight condition, to settle propulsion or rotor states"
     },
     {
+      "id": "alert-level",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ai/alertLevel",
+      "gameFacing": true,
+      "probe": {
+        "kind": "devtools"
+      },
+      "intent": "witness-gated alert value, labelled cut points and a stand-down beat"
+    },
+    {
       "id": "ambience-zones",
       "packages": [
         "@jgengine/core"
@@ -413,16 +425,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "keep one area membership per stack key, strongest wins"
-    },
-    {
-      "id": "arena-wall",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/bossArena/bossArena",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "solid ring wall round a circular arena floor, following the ground"
     },
     {
       "id": "armor-bypass",
@@ -1088,36 +1090,6 @@
       "intent": "hypothermia and hyperthermia from ambient temperature, insulation and fortitude, as vital drain and exposure damage"
     },
     {
-      "id": "boss-arena",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/bossArena/bossArena",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "summoned boss fights: tribute and level gates, a portal that takes survivors and companions in, win, wipe and the trip home"
-    },
-    {
-      "id": "boss-phase-state",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/director/boss",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "fresh serializable boss phase state that opens in the first phase"
-    },
-    {
-      "id": "boss-phases",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/director/boss",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "data-authored boss phases that change behaviour and fire a tell at health thresholds"
-    },
-    {
       "id": "bounded-grid-route",
       "packages": [
         "@jgengine/core"
@@ -1145,7 +1117,7 @@
       "module": "@jgengine/core/breeding/breeding",
       "gameFacing": false,
       "probe": null,
-      "intent": "tame pairs mate, eggs incubate by temperature or mothers carry, the young grow and bond through care"
+      "intent": "pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care"
     },
     {
       "id": "browser-suspension",
@@ -5920,16 +5892,6 @@
       "intent": "a HUD wave clock — countdown or enemies left, a note, and the wave banner"
     },
     {
-      "id": "knockout-taming",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/taming/knockoutTaming",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "knock a creature out with torpor and tame it by feeding, with taming effectiveness and bonus levels"
-    },
-    {
       "id": "land-area-damage",
       "packages": [
         "@jgengine/core"
@@ -7021,7 +6983,7 @@
       "module": "@jgengine/core/stats/statPool",
       "gameFacing": false,
       "probe": null,
-      "intent": "tick a bounded value's regen, decay and regen delay over time"
+      "intent": "tick a bounded value's regen, decay and their delays over time"
     },
     {
       "id": "minimap",
@@ -8187,6 +8149,26 @@
       "intent": "retain sightings, sounds and damage with cone, range, occlusion, decaying memory and shared squad knowledge"
     },
     {
+      "id": "phase-clock",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ai/phaseLadder",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "fresh serializable phase clock that opens in the first phase"
+    },
+    {
+      "id": "phase-ladder",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ai/phaseLadder",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "data-authored phases that change caller data and fire a tell at value cut points"
+    },
+    {
       "id": "photo-mode",
       "packages": [
         "@jgengine/core"
@@ -8545,30 +8527,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "editor-authorable poles + sagging cables along a path"
-    },
-    {
-      "id": "police-response",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/policeResponse",
-      "gameFacing": true,
-      "probe": {
-        "kind": "devtools"
-      },
-      "intent": "witness-gated heat, tiered police response, last-sighting search areas and lane-graph roadblocks"
-    },
-    {
-      "id": "police-roads",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ai/policeResponse",
-      "gameFacing": true,
-      "probe": {
-        "kind": "devtools"
-      },
-      "intent": "lane-graph roadblock sites and an indexed nearby-lane query for search areas"
     },
     {
       "id": "policy-annotate",
@@ -9485,6 +9443,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "exact multibody dynamics of a tree of rigid bodies — mass matrix, bias forces, point Jacobians"
+    },
+    {
+      "id": "ring-wall",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/world/worldSolids",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "solid ring wall round a circular floor, following the ground"
     },
     {
       "id": "road-ribbons",
@@ -10968,6 +10936,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "cinematic lighting rig + backdrop + turntable for parametric studios"
+    },
+    {
+      "id": "subdual-feeding",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/subdual/subdualFeeding",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "win over a creature by keeping it subdued and feeding it, with its quality and doses"
+    },
+    {
+      "id": "summoned-encounter",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/summonedEncounter/summonedEncounter",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a fight started by meeting a cost at a place: a portal, party caps, win, wipe and the trip home"
     },
     {
       "id": "supply-demand-pricing",

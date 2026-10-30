@@ -21,6 +21,7 @@ export type { UtilityInterrupt, UtilityOption, UtilityTunables } from "../ai/uti
 /** The mood policy a member runs on: which needs matter, and the game's own words for the bands. */
 export interface AgentMoodConfig {
   readonly weights?: readonly MoodWeight[];
+  /** The game's own bands. A system must name them; a member may override them. */
   readonly tiers?: readonly MoodTier[];
 }
 
@@ -84,7 +85,8 @@ export interface AgentSystemConfig {
   /** Scored actions every member chooses between unless it declares its own. */
   readonly options: readonly UtilityOption[];
   readonly interrupts?: readonly UtilityInterrupt[];
-  readonly mood?: AgentMoodConfig;
+  /** Mood policy every member feels on unless it declares its own. */
+  readonly mood: AgentMoodConfig & { readonly tiers: readonly MoodTier[] };
   /** Members present at creation; more join later with {@link AgentSystem.add}. */
   readonly members?: readonly AgentMemberSpec[];
   /** Resolve every member's targets. Called once per on-camera member per tick, never per option. */
@@ -199,8 +201,8 @@ export function createAgentSystem(config: AgentSystemConfig): AgentSystem {
       ...optional("interrupts", spec.interrupts ?? config.interrupts),
       ...optional("schedule", spec.schedule),
       mood: {
-        ...optional("weights", spec.mood?.weights ?? config.mood?.weights),
-        ...optional("tiers", spec.mood?.tiers ?? config.mood?.tiers),
+        ...optional("weights", spec.mood?.weights ?? config.mood.weights),
+        tiers: spec.mood?.tiers ?? config.mood.tiers,
       },
       ...optional("switchMargin", tuned("switchMargin")),
       ...optional("minHoldSeconds", tuned("minHoldSeconds")),

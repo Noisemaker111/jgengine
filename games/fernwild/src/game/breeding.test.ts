@@ -3,15 +3,16 @@ import { createBreedingField } from "@jgengine/core/breeding/breeding";
 import type { MateCandidate } from "@jgengine/core/breeding/breeding";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
+import { tierAt } from "@jgengine/core/threshold/thresholds";
 
 import { editorLayers } from "../editorLayers";
 import { onNewPlayer, survivorStart, systems } from "../loop";
 import { time, world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
-import { babyStage, breedingCard, breedingView, eggs } from "./breeding";
+import { breedingCard, breedingView, eggs } from "./breeding";
 import { content } from "./content";
 import { creatureCard, genesOf, tames } from "./creatures";
-import { breedingOf, CARE_INTERVAL, CARE_KINDS, IMPRINT_BONUS, MULTIPLES, NEWBORN_SIZE } from "./data/breeding";
+import { breedingOf, BREEDING_STAGES, CARE_INTERVAL, CARE_KINDS, IMPRINT_BONUS, litterOf, NEWBORN_SIZE } from "./data/breeding";
 import { itemTraits } from "./data/items";
 import { WILD_STATS } from "./data/species";
 
@@ -60,9 +61,9 @@ function face(game: HeadlessRunner, id: string): void {
 }
 
 test("every Island species that breeds in ARK has its wiki times; the sterile and non-breeding ones do not", () => {
-  expect(breedingOf("raptor", 1)).toMatchObject({ mode: "egg", incubation: [20, 28], carrySeconds: 7140, maturationSeconds: 133_320 });
-  expect(breedingOf("phiomia", 1)).toMatchObject({ mode: "carry", incubation: null, carrySeconds: 35_700 });
-  expect(breedingOf("rex", 1)?.incubation).toEqual([32, 34]);
+  expect(breedingOf("raptor", 1)).toMatchObject({ egg: { band: [20, 28], healthSeconds: 600 }, carrySeconds: 7140, maturationSeconds: 133_320 });
+  expect(breedingOf("phiomia", 1)).toMatchObject({ egg: null, carrySeconds: 35_700 });
+  expect(breedingOf("rex", 1)?.egg?.band).toEqual([32, 34]);
   for (const sterile of ["titanoboa", "leech", "titanomyrma", "meganeura"]) expect(breedingOf(sterile, 1)).toBeNull();
 });
 
@@ -188,14 +189,15 @@ function rngOf(seed: number): () => number {
   };
 }
 
-/** ARK's breeding on paper, with Fernwild's own species times and care kinds; no world. */
-const field = (multiples = { twins: 0, triplets: 0 }) =>
+/** ARK's breeding on paper, with Fernwild's own species times, stages and care kinds; no world. */
+const field = (litter: (rng: () => number) => number = () => 1) =>
   createBreedingField<{ from: string }>({
     species: (id) => breedingOf(id, 1),
     conceive: (mother, father) => ({ from: `${mother}+${father}` }),
     careIntervalSeconds: CARE_INTERVAL,
     careKinds: CARE_KINDS,
-    multiples,
+    stages: BREEDING_STAGES,
+    litter,
   });
 
 const mates = (gap: number, species = "raptor", who = "her", mate = "him"): MateCandidate[] => [
@@ -218,7 +220,7 @@ describe("breeding field", () => {
     const events = breeding.mate(mates(3), 70, 30, rng);
     expect(events.map((event) => event.type)).toEqual(["conceived", "laid"]);
     expect(breeding.eggs()).toHaveLength(1);
-    expect(breeding.eggs()[0]?.baby).toEqual({ from: "her+him" });
+    expect(breeding.eggs()[0]?.offspring).toEqual({ from: "her+him" });
     // ARK's 18 to 48 hours before she mates again.
     expect(breeding.cooldown("her", 70)).toBeGreaterThanOrEqual(64_800);
     expect(breeding.cooldown("her", 70)).toBeLessThanOrEqual(172_800);
@@ -255,7 +257,7 @@ describe("breeding field", () => {
     expect(breeding.pregnancy("her")?.progress).toBe(0);
     expect(breeding.tick(35_000, 35_000, () => 0, rng)).toEqual([]);
     const born = breeding.tick(35_700, 700, () => 0, rng);
-    expect(born).toEqual([{ type: "born", mother: "her", species: "phiomia", baby: { from: "her+him" } }]);
+    expect(born).toEqual([{ type: "born", mother: "her", species: "phiomia", offspring: { from: "her+him" } }]);
     expect(breeding.pregnancy("her")).toBeNull();
     expect(breeding.cooldown("her", 35_700)).toBeGreaterThan(0);
   });
@@ -263,10 +265,11 @@ describe("breeding field", () => {
   test("a baby grows through ARK's stages, asks for care every interval, and answering every request imprints it fully", () => {
     const breeding = field();
     const rng = rngOf(11);
-    breeding.raise("baby", "raptor", 0);
-    expect(babyStage(0.05)).toBe("baby");
-    expect(babyStage(0.2)).toBe("juvenile");
-    expect(babyStage(0.7)).toBe("adolescent");
+    const stageAt = (matured: number) => tierAt(BREEDING_STAGES, matured)?.id ?? "";
+    expect(breeding.raise("baby", "raptor", 0).stage).toBe("baby");
+    expect(stageAt(0.05)).toBe("baby");
+    expect(stageAt(0.2)).toBe("juvenile");
+    expect(stageAt(0.7)).toBe("adolescent");
     let asked = 0;
     let imprint = 0;
     let grown: number | null = null;
@@ -285,7 +288,7 @@ describe("breeding field", () => {
     expect(asked).toBe(4);
     expect(imprint).toBeCloseTo((4 * 28_800) / 133_320, 6);
     expect(grown).toBeCloseTo(imprint, 6);
-    expect(breeding.baby("baby")).toBeNull();
+    expect(breeding.offspringOf("baby")).toBeNull();
   });
 
   test("faster paces shorten everything, and the save keeps eggs, pregnancies and babies", () => {
@@ -300,16 +303,16 @@ describe("breeding field", () => {
     breeding.mate(mates(2, "phiomia", "her2", "him2"), 714, 61, rng);
     const copy = field();
     copy.restore(breeding.snapshot());
-    expect(copy.baby("baby")?.nextCareAt).toBeCloseTo(714 + 2880, 6);
+    expect(copy.offspringOf("baby")?.nextCareAt).toBeCloseTo(714 + 2880, 6);
     expect(copy.pregnancy("her2")?.species).toBe("phiomia");
     expect(copy.speeds().grow).toBe(10);
     copy.forget("baby");
-    expect(copy.babies()).toHaveLength(0);
+    expect(copy.offspring()).toHaveLength(0);
     expect(() => breeding.raise("x", "titanoboa", 0)).toThrow("cannot breed");
   });
 
   test("twins and triplets come at ARK's odds", () => {
-    const breeding = field(MULTIPLES);
+    const breeding = field(litterOf);
     const rng = rngOf(17);
     const litters = [0, 0, 0];
     for (let n = 0; n < 4000; n += 1) {

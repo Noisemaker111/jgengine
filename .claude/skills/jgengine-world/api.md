@@ -7,6 +7,20 @@
 - `AuthoredFlocks` (function): function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstances = 256 }: AuthoredFlocksProps): ReactElement — Render bounded authored habitat agents with game-selected species models. The environment owns movement and lifetime; existing model owners load, animate, and dispose the native GLB. Unmapped species have no substitute geometry.
 - `AuthoredFlocksProps` (interface): interface AuthoredFlocksProps — Caller-owned species models for authored habitat agents.
 
+## @jgengine/core/ai/alertLevel
+
+- `AlertAnchor` (interface): interface AlertAnchor — Where the alert last had the target, kept from the freshest sighting any observer remembers.
+- `AlertLevel` (interface): interface AlertLevel<Tier> — Stateful alert/pursuit API with retuning and save/restore support.
+- `AlertLevelConfig` (interface): interface AlertLevelConfig<Tier> — Everything {@link createAlertLevel} needs: the sight seam, the observer roster and the caller's numbers.
+- `AlertLevelState` (interface): interface AlertLevelState<Tier> — Serializable alert state — the tuning, the meter, the sight clock, the anchor and the counters.
+- `AlertSighting` (interface): interface AlertSighting — One remembered sighting of the target, as a perception service reports it — `PerceptionMemory` from `sensor/perception` satisfies this shape.
+- `AlertStats` (interface): interface AlertStats — Counters a devtools probe, a HUD or a test reads.
+- `AlertStep` (interface): interface AlertStep<Tier> — One tick's answer: the value, the tier, the anchor and the escape.
+- `AlertTickContext` (interface): interface AlertTickContext — Per-tick world facts {@link AlertLevel.tick} needs but cannot derive itself.
+- `AlertTuning` (interface): interface AlertTuning<Tier> — Everything an alert level runs on; the game supplies it all.
+- `AlertWitness` (interface): interface AlertWitness — The sight seam: what each observer remembers of the target, asked one observer at a time. Pass `createPerception` (`sensor/perception`) straight in — a report counts when an observer still holds the target in view, so there is no second sight path to keep in step.
+- `createAlertLevel` (function): function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLevel<Tier> — An alert level any stealth, heist or pursuit game can use, over the meter and ladder parts: reports raise a bounded value only while an observer holds the target in view, the value bleeds on the caller's curve once the target has been out of every observer's sight, labelled cut points decide what the alert resolves to, and a stand-down countdown tells the caller when to call its units off. The value, its rates, the cut points and every label are caller policy; sight facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
+
 ## @jgengine/core/ai/buildOrder
 
 - `AttackClock` (interface): interface AttackClock — A running attack clock.
@@ -87,17 +101,6 @@
 - `planLookahead` (function): function planLookahead<S, M>(root: S, domain: LookaheadDomain<S, M>, profile: DifficultyProfile, rng: () => number): M | null — Pick the agent's next move by bounded lookahead: a depth-limited negamax (or single-perspective sequence search when `adversarial: false`) over the caller's {@link LookaheadDomain}, exploring at most `profile.planWidth` moves per ply to `profile.planDepth` plies, with the final root choice run through {@link pickScored} so `decisionNoise` still injects tier-appropriate blunders. Depth `1` is greedy — an easy profile literally cannot see the fork coming; an expert profile finds multi-ply tactics. Work is bounded by `planWidth ** planDepth` domain calls; run it at decision cadence (turns, ability windows, order re-evaluation), not per frame.
 - `shouldUseAbility` (function): function shouldUseAbility(opportunity: number, profile: DifficultyProfile, rng: () => number): boolean — Should the agent spend an ability now? `opportunity` is the caller-scored quality of this moment in `0..1` (targets clumped for the AoE, player mid-animation, burn phase). The perceived opportunity is fuzzed by `decisionNoise` and compared against `abilityDiscipline`: an easy profile (low discipline, high noise) wastes cooldowns on weak moments and sometimes sits on a perfect window; an expert profile fires exactly on strong windows. One rng draw when noisy.
 
-## @jgengine/core/ai/director/boss
-
-- `BossBehaviour` (type): type BossBehaviour = Omit<SquadRole, "id" | "count"> — The role shape a boss fights with in one phase: the same dials a squad role uses.
-- `BossPhase` (interface): interface BossPhase — One authored phase: the health it starts at, how the boss fights, and its tell.
-- `BossState` (interface): interface BossState — Serializable boss state: which phase holds, how long it has held, and the tell still on screen.
-- `BossStep` (interface): interface BossStep — One step of the boss clock.
-- `BossTell` (interface): interface BossTell — The warning a boss gives while it changes phase, and how long the player has to read it.
-- `advanceBoss` (function): function advanceBoss(phases: readonly BossPhase[], state: BossState, health: number, dt: number): BossStep — Advance the boss by `dt` at a health fraction and return the phase in effect.
-- `bossPhase` (function): function bossPhase(phases: readonly BossPhase[], health: number): BossPhase — The phase a boss fights with at a health fraction. Pure read for a HUD; never mutates.
-- `createBossState` (function): function createBossState(phases: readonly BossPhase[]): BossState — Fresh boss state for a phase list, opening in phase 0 with no tell showing.
-
 ## @jgengine/core/ai/director/roles
 
 - `FightIntent` (type): type FightIntent = "retreat" | "hold" | "flank" | "cover" | "assault" — The five duties a fighter can be given in a fight. A duty is *who does what*; the squad role a game dials (range, angles, fire discipline) is *how that duty fights* and stays content.
@@ -156,16 +159,6 @@
 - `AssistNetworkConfig` (interface): interface AssistNetworkConfig { radius?: number; shareFraction?: number; distanceBetween?: (a: string, b: string) => number } — ⚠ undocumented
 - `AssistNetworkState` (interface): interface AssistNetworkState — Plain JSON membership of an {@link AssistNetwork}, in registration order; threat lives in each member's own table.
 
-## @jgengine/core/ai/heatSystem
-
-- `HeatConfig` (interface): interface HeatConfig — Tuning for {@link createHeatState}/{@link advanceHeat} — levels, decay, and pursuit-spawn ring.
-- `HeatGain` (interface): interface HeatGain — One crime tick's contribution — only `witnessed` gains raise heat (unseen crimes are free, GTA-style).
-- `HeatLevelDef` (interface): interface HeatLevelDef — One escalation tier — the heat threshold it begins at and the pursuer count it wants active.
-- `HeatPoint` (type): type HeatPoint = readonly [number, number] — A world-space `[x, z]` used for the heat system's spawn ring and witness proximity checks.
-- `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
-- `HeatStep` (interface): interface HeatStep — One `advanceHeat` tick's result — updated state plus what the caller should spawn/despawn.
-- `HeatTickContext` (interface): interface HeatTickContext — Per-tick world facts {@link advanceHeat} needs but can't derive itself — witness proximity, pursuer count, origin.
-
 ## @jgengine/core/ai/interestScheduler
 
 - `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
@@ -210,28 +203,14 @@
 
 - `mobBrainGraph` (const): const mobBrainGraph: DecisionGraph — Graph-shaped description of the mob brain's idle, wander, chase, engage, and evade decisions.
 
-## @jgengine/core/ai/policeResponse
+## @jgengine/core/ai/phaseLadder
 
-- `DEFAULT_POLICE_TIERS` (const): const DEFAULT_POLICE_TIERS: readonly PoliceTier[] — The starting tier table: patrol until heat arrives, then investigate, pursue and finally cordon.
-- `DEFAULT_POLICE_TUNING` (const): const DEFAULT_POLICE_TUNING: PoliceTuning — The starting policy: linear decay, a six-second escape and a search area that grows at 2 m/s.
-- `PoliceLaneHit` (interface): interface PoliceLaneHit — A lane near a world point: its id, the arc of the nearest point on it, and how far away that is.
-- `PoliceResponse` (interface): interface PoliceResponse — Stateful wanted/pursuit API with retuning and save/restore support.
-- `PoliceResponseConfig` (interface): interface PoliceResponseConfig extends Partial<PoliceTuning> — Everything {@link createPoliceResponse} needs: the witness seam, the roster and the caller's policy.
-- `PoliceResponseKind` (type): type PoliceResponseKind = "patrol" | "investigate" | "pursue" | "roadblock" — How police answer the current heat tier — watching the streets up to cordoning them.
-- `PoliceResponseState` (interface): interface PoliceResponseState — Serializable response state — the heat curve, the sight timer, the anchor and the counters.
-- `PoliceRoadblockSite` (interface): interface PoliceRoadblockSite — A roadblock site on a lane, resolved from authored road data.
-- `PoliceRoads` (interface): interface PoliceRoads — Road data the response reads: nearby lanes for the search area, authored sites for roadblocks.
-- `PoliceRoadsOptions` (interface): interface PoliceRoadsOptions — How the document reader recognizes authored road content.
-- `PoliceSearchArea` (interface): interface PoliceSearchArea — Where the search is, as the last sighting places it.
-- `PoliceSighting` (interface): interface PoliceSighting — One remembered sighting of the suspect, as the perception service reports it — `PerceptionMemory` from `sensor/perception` satisfies this shape.
-- `PoliceStats` (interface): interface PoliceStats — Counters a devtools probe, a HUD or a test reads.
-- `PoliceStep` (interface): interface PoliceStep — One tick's answer: the heat, the tier, the search area, the cordon and the escape.
-- `PoliceTickContext` (interface): interface PoliceTickContext — Per-tick world facts {@link PoliceResponse.tick} needs but cannot derive itself.
-- `PoliceTier` (interface): interface PoliceTier — One response tier: the heat it begins at, what it puts on the street, and how wide it searches.
-- `PoliceTuning` (interface): interface PoliceTuning — The serializable policy of a response: the tier table, the heat curve and the search shape.
-- `PoliceWitness` (interface): interface PoliceWitness — The witness seam: perception memory, queried by observer id. Pass `createPerception` (`sensor/perception`) straight in — a crime is witnessed when an observer still holds the suspect in view, so there is no second sight path to keep in step.
-- `createPoliceResponse` (function): function createPoliceResponse(config: PoliceResponseConfig): PoliceResponse — The wanted level a crime sandbox needs, over the shared heat curve: a crime raises heat only while a witness holds the suspect in view, the heat bleeds on a stated linear curve once the suspect has been out of every witness's sight for `escapeSeconds`, the tier table decides what police do (patrol → investigate → pursue → roadblock), the search area sits where the suspect was last seen and grows while the trail is cold, and a roadblock tier cordons it with authored sites off the lane graph. Heat, tiers and curves are caller policy; witness facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
-- `policeRoadsFromLaneGraph` (function): function policeRoadsFromLaneGraph(graph: LaneGraph, markers: readonly EditorMarker[] = [], options: PoliceRoadsOptions = {}): PoliceRoads — Read the police road data out of an authored lane graph: `traffic_roadblock` markers become cordon sites projected onto the lane they block, and lanes are indexed so `lanesNear` answers from the local cells rather than a scan of every lane. With no roadblock markers authored, the graph's intersections are the sites, so a cordon still sits where streets meet. Built once; the index is rebuildable from the document, so it is never serialized.
+- `PhaseClockState` (interface): interface PhaseClockState — Serializable phase clock: which phase holds, how long it has held, and the tell still on screen.
+- `PhaseLike` (interface): interface PhaseLike — One authored phase: the fraction its band starts at, whatever data the caller hangs on it, and its tell.
+- `PhaseStep` (interface): interface PhaseStep<P extends PhaseLike> — One step of the phase clock.
+- `PhaseTell` (interface): interface PhaseTell — The warning a phase change gives, and how long it stays up.
+- `advancePhase` (function): function advancePhase<P extends PhaseLike>(phases: readonly P[], clock: PhaseClockState, fraction: number, dt: number): PhaseStep<P> — Advance the phase clock by `dt` at a fraction of the ladder's value and return the phase in effect.
+- `createPhaseClock` (function): function createPhaseClock(phases: readonly PhaseLike[]): PhaseClockState — Fresh phase clock for a phase list, opening in phase 0 with no tell showing.
 
 ## @jgengine/core/ai/populationDirector
 
@@ -1286,13 +1265,12 @@
 
 ## @jgengine/core/faction/reputation
 
-- `DEFAULT_REPUTATION_TIERS` (const): const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] — ⚠ undocumented
 - `EffectiveRelationInput` (interface): interface EffectiveRelationInput { base: FactionRelation; ledger: ReputationLedger; actorId: string; factionId: string } — ⚠ undocumented
-- `ReputationLedger` (interface): interface ReputationLedger { standing(actorId: string, factionId: string): number; hasStanding(actorId: string, factionId: string): boolean; gain(actorId: string, factionId: string, amount: number): number; set(actorId: string, factionId: string, standing: number): n… — ⚠ undocumented
-- `ReputationLedgerConfig` (interface): interface ReputationLedgerConfig { tiers?: readonly ReputationTier[]; initial?: Readonly<Record<string, number>>; min?: number; max?: number } — ⚠ undocumented
+- `ReputationLedger` (interface): interface ReputationLedger { standing(actorId: string, factionId: string): number; hasStanding(actorId: string, factionId: string): boolean; gain(actorId: string, factionId: string, amount: number): number; set(actorId: string, factionId: string, standing: number): n… — ⚠ undocumented · used by `createReputationLedger`: A standing ledger over the caller's own tier list: `tiers` is required, so the game says which names and cut points its standings cross.
+- `ReputationLedgerConfig` (interface): interface ReputationLedgerConfig { tiers: readonly ReputationTier[]; initial?: Readonly<Record<string, number>>; min?: number; max?: number } — ⚠ undocumented · used by `createReputationLedger`: A standing ledger over the caller's own tier list: `tiers` is required, so the game says which names and cut points its standings cross.
 - `ReputationLedgerState` (interface): interface ReputationLedgerState — Plain JSON standings of a {@link ReputationLedger}: stored values only, `initial` stays config.
 - `ReputationTier` (interface): interface ReputationTier { id: string; min: number; relation: FactionRelation } — ⚠ undocumented · used by `tierForStanding`: Map a faction standing value to its named reputation tier.
-- `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
+- `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig): ReputationLedger — A standing ledger over the caller's own tier list: `tiers` is required, so the game says which names and cut points its standings cross.
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 
@@ -6289,6 +6267,16 @@
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition; spread?: number } | { yaw: number; pitch: number; spread?: number } — Where a shot or ability points: a world ray (cursor aim) or a look angle (crosshair aim). `spread` is the cone half-angle in degrees a projectile strays inside, on either form.
 - `AircraftAssistTuning` (interface): interface AircraftAssistTuning — Flight assists. Each one moves the same actuators the pilot does, so a stronger assist still flies within the airframe's authority. Strengths are `0..1`; an axis the pilot is deflecting gets less help the further the stick is pushed, so full stick is always the pilot's.
+- `AlertAnchor` (interface): interface AlertAnchor — Where the alert last had the target, kept from the freshest sighting any observer remembers.
+- `AlertLevel` (interface): interface AlertLevel<Tier> — Stateful alert/pursuit API with retuning and save/restore support.
+- `AlertLevelConfig` (interface): interface AlertLevelConfig<Tier> — Everything {@link createAlertLevel} needs: the sight seam, the observer roster and the caller's numbers.
+- `AlertLevelState` (interface): interface AlertLevelState<Tier> — Serializable alert state — the tuning, the meter, the sight clock, the anchor and the counters.
+- `AlertSighting` (interface): interface AlertSighting — One remembered sighting of the target, as a perception service reports it — `PerceptionMemory` from `sensor/perception` satisfies this shape.
+- `AlertStats` (interface): interface AlertStats — Counters a devtools probe, a HUD or a test reads.
+- `AlertStep` (interface): interface AlertStep<Tier> — One tick's answer: the value, the tier, the anchor and the escape.
+- `AlertTickContext` (interface): interface AlertTickContext — Per-tick world facts {@link AlertLevel.tick} needs but cannot derive itself.
+- `AlertTuning` (interface): interface AlertTuning<Tier> — Everything an alert level runs on; the game supplies it all.
+- `AlertWitness` (interface): interface AlertWitness — The sight seam: what each observer remembers of the target, asked one observer at a time. Pass `createPerception` (`sensor/perception`) straight in — a report counts when an observer still holds the target in view, so there is no second sight path to keep in step.
 - `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
 - `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
 - `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
@@ -6405,9 +6393,6 @@
 - `DEFAULT_GRIP_CURVE` (const): const DEFAULT_GRIP_CURVE: GripCurve — A street tire: full grip to slip `0.2`, then it lets go to 55% fully sideways.
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — Built-in marker kinds (player, ally, objective, location, loot, enemy, ...) with colour, glyph and priority.
 - `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.
-- `DEFAULT_POLICE_TIERS` (const): const DEFAULT_POLICE_TIERS: readonly PoliceTier[] — The starting tier table: patrol until heat arrives, then investigate, pursue and finally cordon.
-- `DEFAULT_POLICE_TUNING` (const): const DEFAULT_POLICE_TUNING: PoliceTuning — The starting policy: linear decay, a six-second escape and a search area that grows at 2 m/s.
-- `DEFAULT_REPUTATION_TIERS` (const): const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] — ⚠ undocumented
 - `DEFAULT_VARIANT_HYSTERESIS` (const): const DEFAULT_VARIANT_HYSTERESIS: 6 — Metres an instance must travel past a switch boundary before it changes level unless the model declares its own.
 - `DRIFTWOOD_GENERATOR` (const): const DRIFTWOOD_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 0.5; readonly max: 8… — Driftwood and fallen logs.
 - `DRIFTWOOD_SCHEMA` (const): const DRIFTWOOD_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 0.5; readonly max: 8; readonly step: 0.05; … — Driftwood params: a weathered log lying on the ground.
@@ -6482,12 +6467,7 @@
 - `GroundGenerator` (interface): interface GroundGenerator — Serializable algorithm parameters for a procedural ground generator. Never a genre kit.
 - `GroundMode` (type): type GroundMode = "flat" | "round" | "voxel" | "board" — Canonical ground modes after normalization (`stage` → `board`).
 - `HOVER_FLIGHT_TUNING` (const): const HOVER_FLIGHT_TUNING: FreeFlightTuning — Preset for hover/jetpack — gravity + thrust, useful for short bursts.
-- `HeatConfig` (interface): interface HeatConfig — Tuning for {@link createHeatState}/{@link advanceHeat} — levels, decay, and pursuit-spawn ring.
-- `HeatGain` (interface): interface HeatGain — One crime tick's contribution — only `witnessed` gains raise heat (unseen crimes are free, GTA-style).
-- `HeatLevelDef` (interface): interface HeatLevelDef — One escalation tier — the heat threshold it begins at and the pursuer count it wants active.
-- `HeatPoint` (type): type HeatPoint = readonly [number, number] — A world-space `[x, z]` used for the heat system's spawn ring and witness proximity checks.
 - `HeatSource` (interface): interface HeatSource — A localized warmth source — campfire, forge, geothermal vent.
-- `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
 - `HiddenStateSource` (interface): interface HiddenStateSource { id: string; position: EntityPosition; variables: Readonly<Record<string, HiddenStateValue>> } — ⚠ undocumented · used by `useHiddenStateProbe` (@jgengine/core/hud/HiddenStateProbeHud.view): Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
 - `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
 - `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
@@ -6662,22 +6642,6 @@
 - `PlatformCarry` (class): class PlatformCarry — Carries bodies standing on a moving platform by composing their transform with the platform's per-`step` delta — moving/rotating lifts and conveyor floors (Fall Guys, Gang Beasts). The platform is a body the game repositions each frame; riders are detected by overlap on its top face.
 - `Point3` (type): type Point3 = readonly [number, number, number] — Deterministic spatial sampling — draw one or many positions from a geometric region under explicit constraints, with an injected RNG, bounded attempts, and a structured pass/fail result.
 - `PointGravityOptions` (interface): interface PointGravityOptions — Center, strength, and falloff for radial gravity.
-- `PoliceLaneHit` (interface): interface PoliceLaneHit — A lane near a world point: its id, the arc of the nearest point on it, and how far away that is.
-- `PoliceResponse` (interface): interface PoliceResponse — Stateful wanted/pursuit API with retuning and save/restore support.
-- `PoliceResponseConfig` (interface): interface PoliceResponseConfig extends Partial<PoliceTuning> — Everything {@link createPoliceResponse} needs: the witness seam, the roster and the caller's policy.
-- `PoliceResponseKind` (type): type PoliceResponseKind = "patrol" | "investigate" | "pursue" | "roadblock" — How police answer the current heat tier — watching the streets up to cordoning them.
-- `PoliceResponseState` (interface): interface PoliceResponseState — Serializable response state — the heat curve, the sight timer, the anchor and the counters.
-- `PoliceRoadblockSite` (interface): interface PoliceRoadblockSite — A roadblock site on a lane, resolved from authored road data.
-- `PoliceRoads` (interface): interface PoliceRoads — Road data the response reads: nearby lanes for the search area, authored sites for roadblocks.
-- `PoliceRoadsOptions` (interface): interface PoliceRoadsOptions — How the document reader recognizes authored road content.
-- `PoliceSearchArea` (interface): interface PoliceSearchArea — Where the search is, as the last sighting places it.
-- `PoliceSighting` (interface): interface PoliceSighting — One remembered sighting of the suspect, as the perception service reports it — `PerceptionMemory` from `sensor/perception` satisfies this shape.
-- `PoliceStats` (interface): interface PoliceStats — Counters a devtools probe, a HUD or a test reads.
-- `PoliceStep` (interface): interface PoliceStep — One tick's answer: the heat, the tier, the search area, the cordon and the escape.
-- `PoliceTickContext` (interface): interface PoliceTickContext — Per-tick world facts {@link PoliceResponse.tick} needs but cannot derive itself.
-- `PoliceTier` (interface): interface PoliceTier — One response tier: the heat it begins at, what it puts on the street, and how wide it searches.
-- `PoliceTuning` (interface): interface PoliceTuning — The serializable policy of a response: the tier table, the heat curve and the search shape.
-- `PoliceWitness` (interface): interface PoliceWitness — The witness seam: perception memory, queried by observer id. Pass `createPerception` (`sensor/perception`) straight in — a crime is witnessed when an observer still holds the suspect in view, so there is no second sight path to keep in step.
 - `PositionedPrompt` (interface): interface PositionedPrompt { id: string; position: PromptPoint; priority?: number; prompt: ProximityPrompt } — ⚠ undocumented · used by `resolveActivePrompt`: Nearest prompt strictly within its radius wins; a higher-priority prompt in range beats any lower-priority one regardless of distance; equal…
 - `PositionedPromptPatch` (type): type PositionedPromptPatch = Partial<Omit<PositionedPrompt, "id">> — A partial edit applied to an already-registered {@link PositionedPrompt} by {@link PromptRegistry.update}. Any subset of the mutable fields — everything but the stable `id` — may be supplied; omitted fields keep their prior value.
 - `PromptRegistry` (interface): interface PromptRegistry — A live, observable set of interaction prompts that OWNS the registered {@link PositionedPrompt}s and tracks which one is active for a player. It is a thin stateful layer over {@link resolveActivePrompt}: registration/order lives here, the nearest-within-radius / higher-priority selection stays in the pure resolver. {@link resolve} is the per-frame hot path — call it as the player moves; subscribers fire only when the active prompt actually CHANGES.
@@ -6986,6 +6950,7 @@
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
 - `controlGroupKey` (function): function controlGroupKey(digit: number, options: ControlGroupOptions = {}): string — The stable bookmark key for a control-group `digit` under `options.keyPrefix` — the key a caller passes to `SelectionBookmarks.bind`/`recall` to store a group without going through {@link resolveControlGroupIntent}.
+- `createAlertLevel` (function): function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLevel<Tier> — An alert level any stealth, heist or pursuit game can use, over the meter and ladder parts: reports raise a bounded value only while an observer holds the target in view, the value bleeds on the caller's curve once the target has been out of every observer's sight, labelled cut points decide what the alert resolves to, and a stand-down countdown tells the caller when to call its units off. The value, its rates, the cut points and every label are caller policy; sight facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
 - `createAnnotationLayer` (function): function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer — Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap` already render via their `routes`/`zones` props, so drawing needs no new renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
 - `createAreaEffectField` (function): function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): AreaEffectField<P> — Build a continuous area-effect field. Drive it with `setSource` (once per live source per tick, so shapes follow their emitters) and `step` (to reconcile membership and drain enter/refresh/leave edges). Optionally restore prior membership by passing a `serialize()` snapshot; re-`setSource` live shapes before the first `step` after restore, since shapes are transient.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
@@ -7030,12 +6995,11 @@
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `PlacementGhost` (`./PlacementGhost.draw`) and {@link placeAssetFromCommit}.
 - `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — Creates the build permissions for one plot.
-- `createPoliceResponse` (function): function createPoliceResponse(config: PoliceResponseConfig): PoliceResponse — The wanted level a crime sandbox needs, over the shared heat curve: a crime raises heat only while a witness holds the suspect in view, the heat bleeds on a stated linear curve once the suspect has been out of every witness's sight for `escapeSeconds`, the tier table decides what police do (patrol → investigate → pursue → roadblock), the search area sits where the suspect was last seen and grows while the trail is cold, and a roadblock tier cordons it with authored sites off the lane graph. Heat, tiers and curves are caller policy; witness facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 - `createPromptRegistry` (function): function createPromptRegistry(): PromptRegistry — Create a live, observable interaction-prompt registry over the pure {@link resolveActivePrompt} resolver. Register positioned "press E" prompts, `resolve(playerPosition)` each frame as the hero moves, and read `active()` — the nearest strictly-in-range prompt (higher `priority` beats closer). The set is owned here (register/update/unregister/clear/all); selection stays pure. Subscribers are notified only when the active prompt *changes*, so a HUD does not thrash per frame, and `snapshot`/`restore` round-trip the prompts plus the active id through a save (display payloads are free strings/ids the game owns — the registry never branches on their meaning). Allocation-aware: `all()` and `resolve()` reuse a cached array instead of rebuilding per call.
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
 - `createRegionField` (function): function createRegionField<T = unknown>(config: RegionFieldConfig<T>): RegionField<T> — ⚠ undocumented
-- `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
+- `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig): ReputationLedger — A standing ledger over the caller's own tier list: `tiers` is required, so the game says which names and cut points its standings cross.
 - `createRigidAircraft` (function): function createRigidAircraft(initial: RigidAircraftTuning, options: RigidAircraftOptions = {}): RigidAircraft — Creates a {@link RigidAircraft}: a quaternion rigid body with a diagonal inertia tensor, pushed by lifting surfaces, fuselage drag, an engine and gravity. Controls deflect surfaces through rate-limited actuators; nothing commands a rotation rate, so a jet loops when its tail can push the nose around and a glider stalls when it runs out of speed. Fixed internal substeps make it deterministic for a given `dt` sequence.
 - `createRvoCrowd` (function): function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd — Reciprocal velocity obstacle avoidance over circular agents. Each nearby pair contributes one or two half-plane constraints on the agent's velocity, and a small linear program picks the velocity closest to the preferred one that satisfies them all. The neighbour search is a uniform grid capped at `maxNeighbors`, so a tick costs the same for 50 agents and 5,000.
 - `createScreenEffects` (function): function createScreenEffects(options: ScreenEffectsOptions = {}): ScreenEffectsController — A serializable screen-feedback controller: a game triggers transient flashes and edge vignettes (a red damage hit, a green heal flash) or sustained, optionally oscillating tints (a low-health pulse), and reads back a composite of the effects to draw right now with their eased opacities. It is clock-driven — call `advance()` each frame against an injected `now` — and allocation-aware: the composite array and its entries are pooled and reused, so steady-state ticking never allocates. Nothing here is genre-specific: `kind` is a free label the game owns and styles, and vignette / flash / pulse are just parameterizations of the same data (region shape, decay easing, sustained oscillation). A shell overlay subscribes and renders; `snapshot`/`restore` round-trips through a save.
@@ -7162,7 +7126,6 @@
 - `pointInPolygon` (function): function pointInPolygon(ring: readonly Vec2[], x: number, z: number): boolean — Even-odd point-in-polygon test.
 - `pointInVolume` (function): function pointInVolume(volume: SceneVolumeLike, point: { x: number; y: number; z: number }): boolean — True when `point` is inside an editor volume (sphere / cylinder / box). Cylinder height defaults to diameter when omitted; sphere ignores y for the common ground-plane case only when the volume radius covers the full vertical span — here y is tested for sphere and box too.
 - `pointSetRegion` (function): function pointSetRegion(points: readonly Vec2[], options: { weights?: readonly number[] } = {}): SampleRegion<Vec2> — A fixed set of candidate points sampled by (optionally weighted) selection — the "spawn point table" region. `contains` is exact membership. Empty when the set is empty.
-- `policeRoadsFromLaneGraph` (function): function policeRoadsFromLaneGraph(graph: LaneGraph, markers: readonly EditorMarker[] = [], options: PoliceRoadsOptions = {}): PoliceRoads — Read the police road data out of an authored lane graph: `traffic_roadblock` markers become cordon sites projected onto the lane they block, and lanes are indexed so `lanesNear` answers from the local cells rather than a scan of every lane. With no roadblock markers authored, the graph's intersections are the sites, so a cordon still sits where streets meet. Built once; the index is rebuildable from the document, so it is never serialized.
 - `polygonArea` (function): function polygonArea(ring: readonly Vec2[]): number — Absolute polygon area.
 - `polygonRegion` (function): function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> — An arbitrary closed polygon on the XZ plane. Candidates are drawn uniformly from the polygon's bounding box and gated by point-in-polygon `contains`, so a run's draw count stays fixed (the sampler's attempt budget bounds the rejection, not a hidden inner loop).
 - `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Blocks the footprint of every solid building an environment feature's `structures` generate — the same set `ctx.world.solids` holds for it. Returns the number of buildings blocked.
@@ -7807,6 +7770,7 @@
 
 ## @jgengine/core/world/worldSolids
 
+- `RingWallOptions` (interface): interface RingWallOptions — Ring wall options: a closed wall round a circular floor.
 - `WallSolidOptions` (interface): interface WallSolidOptions — Wall height, thickness and base for {@link wallSolids}.
 - `WorldSolid` (interface): interface WorldSolid — One solid box in world space: the collision half of generated or authored world geometry.
 - `WorldSolidRayWork` (interface): interface WorldSolidRayWork — Caller-owned work counters, reset by each world-solid ray candidate query.
@@ -7814,6 +7778,7 @@
 - `WorldSolidsState` (interface): interface WorldSolidsState — Serializable contents of a {@link WorldSolids}: every layer's solids by layer id.
 - `buildingSolids` (function): function buildingSolids(buildings: readonly GeneratedBuilding[], groundHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per generated building: its `bounds` footprint turned by `rotationY` about `center`, from the ground under its center up through its floors. `groundHeight` defaults to flat `0`.
 - `createWorldSolids` (function): function createWorldSolids(options: { cellSize?: number } = {}): WorldSolids — A store of static world solids in named layers.
+- `ringWallSolids` (function): function ringWallSolids(options: RingWallOptions): WorldSolid[] — A closed ring wall: `sides` solid slabs round a circular floor, each standing on the lowest ground under it so no gap opens on a slope. Feed it to `ctx.world.solids.set`.
 - `structureSolids` (function): function structureSolids(world: EnvironmentWorldFeature, groundHeight?: (x: number, z: number) => number): WorldSolid[] — Solids for every `structures` descriptor on an environment feature, skipping any marked `solid: false`.
 - `wallSolids` (function): function wallSolids(segments: readonly WallSegment[], options: WallSolidOptions): WorldSolid[] — One oriented solid per wall segment (see `wallSegments` in `world/walls`).
 - `worldSolidBounds` (function): function worldSolidBounds(solid: WorldSolid): { min: [number, number, number]; max: [number, number, number]; } — Yaw-expanded world AABB of an oriented solid box.

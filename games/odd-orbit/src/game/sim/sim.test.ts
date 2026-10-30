@@ -10,7 +10,7 @@ import { content } from "../content";
 import { generateBodyPlan, walkSpeedOf } from "../creatures/bodyPlan";
 import { emptyNeeds, type NeedId } from "../needs/needs";
 import { householdStore } from "../session/store";
-import { MEMBER_OPTIONS, memberNeeds, moodOfNeeds, relationLabel } from "../agents";
+import { MEMBER_OPTIONS, MOOD_TIERS, memberNeeds, moodOfNeeds, relationLabel } from "../agents";
 
 const NEEDS: readonly NeedId[] = ["hunger", "energy", "social", "fun"];
 
@@ -25,7 +25,7 @@ describe("body plans", () => {
 
 describe("needs and mood", () => {
   test("the shared meter drains a being's needs over the household day", () => {
-    const agent = createAgent({ id: "a", needs: memberNeeds({ ...generateBodyPlan("x"), metabolism: 1 }), options: MEMBER_OPTIONS });
+    const agent = createAgent({ id: "a", needs: memberNeeds({ ...generateBodyPlan("x"), metabolism: 1 }), options: MEMBER_OPTIONS, mood: { tiers: MOOD_TIERS } });
     agent.update({ dt: 10, now: 10 });
     expect(agent.needs.value("hunger")).toBeLessThan(emptyNeeds().hunger);
     expect(agent.needs.value("hunger")).toBeGreaterThanOrEqual(0);
@@ -44,6 +44,7 @@ describe("agent desire", () => {
       id: "a",
       needs: memberNeeds(generateBodyPlan("desire")),
       options: MEMBER_OPTIONS,
+      mood: { tiers: MOOD_TIERS },
       switchMargin: 0,
     });
     for (const need of NEEDS) agent.needs.refill(need, needs[need] - agent.needs.value(need));

@@ -35,15 +35,14 @@
 
 ## @jgengine/core/agents/mood
 
-- `DEFAULT_MOOD_TIERS` (const): const DEFAULT_MOOD_TIERS: readonly MoodTier[] — Five bands a park guest, a household being or a soldier can share. A game overrides them when its own tone needs different words; the numeric bands are what HUD counters and tests read.
 - `Mood` (interface): interface Mood — What the agent feels right now, on the caller's own tier labels.
 - `MoodReader` (interface): interface MoodReader — A mood reader that keeps the game-raised biases, so a queue or a litter patch moves mood too.
 - `MoodSnapshot` (interface): interface MoodSnapshot — Serializable mood state: the game-raised biases that sit on top of need satisfaction.
 - `MoodTier` (interface): interface MoodTier — One labelled band of the 0-100 mood score.
 - `MoodWeight` (interface): interface MoodWeight — One need's say in the mood score; weights are relative, so they need no fixed total.
-- `createMoodReader` (function): function createMoodReader(config: { readonly needs: Pick<NeedSet, "ids" | "fraction">; readonly weights?: readonly MoodWeight[]; readonly tiers?: readonly MoodTier[]; }): MoodReader — Create the mood an agent carries. Needs are the agent's own (shared with its utility brain), and every bias is named data the game can remove again - there is no decaying hidden penalty.
-- `moodTierOf` (function): function moodTierOf(score: number, tiers: readonly MoodTier[] = DEFAULT_MOOD_TIERS): MoodTier — The band a score reads as, from tiers sorted by `at` descending. Unknown or unsorted tiers fall back to the lowest declared band rather than throwing, because a HUD reads this every frame.
-- `readMood` (function): function readMood(needs: Pick<NeedSet, "ids" | "fraction">, weights: readonly MoodWeight[], tiers: readonly MoodTier[] = DEFAULT_MOOD_TIERS, sources?: Readonly<Record<string, number>>): Mood — A mood read from a need set: each declared need contributes its `0..1` satisfaction times its weight, normalized by the total weight, so an agent with four needs and one with six read on the same 0-100 scale. Pure and allocation-light - the per-frame read a HUD and a thought bubble share.
+- `createMoodReader` (function): function createMoodReader(config: { readonly needs: Pick<NeedSet, "ids" | "fraction">; readonly weights?: readonly MoodWeight[]; readonly tiers: readonly MoodTier[]; }): MoodReader — Create the mood an agent carries. Needs are the agent's own (shared with its utility brain), the tiers are the game's own bands, and every bias is named data the game can remove again - there is no decaying hidden penalty.
+- `moodTierOf` (function): function moodTierOf(score: number, tiers: readonly MoodTier[]): MoodTier — The band a score reads as, from the caller's own tiers. A score below every tier reads as the lowest tier in the list; an empty list throws `RangeError`.
+- `readMood` (function): function readMood(needs: Pick<NeedSet, "ids" | "fraction">, weights: readonly MoodWeight[], tiers: readonly MoodTier[], sources?: Readonly<Record<string, number>>): Mood — A mood read from a need set, on the caller's own tier list: each declared need contributes its `0..1` satisfaction times its weight, normalized by the total weight, so an agent with four needs and one with six read on the same 0-100 scale. Pure and allocation-light - the per-frame read a HUD and a thought bubble share.
 
 ## @jgengine/core/agents/relationships
 
@@ -164,36 +163,20 @@
 - `TimelineSlotConfig` (interface): interface TimelineSlotConfig { id: string; cooldownMs: number; enabled?: boolean; offsetMs?: number } — ⚠ undocumented
 - `TimelineTickResult` (interface): interface TimelineTickResult { state: TimelineBoardState; fires: readonly TimelineFire[] } — ⚠ undocumented
 
-## @jgengine/core/bossArena/bossArena
-
-- `ArenaCandidate` (interface): interface ArenaCandidate — Someone the portal could take in: a survivor, or a companion, and where they stood to be sent back to.
-- `ArenaReturn` (interface): interface ArenaReturn — Who goes back where, when a fight ends.
-- `ArenaWallOptions` (interface): interface ArenaWallOptions — Where the arena stands in the world and how high its walls rise.
-- `BossArena` (interface): interface BossArena — A summoned boss fight: tribute, portal, the fight, the winners' wait, the trip home.
-- `BossArenaEvent` (type): type BossArenaEvent = | { type: "entered"; tier: string; admitted: ArenaCandidate[]; refused: { id: string; reason: "full" | "heavy" }[] } /** The portal closed with no survivor in range: the tribute is gone, as in ARK. */ | { type: "closed"; tier: string } | { type: "won"; tier: string; survivors: … — Things that happened on one step of the arena clock.
-- `BossArenaHooks` (interface): interface BossArenaHooks — What the arena clock asks the game each step.
-- `BossArenaOptions` (interface): interface BossArenaOptions — How a summoned boss fight runs: tiers, the portal, who may come in, and how long the winners stay.
-- `BossArenaPhase` (type): type BossArenaPhase = "idle" | "portal" | "fight" | "victory" — Where a fight stands: nothing summoned, the portal counting down, the fight, or the winners' wait.
-- `BossArenaState` (interface): interface BossArenaState — Serializable fight state.
-- `BossArenaTier` (interface): interface BossArenaTier — One difficulty of a summoned boss: the survivor level it asks for and the tribute it eats.
-- `TributeCheck` (interface): interface TributeCheck — What a tribute check found: what is missing, and how many levels short the summoner is.
-- `TributeSource` (interface): interface TributeSource — What the summoner carries, for a tribute: how many of an item, and taking them.
-- `arenaWall` (function): function arenaWall(options: ArenaWallOptions): WorldSolid[] — The ring wall that keeps a fight in its arena: `sides` solid slabs round the floor, each standing on the lowest ground under it so no gap opens on a slope. Feed it to `ctx.world.solids.set`.
-- `createBossArena` (function): function createBossArena(options: BossArenaOptions): BossArena — A summoned boss fight as ARK runs its obelisk bosses. The summoner pays a tier's tribute (and needs its level); a portal counts down, then takes every survivor and companion in range up to the caps into the arena, each remembered where they stood. The fight is won when the boss dies, after which the winners stay `victorySeconds` and are sent back; it is lost when no survivor is left inside (or time runs out), and the companions still inside are lost with it. The game owns the bodies, teleports and the boss; this owns the rules and the clock. Deterministic in `now`; serializable.
-
 ## @jgengine/core/breeding/breeding
 
-- `BreedingBaby` (interface): interface BreedingBaby — A young one growing into an adult: how far it has grown (0-1), its bond (0-1), the care it wants now and when it next asks.
 - `BreedingEgg` (interface): interface BreedingEgg<P> — A fertilized egg lying where it was laid, carrying its young one's genes `P`; it progresses only inside its incubation band.
-- `BreedingEvent` (type): type BreedingEvent<P> = | { type: "conceived"; mother: string; father: string; species: string; count: number } | { type: "laid"; egg: BreedingEgg<P> } | { type: "hatched"; egg: BreedingEgg<P> } | { type: "eggLost"; egg: BreedingEgg<P> } | { type: "born"; mother: string; species: string; baby: P } |… — What happened this tick.
-- `BreedingField` (interface): interface BreedingField<P> — The breeding of a world's tames, made by {@link createBreedingField}.
+- `BreedingEggSpec` (interface): interface BreedingEggSpec — An egg's temperature band in °C, inclusive, and the seconds it survives out of that band before it is lost.
+- `BreedingEvent` (type): type BreedingEvent<P> = | { type: "conceived"; mother: string; father: string; species: string; count: number } | { type: "laid"; egg: BreedingEgg<P> } | { type: "hatched"; egg: BreedingEgg<P> } | { type: "eggLost"; egg: BreedingEgg<P> } | { type: "born"; mother: string; species: string; offspring: … — What happened this tick.
+- `BreedingField` (interface): interface BreedingField<P> — The breeding of a world's creatures, made by {@link createBreedingField}.
+- `BreedingOffspring` (interface): interface BreedingOffspring — A young one growing up: its stage, how far it has grown (0-1), its bond (0-1), the care it wants now and when it next asks.
 - `BreedingOptions` (interface): interface BreedingOptions<P> — {@link createBreedingField} setup.
 - `BreedingPregnancy` (interface): interface BreedingPregnancy<P> — A mother carrying her young, with their genes `P` and how far along the carrying is (0-1).
-- `BreedingSnapshot` (interface): interface BreedingSnapshot<P> — Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, babies and speeds.
+- `BreedingSnapshot` (interface): interface BreedingSnapshot<P> — Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, the growing young and speeds.
 - `BreedingSpecies` (interface): interface BreedingSpecies — How one species breeds.
 - `BreedingSpeeds` (interface): interface BreedingSpeeds — How much faster each part of breeding runs than its times say. All start at 1.
 - `MateCandidate` (interface): interface MateCandidate — A creature offered for mating this tick.
-- `createBreedingField` (function): function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> — Tame pairs left together mate, a mother lays a fertilised egg that hatches only kept in its temperature or carries a baby to birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace and ask for care on an interval; each answered request adds its share of bond, full bond when every request in its growing time was answered. Species times, care kinds, the size of a litter and what a young one is all come from the game.
+- `createBreedingField` (function): function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> — Pairs left together mate, a mother lays an egg that hatches only in its temperature band or carries her young to birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace through the game's stage list and ask for care on an interval; each answered request adds its share of the bond. Species times, care kinds, stages, the size of a litter and what a young one is all come from the game.
 
 ## @jgengine/core/cards/cardPile
 
@@ -3245,6 +3228,34 @@
 - `StoreHandle` (interface): interface StoreHandle<T> — A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single type parameter is fixed at definition; `read`/`write`/`update` never widen to `unknown`, so no call site repeats `store.get(key) as T`. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `store.get`/`store.set` pair gives up the moment it forks run state into a module-level singleton.
 - `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a React selector, no allocation on a hot path). A value that carries functions (a closure-based run store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in place. Hold such objects with `perContext` when they need no store notifications.
 
+## @jgengine/core/subdual/subdualFeeding
+
+- `FeedingDose` (interface): interface FeedingDose — A dose that releases into the subdual meter over some seconds.
+- `FeedingFood` (interface): interface FeedingFood — One food a subdued creature will eat. The order foods are listed in is the order it prefers them; every number is the caller's.
+- `FeedingSupply` (interface): interface FeedingSupply — What a subdued creature holds, as the feeding loop reads and spends it.
+- `SubdualFeeding` (interface): interface SubdualFeeding — Winning over creatures by keeping them subdued and feeding them: hits and doses fill a subdual meter, the creature goes down once it reaches its capacity, it eats what it holds on its own clock (the first food in the caller's list it has), each meal fills the progress meter and costs quality, damage taken while down costs quality too, and it gets away — losing the progress — when the subdual meter empties. Levels scale the caller's tables, never a formula here.
+- `SubdualFeedingConfig` (interface): interface SubdualFeedingConfig — How one kind of creature goes down and is won over. Every rate, list and threshold is the caller's.
+- `SubdualFeedingEvent` (type): type SubdualFeedingEvent = | { type: "subdued" } | { type: "ate"; itemId: string } | { type: "released" } | { type: "won"; quality: number } — What changed this tick.
+- `SubdualFeedingState` (interface): interface SubdualFeedingState — One tracked creature's progress. Plain data, JSON round-trips.
+- `createSubdualFeeding` (function): function createSubdualFeeding(configs: Readonly<Record<string, SubdualFeedingConfig>>): SubdualFeeding — Track subdual, feeding and quality for every creature the caller names.
+
+## @jgengine/core/summonedEncounter/summonedEncounter
+
+- `CostSource` (interface): interface CostSource — What the summoner carries, for a cost: how many of an item, and taking them.
+- `RefusedCandidate` (interface): interface RefusedCandidate — A candidate the portal left behind, and why.
+- `SummonCandidate` (interface): interface SummonCandidate — Someone the portal could take in and where they stood to be sent back to.
+- `SummonCheck` (interface): interface SummonCheck — What a requirement check found: what the source is short of, and whether the rest of the requirement held.
+- `SummonResult` (type): type SummonResult = | { ok: true } | { ok: false; reason: "busy" | "unknown" | "requirement"; check?: SummonCheck } — What a summon did.
+- `SummonReturn` (interface): interface SummonReturn — Who goes back where, when a fight ends.
+- `SummonTier` (interface): interface SummonTier — One difficulty of a summoned fight: what the summon spends and what else it asks.
+- `SummonedEncounter` (interface): interface SummonedEncounter<C extends SummonCandidate> — A fight started by meeting a requirement at a place, with its own time limit, outcome and trip home.
+- `SummonedEncounterEvent` (type): type SummonedEncounterEvent<C extends SummonCandidate> = | { type: "entered"; tier: string; admitted: readonly C[]; refused: readonly RefusedCandidate[] } /** The portal closed with no lead kind in range: the cost is spent. */ | { type: "closed"; tier: string } | { type: "won"; tier: string; party: … — Things that happened on one step of the encounter clock.
+- `SummonedEncounterHooks` (interface): interface SummonedEncounterHooks<C extends SummonCandidate> — What the encounter clock asks the game each step.
+- `SummonedEncounterOptions` (interface): interface SummonedEncounterOptions — How a summoned fight runs: the tiers, the portal, who may come in, and how long the winners stay.
+- `SummonedEncounterPhase` (type): type SummonedEncounterPhase = "idle" | "portal" | "fight" | "victory" — Where a summoned encounter stands: nothing summoned, the portal counting down, the fight, or the winners' wait.
+- `SummonedEncounterState` (interface): interface SummonedEncounterState — Serializable encounter state.
+- `createSummonedEncounter` (function): function createSummonedEncounter<C extends SummonCandidate>(options: SummonedEncounterOptions): SummonedEncounter<C> — A fight a game starts by meeting a requirement at a place: the summoner pays a tier's cost and its extra condition, a portal counts down, then takes every candidate in range up to each kind's cap, each remembered where they stood. The fight is won when the target dies, after which the winners stay `victorySeconds` and are sent back; it is lost when no lead is left inside (or time runs out), and the party still inside is lost with it. The game owns the bodies, teleports and the target; this owns the rules and the clock. Deterministic in `now`; serializable.
+
 ## @jgengine/core/survival/bodyTemperature
 
 - `AmbientInput` (interface): interface AmbientInput — What sets the air temperature at a spot: its climate plus the hour, the weather, the height and nearby heat.
@@ -3373,22 +3384,6 @@
 - `TalentTree` (interface): interface TalentTree<TStat extends string = string> { rank(nodeId: string): number; pointsAvailable(): number; pointsSpent(): number; pointsInBranch(branch: string): number; grantPoints(amount: number): void; canAllocate(nodeId: string): TalentAllocateResult; allocate(nodeId: string): Talent… — ⚠ undocumented · used by `talentTreeView` (@jgengine/core/gameplay): Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-dep…
 - `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> { nodes: readonly TalentNodeDef<TStat>[]; points?: number } — ⚠ undocumented
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
-
-## @jgengine/core/taming/knockoutTaming
-
-- `KnockoutTaming` (interface): interface KnockoutTaming — Knockout taming for a world of creatures: hits and narcotics pile torpor on, a full bar knocks the creature out, it eats what you put in its inventory on its own clock, each meal fills the taming bar by one table-count's worth and costs effectiveness, and it wakes (losing the tame) if torpor drains away first. The numbers are the species' taming table, not a formula to tune.
-- `KnockoutTamingConfig` (interface): interface KnockoutTamingConfig — A species' knockout taming rules: its torpor, how it wakes, what it eats and in what order.
-- `Narcotic` (interface): interface Narcotic — Torpor the survivor can force into a downed creature: a narcotic's amount spread over seconds.
-- `TamingEvent` (type): type TamingEvent = | { type: "knockedOut" } | { type: "ate"; itemId: string } | { type: "woke" } | { type: "tamed"; effectiveness: number; bonusLevels: number } — What changed this tick.
-- `TamingFeeder` (interface): interface TamingFeeder — The food it would eat now from what it holds, and how much a meal of it is worth.
-- `TamingFood` (interface): interface TamingFood — How one food tames one species, read straight off a taming table: how many it takes and how long it takes at level 1 and at level 30. Between and past those levels the count and time scale linearly, which is how ARK-style tables grow.
-- `TamingState` (interface): interface TamingState — One downed or wild creature's taming progress. Plain data, JSON round-trips.
-- `bonusLevels` (function): function bonusLevels(level: number, effectiveness: number): number — ARK's bonus levels: half the wild level, scaled by effectiveness, floored.
-- `createKnockoutTaming` (function): function createKnockoutTaming(species: Readonly<Record<string, KnockoutTamingConfig>>): KnockoutTaming — Track torpor and taming for every downed creature of the given species: hits add torpor, held food feeds it.
-- `maxTorpor` (function): function maxTorpor(config: KnockoutTamingConfig, level: number): number — Max torpor at `level`.
-- `mealInterval` (function): function mealInterval(food: TamingFood, level: number): number — Seconds between meals of `food` at `level`: the table's time spread over its count.
-- `tamingEffectiveness` (function): function tamingEffectiveness(state: TamingState): number — Taming effectiveness from spent weights: 1 at a perfect tame.
-- `tamingScale` (function): function tamingScale(at1: number, at30: number, level: number): number — Interpolate a level-1 / level-30 pair to `level`.
 
 ## @jgengine/core/threshold/thresholdTracker
 
