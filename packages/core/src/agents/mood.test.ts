@@ -32,6 +32,14 @@ describe("readMood", () => {
     expect(moodTierOf(70, [{ at: 60, id: "ok", label: "OK" }]).id).toBe("ok");
     expect(moodTierOf(10, [])).toEqual({ at: 0, id: "low", label: "Low" });
   });
+
+  test("a score exactly on a band floor reads as that band, one below stays under it", () => {
+    expect(moodTierOf(82).id).toBe("radiant");
+    expect(moodTierOf(81.9).id).toBe("content");
+    expect(moodTierOf(64).id).toBe("content");
+    expect(moodTierOf(0).id).toBe("low");
+    expect(moodTierOf(-1).id).toBe("low");
+  });
 });
 
 describe("createMoodReader", () => {

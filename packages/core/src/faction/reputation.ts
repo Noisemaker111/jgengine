@@ -1,3 +1,4 @@
+import { tierAt } from "../threshold/thresholds";
 import type { FactionRelation } from "./factions";
 
 export interface ReputationTier {
@@ -23,11 +24,14 @@ export const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] = [
  * @capability reputation faction standing that crosses named reputation tiers
  */
 export function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier {
-  let match = tiers[0]!;
-  for (const tier of tiers) {
-    if (standing >= tier.min && tier.min >= match.min) match = tier;
-  }
-  return match;
+  const match = tierAt(
+    tiers.map((tier) => ({ at: tier.min, id: tier })),
+    standing,
+  );
+  if (match !== null) return match.id;
+  const lowest = tiers[0];
+  if (lowest === undefined) throw new RangeError("A reputation tier list needs at least one tier");
+  return lowest;
 }
 
 export interface ReputationLedgerConfig {
