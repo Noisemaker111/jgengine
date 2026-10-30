@@ -996,6 +996,8 @@
 
 ## @jgengine/core/stats/statPool
 
+- `MeterRates` (interface): interface MeterRates — How a meter changes by itself over time. All per second; every field optional.
+- `MeterState` (interface): interface MeterState — Plain JSON meter: the pool plus seconds since its last drop.
 - `StatPool` (interface): interface StatPool — Serializable state for any bounded named resource. The caller defines what the resource means.
 - `StatPoolAccess` (interface): interface StatPoolAccess<TOwnerId extends string = string, TStatId extends string = string> — Structural bridge to caller-owned resource state. Implement it over an ECS, Redux/Zustand store, plain object, database-backed model, or JGengine's native entity stats without moving ownership into the SDK.
 - `StatPoolAccessResult` (type): type StatPoolAccessResult = | ({ status: "ok" } & StatPoolChange) | { status: "rejected"; reason: string } — Outcome of changing a pool through {@link StatPoolAccess}.
@@ -1003,9 +1005,12 @@
 - `StatPoolInput` (interface): interface StatPoolInput — Input used to create a normalized pool. `current` defaults to `max`; `min` defaults to zero.
 - `StatPoolPatch` (interface): interface StatPoolPatch — Partial update applied without mutating the previous pool.
 - `applyStatPoolDelta` (function): function applyStatPoolDelta<TOwnerId extends string, TStatId extends string>(access: StatPoolAccess<TOwnerId, TStatId>, ownerId: TOwnerId, statId: TStatId, amount: number): StatPoolAccessResult — Read, transition, and write a caller-owned pool through the structural adapter. Positive amounts increase the resource; negative amounts decrease it. The adapter receives a complete replacement value, never a hidden mutation.
+- `changeMeter` (function): function changeMeter(meter: MeterState, amount: number): { meter: MeterState; change: StatPoolChange } — Add `amount` now (negative drains). A drop (applied < 0) resets sinceDrop to 0.
 - `changeStatPool` (function): function changeStatPool(pool: StatPool, amount: number): StatPoolChange — Pure bounded delta transition with the exact applied amount and boundary flags.
+- `createMeter` (function): function createMeter(input: StatPoolInput): MeterState — A new meter, full unless `current` says otherwise.
 - `createStatPool` (function): function createStatPool(input: StatPoolInput): StatPool — Normalize caller data into a complete plain-data pool.
 - `patchStatPool` (function): function patchStatPool(pool: StatPool, patch: StatPoolPatch): StatPool — Apply new bounds/current to a pool, clamping the result and leaving the input untouched.
+- `tickMeter` (function): function tickMeter(meter: MeterState, rates: MeterRates, dt: number): { meter: MeterState; change: StatPoolChange } — Advance `dt` seconds: decay, then regen if the delay has passed.
 
 ## @jgengine/core/waves/encounter
 
