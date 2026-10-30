@@ -60,7 +60,10 @@ export interface PlantSpecies {
     phyllotaxis: "alternate" | "opposite" | "whorled" | "spiral";
     /** Rotation between successive nodes, degrees (90 for decussate opposite leaves). */
     divergence: number;
-    /** A tree's crown form, from Silvics of North America; absent for shrubs, palms, ferns and herbs. */
+    /**
+     * A tree's crown form, from Silvics of North America; absent for shrubs, palms, ferns and herbs.
+     * Only a decurrent crown divides into codominant stems as its leader weakens.
+     */
     crownForm?: CrownForm;
   };
   growth: {

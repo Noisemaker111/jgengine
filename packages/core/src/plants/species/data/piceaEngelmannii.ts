@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PICEA_ENGELMANNII: PlantSpecies = {
   id: "picea-engelmannii",
-  version: 10,
+  version: 11,
   names: {
     scientific: "Picea engelmannii Parry ex Engelm.",
     common: { en: "Engelmann spruce", fr: "épinette d'Engelmann" },
@@ -17,22 +17,22 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
-    apicalControl: 0.8651,
-    apicalControlMature: 0.4115,
-    apicalControlHalfYears: 27.42,
+    apicalControl: 0.95,
+    apicalControlMature: 0.3,
+    apicalControlHalfYears: 80,
     internodeMax: 0.04,
-    branchAngle: 42.57,
+    branchAngle: 35,
     lateralBudsPerNode: 4,
     maxMetamersPerShoot: 8,
     establishmentYears: 25,
-    horizontalVigour: 0.3899,
+    horizontalVigour: 0.8,
     vigourIndexWeight: 0.8,
     tropism: {
       gravity: 0.6,
       gravityOrderDecay: 0.6,
       setpointAngle: 90,
       setpointPerOrder: 25,
-      optimal: 0,
+      optimal: 0.02041,
       wind: 0.2,
       setpointMax: 90,
     },
@@ -46,9 +46,9 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 0.9181,
-    lueGPerMJ: 2.101,
-    lightHalfSaturation: 0.2,
+    hydraulicHeightShare: 1,
+    lueGPerMJ: 1.968,
+    lightHalfSaturation: 0.2244,
     respiration: 0.6,
     sapwoodRespiration: 0.02,
     rootRespiration: 1.5,
@@ -97,13 +97,7 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     bark: { source: "silvics-654" },
     reproduction: { source: "silvics-654" },
     phenology: { source: "silvics-654" },
-    growth: {
-      source: "crown-fit",
-      fitted: { score: 108.3, against: "fia, carmean-1989, tallo-2022, ek-1974" },
-    },
-    carbon: {
-      source: "crown-fit",
-      fitted: { score: 108.3, against: "fia, carmean-1989, tallo-2022, ek-1974" },
-    },
+    growth: { source: "crown-fit", fitted: { score: 1000000000, against: "beta" } },
+    carbon: { source: "crown-fit", fitted: { score: 1000000000, against: "beta" } },
   },
 };

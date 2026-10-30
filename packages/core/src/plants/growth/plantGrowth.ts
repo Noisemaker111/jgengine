@@ -203,7 +203,11 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   const frondShoots = isFrondShape(species.leaf.shape);
   // Laterals a year's shoot puts out, which share its yearly chance of a codominant stem.
   const lateralsPerShoot = Math.max(1, g.maxMetamersPerShoot * g.lateralBudsPerNode);
-  const crownShedShare = species.habit === "tree" && !frondShoots ? crownShedLightShare(species.tolerance.shade) : 0;
+  // A broadleaf rebuilds its canopy every year and leaves out its shaded interior; evergreen foliage
+  // ages out by its own lifespan instead.
+  const crownShedShare = species.habit === "tree" && !frondShoots && species.leaf.lifespanYears <= 1 ? crownShedLightShare(species.tolerance.shade) : 0;
+  // An excurrent conifer's weak mature λ lengthens its laterals into a cone; its leader still wins.
+  const divides = species.architecture.crownForm === "decurrent";
   const cambium = hasCambium(species);
   // A frond spreads its leaf area along its whole length, so its shade and light are sampled there.
   const frondCells = new Int32Array(frondShoots ? nodeCap * FROND_LIGHT_SAMPLES : 0);
@@ -1026,7 +1030,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
           // keeps a single bole where the same tree in the open divides.
           const parentOrder = state.order[node] ?? 0;
           const [roll, after] = stepRandomSeed(next);
-          const codominant = parentOrder === 0 && year - (state.born[node] ?? 0) <= 1 && roll < codominantChance(g.apicalControl, lambda, tipLight[node] ?? 0) / lateralsPerShoot;
+          const codominant = divides && parentOrder === 0 && year - (state.born[node] ?? 0) <= 1 && roll < codominantChance(g.apicalControl, lambda, tipLight[node] ?? 0) / lateralsPerShoot;
           const order = codominant ? 0 : Math.min(255, parentOrder + 1);
           const tip = growShoot(node, order, NODE_AXIS_START, metamers, axisDir, azimuth + PLANT_PI / 2, after);
           addBud(tip);
