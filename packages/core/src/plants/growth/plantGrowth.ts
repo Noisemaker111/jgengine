@@ -1021,10 +1021,12 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
           // stem it leaves, so one breaking near a stem's tip may overtop the leader: it keeps the stem's
           // order and grows upright beside it as a codominant stem, and a decurrent crown divides into
           // several (Brown, McAlpine & Kormanik 1967; Zimmermann & Brown 1971). The chance rises smoothly
-          // as λ falls, so a small change of λ makes a small change of crown.
+          // as λ falls, so a small change of λ makes a small change of crown, and falls with the bud's
+          // light: neighbours' shade strengthens apical dominance (Franklin 2008), so a stand-grown tree
+          // keeps a single bole where the same tree in the open divides.
           const parentOrder = state.order[node] ?? 0;
           const [roll, after] = stepRandomSeed(next);
-          const codominant = parentOrder === 0 && year - (state.born[node] ?? 0) <= 1 && roll < codominantChance(lambda) / lateralsPerShoot;
+          const codominant = parentOrder === 0 && year - (state.born[node] ?? 0) <= 1 && roll < codominantChance(lambda, tipLight[node] ?? 0) / lateralsPerShoot;
           const order = codominant ? 0 : Math.min(255, parentOrder + 1);
           const tip = growShoot(node, order, NODE_AXIS_START, metamers, axisDir, azimuth + PLANT_PI / 2, after);
           addBud(tip);
@@ -1452,7 +1454,16 @@ function copyEnvironment(env: PlantEnvironment): PlantEnvironment {
   return { ...rest, wind: { ...env.wind }, slope: { ...env.slope }, ...(stand ? { stand: { ...stand } } : {}) };
 }
 
-/** λ at an age: from the young value towards the mature one, halfway at `apicalControlHalfYears`. */
+/**
+ * Codominant stems a stem tip puts out per year: none at λ 0.6, rising to one every two years at λ 0.3
+ * in full light, so a decurrent crown divides every few years rather than all at once; none below
+ * half light.
+ */
+function codominantChance(lambda: number, light: number): number {
+  const lit = Math.min(1, Math.max(0, (light - 0.5) / 0.4));
+  return 0.5 * lit * Math.min(1, Math.max(0, (0.6 - lambda) / 0.3));
+}
+
 /**
  * Share of a tree's best-lit shoot's light below which a shoot sheds its leaves, from shade tolerance
  * 0..1: 0.05 for the most tolerant, 0.25 for the least. A shoot pays its way only above its effective
@@ -1460,19 +1471,12 @@ function copyEnvironment(env: PlantEnvironment): PlantEnvironment {
  * nutrients to its best-paying shoots first, so tolerant trees prune at lower light (Kothari et al.
  * 2025). The ends are set so tolerant broadleaves hold their leaves in an outer shell (Horn 1971).
  */
-/**
- * Codominant stems a stem tip puts out per year: none at λ 0.6, rising to one every two years at λ 0.3,
- * so a decurrent crown divides every few years rather than all at once.
- */
-function codominantChance(lambda: number): number {
-  return 0.5 * Math.min(1, Math.max(0, (0.6 - lambda) / 0.3));
-}
-
 function crownShedLightShare(shadeTolerance: number): number {
   const t = Math.min(1, Math.max(0, shadeTolerance));
   return 0.25 - 0.2 * t;
 }
 
+/** λ at an age: from the young value towards the mature one, halfway at `apicalControlHalfYears`. */
 function apicalControlAt(g: PlantSpecies["growth"], ageYears: number): number {
   const half = g.apicalControlHalfYears;
   return g.apicalControlMature + ((g.apicalControl - g.apicalControlMature) * half) / (half + ageYears);

@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const ACER_SACCHARUM: PlantSpecies = {
   id: "acer-saccharum",
-  version: 12,
+  version: 13,
   names: { scientific: "Acer saccharum Marshall", common: { en: "sugar maple", fr: "érable à sucre" } },
   ids: { usda: "ACSA3" },
   habit: "tree",
@@ -96,11 +96,11 @@ export const ACER_SACCHARUM: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 21.79, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 131.9, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 21.79, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 131.9, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };
