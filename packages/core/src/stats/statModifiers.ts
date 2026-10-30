@@ -114,7 +114,7 @@ export function createStats<TStat extends string>(
       }
     },
     getBase(stat) {
-      return sheet.getBase(stat);
+      return baseValues[stat];
     },
     addSource(sourceId, modifiers, sourceOptions) {
       sourceEntries.set(sourceId, { modifiers, expiresAtMs: sourceOptions?.expiresAtMs });
@@ -146,6 +146,8 @@ export function createStats<TStat extends string>(
     get(stat, nowMs) {
       const time = resolveNow(nowMs);
       if (time !== undefined) dropExpired(time);
+      // A stat the block has never seen reads as NaN, as it always has; adding a base or a source names it.
+      if (!statIds.has(stat)) return Number.NaN;
       return sheet.get(stat);
     },
     pruneExpired(nowMs) {
