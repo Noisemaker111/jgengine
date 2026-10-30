@@ -270,7 +270,8 @@ const AGAINST = "fia, carmean-1989, tallo-2022, ek-1974";
 async function runFit(ids: readonly string[], argv: readonly string[]): Promise<void> {
   mkdirSync(FIT_DIR, { recursive: true });
   const seeds = flag(argv, "--seeds", "a,b").split(",");
-  const workers = Number(flag(argv, "--workers", String(Math.max(1, availableParallelism() - 2))));
+  // The PC is shared: never more than 4 workers, whatever the flag says (AGENTS.md).
+  const workers = Math.max(1, Math.min(4, Number(flag(argv, "--workers", "4")), availableParallelism() - 2));
   for (const id of ids) {
     const habit = habitOf(id);
     if (habit !== undefined) {
