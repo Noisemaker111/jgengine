@@ -234,36 +234,38 @@ export function crownShapeBands(form: CrownForm, ageYears: number): CrownShapeBa
 }
 
 /**
- * What an open-grown tree's crown is built like at {@link CROWN_ARCHITECTURE_AGE} years, by crown form
- * and shade tolerance. A decurrent tree grown in the open divides low, within the lower half of its
- * height where an open-grown crown's base already sits (crown ratio over 0.57), into three to twelve
- * scaffold limbs at 25–65 degrees from vertical (Zimmermann & Brown 1971; Gilman 2011, open-grown
- * shade trees), and an excurrent or columnar one keeps its leader to the top with branches near
- * level. A broadleaf crown in leaf shows sky through 15–55% of its outline: healthy hardwoods rate
- * 10–30% foliage transparency within the foliated crown (Schomaker et al. 2007, FIA crown
- * transparency), and the outline adds the gaps between limbs. A shade-tolerant broadleaf holds its
- * leaves as a monolayer in the outer shell (Horn 1971), more than a crown filled evenly would (0.58
- * in the outer quarter). Crown shape follows {@link crownShapeBands}. Shrubs, palms and herbs have no
- * target.
+ * Guardrails an open-grown tree's crown stays inside at {@link CROWN_ARCHITECTURE_AGE} years, by crown
+ * form and shade tolerance: loose bands that catch a crown of the wrong kind, not a species' exact
+ * shape, which its own traits set. A decurrent tree grown in the open divides into codominant stems
+ * within the lower 60% of its height, where an open-grown crown's base already sits (Zimmermann &
+ * Brown 1971; Gilman 2011), and carries its spread no lower than a cone would (centroid 0.37; a cone
+ * is 0.25). An excurrent, columnar or weeping tree keeps its leader, and an excurrent one tapers to it.
+ * A broadleaf crown in leaf shows sky through 15–70% of its outline: healthy hardwoods rate 10–30%
+ * foliage transparency within the foliated crown (Schomaker et al. 2007), and the outline adds the
+ * gaps between limbs. A shade-tolerant broadleaf holds its leaves as a monolayer in the outer shell
+ * (Horn 1971), more than a crown filled evenly would (0.58 in the outer quarter). Shrubs, palms and
+ * herbs have none.
  * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
  */
 export function crownArchitectureTarget(species: Pick<PlantSpecies, "architecture" | "tolerance" | "leaf">): CrownArchitectureTarget {
   const form = species.architecture.crownForm;
   if (form === undefined) return {};
-  const shape = crownShapeBands(form, CROWN_ARCHITECTURE_AGE);
-  const shapeTarget: CrownArchitectureTarget = { centroid: shape.centroid, ...(shape.shoulder !== undefined ? { shoulder: shape.shoulder } : {}) };
-  if (form !== "decurrent") return { forkRatio: [0, CODOMINANT_RATIO], limbAngleDeg: [45, 110], ...shapeTarget };
+  if (form !== "decurrent") return { forkRatio: [0, CODOMINANT_RATIO], ...(form === "excurrent" ? { centroid: [0, 0.36] as const } : {}) };
   const broadleaf = species.leaf.lifespanYears <= 1;
   return {
-    forkRatio: [CODOMINANT_RATIO, 2],
-    forkHeightShare: [0, 0.5],
-    scaffoldLimbs: [3, 12],
-    limbAngleDeg: [25, 65],
-    ...shapeTarget,
-    ...(broadleaf ? { gapFraction: [0.15, 0.55] as const } : {}),
+    forkRatio: [CODOMINANT_RATIO, Number.POSITIVE_INFINITY],
+    forkHeightShare: [0, 0.6],
+    centroid: [0.37, 1],
+    ...(broadleaf ? { gapFraction: [0.15, 0.7] as const } : {}),
     ...(broadleaf && species.tolerance.shade >= 0.7 ? { shellShare: [0.6, 1] as const } : {}),
   };
 }
+
+/** Seeds whose own individuals a species' crown guardrails are checked on: each grows its own tree. */
+export const CROWN_ARCHITECTURE_SEEDS = ["a", "b", "c"] as const;
+
+/** Seeds of {@link CROWN_ARCHITECTURE_SEEDS} that may miss a guardrail: an odd tree is allowed, a habit is not. */
+export const CROWN_ARCHITECTURE_MISSES_ALLOWED = 1;
 
 /**
  * The measures of `architecture` outside their band in `target`, as readable lines; empty when the

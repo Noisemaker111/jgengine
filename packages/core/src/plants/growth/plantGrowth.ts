@@ -201,6 +201,8 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   const leafAreaIn = (year: number): number => fullLeafArea * frondLengthShare(g, year) ** 2;
   let leafAreaPerNode = leafAreaIn(0);
   const frondShoots = isFrondShape(species.leaf.shape);
+  // Laterals a year's shoot puts out, which share its yearly chance of a codominant stem.
+  const lateralsPerShoot = Math.max(1, g.maxMetamersPerShoot * g.lateralBudsPerNode);
   const crownShedShare = species.habit === "tree" && !frondShoots ? crownShedLightShare(species.tolerance.shade) : 0;
   const cambium = hasCambium(species);
   // A frond spreads its leaf area along its whole length, so its shade and light are sampled there.
@@ -1015,14 +1017,16 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
           axisDir[0] = heading[0] ?? 0;
           axisDir[1] = heading[1] ?? 1;
           axisDir[2] = heading[2] ?? 0;
-          // Under apical control λ below 0.5 a lateral draws more vigour per unit light than the stem it
-          // leaves, so one breaking near a stem's tip overtops the leader: it keeps the stem's order and
-          // grows upright beside it as a codominant stem, and a decurrent crown divides into several
-          // (Brown, McAlpine & Kormanik 1967; Zimmermann & Brown 1971).
+          // As apical control λ falls below about 0.5 a lateral draws more vigour per unit light than the
+          // stem it leaves, so one breaking near a stem's tip may overtop the leader: it keeps the stem's
+          // order and grows upright beside it as a codominant stem, and a decurrent crown divides into
+          // several (Brown, McAlpine & Kormanik 1967; Zimmermann & Brown 1971). The chance rises smoothly
+          // as λ falls, so a small change of λ makes a small change of crown.
           const parentOrder = state.order[node] ?? 0;
-          const codominant = parentOrder === 0 && lambda < 0.5 && year - (state.born[node] ?? 0) <= 1;
+          const [roll, after] = stepRandomSeed(next);
+          const codominant = parentOrder === 0 && year - (state.born[node] ?? 0) <= 1 && roll < codominantChance(lambda) / lateralsPerShoot;
           const order = codominant ? 0 : Math.min(255, parentOrder + 1);
-          const tip = growShoot(node, order, NODE_AXIS_START, metamers, axisDir, azimuth + PLANT_PI / 2, next);
+          const tip = growShoot(node, order, NODE_AXIS_START, metamers, axisDir, azimuth + PLANT_PI / 2, after);
           addBud(tip);
         }
       }
@@ -1456,6 +1460,14 @@ function copyEnvironment(env: PlantEnvironment): PlantEnvironment {
  * nutrients to its best-paying shoots first, so tolerant trees prune at lower light (Kothari et al.
  * 2025). The ends are set so tolerant broadleaves hold their leaves in an outer shell (Horn 1971).
  */
+/**
+ * Codominant stems a stem tip puts out per year: none at λ 0.6, rising to one every two years at λ 0.3,
+ * so a decurrent crown divides every few years rather than all at once.
+ */
+function codominantChance(lambda: number): number {
+  return 0.5 * Math.min(1, Math.max(0, (0.6 - lambda) / 0.3));
+}
+
 function crownShedLightShare(shadeTolerance: number): number {
   const t = Math.min(1, Math.max(0, shadeTolerance));
   return 0.25 - 0.2 * t;

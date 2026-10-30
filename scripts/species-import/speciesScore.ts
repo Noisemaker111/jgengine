@@ -1,7 +1,7 @@
 import { openGrownCrownWidthM } from "../../packages/core/src/plants/validation/crownAllometry";
 import { crownWidthBandM, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../../packages/core/src/plants/species/speciesReference";
 import type { CrownForm } from "../../packages/core/src/plants/species/plantSpecies";
-import { CROWN_ARCHITECTURE_AGE, CROWN_ARCHITECTURE_MEASURES, crownShapeBands, type CrownArchitecture, type CrownArchitectureTarget, type MeasureBand } from "../../packages/core/src/plants/validation/crownArchitecture";
+import { CROWN_ARCHITECTURE_MEASURES, CROWN_ARCHITECTURE_MISSES_ALLOWED, crownShapeBands, type CrownArchitecture, type CrownArchitectureTarget, type MeasureBand } from "../../packages/core/src/plants/validation/crownArchitecture";
 import type { Trial, TrialReading } from "./speciesTrial";
 
 /** What a fit holds one species to beyond its reference tables. */
@@ -29,14 +29,14 @@ function shapePenalty(form: CrownForm, r: TrialReading): number {
 
 /** How far a measure may stray outside its band before it costs as much as a 1-sigma height miss. */
 const ARCHITECTURE_SCALE: Readonly<Record<keyof CrownArchitecture, number>> = {
-  forkRatio: 0.015,
-  forkHeightShare: 0.015,
-  scaffoldLimbs: 0.25,
-  shellShare: 0.01,
-  gapFraction: 0.01,
-  limbAngleDeg: 1.5,
-  centroid: 0.01,
-  shoulder: 0.01,
+  forkRatio: 0.05,
+  forkHeightShare: 0.05,
+  scaffoldLimbs: 1,
+  shellShare: 0.03,
+  gapFraction: 0.03,
+  limbAngleDeg: 4,
+  centroid: 0.03,
+  shoulder: 0.03,
 };
 
 /** Margin the fit keeps inside each band, as the height and DBH terms do, so a fitted tree passes the test. */
@@ -51,14 +51,19 @@ const ARCHITECTURE_MARGIN: Readonly<Record<keyof CrownArchitecture, number>> = {
   shoulder: 0.02,
 };
 
-function architecturePenalty(target: CrownArchitectureTarget, measured: CrownArchitecture | undefined): number {
-  if (measured === undefined) return 0;
+function architecturePenalty(target: CrownArchitectureTarget, measured: CrownArchitecture): number {
   let sum = 0;
   for (const key of CROWN_ARCHITECTURE_MEASURES) {
     const band = target[key];
     if (band !== undefined) sum += hinge(measured[key], band[0] + ARCHITECTURE_MARGIN[key], band[1] - ARCHITECTURE_MARGIN[key], ARCHITECTURE_SCALE[key]);
   }
   return sum;
+}
+
+/** Guardrail misfit of the seeded individuals, leaving out the worst ones the library test allows to miss. */
+function seededArchitecturePenalty(target: CrownArchitectureTarget, individuals: readonly CrownArchitecture[]): number {
+  const penalties = individuals.map((measured) => architecturePenalty(target, measured)).sort((a, b) => a - b);
+  return penalties.slice(0, Math.max(0, penalties.length - CROWN_ARCHITECTURE_MISSES_ALLOWED)).reduce((sum, p) => sum + p, 0);
 }
 
 /** A trial's total misfit and its parts; lower is better. */
@@ -104,7 +109,7 @@ export function scoreTrial(target: FitTarget, trial: Trial): TrialScore {
       add("crownRatio", hinge(open.crownRatio, 0.57, 1, 0.04) + (age >= 50 ? hinge(stand.crownRatio, 0, 0.5, 0.04) : 0));
       add("shape", shapePenalty(target.form, open) + shapePenalty(target.form, stand));
     }
-    add("architecture", architecturePenalty(target.architecture, trial.open[s]?.find((r) => r.age === CROWN_ARCHITECTURE_AGE)?.architecture));
+    add("architecture", seededArchitecturePenalty(target.architecture, trial.architecture));
     const shadeLeaf = trial.shadeLeafAreaM2[s];
     // A shaded sapling keeps a leafy crown but never outgrows an open-grown tree of its age.
     const openLeaf = trial.open[s]?.find((r) => r.age === 100)?.leafAreaM2 ?? 0;

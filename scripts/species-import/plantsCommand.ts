@@ -299,7 +299,9 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
     const out = join(FIT_DIR, `${id}.json`);
     const resumed: FitFile | undefined = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : undefined;
     // A fit saved before a field existed resumes with that field's neutral value.
-    const start = resumed === undefined ? await startingRecord(traits) : { ...resumed.species, carbon: { ...resumed.species.carbon, hydraulicHeightShare: resumed.species.carbon.hydraulicHeightShare ?? 1 } };
+    const resumedStart = resumed === undefined ? await startingRecord(traits) : { ...resumed.species, carbon: { ...resumed.species.carbon, hydraulicHeightShare: resumed.species.carbon.hydraulicHeightShare ?? 1 } };
+    // The trial reads the crown form to grow the seeded individuals the guardrails check.
+    const start: PlantSpecies = { ...resumedStart, architecture: { ...resumedStart.architecture, crownForm: traits.form } };
     const target = fitTarget(traits, start, referenceOf(id));
     const pool = workerPool(workers, seeds, target.shadeTolerant);
     await fitSpecies(start, (trial) => scoreTrial(target, trial), pool.evaluate, {

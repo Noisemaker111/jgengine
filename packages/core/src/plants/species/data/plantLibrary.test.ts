@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { OPEN_TEMPERATE_SITE } from "../../growth/plantEnvironment";
 import { createPlantGrowth } from "../../growth/plantGrowth";
 import { PLANT_REGION } from "../../structure/plantStructure";
-import { CROWN_ARCHITECTURE_AGE, crownArchitecture, crownArchitectureMisses, crownArchitectureTarget } from "../../validation/crownArchitecture";
+import { CROWN_ARCHITECTURE_AGE, CROWN_ARCHITECTURE_MISSES_ALLOWED, CROWN_ARCHITECTURE_SEEDS, crownArchitecture, crownArchitectureMisses, crownArchitectureTarget } from "../../validation/crownArchitecture";
 import { PLANT_LIBRARY } from "./plantLibrary";
 import { basalStemCount, habitHeightAt20M, habitHeightCeilingM, SHRUB_STEMS } from "../habitReference";
 import { HABIT_REFERENCE } from "../habitReferenceTable";
@@ -33,11 +33,17 @@ function checkTree(species: PlantSpecies): void {
 }
 
 function checkArchitecture(species: PlantSpecies): void {
-  test(`${species.id}: an open-grown ${species.architecture.crownForm ?? "tree"} tree at ${CROWN_ARCHITECTURE_AGE} years has its published fork, limbs, openness and leaf shell`, () => {
+  test(`${species.id}: open-grown ${species.architecture.crownForm ?? "tree"} individuals at ${CROWN_ARCHITECTURE_AGE} years keep its crown kind: fork, shape, openness and leaf shell`, () => {
     expect(species.architecture.crownForm, "crown form").toBeDefined();
-    const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
-    plant.step(CROWN_ARCHITECTURE_AGE);
-    expect(crownArchitectureMisses(crownArchitectureTarget(species), crownArchitecture(plant.structure()))).toEqual([]);
+    const target = crownArchitectureTarget(species);
+    const misses: string[] = [];
+    for (const seed of CROWN_ARCHITECTURE_SEEDS) {
+      const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, seed);
+      plant.step(CROWN_ARCHITECTURE_AGE);
+      const missed = crownArchitectureMisses(target, crownArchitecture(plant.structure()));
+      if (missed.length > 0) misses.push(`seed ${seed}: ${missed.join(", ")}`);
+    }
+    expect(misses.length, misses.join("\n")).toBeLessThanOrEqual(CROWN_ARCHITECTURE_MISSES_ALLOWED);
   }, 60_000);
 }
 

@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const CARYA_OVATA: PlantSpecies = {
   id: "carya-ovata",
-  version: 4,
+  version: 5,
   names: {
     scientific: "Carya ovata (Mill.) K. Koch",
     common: { en: "shagbark hickory", fr: "caryer ovale" },
@@ -17,22 +17,22 @@ export const CARYA_OVATA: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
-    apicalControl: 0.8775,
-    apicalControlMature: 0.7652,
-    apicalControlHalfYears: 3.124,
-    internodeMax: 0.1152,
-    branchAngle: 35,
+    apicalControl: 0.7872,
+    apicalControlMature: 0.81,
+    apicalControlHalfYears: 6.973,
+    internodeMax: 0.1127,
+    branchAngle: 35.15,
     lateralBudsPerNode: 1,
     maxMetamersPerShoot: 4,
-    establishmentYears: 7.611,
-    horizontalVigour: 0.8,
-    vigourIndexWeight: 0.2964,
+    establishmentYears: 7.832,
+    horizontalVigour: 0.09428,
+    vigourIndexWeight: 0.09405,
     tropism: {
       gravity: 0.6,
       gravityOrderDecay: 0.4,
-      setpointAngle: 82.34,
-      setpointPerOrder: 24.3,
-      optimal: 0.102,
+      setpointAngle: 70.61,
+      setpointPerOrder: 14.49,
+      optimal: 0.1237,
       wind: 0.15,
       setpointMax: 90,
     },
@@ -46,9 +46,9 @@ export const CARYA_OVATA: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 0.8657,
-    lueGPerMJ: 2.823,
-    lightHalfSaturation: 0.7036,
+    hydraulicHeightShare: 0.7231,
+    lueGPerMJ: 2.72,
+    lightHalfSaturation: 0.5032,
     respiration: 0.6,
     sapwoodRespiration: 0.02,
     rootRespiration: 2,
@@ -62,7 +62,7 @@ export const CARYA_OVATA: PlantSpecies = {
     reproductiveShare: 0.06,
     pruneDeficitYears: 2,
     coarseRootShare: 0.25,
-    hydraulicExponent: 4,
+    hydraulicExponent: 6,
   },
   wood: {
     densityKgM3: 640,
@@ -99,11 +99,11 @@ export const CARYA_OVATA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 94.12, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 67.84, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 94.12, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 67.84, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

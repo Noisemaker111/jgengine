@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PICEA_ENGELMANNII: PlantSpecies = {
   id: "picea-engelmannii",
-  version: 5,
+  version: 6,
   names: {
     scientific: "Picea engelmannii Parry ex Engelm.",
     common: { en: "Engelmann spruce", fr: "épinette d'Engelmann" },
@@ -17,21 +17,21 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
-    apicalControl: 0.8751,
-    apicalControlMature: 0.3748,
-    apicalControlHalfYears: 80,
-    internodeMax: 0.04935,
-    branchAngle: 61.29,
+    apicalControl: 0.9351,
+    apicalControlMature: 0.3082,
+    apicalControlHalfYears: 52.72,
+    internodeMax: 0.04,
+    branchAngle: 62.35,
     lateralBudsPerNode: 4,
-    maxMetamersPerShoot: 6,
-    establishmentYears: 24.27,
-    horizontalVigour: 0.4471,
+    maxMetamersPerShoot: 8,
+    establishmentYears: 25,
+    horizontalVigour: 0.03,
     vigourIndexWeight: 0.8,
     tropism: {
-      gravity: 0.6,
+      gravity: 0.5808,
       gravityOrderDecay: 0.6,
-      setpointAngle: 90,
-      setpointPerOrder: 25,
+      setpointAngle: 86.08,
+      setpointPerOrder: 17.82,
       optimal: 0,
       wind: 0.2,
       setpointMax: 90,
@@ -46,9 +46,9 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 1,
-    lueGPerMJ: 1.369,
-    lightHalfSaturation: 0.2077,
+    hydraulicHeightShare: 0.5019,
+    lueGPerMJ: 1.816,
+    lightHalfSaturation: 0.2,
     respiration: 0.6,
     sapwoodRespiration: 0.02,
     rootRespiration: 1.5,
@@ -62,7 +62,7 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     reproductiveShare: 0.05,
     pruneDeficitYears: 2,
     coarseRootShare: 0.25,
-    hydraulicExponent: 2,
+    hydraulicExponent: 6,
   },
   wood: {
     densityKgM3: 330,
@@ -99,11 +99,11 @@ export const PICEA_ENGELMANNII: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 243.2, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 306, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 243.2, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 306, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

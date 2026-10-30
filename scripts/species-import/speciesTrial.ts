@@ -5,7 +5,7 @@ import { crownRatio, PLANT_REGION } from "../../packages/core/src/plants/structu
 import { basalStemCount, HABIT_CHECK_AGES } from "../../packages/core/src/plants/species/habitReference";
 import { REFERENCE_STAND } from "../../packages/core/src/plants/species/speciesReference";
 import { crownProfile } from "../../packages/core/src/plants/validation/crownAllometry";
-import { CROWN_ARCHITECTURE_AGE, crownArchitecture, type CrownArchitecture } from "../../packages/core/src/plants/validation/crownArchitecture";
+import { CROWN_ARCHITECTURE_AGE, CROWN_ARCHITECTURE_SEEDS, crownArchitecture, type CrownArchitecture } from "../../packages/core/src/plants/validation/crownArchitecture";
 
 /** One reading of a grown plant at an age. */
 export interface TrialReading {
@@ -20,13 +20,13 @@ export interface TrialReading {
   /** Live stems rising from the collar. */
   stems: number;
   alive: boolean;
-  /** Fork, limbs and leaf shell, read at the architecture age only. */
-  architecture?: CrownArchitecture;
 }
 
 /** Open-grown and stand-grown runs of one species per seed, and a shaded sapling run. */
 export interface Trial {
   open: TrialReading[][];
+  /** Crown architecture of each seeded individual in {@link CROWN_ARCHITECTURE_SEEDS}, open-grown to the architecture age. */
+  architecture: CrownArchitecture[];
   stand: TrialReading[][];
   shadeLeafAreaM2: number[];
   shadeAlive: boolean[];
@@ -54,7 +54,6 @@ function grow(species: PlantSpecies, env: PlantEnvironment, seed: string, ages: 
       leafAreaM2: stats.leafAreaM2,
       stems: basalStemCount(structure.segments, PLANT_REGION.deadwood),
       alive: stats.alive,
-      ...(age === CROWN_ARCHITECTURE_AGE ? { architecture: crownArchitecture(structure) } : {}),
     });
     if (!stats.alive) break;
   }
@@ -65,13 +64,23 @@ function grow(species: PlantSpecies, env: PlantEnvironment, seed: string, ages: 
 export function runHabitTrial(species: PlantSpecies, seeds: readonly string[]): Trial {
   const started = performance.now();
   const open = seeds.map((seed) => grow(species, OPEN_TEMPERATE_SITE, seed, HABIT_CHECK_AGES));
-  return { open, stand: [], shadeLeafAreaM2: [], shadeAlive: [], deepShadeAlive: [], ms: performance.now() - started };
+  return { open, architecture: [], stand: [], shadeLeafAreaM2: [], shadeAlive: [], deepShadeAlive: [], ms: performance.now() - started };
+}
+
+/** Each seeded individual's crown architecture at the architecture age, as the library test reads it. */
+function seededArchitecture(species: PlantSpecies): CrownArchitecture[] {
+  return CROWN_ARCHITECTURE_SEEDS.map((seed) => {
+    const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, seed);
+    plant.step(CROWN_ARCHITECTURE_AGE);
+    return crownArchitecture(plant.structure());
+  });
 }
 
 /** Grow `species` open, in a stand and (when `shade`) under 0.2 light, once per seed. */
 export function runTrial(species: PlantSpecies, seeds: readonly string[], shade: boolean): Trial {
   const started = performance.now();
-  const open = seeds.map((seed) => grow(species, OPEN_TEMPERATE_SITE, seed, [20, CROWN_ARCHITECTURE_AGE, 50, 100]));
+  const open = seeds.map((seed) => grow(species, OPEN_TEMPERATE_SITE, seed));
+  const architecture = species.architecture.crownForm === undefined ? [] : seededArchitecture(species);
   const stand = seeds.map((seed) => grow(species, REFERENCE_STAND, seed));
   const shadeLeafAreaM2: number[] = [];
   const shadeAlive: boolean[] = [];
@@ -87,5 +96,5 @@ export function runTrial(species: PlantSpecies, seeds: readonly string[], shade:
       deepShadeAlive.push(deep.stats().alive);
     }
   }
-  return { open, stand, shadeLeafAreaM2, shadeAlive, deepShadeAlive, ms: performance.now() - started };
+  return { open, architecture, stand, shadeLeafAreaM2, shadeAlive, deepShadeAlive, ms: performance.now() - started };
 }
