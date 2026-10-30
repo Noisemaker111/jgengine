@@ -65,7 +65,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBossArena` (function) · `import { createBossArena } from "@jgengine/core/bossArena/bossArena"`
 
-## breeding — tame pairs mate, eggs incubate by temperature or mothers gestate, babies grow and imprint through care
+## breeding — pairs mate, eggs hatch in a game's temperature band or mothers carry, and the young grow, stage and bond through care
 
 - `createBreedingField` (function) · `import { createBreedingField } from "@jgengine/core/breeding/breeding"`
 
@@ -152,10 +152,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## cosmetics — equip cosmetic skins and customizations by slot
 
 - `createCosmetics` (function) · `import { createCosmetics } from "@jgengine/core/gameplay"`
-
-## creature-breeding — deterministic stat inheritance, mutation, and lineage genetics for taming games
-
-- `breedOffspring` (function) · `import { breedOffspring } from "@jgengine/core/game/breeding"`
 
 ## currency-major-units — convert safe minor-unit integers into currency amounts
 
@@ -304,22 +300,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hud-slots — atomic themed equipment/weapon/armor/potion slot grids with painted icons
 
 - `SlotItem` (interface) · `import { SlotItem } from "@jgengine/core/inventory/slots.view"`
-
-## imprint-bonus — apply imprint stat and handler bonuses at an imprint fraction
-
-- `applyImprintBonus` (function) · `import { applyImprintBonus } from "@jgengine/core/game/breeding"`
-
-## imprint-increment — per-care-request imprint gain across a maturation schedule
-
-- `imprintIncrementPerRequest` (function) · `import { imprintIncrementPerRequest } from "@jgengine/core/game/breeding"`
-
-## incubation-tick — advance egg incubation health inside/outside its temperature range
-
-- `tickIncubation` (function) · `import { tickIncubation } from "@jgengine/core/game/breeding"`
-
-## incubation-viability — test whether an egg incubation still has health to hatch
-
-- `incubationViable` (function) · `import { incubationViable } from "@jgengine/core/game/breeding"`
 
 ## inventory-grid — a bag of stackable items with add, remove, and move
 
@@ -490,10 +470,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## loot-weapon — feed a rolled item into a weapon definition so generated gear fires through the weapon system
 
 - `lootWeaponDefinition` (function) · `import { lootWeaponDefinition } from "@jgengine/core/gameplay"`
-
-## maturation-stage — resolve the baby/juvenile/adolescent/adult stage from elapsed maturation
-
-- `maturationStage` (function) · `import { maturationStage } from "@jgengine/core/game/breeding"`
 
 ## medal-board — per-event bronze/silver/gold targets over a stored best, with tiers that open on medal points
 

@@ -182,19 +182,18 @@
 
 ## @jgengine/core/breeding/breeding
 
-- `BabyStage` (type): type BabyStage = "baby" | "juvenile" | "adolescent" | "adult" — ARK's baby stages by maturation: baby to 10%, juvenile to 50%, then adolescent.
-- `BreedingBaby` (interface): interface BreedingBaby — A growing baby: how far it has matured (0-1), its imprint (0-1), the care it wants now and when it next asks.
-- `BreedingEgg` (interface): interface BreedingEgg<P> — A fertilized egg lying where it was laid, carrying its baby's genes `P`; it progresses only inside its incubation band.
-- `BreedingEvent` (type): type BreedingEvent<P> = | { type: "conceived"; mother: string; father: string; species: string; count: number } | { type: "laid"; egg: BreedingEgg<P> } | { type: "hatched"; egg: BreedingEgg<P> } | { type: "eggLost"; egg: BreedingEgg<P> } | { type: "born"; mother: string; species: string; baby: P } |… — What happened this tick.
-- `BreedingField` (interface): interface BreedingField<P> — The breeding of a world's tames, made by {@link createBreedingField}.
+- `BreedingEgg` (interface): interface BreedingEgg<P> — A fertilized egg lying where it was laid, carrying its young one's genes `P`; it progresses only inside its incubation band.
+- `BreedingEggSpec` (interface): interface BreedingEggSpec — An egg's temperature band in °C, inclusive, and the seconds it survives out of that band before it is lost.
+- `BreedingEvent` (type): type BreedingEvent<P> = | { type: "conceived"; mother: string; father: string; species: string; count: number } | { type: "laid"; egg: BreedingEgg<P> } | { type: "hatched"; egg: BreedingEgg<P> } | { type: "eggLost"; egg: BreedingEgg<P> } | { type: "born"; mother: string; species: string; offspring: … — What happened this tick.
+- `BreedingField` (interface): interface BreedingField<P> — The breeding of a world's creatures, made by {@link createBreedingField}.
+- `BreedingOffspring` (interface): interface BreedingOffspring — A young one growing up: its stage, how far it has grown (0-1), its bond (0-1), the care it wants now and when it next asks.
 - `BreedingOptions` (interface): interface BreedingOptions<P> — {@link createBreedingField} setup.
-- `BreedingPregnancy` (interface): interface BreedingPregnancy<P> — A mother carrying her young, with the baby's genes `P` and how far along the gestation is (0-1).
-- `BreedingSnapshot` (interface): interface BreedingSnapshot<P> — Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, babies and speeds.
+- `BreedingPregnancy` (interface): interface BreedingPregnancy<P> — A mother carrying her young, with their genes `P` and how far along the carrying is (0-1).
+- `BreedingSnapshot` (interface): interface BreedingSnapshot<P> — Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, the growing young and speeds.
 - `BreedingSpecies` (interface): interface BreedingSpecies — How one species breeds.
-- `BreedingSpeeds` (interface): interface BreedingSpeeds — ARK's server multipliers: how much faster each part of breeding runs. All default 1.
-- `MateCandidate` (interface): interface MateCandidate — A tame offered for mating this tick.
-- `babyStage` (function): function babyStage(matured: number): BabyStage — The stage a baby is at for how far it has matured (0-1).
-- `createBreedingField` (function): function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> — ARK-style breeding: tame pairs left together mate, a mother lays a fertilised egg that hatches only kept in its temperature or carries a baby to birth, then waits a while before mating again. Babies, rolled at conception, grow through baby, juvenile and adolescent to adult and ask for care on an interval; each answered request adds its share of imprint, full imprint when every request in its growing time was answered.
+- `BreedingSpeeds` (interface): interface BreedingSpeeds — How much faster each part of breeding runs than its times say. All start at 1.
+- `MateCandidate` (interface): interface MateCandidate — A creature offered for mating this tick.
+- `createBreedingField` (function): function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> — Pairs left together mate, a mother lays an egg that hatches only in its temperature band or carries her young to birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace through the game's stage list and ask for care on an interval; each answered request adds its share of the bond. Species times, care kinds, stages, the size of a litter and what a young one is all come from the game.
 
 ## @jgengine/core/cards/cardPile
 
@@ -660,25 +659,6 @@
 - `KillFeedProps` (interface): interface KillFeedProps — Props for {@link KillFeed}.
 - `KillFeedTheme` (interface): interface KillFeedTheme — Reskin tokens for {@link KillFeed}.
 - `useEventTicker` (function): function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] — Subscribe to an event ticker and re-render it on an animation frame (unless the game already ticks it), returning the live entries newest-first with `fade` applied. Driving the frame loop is what makes entries visibly fade and drop as they age out.
-
-## @jgengine/core/game/breeding
-
-- `BreedConfig` (interface): interface BreedConfig — Tuning for {@link breedOffspring}. Every field has an ARK-style default; all are optional.
-- `BreedResult` (interface): interface BreedResult — Result of {@link breedOffspring}: the new genome plus the mutations that produced it.
-- `Genome` (interface): interface Genome — A creature's heritable genome. `stats` are the inherited/mutated point values; `mutationCount` and `colorMutationCount` are the lineage counters that carry across generations and drive the mutation soft cap. Fully serializable — no methods or closures.
-- `ImprintBonusConfig` (interface): interface ImprintBonusConfig — Options controlling how an imprint bonus is applied.
-- `IncubationConfig` (interface): interface IncubationConfig — Temperature gate for {@link tickIncubation}.
-- `IncubationState` (interface): interface IncubationState — Serializable incubation/gestation state advanced by {@link tickIncubation}.
-- `MaturationStage` (interface): interface MaturationStage — A maturation stage keyed by the elapsed fraction (0..1) at which it begins.
-- `MutationEvent` (interface): interface MutationEvent — One mutation that occurred while breeding a single offspring.
-- `MutationSoftCap` (interface): interface MutationSoftCap — Soft-cap rule for mutation eligibility. When a parent's `mutationCount` exceeds `threshold` its lineage is considered "capped"; the per-roll mutation chance is then either zeroed (`mode: "block"`) or scaled by `reducedFactor` (`mode: "reduce"`). `scope` decides whether it takes `both` parents capped, or `either` one, to trigger.
-- `StatBlock` (type): type StatBlock = Record<string, number> — Deterministic creature breeding & genetics — a genre-agnostic engine primitive for taming/husbandry games. Everything here operates over plain serializable records so a genome round-trips through save/load and multiplayer sync, and every random decision is driven by an injected `rng: () => number` (values in `[0, 1)`) so identical inputs and an identical rng stream always produce the identical offspring.
-- `applyImprintBonus` (function): function applyImprintBonus(stats: StatBlock, imprint: number, config: ImprintBonusConfig = {}, options: { asOwner?: boolean } = {}): StatBlock — Apply the imprint rearing bonus to a stat block. Every stat is scaled by `1 + statBonusAtFull * imprint`; when `asOwner` is set, the imprinting handler additionally gets `1 + handlerBonusAtFull * imprint`. `imprint` is a 0..1 fraction (clamped) and scales both bonuses linearly, so half-imprint yields half the bonus. Returns a fresh stat block.
-- `breedOffspring` (function): function breedOffspring(parentA: Genome, parentB: Genome, rng: () => number, config: BreedConfig = {}): BreedResult — Breed one offspring from two parents. For each stat present in either parent (iterated in sorted id order for a stable rng stream) the offspring independently inherits the higher parent's value with probability `higherStatChance` (default `0.55`), else the lower — a per-stat coin flip, so a strong parent does not guarantee a strong child. Then up to `mutationRolls` mutation rolls fire at the soft-capped chance; each success adds `mutationDelta` to a random stat, bumps the heritable `mutationCount`, and is flagged cosmetic with probability `colorMutationChance`. Lineage counters carry as the max of the two parents plus the new mutations, keeping them monotonic and heritable.
-- `imprintIncrementPerRequest` (function): function imprintIncrementPerRequest(requestCount: number): number — Imprint gained per fulfilled care request when `requestCount` requests are scheduled over the maturation window: `1 / requestCount`, so fulfilling every request reaches full (1.0) imprint. Returns `0` for a non-positive request count.
-- `incubationViable` (function): function incubationViable(state: IncubationState): boolean — True while the incubation still has health to hatch.
-- `maturationStage` (function): function maturationStage(elapsed: number, duration: number, stages: readonly MaturationStage[]): string — Resolve the maturation stage for an elapsed time against a duration. Computes the clamped `elapsed / duration` fraction and returns the id of the last stage whose `at` threshold has been reached (boundaries inclusive). Stages need not be pre-sorted. Returns `""` when no stage qualifies (e.g. an empty list or all thresholds above the current fraction).
-- `tickIncubation` (function): function tickIncubation(state: IncubationState, temperature: number, dt: number, config: IncubationConfig): IncubationState — Advance incubation one tick. While `temperature` is within `[minTemp, maxTemp]` the embryo makes progress (`elapsed += dt`) and keeps its health; outside the range it makes no progress and loses `healthLossPerTick * dt` health (clamped at `0`). Pure — returns a new state, never mutates the input.
 
 ## @jgengine/core/game/clipRoles
 
