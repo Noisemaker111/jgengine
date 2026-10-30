@@ -1,3 +1,5 @@
+import { crossThresholds, tierAt, type ThresholdBoundary } from "../threshold/thresholds";
+
 /** Whether a smaller result (a lap time) or a larger one (a score) is the better run. */
 export type MedalDirection = "lower" | "higher";
 
@@ -155,6 +157,7 @@ export function createMedalBoard(config: MedalBoardConfig): MedalBoard {
   const medals = config.medals;
   const events = config.events;
   const tiers = config.tiers ?? [];
+  const tierSteps = tiers.map((tier) => ({ at: tier.requires, id: tier.id }));
   const eventById = new Map(events.map((event) => [event.id, event]));
   const medalIndex = new Map(medals.map((medal, index) => [medal.id, index]));
   let best: Record<string, number> = {};
@@ -171,12 +174,14 @@ export function createMedalBoard(config: MedalBoardConfig): MedalBoard {
   function grade(eventId: string, value: number): string | null {
     const event = eventById.get(eventId);
     if (event === undefined || !Number.isFinite(value)) return null;
-    let earned: string | null = null;
-    for (const medal of medals) {
+    const sign = event.direction === "lower" ? -1 : 1;
+    const ladder: ThresholdBoundary<string>[] = [];
+    // Top medal first, so two medals with an equal target resolve to the better one.
+    for (const medal of [...medals].reverse()) {
       const target = event.targets[medal.id];
-      if (target !== undefined && meets(event.direction, value, target)) earned = medal.id;
+      if (target !== undefined) ladder.push({ at: sign * target, id: medal.id });
     }
-    return earned;
+    return tierAt(ladder, sign * value)?.id ?? null;
   }
 
   function medalOf(eventId: string): string | null {
@@ -256,7 +261,9 @@ export function createMedalBoard(config: MedalBoardConfig): MedalBoard {
       if (newBest) best = { ...best, [eventId]: value };
       const now = medalOf(eventId);
       const heldAfter = points();
-      const openedTiers = tiers.filter((tier) => heldBefore < tier.requires && heldAfter >= tier.requires).map((tier) => tier.id);
+      const openedTiers = crossThresholds(tierSteps, heldBefore, heldAfter)
+        .filter((crossing) => crossing.direction === "up")
+        .map((crossing) => crossing.id);
       return { eventId, value, medal: grade(eventId, value), previous, newBest, newlyEarned: earnedBetween(previous, now), openedTiers };
     },
     snapshot: () => ({ best: { ...best } }),

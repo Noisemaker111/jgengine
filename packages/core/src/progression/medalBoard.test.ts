@@ -45,6 +45,27 @@ describe("medal board", () => {
     expect(board.best("sprint")).toBe(35);
   });
 
+  test("a result exactly on a target earns it, just past it stays at the medal below", () => {
+    const board = createMedalBoard(BOARD);
+    expect(board.grade("sprint", 36)).toBe("gold");
+    expect(board.grade("sprint", 36.01)).toBe("silver");
+    expect(board.grade("sprint", 42)).toBe("silver");
+    expect(board.grade("sprint", 50)).toBe("bronze");
+    expect(board.grade("sprint", 50.01)).toBeNull();
+    expect(board.grade("sweep", 12)).toBe("gold");
+    expect(board.grade("sweep", 11.99)).toBe("silver");
+    expect(board.grade("sweep", 5.99)).toBeNull();
+  });
+
+  test("two medals with the same target give the better medal", () => {
+    const board = createMedalBoard({
+      medals: MEDALS,
+      events: [{ id: "tied", direction: "higher", targets: { bronze: 5, silver: 5, gold: 9 } }],
+    });
+    expect(board.grade("tied", 5)).toBe("silver");
+    expect(board.grade("tied", 9)).toBe("gold");
+  });
+
   test("a tier opens on medal points and reports the result that opened it", () => {
     const board = createMedalBoard(BOARD);
     expect(board.isOpen("night-run")).toBe(false);
