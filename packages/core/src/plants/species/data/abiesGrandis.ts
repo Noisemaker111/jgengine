@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const ABIES_GRANDIS: PlantSpecies = {
   id: "abies-grandis",
-  version: 12,
+  version: 13,
   names: {
     scientific: "Abies grandis (Douglas ex D. Don) Lindl.",
     common: { en: "grand fir", fr: "sapin grandissime" },
