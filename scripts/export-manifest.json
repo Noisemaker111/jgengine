@@ -644,6 +644,7 @@
     "./movement/glideModel",
     "./movement/grappleSwing",
     "./movement/leaderTrail",
+    "./movement/motionTrack",
     "./movement/movementModel",
     "./movement/movementProbe",
     "./movement/movementSpeed",

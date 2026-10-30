@@ -6012,6 +6012,16 @@
       "intent": "a mood derived from how satisfied an agent's needs are"
     },
     {
+      "id": "motion-track",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/motionTrack",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "move a thing along a path over time and report its arrival"
+    },
+    {
       "id": "mount-game",
       "packages": [
         "@jgengine/shell"

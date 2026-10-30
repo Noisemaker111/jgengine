@@ -828,6 +828,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
 
+## motion-track — move a thing along a path over time and report its arrival
+
+- `createMotionTrack` (function) · `import { createMotionTrack } from "@jgengine/core/movement/motionTrack"`
+
 ## move-order — go-to-point order that completes on arrival, composed over a motion adapter
 
 - `defineMoveOrder` (function) · `import { defineMoveOrder } from "@jgengine/core/world"`
