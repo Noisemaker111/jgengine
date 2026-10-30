@@ -113,29 +113,53 @@ export interface StatGraph {
 
 const OP_ORDER: Record<StatOp, number> = { override: 0, add: 1, mul: 2, clampMin: 3, clampMax: 4 };
 
-function applyOp(acc: number, op: StatOp, value: number): number {
+/**
+ * Apply one {@link StatOp} to a running value — the engine's one definition of what add,
+ * multiply, override and clamp mean.
+ *
+ * @capability stat-graph fold one add/mul/override/clamp operation onto a value
+ */
+export function applyStatOp(value: number, op: StatOp, operand: number): number {
   switch (op) {
     case "add":
-      return acc + value;
+      return value + operand;
     case "mul":
-      return acc * value;
+      return value * operand;
     case "override":
-      return value;
+      return operand;
     case "clampMin":
-      return Math.max(acc, value);
+      return Math.max(value, operand);
     case "clampMax":
-      return Math.min(acc, value);
+      return Math.min(value, operand);
   }
 }
 
-function normalizeEntry(entry: StatModEntry): StatContribution[] {
-  return Array.isArray(entry) ? [...entry] : [entry as StatContribution];
+/**
+ * Fold contributions onto `base` in the order given, with no reordering — the stack a caller
+ * applies to one number (a damage roll, a move speed, a loot weight) without building a graph.
+ * A stat graph sorts its sources by op first; an ordered stack keeps the caller's sequence.
+ *
+ * @capability stat-graph fold an ordered contribution stack onto one value
+ */
+export function foldStatContributions(base: number, contributions: Iterable<StatContribution>): number {
+  let value = base;
+  for (const contribution of contributions) value = applyStatOp(value, contribution.op, contribution.value);
+  return value;
 }
 
-function applyBounds(
-  value: number,
-  bounds: { min?: number; max?: number; round?: "floor" | "ceil" | "round" },
-): number {
+/** Bounds of a caller-owned value, applied in the order min, max, then rounding. */
+export interface StatBounds {
+  min?: number;
+  max?: number;
+  round?: "floor" | "ceil" | "round";
+}
+
+/**
+ * Clamp and round a value to {@link StatBounds} — the same bounds a stat input or derived node applies.
+ *
+ * @capability stat-graph bound a value to caller-owned min, max and rounding
+ */
+export function boundStatValue(value: number, bounds: StatBounds): number {
   let out = value;
   if (bounds.min !== undefined) out = Math.max(bounds.min, out);
   if (bounds.max !== undefined) out = Math.min(bounds.max, out);
@@ -149,6 +173,10 @@ function applyBounds(
     default:
       return out;
   }
+}
+
+function normalizeEntry(entry: StatModEntry): StatContribution[] {
+  return Array.isArray(entry) ? [...entry] : [entry as StatContribution];
 }
 
 /**
@@ -268,16 +296,16 @@ export function createStatGraph(def: StatGraphDef): StatGraph {
           typeof out === "number" ? [{ source: "formula", op: "add" as StatOp, value: out }] : out;
         acc = 0;
         for (const c of contribs) {
-          acc = applyOp(acc, c.op, c.value);
+          acc = applyStatOp(acc, c.op, c.value);
           steps.push({ ...c, subtotal: acc });
         }
       }
       for (const c of externalSteps(id)) {
-        acc = applyOp(acc, c.op, c.value);
+        acc = applyStatOp(acc, c.op, c.value);
         steps.push({ ...c, subtotal: acc });
       }
       const bounds = inputDef ?? derived.get(id)!;
-      const bounded = applyBounds(acc, bounds);
+      const bounded = boundStatValue(acc, bounds);
       if (bounded !== acc) {
         steps.push({ source: "bounds", op: "override", value: bounded, subtotal: bounded });
       }

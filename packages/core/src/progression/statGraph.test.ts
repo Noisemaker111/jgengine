@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
+  applyStatOp,
+  boundStatValue,
   createStatGraph,
+  foldStatContributions,
   statModifierContributions,
+  type StatContribution,
   type StatGraphDef,
 } from "@jgengine/core/progression/statGraph";
 import { createTalentTree } from "@jgengine/core/talents/talents";
@@ -271,5 +275,39 @@ describe("stat graph — first adopters (issue #914)", () => {
       { source: "gear", op: "add", value: 4 },
       { source: "gear", op: "mul", value: 1.25 },
     ]);
+  });
+});
+
+describe("stat stack over one value", () => {
+  test("folds contributions in the caller's order, so a late add differs from an early one", () => {
+    const flat: StatContribution = { source: "flat", op: "add", value: 10 };
+    const double: StatContribution = { source: "double", op: "mul", value: 2 };
+    expect(foldStatContributions(5, [flat, double])).toBe(30);
+    expect(foldStatContributions(5, [double, flat])).toBe(20);
+  });
+
+  test("folded provenance stacks match a graph source on the same ops", () => {
+    const contributions: StatContribution[] = [
+      { source: "gear", op: "add", value: 50 },
+      { source: "haste", op: "mul", value: 2 },
+      { source: "cap", op: "clampMax", value: 250 },
+    ];
+    const sheet = createStatGraph({ inputs: [{ id: "hp", base: 100 }] }).create();
+    for (const contribution of contributions) sheet.addSource(contribution.source, { hp: contribution });
+    expect(foldStatContributions(100, contributions)).toBe(sheet.get("hp"));
+  });
+
+  test("applies each op by its one definition", () => {
+    expect(applyStatOp(4, "add", 3)).toBe(7);
+    expect(applyStatOp(4, "mul", 3)).toBe(12);
+    expect(applyStatOp(4, "override", 3)).toBe(3);
+    expect(applyStatOp(4, "clampMin", 9)).toBe(9);
+    expect(applyStatOp(4, "clampMax", 1)).toBe(1);
+  });
+
+  test("bounds clamp then round a folded value", () => {
+    expect(boundStatValue(8.1, { min: 0, max: 10, round: "floor" })).toBe(8);
+    expect(boundStatValue(-3, { min: 0 })).toBe(0);
+    expect(boundStatValue(2.5, { round: "round" })).toBe(3);
   });
 });
