@@ -1145,7 +1145,7 @@
       "module": "@jgengine/core/breeding/breeding",
       "gameFacing": false,
       "probe": null,
-      "intent": "tame pairs mate, eggs incubate by temperature or mothers gestate, babies grow and imprint through care"
+      "intent": "tame pairs mate, eggs incubate by temperature or mothers carry, the young grow and bond through care"
     },
     {
       "id": "browser-suspension",
@@ -2176,16 +2176,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a body plan as a raw node tree and clips, to edit or write out yourself before encoding"
-    },
-    {
-      "id": "creature-breeding",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/game/breeding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "deterministic stat inheritance, mutation, and lineage genetics for taming games"
     },
     {
       "id": "creature-driver",
@@ -5360,46 +5350,6 @@
       "intent": "resolve original imported bone and slot names with ambiguity diagnostics"
     },
     {
-      "id": "imprint-bonus",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/game/breeding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "apply imprint stat and handler bonuses at an imprint fraction"
-    },
-    {
-      "id": "imprint-increment",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/game/breeding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "per-care-request imprint gain across a maturation schedule"
-    },
-    {
-      "id": "incubation-tick",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/game/breeding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "advance egg incubation health inside/outside its temperature range"
-    },
-    {
-      "id": "incubation-viability",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/game/breeding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "test whether an egg incubation still has health to hatch"
-    },
-    {
       "id": "input-buffer",
       "packages": [
         "@jgengine/core"
@@ -6862,16 +6812,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "eigenvalues of a real matrix — stability modes of a linearised plant"
-    },
-    {
-      "id": "maturation-stage",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/game/breeding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "resolve the baby/juvenile/adolescent/adult stage from elapsed maturation"
     },
     {
       "id": "measured-colliders",

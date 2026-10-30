@@ -120,7 +120,7 @@ function BreedingPanel({ mating }: { mating: boolean }): ReactNode {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ flex: 1 }}>
               Mating: {mating ? "on" : "off"}
-              {card.incubation !== null ? ` · eggs need ${card.incubation[0]}–${card.incubation[1]} °C` : card.mode === "gestation" ? " · carries its young" : ""}
+              {card.incubation !== null ? ` · eggs need ${card.incubation[0]}–${card.incubation[1]} °C` : card.mode === "carry" ? " · carries its young" : ""}
             </span>
             <button style={BUTTON} onClick={() => void game.commands.run("toggleMating", {})}>
               {mating ? "Disable mating" : "Enable mating"}
