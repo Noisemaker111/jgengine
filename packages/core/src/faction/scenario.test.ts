@@ -1,8 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { createFactionGraph, createFactionRoster } from "@jgengine/core/faction/factions";
-import { createReputationLedger, effectiveRelation } from "@jgengine/core/faction/reputation";
+import { createReputationLedger, effectiveRelation, type ReputationTier } from "@jgengine/core/faction/reputation";
 import { createThreatTable } from "@jgengine/core/ai/threat";
 import { createTargeting } from "@jgengine/core/scene/targeting";
+
+const TIERS: readonly ReputationTier[] = [
+  { id: "hostile", min: -100, relation: "hostile" },
+  { id: "unfriendly", min: -25, relation: "neutral" },
+  { id: "neutral", min: 0, relation: "neutral" },
+  { id: "friendly", min: 50, relation: "friendly" },
+];
 
 function realm() {
   const graph = createFactionGraph({
@@ -45,17 +52,17 @@ describe("classic-mmo faction aggro", () => {
 describe("reputation flips a faction's hostility", () => {
   test("grinding mirefen reputation turns bog-lurkers from hostile to friendly", () => {
     const { graph } = realm();
-    const ledger = createReputationLedger({ initial: { mirefen: -6000 } });
+    const ledger = createReputationLedger({ tiers: TIERS, initial: { mirefen: -50 } });
 
     const baseHostility = graph.relationBetween("wardens", "mirefen");
     expect(baseHostility).toBe("hostile");
     expect(effectiveRelation({ base: baseHostility, ledger, actorId: "hero", factionId: "mirefen" })).toBe("hostile");
 
-    ledger.gain("hero", "mirefen", 3000);
+    ledger.gain("hero", "mirefen", 30);
     expect(ledger.tier("hero", "mirefen").id).toBe("unfriendly");
     expect(effectiveRelation({ base: baseHostility, ledger, actorId: "hero", factionId: "mirefen" })).toBe("neutral");
 
-    ledger.gain("hero", "mirefen", 6000);
+    ledger.gain("hero", "mirefen", 70);
     expect(ledger.tier("hero", "mirefen").id).toBe("friendly");
     expect(effectiveRelation({ base: baseHostility, ledger, actorId: "hero", factionId: "mirefen" })).toBe("friendly");
   });

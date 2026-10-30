@@ -81,7 +81,7 @@ export default {
       bossUnit = boss.unitId;
       bossStanceBefore = boss.stance;
       // One hit across the first phase threshold (the Warlord turns at 65% health).
-      const threshold = profile.phases[1]?.atHealth ?? 0.65;
+      const threshold = profile.phases[1]?.at ?? 0.65;
       ctx.scene.entity.effect({
         from: ctx.player.userId,
         to: boss.instanceId,

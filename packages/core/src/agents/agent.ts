@@ -80,7 +80,8 @@ export interface AgentConfig {
   readonly interrupts?: readonly UtilityInterrupt[];
   /** The authored day plan, or omitted for an agent with no schedule. */
   readonly schedule?: AgentScheduleConfig;
-  readonly mood?: { readonly weights?: readonly MoodWeight[]; readonly tiers?: readonly MoodTier[] };
+  /** Mood policy: the game's own weights and its own tier list. */
+  readonly mood: { readonly weights?: readonly MoodWeight[]; readonly tiers: readonly MoodTier[] };
   readonly switchMargin?: number;
   readonly minHoldSeconds?: number;
   readonly costWeight?: number;
@@ -194,8 +195,8 @@ export function createAgent(config: AgentConfig): Agent {
   });
   const moodReader = createMoodReader({
     needs,
-    ...(config.mood?.weights === undefined ? {} : { weights: config.mood.weights }),
-    ...(config.mood?.tiers === undefined ? {} : { tiers: config.mood.tiers }),
+    ...(config.mood.weights === undefined ? {} : { weights: config.mood.weights }),
+    tiers: config.mood.tiers,
   });
   const schedule = config.schedule === undefined ? null : createAgentSchedule(config.schedule);
 

@@ -283,7 +283,7 @@ interface BreedingSave {
 
 export function breedingSave(ctx: GameContext) {
   return {
-    key: "fernwild.breeding",
+    key: "fernwild.breeding2",
     snapshot: (): BreedingSave => {
       const nursery = nurseryOf(ctx);
       return { field: nursery.field.snapshot(), food: Object.fromEntries(nursery.food), walked: structuredClone(Object.fromEntries(nursery.walked)) };

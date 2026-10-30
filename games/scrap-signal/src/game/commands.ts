@@ -618,7 +618,7 @@ export function registerCommands(ctx: GameContext): void {
   });
 
   // Dev-only capture affordance: open the front's boss wave with the Foreman one shot above its
-  // second phase, so a capture can photograph the real `advanceBoss` tell. Never shipped.
+  // second phase, so a capture can photograph the real `advancePhase` tell. Never shipped.
   if (import.meta.env.DEV) {
     ctx.game.commands.define<{ mode?: string }>("front.capture", {
       apply(state: GameContext, input) {

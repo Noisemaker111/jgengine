@@ -5,7 +5,7 @@ import {
   type FightIntent,
   type FighterState,
 } from "@jgengine/core/ai/director/roles";
-import { advanceBoss, createBossState, type BossState, type BossStep } from "@jgengine/core/ai/director/boss";
+import { advancePhase, createPhaseClock, type PhaseClockState, type PhaseStep } from "@jgengine/core/ai/phaseLadder";
 import { createEncounter, type Encounter, type EncounterOrder } from "@jgengine/core/waves/encounter";
 import { evaluatePressure } from "@jgengine/core/waves/pressure";
 import {
@@ -44,6 +44,7 @@ import {
   FRONT_WAVE_GAP_SECONDS,
   FRONT_WAVES,
   SHOT_LOUDNESS,
+  type ForemanPhase,
 } from "./waves";
 
 /** Range at which a gunshot can be heard at all; a loud gun multiplies it. */
@@ -72,7 +73,7 @@ interface SquadOrders {
 
 interface FrontBoss {
   id: string;
-  state: BossState;
+  state: PhaseClockState;
   stance: string;
 }
 
@@ -189,8 +190,8 @@ export function frontPressure(reading: PressureReading): PressurePlan {
 }
 
 /** One boss-clock step, exposed so a test can drive the same function the game drives. */
-export function stepForeman(state: BossState, healthFraction: number, dt: number): BossStep {
-  return advanceBoss(FOREMAN_PHASES, state, healthFraction, dt);
+export function stepForeman(state: PhaseClockState, healthFraction: number, dt: number): PhaseStep<ForemanPhase> {
+  return advancePhase(FOREMAN_PHASES, state, healthFraction, dt);
 }
 
 function playerHealthFraction(ctx: GameContext): number {
@@ -375,7 +376,7 @@ export function spawnFrontUnit(ctx: GameContext, unit: string, around: { x: numb
     });
   }
   if (order.unit === FOREMAN_ID) {
-    runtime.boss = { id, state: createBossState(FOREMAN_PHASES), stance: FOREMAN_PHASES[0]!.id };
+    runtime.boss = { id, state: createPhaseClock(FOREMAN_PHASES), stance: FOREMAN_PHASES[0]!.id };
     if (runtime.stageBossFraction !== null) {
       // Capture staging only: the boss arrives already worn down, so one real hit crosses a phase.
       const stats = ctx.scene.entity.stats.get(id, "health");
@@ -552,9 +553,10 @@ function tickForeman(ctx: GameContext, nowMs: number, dt: number): void {
   const step = stepForeman(boss.state, fraction, dt);
   if (step.changed) {
     boss.stance = step.phase.id;
-    const text = step.tell === null ? undefined : FOREMAN_TELL_TEXT[step.tell.id];
-    if (text !== undefined) {
-      ctx.game.notices.push({ text, tone: "warn", ttlMs: Math.round((step.tell?.telegraphSeconds ?? 1.5) * 1000) });
+    const tell = step.tell;
+    const text = tell === null ? undefined : FOREMAN_TELL_TEXT[tell.id];
+    if (text !== undefined && tell !== null) {
+      ctx.game.notices.push({ text, tone: "warn", ttlMs: Math.round(tell.seconds * 1000) });
     }
     ctx.game.audio.play("bark_alert", entity.position);
     // The tell is also a ground shock: readable, dodgeable, and it makes the new phase felt.
@@ -702,7 +704,7 @@ export function tickFront(ctx: GameContext, dt: number): void {
 
 /**
  * Capture-harness staging: open the front's last wave and set the Foreman just above its second
- * phase, so one real shot drives a real `advanceBoss` transition in front of the camera. Registered
+ * phase, so one real shot drives a real `advancePhase` transition in front of the camera. Registered
  * only in dev builds (`front.capture`); play reaches the same fight by clearing the first three
  * waves.
  */
