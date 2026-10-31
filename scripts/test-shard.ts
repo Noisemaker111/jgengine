@@ -30,7 +30,7 @@
 // and apps/dev joins e. React (41 s) cannot fold into anything without clearing 60 s, so it
 // carries the editor's unit tests and nothing else. Moving a directory means re-timing the
 // shard and updating these numbers in the same commit.
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -69,6 +69,23 @@ export const SLOW_TEST_SECONDS: Readonly<Record<string, number>> = {
   "packages/core/src/physics/reference/discreteElementExperiments.test.ts": 88,
   "packages/core/src/landform/evolution/landscapeEvolution.browser.test.ts": 51,
 };
+
+/**
+ * A test that reads the wall clock (`performance.now()`) can hold a timing budget, and a budget
+ * measured beside three other `bun test` processes reads their work as its own: the stand
+ * simulation's 10 s budget took 12.4 s in a lane. Such files run after the lanes, alone.
+ */
+export function readsWallClock(source: string): boolean {
+  return source.includes("performance.now(");
+}
+
+/** The lanes for a shard's files, and the files that run alone after them. */
+export function planLanes(files: readonly string[], lanes: number, source: (file: string) => string): { lanes: string[][]; alone: string[] } {
+  if (lanes <= 1) return { lanes: [[...files]], alone: [] };
+  const alone = files.filter((file) => readsWallClock(source(file)));
+  const rest = files.filter((file) => !alone.includes(file));
+  return { lanes: rest.length === 0 ? [] : splitLanes(rest, lanes), alone };
+}
 
 /** Files split into at most `lanes` groups of near-equal cost, heaviest first. */
 export function splitLanes(files: readonly string[], lanes: number, cost: Readonly<Record<string, number>> = SLOW_TEST_SECONDS): string[][] {
@@ -267,20 +284,20 @@ async function main(): Promise<void> {
     const prepared = spawnSync("bun", args, { cwd: root, stdio: "inherit" });
     if (prepared.status !== 0) process.exit(prepared.status ?? 1);
   }
-  const groups = splitLanes(assigned, shard.lanes ?? 1);
-  const codes = await Promise.all(
-    groups.map(async (group, index) => {
-      const lane = groups.length === 1 ? "" : ` lane ${index + 1}/${groups.length}`;
-      let status = await runTests(group, groups.length > 1);
-      if (status.bunCrashed) {
-        // Bun itself aborted, so no test reached a verdict; the same files run once more.
-        console.log(`test-shard ${name}${lane}: Bun crashed (not a test failure); running it once more`);
-        status = await runTests(group, groups.length > 1);
-      }
-      if (groups.length > 1) console.log(`test-shard ${name}${lane}: ${group.length} file(s), exit ${status.code}`);
-      return status.code;
-    }),
-  );
+  const plan = planLanes(assigned, shard.lanes ?? 1, (file) => readFileSync(join(root, file), "utf8"));
+  const runGroup = async (group: readonly string[], label: string, held: boolean): Promise<number> => {
+    let status = await runTests(group, held);
+    if (status.bunCrashed) {
+      // Bun itself aborted, so no test reached a verdict; the same files run once more.
+      console.log(`test-shard ${name}${label}: Bun crashed (not a test failure); running it once more`);
+      status = await runTests(group, held);
+    }
+    if (label.length > 0) console.log(`test-shard ${name}${label}: ${group.length} file(s), exit ${status.code}`);
+    return status.code;
+  };
+  const many = plan.lanes.length > 1;
+  const codes = await Promise.all(plan.lanes.map((group, index) => runGroup(group, many ? ` lane ${index + 1}/${plan.lanes.length}` : "", many)));
+  if (plan.alone.length > 0) codes.push(await runGroup(plan.alone, " alone (timing budgets)", false));
   process.exit(codes.find((code) => code !== 0) ?? 0);
 }
 

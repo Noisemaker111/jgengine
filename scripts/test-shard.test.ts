@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { assignShards, bunCrashed, matchingShard, preparation, SHARDS, SLOW_TEST_SECONDS, splitLanes, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
+import { assignShards, bunCrashed, matchingShard, preparation, SHARDS, planLanes, SLOW_TEST_SECONDS, splitLanes, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
   { name: "hot", label: "the core combat tests", include: ["packages/core/src/combat"] },
@@ -105,4 +105,12 @@ test("a shard's lanes split by measured cost, so the long simulations never shar
 
 test("the slow files are in the shard that runs them in lanes", () => {
   for (const file of Object.keys(SLOW_TEST_SECONDS)) expect(matchingShard(file)?.lanes).toBeGreaterThan(1);
+});
+
+test("a file that reads the wall clock runs alone after the lanes, never beside them", () => {
+  const sources: Record<string, string> = { "a.test.ts": "expect(1).toBe(1)", "timed.test.ts": "const t = performance.now();", "b.test.ts": "" };
+  const plan = planLanes(Object.keys(sources), 4, (file) => sources[file] ?? "");
+  expect(plan.alone).toEqual(["timed.test.ts"]);
+  expect(plan.lanes.flat().sort()).toEqual(["a.test.ts", "b.test.ts"]);
+  expect(planLanes(Object.keys(sources), 1, (file) => sources[file] ?? "")).toEqual({ lanes: [Object.keys(sources)], alone: [] });
 });
