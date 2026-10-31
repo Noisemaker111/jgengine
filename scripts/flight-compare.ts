@@ -4,10 +4,10 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import type { RigidAircraftTuning } from "../packages/core/src/flight/aircraftDynamics";
-import { compareFlight, formatFlightComparison, type FlightComparisonAircraft } from "../packages/core/src/flight/reference/flightComparison";
-import { compareJetEngines, type JetComparisonAircraft } from "../packages/core/src/flight/reference/jetEngineComparison";
-import { compareRocketAscent } from "../packages/core/src/flight/reference/rocketComparison";
-import { compareRotorcraft } from "../packages/core/src/flight/reference/rotorcraftComparison";
+import { compareFlight, formatFlightComparison, type FlightComparisonAircraft } from "./reference/flight/flightComparison";
+import { compareJetEngines, type JetComparisonAircraft } from "./reference/flight/jetEngineComparison";
+import { compareRocketAscent } from "./reference/flight/rocketComparison";
+import { compareRotorcraft } from "./reference/flight/rotorcraftComparison";
 import { printHelpIfAsked } from "./script-help";
 
 if (

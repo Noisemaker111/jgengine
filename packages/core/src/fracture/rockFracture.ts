@@ -31,7 +31,7 @@ export interface RockBreakage {
 /**
  * Granite. A and b sit inside the range of published drop-weight results for hard ores (A 45–100, b 0.4–3.3,
  * A×b 27–160), at A×b 42; the four presets keep the order the bonded-particle reference breaks the rocks in
- * (`physics/reference/bondedRock.ts`). f_Mat and x·W_min put a 50 mm piece at about one chance in four of
+ * (`scripts/reference/physics/bondedRock.ts`). f_Mat and x·W_min put a 50 mm piece at about one chance in four of
  * breaking at 10 J/kg, and grow easier with size as Vogel & Peukert (2003) found.
  * @capability rock-fracture rock that breaks by impact into fragments sized by measured comminution laws
  */

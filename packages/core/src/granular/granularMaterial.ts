@@ -50,7 +50,7 @@ export interface GranularMaterial {
 export const GLASS_BEADS: GranularMaterial = { id: "glass-beads", grainDensity: 2500, loosePacking: 0.6, densePacking: 0.64, stopAngle: 21, flowAngle: 30.7, startAngle: 22.2, beta: 0.136, depthScale: 0.65e-3, cohesion: 0 };
 
 /**
- * Dry quartz sand. Repose angle from the poured-cone DEM (`physics/reference`, mean of three heaps 32.3°); the span to δ₂ and δ₃ and β
+ * Dry quartz sand. Repose angle from the poured-cone DEM (`scripts/reference/physics`, mean of three heaps 32.3°); the span to δ₂ and δ₃ and β
  * from the glass-bead fit; packing 0.56 to 0.64 (porosity 0.44 to 0.36); Bekker values for dry sand from Wong (2008).
  * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
  */
