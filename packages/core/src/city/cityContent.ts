@@ -10,6 +10,7 @@
  * @capability city-district zone bands, weighted building-class mixes, and per-class massing pieces
  */
 import type { WeightedParamEntry } from "../generator/paramSchema";
+import { pickWeighted } from "../random/pick";
 
 /** A building class a zone mix can weight — drives lot size, floors, setback, and massing. */
 export type CityLotClass =
@@ -194,16 +195,12 @@ const CLASS_SET = new Set<string>(CITY_LOT_CLASSES);
 
 /** Pick a class from a weighted mix; unknown items are ignored, an empty mix falls back to `house`. @internal */
 export function pickClass(mix: readonly WeightedParamEntry[], roll: number): CityLotClass {
-  let total = 0;
-  for (const entry of mix) if (CLASS_SET.has(entry.item) && entry.weight > 0) total += entry.weight;
-  if (total <= 0) return "house";
-  let cursor = roll * total;
-  for (const entry of mix) {
-    if (!CLASS_SET.has(entry.item) || entry.weight <= 0) continue;
-    cursor -= entry.weight;
-    if (cursor <= 0) return entry.item as CityLotClass;
-  }
-  return "house";
+  const entry = pickWeighted(
+    () => roll,
+    mix.filter((e) => CLASS_SET.has(e.item)),
+    (e) => e.weight,
+  );
+  return entry === undefined ? "house" : (entry.item as CityLotClass);
 }
 
 function box(
@@ -534,12 +531,12 @@ const LANDMARK_ZONE_MIX: Record<CityZoneBand, readonly { cls: CityLandmarkClass;
 /** Weighted pick of the landmark class a block in `zone` gets, from a roll in [0, 1). @internal */
 export function pickLandmarkClass(zone: CityZoneBand, roll: number): CityLandmarkClass {
   const entries = LANDMARK_ZONE_MIX[zone];
-  let cursor = roll * entries.reduce((sum, entry) => sum + entry.weight, 0);
-  for (const entry of entries) {
-    cursor -= entry.weight;
-    if (cursor <= 0) return entry.cls;
-  }
-  return entries[entries.length - 1]!.cls;
+  const entry = pickWeighted(
+    () => roll,
+    entries,
+    (e) => e.weight,
+  );
+  return entry === undefined ? entries[entries.length - 1]!.cls : entry.cls;
 }
 
 /** Minimum depth-into-block factor for a landmark class (the pass grows shallow clusters to this). @internal */
@@ -654,14 +651,10 @@ const SPECIES_SET = new Set<string>(CITY_TREE_SPECIES);
 
 /** Pick a species from a weighted mix; unknown items are ignored, an empty mix falls back to broadleaf. @internal */
 export function pickSpecies(mix: readonly WeightedParamEntry[], roll: number): CityTreeSpecies {
-  let total = 0;
-  for (const entry of mix) if (SPECIES_SET.has(entry.item) && entry.weight > 0) total += entry.weight;
-  if (total <= 0) return "broadleaf";
-  let cursor = roll * total;
-  for (const entry of mix) {
-    if (!SPECIES_SET.has(entry.item) || entry.weight <= 0) continue;
-    cursor -= entry.weight;
-    if (cursor <= 0) return entry.item as CityTreeSpecies;
-  }
-  return "broadleaf";
+  const entry = pickWeighted(
+    () => roll,
+    mix.filter((e) => SPECIES_SET.has(e.item)),
+    (e) => e.weight,
+  );
+  return entry === undefined ? "broadleaf" : (entry.item as CityTreeSpecies);
 }
