@@ -19,8 +19,9 @@
  * TODO line rather than a failure, so the four games still to be covered can be cut as their own
  * lanes; `--strict` fails them, which is the state this gate is aiming at.
  *
- * Every game also carries a design brief in its `PLAN.md` (`designBrief.ts` says what it holds). A
- * game without a complete one fails, unless `depth-known-failing.json` lists it for `brief`; that
+ * Every game also carries a design brief in its `PLAN.md` (`designBrief.ts` says what it holds). It
+ * is written once milestone 1 plays: a pending brief passes while milestone 1 is unticked, and the
+ * full brief is required from the commit that ticks it. A game without a complete one fails, unless `depth-known-failing.json` lists it for `brief`; that
  * list only shrinks (`knownFailing.ts`), checked against `--base` (default origin/beta).
  *
  * Usage: bun run check games-design [--strict] [--root <dir>] [--base <ref>]
@@ -29,7 +30,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { gameDirs } from "./capabilities";
-import { readDesignBrief, type BriefRead } from "./designBrief";
+import { briefDue, type BriefGate } from "./designBrief";
 import { addedSinceBase, judge, readBaseKnownFailing, readKnownFailing, verdictLines, type BaseList, type KnownFailing } from "./knownFailing";
 
 /** This repo names flow files in lowercase letters, digits and dashes; the Loop proof line uses them. */
@@ -95,8 +96,10 @@ export interface GameInspection {
   todos: string[];
   /** Flows the README names that exist and expect an arrival. */
   proven: string[];
-  /** What the `PLAN.md` design brief is missing; empty when it is complete. */
+  /** What the `PLAN.md` design brief is missing; empty when it is complete or still pending. */
   briefProblems: string[];
+  /** The brief is still pending because milestone 1 is not ticked yet. */
+  briefPending: boolean;
 }
 
 type Read = (path: string) => string;
@@ -159,11 +162,12 @@ export function inspectGame(root: string, game: string, io: Io = realIo): GameIn
   const dir = join(root, game);
   const readme = join(dir, "README.md");
   const planPath = join(dir, PLAN_FILE);
-  const brief: BriefRead = io.exists(planPath) ? readDesignBrief(io.read(planPath)) : { ok: false, problems: ["has no PLAN.md with a design brief"] };
+  const brief: BriefGate = io.exists(planPath) ? briefDue(io.read(planPath)) : { ok: false, problems: ["has no PLAN.md with a design brief"] };
   const briefProblems = brief.ok ? [] : brief.problems;
+  const briefPending = brief.ok && "pending" in brief;
 
   if (!io.exists(readme)) {
-    return { game, problems: [`${game} has no README.md with a design checklist`], todos, proven, briefProblems };
+    return { game, problems: [`${game} has no README.md with a design checklist`], todos, proven, briefProblems, briefPending };
   }
   const text = io.read(readme);
   const planned = planHasGaps(planPath, io);
@@ -175,7 +179,7 @@ export function inspectGame(root: string, game: string, io: Io = realIo): GameIn
   const proof = readLoopProof(text);
   if (!proof.ok) {
     problems.push(`${game} README ${proof.problem}`);
-    return { game, problems, todos, proven, briefProblems };
+    return { game, problems, todos, proven, briefProblems, briefPending };
   }
 
   const flowsDir = join(dir, "proofs", "flows");
@@ -205,7 +209,7 @@ export function inspectGame(root: string, game: string, io: Io = realIo): GameIn
       }
     }
   }
-  return { game, problems, todos, proven, briefProblems };
+  return { game, problems, todos, proven, briefProblems, briefPending };
 }
 
 export interface CheckResult {
@@ -230,7 +234,9 @@ export function checkGames(root: string, games: string[], io: Io = realIo, stric
       lines.push(`game-design: FAIL - ${problem}`);
     }
     const brief = verdictLines("game-design", game, "brief", judge(game, "brief", result.briefProblems, known));
-    if (brief.failed) {
+    if (result.briefPending && !brief.failed) {
+      lines.push(`game-design: PENDING - ${game} brief: milestone 1 is not ticked yet; the brief is due with it`);
+    } else if (brief.failed) {
       failures += brief.lines.length;
       lines.push(...brief.lines);
     } else if (!brief.lines.every((line) => line.includes(": OK - "))) {

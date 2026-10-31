@@ -1,6 +1,7 @@
 import { findLibraryModelByName } from "@jgengine/assets/catalogs/modelLibrary";
 
 import { escapeHtml } from "../escapeHtml";
+import { starterGameUiTsx, starterLoopTs } from "./starterGame";
 import type { EditorSceneDoc, TemplateVariant } from "./types";
 
 const indexHtml = (name: string) => `<!doctype html>
@@ -302,6 +303,9 @@ const STARTER_SKY = (({ sunAzimuth, sunElevation, ...rest }) => ({ ...rest, sun:
   STARTER_ENVIRONMENT,
 );
 
+// The starter scene: the spawn, three caches (interact -> gather) and the beacon (enter/exit ->
+// beacon) the starter loop reads, plus a few trees. Content sits at +Z of the spawn because rotationY 0
+// faces +Z: the follow camera frames it and W walks toward it.
 const editorSceneJson = `{
   "version": 1,
   "markers": [
@@ -312,18 +316,19 @@ const editorSceneJson = `{
       "label": "Player spawn",
       "color": "#22d3ee"
     },
-    { "id": "crate_1", "kind": "prop", "position": { "x": -3, "y": 0, "z": 4 }, "rotationY": 0.4, "label": "Crate", "catalogId": "crate" },
-    { "id": "crate_2", "kind": "prop", "position": { "x": -4.4, "y": 0, "z": 2.8 }, "rotationY": 1.2, "label": "Crate", "catalogId": "crate" },
-    { "id": "tree_1", "kind": "prop", "position": { "x": 8, "y": 0, "z": 10 }, "label": "Tree", "catalogId": "tree" },
-    { "id": "tree_2", "kind": "prop", "position": { "x": -10, "y": 0, "z": 14 }, "rotationY": 2.1, "label": "Tree", "catalogId": "tree" },
+    { "id": "cache_1", "kind": "prop", "position": { "x": -4, "y": 0, "z": 0 }, "rotationY": 0.4, "label": "Cache", "catalogId": "crate", "meta": { "on": "interact", "action": "gather" } },
+    { "id": "cache_2", "kind": "prop", "position": { "x": 5, "y": 0, "z": 6 }, "rotationY": 1.2, "label": "Cache", "catalogId": "crate", "meta": { "on": "interact", "action": "gather" } },
+    { "id": "cache_3", "kind": "prop", "position": { "x": -3, "y": 0, "z": 12 }, "rotationY": 2.6, "label": "Cache", "catalogId": "crate", "meta": { "on": "interact", "action": "gather" } },
+    { "id": "tree_1", "kind": "prop", "position": { "x": 9, "y": 0, "z": 12 }, "label": "Tree", "catalogId": "tree" },
+    { "id": "tree_2", "kind": "prop", "position": { "x": -11, "y": 0, "z": 15 }, "rotationY": 2.1, "label": "Tree", "catalogId": "tree" },
     { "id": "tree_3", "kind": "prop", "position": { "x": 12, "y": 0, "z": -4 }, "rotationY": 4.2, "label": "Tree", "catalogId": "tree" },
     {
-      "id": "goal",
+      "id": "beacon",
       "kind": "goal",
-      "position": { "x": 0, "y": 0, "z": 18 },
-      "label": "Goal — walk here to win",
-      "color": "#22c55e",
-      "meta": { "on": "enter", "action": "win", "message": "You reached the goal — you win!", "triggerRadius": 3 }
+      "position": { "x": 0, "y": 0, "z": 20 },
+      "label": "Beacon",
+      "color": "#f59e0b",
+      "meta": { "triggers": [{ "on": "enter", "action": "beacon" }, { "on": "exit", "action": "beacon" }], "triggerRadius": 3 }
     }
   ],
   "environment": ${JSON.stringify(STARTER_ENVIRONMENT)}
@@ -344,6 +349,7 @@ export const editorLayers: EditorDocument = normalizeEditorLayers(sceneJson as u
 
 const editorLayersTest = `import { describe, expect, test } from "bun:test";
 
+import { collectAuthoredTriggers } from "@jgengine/core/scene/authoredTriggers";
 import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
 
 import { editorLayers } from "./editorLayers";
@@ -353,14 +359,10 @@ describe("authored scene", () => {
     expect(authoredSpawnPosition(editorLayers)).not.toBeNull();
   });
 
-  test("ships placed content", () => {
-    expect(editorLayers.markers.length).toBeGreaterThan(1);
-  });
-
-  test("ships an authored goal that wins on enter — no game code", () => {
-    const goal = editorLayers.markers.find((marker) => marker.kind === "goal");
-    expect(goal?.meta?.on).toBe("enter");
-    expect(goal?.meta?.action).toBe("win");
+  test("ships the caches and the beacon the starter loop reads", () => {
+    const triggers = collectAuthoredTriggers(editorLayers);
+    expect(triggers.filter((trigger) => trigger.action === "gather").length).toBeGreaterThanOrEqual(3);
+    expect(triggers.some((trigger) => trigger.action === "beacon" && trigger.on === "enter")).toBe(true);
   });
 });
 `;
@@ -436,18 +438,25 @@ export interface GameConfigOptions {
   world: boolean;
   /** Ship the authored scene document + editor wiring (dropped by create --no-editor). */
   editor: boolean;
+  /** The starter loop (caches, energy, ranks, beacon) on the starter scene. */
+  loop: boolean;
+  /** The title, pause and checkpoints of the game-flow system, drawn by a GameFlowUI GameUI. */
+  flow: boolean;
 }
 
 const gameConfigTs = (name: string, options: GameConfigOptions) => {
   const imports = [
+    ...(options.flow ? ['import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";'] : []),
     'import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";',
     "",
     ...(options.editor ? ['import { editorLayers } from "./editorLayers";'] : []),
     ...(options.world
       ? ['import { assets } from "./game/assets";', 'import { entityModels, objectModels } from "./game/models";']
       : []),
+    'import { probe } from "./game/probe";',
+    'import { kit } from "./game/ui/kit";',
     'import { GameUI } from "./game/ui/GameUI";',
-    'import { onNewPlayer, systems } from "./loop";',
+    options.loop ? 'import { cachePrompts, onNewPlayer, sprintAllowed, systems } from "./loop";' : 'import { onNewPlayer, systems } from "./loop";',
     ...(options.world ? ['import { world } from "./world";'] : []),
   ];
   const fields = [
@@ -457,11 +466,16 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
     '  look: "cinematic",',
     "  // The light: day | bright | golden | dusk | overcast | night, or { preset, sun, skyColor, fog, saturation } to move a few tokens.",
     '  mood: "day",',
+    "  // Menus, panes and HUD parts draw in this kit (src/game/ui/kit.ts).",
+    "  uiKit: kit,",
     // The world carries its own physics (laws of the place) — no separate physics field to wire.
     ...(options.world ? ["  assets,", "  world,"] : []),
     "  // Binding any movement action makes the shell drive the walk controller — a fresh game walks.",
-    "  input: { ...DEFAULT_WALK_CODES, interact: [\"KeyE\"] },",
-    "  systems,",
+    `  input: { ...DEFAULT_WALK_CODES, sprint: ["ShiftLeft"], interact: ["KeyE"]${options.flow ? ', pause: ["Escape", "KeyP"]' : ""} },`,
+    ...(options.loop ? ["  movement: { canSprint: sprintAllowed },", "  prompts: cachePrompts,"] : []),
+    ...(options.flow
+      ? ["  // The title, pause and checkpoints; GameUI draws the menus over the world.", "  systems: [createGameFlowSystem(), ...systems],"]
+      : ["  systems,"]),
     "  loop: { onNewPlayer },",
     "  GameUI,",
     ...(options.editor
@@ -471,6 +485,9 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
         ]
       : []),
     ...(options.world ? ["  entityModels,", "  objectModels,"] : []),
+    ...(options.flow
+      ? ["  // A capture or flow presses New game (`start`); the probe is what proofs and playtests read.", '  capture: { play: ["start"], probe },']
+      : ["  // The probe is what proofs and playtests read.", "  capture: { probe },"]),
   ];
   return `${imports.join("\n")}
 
@@ -612,39 +629,59 @@ export function onNewPlayer(ctx: GameContext): void {
 }
 `;
 
-const loopTs = (editor: boolean) => (editor ? editorLoopTs : plainLoopTs);
+const loopTs = (editor: boolean, loop = false) => (loop ? starterLoopTs : editor ? editorLoopTs : plainLoopTs);
 
-const gameUiTsx = (id: string, name: string, editor: boolean) => {
-  const header = `// ${name} — GameUI starts empty on purpose. Every game owns its UI composition: write a
-// short UI art direction, then compose the shipped building blocks (HudSlots, KitVitals, Hotbar, Coins,
-// InventoryGrid, CharacterSheet, Window shells — see jgengine-ui) and reskin them with HudTheme
-// tokens. Reaching for those is correct, not incomplete work. What you must not ship is an
-// unarranged, unskinned generic face — layout, terminology, and art direction stay game-owned.
-// Panel placement is editable live in canvas mode (F2+C) and can persist to the scene document's
-// ui.panels.`;
+const gameUiTsx = (id: string, name: string, editor: boolean, loop = false) => {
+  if (loop) return starterGameUiTsx(id, name);
+  const header = `// ${name}: the title, pause menu and HUD. The menus are the engine's GameFlowUI drawn in this
+// game's kit (./kit.ts); the HUD composes the shipped blocks (HudSlots, KitVitals, Hotbar, Coins,
+// InventoryGrid, Window shells; see jgengine-ui). Panel placement is editable live in canvas mode
+// (F2+C) and can persist to the scene document's ui.panels.`;
+  const menu = `const MENU: GameFlowMenuContent = {
+  name: ${JSON.stringify(name)},
+  controls: [
+    ["WASD", "walk"],
+    ["Space", "jump"],
+    ["E", "interact"],
+    ["Esc", "pause"],
+  ],
+  credits,
+};`;
   if (!editor) {
-    return `import { HudCanvas, useHudLayout } from "@jgengine/react";
+    return `import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
+import { HudCanvas, useHudLayout } from "@jgengine/react";
+
+import { credits } from "../credits";
 
 ${header}
 
-/** @internal */
-export function GameUI() {
+${menu}
+
+function Hud() {
   const layout = useHudLayout({ storageKey: ${JSON.stringify(id)} });
   return <HudCanvas layout={layout} className="z-20 font-sans text-slate-100" />;
+}
+
+/** @internal */
+export function GameUI() {
+  return <GameFlowUI menu={MENU} hud={<Hud />} />;
 }
 `;
   }
   return `import { useSyncExternalStore } from "react";
+import { GameFlowUI, type GameFlowMenuContent } from "@jgengine/core/menu/gameFlowMenus.view";
 import { HudCanvas, useHudLayout } from "@jgengine/react";
 
 import { outcome } from "../../loop";
+import { credits } from "../credits";
 
 ${header}
 
-/** @internal */
-export function GameUI() {
+${menu}
+
+function Hud() {
   const layout = useHudLayout({ storageKey: ${JSON.stringify(id)} });
-  // The built-in trigger actions (announce/win/advance) write here; the starter goal wins on enter.
+  // The built-in trigger actions (announce/win/advance) write here.
   const status = useSyncExternalStore(outcome.subscribe, outcome.get, outcome.get);
   const tone = status.won
     ? "bg-emerald-600/90 text-white"
@@ -661,6 +698,11 @@ export function GameUI() {
       ) : null}
     </>
   );
+}
+
+/** @internal */
+export function GameUI() {
+  return <GameFlowUI menu={MENU} hud={<Hud />} />;
 }
 `;
 };
@@ -727,6 +769,7 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 ## Project rules
 
 - Shape: \`src/\` holds only \`game.config.ts\`, \`index.tsx\`, \`main.tsx\`, \`index.css\`, \`style.css\` plus optional \`loop.ts\`, \`world.ts\`, \`editorLayers.ts\`, \`editorLayers.test.ts\`, \`editor.scene.json\`; everything else under \`src/game/\`.
+- Plan: \`PLAN.md\` is the build plan. Milestone 1 (the starter loop) plays from a new game; \`proofs/flows/from-zero.flow.ts\` proves it through real keys and \`src/game/probe.ts\` is what it reads. Write the plan's design brief once milestone 1 plays, and tick each milestone in the commit that makes it play.
 - Entry: \`defineGame({...})\` in \`game.config.ts\`; \`editorLayers\` passed to defineGame auto-mounts the authored scene, and the player spawns at the authored \`player_spawn\` marker.
 - Spawn player with \`id === ctx.player.userId\` in \`onNewPlayer\`; systems (\`defineSystem\`) own the rules tick.
 - Tailwind v4: \`@source\` in \`src/index.css\` must cover \`@jgengine/react\`, \`@jgengine/shell\`, and \`@jgengine/editor\`${

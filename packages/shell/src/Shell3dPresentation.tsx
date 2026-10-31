@@ -108,6 +108,8 @@ import { TextureFiltering } from "@jgengine/core/material/TextureFiltering.draw"
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
 import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FpsCounter, FpsProbe, type FrameTally } from "@jgengine/core/devtools/FpsCounter.draw";
+import { createPerfOverlaySample, PerfOverlay, PerfOverlayProbe } from "@jgengine/core/devtools/perfOverlay.draw";
+import { createReplayRecorder } from "@jgengine/core/replay/replayRecording";
 import { ConfiguredLighting, BackdropFog } from "@jgengine/core/lighting/SceneLighting.draw";
 import { IrradianceVolumeLighting } from "@jgengine/core/lighting/IrradianceVolumeLighting.draw";
 import { usePresentationLook } from "@jgengine/core/render/presentationLook.draw";
@@ -119,6 +121,7 @@ import { SplitScreenRenderer, useSeatViewports } from "@jgengine/core/camera/Vie
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import type { RuntimeDiagnostic } from "@jgengine/core/devtools/diagnosticOverlay.view";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
+import { ContextLossScreen } from "./presentationRecovery";
 import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.draw";
 import { ParticleEmitters } from "@jgengine/core/vfx/ParticleEmitters.draw";
 import { WorldTireMarks } from "@jgengine/core/vfx/tireMarks.draw";
@@ -261,6 +264,22 @@ export function Shell3dPresentation({
   const ktx2SupportDetected = useRef(false);
   const warmup = useMemo(createSceneWarmupStore, []);
   const frameTally = useRef<FrameTally>({ frames: 0 }).current;
+  // F3: the performance overlay, in every game and every phase.
+  const [perfOpen, setPerfOpen] = useState(false);
+  const perfSample = useMemo(() => createPerfOverlaySample(), []);
+  // Every session's input is recorded against the world seed; F2+R saves it as a replay.
+  const recorder = useMemo(() => createReplayRecorder({ game: playable.game.name }), [ctx, playable]);
+  const saveReplay = () => {
+    const replay = recorder.snapshot();
+    window.__jgengineReplay = replay;
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(replay)], { type: "application/json" }));
+    link.download = `${playable.game.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-replay.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    console.info(`[jgengine] replay saved: ${replay.frames.length} frames; play it with playReplayRecording from @jgengine/core/replay/replayPlayback.draw`);
+  };
+  const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
   const WorldOverlay = playable.WorldOverlay;
   const pointerService = useMemo(() => createPointerService(), []);
   // The player's entity selection lives on ctx so game HUDs can read (and write) it.
@@ -606,6 +625,8 @@ export function Shell3dPresentation({
     controlsActive: () => playControlsActive(ctx),
     exitPointerLockOnDevtools: true,
     claimKey: controlGroupKeys === null ? undefined : (event) => controlGroupKeys.handle(event),
+    togglePerfOverlay: () => setPerfOpen((open) => !open),
+    saveReplay,
   });
 
   return (
@@ -662,6 +683,7 @@ export function Shell3dPresentation({
               <ColorblindFrame mode={colorblind} style={{ position: "absolute", inset: 0 }}>
                 <Canvas
                   onCreated={({ gl, scene }) => {
+                    setCanvasElement(gl.domElement);
                     skipCulledMatrices(scene);
                     if (ktx2SupportDetected.current) return;
                     ktx2SupportDetected.current = true;
@@ -691,6 +713,7 @@ export function Shell3dPresentation({
                   <TextureFiltering anisotropy={graphics.profile.anisotropy} />
                   {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
                   {graphics.showFps ? <FpsProbe tally={frameTally} /> : null}
+                  {perfOpen ? <PerfOverlayProbe sample={perfSample} /> : null}
                   {orthographic && playable.camera?.pixelPerfect !== undefined ? (
                     <PixelPerfectCamera {...playable.camera.pixelPerfect} />
                   ) : null}
@@ -837,6 +860,7 @@ export function Shell3dPresentation({
                     poster={poster}
                     onPosterSettled={onPosterSettled}
                     authoritativeFrameRef={authoritativeFrameRef}
+                    recorder={poster ? undefined : recorder}
                   />
                   <GamepadSource
                     tracker={tracker}
@@ -875,6 +899,8 @@ export function Shell3dPresentation({
               <SceneWarmupCoverLive store={warmup} />
               {poster ? null : <BootDirector ctx={ctx} warmup={warmup} />}
               {graphics.showFps && !poster ? <FpsCounter tally={frameTally} /> : null}
+              {perfOpen && !poster ? <PerfOverlay sample={perfSample} /> : null}
+              {poster ? null : <ContextLossScreen ctx={ctx} canvas={canvasElement} />}
               {!poster &&
               !orientationGate &&
               coarsePointer &&

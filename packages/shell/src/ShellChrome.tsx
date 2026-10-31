@@ -152,6 +152,8 @@ export function createShellKeyHandlers({
   controlsActive,
   exitPointerLockOnDevtools = false,
   claimKey,
+  togglePerfOverlay,
+  saveReplay,
 }: {
   f2HeldRef: { current: boolean };
   tracker: { handleDown: (code: string) => void; handleUp: (code: string) => void; reset: () => void };
@@ -162,6 +164,10 @@ export function createShellKeyHandlers({
   exitPointerLockOnDevtools?: boolean;
   /** Play-surface key-down hook that runs before action bindings; returning true consumes the key (and its key-up). */
   claimKey?: ((event: ShellKeyDownEvent) => boolean) | undefined;
+  /** F3 opens and closes the performance overlay, in every phase. */
+  togglePerfOverlay?: (() => void) | undefined;
+  /** F2+R saves the input recording of this session. */
+  saveReplay?: (() => void) | undefined;
 }): ShellKeyHandlers {
   const claimed = new Set<string>();
   return {
@@ -182,11 +188,20 @@ export function createShellKeyHandlers({
         f2HeldRef.current = true;
         return;
       }
+      if (event.code === "F3" && togglePerfOverlay !== undefined) {
+        event.preventDefault();
+        if (event.repeat !== true) togglePerfOverlay();
+        return;
+      }
       if (f2HeldRef.current) {
         if (event.code === "KeyD" && devtoolsEnabled) {
           event.preventDefault();
           if (exitPointerLockOnDevtools) document.exitPointerLock?.();
           setDevtoolsOpen((current) => !current);
+        }
+        if (event.code === "KeyR" && saveReplay !== undefined) {
+          event.preventDefault();
+          saveReplay();
         }
         return;
       }

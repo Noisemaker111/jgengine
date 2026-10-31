@@ -3,9 +3,12 @@ import { useEffect, useState, type ReactNode } from "react";
 import { continueGame, newGame, openTitle, playGame, runPlayed, saveNow, togglePause } from "@jgengine/core/game/gameFlow";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
+import { useHasSettings, useSettings } from "@jgengine/core/settings/settings.view";
 import { useGamePhase } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
+import type { CreditsDocument } from "./credits";
 import { GameMenu } from "./gameMenu.view";
+import { CreditsPane } from "./gameMenuSaves.view";
 import { PauseMenu } from "./pauseMenu.view";
 
 /**
@@ -33,8 +36,10 @@ export interface GameFlowMenuContent {
   controls: readonly (readonly [string, string])[];
   /** The title's default pane: a numbered list of how a run goes. */
   briefing?: readonly string[];
-  /** The Credits pane, one line each. Omit to drop the Credits verb. */
-  credits?: readonly string[];
+  /** The Credits pane: one line each, or a sectioned credits document. Omit to drop the Credits verb. */
+  credits?: readonly string[] | CreditsDocument;
+  /** The Settings verb on both menus, opening the engine settings surface. Default true; it shows only when the game has settings. */
+  settings?: boolean;
   /**
    * A screen between New game and play (a character creator, a start-region choice), drawn in place
    * of the title over the standing world. Call `begin()` once the choices are applied to start the
@@ -83,6 +88,21 @@ function BriefingPane({ lines }: { lines: readonly string[] }): ReactNode {
   );
 }
 
+function CreditsDetail({ credits }: { credits: NonNullable<GameFlowMenuContent["credits"]> }): ReactNode {
+  if ("sections" in credits) return <CreditsPane sections={credits.sections} heading={credits.title ?? "Credits"} notice={credits.notice} />;
+  return <CreditsLines lines={credits} />;
+}
+
+function SettingsDetail(): ReactNode {
+  return <p style={{ margin: 0, maxWidth: 420, opacity: 0.85 }}>Graphics quality, sound, key bindings and accessibility.</p>;
+}
+
+/** Whether the Settings verb shows: the game has settings and did not turn the verb off. */
+function useSettingsVerb(content: GameFlowMenuContent): boolean {
+  const has = useHasSettings();
+  return has && content.settings !== false;
+}
+
 function CreditsLines({ lines }: { lines: readonly string[] }): ReactNode {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, maxWidth: 520 }}>
@@ -95,9 +115,11 @@ function CreditsLines({ lines }: { lines: readonly string[] }): ReactNode {
   );
 }
 
-/** Title screen over the standing world: Continue opens the save, New game starts clean, then Controls and Credits. */
+/** Title screen over the standing world: Continue opens the save, New game starts clean, then Controls, Settings and Credits. */
 function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode {
   const ctx = useGameContext();
+  const settings = useSettings();
+  const withSettings = useSettingsVerb(content);
   const [saved, setSaved] = useState(false);
   const setup = content.newGameSetup;
   const [settingUp, setSettingUp] = useState(() => setup !== undefined && setupAfterRestart());
@@ -133,14 +155,17 @@ function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode
         { id: "continue", label: "Continue", disabled: !saved, hint: saved ? "Back where you left off" : "No save yet" },
         { id: "new", label: "New game", hint: "Start from nothing" },
         { id: "controls", label: "Controls" },
+        ...(withSettings ? [{ id: "settings", label: "Settings", hint: "Graphics, sound, keys" }] : []),
         ...(content.credits === undefined ? [] : [{ id: "credits", label: "Credits" }]),
       ]}
       initialId={saved ? "continue" : "new"}
       detail={(id) =>
         id === "controls" ? (
           <ControlsPane rows={content.controls} />
+        ) : id === "settings" ? (
+          <SettingsDetail />
         ) : id === "credits" && content.credits !== undefined ? (
-          <CreditsLines lines={content.credits} />
+          <CreditsDetail credits={content.credits} />
         ) : content.briefing === undefined ? null : (
           <BriefingPane lines={content.briefing} />
         )
@@ -148,6 +173,7 @@ function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode
       onSelect={(id) => {
         if (id === "continue") void continueGame(ctx);
         if (id === "new") startNew();
+        if (id === "settings") settings.open();
       }}
     />
   );
@@ -156,6 +182,8 @@ function GameFlowTitle({ content }: { content: GameFlowMenuContent }): ReactNode
 /** Pause: resume, save, the controls, or back to the title (the save keeps the run). */
 function GameFlowPause({ content }: { content: GameFlowMenuContent }): ReactNode {
   const ctx = useGameContext();
+  const settings = useSettings();
+  const withSettings = useSettingsVerb(content);
   return (
     <PauseMenu
       style={menuStyle(content)}
@@ -163,13 +191,15 @@ function GameFlowPause({ content }: { content: GameFlowMenuContent }): ReactNode
         { id: "resume", label: "Resume" },
         { id: "save", label: "Save" },
         { id: "controls", label: "Controls" },
+        ...(withSettings ? [{ id: "settings", label: "Settings" }] : []),
         { id: "title", label: "Quit to title" },
       ]}
-      detail={(id) => (id === "controls" ? <ControlsPane rows={content.controls} /> : null)}
+      detail={(id) => (id === "controls" ? <ControlsPane rows={content.controls} /> : id === "settings" ? <SettingsDetail /> : null)}
       onResume={() => togglePause(ctx)}
       onSelect={(id) => {
         if (id === "resume") playGame(ctx);
         if (id === "save") void saveNow(ctx);
+        if (id === "settings") settings.open();
         if (id === "title") void saveNow(ctx).then(() => openTitle(ctx));
       }}
     />

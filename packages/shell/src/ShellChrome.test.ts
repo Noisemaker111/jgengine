@@ -99,4 +99,27 @@ describe("shell keyboard ownership", () => {
       if (active) expect(down).toEqual(["KeyA"]);
     }
   });
+
+  test("F3 toggles the perf overlay in any phase, and F2+R saves the replay", () => {
+    let perf = 0;
+    let replays = 0;
+    const held = { current: false };
+    const handlers = createShellKeyHandlers({
+      f2HeldRef: held,
+      tracker: { handleDown() {}, handleUp() {}, reset() {} },
+      devtoolsEnabled: false,
+      setDevtoolsOpen: () => {},
+      controlsActive: () => false,
+      togglePerfOverlay: () => { perf++; },
+      saveReplay: () => { replays++; },
+    });
+    handlers.onKeyDown({ code: "F3", preventDefault() {} });
+    handlers.onKeyDown({ code: "F3", repeat: true, preventDefault() {} });
+    expect(perf).toBe(1);
+    handlers.onKeyDown({ code: "KeyR", preventDefault() {} });
+    expect(replays).toBe(0);
+    handlers.onKeyDown({ code: "F2", preventDefault() {} });
+    handlers.onKeyDown({ code: "KeyR", preventDefault() {} });
+    expect(replays).toBe(1);
+  });
 });

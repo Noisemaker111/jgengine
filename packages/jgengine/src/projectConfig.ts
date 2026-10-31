@@ -27,6 +27,20 @@ export interface CapabilityAnswers {
   debt?: Record<string, CapabilityDebt>;
 }
 
+/** One credited line in `jgengine.json`: a person, a studio, an asset pack, a tool. */
+export interface ProjectCreditLine {
+  label: string;
+  detail?: string;
+  href?: string;
+}
+
+/** The `credits` field of `jgengine.json`, in the shape the engine's credits screens read. */
+export interface ProjectCredits {
+  title?: string;
+  sections: { heading: string; entries: ProjectCreditLine[] }[];
+  notice?: string;
+}
+
 /**
  * A game's `jgengine.json`: the one place that says what the game is and uses. `jgengine create`
  * writes it and `jgengine sync` makes the game match it and the running engine.
@@ -50,6 +64,8 @@ export interface ProjectConfig {
   owns?: string[];
   /** Engine monorepo games: boot probes and adoption debt (adoption itself is read from source). */
   capabilities?: CapabilityAnswers;
+  /** Who made the game and what it uses; the main menu's Credits reads it. */
+  credits?: ProjectCredits;
 }
 
 /** Read and validate `<dir>/jgengine.json`; throws with the field at fault. */
@@ -77,7 +93,32 @@ export function readProjectConfig(dir: string): ProjectConfig {
   if (config.owns !== undefined && (!Array.isArray(config.owns) || config.owns.some((file) => typeof file !== "string"))) {
     throw new Error(`${path}: "owns" lists file paths`);
   }
+  if (config.credits !== undefined && (typeof config.credits !== "object" || config.credits === null || !Array.isArray(config.credits.sections))) {
+    throw new Error(`${path}: "credits" is { sections: [{ heading, entries: [{ label, detail?, href? }] }], notice? }`);
+  }
   return config as ProjectConfig;
+}
+
+/** The credits a new game starts with: the game, the engine and the starter art it ships with. */
+export function starterCredits(name: string, art: boolean): ProjectCredits {
+  return {
+    sections: [
+      { heading: name, entries: [{ label: name, detail: "game design and code" }] },
+      { heading: "Engine", entries: [{ label: "JGengine", detail: "Apache-2.0", href: "https://github.com/Noisemaker111/jgengine" }] },
+      ...(art
+        ? [
+            {
+              heading: "3D models",
+              entries: [
+                { label: "KayKit", detail: "Kay Lousberg, CC0-1.0", href: "https://kaylousberg.com" },
+                { label: "Quaternius", detail: "CC0-1.0", href: "https://quaternius.com" },
+              ],
+            },
+          ]
+        : []),
+    ],
+    notice: "Third-party art is CC0. Thank you for playing.",
+  };
 }
 
 /** `jgengine.json` text in its fixed key order. */
@@ -90,6 +131,7 @@ export function renderProjectConfig(config: ProjectConfig): string {
     engine: [...config.engine].sort(),
     ...(config.owns === undefined || config.owns.length === 0 ? {} : { owns: [...config.owns].sort() }),
     ...(config.capabilities === undefined ? {} : { capabilities: config.capabilities }),
+    ...(config.credits === undefined ? {} : { credits: config.credits }),
   };
   return `${JSON.stringify(ordered, null, 2)}\n`;
 }

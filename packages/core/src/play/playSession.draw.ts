@@ -3,6 +3,8 @@ import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtim
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
 
+import type { ReplayRecorder } from "@jgengine/core/replay/replayRecording";
+
 import { dispatchBoundAction, RESERVED_INPUT_ACTIONS, shouldFireBoundAction } from "../input/boundActionDispatch";
 import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "../input/hotbarActions";
 
@@ -16,6 +18,8 @@ export interface PlaySessionOptions {
   dt?: number;
   /** Called for every command the session runs (a bound action, a prompt, or {@link PlaySession.command}). */
   onCommand?: (entry: { name: string; input: unknown; label: string; result: ReturnType<GameContext["game"]["commands"]["run"]> }) => void;
+  /** Records every tick and every {@link PlaySession.command} call, for a replay. Bound-action commands replay from the input and are not recorded. */
+  recorder?: ReplayRecorder;
 }
 
 /** A live headless play of one game, ticked by its caller. */
@@ -31,7 +35,7 @@ export interface PlaySession {
    * action runs its command with the aim, `interact` runs the active proximity prompt, a hotbar press uses
    * its slot.
    */
-  tick(held: readonly string[]): void;
+  tick(held: readonly string[], dt?: number): void;
   /** Run a command as the player would, reported through `onCommand`. */
   command(name: string, input?: unknown, label?: string): ReturnType<GameContext["game"]["commands"]["run"]>;
 }
@@ -57,7 +61,7 @@ export function createPlaySession(playable: HeadlessPlayable, options: PlaySessi
   });
   const ctx = runner.ctx;
 
-  const command = (name: string, input?: unknown, label = `command ${name}`) => {
+  const run = (name: string, input?: unknown, label = `command ${name}`) => {
     const result = ctx.game.commands.run(name, input);
     options.onCommand?.({ name, input, label, result });
     return result;
@@ -67,7 +71,7 @@ export function createPlaySession(playable: HeadlessPlayable, options: PlaySessi
   const gameActions = Object.keys(definition.input ?? {});
   const slotActions = findHotbarSlotActions(definition.input);
   const hotbarId = hotbarIdFor(playable);
-  const sink = { run: (name: string, input: unknown) => void command(name, input, `action ${name}`) };
+  const sink = { run: (name: string, input: unknown) => void run(name, input, `action ${name}`) };
 
   const dispatchActions = (): void => {
     const { heading: yaw, pitch } = runner.look;
@@ -81,7 +85,7 @@ export function createPlaySession(playable: HeadlessPlayable, options: PlaySessi
         const focus = ctx.scene.entity.get(userId);
         if (prompts.length === 0 || focus === null) continue;
         const active = resolveActivePrompt({ x: focus.position[0], z: focus.position[2] }, prompts);
-        if (active?.prompt.invoke != null) command(active.prompt.invoke.name, active.prompt.invoke.input, `prompt ${active.id}`);
+        if (active?.prompt.invoke != null) run(active.prompt.invoke.name, active.prompt.invoke.input, `prompt ${active.id}`);
         continue;
       }
       if (!shouldFireBoundAction(tracker, action, definition.input, repeatFiredAt, clockMs)) continue;
@@ -103,6 +107,10 @@ export function createPlaySession(playable: HeadlessPlayable, options: PlaySessi
   };
 
   let ticks = 0;
+  // Ticks at the session's own dt are counted, so a fixed-step clock never drifts; others add their time.
+  let otherMs = 0;
+  let previousHeld: readonly string[] = [];
+  const recorder = options.recorder;
   return {
     runner,
     ctx,
@@ -111,12 +119,21 @@ export function createPlaySession(playable: HeadlessPlayable, options: PlaySessi
     get clockMs() {
       return clockMs;
     },
-    tick(held) {
-      ticks += 1;
-      clockMs = Math.round(ticks * dt * 1000 * 1000) / 1000;
-      runner.step(dt, { held: [...held], pointer: null });
+    tick(held, stepDt = dt) {
+      if (recorder !== undefined) {
+        const pressed = held.filter((action) => !previousHeld.includes(action));
+        recorder.frame({ dt: stepDt, held, pressed, yaw: runner.look.heading, pitch: runner.look.pitch });
+        previousHeld = [...held];
+      }
+      if (stepDt === dt) ticks += 1;
+      else otherMs += stepDt * 1000;
+      clockMs = Math.round((ticks * dt * 1000 + otherMs) * 1000) / 1000;
+      runner.step(stepDt, { held: [...held], pointer: null });
       dispatchActions();
     },
-    command,
+    command(name, input, label) {
+      recorder?.command(name, input);
+      return run(name, input, label);
+    },
   };
 }

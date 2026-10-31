@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { dirname, join, relative, resolve, sep } from "node:path";
 
 import { cliVersion, findWorkspaceRoot, flag, hasFlag, isEngineMonorepo, pickPackageManager, sdkVersion } from "./pkg";
-import { GAME_TEMPLATES, type GameTemplate, PROJECT_CONFIG_FILE, renderProjectConfig } from "./projectConfig";
+import { GAME_TEMPLATES, type GameTemplate, PROJECT_CONFIG_FILE, renderProjectConfig, starterCredits } from "./projectConfig";
 import { installSkills } from "./skills";
 import { applySync, planSync, syncContext } from "./sync";
 import { type EditorSceneDoc, gameTemplate, parseCreateName, type TemplateVariant } from "./templates";
@@ -24,6 +24,7 @@ export function writeGame(
     ground?: "flat" | "terrain";
     sceneMode?: "empty" | "starter";
     dimension?: "2d" | "3d";
+    brief?: string | undefined;
   },
 ): void {
   for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), cliVersion: cliVersion(), ...(scene === undefined ? {} : { scene }), ...options })) {
@@ -76,7 +77,7 @@ export function readPromotedScene(pathArg: string): EditorSceneDoc {
   return { version: 1, ...scene, markers };
 }
 
-const VALUE_FLAGS = new Set(["--pm", "--template", "--from-scene", "--player", "--ground", "--scene"]);
+const VALUE_FLAGS = new Set(["--pm", "--template", "--from-scene", "--player", "--ground", "--scene", "--brief"]);
 const BOOLEAN_FLAGS = new Set([
   "--no-editor",
   "--in-repo",
@@ -92,6 +93,7 @@ const CREATE_USAGE = `usage: jgengine create "<Game Name>" [flags]
                              2d: a board game drawn by GameUI, no 3D scene, editor or models
                              (grid, card and tile games); takes none of the 3D flags below
                              builder: a 3d world players build in together, on Convex
+  --brief "<words>"          the user's words for the game, written into PLAN.md and README.md
   --player <model>           player model: a library human or a catalog id (default human/man-casual)
   --ground terrain|flat      starter ground (default terrain)
   --scene starter|empty      starter props and a goal to walk to, or just ground and the player (default starter)
@@ -174,7 +176,14 @@ function writeProjectConfig(targetDir: string, game: { id: string; name: string;
     .map((name) => name.slice("@jgengine/".length));
   writeFileSync(
     join(targetDir, PROJECT_CONFIG_FILE),
-    renderProjectConfig({ name: game.name, id: game.id, template: game.template, ...(game.template === "2d" ? {} : { editor: game.editor }), engine }),
+    renderProjectConfig({
+      name: game.name,
+      id: game.id,
+      template: game.template,
+      ...(game.template === "2d" ? {} : { editor: game.editor }),
+      engine,
+      credits: starterCredits(game.name, game.template !== "2d"),
+    }),
   );
 }
 
@@ -264,7 +273,8 @@ export async function runCreate(argv: string[]): Promise<number> {
     }
 
     const engineVersion = sdkVersion();
-    writeGame(targetDir, id, displayName, variant, scene, { world, editor, player, ground, sceneMode, shape, dimension });
+    const brief = flag(argv, "brief");
+    writeGame(targetDir, id, displayName, variant, scene, { world, editor, player, ground, sceneMode, shape, dimension, brief });
     writeProjectConfig(targetDir, { id, name: displayName, template, editor });
     applySync(targetDir, planSync(targetDir, syncContext(targetDir)));
     console.log(`created ${displayName} (${template}, ${variant}) → ${targetDir}`);
@@ -325,7 +335,8 @@ export async function runCreate(argv: string[]): Promise<number> {
     console.log(`  cd ${cdHint}`);
     if (!installed) console.log("  bun install   # or npm install");
     if (wantAssets && !assetsPulled) console.log(`  ${ASSETS_PULL_HINT}   # starter models into public/models`);
-    console.log(dimension === "2d" ? "  bun dev       # board game with HUD controls" : "  bun dev       # walkable base: WASD + jump, HUD canvas");
+    console.log(dimension === "2d" ? "  bun dev       # board game with HUD controls" : "  bun dev       # main menu, then New game: walk, gather with E, light the beacon");
+    console.log("  # PLAN.md is the build plan; milestone 1 plays now, so write its design brief next");
     if (editor) {
       console.log("  # F2+E in the browser opens the scene editor on src/editor.scene.json (Ctrl+S saves)");
     }

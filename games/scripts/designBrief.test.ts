@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
+import { planMd } from "../../packages/jgengine/src/templates/starterGame";
+
 import { EXAMPLE_BRIEF } from "./briefExample";
-import { readDesignBrief } from "./designBrief";
+import { BRIEF_PENDING_LINE, briefDue, briefPending, milestoneOneDone, readDesignBrief } from "./designBrief";
 import { addedSinceBase, judge, parseKnownFailing, verdictLines } from "./knownFailing";
 
 const plan = (brief: string): string => `# Courier plan\n\n${brief}\n## Milestones\n\n- [ ] 1. the first ten minutes\n`;
@@ -79,5 +81,39 @@ describe("known-failing list", () => {
     expect(verdictLines("t", "demo", "brief", judge("demo", "brief", [], list)).failed).toBe(true);
     expect(verdictLines("t", "other", "brief", judge("other", "brief", ["missing"], list)).failed).toBe(true);
     expect(verdictLines("t", "other", "brief", judge("other", "brief", [], list)).failed).toBe(false);
+  });
+});
+
+describe("brief ordering", () => {
+  const scaffold = (tick: " " | "x", brief = BRIEF_PENDING_LINE): string =>
+    `# Probe plan\n\n## Direction\n\n- a walk\n\n## Design brief\n\n${brief}\n\n## Milestones\n\n- [${tick}] 1. the core loop plays from second 0\n- [ ] 2. the next ten minutes\n`;
+
+  test("a pending brief passes while milestone 1 is unticked", () => {
+    expect(briefPending(scaffold(" "))).toBe(true);
+    expect(milestoneOneDone(scaffold(" "))).toBe(false);
+    expect(briefDue(scaffold(" "))).toEqual({ ok: true, pending: true });
+  });
+
+  test("ticking milestone 1 makes the full brief due", () => {
+    const read = briefDue(scaffold("x"));
+    expect(read.ok).toBe(false);
+    if (read.ok) return;
+    expect(read.problems[0]).toBe("milestone 1 is ticked, so the design brief is due: replace its pending line with the brief");
+    expect(read.problems.length).toBeGreaterThan(1);
+  });
+
+  test("a written brief is judged in full whatever the milestones say", () => {
+    const written = briefDue(scaffold("x", EXAMPLE_BRIEF.replace(/^## Design brief\n/m, "")));
+    expect(written.ok && !("pending" in written)).toBe(true);
+    const broken = briefDue(scaffold(" ", "- Core loop: walk\n"));
+    expect(broken.ok).toBe(false);
+  });
+});
+
+describe("the scaffold's plan", () => {
+  test("jgengine create writes a plan whose brief is pending until milestone 1 is ticked", () => {
+    const plan = planMd({ id: "probe", name: "Probe", template: "3d", loop: true, ground: "terrain" });
+    expect(briefDue(plan)).toEqual({ ok: true, pending: true });
+    expect(briefDue(plan.replace("- [ ] 1.", "- [x] 1.")).ok).toBe(false);
   });
 });

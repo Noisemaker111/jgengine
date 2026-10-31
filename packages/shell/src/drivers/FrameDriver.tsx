@@ -1,3 +1,4 @@
+import type { ReplayRecorder } from "@jgengine/core/replay/replayRecording";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 
@@ -58,6 +59,7 @@ export function FrameDriver({
   poster,
   onPosterSettled,
   authoritativeFrameRef,
+  recorder,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
@@ -77,6 +79,8 @@ export function FrameDriver({
   poster: boolean;
   onPosterSettled: () => void;
   authoritativeFrameRef: { current: AuthoritativeFrameHandler | null };
+  /** Records each frame of play (time, held and pressed actions, look) for a deterministic replay. */
+  recorder?: ReplayRecorder | undefined;
 }) {
   const posterElapsedRef = useRef(0);
   const posterDoneRef = useRef(false);
@@ -201,6 +205,16 @@ export function FrameDriver({
     sendInput();
     const turnInput = (tracker.isDown("turnRight") ? 1 : 0) - (tracker.isDown("turnLeft") ? 1 : 0);
     if (turnInput !== 0) yawRef.current = steerYaw(yawRef.current, turnInput, TURN_SPEED, dt);
+    if (recorder !== undefined && !recorder.full()) {
+      const actions = tracker.actions();
+      recorder.frame({
+        dt,
+        held: ctx.input.held(),
+        pressed: actions.filter((action) => tracker.wasPressed(action)),
+        yaw: yawRef.current,
+        pitch: pitchRef.current,
+      });
+    }
     // Recoil moves the look only where the look is the aim; a free cursor aims on its own.
     const kick = recoil.step(dt);
     const cursorAims = pointerAim && (typeof document === "undefined" || document.pointerLockElement === null);
