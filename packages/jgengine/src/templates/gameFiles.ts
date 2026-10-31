@@ -471,7 +471,7 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
     // The world carries its own physics (laws of the place) — no separate physics field to wire.
     ...(options.world ? ["  assets,", "  world,"] : []),
     "  // Binding any movement action makes the shell drive the walk controller — a fresh game walks.",
-    '  input: { ...DEFAULT_WALK_CODES, sprint: ["ShiftLeft"], interact: ["KeyE"], pause: ["Escape", "KeyP"] },',
+    `  input: { ...DEFAULT_WALK_CODES, sprint: ["ShiftLeft"], interact: ["KeyE"]${options.flow ? ', pause: ["Escape", "KeyP"]' : ""} },`,
     ...(options.loop ? ["  movement: { canSprint: sprintAllowed },", "  prompts: cachePrompts,"] : []),
     ...(options.flow
       ? ["  // The title, pause and checkpoints; GameUI draws the menus over the world.", "  systems: [createGameFlowSystem(), ...systems],"]
