@@ -72,7 +72,7 @@ export const SLOW_TEST_SECONDS: Readonly<Record<string, number>> = {
 
 /** Files split into at most `lanes` groups of near-equal cost, heaviest first. */
 export function splitLanes(files: readonly string[], lanes: number, cost: Readonly<Record<string, number>> = SLOW_TEST_SECONDS): string[][] {
-  const groups = Array.from({ length: Math.max(1, Math.min(lanes, files.length)) }, () => ({ files: [] as string[], total: 0 }));
+  const groups = Array.from({ length: Math.max(1, Math.min(lanes, files.length)) }, (): { files: string[]; total: number } => ({ files: [], total: 0 }));
   const ordered = [...files].sort((a, b) => (cost[b] ?? 1) - (cost[a] ?? 1) || a.localeCompare(b));
   for (const file of ordered) {
     const lightest = groups.reduce((low, group) => (group.total < low.total ? group : low));

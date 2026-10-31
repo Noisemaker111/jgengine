@@ -233,6 +233,12 @@ describe("parseCheckArgs", () => {
   });
 });
 
+function row(name: string): (typeof CHECKS)[number] {
+  const found = CHECKS.find((check) => check.name === name);
+  if (found === undefined) throw new Error(`no check ${name}`);
+  return found;
+}
+
 describe("which rows a diff reaches", () => {
   test("a game-only diff names its games; anything else judges every game", () => {
     expect(gameScope(["games/deepward/src/a.ts", "games/fernwild/PLAN.md"])).toEqual(["deepward", "fernwild"]);
@@ -243,13 +249,13 @@ describe("which rows a diff reaches", () => {
   });
 
   test("a per-game check takes the touched games after its own arguments", () => {
-    const depth = CHECKS.find((check) => check.name === "games-depth")!;
+    const depth = row("games-depth");
     expect(checkArgsFor(depth, ["games/deepward/src/a.ts"])).toEqual(["deepward"]);
     expect(checkArgsFor(depth, ["packages/core/src/a.ts"])).toEqual([]);
   });
 
   test("a row runs for a change to what it reads, to tooling, or always when it names nothing", () => {
-    const layers = CHECKS.find((check) => check.name === "layers")!;
+    const layers = row("layers");
     expect(reachedBy(layers, ["games/deepward/src/a.ts"])).toBe(false);
     expect(reachedBy(layers, ["packages/core/src/a.ts"])).toBe(true);
     expect(reachedBy(layers, ["scripts/check-layers.ts"])).toBe(true);

@@ -671,8 +671,8 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     const args = [...checkArgsFor(check, plan.changed), ...(GATE_ARGS[gate] ?? [])];
     const settles = unit(["gate:" + gate, ...args].join(" "), options.tree === undefined ? [WHOLE_TREE] : gateInputs(check, plan.changed, options.tree));
     if (fresh(settles.id, settles.inputs)) continue;
-    const scoped = check.perGame === true && gameScope(plan.changed) !== null;
-    steps.push({ name: scoped ? `${gate} ${gameScope(plan.changed)!.join(" ")}` : gate, command: ["bun", check.script, ...args], fix: GATE_FIX[gate], cost: GATE_COST[gate], first: true, units: [settles] });
+    const scope = check.perGame === true ? gameScope(plan.changed) : null;
+    steps.push({ name: scope === null ? gate : `${gate} ${scope.join(" ")}`, command: ["bun", check.script, ...args], fix: GATE_FIX[gate], cost: GATE_COST[gate], first: true, units: [settles] });
   }
 
   const boots = plan.boots.map((game) => unit(`boot:${game}`)).filter((settles) => !fresh(settles.id, settles.inputs));
