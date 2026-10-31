@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createPresentationDiagnosticOwnership, createPlaySurfaceFocusOwnership, createPresentationRetryRegistry, deferUnhandledPresentationError, markPresentationCodeLoadFailure, presentationRecoveryAction, PresentationRecovery } from "./presentationRecovery";
+import { createPresentationDiagnosticOwnership, createPlaySurfaceFocusOwnership, createPresentationRetryRegistry, deferUnhandledPresentationError, markPresentationCodeLoadFailure, presentationRecoveryAction, PresentationRecovery, watchContextLoss } from "./presentationRecovery";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 describe("presentation retry ownership", () => {
@@ -181,5 +181,20 @@ describe("owned play surface focus", () => {
     expect(focus.reveal(replacement, surface, body, body)).toBe(false);
     expect(focus.reveal(owner, surface, body, body)).toBe(false);
     expect(calls).toBe(0);
+  });
+});
+
+describe("context loss", () => {
+  test("a lost context is reported, asked back, and cleared when restored", () => {
+    const canvas = new EventTarget();
+    const seen: boolean[] = [];
+    const stop = watchContextLoss(canvas, (lost) => seen.push(lost));
+    const lost = new Event("webglcontextlost", { cancelable: true });
+    canvas.dispatchEvent(lost);
+    expect(lost.defaultPrevented).toBe(true);
+    canvas.dispatchEvent(new Event("webglcontextrestored"));
+    stop();
+    canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
+    expect(seen).toEqual([true, false]);
   });
 });

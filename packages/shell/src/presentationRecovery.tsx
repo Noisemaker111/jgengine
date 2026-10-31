@@ -1,4 +1,4 @@
-import { Component, createContext, useContext, useId, useLayoutEffect, type ErrorInfo, type ReactNode } from "react";
+import { Component, createContext, useContext, useEffect, useId, useLayoutEffect, useState, type ErrorInfo, type ReactNode } from "react";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
@@ -214,4 +214,41 @@ export class PresentationRecovery extends Component<RecoveryProps, RecoveryState
     } }; }
     return <PresentationRetryContext value={this.scope}>{this.props.children}</PresentationRetryContext>;
   }
+}
+
+/** Report a canvas's WebGL context as lost or back; asks the browser to restore it. Returns the unsubscribe. @internal */
+export function watchContextLoss(canvas: EventTarget, onChange: (lost: boolean) => void): () => void {
+  const onLost = (event: Event) => {
+    // Without preventDefault the browser never offers the context back.
+    event.preventDefault();
+    onChange(true);
+  };
+  const onRestored = () => onChange(false);
+  canvas.addEventListener("webglcontextlost", onLost);
+  canvas.addEventListener("webglcontextrestored", onRestored);
+  return () => {
+    canvas.removeEventListener("webglcontextlost", onLost);
+    canvas.removeEventListener("webglcontextrestored", onRestored);
+  };
+}
+
+/**
+ * Watches the game canvas for a lost WebGL context and draws a screen over it instead of a silent black
+ * frame: play controls stop while it is lost, the browser is asked to restore it, and the player can
+ * reload. A restored context removes the screen. @internal
+ */
+export function ContextLossScreen({ ctx, canvas }: { ctx: GameContext; canvas: HTMLCanvasElement | null }): ReactNode {
+  const [lost, setLost] = useState(false);
+  useEffect(() => (canvas === null ? undefined : watchContextLoss(canvas, setLost)), [canvas]);
+  useLayoutEffect(() => (lost ? suspendPlayControls(ctx) : undefined), [ctx, lost]);
+  if (!lost) return null;
+  return (
+    <div data-context-lost="" style={{ position: "absolute", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: 24, background: "rgba(8, 21, 29, 0.92)", color: "#e9f6ee", fontFamily: "system-ui" }}>
+      <section role="alert" style={{ width: "100%", maxWidth: 440, padding: 24, border: "1px solid #35616b", borderRadius: 16, background: "#102735" }}>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 650 }}>The display was lost</h2>
+        <p style={{ margin: "10px 0 18px", color: "#c3d9dd", lineHeight: 1.5 }}>The graphics driver reset. The game is paused and will come back on its own; if it does not, reload. Your last checkpoint is kept.</p>
+        <button type="button" autoFocus style={{ border: "1px solid #8ce0c2", borderRadius: 8, background: "#8ce0c2", color: "#082b22", padding: "10px 18px", font: "inherit", fontWeight: 650, cursor: "pointer" }} onClick={() => location.reload()}>Reload game</button>
+      </section>
+    </div>
+  );
 }
