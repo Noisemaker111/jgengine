@@ -1,3 +1,4 @@
+import { length2 } from "../math/scalar";
 import { seededRng } from "../random/rng";
 import type { NavGrid, NavPoint } from "../nav/navGrid";
 
@@ -168,7 +169,7 @@ export function computeFlowField(
       const target = grid.center(best.col, best.row);
       const dx = target[0] - point[0];
       const dz = target[1] - point[1];
-      const length = Math.hypot(dx, dz);
+      const length = length2(dx, dz);
       return length < 1e-9 ? [0, 0] : [dx / length, dz / length];
     },
     next(point) {
@@ -241,7 +242,7 @@ export interface SelectPoiOptions {
 }
 
 function euclidean(from: NavPoint, poi: Poi): number {
-  return Math.hypot(poi.point[0] - from[0], poi.point[1] - from[1]);
+  return length2(poi.point[0] - from[0], poi.point[1] - from[1]);
 }
 
 /** @internal */
@@ -395,7 +396,7 @@ export function createVisitorLoop(options: VisitorLoopOptions): VisitorLoop {
         }
       } else if (state.phase === "departing") {
         const exit = exitOf(agentId);
-        if (Math.hypot(exit[0] - position[0], exit[1] - position[1]) <= arriveRadius) {
+        if (length2(exit[0] - position[0], exit[1] - position[1]) <= arriveRadius) {
           state.phase = "done";
           state.poiId = null;
         }
