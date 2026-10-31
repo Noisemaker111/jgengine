@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { findCapabilities, loadAllCapabilities, type CapabilityEntry } from "./capabilities";
+import { loadAllCapabilities, type CapabilityEntry } from "./capabilities";
 import { engineRoot, indexCode, listInstalledFiles, listRepoFiles, locateIn, type CodeFile, type IndexedFile } from "./codeMap";
-import { queryTokens, rowWords, tokenHits } from "./words";
+import { queryTokens, rowWords, stem } from "./words";
 
 /**
  * `jgengine has`: many feature questions answered in one call, from the same generated capability
@@ -16,7 +16,7 @@ export type HasVerdict = "covered" | "partial" | "gap";
 /** One feature's answer. */
 export interface HasAnswer {
   feature: string;
-  /** `covered`: a shipped capability carries every word; `partial`: only some words, or only a folder; `gap`: nothing. */
+  /** `covered`: a part or a capability whose names carry the words; `partial`: only a folder is named for it; `gap`: nothing scores above the bar. */
   verdict: HasVerdict;
   /** Engine folders named for the feature, core first. */
   folders: string[];
@@ -27,10 +27,27 @@ export interface HasAnswer {
 /** Capability rows kept per feature. */
 export const HAS_PER_FEATURE = 3;
 
-/** What `has` searches: the capability rows and the engine's code, indexed once. */
+/** One engine part: its doc line (name and what it covers) and the home it re-exports. */
+export interface PartRow {
+  line: string;
+  home: string;
+}
+
+/** What `has` searches: the capability rows, the engine's code and the parts barrel, indexed once. */
 export interface HasSources {
   capabilities: readonly CapabilityEntry[];
   code: readonly IndexedFile[];
+  /** The doc line and home of each part, read from `parts.ts`. */
+  parts?: readonly PartRow[];
+}
+
+/** The parts a `parts.ts` barrel names: each doc comment followed by the `export * from` it describes. */
+export function parsePartRows(text: string): PartRow[] {
+  const rows: PartRow[] = [];
+  for (const match of text.matchAll(/\/\*\*\s*([^*]+?)\s*\*\/\s*export\s+\*\s+from\s+"\.\/([^"]+)"/g)) {
+    rows.push({ line: match[1]!.replace(/\s+/g, " "), home: match[2]! });
+  }
+  return rows;
 }
 
 /** A capability with the words its code says about it, at two strengths. */
@@ -78,51 +95,79 @@ function compoundTails(names: string): string {
   return `${names} ${tails.join(" ")}`;
 }
 
-/** True when a text's words carry the query word. */
-function carries(text: { words: ReadonlySet<string>; raw: string }, token: string): boolean {
-  return tokenHits(token, text.words, text.raw);
+/** True when a text's words carry the query word, by whole word (stem equality), never by prefix. */
+function carries(words: ReadonlySet<string>, token: string): boolean {
+  const target = stem(token);
+  for (const word of words) if (word === token || stem(word) === target) return true;
+  return false;
 }
 
+/** Below this a capability is a stray word, not an answer. */
+const BAR = 10;
+const NAME_HIT = 10;
+const DESCRIPTION_HIT = 2;
+
 /**
- * The capabilities answering one feature, best first, and whether they carry only some of its words.
- * A capability whose names carry every word covers it. Failing that, one whose names carry some word
- * covers it when a single doc comment in its code carries every word: "hunger thirst" finds the decay
- * meter whose field doc reads "hunger/thirst", while a stray "fly" elsewhere in a mount's file does not
- * make it "flying mounts".
+ * Score one capability. Names (slug, symbols, the folder and file of its code) carry the weight. A word
+ * found only in a description counts only when the description and names together carry every word, so
+ * "metal tools" does not reach a row that says "tools" alone. A doc comment in its code can finish a match
+ * when a single comment carries every word ("hunger thirst" finds the decay meter whose field doc reads
+ * "hunger/thirst"). Some words in a name without the rest is `partial`.
  */
-function matchFeature(searched: readonly CodeWords[], feature: string): { matches: CapabilityEntry[]; partial: boolean } {
-  const byName = findCapabilities(searched.map((words) => words.named), feature);
-  if (byName.matches.length > 0 && !byName.partial) return byName;
-  const tokens = queryTokens(feature);
-  const byDocs = searched.filter((words) => {
-    const raw = `${words.named.slug} ${words.named.symbols.join(" ")} ${words.named.description}`;
-    const named = { words: rowWords(raw), raw: raw.toLowerCase() };
-    return tokens.some((token) => carries(named, token)) && words.docs.some((doc) => tokens.every((token) => carries(doc, token)));
+function scoreCapability(words: CodeWords, tokens: readonly string[]): { score: number; complete: boolean; named: boolean } {
+  const none = { score: 0, complete: false, named: false };
+  if (tokens.length === 0) return none;
+  const names = rowWords(`${words.entry.slug} ${words.entry.symbols.join(" ")} ${words.named.description.slice(words.entry.description.length)}`);
+  const described = rowWords(words.entry.description);
+  const nameHits = tokens.filter((token) => carries(names, token));
+  const rest = tokens.filter((token) => !nameHits.includes(token));
+  const desc = rest.filter((token) => carries(described, token));
+  const documented = words.docs.some((doc) => tokens.every((token) => carries(doc.words, token)));
+  const score = nameHits.length * NAME_HIT + desc.length * DESCRIPTION_HIT;
+  const named = nameHits.length > 0;
+  if (desc.length === rest.length) return { score: Math.max(score, BAR), complete: true, named };
+  if (documented && (named || desc.length > 0)) return { score: Math.max(score, BAR), complete: true, named };
+  const own = rowWords(`${words.entry.slug} ${words.entry.symbols.join(" ")}`);
+  return tokens.some((token) => carries(own, token)) ? { score, complete: false, named } : none;
+}
+
+/** Part rows whose doc line carries every word. */
+function matchParts(parts: readonly PartRow[], tokens: readonly string[]): PartRow[] {
+  return parts.filter((part) => {
+    const words = rowWords(part.line);
+    return tokens.every((token) => carries(words, token));
   });
-  if (byDocs.length > 0) return { matches: byDocs.map((words) => words.named), partial: false };
-  return byName;
 }
 
 /** Answer each feature against one set of sources. */
 export function answerHas(features: readonly string[], sources: HasSources): HasAnswer[] {
   const searched = withCodeWords(sources.capabilities, sources.code);
-  const original = new Map(searched.map((words) => [words.named, words.entry]));
   return features.map((feature) => {
-    const found = matchFeature(searched, feature);
-    const matches = found.matches.map((entry) => original.get(entry)!);
-    const { partial } = found;
-    const folders = locateIn(sources.code, queryTokens(feature)).map((home) => home.home);
-    const verdict: HasVerdict = matches.length > 0 && !partial ? "covered" : matches.length > 0 || folders.length > 0 ? "partial" : "gap";
+    const tokens = queryTokens(feature);
+    const parts = tokens.length === 0 ? [] : matchParts(sources.parts ?? [], tokens);
+    const scored = searched
+      .map((words) => ({ entry: words.entry, ...scoreCapability(words, tokens) }))
+      .filter((row) => row.score >= BAR && (parts.length === 0 || row.named));
+    const complete = scored.some((row) => row.complete);
+    const matches = scored
+      .filter((row) => row.complete === complete)
+      .sort((a, b) => b.score - a.score || a.entry.skill.localeCompare(b.entry.skill) || a.entry.slug.localeCompare(b.entry.slug))
+      .map((row) => row.entry);
+    const folders = locateIn(sources.code, tokens).map((home) => home.home);
+    const verdict: HasVerdict = parts.length > 0 || (matches.length > 0 && complete) ? "covered" : matches.length > 0 || folders.length > 0 ? "partial" : "gap";
     return {
       feature,
       verdict,
       folders,
-      capabilities: matches.slice(0, HAS_PER_FEATURE).map((entry) => ({
-        skill: entry.skill,
-        slug: entry.slug,
-        description: entry.description,
-        import: entry.imports[0] ?? null,
-      })),
+      capabilities: [
+        ...parts.map((part) => ({ skill: "parts", slug: part.home, description: part.line, import: `@jgengine/core/${part.home}` })),
+        ...matches.slice(0, HAS_PER_FEATURE).map((entry) => ({
+          skill: entry.skill,
+          slug: entry.slug,
+          description: entry.description,
+          import: entry.imports[0] ?? null,
+        })),
+      ],
     };
   });
 }
@@ -132,11 +177,21 @@ export function loadHasSources(cwd: string = process.cwd()): HasSources {
   const root = engineRoot(cwd);
   const capabilities = loadAllCapabilities(root);
   if (root !== null) {
-    return { capabilities, code: indexCode(listRepoFiles(root), (file: CodeFile) => readFileSync(join(root, file.path), "utf8")) };
+    const parts = readParts(join(root, "packages", "core", "src", "parts.ts"));
+    return { capabilities, parts, code: indexCode(listRepoFiles(root), (file: CodeFile) => readFileSync(join(root, file.path), "utf8")) };
   }
   const installed = listInstalledFiles(cwd);
   if (installed === null) return { capabilities, code: [] };
-  return { capabilities, code: indexCode(installed.files, (file: CodeFile) => readFileSync(join(installed.root, file.path), "utf8")) };
+  const parts = installed.files.filter((file) => /(^|\/)parts\.(ts|d\.ts)$/.test(file.path) && file.layer === "core").flatMap((file) => readParts(join(installed.root, file.path)));
+  return { capabilities, parts, code: indexCode(installed.files, (file: CodeFile) => readFileSync(join(installed.root, file.path), "utf8")) };
+}
+
+function readParts(path: string): PartRow[] {
+  try {
+    return parsePartRows(readFileSync(path, "utf8"));
+  } catch {
+    return [];
+  }
 }
 
 const HELP = [
