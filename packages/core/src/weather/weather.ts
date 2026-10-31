@@ -1,5 +1,6 @@
 // @skill jgengine-world
 import type { WindVector } from "@jgengine/core/world/wind";
+import { lerp } from "../math/scalar";
 
 /** A weather kind's name, as a game's {@link WeatherModifierTable} keys it (`"rain"`, `"storm"`, ...). */
 export type WeatherKind = string;
@@ -35,10 +36,6 @@ export interface ResolvedWeather {
   chill: number;
   ignition: number;
   spread: number;
-}
-
-function lerp(from: number, to: number, t: number): number {
-  return from + (to - from) * t;
 }
 
 /** Resolve the current weather against a game's modifier table; throws on a kind the table does not define. */
