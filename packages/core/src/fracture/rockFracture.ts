@@ -12,6 +12,7 @@
 import type { SeededRng } from "../random/rng";
 import { cellContains, cellVolume, clipCell, transformCell, type CellVec, type ConvexCell } from "./convexCell";
 import { KWH_PER_TONNE, breakageProbability, jkT10 } from "./fragmentSize";
+import { lerp } from "../math/scalar";
 
 /** How a rock breaks by impact. */
 export interface RockBreakage {
@@ -251,10 +252,6 @@ function burst(fragments: RockFragment[], origin: CellVec, energy: number): void
     f.velocity[1] += dy * speed;
     f.velocity[2] += dz * speed;
   }
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
 }
 
 /**
