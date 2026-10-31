@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { CombatVfxEvent, VfxKind } from "@jgengine/core/game/events";
 import { useGameContext } from "@jgengine/react/provider";
+import { clamp01 } from "../math/scalar";
 
 interface ActiveVfx {
   key: number;
@@ -117,10 +118,6 @@ function useRadialTexture(): THREE.Texture {
     texture.needsUpdate = true;
     return texture;
   }, []);
-}
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 function VfxItem({ event, texture }: { event: CombatVfxEvent; texture: THREE.Texture }) {

@@ -1,3 +1,5 @@
+import { clamp01 } from "../math/scalar";
+
 /** How a transient effect's intensity curves from peak to zero over its life. */
 export type ScreenEffectEasing = "linear" | "easeIn" | "easeOut" | "easeInOut";
 
@@ -138,10 +140,6 @@ export interface ScreenEffectsController {
 export interface ScreenEffectsOptions {
   /** Injected clock (ms). Default `Date.now`. */
   now?: () => number;
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 /** Eased progress `0..1` for a transient effect's decay curve. */
