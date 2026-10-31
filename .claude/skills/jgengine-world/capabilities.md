@@ -32,11 +32,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureAir` (function) · `import { measureAir } from "@jgengine/core/physics/handlingProbe"`
 
-## aircraft-trim — air data for a steady flight condition, to settle propulsion or rotor states
-
-- `steadyAirData` (function) · `import { steadyAirData } from "@jgengine/core/flight/reference/aircraftTrim"`
-- `trimReferenceAircraft` (function) · `import { trimReferenceAircraft } from "@jgengine/core/flight/reference/aircraftTrim"`
-
 ## alert-level — witness-gated alert value, labelled cut points and a stand-down beat
 
 - `createAlertLevel` (function) · `import { createAlertLevel } from "@jgengine/core/world"`
@@ -260,10 +255,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/world"`
 
-## bike-handling-compare — measure any single-track sim on bike scenarios — launch, braking, lean, lane change, slalom
-
-- `measureBikeHandling` (function) · `import { measureBikeHandling } from "@jgengine/core/physics/reference/motorcycleManeuvers"`
-
 ## biped-compare — score a game biped's walk and run speeds against real bird gaits, top speed and theropod leg muscle
 
 - `compareBiped` (function) · `import { compareBiped } from "@jgengine/core/movement/reference/bipedRunning"`
@@ -288,24 +279,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `cruisingWingbeatFrequency` (function) · `import { cruisingWingbeatFrequency } from "@jgengine/core/movement/reference/flightPower"`
 
-## bo105-reference — MBB Bo-105 reference helicopter validated against NASA TM-110356 rotor data
-
-- `createBo105Model` (function) · `import { createBo105Model } from "@jgengine/core/flight/reference/bo105Helicopter"`
-
 ## board-vehicle — board a rideable, freeze/hide its rider and apply caller camera policy
 
 - `boardVehicle` (function) · `import { boardVehicle } from "@jgengine/core/world"`
-
-## boat-comparison — compare a game boat with a reference hull and published figures, metric by metric
-
-- `compareBoat` (function) · `import { compareBoat } from "@jgengine/core/physics/reference/boatComparison"`
-- `holtropExampleSubject` (function) · `import { holtropExampleSubject } from "@jgengine/core/physics/reference/boatComparison"`
-- `kvlcc2Subject` (function) · `import { kvlcc2Subject } from "@jgengine/core/physics/reference/boatComparison"`
-- `referenceBoatSubjects` (function) · `import { referenceBoatSubjects } from "@jgengine/core/physics/reference/boatComparison"`
-- `referenceSubjectFor` (function) · `import { referenceSubjectFor } from "@jgengine/core/physics/reference/boatComparison"`
-- `speedboatSubject` (function) · `import { speedboatSubject } from "@jgengine/core/physics/reference/boatComparison"`
-- `surgeAddedMass` (function) · `import { surgeAddedMass } from "@jgengine/core/physics/reference/boatComparison"`
-- `wigleyStandIn` (function) · `import { wigleyStandIn } from "@jgengine/core/physics/reference/boatComparison"`
 
 ## boat-dynamics — force-based powered hull — hull-speed drag hump, planing, keel, rudder that needs flow or outboard thrust
 
@@ -388,10 +364,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/core/scene/sceneCapture.draw"`
 
-## car-effect-metrics — measure a car sim one effect at a time — roll, load transfer, pitch, coast-down, launch, yaw gain, response lag, power-on and brake-in-turn
-
-- `measureCarEffects` (function) · `import { measureCarEffects } from "@jgengine/core/physics/reference/carEffectProbe"`
-
 ## cave-draw — draw a cave's rock from its layout
 
 - `Cave` (function) · `import { Cave } from "@jgengine/core/cave/Cave.draw"`
@@ -403,10 +375,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## cave-mesh — triangle meshes for a cave's inside and the hill around it, from its layout
 
 - `caveMesh` (function) · `import { caveMesh } from "@jgengine/core/cave/caveMesh"`
-
-## cessna172-reference — Cessna 172N reference airframe — tabled lift and drag through the stall, propeller and piston engine, tricycle gear
-
-- `createCessna172Model` (function) · `import { createCessna172Model } from "@jgengine/core/flight/reference/cessna172Aircraft"`
 
 ## change-of-direction-505 — simulated 505 change-of-direction test time of a sprint profile
 
@@ -448,11 +416,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## cma-es — derivative-free ask/tell minimiser for tuning controllers and fitting models
 
 - `createCmaEvolutionStrategy` (function) · `import { createCmaEvolutionStrategy } from "@jgengine/core/math/cmaEvolutionStrategy"`
-
-## coefficient-table — N-dimensional gridded data table with multilinear interpolation and per-axis extrapolation
-
-- `createCoefficientTable` (function) · `import { createCoefficientTable } from "@jgengine/core/flight/reference/coefficientTable"`
-- `evenBreakpoints` (function) · `import { evenBreakpoints } from "@jgengine/core/flight/reference/coefficientTable"`
 
 ## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent
 
@@ -599,14 +562,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## event-feedback — map announced gameplay events (damage, kill, pickup, objective, wave, refusal) to a sound, gamepad pulse, camera shake and caption through one data mapping
 
 - `createEventFeedback` (function) · `import { createEventFeedback } from "@jgengine/core/audio/eventFeedback"`
-
-## f16-reference — NASA TP-1538 F-16 coefficient-table reference airframe with thrust table and power lag
-
-- `createF16Model` (function) · `import { createF16Model } from "@jgengine/core/flight/reference/f16Aircraft"`
-- `f16CycleEngine` (function) · `import { f16CycleEngine } from "@jgengine/core/flight/reference/f16Aircraft"`
-- `f16PowerCommand` (function) · `import { f16PowerCommand } from "@jgengine/core/flight/reference/f16Aircraft"`
-- `f16Thrust` (function) · `import { f16Thrust } from "@jgengine/core/flight/reference/f16Aircraft"`
-- `stevensLewisAtmosphere` (function) · `import { stevensLewisAtmosphere } from "@jgengine/core/flight/reference/f16Aircraft"`
 
 ## fast-travel — network of fast-travel destinations with discovery, distance-sorted queries, nearest lookup, a travel gate, and serializable state
 
@@ -808,13 +763,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `compareFlier` (function) · `import { compareFlier } from "@jgengine/core/movement/reference/flightPower"`
 
-## flight-comparison — compare a game aircraft's flight tests with a reference aircraft and published figures
-
-- `compareFlight` (function) · `import { compareFlight } from "@jgengine/core/flight/reference/flightComparison"`
-- `compareJetEngines` (function) · `import { compareJetEngines } from "@jgengine/core/flight/reference/jetEngineComparison"`
-- `compareRotorcraft` (function) · `import { compareRotorcraft } from "@jgengine/core/flight/reference/rotorcraftComparison"`
-- `formatFlightComparison` (function) · `import { formatFlightComparison } from "@jgengine/core/flight/reference/flightComparison"`
-
 ## flight-maximum-range-speed — the airspeed that carries a flapping flier furthest on its fuel
 
 - `maximumRangeSpeed` (function) · `import { maximumRangeSpeed } from "@jgengine/core/movement/reference/flightPower"`
@@ -827,10 +775,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `minimumPowerSpeed` (function) · `import { minimumPowerSpeed } from "@jgengine/core/movement/reference/flightPower"`
 
-## flight-modes — linearize a trimmed reference aircraft and read short period, phugoid, dutch roll, roll and spiral modes
-
-- `linearizeReferenceAircraft` (function) · `import { linearizeReferenceAircraft } from "@jgengine/core/flight/reference/aircraftTrim"`
-
 ## flight-power-curve — power a flapping bird, bat or pterosaur needs to fly level at an airspeed
 
 - `flightPower` (function) · `import { flightPower } from "@jgengine/core/movement/reference/flightPower"`
@@ -838,12 +782,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## flight-reference-validation — check the flight reference against measured bird airspeeds and wingbeat frequencies
 
 - `validateFlightReference` (function) · `import { validateFlightReference } from "@jgengine/core/movement/reference/flightPower"`
-
-## flight-tests — fly a reference aircraft model through the flight tests
-
-- `referenceFlightSubject` (function) · `import { referenceFlightSubject } from "@jgengine/core/flight/reference/flightTests"`
-- `rigidAircraftFlightSubject` (function) · `import { rigidAircraftFlightSubject } from "@jgengine/core/flight/reference/flightTests"`
-- `runFlightTests` (function) · `import { runFlightTests } from "@jgengine/core/flight/reference/flightTests"`
 
 ## follow-trail — trailing follower/snake formation that chases a leader
 
@@ -917,15 +855,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveGamepadFrame` (function) · `import { resolveGamepadFrame } from "@jgengine/core/input/gamepadModel"`
 
-## gas-turbine — real-gas air and combustion product properties
-
-- `WALSH_FLETCHER_GAS` (const) · `import { WALSH_FLETCHER_GAS } from "@jgengine/core/flight/reference/gasTurbine"`
-- `createGasTurbineCycle` (function) · `import { createGasTurbineCycle } from "@jgengine/core/flight/reference/gasTurbine"`
-- `createGasTurbineEngine` (function) · `import { createGasTurbineEngine } from "@jgengine/core/flight/reference/gasTurbineEngine"`
-- `gasTurbinePropulsion` (function) · `import { gasTurbinePropulsion } from "@jgengine/core/flight/reference/gasTurbineEngine"`
-- `inletShockRecovery` (function) · `import { inletShockRecovery } from "@jgengine/core/flight/reference/gasTurbine"`
-- `perfectGas` (function) · `import { perfectGas } from "@jgengine/core/flight/reference/gasTurbine"`
-
 ## generator-contract — seeded, schema-driven procedural generator with variants and editor exposure
 
 - `bakeGeneratorVariants` (function) · `import { bakeGeneratorVariants } from "@jgengine/core/world"`
@@ -944,26 +873,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## glide — gliding/wingsuit descent control from a launch
 
 - `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/world"`
-
-## granular-dem — discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
-
-- `beverlooHopper` (function) · `import { beverlooHopper } from "@jgengine/core/physics/reference/discreteElementExperiments"`
-- `brazilNutShaker` (function) · `import { brazilNutShaker } from "@jgengine/core/physics/reference/discreteElementExperiments"`
-- `bridgeRuptureDistance` (function) · `import { bridgeRuptureDistance } from "@jgengine/core/physics/reference/discreteElements"`
-- `bridgeVolumeFromMoisture` (function) · `import { bridgeVolumeFromMoisture } from "@jgengine/core/physics/reference/discreteElements"`
-- `capillaryForce` (function) · `import { capillaryForce } from "@jgengine/core/physics/reference/discreteElements"`
-- `collapsedColumn` (function) · `import { collapsedColumn } from "@jgengine/core/physics/reference/discreteElementExperiments"`
-- `createDiscreteElements` (function) · `import { createDiscreteElements } from "@jgengine/core/physics/reference/discreteElements"`
-- `fitBeverloo` (function) · `import { fitBeverloo } from "@jgengine/core/physics/reference/discreteElementExperiments"`
-- `janssenLoad` (function) · `import { janssenLoad } from "@jgengine/core/physics/reference/discreteElementExperiments"`
-- `janssenSilo` (function) · `import { janssenSilo } from "@jgengine/core/physics/reference/discreteElementExperiments"`
-- `measuredRestitution` (function) · `import { measuredRestitution } from "@jgengine/core/physics/reference/discreteElementExperiments"`
-- `nowakExcessAngle` (function) · `import { nowakExcessAngle } from "@jgengine/core/physics/reference/discreteElementExperiments"`
-- `pouredCone` (function) · `import { pouredCone } from "@jgengine/core/physics/reference/discreteElementExperiments"`
-- `rayleighTime` (function) · `import { rayleighTime } from "@jgengine/core/physics/reference/discreteElements"`
-- `restitutionDamping` (function) · `import { restitutionDamping } from "@jgengine/core/physics/reference/discreteElements"`
-- `settleGrains` (function) · `import { settleGrains } from "@jgengine/core/physics/reference/discreteElementExperiments"`
-- `waterBridges` (function) · `import { waterBridges } from "@jgengine/core/physics/reference/discreteElementExperiments"`
 
 ## granular-flow — sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
 
@@ -1008,14 +917,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `grounded` (function) · `import { grounded } from "@jgengine/core/world"`
 
-## handling-compare — line up two bikes' measured metrics with deltas per metric
-
-- `compareBikeMetrics` (function) · `import { compareBikeMetrics } from "@jgengine/core/physics/reference/compareHandling"`
-- `compareBikeTuning` (function) · `import { compareBikeTuning } from "@jgengine/core/physics/reference/compareHandling"`
-- `compareHandlingMetrics` (function) · `import { compareHandlingMetrics } from "@jgengine/core/physics/reference/compareHandling"`
-- `compareVehicleTuning` (function) · `import { compareVehicleTuning } from "@jgengine/core/physics/reference/compareHandling"`
-- `measureComparableHandling` (function) · `import { measureComparableHandling } from "@jgengine/core/physics/reference/compareHandling"`
-
 ## handling-metrics — measure a vehicle's feel as numbers — 0–100, braking, lateral g, turn-in, sideslip, spin
 
 - `measureHandling` (function) · `import { measureHandling } from "@jgengine/core/physics/handlingProbe"`
@@ -1043,25 +944,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hotbar-slot-bindings — number-row key codes for a run of numbered actions (hotbar, build menu, tools)
 
 - `hotbarSlotBindings` (function) · `import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings"`
-
-## hull-form — a rectangular box barge as a table of offsets
-
-- `boxBarge` (function) · `import { boxBarge } from "@jgengine/core/physics/reference/hullForm"`
-- `hullMeshFromOffsets` (function) · `import { hullMeshFromOffsets } from "@jgengine/core/physics/reference/hullForm"`
-- `meshVolume` (function) · `import { meshVolume } from "@jgengine/core/physics/reference/hullForm"`
-- `prismaticPlaningHull` (function) · `import { prismaticPlaningHull } from "@jgengine/core/physics/reference/hullForm"`
-- `wigleyHull` (function) · `import { wigleyHull } from "@jgengine/core/physics/reference/hullForm"`
-
-## hull-hydrostatics — pressure integration over a hull mesh cut at the free surface
-
-- `createHullIntegrator` (function) · `import { createHullIntegrator } from "@jgengine/core/physics/reference/hullHydrostatics"`
-- `createHullLoads` (function) · `import { createHullLoads } from "@jgengine/core/physics/reference/hullHydrostatics"`
-- `floatingEquilibrium` (function) · `import { floatingEquilibrium } from "@jgengine/core/physics/reference/hullHydrostatics"`
-- `heelTrimRotation` (function) · `import { heelTrimRotation } from "@jgengine/core/physics/reference/hullHydrostatics"`
-- `hydrostaticParticulars` (function) · `import { hydrostaticParticulars } from "@jgengine/core/physics/reference/hullHydrostatics"`
-- `rightingArmCurve` (function) · `import { rightingArmCurve } from "@jgengine/core/physics/reference/hullHydrostatics"`
-- `stillWater` (function) · `import { stillWater } from "@jgengine/core/physics/reference/hullHydrostatics"`
-- `summarizeStability` (function) · `import { summarizeStability } from "@jgengine/core/physics/reference/hullHydrostatics"`
 
 ## human-anthropometry — scale published body-segment parameters (de Leva 1996) to a subject and build a sagittal multibody human
 
@@ -1306,18 +1188,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `referenceLocomotion` (function) · `import { referenceLocomotion } from "@jgengine/core/movement/reference/compareLocomotion"`
 
-## magic-formula-contact — relaxation-length tire contact as a pure ODE right-hand side for a multibody integrator
-
-- `magicFormulaContact` (function) · `import { magicFormulaContact } from "@jgengine/core/physics/reference/magicFormulaTire"`
-
-## magic-formula-tire — evaluate a published Pacejka Magic Formula 6.1 tire — combined slip, load, camber, pressure, turn slip, Fx Fy Mx My Mz
-
-- `magicFormula` (function) · `import { magicFormula } from "@jgengine/core/physics/reference/magicFormulaTire"`
-
-## magic-formula-tire-transient — run a Magic Formula tire with relaxation-length dynamics, standstill-stable, serializable state
-
-- `createMagicFormulaTire` (function) · `import { createMagicFormulaTire } from "@jgengine/core/physics/reference/magicFormulaTire"`
-
 ## map-annotations — player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable
 
 - `createAnnotationLayer` (function) · `import { createAnnotationLayer } from "@jgengine/core/world"`
@@ -1325,16 +1195,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
 
 - `MapLegend` (function) · `import { MapLegend } from "@jgengine/core/map/map.view"`
-
-## marine-propeller — B-series blade chord and thickness at 0.75R
-
-- `bSeriesBladeSection` (function) · `import { bSeriesBladeSection } from "@jgengine/core/physics/reference/marinePropeller"`
-- `bSeriesOpenWater` (function) · `import { bSeriesOpenWater } from "@jgengine/core/physics/reference/marinePropeller"`
-- `bSeriesShipOpenWater` (function) · `import { bSeriesShipOpenWater } from "@jgengine/core/physics/reference/marinePropeller"`
-- `optimumPitchPropeller` (function) · `import { optimumPitchPropeller } from "@jgengine/core/physics/reference/marinePropeller"`
-- `propellerForThrust` (function) · `import { propellerForThrust } from "@jgengine/core/physics/reference/marinePropeller"`
-- `propellerProfileDragIncrement` (function) · `import { propellerProfileDragIncrement } from "@jgengine/core/physics/reference/marinePropeller"`
-- `waterjetThrust` (function) · `import { waterjetThrust } from "@jgengine/core/physics/reference/marinePropeller"`
 
 ## material-appearance-signals — adapt selected surface response to sampled wetness and local card exposure
 
@@ -1399,18 +1259,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## motion-track — move a thing along a path over time and report its arrival
 
 - `createMotionTrack` (function) · `import { createMotionTrack } from "@jgengine/core/movement/motionTrack"`
-
-## motorcycle-modes — weave and wobble eigenvalues of a multibody motorcycle at any speed
-
-- `motorcycleStraightRunningModes` (function) · `import { motorcycleStraightRunningModes } from "@jgengine/core/physics/reference/referenceMotorcycle"`
-
-## motorcycle-rider — steering-torque rider for the reference motorcycle — steady turns, lane changes, slaloms
-
-- `createRiddenMotorcycle` (function) · `import { createRiddenMotorcycle } from "@jgengine/core/physics/reference/motorcycleRider"`
-
-## motorcycle-tire — motorcycle Magic Formula tyre with camber thrust, combined slip and aligning/twisting moment (Sharp, Evangelou & Limebeer 2004)
-
-- `motorcycleMagicFormula` (function) · `import { motorcycleMagicFormula } from "@jgengine/core/physics/reference/motorcycleTire"`
 
 ## move-order — go-to-point order that completes on arrival, composed over a motion adapter
 
@@ -1479,22 +1327,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createNeedSet` (function) · `import { createNeedSet } from "@jgengine/core/procedural"`
 
-## nonlinear-solve — solve a small nonlinear system of equations
-
-- `solveNewton` (function) · `import { solveNewton } from "@jgengine/core/flight/reference/helicopterRotor"`
-
 ## object-slot-inventory — placed objects hold validated per-instance container contents that replicate and save with the placement
 
 - `SceneObjectSlots` (interface) · `import { SceneObjectSlots } from "@jgengine/core/world"`
-
-## ocean-waves — seeded irregular sea from a Pierson–Moskowitz or JONSWAP spectrum
-
-- `irregularSea` (function) · `import { irregularSea } from "@jgengine/core/physics/reference/oceanWaves"`
-- `regularSea` (function) · `import { regularSea } from "@jgengine/core/physics/reference/oceanWaves"`
-- `seaElevation` (function) · `import { seaElevation } from "@jgengine/core/physics/reference/oceanWaves"`
-- `seaWaterAt` (function) · `import { seaWaterAt } from "@jgengine/core/physics/reference/oceanWaves"`
-- `spectralMoment` (function) · `import { spectralMoment } from "@jgengine/core/physics/reference/oceanWaves"`
-- `waveSpectrum` (function) · `import { waveSpectrum } from "@jgengine/core/physics/reference/oceanWaves"`
 
 ## order-queue — serializable per-entity command queue with lifecycle, preemption, and pluggable order kinds
 
@@ -1633,14 +1468,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPlanarMultibody` (function) · `import { createPlanarMultibody } from "@jgengine/core/movement/reference/planarMultibody"`
 
-## planing-hull — Savitsky planing forces, wetted length and pitching moment at a trim
-
-- `planingAtTrim` (function) · `import { planingAtTrim } from "@jgengine/core/physics/reference/planingHull"`
-- `planingEquilibrium` (function) · `import { planingEquilibrium } from "@jgengine/core/physics/reference/planingHull"`
-- `savitskyLiftCoefficient` (function) · `import { savitskyLiftCoefficient } from "@jgengine/core/physics/reference/planingHull"`
-- `savitskyPorpoisingTrim` (function) · `import { savitskyPorpoisingTrim } from "@jgengine/core/physics/reference/planingHull"`
-- `savitskyWettedLength` (function) · `import { savitskyWettedLength } from "@jgengine/core/physics/reference/planingHull"`
-
 ## plant-cache — cache grown plant structures and styled meshes in memory and injected storage
 
 - `PlantCache` (interface) · `import { PlantCache } from "@jgengine/core/plants/cache/plantCache"`
@@ -1745,10 +1572,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `POLE_LINE_KIND` (const) · `import { POLE_LINE_KIND } from "@jgengine/core/world/poleLineKind"`
 
-## polynomial-roots — all complex roots of a real polynomial to double precision
-
-- `polynomialRoots` (function) · `import { polynomialRoots } from "@jgengine/core/physics/reference/eigenvalues"`
-
 ## population-director — ambient per-region creature population manager with timed weighted respawns and caps
 
 - `createPopulationDirector` (function) · `import { createPopulationDirector } from "@jgengine/core/ai/populationDirector"`
@@ -1764,12 +1587,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## procedural-ground — seeded noise-height ground mesh with low/high/waterline vertex colours for quick natural scenes
 
 - `ProceduralGround` (function) · `import { ProceduralGround } from "@jgengine/core/terrain/ProceduralGround.draw"`
-
-## propeller-bemt — Clark Y propeller section lift and drag
-
-- `clarkYPropellerSection` (function) · `import { clarkYPropellerSection } from "@jgengine/core/flight/reference/propeller"`
-- `createPropellerMap` (function) · `import { createPropellerMap } from "@jgengine/core/flight/reference/propeller"`
-- `solvePropeller` (function) · `import { solvePropeller } from "@jgengine/core/flight/reference/propeller"`
 
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
@@ -1831,25 +1648,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `decideRateWindow` (function) · `import { decideRateWindow } from "@jgengine/core/time/rateWindow"`
 
-## reference-aircraft — 6-DOF reference flight sim — quaternion rigid body, RK4, standard atmosphere, coefficient-table aero, gear, wind
-
-- `createReferenceAircraft` (function) · `import { createReferenceAircraft } from "@jgengine/core/flight/reference/referenceAircraft"`
-- `referenceEuler` (function) · `import { referenceEuler } from "@jgengine/core/flight/reference/referenceAircraft"`
-- `referenceQuaternion` (function) · `import { referenceQuaternion } from "@jgengine/core/flight/reference/referenceAircraft"`
-
-## reference-car — multibody reference car on Magic Formula tires and real suspension kinematics — the physics ruler for game vehicle handling
-
-- `createReferenceCar` (function) · `import { createReferenceCar } from "@jgengine/core/physics/reference/referenceCar"`
-
-## reference-helicopter — blade-element helicopter on the reference 6-DOF: flapping, dynamic inflow, governor, autorotation
-
-- `createHelicopterModel` (function) · `import { createHelicopterModel } from "@jgengine/core/flight/reference/helicopter"`
-- `trimHelicopter` (function) · `import { trimHelicopter } from "@jgengine/core/flight/reference/helicopter"`
-
-## reference-motorcycle — multibody reference motorcycle — countersteer, weave and wobble from the physics, motorcycle Magic Formula tyres
-
-- `createReferenceMotorcycle` (function) · `import { createReferenceMotorcycle } from "@jgengine/core/physics/reference/referenceMotorcycle"`
-
 ## reference-slope-ground — a constant-grade sagittal ground profile for the reference human
 
 - `slopeGround` (function) · `import { slopeGround } from "@jgengine/core/movement/reference/footContact"`
@@ -1857,13 +1655,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## reference-stair-ground — a stair-flight sagittal ground profile for the reference human
 
 - `stairGround` (function) · `import { stairGround } from "@jgengine/core/movement/reference/footContact"`
-
-## reference-validation — check the reference car model against a real car's published 0-100, braking and skidpad numbers
-
-- `checkReferenceAgainstPublished` (function) · `import { checkReferenceAgainstPublished } from "@jgengine/core/physics/reference/compareHandling"`
-- `checkReferenceMotorcycle` (function) · `import { checkReferenceMotorcycle } from "@jgengine/core/physics/reference/compareHandling"`
-- `validateReferenceCars` (function) · `import { validateReferenceCars } from "@jgengine/core/physics/reference/compareHandling"`
-- `validateReferenceMotorcycles` (function) · `import { validateReferenceMotorcycles } from "@jgengine/core/physics/reference/compareHandling"`
 
 ## refill-slots — named slots that each hold one thing and refill a random while after it is gone
 
@@ -1905,10 +1696,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRigidAircraft` (function) · `import { createRigidAircraft } from "@jgengine/core/world"`
 
-## rigid-body-tree — exact multibody dynamics of a tree of rigid bodies — mass matrix, bias forces, point Jacobians
-
-- `createRigidBodyTree` (function) · `import { createRigidBodyTree } from "@jgengine/core/physics/reference/rigidBodyTree"`
-
 ## ring-wall — solid ring wall round a circular floor, following the ground
 
 - `ringWallSolids` (function) · `import { ringWallSolids } from "@jgengine/core/world/worldSolids"`
@@ -1919,25 +1706,16 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## rock-fracture — rock that breaks by impact into fragments sized by measured comminution laws
 
-- `BASALT` (const) · `import { BASALT } from "@jgengine/core/physics/reference/bondedRock"`
 - `BASALT_BREAKAGE` (const) · `import { BASALT_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
-- `BEREA_SANDSTONE` (const) · `import { BEREA_SANDSTONE } from "@jgengine/core/physics/reference/bondedRock"`
 - `CellVec` (type) · `import { CellVec } from "@jgengine/core/fracture/convexCell"`
 - `FragmentSizes` (interface) · `import { FragmentSizes } from "@jgengine/core/fracture/fragmentSize"`
 - `GRANITE_BREAKAGE` (const) · `import { GRANITE_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
-- `INDIANA_LIMESTONE` (const) · `import { INDIANA_LIMESTONE } from "@jgengine/core/physics/reference/bondedRock"`
 - `LIMESTONE_BREAKAGE` (const) · `import { LIMESTONE_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
-- `ROCKS` (const) · `import { ROCKS } from "@jgengine/core/physics/reference/bondedRock"`
 - `ROCK_BREAKAGE` (const) · `import { ROCK_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
 - `ROCK_FRACTURE_GENERATOR` (const) · `import { ROCK_FRACTURE_GENERATOR } from "@jgengine/core/fracture/rockFractureGenerator"`
 - `SANDSTONE_BREAKAGE` (const) · `import { SANDSTONE_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
-- `WESTERLY_GRANITE` (const) · `import { WESTERLY_GRANITE } from "@jgengine/core/physics/reference/bondedRock"`
-- `bondedFragments` (function) · `import { bondedFragments } from "@jgengine/core/physics/reference/bondedRock"`
-- `bondedSpecimen` (function) · `import { bondedSpecimen } from "@jgengine/core/physics/reference/bondedRock"`
 - `boxCell` (function) · `import { boxCell } from "@jgengine/core/fracture/convexCell"`
-- `brazilianTest` (function) · `import { brazilianTest } from "@jgengine/core/physics/reference/bondedRock"`
 - `breakageProbability` (function) · `import { breakageProbability } from "@jgengine/core/fracture/fragmentSize"`
-- `calibrateBondedRock` (function) · `import { calibrateBondedRock } from "@jgengine/core/physics/reference/bondedRock"`
 - `cellContains` (function) · `import { cellContains } from "@jgengine/core/fracture/convexCell"`
 - `cellVolume` (function) · `import { cellVolume } from "@jgengine/core/fracture/convexCell"`
 - `clipCell` (function) · `import { clipCell } from "@jgengine/core/fracture/convexCell"`
@@ -1951,39 +1729,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `fragmentMesh` (function) · `import { fragmentMesh } from "@jgengine/core/fracture/rockFractureGenerator"`
 - `fragmentSizes` (function) · `import { fragmentSizes } from "@jgengine/core/fracture/rockFracture"`
 - `gaudinSchuhmann` (function) · `import { gaudinSchuhmann } from "@jgengine/core/fracture/fragmentSize"`
-- `impactBreakage` (function) · `import { impactBreakage } from "@jgengine/core/physics/reference/bondedRock"`
 - `jkT10` (function) · `import { jkT10 } from "@jgengine/core/fracture/fragmentSize"`
-- `packSpecimen` (function) · `import { packSpecimen } from "@jgengine/core/physics/reference/bondedRock"`
 - `passingFraction` (function) · `import { passingFraction } from "@jgengine/core/fracture/fragmentSize"`
 - `rockCell` (function) · `import { rockCell } from "@jgengine/core/fracture/rockFractureGenerator"`
 - `rosinRammler` (function) · `import { rosinRammler } from "@jgengine/core/fracture/fragmentSize"`
 - `t10` (function) · `import { t10 } from "@jgengine/core/fracture/fragmentSize"`
 - `transformCell` (function) · `import { transformCell } from "@jgengine/core/fracture/convexCell"`
-- `uniaxialModulus` (function) · `import { uniaxialModulus } from "@jgengine/core/physics/reference/bondedRock"`
-
-## rocket-6dof — multistage rocket ascent on a rotating Earth: thrust curves, gimbal, staging, drag through Mach, max-Q
-
-- `createRocket` (function) · `import { createRocket } from "@jgengine/core/flight/reference/rocket"`
-- `earthFixedToGeodetic` (function) · `import { earthFixedToGeodetic } from "@jgengine/core/flight/reference/rocket"`
-- `earthGravity` (function) · `import { earthGravity } from "@jgengine/core/flight/reference/rocket"`
-- `geodeticToEarthFixed` (function) · `import { geodeticToEarthFixed } from "@jgengine/core/flight/reference/rocket"`
-- `gravityTurnTarget` (function) · `import { gravityTurnTarget } from "@jgengine/core/flight/reference/rocket"`
-- `steerRocket` (function) · `import { steerRocket } from "@jgengine/core/flight/reference/rocket"`
-
-## rocket-comparison — compare a game rocket's ascent with a reference 6-DOF rocket and the Apollo 11 Saturn V
-
-- `compareRocketAscent` (function) · `import { compareRocketAscent } from "@jgengine/core/flight/reference/rocketComparison"`
-- `saturnVGameTuning` (function) · `import { saturnVGameTuning } from "@jgengine/core/flight/reference/rocketComparison"`
-
-## rotor-bemt — allocate rotor load buffers once, outside the hot path
-
-- `createRotorLoads` (function) · `import { createRotorLoads } from "@jgengine/core/flight/reference/helicopterRotor"`
-- `evaluateRotor` (function) · `import { evaluateRotor } from "@jgengine/core/flight/reference/helicopterRotor"`
-- `naca23012RotorSection` (function) · `import { naca23012RotorSection } from "@jgengine/core/flight/reference/helicopterRotor"`
-- `rotorStateCount` (function) · `import { rotorStateCount } from "@jgengine/core/flight/reference/helicopterRotor"`
-- `rotorStateNames` (function) · `import { rotorStateNames } from "@jgengine/core/flight/reference/helicopterRotor"`
-- `settleRotor` (function) · `import { settleRotor } from "@jgengine/core/flight/reference/helicopterRotor"`
-- `trimIsolatedRotor` (function) · `import { trimIsolatedRotor } from "@jgengine/core/flight/reference/helicopterRotor"`
 
 ## route-course — build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines
 
@@ -2001,10 +1752,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `controlGroupKey` (function) · `import { controlGroupKey } from "@jgengine/core/world"`
 - `resolveControlGroupIntent` (function) · `import { resolveControlGroupIntent } from "@jgengine/core/world"`
-
-## runge-kutta-4 — fixed-step fourth-order Runge–Kutta integrator for reference physics plants
-
-- `createRungeKutta4` (function) · `import { createRungeKutta4 } from "@jgengine/core/physics/reference/rungeKutta"`
 
 ## rvo-avoidance — reciprocal collision avoidance between many steering agents
 
@@ -2043,17 +1790,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/core/postfx/ScreenEffectsOverlay.draw"`
 
-## seakeeping-hull — hull at rest in still water
-
-- `restingSeakeepingState` (function) · `import { restingSeakeepingState } from "@jgengine/core/physics/reference/seakeepingHull"`
-- `seakeepingHullFromStrip` (function) · `import { seakeepingHullFromStrip } from "@jgengine/core/physics/reference/seakeepingHull"`
-- `stepSeakeeping` (function) · `import { stepSeakeeping } from "@jgengine/core/physics/reference/seakeepingHull"`
-
-## section-hydrodynamics — Lewis-form ship section from beam, draft and area coefficient
-
-- `lewisSection` (function) · `import { lewisSection } from "@jgengine/core/physics/reference/sectionHydrodynamics"`
-- `sectionHeave` (function) · `import { sectionHeave } from "@jgengine/core/physics/reference/sectionHydrodynamics"`
-
 ## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
 
 - `recallSelectionBookmark` (function) · `import { recallSelectionBookmark } from "@jgengine/core/world"`
@@ -2069,26 +1805,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## shared-annotations — broadcast local map-drawing edits over the party feed and mirror inbound edits — collaborative annotations over any replicated feed
 
 - `createSharedAnnotations` (function) · `import { createSharedAnnotations } from "@jgengine/core/world"`
-
-## ship-manoeuvring — KVLCC2 L7 model in the MMG standard method
-
-- `KVLCC2_L7` (const) · `import { KVLCC2_L7 } from "@jgengine/core/physics/reference/shipManoeuvring"`
-- `KVLCC2_L7_PUBLISHED` (const) · `import { KVLCC2_L7_PUBLISHED } from "@jgengine/core/physics/reference/shipManoeuvring"`
-- `KVLCC2_L7_SPEED` (const) · `import { KVLCC2_L7_SPEED } from "@jgengine/core/physics/reference/shipManoeuvring"`
-- `createMmgState` (function) · `import { createMmgState } from "@jgengine/core/physics/reference/shipManoeuvring"`
-- `mmgForces` (function) · `import { mmgForces } from "@jgengine/core/physics/reference/shipManoeuvring"`
-- `mmgTrialBoat` (function) · `import { mmgTrialBoat } from "@jgengine/core/physics/reference/shipManoeuvring"`
-- `runTurningCircle` (function) · `import { runTurningCircle } from "@jgengine/core/physics/reference/shipManoeuvring"`
-- `runZigZag` (function) · `import { runZigZag } from "@jgengine/core/physics/reference/shipManoeuvring"`
-- `selfPropulsionRevs` (function) · `import { selfPropulsionRevs } from "@jgengine/core/physics/reference/shipManoeuvring"`
-- `stepMmg` (function) · `import { stepMmg } from "@jgengine/core/physics/reference/shipManoeuvring"`
-
-## ship-resistance — Holtrop–Mennen (1982/1984) displacement-ship resistance, component by component
-
-- `holtropMennenResistance` (function) · `import { holtropMennenResistance } from "@jgengine/core/physics/reference/shipResistance"`
-- `holtropPropulsionFactors` (function) · `import { holtropPropulsionFactors } from "@jgengine/core/physics/reference/shipResistance"`
-- `ittc1957Friction` (function) · `import { ittc1957Friction } from "@jgengine/core/physics/reference/shipResistance"`
-- `schoenherrFriction` (function) · `import { schoenherrFriction } from "@jgengine/core/physics/reference/shipResistance"`
 
 ## sight-line — block a sight test behind the world's own collision boxes
 
@@ -2214,17 +1930,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `sprintTopSpeed` (function) · `import { sprintTopSpeed } from "@jgengine/core/movement/reference/humanEnvelope"`
 
-## standard-atmosphere — calibrated airspeed from true airspeed
-
-- `calibratedAirspeed` (function) · `import { calibratedAirspeed } from "@jgengine/core/flight/reference/standardAtmosphere"`
-- `geopotentialAltitude` (function) · `import { geopotentialAltitude } from "@jgengine/core/flight/reference/standardAtmosphere"`
-- `standardAtmosphere` (function) · `import { standardAtmosphere } from "@jgengine/core/flight/reference/standardAtmosphere"`
-- `standardGravity` (function) · `import { standardGravity } from "@jgengine/core/flight/reference/standardAtmosphere"`
-
-## standard-maneuvers — measure a vehicle with ISO 4138 steady-state circle, ISO 7401 step steer and ISO 3888-1 lane change
-
-- `measureStandardManeuvers` (function) · `import { measureStandardManeuvers } from "@jgengine/core/physics/reference/standardManeuvers"`
-
 ## static-shape-instances — render authored primitive transforms as static material-compatible instance batches
 
 - `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw"`
@@ -2244,11 +1949,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## street-generator — build a deterministic street/track graph (nodes, edges, streets, junctions, sidewalks, bridges, tunnels) from sliders
 
 - `generateStreets` (function) · `import { generateStreets } from "@jgengine/core/roads/streetGenerator"`
-
-## strip-theory — heave and pitch response amplitude operators in head waves
-
-- `heavePitchResponse` (function) · `import { heavePitchResponse } from "@jgengine/core/physics/reference/stripTheory"`
-- `stripSections` (function) · `import { stripSections } from "@jgengine/core/physics/reference/stripTheory"`
 
 ## studio-stage — cinematic lighting rig + backdrop + turntable for parametric studios
 
@@ -2276,12 +1976,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `surveyFromDocument` (function) · `import { surveyFromDocument } from "@jgengine/core/terrain/surveyTerrain"`
 - `surveyHeightField` (function) · `import { surveyHeightField } from "@jgengine/core/terrain/surveyTerrain"`
 - `surveyIsLand` (function) · `import { surveyIsLand } from "@jgengine/core/terrain/surveyTerrain"`
-
-## suspension-kinematics — allocate a reusable sample for table lookups in a hot loop
-
-- `createSuspensionSample` (function) · `import { createSuspensionSample } from "@jgengine/core/physics/reference/suspensionKinematics"`
-- `createSuspensionTable` (function) · `import { createSuspensionTable } from "@jgengine/core/physics/reference/suspensionKinematics"`
-- `solveSuspension` (function) · `import { solveSuspension } from "@jgengine/core/physics/reference/suspensionKinematics"`
 
 ## sync-authored-objects — synchronize edited catalog prop poses, elevation and removal through the existing object store
 
@@ -2375,29 +2069,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `TimerRing` (function) · `import { TimerRing } from "@jgengine/core/time/timerReadout.view"`
 
-## tir-file — read a TNO/ADAMS .tir tyre property file into Magic Formula coefficients
-
-- `parseTirFile` (function) · `import { parseTirFile } from "@jgengine/core/physics/reference/magicFormulaTire"`
-
 ## tire-marks — skid marks laid by sliding wheels that fade over time from a fixed pool
 
 - `createTireMarks` (function) · `import { createTireMarks } from "@jgengine/core/world"`
-
-## tire-relaxation-length — tyre relaxation lengths and carcass stiffness from a Magic Formula set
-
-- `magicFormulaRelaxation` (function) · `import { magicFormulaRelaxation } from "@jgengine/core/physics/reference/magicFormulaTire"`
-
-## tire-rolling-radius — effective rolling radius of a loaded, spinning tyre
-
-- `magicFormulaRollingRadius` (function) · `import { magicFormulaRollingRadius } from "@jgengine/core/physics/reference/magicFormulaTire"`
-
-## tire-spin-slip — spin and turn slip of a yawing, cambered wheel for the Magic Formula turn-slip terms
-
-- `magicFormulaSpinSlip` (function) · `import { magicFormulaSpinSlip } from "@jgengine/core/physics/reference/magicFormulaTire"`
-
-## tire-vertical-force — tyre vertical force from deflection with speed, force, pressure and bottoming terms
-
-- `magicFormulaVerticalForce` (function) · `import { magicFormulaVerticalForce } from "@jgengine/core/physics/reference/magicFormulaTire"`
 
 ## touch-controls — switch the on-screen touch control set when gameplay context changes (enter/exit vehicle, mount, build mode)
 
@@ -2536,36 +2210,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weather-surface-accumulation — Persist and retune bounded surface wetness, snow, temperature and exposure independently of rendering.
 
 - `createWeatherExposure` (function) · `import { createWeatherExposure } from "@jgengine/core/weather/authoredWeather"`
-
-## whipple-bicycle — nonlinear Whipple bicycle simulation — self-stability, countersteer and capsize from rigid-body physics
-
-- `createWhippleBicycle` (function) · `import { createWhippleBicycle } from "@jgengine/core/physics/reference/whippleBicycle"`
-
-## whipple-eigenvalues — stability eigenvalues of the Whipple bicycle at any speed — weave, capsize, castering
-
-- `whippleEigenvalues` (function) · `import { whippleEigenvalues } from "@jgengine/core/physics/reference/whippleBicycle"`
-
-## whipple-linear — linearised Whipple bicycle lean/steer equations (Meijaard 2007 benchmark coefficients)
-
-- `whippleLinearCoefficients` (function) · `import { whippleLinearCoefficients } from "@jgengine/core/physics/reference/whippleBicycle"`
-
-## whipple-nonlinear-linearisation — linearise the full nonlinear bicycle multibody model to check it against the benchmark
-
-- `linearizeWhippleBicycle` (function) · `import { linearizeWhippleBicycle } from "@jgengine/core/physics/reference/whippleBicycle"`
-- `nonlinearWhippleEigenvalues` (function) · `import { nonlinearWhippleEigenvalues } from "@jgengine/core/physics/reference/whippleBicycle"`
-
-## whipple-self-stability — weave and capsize speeds of a Whipple bicycle — its self-stable speed range
-
-- `whippleCriticalSpeeds` (function) · `import { whippleCriticalSpeeds } from "@jgengine/core/physics/reference/whippleBicycle"`
-
-## wind-axis-rates — state rates in wind-axis variables for check cases and linearisation
-
-- `windAxisRates` (function) · `import { windAxisRates } from "@jgengine/core/flight/reference/aircraftTrim"`
-
-## wind-axis-state — build a reference aircraft state from airspeed, alpha, beta and Euler angles
-
-- `referenceStateFromWindAxes` (function) · `import { referenceStateFromWindAxes } from "@jgengine/core/flight/reference/aircraftTrim"`
-- `windAxesOf` (function) · `import { windAxesOf } from "@jgengine/core/flight/reference/aircraftTrim"`
 
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 
