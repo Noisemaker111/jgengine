@@ -36,4 +36,8 @@ test("side light reaches a shaded shoot at a crown's edge, is cut by leaves in i
   expect(sides.lightAt(1.5, 2, 0, 1, 0.5)).toBeLessThan(sides.lightAt(-2, 2, -2, 1, 0.5));
   // In a stand, the neighbours' rows close the sides.
   expect(grow(0.6, 6).lightAt(1.5, 2, 0, 1, 0.5)).toBeLessThan(sides.lightAt(1.5, 2, 0, 1, 0.5));
+  // Below the lowest leaves, a bare stem in a stand is shaded through the neighbours' crowns.
+  const stand = grow(0.6, 6);
+  expect(stand.lightAt(0, 0.5, 0, 1, 0.5)).toBeLessThan(grow(0.6).lightAt(0, 0.5, 0, 1, 0.5));
+  expect(stand.lightAt(0, 0.5, 0, 1, 0.5)).toBeLessThan(0.6);
 });

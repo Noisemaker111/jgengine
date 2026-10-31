@@ -232,37 +232,71 @@ class ShadowVoxels implements LightField {
 
   /**
    * Side light at a cell, 0..1 of open sky, from four sides, through the leaf area its rays cross; in
-   * a stand each ray runs on into the neighbour copies in reach. Open sky outside the crown's box.
+   * a stand each ray runs on through the neighbour copies until it climbs above the crowns. A cell
+   * below or beside the crown is lit through whatever crowns its rays cross.
    */
   private sideAt(at: number): number {
-    const { layer, nx, grid, images, period, sideMinX: x0, sideMaxX: x1, sideMinZ: z0, sideMaxZ: z1, sideMaxY: top } = this;
+    const { layer, nx, images, period, sideMinX: x0, sideMaxX: x1, sideMinZ: z0, sideMaxZ: z1, sideMaxY: top } = this;
     const y = Math.floor(at / layer);
+    if (y > top) return 1;
     const rest = at - y * layer;
     const z = Math.floor(rest / nx);
     const x = rest - z * nx;
-    if (x < x0 || x > x1 || z < z0 || z > z1 || y < this.sideMinY || y > top) return 1;
     const own = 0.5 * (this.leaf[at] ?? 0);
-    const base = y * layer;
     let light = 0;
     for (let d = 0; d < 4; d += 1) {
       const along = d < 2;
       const sign = d % 2 === 0 ? 1 : -1;
+      const row = along ? z : x;
+      // A ray in a row the crown's box never spans crosses no leaves, here or in any neighbour.
+      if (along ? row < z0 || row > z1 : row < x0 || row > x1) {
+        light += 1;
+        continue;
+      }
       const c = along ? x : z;
-      const first = along ? (sign > 0 ? x0 : x1) : sign > 0 ? z0 : z1;
-      let crossed = own + (this.ray[d * grid + at] ?? 0);
-      for (let m = 1; m <= images; m += 1) {
-        // The m-th neighbour along this ray is this crown, met by the ray started m periods back.
-        const back = c - sign * m * period;
-        if ((back - first) * sign >= 0) {
-          crossed += this.ray[d * grid + base + (along ? z * nx + back : back * nx + x)] ?? 0;
-        } else {
-          const climb = y + Math.floor(((first - back) * sign - 1) / 2);
-          if (climb <= top) crossed += this.rayEntry[d * this.ny * nx + climb * nx + (along ? z : x)] ?? 0;
-        }
+      let crossed = Math.max(0, this.sidePath(d, y, c, row)) - own;
+      // The m-th neighbour along this ray is this crown, met by the ray started m periods back; the
+      // ray crosses neighbours until it climbs above the crowns.
+      for (let m = 1; images > 0; m += 1) {
+        const path = this.sidePath(d, y, c - sign * m * period, row);
+        if (path < 0) break;
+        crossed += path;
       }
       light += this.expOf(this.sideScale * crossed);
     }
     return 0.25 * light;
+  }
+
+  /**
+   * Leaf area along side ray `d` started at cell `c` of `row` in layer `y`, start cell included, from
+   * the crown box's tables; -1 once the ray first meets the box above the crown's top.
+   */
+  private sidePath(d: number, y: number, c: number, row: number): number {
+    const { layer, nx, grid, sideMinY: bottom, sideMaxY: top } = this;
+    const along = d < 2;
+    const sign = d % 2 === 0 ? 1 : -1;
+    const first = along ? (sign > 0 ? this.sideMinX : this.sideMaxX) : sign > 0 ? this.sideMinZ : this.sideMaxZ;
+    const last = along ? (sign > 0 ? this.sideMaxX : this.sideMinX) : sign > 0 ? this.sideMaxZ : this.sideMinZ;
+    let at = c;
+    let layerY = y;
+    // The ray climbs one layer every two cells (offset t is at layer floor(t / 2)): bring a start
+    // below the box up to its bottom layer.
+    if (layerY < bottom) {
+      at += sign * 2 * (bottom - layerY);
+      layerY = bottom;
+    }
+    const before = (first - at) * sign;
+    if (before > 0) {
+      // Starting short of the box: it meets the box's first cell `before` cells on.
+      const climb = layerY + Math.floor(before / 2);
+      if (climb > top) return -1;
+      if (before % 2 === 1) return this.rayEntry[d * this.ny * nx + climb * nx + row] ?? 0;
+      at = first;
+      layerY = climb;
+    }
+    if ((at - last) * sign > 0) return 0;
+    const cell = layerY * layer + (along ? row * nx + at : at * nx + row);
+    return (this.leaf[cell] ?? 0) + (this.ray[d * grid + cell] ?? 0);
   }
 
   /**
