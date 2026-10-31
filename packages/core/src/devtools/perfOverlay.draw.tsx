@@ -34,7 +34,7 @@ export function createPerfOverlaySample(): PerfOverlaySample {
   return { intervals: new Float32Array(PERF_OVERLAY_FRAMES), head: 0, frames: 0, draws: 0, triangles: 0, nodes: null, programs: null, systems: [] };
 }
 
-/** Frames per second over the filled part of the ring: frames over the time they took. */
+/** Frames per second over the filled part of the ring: frames over the time they took. @internal */
 export function overlayFps(sample: PerfOverlaySample): number {
   const count = Math.min(sample.frames, PERF_OVERLAY_FRAMES);
   let total = 0;

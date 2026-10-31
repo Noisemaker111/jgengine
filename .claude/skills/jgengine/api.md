@@ -333,6 +333,12 @@
 
 - `diagnose` (function): function diagnose(frame: NonNullable<ReturnType<typeof devtools.frame.stats>>, longs: readonly LongFrameEvent[]): string | null — ⚠ undocumented
 
+## @jgengine/core/devtools/perfOverlay.draw
+
+- `PERF_OVERLAY_FRAMES` (const): const PERF_OVERLAY_FRAMES: 120 — Frames the FPS graph keeps.
+- `PerfOverlay` (function): function PerfOverlay({ sample }: { sample: PerfOverlaySample }): ReactElement — The F3 performance overlay every game gets: an FPS graph of the last frames, draws, triangles, scene nodes, linked programs and the costliest subsystems from the devtools frame breakdown. Pair it with {@link PerfOverlayProbe} inside the Canvas, sharing one sample.
+- `PerfOverlaySample` (interface): interface PerfOverlaySample — What the overlay draws, filled in place by {@link PerfOverlayProbe} and read by {@link PerfOverlay}.
+
 ## @jgengine/core/devtools/report
 
 - `FrameWindow` (interface): interface FrameWindow — Frame timings over the measured window, as the player sees them.

@@ -168,6 +168,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SceneObjectSlots` (interface) · `import { SceneObjectSlots } from "@jgengine/core/runtime/context/objectSlots"`
 
+## perf-overlay — F3 in-game performance overlay — FPS graph, draws, nodes, programs and the costliest subsystems
+
+- `PerfOverlay` (function) · `import { PerfOverlay } from "@jgengine/core/devtools/perfOverlay.draw"`
+
 ## placed-object-rehydrate — rebuild live placed objects, with their state and slot contents, from persisted snapshot rows
 
 - `fromRuntimeObjectRow` (function) · `import { fromRuntimeObjectRow } from "@jgengine/core/runtime/objectRows"`

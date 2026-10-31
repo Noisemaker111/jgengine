@@ -109,7 +109,7 @@ import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
 import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FpsCounter, FpsProbe, type FrameTally } from "@jgengine/core/devtools/FpsCounter.draw";
 import { createPerfOverlaySample, PerfOverlay, PerfOverlayProbe } from "@jgengine/core/devtools/perfOverlay.draw";
-import { createInputRecorder } from "@jgengine/core/replay/inputReplay";
+import { createReplayRecorder } from "@jgengine/core/replay/replayRecording";
 import { ConfiguredLighting, BackdropFog } from "@jgengine/core/lighting/SceneLighting.draw";
 import { IrradianceVolumeLighting } from "@jgengine/core/lighting/IrradianceVolumeLighting.draw";
 import { usePresentationLook } from "@jgengine/core/render/presentationLook.draw";
@@ -268,16 +268,16 @@ export function Shell3dPresentation({
   const [perfOpen, setPerfOpen] = useState(false);
   const perfSample = useMemo(() => createPerfOverlaySample(), []);
   // Every session's input is recorded against the world seed; F2+R saves it as a replay.
-  const recorder = useMemo(() => createInputRecorder({ game: playable.game.name }), [ctx, playable]);
+  const recorder = useMemo(() => createReplayRecorder({ game: playable.game.name }), [ctx, playable]);
   const saveReplay = () => {
     const replay = recorder.snapshot();
-    (window as { __jgengineReplay?: typeof replay }).__jgengineReplay = replay;
+    window.__jgengineReplay = replay;
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([JSON.stringify(replay)], { type: "application/json" }));
     link.download = `${playable.game.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-replay.json`;
     link.click();
     URL.revokeObjectURL(link.href);
-    console.info(`[jgengine] replay saved: ${replay.frames.length} frames; play it with playInputReplay from @jgengine/core/play/inputReplay.draw`);
+    console.info(`[jgengine] replay saved: ${replay.frames.length} frames; play it with playReplayRecording from @jgengine/core/replay/replayPlayback.draw`);
   };
   const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
   const WorldOverlay = playable.WorldOverlay;

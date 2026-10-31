@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { createInputRecorder, inputReplayProblem } from "@jgengine/core/replay/inputReplay";
+import { createReplayRecorder, replayRecordingProblem } from "@jgengine/core/replay/replayRecording";
 import { environment, terrain } from "@jgengine/core/world/features";
 import { defineGame } from "@jgengine/shell/defineGame";
 
-import { playInputReplay } from "./inputReplay.draw";
-import { createPlaySession } from "./playSession.draw";
+import { playReplayRecording } from "./replayPlayback.draw";
+import { createPlaySession } from "@jgengine/core/play/playSession.draw";
 
 function fixture() {
   return defineGame({
@@ -37,7 +37,7 @@ function fixture() {
 describe("input replay", () => {
   test("a recorded session replays to the same state from its input and seed", () => {
     const game = fixture();
-    const recorder = createInputRecorder({ game: game.game.name, seed: "replay-seed" });
+    const recorder = createReplayRecorder({ game: game.game.name, seed: "replay-seed" });
     const live = createPlaySession(game, { seed: "replay-seed", recorder });
     for (let frame = 0; frame < 90; frame += 1) {
       if (frame === 30) live.runner.aim({ heading: 0.7 });
@@ -46,23 +46,23 @@ describe("input replay", () => {
     }
     const recorded = game.capture?.probe?.(live.ctx);
     const replay = recorder.snapshot();
-    expect(inputReplayProblem(JSON.parse(JSON.stringify(replay)))).toBeNull();
+    expect(replayRecordingProblem(JSON.parse(JSON.stringify(replay)))).toBeNull();
     expect(replay.frames.length).toBe(90);
     expect(replay.commands).toEqual([{ frame: 45, name: "roll", input: {} }]);
 
-    const first = playInputReplay(game, replay, { boot: false });
-    const second = playInputReplay(game, JSON.parse(JSON.stringify(replay)), { boot: false });
+    const first = playReplayRecording(game, replay, { boot: false });
+    const second = playReplayRecording(game, JSON.parse(JSON.stringify(replay)), { boot: false });
     expect(first.probe).toEqual(recorded);
     expect(second.probe).toEqual(recorded);
     expect(recorded?.roll).toBeGreaterThanOrEqual(0);
   });
 
   test("a replay of another game is refused, and the recorder stops at its bound", () => {
-    const recorder = createInputRecorder({ game: "Other", maxFrames: 2 });
+    const recorder = createReplayRecorder({ game: "Other", maxFrames: 2 });
     for (let frame = 0; frame < 5; frame += 1) recorder.frame({ dt: 1 / 60, held: [], pressed: [], yaw: 0, pitch: 0 });
     expect(recorder.frames()).toBe(2);
     expect(recorder.full()).toBe(true);
-    expect(() => playInputReplay(fixture(), recorder.snapshot())).toThrow('replay is of "Other"');
+    expect(() => playReplayRecording(fixture(), recorder.snapshot())).toThrow('replay is of "Other"');
     recorder.reset();
     expect(recorder.frames()).toBe(0);
   });

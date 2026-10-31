@@ -1,4 +1,4 @@
-import type { InputRecorder } from "@jgengine/core/replay/inputReplay";
+import type { ReplayRecorder } from "@jgengine/core/replay/replayRecording";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 
@@ -80,7 +80,7 @@ export function FrameDriver({
   onPosterSettled: () => void;
   authoritativeFrameRef: { current: AuthoritativeFrameHandler | null };
   /** Records each frame of play (time, held and pressed actions, look) for a deterministic replay. */
-  recorder?: InputRecorder | undefined;
+  recorder?: ReplayRecorder | undefined;
 }) {
   const posterElapsedRef = useRef(0);
   const posterDoneRef = useRef(false);

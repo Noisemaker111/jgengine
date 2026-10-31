@@ -708,6 +708,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/react"`
 
+## replay-playback — play a recorded input-plus-seed session headless and reach the same state
+
+- `playReplayRecording` (function) · `import { playReplayRecording } from "@jgengine/core/replay/replayPlayback.draw"`
+
+## replay-recording — record a session as input plus seed, plain JSON, for deterministic playback
+
+- `createReplayRecorder` (function) · `import { createReplayRecorder } from "@jgengine/core/replay/replayRecording"`
+
+## replay-recording-check — say why a loaded file is not a replay recording before playing it
+
+- `replayRecordingProblem` (function) · `import { replayRecordingProblem } from "@jgengine/core/replay/replayRecording"`
+
 ## resolve-game-look — expand a look preset and lighting mood into concrete lighting/backdrop/post knobs
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`

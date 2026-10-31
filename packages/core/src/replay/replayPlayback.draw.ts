@@ -1,8 +1,8 @@
 import type { GameCaptureConfig, ProbeReadings } from "@jgengine/core/game/playableGame";
 import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
-import type { InputReplay } from "@jgengine/core/replay/inputReplay";
+import type { ReplayRecording } from "@jgengine/core/replay/replayRecording";
 
-import { createPlaySession, type PlaySession } from "./playSession.draw";
+import { createPlaySession, type PlaySession } from "@jgengine/core/play/playSession.draw";
 
 /** What a replay played to. */
 export interface ReplayPlayback {
@@ -23,13 +23,13 @@ function bootNewGame(session: PlaySession, capture: GameCaptureConfig<ProbeReadi
 }
 
 /**
- * Play an {@link InputReplay} headless against a new world from the same game and seed: boot a new game
+ * Play an {@link ReplayRecording} headless against a new world from the same game and seed: boot a new game
  * (unless `boot: false`), then each frame's commands, look and held actions at the frame's own time.
  * The same replay always reaches the same state, so a recorded session is a repro anyone can run.
  *
- * @capability input-replay-playback play a recorded input-plus-seed session headless and reach the same state
+ * @capability replay-playback play a recorded input-plus-seed session headless and reach the same state
  */
-export function playInputReplay(playable: ReplayPlayable, replay: InputReplay, options: { boot?: boolean } = {}): ReplayPlayback {
+export function playReplayRecording(playable: ReplayPlayable, replay: ReplayRecording, options: { boot?: boolean } = {}): ReplayPlayback {
   if (replay.game !== playable.game.name) throw new Error(`replay is of "${replay.game}", not "${playable.game.name}"`);
   const session = createPlaySession(playable, replay.seed === null ? {} : { seed: replay.seed });
   if (options.boot !== false) bootNewGame(session, playable.capture);

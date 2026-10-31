@@ -8139,6 +8139,16 @@
       "intent": "retain sightings, sounds and damage with cone, range, occlusion, decaying memory and shared squad knowledge"
     },
     {
+      "id": "perf-overlay",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/devtools/perfOverlay.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "F3 in-game performance overlay — FPS graph, draws, nodes, programs and the costliest subsystems"
+    },
+    {
       "id": "phase-clock",
       "packages": [
         "@jgengine/core"
@@ -9227,6 +9237,36 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Enable/disable the dev-only placeholder-fallback probe."
+    },
+    {
+      "id": "replay-playback",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/replay/replayPlayback.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "play a recorded input-plus-seed session headless and reach the same state"
+    },
+    {
+      "id": "replay-recording",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/replay/replayRecording",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "record a session as input plus seed, plain JSON, for deterministic playback"
+    },
+    {
+      "id": "replay-recording-check",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/replay/replayRecording",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "say why a loaded file is not a replay recording before playing it"
     },
     {
       "id": "reputation",

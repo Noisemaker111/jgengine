@@ -3,7 +3,7 @@ import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtim
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
 
-import type { InputRecorder } from "@jgengine/core/replay/inputReplay";
+import type { ReplayRecorder } from "@jgengine/core/replay/replayRecording";
 
 import { dispatchBoundAction, RESERVED_INPUT_ACTIONS, shouldFireBoundAction } from "../input/boundActionDispatch";
 import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "../input/hotbarActions";
@@ -19,7 +19,7 @@ export interface PlaySessionOptions {
   /** Called for every command the session runs (a bound action, a prompt, or {@link PlaySession.command}). */
   onCommand?: (entry: { name: string; input: unknown; label: string; result: ReturnType<GameContext["game"]["commands"]["run"]> }) => void;
   /** Records every tick and every {@link PlaySession.command} call, for a replay. Bound-action commands replay from the input and are not recorded. */
-  recorder?: InputRecorder;
+  recorder?: ReplayRecorder;
 }
 
 /** A live headless play of one game, ticked by its caller. */

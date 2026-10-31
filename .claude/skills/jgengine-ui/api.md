@@ -802,6 +802,21 @@
 - `ReplayLoop` (interface): interface ReplayLoop<T> — Replays a finished `RecordingBuffer` on a loop — modulo-time seek, frame interpolation, and spawn grace, the pieces every ghost-lap/echo feature hand-rolled (#286.4). `sample(t)` is a pure function of absolute time; `null` means "the ghost isn't on track right now".
 - `ReplayLoopOptions` (interface): interface ReplayLoopOptions<T> { interpolate?: (before: T, after: T, alpha: number) => T; spawnGraceSeconds?: number } — ⚠ undocumented
 
+## @jgengine/core/replay/replayPlayback.draw
+
+- `ReplayPlayback` (interface): interface ReplayPlayback — What a replay played to.
+- `playReplayRecording` (function): function playReplayRecording(playable: ReplayPlayable, replay: ReplayRecording, options: { boot?: boolean } = {}): ReplayPlayback — Play an {@link ReplayRecording} headless against a new world from the same game and seed: boot a new game (unless `boot: false`), then each frame's commands, look and held actions at the frame's own time. The same replay always reaches the same state, so a recorded session is a repro anyone can run.
+
+## @jgengine/core/replay/replayRecording
+
+- `ReplayCommand` (interface): interface ReplayCommand — A command a button or the shell ran, before the frame at `frame` played.
+- `ReplayFrame` (interface): interface ReplayFrame — One recorded frame of play: how long it was, the actions held and newly pressed, and the look.
+- `ReplayRecorder` (interface): interface ReplayRecorder — Records a session's input as an {@link ReplayRecording}; its state is the replay itself.
+- `ReplayRecorderOptions` (interface): interface ReplayRecorderOptions — Options for {@link createReplayRecorder}.
+- `ReplayRecording` (interface): interface ReplayRecording — A session as input plus seed, plain JSON: replaying the frames and commands against a new world built from the same game and seed gives the same run.
+- `createReplayRecorder` (function): function createReplayRecorder(options: ReplayRecorderOptions): ReplayRecorder — Record a session's input — each frame's time, held and pressed actions and look, and the commands run between frames — against the world seed, for a deterministic replay. Bounded: it stops at `maxFrames`.
+- `replayRecordingProblem` (function): function replayRecordingProblem(value: unknown): string | null — Why a value (a parsed replay file) is not a {@link ReplayRecording}, or `null` when it is one.
+
 ## @jgengine/core/replay/useSessionRecorder.draw
 
 - `RecordedPose` (interface): interface RecordedPose { position: EntityPosition; rotationY: number } — ⚠ undocumented · used by `useSessionRecorder`: Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
@@ -2309,7 +2324,7 @@
 
 ## @jgengine/shell/drivers/FrameDriver
 
-- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, authoritativeFrameRef, }: { ctx: GameContext; playable: PlayableGame; trac… — ⚠ undocumented
+- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, authoritativeFrameRef, recorder, }: { ctx: GameContext; playable: Playable… — ⚠ undocumented
 - `POSTER_SETTLE_SECONDS` (const): const POSTER_SETTLE_SECONDS: 1.6 — ⚠ undocumented
 
 ## @jgengine/shell/registry
