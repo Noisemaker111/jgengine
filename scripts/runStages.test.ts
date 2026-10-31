@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
 import {
-  ALL_CHECKS, CHECKS, checkPlan, fixHint, formatSummary, GEN_TARGETS, genPlan, jobChecks, parseCheckArgs, rerunHint, runPlan,
+  ALL_CHECKS, CHECKS, checkArgsFor, checkPlan, fixHint, formatSummary, gameScope, GEN_TARGETS, genPlan, jobChecks, parseCheckArgs, reachedBy, readsPath, rerunHint, runPlan,
   SDK_CHECKS, type Stage,
 } from "./run-stages.ts";
 import { CORE_BARRELS } from "./gen-barrels";
@@ -230,5 +230,41 @@ describe("parseCheckArgs", () => {
     expect(parseCheckArgs(["--sdk", "skills"]).kind).toBe("error");
     expect(parseCheckArgs(["--sdk"]).kind).toBe("plan");
     expect(parseCheckArgs(["--list"]).kind).toBe("list");
+  });
+});
+
+describe("which rows a diff reaches", () => {
+  test("a game-only diff names its games; anything else judges every game", () => {
+    expect(gameScope(["games/deepward/src/a.ts", "games/fernwild/PLAN.md"])).toEqual(["deepward", "fernwild"]);
+    expect(gameScope(["games/deepward/src/a.ts", "packages/core/src/a.ts"])).toBeNull();
+    expect(gameScope(["games/scripts/check-game-depth.ts"])).toBeNull();
+    expect(gameScope(["games/capabilities.json"])).toBeNull();
+    expect(gameScope([])).toBeNull();
+  });
+
+  test("a per-game check takes the touched games after its own arguments", () => {
+    const depth = CHECKS.find((check) => check.name === "games-depth")!;
+    expect(checkArgsFor(depth, ["games/deepward/src/a.ts"])).toEqual(["deepward"]);
+    expect(checkArgsFor(depth, ["packages/core/src/a.ts"])).toEqual([]);
+  });
+
+  test("a row runs for a change to what it reads, to tooling, or always when it names nothing", () => {
+    const layers = CHECKS.find((check) => check.name === "layers")!;
+    expect(reachedBy(layers, ["games/deepward/src/a.ts"])).toBe(false);
+    expect(reachedBy(layers, ["packages/core/src/a.ts"])).toBe(true);
+    expect(reachedBy(layers, ["scripts/check-layers.ts"])).toBe(true);
+    expect(reachedBy(layers, ["bun.lock"])).toBe(true);
+    expect(reachedBy({}, ["anything.md"])).toBe(true);
+    expect(readsPath(["packages/core/src/city/cityKind.ts"], "packages/core/src/city/cityKind.ts.bak")).toBe(false);
+  });
+
+  test("every row says what it reads, except the whole-tree type-check", () => {
+    for (const check of CHECKS) if (check.name !== "types") expect(check.reads).toBeDefined();
+    for (const target of GEN_TARGETS) expect(target.reads).toBeDefined();
+  });
+
+  test("a game-only diff regenerates only what reads games", () => {
+    expect(GEN_TARGETS.filter((target) => reachedBy(target, ["games/deepward/src/a.ts"])).map((target) => target.name)).toEqual(["type-escapes"]);
+    expect(GEN_TARGETS.filter((target) => reachedBy(target, ["games/deepward/PLAN.md"])).length).toBeGreaterThan(0);
   });
 });

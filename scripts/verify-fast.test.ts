@@ -327,7 +327,7 @@ describe("static gates", () => {
   test("a skill or doc change pays the stage-skills gate, and no lane pays the housekeeping ones", () => {
     expect(gatesFor([".claude/skills/workflow/SKILL.md"])).toContain("stage-skills");
     expect(gatesFor(["README.md"])).toContain("stage-skills");
-    for (const gate of ["skills", "fixture-location", "orphan-ratchet"]) expect(gatesFor(["scripts/x.ts", "README.md"])).not.toContain(gate);
+    for (const gate of ["skills", "fixture-location"]) expect(gatesFor(["scripts/x.ts", "README.md"])).not.toContain(gate);
   });
 
   test("a test change pays the spawn-timeout gate, and a browser test the budget gate", () => {
@@ -356,8 +356,8 @@ describe("static gates", () => {
 
   // stateful-ratchet and the scaffold-launch fetch scan failed only in CI: the landing ran a
   // hand-picked subset of what CI runs, so each lane met them one CI run at a time.
-  test("the landing runs every quick and types check CI runs, except the ones with a stated reason", () => {
-    const landing = landingGates(["games/fernwild/src/main.ts"]);
+  test("an engine landing runs every quick and types check CI runs, except the ones with a stated reason", () => {
+    const landing = landingGates(["packages/core/src/city/cityKind.ts", "packages/react/src/a.ts", "games/fernwild/src/main.ts", "apps/web/src/a.ts", "registry/x.json"]);
     for (const check of [...jobChecks("quick"), ...jobChecks("types")]) {
       const reason = CI_ONLY_GATES[check.name];
       if (reason === undefined) expect(landing).toContain(check.name);
@@ -368,6 +368,20 @@ describe("static gates", () => {
     for (const name of Object.keys(CI_ONLY_GATES)) expect(findCheck(name)).toBeDefined();
   });
 
+  test("a game-only landing runs the game gates and skips the engine hygiene ones it cannot reach", () => {
+    const landing = landingGates(["games/fernwild/src/main.ts"]);
+    for (const gate of ["games-framework", "games-design", "games-depth", "games-save-states", "game-feel", "art-direction", "content-gate", "module-globals"]) {
+      expect(landing).toContain(gate);
+    }
+    for (const gate of ["layers", "stateful-ratchet", "hud-tokens", "street-rule-parity", "doc-symbols", "release-set", "path-portability", "skill-api", "export-manifest"]) {
+      expect(landing).not.toContain(gate);
+    }
+  });
+
+  test("a check script change reaches every gate, since the rule itself moved", () => {
+    expect(landingGates(["scripts/check-layers.ts"])).toContain("layers");
+  });
+
   test("a docs-only landing pays only the iteration gates", () => {
     expect(landingGates(["README.md"])).toEqual(gatesFor(["README.md"]));
   });
@@ -376,13 +390,14 @@ describe("static gates", () => {
     expect(gatesFor(["scripts/lookArg.ts"])).toContain("capture-hygiene");
   });
 
-  test("a package change pays both generated-file checks, so a stale manifest or api.md fails here", () => {
-    const gates = gatesFor(["packages/core/src/world/terrain.ts"]);
-    expect(gates).toContain("export-manifest");
-    expect(gates).toContain("skill-api");
+  test("a lane never pays a generated-file comparison: lane:close regenerates those files when it lands", () => {
+    for (const gate of ["export-manifest", "games-ledger", "type-escapes", "capabilities", "source-paths"]) {
+      expect(gatesFor(["packages/core/src/world/terrain.ts", "games/x/src/a.ts"])).not.toContain(gate);
+      expect(landingGates(["packages/core/src/world/terrain.ts", "games/x/src/a.ts"])).not.toContain(gate);
+    }
   });
 
-  test("a change that cannot touch the public API does not pay the generated-file checks", () => {
+  test("a change that cannot touch the public API does not pay skill-api", () => {
     expect(gatesFor(["scripts/lookArg.ts"])).not.toContain("export-manifest");
     expect(gatesFor([".claude/skills/workflow/SKILL.md"])).not.toContain("skill-api");
   });
@@ -847,9 +862,17 @@ describe("local boots", () => {
     expect(stepResult(guard, 0, 10, "").unjudged).toBeUndefined();
   });
 
+  test("a game-only diff judges games-depth on the touched games alone, keyed on their files", () => {
+    const changed = ["games/deepward/src/world.ts"];
+    const steps = fastSteps({ ...emptyPlan, changed, gates: ["games-depth"] }, { tree: ["games/deepward/src/world.ts", "games/fernwild/src/a.ts", "games/scripts/x.ts", "packages/core/src/a.ts", "README.md"] });
+    expect(steps[0]?.command).toEqual(["bun", "games/scripts/check-game-depth.ts", "deepward"]);
+    expect(steps[0]?.units?.[0]?.inputs).toEqual(["games/deepward/src/world.ts", "games/scripts/x.ts", "packages/core/src/a.ts"]);
+    const engine = fastSteps({ ...emptyPlan, changed: ["packages/core/src/a.ts"], gates: ["games-depth"] });
+    expect(engine[0]?.command).toEqual(["bun", "games/scripts/check-game-depth.ts"]);
+  });
+
   test("the games job's capability gates run here with CI's arguments", () => {
     const steps = fastSteps({ ...emptyPlan, gates: gatesFor(["games/x/src/a.ts"]) });
-    expect(steps.map((step) => step.command.join(" "))).toContain("bun games/scripts/capabilities-sync.ts --check");
     expect(steps.map((step) => step.command.join(" "))).toContain("bun games/scripts/check-capabilities.ts --summary");
   });
 });
