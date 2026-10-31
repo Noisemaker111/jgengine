@@ -6,6 +6,8 @@
  * buys extra quiet afterwards. The game owns what an incident does; this owns when and which.
  */
 
+import { pickWeighted } from "../../random/pick";
+
 /** One thing that can happen. Boons cost nothing; threats spend the points they cost. */
 export interface StoryIncident<R = unknown> {
   id: string;
@@ -144,19 +146,11 @@ export function createStoryteller<R = unknown>(config: StorytellerConfig<R>): St
       state.elapsed += dt;
       if (state.elapsed < state.nextAt) return null;
       const pool = current.incidents.filter((incident) => allowed(incident, reading));
-      const weights = pool.map(weightOf);
-      const total = weights.reduce((sum, w) => sum + w, 0);
-      if (pool.length === 0 || total <= 0) {
+      const incident = pickWeighted(() => finite(rng(), 0), pool, weightOf);
+      if (incident === undefined) {
         state.nextAt = state.elapsed + Math.max(1, gapMin());
         return null;
       }
-      let roll = finite(rng(), 0) * total;
-      let index = 0;
-      while (index < pool.length - 1 && roll >= weights[index]!) {
-        roll -= weights[index]!;
-        index += 1;
-      }
-      const incident = pool[index]!;
       const pointsBefore = state.points;
       const spent = Math.max(0, incident.cost);
       state.points = Math.max(0, state.points - spent);
