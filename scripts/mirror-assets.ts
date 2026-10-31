@@ -1,4 +1,12 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { MODEL_LIBRARY, libraryModelDir } from "../packages/assets/src/catalogs/modelLibrary";
 import { resolveArchiveUrl, downloadArchive } from "../packages/assets/src/download";
+import { pullLibraryModel } from "../packages/assets/src/modelLibraryPull";
+import { modelMirrorAssetName, zipPulledModel } from "../packages/assets/src/modelMirror";
+import { pullRocketboxModel } from "../packages/assets/src/rocketboxPull";
 import { sources } from "../packages/assets/src/sources";
 import type { AssetSource } from "../packages/assets/src/manifest";
 
@@ -50,6 +58,14 @@ function isPriority(source: AssetSource): boolean {
   return kind === "model" || kind === "sprite";
 }
 
+async function upload(assetName: string, archive: Uint8Array<ArrayBuffer>): Promise<void> {
+  const response = await fetch(
+    `https://uploads.github.com/repos/${repo}/releases/${release.id}/assets?name=${encodeURIComponent(assetName)}`,
+    { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/zip" }, body: archive },
+  );
+  if (!response.ok) throw new Error(`upload HTTP ${response.status} ${await response.text()}`);
+}
+
 const release = await ensureRelease();
 const have = new Set(release.assets.map((asset) => asset.name));
 let uploaded = 0;
@@ -63,18 +79,7 @@ for (const source of sources) {
   try {
     const url = await resolveArchiveUrl(source);
     const archive = await downloadArchive(url);
-    const upload = await fetch(
-      `https://uploads.github.com/repos/${repo}/releases/${release.id}/assets?name=${encodeURIComponent(assetName)}`,
-      {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${token}`,
-          "content-type": "application/zip",
-        },
-        body: archive,
-      },
-    );
-    if (!upload.ok) throw new Error(`upload HTTP ${upload.status} ${await upload.text()}`);
+    await upload(assetName, archive);
     uploaded += 1;
     console.log(`mirrored ${assetName} (${(archive.byteLength / 1_048_576).toFixed(1)} MB) from ${url}`);
   } catch (error) {
@@ -84,6 +89,35 @@ for (const source of sources) {
     else softFailures.push(line);
   }
 }
+
+// Per-model pulls (Rocketbox, Khronos) read api.github.com, which cloud sandboxes cannot reach, so each
+// is built here from the real source (blob-sha verified by the pull) and shipped as one zip.
+process.env["JGENGINE_ASSETS_NO_DEFAULT_MIRROR"] = "1";
+const modelFailures: string[] = [];
+const modelOnly = process.env["MIRROR_MODEL_ONLY"];
+for (const entry of MODEL_LIBRARY) {
+  const provider = entry.origin.provider;
+  if (provider !== "rocketbox" && provider !== "khronos") continue;
+  if (modelOnly !== undefined && modelOnly !== "" && modelOnly !== entry.name) continue;
+  const assetName = modelMirrorAssetName(entry.name);
+  if (have.has(assetName)) continue;
+  const scratch = mkdtempSync(join(tmpdir(), "jg-mirror-"));
+  try {
+    const options = { modelsRoot: scratch, githubToken: token };
+    const pulled = provider === "rocketbox" ? await pullRocketboxModel(entry, options) : await pullLibraryModel(entry, options);
+    const { name: _name, ...recorded } = pulled;
+    const archive = zipPulledModel(join(scratch, ...libraryModelDir(entry.name).split("/")), recorded);
+    await upload(assetName, new Uint8Array(archive));
+    uploaded += 1;
+    console.log(`mirrored ${assetName} (${(archive.byteLength / 1_048_576).toFixed(1)} MB) from ${provider}`);
+  } catch (error) {
+    modelFailures.push(`${assetName}: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+for (const failure of modelFailures) console.error(`  - ${failure}`);
+hardFailures.push(...modelFailures);
 
 console.log(
   `mirror-assets: ${sources.length} catalog packs, ${have.size} already mirrored, ${uploaded} uploaded, ${hardFailures.length} hard fails, ${softFailures.length} soft fails (materials), ${unpulledFailures.length} unpulled`,

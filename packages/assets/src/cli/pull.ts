@@ -133,6 +133,7 @@ export function describeNetworkFailure(error: unknown): string {
     current = current.cause;
   }
   const text = chain.length > 0 ? chain.join(" — ") : String(error);
+  if (text.includes("sandbox policy denial")) return text;
   const looksPolicyBlocked =
     /\b403\b|CONNECT|proxy|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|fetch failed/i.test(text);
   return looksPolicyBlocked
@@ -225,35 +226,40 @@ export async function cmdPull(argv: string[]): Promise<void> {
         : [findLibraryModelByName(sourceId.slice("model:".length)) ?? fail(`unknown library model: ${sourceId.slice(6)}`)];
     let total = 0;
     for (const entry of entries) {
-      if (dirHasEntries(join(modelsRoot, "library", ...entry.name.split("/"))) && !argv.includes("--force")) {
-        console.log(`${entry.name}: already pulled`);
-        continue;
-      }
-      if (entry.origin.provider === "rocketbox") {
-        const pulled = await pullRocketboxModel(entry, { modelsRoot, fetchImpl: cliFetch, ...(githubToken === undefined ? {} : { githubToken }) });
+      try {
+        if (dirHasEntries(join(modelsRoot, "library", ...entry.name.split("/"))) && !argv.includes("--force")) {
+          console.log(`${entry.name}: already pulled`);
+          continue;
+        }
+        if (entry.origin.provider === "rocketbox") {
+          const pulled = await pullRocketboxModel(entry, { modelsRoot, fetchImpl: cliFetch, ...(githubToken === undefined ? {} : { githubToken }) });
+          total += pulled.bytes;
+          console.log(
+            `${entry.name}: ${pulled.triangles} tris, ${pulled.bones} bones, clips ${pulled.clips.join("/") || "none"}, ` +
+              `${(pulled.bytes / 1e6).toFixed(2)} MB, ${pulled.height.toFixed(2)} m tall -> ${pulled.file}`,
+          );
+          continue;
+        }
+        if (entry.origin.provider === "authored") {
+          const built = await buildAuthoredModel(entry, modelsRoot);
+          total += built.bytes;
+          console.log(`${entry.name}: ${built.triangles} tris, ${(built.bytes / 1e6).toFixed(2)} MB (built) -> ${built.file}`);
+          continue;
+        }
+        if (entry.origin.provider === "generated") {
+          console.log(`${entry.name}: generated - the game commits it; nothing to pull`);
+          continue;
+        }
+        const pulled = await pullLibraryModel(entry, { modelsRoot, fetchImpl: cliFetch, ...(githubToken === undefined ? {} : { githubToken }) });
         total += pulled.bytes;
         console.log(
-          `${entry.name}: ${pulled.triangles} tris, ${pulled.bones} bones, clips ${pulled.clips.join("/") || "none"}, ` +
-            `${(pulled.bytes / 1e6).toFixed(2)} MB, ${pulled.height.toFixed(2)} m tall -> ${pulled.file}`,
+          `${entry.name}: ${pulled.nearTriangles} / ${pulled.farTriangles} tris, ` +
+            `${(pulled.bytes / 1e6).toFixed(2)} MB, ${pulled.size.map((v) => v.toFixed(2)).join(" x ")} m -> ${pulled.dir}`,
         );
-        continue;
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("sandbox policy denial")) throw new Error(`${entry.name}: ${error.message}`);
+        throw error;
       }
-      if (entry.origin.provider === "authored") {
-        const built = await buildAuthoredModel(entry, modelsRoot);
-        total += built.bytes;
-        console.log(`${entry.name}: ${built.triangles} tris, ${(built.bytes / 1e6).toFixed(2)} MB (built) -> ${built.file}`);
-        continue;
-      }
-      if (entry.origin.provider === "generated") {
-        console.log(`${entry.name}: generated - the game commits it; nothing to pull`);
-        continue;
-      }
-      const pulled = await pullLibraryModel(entry, { modelsRoot, fetchImpl: cliFetch, ...(githubToken === undefined ? {} : { githubToken }) });
-      total += pulled.bytes;
-      console.log(
-        `${entry.name}: ${pulled.nearTriangles} / ${pulled.farTriangles} tris, ` +
-          `${(pulled.bytes / 1e6).toFixed(2)} MB, ${pulled.size.map((v) => v.toFixed(2)).join(" x ")} m -> ${pulled.dir}`,
-      );
     }
     console.log(`model library: ${entries.length} model(s), ${(total / 1e6).toFixed(2)} MB written`);
     return;

@@ -1677,6 +1677,7 @@
     "./materials",
     "./modelLibraryAuthored",
     "./modelLibraryPull",
+    "./modelMirror",
     "./packModelConvert",
     "./packs/starter",
     "./provisioning",

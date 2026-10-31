@@ -281,6 +281,7 @@
 - `MAX_ARCHIVE_DOWNLOAD_BYTES` (const): const MAX_ARCHIVE_DOWNLOAD_BYTES: number — Max size of a downloaded (still-compressed) archive, in bytes. Provider zips run tens of MB; this leaves headroom without buffering an unbounded response.
 - `MAX_ARCHIVE_ENTRY_COUNT` (const): const MAX_ARCHIVE_ENTRY_COUNT: 20000 — Max number of entries this module will extract out of one archive.
 - `MAX_ARCHIVE_UNCOMPRESSED_BYTES` (const): const MAX_ARCHIVE_UNCOMPRESSED_BYTES: number — Max total uncompressed size this module will inflate out of one archive, in bytes.
+- `mirrorOverrideBase` (function): function mirrorOverrideBase(env: Readonly<Record<string, string | undefined>> = process.env): string | undefined — The `JGENGINE_ASSETS_MIRROR` base URL without a trailing slash, or undefined when unset.
 
 ## @jgengine/assets/findAssets
 
@@ -471,6 +472,13 @@
 - `downscaleJpeg` (function): function downscaleJpeg(bytes: Uint8Array, max: number): Uint8Array — Halve a JPEG (2x2 box filter) until its longest edge fits `max`; smaller maps pass through untouched.
 - `pullLibraryModel` (function): function pullLibraryModel(entry: ModelLibraryEntry, options: PullLibraryModelOptions): Promise<PulledLibraryModel> — Download one library model from its official source, simplify it into a near and a far level, meshopt-compress both and write them as `near.gltf` / `far.gltf` sharing one set of textures (so the far level costs geometry only). Every file is checked against the source's published md5.
 - `thinIslands` (function): function thinIslands(document: Document, material: RegExp, share: number): number — Keep an evenly spread `share` of the connected triangle islands (leaf clusters) on every primitive whose material name matches `material`, and grow each kept island about its own centre by `share^-0.35` so the canopy keeps most of its cover — the usual foliage LOD trade, not a change to the tree's size. Returns the triangles removed.
+
+## @jgengine/assets/modelMirror
+
+- `modelMirrorAssetName` (function): function modelMirrorAssetName(name: string): string — `model-library-<name>.zip`, the release asset holding one per-model pull exactly as it lands in the store.
+- `modelMirrorUrls` (function): function modelMirrorUrls(name: string, env: Readonly<Record<string, string | undefined>> = process.env): string[] — Every base URL to try for a per-model zip, in order: `JGENGINE_ASSETS_MIRROR`, then the default release (unless disabled).
+- `pullMirroredModel` (function): function pullMirroredModel<T>(name: string, modelsRoot: string, fetchImpl: typeof fetch, env: Readonly<Record<string, string | undefined>> = process.env): Promise<{ recorded: T; dir: string } | null> — Restore a per-model pull from the mirror into `<modelsRoot>/library/<name>/`. Returns the pull's recorded result and folder, or null when no mirror holds a usable zip, so the caller falls back to the source.
+- `zipPulledModel` (function): function zipPulledModel(dir: string, result: object): Uint8Array — Zip a pulled model folder with the pull's result, ready to upload as {@link modelMirrorAssetName}.
 
 ## @jgengine/assets/packs/starter
 

@@ -127,10 +127,27 @@ export async function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLik
   return url;
 }
 
+const SANDBOX_DENIAL = /GitHub access to this repository is not enabled/i;
+
+/**
+ * The error for a failed HTTP response. A 403 whose body says the session's GitHub access is not
+ * enabled is a sandbox policy denial, named as such so nobody retries it as a transient error.
+ * @internal
+ */
+export async function httpFailure(url: string, response: Response): Promise<Error> {
+  if (response.status === 403) {
+    const body = await response.text().catch(() => "");
+    if (SANDBOX_DENIAL.test(body)) {
+      return new Error(`${url}: sandbox policy denial (HTTP 403: GitHub access to this repository is not enabled for this session); not a transient error, not retried`);
+    }
+  }
+  return new Error(`${url}: HTTP ${response.status}`);
+}
+
 /** @internal */
 export async function downloadArchive(url: string, fetchImpl: FetchLike = fetch): Promise<Uint8Array<ArrayBuffer>> {
   const response = await fetchImpl(url, { redirect: "follow" });
-  if (!response.ok) throw new Error(`download ${url} -> HTTP ${response.status}`);
+  if (!response.ok) throw await httpFailure(url, response);
   const declaredLength = response.headers.get("content-length");
   if (declaredLength !== null) {
     const declared = Number(declaredLength);
@@ -168,6 +185,12 @@ export function mirrorOverrideUrl(baseUrl: string, source: AssetSource): string 
  */
 export const DEFAULT_RELEASE_BASE =
   "https://github.com/Noisemaker111/jgengine/releases/download/packs";
+
+/** The `JGENGINE_ASSETS_MIRROR` base URL without a trailing slash, or undefined when unset. */
+export function mirrorOverrideBase(env: Readonly<Record<string, string | undefined>> = process.env): string | undefined {
+  const base = env["JGENGINE_ASSETS_MIRROR"];
+  return base === undefined || base === "" ? undefined : base.replace(/\/+$/, "");
+}
 
 /** URL of `source`'s archive on the default GitHub-release mirror.
  * @internal
