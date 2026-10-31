@@ -16,7 +16,7 @@ export const CORE_DOMAIN_SKILLS: Readonly<Record<string, string>> = (
   JSON.parse(readFileSync(fileURLToPath(new URL("./skill-routing.json", import.meta.url)), "utf8")) as { domains: Record<string, string> }
 ).domains;
 
-export const CORE_INTERNAL_DOMAINS = new Set(["assets"]);
+export const CORE_INTERNAL_DOMAINS = new Set(["assets", "parts"]);
 
 export const PACKAGE_SKILLS: Record<string, string> = {
   rapier: "jgengine-world",

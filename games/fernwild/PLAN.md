@@ -77,7 +77,7 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 
 ## Features
 
-<!-- Every feature the brief implies, one per line, a few words each (the words before ` — ` are looked up). Then run `jgengine plan` again. -->
+<!-- Every feature the brief implies, one per line, a few words each (the words before ` — ` are looked up). Then check each with `jgengine has "<feature>"`. -->
 
 - island terrain — The Island surveyed 1:1: coast, peaks, ridges, rivers, biomes, obelisks, caves
 - creature spawns — ARK's spawn zones, species and weights per biome
@@ -101,7 +101,7 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 
 ## Engine coverage
 
-<!-- written by `jgengine plan` from the Features list; edit the list, then run it again -->
+<!-- written from the Features list by hand; check each row with `jgengine has "<feature>"` -->
 
 | Feature | Engine | Verdict |
 | --- | --- | --- |
@@ -127,7 +127,7 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 
 ## Gaps
 
-<!-- written by `jgengine plan` from the Features list; edit the list, then run it again -->
+<!-- written from the Features list by hand; check each row with `jgengine has "<feature>"` -->
 
 - metal tier — metal tools and structures, smithy, forge: only part ships (mood); extend that owner or confirm it covers the feature.
 - cooking — cooking pot, kibble for taming: only part ships (scripts/); extend that owner or confirm it covers the feature.

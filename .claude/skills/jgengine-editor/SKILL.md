@@ -57,3 +57,13 @@ Build each playtest through `createPlayable` from the captured current document,
 - Asset-facing, units, pivot, footprint, and placement policy belong in asset/catalog metadata, not corrective game transforms.
 - Paths and markers should drive both rendering and gameplay from the same document.
 - Visual presence summaries prove content exists; only an inspected shot proves composition and finish.
+
+## Project upgrades, doctor and sync
+
+Created projects pin their scaffolding CLI as a local devDependency, separately from SDK versions. Run `npx jgengine doctor` after SDK upgrades to check CLI compatibility. Skill installation preserves newer or differing unversioned copies; update the project CLI first, and use `skills -p --force` only when replacement is intended. Each packaged skill install records its CLI and SDK versions in `.jgengine-version.json`.
+
+For an existing game asked to pick up a new engine release ("jgengine published a new version, grab it"), run `npx jgengine@latest sync` in the project (or at its workspace root): it moves every `@jgengine` pin and catalog entry to that release, refreshes the template's files, and prints every Migrate step and Adopt-worthy addition in between. Install, migrate oldest-first, then work the Adopt lists instead of reconstructing the changelog by hand.
+
+`doctor` resolves Bun `catalog:` and `catalog:<name>` declarations from the nearest workspace's `workspaces.catalog` or `workspaces.catalogs` and follows hoisted SDK installs; missing or malformed catalog entries fail diagnostics. `sync` at a workspace root moves the catalog pins (preserving per-game `catalog:` declarations, CLI/github versions and a held editor override) and changes declarations only: run `bun install` at the root, then `jgengine doctor --workspace --json` once there.
+
+When a linked consumer renders differently despite matching root SDK versions, `doctor` checks direct consumers and SDK dependency/peer paths, including private copies with the same version. Review the reported importer and real paths, align the shared catalog and linked-consumer declarations, then reinstall at the root and rerun `doctor --workspace`; a root install may leave private linked-package installs intact. Restart running games after reinstall. Workspace mode checks installed identities only, reports coverage, and refuses unsupported patterns, escaped symlinks or exhausted traversal budgets. The default project audit stays scoped; neither mode covers custom bundler aliases or indirect non-SDK chains.

@@ -42,6 +42,7 @@
     "ci:status": "bun scripts/ci-status.ts",
     "background": "bun scripts/background.ts",
     "find": "bun packages/jgengine/src/cli/index.ts find",
+    "idea-clock": "bun scripts/idea-clock.ts",
     "jgengine": "bun packages/jgengine/src/cli/index.ts",
     "data-table": "bun scripts/data-table.ts",
     "check": "bun scripts/guard.ts 600 'bun scripts/run-stages.ts check'",

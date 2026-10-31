@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import type { CapabilityEntry } from "./capabilities";
 import { indexCode, type CodeFile } from "./codeMap";
-import { answerHas, type HasSources } from "./has";
+import { answerHas, parsePartRows, type HasSources } from "./has";
 
 const CAPABILITIES: CapabilityEntry[] = [
   {
@@ -98,4 +98,31 @@ test("a feature worded differently from the capability is covered through its co
     ["bows", "gap", null],
     ["thirst", "gap", null],
   ]);
+});
+
+test("a word that only sits in a description or inside another word is not an answer", () => {
+  const rows: CapabilityEntry[] = [
+    { skill: "jgengine-ui", slug: "action-tooltip", description: "structured action tooltip body", imports: [], symbols: ["ActionTooltip"] },
+    { skill: "jgengine", slug: "hotbar-slot-bindings", description: "key codes for numbered actions (hotbar, build menu, tools)", imports: [], symbols: ["hotbarSlotBindings"] },
+  ];
+  const [answer] = answerHas(["metal tools"], { capabilities: rows, code: [] });
+  expect(answer).toEqual({ feature: "metal tools", verdict: "gap", folders: [], capabilities: [] });
+});
+
+test("a supply drop is named by the parts it is made of", () => {
+  const parts = parsePartRows([
+    '/** Schedule: something happens at a pace from a start time: waves, supply drops, weather. */',
+    'export * from "./time/pacedSchedule";',
+    '/** Table: a weighted choice: supply drop loot per rarity. */',
+    'export * from "./random/pick";',
+    '/** Motion track: a thing follows a path over time: a supply drop falling, a door. */',
+    'export * from "./movement/motionTrack";',
+    '/** Slots: named spots that refill: supply drop crates, resource nodes. */',
+    'export * from "./time/refillSlots";',
+    '/** Meter: a number with a range: health, hunger. */',
+    'export * from "./stats/statPool";',
+  ].join("\n"));
+  const [answer] = answerHas(["supply drop"], { capabilities: [], code: [], parts });
+  expect(answer?.verdict).toBe("covered");
+  expect(answer?.capabilities.map((row) => row.slug).sort()).toEqual(["movement/motionTrack", "random/pick", "time/pacedSchedule", "time/refillSlots"]);
 });
