@@ -21,14 +21,14 @@ import {
 } from "./growthState";
 import { createLightField } from "./lightField";
 import { growingSeason, type GrowingSeason } from "./phenology";
-import { OPEN_TEMPERATE_SITE, siteModifier, type PlantEnvironment } from "./plantEnvironment";
+import { OPEN_TEMPERATE_SITE, SIDE_LIGHT_SHARE, siteModifier, type PlantEnvironment } from "./plantEnvironment";
 import { PLANT_PI, plantCos, plantPow, plantSin } from "./plantMath";
 import { applyThickening, createPipeCost, hasCambium, pipeDemand } from "./pipeModel";
 import { bendTowardsTropisms, lateralDirection, normalize3, type TropismWeights } from "./tropism";
 import { individualGrowth } from "./individualVariation";
 
 /** Bumped whenever a rule changes what a seed grows into; part of every structure cache key. */
-export const PLANT_SIM_VERSION = 6;
+export const PLANT_SIM_VERSION = 7;
 
 /** Caps that bound one plant's memory and per-year work. */
 export interface GrowthLimits {
@@ -708,10 +708,10 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       if (y > top) top = y;
       if (((budAt[i] ?? -1) >= 0 || buds > 0) && y < lowest) lowest = y;
     }
-    field.propagate(lowest === Number.POSITIVE_INFINITY ? 0 : lowest);
     const extinction = g.extinction;
     // In an even-aged stand every neighbour is a copy of this plant spacingIndex × its height away.
     field.setPeriod(environment.stand ? Math.max(1, environment.stand.spacingIndex * top) : 0);
+    field.propagate(lowest === Number.POSITIVE_INFINITY ? 0 : lowest, { share: environment.sideLight ?? SIDE_LIGHT_SHARE, extinction });
     const sky = environment.light;
     let brightest = 0;
     for (let i = 0; i < n; i += 1) {

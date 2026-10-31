@@ -3,6 +3,8 @@ import { plantExp } from "./plantMath";
 const EXP_TABLE_STEPS = 256;
 const EXP_TABLE_SIZE = 40 * EXP_TABLE_STEPS;
 const THIRD = 1 / 3;
+/** Path through one cell of a side ray that climbs one cell for every two across, in cells. */
+const SIDE_RAY_PATH = Math.sqrt(1.25);
 
 /** Relative light (0..1 of open sky) and the least-shaded direction at a point. */
 export interface LightField {
@@ -10,9 +12,15 @@ export interface LightField {
   clear(): void;
   /** Add leaf area (m²) at a point; returns the point's cell for {@link LightField.lightAtCell}. */
   deposit(x: number, y: number, z: number, leafAreaM2: number): number;
-  /** Propagate shadow downwards from every deposit. Call once after all deposits. */
-  propagate(lowestY: number): void;
-  /** Relative irradiance at a point: openSky · e^(-k · LAI above), the point's own half voxel excluded. */
+  /**
+   * Propagate shadow downwards from every deposit, and with `side` the light reaching each cell from
+   * the side through the leaves in its own row. Call once after all deposits and {@link LightField.setPeriod}.
+   */
+  propagate(lowestY: number, side?: SideLight): void;
+  /**
+   * Relative irradiance at a point: openSky · e^(-k · LAI above), the point's own half voxel excluded,
+   * with {@link SideLight.share} of it arriving from the side instead.
+   */
   lightAt(x: number, y: number, z: number, openSky: number, extinction: number): number;
   /** {@link LightField.lightAt} at a cell {@link LightField.deposit} returned. */
   lightAtCell(cell: number, openSky: number, extinction: number): number;
@@ -30,11 +38,30 @@ export interface LightField {
   restore(next: LightFieldSnapshot): void;
 }
 
+/**
+ * Sky light arriving from the side. A shoot is lit through a cone of the crown above it and, for
+ * `share` of its light, along the horizontal through the leaves of its own row, from four sides; in a
+ * stand that row runs on into the neighbours' crowns.
+ */
+export interface SideLight {
+  /** Share of the light that comes from the side, 0..1; 0 lights every shoot from above only. */
+  share: number;
+  /** Beer–Lambert extinction coefficient along the side rays. */
+  extinction: number;
+}
+
 /** A light field's grids and the boxes they cover, as plain data. */
 export interface LightFieldSnapshot {
   leaf: Float32Array;
   shadow: Float32Array;
-  /** minX, maxX, minZ, maxZ, maxY, shadowMinY, shadowMaxY, shadowMinX, shadowMaxX, shadowMinZ, shadowMaxZ. */
+  /** Leaf area along the side ray from every cell, per direction. */
+  ray: Float32Array;
+  /** Leaf area along the side rays started just outside the crown's box. */
+  rayEntry: Float32Array;
+  /**
+   * minX, maxX, minZ, maxZ, maxY, shadowMinY, shadowMaxY, shadowMinX, shadowMaxX, shadowMinZ, shadowMaxZ,
+   * then the side share, the side ray scale and the side box: minX, maxX, minZ, maxZ, minY, maxY.
+   */
   bounds: number[];
 }
 
@@ -80,6 +107,21 @@ class ShadowVoxels implements LightField {
   private readonly depth: number;
   private readonly leaf: Float32Array;
   private readonly shadow: Float32Array;
+  /** Cells in the grid. */
+  private readonly grid: number;
+  private sideShare = 0;
+  /** Extinction times leaf area index per unit of leaf area crossed by a side ray. */
+  private sideScale = 0;
+  private sideMinX = 0;
+  private sideMaxX = -1;
+  private sideMinZ = 0;
+  private sideMaxZ = -1;
+  private sideMinY = 0;
+  private sideMaxY = -1;
+  /** Leaf area along the side ray from every cell, per direction (+x, -x, +z, -z). */
+  private readonly ray: Float32Array;
+  /** Leaf area along each side ray started just outside the crown's box, per direction, layer and row. */
+  private readonly rayEntry: Float32Array;
   private readonly rowBlur: Float32Array;
   private readonly lai: number;
   private readonly keep: number;
@@ -116,6 +158,9 @@ class ShadowVoxels implements LightField {
     this.depth = options.depth;
     this.leaf = new Float32Array(this.layer * ny);
     this.shadow = new Float32Array(this.layer * ny);
+    this.grid = this.layer * ny;
+    this.ray = new Float32Array(4 * this.grid);
+    this.rayEntry = new Float32Array(4 * ny * nx);
     this.rowBlur = new Float32Array(this.layer);
     this.lai = options.a / (cell * cell);
     this.keep = 1 / options.b;
@@ -170,13 +215,102 @@ class ShadowVoxels implements LightField {
       shade = this.shadowSum(cx, cy, cz);
     }
     const above = shade - 0.5 * (this.leaf[at] ?? 0) * this.lai;
-    if (above <= 0) return openSky;
-    const depth = extinction * above * EXP_TABLE_STEPS;
-    // e^-40 is below 1e-17: full shade.
+    const fromAbove = above <= 0 ? 1 : this.expOf(extinction * above);
+    const share = this.sideShare;
+    if (share <= 0) return openSky * fromAbove;
+    return openSky * ((1 - share) * fromAbove + share * this.sideAt(at));
+  }
+
+  /** e^-x from the table; e^-40 is below 1e-17, full shade. */
+  private expOf(x: number): number {
+    const depth = x * EXP_TABLE_STEPS;
     if (depth >= EXP_TABLE_SIZE) return 0;
     const at0 = Math.floor(depth);
     const t = depth - at0;
-    return openSky * ((this.expTable[at0] ?? 0) * (1 - t) + (this.expTable[at0 + 1] ?? 0) * t);
+    return (this.expTable[at0] ?? 0) * (1 - t) + (this.expTable[at0 + 1] ?? 0) * t;
+  }
+
+  /**
+   * Side light at a cell, 0..1 of open sky, from four sides, through the leaf area its rays cross; in
+   * a stand each ray runs on into the neighbour copies in reach. Open sky outside the crown's box.
+   */
+  private sideAt(at: number): number {
+    const { layer, nx, grid, images, period, sideMinX: x0, sideMaxX: x1, sideMinZ: z0, sideMaxZ: z1, sideMaxY: top } = this;
+    const y = Math.floor(at / layer);
+    const rest = at - y * layer;
+    const z = Math.floor(rest / nx);
+    const x = rest - z * nx;
+    if (x < x0 || x > x1 || z < z0 || z > z1 || y < this.sideMinY || y > top) return 1;
+    const own = 0.5 * (this.leaf[at] ?? 0);
+    const base = y * layer;
+    let light = 0;
+    for (let d = 0; d < 4; d += 1) {
+      const along = d < 2;
+      const sign = d % 2 === 0 ? 1 : -1;
+      const c = along ? x : z;
+      const first = along ? (sign > 0 ? x0 : x1) : sign > 0 ? z0 : z1;
+      let crossed = own + (this.ray[d * grid + at] ?? 0);
+      for (let m = 1; m <= images; m += 1) {
+        // The m-th neighbour along this ray is this crown, met by the ray started m periods back.
+        const back = c - sign * m * period;
+        if ((back - first) * sign >= 0) {
+          crossed += this.ray[d * grid + base + (along ? z * nx + back : back * nx + x)] ?? 0;
+        } else {
+          const climb = y + Math.floor(((first - back) * sign - 1) / 2);
+          if (climb <= top) crossed += this.rayEntry[d * this.ny * nx + climb * nx + (along ? z : x)] ?? 0;
+        }
+      }
+      light += this.expOf(this.sideScale * crossed);
+    }
+    return 0.25 * light;
+  }
+
+  /**
+   * Leaf area along the side rays from each cell of the crown's box: rays that climb one cell for
+   * every two across (63° from the zenith, mid-way through the band beyond 45°), toward ±x and ±z,
+   * and the same rays started just outside the box, where a neighbour's ray enters it.
+   */
+  private computeSide(bottom: number, side: SideLight): void {
+    const { nx, nz, ny, layer, leaf, grid, ray, rayEntry } = this;
+    this.sideScale = side.extinction * this.lai * SIDE_RAY_PATH;
+    const x0 = Math.max(0, this.minX - 1);
+    const x1 = Math.min(nx - 1, this.maxX + 1);
+    const z0 = Math.max(0, this.minZ - 1);
+    const z1 = Math.min(nz - 1, this.maxZ + 1);
+    const top = this.maxY;
+    this.sideMinX = x0;
+    this.sideMaxX = x1;
+    this.sideMinZ = z0;
+    this.sideMaxZ = z1;
+    this.sideMinY = bottom;
+    this.sideMaxY = top;
+    for (let y = top; y >= bottom; y -= 1) {
+      const base = y * layer;
+      const up = y < top;
+      for (let d = 0; d < 4; d += 1) {
+        const along = d < 2;
+        const sign = d % 2 === 0 ? 1 : -1;
+        const step = along ? sign : sign * nx;
+        const first = along ? (sign > 0 ? x0 : x1) : sign > 0 ? z0 : z1;
+        const last = along ? (sign > 0 ? x1 : x0) : sign > 0 ? z1 : z0;
+        const plane = d * grid;
+        for (let z = z0; z <= z1; z += 1) {
+          for (let x = x0; x <= x1; x += 1) {
+            const c = along ? x : z;
+            const at = base + z * nx + x;
+            // One cell on in this layer, then two on and one up, and on from there.
+            const one = (c + sign - last) * sign <= 0 ? (leaf[at + step] ?? 0) : 0;
+            const two = up && (c + 2 * sign - last) * sign <= 0 ? (leaf[at + layer + 2 * step] ?? 0) + (ray[plane + at + layer + 2 * step] ?? 0) : 0;
+            ray[plane + at] = one + two;
+          }
+        }
+        for (let k = along ? z0 : x0; k <= (along ? z1 : x1); k += 1) {
+          const at = base + (along ? k * nx + first : first * nx + k);
+          const two = up ? (leaf[at + layer + step] ?? 0) + (ray[plane + at + layer + step] ?? 0) : 0;
+          rayEntry[d * ny * nx + y * nx + k] = (leaf[at] ?? 0) + two;
+        }
+      }
+    }
   }
 
   clear(): void {
@@ -200,6 +334,7 @@ class ShadowVoxels implements LightField {
     this.maxY = -1;
     this.shadowMaxY = -1;
     this.shadowMinY = this.ny;
+    this.sideMaxY = -1;
   }
 
   deposit(x: number, y: number, z: number, leafAreaM2: number): number {
@@ -221,10 +356,12 @@ class ShadowVoxels implements LightField {
     return y >= ny * this.cell ? -1 : at;
   }
 
-  propagate(lowestY: number): void {
+  propagate(lowestY: number, side?: SideLight): void {
     const { maxY, minX, maxX, minZ, maxZ, nx, nz, layer, depth, shadow, leaf, rowBlur, lai, keep } = this;
+    this.sideShare = side === undefined ? 0 : Math.min(1, Math.max(0, side.share));
     if (maxY < 0) return;
     const bottom = Math.min(maxY, this.iy(lowestY));
+    if (side !== undefined && this.sideShare > 0) this.computeSide(bottom, side);
     this.shadowMaxY = maxY;
     this.shadowMinY = bottom;
     this.shadowMinX = Math.max(0, minX - depth);
@@ -298,14 +435,23 @@ class ShadowVoxels implements LightField {
     return {
       leaf: this.leaf.slice(),
       shadow: this.shadow.slice(),
-      bounds: [this.minX, this.maxX, this.minZ, this.maxZ, this.maxY, this.shadowMinY, this.shadowMaxY, this.shadowMinX, this.shadowMaxX, this.shadowMinZ, this.shadowMaxZ],
+      ray: this.ray.slice(),
+      rayEntry: this.rayEntry.slice(),
+      bounds: [
+        this.minX, this.maxX, this.minZ, this.maxZ, this.maxY, this.shadowMinY, this.shadowMaxY, this.shadowMinX, this.shadowMaxX, this.shadowMinZ, this.shadowMaxZ,
+        this.sideShare, this.sideScale, this.sideMinX, this.sideMaxX, this.sideMinZ, this.sideMaxZ, this.sideMinY, this.sideMaxY,
+      ],
     };
   }
 
   restore(next: LightFieldSnapshot): void {
-    if (next.leaf.length !== this.leaf.length || next.shadow.length !== this.shadow.length) throw new Error("light field snapshot has a different grid size");
+    if (next.leaf.length !== this.leaf.length || next.shadow.length !== this.shadow.length || next.ray.length !== this.ray.length || next.rayEntry.length !== this.rayEntry.length) {
+      throw new Error("light field snapshot has a different grid size");
+    }
     this.leaf.set(next.leaf);
     this.shadow.set(next.shadow);
+    this.ray.set(next.ray);
+    this.rayEntry.set(next.rayEntry);
     const b = next.bounds;
     this.minX = b[0] ?? this.nx;
     this.maxX = b[1] ?? -1;
@@ -318,6 +464,14 @@ class ShadowVoxels implements LightField {
     this.shadowMaxX = b[8] ?? -1;
     this.shadowMinZ = b[9] ?? 0;
     this.shadowMaxZ = b[10] ?? -1;
+    this.sideShare = b[11] ?? 0;
+    this.sideScale = b[12] ?? 0;
+    this.sideMinX = b[13] ?? 0;
+    this.sideMaxX = b[14] ?? -1;
+    this.sideMinZ = b[15] ?? 0;
+    this.sideMaxZ = b[16] ?? -1;
+    this.sideMinY = b[17] ?? 0;
+    this.sideMaxY = b[18] ?? -1;
   }
 
   setPeriod(periodM: number): void {
