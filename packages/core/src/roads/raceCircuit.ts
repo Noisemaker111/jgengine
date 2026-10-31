@@ -21,6 +21,7 @@
  *
  * @capability race-circuit lift a closed, sealed-off race lap out of an existing city street network
  */
+import { pickWeighted } from "../random/pick";
 import { seededRng } from "../random/rng";
 import type { StreetEdge, StreetLevel, StreetNetwork, StreetVec2 } from "./streetGenerator";
 
@@ -669,8 +670,7 @@ function searchCycle(adjacency: Adjacency, rules: CircuitRouteRules): Candidate 
       });
       const options = forward.length > 0 ? forward : fresh;
       if (options.length === 0) break;
-      let total = 0;
-      const weights = options.map((link) => {
+      const candidates = options.map((link) => {
         const edge = adjacency.edgeById.get(link.edge)!;
         const rank = LEVEL_RANK[edge.level] / LEVEL_RANK.boulevard;
         let weight = 0.15 + rank * rules.arterialBias * 2.5;
@@ -687,20 +687,9 @@ function searchCycle(adjacency: Adjacency, rules: CircuitRouteRules): Candidate 
           const closer = Math.hypot(home.x - there.x, home.z - there.z) < Math.hypot(home.x - here.x, home.z - here.z);
           weight *= closer ? 2.4 : 0.5;
         }
-        weight = Math.max(0.01, weight);
-        total += weight;
-        return weight;
+        return { link, weight: Math.max(0.01, weight) };
       });
-      let roll = rng() * total;
-      let chosen = options.length - 1;
-      for (let i = 0; i < weights.length; i += 1) {
-        roll -= weights[i]!;
-        if (roll <= 0) {
-          chosen = i;
-          break;
-        }
-      }
-      const link = options[chosen]!;
+      const link = (pickWeighted(rng, candidates, (c) => c.weight) ?? candidates[candidates.length - 1]!).link;
       const edge = adjacency.edgeById.get(link.edge)!;
       const span = edgeLength(edge.points);
       nodes.push(link.other);
