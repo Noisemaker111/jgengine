@@ -3,7 +3,9 @@
 //
 //   1. the install: node_modules present and linked, bun.lock in step with every package.json
 //   2. no conflict markers left in a changed file
-//   3. `bun run gen`: every generated file rewritten, so a stale one never fails a landing
+//   3. `bun run gen <targets>`: the generators whose inputs the diff reaches and that did not
+//      already run on these exact inputs, so a stale generated file never fails a landing and a
+//      game-only change pays for none of the engine's 35 s generators
 //   4. `bun run verify:fast --cheap`: the type-checks the change reaches and every gate CI's
 //      quick and types jobs run, all of them, so every failure shows in one pass
 //
@@ -17,7 +19,11 @@ import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { repoFiles } from "./import-graph";
+import { GEN_TARGETS, reachedBy, readsPath, type GenTarget } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
+import { changedFiles } from "./verify-fast";
+import { openPassCache, treeDigests } from "./verify-cache";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 
 const PREFLIGHT_USAGE = {
@@ -130,6 +136,44 @@ function conflictProblems(): string[] {
   return problems;
 }
 
+const GEN_CACHE = join(".scratch", "verify-fast", "gen-passed.json");
+
+function gitNames(args: string[]): string[] {
+  const run = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+  return (run.stdout ?? "").split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
+}
+
+/** Every file a generator's output depends on, its own outputs included. */
+function genInputs(target: GenTarget, tree: readonly string[]): string[] {
+  return tree.filter((file) => readsPath(target.reads, file));
+}
+
+function genCache(): { fresh: (target: GenTarget) => boolean; record: (targets: readonly GenTarget[]) => void } {
+  const open = () => {
+    const tree = repoFiles(root);
+    const dirty = [...gitNames(["diff", "--name-only"]), ...gitNames(["ls-files", "--others", "--exclude-standard"])];
+    return { tree, cache: openPassCache({ file: join(root, GEN_CACHE), digest: treeDigests(root, dirty), tree: () => tree }) };
+  };
+  const before = open();
+  return {
+    fresh: (target) => before.cache.fresh(`gen:${target.name}`, genInputs(target, before.tree)),
+    record: (targets) => {
+      // The generators rewrote files, so the inputs are read again as they now stand.
+      const after = open();
+      for (const target of targets) after.cache.record(`gen:${target.name}`, genInputs(target, after.tree));
+      after.cache.save();
+    },
+  };
+}
+
+/**
+ * The generators this diff needs: each one whose inputs it reaches, less each one that already
+ * ran on these exact inputs. A diff that reaches none (a doc, a game's own data) runs none.
+ */
+export function genTargetsFor(changed: readonly string[], fresh: (target: GenTarget) => boolean = () => false): GenTarget[] {
+  return GEN_TARGETS.filter((target) => reachedBy(target, changed) && !fresh(target));
+}
+
 /**
  * Run one step. Under --verbose it streams; otherwise its output is held and printed only when the
  * step fails, so a passing preflight is one line and a failing one shows everything the step said.
@@ -169,7 +213,12 @@ function main(rawArgv: readonly string[]): number {
   // Both run whatever the first says: a landing that fixed gen only to meet a gate, then the next
   // gate, paid one close per failure. Every failure is named in this one pass.
   const failed: string[] = [];
-  if (!step("gen", ["run", "gen"])) failed.push("gen (a generator, or a file that gained a type escape)");
+  const cache = genCache();
+  const targets = genTargetsFor(changedFiles(root), cache.fresh);
+  if (targets.length > 0) {
+    if (step(`gen ${targets.map((target) => target.name).join(" ")}`, ["run", "gen", ...targets.map((target) => target.name)])) cache.record(targets);
+    else failed.push("gen (a generator, or a file that gained a type escape)");
+  }
   if (!step("verify:fast --cheap", ["run", "verify:fast", "--cheap"])) failed.push("verify:fast --cheap (type-checks and every gate CI runs)");
   if (failed.length > 0) {
     console.error(`preflight failed: ${failed.join("; ")}. Everything above is every failure, not the first; fix them all, then close again.`);
