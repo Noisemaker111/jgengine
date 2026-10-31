@@ -13,7 +13,7 @@ Games run the engine source in `packages/` from the same commit, never a publish
 3. Verify the game itself, plus a differently built second game when it applies.
 4. Delete superseded game code after adoption.
 
-**Mechanism signal.** A game module that owns a reusable mechanism (a state machine, reducer, scheduler, resource pool, pathfinder, damage or status model, spawn director) is an engine system in the wrong place when a second game would want the same code with different data. Then file the engine seam first: name `packages/<pkg>/src/<file>`, the API needed and two adopting games, under [epic #2312](https://github.com/Noisemaker111/jgengine/issues/2312).
+**Mechanism signal.** A game module that owns a reusable mechanism (a state machine, reducer, scheduler, resource pool, pathfinder, damage or status model, spawn director) is an engine system in the wrong place when a second game would want the same code with different data. Keep it in the game with a first-line `// framework-ok: <reason>` and file the seam as an issue naming `packages/<pkg>/src/<file>`, the API needed and the second game that would adopt it. The second adopter builds it upstream; the first never waits.
 
 A game's own progression is the game, not a mechanism, and stays in the game at any length: its level and price numbers, unlock order, tutorial beats, quests, recipes and content tables. Hours of content are expected to be thousands of lines; size is never the signal.
 

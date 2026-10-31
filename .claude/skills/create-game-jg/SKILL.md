@@ -5,10 +5,11 @@ description: Start a new game or big feature - agree direction, write its design
 
 # Create a game
 
-A game starts as an agreed plan, not as code. The plan is a file, `games/<id>/PLAN.md` (in a created
-project, `PLAN.md` at its root), written with the user before `jgengine create` runs. No step below is
-skipped because the brief looks obvious: "ARK 1:1" still leaves which systems, how deep, and what
-"done" means open.
+A game starts as an agreed direction, not as code. The plan is a file, `games/<id>/PLAN.md` (in a
+created project, `PLAN.md` at its root), whose direction, features and milestones are agreed with the
+user before `jgengine create` runs. Its design brief (step 3) is written after milestone 1 plays, from
+what building it taught. No step below is skipped because the brief looks obvious: "ARK 1:1" still
+leaves which systems, how deep, and what "done" means open.
 
 The goal is a game with hours of play, not a short demo. The plan's design brief (step 3) says what
 those hours are, and every milestone adds the next 10 minutes of them.
@@ -55,7 +56,7 @@ One file, these sections, in this order:
 - `# <Title> plan`, then `Brief:` the user's words.
 - `## Direction`: the agreed answers from step 1, including what is out and the done scenario, plus the player
   promise, pillars, anti-pillars and falsifier (`game-design` playbook §1).
-- `## Design brief`: the game's loops and its first 10 minutes, before any feature. Lines for the
+- `## Design brief`: the game's loops and its first 10 minutes, written once milestone 1 plays. Lines for the
   core loop (30 seconds), session loop (one sitting) and long loop (hours); `Second 0:` what the
   player has at the start and why that is the right first verb; `Onboarding:`; `Pace:` something
   new every N minutes; `Longest cycle:`; `Minutes to see everything:`. Then `### First 10 minutes`
@@ -87,8 +88,10 @@ editor scene); a grid, card, tile or other board game with no 3D scene takes `--
 game's folder. The game's `jgengine.json` says what it is and uses; change it and run `jgengine sync`.
 
 Then take the milestones in order, all on the one branch the game was asked for in. Each milestone
-builds its engine gap upstream first (root `AGENTS.md`, "Game changes improve the framework"), is
-committed when it plays, and ticks itself in `PLAN.md` in that commit. When the build teaches
+ships first: a gap only this game needs stays in the game with `// framework-ok: <reason>` and an issue
+naming the seam, and the second game that wants it builds it upstream (root `AGENTS.md`, "Game changes
+improve the framework"). A milestone is committed when it plays, and ticks itself in `PLAN.md` in that
+commit. When the build teaches
 something that changes the direction, brief, features or order, edit `PLAN.md` in the same commit.
 The branch lands once, with `bun run lane:close`, when the milestones asked for are done; a
 milestone is never a PR of its own.
