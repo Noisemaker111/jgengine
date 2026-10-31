@@ -2153,7 +2153,7 @@
   "scripts/mirror-assets.ts": {"cast":3},
   "scripts/moduleGlobalState.test.ts": {"nonNull":1},
   "scripts/orphanRatchet.ts": {"cast":2},
-  "scripts/perf-budget.ts": {"cast":5},
+  "scripts/perf-budget.ts": {"cast":4},
   "scripts/perf-gate.ts": {"nonNull":2},
   "scripts/perf-network.ts": {"cast":4,"nonNull":2},
   "scripts/perf-play.test.ts": {"cast":6},
