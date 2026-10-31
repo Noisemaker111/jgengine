@@ -52,6 +52,34 @@ export interface Shard {
    * published dist. Only the shard that needs it pays for it.
    */
   needs?: readonly "build"[];
+  /**
+   * `bun test` processes the shard's files run in at once, split by measured cost. A runner has 4
+   * cores and one `bun test` uses one, so a shard of many files waits on a single core without it.
+   */
+  lanes?: number;
+}
+
+/**
+ * Seconds the slowest test files took on a CI runner (run 41087291823, 2026-10-30), so a shard's
+ * lanes split by time rather than count. Every other file counts as one second.
+ */
+export const SLOW_TEST_SECONDS: Readonly<Record<string, number>> = {
+  "packages/core/src/landform/glacial/glacialErosion.test.ts": 148,
+  "packages/core/src/physics/reference/bondedRock.test.ts": 137,
+  "packages/core/src/physics/reference/discreteElementExperiments.test.ts": 88,
+  "packages/core/src/landform/evolution/landscapeEvolution.browser.test.ts": 51,
+};
+
+/** Files split into at most `lanes` groups of near-equal cost, heaviest first. */
+export function splitLanes(files: readonly string[], lanes: number, cost: Readonly<Record<string, number>> = SLOW_TEST_SECONDS): string[][] {
+  const groups = Array.from({ length: Math.max(1, Math.min(lanes, files.length)) }, () => ({ files: [] as string[], total: 0 }));
+  const ordered = [...files].sort((a, b) => (cost[b] ?? 1) - (cost[a] ?? 1) || a.localeCompare(b));
+  for (const file of ordered) {
+    const lightest = groups.reduce((low, group) => (group.total < low.total ? group : low));
+    lightest.files.push(file);
+    lightest.total += cost[file] ?? 1;
+  }
+  return groups.map((group) => group.files.sort());
 }
 
 /** Eight shards by measured cost; the CI matrix runs one job per entry, in this order. */
@@ -93,11 +121,14 @@ export const SHARDS: readonly Shard[] = [
   },
   {
     name: "d",
-    label: "core world",
-    // 53 s: 87 files, the generator and city suites among them; the city generator alone is
-    // 28 s of it, so this is a single file's floor plus the world suite around it.
-    include: ["packages/core/src/world"],
+    label: "core world, landforms and the physics reference sims",
+    // The world suite (seconds since the city generator moved out) plus the long simulations:
+    // glacial erosion 148 s, bonded rock 137 s, the DEM experiments 88 s and landscape evolution
+    // 51 s on a runner. In shard h they made it a 13-minute job; here four lanes hold it near the
+    // longest file.
+    include: ["packages/core/src/world", "packages/core/src/landform", "packages/core/src/physics/reference"],
     needs: [],
+    lanes: 4,
   },
   {
     name: "e",
@@ -130,6 +161,8 @@ export const SHARDS: readonly Shard[] = [
     // deepest job has to stay under a minute for the gate to have any headroom.
     include: ["packages/core"],
     needs: [],
+    // 1,000 files took 13 minutes in one process (runs 41018954039 to 41121415429); four lanes.
+    lanes: 4,
   },
   {
     name: "i",
@@ -234,13 +267,21 @@ async function main(): Promise<void> {
     const prepared = spawnSync("bun", args, { cwd: root, stdio: "inherit" });
     if (prepared.status !== 0) process.exit(prepared.status ?? 1);
   }
-  let status = await runTests(assigned);
-  if (status.bunCrashed) {
-    // Bun itself aborted, so no test reached a verdict; the same files run once more.
-    console.log(`test-shard ${name}: Bun crashed (not a test failure); running the shard once more`);
-    status = await runTests(assigned);
-  }
-  process.exit(status.code);
+  const groups = splitLanes(assigned, shard.lanes ?? 1);
+  const codes = await Promise.all(
+    groups.map(async (group, index) => {
+      const lane = groups.length === 1 ? "" : ` lane ${index + 1}/${groups.length}`;
+      let status = await runTests(group, groups.length > 1);
+      if (status.bunCrashed) {
+        // Bun itself aborted, so no test reached a verdict; the same files run once more.
+        console.log(`test-shard ${name}${lane}: Bun crashed (not a test failure); running it once more`);
+        status = await runTests(group, groups.length > 1);
+      }
+      if (groups.length > 1) console.log(`test-shard ${name}${lane}: ${group.length} file(s), exit ${status.code}`);
+      return status.code;
+    }),
+  );
+  process.exit(codes.find((code) => code !== 0) ?? 0);
 }
 
 /** Bun's own crash banner: printed by the runtime, never by a test. */
@@ -254,18 +295,24 @@ export function bunCrashed(output: string, code: number): boolean {
   return code !== 0 && BUN_CRASH.test(output) && !/^\(fail\) /m.test(output);
 }
 
-/** `bun test` on the files, streamed to this job's log as it runs and kept for the crash check. */
-async function runTests(files: readonly string[]): Promise<{ code: number; bunCrashed: boolean }> {
+/**
+ * `bun test` on the files, kept for the crash check. Alone it streams to the job's log as it runs;
+ * beside other lanes its output prints whole when it ends, so two lanes never interleave.
+ */
+async function runTests(files: readonly string[], held = false): Promise<{ code: number; bunCrashed: boolean }> {
   const child = Bun.spawn(["bun", "test", "--timeout", "20000", ...files], { cwd: root, stdout: "pipe", stderr: "pipe" });
   let tail = "";
+  const heldOut: Uint8Array[] = [];
   const tee = async (stream: ReadableStream<Uint8Array>, sink: NodeJS.WriteStream): Promise<void> => {
     const decoder = new TextDecoder();
     for await (const chunk of stream) {
-      sink.write(chunk);
+      if (held) heldOut.push(chunk);
+      else sink.write(chunk);
       tail = (tail + decoder.decode(chunk, { stream: true })).slice(-200_000);
     }
   };
   const [, , code] = await Promise.all([tee(child.stdout, process.stdout), tee(child.stderr, process.stderr), child.exited]);
+  for (const chunk of heldOut) process.stdout.write(chunk);
   return { code, bunCrashed: bunCrashed(tail, code) };
 }
 

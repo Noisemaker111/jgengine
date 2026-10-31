@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { assignShards, bunCrashed, matchingShard, preparation, SHARDS, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
+import { assignShards, bunCrashed, matchingShard, preparation, SHARDS, SLOW_TEST_SECONDS, splitLanes, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
   { name: "hot", label: "the core combat tests", include: ["packages/core/src/combat"] },
@@ -92,4 +92,17 @@ test("ci runs one test job per shard this script defines", () => {
 
 test("every shard names what it runs, so a red `test (a)` is diagnosable", () => {
   for (const shard of SHARDS) expect(shard.label.length).toBeGreaterThan(0);
+});
+
+test("a shard's lanes split by measured cost, so the long simulations never share one", () => {
+  const files = [...Object.keys(SLOW_TEST_SECONDS), "a.test.ts", "b.test.ts"];
+  const lanes = splitLanes(files, 4);
+  expect(lanes).toHaveLength(4);
+  for (const lane of lanes) expect(lane.filter((file) => (SLOW_TEST_SECONDS[file] ?? 0) > 100).length).toBeLessThanOrEqual(1);
+  expect(lanes.flat().sort()).toEqual([...files].sort());
+  expect(splitLanes(["one.test.ts"], 4)).toEqual([["one.test.ts"]]);
+});
+
+test("the slow files are in the shard that runs them in lanes", () => {
+  for (const file of Object.keys(SLOW_TEST_SECONDS)) expect(matchingShard(file)?.lanes).toBeGreaterThan(1);
 });
