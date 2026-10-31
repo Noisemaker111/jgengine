@@ -3,8 +3,8 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { formatFlightComparison } from "../packages/core/src/flight/reference/flightComparison";
-import { compareBoat, referenceBoatSubjects, referenceSubjectFor } from "../packages/core/src/physics/reference/boatComparison";
+import { formatFlightComparison } from "./reference/flight/flightComparison";
+import { compareBoat, referenceBoatSubjects, referenceSubjectFor } from "./reference/physics/boatComparison";
 import type { BoatTuning } from "../packages/core/src/physics/boatDynamics";
 import { printHelpIfAsked } from "./script-help";
 

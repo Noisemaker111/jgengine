@@ -14,10 +14,10 @@ import {
   validateReferenceCars,
   validateReferenceMotorcycles,
   type ComparableHandlingMetrics,
-} from "@jgengine/core/physics/reference/compareHandling";
-import type { BikeHandlingMetrics } from "@jgengine/core/physics/reference/motorcycleManeuvers";
-import { REAL_MOTORCYCLES } from "@jgengine/core/physics/reference/realMotorcycles";
-import { REAL_CARS, type RealCar } from "@jgengine/core/physics/reference/realCars";
+} from "../../scripts/reference/physics/compareHandling";
+import type { BikeHandlingMetrics } from "../../scripts/reference/physics/motorcycleManeuvers";
+import { REAL_MOTORCYCLES } from "../../scripts/reference/physics/realMotorcycles";
+import { REAL_CARS, type RealCar } from "../../scripts/reference/physics/realCars";
 import type { VehicleDynamicsTuning } from "@jgengine/core/physics/vehicleDynamics";
 import { vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
 

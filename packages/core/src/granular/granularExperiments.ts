@@ -3,7 +3,7 @@
  * Laboratory experiments run on {@link createGranularLayer}, each the setup of a published
  * measurement: the axisymmetric column collapse of Lube, Huppert, Sparks & Hallworth (2004), the
  * steady inclined-plane flow of Pouliquen (1999), and a heap poured from a point. Tests compare their
- * numbers with the papers' and with the discrete element reference in `physics/reference`.
+ * numbers with the papers' and with the discrete element reference in `scripts/reference/physics`.
  *
  * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
  */

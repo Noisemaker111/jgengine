@@ -275,16 +275,6 @@
       "intent": "measure a vehicle's jumps and air control — apex height and time, double jump, air rotation rates"
     },
     {
-      "id": "aircraft-trim",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/aircraftTrim",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "air data for a steady flight condition, to settle propulsion or rotor states"
-    },
-    {
       "id": "alert-level",
       "packages": [
         "@jgengine/core"
@@ -960,16 +950,6 @@
       "intent": "persist personal-best times/scores with safe storage fallback"
     },
     {
-      "id": "bike-handling-compare",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/motorcycleManeuvers",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "measure any single-track sim on bike scenarios — launch, braking, lean, lane change, slalom"
-    },
-    {
       "id": "biped-compare",
       "packages": [
         "@jgengine/core"
@@ -1030,16 +1010,6 @@
       "intent": "cruising wingbeat frequency of a bird, bat or pterosaur from mass, span and wing area"
     },
     {
-      "id": "bo105-reference",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/bo105Helicopter",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "MBB Bo-105 reference helicopter validated against NASA TM-110356 rotor data"
-    },
-    {
       "id": "board-vehicle",
       "packages": [
         "@jgengine/core"
@@ -1048,16 +1018,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "board a rideable, freeze/hide its rider and apply caller camera policy"
-    },
-    {
-      "id": "boat-comparison",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/boatComparison",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "surge added mass of a hull from Lamb's prolate-spheroid coefficient"
     },
     {
       "id": "boat-dynamics",
@@ -1380,16 +1340,6 @@
       "intent": "apply capture effectiveness to grant and distribute bonus levels"
     },
     {
-      "id": "car-effect-metrics",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/carEffectProbe",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "measure a car sim one effect at a time — roll, load transfer, pitch, coast-down, launch, yaw gain, response lag, power-on and brake-in-turn"
-    },
-    {
       "id": "career-bank",
       "packages": [
         "@jgengine/core"
@@ -1478,16 +1428,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "immutable 2D board of cells with row clears, gravity collapse, and match runs"
-    },
-    {
-      "id": "cessna172-reference",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/cessna172Aircraft",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "Cessna 172N reference airframe — tabled lift and drag through the stall, propeller and piston engine, tricycle gear"
     },
     {
       "id": "change-of-direction-505",
@@ -1718,16 +1658,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header"
-    },
-    {
-      "id": "coefficient-table",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/coefficientTable",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "N-dimensional gridded data table with multilinear interpolation and per-axis extrapolation"
     },
     {
       "id": "collider-autofit",
@@ -3447,16 +3377,6 @@
       "intent": "settle bounded offline expedition ticks without losing supplies rewards or RNG continuity"
     },
     {
-      "id": "f16-reference",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/f16Aircraft",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "F-16 throttle gearing to engine power command"
-    },
-    {
       "id": "fair-chance",
       "packages": [
         "@jgengine/core"
@@ -3987,16 +3907,6 @@
       "intent": "score a game flier's speed against real flight mechanics for its mass and wings"
     },
     {
-      "id": "flight-comparison",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/flightComparison",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "compare a game aircraft's flight tests with a reference aircraft and published figures"
-    },
-    {
       "id": "flight-maximum-range-speed",
       "packages": [
         "@jgengine/core"
@@ -4027,16 +3937,6 @@
       "intent": "the airspeed where a flapping flier spends least power (Pennycuick)"
     },
     {
-      "id": "flight-modes",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/aircraftTrim",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "linearize a trimmed reference aircraft and read short period, phugoid, dutch roll, roll and spiral modes"
-    },
-    {
       "id": "flight-power-curve",
       "packages": [
         "@jgengine/core"
@@ -4055,16 +3955,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "check the flight reference against measured bird airspeeds and wingbeat frequencies"
-    },
-    {
-      "id": "flight-tests",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/flightTests",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "fly a reference aircraft model through the flight tests"
     },
     {
       "id": "floating-text",
@@ -4401,16 +4291,6 @@
       "intent": "Resolve sampled gamepad input into actions with deadzones and response curves."
     },
     {
-      "id": "gas-turbine",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/gasTurbine",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "real-gas air and combustion product properties"
-    },
-    {
       "id": "gear-score",
       "packages": [
         "@jgengine/core"
@@ -4511,16 +4391,6 @@
       "intent": "deliver rolled loot drops into inventory and currency"
     },
     {
-      "id": "granular-dem",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/discreteElements",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion"
-    },
-    {
       "id": "granular-flow",
       "packages": [
         "@jgengine/core"
@@ -4599,16 +4469,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "validate authored ribbon guides and their vertex allocation ceiling"
-    },
-    {
-      "id": "handling-compare",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/compareHandling",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "measure any vehicle sim on every comparison scenario (0-100, braking, skidpad, ISO tests)"
     },
     {
       "id": "handling-metrics",
@@ -5090,26 +4950,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "inline-style accessors for the HudTheme type scale, spacing, motion, elevation, and focus ring"
-    },
-    {
-      "id": "hull-form",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/hullForm",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "triangle mesh of a hull from a published table of offsets"
-    },
-    {
-      "id": "hull-hydrostatics",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/hullHydrostatics",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "still-water pressure field for hull integration"
     },
     {
       "id": "human-anthropometry",
@@ -6586,36 +6426,6 @@
       "intent": "a weapon magazine with capacity, timed reload, and reserve-pool interaction"
     },
     {
-      "id": "magic-formula-contact",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/magicFormulaTire",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "relaxation-length tire contact as a pure ODE right-hand side for a multibody integrator"
-    },
-    {
-      "id": "magic-formula-tire",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/magicFormulaTire",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "evaluate a published Pacejka Magic Formula 6.1 tire — combined slip, load, camber, pressure, turn slip, Fx Fy Mx My Mz"
-    },
-    {
-      "id": "magic-formula-tire-transient",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/magicFormulaTire",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "run a Magic Formula tire with relaxation-length dynamics, standstill-stable, serializable state"
-    },
-    {
       "id": "makehuman-character",
       "packages": [
         "@jgengine/assets"
@@ -6644,16 +6454,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "marker-kind key (glyph + color + label per kind) sharing the map's kindStyles"
-    },
-    {
-      "id": "marine-propeller",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/marinePropeller",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "Wageningen B-series open-water K_T, K_Q polynomials"
     },
     {
       "id": "match-rounds",
@@ -7284,36 +7084,6 @@
       "intent": "move a thing along a path over time and report its arrival"
     },
     {
-      "id": "motorcycle-modes",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/referenceMotorcycle",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "weave and wobble eigenvalues of a multibody motorcycle at any speed"
-    },
-    {
-      "id": "motorcycle-rider",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/motorcycleRider",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "steering-torque rider for the reference motorcycle — steady turns, lane changes, slaloms"
-    },
-    {
-      "id": "motorcycle-tire",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/motorcycleTire",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "motorcycle Magic Formula tyre with camber thrust, combined slip and aligning/twisting moment (Sharp, Evangelou & Limebeer 2004)"
-    },
-    {
       "id": "mount-game",
       "packages": [
         "@jgengine/shell"
@@ -7595,16 +7365,6 @@
       "intent": "declare what the player has at second 0 (cash, kit, unlocks, prebuilt pieces, systems that start on their own) as data the engine builds from and checks read"
     },
     {
-      "id": "nonlinear-solve",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/helicopterRotor",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "solve a small nonlinear system of equations"
-    },
-    {
       "id": "notice-feed",
       "packages": [
         "@jgengine/core"
@@ -7683,16 +7443,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "check progress of a threshold objective against a live metric"
-    },
-    {
-      "id": "ocean-waves",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/oceanWaves",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "Pierson–Moskowitz and JONSWAP wave spectra"
     },
     {
       "id": "offscreen-markers",
@@ -8369,16 +8119,6 @@
       "intent": "exact planar floating-base multibody dynamics for sagittal-plane biomechanics"
     },
     {
-      "id": "planing-hull",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/planingHull",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "Savitsky (1964) planing lift coefficient"
-    },
-    {
       "id": "plant-cache",
       "packages": [
         "@jgengine/core"
@@ -8599,16 +8339,6 @@
       "intent": "scale a transaction by a context threshold band"
     },
     {
-      "id": "polynomial-roots",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/eigenvalues",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "all complex roots of a real polynomial to double precision"
-    },
-    {
       "id": "popover",
       "packages": [
         "@jgengine/core"
@@ -8757,16 +8487,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "write a game's proof route in TypeScript with typed keys and probe checks; it runs headless or in the browser"
-    },
-    {
-      "id": "propeller-bemt",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/propeller",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "Clark Y propeller section lift and drag"
     },
     {
       "id": "proximity-prompt",
@@ -9099,46 +8819,6 @@
       "intent": "locate broken crafting item/station/unlock references, duplicate inputs and invalid authored quantities with repair guidance"
     },
     {
-      "id": "reference-aircraft",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/referenceAircraft",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "attitude quaternion from heading, pitch and bank"
-    },
-    {
-      "id": "reference-car",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/referenceCar",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "multibody reference car on Magic Formula tires and real suspension kinematics — the physics ruler for game vehicle handling"
-    },
-    {
-      "id": "reference-helicopter",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/helicopter",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "blade-element helicopter on the reference 6-DOF: flapping, dynamic inflow, governor, autorotation"
-    },
-    {
-      "id": "reference-motorcycle",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/referenceMotorcycle",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "multibody reference motorcycle — countersteer, weave and wobble from the physics, motorcycle Magic Formula tyres"
-    },
-    {
       "id": "reference-slope-ground",
       "packages": [
         "@jgengine/core"
@@ -9157,16 +8837,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a stair-flight sagittal ground profile for the reference human"
-    },
-    {
-      "id": "reference-validation",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/compareHandling",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "check the reference car model against a real car's published 0-100, braking and skidpad numbers"
     },
     {
       "id": "refill-slots",
@@ -9435,16 +9105,6 @@
       "intent": "force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls"
     },
     {
-      "id": "rigid-body-tree",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/rigidBodyTree",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "exact multibody dynamics of a tree of rigid bodies — mass matrix, bias forces, point Jacobians"
-    },
-    {
       "id": "ring-wall",
       "packages": [
         "@jgengine/core"
@@ -9475,26 +9135,6 @@
       "intent": "rock that breaks by impact into fragments sized by measured comminution laws"
     },
     {
-      "id": "rocket-6dof",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/rocket",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "geodetic latitude, longitude and height to Earth-fixed coordinates"
-    },
-    {
-      "id": "rocket-comparison",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/rocketComparison",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "the Saturn V S-IC flight built as a game rigid-body rocket"
-    },
-    {
       "id": "rocketbox-clip",
       "packages": [
         "@jgengine/assets"
@@ -9513,16 +9153,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "assign hidden or team roles to players by ratio"
-    },
-    {
-      "id": "rotor-bemt",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/helicopterRotor",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "size a rotor state vector"
     },
     {
       "id": "route-course",
@@ -9593,16 +9223,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a roguelike run built from stacking drafted modifier picks"
-    },
-    {
-      "id": "runge-kutta-4",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/rungeKutta",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "fixed-step fourth-order Runge–Kutta integrator for reference physics plants"
     },
     {
       "id": "runtime",
@@ -9827,26 +9447,6 @@
       "intent": "reachable horizontal controls with visible overflow navigation and keyboard focus reveal"
     },
     {
-      "id": "seakeeping-hull",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/seakeepingHull",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "time-domain seakeeping hull built from strip theory"
-    },
-    {
-      "id": "section-hydrodynamics",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/sectionHydrodynamics",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "2-D heave added mass and radiation damping of a ship section (Frank close-fit)"
-    },
-    {
       "id": "seed-sweep",
       "packages": [
         "@jgengine/core"
@@ -10048,26 +9648,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "shared/group currency pools tracking per-member contributions"
-    },
-    {
-      "id": "ship-manoeuvring",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/shipManoeuvring",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "KVLCC2 L7 model in the MMG standard method"
-    },
-    {
-      "id": "ship-resistance",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/shipResistance",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "ITTC-1957 friction line"
     },
     {
       "id": "shop-grid",
@@ -10654,26 +10234,6 @@
       "intent": "render persisted chat with focus controls and visible send failures"
     },
     {
-      "id": "standard-atmosphere",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/standardAtmosphere",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "geopotential altitude from geometric altitude"
-    },
-    {
-      "id": "standard-maneuvers",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/standardManeuvers",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "measure a vehicle with ISO 4138 steady-state circle, ISO 7401 step steer and ISO 3888-1 lane change"
-    },
-    {
       "id": "standing",
       "packages": [
         "@jgengine/core"
@@ -10948,16 +10508,6 @@
       "intent": "seed-driven procedural streets and race circuits from one slider-driven engine"
     },
     {
-      "id": "strip-theory",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/stripTheory",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "ship sections below the waterline from a table of offsets"
-    },
-    {
       "id": "studio-stage",
       "packages": [
         "@jgengine/core"
@@ -11068,16 +10618,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "linked survival meters — drain, delayed regen that costs other vitals, starvation links and knockout-style flags"
-    },
-    {
-      "id": "suspension-kinematics",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/suspensionKinematics",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "solve a double-wishbone or MacPherson corner from hardpoints — camber, toe, track and spring length through travel and steer"
     },
     {
       "id": "sync-authored-objects",
@@ -11430,16 +10970,6 @@
       "intent": "radial SVG charge/cooldown ring bound to a TimerSet's progress"
     },
     {
-      "id": "tir-file",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/magicFormulaTire",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "read a TNO/ADAMS .tir tyre property file into Magic Formula coefficients"
-    },
-    {
       "id": "tire-marks",
       "packages": [
         "@jgengine/core"
@@ -11448,46 +10978,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "skid marks laid by sliding wheels that fade over time from a fixed pool"
-    },
-    {
-      "id": "tire-relaxation-length",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/magicFormulaTire",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "tyre relaxation lengths and carcass stiffness from a Magic Formula set"
-    },
-    {
-      "id": "tire-rolling-radius",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/magicFormulaTire",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "effective rolling radius of a loaded, spinning tyre"
-    },
-    {
-      "id": "tire-spin-slip",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/magicFormulaTire",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "spin and turn slip of a yawing, cambered wheel for the Magic Formula turn-slip terms"
-    },
-    {
-      "id": "tire-vertical-force",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/magicFormulaTire",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "tyre vertical force from deflection with speed, force, pressure and bottoming terms"
     },
     {
       "id": "toon-ramp",
@@ -12572,76 +12062,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "pick one item from a set with an injected random source"
-    },
-    {
-      "id": "whipple-bicycle",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/whippleBicycle",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "nonlinear Whipple bicycle simulation — self-stability, countersteer and capsize from rigid-body physics"
-    },
-    {
-      "id": "whipple-eigenvalues",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/whippleBicycle",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "stability eigenvalues of the Whipple bicycle at any speed — weave, capsize, castering"
-    },
-    {
-      "id": "whipple-linear",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/whippleBicycle",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "linearised Whipple bicycle lean/steer equations (Meijaard 2007 benchmark coefficients)"
-    },
-    {
-      "id": "whipple-nonlinear-linearisation",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/whippleBicycle",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "linearise the full nonlinear bicycle multibody model to check it against the benchmark"
-    },
-    {
-      "id": "whipple-self-stability",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/physics/reference/whippleBicycle",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "weave and capsize speeds of a Whipple bicycle — its self-stable speed range"
-    },
-    {
-      "id": "wind-axis-rates",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/aircraftTrim",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "state rates in wind-axis variables for check cases and linearisation"
-    },
-    {
-      "id": "wind-axis-state",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/flight/reference/aircraftTrim",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "build a reference aircraft state from airspeed, alpha, beta and Euler angles"
     },
     {
       "id": "window",
