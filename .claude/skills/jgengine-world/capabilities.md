@@ -874,29 +874,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/world"`
 
-## granular-flow — sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
-
-- `BekkerSoil` (interface) · `import { BekkerSoil } from "@jgengine/core/granular/granularMaterial"`
-- `DAMP_SAND` (const) · `import { DAMP_SAND } from "@jgengine/core/granular/granularMaterial"`
-- `DRY_SAND` (const) · `import { DRY_SAND } from "@jgengine/core/granular/granularMaterial"`
-- `GLASS_BEADS` (const) · `import { GLASS_BEADS } from "@jgengine/core/granular/granularMaterial"`
-- `GRAVEL` (const) · `import { GRAVEL } from "@jgengine/core/granular/granularMaterial"`
-- `SANDY_LOAM` (const) · `import { SANDY_LOAM } from "@jgengine/core/granular/granularMaterial"`
-- `continuumCollapse` (function) · `import { continuumCollapse } from "@jgengine/core/granular/granularExperiments"`
-- `createGranularLayer` (function) · `import { createGranularLayer } from "@jgengine/core/granular/granularLayer"`
-- `createGranularTerrain` (function) · `import { createGranularTerrain } from "@jgengine/core/granular/granularTerrain"`
-- `culmannHeight` (function) · `import { culmannHeight } from "@jgengine/core/granular/granularMaterial"`
-- `flowFriction` (function) · `import { flowFriction } from "@jgengine/core/granular/granularMaterial"`
-- `inclinedFlume` (function) · `import { inclinedFlume } from "@jgengine/core/granular/granularExperiments"`
-- `landformLooseCover` (function) · `import { landformLooseCover } from "@jgengine/core/granular/granularTerrain"`
-- `plateSinkage` (function) · `import { plateSinkage } from "@jgengine/core/granular/granularMaterial"`
-- `plateSinkagePressure` (function) · `import { plateSinkagePressure } from "@jgengine/core/granular/granularMaterial"`
-- `pouredHeap` (function) · `import { pouredHeap } from "@jgengine/core/granular/granularExperiments"`
-- `startFriction` (function) · `import { startFriction } from "@jgengine/core/granular/granularMaterial"`
-- `stopFriction` (function) · `import { stopFriction } from "@jgengine/core/granular/granularMaterial"`
-- `stoppingDepth` (function) · `import { stoppingDepth } from "@jgengine/core/granular/granularMaterial"`
-- `wheelSinkage` (function) · `import { wheelSinkage } from "@jgengine/core/granular/granularMaterial"`
-
 ## grapple-swing — grappling-hook rope swing physics with reel-in
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
