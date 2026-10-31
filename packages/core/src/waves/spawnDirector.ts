@@ -3,6 +3,7 @@ import { pickWeighted } from "../random/pick";
 import { randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
 import { distanceBiasStrength, type DistanceBias } from "../world/spatialSample";
 import { selectSpawnPoint } from "./spawnPoint";
+import { clamp01 } from "../math/scalar";
 
 /** One kind a wave can spend budget on: its cost, pick weight and the first wave it may appear in. */
 export interface SpawnEntry {
@@ -73,10 +74,6 @@ export interface DirectorStep {
 
 const DEFAULT_MAX_SPAWNS_PER_TICK = 64;
 const DEFAULT_ALERT_DECAY = 0.1;
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
 
 /** The semantic distance preference a signed `spawnPointBias` names. */
 function distanceBiasOf(bias: number): DistanceBias {
