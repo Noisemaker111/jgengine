@@ -26,7 +26,7 @@ swapped or retuned.
 
 ### The parts
 
-Most game features are made of these eleven parts plus the engine's entities, containers and
+Most game features are made of these eleven parts (`@jgengine/core/parts` re-exports their model layer) plus the engine's entities, containers and
 world. Each has one home; a feature that needs one uses that home and never writes its own.
 
 | Part | What it is | Examples it covers | Home |
@@ -34,14 +34,14 @@ world. Each has one home; a feature that needs one uses that home and never writ
 | Meter | a number with a range that drains, fills or regenerates | health, hunger, ammo, combo, torpor, heat, stamina | `stats/statPool.ts` |
 | Ladder | ordered steps over a number, named by the game | rarity, tiers, ranks, levels, mood bands, wanted stars | `threshold/thresholds.ts` |
 | Phases | named states one after another, by time or by event | growth stages, boss phases, day parts, a match's rounds | `time/stateSchedule.ts` |
-| Schedule | something happens at a pace from a start time | waves, supply drops, weather, events, respawns | planned, `time/` |
-| Slots | named spots that each hold one thing, ready again a while after it is gone | supply crates, resource nodes, herd dens, boss spawns | `time/refillSlots.ts` |
+| Schedule | something happens at a pace from a start time | waves, supply drops, weather, events, respawns | `time/pacedSchedule.ts` |
+| Slots | named spots that each hold one thing, ready again a while after it is gone | supply drop crates, resource nodes, herd dens, boss spawns | `time/refillSlots.ts` |
 | Placement | where something appears | spawn points, scatter, drop zones, safe spots | `world/spatialSample.ts`, `game/spawnPoints.ts` |
-| Table | a weighted choice the game fills | loot per rarity, which enemy, which mutation | `random/pick.ts` |
+| Table | a weighted choice the game fills | supply drop loot per rarity, which enemy, which mutation | `random/pick.ts` |
 | Requirement | a condition over facts the game names | level gates, keys, quest prerequisites, unlocks | `rules/predicate.ts` |
 | Modifiers | stacked add, multiply, override and clamp on a value | buffs, gear stats, difficulty, upgrades, imprinting | `progression/statGraph.ts` |
-| Inheritance | a child's values from its parents with variation | breeding, crossing plants, procedural offspring | `breeding/inheritance.ts`, moving to its own folder |
-| Motion track | a thing follows a path over time and arrives | a drop falling, a thrown item, a door, a cutscene move | planned, `movement/` |
+| Inheritance | a child's values from its parents with variation | breeding, crossing plants, procedural offspring | `inheritance/inheritance.ts` |
+| Motion track | a thing follows a path over time and arrives | a supply drop falling, a thrown item, a door, a cutscene move | `movement/motionTrack.ts` |
 
 A supply drop is a Schedule (when), Placement (where), Ladder (rarity), Requirement (who may
 open which rarity), Table (loot per rarity) and Motion track (the fall and landing), with each
@@ -138,6 +138,7 @@ bun run build        # tsgo + import-extension rewrite, per package; only for pa
 bun run gen           # regenerate every committed derived artifact, in dependency order
 bun run verify:fast   # seconds: the branch diff vs origin/beta mapped to the packages, tests and quick gates it reaches
 bun run lane:close    # verify:fast, land, one ci:status read, print the lane report
+bun run idea-clock <game>  # minutes from a game's first commit to its from-zero flow, and the flow result
 bun --filter="@games/*" run check-types  # type-check every game in games/ against this checkout's engine source
 bun test games         # every game's tests and the games' own scripts
 bun run games:provision    # link the asset packs the games reference from the shared store (games:provision <id> for one game)
