@@ -9,6 +9,8 @@ import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 
+import { httpFailure } from "./download";
+import { pullMirroredModel } from "./modelMirror";
 import { decodeTgaForGltf, encodeJpeg, encodePng, fitRgba, gitBlobSha, type RgbaImage } from "./imageCodec";
 import { libraryModelDir, type ModelLibraryEntry, type RocketboxClip, type RocketboxModelOrigin } from "./catalogs/modelLibrary";
 import { ROCKETBOX_CLIP_FOLDERS } from "./library/libraryRocketbox";
@@ -125,7 +127,7 @@ class RocketboxSource {
     const host = new URL(url).hostname;
     if (!ROCKETBOX_HOSTS.has(host)) throw new Error(`refusing a Rocketbox file served from ${host}`);
     const response = await this.fetchImpl(url, init);
-    if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+    if (!response.ok) throw await httpFailure(url, response);
     return response;
   }
 
@@ -326,6 +328,8 @@ export async function loadRocketboxClip(clip: RocketboxClip, options: { fetchImp
 export async function pullRocketboxModel(entry: ModelLibraryEntry, options: PullRocketboxOptions): Promise<PulledRocketboxModel> {
   if (entry.origin.provider !== "rocketbox") throw new Error(`${entry.name} is not a Rocketbox model`);
   const origin: RocketboxModelOrigin = entry.origin;
+  const mirrored = await pullMirroredModel<PulledRocketboxModel>(entry.name, options.modelsRoot, options.fetchImpl ?? fetch);
+  if (mirrored !== null) return { ...mirrored.recorded, file: join(mirrored.dir, "model.glb") };
   const source = new RocketboxSource(options.fetchImpl ?? fetch, options.githubToken);
   const maxTexture = options.maxTexture ?? 512;
   const loader = fbxLoader();

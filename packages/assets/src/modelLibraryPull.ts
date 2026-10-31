@@ -8,6 +8,8 @@ import { compactPrimitive, dedup, getBounds, meshopt, prune, reorder, simplify, 
 import jpeg from "jpeg-js";
 import { MeshoptEncoder, MeshoptSimplifier } from "meshoptimizer";
 
+import { httpFailure } from "./download";
+import { pullMirroredModel } from "./modelMirror";
 import { libraryModelDir, type KhronosModelOrigin, type ModelLibraryEntry } from "./catalogs/modelLibrary";
 import { decodePng, encodeJpeg, encodePng, fitRgba, gitBlobSha, hasAlpha, type RgbaImage } from "./imageCodec";
 
@@ -403,16 +405,18 @@ interface GitHubListing {
 /** Fetch a Khronos sample's GLB at the pinned commit, scrub it, and write its near and far levels. */
 async function pullKhronosModel(entry: ModelLibraryEntry, origin: KhronosModelOrigin, options: PullLibraryModelOptions): Promise<PulledLibraryModel> {
   const fetchImpl = options.fetchImpl ?? fetch;
+  const mirrored = await pullMirroredModel<PulledLibraryModel>(entry.name, options.modelsRoot, fetchImpl);
+  if (mirrored !== null) return { ...mirrored.recorded, dir: mirrored.dir };
   const listingUrl = `https://api.github.com/repos/KhronosGroup/glTF-Sample-Assets/contents/Models/${origin.model}/glTF-Binary?ref=${KHRONOS_COMMIT}`;
   const headers: Record<string, string> = { accept: "application/vnd.github+json" };
   if (options.githubToken !== undefined) headers["authorization"] = `Bearer ${options.githubToken}`;
   const listing = await fetchImpl(listingUrl, { headers });
-  if (!listing.ok) throw new Error(`${listingUrl}: HTTP ${listing.status}`);
+  if (!listing.ok) throw await httpFailure(listingUrl, listing);
   const file = ((await listing.json()) as GitHubListing[]).find((candidate) => candidate.name === `${origin.model}.glb`);
   if (file?.download_url === undefined || file.download_url === null) throw new Error(`Khronos lists no ${origin.model}.glb`);
   if (new URL(file.download_url).hostname !== "raw.githubusercontent.com") throw new Error(`refusing a Khronos file served from ${file.download_url}`);
   const response = await fetchImpl(file.download_url);
-  if (!response.ok) throw new Error(`${file.download_url}: HTTP ${response.status}`);
+  if (!response.ok) throw await httpFailure(file.download_url, response);
   const bytes = new Uint8Array(await response.arrayBuffer());
   if (gitBlobSha(bytes) !== file.sha) throw new Error(`${origin.model}.glb does not match the repository's blob ${file.sha}`);
 
