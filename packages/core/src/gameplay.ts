@@ -8,7 +8,6 @@ export {
   type AchievementView,
 } from "./achievements/achievements";
 export { Behaviour, BehaviourModule, createBehaviourWorld, type BehaviourWorld } from "./behaviour/behaviour";
-export { type LaneRule } from "./board/laneBoard";
 export {
   createCardPile,
   createCardPileState,
