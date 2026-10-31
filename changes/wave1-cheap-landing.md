@@ -20,6 +20,7 @@ Engine seam: none - game content only
 - preflight runs only the generators a diff reaches, and skips one whose inputs have not changed since it last ran; a lane never fails on a stale generated file, and a stale api baseline entry is pruned at land time
 - CI's full-history checkouts fetch no file contents up front, and the games job type-checks the reached games four at a time
 - a test that reads the wall clock runs alone after its shard's lanes, so a timing budget never measures the tests beside it
+- the nav crowd tests run on a fixed clock, so a busy machine cannot starve the replan cap and fail them
 
 ### Removed
 

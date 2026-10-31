@@ -87,7 +87,7 @@ describe("authored scene to moving agents", () => {
     expect(path.points.at(-1)![0]).toBeGreaterThan(12);
     expect(Math.abs(path.points.at(-1)![1]! - 3)).toBeLessThan(0.2);
 
-    const crowd = createNavCrowd({ nav: runtime, speed: 3, radius: 0.4, goalRadius: 0.6, spread: 1.5 });
+    const crowd = createNavCrowd({ nav: runtime, speed: 3, radius: 0.4, goalRadius: 0.6, spread: 1.5, clock: () => 0 });
     for (let i = 0; i < 6; i += 1) {
       crowd.add(`climber${i}`, { position: [1.5 + i * 0.9, 0, 2], goal: [13.5, 3, 5] });
     }
@@ -120,7 +120,7 @@ describe("authored scene to moving agents", () => {
 
   test("agents re-plan after a wall is added, and only within the per-tick budget", () => {
     const runtime = createNavRuntime({ mesh: bake([FLOOR, DECK]) });
-    const crowd = createNavCrowd({ nav: runtime, speed: 2.5, replanBudget: 1 });
+    const crowd = createNavCrowd({ nav: runtime, speed: 2.5, replanBudget: 1, clock: () => 0 });
     crowd.add("south", { position: [2, 0, 1], goal: [8, 0, 1] });
     crowd.add("north", { position: [2, 0, 8], goal: [8, 0, 8] });
     crowd.tick(1 / 30);
