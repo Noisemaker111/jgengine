@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const QUERCUS_NIGRA: PlantSpecies = {
   id: "quercus-nigra",
-  version: 17,
+  version: 18,
   names: { scientific: "Quercus nigra L.", common: { en: "water oak", fr: "chêne aquatique" } },
   ids: { usda: "QUNI" },
   habit: "tree",
