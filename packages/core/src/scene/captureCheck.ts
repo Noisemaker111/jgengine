@@ -1,12 +1,9 @@
 import { resolveRng } from "../random/resolveRng";
+import { clamp01 } from "../math/scalar";
 export interface CaptureCheckInput {
   hpFraction: number;
   catchPower: number;
   difficulty?: number;
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }
 
 export function captureChance(input: CaptureCheckInput): number {
