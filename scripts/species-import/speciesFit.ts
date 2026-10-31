@@ -11,6 +11,8 @@ export interface FitParameter {
   hi: number;
   integer?: boolean;
   log?: boolean;
+  /** Value a record without this optional field has. */
+  absent?: number;
 }
 
 /**
@@ -34,6 +36,7 @@ export const FIT_PARAMETERS: readonly FitParameter[] = [
   { path: "growth.tropism.optimal", lo: 0, hi: 0.4 },
   { path: "growth.budLightThreshold", lo: 0.02, hi: 0.2, log: true },
   { path: "growth.spurYears", lo: 2, hi: 30, integer: true },
+  { path: "growth.leafNodesPerMetamer", lo: 1, hi: 4, log: true, absent: 1 },
   { path: "carbon.lueGPerMJ", lo: 1, hi: 5, log: true },
   { path: "carbon.lightHalfSaturation", lo: 0.2, hi: 1.5, log: true },
   { path: "carbon.respiration", lo: 0.6, hi: 3, log: true },
@@ -111,7 +114,10 @@ export async function fitSpecies(
 ): Promise<FitProgress> {
   const parameters = options.parameters ?? FIT_PARAMETERS;
   const at = (point: readonly number[]): PlantSpecies => speciesAt(start, point, parameters);
-  const origin = parameters.map((p) => toUnit(p, readPath(start, p.path)));
+  const origin = parameters.map((p) => {
+    const value = readPath(start, p.path);
+    return toUnit(p, Number.isNaN(value) && p.absent !== undefined ? p.absent : value);
+  });
   const first = await evaluate(at(origin));
   const firstScore = first === null ? { total: 1e9, parts: {} } : scoreTrial(first);
   let best: FitProgress = { generation: 0, score: firstScore.total, parts: firstScore.parts, species: at(origin) };

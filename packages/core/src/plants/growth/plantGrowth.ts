@@ -196,7 +196,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   // Each seed grows its own individual: architecture drawn around the species record.
   const g = individual === "typical" ? species.growth : individualGrowth(species.growth, randomSeedFrom(Math.imul(seedHash ^ 0x51ed, 0x2c1b3c6d)));
   const c = species.carbon;
-  const fullLeafArea = species.leaf.leavesPerNode * 0.55 * (species.leaf.sizeCm / 100) * (species.leaf.sizeCm / 100);
+  const fullLeafArea = species.leaf.leavesPerNode * (g.leafNodesPerMetamer ?? 1) * 0.55 *(species.leaf.sizeCm / 100) * (species.leaf.sizeCm / 100);
   // A palm's or fern's fronds lengthen through its establishment phase; every other leaf is full size.
   const leafAreaIn = (year: number): number => fullLeafArea * frondLengthShare(g, year) ** 2;
   let leafAreaPerNode = leafAreaIn(0);

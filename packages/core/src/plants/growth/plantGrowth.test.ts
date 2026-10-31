@@ -111,6 +111,17 @@ describe("plant growth", () => {
     }
   }, 120_000);
 
+  test("a metamer standing for two leaf nodes carries twice the leaves", () => {
+    const leavesAfterFirstYear = (leafNodesPerMetamer: number): number => {
+      const plant = createPlantGrowth({ ...ACER_SACCHARUM, growth: { ...ACER_SACCHARUM.growth, leafNodesPerMetamer } }, OPEN_TEMPERATE_SITE, SEED);
+      plant.step(1);
+      return plant.structure().leaves.count.reduce((sum, n) => sum + n, 0);
+    };
+    const ratio = leavesAfterFirstYear(2) / leavesAfterFirstYear(1);
+    expect(ratio).toBeGreaterThan(1.6);
+    expect(ratio).toBeLessThan(2.4);
+  });
+
   test("the default caps are never exceeded", () => {
     const run = growLong();
     expect(run.maxNodes).toBeLessThanOrEqual(DEFAULT_GROWTH_LIMITS.maxNodes);

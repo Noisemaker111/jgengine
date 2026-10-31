@@ -17,6 +17,8 @@ export const PLANT_ORGAN = { flower: 0, fruit: 1 } as const;
 
 /** Cluster levels per leaf: own shoot axis, its order-2 limb, its order-1 limb. */
 export const PLANT_CLUSTER_LEVELS = 3;
+/** Share of a shoot, from its tip back, its leaves hang along; the rest is bare. */
+export const PLANT_SHOOT_LEAF_SPAN = 0.7;
 /** Height bins and azimuth sectors of {@link PlantStructure.crownHull}. */
 export const CROWN_HULL_BINS = 16;
 /** Compass sectors per height bin of the crown envelope. */

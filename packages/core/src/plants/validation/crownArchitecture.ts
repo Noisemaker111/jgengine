@@ -1,6 +1,6 @@
 import type { PlantSpecies } from "../species/plantSpecies";
 import type { CrownForm } from "../species/plantSpecies";
-import { CROWN_HULL_BINS, CROWN_HULL_SECTORS, type PlantStructure } from "../structure/plantStructure";
+import { CROWN_HULL_BINS, CROWN_HULL_SECTORS, PLANT_SHOOT_LEAF_SPAN, type PlantStructure } from "../structure/plantStructure";
 import { crownProfile } from "./crownAllometry";
 
 /** Leaf area of one leaf of size `sizeM`, as the growth model counts it. */
@@ -147,7 +147,7 @@ function gapFraction(structure: PlantStructure, views: number, cells: number, st
   const cell = span / cells;
   const half = Math.max(structure.stats.crownRadiusM, cell) * 1.05;
   const cols = Math.max(1, Math.ceil((2 * half) / cell));
-  const { position, size, count } = structure.leaves;
+  const { position, size, count, segment } = structure.leaves;
   let gapSum = 0;
   let crownCells = 0;
   for (let view = 0; view < views; view += 1) {
@@ -158,17 +158,9 @@ function gapFraction(structure: PlantStructure, views: number, cells: number, st
     const wood = new Uint8Array(cols * cells);
     const colOf = (x: number, z: number): number => Math.floor((x * ax + z * az + half) / cell);
     const rowOf = (y: number): number => Math.floor((y - bottom) / cell);
-    for (let row = 0; row < size.length; row += 1) {
-      const x = position[row * 3] ?? 0;
-      const y = position[row * 3 + 1] ?? 0;
-      const z = position[row * 3 + 2] ?? 0;
-      const s = size[row] ?? 0;
-      const area = (count[row] ?? 1) * LEAF_AREA_PER_SIZE_SQ * s * s;
-      // A node's leaves reach out from it by up to a leaf's length: spread their area over the cells
-      // whose centres lie within that reach, side-on, or over the node's own cell when it is smaller.
-      const u = (x * ax + z * az + half) / cell;
-      const v = (y - bottom) / cell;
-      const reach = s / cell;
+    // A leaf reaches out from where it sits by up to its length: its area goes over the cells whose
+    // centres lie within that reach, side-on, or into its own cell when the reach is smaller.
+    const deposit = (u: number, v: number, reach: number, area: number): void => {
       const c0 = Math.max(0, Math.floor(u - reach));
       const c1 = Math.min(cols - 1, Math.floor(u + reach));
       const r0 = Math.max(0, Math.floor(v - reach));
@@ -181,11 +173,34 @@ function gapFraction(structure: PlantStructure, views: number, cells: number, st
         const c = Math.floor(u);
         const r = Math.floor(v);
         if (c >= 0 && c < cols && r >= 0 && r < cells) leafArea[r * cols + c] = (leafArea[r * cols + c] ?? 0) + area;
-        continue;
+        return;
       }
       const share = area / covered;
       for (let r = r0; r <= r1; r += 1) {
         for (let c = c0; c <= c1; c += 1) if ((c + 0.5 - u) ** 2 + (r + 0.5 - v) ** 2 <= reach * reach) leafArea[r * cols + c] = (leafArea[r * cols + c] ?? 0) + share;
+      }
+    };
+    for (let row = 0; row < size.length; row += 1) {
+      const x = position[row * 3] ?? 0;
+      const y = position[row * 3 + 1] ?? 0;
+      const z = position[row * 3 + 2] ?? 0;
+      const s = size[row] ?? 0;
+      const leaves = count[row] ?? 1;
+      const area = leaves * LEAF_AREA_PER_SIZE_SQ * s * s;
+      const node = segment[row] ?? -1;
+      const sx = node >= 0 ? (start[node * 3] ?? x) : x;
+      const sy = node >= 0 ? (start[node * 3 + 1] ?? y) : y;
+      const sz = node >= 0 ? (start[node * 3 + 2] ?? z) : z;
+      // The leaves sit along the outer 70% of the shoot that bears them, as the mesh draws them; one
+      // spot per leaf length along it.
+      const bearing = PLANT_SHOOT_LEAF_SPAN * Math.hypot(x - sx, y - sy, z - sz);
+      const spots = Math.max(1, Math.min(leaves, Math.ceil(bearing / Math.max(s, 1e-6))));
+      for (let k = 0; k < spots; k += 1) {
+        const t = 1 - PLANT_SHOOT_LEAF_SPAN + (PLANT_SHOOT_LEAF_SPAN * (k + 0.5)) / spots;
+        const px = sx + (x - sx) * t;
+        const py = sy + (y - sy) * t;
+        const pz = sz + (z - sz) * t;
+        deposit((px * ax + pz * az + half) / cell, (py - bottom) / cell, s / cell, area / spots);
       }
     }
     for (let i = 0; i < radiusStart.length; i += 1) {

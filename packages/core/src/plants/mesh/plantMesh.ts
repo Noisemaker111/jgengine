@@ -4,7 +4,7 @@ import { hashString } from "../../random/rng";
 import { hexRgb, icosphere, type NatureMesh, type NatureRgb } from "../../nature/natureMesh";
 import type { LeafShapeParams } from "../species/plantSpecies";
 import { frondPose, frondSpine, isFrondShape, type FrondPose } from "../structure/frondPose";
-import { hashPlantStructure, PLANT_CLUSTER_LEVELS, PLANT_ORGAN, PLANT_REGION, type PlantStructure } from "../structure/plantStructure";
+import { hashPlantStructure, PLANT_CLUSTER_LEVELS, PLANT_ORGAN, PLANT_REGION, PLANT_SHOOT_LEAF_SPAN, type PlantStructure } from "../structure/plantStructure";
 import { PLANT_LEAF_ATLAS_CELL_COUNT, PLANT_LEAF_ATLAS_CELLS } from "./plantLeafAtlas";
 
 /** Detail of each mesh level, highest first: leaves, shoot cards, then leaf clusters at two sizes. */
@@ -623,7 +623,7 @@ function addLeafCards(build: FoliageBuild, perRowOverride: number | null, cardSc
       const nx = face[0] ?? 0;
       const ny = face[1] ?? 1;
       const nz = face[2] ?? 0;
-      const t = perRow === 1 ? 0.35 : 0.3 + (0.7 * (k + 0.5)) / perRow;
+      const t = perRow === 1 ? 0.35 : 1 - PLANT_SHOOT_LEAF_SPAN + (PLANT_SHOOT_LEAF_SPAN * (k + 0.5)) / perRow;
       // The atlas leaf spans about 0.1..0.9 of its cell, so the quad is a little longer than the leaf.
       const quad = length / 0.8;
       const half = quad * 0.5;

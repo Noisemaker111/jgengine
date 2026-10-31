@@ -149,6 +149,11 @@ export interface PlantSpecies {
     dormantBudYears: number;
     /** Years a node keeps bearing leaves on short shoots. */
     spurYears: number;
+    /**
+     * Botanical leaf nodes one grown metamer stands for: a metamer `internodeMax` long carries the
+     * leaves of the real nodes along that length. Absent, 1. Fitted to crown density, not measured.
+     */
+    leafNodesPerMetamer?: number;
     /** Light-field coupling: a·b^-q per voxel layer q, propagated at most `depth` layers. */
     shadow: { a: number; b: number; depth: number };
     /** Light extinction coefficient k of Beer–Lambert, per unit leaf area index. */
