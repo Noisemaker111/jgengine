@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { assignShards, bunCrashed, matchingShard, preparation, SHARDS, planLanes, SLOW_TEST_SECONDS, splitLanes, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
+import { assignShards, bunCrashed, failureDetails, matchingShard, preparation, SHARDS, planLanes, SLOW_TEST_SECONDS, splitLanes, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
   { name: "hot", label: "the core combat tests", include: ["packages/core/src/combat"] },
@@ -113,4 +113,9 @@ test("a file that reads the wall clock runs alone after the lanes, never beside 
   expect(plan.alone).toEqual(["timed.test.ts"]);
   expect(plan.lanes.flat().sort()).toEqual(["a.test.ts", "b.test.ts"]);
   expect(planLanes(Object.keys(sources), 1, (file) => sources[file] ?? "")).toEqual({ lanes: [Object.keys(sources)], alone: [] });
+});
+
+test("a failure's error lines are repeated at the end, once per test", () => {
+  const output = ["(pass) a", "error: expect(received).toBe(expected)", "at x.test.ts:3", "(fail) suite > b [5.00ms]", "", "1 tests failed:", "(fail) suite > b [5.00ms]"].join("\n");
+  expect(failureDetails(output, 2)).toEqual(["error: expect(received).toBe(expected)", "at x.test.ts:3", "(fail) suite > b [5.00ms]", ""]);
 });

@@ -285,20 +285,47 @@ async function main(): Promise<void> {
     if (prepared.status !== 0) process.exit(prepared.status ?? 1);
   }
   const plan = planLanes(assigned, shard.lanes ?? 1, (file) => readFileSync(join(root, file), "utf8"));
-  const runGroup = async (group: readonly string[], label: string, held: boolean): Promise<number> => {
+  const runGroup = async (group: readonly string[], label: string, held: boolean): Promise<{ code: number; output: string; line: string }> => {
     let status = await runTests(group, held);
     if (status.bunCrashed) {
       // Bun itself aborted, so no test reached a verdict; the same files run once more.
       console.log(`test-shard ${name}${label}: Bun crashed (not a test failure); running it once more`);
       status = await runTests(group, held);
     }
-    if (label.length > 0) console.log(`test-shard ${name}${label}: ${group.length} file(s), exit ${status.code}`);
-    return status.code;
+    return { code: status.code, output: status.output, line: label.length > 0 ? `test-shard ${name}${label}: ${group.length} file(s), exit ${status.code}` : "" };
   };
   const many = plan.lanes.length > 1;
-  const codes = await Promise.all(plan.lanes.map((group, index) => runGroup(group, many ? ` lane ${index + 1}/${plan.lanes.length}` : "", many)));
-  if (plan.alone.length > 0) codes.push(await runGroup(plan.alone, " alone (timing budgets)", false));
+  const lanes = await Promise.all(plan.lanes.map((group, index) => runGroup(group, many ? ` lane ${index + 1}/${plan.lanes.length}` : "", many)));
+  // Passing lanes first and failing ones last, so a failure sits at the end of the job's log.
+  for (const lane of [...lanes.filter((entry) => entry.code === 0), ...lanes.filter((entry) => entry.code !== 0)]) {
+    if (many) process.stdout.write(lane.output);
+    if (lane.line.length > 0) console.log(lane.line);
+  }
+  const results = [...lanes];
+  if (plan.alone.length > 0) {
+    const alone = await runGroup(plan.alone, " alone (timing budgets)", false);
+    console.log(alone.line);
+    results.push(alone);
+  }
+  const details = results.filter((entry) => entry.code !== 0).flatMap((entry) => failureDetails(entry.output));
+  if (details.length > 0) console.log(`\ntest-shard ${name}: what failed\n${details.join("\n")}`);
+  const codes = results.map((entry) => entry.code);
   process.exit(codes.find((code) => code !== 0) ?? 0);
+}
+
+/** Each `(fail)` line with the error output before it, once per test, so a failure reads at the end of a long log. */
+export function failureDetails(output: string, before = 25): string[] {
+  const lines = output.split("\n");
+  const seen = new Set<string>();
+  const blocks: string[] = [];
+  lines.forEach((line, index) => {
+    if (!line.startsWith("(fail) ")) return;
+    const name = line.replace(/ \[[\d.]+ms\]$/, "");
+    if (seen.has(name)) return;
+    seen.add(name);
+    blocks.push(...lines.slice(Math.max(0, index - before), index + 1), "");
+  });
+  return blocks;
 }
 
 /** Bun's own crash banner: printed by the runtime, never by a test. */
@@ -313,24 +340,25 @@ export function bunCrashed(output: string, code: number): boolean {
 }
 
 /**
- * `bun test` on the files, kept for the crash check. Alone it streams to the job's log as it runs;
- * beside other lanes its output prints whole when it ends, so two lanes never interleave.
+ * `bun test` on the files, its output kept for the crash check and the failure digest. Alone it
+ * streams to the job's log as it runs; beside other lanes the caller prints it whole, so two lanes
+ * never interleave.
  */
-async function runTests(files: readonly string[], held = false): Promise<{ code: number; bunCrashed: boolean }> {
+async function runTests(files: readonly string[], held = false): Promise<{ code: number; bunCrashed: boolean; output: string }> {
   const child = Bun.spawn(["bun", "test", "--timeout", "20000", ...files], { cwd: root, stdout: "pipe", stderr: "pipe" });
   let tail = "";
-  const heldOut: Uint8Array[] = [];
+  let output = "";
   const tee = async (stream: ReadableStream<Uint8Array>, sink: NodeJS.WriteStream): Promise<void> => {
     const decoder = new TextDecoder();
     for await (const chunk of stream) {
-      if (held) heldOut.push(chunk);
-      else sink.write(chunk);
-      tail = (tail + decoder.decode(chunk, { stream: true })).slice(-200_000);
+      if (!held) sink.write(chunk);
+      const text = decoder.decode(chunk, { stream: true });
+      output += text;
+      tail = (tail + text).slice(-200_000);
     }
   };
   const [, , code] = await Promise.all([tee(child.stdout, process.stdout), tee(child.stderr, process.stderr), child.exited]);
-  for (const chunk of heldOut) process.stdout.write(chunk);
-  return { code, bunCrashed: bunCrashed(tail, code) };
+  return { code, bunCrashed: bunCrashed(tail, code), output };
 }
 
 if (import.meta.main) await main();
