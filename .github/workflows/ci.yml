@@ -45,6 +45,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Every commit, no file contents until one is read: a full clone took 36-59 s of the
+          # jobs every shard waits on, and the diff these jobs take needs only history.
+          filter: blob:none
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
@@ -68,6 +71,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Every commit, no file contents until one is read: a full clone took 36-59 s of the
+          # jobs every shard waits on, and the diff these jobs take needs only history.
+          filter: blob:none
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
@@ -192,6 +198,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Every commit, no file contents until one is read: a full clone took 36-59 s of the
+          # jobs every shard waits on, and the diff these jobs take needs only history.
+          filter: blob:none
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
@@ -208,13 +217,9 @@ jobs:
       - run: bun run check games-design
       - run: bun run check games-ledger
       - run: bun run check games-capabilities --summary
+      # A few at a time on the runner's cores: one after another took 52 s for three games.
       - name: type-check the reached games
-        run: |
-          failed=""
-          for game in $GAMES; do
-            bun --cwd="games/$game" run check-types || failed="$failed $game"
-          done
-          test -z "$failed" || { echo "type errors in:$failed"; exit 1; }
+        run: bun scripts/check-types-all.ts $(for game in $GAMES; do printf 'games/%s ' "$game"; done)
       - name: test the games' scripts and the reached games
         run: bun test games/scripts games/shared $(for game in $GAMES; do printf 'games/%s ' "$game"; done)
 
