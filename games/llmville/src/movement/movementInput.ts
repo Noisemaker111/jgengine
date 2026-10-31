@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type MouseEvent as ReactMouseEvent } 
 import { createLookChannel } from "@jgengine/core/input/lookChannel";
 import { MAX_JUMP_OFFSET, type MovementKey } from "@jgengine/core/movement/movementModel";
 import { engineActions, type GameEngine } from "@/runtime/gameEngine";
-import { KEYBIND_ACTION, matchesKeybind, type AppKeybinds, type KeybindActionId } from "@/settings/settings";
+import { KEYBIND_ACTION, matchesKeybind, type AppKeybinds, type KeybindActionId } from "@/settings/keybinds";
 
 /**
  * Movement input side: pointer-lock plumbing, keyboard/mouse capture, and the

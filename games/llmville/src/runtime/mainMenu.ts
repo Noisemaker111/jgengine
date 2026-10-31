@@ -8,7 +8,7 @@ import { loadGameSessionModule, preloadGameRoute } from "@/runtime/gameRoutePrel
 import { deriveMainMenuPhase, MAIN_MENU_KIND, type MainMenuPhase } from "@/runtime/mainMenuPhase";
 import { preloadGameCreateRoute } from "@/runtime/gameCreate";
 import { destinationAfterAuth } from "@/runtime/playEntry";
-import { clearAllLocalGamePersistence } from "@/storage/storage";
+import { clearAllLocalGamePersistence } from "@/user/localGameState";
 import { showActionErrorFromException } from "@/runtime/actionFeedback";
 import { loadAuthScreenModule } from "@/user/authScreenPreload";
 import { useUserWorld } from "@/world/world";

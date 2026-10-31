@@ -12,7 +12,7 @@ import { BASE_POWER_CAPACITY_KW } from "@llmville/game/infrastructure/infrastruc
 import { useAuth } from "@/auth";
 import { resolveAuthUsername } from "@/auth/authCredentials";
 import { formatChunkLoadError } from "@/runtime/chunkLoadError";
-import { clearAllLocalGamePersistence } from "@/storage/storage";
+import { clearAllLocalGamePersistence } from "@/user/localGameState";
 
 export type AvatarId = CanonicalAvatarId;
 

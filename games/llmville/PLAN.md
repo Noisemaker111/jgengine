@@ -84,7 +84,7 @@ To be written once milestone 2 puts the game on the shell game player. That is t
 
 Each milestone keeps the game playing, deletes the private code it replaces in the same commit, and ticks itself here. They are ordered by risk, lowest first.
 
-- [ ] 1. **Settings and local state on engine parts.**
+- [x] 1. **Settings and local state on engine parts.**
   - Settings now use the engine settings store: `graphics.quality` and `accessibility.reducedMotion`. Keybinds use engine binding overrides keyed `llmville`. Local camera look and tablet menu state live in one engine key-value store document, with storage injected.
   - A legacy `llmville:app-settings` blob and the per-key `ai-game:*` layout each move over once on first boot. Regression tests cover both.
   - Deleted: `src/storage/storage.ts` (192) and the localStorage code in `src/settings/settings.ts` (446 → 161, with keybind content split into `keybinds.ts`).

@@ -8,7 +8,7 @@ import {
 } from "@/movement/movementInput";
 import { useGameEngineState } from "@/runtime/gameEngine";
 import { runPromptCommand } from "@/runtime/promptCommands";
-import type { AppKeybinds } from "@/settings/settings";
+import type { AppKeybinds } from "@/settings/keybinds";
 import { resolvePlayerSpeed } from "@llmville/game/user/personalUpgrades";
 import { useLocalPlayerWalkSpeed } from "@/runtime/localPlayerEntity";
 import type { WorldViewModel } from "@/runtime/worldState";

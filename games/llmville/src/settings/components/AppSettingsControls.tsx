@@ -1,5 +1,6 @@
 import { cn } from "@/components/ui/cn";
-import { GRAPHICS_PRESET_OPTIONS, useAppSettings } from "@/settings/settings";
+import { GRAPHICS_PRESET_OPTIONS } from "@/settings/appSettingsStore";
+import { useAppSettings } from "@/settings/settings";
 
 import { KeybindSettingsControls } from "@/settings/components/KeybindSettingsControls";
 

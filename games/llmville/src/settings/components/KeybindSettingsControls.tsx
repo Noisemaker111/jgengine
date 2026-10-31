@@ -1,11 +1,6 @@
 import { cn } from "@/components/ui/cn";
-import {
-  formatBindableKeyLabel,
-  KEYBIND_ACTIONS,
-  KEYBIND_SLOT,
-  useAppSettings,
-  useKeybindEditor,
-} from "@/settings/settings";
+import { formatBindableKeyLabel, KEYBIND_ACTIONS, KEYBIND_SLOT } from "@/settings/keybinds";
+import { useAppSettings, useKeybindEditor } from "@/settings/settings";
 
 interface KeybindSettingsControlsProps {
   compact?: boolean;

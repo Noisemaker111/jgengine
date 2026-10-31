@@ -10,7 +10,7 @@ import { useGameEngineInput } from "@/runtime/input";
 import { useWorldState, type WorldViewModel } from "@/runtime/worldState";
 import { isReadyWorldViewModel, type ReadyWorldViewModel } from "@/runtime/worldViewModel";
 import { useAppSettings } from "@/settings/settings";
-import type { AppKeybinds } from "@/settings/settings";
+import type { AppKeybinds } from "@/settings/keybinds";
 import { useTutorialState, type TutorialViewModel } from "@/tutorial/tutorialRuntime";
 
 import { buildRackSlotGpuWorkloadMap } from "@/infrastructure/computeUnits";
