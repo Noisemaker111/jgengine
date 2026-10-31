@@ -1,4 +1,5 @@
 import { resolveRng } from "../random/resolveRng";
+import { clamp01 } from "../math/scalar";
 
 /** One hit zone: what a hit there multiplies, and how much likelier it is to crit. */
 export interface HitZoneDef {
@@ -56,12 +57,6 @@ export class UnknownHitZoneError extends Error {
 
 /** Default crit multiplier for a zone that does not name one. */
 export const DEFAULT_CRIT_MULTIPLIER = 2;
-
-function clamp01(value: number): number {
-  if (value < 0) return 0;
-  if (value > 1) return 1;
-  return value;
-}
 
 function findZone(table: HitZoneTable, zone: string): HitZoneDef | undefined {
   for (const entry of table.zones) if (entry.id === zone) return entry;

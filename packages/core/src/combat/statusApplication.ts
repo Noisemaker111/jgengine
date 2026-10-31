@@ -1,4 +1,5 @@
 import { resolveRng } from "../random/resolveRng";
+import { clamp01 } from "../math/scalar";
 /**
  * How a fresh application behaves when the target already carries the status.
  * - `refresh` — reset duration, hold the existing stack count.
@@ -93,12 +94,6 @@ export interface StatusApplicationOutcome {
   chance: number;
   /** The RNG draw compared against `chance`; `null` when no roll was taken (immune/ignored). */
   roll: number | null;
-}
-
-function clamp01(value: number): number {
-  if (value < 0) return 0;
-  if (value > 1) return 1;
-  return value;
 }
 
 /**

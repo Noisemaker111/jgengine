@@ -1,5 +1,6 @@
 import { devtools } from "../devtools/devtools";
 import type { Vec3 } from "../world/geometry";
+import { clamp01 } from "../math/scalar";
 
 /**
  * A box of authored world geometry a body can hide behind. Structurally a `WorldSolid`, so
@@ -317,10 +318,6 @@ export interface CoverChoice {
 }
 
 const DEFAULT_WEIGHTS: Required<CoverWeights> = { hidden: 3, range: 1, flank: 1, near: 0.6, crowding: 2, retreat: 0, path: 1.2 };
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
 
 function wrapAngle(angle: number): number {
   let value = angle;
