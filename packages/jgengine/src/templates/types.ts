@@ -37,6 +37,8 @@ export interface TemplateOptions {
   player?: string | undefined;
   ground?: "flat" | "terrain";
   sceneMode?: "empty" | "starter";
+  /** The user's words for the game (`create --brief`), written into PLAN.md and the README. */
+  brief?: string | undefined;
   /** `"2d"` scaffolds a board game with no 3D scene, editor document, or models (`create --template 2d`). Default `"3d"`. */
   dimension?: "2d" | "3d";
 }

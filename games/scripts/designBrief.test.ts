@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { planMd } from "../../packages/jgengine/src/templates/starterGame";
+
 import { EXAMPLE_BRIEF } from "./briefExample";
 import { BRIEF_PENDING_LINE, briefDue, briefPending, milestoneOneDone, readDesignBrief } from "./designBrief";
 import { addedSinceBase, judge, parseKnownFailing, verdictLines } from "./knownFailing";
@@ -105,5 +107,13 @@ describe("brief ordering", () => {
     expect(written.ok && !("pending" in written)).toBe(true);
     const broken = briefDue(scaffold(" ", "- Core loop: walk\n"));
     expect(broken.ok).toBe(false);
+  });
+});
+
+describe("the scaffold's plan", () => {
+  test("jgengine create writes a plan whose brief is pending until milestone 1 is ticked", () => {
+    const plan = planMd({ id: "probe", name: "Probe", template: "3d", loop: true, ground: "terrain" });
+    expect(briefDue(plan)).toEqual({ ok: true, pending: true });
+    expect(briefDue(plan.replace("- [ ] 1.", "- [x] 1.")).ok).toBe(false);
   });
 });

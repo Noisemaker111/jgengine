@@ -51,10 +51,22 @@ const IN_REPO_THIN_FILES = [
   "src/game/ui/GameUI.tsx",
 ];
 
-const thinFiles = (variant: "standalone" | "in-repo") => (variant === "in-repo" ? IN_REPO_THIN_FILES : [...IN_REPO_THIN_FILES, ...PROJECT_FILES]);
+/** Every scaffold carries its plan, perf budget, probe, kit and credits. */
+const PLAN_FILES = ["PLAN.md", "perf-budget.json", "src/game/probe.ts", "src/game/ui/kit.ts", "src/game/credits.ts"];
 
-/** The default set: the thin skeleton plus the world scaffold, which is now on unless --no-world. */
-const worldFiles = (variant: "standalone" | "in-repo") => [...thinFiles(variant), "src/world.ts", "src/game/assets.ts", "src/game/models.ts"];
+const thinFiles = (variant: "standalone" | "in-repo") => [...(variant === "in-repo" ? IN_REPO_THIN_FILES : [...IN_REPO_THIN_FILES, ...PROJECT_FILES]), ...PLAN_FILES];
+
+/** The default set: the thin skeleton plus the world scaffold and the starter loop with its proof. */
+const worldFiles = (variant: "standalone" | "in-repo") => [
+  ...thinFiles(variant),
+  "src/world.ts",
+  "src/game/assets.ts",
+  "src/game/models.ts",
+  "src/game/rules.ts",
+  "src/game/rules.test.ts",
+  "proofs/flows/from-zero.flow.ts",
+  "README.md",
+];
 
 describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
   for (const variant of ["standalone", "in-repo"] as const) {
@@ -277,21 +289,29 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
       expect(scene.markers.map((marker) => marker.kind)).toEqual(["player_spawn"]);
     });
 
-    test(`${variant}: the default scaffold authors a zero-code "reach the goal to win" via systems`, () => {
+    test(`${variant}: the default scaffold plays: authored caches and beacon, the parts, a menu and a proof`, () => {
       const files = render(variant);
       const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as {
-        markers: { kind: string; meta?: { on?: string; action?: string } }[];
+        markers: { kind: string; meta?: { on?: string; action?: string; triggers?: { on: string; action: string }[] } }[];
       };
-      const goal = scene.markers.find((marker) => marker.kind === "goal");
-      expect(goal?.meta?.on).toBe("enter");
-      expect(goal?.meta?.action).toBe("win");
+      expect(scene.markers.filter((marker) => marker.meta?.action === "gather").length).toBe(3);
+      expect(scene.markers.find((marker) => marker.kind === "goal")?.meta?.triggers?.map((row) => row.on)).toEqual(["enter", "exit"]);
+      const rules = fileOf(files, "src/game/rules.ts");
+      for (const part of ["stats/statPool", "threshold/thresholds", "rules/predicate", "time/pacedSchedule", "random/pick"]) {
+        expect(rules).toContain(`@jgengine/core/${part}`);
+      }
       const loop = fileOf(files, "src/loop.ts");
-      expect(loop).toContain('defineSystem');
       expect(loop).toContain('from "@jgengine/shell/gameKit"');
-      expect(loop).toContain("registerBuiltinTriggerActions");
-      expect(loop).toContain("createTriggerOutcome");
-      expect(fileOf(files, "src/game.config.ts")).toContain("systems,");
-      expect(fileOf(files, "src/game/ui/GameUI.tsx")).toContain("outcome");
+      expect(loop).toContain("registerTriggerAction");
+      expect(loop).not.toMatch(/^let /m);
+      const config = fileOf(files, "src/game.config.ts");
+      expect(config).toContain("createGameFlowSystem()");
+      expect(config).toContain('capture: { play: ["start"], probe }');
+      expect(config).toContain("uiKit: kit");
+      expect(fileOf(files, "src/game/ui/GameUI.tsx")).toContain("<GameFlowUI");
+      expect(fileOf(files, "proofs/flows/from-zero.flow.ts")).toContain("export default defineFlow(game");
+      expect(fileOf(files, "PLAN.md")).toContain("## Design brief\n\nPending:");
+      expect(fileOf(files, "README.md")).toContain("Loop proof: from-zero");
     });
   }
 
