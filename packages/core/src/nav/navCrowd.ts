@@ -1,4 +1,5 @@
 import { devtools } from "../devtools/devtools";
+import { length2 } from "../math/scalar";
 import type { Vec3 } from "../world/geometry";
 import type { NavMeshPath } from "./navMesh";
 import type { NavRebuildStats, NavRegion, NavRuntime } from "./navRuntime";
@@ -360,7 +361,7 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
         }
         const dx = target[0] - agent.x;
         const dz = target[2] - agent.z;
-        const distance = Math.hypot(dx, dz);
+        const distance = length2(dx, dz);
         if (distance <= EPSILON) {
           avoid.setPreferredVelocity(agent.id, 0, 0);
           continue;
@@ -394,7 +395,7 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
           advanced = false;
           const target = agent.waypoints[agent.waypoint];
           if (target === undefined) break;
-          if (Math.hypot(target[0] - x, target[2] - z) <= waypointRadius) {
+          if (length2(target[0] - x, target[2] - z) <= waypointRadius) {
             y = target[1];
             agent.waypoint += 1;
             advanced = true;
@@ -403,7 +404,7 @@ export function createNavCrowd(options: NavCrowdOptions & { nav: NavRuntime }): 
         agent.x = x;
         agent.y = y;
         agent.z = z;
-        const goalDistance = Math.hypot(agent.goal[0] + agent.offsetX - x, agent.goal[2] + agent.offsetZ - z);
+        const goalDistance = length2(agent.goal[0] + agent.offsetX - x, agent.goal[2] + agent.offsetZ - z);
         if (agent.waypoint >= agent.waypoints.length && goalDistance <= Math.max(goalRadius, waypointRadius)) {
           agent.arrived = true;
           agent.waypoints = [];

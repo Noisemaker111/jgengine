@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { devtools } from "@jgengine/core/devtools/devtools";
+import { length2 } from "@jgengine/core/math/scalar";
 import { createNavCrowd, createNavRuntime, type NavMeshData } from "@jgengine/core/world";
 
 function gridMesh(cols: number, rows: number, size = 1, holes: ReadonlySet<number> = new Set()): NavMeshData {
@@ -32,7 +33,7 @@ function run(crowd: ReturnType<typeof createNavCrowd>, ticks: number, dt = 1 / 3
     for (const position of positions) if (!Number.isFinite(position[0]) || !Number.isFinite(position[2])) nan = true;
     for (let i = 0; i < positions.length; i += 1) {
       for (let j = i + 1; j < positions.length; j += 1) {
-        gap = Math.min(gap, Math.hypot(positions[i]![0] - positions[j]![0], positions[i]![2] - positions[j]![2]));
+        gap = Math.min(gap, length2(positions[i]![0] - positions[j]![0], positions[i]![2] - positions[j]![2]));
       }
     }
   }
@@ -73,7 +74,7 @@ describe("createNavCrowd", () => {
     expect(crowd.stats().arrived).toBe(12);
     expect(crowd.stats().unroutable).toBe(0);
     for (const view of crowd.ids().map((id) => crowd.agent(id)!)) {
-      expect(Math.hypot(view.position[0] - view.goal[0], view.position[2] - view.goal[2])).toBeLessThan(1.2);
+      expect(length2(view.position[0] - view.goal[0], view.position[2] - view.goal[2])).toBeLessThan(1.2);
     }
     crowd.dispose();
     nav.dispose();
