@@ -1,5 +1,6 @@
 import type { AxisInput } from "../input/axisInput";
 import { executionError, type DifficultyProfile } from "./difficulty";
+import { clamp01 } from "../math/scalar";
 
 /**
  * A difficulty-aware driver brain: pose + goal in, the shared {@link AxisInput}
@@ -158,8 +159,6 @@ const wrapAngle = (angle: number): number => {
   while (a < -Math.PI) a += Math.PI * 2;
   return a;
 };
-
-const clamp01 = (value: number): number => (value < 0 ? 0 : value > 1 ? 1 : value);
 
 /**
  * Advance one driving step, mutating `state`, and return the {@link AxisInput} to feed the vehicle
