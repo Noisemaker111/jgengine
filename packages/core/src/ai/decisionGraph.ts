@@ -1,3 +1,5 @@
+import { pickWeighted } from "../random/pick";
+
 /** Scalar values stored in a decision graph blackboard. */
 export type BlackboardValue = number | boolean | string;
 /** Named facts available to conditions, utilities, and actions. */
@@ -232,12 +234,13 @@ export function createDecisionGraphRuntime<Context = unknown>(
         let index = carried(entry.id)?.index ?? -1;
         if (index < 0) {
           if (options.rng === undefined) throw new Error("A random decision node needs options.rng (pass ctx.rng)");
-          const weights = entry.children.map((_, i) => Math.max(0, node.weights?.[i] ?? 1));
-          const total = weights.reduce((sum, weight) => sum + weight, 0);
-          if (total <= 0) return "failed";
-          let roll = options.rng() * total;
-          index = 0;
-          while (index < weights.length - 1 && roll >= weights[index]!) roll -= weights[index++]!;
+          const picked = pickWeighted(
+            options.rng,
+            entry.children.map((_, i) => i),
+            (i) => Math.max(0, node.weights?.[i] ?? 1),
+          );
+          if (picked === undefined) return "failed";
+          index = picked;
         }
         memory.delete(entry.id);
         const status = run(entry.children[index]!, ctx, blackboard, dt);
