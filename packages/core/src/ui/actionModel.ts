@@ -1,3 +1,5 @@
+import { clamp01 } from "../math/scalar";
+
 /**
  * Headless view model for a contextual action collection — the data layer behind an RTS command
  * card, an ability action bar, a build menu, or a radial. It carries *what the buttons mean*
@@ -79,8 +81,6 @@ export interface ResolvedAction {
   costs: readonly ActionCost[];
   reasons: readonly ActionReason[];
 }
-
-const clamp01 = (value: number): number => (value < 0 ? 0 : value > 1 ? 1 : value);
 
 /** Build an {@link ActionCooldown} from remaining/total milliseconds. `ready` when nothing remains. */
 export function actionCooldown(remainingMs: number, totalMs: number): ActionCooldown {
