@@ -13,7 +13,7 @@ describe("skill routing contract", () => {
     expect(skillForModule("core", "audio/music")).toBe("jgengine-world");
     expect(skillForModule("core", "input/bindings")).toBe("jgengine-world");
     expect(skillForModule("core", "stats/boundedStat")).toBe("jgengine-combat");
-    expect(skillForModule("core", "tactics/formation")).toBe("jgengine-gameplay");
+    expect(skillForModule("core", "achievements/achievements")).toBe("jgengine-gameplay");
     expect(skillForModule("core", "editor/document")).toBe("jgengine-editor");
   });
 

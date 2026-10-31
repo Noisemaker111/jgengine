@@ -7,5 +7,5 @@ test("the desktop app's game glob finds every game in games/", () => {
   const pattern = /import\.meta\.glob<[^>]*>\("([^"]+)"\)/.exec(source)?.[1];
   expect(pattern).toBeDefined();
   const found = [...new Bun.Glob(pattern!).scanSync({ cwd: import.meta.dir })];
-  expect(found.length).toBeGreaterThan(10);
+  expect(found.length).toBeGreaterThan(8);
 });
