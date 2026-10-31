@@ -138,31 +138,6 @@
 
 - `attachObject3D` (function): function attachObject3D<T extends Object3DBehaviour>(world: BehaviourWorld, object: Object3D, behaviour: T, nodeId: string = object.uuid): T — ⚠ undocumented
 
-## @jgengine/core/board/laneBoard
-
-- `LaneAggregate` (interface): interface LaneAggregate { lane: number; side: Side; subtotal: number; total: number; count: number } — ⚠ undocumented
-- `LaneBoard` (interface): interface LaneBoard<C> { state(): LaneBoardState<C>; place(lane: number, side: Side, card: C): LaneResult<C>; remove(lane: number, side: Side, predicate: (card: C, index: number) => boolean): LaneResult<C>; aggregate(lane: number, side: Side): LaneAggregate; outc… — ⚠ undocumented
-- `LaneBoardConfig` (interface): interface LaneBoardConfig<C> { laneCount: number; sides: readonly Side[]; power: (card: C) => number; laneRules?: readonly (LaneRule<C> | null | undefined)[] } — ⚠ undocumented
-- `LaneBoardState` (interface): interface LaneBoardState<C> { readonly lanes: readonly LaneCells<C>[] } — ⚠ undocumented
-- `LaneCells` (interface): interface LaneCells<C> { readonly [side: Side]: readonly C[] } — ⚠ undocumented
-- `LaneOutcome` (interface): interface LaneOutcome { lane: number; totals: Readonly<Record<Side, number>>; winner: Side | null } — ⚠ undocumented
-- `LanePlaceRejected` (interface): interface LanePlaceRejected { status: "rejected"; reason: LaneRejection } — ⚠ undocumented
-- `LanePlaceResult` (interface): interface LanePlaceResult<C> { status: "ok"; state: LaneBoardState<C> } — ⚠ undocumented
-- `LaneRejection` (type): type LaneRejection = "invalid-lane" | "invalid-side" — ⚠ undocumented
-- `LaneResult` (type): type LaneResult<C> = LanePlaceResult<C> | LanePlaceRejected — ⚠ undocumented
-- `LaneRule` (interface): interface LaneRule<C> { id: string; apply: (input: LaneRuleInput<C>) => number } — ⚠ undocumented
-- `LaneRuleInput` (interface): interface LaneRuleInput<C> { lane: number; side: Side; cards: readonly C[]; subtotal: number } — ⚠ undocumented
-- `Side` (type): type Side = string — ⚠ undocumented
-
-## @jgengine/core/board/timelineBoard
-
-- `TimelineBoard` (interface): interface TimelineBoard { state(): TimelineBoardState; tick(dtMs: number): readonly TimelineFire[]; setEnabled(slotId: string, enabled: boolean): void; reset(slotId?: string, remainingMs?: number): void } — ⚠ undocumented
-- `TimelineBoardState` (interface): interface TimelineBoardState { readonly slots: readonly TimelineSlot[]; readonly elapsedMs: number } — ⚠ undocumented
-- `TimelineFire` (interface): interface TimelineFire { slotId: string; slotIndex: number; atMs: number } — ⚠ undocumented
-- `TimelineSlot` (interface): interface TimelineSlot { readonly id: string; readonly cooldownMs: number; readonly remainingMs: number; readonly enabled: boolean } — ⚠ undocumented
-- `TimelineSlotConfig` (interface): interface TimelineSlotConfig { id: string; cooldownMs: number; enabled?: boolean; offsetMs?: number } — ⚠ undocumented
-- `TimelineTickResult` (interface): interface TimelineTickResult { state: TimelineBoardState; fires: readonly TimelineFire[] } — ⚠ undocumented
-
 ## @jgengine/core/breeding/breeding
 
 - `BreedingEgg` (interface): interface BreedingEgg<P> — A fertilized egg lying where it was laid, carrying its young one's genes `P`; it progresses only inside its incubation band.
@@ -1256,7 +1231,6 @@
 - `JobStatus` (type): type JobStatus = "queued" | "active" | "paused" — Lifecycle phase of a single queued job. Terminal jobs are removed from state.
 - `JobValidation` (interface): interface JobValidation — Result of pre-enqueue validation (population caps, prerequisites, affordability).
 - `KeyValueStorage` (interface): interface KeyValueStorage — Structural, DOM-free storage backend: the browser `localStorage` satisfies it, as does a test stub or `null`. The one storage seam core primitives target so persistence code never needs the DOM `Storage` lib.
-- `LaneRule` (interface): interface LaneRule<C> { id: string; apply: (input: LaneRuleInput<C>) => number } — ⚠ undocumented
 - `LayerConflict` (interface): interface LayerConflict — A single conflict surfaced by {@link validateLayers}.
 - `LayerOps` (type): type LayerOps = Readonly<Record<string, ParamOp | readonly ParamOp[]>> — Per-parameter ops contributed by one layer — a single op or an ordered list folded in sequence.
 - `LayerRegistry` (interface): interface LayerRegistry — Registered lookup of {@link ParamLayer}s by stable id, resolving serialized selections and unknowns.
@@ -3306,47 +3280,6 @@
 - `VitalsState` (interface): interface VitalsState — Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns and raised flags.
 - `VitalsTickOptions` (interface): interface VitalsTickOptions — Options for {@link Vitals.tick}.
 - `createVitals` (function): function createVitals(initial: readonly VitalDef[]): Vitals — Survival vitals for one body — health, stamina, food, water, oxygen, torpor or anything the game names. Each vital drains or regenerates per second, regen can wait out a delay and charge other vitals (health regen eats food), an empty vital pushes on others (starving drains health), and thresholds raise flags with hysteresis (torpor full knocks out until it wears off). Plain data, deterministic, bounded by the number of vitals.
-
-## @jgengine/core/tactics/predictiveQuery
-
-- `ArcPredictInput` (interface): interface ArcPredictInput { from: string; aim: Aim; radius: number; halfAngleDeg?: number; effect?: string; requireReceive?: boolean } — ⚠ undocumented
-- `AreaPredictInput` (interface): interface AreaPredictInput extends AreaTargetInput { effect?: string; requireReceive?: boolean } — ⚠ undocumented
-- `PredictedTarget` (interface): interface PredictedTarget { instanceId: string; scale: number } — ⚠ undocumented
-- `PredictiveDeps` (interface): interface PredictiveDeps { spatial: CombatSpatialDeps; queryArc(options: QueryArcOptions): string[]; canReceive?(instanceId: string, effect: string): string | null } — ⚠ undocumented
-- `TilePredictInput` (interface): interface TilePredictInput { at: EntityPosition; radius: number; originTile: Tile; tileSize: number } — ⚠ undocumented
-
-## @jgengine/core/tactics/snapshot
-
-- `Snapshot` (type): type Snapshot = Record<string, unknown> — ⚠ undocumented
-- `SnapshotSlice` (interface): interface SnapshotSlice<T = unknown> { capture(): T; restore(state: T): void } — ⚠ undocumented
-- `SnapshotStore` (interface): interface SnapshotStore { register<T>(id: string, slice: SnapshotSlice<T>): void; unregister(id: string): void; capture(): Snapshot; restore(snapshot: Snapshot): void; push(): Snapshot; pop(): boolean; peek(): Snapshot | null; depth(): number; clear(): void } — ⚠ undocumented
-
-## @jgengine/core/tactics/surface
-
-- `SurfaceCell` (interface): interface SurfaceCell { tile: Tile; kinds: SurfaceCellKind[] } — ⚠ undocumented
-- `SurfaceCellKind` (interface): interface SurfaceCellKind { surface: string; remaining: number | null } — ⚠ undocumented
-- `SurfaceEvent` (type): type SurfaceEvent = | { kind: "apply"; tile: Tile; surface: string } | { kind: "react"; tile: Tile; consumed: readonly [string, string]; produced: string | null } | { kind: "expire"; tile: Tile; surface: string } — ⚠ undocumented
-- `SurfaceKindDef` (interface): interface SurfaceKindDef { id: string; duration?: number } — ⚠ undocumented
-- `SurfaceLayer` (interface): interface SurfaceLayer { apply(tile: Tile, surface: string, patch?: SurfacePatch): SurfaceEvent[]; has(tile: Tile, surface: string): boolean; kindsAt(tile: Tile): string[]; remove(tile: Tile, surface: string): void; clearTile(tile: Tile): void; clear(): void; tic… — ⚠ undocumented
-- `SurfaceLayerConfig` (interface): interface SurfaceLayerConfig { kinds: readonly SurfaceKindDef[]; reactions?: readonly SurfaceReaction[] } — ⚠ undocumented
-- `SurfaceLayerSnapshot` (type): type SurfaceLayerSnapshot = Record<string, Record<string, number | null>> — ⚠ undocumented
-- `SurfacePatch` (interface): interface SurfacePatch { duration?: number } — ⚠ undocumented
-- `SurfaceReaction` (interface): interface SurfaceReaction { when: readonly [string, string]; result: string | null } — ⚠ undocumented
-
-## @jgengine/core/tactics/tacticalGrid
-
-- `PushCollision` (interface): interface PushCollision { mover: string; into: string | PushObstacle; at: Tile } — ⚠ undocumented
-- `PushMove` (interface): interface PushMove { id: string; from: Tile; to: Tile } — ⚠ undocumented
-- `PushObstacle` (type): type PushObstacle = "wall" | "edge" — ⚠ undocumented
-- `PushOptions` (interface): interface PushOptions { distance?: number; chain?: boolean } — ⚠ undocumented
-- `PushResult` (interface): interface PushResult { moves: PushMove[]; collisions: PushCollision[] } — ⚠ undocumented
-- `ReachableOptions` (interface): interface ReachableOptions { passThrough?: readonly string[]; diagonal?: boolean } — ⚠ undocumented
-- `ReachableTile` (interface): interface ReachableTile { tile: Tile; cost: number } — ⚠ undocumented
-- `TacticalGrid` (interface): interface TacticalGrid { readonly width: number; readonly height: number; inBounds(tile: Tile): boolean; isBlocked(tile: Tile): boolean; setBlocked(tile: Tile, blocked: boolean): void; occupantAt(tile: Tile): string | null; tileOf(id: string): Tile | null; place(… — ⚠ undocumented
-- `TacticalGridConfig` (interface): interface TacticalGridConfig { width: number; height: number; blocked?: readonly Tile[]; diagonal?: boolean; world?: TacticalGridWorldConfig } — ⚠ undocumented
-- `TacticalGridSnapshot` (interface): interface TacticalGridSnapshot { blocked: string[]; occupants: Record<string, string> } — ⚠ undocumented
-- `TacticalGridWorldConfig` (interface): interface TacticalGridWorldConfig — Maps abstract `[col, row]` tiles onto world-space `[x, z]`, mirroring `navGrid`'s bounds+cellSize convention.
-- `Tile` (type): type Tile = readonly [number, number] — ⚠ undocumented
 
 ## @jgengine/core/talents/talentTree.view
 
