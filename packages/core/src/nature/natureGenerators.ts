@@ -22,6 +22,7 @@ import {
   type NatureRgb,
   type NatureVec,
 } from "./natureMesh";
+import { lerp } from "../math/scalar";
 
 function pick<T>(values: readonly T[], index: number): T {
   const value = values[index];
@@ -34,10 +35,6 @@ export const NATURE_OUTPUT = "nature-mesh";
 
 /** Detail levels each nature variant bakes: full near the camera, half for a mid level. */
 const NATURE_LODS = [1, 0.5] as const;
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
 
 /** A value in `[1 - amount, 1 + amount]`. */
 function spread(random: () => number, amount: number): number {
