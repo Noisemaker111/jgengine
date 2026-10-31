@@ -2749,6 +2749,10 @@
 - `matrixEigenvalues` (function): function matrixEigenvalues(matrix: ArrayLike<number>, n: number): Eigenvalue[] — Eigenvalues of a real square matrix (row-major, `n × n`): balancing, reduction to upper Hessenberg form by stabilised elimination, then the Francis double-shift QR iteration (Wilkinson & Reinsch, *Handbook for Automatic Computation* II, the EISPACK `balanc`/`elmhes`/`hqr` scheme). Complex pairs come out together. The input is not modified. Sorted by real part, then imaginary part, descending.
 - `solveLinearSystem` (function): function solveLinearSystem(m: Float64Array, b: Float64Array, n: number): void — Solve `m·x = b` in place (n×n, row-major; `m` is overwritten and `b` becomes `x`) by Gaussian elimination with partial pivoting. A singular pivot leaves that unknown at `0`.
 
+## @jgengine/core/math/scalar
+
+- `length2` (function): function length2(x: number, y: number): number — Length of the vector (x, y) as `sqrt(x*x + y*y)`. `Math.hypot` is not required to round exactly and differs between JIT tiers and machines; a simulation that runs thousands of steps amplifies that last bit, so hot paths use this instead.
+
 ## @jgengine/core/math/xyz
 
 - `Xyz` (interface): interface Xyz — A point or direction as named `x`/`y`/`z` fields, for wire and audio code that reads fields rather than tuple slots.

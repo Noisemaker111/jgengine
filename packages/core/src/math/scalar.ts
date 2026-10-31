@@ -1,9 +1,6 @@
 // @skill jgengine-world
 export { lerp, clamp01, smoothstep } from "../anim/easing";
 
-/** Constrain a value to the inclusive `[min, max]` range.
- * @internal
- */
 /**
  * Length of the vector (x, y) as `sqrt(x*x + y*y)`. `Math.hypot` is not required to round exactly and
  * differs between JIT tiers and machines; a simulation that runs thousands of steps amplifies that last
@@ -13,6 +10,9 @@ export function length2(x: number, y: number): number {
   return Math.sqrt(x * x + y * y);
 }
 
+/** Constrain a value to the inclusive `[min, max]` range.
+ * @internal
+ */
 export function clamp(value: number, min: number, max: number): number {
   return value < min ? min : value > max ? max : value;
 }
