@@ -1,4 +1,5 @@
 import { type Aabb, type Vec2, pointInAabb } from "./geometry";
+import { pickWeighted } from "../random/pick";
 import { pointInPolygon, ringBounds } from "./polygon";
 
 /**
@@ -371,17 +372,13 @@ export function pointSetRegion(points: readonly Vec2[], options: { weights?: rea
   const pool = points.map((p) => [p[0], p[1]] as Vec2);
   const weights = options.weights;
   const total = weights === undefined ? pool.length : weights.reduce((sum, w) => sum + Math.max(0, w), 0);
+  const weighted = weights === undefined ? undefined : pool.map((point, i) => ({ point, weight: Math.max(0, weights[i] ?? 0) }));
   return {
     dimensions: 2,
     isEmpty: pool.length === 0 || total <= 0,
     sample(rng) {
-      if (weights === undefined) return pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))]!;
-      let roll = rng() * total;
-      for (let i = 0; i < pool.length; i += 1) {
-        roll -= Math.max(0, weights[i] ?? 0);
-        if (roll <= 0) return pool[i]!;
-      }
-      return pool[pool.length - 1]!;
+      if (weighted === undefined) return pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))]!;
+      return (pickWeighted(rng, weighted, (e) => e.weight) ?? weighted[weighted.length - 1]!).point;
     },
     contains(point) {
       return pool.some((p) => p[0] === point[0] && p[1] === point[1]);
@@ -514,18 +511,12 @@ export function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> {
  */
 export function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> {
   const usable = entries.filter((e) => e.weight > 0 && !e.region.isEmpty);
-  const total = usable.reduce((sum, e) => sum + e.weight, 0);
   const dimensions = entries[0]?.region.dimensions ?? 2;
   return {
     dimensions,
     isEmpty: usable.length === 0,
     sample(rng) {
-      let roll = rng() * total;
-      for (const entry of usable) {
-        roll -= entry.weight;
-        if (roll <= 0) return entry.region.sample(rng);
-      }
-      return usable[usable.length - 1]!.region.sample(rng);
+      return (pickWeighted(rng, usable, (e) => e.weight) ?? usable[usable.length - 1]!).region.sample(rng);
     },
     contains(point) {
       return entries.some((e) => e.region.contains(point));
