@@ -56,7 +56,7 @@ export interface CrownArchitectureOptions {
  * a scaffold limb and one past about 0.6 a codominant stem (Gilman 2011). Shade-tolerant trees hold
  * their leaves in a thin outer shell, intolerant ones through the crown (Horn 1971); the gap fraction
  * reads sky through the crown side-on by Beer–Lambert extinction of the projected leaf area in each
- * cell, as foliage transparency is rated in the field (Schomaker et al. 2007).
+ * cell, the complement of the shade factor photographed within a crown's perimeter (McPherson et al. 2018).
  * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
  */
 export function crownArchitecture(structure: PlantStructure, options: CrownArchitectureOptions = {}): CrownArchitecture {
@@ -240,23 +240,26 @@ export function crownShapeBands(form: CrownForm, ageYears: number): CrownShapeBa
  * within the lower 60% of its height, where an open-grown crown's base already sits (Zimmermann &
  * Brown 1971; Gilman 2011), and carries its spread no lower than a cone would (centroid 0.37; a cone
  * is 0.25). An excurrent, columnar or weeping tree keeps its leader, and an excurrent one tapers to it.
- * A broadleaf crown in leaf shows sky through 15–70% of its outline: healthy hardwoods rate 10–30%
- * foliage transparency within the foliated crown (Schomaker et al. 2007), and the outline adds the
- * gaps between limbs. A shade-tolerant broadleaf holds its leaves as a monolayer in the outer shell
- * (Horn 1971), more than a crown filled evenly would (0.58 in the outer quarter). Shrubs, palms and
- * herbs have none.
+ * A broadleaf crown in leaf, of any form, shows sky through at most 38% of its outline: foliage and
+ * branches cover 62% (honey locust) to 93% of the sky within the crown perimeter of 47 urban species,
+ * 70–90% for most, and the cover stops rising once a tree passes about 20 years or 30 cm DBH
+ * (McPherson et al. 2018); individual trees of one species reach 98%. A shade-tolerant decurrent
+ * broadleaf holds its leaves as a monolayer in the outer shell (Horn 1971), more than a crown filled
+ * evenly would (0.58 in the outer quarter). Shrubs, palms and herbs have none.
  * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
  */
 export function crownArchitectureTarget(species: Pick<PlantSpecies, "architecture" | "tolerance" | "leaf">): CrownArchitectureTarget {
   const form = species.architecture.crownForm;
   if (form === undefined) return {};
-  if (form !== "decurrent") return { forkRatio: [0, CODOMINANT_RATIO], ...(form === "excurrent" ? { centroid: [0, 0.36] as const } : {}) };
-  const broadleaf = species.leaf.lifespanYears <= 1;
+  const kind = species.leaf.shape.kind;
+  const broadleaf = species.leaf.lifespanYears <= 1 && kind !== "needle" && kind !== "scale";
+  const density = broadleaf ? { gapFraction: [0.02, 0.38] as const } : {};
+  if (form !== "decurrent") return { forkRatio: [0, CODOMINANT_RATIO], ...(form === "excurrent" ? { centroid: [0, 0.36] as const } : {}), ...density };
   return {
     forkRatio: [CODOMINANT_RATIO, Number.POSITIVE_INFINITY],
     forkHeightShare: [0, 0.6],
     centroid: [0.37, 1],
-    ...(broadleaf ? { gapFraction: [0.15, 0.7] as const } : {}),
+    ...density,
     ...(broadleaf && species.tolerance.shade >= 0.7 ? { shellShare: [0.6, 1] as const } : {}),
   };
 }

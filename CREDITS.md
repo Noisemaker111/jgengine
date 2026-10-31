@@ -306,8 +306,9 @@ provenance.
   Biology* 256; Moulia, Coutand & Lenne 2006, posture control, *American Journal of Botany* 93.
 - Zimmermann & Brown 1971, *Trees: Structure and Function*; Gilman 2011, *An Illustrated Guide to
   Pruning*: scaffold limbs and codominant forks. Horn 1971, *The Adaptive Geometry of Trees*:
-  monolayer crowns. Schomaker et al. 2007, crown-condition classification, USDA Forest Service
-  GTR SRS-102 (US public domain): foliage transparency.
+  monolayer crowns. McPherson et al. 2018, shade factors for 149 taxa of in-leaf urban trees,
+  *Urban Forestry & Urban Greening* 31 (USDA Forest Service; data CC0): how much sky a crown
+  in leaf covers.
 - Franklin 2008, shade avoidance, *New Phytologist* 179: neighbours' shade strengthens apical
   dominance, so stand-grown trees divide less.
 - Givnish 1988, adaptation to sun and shade, *Australian Journal of Plant Physiology* 15: the

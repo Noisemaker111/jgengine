@@ -1,4 +1,5 @@
 import type { PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
+import { BAAD_LEAF_TO_SAPWOOD } from "../../packages/core/src/plants/validation/stemAllometry";
 import { createCmaEs } from "./cmaEs";
 import type { TrialScore } from "./speciesScore";
 import type { Trial } from "./speciesTrial";
@@ -38,6 +39,8 @@ export const FIT_PARAMETERS: readonly FitParameter[] = [
   { path: "carbon.respiration", lo: 0.6, hi: 3, log: true },
   { path: "carbon.hydraulicExponent", lo: 1, hi: 8, integer: true },
   { path: "carbon.hydraulicHeightShare", lo: 0.4, hi: 1 },
+  // Sapwood per leaf area, inside the leaf-to-sapwood range trees are measured at.
+  { path: "carbon.sapwoodPerFoliage", lo: 1 / BAAD_LEAF_TO_SAPWOOD.deciduous.high, hi: 1 / BAAD_LEAF_TO_SAPWOOD.evergreen.low, log: true },
 ];
 
 type Bag = Record<string, unknown>;
