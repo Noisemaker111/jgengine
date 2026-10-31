@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const ABIES_GRANDIS: PlantSpecies = {
   id: "abies-grandis",
-  version: 18,
+  version: 21,
   names: {
     scientific: "Abies grandis (Douglas ex D. Don) Lindl.",
     common: { en: "grand fir", fr: "sapin grandissime" },
@@ -20,7 +20,7 @@ export const ABIES_GRANDIS: PlantSpecies = {
     apicalControl: 0.6538,
     apicalControlMature: 0.3074,
     apicalControlHalfYears: 80,
-    internodeMax: 0.04,
+    internodeMax: 0.046,
     branchAngle: 85,
     lateralBudsPerNode: 4,
     maxMetamersPerShoot: 9,

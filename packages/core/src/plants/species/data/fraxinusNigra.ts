@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const FRAXINUS_NIGRA: PlantSpecies = {
   id: "fraxinus-nigra",
-  version: 8,
+  version: 10,
   names: { scientific: "Fraxinus nigra Marshall", common: { en: "black ash", fr: "frêne noir" } },
   ids: { usda: "FRNI" },
   habit: "tree",
