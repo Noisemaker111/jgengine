@@ -3,83 +3,60 @@ name: jgengine
 description: Route game work to the smallest useful JGengine guidance set.
 ---
 
-# JGengine intake and router
+# JGengine router
 
-This skill decides what to load; it is not an engine manual. Package map, commands, layering, and license live in the JGengine README (repo-root [`README.md`](../../../README.md) in the monorepo, [jgengine.com](https://jgengine.com) from a created project); open it when you need one of those facts.
+JGengine is a TypeScript SDK of small general systems that combine into any game. Rules live in [AGENTS.md](../../../AGENTS.md); packages, layering and commands in [README.md](../../../README.md) (jgengine.com from a created project). Load only the domain a task needs.
 
-A created project installs only `jgengine`, `create-game-jg`, `jgengine-editor`, `jgengine-verify`, `game-design`, and `jgengine-ui`. Run `npx jgengine skills -p --all` before loading any other domain named below. Those projects do not ship `api.md`; read exact signatures from the `.d.ts` files under `node_modules/@jgengine/<pkg>/dist/`.
+A created project ships `jgengine`, `create-game-jg`, `jgengine-editor`, `jgengine-verify`, `game-design` and `jgengine-ui`; `npx jgengine skills -p --all` adds the rest, with no `api.md` (read `node_modules/@jgengine/<pkg>/dist/*.d.ts`). Upgrading a project, `doctor` and `sync`: `jgengine-editor`.
 
-Created projects pin their scaffolding CLI as a local devDependency, separately from SDK versions. Run `npx jgengine doctor` after SDK upgrades to check CLI compatibility. Skill installation preserves newer or differing unversioned copies; update the project CLI first, and use `skills -p --force` only when replacement is intended. Each packaged skill install records its CLI and SDK versions in `.jgengine-version.json`.
+## Start
 
-## Framework-first decisions
+A new game or big feature starts with `create-game-jg`: it owns the create flow, `PLAN.md` and milestones. Never copy `games/*` or reach for a genre kit or preset. Pitch to testable promise: `game-design`; authored spaces and encounters: `level-design`.
 
-For every requested interaction, feature, fix or visual change, follow the boundary in
-[AGENTS.md](../../../AGENTS.md): discover the installed
-capability, adopt it, or improve its shared owner before adding reusable game-local code.
-Games keep unique rules, content, assets and presentation. Custom markup is not a reason
-to copy focus handling, input tracking, storage or model lifecycle.
+## The parts
 
-Check engine `beta` before recreating an upstream fix: games run the engine source from
-the same commit, so a fix that exists is adopted by importing it. After adoption, remove
-superseded local machinery and verify the actual game. Outside this repository, report
-missing SDK contracts upstream rather than treating a local engine implementation as the
-finished solution.
+Break every feature into these before looking anything up: "supply drop" is a Schedule, Placement, Ladder, Requirement, Table and Motion track. One home each; `@jgengine/core/parts` re-exports their model layers.
 
-## 1. Establish the target
+| Part | Home |
+| --- | --- |
+| Meter | `stats/statPool.ts` |
+| Ladder | `threshold/thresholds.ts` |
+| Phases | `time/stateSchedule.ts` |
+| Schedule | `time/pacedSchedule.ts` |
+| Slots | `time/refillSlots.ts` |
+| Placement | `world/spatialSample.ts`, `game/spawnPoints.ts` |
+| Table | `random/pick.ts` |
+| Requirement | `rules/predicate.ts` |
+| Modifiers | `progression/statGraph.ts` |
+| Inheritance | `inheritance/inheritance.ts` |
+| Motion track | `movement/motionTrack.ts` |
 
-A new game or a big new feature starts with the `create-game-jg` skill: agree the direction with the user, map every feature with `jgengine has`, write `PLAN.md` with its design brief, then `jgengine create` and build it milestone by milestone, each the next 10 minutes of play and a commit on the one branch, which lands as one PR at the end. Load it before anything below.
+## Domains
 
-Treat the pitch as a unique composition of needs, not a genre to fill in — never reach for a genre kit, preset, archetype, or class template ("default sports car", "default RPG", "default FPS") in the SDK or skills (see [AGENTS.md](../../../AGENTS.md)). Use `game-design` to turn the pitch into a testable player promise, verbs, loops, progression, failure, and completion scenario. Use `level-design` when play depends on authored spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
+| Load | When |
+| --- | --- |
+| `jgengine-editor` | anything visible in the world: placement, terrain, paths, assets; project upgrades |
+| `jgengine-world` | runtime movement, input, interaction, AI, navigation, audio |
+| `jgengine-gameplay` | state, systems, inventory, crafting, quests, economy, turns |
+| `jgengine-combat` | targeting, stats, damage, effects, abilities, loot |
+| `jgengine-ui` | HUD, menus, layout, accessibility, touch |
+| `jgengine-assets` | models, sprites, audio files, licensing, catalogs |
+| `jgengine-multiplayer` | authority, replication, sessions, persistence |
+| `game-improvement` | deepening an existing game |
+| `jgengine-verify` | before any claim that a change works |
+| `workflow` | landing a change (monorepo) |
+| `improve` | backlog passes |
 
-- player point of view and controls
-- world shape and authored content
-- core loop, interaction, combat, and progression
-- solo, local, hosted, or persistent multiplayer
-- HUD/menu states and **custom** UI art direction (compose shipped building blocks + HudTheme; no unskinned stock face)
-- one observable completion scenario
+World content is editor-first: anything that adds, moves or restyles something visible starts in `jgengine-editor`, and `jgengine-world` consumes the document.
 
-Start a game only through `create-game-jg` (it picks the template and runs `jgengine create`); never copy `games/*`. The game's `jgengine.json` says what it is and uses (template, editor, `@jgengine` packages, and in-repo its adoption debt and boot probes). Change what a game uses by editing it, then run `jgengine sync`, which also brings a game up to the running engine: its `@jgengine` versions and its template's shared files (wiring, page, tooling scripts, AGENTS.md). A shared file the game rewrote goes in its `owns` list so sync leaves it alone.
+## Discover before writing
 
-For an existing game asked to pick up a new engine release ("jgengine published a new version, grab it"), run `npx jgengine@latest sync` in the project (or at its workspace root): it moves every `@jgengine` pin and catalog entry to that release, refreshes the template's files, and prints every Migrate step and Adopt-worthy addition in between. Install, migrate oldest-first, then work the Adopt lists instead of reconstructing the changelog by hand.
+1. `npx jgengine has "<feature>" ...` answers many features at once (covered, partial or gap, with imports). `npx jgengine find <intent>` names the home folder, primitives, recipes and assets. Search the moment you would hand-roll a HUD window, inventory grid, hotkey, minimap, stat bar or character motion.
+2. `npx jgengine recipe <name>` prints a typechecked snippet; `npx jgengine recipe` lists them. [recipes/minimal-game.md](recipes/minimal-game.md) is the whole-game walkthrough; each domain has `recipes/`.
+3. Open `api.md` or a `.d.ts` only for exact signatures, with grep.
 
-`doctor` resolves Bun `catalog:` and `catalog:<name>` declarations from the nearest workspace's `workspaces.catalog` or `workspaces.catalogs` and follows hoisted SDK installs; missing or malformed catalog entries fail diagnostics. `sync` at a workspace root moves the catalog pins (preserving per-game `catalog:` declarations, CLI/github versions and a held editor override) and changes declarations only: run `bun install` at the root, then `jgengine doctor --workspace --json` once there.
+If nothing fits, name the shared owner first (AGENTS.md, "Reusable capability goes upstream first"); report SDK gaps upstream outside this repo.
 
-When a linked consumer renders differently despite matching root SDK versions, `doctor` checks direct consumers and SDK dependency/peer paths, including private copies with the same version. Review the reported importer and real paths, align the shared catalog and linked-consumer declarations, then reinstall at the root and rerun `doctor --workspace`; a root install may leave private linked-package installs intact. Restart running games after reinstall. Workspace mode checks installed identities only, reports coverage, and refuses unsupported patterns, escaped symlinks or exhausted traversal budgets. The default project audit stays scoped; neither mode covers custom bundler aliases or indirect non-SDK chains.
+## Finish
 
-## 2. Select domains
-
-Load only rows the target needs. Do not preload every domain.
-
-| Need | Skill | Owner |
-| --- | --- | --- |
-| player promise, pillars, verbs, loops, economy, progression, balance | `game-design` | experience and rule intent |
-| substantial existing-game improvement across depth, world and presentation | `game-improvement` | ordered improvement plan and per-game completion |
-| metrics, topology, encounters, navigation, spatial pacing | `level-design` | playable space intent |
-| scene placement, terrain painting, paths, asset authoring | `jgengine-editor` | editor document and authoring tools |
-| runtime world, movement, input, interaction, AI, navigation, audio | `jgengine-world` | spatial simulation and world runtime |
-| game state, systems, inventory, crafting, quests, economy, turns | `jgengine-gameplay` | non-combat rules and state |
-| targeting, stats, damage, effects, abilities, projectiles, loot | `jgengine-combat` | combat resolution |
-| HUD, menus, layout, accessibility, touch presentation | `jgengine-ui` | player-facing interface |
-| models, sprites, materials, audio files, source licensing | `jgengine-assets` | asset discovery and catalogs |
-| authority, transport, replication, sessions, host persistence | `jgengine-multiplayer` | network topology and persistence adapters |
-
-World content routes editor-first: any request that adds, moves, restyles, or removes something visible in the world — however phrased ("design this world", "place the enemies", "make it look better") — starts in `jgengine-editor`; the other domains consume the authored document. Scenes normally require both `jgengine-editor` for authoring and `jgengine-world` for runtime consumption. Combat and multiplayer are opt-in, not default intake.
-
-## 3. Discover before designing
-
-Within each selected domain:
-
-0. Break each feature into the ten parts first ([README.md](../../../README.md#the-parts)): "supply drop" is a schedule, a placement, a rarity ladder, a requirement, a loot table and a motion track. Look up and use each part; a closed engine feature with the same name is not a reason to skip this, because it is likely one of the one-game features being taken apart.
-1. Fastest start for a common composition: `npx jgengine recipe <name>` prints a vetted, SDK-typechecked snippet (imports + wired code) (`combat-loop`, `loot`, `world-drops`, `click-target`, `ability-bar`, `hitscan-weapon`, `rolled-gear`, `enter-vehicle` and more); `npx jgengine recipe` lists them. Copy that instead of reconning per-file.
-2. Search capabilities by intent; do not read `capabilities.md` top to bottom. Several features at once: `npx jgengine has torpor riding "snap building"` answers each (covered, partial or gap, with folders and imports) as one JSON document. `npx jgengine find <intent>` names the concept's home folder in each layer (read from the engine source or the installed packages), searches every domain's index and every recipe at once, and prints the primitive and its import (or the recipe to open) and matching assets; agents can use `--json --limit 5` for ranked imports and recipes with total, partial-match, and truncation fields. In the monorepo, `rg -i "<intent>" .claude/skills/*/capabilities.md` does the same search. Search the moment you are tempted to hand-roll a HUD window, inventory grid, paperdoll, hotkey listener, minimap, stat bar, or character motion. A `z-index`, a `keydown` for a panel, a `<div>` inventory, or a limb bob almost certainly has a shipped drop-in (`usePanels`/`PanelHost`, `InventoryGrid`, `CharacterSheet`/`Paperdoll`, `PartMotionRig`, `EntityPreview`); games own the *skin*, not the re-derivation.
-3. Open `api.md` (monorepo) or the package `.d.ts` only when exact signatures are needed; grep it, never read it whole.
-4. Open the linked reference only for a deeper recipe or trap.
-5. For how several primitives wire into a running loop, read the domain's `recipes/` — connected, genre-free walkthroughs organized by composition seam; this skill's own [recipes/minimal-game.md](recipes/minimal-game.md) is the default whole-game walkthrough. Prefer a recipe over reading a game's source; the games under `games/*` are not templates or references, and a hybrid game is just a different composition of the same primitives.
-
-If no capability fits, identify the upstream package seam before writing game-local code. In this repository, implement a reusable primitive with its first adopter and a reviewed consumer cleanup; coordinate a differently composed second consumer when applicable. Recipes wire SDK APIs, not copied implementations. If editor-owned content cannot be expressed, file the editor gap first; track any fallback and its removal path.
-
-## 4. Build and finish
-
-Keep scene coordinates in the editor document, state serializable, randomness injected, and hot-path work bounded. Use `jgengine-verify` for evidence appropriate to the change. Inside this monorepo, `workflow` owns issue/PR completion. Visual polish work also uses the `jgengine-ui` quality reference.
-
-**Required asset pass — completion is gated on real models.** A game is not done while its entities and props are still primitive markers or box placeholders when real models are available for them. Before claiming completion, run an asset pass: every placed entity has its `entityModels` set and every prop its `objectModels` set to real, resolved model refs — not primitive-shape markers. Scaffolds ship with `jgengine-assets` and `npx jgengine assets pull` installed but never auto-triggered, so this step is on you to run explicitly. `jgengine-assets` owns the how-to (sourcing, licensing, `assets pull`, catalog indexing, and resolving refs); load it for the workflow. If a game genuinely wants primitive shapes as its art direction, say so — otherwise unresolved markers/box props are unfinished, not a style.
+Keep scene coordinates in the editor document, state serializable, randomness injected. A game is not done while its entities and props are box markers: run the asset pass in `jgengine-assets`. Prove it with `jgengine-verify`.
