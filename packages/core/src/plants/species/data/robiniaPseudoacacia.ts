@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const ROBINIA_PSEUDOACACIA: PlantSpecies = {
   id: "robinia-pseudoacacia",
-  version: 11,
+  version: 12,
   names: {
     scientific: "Robinia pseudoacacia L.",
     common: { en: "black locust", fr: "robinier faux-acacia" },
@@ -17,20 +17,20 @@ export const ROBINIA_PSEUDOACACIA: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
-    apicalControl: 0.6352,
-    apicalControlMature: 0.3176,
+    apicalControl: 0.6356,
+    apicalControlMature: 0.3251,
     apicalControlHalfYears: 66.17,
     internodeMax: 0.09189,
-    branchAngle: 42.16,
+    branchAngle: 45.39,
     lateralBudsPerNode: 1,
     maxMetamersPerShoot: 8,
     establishmentYears: 0.03772,
-    horizontalVigour: 0.0352,
+    horizontalVigour: 0.03,
     vigourIndexWeight: 0.5337,
     tropism: {
       gravity: 0.05,
       gravityOrderDecay: 0.4,
-      setpointAngle: 71.47,
+      setpointAngle: 68.13,
       setpointPerOrder: 21.95,
       optimal: 0.2857,
       wind: 0.15,
@@ -39,7 +39,7 @@ export const ROBINIA_PSEUDOACACIA: PlantSpecies = {
     budLightThreshold: 0.04814,
     budDeathYears: 3,
     dormantBudYears: 5,
-    spurYears: 13,
+    spurYears: 14,
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.5,
     jitter: 0.12,
