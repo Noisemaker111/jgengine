@@ -44,7 +44,8 @@ export async function pullMirroredModel<T>(
         if (file === RESULT_FILE || file.includes("/") || file.includes("\\") || file.startsWith(".")) continue;
         writeFileSync(join(dir, file), bytes);
       }
-      return { recorded: JSON.parse(new TextDecoder().decode(recorded)) as T, dir };
+      const result: T = JSON.parse(new TextDecoder().decode(recorded));
+      return { recorded: result, dir };
     } catch {
       // Missing, blocked or malformed: the next mirror, then the source.
     }

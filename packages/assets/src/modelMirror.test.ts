@@ -21,19 +21,28 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-const rocketbox = MODEL_LIBRARY.find((entry) => entry.origin.provider === "rocketbox")!;
-const khronos = MODEL_LIBRARY.find((entry) => entry.origin.provider === "khronos")!;
+function entryOf(provider: string) {
+  const found = MODEL_LIBRARY.find((entry) => entry.origin.provider === provider);
+  if (found === undefined) throw new Error(`no ${provider} entry in the library`);
+  return found;
+}
+const rocketbox = entryOf("rocketbox");
+const khronos = entryOf("khronos");
+
+function fetchOf(handler: (url: string) => Response): typeof fetch {
+  // type-escape: a test double with fetch's call shape but not its static members
+  return ((input: string | URL | Request) => Promise.resolve(handler(String(input)))) as unknown as typeof fetch;
+}
 
 function fakeMirror(entryName: string, files: Record<string, Uint8Array>, result: object) {
   const dir = scratch();
   const asset = `${DEFAULT_RELEASE_BASE}/${modelMirrorAssetName(entryName)}`;
   const zip = zipSync({ ...files, "pulled.json": new TextEncoder().encode(JSON.stringify(result)) });
   const urls: string[] = [];
-  const fetchImpl = (async (input: string | URL | Request) => {
-    const url = String(input);
+  const fetchImpl = fetchOf((url) => {
     urls.push(url);
     return url === asset ? new Response(zip) : new Response("not found", { status: 404 });
-  }) as unknown as typeof fetch;
+  });
   return { dir, urls, fetchImpl };
 }
 
@@ -65,7 +74,7 @@ describe("model mirror", () => {
   });
 
   test("a mirror miss returns null so the pull falls back to the source", async () => {
-    const miss = (async () => new Response("nope", { status: 404 })) as unknown as typeof fetch;
+    const miss = fetchOf(() => new Response("nope", { status: 404 }));
     expect(await pullMirroredModel("x", scratch(), miss)).toBeNull();
   });
 
@@ -73,11 +82,11 @@ describe("model mirror", () => {
     const source = scratch();
     await Bun.write(join(source, "near.gltf"), "n");
     const zip = zipPulledModel(source, { bytes: 1 });
-    const fetchImpl = (async () => new Response(zip)) as unknown as typeof fetch;
+    const fetchImpl = fetchOf(() => new Response(zip));
     const out = scratch();
     const restored = await pullMirroredModel<{ bytes: number }>("lib/x", out, fetchImpl, {});
     expect(restored?.recorded.bytes).toBe(1);
-    expect(readFileSync(join(restored!.dir, "near.gltf"), "utf8")).toBe("n");
+    expect(readFileSync(join(restored?.dir ?? "", "near.gltf"), "utf8")).toBe("n");
   });
 
   test("a 403 saying GitHub access is not enabled is named a sandbox policy denial", async () => {
