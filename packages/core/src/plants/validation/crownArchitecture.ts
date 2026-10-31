@@ -159,11 +159,34 @@ function gapFraction(structure: PlantStructure, views: number, cells: number, st
     const colOf = (x: number, z: number): number => Math.floor((x * ax + z * az + half) / cell);
     const rowOf = (y: number): number => Math.floor((y - bottom) / cell);
     for (let row = 0; row < size.length; row += 1) {
-      const c = colOf(position[row * 3] ?? 0, position[row * 3 + 2] ?? 0);
-      const r = rowOf(position[row * 3 + 1] ?? 0);
-      if (c < 0 || c >= cols || r < 0 || r >= cells) continue;
+      const x = position[row * 3] ?? 0;
+      const y = position[row * 3 + 1] ?? 0;
+      const z = position[row * 3 + 2] ?? 0;
       const s = size[row] ?? 0;
-      leafArea[r * cols + c] = (leafArea[r * cols + c] ?? 0) + (count[row] ?? 1) * LEAF_AREA_PER_SIZE_SQ * s * s;
+      const area = (count[row] ?? 1) * LEAF_AREA_PER_SIZE_SQ * s * s;
+      // A node's leaves reach out from it by up to a leaf's length: spread their area over the cells
+      // whose centres lie within that reach, side-on, or over the node's own cell when it is smaller.
+      const u = (x * ax + z * az + half) / cell;
+      const v = (y - bottom) / cell;
+      const reach = s / cell;
+      const c0 = Math.max(0, Math.floor(u - reach));
+      const c1 = Math.min(cols - 1, Math.floor(u + reach));
+      const r0 = Math.max(0, Math.floor(v - reach));
+      const r1 = Math.min(cells - 1, Math.floor(v + reach));
+      let covered = 0;
+      for (let r = r0; r <= r1; r += 1) {
+        for (let c = c0; c <= c1; c += 1) if ((c + 0.5 - u) ** 2 + (r + 0.5 - v) ** 2 <= reach * reach) covered += 1;
+      }
+      if (covered === 0) {
+        const c = Math.floor(u);
+        const r = Math.floor(v);
+        if (c >= 0 && c < cols && r >= 0 && r < cells) leafArea[r * cols + c] = (leafArea[r * cols + c] ?? 0) + area;
+        continue;
+      }
+      const share = area / covered;
+      for (let r = r0; r <= r1; r += 1) {
+        for (let c = c0; c <= c1; c += 1) if ((c + 0.5 - u) ** 2 + (r + 0.5 - v) ** 2 <= reach * reach) leafArea[r * cols + c] = (leafArea[r * cols + c] ?? 0) + share;
+      }
     }
     for (let i = 0; i < radiusStart.length; i += 1) {
       // Only wood at least a cell wide hides the sky behind a whole cell.
