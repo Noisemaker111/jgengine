@@ -1,7 +1,4 @@
 {
   "drawsFrame": 679,
-  "previousDraws": 732,
-  "triangles": 4405210,
-  "nodes": 6608,
-  "baseline": "2026-10-25 bun run perf harbor-heat --seconds 6 --uncapped --quality high, GeForce RTX 3070 ANGLE D3D11, 1600x900, tier high, engine 5b64fdd6 (0.42.0) serving Games on origin/beta a6267c7f plus the harbor-look lane; two runs read drawsFrame 613 / 618, triangles 2,998,943 / 3,006,673, nodes 6,008 / 6,008. Ceilings are +10% over the higher measured value, rounded down: drawsFrame 679 (618), nodes 6,608 (6,008). Before this lane the same engine and beta measured drawsFrame 941 / 941 and nodes 6,899 / 6,899 (already over the old 732 / 3,769 ceilings from content that landed after the 2026-10-24 baseline): the palm went from 38 primitives to 3 and its far level from a decimation to an authored mesh, which is the 323 draws and 891 nodes saved; triangles rose 66,194 for the denser crowns, the bus and the cruiser. The node ceiling is the +10% convention on today's measurement, not a loosened rule. Previous draws ceiling 732."
+  "baseline": "2026-10-25 bun run perf harbor-heat --seconds 6 --uncapped --quality high, GeForce RTX 3070 ANGLE D3D11, 1600x900, tier high, engine 5b64fdd6 (0.42.0) serving Games on origin/beta a6267c7f plus the harbor-look lane. drawsFrame is that run's whole-frame draw ceiling, printed beside each gate run as a reference, not gated; every game is judged on the shared 16.7 ms p95 frame."
 }

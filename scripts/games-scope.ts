@@ -9,7 +9,7 @@ import { join } from "node:path";
 export function referenceGames(root: string): string[] {
   const budget = join(root, "scripts", "perf-budget.json");
   if (!existsSync(budget)) return folders(root, (name) => existsSync(join(root, "games", name, "src")));
-  return Object.keys(JSON.parse(readFileSync(budget, "utf8")) as Record<string, unknown>).sort();
+  return Object.keys(JSON.parse(readFileSync(budget, "utf8")) as Record<string, unknown>).filter((key) => !key.startsWith("$")).sort();
 }
 
 function folders(root: string, keep: (name: string) => boolean): string[] {

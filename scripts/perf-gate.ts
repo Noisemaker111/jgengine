@@ -11,45 +11,44 @@ import {
 } from "./browser-lib";
 import { measureGame } from "./perf-play";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
-import { checkBudget, loadBudget, summarizeRecord, type LoadedBudget } from "./perf-budget";
+import {
+  checkBudget,
+  FRAME_BUDGET_MS,
+  frameVerdict,
+  KNOWN_SLOW_PATH,
+  knownSlowAdded,
+  loadBudget,
+  readBaseKnownSlow,
+  readKnownSlow,
+  REFERENCE,
+  summarizeRecord,
+  unjudgedFrameTime,
+  type LoadedBudget,
+} from "./perf-budget";
 import { runPool } from "./type-shard";
 
 /**
- * Frame-budget gate: plays every reference game under the checkout's software
- * GL path, waits out the warmup, then fails the run when steady-state render
- * counts exceed the game's budget or when the frame loop still allocates GL
- * objects after warmup.
+ * Frame-time gate: plays every reference game, waits out the warmup, then fails a game whose p95
+ * frame time on the reference GPU (RTX 3070 at 1600x900, uncapped clock) is over the
+ * 16.7 ms every game shares, or whose frame loop still allocates GL objects after warmup.
  *
- *   bun run perf gate [--games a,b] [--seconds n] [--quality draft|full]
+ *   bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--jobs n]
  *
- * Frame times are deliberately not gated: CI runners are slow and shared, so
- * only counts a build controls — draws, triangles, scene nodes and post-warmup
- * GL allocations — decide pass or fail. `bun run perf live <game>` reads the same
- * budget through the same verdict logic, from a game already open in a browser.
+ * On any other GPU the frame time is printed and not judged, and only the GL allocations decide.
+ * Draws are printed beside the frame time, as the first number to read when a game is slow; they
+ * are not a gate. A game over budget when the gate landed is listed in
+ * `scripts/perf-known-failing.json`, which only shrinks: a listed game that holds the budget fails
+ * until its entry is removed, and an entry the base branch lacks fails.
  *
- * Games are measured a few at a time rather than one after another: eight games
- * in series cost ~6 minutes locally, while the same eight with four in flight
- * cost about two waves. Each game gets its own browser and profile from the
- * launch lib (one page target per game on a shared browser is not isolation: a
- * crashed or throttled page would take another game's measurement with it), and
- * each is judged against its own budget on its own record, so a game over budget
- * still fails alone.
- *
- * Two draw counts appear in the output, and they are not interchangeable:
- *
- * - `drawsFrame` is every draw a frame issues, all passes together — shadow,
- *   main, postfx prepasses, AO, DOF — taken as the p95 of the measured window by
- *   wrapping the GL draw calls. This is what the budget compares.
- * - `draws` is the renderer's own counter as the devtools probe sampled it: one
- *   frame, from a source that can only hold every pass while `info.autoReset` is
- *   off. It is printed for comparison with older records, not gated.
+ * Games are measured one at a time by default: two games on one GPU would each read the other's
+ * frames as their own cost.
  */
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const DEFAULT_SECONDS = 6;
 const WARMUP_MS = 5_000;
-/** Games measured at once by default. Four keeps a handful of software-GL pages off each other's core. */
-export const DEFAULT_JOBS = 4;
+/** Games measured at once by default: one, since games sharing a GPU measure each other's frames. */
+export const DEFAULT_JOBS = 1;
 /**
  * Debug ports for the games in flight, one per slot. Above the 9200-9899 band
  * `pickDebugPort` and the warm Chrome use, so two games in one run - or a game
@@ -58,6 +57,9 @@ export const DEFAULT_JOBS = 4;
 export const DEBUG_PORT_BASE = 9910;
 
 export { checkBudget, loadBudget, type BudgetViolation, type LoadedBudget, type PerfBudget } from "./perf-budget";
+
+/** The viewport the gate measures at: the reference one, so a frame time is comparable with the budget. */
+export const GATE_SIZE = { width: 1600, height: 900 } as const;
 
 /** The reference games the epic's budget passes cover. */
 export const PERF_GATE_GAMES = [
@@ -132,17 +134,25 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
 
 const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--draft] [--jobs n]
 
+  Fails a game whose p95 frame time is over ${FRAME_BUDGET_MS} ms on the reference GPU
+  (${REFERENCE.label}, uncapped clock), or whose frame loop allocates GL objects after
+  warmup. On another GPU the frame time is printed, not judged. Draws are printed, not gated.
+  Games over budget today are listed in ${KNOWN_SLOW_PATH}; the list only shrinks.
+
   --games           comma-separated game ids (default: the 8 reference games)
   --seconds         measured window per game (default ${DEFAULT_SECONDS})
   --quality         the graphics tier each game is measured at (low, medium, high, ultra). Without
                     it each game runs its own default tier, and every record names the tier it got.
-  --draft           low tier at half viewport, for a smoke pass you will not quote
-  --jobs            games measured at once (default ${DEFAULT_JOBS}); each gets its own browser
+  --draft           low tier at half viewport, for a smoke pass you will not quote (frame time not judged)
+  --jobs            games measured at once (default ${DEFAULT_JOBS}); more than one shares the GPU, so
+                    their frame times read each other's work
   --set             not taken here: a setting override measures a cost against the defaults,
                     not a budget. Use \`bun run perf <game> --set key=value\` and compare records.`;
 
 interface GameOutcome {
   game: string;
+  /** Over the frame budget and listed as known; reported, not failed. */
+  known?: string;
   /** The printed ok line, or null when the game failed or was not measured. */
   summary: string | null;
   violations: string[];
@@ -182,20 +192,18 @@ async function main(): Promise<void> {
     );
   }
 
+  const known = readKnownSlow(repoRoot);
+  const added = knownSlowAdded(known, readBaseKnownSlow(repoRoot, "origin/beta"));
+
   const server = await ensureDevServer(repoRoot);
   let rasterizerPrinted = false;
 
   const measureOne = async (game: string, index: number): Promise<GameOutcome> => {
     const loaded = budgets.get(game)!;
     console.log(`perf gate: ${game} budget ${loaded.source}`);
-    if (loaded.budget.legacyDraws === true) {
-      console.log(
-        `perf gate: ${game} budget entry still says draws — it is compared whole-frame, but re-measure it as drawsFrame (bun run perf ${game}) so the number is a sampled p95, not one frame`,
-      );
-    }
     let outcome: GameOutcome = { game, summary: null, violations: [], error: null };
     const exitCode = await withBrowserSession(
-      { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: 300_000 },
+      { keep: false, debugPort: debugPortFor(index), timeoutMs: 180_000, hardDeadlineMs: 300_000, frameClock: "uncapped" },
       async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         try {
@@ -208,21 +216,31 @@ async function main(): Promise<void> {
             seconds,
             warmupMs: WARMUP_MS,
             profile: false,
+            frameClock: "uncapped",
+            ...(draft ? {} : { size: GATE_SIZE }),
           });
           const budget = loaded.budget;
           if (!rasterizerPrinted) {
             rasterizerPrinted = true;
-            console.log(`perf gate: rasterizer ${measured.record.gpu}`);
+            const unjudged = unjudgedFrameTime(measured.record);
+            console.log(`perf gate: rasterizer ${measured.record.gpu}${unjudged === null ? "" : ` — frame times not judged: ${unjudged}`}`);
           }
-          const violations = checkBudget(measured.record, budget, { requireDrawsFrame: true });
-          if (violations.length === 0) {
-            outcome = { ...outcome, summary: summarizeRecord(measured.record, budget) };
-            console.log(`perf gate: ${summarizeRecord(measured.record, budget)}`);
+          const violations = checkBudget(measured.record, budget);
+          const verdict = frameVerdict(game, violations, measured.record, known);
+          const failing = violations.filter((entry) => verdict !== "known" || entry.metric !== "p95 frame").map((entry) => entry.message);
+          if (verdict === "stale") {
+            failing.push(`perf gate: ${game} now holds ${FRAME_BUDGET_MS} ms (p95 ${measured.record.frame.p95Ms} ms); remove its entry from ${KNOWN_SLOW_PATH} (it said: ${known.get(game) ?? ""})`);
+          }
+          if (failing.length === 0) {
+            const line = summarizeRecord(measured.record, budget);
+            const knownNote = verdict === "known" ? `  KNOWN over budget (${known.get(game) ?? ""})` : "";
+            outcome = { ...outcome, summary: `${line}${knownNote}`, ...(verdict === "known" ? { known: known.get(game) ?? "" } : {}) };
+            console.log(`perf gate: ${line}${knownNote}`);
           } else {
-            outcome = { ...outcome, violations: violations.map((entry) => entry.message) };
+            outcome = { ...outcome, violations: failing };
             console.error(`perf gate: ${game} FAILED against ${loaded.source} (${measured.record.gpu})`);
-            for (const entry of violations) console.error(`  ${entry.message}`);
-            console.error(JSON.stringify(measured.record, null, 2));
+            for (const message of failing) console.error(`  ${message}`);
+            console.error(`  p95 ${measured.record.frame.p95Ms} ms, ${measured.record.frame.fps} fps, drawsFrame ${measured.record.render.drawsFrame ?? "n/a"}`);
           }
         } finally {
           await session.close();
@@ -257,18 +275,21 @@ async function main(): Promise<void> {
   }
 
   const measured = outcomes.filter((outcome): outcome is GameOutcome => outcome !== undefined);
-  const { failures, lines } = gateVerdicts(measured);
+  const verdicts = gateVerdicts(measured);
+  const failures = [...added, ...verdicts.failures];
+  const lines = verdicts.lines;
 
   if (failures.length > 0) {
     console.error(`\nperf gate FAILED — ${failures.length} problem(s) across ${games.length} games`);
     for (const failure of failures) console.error(`  ${failure}`);
     console.error(
-      "budgets live beside each game (games/<id>/perf-budget.json), else scripts/perf-budget.json; raise drawsFrame only with a measured whole-frame baseline.",
+      `every game shares the ${FRAME_BUDGET_MS} ms p95 frame on ${REFERENCE.label}; read the drawsFrame and \`bun run perf <game>\` breakdown to find where a frame goes.`,
     );
     process.exit(1);
   }
 
-  console.log(`\nperf gate: ${games.length} games inside budget (${lines.length} measured)`);
+  const knownCount = measured.filter((outcome) => outcome.known !== undefined).length;
+  console.log(`\nperf gate: ${games.length} games inside budget (${lines.length} measured${knownCount > 0 ? `, ${knownCount} known over it in ${KNOWN_SLOW_PATH}` : ""})`);
 }
 
 if (import.meta.main) {

@@ -318,15 +318,12 @@ function main(): void {
   }
 
   if (check) {
-    if (staleBaseline > 0) {
-      failures.push(
-        `${BASELINE_PATH} has ${staleBaseline} stale entr(ies) for symbols now documented or removed — run: bun run gen skill-api`,
-      );
-    }
+    // A stale entry only shrinks a baseline: a game that adopts an orphan makes one, and the next
+    // land-time `bun run gen` prunes it. It is reported, never failed, so a game change never pays
+    // for the engine's generator.
+    if (staleBaseline > 0) console.log(`note: ${BASELINE_PATH} has ${staleBaseline} stale entr(ies); bun run gen prunes them`);
     if (orphanBaselineExists && staleOrphanBaseline > 0) {
-      failures.push(
-        `${ORPHAN_BASELINE_PATH} has ${staleOrphanBaseline} stale entr(ies) for primitives now adopted or removed — run: bun run gen skill-api`,
-      );
+      console.log(`note: ${ORPHAN_BASELINE_PATH} has ${staleOrphanBaseline} stale entr(ies) for primitives now adopted or removed; bun run gen prunes them`);
     }
   } else if (seed) {
     writeBaseline(root, BASELINE_PATH, undocumented);

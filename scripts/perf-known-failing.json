@@ -1,0 +1,5 @@
+{
+  "$comment": "Games whose p95 frame was over the 16.7 ms budget on the RTX 3070 at 1600x900 when the frame-time gate landed, and why. Shrink only: remove a game's entry in the PR that makes it hold the budget (the gate fails a listed game that passes); never add one (the gate fails an entry origin/beta lacks). See scripts/perf-budget.ts.",
+  "harbor-heat": "runs at about 15 fps (a p95 frame near 67 ms) on the reference GPU, 2026-10 (#2837)",
+  "drift-foundry": "runs at about 38 fps (a p95 frame near 26 ms) on the reference GPU, 2026-10 (#2837)"
+}

@@ -9,7 +9,7 @@ const ROOTS = ["packages", "apps", "examples"];
  * `scripts/` are run as often as any package and had no typecheck until they were listed here.
  */
 const EXTRA_DIRS = ["scripts"];
-const CONCURRENCY = 8;
+const CONCURRENCY = 4;
 
 /** Every dir this runs a `check-types` in: the workspaces plus {@link EXTRA_DIRS}. */
 export function typecheckedDirs(root: string = process.cwd()): string[] {
@@ -46,8 +46,8 @@ async function checkOne(dir: string): Promise<{ dir: string; ok: boolean; output
   return { dir, ok: exitCode === 0, output: `${stdout}${stderr}`.trim() };
 }
 
-async function main(): Promise<number> {
-  const dirs = typecheckedDirs();
+async function main(named: readonly string[]): Promise<number> {
+  const dirs = named.length > 0 ? [...named] : typecheckedDirs();
   const failures: { dir: string; output: string }[] = [];
   let checked = 0;
 
@@ -71,11 +71,11 @@ async function main(): Promise<number> {
 
 if (import.meta.main) {
   const usage = {
-    summary: "type-check every workspace (and scripts/) that has its own check-types script, eight at a time",
-    usage: "bun run check types",
-    flags: [],
+    summary: "type-check every workspace (and scripts/) that has its own check-types script, four at a time",
+    usage: "bun run check types [<dir>...]",
+    flags: [{ flag: "<dir>...", detail: "type-check only these workspace dirs (the games job passes the games it reached)" }],
     example: "bun run check types",
   };
   if (printHelpIfAsked("check-types-all", usage)) process.exit(0);
-  process.exit(await main());
+  process.exit(await main(process.argv.slice(2).filter((arg) => !arg.startsWith("-"))));
 }
