@@ -18,7 +18,7 @@ describe("provisionCapturedGame", () => {
     const before = process.env["JG_DEV_PROVISION"];
     process.env["JG_DEV_PROVISION"] = "0";
     const lines: string[] = [];
-    await provisionCapturedGame(join(import.meta.dir, "../games/hold-the-line"), (line) => lines.push(line));
+    await provisionCapturedGame(join(import.meta.dir, "../games/deepward"), (line) => lines.push(line));
     if (before === undefined) delete process.env["JG_DEV_PROVISION"];
     else process.env["JG_DEV_PROVISION"] = before;
     expect(lines).toEqual([]);

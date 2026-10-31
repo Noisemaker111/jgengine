@@ -46,25 +46,25 @@ describe("resolveAssetBaseUrl", () => {
 
   test("loads the running game's own files from its folder and everything else from the shared base", () => {
     setAssetBase("/play/");
-    setGameAssetFiles("games/hold-the-line", ["/models/imported/nature/Bush.glb"]);
-    expect(resolveAssetBaseUrl("/models/imported/nature/Bush.glb")).toBe("/play/games/hold-the-line/models/imported/nature/Bush.glb");
-    expect(resolveAssetBaseUrl("/models/imported/nature/Bush.glb?v=2")).toBe("/play/games/hold-the-line/models/imported/nature/Bush.glb?v=2");
+    setGameAssetFiles("games/deepward", ["/models/imported/nature/Bush.glb"]);
+    expect(resolveAssetBaseUrl("/models/imported/nature/Bush.glb")).toBe("/play/games/deepward/models/imported/nature/Bush.glb");
+    expect(resolveAssetBaseUrl("/models/imported/nature/Bush.glb?v=2")).toBe("/play/games/deepward/models/imported/nature/Bush.glb?v=2");
     expect(resolveAssetBaseUrl("/models/kaykit-dungeon/wall.glb")).toBe("/play/models/kaykit-dungeon/wall.glb");
   });
 
   test("moves a game file the loader already based (a .gltf's own texture) into the game's folder, once", () => {
     setAssetBase("/play/");
-    setGameAssetFiles("games/briarcrown", ["/models/scenery/T_Wood.png"]);
-    expect(resolveAssetBaseUrl("/play/models/scenery/T_Wood.png")).toBe("/play/games/briarcrown/models/scenery/T_Wood.png");
-    expect(resolveAssetBaseUrl("/play/games/briarcrown/models/scenery/T_Wood.png")).toBe("/play/games/briarcrown/models/scenery/T_Wood.png");
+    setGameAssetFiles("games/ember-command", ["/models/scenery/T_Wood.png"]);
+    expect(resolveAssetBaseUrl("/play/models/scenery/T_Wood.png")).toBe("/play/games/ember-command/models/scenery/T_Wood.png");
+    expect(resolveAssetBaseUrl("/play/games/ember-command/models/scenery/T_Wood.png")).toBe("/play/games/ember-command/models/scenery/T_Wood.png");
     expect(resolveAssetBaseUrl("/play/models/shared.png")).toBe("/play/models/shared.png");
   });
 
   test("finds a model's texture named through its own folder (`settlements/../scenery/a.png`)", () => {
     setAssetBase("/play/");
-    setGameAssetFiles("games/briarcrown", ["/models/scenery/T_Wood.png"]);
-    expect(resolveAssetBaseUrl("/models/settlements/../scenery/T_Wood.png")).toBe("/play/games/briarcrown/models/scenery/T_Wood.png");
-    expect(resolveAssetBaseUrl("/models/settlements/./../scenery/T_Wood.png?v=1")).toBe("/play/games/briarcrown/models/scenery/T_Wood.png?v=1");
+    setGameAssetFiles("games/ember-command", ["/models/scenery/T_Wood.png"]);
+    expect(resolveAssetBaseUrl("/models/settlements/../scenery/T_Wood.png")).toBe("/play/games/ember-command/models/scenery/T_Wood.png");
+    expect(resolveAssetBaseUrl("/models/settlements/./../scenery/T_Wood.png?v=1")).toBe("/play/games/ember-command/models/scenery/T_Wood.png?v=1");
   });
 
   test("scopes game files under the root base too", () => {

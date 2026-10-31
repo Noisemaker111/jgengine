@@ -822,8 +822,8 @@ describe("local boots", () => {
     const changed = ["packages/core/src/model/modelLoad.draw.ts"];
     const reaches = (...files: string[]): Set<string> => new Set([...changed, ...files]);
     expect(bootsFor(changed, reaches(`games/${REPRESENTATIVE_GAME}/src/main.tsx`, "games/odd-orbit/src/main.tsx"))).toEqual([REPRESENTATIVE_GAME]);
-    expect(bootsFor(changed, reaches("games/odd-orbit/src/main.tsx", "games/saltwick/src/main.tsx"))).toEqual(["odd-orbit"]);
-    expect(bootsFor(changed, reaches("games/saltwick/src/main.tsx"))).toEqual(["saltwick"]);
+    expect(bootsFor(changed, reaches("games/odd-orbit/src/main.tsx", "games/fernwild/src/main.tsx"))).toEqual(["odd-orbit"]);
+    expect(bootsFor(changed, reaches("games/fernwild/src/main.tsx"))).toEqual(["fernwild"]);
     expect(bootsFor(changed, reaches("packages/shell/src/other.ts", "games/scripts/check.ts"))).toEqual([]);
     // A heavy path no import shows (a lockfile, a workflow) still boots the representative.
     expect(bootsFor(["bun.lock"], new Set(["bun.lock"]))).toEqual([REPRESENTATIVE_GAME]);

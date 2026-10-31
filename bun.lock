@@ -187,58 +187,8 @@
         "vite": "^8.1.3",
       },
     },
-    "games/apex-nights": {
-      "name": "@games/apex-nights",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "three": "catalog:",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
     "games/beacon-bastion": {
       "name": "@games/beacon-bastion",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "three": "catalog:",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "games/briarcrown": {
-      "name": "@games/briarcrown",
       "version": "0.1.0",
       "dependencies": {
         "@jgengine/assets": "workspace:*",
@@ -417,31 +367,6 @@
         "vite": "catalog:",
       },
     },
-    "games/hold-the-line": {
-      "name": "@games/hold-the-line",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "three": "catalog:",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
     "games/llmville": {
       "name": "@games/llmville",
       "version": "0.0.0",
@@ -545,81 +470,6 @@
         "vite": "catalog:",
       },
     },
-    "games/orbit-watch": {
-      "name": "@games/orbit-watch",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "three": "catalog:",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "games/outpost-zero": {
-      "name": "@games/outpost-zero",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "three": "catalog:",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "games/red-frontier": {
-      "name": "@games/red-frontier",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "three": "catalog:",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
     "games/registry": {
       "name": "@games/hud-components",
       "dependencies": {
@@ -628,31 +478,6 @@
       },
       "devDependencies": {
         "@types/react": "catalog:",
-      },
-    },
-    "games/saltwick": {
-      "name": "@games/saltwick",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "three": "catalog:",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
       },
     },
     "games/scrap-signal": {
@@ -665,31 +490,6 @@
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
         "@react-three/drei": "catalog:",
-        "@react-three/fiber": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "three": "catalog:",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "games/the-sunken-crown": {
-      "name": "@games/the-sunken-crown",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
         "@react-three/fiber": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
@@ -1145,11 +945,7 @@
 
     "@fontsource-variable/jetbrains-mono": ["@fontsource-variable/jetbrains-mono@5.2.8", "", {}, "sha512-WBA9elru6Jdp5df2mES55wuOO0WIrn3kpXnI4+W2ek5u3ZgLS9XS4gmIlcQhiZOWEKl95meYdvK7xI+ETLCq/Q=="],
 
-    "@games/apex-nights": ["@games/apex-nights@workspace:games/apex-nights"],
-
     "@games/beacon-bastion": ["@games/beacon-bastion@workspace:games/beacon-bastion"],
-
-    "@games/briarcrown": ["@games/briarcrown@workspace:games/briarcrown"],
 
     "@games/brightway-park": ["@games/brightway-park@workspace:games/brightway-park"],
 
@@ -1163,25 +959,13 @@
 
     "@games/harbor-heat": ["@games/harbor-heat@workspace:games/harbor-heat"],
 
-    "@games/hold-the-line": ["@games/hold-the-line@workspace:games/hold-the-line"],
-
     "@games/hud-components": ["@games/hud-components@workspace:games/registry"],
 
     "@games/llmville": ["@games/llmville@workspace:games/llmville"],
 
     "@games/odd-orbit": ["@games/odd-orbit@workspace:games/odd-orbit"],
 
-    "@games/orbit-watch": ["@games/orbit-watch@workspace:games/orbit-watch"],
-
-    "@games/outpost-zero": ["@games/outpost-zero@workspace:games/outpost-zero"],
-
-    "@games/red-frontier": ["@games/red-frontier@workspace:games/red-frontier"],
-
-    "@games/saltwick": ["@games/saltwick@workspace:games/saltwick"],
-
     "@games/scrap-signal": ["@games/scrap-signal@workspace:games/scrap-signal"],
-
-    "@games/the-sunken-crown": ["@games/the-sunken-crown@workspace:games/the-sunken-crown"],
 
     "@gltf-transform/core": ["@gltf-transform/core@4.2.1", "", { "dependencies": { "property-graph": "^3.0.0" } }, "sha512-qKhrQ29KJ9K6sz7xGoGRllqPBlROjPJMQPvCLBOfgMPH3S/Ph5E0e6fD5WmwTY5QPyBsDMRqKd1Vl0ncThTXGw=="],
 

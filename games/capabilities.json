@@ -4391,16 +4391,6 @@
       "intent": "deliver rolled loot drops into inventory and currency"
     },
     {
-      "id": "granular-flow",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/granular/granularLayer",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield"
-    },
-    {
       "id": "grapple-swing",
       "packages": [
         "@jgengine/core"
@@ -5800,16 +5790,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation"
-    },
-    {
-      "id": "lane-board",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/board/laneBoard",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a lane-based card-battler board with per-lane outcomes"
     },
     {
       "id": "lane-graph",
@@ -10968,16 +10948,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "shape loot odds by elapsed hours with caller-authored curves and pipeline provenance"
-    },
-    {
-      "id": "timeline-board",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/board/timelineBoard",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a step-sequencer timeline board of timed slots"
     },
     {
       "id": "timer-readout",

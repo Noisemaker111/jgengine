@@ -6,7 +6,7 @@
  *   bun run games:provision                     every game
  *   bun run games:provision ember-command       one game
  *   bun run games:provision --link-only         link what the store has, download nothing
- *   bun run games:provision saltwick --library gameicons:lorc/wheat   serve one library key; prints { url }
+ *   bun run games:provision fernwild --library gameicons:lorc/wheat   serve one library key; prints { url }
  */
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";

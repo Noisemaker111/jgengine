@@ -28,7 +28,7 @@ const USAGE = `usage: bun run games:capabilities handling <module>#<export> ... 
   --car <id>         real car to compare with (default: the closest in mass): ${REAL_CARS.map((car) => car.id).join(", ")}
                      a tuning with a lean block is a bike: it is compared with ${REAL_MOTORCYCLES.map((bike) => bike.name).join(", ")}
   --json             print the rows as JSON
-example: bun run games:capabilities handling games/apex-nights/src/game/race.ts#BASE`;
+example: bun run games:capabilities handling games/drift-foundry/src/game/parts/build.ts#BASE_HANDLING`;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

@@ -85,14 +85,14 @@ test("pullLibraryAssetToHost posts the key and game, returns the served URL and 
     sent = String(init.body ?? "");
     return Promise.resolve(new Response(JSON.stringify({ url: "/models/library/a/model.glb", files: ["/models/library/a/model.glb"] })));
   };
-  setGameAssetFiles("games/saltwick", []);
+  setGameAssetFiles("games/fernwild", []);
   try {
-    expect(await pullLibraryAssetToHost("polyhaven:a", "saltwick", "/r", host)).toBe("/models/library/a/model.glb");
-    expect(JSON.parse(sent)).toEqual({ key: "polyhaven:a", game: "saltwick" });
-    expect(resolveAssetBaseUrl("/models/library/a/model.glb")).toBe("/games/saltwick/models/library/a/model.glb");
+    expect(await pullLibraryAssetToHost("polyhaven:a", "fernwild", "/r", host)).toBe("/models/library/a/model.glb");
+    expect(JSON.parse(sent)).toEqual({ key: "polyhaven:a", game: "fernwild" });
+    expect(resolveAssetBaseUrl("/models/library/a/model.glb")).toBe("/games/fernwild/models/library/a/model.glb");
   } finally {
     setGameAssetFiles(null);
   }
   const down = () => Promise.reject(new Error("offline"));
-  expect(await pullLibraryAssetToHost("polyhaven:a", "saltwick", "/r", down)).toBeNull();
+  expect(await pullLibraryAssetToHost("polyhaven:a", "fernwild", "/r", down)).toBeNull();
 });

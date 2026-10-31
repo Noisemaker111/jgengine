@@ -4,11 +4,11 @@ import { SHOOT_GUARD_SECONDS, shootCommand } from "./shoot";
 
 describe("bun run shoot", () => {
   test("a plain run is one guarded capture with its arguments untouched", () => {
-    expect(shootCommand(["hold-the-line", "--mode", "play"])).toEqual([
+    expect(shootCommand(["deepward", "--mode", "play"])).toEqual([
       "scripts/guard.ts",
       String(SHOOT_GUARD_SECONDS),
       "bun scripts/shoot-dev.ts",
-      "hold-the-line",
+      "deepward",
       "--mode",
       "play",
     ]);

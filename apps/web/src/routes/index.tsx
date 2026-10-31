@@ -45,9 +45,8 @@ const AGENT_TOOLS: readonly { command: string; does: string }[] = [
 
 /** Games that use the controllers shown in the movement section, and what each one does there. */
 const CONTROLLER_PROOF: readonly { id: string; does: string }[] = [
-  { id: "apex-nights", does: "Drive: night street racing on the vehicle model" },
+  { id: "drift-foundry", does: "Drive: physics racing on the vehicle model" },
   { id: "harbor-heat", does: "Walk, drive and fly in one city" },
-  { id: "the-sunken-crown", does: "Walk and glide through ruins" },
 ];
 
 function Home() {
