@@ -178,9 +178,8 @@ export const SHARDS: readonly Shard[] = [
     // deepest job has to stay under a minute for the gate to have any headroom.
     include: ["packages/core"],
     needs: [],
-    // One process: in four lanes the nav crowd corridor test read a 0.713 closest gap on the runner
-    // against 0.748 everywhere else, so its result depends on what ran before it in the process.
-    // With the long simulations moved to shard d it is about 5.5 minutes, from 13.
+    // 1,000 files took 13 minutes in one process (runs 41018954039 to 41121415429); four lanes.
+    lanes: 4,
   },
   {
     name: "i",
