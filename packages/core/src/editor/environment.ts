@@ -7,6 +7,7 @@ import type { EditorAutoExposure, EditorColorGrading, EditorDocument, EditorEnvi
 import { bakeIrradianceVolume, type IrradianceBakeSettings, type IrradianceVolume } from "@jgengine/core/lighting/lightProbes";
 import type { LutCube } from "../render/postProcessing";
 import type { LightingConfig, PointLightingConfig, SpotLightingConfig } from "../game/playableGame";
+import { clamp01 } from "../math/scalar";
 
 /**
  * World-authoring convergence (#1018, epic #1006 Phase 4): derive the **coordinate/placement**
@@ -91,10 +92,6 @@ const GRADING_LUMA: readonly [number, number, number] = [0.2126, 0.7152, 0.0722]
 const MIN_LUT_SIZE = 2;
 const MAX_LUT_SIZE = 16;
 const DEFAULT_LUT_SIZE = 8;
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
 
 /** Parses `#rgb`/`#rrggbb` into 0..1 display RGB; `undefined` when the swatch is not a colour. */
 function displayRgb(hex: string): [number, number, number] | undefined {
