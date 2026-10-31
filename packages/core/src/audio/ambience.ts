@@ -1,3 +1,5 @@
+import { clamp01 } from "../math/scalar";
+
 /** A world-space volume whose sound bed plays while the listener is inside it. */
 export type AmbienceZoneShape =
   | { kind: "sphere"; center: readonly [number, number, number]; radius: number }
@@ -28,10 +30,6 @@ export interface AmbienceWeight {
 }
 
 const DEFAULT_CROSSFADE = 4;
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
 
 /**
  * Distance from a point to a zone boundary, positive inside and negative outside.
