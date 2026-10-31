@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const FRAXINUS_PENNSYLVANICA: PlantSpecies = {
   id: "fraxinus-pennsylvanica",
-  version: 16,
+  version: 17,
   names: { scientific: "Fraxinus pennsylvanica Marshall", common: { en: "green ash", fr: "frêne rouge" } },
   ids: { usda: "FRPE" },
   habit: "tree",
