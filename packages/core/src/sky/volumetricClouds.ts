@@ -1,3 +1,5 @@
+import { clamp01, lerp } from "../math/scalar";
+
 /**
  * Volumetric cloud layer config for `sky()`: a raymarched cloud slab the sky mounts beside its dome
  * (`VolumetricClouds.draw.tsx`). The sky's light colours and shades it through the day, and the
@@ -84,10 +86,6 @@ export function resolveVolumetricClouds(config: VolumetricCloudsConfig = {}): Vo
   };
 }
 
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
-}
-
 /** Edge length of the tileable cloud noise volume, in voxels. */
 export const CLOUD_NOISE_SIZE = 32;
 
@@ -112,7 +110,6 @@ function tiledValueNoise(x: number, y: number, z: number, period: number): numbe
   const fy = smooth(y - y0);
   const fz = smooth(z - z0);
   const c = (dx: number, dy: number, dz: number) => latticeHash(x0 + dx, y0 + dy, z0 + dz, period);
-  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
   return lerp(
     lerp(lerp(c(0, 0, 0), c(1, 0, 0), fx), lerp(c(0, 1, 0), c(1, 1, 0), fx), fy),
     lerp(lerp(c(0, 0, 1), c(1, 0, 1), fx), lerp(c(0, 1, 1), c(1, 1, 1), fx), fy),
