@@ -45,7 +45,8 @@ export interface HasSources {
 export function parsePartRows(text: string): PartRow[] {
   const rows: PartRow[] = [];
   for (const match of text.matchAll(/\/\*\*\s*([^*]+?)\s*\*\/\s*export\s+\*\s+from\s+"\.\/([^"]+)"/g)) {
-    rows.push({ line: match[1]!.replace(/\s+/g, " "), home: match[2]! });
+    const [, line, home] = match;
+    if (line !== undefined && home !== undefined) rows.push({ line: line.replace(/\s+/g, " "), home });
   }
   return rows;
 }

@@ -123,6 +123,6 @@ test("a supply drop is named by the parts it is made of", () => {
     'export * from "./stats/statPool";',
   ].join("\n"));
   const [answer] = answerHas(["supply drop"], { capabilities: [], code: [], parts });
-  expect(answer!.verdict).toBe("covered");
-  expect(answer!.capabilities.map((row) => row.slug).sort()).toEqual(["movement/motionTrack", "random/pick", "time/pacedSchedule", "time/refillSlots"]);
+  expect(answer?.verdict).toBe("covered");
+  expect(answer?.capabilities.map((row) => row.slug).sort()).toEqual(["movement/motionTrack", "random/pick", "time/pacedSchedule", "time/refillSlots"]);
 });

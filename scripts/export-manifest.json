@@ -807,6 +807,7 @@
     "./onboarding/onboardingSystem",
     "./orders/orderKinds",
     "./orders/orderQueue",
+    "./parts",
     "./physics/InstancedBodies.draw",
     "./physics/InstancedJoints.draw",
     "./physics/ballisticSweep",
