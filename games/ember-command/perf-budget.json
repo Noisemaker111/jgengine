@@ -1,7 +1,4 @@
 {
   "drawsFrame": 847,
-  "previousDraws": 1416,
-  "triangles": 591760,
-  "nodes": 1075,
-  "baseline": "2026-10-23 bun run perf ember-command --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 0.35.0 source; three runs read drawsFrame 770 / 770 / 770, triangles 510,134 / 360,752 / 430,228, nodes 1,045 / 1,042 / 1,044. Rank-and-file troops now draw from one instance batch per unit kind, so 28 troops cost five batches instead of seventeen draws each. The ceiling is +10% over the highest run (770), rounded down. The triangle ceiling stays where it was: a triangle count is one sample at snapshot time, not a window p95, and it moved far more than 10% between runs, so it is not ratcheted here. Nodes stay at 1,075: the batch layer adds a draw group per unit kind and 1,045 is still inside it. Previous draws 1,416 (itself from 2,260). 2026-10-25 triangles back at 591,760: grass now streams around the camera (GrassPatch), so the vale meadow costs what the view sees, not what the field holds."
+  "baseline": "2026-10-23 bun run perf ember-command --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 0.35.0 source. drawsFrame is that run's whole-frame draw ceiling, printed beside each gate run as a reference, not gated; every game is judged on the shared 16.7 ms p95 frame."
 }

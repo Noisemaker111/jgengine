@@ -562,10 +562,10 @@ describe("commands", () => {
     expect(browser).toHaveLength(5);
   });
 
-  test("the frame gate step measures all eight games at once rather than in one lane per game", async () => {
+  test("the frame gate step measures the games one at a time, so no two share the GPU", async () => {
     const steps = await fullSteps(root, ["packages/core/src/render/frame.ts"]);
     const perf = steps.find((step) => step.name.startsWith("perf gate"));
-    expect(perf?.command).toEqual(["bun", "scripts/perf-gate.ts", "--jobs", "8"]);
+    expect(perf?.command).toEqual(["bun", "scripts/perf-gate.ts"]);
   });
 
   test("the heaviest runnable step starts first, so the longest one does not end the run", async () => {

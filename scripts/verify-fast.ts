@@ -837,15 +837,13 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
     // The smoke games boot one at a time inside one smoke-games run, so each keeps its own step
     // and its own process. Scripts are called directly, never through a guarded `&&` chain:
     // scripts/guard.ts's win32 pass-through runs only the chain's first command and exits 0.
-    // The frame gate measures games concurrently itself, so one step with every game gives
-    // one lane the wall of the slowest game; `--jobs` bounds it for a machine that cannot
-    // hold eight browsers.
+    // The frame gate measures one game at a time: games sharing a GPU read each other's frames.
     for (const game of SMOKE_GAMES) {
       steps.push({ name: `smoke ${game}`, command: ["bun", "scripts/smoke-games.ts", "--games", game], browser: true, cost: 60 });
     }
     steps.push({
       name: `perf gate (${PERF_GATE_GAMES.length} games)`,
-      command: ["bun", "scripts/perf-gate.ts", "--jobs", String(PERF_GATE_GAMES.length)],
+      command: ["bun", "scripts/perf-gate.ts"],
       browser: true,
       cost: 100,
     });
