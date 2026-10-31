@@ -5,6 +5,7 @@ import * as THREE from "three";
 
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { clamp01 } from "../math/scalar";
 
 /**
  * Renders one placed 3D object per data item — a 3D bar chart, a heatmap, a city
@@ -39,10 +40,6 @@ export interface DataObjectsProps<T> {
    * per unit of value). When set, the instanced-box path is bypassed.
    */
   renderItem?: (item: T, index: number, info: { x: number; z: number; height: number }) => ReactNode;
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 /** Places one 3D object per data item: instanced boxes sized and colored from the item, or custom content per item. */
