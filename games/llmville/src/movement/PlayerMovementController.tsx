@@ -3,7 +3,7 @@ import { PROFILE_SECTION, recordProfileSection } from "@/runtime/runtimePerforma
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Euler, Vector3, type Camera } from "three";
 
-import { readCameraLookForSlot, writeCameraLookForSlot } from "@/storage/storage";
+import { localGameState } from "@/user/localGameState";
 import type { GameEngine } from "@/runtime/gameEngine";
 import {
   advanceEyeHeight,
@@ -51,18 +51,18 @@ interface UseCameraLookPersistenceResult {
  * throttle while playing and flushed on unmount / page hide.
  */
 function useCameraLookPersistence(activeSlot: number, gameId: string, camera: Camera): UseCameraLookPersistenceResult {
-  const lookSnapshotRef = useRef(readCameraLookForSlot(activeSlot, gameId));
+  const lookSnapshotRef = useRef(localGameState().readCameraLook(activeSlot, gameId));
   const lookStateRef = useRef({ yaw: 0, pitch: 0, lastPersistedAt: 0, initialized: false });
   const lookEulerRef = useRef(new Euler(0, 0, 0, "YXZ"));
 
   useEffect(() => {
-    lookSnapshotRef.current = readCameraLookForSlot(activeSlot, gameId);
+    lookSnapshotRef.current = localGameState().readCameraLook(activeSlot, gameId);
     lookStateRef.current = { yaw: 0, pitch: 0, lastPersistedAt: 0, initialized: false };
   }, [activeSlot, gameId]);
 
   useEffect(() => {
     const flushLook = () => {
-      writeCameraLookForSlot(activeSlot, gameId, {
+      localGameState().writeCameraLook(activeSlot, gameId, {
         yaw: lookStateRef.current.yaw,
         pitch: lookStateRef.current.pitch,
       });
@@ -98,7 +98,7 @@ function useCameraLookPersistence(activeSlot: number, gameId: string, camera: Ca
     if (now - lookStateRef.current.lastPersistedAt < 1_000) return;
     lookStateRef.current.lastPersistedAt = now;
 
-    writeCameraLookForSlot(activeSlot, gameId, {
+    localGameState().writeCameraLook(activeSlot, gameId, {
       yaw: lookStateRef.current.yaw,
       pitch: lookStateRef.current.pitch,
     });

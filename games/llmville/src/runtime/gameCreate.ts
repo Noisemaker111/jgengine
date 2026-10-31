@@ -8,7 +8,7 @@ import { useAuth } from "@/auth";
 import { resolveAuthUsername } from "@/auth/authCredentials";
 import { formatChunkLoadError } from "@/runtime/chunkLoadError";
 import { loadGameSessionModule, preloadGameRoute } from "@/runtime/gameRoutePreload";
-import { clearAllLocalGamePersistence } from "@/storage/storage";
+import { clearAllLocalGamePersistence } from "@/user/localGameState";
 import { getDefaultAvatarId, normalizeAvatarId } from "@/user/user";
 import { useUserWorld } from "@/world/world";
 

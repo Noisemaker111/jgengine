@@ -3,7 +3,7 @@ import { exitPointerLock, requestPointerLock } from "@/movement/movementInput";
 import { flushSync } from "react-dom";
 
 import type { WorldViewModel } from "@/runtime/worldState";
-import { readGameUiSession, writeGameUiSession } from "@/storage/storage";
+import { localGameState } from "@/user/localGameState";
 import { TUTORIAL_STAGE } from "@llmville/game/tutorial/tutorialStages";
 import type { TabletTutorialLock, TutorialViewModel } from "@/tutorial/tutorialRuntime";
 import {
@@ -107,6 +107,51 @@ export interface TabletNavBundle {
 
 interface UseTabletNavParams {
   gameId: string;
+}
+
+function isTabletAppId(value: unknown): value is TabletAppId {
+  return typeof value === "string" && TABLET_APPS.some((app) => app.id === value);
+}
+
+function normalizeLegacyStoreTabId(value: unknown): TabletStoreTabId | null {
+  if (value === "decorations" || value === "furniture") return "decor";
+  return isTabletStoreTabId(value) ? value : null;
+}
+
+function isTabletStoreTabId(value: unknown): value is TabletStoreTabId {
+  return typeof value === "string" && TABLET_STORE_TABS.some((tabId) => tabId === value);
+}
+
+function parsePersistedGameMenuState(value: unknown): PersistedGameMenuState | null {
+  if (typeof value !== "object" || value === null || !("type" in value) || typeof value.type !== "string") {
+    return null;
+  }
+
+  if (value.type === "closed" || value.type === "tablet-home") {
+    return { type: value.type };
+  }
+
+  if (value.type === "tablet-app") {
+    if (!("appId" in value) || typeof value.appId !== "string") return null;
+    if (value.appId === "bills" || value.appId === "finance") return { type: "tablet-home" };
+    const rawAppId = value.appId;
+    if (!isTabletAppId(rawAppId)) return null;
+    if (!("storeTab" in value)) return null;
+    const storeTab = normalizeLegacyStoreTabId(value.storeTab);
+    if (storeTab === null) return null;
+    return { type: "tablet-app", appId: rawAppId, storeTab };
+  }
+
+  return null;
+}
+
+
+function readGameUiSession(gameId: string): PersistedGameMenuState {
+  return parsePersistedGameMenuState(localGameState().readMenu(gameId)) ?? { type: "closed" };
+}
+
+function writeGameUiSession(gameId: string, menu: PersistedGameMenuState): void {
+  localGameState().writeMenu(gameId, menu);
 }
 
 export function useTabletNav({ gameId }: UseTabletNavParams): TabletNavBundle {

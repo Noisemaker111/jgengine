@@ -10,7 +10,7 @@
     "start": "vite",
     "check-types": "tsgo --noEmit -p ./tsconfig.json",
     "assets:slice": "bun scripts/slice-sprite-sheet.ts",
-    "test": "bun test packages",
+    "test": "bun test packages src",
     "convex:dev": "bun --cwd=packages/backend run dev"
   },
   "dependencies": {

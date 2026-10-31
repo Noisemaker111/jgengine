@@ -87,7 +87,6 @@
   "@jgengine/core/hud/HudOnlyDriver.draw#HudOnlyDriver",
   "@jgengine/core/hud/hudScale#rectOverflow",
   "@jgengine/core/input/bindingOverrides#bindingOverridesStorageKey",
-  "@jgengine/core/input/bindingOverrides#clearAllBindingOverrides",
   "@jgengine/core/input/mouseLook.draw#createMouseLookTracker",
   "@jgengine/core/input/pointerAxis#pointerAxisValue",
   "@jgengine/core/input/touchScheme#touchButtonKind",

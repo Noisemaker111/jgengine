@@ -5,7 +5,8 @@ import {
   type InteractionProximity,
   type InteractionSnapshot,
 } from "@llmville/game/simulation/interaction";
-import { formatBindableKeyLabel, getAppSettingsSnapshot } from "@/settings/settings";
+import { formatBindableKeyLabel } from "@/settings/keybinds";
+import { getAppSettingsSnapshot } from "@/settings/settings";
 import { getTutorialInteractionHint } from "@/tutorial/tabletTutorial";
 import { resolveTutorialInputMode } from "@/tutorial/tutorialInput";
 
