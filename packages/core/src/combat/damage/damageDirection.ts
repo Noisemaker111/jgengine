@@ -1,3 +1,5 @@
+import { clamp01 } from "../../math/scalar";
+
 /**
  * A single incoming hit to register on a {@link DamageDirectionTracker}. The
  * angle is relative to the player's facing (renderer-agnostic): `0` points at the
@@ -100,10 +102,6 @@ function angularDistance(a: number, b: number): number {
   if (d < -Math.PI) d += TAU;
   else if (d > Math.PI) d -= TAU;
   return Math.abs(d);
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 interface Slot {
