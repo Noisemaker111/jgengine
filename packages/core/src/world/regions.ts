@@ -6,6 +6,7 @@ import {
   type FractalNoiseConfig,
   type TerrainField,
 } from "../terrain/terrain";
+import { clamp01 } from "../math/scalar";
 
 export type Rgb = readonly [number, number, number];
 export type ColorInput = string | Rgb;
@@ -81,10 +82,6 @@ function toRgb(color: ColorInput | undefined, fallback: Rgb): Rgb {
   const value = color.startsWith("#") ? color.slice(1) : color;
   const int = Number.parseInt(value, 16);
   return [((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255];
-}
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 function selectorNoise(x: number, z: number, seed: number, frequency: number): number {
