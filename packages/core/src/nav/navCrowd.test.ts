@@ -2,9 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { createNavCrowd, createNavRuntime, type NavMeshData } from "@jgengine/core/world";
 
-/** A clock that never advances, so the replan cap counts plans, not a busy machine's milliseconds. */
-const fixedClock = (): number => 0;
-
 function gridMesh(cols: number, rows: number, size = 1, holes: ReadonlySet<number> = new Set()): NavMeshData {
   const verts: number[] = [];
   for (let r = 0; r <= rows; r += 1) for (let c = 0; c <= cols; c += 1) verts.push(c * size, 0, r * size);
@@ -62,7 +59,7 @@ describe("createNavCrowd", () => {
 
   test("routes a corridor full of agents to their goals without overlapping", () => {
     const nav = createNavRuntime({ mesh: gridMesh(20, 4) });
-    const crowd = createNavCrowd({ nav, speed: 2, radius: 0.4 , clock: fixedClock });
+    const crowd = createNavCrowd({ nav, speed: 2, radius: 0.4 });
     for (let i = 0; i < 6; i += 1) {
       const lane = 0.6 + (i % 3) * 1.3;
       const row = Math.floor(i / 3);
@@ -87,7 +84,7 @@ describe("createNavCrowd", () => {
       mesh: islands(),
       links: [{ id: "ladder", kind: "ladder", from: [0.9, 0, 0.5], to: [3.1, 3, 0.5] }],
     });
-    const crowd = createNavCrowd({ nav, speed: 2, radius: 0.3, goalRadius: 0.4 , clock: fixedClock });
+    const crowd = createNavCrowd({ nav, speed: 2, radius: 0.3, goalRadius: 0.4 });
     crowd.add("climber", { position: [0.3, 0, 0.3], goal: [3.7, 3, 0.7] });
     run(crowd, 240);
     const climber = crowd.agent("climber")!;
@@ -108,7 +105,7 @@ describe("createNavCrowd", () => {
 
   test("a region rebuild re-plans only the agents whose route crossed it", () => {
     const nav = createNavRuntime({ mesh: gridMesh(12, 4) });
-    const crowd = createNavCrowd({ nav, speed: 2, replanBudget: 4 , clock: fixedClock });
+    const crowd = createNavCrowd({ nav, speed: 2, replanBudget: 4 });
     crowd.add("near", { position: [0.5, 0, 1.5], goal: [11.5, 0, 1.5] });
     crowd.add("far", { position: [0.5, 0, 3.5], goal: [0.5, 0, 0.5] });
     crowd.tick(1 / 30);
@@ -130,7 +127,7 @@ describe("createNavCrowd", () => {
 
   test("setGoal, remove and the devtools probe keep reporting live state", () => {
     const nav = createNavRuntime({ mesh: gridMesh(6, 2) });
-    const crowd = createNavCrowd({ nav, speed: 2, devtoolsName: "test.navCrowd" , clock: fixedClock });
+    const crowd = createNavCrowd({ nav, speed: 2, devtoolsName: "test.navCrowd" });
     crowd.add("a", { position: [0.5, 0, 0.5], goal: [5.5, 0, 0.5] });
     crowd.add("b", { position: [5.5, 0, 1.5], goal: [0.5, 0, 1.5] });
     expect(crowd.setGoal("a", [3.5, 0, 1.5])).toBe(true);
@@ -149,7 +146,7 @@ describe("createNavCrowd", () => {
   test("is deterministic and survives a snapshot round trip", () => {
     const build = () => {
       const nav = createNavRuntime({ mesh: gridMesh(8, 8) });
-      const crowd = createNavCrowd({ nav, speed: 2.5 , clock: fixedClock });
+      const crowd = createNavCrowd({ nav, speed: 2.5 });
       for (let i = 0; i < 16; i += 1) {
         crowd.add(`a${i}`, { position: [0.5 + (i % 4), 0, 0.5 + Math.floor(i / 4)], goal: [7.5, 0, 7.5 - Math.floor(i / 4)] });
       }
@@ -176,7 +173,7 @@ describe("createNavCrowd", () => {
 
   test("re-tunes speed, goal radius and the avoidance dials in play", () => {
     const nav = createNavRuntime({ mesh: gridMesh(10, 2) });
-    const crowd = createNavCrowd({ nav, speed: 1 , clock: fixedClock });
+    const crowd = createNavCrowd({ nav, speed: 1 });
     crowd.add("a", { position: [0.5, 0, 0.5], goal: [9.5, 0, 0.5] });
     crowd.retune({ speed: 4, goalRadius: 1, waypointRadius: 1.2, replanBudget: 2, avoid: { maxNeighbors: 3, neighborDist: 2 } });
     const saved = crowd.snapshot();
