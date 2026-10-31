@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { EXAMPLE_BRIEF } from "./briefExample";
+import { BRIEF_PENDING_LINE } from "./designBrief";
 import { checkFlow, checkGames, inspectGame, readLoopProof, runCli, type Io } from "./check-game-design";
 import type { DepthRule } from "./knownFailing";
 
@@ -243,6 +244,19 @@ describe("game design gate", () => {
     const listed = checkGames(root, ["demo"], undefined, false, known);
     expect(listed.failures).toBe(0);
     expect(listed.lines[0]).toStartWith("game-design: KNOWN - demo brief (written before the brief existed)");
+  });
+
+  test("a pending brief passes until milestone 1 is ticked, then the full brief is required", () => {
+    const plan = (tick: string) => `# New plan\n\n## Design brief\n\n${BRIEF_PENDING_LINE}\n\n## Milestones\n\n- [${tick}] 1. the core loop\n`;
+    const pending = fixture({ "fresh/README.md": readme("Loop proof: to-start"), "fresh/PLAN.md": plan(" "), "fresh/proofs/flows/to-start.flow.ts": FLOW });
+    const early = checkGames(pending, ["fresh"]);
+    expect(early.failures).toBe(0);
+    expect(early.lines[0]).toBe("game-design: PENDING - fresh brief: milestone 1 is not ticked yet; the brief is due with it");
+
+    const due = fixture({ "fresh/README.md": readme("Loop proof: to-start"), "fresh/PLAN.md": plan("x"), "fresh/proofs/flows/to-start.flow.ts": FLOW });
+    const late = checkGames(due, ["fresh"]);
+    expect(late.failures).toBeGreaterThan(0);
+    expect(late.lines[0]).toBe("game-design: FAIL - fresh brief: milestone 1 is ticked, so the design brief is due: replace its pending line with the brief");
   });
 
   test("a listed game whose brief is now complete fails until its entry is removed", () => {

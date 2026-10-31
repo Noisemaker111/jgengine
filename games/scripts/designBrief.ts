@@ -234,3 +234,46 @@ export function clock(seconds: number): string {
   const whole = Math.max(0, Math.round(seconds));
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
+
+/**
+ * The line a new game's `## Design brief` section holds until milestone 1 plays. `jgengine create`
+ * writes it; the brief replaces it once the core loop has taught what the loops are.
+ */
+export const BRIEF_PENDING_LINE = "Pending: written once milestone 1 plays, from what building it taught.";
+
+const PENDING = /^pending\b/i;
+const MILESTONE_ONE = /^-\s*\[( |x|X)\]\s*1\b/;
+
+/** Whether the plan's `## Milestones` list has milestone 1 ticked (`- [x] 1. ...`). */
+export function milestoneOneDone(plan: string): boolean {
+  const body = section(plan, "## Milestones", "##");
+  if (body === null) return false;
+  for (const line of body.split(/\r?\n/)) {
+    const match = MILESTONE_ONE.exec(line.trim());
+    if (match !== null) return match[1] !== " ";
+  }
+  return false;
+}
+
+/** Whether the `## Design brief` section is still the pending line rather than a brief. */
+export function briefPending(plan: string): boolean {
+  const body = section(plan, BRIEF_HEADING, "##");
+  if (body === null) return false;
+  const first = body.split(/\r?\n/).map((line) => line.trim()).find((line) => line.length > 0);
+  return first !== undefined && PENDING.test(first);
+}
+
+export type BriefGate = BriefRead | { ok: true; pending: true };
+
+/**
+ * The brief a game owes now. Until milestone 1 is ticked a pending brief passes; once it is ticked
+ * the full brief is required, and a still-pending one says so before naming what is missing.
+ */
+export function briefDue(plan: string): BriefGate {
+  const pending = briefPending(plan);
+  const done = milestoneOneDone(plan);
+  if (pending && !done) return { ok: true, pending: true };
+  const read = readDesignBrief(plan);
+  if (!pending || read.ok) return read;
+  return { ok: false, problems: ["milestone 1 is ticked, so the design brief is due: replace its pending line with the brief", ...read.problems] };
+}
