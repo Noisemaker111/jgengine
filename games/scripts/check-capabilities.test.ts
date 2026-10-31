@@ -120,7 +120,7 @@ describe("debt entries", () => {
     const games = [
       game("ember", ["mission-runtime"], owesAudio(101, "n/a")),
       game("harbor", ["mission-runtime"], owesAudio(102, "n/a")),
-      game("saltwick", ["mission-runtime"], owesAudio(103)),
+      game("fernwild", ["mission-runtime"], owesAudio(103)),
     ];
     const report = checkDeclarations(ledger, games);
     expect(report.problems).toEqual([]);

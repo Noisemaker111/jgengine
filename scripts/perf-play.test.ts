@@ -44,7 +44,7 @@ test("parsePerfArgs reads one game with its flags", () => {
   expect(drafted.kind === "run" && drafted.args.quality).toBeUndefined();
   expect(parsePerfArgs(["--help"]).kind).toBe("help");
   // Several games are one run in one browser, in the order given.
-  expect(parsePerfArgs(["deepward", "saltwick", "--compare", "HEAD"])).toMatchObject({ args: { games: ["deepward", "saltwick"], compare: "HEAD" } });
+  expect(parsePerfArgs(["deepward", "fernwild", "--compare", "HEAD"])).toMatchObject({ args: { games: ["deepward", "fernwild"], compare: "HEAD" } });
 });
 
 test("a batch ends with one row per game: frame, cost, and the distance from 144 Hz", () => {
@@ -53,13 +53,13 @@ test("a batch ends with one row per game: frame, cost, and the distance from 144
   const table = perfBatchTable([
     { game: "deepward", summary: summary(3, 2.5) },
     { game: "harbor-heat", summary: summary(10, 62.2) },
-    { game: "hold-the-line", summary: "failed" },
+    { game: "deepward", summary: "failed" },
   ]).split("\n");
   expect(table).toHaveLength(4);
   expect(table[1]).toMatch(/^deepward\s+8\.00 ms\s+12\.00 ms\s+3\.00 ms\s+ok$/);
   // The cost is the larger of CPU work and GPU time, whichever side it is on.
   expect(table[2]).toMatch(/^harbor-heat\s+8\.00 ms\s+12\.00 ms\s+62\.20 ms\s+55\.26 ms over$/);
-  expect(table[3]).toMatch(/^hold-the-line\s+failed$/);
+  expect(table[3]).toMatch(/^deepward\s+failed$/);
 });
 
 test("parsePerfArgs rejects unusable input", () => {

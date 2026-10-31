@@ -1,17 +1,9 @@
 {
   "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 (0x00002484) Direct3D11 vs_5_0 ps_5_0, D3D11)",
   "games": {
-    "apex-nights": {
-      "worstClick": 375,
-      "sceneReady": 5464
-    },
     "beacon-bastion": {
       "worstClick": 501,
       "sceneReady": 4989
-    },
-    "briarcrown": {
-      "worstClick": 489,
-      "sceneReady": 4835
     },
     "brightway-park": {
       "worstClick": 506,
@@ -37,37 +29,13 @@
       "worstClick": 739,
       "sceneReady": 9441
     },
-    "hold-the-line": {
-      "worstClick": 463,
-      "sceneReady": 6055
-    },
     "odd-orbit": {
       "worstClick": 610,
       "sceneReady": 6421
     },
-    "orbit-watch": {
-      "worstClick": 497,
-      "sceneReady": 4662
-    },
-    "outpost-zero": {
-      "worstClick": 499,
-      "sceneReady": 4903
-    },
-    "red-frontier": {
-      "worstClick": 484,
-      "sceneReady": 4547
-    },
-    "saltwick": {
-      "worstClick": 387,
-      "sceneReady": 5567
-    },
     "scrap-signal": {
       "worstClick": 771,
       "sceneReady": 8926
-    },
-    "the-sunken-crown": {
-      "worstClick": 481,
-      "sceneReady": 6702
     }
   }
 }

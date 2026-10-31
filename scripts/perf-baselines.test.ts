@@ -63,8 +63,8 @@ test("a clean tree names its commit and keeps the record; an edited game or engi
     expect(cleanCommitFor(root, "deepward")).toBeNull();
     git(root, "checkout", "-q", "--", ".");
     // Another game's edit does not change what this game's run serves.
-    mkdirSync(join(root, "games", "saltwick"), { recursive: true });
-    writeFileSync(join(root, "games", "saltwick", "index.ts"), "1");
+    mkdirSync(join(root, "games", "fernwild"), { recursive: true });
+    writeFileSync(join(root, "games", "fernwild", "index.ts"), "1");
     expect(cleanCommitFor(root, "deepward")).toBe(head);
   } finally {
     rmSync(root, { recursive: true, force: true });

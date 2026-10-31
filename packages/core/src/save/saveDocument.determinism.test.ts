@@ -119,7 +119,7 @@ const LOOT_CATALOG: LootCatalog = {
 };
 
 const MISSION: MissionDef = {
-  id: "hold-the-line",
+  id: "deepward",
   title: "Hold the line",
   rollout: { fact: "flavor", options: ["dawn", "dusk", "rain"] },
   objectives: [{ id: "hold", kind: "survive", duration: 12, actor: "hero", next: "done" }],

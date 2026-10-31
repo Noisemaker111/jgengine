@@ -1,19 +1,9 @@
 {
   "$comment": "Games that failed a depth rule when it landed, and why. Shrink only: remove a game's entry in the PR that makes it pass; never add one (games-design and games-depth fail an entry the base branch lacks). Rules: brief (PLAN.md design brief), from-zero (proofs/flows/from-zero.flow.ts plays a new game through real input), depth (the numbers that run measures). See games/scripts/knownFailing.ts.",
-  "apex-nights": {
-    "brief": "no PLAN.md: built from a one-line idea, no loop designed before code",
-    "from-zero": "no from-zero proof; its loop proof boots straight into a race",
-    "depth": "one-line-idea game of about 1.5k lines: a 24-minute sky day but no unlock pace or content budget to measure"
-  },
   "beacon-bastion": {
     "brief": "no PLAN.md design brief",
     "from-zero": "no from-zero proof; to-first-defense waits for the first wave rather than playing from a new game",
     "depth": "no from-zero run to measure; no content budget or unlock pace declared"
-  },
-  "briarcrown": {
-    "brief": "no PLAN.md: built from a one-line idea, no loop designed before code",
-    "from-zero": "no from-zero proof",
-    "depth": "one-line-idea game of about 1.5k lines: a 10-minute day and no declared content budget"
   },
   "deepward": {
     "brief": "no PLAN.md design brief (DESIGN.md exists but is not the brief)",
@@ -35,11 +25,6 @@
     "from-zero": "no from-zero proof; its flows boot named states (chase, courier)",
     "depth": "no from-zero run to measure; a 12-minute day and no declared content budget"
   },
-  "hold-the-line": {
-    "brief": "no PLAN.md: built from a one-line idea, no loop designed before code",
-    "from-zero": "no from-zero proof",
-    "depth": "one-line-idea game of about 1.5k lines with no content budget or unlock pace"
-  },
   "llmville": {
     "brief": "no PLAN.md design brief",
     "from-zero": "no from-zero proof; play needs Convex and an account, so it has never been played from zero headless",
@@ -49,30 +34,5 @@
     "brief": "no PLAN.md design brief",
     "from-zero": "no from-zero proof; a new household starts with 2 of 3 stations furnished and a being already working, credits rising with no input",
     "depth": "4 beings, 6 furnishing types and 4 terms of 5 days are the whole content; no unlock pace declared"
-  },
-  "orbit-watch": {
-    "brief": "no PLAN.md: built from a one-line idea, no loop designed before code",
-    "from-zero": "no from-zero proof",
-    "depth": "one-line-idea game of about 1.5k lines with no content budget or unlock pace"
-  },
-  "outpost-zero": {
-    "brief": "no PLAN.md: built from a one-line idea, no loop designed before code",
-    "from-zero": "no from-zero proof",
-    "depth": "one-line-idea game of about 1.5k lines with no content budget or unlock pace"
-  },
-  "red-frontier": {
-    "brief": "no PLAN.md: built from a one-line idea, no loop designed before code",
-    "from-zero": "no from-zero proof",
-    "depth": "one-line-idea game of about 1.5k lines with no content budget or unlock pace"
-  },
-  "saltwick": {
-    "brief": "no PLAN.md: built from a one-line idea, no loop designed before code",
-    "from-zero": "no from-zero proof; its loop proof expects the first request to start by itself",
-    "depth": "one-line-idea game: 3 seeds, 4 fish, 3 rod upgrades and 5 requests are the whole content"
-  },
-  "the-sunken-crown": {
-    "brief": "no PLAN.md: built from a one-line idea, no loop designed before code",
-    "from-zero": "no from-zero proof; its proof boots the journey state",
-    "depth": "one-line-idea game of about 1.5k lines with no content budget or unlock pace"
   }
 }

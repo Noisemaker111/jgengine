@@ -29,7 +29,7 @@ const SHOOT_USAGE = {
     { flag: "--verbose", detail: "also print progress, reuse and timing lines (by default only the result, its warnings and failures)" },
     { flag: "capture flags", detail: "listed below" },
   ],
-  example: "bun run shoot hold-the-line --mode play",
+  example: "bun run shoot deepward --mode play",
 } as const;
 
 /** The command a shoot argv runs: the prove bundle, or one guarded capture. */

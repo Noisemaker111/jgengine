@@ -41,7 +41,7 @@ test("reads the exported names a diff adds, games included, skipping tests and d
 test("a game export named like an engine export fails; two games may share a name; entry exports are the contract", () => {
   const engine = { name: "pathLength", file: "packages/core/src/world/roads.ts" };
   expect(clashes({ name: "pathLength", file: "games/beacon-bastion/src/game/world/layout.ts" }, engine)).toBe(true);
-  expect(clashes({ name: "Hud", file: "games/fernwild/src/game/Hud.tsx" }, { name: "Hud", file: "games/hold-the-line/src/game/Hud.tsx" })).toBe(false);
+  expect(clashes({ name: "Hud", file: "games/fernwild/src/game/Hud.tsx" }, { name: "Hud", file: "games/deepward/src/game/Hud.tsx" })).toBe(false);
   const place = { name: "world", file: "packages/core/src/world/place.ts" };
   expect(clashes({ name: "world", file: "games/fernwild/src/world.ts" }, place)).toBe(false);
   expect(clashes({ name: "world", file: "games/fernwild/src/game/spec.ts" }, place)).toBe(true);

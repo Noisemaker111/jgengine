@@ -29,15 +29,7 @@ owns the discovery, upstream implementation, adoption and verification workflow.
 | Deepward | `deepward` | First-person extraction slice: salvage, pack, return and bank |
 | Harbor Heat | `harbor-heat` | Coastal courier and crew adventure |
 | Drift Foundry | `drift-foundry` | Physics racer |
-| Apex Nights | `apex-nights` | Night street racer with car upgrades |
-| Briarcrown | `briarcrown` | Medieval hamlet-to-castle-town builder |
 | Fernwild | `fernwild` | Dinosaur taming and survival |
-| Hold the Line | `hold-the-line` | Zombie survival: scavenge by day, fortify by night |
-| Orbit Watch | `orbit-watch` | Orbital tower defense |
-| Outpost Zero | `outpost-zero` | Third-person shooter clearing alien outposts |
-| Red Frontier | `red-frontier` | Mars colony: mine, farm, defend |
-| Saltwick | `saltwick` | Cozy seaside farming and fishing |
-| The Sunken Crown | `the-sunken-crown` | Ruins exploration with a glider |
 | LLMville | `llmville` | Shared-world AI-lab tycoon on a Convex backend (accounts, multiplayer); production still deploys from its old repo |
 
 See [the genre roadmap](./CLASSICS.md) for planned mechanics and [content provenance](./CONTENT-PROVENANCE.md) for source and asset attribution.
@@ -106,7 +98,7 @@ export default defineFlow(game, {
 ```
 
 ```sh
-bun run drive the-sunken-crown --flow the-sunken-crown-clip    # quiet: one line unless a step fails
+bun run drive harbor-heat --flow street-race    # quiet: one line unless a step fails
 ```
 
 `bun run shoot --prove harbor-heat --view boulevard --view downtown --sizes 1600x900,1024x640 --flow to-chase --state chase`

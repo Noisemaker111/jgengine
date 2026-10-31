@@ -4,7 +4,7 @@
  * exists, so this only ever makes loads lighter; it never changes a file a game commits.
  *
  *   bun run games:compress                 every game
- *   bun run games:compress saltwick        one game
+ *   bun run games:compress fernwild        one game
  *
  * It runs at idle priority, skips in CI (`JG_DEV_PROVISION=1` overrides), and a run with nothing
  * left to encode costs one pass of hashing.
