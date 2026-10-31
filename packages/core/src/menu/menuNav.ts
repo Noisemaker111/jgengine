@@ -1,3 +1,5 @@
+import { clamp } from "../math/scalar";
+
 /**
  * Headless focus-order model for a game front-end menu: a list or grid of item ids, one focused
  * item, and the keyboard/gamepad intents that move between them. It holds no React state, no DOM and
@@ -24,10 +26,6 @@ export interface MenuNavLayout {
   wrap?: boolean;
   /** Item indices that are skipped by every move (disabled or hidden rows). */
   disabled?: readonly number[];
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
 }
 
 function isDisabled(layout: MenuNavLayout, index: number): boolean {
