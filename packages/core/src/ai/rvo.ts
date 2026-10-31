@@ -1,4 +1,5 @@
 import { devtools } from "../devtools/devtools";
+import { length2 } from "../math/scalar";
 
 /** One agent's circular footprint and top speed; positions and velocities live in the crowd. */
 export interface RvoAgentSpec {
@@ -316,14 +317,14 @@ export function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd {
       } else {
         const wx = relVX - invStep * relX;
         const wz = relVZ - invStep * relZ;
-        const wLength = Math.hypot(wx, wz);
+        const wLength = length2(wx, wz);
         let unitX = 1;
         let unitZ = 0;
         if (wLength > EPSILON) {
           unitX = wx / wLength;
           unitZ = wz / wLength;
         } else if (Math.abs(relX) > EPSILON || Math.abs(relZ) > EPSILON) {
-          const length = Math.hypot(relX, relZ);
+          const length = length2(relX, relZ);
           unitX = relZ / length;
           unitZ = -relX / length;
         }
@@ -374,7 +375,7 @@ export function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd {
         }
         const rawX = ex - dx;
         const rawZ = ez - dz;
-        const length = Math.hypot(rawX, rawZ);
+        const length = length2(rawX, rawZ);
         if (length <= EPSILON) continue;
         projection[projected * LINE_STRIDE] = pointX;
         projection[projected * LINE_STRIDE + 1] = pointZ;
@@ -485,7 +486,7 @@ export function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd {
       const at = slotIndexOf(id);
       if (at === undefined) return false;
       const agent = slots[at]!;
-      const speed = Math.hypot(vx, vz);
+      const speed = length2(vx, vz);
       const scale = speed > agent.maxSpeed && speed > EPSILON ? agent.maxSpeed / speed : 1;
       agent.prefX = (vx * biasKeep + vz * biasTurn) * scale;
       agent.prefZ = (-vx * biasTurn + vz * biasKeep) * scale;
@@ -583,8 +584,8 @@ export function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd {
           solution[0] = agent.prefX;
           solution[1] = agent.prefZ;
         }
-        const solvedSpeed = Math.hypot(solution[0], solution[1]);
-        const preferredSpeed = Math.hypot(agent.prefX, agent.prefZ);
+        const solvedSpeed = length2(solution[0], solution[1]);
+        const preferredSpeed = length2(agent.prefX, agent.prefZ);
         if (preferredSpeed > EPSILON && solvedSpeed < 0.25 * preferredSpeed) {
           // A tight cluster can leave the constraints with no way forward. Creeping at a fraction of
           // the asked speed keeps a jam resolving instead of freezing every agent in it.

@@ -30,7 +30,7 @@ import { digestLines, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
 import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
-import { checkCommand, findCheck, jobChecks } from "./run-stages";
+import { checkArgsFor, checkCommand, findCheck, gameScope, GEN_TARGETS, jobChecks, readsPath, reachedBy, type CheckDef } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { siteGames } from "./siteGames";
@@ -335,23 +335,30 @@ export function gatesFor(changed: readonly string[]): string[] {
   const gates = new Set(["artifacts", "path-portability", "concept-homes", "layers"]);
   const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
   if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("capture-hygiene");
-  if (changed.some((path) => path.startsWith("packages/"))) {
-    gates.add("export-manifest");
-    gates.add("skill-api");
-  }
+  if (changed.some((path) => path.startsWith("packages/"))) gates.add("skill-api");
   if (changed.some((path) => path.startsWith("games/"))) {
     for (const gate of ["games-framework", "module-globals", "games-save-states", "games-design", "games-depth"]) gates.add(gate);
   }
-  // The `games` CI job runs both on every package or game change; each takes seconds here.
   if (changed.some((path) => path.startsWith("games/") || /^packages\/[^/]+\/src\//.test(path))) {
-    gates.add("games-ledger");
     gates.add("games-capabilities");
     gates.add("games-sync");
   }
   if (changed.some((path) => /\.(md|mdx)$/i.test(path) || path.startsWith(".claude/skills/"))) gates.add("stage-skills");
   if (changed.some((path) => isTestFile(path))) gates.add("test-spawn-timeouts");
   if (changed.some((path) => /\.browser\.test\.[cm]?[jt]sx?$/.test(path))) gates.add("browser-test-budget");
-  return [...gates];
+  return [...gates].filter((gate) => gate === "skill-api" || keepGate(gate, changed));
+}
+
+/**
+ * The checks that only compare a committed file with its generator. `bun run gen` rewrites those
+ * files when lane:close lands, so a lane never fails on one going stale while it works.
+ */
+export const GENERATED_GATES: ReadonlySet<string> = new Set(GEN_TARGETS.map((target) => target.name).filter((name) => findCheck(name)?.generated === true));
+
+/** A gate runs when the diff reaches what it reads and it is not a generated-file comparison. */
+function keepGate(name: string, changed: readonly string[]): boolean {
+  const check = findCheck(name);
+  return check !== undefined && !GENERATED_GATES.has(name) && reachedBy(check, changed);
 }
 
 /**
@@ -365,6 +372,9 @@ export const CI_ONLY_GATES: Readonly<Record<string, string>> = {
   "type-escapes": "bun run gen runs it first in preflight, and it fails there on a gained escape",
   capabilities: "bun run gen rewrites capabilities.md first in preflight",
   "source-paths": "bun run gen rewrites the tsconfig paths first in preflight",
+  "skill-api": "bun run gen rewrites api.md and its baselines first in preflight, and fails there on a new orphan",
+  "export-manifest": "bun run gen rewrites the export manifest first in preflight",
+  "games-ledger": "bun run gen rewrites games/capabilities.json first in preflight",
   changelog: "lane:close writes changes/<branch>.md itself after preflight, so a branch that commits as it goes has no note yet",
 };
 
@@ -379,7 +389,8 @@ export function landingGates(changed: readonly string[]): string[] {
   const iterating = gatesFor(changed);
   if (!changed.some((path) => CODE_PATH.test(path) || basename(path) === "package.json")) return iterating;
   const ci = [...jobChecks("quick"), ...jobChecks("types")].map((check) => check.name);
-  return [...new Set([...iterating, ...ci.filter((name) => CI_ONLY_GATES[name] === undefined)])];
+  // skill-api stays in the iteration set only for `--skill-api`; the landing leaves it to gen.
+  return [...new Set([...iterating.filter((name) => name !== "skill-api"), ...ci.filter((name) => CI_ONLY_GATES[name] === undefined && keepGate(name, changed))])];
 }
 
 /**
@@ -542,6 +553,18 @@ export const GATE_FIX: Readonly<Record<string, string>> = {
     "bun run gen  (rewrites .claude/skills/*/api.md and prunes scripts/api-doc-baseline.json and scripts/api-orphan-baseline.json)",
 };
 
+/**
+ * The files whose bytes decide a gate: what its row reads, narrowed to the touched games for a
+ * per-game gate on a game-only diff. A row that names no paths reads the whole tree.
+ */
+export function gateInputs(check: CheckDef, changed: readonly string[], files: readonly string[]): string[] {
+  if (check.reads === undefined) return [WHOLE_TREE];
+  const games = check.perGame === true ? gameScope(changed) : null;
+  const inScope = (file: string): boolean =>
+    games === null || !/^games\/[^/]+\//.test(file) || /^games\/(?:scripts|shared)\//.test(file) || games.some((game) => file.startsWith(`games/${game}/`));
+  return files.filter((file) => readsPath(check.reads, file) && inScope(file)).sort();
+}
+
 /** Arguments a gate needs after its script name, as CI passes them. */
 const GATE_ARGS: Readonly<Record<string, readonly string[]>> = {
   "games-capabilities": ["--summary"],
@@ -593,6 +616,8 @@ export interface FastOptions {
   testCosts?: Readonly<Record<string, number>>;
   /** Where each test process writes its junit report (`<dir>/tests-<n>.xml`), for `testCosts`. */
   reportDir?: string;
+  /** Every file in the checkout, so a gate's pass is keyed on the files its row reads; absent, on the whole tree. */
+  tree?: readonly string[];
 }
 
 /**
@@ -641,13 +666,13 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
 
   const gates = options.skillApi === true ? plan.gates : plan.gates.filter((gate) => gate !== "skill-api");
   for (const gate of gates) {
-    const extra = GATE_ARGS[gate] ?? [];
-    // A gate reads the whole tree.
-    const settles = unit(`gate:${gate}`, [WHOLE_TREE]);
-    if (fresh(settles.id, settles.inputs)) continue;
     const check = findCheck(gate);
     if (check === undefined) throw new Error(`verify:fast: gate ${gate} is not in the check table (scripts/run-stages.ts)`);
-    steps.push({ name: gate, command: [...checkCommand(check), ...extra], fix: GATE_FIX[gate], cost: GATE_COST[gate], first: true, units: [settles] });
+    const args = [...checkArgsFor(check, plan.changed), ...(GATE_ARGS[gate] ?? [])];
+    const settles = unit(["gate:" + gate, ...args].join(" "), options.tree === undefined ? [WHOLE_TREE] : gateInputs(check, plan.changed, options.tree));
+    if (fresh(settles.id, settles.inputs)) continue;
+    const scope = check.perGame === true ? gameScope(plan.changed) : null;
+    steps.push({ name: scope === null ? gate : `${gate} ${scope.join(" ")}`, command: ["bun", check.script, ...args], fix: GATE_FIX[gate], cost: GATE_COST[gate], first: true, units: [settles] });
   }
 
   const boots = plan.boots.map((game) => unit(`boot:${game}`)).filter((settles) => !fresh(settles.id, settles.inputs));
@@ -812,15 +837,13 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
     // The smoke games boot one at a time inside one smoke-games run, so each keeps its own step
     // and its own process. Scripts are called directly, never through a guarded `&&` chain:
     // scripts/guard.ts's win32 pass-through runs only the chain's first command and exits 0.
-    // The frame gate measures games concurrently itself, so one step with every game gives
-    // one lane the wall of the slowest game; `--jobs` bounds it for a machine that cannot
-    // hold eight browsers.
+    // The frame gate measures one game at a time: games sharing a GPU read each other's frames.
     for (const game of SMOKE_GAMES) {
       steps.push({ name: `smoke ${game}`, command: ["bun", "scripts/smoke-games.ts", "--games", game], browser: true, cost: 60 });
     }
     steps.push({
       name: `perf gate (${PERF_GATE_GAMES.length} games)`,
-      command: ["bun", "scripts/perf-gate.ts", "--jobs", String(PERF_GATE_GAMES.length)],
+      command: ["bun", "scripts/perf-gate.ts"],
       browser: true,
       cost: 100,
     });
@@ -1071,6 +1094,7 @@ async function main(argv: readonly string[]): Promise<number> {
     lanes: DEFAULT_JOBS,
     testCosts,
     reportDir,
+    tree,
     fresh: (unit, inputs) => {
       const hit = cache?.fresh(unit, inputs) === true;
       if (hit) skipped.push(unit);

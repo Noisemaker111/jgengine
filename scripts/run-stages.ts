@@ -54,55 +54,120 @@ export interface CheckDef {
   readonly games?: boolean;
   /** Needs arguments only CI has (a PR body), so it runs only when named. */
   readonly named?: boolean;
+  /**
+   * The repository paths whose change can move this check's verdict, as prefixes. A diff that
+   * touches none of them (nor a tooling path, which reaches every row) skips the check, and its
+   * cached pass is keyed on these files alone. Omitted: it reads the whole tree.
+   */
+  readonly reads?: readonly string[];
+  /**
+   * Takes game ids after its own arguments and judges only those games. A diff inside
+   * `games/<id>/` folders alone passes the ids it touched; any other diff judges every game.
+   */
+  readonly perGame?: boolean;
 }
 
 export const CHECKS: readonly CheckDef[] = [
-  { name: "artifacts", script: "scripts/check-no-src-artifacts.ts", jobs: ["types", "quick"], generated: true },
-  { name: "release-set", script: "scripts/check-release-set.ts", jobs: ["types"] },
-  { name: "skills", script: "scripts/check-skill-sync.ts", jobs: [] },
-  { name: "skill-api", script: "scripts/gen-skill-api.ts", args: ["--check"], jobs: ["types", "quick"], needsBuild: true, generated: true },
-  { name: "orphan-ratchet", script: "scripts/check-orphan-ratchet.ts", jobs: [] },
-  { name: "stateful-ratchet", script: "scripts/check-stateful-ratchet.ts", jobs: ["types"] },
-  { name: "type-escapes", script: "scripts/type-escapes.ts", args: ["--check"], jobs: ["types", "quick"], generated: true },
-  { name: "module-globals", script: "scripts/check-module-globals.ts", jobs: ["types"], games: true },
-  { name: "game-determinism", script: "scripts/check-game-determinism.ts", jobs: ["types"], games: true },
-  { name: "game-front-end", script: "scripts/check-game-front-end.ts", jobs: ["types"], games: true },
-  { name: "game-feel", script: "scripts/check-game-feel.ts", jobs: ["types"], games: true },
-  { name: "art-direction", script: "scripts/check-art-direction.ts", jobs: ["types"], games: true },
-  { name: "capabilities", script: "scripts/gen-capability-index.ts", args: ["--check"], jobs: ["types"], generated: true },
-  { name: "content-gate", script: "scripts/check-content-gate.ts", jobs: ["types"], games: true },
-  { name: "asset-availability", script: "scripts/checkAssetAvailability.ts", jobs: ["types"], games: true },
-  { name: "pack-texture-layout", script: "scripts/check-pack-texture-layout.ts", jobs: ["types"] },
-  { name: "recipes", script: "scripts/check-recipes.ts", jobs: ["types"] },
-  { name: "doc-symbols", script: "scripts/check-doc-symbols.ts", jobs: ["types"] },
-  { name: "hud-tokens", script: "scripts/check-hud-tokens.ts", jobs: ["types"] },
-  { name: "street-rule-parity", script: "scripts/check-street-rule-parity.ts", jobs: ["types"] },
-  { name: "source-paths", script: "scripts/sourcePaths.ts", args: ["--check"], jobs: ["types"], generated: true },
-  { name: "test-spawn-timeouts", script: "scripts/check-test-spawn-timeouts.ts", jobs: ["types"] },
-  { name: "browser-test-budget", script: "scripts/browser-test-budget.ts", jobs: [] },
-  { name: "fixture-location", script: "scripts/check-fixture-location.ts", jobs: [] },
-  { name: "path-portability", script: "scripts/check-path-portability.ts", jobs: ["types", "quick"] },
-  { name: "no-blocking-wait", script: "scripts/check-no-blocking-wait.ts", jobs: ["types"] },
-  { name: "script-help", script: "scripts/check-script-help.ts", jobs: [] },
+  { name: "artifacts", script: "scripts/check-no-src-artifacts.ts", jobs: ["types", "quick"], generated: true, reads: ["packages/"] },
+  { name: "release-set", script: "scripts/check-release-set.ts", jobs: ["types"], reads: ["packages/"] },
+  { name: "skills", script: "scripts/check-skill-sync.ts", jobs: [], reads: [".claude/", "docs/", "packages/"] },
+  { name: "skill-api", script: "scripts/gen-skill-api.ts", args: ["--check"], jobs: ["types", "quick"], needsBuild: true, generated: true, reads: ["packages/", ".claude/"] },
+  { name: "stateful-ratchet", script: "scripts/check-stateful-ratchet.ts", jobs: ["types"], reads: ["packages/"] },
+  { name: "type-escapes", script: "scripts/type-escapes.ts", args: ["--check"], jobs: ["types", "quick"], generated: true, reads: ["packages/", "games/", "apps/", "examples/"] },
+  { name: "module-globals", script: "scripts/check-module-globals.ts", jobs: ["types"], games: true, reads: ["games/"] },
+  { name: "game-determinism", script: "scripts/check-game-determinism.ts", jobs: ["types"], games: true, reads: ["games/"] },
+  { name: "game-front-end", script: "scripts/check-game-front-end.ts", jobs: ["types"], games: true, reads: ["games/"] },
+  { name: "game-feel", script: "scripts/check-game-feel.ts", jobs: ["types"], games: true, reads: ["games/"] },
+  { name: "art-direction", script: "scripts/check-art-direction.ts", jobs: ["types"], games: true, reads: ["games/"] },
+  { name: "capabilities", script: "scripts/gen-capability-index.ts", args: ["--check"], jobs: ["types"], generated: true, reads: ["packages/", ".claude/"] },
+  { name: "content-gate", script: "scripts/check-content-gate.ts", jobs: ["types"], games: true, reads: ["games/"] },
+  { name: "asset-availability", script: "scripts/checkAssetAvailability.ts", jobs: ["types"], games: true, reads: ["games/", "apps/dev/public/"] },
+  { name: "pack-texture-layout", script: "scripts/check-pack-texture-layout.ts", jobs: ["types"], reads: ["apps/"] },
+  { name: "recipes", script: "scripts/check-recipes.ts", jobs: ["types"], reads: [".claude/", "games/"] },
+  { name: "doc-symbols", script: "scripts/check-doc-symbols.ts", jobs: ["types"], reads: [".claude/", "apps/", "packages/"] },
+  { name: "hud-tokens", script: "scripts/check-hud-tokens.ts", jobs: ["types"], reads: ["packages/react/src/", "registry/"] },
+  { name: "street-rule-parity", script: "scripts/check-street-rule-parity.ts", jobs: ["types"], reads: ["packages/core/src/city/cityKind.ts", "packages/core/src/roads/streetGenerator.ts", "packages/editor/src/handlers/streets.ts"] },
+  { name: "source-paths", script: "scripts/sourcePaths.ts", args: ["--check"], jobs: ["types"], generated: true, reads: ["packages/", "apps/", "examples/", "registry/", "games/llmville/packages/"] },
+  { name: "test-spawn-timeouts", script: "scripts/check-test-spawn-timeouts.ts", jobs: ["types"], reads: ["packages/", "apps/"] },
+  { name: "browser-test-budget", script: "scripts/browser-test-budget.ts", jobs: [], reads: ["packages/", "apps/"] },
+  { name: "fixture-location", script: "scripts/check-fixture-location.ts", jobs: [], reads: ["packages/", "apps/", "examples/", "registry/"] },
+  { name: "path-portability", script: "scripts/check-path-portability.ts", jobs: ["types", "quick"], reads: ["packages/"] },
+  { name: "no-blocking-wait", script: "scripts/check-no-blocking-wait.ts", jobs: ["types"], reads: ["packages/"] },
+  { name: "script-help", script: "scripts/check-script-help.ts", jobs: [], reads: [] },
   { name: "types", script: "scripts/check-types-all.ts", jobs: ["types"] },
-  { name: "stage-skills", script: "scripts/stage-skills.ts", args: ["--check"], jobs: ["quick"] },
-  { name: "changelog", script: "scripts/check-changelog.ts", jobs: ["quick"] },
-  { name: "scaffold-launch", script: "scripts/check-scaffold-launch.ts", jobs: ["quick"] },
-  { name: "capture-hygiene", script: "scripts/check-capture-hygiene.ts", jobs: ["quick"] },
-  { name: "concept-homes", script: "scripts/check-concept-homes.ts", jobs: ["quick"] },
-  { name: "layers", script: "scripts/check-layers.ts", jobs: ["quick"] },
-  { name: "export-manifest", script: "scripts/gen-export-manifest.ts", args: ["--check"], jobs: ["quick"], needsBuild: true, generated: true },
-  { name: "games-framework", script: "games/scripts/framework-check.ts", jobs: ["games"], games: true },
-  { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true },
-  { name: "games-design", script: "games/scripts/check-game-design.ts", jobs: ["games"], games: true },
-  { name: "games-depth", script: "games/scripts/check-game-depth.ts", jobs: ["games"], games: true },
-  { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true },
-  { name: "games-capabilities", script: "games/scripts/check-capabilities.ts", jobs: ["games"], games: true },
-  { name: "games-sync", script: "packages/jgengine/src/cli/index.ts", args: ["sync", "--check"], jobs: ["games"], games: true },
-  { name: "games-glb-textures", script: "games/scripts/check-glb-textures.ts", jobs: [], games: true },
-  { name: "recursive-walk", script: "scripts/check-recursive-walk.ts", jobs: [] },
-  { name: "version", script: "scripts/set-version.ts", args: ["--check"], jobs: [] },
+  { name: "stage-skills", script: "scripts/stage-skills.ts", args: ["--check"], jobs: ["quick"], reads: [".claude/", "packages/", "docs/", "README.md"] },
+  { name: "changelog", script: "scripts/check-changelog.ts", jobs: ["quick"], reads: ["changes/", "packages/core/src/meta/changelog.ts"] },
+  { name: "scaffold-launch", script: "scripts/check-scaffold-launch.ts", jobs: ["quick"], reads: ["packages/"] },
+  { name: "capture-hygiene", script: "scripts/check-capture-hygiene.ts", jobs: ["quick"], reads: ["packages/", "apps/", "examples/"] },
+  { name: "concept-homes", script: "scripts/check-concept-homes.ts", jobs: ["quick"], reads: ["packages/", "apps/", "games/"] },
+  { name: "layers", script: "scripts/check-layers.ts", jobs: ["quick"], reads: ["packages/core/src/", "packages/react/src/", "packages/shell/src/"] },
+  { name: "export-manifest", script: "scripts/gen-export-manifest.ts", args: ["--check"], jobs: ["quick"], needsBuild: true, generated: true, reads: ["packages/"] },
+  { name: "games-framework", script: "games/scripts/framework-check.ts", jobs: ["games"], games: true, reads: ["games/", "registry/", "docs/"] },
+  { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true, reads: ["games/"] },
+  { name: "games-design", script: "games/scripts/check-game-design.ts", jobs: ["games"], games: true, reads: ["games/"] },
+  { name: "games-depth", script: "games/scripts/check-game-depth.ts", jobs: ["games"], games: true, reads: ["games/", "packages/"], perGame: true },
+  { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["packages/"] },
+  { name: "games-capabilities", script: "games/scripts/check-capabilities.ts", jobs: ["games"], games: true, reads: ["games/", "packages/"] },
+  { name: "games-sync", script: "packages/jgengine/src/cli/index.ts", args: ["sync", "--check"], jobs: ["games"], games: true, reads: ["games/", "packages/jgengine/"] },
+  { name: "games-glb-textures", script: "games/scripts/check-glb-textures.ts", jobs: [], games: true, reads: ["games/"] },
+  { name: "recursive-walk", script: "scripts/check-recursive-walk.ts", jobs: [], reads: [".claude/"] },
+  { name: "version", script: "scripts/set-version.ts", args: ["--check"], jobs: [], reads: ["packages/"] },
 ];
+
+/**
+ * Paths every row reads: the toolchain, the compiler settings and the check scripts themselves. A
+ * change here can move any verdict, so it runs every check and generator.
+ */
+export const TOOLING_PATHS: readonly string[] = [
+  "package.json",
+  "bun.lock",
+  "bunfig.toml",
+  "tsconfig.base.json",
+  "tsconfig.json",
+  "scripts/",
+  "games/scripts/",
+  ".github/",
+];
+
+/** True when `path` is `prefix` itself or sits under it. */
+function under(path: string, prefix: string): boolean {
+  return prefix.endsWith("/") ? path.startsWith(prefix) : path === prefix;
+}
+
+/** True when a change to `path` can move a row that reads `reads` (undefined: the whole tree). */
+export function readsPath(reads: readonly string[] | undefined, path: string): boolean {
+  if (reads === undefined) return true;
+  return TOOLING_PATHS.some((prefix) => under(path, prefix)) || reads.some((prefix) => under(path, prefix));
+}
+
+/** True when any changed path can move this row. */
+export function reachedBy(row: { readonly reads?: readonly string[] | undefined }, changed: readonly string[]): boolean {
+  return changed.some((path) => readsPath(row.reads, path));
+}
+
+const GAME_FOLDER = /^games\/([^/]+)\/./;
+const SHARED_GAME_FOLDERS = new Set(["scripts", "shared"]);
+
+/**
+ * The games a diff stays inside: their ids when every changed path sits in a `games/<id>/` folder of
+ * its own, else null (an engine, tooling or shared-games change judges every game).
+ */
+export function gameScope(changed: readonly string[]): string[] | null {
+  if (changed.length === 0) return null;
+  const games = new Set<string>();
+  for (const path of changed) {
+    const id = GAME_FOLDER.exec(path)?.[1];
+    if (id === undefined || SHARED_GAME_FOLDERS.has(id)) return null;
+    games.add(id);
+  }
+  return [...games].sort();
+}
+
+/** The arguments a check runs with for this diff: a per-game check gets the games a game-only diff touched. */
+export function checkArgsFor(check: CheckDef, changed: readonly string[]): string[] {
+  const games = check.perGame === true ? gameScope(changed) : null;
+  return [...(check.args ?? []), ...(games ?? [])];
+}
 
 export function findCheck(name: string): CheckDef | undefined {
   return CHECKS.find((check) => check.name === name);
@@ -160,6 +225,8 @@ export interface GenTarget {
    * A file people also edit by hand (a tsconfig, a source file's `@skill` tag) is not listed.
    */
   readonly outputs?: readonly RegExp[];
+  /** The repository paths it reads, as `CheckDef.reads`: a diff that reaches none leaves its files as they are. */
+  readonly reads?: readonly string[];
 }
 
 /**
@@ -167,24 +234,26 @@ export interface GenTarget {
  * generator reads package source, so no build runs first.
  */
 export const GEN_TARGETS: readonly GenTarget[] = [
-  { name: "source-paths", script: "scripts/sourcePaths.ts" },
-  { name: "skill-routing", script: "scripts/gen-skill-routing.ts", outputs: [/^scripts\/skill-routing\.json$/] },
+  { name: "source-paths", script: "scripts/sourcePaths.ts", reads: ["packages/", "apps/", "examples/", "registry/", "games/llmville/packages/"] },
+  { name: "skill-routing", script: "scripts/gen-skill-routing.ts", outputs: [/^scripts\/skill-routing\.json$/], reads: ["packages/", ".claude/"] },
   {
     name: "barrels",
     script: "scripts/gen-barrels.ts",
     after: ["skill-routing"],
+    reads: ["packages/", ".claude/"],
     outputs: [/^packages\/core\/src\/(?:world|combat|gameplay|multiplayer|ui)\.ts$/],
   },
-  { name: "capabilities", script: "scripts/gen-capability-index.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/[^/]+\/capabilities\.md$/] },
+  { name: "capabilities", script: "scripts/gen-capability-index.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/[^/]+\/capabilities\.md$/], reads: ["packages/", ".claude/"] },
   {
     name: "skill-api",
     script: "scripts/gen-skill-api-safe.ts",
     after: ["barrels"],
     outputs: [/^\.claude\/skills\/[^/]+\/api\.md$/, /^scripts\/(?:api-doc-baseline|api-orphan-baseline)\.json$/],
+    reads: ["packages/", ".claude/"],
   },
-  { name: "export-manifest", script: "scripts/gen-export-manifest.ts", after: ["barrels"], outputs: [/^scripts\/export-manifest\.json$/] },
-  { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"], outputs: [/^games\/capabilities\.json$/] },
-  { name: "type-escapes", script: "scripts/type-escapes.ts", after: ["barrels"], outputs: [/^scripts\/type-escape-baseline\.json$/] },
+  { name: "export-manifest", script: "scripts/gen-export-manifest.ts", after: ["barrels"], outputs: [/^scripts\/export-manifest\.json$/], reads: ["packages/"] },
+  { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"], outputs: [/^games\/capabilities\.json$/], reads: ["packages/"] },
+  { name: "type-escapes", script: "scripts/type-escapes.ts", after: ["barrels"], outputs: [/^scripts\/type-escape-baseline\.json$/], reads: ["packages/", "games/", "apps/", "examples/"] },
 ];
 
 export function genPlan(targets: readonly GenTarget[]): Stage[] {

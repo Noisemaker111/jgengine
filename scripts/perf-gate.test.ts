@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import type { PerfRecord } from "./perf-play";
 import { PERF_GATE_GAMES, DEBUG_PORT_BASE, checkBudget, debugPortFor, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
-import { summarizeRecord } from "./perf-budget";
+import { frameVerdict, knownSlowAdded, parseKnownSlow, readKnownSlow, summarizeRecord, unjudgedFrameTime } from "./perf-budget";
 import { FRAME_GAMES } from "./ci-scope";
 
 /**
@@ -16,7 +16,8 @@ import { FRAME_GAMES } from "./ci-scope";
  * is caught by a test instead of by a review.
  */
 
-const BUDGET: PerfBudget = { drawsFrame: 7600, triangles: 3_850_000, nodes: 11_900 };
+const BUDGET: PerfBudget = { drawsFrame: 7600 };
+const REFERENCE_RUN = { gpu: "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 Direct3D11)", viewport: "1600x900", frameClock: "uncapped" as const };
 
 const roots: string[] = [];
 afterEach(() => {
@@ -66,36 +67,26 @@ function record(overrides: Partial<PerfRecord> = {}, render: Partial<PerfRecord[
 }
 
 describe("checkBudget", () => {
-  test("passes a game inside its budget", () => {
-    expect(checkBudget(record(), BUDGET)).toEqual([]);
+  test("passes a game inside the shared frame budget on the reference GPU", () => {
+    expect(checkBudget(record({ ...REFERENCE_RUN, frame: { fps: 90, avgMs: 11, p95Ms: 14.2, maxMs: 20, samples: 500, longFrames: 0 } }), BUDGET)).toEqual([]);
   });
 
-  test("names the game, metric, measured value and budget when the frame's draws go over", () => {
-    const [violation] = checkBudget(record({}, { drawsFrame: 9_100 }), BUDGET);
-    expect(violation?.message).toBe("perf gate: harbor-heat drawsFrame (whole frame) 9,100 (budget 7,600) over by 1,500");
-    expect(violation).toMatchObject({ game: "harbor-heat", metric: "drawsFrame (whole frame)", budget: 7600, measured: 9100 });
+  test("fails a p95 frame over 16.7 ms on the reference GPU, naming the game and both numbers", () => {
+    const [violation] = checkBudget(record(REFERENCE_RUN), BUDGET);
+    expect(violation?.message).toBe("perf gate: harbor-heat p95 frame 18 ms (budget 16.7 ms) over by 1.3 ms");
+    expect(violation?.metric).toBe("p95 frame");
   });
 
-  test("the renderer's single-sample draws are printed, not gated", () => {
-    expect(checkBudget(record({}, { draws: 40_000 }), BUDGET)).toEqual([]);
+  test("a frame time from another GPU, viewport or a vsynced clock is printed, never judged", () => {
+    expect(checkBudget(record({ ...REFERENCE_RUN, gpu: "ANGLE (Google, SwiftShader)" }), BUDGET)).toEqual([]);
+    expect(checkBudget(record({ ...REFERENCE_RUN, viewport: "1920x1080" }), BUDGET)).toEqual([]);
+    expect(checkBudget(record({ ...REFERENCE_RUN, frameClock: "capped" }), BUDGET)).toEqual([]);
+    expect(unjudgedFrameTime(record({ ...REFERENCE_RUN, gpu: "SwiftShader" }))).toContain("not the reference");
+    expect(unjudgedFrameTime(record(REFERENCE_RUN))).toBeNull();
   });
 
-  test("fails when the wrapped draw counter sampled no frame, instead of trusting the renderer sample alone", () => {
-    const [violation] = checkBudget(record({}, { drawsFrame: null, drawsFrames: 0 }), BUDGET, { requireDrawsFrame: true });
-    expect(violation?.message).toContain("drawsFrame (whole frame) unavailable");
-    expect(violation?.message).toContain("never rendered one");
-  });
-
-  test("an in-page report without a whole-frame count is judged on the counts it carries", () => {
-    expect(checkBudget(record({}, { drawsFrame: null, drawsFrames: 0 }), BUDGET)).toEqual([]);
-  });
-
-  test("gates triangles and scene nodes too", () => {
-    const messages = checkBudget(record({}, { triangles: 4_000_000, nodes: 12_500 }), BUDGET).map((entry) => entry.message);
-    expect(messages).toEqual([
-      "perf gate: harbor-heat triangles 4,000,000 (budget 3,850,000) over by 150,000",
-      "perf gate: harbor-heat nodes 12,500 (budget 11,900) over by 600",
-    ]);
+  test("draws, triangles and nodes are reported, not gated", () => {
+    expect(checkBudget(record({}, { drawsFrame: 90_000, triangles: 90_000_000, nodes: 90_000 }), BUDGET)).toEqual([]);
   });
 
   test("fails on any program linked after warmup", () => {
@@ -108,11 +99,15 @@ describe("checkBudget", () => {
     expect(violation?.message).toBe("perf gate: harbor-heat createFramebuffer 1 (budget 0) over by 1");
   });
 
-  test("fails when the game never reached play instead of reading 0 draws as a pass", () => {
-    const violations = checkBudget(record({}, { draws: 0 }), BUDGET);
+  test("fails when the game never reached play instead of reading 0 draws as a fast frame", () => {
+    const violations = checkBudget(record(REFERENCE_RUN, { draws: 0 }), BUDGET);
     expect(violations).toHaveLength(1);
-    expect(violations[0]?.message).toContain("draws unavailable");
     expect(violations[0]?.message).toContain("never reached play");
+  });
+
+  test("fails when the window measured no frames", () => {
+    const [violation] = checkBudget(record({ frame: { fps: 0, avgMs: 0, p95Ms: 0, maxMs: 0, samples: 0, longFrames: 0 } }), BUDGET);
+    expect(violation?.message).toContain("p95 frame unavailable");
   });
 
   test("a report still inside its warmup cannot be judged on post-warmup GL counts", () => {
@@ -129,12 +124,35 @@ describe("checkBudget", () => {
   test("fails when the GL counters never attached, since 0 allocations would be meaningless", () => {
     const [violation] = checkBudget(record({}, {}, { attached: false, total: { buffers: 0, textures: 0 } }), BUDGET);
     expect(violation?.message).toContain("GL allocations unavailable");
-    expect(violation?.message).toContain("never attached");
+  });
+});
+
+describe("the known-slow list", () => {
+  const known = parseKnownSlow(JSON.stringify({ $comment: "shrink only", "harbor-heat": "15 fps" }));
+
+  test("a listed game over budget is known; inside it, its entry is stale; unlisted and over, it fails", () => {
+    const slow = record(REFERENCE_RUN);
+    expect(frameVerdict("harbor-heat", checkBudget(slow, BUDGET), slow, known)).toBe("known");
+    const fast = record({ ...REFERENCE_RUN, frame: { fps: 90, avgMs: 11, p95Ms: 12, maxMs: 15, samples: 500, longFrames: 0 } });
+    expect(frameVerdict("harbor-heat", checkBudget(fast, BUDGET), fast, known)).toBe("stale");
+    expect(frameVerdict("deepward", checkBudget(slow, BUDGET), slow, known)).toBe("fail");
+    expect(frameVerdict("deepward", checkBudget(fast, BUDGET), fast, known)).toBe("pass");
+    const elsewhere = record({ ...REFERENCE_RUN, gpu: "SwiftShader" });
+    expect(frameVerdict("harbor-heat", checkBudget(elsewhere, BUDGET), elsewhere, known)).toBe("unjudged");
   });
 
-  test("fails when the harness cannot count scene nodes", () => {
-    const [violation] = checkBudget(record({}, { nodes: null, nodesSource: "unavailable" }), BUDGET);
-    expect(violation?.message).toContain("nodes unavailable");
+  test("only shrinks: an entry the base branch lacks is a failure", () => {
+    const grown = parseKnownSlow(JSON.stringify({ "harbor-heat": "15 fps", deepward: "slow" }));
+    expect(knownSlowAdded(grown, known)).toEqual([expect.stringContaining("deepward was added")]);
+    expect(knownSlowAdded(known, grown)).toEqual([]);
+    expect(knownSlowAdded(grown, null)).toEqual([]);
+  });
+
+  test("the committed list names only gated games, each with a reason", () => {
+    for (const [game, reason] of readKnownSlow()) {
+      expect(PERF_GATE_GAMES.some((gated) => gated === game)).toBe(true);
+      expect(reason.length).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -151,81 +169,50 @@ describe("loadBudget", () => {
 
   test("reads the engine baseline for the named game and names that file", () => {
     const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: 7600, triangles: 3850000, nodes: 11900 } });
-    expect(loadBudget("harbor-heat", root)).toEqual({
-      budget: { drawsFrame: 7600, triangles: 3850000, nodes: 11900 },
-      source: "scripts/perf-budget.json",
-    });
+    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: 7600 } });
+    expect(loadBudget("harbor-heat", root)).toEqual({ budget: { drawsFrame: 7600 }, source: "scripts/perf-budget.json" });
   });
 
   test("a game's own perf-budget.json wins over the engine copy, and the gate reports that path", () => {
     const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: 7600, triangles: 3850000, nodes: 11900 } });
-    writeGameBudget(root, "harbor-heat", { drawsFrame: 5000, triangles: 2_000_000, nodes: 9000 });
+    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: 7600 } });
+    writeGameBudget(root, "harbor-heat", { drawsFrame: 5000, programsLinked: 2 });
     const loaded = loadBudget("harbor-heat", root);
-    expect(loaded.budget.drawsFrame).toBe(5000);
+    expect(loaded.budget).toEqual({ drawsFrame: 5000, programsLinked: 2 });
     expect(loaded.source).toBe("games/harbor-heat/perf-budget.json");
   });
 
-  test("the standalone game copy is the whole entry, not a table keyed by game id", () => {
+  test("an old count ceiling is refused by name, so a stale file never reads as a budget", () => {
     const root = tempRoot();
-    writeGameBudget(root, "deepward", { drawsFrame: 90, triangles: 56100, nodes: 170, baseline: "2026-10-22 bun run perf gate" });
-    expect(loadBudget("deepward", root).budget).toEqual({
-      drawsFrame: 90,
-      triangles: 56100,
-      nodes: 170,
-      baseline: "2026-10-22 bun run perf gate",
-    });
-  });
-
-  test("an entry that still budgets draws is compared whole-frame and named as pre-drawsFrame", () => {
-    const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { draws: 10420, triangles: 4405210, nodes: 15210 } });
-    expect(loadBudget("harbor-heat", root).budget).toMatchObject({ drawsFrame: 10420, legacyDraws: true });
-  });
-
-  test("an entry with neither count fails instead of skipping the gate", () => {
-    const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { triangles: 4405210, nodes: 15210 } });
-    expect(() => loadBudget("harbor-heat", root)).toThrow(/harbor-heat\.drawsFrame/);
+    writeGameBudget(root, "harbor-heat", { drawsFrame: 5000, triangles: 2_000_000, nodes: 9000 });
+    expect(() => loadBudget("harbor-heat", root)).toThrow(/has triangles, nodes/);
   });
 
   test("a missing budget fails loudly and names both places it looked", () => {
     const root = tempRoot();
-    expect(() => loadBudget("harbor-heat", root)).toThrow(/no budget for "harbor-heat".*scripts[/\\]perf-budget\.json.*games[/\\]harbor-heat[/\\]perf-budget\.json/s);
+    expect(() => loadBudget("harbor-heat", root)).toThrow(/no budget for "harbor-heat"/);
   });
 
   test("a game missing from the baseline fails instead of skipping the gate", () => {
     const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: 7600, triangles: 3850000, nodes: 11900 } });
+    writeEngineBudgets(root, { "harbor-heat": {} });
     expect(() => loadBudget("deepward", root)).toThrow(/no budget for "deepward"/);
   });
 
   test("a budget entry with a non-number is rejected by name", () => {
     const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: "lots", triangles: 3850000, nodes: 11900 } });
+    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: "lots" } });
     expect(() => loadBudget("harbor-heat", root)).toThrow(/harbor-heat\.drawsFrame/);
   });
 
-  test("keeps the previous draws budget beside the new one", () => {
-    const root = tempRoot();
-    writeEngineBudgets(root, { "harbor-heat": { drawsFrame: 1724, previousDraws: 10420, triangles: 4405210, nodes: 15210 } });
-    expect(loadBudget("harbor-heat", root).budget).toMatchObject({ drawsFrame: 1724, previousDraws: 10420 });
-  });
-
-  test("the engine baseline itself parses for every gated game", () => {
-    for (const game of PERF_GATE_GAMES) {
-      const { budget } = loadBudget(game);
-      expect(budget.drawsFrame).toBeGreaterThan(0);
-      expect(budget.triangles).toBeGreaterThan(0);
-      expect(budget.nodes).toBeGreaterThan(0);
-    }
+  test("the committed budgets parse for every gated game", () => {
+    for (const game of PERF_GATE_GAMES) expect(loadBudget(game).budget).toBeDefined();
   });
 });
 
 describe("parseGateArgs", () => {
-  test("defaults to every reference game at each game's own tier, four at a time", () => {
-    expect(parseGateArgs([])).toEqual({ games: [...PERF_GATE_GAMES], draft: false, seconds: 6, jobs: 4 });
+  test("defaults to every reference game at each game's own tier, one at a time so no two share the GPU", () => {
+    expect(parseGateArgs([])).toEqual({ games: [...PERF_GATE_GAMES], draft: false, seconds: 6, jobs: 1 });
   });
 
   test("pins one tier for every game, and reads it back into the argument table", () => {
@@ -291,13 +278,13 @@ describe("ci matrix", () => {
 
 describe("gateVerdicts", () => {
   test("a game over its budget fails alone while its neighbours are still reported inside budget", () => {
-    const over = checkBudget(record({ game: "harbor-heat" }, { drawsFrame: 9_100 }), BUDGET, { requireDrawsFrame: true });
-    const inside = checkBudget(record({ game: "deepward" }), BUDGET, { requireDrawsFrame: true });
+    const over = checkBudget(record({ ...REFERENCE_RUN, game: "harbor-heat" }), BUDGET);
+    const inside = checkBudget(record({ game: "deepward" }), BUDGET);
     const { failures, lines } = gateVerdicts([
       { game: "harbor-heat", summary: null, violations: over.map((entry) => entry.message), error: null },
       { game: "deepward", summary: "deepward ok", violations: inside.map((entry) => entry.message), error: null },
     ]);
-    expect(failures).toEqual(["perf gate: harbor-heat drawsFrame (whole frame) 9,100 (budget 7,600) over by 1,500"]);
+    expect(failures).toEqual(["perf gate: harbor-heat p95 frame 18 ms (budget 16.7 ms) over by 1.3 ms"]);
     expect(lines).toEqual(["deepward ok"]);
   });
 
@@ -311,10 +298,11 @@ describe("gateVerdicts", () => {
 });
 
 describe("summarizeRecord", () => {
-  test("a run without overrides prints the same line as before", () => {
-    expect(summarizeRecord(record(), BUDGET)).toBe(
-      "harbor-heat ok  drawsFrame 7,100/7,600 (340 frames)  draws 7,000  triangles 3,600,000/3,850,000  nodes 11,000/11,900  links 0/0  framebuffers 0/0  allocations 0  1600x900 high",
+  test("a passing line leads with the frame time and prints draws beside the baseline", () => {
+    expect(summarizeRecord(record(REFERENCE_RUN), BUDGET)).toBe(
+      "harbor-heat ok  p95 18 ms/16.7 ms (60 fps)  drawsFrame 7,100 (baseline 7,600)  links 0/0  framebuffers 0/0  1600x900 high",
     );
+    expect(summarizeRecord(record(), BUDGET)).toContain("(60 fps) not judged");
   });
 
   test("a run with an override names it, so the line is reproducible as printed", () => {
