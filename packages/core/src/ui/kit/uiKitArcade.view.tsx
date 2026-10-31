@@ -13,6 +13,7 @@ import {
   type KitToastProps,
   type UiKit,
 } from "./uiKit.view";
+import { clamp01 } from "../../math/scalar";
 
 const P = "jgk-arcade";
 
@@ -42,10 +43,6 @@ function frame(w: number): string {
 
 function cx(...names: (string | false | undefined)[]): string {
   return names.filter(Boolean).join(" ");
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }
 
 function Button({ variant = "secondary", size = "md", tone, icon, glyph, pressed, type = "button", className, children, ...rest }: KitButtonProps): ReactNode {
