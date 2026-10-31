@@ -44,7 +44,7 @@ describe("Cessna 172 reference against the 172N handbook", () => {
       {
         aircraft: "Test plane",
         reference: "Cessna 172N",
-        rows: [{ metric: "stallSpeed", label: "stall speed", unit: "m/s EAS", game: 20, reference: report.stallSpeed, real: published("stallSpeed") }],
+        rows: [{ label: "stall speed", unit: "m/s EAS", game: 20, reference: report.stallSpeed, real: published("stallSpeed") }],
       },
     ]);
     expect(text).toContain("Test plane vs Cessna 172N");
