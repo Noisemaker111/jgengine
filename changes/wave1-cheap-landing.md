@@ -16,6 +16,7 @@ Engine seam: none - game content only
 
 ### Fixed
 
+- the crowd and RVO hot paths measure length with math/scalar length2 (sqrt of the squares) instead of Math.hypot, so the nav crowd corridor test reads the same gap on every machine (from #2846, with clamp's doc comment restored)
 - CI's core test shard ran 1,000 files in one process for about 13 minutes on every PR; the long simulation tests move to shard d, and shards d and h run in four cost-balanced lanes
 - preflight runs only the generators a diff reaches, and skips one whose inputs have not changed since it last ran; a lane never fails on a stale generated file, and a stale api baseline entry is pruned at land time
 - CI's full-history checkouts fetch no file contents up front, and the games job type-checks the reached games four at a time
