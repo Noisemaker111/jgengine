@@ -1,4 +1,3 @@
-import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import * as THREE from "three";
 import { requireUniform } from "@jgengine/core/render/uniformMaterial.draw";
 import { ShaderPass } from "three-stdlib";
