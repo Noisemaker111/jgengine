@@ -24,7 +24,6 @@ export interface PooledPlacement {
   readonly instanceId: string;
 }
 
-/** Marks the merged far proxies a {@link StaticDrawPool} draws. @internal */
 /**
  * A source's part in its cells' far proxies. `"part"` adds its geometry to the proxy and hides behind
  * it (a model's coarsest mesh level); `"hidden"` hides behind the proxy without adding to it (a finer
@@ -33,6 +32,7 @@ export interface PooledPlacement {
  */
 export type ProxyRole = "part" | "hidden" | "own";
 
+/** Marks the merged far proxies a {@link StaticDrawPool} draws. @internal */
 export const STATIC_POOL_PROXY_KEY = "jgStaticDrawProxy";
 
 /**

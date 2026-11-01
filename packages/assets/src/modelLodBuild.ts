@@ -76,7 +76,7 @@ async function nodeIO(): Promise<NodeIO> {
   return io;
 }
 
-/** Triangles the scene draws, counting a mesh once per node that uses it. */
+/** Triangles the scene draws, counting a mesh once per node that uses it. @internal */
 export function sceneTriangles(document: Document): number {
   let count = 0;
   for (const scene of document.getRoot().listScenes()) {
@@ -92,7 +92,7 @@ export function sceneTriangles(document: Document): number {
   return Math.round(count);
 }
 
-/** Content hash of a model file and the resources a `.gltf` names beside it. */
+/** Content hash of a model file and the resources a `.gltf` names beside it. @internal */
 export function modelSourceHash(file: string): string {
   const hash = createHash("sha256").update(readFileSync(file));
   if (file.toLowerCase().endsWith(".gltf")) {
@@ -108,7 +108,7 @@ export function modelSourceHash(file: string): string {
   return hash.digest("hex").slice(0, 24);
 }
 
-/** Hash of everything in a plan that changes the files a build writes. */
+/** Hash of everything in a plan that changes the files a build writes. @internal */
 export function lodPlanHash(plan: LodBuildPlan, impostor: ImpostorBakePlan | null): string {
   return createHash("sha256")
     .update(JSON.stringify({ v: BUILT_LOD_VERSION, levels: plan.levels, min: plan.minTriangles ?? DEFAULT_MIN_TRIANGLES, reduce: plan.minReduction ?? DEFAULT_MIN_REDUCTION, impostor }))
@@ -116,7 +116,7 @@ export function lodPlanHash(plan: LodBuildPlan, impostor: ImpostorBakePlan | nul
     .slice(0, 16);
 }
 
-/** The meta already on disk for `file`, when it matches the source and plan. */
+/** The meta already on disk for `file`, when it matches the source and plan. @internal */
 export function cachedLodMeta(file: string, source: string, plan: string): BuiltLodMeta | null {
   const path = join(builtLodDir(file), "meta.json");
   if (!existsSync(path)) return null;
@@ -162,6 +162,7 @@ function writeAtomic(path: string, bytes: Uint8Array | string): void {
  * Build the simplified levels (and, with a baker, the impostor atlas) for one model file into
  * `<file>.lods/`, the folder the runtime reads (`@jgengine/core/lod/builtLods`). Cached: a source
  * and plan that match the meta on disk rebuild nothing. Animated and skinned models are skipped.
+ * @capability model-lod-build write simplified mesh levels and a baked impostor atlas beside a model file
  */
 export async function buildModelLods(
   file: string,
@@ -223,7 +224,7 @@ export async function buildModelLods(
   return { file, status: "built", meta };
 }
 
-/** A short line for one result: `name: 12,400 → 4,960 / 1,240 tris + impostor`. */
+/** A short line for one result: `name: 12,400 → 4,960 / 1,240 tris + impostor`. @internal */
 export function describeLodBuild(result: ModelLodBuildResult, name = basename(result.file)): string {
   if (result.meta === null) return `${name}: skipped (${result.reason ?? "nothing to build"})`;
   const levels = result.meta.levels.map((level) => level.triangles.toLocaleString("en-US")).join(" / ");

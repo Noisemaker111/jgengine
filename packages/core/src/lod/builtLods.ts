@@ -140,13 +140,14 @@ function parseImpostor(value: unknown): BuiltImpostor | null {
 /**
  * Metres from the camera at which a model of bounding `radius` spans `screenSize` of the viewport
  * height through a perspective camera with vertical field of view `fovY` (radians).
+ * @internal
  */
 export function screenSizeDistance(radius: number, screenSize: number, fovY: number): number {
   const half = Math.tan(Math.min(Math.max(fovY, 1e-3), Math.PI - 1e-3) / 2);
   return radius / (Math.max(screenSize, 1e-6) * half);
 }
 
-/** Share of the viewport height a model of bounding `radius` spans at `distance` metres. */
+/** Share of the viewport height a model of bounding `radius` spans at `distance` metres. @internal */
 export function projectedScreenSize(radius: number, distance: number, fovY: number): number {
   const half = Math.tan(Math.min(Math.max(fovY, 1e-3), Math.PI - 1e-3) / 2);
   return radius / (Math.max(distance, 1e-6) * half);
