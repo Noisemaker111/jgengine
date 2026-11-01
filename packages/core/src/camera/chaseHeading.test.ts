@@ -86,18 +86,23 @@ describe("chase heading ownership", () => {
   });
 
   test("the default and explicit body source still follow a turning vehicle and return its chase aim", () => {
-    const car = createVehicleDynamics(vehicleTuning({ topSpeed: 20, accel: 9, brake: 12, turnRate: 2, grip: 1.3, handbrakeGrip: 0.4 }));
+    const car = createVehicleDynamics(vehicleTuning({
+      engine: { topSpeed: 20, accel: 9 },
+      brakes: { brake: 12, handbrakeGrip: 0.4 },
+      steering: { turnRate: 2 },
+      tires: { grip: 1.3 },
+    }));
     const camera = createChaseRigState();
     const resolved = resolveChase({ yawResponse: 5 });
     let inputYaw = -2;
     let lastHeading = 0;
     for (let frame = 0; frame < 120; frame++) {
       const carStep = car.tick(DT, { throttle: 1, brake: 0, steer: 0.4, handbrake: 0 });
-      lastHeading = carStep.heading;
-      const yaw = resolveChaseHeading(undefined, carStep.heading, inputYaw);
-      expect(yaw).toBe(carStep.heading);
-      expect(resolveChaseHeading({ headingSource: "body" }, carStep.heading, inputYaw)).toBe(yaw);
-      const step = stepChase(camera, { follow: { x: carStep.position[0], y: 0, z: carStep.position[2] }, yaw, bodyPitch: 0, velocity: null, lookBack: false, fovKick: 0 }, resolved, DT);
+      lastHeading = carStep.motion.heading;
+      const yaw = resolveChaseHeading(undefined, carStep.motion.heading, inputYaw);
+      expect(yaw).toBe(carStep.motion.heading);
+      expect(resolveChaseHeading({ headingSource: "body" }, carStep.motion.heading, inputYaw)).toBe(yaw);
+      const step = stepChase(camera, { follow: { x: carStep.motion.position[0], y: 0, z: carStep.motion.position[2] }, yaw, bodyPitch: 0, velocity: null, lookBack: false, fovKick: 0 }, resolved, DT);
       inputYaw = resolveChaseHeading(undefined, step.anchorYaw, inputYaw);
       expect(inputYaw).toBe(step.anchorYaw);
     }

@@ -50,7 +50,7 @@ function gameRotor(tuning: RigidAircraftTuning, velocity: readonly [number, numb
   const hubAbove = rotor.at?.[1] ?? 1.5;
   // The hub sits at sea level and the ground `hubHeight` below it, so a model with an atmosphere sees sea-level air.
   const aircraft = createRigidAircraft(tuning, { position: [0, -hubAbove, 0], velocity: [velocity[0], velocity[1], velocity[2]], airDensity: () => DENSITY, groundHeight: () => -hubHeight });
-  aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 });
+  { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
   const step = aircraft.tick(1e-3, { throttle: 1, pitch: 0, roll: 0, yaw: 0, collective });
   return { thrust: step.rotor?.thrust ?? Number.NaN, torque: step.rotor?.aerodynamicTorque ?? Number.NaN };
 }
@@ -73,7 +73,7 @@ function collectiveFor(tuning: RigidAircraftTuning, thrust: number, velocity: re
  */
 function gameEngineCut(tuning: RigidAircraftTuning, trimCollective: number): number {
   const aircraft = createRigidAircraft(tuning, { position: [0, 1000, 0], velocity: [0, 0, 35], airDensity: () => DENSITY });
-  aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 });
+  { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
   let speed = Number.NaN;
   let pitch = 0;
   let bank = 0;

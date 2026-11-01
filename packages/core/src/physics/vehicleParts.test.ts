@@ -8,7 +8,12 @@ import { vehicleTuning, type VehicleSpec } from "./vehicleSpec";
 
 const DT = 1 / 60;
 
-const BASE: VehicleSpec = { topSpeed: 30, accel: 8, brake: 9, turnRate: 1.6, grip: 1.1, handbrakeGrip: 0.25 };
+const BASE: VehicleSpec = {
+  engine: { topSpeed: 30, accel: 8 },
+  brakes: { brake: 9, handbrakeGrip: 0.25 },
+  steering: { turnRate: 1.6 },
+  tires: { grip: 1.1 },
+};
 
 const SLICK: VehiclePart = {
   id: "tires/hard",
@@ -34,28 +39,28 @@ const BRAKES: VehiclePart = {
 describe("applyVehicleParts", () => {
   test("scales then adds in install order and leaves the base untouched", () => {
     const setup = applyVehicleParts(BASE, [ENGINE, BRAKES]);
-    expect(setup.spec.accel).toBeCloseTo(BASE.accel * 1.4, 6);
-    expect(setup.spec.topSpeed).toBeCloseTo(BASE.topSpeed + 8, 6);
-    expect(setup.spec.brake).toBeCloseTo(BASE.brake * 1.25, 6);
-    expect(setup.spec.grip).toBeCloseTo(BASE.grip * 1.05, 6);
+    expect(setup.spec.engine.accel).toBeCloseTo(BASE.engine.accel * 1.4, 6);
+    expect(setup.spec.engine.topSpeed).toBeCloseTo(BASE.engine.topSpeed + 8, 6);
+    expect(setup.spec.brakes.brake).toBeCloseTo(BASE.brakes.brake * 1.25, 6);
+    expect(setup.spec.tires.grip).toBeCloseTo(BASE.tires.grip * 1.05, 6);
     expect(setup.parts).toEqual(["engine/v8", "brakes/race"]);
     // The base is a seed, never mutated, so one base can build several cars.
-    expect(BASE.accel).toBe(8);
-    expect(BASE.topSpeed).toBe(30);
-    expect(BASE.grip).toBe(1.1);
+    expect(BASE.engine.accel).toBe(8);
+    expect(BASE.engine.topSpeed).toBe(30);
+    expect(BASE.tires.grip).toBe(1.1);
   });
 
   test("an effect on an unset stat starts from the spec's default", () => {
     const setup = applyVehicleParts(BASE, [{ id: "ballast", slot: "body", effects: { weight: { add: 200 }, drift: { add: 0.3 } } }]);
-    expect(setup.spec.weight).toBe(1500);
-    expect(setup.spec.drift).toBeCloseTo(0.5, 6);
+    expect(setup.spec.chassis?.weight).toBe(1500);
+    expect(setup.spec.tires.drift).toBeCloseTo(0.5, 6);
   });
 
   test("a tire compound replaces the grip curve and moves the reported feel", () => {
     const stock = applyVehicleParts(BASE, []);
     const slick = applyVehicleParts(BASE, [SLICK]);
-    expect(stock.spec.gripCurve).toBeUndefined();
-    expect(slick.spec.gripCurve).toBe(SLICK.gripCurve);
+    expect(stock.spec.tires.gripCurve).toBeUndefined();
+    expect(slick.spec.tires.gripCurve).toBe(SLICK.gripCurve);
     expect(slick.feel.peakGrip).toBeLessThan(stock.feel.peakGrip);
     expect(slick.feel.slideGrip).toBeLessThan(stock.feel.slideGrip);
     expect(slick.feel.peakSlip).not.toBeCloseTo(stock.feel.peakSlip, 3);
@@ -85,8 +90,8 @@ describe("vehicle parts change the numbers and the feel", () => {
     let stockSpeed = 0;
     let builtSpeed = 0;
     for (let i = 0; i < 240; i += 1) {
-      stockSpeed = stock.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 }).forwardSpeed;
-      builtSpeed = built.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 }).forwardSpeed;
+      stockSpeed = stock.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 }).motion.forwardSpeed;
+      builtSpeed = built.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 }).motion.forwardSpeed;
     }
     expect(builtSpeed).toBeGreaterThan(stockSpeed);
   });
@@ -102,8 +107,8 @@ describe("vehicle parts change the numbers and the feel", () => {
     let slickSlip = 0;
     const axis = { ...NEUTRAL_AXIS, throttle: 1, steer: 1 };
     for (let i = 0; i < 60; i += 1) {
-      stockSlip = Math.max(stockSlip, stock.tick(DT, axis).slip);
-      slickSlip = Math.max(slickSlip, slick.tick(DT, axis).slip);
+      stockSlip = Math.max(stockSlip, stock.tick(DT, axis).tires.slip);
+      slickSlip = Math.max(slickSlip, slick.tick(DT, axis).tires.slip);
     }
     expect(slickSlip).toBeGreaterThan(stockSlip);
   });

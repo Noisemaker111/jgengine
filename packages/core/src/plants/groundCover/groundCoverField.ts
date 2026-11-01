@@ -86,7 +86,7 @@ export function registerGroundCoverKind(): void {
     note: (object) => {
       const resolved = resolveGroundCoverObject(object);
       if (resolved === null) return "Give the volume a box footprint.";
-      return `${Math.round(resolved.size[0])}×${Math.round(resolved.size[1])} m · ${Math.round(resolved.look.bladeHeight * 100)} cm sward, ${Math.round(resolved.look.density * 100)}% cover`;
+      return `${Math.round(resolved.size[0])}×${Math.round(resolved.size[1])} m · ${Math.round(resolved.look.blade.bladeHeight * 100)} cm sward, ${Math.round(resolved.look.blade.density * 100)}% cover`;
     },
   });
 }

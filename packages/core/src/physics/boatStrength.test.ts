@@ -10,7 +10,7 @@ const KNOT = 0.5144444;
 function topSpeed(tuning: BoatTuning, seconds: number): number {
   const boat = createBoatDynamics(tuning);
   let speed = 0;
-  for (let i = 0; i < 60 * seconds; i += 1) speed = boat.tick(DT, { throttle: 1, brake: 0, steer: 0, handbrake: 0 }).forwardSpeed;
+  for (let i = 0; i < 60 * seconds; i += 1) speed = boat.tick(DT, { throttle: 1, brake: 0, steer: 0, handbrake: 0 }).motion.forwardSpeed;
   return speed;
 }
 
@@ -19,7 +19,7 @@ function heaveRatio(tuning: BoatTuning, amplitude: number): number {
   const boat = createBoatDynamics(tuning, { sea: regularWaveField(amplitude, period, -Math.PI / 2) });
   let peak = 0;
   for (let i = 0; i < 60 * 30; i += 1) {
-    const y = boat.tick(DT, { throttle: 0, brake: 0, steer: 0, handbrake: 0 }).position[1];
+    const y = boat.tick(DT, { throttle: 0, brake: 0, steer: 0, handbrake: 0 }).motion.position[1];
     if (i > 60 * 20) peak = Math.max(peak, Math.abs(y));
   }
   return peak / amplitude;
@@ -35,10 +35,10 @@ describe("effect strength", () => {
       const boat = createBoatDynamics(tuning, { sea });
       for (let i = 0; i < 60 * 120; i += 1) {
         const step = boat.tick(DT, { throttle: 1, brake: 0, steer: Math.sin(i / 300), handbrake: 0 });
-        for (const value of [...step.position, step.forwardSpeed, step.bodyPitch, step.bodyRoll, step.yawRate]) expect(Number.isFinite(value)).toBe(true);
-        expect(Math.abs(step.position[1])).toBeLessThan(0.5);
-        expect(Math.abs(step.forwardSpeed)).toBeLessThan(5);
-        expect(Math.abs(step.yawRate)).toBeLessThan(2);
+        for (const value of [...step.motion.position, step.motion.forwardSpeed, step.body.bodyPitch, step.body.bodyRoll, step.motion.yawRate]) expect(Number.isFinite(value)).toBe(true);
+        expect(Math.abs(step.motion.position[1])).toBeLessThan(0.5);
+        expect(Math.abs(step.motion.forwardSpeed)).toBeLessThan(5);
+        expect(Math.abs(step.motion.yawRate)).toBeLessThan(2);
       }
     });
   }
@@ -64,8 +64,8 @@ describe("effect strength", () => {
       boat.restore({ ...boat.snapshot(), vz: 1.18 });
       for (let i = 1; i < 60 * 600; i += 1) {
         const step = boat.tick(DT, { throttle: 1, brake: 0, steer: -1, handbrake: 0 });
-        expect(Number.isFinite(step.heading)).toBe(true);
-        if (step.heading >= Math.PI / 2) return i * DT;
+        expect(Number.isFinite(step.motion.heading)).toBe(true);
+        if (step.motion.heading >= Math.PI / 2) return i * DT;
       }
       return Number.POSITIVE_INFINITY;
     };

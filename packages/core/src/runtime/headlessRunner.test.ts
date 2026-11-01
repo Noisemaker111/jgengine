@@ -24,7 +24,7 @@ function heroGame() {
   return defineGameDefinition({
     name: "Headless Hero",
     multiplayer: offline(),
-    world: environment({ terrain: terrain(), vegetation: grass({ density: 0.4 }) }),
+    world: environment({ terrain: terrain(), vegetation: grass({ blade: { density: 0.4 } }) }),
     loop: {
       onNewPlayer(ctx: GameContext) {
         ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] });
@@ -241,7 +241,7 @@ describe("createHeadlessRunner", () => {
         content,
         loop: { onInit() {}, onNewPlayer(ctx) { ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] }); }, onTick() {}, onReset() {}, onDispose() {} },
         GameUI: null,
-        movement: { canSprint: () => false },
+        controls: { movement: { canSprint: () => false } },
       },
     });
     runner.step(0.5, { held: ["moveForward"] });
@@ -316,7 +316,7 @@ describe("headless ui-intent seam", () => {
     return defineGameDefinition({
       name: "Headless UI",
       multiplayer: offline(),
-      world: environment({ terrain: terrain(), vegetation: grass({ density: 0.4 }) }),
+      world: environment({ terrain: terrain(), vegetation: grass({ blade: { density: 0.4 } }) }),
       loop: {
         onInit(ctx: GameContext) {
           ctx.game.commands.define<{ max: number }>("player.setEnergyMax", {

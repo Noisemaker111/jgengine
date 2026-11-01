@@ -3,15 +3,27 @@ import type {
   GameCameraConfig,
   ObserverCameraConfig,
 } from "@jgengine/core/game/playableGame";
+import type { GameCameraRigConfigs } from "@jgengine/core/camera/cameraConfig";
+import type { OrbitCameraConfig } from "@jgengine/core/camera/orbitCameraMath";
 import type { CameraRigOverride } from "@jgengine/core/runtime/cameraDirector";
 import { readCaptureCamera } from "@jgengine/core/world/captureCamera";
+
+const RIG_BLOCKS = ["firstPerson", "topDown", "rts", "shoulder", "lockOn", "chase", "observer", "turntable", "sideScroll", "inspection"] as const;
 
 /** @internal */
 export function resolveRuntimeCameraConfig(config: GameCameraConfig | undefined, override: CameraRigOverride | null | undefined): GameCameraConfig | undefined {
   if (override === null || override === undefined) return config;
-  const merged = { ...config, ...override.config, rig: override.kind };
-  for (const key of ["firstPerson", "topDown", "rts", "shoulder", "lockOn", "chase", "observer", "turntable", "sideScroll", "inspection", "shake"] as const) {
-    if (override.config[key] !== undefined) Object.assign(merged, { [key]: { ...config?.[key], ...override.config[key] } });
+  const { orbit, follow, rigs, shake, ...rest } = override.config;
+  const merged: GameCameraConfig = { ...config, ...rest, rig: override.kind };
+  if (orbit !== undefined) merged.orbit = { ...config?.orbit, ...orbit };
+  if (follow !== undefined) merged.follow = { ...config?.follow, ...follow };
+  if (shake !== undefined) merged.shake = { ...config?.shake, ...shake };
+  if (rigs !== undefined) {
+    const blocks: GameCameraRigConfigs = { ...config?.rigs };
+    for (const key of RIG_BLOCKS) {
+      if (rigs[key] !== undefined) Object.assign(blocks, { [key]: { ...config?.rigs?.[key], ...rigs[key] } });
+    }
+    merged.rigs = blocks;
   }
   return merged;
 }
@@ -32,6 +44,16 @@ export function resolveCaptureCameraConfig(config: GameCameraConfig | undefined,
   return resolveRuntimeCameraConfig(config, readCaptureCamera() ?? override);
 }
 
+/** The flat orbit-rig config the orbit camera reads: the `orbit` block plus the follow lock switches. @internal */
+export function orbitRigConfig(config: GameCameraConfig | undefined): OrbitCameraConfig {
+  const follow = config?.follow;
+  return {
+    ...config?.orbit,
+    ...(follow?.followLock === undefined ? {} : { followLock: follow.followLock }),
+    ...(follow?.followEnabled === undefined ? {} : { followEnabled: follow.followEnabled }),
+  };
+}
+
 /**
  * Resolves which rig mounts from a `GameCameraConfig`. Precedence, most to least
  * specific: an explicit `rig` field always wins; then `perspective: "first"`
@@ -44,15 +66,15 @@ export function resolveCaptureCameraConfig(config: GameCameraConfig | undefined,
 export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigKind {
   if (config?.rig !== undefined) return config.rig;
   if (config?.perspective === "first") return "first";
-  if (config?.topDown !== undefined) return "topDown";
-  if (config?.rts !== undefined) return "rts";
-  if (config?.shoulder !== undefined) return "shoulder";
-  if (config?.lockOn !== undefined) return "lockOn";
-  if (config?.chase !== undefined) return "chase";
-  if (config?.observer !== undefined) return "observer";
-  if (config?.turntable !== undefined) return "turntable";
-  if (config?.sideScroll !== undefined) return "sideScroll";
-  if (config?.inspection !== undefined) return "inspection";
+  if (config?.rigs?.topDown !== undefined) return "topDown";
+  if (config?.rigs?.rts !== undefined) return "rts";
+  if (config?.rigs?.shoulder !== undefined) return "shoulder";
+  if (config?.rigs?.lockOn !== undefined) return "lockOn";
+  if (config?.rigs?.chase !== undefined) return "chase";
+  if (config?.rigs?.observer !== undefined) return "observer";
+  if (config?.rigs?.turntable !== undefined) return "turntable";
+  if (config?.rigs?.sideScroll !== undefined) return "sideScroll";
+  if (config?.rigs?.inspection !== undefined) return "inspection";
   return "orbit";
 }
 
@@ -62,7 +84,7 @@ export function resolveRigKind(config: GameCameraConfig | undefined): CameraRigK
   * @internal
   */
 export function turntableAsObserver(config: GameCameraConfig | undefined): GameCameraConfig {
-  const t = config?.turntable;
+  const t = config?.rigs?.turntable;
   if (t === undefined) return config ?? {};
   const observer: ObserverCameraConfig = {
     ...(t.target !== undefined ? { bind: { kind: "point", position: t.target } } : {}),
@@ -73,5 +95,5 @@ export function turntableAsObserver(config: GameCameraConfig | undefined): GameC
     ...(t.startAngle !== undefined ? { startAngle: t.startAngle } : {}),
     ...(t.fov !== undefined ? { fov: t.fov } : {}),
   };
-  return { ...config, observer };
+  return { ...config, rigs: { ...config?.rigs, observer } };
 }

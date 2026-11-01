@@ -47,7 +47,7 @@ describe("streetPlay drivable-vehicle adoption", () => {
   });
 
   test("the static on-foot chase config carries no speed-reactive lens or roll (#1299)", () => {
-    const chase = game.camera?.chase;
+    const chase = game.camera?.rigs?.chase;
     expect(chase).toBeDefined();
     expect(chase?.fov?.speedForMax).toBe(0);
     expect(chase?.bank).toBeUndefined();

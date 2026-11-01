@@ -82,7 +82,7 @@ export function CreatorApp({ gameId, config, onExit }: { gameId: string; config:
   if (selected !== null && playable !== null) {
     return <EditorApp
       gameId={`${gameId}:${selected.id}`} playable={playable} layers={selected.document}
-      catalogs={playable.editorCatalogs} save={save} createPlaytest={config.createPlayable}
+      catalogs={playable.scene?.editorCatalogs} save={save} createPlaytest={config.createPlayable}
       validateDocument={validate} playerCreator allowedAssets={config.policy.allowedAssets}
       allowedKinds={config.policy.allowedKinds} maxImportBytes={config.policy.maxBytes}
       creatorPolicy={config.policy} onExitEditor={returnToCatalog}

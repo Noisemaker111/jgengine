@@ -53,7 +53,7 @@ const i18n: I18n = createI18n({ catalog: CATALOG, locale: "en", fallbackLocale: 
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3, frequency: 0.03, seed: "l10n" }),
-  vegetation: grass({ area: { w: 68, d: 68 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "l10n" }),
+  vegetation: grass({ area: { w: 68, d: 68 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "l10n" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -159,6 +159,15 @@ export const localizationDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: LocalizationUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 30, initialHeight: 24, minDistance: 12, maxDistance: 60, targetHeight: 0, maxPolarAngle: 1.3 },
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
+  camera: {
+    orbit: {
+      initialDistance: 30,
+      initialHeight: 24,
+      minDistance: 12,
+      maxDistance: 60,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

@@ -61,7 +61,7 @@ function seed(): void {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 50, d: 50 }, height: 1.5, frequency: 0.03, seed: "floating" }),
-  vegetation: grass({ area: { w: 44, d: 44 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "floating" }),
+  vegetation: grass({ area: { w: 44, d: 44 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "floating" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -97,11 +97,22 @@ export const floatingTextDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: FloatingTextHud,
-  environment: () => (
-    <>
-      <EnvironmentScene feature={terrainFeature} />
-      <WorldFloatingText field={field} styleFor={styleFor} fontSizePx={22} offsetY={-8} />
-    </>
-  ),
-  camera: { initialDistance: 12, initialHeight: 6, minDistance: 6, maxDistance: 30, targetHeight: 2, maxPolarAngle: 1.4 },
+  scene: {
+    environment: () => (
+      <>
+        <EnvironmentScene feature={terrainFeature} />
+        <WorldFloatingText field={field} styleFor={styleFor} fontSizePx={22} offsetY={-8} />
+      </>
+    ),
+  },
+  camera: {
+    orbit: {
+      initialDistance: 12,
+      initialHeight: 6,
+      minDistance: 6,
+      maxDistance: 30,
+      targetHeight: 2,
+      maxPolarAngle: 1.4,
+    },
+  },
 };

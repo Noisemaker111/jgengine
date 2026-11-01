@@ -30,7 +30,7 @@ const runner = createWaveRunner({
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "feel-audio" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "feel-audio" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "feel-audio" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -177,6 +177,15 @@ export const feelAudioDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit, onNewPlayer, onTick, onReset: () => undefined, onDispose: () => undefined },
   GameUI: FeelAudioUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 22, initialHeight: 16, minDistance: 10, maxDistance: 48, targetHeight: 0, maxPolarAngle: 1.3 },
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
+  camera: {
+    orbit: {
+      initialDistance: 22,
+      initialHeight: 16,
+      minDistance: 10,
+      maxDistance: 48,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

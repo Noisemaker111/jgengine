@@ -122,7 +122,7 @@ function gameResistance(tuning: BoatTuning, speed: number): number {
   let resistance = 0;
   for (let i = 0; i < 200; i += 1) {
     boat.restore({ ...boat.snapshot(), vx: 0, vz: speed, heading: 0, yawRate: 0 });
-    resistance = boat.tick(0.02, { throttle: 0, brake: 0, steer: 0, handbrake: 0 }).resistance;
+    resistance = boat.tick(0.02, { throttle: 0, brake: 0, steer: 0, handbrake: 0 }).hull.resistance;
   }
   return resistance;
 }
@@ -139,19 +139,19 @@ function gameStraightLine(tuning: BoatTuning): StraightLine & { timeToPlane: num
   while (t < 7200 && still < 200) {
     const step = boat.tick(dt, full);
     t += dt;
-    if (Number.isNaN(timeToPlane) && step.planing >= 1) timeToPlane = t;
-    still = Math.abs(step.forwardSpeed - speed) < 1e-5 ? still + 1 : 0;
-    speed = step.forwardSpeed;
+    if (Number.isNaN(timeToPlane) && step.hull.planing >= 1) timeToPlane = t;
+    still = Math.abs(step.motion.forwardSpeed - speed) < 1e-5 ? still + 1 : 0;
+    speed = step.motion.forwardSpeed;
   }
   const topSpeed = speed;
   const climb = createBoatDynamics(tuning);
   let timeTo90 = 0;
-  for (let u = 0; u < 0.9 * topSpeed && timeTo90 < 7200; timeTo90 += dt) u = climb.tick(dt, full).forwardSpeed;
+  for (let u = 0; u < 0.9 * topSpeed && timeTo90 < 7200; timeTo90 += dt) u = climb.tick(dt, full).motion.forwardSpeed;
   let distance = 0;
   let u = topSpeed;
   for (let i = 0; u > 0.25 * topSpeed && i < 144000; i += 1) {
     const before = boat.snapshot();
-    const next = boat.tick(dt, idle).forwardSpeed;
+    const next = boat.tick(dt, idle).motion.forwardSpeed;
     distance += Math.hypot(boat.snapshot().x - before.x, boat.snapshot().z - before.z);
     u = next;
   }
@@ -161,7 +161,7 @@ function gameStraightLine(tuning: BoatTuning): StraightLine & { timeToPlane: num
     let pitch = 0;
     for (let i = 0; i < 400; i += 1) {
       held.restore({ ...held.snapshot(), vx: 0, vz: target, heading: 0 });
-      pitch = held.tick(dt, idle).bodyPitch;
+      pitch = held.tick(dt, idle).body.bodyPitch;
     }
     return -pitch;
   };
@@ -253,10 +253,10 @@ function gameHeavePitch(tuning: BoatTuning, wavelength: number, amplitude: numbe
     const step = boat.tick(dt, { throttle: 0, brake: 0, steer: 0, handbrake: 0 });
     if (i < 40 * 20) continue;
     const phase = omega * (i + 1) * dt;
-    heaveCos += step.position[1] * Math.cos(phase);
-    heaveSin += step.position[1] * Math.sin(phase);
-    pitchCos += step.bodyPitch * Math.cos(phase);
-    pitchSin += step.bodyPitch * Math.sin(phase);
+    heaveCos += step.motion.position[1] * Math.cos(phase);
+    heaveSin += step.motion.position[1] * Math.sin(phase);
+    pitchCos += step.body.bodyPitch * Math.cos(phase);
+    pitchSin += step.body.bodyPitch * Math.sin(phase);
     samples += 1;
   }
   return { heave: (2 * Math.hypot(heaveCos, heaveSin)) / samples / amplitude, pitch: (2 * Math.hypot(pitchCos, pitchSin)) / samples / (k * amplitude) };
@@ -290,7 +290,7 @@ function gameTrialBoat(tuning: BoatTuning, speed: number, maxAngle: number): Man
   const start = { ...boat.snapshot(), vx: 0, vz: speed, heading: 0 };
   const surge = (throttle: number) => {
     boat.restore(start);
-    return boat.tick(1e-3, { throttle, brake: 0, steer: 0, handbrake: 0 }).forwardSpeed - speed;
+    return boat.tick(1e-3, { throttle, brake: 0, steer: 0, handbrake: 0 }).motion.forwardSpeed - speed;
   };
   let throttle = 1;
   if (surge(1) > 0) {
@@ -308,7 +308,7 @@ function gameTrialBoat(tuning: BoatTuning, speed: number, maxAngle: number): Man
     step(steerTarget, dt) {
       // Positive game steer turns to port; the game heading grows turning toward +x, which is starboard here.
       const step = boat.tick(dt, { throttle, brake: 0, steer: -steerTarget / maxAngle, handbrake: 0 });
-      return { x: step.position[2], y: step.position[0], heading: step.heading, speed: Math.hypot(step.forwardSpeed, step.lateralSpeed) };
+      return { x: step.motion.position[2], y: step.motion.position[0], heading: step.motion.heading, speed: Math.hypot(step.motion.forwardSpeed, step.motion.lateralSpeed) };
     },
   };
 }

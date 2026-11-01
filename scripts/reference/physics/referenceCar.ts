@@ -1,4 +1,5 @@
 import type { AxisInput } from "@jgengine/core/input/axisInput";
+import type { VehicleStepAir, VehicleStepBody, VehicleStepEngine, VehicleStepLoads, VehicleStepMotion, VehicleStepSteering } from "@jgengine/core/physics/vehicleDynamics";
 import { magicFormula, magicFormulaContact, magicFormulaVerticalForce, type MagicFormulaCoefficients, type MagicFormulaTireStep } from "./magicFormulaTire";
 import { createRungeKutta4 } from "./rungeKutta";
 import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra";
@@ -184,41 +185,31 @@ export interface ReferenceCarState {
   carry: number;
 }
 
-/** What one {@link ReferenceCar.tick} reports; the first fields match `VehicleDynamicsStep` so the probes read either. */
+/** What one {@link ReferenceCar.tick} reports; the groups shared with `VehicleDynamicsStep` use its shapes so the probes read either. */
 export interface ReferenceCarStep {
-  position: readonly [number, number, number];
-  heading: number;
-  /** Speed along the heading, m/s. */
-  forwardSpeed: number;
-  /** Speed toward the car's right, m/s. */
-  lateralSpeed: number;
-  /** Heading rate, rad/s (positive turns left, like `VehicleDynamics`). */
-  yawRate: number;
   /**
-   * Handwheel angle over the overall steering ratio, rad, positive steering right like `AxisInput.steer`: the steer
-   * measure of ISO 4138, so steering and bushing compliance count toward understeer as on a real test.
+   * Pose and planar motion. `yawRate` is the heading rate, rad/s (positive turns left, like `VehicleDynamics`);
+   * `lateralAccel` is positive toward the right.
    */
-  steerAngle: number;
-  /** Mean front road-wheel angle the wheels actually reach, after compliance and kinematics, rad, same sign. */
-  roadWheelAngle: number;
-  /** Lateral acceleration, m/s², positive toward the right. */
-  lateralAccel: number;
-  longitudinalAccel: number;
-  /** Nose-down pitch, rad. */
-  bodyPitch: number;
-  /** Roll, rad, positive dropping the right side. */
-  bodyRoll: number;
-  rpm: number;
-  gear: number;
+  motion: VehicleStepMotion;
+  /**
+   * `steerAngle` is the handwheel angle over the overall steering ratio, rad, positive steering right like `AxisInput.steer`:
+   * the steer measure of ISO 4138, so steering and bushing compliance count toward understeer as on a real test.
+   * `roadWheelAngle` is the mean front road-wheel angle the wheels actually reach, after compliance and kinematics, same sign.
+   */
+  steering: VehicleStepSteering;
+  /** Nose-down pitch and roll (positive dropping the right side), rad. */
+  body: Pick<VehicleStepBody, "bodyPitch" | "bodyRoll">;
+  engine: Pick<VehicleStepEngine, "rpm" | "gear">;
   /** Vertical tyre loads, N (front-left, front-right, rear-left, rear-right). */
-  wheelLoads: readonly [number, number, number, number];
-  /** Longitudinal slip κ per corner. */
-  slipRatios: readonly [number, number, number, number];
-  /** Slip angle per corner, rad. */
-  slipAngles: readonly [number, number, number, number];
-  /** Inclination per corner against the road, rad (automotive camber: negative tops the wheel inboard). */
-  cambers: readonly [number, number, number, number];
-  airborne: boolean;
+  loads: Pick<VehicleStepLoads, "wheelLoads">;
+  /** Per-corner tyre state: longitudinal slip κ, slip angle (rad) and inclination against the road (rad; automotive camber: negative tops the wheel inboard). */
+  wheels: {
+    slipRatios: readonly [number, number, number, number];
+    slipAngles: readonly [number, number, number, number];
+    cambers: readonly [number, number, number, number];
+  };
+  air: Pick<VehicleStepAir, "airborne">;
 }
 
 /**
@@ -1151,24 +1142,21 @@ export function createReferenceCar(spec: ReferenceCarSpec, options: ReferenceCar
       const pitch = Math.asin(clamp(2 * (qw * qy - qz * qx), -1, 1));
       const roll = Math.atan2(2 * (qw * qx + qy * qz), 1 - 2 * (qx * qx + qy * qy));
       return {
-        position: enginePosition(),
-        heading: psi,
-        forwardSpeed: vx * fx + vy * fy,
-        lateralSpeed: vx * fy - vy * fx,
-        yawRate: plant[12] ?? 0,
-        steerAngle: -control.steer,
-        roadWheelAngle: -report.steer,
-        lateralAccel: ax * fy - ay * fx,
-        longitudinalAccel: ax * fx + ay * fy,
-        bodyPitch: pitch,
-        bodyRoll: roll,
-        rpm: (plant[ENGINE] ?? 0) * RPM,
-        gear: control.gear,
-        wheelLoads: [...report.loads],
-        slipRatios: [...report.slips],
-        slipAngles: [...report.angles],
-        cambers: [...report.cambers],
-        airborne: report.airborne,
+        motion: {
+          position: enginePosition(),
+          heading: psi,
+          forwardSpeed: vx * fx + vy * fy,
+          lateralSpeed: vx * fy - vy * fx,
+          yawRate: plant[12] ?? 0,
+          lateralAccel: ax * fy - ay * fx,
+          longitudinalAccel: ax * fx + ay * fy,
+        },
+        steering: { steerAngle: -control.steer, roadWheelAngle: -report.steer },
+        body: { bodyPitch: pitch, bodyRoll: roll },
+        engine: { rpm: (plant[ENGINE] ?? 0) * RPM, gear: control.gear },
+        loads: { wheelLoads: [...report.loads] },
+        wheels: { slipRatios: [...report.slips], slipAngles: [...report.angles], cambers: [...report.cambers] },
+        air: { airborne: report.airborne },
       };
     },
     velocity: () => [plant[8] ?? 0, plant[7] ?? 0],

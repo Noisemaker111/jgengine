@@ -1,5 +1,6 @@
 import { boatWindageForce, type BoatWind } from "./boatWindage";
 import type { AxisInput } from "../input/axisInput";
+import type { VehicleStepAir, VehicleStepBody, VehicleStepEngine, VehicleStepMotion, VehicleStepSteering } from "./vehicleDynamics";
 import { waveFieldHeight, type WaveField } from "../water/seaState";
 import { hullManoeuvringForces, rudderForces, type HullManoeuvring, type ManoeuvringLoads } from "./boatManoeuvring";
 import { planingForces, planingTrim, type PlaningBottom } from "./boatPlaning";
@@ -161,30 +162,22 @@ export interface BoatState {
   rollRate: number;
 }
 
-/** One boat tick: pose plus the telemetry wake, spray and engine sound read. */
+/** One boat tick: pose plus the telemetry wake, spray and engine sound read, grouped like `VehicleDynamicsStep`. */
 export interface BoatStep {
-  position: readonly [number, number, number];
-  heading: number;
-  forwardSpeed: number;
-  lateralSpeed: number;
-  yawRate: number;
+  motion: Pick<VehicleStepMotion, "position" | "heading" | "forwardSpeed" | "lateralSpeed" | "yawRate">;
   /** Rudder or outboard angle, rad, positive steers like `steer > 0`. */
-  steerAngle: number;
-  /** `0` displacement … `1` fully planing. */
-  planing: number;
-  /** Thrust in use as a share of `maxThrust`, `0..1` — engine load. */
-  engineLoad: number;
-  /** Net propulsive force along the hull, N (after thrust deduction with the `propeller` effect). */
-  thrust: number;
-  /** Calm-water resistance along the hull, N. */
-  resistance: number;
-  /** Propeller shaft speed, rev/s (`0` without the `propeller` effect). */
-  propRevs: number;
-  bodyPitch: number;
-  bodyRoll: number;
-  /** Always `0`: the hull rides the water surface. Present so `tickDrivableVehicle` can drive it. */
-  airOffset: number;
-  airborne: boolean;
+  steering: Pick<VehicleStepSteering, "steerAngle">;
+  hull: {
+    /** `0` displacement … `1` fully planing. */
+    planing: number;
+    /** Calm-water resistance along the hull, N. */
+    resistance: number;
+  };
+  /** `engineLoad` is thrust in use as a share of `maxThrust`, `0..1`; `thrust` is the net propulsive force along the hull, N (after thrust deduction with the `propeller` effect); `propRevs` is the shaft speed, rev/s (`0` without the `propeller` effect). */
+  engine: Pick<VehicleStepEngine, "engineLoad"> & { thrust: number; propRevs: number };
+  body: Pick<VehicleStepBody, "bodyPitch" | "bodyRoll">;
+  /** `airOffset` is always `0`: the hull rides the water surface. Present so `tickDrivableVehicle` can drive it. */
+  air: Pick<VehicleStepAir, "airOffset" | "airborne">;
 }
 
 /** A force-based powered hull on the same tick/snapshot/retune contract as `VehicleDynamics`. */
@@ -685,21 +678,21 @@ export function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {
       }
       const [fx, fz] = forwardOf(state.heading);
       return {
-        position: [state.x, state.y, state.z],
-        heading: state.heading,
-        forwardSpeed: state.vx * fx + state.vz * fz,
-        lateralSpeed: -state.vx * fz + state.vz * fx,
-        yawRate: state.yawRate,
-        steerAngle: -state.steerAngle,
-        planing: telemetry.planing,
-        engineLoad: telemetry.engineLoad,
-        thrust: telemetry.thrust,
-        resistance: telemetry.resistance,
-        propRevs: telemetry.propRevs,
-        bodyPitch: state.bodyPitch + Math.min(1, prepared.strength.seakeeping) * state.pitch,
-        bodyRoll: state.bodyRoll + Math.min(1, prepared.strength.seakeeping) * state.roll,
-        airOffset: 0,
-        airborne: false,
+        motion: {
+          position: [state.x, state.y, state.z],
+          heading: state.heading,
+          forwardSpeed: state.vx * fx + state.vz * fz,
+          lateralSpeed: -state.vx * fz + state.vz * fx,
+          yawRate: state.yawRate,
+        },
+        steering: { steerAngle: -state.steerAngle },
+        hull: { planing: telemetry.planing, resistance: telemetry.resistance },
+        engine: { engineLoad: telemetry.engineLoad, thrust: telemetry.thrust, propRevs: telemetry.propRevs },
+        body: {
+          bodyPitch: state.bodyPitch + Math.min(1, prepared.strength.seakeeping) * state.pitch,
+          bodyRoll: state.bodyRoll + Math.min(1, prepared.strength.seakeeping) * state.roll,
+        },
+        air: { airOffset: 0, airborne: false },
       };
     },
     pose: () => ({ position: [state.x, state.y, state.z], heading: state.heading }),

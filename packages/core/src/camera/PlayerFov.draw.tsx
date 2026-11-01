@@ -42,14 +42,14 @@ export function PlayerFovProvider({
   const bounds = useMemo(
     () =>
       resolvePlayerFovBounds({
-        min: config?.playerFov?.min,
-        max: config?.playerFov?.max,
-        default: config?.playerFov?.default ?? config?.frustum?.fov,
+        min: config?.lens?.playerFov?.min,
+        max: config?.lens?.playerFov?.max,
+        default: config?.lens?.playerFov?.default ?? config?.lens?.frustum?.fov,
       }),
-    [config?.playerFov?.min, config?.playerFov?.max, config?.playerFov?.default, config?.frustum?.fov],
+    [config?.lens?.playerFov?.min, config?.lens?.playerFov?.max, config?.lens?.playerFov?.default, config?.lens?.frustum?.fov],
   );
-  const persist = config?.playerFov?.persist !== false;
-  const showControl = !orthographic && config?.playerFov?.control !== false;
+  const persist = config?.lens?.playerFov?.persist !== false;
+  const showControl = !orthographic && config?.lens?.playerFov?.control !== false;
   const [fov, setFovState] = useState(() =>
     persist ? loadPlayerFov(bounds) : bounds.defaultFov,
   );

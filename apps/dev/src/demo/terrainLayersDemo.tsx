@@ -58,14 +58,18 @@ function TerrainLayers() {
 export const terrainLayersGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "terrain-layers" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: TerrainLayers,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  look: "flat",
-  lighting: { ambient: { intensity: 0.4 }, directional: [{ intensity: 2.4, position: [16, 24, 12], color: "#fff3df" }] },
-  backdrop: { background: "#2a2f26" },
-  postProcessing: { enabled: true, toneMapping: "aces", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
-  environment: TerrainLayers,
+  rendering: {
+    look: "flat",
+    lighting: { ambient: { intensity: 0.4 }, directional: [{ intensity: 2.4, position: [16, 24, 12], color: "#fff3df" }] },
+    backdrop: { background: "#2a2f26" },
+    postProcessing: { enabled: true, toneMapping: "aces", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
+  },
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#f2f3f0", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
       <div style={{ position: "absolute", top: 14, left: 18, fontSize: 15, fontWeight: 600 }}>

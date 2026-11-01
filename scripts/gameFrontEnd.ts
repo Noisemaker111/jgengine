@@ -14,7 +14,7 @@ const REQUIREMENTS = [
     id: "settings",
     // The declaration, not the trigger: `SettingsTrigger` renders null until a game declares
     // `settings:` in its config, so an imported-but-dead trigger must not satisfy this.
-    pattern: /\n\s*settings:\s*\{|SettingsScreen|SettingsPanel/,
+    pattern: /[\n{,]\s*settings:\s*\{|SettingsScreen|SettingsPanel/,
     fix: "declare `settings: { ... }` in game.config.ts (the trigger renders nothing without it) and mount `SettingsTrigger` somewhere reachable",
   },
   {

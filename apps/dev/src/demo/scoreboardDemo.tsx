@@ -46,7 +46,7 @@ const scoreboardTheme: ScoreboardTheme = {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "scoreboard" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#241a3a", tipColor: "#6b4aa0", seed: "scoreboard" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colour: { baseColor: "#241a3a", tipColor: "#6b4aa0" }, seed: "scoreboard" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -88,6 +88,15 @@ export const scoreboardDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: ScoreboardUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 26, initialHeight: 20, minDistance: 12, maxDistance: 52, targetHeight: 0, maxPolarAngle: 1.3 },
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
+  camera: {
+    orbit: {
+      initialDistance: 26,
+      initialHeight: 20,
+      minDistance: 12,
+      maxDistance: 52,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

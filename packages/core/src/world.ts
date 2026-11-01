@@ -238,6 +238,7 @@ export {
   GRASS_SCHEMA,
   type GrassFieldBake,
   type GrassLook,
+  type GrassLookGroups,
 } from "./grass/grassKind";
 export {
   controlGroupKey,

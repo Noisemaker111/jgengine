@@ -23,7 +23,7 @@ modals.push({ kind: "pause" });
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "pause" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "pause" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "pause" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -101,6 +101,15 @@ export const pauseMenuDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: PauseMenuUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 26, initialHeight: 20, minDistance: 12, maxDistance: 52, targetHeight: 0, maxPolarAngle: 1.3 },
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
+  camera: {
+    orbit: {
+      initialDistance: 26,
+      initialHeight: 20,
+      minDistance: 12,
+      maxDistance: 52,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

@@ -203,13 +203,15 @@ function makeGame(rig: "first" | "shoulder"): PlayableGame {
     content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
     loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: () => {} },
     GameUI: WeaponHud,
-    environment: () => <Range />,
-    backdrop: { sky: { preset: "day" } },
+    scene: { environment: () => <Range /> },
+    rendering: { backdrop: { sky: { preset: "day" } } },
     camera: {
       rig,
-      firstPerson: { eyeHeight: 1.6 },
-      shoulder: { shoulderOffset: 0.8, distance: 3, heightOffset: 1.6, ads: { distance: 1.9, shoulderOffset: 0.85, fov: 42 } },
-      weapon: () => held.view,
+      rigs: {
+        firstPerson: { eyeHeight: 1.6 },
+        shoulder: { shoulderOffset: 0.8, distance: 3, heightOffset: 1.6, ads: { distance: 1.9, shoulderOffset: 0.85, fov: 42 } },
+      },
+      follow: { weapon: () => held.view },
     },
     capture: {
       states: {

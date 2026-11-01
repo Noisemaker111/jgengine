@@ -11,12 +11,10 @@ export const input = { ...DEFAULT_WALK_CODES, interact: ["KeyE"] };
 // (drag, load transfer, each driver aid) can be switched off or retuned.
 export const car = createVehicleDynamics(
   vehicleTuning({
-    grip: 1.1,
-    drift: 0.85,
-    topSpeed: 34,
-    accel: 10,
-    brake: 16,
-    turnRate: 2.4,
+    tires: { grip: 1.1, drift: 0.85 },
+    engine: { topSpeed: 34, accel: 10 },
+    brakes: { brake: 16 },
+    steering: { turnRate: 2.4 },
   }),
 );
 

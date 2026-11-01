@@ -23,7 +23,11 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3.2, frequency: 0.028, seed: "menu-framework" }),
-  vegetation: grass({ area: { w: 72, d: 72 }, baseColor: "#243b1c", tipColor: "#7fae45", seed: "menu-framework" }),
+  vegetation: grass({
+    area: { w: 72, d: 72 },
+    colour: { baseColor: "#243b1c", tipColor: "#7fae45" },
+    seed: "menu-framework",
+  }),
 });
 
 const game = defineGameDefinition({
@@ -405,11 +409,22 @@ export const menuFrameworkDemoGame: PlayableGame = {
   content: { entityById: () => null, objectById: () => null },
   loop: { onInit, onNewPlayer: () => {}, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: MenuFrameworkUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 30, initialHeight: 22, minDistance: 14, maxDistance: 60, targetHeight: 0, maxPolarAngle: 1.32 },
-  settings: {
-    variant: "panel",
-    extra: [{ id: "demo.hints", label: "Show hints", category: "gameplay", kind: "toggle", default: true }],
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
+  camera: {
+    orbit: {
+      initialDistance: 30,
+      initialHeight: 22,
+      minDistance: 14,
+      maxDistance: 60,
+      targetHeight: 0,
+      maxPolarAngle: 1.32,
+    },
+  },
+  chrome: {
+    settings: {
+      variant: "panel",
+      extra: [{ id: "demo.hints", label: "Show hints", category: "gameplay", kind: "toggle", default: true }],
+    },
   },
   capture: {
     states: {

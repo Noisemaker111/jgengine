@@ -113,17 +113,17 @@ export function FrameDriver({
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
   const movementTuning = useMemo(
     () => ({ ...resolvePlayerMovementTuning({
-      collision: playable.collision,
-      movement: playable.movement,
+      collision: playable.controls?.collision,
+      movement: playable.controls?.movement,
       physics: playable.game.physics,
       world: playable.game.world,
     }), authoritativeStep: true }),
     [playable],
   );
   const autoPickupRadius = useMemo(() => {
-    const cfg = playable.worldItem?.autoPickup;
+    const cfg = playable.scene?.worldItem?.autoPickup;
     if (cfg === undefined || cfg === false) return null;
-    const fallback = playable.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
+    const fallback = playable.scene?.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
     return cfg === true ? fallback : cfg.radius ?? fallback;
   }, [playable]);
   const drivesPose = useMemo(() => shellDrivesPlayerPose(playable.game.input), [playable]);
@@ -340,7 +340,7 @@ export function FrameDriver({
       if (action === "ping" && pingCommand !== undefined) continue;
       if (action === "interact") {
         if (!pressed) continue;
-        const prompts = playable.prompts?.(ctx);
+        const prompts = playable.controls?.prompts?.(ctx);
         const focus = prompts === undefined ? null : ctx.scene.entity.get(playerId);
         if (prompts !== undefined && focus !== null) {
           const active = resolveActivePrompt({ x: focus.position[0], z: focus.position[2] }, prompts);
@@ -365,7 +365,7 @@ export function FrameDriver({
       if (usePrimary) {
         primaryClickRef.current = false;
         const slots = ctx.player.inventory.state(hotbarId).slots;
-        const preferred = playable.hotbarSelection?.() ?? -1;
+        const preferred = playable.controls?.hotbarSelection?.() ?? -1;
         const slot =
           preferred >= 0 && slots[preferred] !== null && slots[preferred] !== undefined
             ? preferred

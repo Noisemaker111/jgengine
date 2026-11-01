@@ -84,7 +84,10 @@ const HELICOPTER_CRAFT: Craft = {
   leverRate: 0.4,
   assists: flightDemoHelicopterAssists,
   input: (stick, lever) => ({ throttle: 1, collective: lever, pitch: stick.pitch * 0.5, roll: stick.roll * 0.5, yaw: stick.yaw * 0.6 }),
-  onSpawn: (aircraft) => aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 }),
+  onSpawn: (aircraft) => {
+    const held = aircraft.snapshot();
+    aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } });
+  },
 };
 
 // Upper stage centre of mass sits this far ahead of the stack's; staging moves the pose there so nothing jumps.
@@ -105,9 +108,12 @@ const ROCKET_CRAFT: Craft = {
     const snap = state.plane.snapshot();
     state.plane.restore({
       ...snap,
-      x: snap.x + forward[0]! * UPPER_STAGE_OFFSET,
-      y: snap.y + forward[1]! * UPPER_STAGE_OFFSET,
-      z: snap.z + forward[2]! * UPPER_STAGE_OFFSET,
+      body: {
+        ...snap.body,
+        x: snap.body.x + forward[0]! * UPPER_STAGE_OFFSET,
+        y: snap.body.y + forward[1]! * UPPER_STAGE_OFFSET,
+        z: snap.body.z + forward[2]! * UPPER_STAGE_OFFSET,
+      },
     });
     state.plane.retune(flightDemoUpperStage);
     state.stage = 2;
@@ -154,7 +160,10 @@ function onTick(ctx: GameContext, dt: number): void {
     craft = craft === TRAINER_CRAFT ? PLANE_CRAFT : TRAINER_CRAFT;
     resetRun();
     ensureRun().plane.resetTo(position);
-    ensureRun().plane.restore({ ...ensureRun().plane.snapshot(), vz: craft.spawn.velocity?.[2] ?? 0 });
+    {
+      const held = ensureRun().plane.snapshot();
+      ensureRun().plane.restore({ ...held, body: { ...held.body, vz: craft.spawn.velocity?.[2] ?? 0 } });
+    }
     return;
   }
   const axis = ctx.input.axis(bindings);
@@ -407,7 +416,9 @@ function makeGame(name: string, choice: Craft): PlayableGame {
     assets: createAssetCatalog(),
     multiplayer: "off",
     world: { kind: "flat" },
-    backdrop: { sky: { preset: "day", radius: 2800 }, fog: { color: "#c7d7e6", near: 600, far: 2400 } },
+    rendering: {
+      backdrop: { sky: { preset: "day", radius: 2800 }, fog: { color: "#c7d7e6", near: 600, far: 2400 } },
+    },
     input: {
       pitchUp: ["KeyS", "ArrowDown"],
       pitchDown: ["KeyW", "ArrowUp"],
@@ -423,19 +434,23 @@ function makeGame(name: string, choice: Craft): PlayableGame {
     loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: resetRun },
     camera: {
       rig: "chase",
-      frustum: { far: 3000 },
-      chase: {
-        distance: choice.kind === "helicopter" ? 18 : choice.kind === "rocket" ? 34 : 16,
-        height: choice.kind === "helicopter" ? 6 : choice.kind === "rocket" ? 3 : 4,
-        lookHeight: 1,
-        springDamping: 8,
-        fov: { base: 60, max: 72, speedForMax: 110 },
-        yawResponse: 4,
+      lens: { frustum: { far: 3000 } },
+      rigs: {
+        chase: {
+          distance: choice.kind === "helicopter" ? 18 : choice.kind === "rocket" ? 34 : 16,
+          height: choice.kind === "helicopter" ? 6 : choice.kind === "rocket" ? 3 : 4,
+          lookHeight: 1,
+          springDamping: 8,
+          fov: { base: 60, max: 72, speedForMax: 110 },
+          yawResponse: 4,
+        },
       },
     },
-    renderEntity: (entity) =>
-      entity.name !== PLANE ? null : choice.kind === "helicopter" ? <HelicopterBody entity={entity} /> : choice.kind === "rocket" ? <RocketBody entity={entity} /> : <PlaneBody entity={entity} />,
-    WorldOverlay: Landscape,
+    scene: {
+      renderEntity: (entity) =>
+        entity.name !== PLANE ? null : choice.kind === "helicopter" ? <HelicopterBody entity={entity} /> : choice.kind === "rocket" ? <RocketBody entity={entity} /> : <PlaneBody entity={entity} />,
+      WorldOverlay: Landscape,
+    },
     GameUI: Telemetry,
     capture: {
       probe: (): Record<string, number> => {

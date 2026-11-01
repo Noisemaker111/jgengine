@@ -69,7 +69,7 @@ const cruiserSkill = (stars: number): DifficultyProfile =>
 
 const CRUISER_TUNING: DriverTuning = (() => {
   const def = vehicleById("car_cop");
-  return { maxSpeed: def !== undefined && def.dynamics.type === "ground" ? def.dynamics.tuning.topSpeed : 35 };
+  return { maxSpeed: def !== undefined && def.dynamics.type === "ground" ? def.dynamics.tuning.engine.topSpeed : 35 };
 })();
 
 /** Fraction of the interceptor's top speed it holds on a straight; the chase band pushes past it. */

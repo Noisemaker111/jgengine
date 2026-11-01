@@ -23,7 +23,7 @@ function renderHud(settings: GameSettingsConfig | false | undefined) {
   const rebindings: string[][] = [];
   const resets: string[] = [];
   const playable: PlayableGame = {
-    game, content: {}, presentation: "hud", settings,
+    game, content: {}, chrome: { presentation: "hud", settings },
     GameUI() {
       controller = useSettings();
       providedStore = useSettingsStore();

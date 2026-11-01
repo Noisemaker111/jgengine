@@ -162,7 +162,7 @@ export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultipla
         <EditorLazy
           gameId={resolvedGameId}
           playable={playable}
-          catalogs={playable.editorCatalogs}
+          catalogs={playable.scene?.editorCatalogs}
           onExitEditor={() => setEditorOpen(false)}
         />
       </Suspense>

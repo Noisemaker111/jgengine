@@ -329,11 +329,14 @@ export function createVehicleDamage(config: VehicleDamageConfig): VehicleDamage 
 export function damagedSpec(base: VehicleSpec, effect: VehicleDamageEffectResolved): VehicleSpec {
   return {
     ...base,
-    accel: base.accel * effect.engineScale,
-    brake: base.brake * effect.brakeScale,
-    topSpeed: base.topSpeed * effect.topSpeedScale,
-    grip: base.grip * effect.gripScale,
-    coast: (base.coast ?? 1) + effect.drag,
+    engine: {
+      ...base.engine,
+      accel: base.engine.accel * effect.engineScale,
+      topSpeed: base.engine.topSpeed * effect.topSpeedScale,
+      coast: (base.engine.coast ?? 1) + effect.drag,
+    },
+    brakes: { ...base.brakes, brake: base.brakes.brake * effect.brakeScale },
+    tires: { ...base.tires, grip: base.tires.grip * effect.gripScale },
   };
 }
 

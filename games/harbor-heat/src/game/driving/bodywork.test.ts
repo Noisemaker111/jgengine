@@ -56,9 +56,9 @@ describe("harbor-heat vehicle damage", () => {
     expect(first[0]!.stage).toBe(1);
     expect(retunes).toHaveLength(1);
     // The re-bake is the shared one: grip and drag move, the authored numbers are not mutated.
-    expect(retunes[0]!.grip).toBeLessThan(car.base.grip);
-    expect(retunes[0]!.coast ?? 1).toBeGreaterThan(car.base.coast ?? 1);
-    expect(car.base.grip).toBe(vehicleById("car_compact")!.dynamics.tuning.grip);
+    expect(retunes[0]!.tires.grip).toBeLessThan(car.base.tires.grip);
+    expect(retunes[0]!.engine.coast ?? 1).toBeGreaterThan(car.base.engine.coast ?? 1);
+    expect(car.base.tires.grip).toBe(vehicleById("car_compact")!.dynamics.tuning.tires.grip);
 
     const readout = vehicleDamageReadout(ctx, car.id)!;
     expect(readout.worstStage).toBe(1);
@@ -74,7 +74,7 @@ describe("harbor-heat vehicle damage", () => {
     );
     expect(second[0]!.previousStage).toBe(1);
     expect(second[0]!.stage).toBe(2);
-    expect(retunes[1]!.grip).toBeLessThan(retunes[0]!.grip);
+    expect(retunes[1]!.tires.grip).toBeLessThan(retunes[0]!.tires.grip);
     expect(vehicleDamageReadout(ctx, car.id)!.worstStage).toBe(2);
   });
 

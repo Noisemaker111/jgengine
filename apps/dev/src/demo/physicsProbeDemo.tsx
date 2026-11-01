@@ -106,8 +106,12 @@ const game = defineGame({
   world: { kind: "flat" },
   input: {},
   loop: { onInit: () => {}, onNewPlayer: () => {}, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
-  camera: { rig: "topDown", projection: "perspective", topDown: { yaw: 0.18, pitch: 0.9, height: 22 } },
-  WorldOverlay: PhysicsProbeOverlay,
+  camera: {
+    rig: "topDown",
+    lens: { projection: "perspective" },
+    rigs: { topDown: { yaw: 0.18, pitch: 0.9, height: 22 } },
+  },
+  scene: { WorldOverlay: PhysicsProbeOverlay },
   GameUI: PhysicsProbeUi,
 });
 

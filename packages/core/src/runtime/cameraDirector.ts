@@ -1,8 +1,9 @@
 import type { CameraRigKind, ChaseCameraConfig, ChaseView, CinematicCameraConfig, GameCameraConfig } from "../game/playableGame";
+import type { GameCameraFollowConfig } from "../camera/cameraConfig";
 import type { GameContext } from "./gameContext";
 
 /** Data overlay for an existing rig; callbacks and Canvas projection/preferences remain configured by the game. */
-export type CameraRigConfig = Omit<GameCameraConfig, "rig" | "projection" | "pixelPerfect" | "frustum" | "playerFov" | "weapon" | "onCameraFollow">;
+export type CameraRigConfig = Omit<GameCameraConfig, "rig" | "lens" | "follow"> & { follow?: Omit<GameCameraFollowConfig, "weapon" | "onCameraFollow"> };
 
 /** Runtime rig selection and detached data overlay over the configured camera. */
 export interface CameraRigOverride {
@@ -64,12 +65,14 @@ const cinematic = shape({
     position: target3d, lookAt: target3d, ...numbers("fov", "duration"), ease: oneOf("linear", "smooth"),
   }, ["position", "lookAt"])),
 }, ["keyframes"]);
-const rigConfig = shape({
-  ...numbers("transitionSeconds", "minDistance", "maxDistance", "targetHeight", "initialDistance", "initialHeight", "initialYaw", "initialPitch", "rotateSpeed", "zoomSpeed", "dampingFactor", "targetSmoothing", "dragTargetSmoothing", "distanceSmoothing", "minPolarAngle", "maxPolarAngle"),
-  perspective: oneOf("third", "first"), targetOffset: point, followLock: boolean, followEnabled: boolean,
-  followEntityId: (value) => value === null || string(value),
+const orbitConfig = shape({
+  ...numbers("minDistance", "maxDistance", "targetHeight", "initialDistance", "initialHeight", "initialYaw", "initialPitch", "rotateSpeed", "zoomSpeed", "dampingFactor", "targetSmoothing", "dragTargetSmoothing", "distanceSmoothing", "minPolarAngle", "maxPolarAngle"),
+  targetOffset: point,
   pitchClamp: (value) => Array.isArray(value) && value.length === 2 && value.every(number),
   collision: shape({ enabled: boolean, ...numbers("padding", "minTargetDistance") }),
+});
+const followConfig = shape({ followLock: boolean, followEnabled: boolean, followEntityId: (value) => value === null || string(value) });
+const rigBlocks = shape({
   firstPerson: shape({ ...numbers("eyeHeight", "sensitivity", "maxPitch"), reticle: boolean, viewmodel: boolean, body: boolean }),
   topDown: shape(topDownFields),
   rts: shape({ ...topDownFields, ...numbers("panSpeed", "rotateSpeed"), pan: boolean,
@@ -90,6 +93,10 @@ const rigConfig = shape({
   inspection: shape({ ...numbers("initialDistance", "minDistance", "maxDistance", "minPolarAngle", "maxPolarAngle", "rotateSpeed", "zoomSpeed", "dampingFactor"),
     anchor: oneOf("target", "cursor", "center"), target: point, initialPosition: point, pan: boolean,
   }),
+});
+const rigConfig = shape({
+  ...numbers("transitionSeconds"),
+  perspective: oneOf("third", "first"), orbit: orbitConfig, follow: followConfig, rigs: rigBlocks,
   shake: shape(numbers("maxOffset", "maxRoll", "decayPerSecond", "exponent", "frequency")), cinematic,
 } satisfies Record<keyof CameraRigConfig, Check>);
 

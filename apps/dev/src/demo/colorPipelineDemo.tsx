@@ -138,26 +138,30 @@ function Legend(): ReactNode {
 export const colorPipelineDemoGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "color-pipeline", world },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
-  editorLayers: authored,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    editorLayers: authored,
+    environment: Scene,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  look: "flat",
-  lighting: {
-    ambient: { intensity: 0.05 },
-    directional: [{ intensity: 2.8, position: [26, 34, 14], color: "#fff2da", castShadow: true }],
+  rendering: {
+    look: "flat",
+    lighting: {
+      ambient: { intensity: 0.05 },
+      directional: [{ intensity: 2.8, position: [26, 34, 14], color: "#fff2da", castShadow: true }],
+    },
+    postProcessing: {
+      enabled: true,
+      toneMapping: "agx",
+      exposure: 1,
+      bloom: false,
+      ao: false,
+      grade: {},
+      aa: "msaa",
+      ...(exposureFixed ? { autoExposure: false as const } : {}),
+    },
   },
-  postProcessing: {
-    enabled: true,
-    toneMapping: "agx",
-    exposure: 1,
-    bloom: false,
-    ao: false,
-    grade: {},
-    aa: "msaa",
-    ...(exposureFixed ? { autoExposure: false as const } : {}),
-  },
-  environment: Scene,
   GameUI: Legend,
   capture: {
     views: {

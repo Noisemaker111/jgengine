@@ -68,7 +68,7 @@ export interface ResolvedGrassBake {
 }
 
 function bareCoverage(look: GrassLook, seed: string, coverageAt: TerrainHeightSampler | undefined): TerrainHeightSampler {
-  if (look.bareGround <= 0) return coverageAt ?? (() => 1);
+  if (look.growth.bareGround <= 0) return coverageAt ?? (() => 1);
   const seedNumber = seedToUint32(seed);
   return coverageAt === undefined
     ? (x, z) => grassBareAt(look, seedNumber, x, z)
@@ -83,10 +83,10 @@ export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
   const rows = Math.max(1, Math.ceil(size.depth / GRASS_CELL_SIZE));
   const bladesPerM2 = grassBladeDensity(look);
   const seed = look.seed.length > 0 ? look.seed : String(options.seed ?? "grass");
-  const tallest = Math.max(1, look.mixShare > 0 ? look.mixHeight : 1);
+  const tallest = Math.max(1, look.species.mixShare > 0 ? look.species.mixHeight : 1);
   const heightAt = options.heightAt ?? (() => 0);
   const coverageAt = bareCoverage(look, seed, options.coverageAt);
-  const growAbove = look.growAbove - (options.baseHeight ?? 0);
+  const growAbove = look.growth.growAbove - (options.baseHeight ?? 0);
   return {
     look,
     width: size.width,
@@ -100,11 +100,11 @@ export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
     growAbove,
     turfAt: (x, z, height = heightAt(x, z)) => coverageAt(x, z) * smoothstep(growAbove, growAbove + 1, height),
     bladesPerM2,
-    tuftsPerM2: bladesPerM2 / look.tuftBlades,
+    tuftsPerM2: bladesPerM2 / look.tuft.tuftBlades,
     columns,
     rows,
     rootLevel: Math.ceil(Math.log2(Math.max(columns, rows))),
-    maxHeight: look.bladeHeight * tallest * 1.15 + look.flowerSize,
+    maxHeight: look.blade.bladeHeight * tallest * 1.15 + look.flowers.flowerSize,
   };
 }
 
@@ -181,9 +181,9 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
   const roots = new THREE.Box3();
   const seedNumber = seedToUint32(bake.seed);
   const clumpSeed = seedNumber + 104729;
-  const cs2 = look.clumpSize * 2;
+  const cs2 = look.tuft.clumpSize * 2;
   const point = new THREE.Vector3();
-  const flutterStiff = 1 - look.stiffness;
+  const flutterStiff = 1 - look.blade.stiffness;
   let maxReach = 0;
   let n = 0;
   for (const cell of cells) {
@@ -193,32 +193,32 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
     for (let j = 0; j < count; j += 1) {
       let x = cell.x0 + random() * cell.w;
       let z = cell.z0 + random() * cell.d;
-      const clumpRoll = random(), clumpAngle = random() * Math.PI * 2, clumpReach = Math.sqrt(random()) * look.clumpSize;
+      const clumpRoll = random(), clumpAngle = random() * Math.PI * 2, clumpReach = Math.sqrt(random()) * look.tuft.clumpSize;
       const speciesRoll = random(), flowerRoll = random(), yaw = random() * Math.PI * 2;
       const heightRoll = random(), widthRoll = random(), bendRoll = random(), gate = random(), settle = random();
       const phase = random() * Math.PI * 2, colorRoll = random();
-      if (clumpRoll < look.clumping * 0.6) {
+      if (clumpRoll < look.tuft.clumping * 0.6) {
         const column = Math.floor((x + halfW) / cs2), row = Math.floor((z + halfD) / cs2);
         const ccx = (column + 0.5 + (hashNoise2(column, row, clumpSeed) - 0.5) * 0.8) * cs2 - halfW;
         const ccz = (row + 0.5 + (hashNoise2(row, column, clumpSeed) - 0.5) * 0.8) * cs2 - halfD;
         x = Math.max(-halfW, Math.min(halfW, ccx + Math.cos(clumpAngle) * clumpReach));
         z = Math.max(-halfD, Math.min(halfD, ccz + Math.sin(clumpAngle) * clumpReach));
       }
-      const species = speciesRoll < look.mixShare ? 1 : 0;
-      let height = look.bladeHeight * (1 - look.heightVariation * 0.6 * (1 - heightRoll)) * (species === 1 ? look.mixHeight : 1);
-      if (look.clumping > 0) {
+      const species = speciesRoll < look.species.mixShare ? 1 : 0;
+      let height = look.blade.bladeHeight * (1 - look.blade.heightVariation * 0.6 * (1 - heightRoll)) * (species === 1 ? look.species.mixHeight : 1);
+      if (look.tuft.clumping > 0) {
         // Clumped ground grows taller tussocks; the open ground between clumps stays shorter turf.
-        const tussock = hashNoise2(Math.floor(x / look.clumpSize), Math.floor(z / look.clumpSize), clumpSeed);
-        height *= 1 + look.clumping * (tussock - 0.5) * 0.6;
+        const tussock = hashNoise2(Math.floor(x / look.tuft.clumpSize), Math.floor(z / look.tuft.clumpSize), clumpSeed);
+        height *= 1 + look.tuft.clumping * (tussock - 0.5) * 0.6;
       }
-      const nx = x / look.noiseScale, nz = z / look.noiseScale;
+      const nx = x / look.season.noiseScale, nz = z / look.season.noiseScale;
       // Mown patches drop to low turf and never flower; at patchiness 0 the mask never bites.
-      const grown = smoothstep(look.patchiness * 0.85 - 0.1, look.patchiness * 0.85 + 0.04, grassFieldNoise(nx, nz, seedNumber + 31));
+      const grown = smoothstep(look.growth.patchiness * 0.85 - 0.1, look.growth.patchiness * 0.85 + 0.04, grassFieldNoise(nx, nz, seedNumber + 31));
       height *= 0.55 + 0.45 * grown;
       const y = bake.heightAt(x, z);
-      if (look.slopeThin > 0) {
+      if (look.growth.slopeThin > 0) {
         const slope = Math.hypot(bake.heightAt(x + 0.5, z) - bake.heightAt(x - 0.5, z), bake.heightAt(x, z + 0.5) - bake.heightAt(x, z - 0.5));
-        height *= 1 - look.slopeThin * 0.75 * smoothstep(0.35, 1.3, slope);
+        height *= 1 - look.growth.slopeThin * 0.75 * smoothstep(0.35, 1.3, slope);
       }
       if (bake.edgeFeather > 0) {
         // Tufts drop out across the feather band, so the border reads as grass growing sparser.
@@ -232,9 +232,9 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
       }
       height *= Math.max(0, Math.min(1, bake.coverageAt(x, z))) * smoothstep(bake.growAbove, bake.growAbove + 1, y);
       // A blade masked down to nothing narrows with it, so no flat sliver lies on bare ground.
-      const width = look.bladeWidth * (1 - look.widthVariation * 0.6 * (1 - widthRoll)) * (species === 1 ? look.mixWidth : 1) * Math.min(1, height / Math.max(1e-4, look.bladeHeight * 0.2));
-      const bend = look.curvature * (0.6 + 0.8 * bendRoll) * (1 + flutterStiff * 0.4);
-      const flower = flowerRoll < look.flowerShare && grown > 0.5 ? 2 : 0;
+      const width = look.blade.bladeWidth * (1 - look.blade.widthVariation * 0.6 * (1 - widthRoll)) * (species === 1 ? look.species.mixWidth : 1) * Math.min(1, height / Math.max(1e-4, look.blade.bladeHeight * 0.2));
+      const bend = look.blade.curvature * (0.6 + 0.8 * bendRoll) * (1 + flutterStiff * 0.4);
+      const flower = flowerRoll < look.flowers.flowerShare && grown > 0.5 ? 2 : 0;
       offsets[n * 3] = x;
       offsets[n * 3 + 1] = y;
       offsets[n * 3 + 2] = z;
@@ -248,11 +248,11 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
       vary[n * 4 + 3] = cell.full > 0 ? (j + u) / cell.full : 1;
       tone[n] = grassFieldNoise(nx * 0.7 + 17.3, nz * 0.7 - 9.1, seedNumber + 53);
       roots.expandByPoint(point.set(x, y, z));
-      maxReach = Math.max(maxReach, height * 1.15 + width * 2 + (flower > 0 ? look.flowerSize : 0));
+      maxReach = Math.max(maxReach, height * 1.15 + width * 2 + (flower > 0 ? look.flowers.flowerSize : 0));
       n += 1;
     }
   }
-  return sortByRank({ count: total, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: maxReach + look.tuftSpread });
+  return sortByRank({ count: total, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: maxReach + look.tuft.tuftSpread });
 }
 
 function sortByRank(tufts: GrassTufts): GrassTufts {
@@ -294,17 +294,17 @@ export function grassFieldColors(look: GrassLook): { base: THREE.Color; tip: THR
   const shift = (hex: string, tipWeight: number) => {
     const color = new THREE.Color(hex);
     const lum = color.r * 0.3 + color.g * 0.55 + color.b * 0.15;
-    if (look.season > 0) {
+    if (look.season.season > 0) {
       const gold = GOLD.clone().multiplyScalar(lum * 1.6);
       const rust = RUST.clone().multiplyScalar(lum * 1.7);
-      color.lerp(gold, Math.min(1, look.season * 2) * 0.75);
-      if (look.season > 0.5) color.lerp(rust, (look.season - 0.5) * 2 * 0.8);
+      color.lerp(gold, Math.min(1, look.season.season * 2) * 0.75);
+      if (look.season.season > 0.5) color.lerp(rust, (look.season.season - 0.5) * 2 * 0.8);
     }
-    if (look.dryness > 0) color.lerp(STRAW.clone().multiplyScalar(0.6 + lum), look.dryness * (0.55 + 0.45 * tipWeight));
+    if (look.season.dryness > 0) color.lerp(STRAW.clone().multiplyScalar(0.6 + lum), look.season.dryness * (0.55 + 0.45 * tipWeight));
     return color;
   };
-  const base = shift(look.baseColor, 0);
+  const base = shift(look.colour.baseColor, 0);
   // The mat is the shaded understory: it stops halfway to the tip colour, so pale-tipped blades
   // always stand out against it instead of vanishing into a mat of their own colour.
-  return { base, tip: shift(look.tipColor, 1).lerp(base, 0.5) };
+  return { base, tip: shift(look.colour.tipColor, 1).lerp(base, 0.5) };
 }

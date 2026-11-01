@@ -24,7 +24,7 @@ describe("environmentSummary", () => {
     const summary = summarizeEnvironment(
       environment({
         terrain: terrain({ bounds: { w: 200, d: 200 }, height: 4, seed: "world" }),
-        vegetation: grass({ area: { w: 100, d: 100 }, density: 5 }),
+        vegetation: grass({ area: { w: 100, d: 100 }, blade: { density: 5 } }),
         water: ocean({ level: -1 }),
         weather: [rain(), snow()],
         structures: building({ count: 6, seed: "world" }),
@@ -93,7 +93,7 @@ describe("environmentSummary", () => {
   });
 
   test("grass position surfaces on the vegetation summary as area.position", () => {
-    const centered = summarizeEnvironment(environment({ vegetation: grass({ density: 0.8 }) })).vegetation[0];
+    const centered = summarizeEnvironment(environment({ vegetation: grass({ blade: { density: 0.8 } }) })).vegetation[0];
     const sited = summarizeEnvironment(
       environment({ vegetation: grass({ position: [200, -150] }) }),
     ).vegetation[0];

@@ -28,7 +28,7 @@ export const game = defineGame({
   simulation: { hz: 60 },
   world,
   // No 3D canvas: the whole screen is GameUI.
-  presentation: "hud",
+  chrome: { presentation: "hud" },
   // Each action runs the command of the same name (see loop.ts); repeatMs re-fires while held.
   input: {
     left: { hold: ["ArrowLeft", "KeyA"], repeatMs: 180 },

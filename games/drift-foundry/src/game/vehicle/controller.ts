@@ -145,14 +145,14 @@ export function createVehicleController(
     // walls and an uncleared barricade, so contact can never push a kart through a gate.
     const state = vehicle.snapshot();
     if (track !== undefined) {
-      const [x, z] = clampTrack(track, state.x + dx, state.z + dz);
-      vehicle.restore({ ...state, x, z });
+      const [x, z] = clampTrack(track, state.motion.x + dx, state.motion.z + dz);
+      vehicle.restore({ ...state, motion: { ...state.motion, x, z } });
       return;
     }
-    const x = Math.max(-CORRIDOR_DRIVE_HALF_WIDTH, Math.min(CORRIDOR_DRIVE_HALF_WIDTH, state.x + dx));
-    const candidateZ = state.z + dz;
-    const z = frameTuning === null ? candidateZ : Math.min(candidateZ, blockedZ(x, state.z, candidateZ, frameTuning, airHeight));
-    vehicle.restore({ ...state, x, z });
+    const x = Math.max(-CORRIDOR_DRIVE_HALF_WIDTH, Math.min(CORRIDOR_DRIVE_HALF_WIDTH, state.motion.x + dx));
+    const candidateZ = state.motion.z + dz;
+    const z = frameTuning === null ? candidateZ : Math.min(candidateZ, blockedZ(x, state.motion.z, candidateZ, frameTuning, airHeight));
+    vehicle.restore({ ...state, motion: { ...state.motion, x, z } });
   };
 
 
@@ -200,7 +200,7 @@ export function createVehicleController(
             : { tires: { id: "kart", time, ...(input.marks === undefined ? {} : { marks: input.marks }), ...(input.particles === undefined ? {} : { particles: input.particles }) } }),
         },
       );
-      airHeight = drive.step.airOffset;
+      airHeight = drive.step.air.airOffset;
       let position = drive.pose.position;
 
       // A belt carries the kart along (or against) the road without touching its own velocity.
@@ -208,16 +208,16 @@ export function createVehicleController(
         const heading = fix.heading;
         shove(Math.sin(heading) * feel.push * dt, Math.cos(heading) * feel.push * dt);
         const state = vehicle.snapshot();
-        position = [state.x, position[1], state.z];
+        position = [state.motion.x, position[1], state.motion.z];
       }
 
       return {
         position,
-        heading: drive.step.heading,
-        speedKmh: Math.abs(drive.step.forwardSpeed) * METERS_PER_SECOND_TO_KMH,
-        slip: drive.step.slip,
-        surface: drive.step.surface,
-        airborne: drive.step.airborne,
+        heading: drive.step.motion.heading,
+        speedKmh: Math.abs(drive.step.motion.forwardSpeed) * METERS_PER_SECOND_TO_KMH,
+        slip: drive.step.tires.slip,
+        surface: drive.step.tires.surface,
+        airborne: drive.step.air.airborne,
         blockedByGate,
         run: fix === null || track === undefined ? position[2] : track.run(fix),
         lateral: fix === null ? position[0] : fix.offset,

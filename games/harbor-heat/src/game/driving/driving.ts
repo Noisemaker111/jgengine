@@ -253,7 +253,7 @@ export function createDriving(): Driving {
     if (entity === null) return;
     const pos = entity.position;
     const radius = carSolids.get(vehicleId)?.radius ?? 1.4;
-    const speed = Math.abs(step.forwardSpeed);
+    const speed = Math.abs(step.motion.forwardSpeed);
 
     const impact = step.impact;
     if (impact !== null && impact.closingSpeed > 3) {
@@ -336,17 +336,17 @@ export function createDriving(): Driving {
       }
     }
 
-    const gearbox = def?.dynamics.type === "ground" ? def.dynamics.tuning.gearbox : undefined;
+    const gearbox = def?.dynamics.type === "ground" ? def.dynamics.tuning.engine.gearbox : undefined;
     const idle = gearbox?.idleRpm ?? 850;
     const redline = gearbox?.redlineRpm ?? 7600;
     drivingAudio.tick(ctx, {
       position: pos,
       throttle: axis.throttle,
-      normRpm: (step.rpm - idle) / Math.max(1, redline - idle),
-      slip: step.slip,
-      wheelspin: step.wheelspin,
+      normRpm: (step.engine.rpm - idle) / Math.max(1, redline - idle),
+      slip: step.tires.slip,
+      wheelspin: step.tires.wheelspin,
       speed,
-      gear: step.gear,
+      gear: step.engine.gear,
     });
   }
 
@@ -558,11 +558,11 @@ export function createDriving(): Driving {
             });
             lastTelemetry = {
               mode: "ground",
-              speedMs: Math.abs(result.step.forwardSpeed),
+              speedMs: Math.abs(result.step.motion.forwardSpeed),
               altitude: 0,
               verticalSpeed: 0,
-              gear: result.step.gear,
-              rpm: result.step.rpm,
+              gear: result.step.engine.gear,
+              rpm: result.step.engine.rpm,
               stalled: false,
               vtol: false,
             };

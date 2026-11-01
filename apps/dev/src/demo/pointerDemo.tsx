@@ -193,18 +193,22 @@ export const pointerDemoGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: CommanderUI,
-  pointer: {
-    select: true,
-    selectFilter: (id) => id !== CREEP_ID,
-    orderCommand: "unit.order",
-    contextMenu: true,
+  controls: {
+    pointer: {
+      select: true,
+      selectFilter: (id) => id !== CREEP_ID,
+      orderCommand: "unit.order",
+      contextMenu: true,
+    },
   },
   camera: {
-    initialDistance: 34,
-    initialHeight: 28,
-    minDistance: 12,
-    maxDistance: 64,
-    targetHeight: 0,
-    maxPolarAngle: 1.25,
+    orbit: {
+      initialDistance: 34,
+      initialHeight: 28,
+      minDistance: 12,
+      maxDistance: 64,
+      targetHeight: 0,
+      maxPolarAngle: 1.25,
+    },
   },
 };

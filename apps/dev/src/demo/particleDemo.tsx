@@ -67,7 +67,7 @@ const sparks = createParticleSystem({
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 1.5, frequency: 0.03, seed: "particles" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#2f4f1e", tipColor: "#6f9f3a", seed: "particles" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colour: { baseColor: "#2f4f1e", tipColor: "#6f9f3a" }, seed: "particles" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -102,13 +102,24 @@ export const particleDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: Vfx,
-  environment: () => (
-    <>
-      <EnvironmentScene feature={terrainFeature} />
-      <ParticleField system={fire} blending="additive" scale={500} />
-      <ParticleField system={smoke} blending="normal" depthWrite scale={500} />
-      <ParticleField system={sparks} blending="additive" scale={500} />
-    </>
-  ),
-  camera: { initialDistance: 15, initialHeight: 5, minDistance: 6, maxDistance: 40, targetHeight: 2.5, maxPolarAngle: 1.45 },
+  scene: {
+    environment: () => (
+      <>
+        <EnvironmentScene feature={terrainFeature} />
+        <ParticleField system={fire} blending="additive" scale={500} />
+        <ParticleField system={smoke} blending="normal" depthWrite scale={500} />
+        <ParticleField system={sparks} blending="additive" scale={500} />
+      </>
+    ),
+  },
+  camera: {
+    orbit: {
+      initialDistance: 15,
+      initialHeight: 5,
+      minDistance: 6,
+      maxDistance: 40,
+      targetHeight: 2.5,
+      maxPolarAngle: 1.45,
+    },
+  },
 };

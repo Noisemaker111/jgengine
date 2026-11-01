@@ -81,7 +81,7 @@ export function createPlaySession(playable: HeadlessPlayable, options: PlaySessi
     for (const action of gameActions) {
       if (action === "interact") {
         if (!wasPressed(action)) continue;
-        const prompts = playable.prompts?.(ctx) ?? [];
+        const prompts = playable.controls?.prompts?.(ctx) ?? [];
         const focus = ctx.scene.entity.get(userId);
         if (prompts.length === 0 || focus === null) continue;
         const active = resolveActivePrompt({ x: focus.position[0], z: focus.position[2] }, prompts);
@@ -99,7 +99,7 @@ export function createPlaySession(playable: HeadlessPlayable, options: PlaySessi
       }
       if (wasPressed("useAbility")) {
         const slots = ctx.player.inventory.state(hotbarId).slots;
-        const preferred = playable.hotbarSelection?.() ?? -1;
+        const preferred = playable.controls?.hotbarSelection?.() ?? -1;
         const slot = preferred >= 0 && slots[preferred] != null ? preferred : slots.findIndex((stack) => stack != null);
         if (slot >= 0) executeHotbarSlot(ctx, userId, hotbarId, slot, yaw, pitch);
       }

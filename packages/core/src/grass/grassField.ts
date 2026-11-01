@@ -32,10 +32,10 @@ export function grassFieldNoise(x: number, z: number, seed: number): number {
  * and the turf mat both read this same band, so stripes line up across the two.
  * @internal
  */
-export function grassStripeAt(look: Pick<GrassLook, "stripeWidth" | "stripeContrast" | "stripeAngle">, x: number, z: number): number {
-  if (look.stripeWidth <= 0 || look.stripeContrast <= 0) return 0;
-  const heading = (look.stripeAngle * Math.PI) / 180;
-  const band = Math.sin(((x * Math.cos(heading) + z * Math.sin(heading)) * Math.PI) / look.stripeWidth);
+export function grassStripeAt(look: Pick<GrassLook, "mowing">, x: number, z: number): number {
+  if (look.mowing.stripeWidth <= 0 || look.mowing.stripeContrast <= 0) return 0;
+  const heading = (look.mowing.stripeAngle * Math.PI) / 180;
+  const band = Math.sin(((x * Math.cos(heading) + z * Math.sin(heading)) * Math.PI) / look.mowing.stripeWidth);
   return smoothstep(-0.15, 0.15, band) * 2 - 1;
 }
 
@@ -43,10 +43,10 @@ export function grassStripeAt(look: Pick<GrassLook, "stripeWidth" | "stripeContr
  * Share of the ground grass grows on at a patch-local point, 0..1: the `bareGround` mask that opens
  * sand or soil between tufts. 1 everywhere when `bareGround` is 0.
  */
-export function grassBareAt(look: Pick<GrassLook, "bareGround" | "noiseScale">, seed: number, x: number, z: number): number {
-  if (look.bareGround <= 0) return 1;
-  const threshold = 0.2 + look.bareGround * 0.65;
-  const noise = grassFieldNoise((x / look.noiseScale) * 2.2 + 5.1, (z / look.noiseScale) * 2.2 - 3.7, seed + 71);
+export function grassBareAt(look: Pick<GrassLook, "growth" | "season">, seed: number, x: number, z: number): number {
+  if (look.growth.bareGround <= 0) return 1;
+  const threshold = 0.2 + look.growth.bareGround * 0.65;
+  const noise = grassFieldNoise((x / look.season.noiseScale) * 2.2 + 5.1, (z / look.season.noiseScale) * 2.2 - 3.7, seed + 71);
   return smoothstep(threshold - 0.05, threshold + 0.05, noise);
 }
 
@@ -88,7 +88,7 @@ export interface GrassTuftInputs {
 export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTemplate {
   const { look } = inputs;
   const segments = Math.max(1, Math.floor(inputs.segments));
-  const blades = look.tuftBlades;
+  const blades = look.tuft.tuftBlades;
   const random = seededRng(`${inputs.seed}/tuft`);
   const position: number[] = [];
   const uv: number[] = [];
@@ -98,7 +98,7 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
   let heightScale = 0, widthScale = 0, radius = 0;
   for (let blade = 0; blade < blades; blade += 1) {
     const angle = blade === 0 ? 0 : ((blade - 1) / Math.max(1, blades - 1)) * Math.PI * 2 + random() * 1.4;
-    const reach = blade === 0 ? 0 : look.tuftSpread * (0.35 + 0.65 * random());
+    const reach = blade === 0 ? 0 : look.tuft.tuftSpread * (0.35 + 0.65 * random());
     const ox = Math.cos(angle) * reach;
     const oz = Math.sin(angle) * reach;
     // Each blade bends away from the tuft centre (plus jitter), so the clump splays open.
@@ -144,7 +144,7 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
         index.push(a, a + 1, b + 1, a, b + 1, b);
       }
     }
-    if (look.flowerShare > 0) index.push(flowerBase, flowerBase + 1, flowerBase + 3, flowerBase, flowerBase + 3, flowerBase + 2);
+    if (look.flowers.flowerShare > 0) index.push(flowerBase, flowerBase + 1, flowerBase + 3, flowerBase, flowerBase + 3, flowerBase + 2);
     lods.push({ segments: level, start, count: index.length - start });
   }
   return {

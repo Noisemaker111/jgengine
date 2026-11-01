@@ -185,7 +185,7 @@ export const sensorShowcaseGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: SensorHud,
-  WorldOverlay: SensorWorldOverlay,
+  scene: { WorldOverlay: SensorWorldOverlay },
   camera: {
     cinematic: {
       keyframes: [{ position: { x: 0, y: 1.6, z: 3 }, lookAt: { x: 0, y: 1, z: -9 }, fov: 55 }],

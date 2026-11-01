@@ -78,36 +78,36 @@ export function tickDrivableVehicle(
   options: DrivableVehicleOptions = {},
 ): DrivableVehicleStep {
   const step = vehicle.tick(dt, axis, options.modifiers);
-  const [x, y, z] = step.position;
+  const [x, y, z] = step.motion.position;
   // Ground-snap first, then lift by any hop in progress, so a jumping vehicle still follows the
   // terrain beneath it instead of hanging at a fixed world height over a slope.
   const ground = options.groundHeight === undefined ? y : options.groundHeight(x, z);
-  const resolvedY = ground + step.airOffset;
+  const resolvedY = ground + step.air.airOffset;
   if (options.tires !== undefined) tireEffects(vehicle, step, axis, ground, options.tires);
   return {
-    pose: { position: [x, resolvedY, z], rotationX: step.bodyPitch, rotationY: step.heading, rotationZ: step.bodyRoll, dt },
+    pose: { position: [x, resolvedY, z], rotationX: step.body.bodyPitch, rotationY: step.motion.heading, rotationZ: step.body.bodyRoll, dt },
     step,
   };
 }
 
 function tireEffects(vehicle: VehicleDynamics, step: VehicleDynamicsStep, axis: AxisInput, ground: number, effects: DrivableTireEffects): void {
   const tuning = vehicle.tuning();
-  const speed = Math.hypot(step.forwardSpeed, step.lateralSpeed);
+  const speed = Math.hypot(step.motion.forwardSpeed, step.motion.lateralSpeed);
   const markFrom = effects.markFrom ?? 0.4;
-  const grounded = !step.airborne && speed > 2;
+  const grounded = !step.air.airborne && speed > 2;
   const handbraking = axis.handbrake > 0.3 && speed > 4;
-  const rearSliding = grounded && (step.slip >= markFrom || handbraking || (step.wheelspin && tuning.driveFront < 1));
-  const frontSliding = grounded && (step.wheelLock || (step.slip >= markFrom && step.frontSaturation > 1.05));
+  const rearSliding = grounded && (step.tires.slip >= markFrom || handbraking || (step.tires.wheelspin && tuning.driveFront < 1));
+  const frontSliding = grounded && (step.tires.wheelLock || (step.tires.slip >= markFrom && step.tires.frontSaturation > 1.05));
   const marks = effects.marks;
   const a = tuning.wheelbase * (1 - tuning.frontWeight);
   const b = tuning.wheelbase - a;
   const half = tuning.trackWidth / 2;
-  const fx = Math.sin(step.heading);
-  const fz = Math.cos(step.heading);
-  const [x, , z] = step.position;
+  const fx = Math.sin(step.motion.heading);
+  const fz = Math.cos(step.motion.heading);
+  const [x, , z] = step.motion.position;
   const wheel = (along: number, lat: number): readonly [number, number] => [x + fx * along - fz * lat, z + fz * along + fx * lat];
   const width = Math.max(0.12, Math.min(0.35, tuning.trackWidth * 0.14));
-  const strength = Math.max(0.35, step.slip);
+  const strength = Math.max(0.35, step.tires.slip);
   if (marks !== undefined) {
     for (let i = 0; i < 4; i += 1) {
       const front = i < 2;
@@ -122,7 +122,7 @@ function tireEffects(vehicle: VehicleDynamics, step: VehicleDynamicsStep, axis: 
   }
   const soil = effects.soil;
   if (soil !== undefined) {
-    const touching = !step.airborne;
+    const touching = !step.air.airborne;
     for (let i = 0; i < 4; i += 1) {
       const key = `${effects.id}:${i}`;
       if (!touching) {
@@ -137,11 +137,11 @@ function tireEffects(vehicle: VehicleDynamics, step: VehicleDynamicsStep, axis: 
   }
   const particles = effects.particles;
   if (particles === undefined || !grounded || speed < 6) return;
-  const smoking = step.slip >= (effects.smokeFrom ?? 0.6) || (step.wheelspin && speed < 14 && axis.throttle > 0.6);
+  const smoking = step.tires.slip >= (effects.smokeFrom ?? 0.6) || (step.tires.wheelspin && speed < 14 && axis.throttle > 0.6);
   if (!smoking) return;
   const previous = lastSmoke.get(vehicle);
   if (previous !== undefined && effects.time - previous < SMOKE_INTERVAL && effects.time >= previous) return;
   lastSmoke.set(vehicle, effects.time);
   const [sx, sz] = wheel(-b, 0);
-  particles.play("smoke/tire", { position: [sx, ground + 0.3, sz], burst: Math.round(3 + 6 * step.slip) });
+  particles.play("smoke/tire", { position: [sx, ground + 0.3, sz], burst: Math.round(3 + 6 * step.tires.slip) });
 }

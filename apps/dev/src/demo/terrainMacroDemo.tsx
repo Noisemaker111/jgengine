@@ -49,14 +49,18 @@ const LABEL = {
 export const terrainMacroGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "terrain-macro" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: Ground,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  look: "flat",
-  lighting: { ambient: { intensity: 0.25 }, directional: [{ intensity: 1.4, position: [16, 24, 12], color: "#fff3df" }] },
-  backdrop: { background: "#2a2f26" },
-  postProcessing: { enabled: true, toneMapping: "aces", exposure: 0.5, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
-  environment: Ground,
+  rendering: {
+    look: "flat",
+    lighting: { ambient: { intensity: 0.25 }, directional: [{ intensity: 1.4, position: [16, 24, 12], color: "#fff3df" }] },
+    backdrop: { background: "#2a2f26" },
+    postProcessing: { enabled: true, toneMapping: "aces", exposure: 0.5, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
+  },
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#f2f3f0", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
       <div style={{ position: "absolute", top: 14, left: 18, fontSize: 15, fontWeight: 600 }}>Macro ground · {LABEL[mode in LABEL ? mode : "macro"]}</div>

@@ -139,14 +139,18 @@ const worldMode = params.get("world") === "1";
 export const materialLibraryGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "material-library" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => (worldMode ? <World /> : <Sheet entries={entries} />),
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  look: "flat",
-  lighting: { ambient: { intensity: 0 }, directional: [] },
-  backdrop: { background: "#1c1f22" },
-  postProcessing: { enabled: true, toneMapping: "agx", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
-  environment: () => (worldMode ? <World /> : <Sheet entries={entries} />),
+  rendering: {
+    look: "flat",
+    lighting: { ambient: { intensity: 0 }, directional: [] },
+    backdrop: { background: "#1c1f22" },
+    postProcessing: { enabled: true, toneMapping: "agx", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
+  },
   GameUI: () => (worldMode ? <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#f2f3f0", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
     <div style={{ position: "absolute", top: 14, left: 18, fontSize: 15, fontWeight: 600 }}>
       World surfaces by library name · {flat ? "flat colour baseline" : uvProjection ? "UV-mapped" : "triplanar, no UVs"}

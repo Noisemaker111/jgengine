@@ -6,7 +6,7 @@ test("createBlankPlayable builds a gameless playable over a flat world", () => {
   const playable = createBlankPlayable();
   expect(playable.game.name).toBe("Standalone Scene");
   expect(playable.game.world?.kind).toBe("environment");
-  expect(playable.environment).toBeDefined();
+  expect(playable.scene?.environment).toBeDefined();
   expect(playable.game.assets.ids()).toEqual([]);
 });
 

@@ -6,17 +6,17 @@
  * @capability grass-wind sway grass in the shared wind field with a per-kind response dial
  */
 import type { WindField, WindVector } from "../world/wind";
-import type { GrassLook } from "./grassKind";
+import type { GrassBlade, GrassWind } from "./grassKind";
 
 /** The wind numbers a grass look animates with. */
-export type GrassWindLook = Pick<GrassLook, "windStrength" | "windSpeed" | "windGust" | "windDirection">;
+export type GrassWindLook = GrassWind;
 
 /**
  * A shared wind for a grass patch. `response` is the patch's dial: `0` blades stand still, `1` the kind's own
  * `windStrength` at {@link GRASS_WIND_REFERENCE_SPEED}, past `1` softer grass; sway stays below one blade-bend and
  * is monotone over the sane range `0..4`.
  */
-export interface GrassWind {
+export interface GrassWindSource {
   field: WindField;
   response?: number;
 }
@@ -47,7 +47,7 @@ export function grassWindLook(look: GrassWindLook, wind: WindVector, response = 
  * Largest sideways blade-tip travel, m, a look's wind numbers give a blade of `stiffness` (the shader's sway and flutter).
  * @capability grass-wind sway grass in the shared wind field with a per-kind response dial
  */
-export function grassSwayAmplitude(look: Pick<GrassLook, "windStrength" | "stiffness">): number {
+export function grassSwayAmplitude(look: Pick<GrassWind, "windStrength"> & Pick<GrassBlade, "stiffness">): number {
   return look.windStrength * 0.78 * (1.25 - look.stiffness);
 }
 
@@ -55,6 +55,6 @@ export function grassSwayAmplitude(look: Pick<GrassLook, "windStrength" | "stiff
  * Sample a shared wind at a grass patch's world centre.
  * @capability grass-wind sway grass in the shared wind field with a per-kind response dial
  */
-export function grassWindAt(wind: GrassWind, x: number, z: number, time: number): WindVector {
+export function grassWindAt(wind: GrassWindSource, x: number, z: number, time: number): WindVector {
   return wind.field.atHeight(x, z, GRASS_WIND_SAMPLE_HEIGHT, time);
 }

@@ -20,12 +20,12 @@ describe("createReferenceCar", () => {
     const car = createReferenceCar(spec);
     let step = car.tick(1 / 60, NEUTRAL);
     for (let i = 0; i < 180; i += 1) step = car.tick(1 / 60, NEUTRAL);
-    const [fl, fr, rl, rr] = step.wheelLoads;
+    const [fl, fr, rl, rr] = step.loads.wheelLoads;
     const total = fl + fr + rl + rr;
     expect(Math.abs(total - spec.massKg * 9.81) / (spec.massKg * 9.81)).toBeLessThan(0.005);
     expect(Math.abs((fl + fr) / total - spec.frontWeight)).toBeLessThan(0.005);
-    expect(Math.hypot(step.position[0], step.position[2])).toBeLessThan(0.002);
-    expect(Math.abs(step.bodyPitch)).toBeLessThan(0.001);
+    expect(Math.hypot(step.motion.position[0], step.motion.position[2])).toBeLessThan(0.002);
+    expect(Math.abs(step.body.bodyPitch)).toBeLessThan(0.001);
   });
 
   test("restore resumes bit for bit", () => {
@@ -46,11 +46,11 @@ describe("createReferenceCar", () => {
   test("a step steer turns the way AxisInput.steer and VehicleDynamics do", () => {
     const car = createReferenceCar(MAZDA_MX5_ND.spec);
     let step = car.tick(1 / 60, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
-    while (step.forwardSpeed < 15) step = car.tick(1 / 60, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
+    while (step.motion.forwardSpeed < 15) step = car.tick(1 / 60, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
     for (let i = 0; i < 60; i += 1) step = car.tick(1 / 60, { throttle: 0.3, brake: 0, steer: 0.1, handbrake: 0 });
-    expect(step.yawRate).toBeLessThan(-0.1);
-    expect(step.steerAngle).toBeGreaterThan(0);
-    expect(step.lateralAccel).toBeGreaterThan(1);
+    expect(step.motion.yawRate).toBeLessThan(-0.1);
+    expect(step.steering.steerAngle).toBeGreaterThan(0);
+    expect(step.motion.lateralAccel).toBeGreaterThan(1);
   });
 });
 
@@ -80,18 +80,18 @@ function parallelogram(halfTrack: number): DoubleWishboneGeometry {
 function steadyPoint(spec: ReferenceCarSpec, speed: number): { g: number; dynamic: number } {
   const car = createReferenceCar(spec);
   let step = car.tick(1 / 60, NEUTRAL);
-  while (step.forwardSpeed < speed) step = car.tick(1 / 60, { ...NEUTRAL, throttle: 0.6 });
+  while (step.motion.forwardSpeed < speed) step = car.tick(1 / 60, { ...NEUTRAL, throttle: 0.6 });
   let throttle = 0.2;
   let g = 0;
   let dynamic = 0;
   let count = 0;
   for (let i = 0; i < 480; i += 1) {
-    throttle = Math.min(1, Math.max(0, throttle + 0.02 * (speed - step.forwardSpeed)));
+    throttle = Math.min(1, Math.max(0, throttle + 0.02 * (speed - step.motion.forwardSpeed)));
     step = car.tick(1 / 60, { ...NEUTRAL, throttle, steer: 0.1 });
     if (i < 360) continue;
-    const v = Math.hypot(step.forwardSpeed, step.lateralSpeed);
-    g += (v * Math.abs(step.yawRate)) / 9.81;
-    dynamic += Math.abs(step.roadWheelAngle) - (spec.wheelbase * Math.abs(step.yawRate)) / v;
+    const v = Math.hypot(step.motion.forwardSpeed, step.motion.lateralSpeed);
+    g += (v * Math.abs(step.motion.yawRate)) / 9.81;
+    dynamic += Math.abs(step.steering.roadWheelAngle) - (spec.wheelbase * Math.abs(step.motion.yawRate)) / v;
     count += 1;
   }
   return { g: g / count, dynamic: ((dynamic / count) * 180) / Math.PI };
@@ -166,7 +166,7 @@ describe("integrator convergence", () => {
       for (let i = 0; i < 300; i += 1) state = car.tick(0.01, { ...NEUTRAL, throttle: 1 });
       for (let i = 0; i < 100; i += 1) state = car.tick(0.01, { ...NEUTRAL, throttle: 0.4, steer: 0.3 });
       for (let i = 0; i < 50; i += 1) state = car.tick(0.01, { ...NEUTRAL, brake: 0.6, steer: 0.3 });
-      return [...state.position, state.forwardSpeed, state.lateralSpeed, state.yawRate];
+      return [...state.motion.position, state.motion.forwardSpeed, state.motion.lateralSpeed, state.motion.yawRate];
     };
     const gap = (a: readonly number[], b: readonly number[]) => Math.max(...a.map((value, i) => Math.abs(value - (b[i] ?? 0))));
     const [coarse, base, fine] = [1 / 1000, 1 / 2000, 1 / 4000].map(run);

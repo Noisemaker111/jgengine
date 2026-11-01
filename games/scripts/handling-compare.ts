@@ -39,7 +39,14 @@ function isTuning(value: Record<string, unknown>): value is Record<string, unkno
 }
 
 function isSpec(value: Record<string, unknown>): value is Record<string, unknown> & VehicleSpec {
-  return ["topSpeed", "accel", "brake", "turnRate", "grip"].every((key) => typeof value[key] === "number");
+  const group = (name: string) => (isRecord(value[name]) ? value[name] : undefined);
+  return (
+    typeof group("engine")?.["topSpeed"] === "number" &&
+    typeof group("engine")?.["accel"] === "number" &&
+    typeof group("brakes")?.["brake"] === "number" &&
+    typeof group("steering")?.["turnRate"] === "number" &&
+    typeof group("tires")?.["grip"] === "number"
+  );
 }
 
 /** Every car tuning inside `value`, labelled by its path and the nearest `id`/`label`/`name`. */

@@ -1008,6 +1008,10 @@
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; body?: boolean; viewmodel?: boolean; collision?: false | FirstPersonCollisionConfig } — ⚠ undocumented
 - `FirstPersonCollisionConfig` (interface): interface FirstPersonCollisionConfig — Clearance tuning for the first-person camera's collision pull-in.
 - `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
+- `GameCameraFollowConfig` (interface): interface GameCameraFollowConfig — What the camera follows and what it reads from the followed entity.
+- `GameCameraLensConfig` (interface): interface GameCameraLensConfig — Projection and frustum of the canvas camera.
+- `GameCameraOrbitConfig` (interface): interface GameCameraOrbitConfig — Boom, orbit and input-feel tuning of the default orbit rig.
+- `GameCameraRigConfigs` (interface): interface GameCameraRigConfigs — Per-rig tuning blocks; each is read only when its rig is selected.
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
@@ -1388,11 +1392,15 @@
 - `AircraftSurface` (interface): interface AircraftSurface — One lifting surface: a wing panel, a tailplane, a fin, a canard. Its lift acts at `at`, so the moments that pitch, roll and yaw the body come from where the surfaces sit, not from commanded rates.
 - `AircraftVector` (type): type AircraftVector = readonly [number, number, number] — Body-frame or world-frame vector, m or N. The body frame is `[left, up, forward]` about the centre of mass.
 - `RigidAircraft` (interface): interface RigidAircraft — A force-and-torque aircraft on the same tick/snapshot/retune contract as `VehicleDynamics`.
+- `RigidAircraftAssist` (interface): interface RigidAircraftAssist — Stability-assist memory: attitude hold, learned trim and hover drift.
+- `RigidAircraftBody` (interface): interface RigidAircraftBody — Rigid-body pose and motion: position, velocity, orientation quaternion and body-frame angular velocity.
 - `RigidAircraftInput` (interface): interface RigidAircraftInput — Pilot input for one tick.
 - `RigidAircraftModifiers` (interface): interface RigidAircraftModifiers — Per-tick overrides layered over tuning: damage, icing, boost, gusts. Each scale defaults to `1`.
 - `RigidAircraftOptions` (interface): interface RigidAircraftOptions — World hooks for one aircraft instance.
+- `RigidAircraftPowerplant` (interface): interface RigidAircraftPowerplant — Engine, rotor and motor state.
 - `RigidAircraftState` (interface): interface RigidAircraftState — Serializable integrator state: everything `restore` needs to resume bit-for-bit.
 - `RigidAircraftStep` (interface): interface RigidAircraftStep — One aircraft tick: pose plus the telemetry HUDs, camera, sound and probes read.
+- `RigidAircraftSurfaces` (interface): interface RigidAircraftSurfaces — Control-surface deflections after rate limiting, rad.
 - `RigidAircraftTuning` (interface): interface RigidAircraftTuning — A rigid aircraft in physical units. There is no aircraft type: a jet, a glider and a paper plane differ only in these numbers. Rotation comes from surface forces acting on the inertia tensor, so loops, rolls, stalls and weathervaning are outcomes, not special cases.
 - `aircraftAttitudeQuaternion` (function): function aircraftAttitudeQuaternion(heading: number, pitch: number, bank: number): AircraftQuaternion — Quaternion from heading, nose-up pitch and right bank, rad — the inverse of a step's `heading`/`pitch`/`bank`. Matches three.js `Euler(-pitch, heading, bank, "YXZ")`.
 - `aircraftHeadingQuaternion` (function): function aircraftHeadingQuaternion(heading: number): AircraftQuaternion — Quaternion for a heading about world up, forward `[sin h, 0, cos h]`.
@@ -1746,7 +1754,7 @@
 - `GrassTuftInputs` (interface): interface GrassTuftInputs — What a tuft template is built from: the look, the patch seed and the full-detail blade segments.
 - `GrassTuftTemplate` (interface): interface GrassTuftTemplate — The shared tuft mesh every instance places: `tuftBlades` blades splayed around a root, each a strip of `segments` rows, plus one flower quad that only flowering tufts open. The index buffer holds the strips at full, half and single-segment detail back to back, so a far draw picks a cheaper range of the same vertices.
 - `createGrassTuftTemplate` (function): function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTemplate — Build the shared tuft template for a patch. Pure and seeded: the same inputs give the same buffers.
-- `grassBareAt` (function): function grassBareAt(look: Pick<GrassLook, "bareGround" | "noiseScale">, seed: number, x: number, z: number): number — Share of the ground grass grows on at a patch-local point, 0..1: the `bareGround` mask that opens sand or soil between tufts. 1 everywhere when `bareGround` is 0.
+- `grassBareAt` (function): function grassBareAt(look: Pick<GrassLook, "growth" | "season">, seed: number, x: number, z: number): number — Share of the ground grass grows on at a patch-local point, 0..1: the `bareGround` mask that opens sand or soil between tufts. 1 everywhere when `bareGround` is 0.
 - `grassFieldNoise` (function): function grassFieldNoise(x: number, z: number, seed: number): number — Two-octave value noise in 0..1, deterministic per numeric seed; the grass field's season, patch and bare masks.
 
 ## @jgengine/core/grass/grassKind
@@ -1755,10 +1763,22 @@
 - `GRASS_FIELD_KIND` (const): const GRASS_FIELD_KIND: "grass_field" — The editor volume kind marking a box as a GPU grass patch.
 - `GRASS_FIELD_OUTPUT` (const): const GRASS_FIELD_OUTPUT: "grass-field" — The generator output family a grass look bakes to: {@link GrassFieldBake}.
 - `GRASS_GENERATOR` (const): const GRASS_GENERATOR: GeneratorDefinition<ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & … — The grass generator: one schema from a putting green to tall savanna and dune grass. Detail picks the blade segments (4 at full detail, 2 at half, 1 at a quarter), so a baked variant carries its LODs.
-- `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: string; label: string; values: { density: number; bladeHeight: number; heightVariation: number; bladeWidth: number; widthVariation: number; profile: number; curvature: number; stiffness: number; tuftSpread: number; tuftBlades: number; baseColor: string; tipColor: string; g… — Starting looks the inspector applies in one click; each is a full knob set, so any can be tweaked from there.
+- `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: string; label: string; values: { density: number; bladeHeight: number; heightVariation: number; bladeWidth: number; widthVariation: number; profile: number; curvature: number; stiffness: number; tuftSpread: number; tuftBlades: number; clumping: number; clumpSize: number; b… — Starting looks the inspector applies in one click; each is a full knob set, so any can be tweaked from there.
 - `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & { key: "profile"; }, Ra… — The grass parameter schema: drives the inspector, the variant grid and every `meta` parse.
+- `GrassBlade` (interface): interface GrassBlade — Blade shape and cover.
+- `GrassColour` (interface): interface GrassColour — Blade colour and its jitter.
 - `GrassFieldBake` (interface): interface GrassFieldBake — One baked grass look: the look with its seed settled, and the tuft mesh every instance of it places.
-- `GrassLook` (interface): interface GrassLook — Fully-defaulted, clamped grass look, read from a volume's `meta` or a `grass()` config.
+- `GrassFlowers` (interface): interface GrassFlowers — Flower heads.
+- `GrassGrowth` (interface): interface GrassGrowth — Where the grass grows and how it covers the ground.
+- `GrassKnobs` (type): type GrassKnobs = GrassBlade & GrassTuft & GrassColour & GrassSeason & GrassSecondSpecies & GrassFlowers & GrassGrowth & GrassMowing & GrassWind & GrassLighting & { seed: string } — Every grass knob flat, the shape a volume's `meta`, the inspector schema and presets use.
+- `GrassLighting` (interface): interface GrassLighting — Blade material and light.
+- `GrassLook` (interface): interface GrassLook — Fully-defaulted, clamped grass look, read from a volume's `meta` or a `grass()` config, grouped by the part of the field each knob shapes.
+- `GrassLookGroups` (type): type GrassLookGroups = { [Group in Exclude<keyof GrassLook, "seed">]?: Partial<GrassLook[Group]> } & { seed?: string } — A partial {@link GrassLook}: any groups, each with any of its knobs.
+- `GrassMowing` (interface): interface GrassMowing — Mow stripes.
+- `GrassSeason` (interface): interface GrassSeason — Season, drought and the masks that vary them across the field.
+- `GrassSecondSpecies` (interface): interface GrassSecondSpecies — The optional second species mixed into the field.
+- `GrassTuft` (interface): interface GrassTuft — How blades gather into tufts and clumps.
+- `GrassWind` (interface): interface GrassWind — Wind sway.
 - `ResolvedGrass` (interface): interface ResolvedGrass — A resolved grass patch: world-space area center at ground height, footprint size (XZ), and look.
 - `grassBladeDensity` (function): function grassBladeDensity(look: GrassLook): number — Blades per square metre at full detail. Fullness sets how much of the ground the blades cover, and the count follows from blade size: thin or short blades need more of them to cover the same ground, so no width, height or fullness can leave bare gaps between tufts.
 
@@ -1779,10 +1799,10 @@
 
 - `GRASS_WIND_REFERENCE_SPEED` (const): const GRASS_WIND_REFERENCE_SPEED: 5 — Wind speed, m/s, a grass kind's `windStrength` was tuned to: a gentle-to-moderate breeze (Beaufort 3–4).
 - `GRASS_WIND_SAMPLE_HEIGHT` (const): const GRASS_WIND_SAMPLE_HEIGHT: 1 — Height, m, grass samples the field at; the log-law profile holds speed constant below its minimum height.
-- `GrassWind` (interface): interface GrassWind — A shared wind for a grass patch. `response` is the patch's dial: `0` blades stand still, `1` the kind's own `windStrength` at {@link GRASS_WIND_REFERENCE_SPEED}, past `1` softer grass; sway stays below one blade-bend and is monotone over the sane range `0..4`.
-- `GrassWindLook` (type): type GrassWindLook = Pick<GrassLook, "windStrength" | "windSpeed" | "windGust" | "windDirection"> — The wind numbers a grass look animates with.
-- `grassSwayAmplitude` (function): function grassSwayAmplitude(look: Pick<GrassLook, "windStrength" | "stiffness">): number — Largest sideways blade-tip travel, m, a look's wind numbers give a blade of `stiffness` (the shader's sway and flutter).
-- `grassWindAt` (function): function grassWindAt(wind: GrassWind, x: number, z: number, time: number): WindVector — Sample a shared wind at a grass patch's world centre.
+- `GrassWindLook` (type): type GrassWindLook = GrassWind — The wind numbers a grass look animates with.
+- `GrassWindSource` (interface): interface GrassWindSource — A shared wind for a grass patch. `response` is the patch's dial: `0` blades stand still, `1` the kind's own `windStrength` at {@link GRASS_WIND_REFERENCE_SPEED}, past `1` softer grass; sway stays below one blade-bend and is monotone over the sane range `0..4`.
+- `grassSwayAmplitude` (function): function grassSwayAmplitude(look: Pick<GrassWind, "windStrength"> & Pick<GrassBlade, "stiffness">): number — Largest sideways blade-tip travel, m, a look's wind numbers give a blade of `stiffness` (the shader's sway and flutter).
+- `grassWindAt` (function): function grassWindAt(wind: GrassWindSource, x: number, z: number, time: number): WindVector — Sample a shared wind at a grass patch's world centre.
 - `grassWindLook` (function): function grassWindLook(look: GrassWindLook, wind: WindVector, response = 1): GrassWindLook — The look's wind numbers under a wind vector: sway saturates with the drag (∝ U²), animation speeds up with √U.
 
 ## @jgengine/core/haptics/haptics
@@ -3301,7 +3321,7 @@
 - `BoatOptions` (interface): interface BoatOptions — World hooks for a boat instance.
 - `BoatState` (interface): interface BoatState — Serializable boat state.
 - `BoatSteering` (type): type BoatSteering = | { kind: "rudder"; /** Rudder area, m². */ area: number; /** Largest rudder angle, rad (default `0.6`). */ maxAngle?: number; /** Share of prop thrust that washes over the rudder as flow, `0..1` (default `0.5`) — steering at low speed. */ propWash?: number; } | { kind: "outboard… — How the boat turns: a rudder needs water flowing past it; an outboard swings its own thrust.
-- `BoatStep` (interface): interface BoatStep — One boat tick: pose plus the telemetry wake, spray and engine sound read.
+- `BoatStep` (interface): interface BoatStep — One boat tick: pose plus the telemetry wake, spray and engine sound read, grouped like `VehicleDynamicsStep`.
 - `BoatTuning` (interface): interface BoatTuning — A powered hull in physical units. Drag rises toward hull speed (`√(g·L)·1.34`) and then falls away once the hull planes, the keel resists sliding sideways, and the prop's thrust fades as the boat approaches the prop's speed.
 - `createBoatDynamics` (function): function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {}): BoatDynamics — Creates a {@link BoatDynamics}: throttle drives the prop, brake reverses it, steer swings the rudder or outboard. A rudder boat barely turns at rest unless the prop is washing over it; an outboard turns at rest because it swings the thrust itself. Deterministic for a given `dt` sequence. With no `effects` the hull is the simple model above; each effect in `tuning.effects` replaces its part of it with the physical term (see {@link BoatEffects}).
 - `hullSurgeAddedMass` (function): function hullSurgeAddedMass(massKg: number, length: number, density = WATER_DENSITY): number — Surge added mass of a hull as half a prolate spheroid of its length and twice its volume (the double-body image across the still surface): Lamb's `k₁ = α₀/(2 − α₀)` times the displaced mass.
@@ -3587,9 +3607,11 @@
 - `VehicleAbsEffect` (interface): interface VehicleAbsEffect — Anti-lock brakes: brake force held below the tyre's remaining grip so the front keeps steering.
 - `VehicleAeroDragEffect` (interface): interface VehicleAeroDragEffect — Aerodynamic drag `½·ρ·CdA·v²`, air density 1.225 kg/m³.
 - `VehicleAirInput` (interface): interface VehicleAirInput — Air-control input, each `-1..1`: `pitch > 0` noses down, `yaw > 0` turns like `steer > 0`, `roll > 0` drops the left side.
+- `VehicleAirState` (interface): interface VehicleAirState — Airborne and jump bookkeeping.
 - `VehicleAirTuning` (interface): interface VehicleAirTuning — Control of the body while airborne (needs `suspension`, the only way to leave the ground).
 - `VehicleAntiStoppieEffect` (interface): interface VehicleAntiStoppieEffect — Anti-stoppie: braking capped below the deceleration that lifts the rear (`g·a/h`); reports as `absActive`.
 - `VehicleAntiWheelieEffect` (interface): interface VehicleAntiWheelieEffect — Anti-wheelie: drive capped below the acceleration that lifts the front (`g·b/h`); reports as `tractionLimited`.
+- `VehicleBodyState` (interface): interface VehicleBodyState — Body acceleration, pitch/roll and spring state (`suspension`).
 - `VehicleBrakeLagEffect` (interface): interface VehicleBrakeLagEffect — Brake hydraulics: pressure follows the pedal with a lag.
 - `VehicleCamberEffect` (interface): interface VehicleCamberEffect — Camber thrust: a tyre leaning into the turn pushes harder, one leaning out pushes less.
 - `VehicleCombinedSlipEffect` (interface): interface VehicleCombinedSlipEffect — Friction ellipse: drive and brake force use up the same tyre's cornering grip. Omit for tyres that corner at full grip whatever the pedals do.
@@ -3597,20 +3619,23 @@
 - `VehicleDifferentialEffect` (type): type VehicleDifferentialEffect = | { kind: "open" } /** Torque may differ by up to `bias` times between sides (Torsen, clutch LSD). */ | { kind: "limitedSlip"; bias: number } /** * Both wheels turn together: every bit of grip drives, but the axle fights the car's yaw (spool understeer). * `slipStiff… — The driven axle's differential: how drive is shared between its left and right wheels.
 - `VehicleDirectDriveTuning` (interface): interface VehicleDirectDriveTuning — Single-speed drive (electric, kart, arcade ball-car): force capped by power, so top speed comes out of drag.
 - `VehicleDownforceEffect` (interface): interface VehicleDownforceEffect — Aerodynamic downforce `½·ρ·ClA·v²`, pressing the tyres harder as speed rises.
+- `VehicleDrivetrainState` (interface): interface VehicleDrivetrainState — Gearbox, engine speed and brake-pressure state.
 - `VehicleDynamics` (interface): interface VehicleDynamics — Force-based planar car: a two-axle ("bicycle") model where yaw comes from tire forces rather than being commanded, so understeer, oversteer, lift-off rotation, trail-braking, power slides and handbrake turns emerge from the numbers instead of from special cases. Deterministic for a given `dt` sequence; ticks are split into fixed substeps. Pairs with `tickDrivableVehicle` for the entity pose and `measureHandling` for asserting feel.
 - `VehicleDynamicsModifiers` (interface): interface VehicleDynamicsModifiers — Per-tick overrides layered over tuning: boost, grip zones, damage. Each scale defaults to `1`.
 - `VehicleDynamicsOptions` (interface): interface VehicleDynamicsOptions — World hooks for one vehicle instance.
 - `VehicleDynamicsState` (interface): interface VehicleDynamicsState — Serializable integrator state: everything {@link VehicleDynamics.restore} needs to resume bit-for-bit.
-- `VehicleDynamicsStep` (interface): interface VehicleDynamicsStep — Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read.
+- `VehicleDynamicsStep` (interface): interface VehicleDynamicsStep — Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read, grouped by the part that produced it.
 - `VehicleDynamicsTuning` (interface): interface VehicleDynamicsTuning — Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N, N·m, rad, s). The body, tyres, powertrain, brakes and rack are always there; every other physical effect and aid is a separate term in `effects`, off unless listed.
 - `VehicleEffectName` (type): type VehicleEffectName = keyof VehicleEffects — The name of one {@link VehicleEffects} term.
 - `VehicleEffects` (interface): interface VehicleEffects — Every physical effect and driver aid the car model can run, each its own term. An omitted effect is off: a game composes the car it wants by listing effects and setting their numbers, so a drift car can drop `combinedSlip`, a kart can ignore `aeroDrag`, and a sim car can add `tireRelaxation` and `complianceSteer`.
 - `VehicleGearboxTuning` (interface): interface VehicleGearboxTuning — Engine and gearbox. Drive force at the wheels = torque · curve(rpm) · gear · finalDrive · efficiency / wheelRadius.
 - `VehicleJumpTuning` (interface): interface VehicleJumpTuning — Jumps from the ground and in the air.
 - `VehicleLateralLoadTransferEffect` (interface): interface VehicleLateralLoadTransferEffect — Load moves to the outside wheels in a corner, by `m·a·comHeight / trackWidth`.
+- `VehicleLeanState` (interface): interface VehicleLeanState — Rider lean (`lean`).
 - `VehicleLeanTuning` (interface): interface VehicleLeanTuning — Single-track lean for motorcycles, bicycles and scooters. Steer input asks for a lean angle; the front wheel then takes whatever angle a balanced turn at that lean needs (curvature = g·tan(lean) / v²), with a brief countersteer as the lean starts. Tire grip still limits the turn, so over-leaning on a low-grip surface slides.
 - `VehicleLoadSensitivityEffect` (interface): interface VehicleLoadSensitivityEffect — Tyre load sensitivity: a tyre grips less per newton the harder it is pressed, so an axle with load moved across it holds less in total. Each wheel is evaluated at its own load.
 - `VehicleLongitudinalLoadTransferEffect` (interface): interface VehicleLongitudinalLoadTransferEffect — Load moves forward under braking and back under drive, by `m·a·comHeight / wheelbase`.
+- `VehicleMotionState` (interface): interface VehicleMotionState — Planar pose and velocity of a {@link VehicleDynamicsState}.
 - `VehicleRollSteerEffect` (interface): interface VehicleRollSteerEffect — Steer from suspension geometry as the body rolls.
 - `VehicleRollingResistanceEffect` (interface): interface VehicleRollingResistanceEffect — Tyre rolling resistance, `Crr · load`.
 - `VehicleRotatingInertiaEffect` (interface): interface VehicleRotatingInertiaEffect — Spinning parts take part of every speed change: the car behaves heavier than its mass, most in low gears.
@@ -3618,8 +3643,17 @@
 - `VehicleSpeedSensitiveSteeringEffect` (interface): interface VehicleSpeedSensitiveSteeringEffect — Speed-sensitive lock: full lock is cut back as speed rises so a full input at speed stays near the grip limit.
 - `VehicleStabilityEffect` (interface): interface VehicleStabilityEffect — Stability (yaw) control: a corrective yaw torque once sideslip passes `maxSideslip`.
 - `VehicleSteeringTuning` (interface): interface VehicleSteeringTuning — Steering rack: lock and rack speed. Speed-sensitive lock and caster self-alignment are effects of their own.
+- `VehicleStepAids` (interface): interface VehicleStepAids — Which driver aids intervened this tick.
+- `VehicleStepAir` (interface): interface VehicleStepAir — Airborne telemetry of a {@link VehicleDynamicsStep}.
+- `VehicleStepBody` (interface): interface VehicleStepBody — Body attitude of a {@link VehicleDynamicsStep}.
+- `VehicleStepEngine` (interface): interface VehicleStepEngine — Engine telemetry of a {@link VehicleDynamicsStep}.
+- `VehicleStepLoads` (interface): interface VehicleStepLoads — Axle and wheel loads of a {@link VehicleDynamicsStep}.
+- `VehicleStepMotion` (interface): interface VehicleStepMotion — Pose and planar motion of a {@link VehicleDynamicsStep}.
+- `VehicleStepSteering` (interface): interface VehicleStepSteering — Front-wheel angles of a {@link VehicleDynamicsStep}.
+- `VehicleStepTires` (interface): interface VehicleStepTires — Tire telemetry of a {@link VehicleDynamicsStep}: slip, saturation and slide state.
 - `VehicleSuspensionTuning` (interface): interface VehicleSuspensionTuning — Four sprung corners. With this block the chassis heaves, pitches and rolls on real springs, axle loads come from spring forces instead of a filtered estimate, slopes pull the car downhill, and the car can leave the ground and land. Omit it for the flat-ground model.
 - `VehicleTireRelaxationEffect` (interface): interface VehicleTireRelaxationEffect — Tyre relaxation: the carcass has to roll a distance before the slip angle builds, so lateral force lags steering.
+- `VehicleTireState` (interface): interface VehicleTireState — Tire memory: relaxed slip (`tireRelaxation`) and last axle forces (compliance steer).
 - `VehicleTireTuning` (interface): interface VehicleTireTuning — One axle's tire, in physical terms. Lateral force follows a simplified Pacejka curve `μ·Fz·sin(C·atan(B·α))` whose `B`/`C` are solved from `peakSlipAngle` and `slideGrip`, so the three numbers read the way a driver feels them: how much grip, how early it peaks, how much is left sliding.
 - `VehicleTractionControlEffect` (interface): interface VehicleTractionControlEffect — Traction control: drive force capped below the driven axle's remaining grip.
 - `VehicleWheelSlideEffect` (interface): interface VehicleWheelSlideEffect — A wheel that locks under braking or spins under drive slides, and a sliding tyre grips less than its peak.
@@ -3646,8 +3680,14 @@
 
 ## @jgengine/core/physics/vehicleSpec
 
-- `VehicleSpec` (interface): interface VehicleSpec — The feel knobs for a car, in numbers a designer can reason about. {@link vehicleTuning} turns a spec into the force-based {@link VehicleDynamicsTuning} `createVehicleDynamics` runs, so every car — kart, street car, bus or drift machine — rides the same tire model and a spec only says how it should feel. Each driver aid is its own number, and `effects` switches any physical effect off or retunes it.
+- `VehicleSpec` (interface): interface VehicleSpec — The feel knobs for a car, in numbers a designer can reason about, grouped by the part they tune. {@link vehicleTuning} turns a spec into the force-based {@link VehicleDynamicsTuning} `createVehicleDynamics` runs, so every car — kart, street car, bus or drift machine — rides the same tire model and a spec only says how it should feel. Each driver aid is its own number, and `effects` switches any physical effect off or retunes it.
+- `VehicleSpecAids` (interface): interface VehicleSpecAids — Driver aids that keep the car on the road.
+- `VehicleSpecBrakes` (interface): interface VehicleSpecBrakes — Brakes: what the pedal asks for and how the handbrake behaves.
+- `VehicleSpecChassis` (interface): interface VehicleSpecChassis — Chassis: mass, geometry, body motion and aero.
+- `VehicleSpecEngine` (interface): interface VehicleSpecEngine — Drive: how fast the car goes and how it gets there.
 - `VehicleSpecGearbox` (interface): interface VehicleSpecGearbox — An optional gearbox for a {@link VehicleSpec}: the HUD gets a gear and rpm, and shifts cost a beat of drive.
+- `VehicleSpecSteering` (interface): interface VehicleSpecSteering — Steering: lock, rack speed and self-alignment.
+- `VehicleSpecTires` (interface): interface VehicleSpecTires — Tires: peak grip, compound and rear balance.
 - `vehicleTuning` (function): function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning — Build the physical tuning for a {@link VehicleSpec}. Pure and deterministic, so a parts change or a dent re-derives the tuning and `retune` swaps it in without costing the car its momentum.
 
 ## @jgengine/core/physics/worldColliders
@@ -3855,13 +3895,18 @@
 
 ## @jgengine/core/plants/growth/growthState
 
+- `GrowthBudArrays` (interface): interface GrowthBudArrays — Per-bud struct-of-arrays.
+- `GrowthNodeArrays` (interface): interface GrowthNodeArrays — Per-node struct-of-arrays: structure, geometry, tissue, light and flowering.
+- `GrowthSlots` (interface): interface GrowthSlots — Slot capacities, fill counts and id counters of a {@link GrowthState}.
 - `GrowthState` (interface): interface GrowthState — The whole simulation state as struct-of-arrays. Nodes are annual shoots (later merged into longer bare segments) kept in creation order, so a parent always sits before its children: a reverse loop is a basipetal pass, a forward loop acropetal.
+- `GrowthVitals` (interface): interface GrowthVitals — Whole-tree condition: age, carbohydrate economy and life.
 - `NODE_AXIS_START` (const): const NODE_AXIS_START: 2 — Node flag: first internode of a lateral axis (a branch base).
 - `NODE_DEAD` (const): const NODE_DEAD: 1 — Node flag: the branch is dead wood still attached.
 - `NODE_FIELDS` (const): const NODE_FIELDS: readonly ["nodeId", "parent", "born", "leafBorn", "order", "flags", "length", "dir", "end", "phase", "sapArea", "heartArea", "foliage", "metamers", "latent", "latentAge", "light", "vigour", "moment", "deficit", "deadAge", "flowers"] — Typed-array fields of {@link GrowthState}, in snapshot order.
 - `NODE_NO_SPUR` (const): const NODE_NO_SPUR: 8 — Node flag: the short shoots on this node died in shade and bear no more leaves.
 - `NODE_SCAR` (const): const NODE_SCAR: 4 — Node flag: a shed branch left a scar at this node's tip.
-- `SCALAR_FIELDS` (const): const SCALAR_FIELDS: readonly ["nodeCount", "budCount", "nextNodeId", "nextBudId", "year", "reserveKg", "stressYears", "alive", "health", "shedKg"] — Scalar fields of {@link GrowthState} carried in a snapshot.
+- `SLOT_FIELDS` (const): const SLOT_FIELDS: readonly ["nodeCount", "budCount", "nextNodeId", "nextBudId"] — Scalar fields of {@link GrowthState} carried in a snapshot.
+- `VITAL_FIELDS` (const): const VITAL_FIELDS: readonly ["year", "reserveKg", "stressYears", "alive", "health", "shedKg"] — Vitals fields of {@link GrowthState} carried in a snapshot.
 
 ## @jgengine/core/plants/growth/lightField
 
@@ -6041,7 +6086,7 @@
 - `FrustumTarget` (interface): interface FrustumTarget { id: string; position: EntityPosition; radius?: number | undefined } — ⚠ undocumented
 - `GRASS_FIELD_OUTPUT` (const): const GRASS_FIELD_OUTPUT: "grass-field" — The generator output family a grass look bakes to: {@link GrassFieldBake}.
 - `GRASS_GENERATOR` (const): const GRASS_GENERATOR: GeneratorDefinition<ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & … — The grass generator: one schema from a putting green to tall savanna and dune grass. Detail picks the blade segments (4 at full detail, 2 at half, 1 at a quarter), so a baked variant carries its LODs.
-- `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: string; label: string; values: { density: number; bladeHeight: number; heightVariation: number; bladeWidth: number; widthVariation: number; profile: number; curvature: number; stiffness: number; tuftSpread: number; tuftBlades: number; baseColor: string; tipColor: string; g… — Starting looks the inspector applies in one click; each is a full knob set, so any can be tweaked from there.
+- `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: string; label: string; values: { density: number; bladeHeight: number; heightVariation: number; bladeWidth: number; widthVariation: number; profile: number; curvature: number; stiffness: number; tuftSpread: number; tuftBlades: number; clumping: number; clumpSize: number; b… — Starting looks the inspector applies in one click; each is a full knob set, so any can be tweaked from there.
 - `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema<readonly [RangeParamField & { key: "density"; }, RangeParamField & { key: "bladeHeight"; }, RangeParamField & { key: "heightVariation"; }, RangeParamField & { key: "bladeWidth"; }, RangeParamField & { key: "widthVariation"; }, RangeParamField & { key: "profile"; }, Ra… — The grass parameter schema: drives the inspector, the variant grid and every `meta` parse.
 - `GROUND_DECAL_LAYERS` (const): const GROUND_DECAL_LAYERS: { readonly road: 0.06; readonly junction: 0.06; readonly marking: 0.11; readonly glow: 0.14; } — The single owning table of ground-decal Y offsets, in world units above the sampled terrain.
 - `GeneratedAsset` (interface): interface GeneratedAsset — A resolved generator asset: its parts plus the overall local-space bounds (min/max corners).
@@ -6053,7 +6098,8 @@
 - `GradientStop` (interface): interface GradientStop — One stop of a `gradient` param: `at` in 0..1 and a hex colour.
 - `GrassEnvironmentDescriptor` (interface): interface GrassEnvironmentDescriptor — A resolved grass patch: its area and the fully-defaulted {@link GrassLook} the shell draws.
 - `GrassFieldBake` (interface): interface GrassFieldBake — One baked grass look: the look with its seed settled, and the tuft mesh every instance of it places.
-- `GrassLook` (interface): interface GrassLook — Fully-defaulted, clamped grass look, read from a volume's `meta` or a `grass()` config.
+- `GrassLook` (interface): interface GrassLook — Fully-defaulted, clamped grass look, read from a volume's `meta` or a `grass()` config, grouped by the part of the field each knob shapes.
+- `GrassLookGroups` (type): type GrassLookGroups = { [Group in Exclude<keyof GrassLook, "seed">]?: Partial<GrassLook[Group]> } & { seed?: string } — A partial {@link GrassLook}: any groups, each with any of its knobs.
 - `GravityField` (interface): interface GravityField — Position-dependent gravity source used by movement and vehicle simulations.
 - `GravityVector` (type): type GravityVector = readonly [number, number, number] — Three-dimensional acceleration vector sampled from a gravity field.
 - `GripCurve` (interface): interface GripCurve — A piecewise-linear curve of `[x, y]` points in ascending `x`: tire grip against slip, engine torque against rpm.
@@ -6438,7 +6484,7 @@
 - `VehicleDynamics` (interface): interface VehicleDynamics — Force-based planar car: a two-axle ("bicycle") model where yaw comes from tire forces rather than being commanded, so understeer, oversteer, lift-off rotation, trail-braking, power slides and handbrake turns emerge from the numbers instead of from special cases. Deterministic for a given `dt` sequence; ticks are split into fixed substeps. Pairs with `tickDrivableVehicle` for the entity pose and `measureHandling` for asserting feel.
 - `VehicleDynamicsModifiers` (interface): interface VehicleDynamicsModifiers — Per-tick overrides layered over tuning: boost, grip zones, damage. Each scale defaults to `1`.
 - `VehicleDynamicsOptions` (interface): interface VehicleDynamicsOptions — World hooks for one vehicle instance.
-- `VehicleDynamicsStep` (interface): interface VehicleDynamicsStep — Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read.
+- `VehicleDynamicsStep` (interface): interface VehicleDynamicsStep — Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read, grouped by the part that produced it.
 - `VehicleDynamicsTuning` (interface): interface VehicleDynamicsTuning — Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N, N·m, rad, s). The body, tyres, powertrain, brakes and rack are always there; every other physical effect and aid is a separate term in `effects`, off unless listed.
 - `VehicleFeel` (interface): interface VehicleFeel — Comparable handling numbers derived from a spec — what "the numbers and the feel" means to a shop screen, a HUD or a test. Grip is reported as the curve's own shape, so a compound change shows up as a moved peak rather than a single scalar.
 - `VehicleImpact` (interface): interface VehicleImpact — A single blocked-move event a car can react to (#1051): crash damage, screen shake, a metal-crunch cue. Reported once, when a move is first vetoed, then consumed by {@link VehicleObstacleClamp.takeImpact}.
@@ -6448,7 +6494,7 @@
 - `VehiclePartEffect` (interface): interface VehiclePartEffect — How one part moves a stat: multiply the base by `scale`, then add `add`. Both default to no change.
 - `VehicleSeats` (class): class VehicleSeats — Composes `scene/mount`'s control-transfer bookkeeping with the seat/camera/movement-mode transition every enter/exit-vehicle flow needs (#533.2): boarding resolves a free seat and reports the camera target, drive target, and rider movement-lock patch in one call; leaving computes a side-door placement next to the vehicle and reports the same triad in reverse. Pure — no entity/camera side effects — the caller applies `riderMovementPatch`/`placement`/`cameraTarget` via its own `ctx`.
 - `VehicleSetup` (interface): interface VehicleSetup — A composed vehicle: the spec to build the sim from, the feel it produces, and what was installed.
-- `VehicleSpec` (interface): interface VehicleSpec — The feel knobs for a car, in numbers a designer can reason about. {@link vehicleTuning} turns a spec into the force-based {@link VehicleDynamicsTuning} `createVehicleDynamics` runs, so every car — kart, street car, bus or drift machine — rides the same tire model and a spec only says how it should feel. Each driver aid is its own number, and `effects` switches any physical effect off or retunes it.
+- `VehicleSpec` (interface): interface VehicleSpec — The feel knobs for a car, in numbers a designer can reason about, grouped by the part they tune. {@link vehicleTuning} turns a spec into the force-based {@link VehicleDynamicsTuning} `createVehicleDynamics` runs, so every car — kart, street car, bus or drift machine — rides the same tire model and a spec only says how it should feel. Each driver aid is its own number, and `effects` switches any physical effect off or retunes it.
 - `VehicleSpecGearbox` (interface): interface VehicleSpecGearbox — An optional gearbox for a {@link VehicleSpec}: the HUD gets a gear and rpm, and shifts cost a beat of drive.
 - `VehicleStat` (type): type VehicleStat = | "topSpeed" | "accel" | "brake" | "reverseSpeed" | "turnRate" | "grip" | "drift" | "handbrakeGrip" | "coast" | "weight" — A tunable vehicle number a part can move; each names a numeric {@link VehicleSpec} field.
 - `VisibilityCells` (interface): interface VisibilityCells — Dense per-cell readout for one group, shaped for minimap/overlay drawing.
@@ -6995,7 +7041,7 @@
 - `EnvironmentVec2` (type): type EnvironmentVec2 = readonly [number, number] — ⚠ undocumented
 - `EnvironmentWorldConfig` (interface): interface EnvironmentWorldConfig { terrain?: TerrainEnvironmentDescriptor; islands?: readonly TerrainIslandDescriptor[]; sky?: SkyEnvironmentDescriptor; weather?: EnvironmentDescriptorList<WeatherEnvironmentDescriptor>; vegetation?: EnvironmentDescriptorList<VegetationEnvi… — ⚠ undocumented · used by `environment`: Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
 - `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature { kind: "environment"; terrain?: TerrainEnvironmentDescriptor; islands?: readonly TerrainIslandDescriptor[]; sky?: SkyEnvironmentDescriptor; weather?: readonly WeatherEnvironmentDescriptor[]; vegetation?: readonly VegetationEnvironmentDescr… — ⚠ undocumented · used by `environment`: Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
-- `GrassEnvironmentConfig` (interface): interface GrassEnvironmentConfig extends Partial<GrassLook> — Config for {@link grass}: where the patch grows plus any {@link GrassLook} knob (blade shape, colour and season, species, flowers, masks, wind). Unset knobs take the shared grass defaults; every knob is clamped to a range that still reads as full ground cover.
+- `GrassEnvironmentConfig` (interface): interface GrassEnvironmentConfig extends GrassLookGroups — Config for {@link grass}: where the patch grows plus any group of {@link GrassLook} knobs (`blade`, `colour`, `season`, `species`, `flowers`, `growth`, `wind`, ...). Set only the groups you care about; unset knobs take the shared grass defaults and every knob is clamped to a range that still reads as full ground cover.
 - `GrassEnvironmentDescriptor` (interface): interface GrassEnvironmentDescriptor — A resolved grass patch: its area and the fully-defaulted {@link GrassLook} the shell draws.
 - `LiveRoadSource` (interface): interface LiveRoadSource — A road list that changes at runtime: read `current()`, and `subscribe` to hear when it changed.
 - `OceanEnvironmentConfig` (interface): interface OceanEnvironmentConfig { bounds?: WorldBounds; position?: EnvironmentVec2; level?: number; levelAt?: (time: number) => number; waveHeight?: number; waveScale?: number; waveSpeed?: number; color?: string; palette?: OceanPalette; horizon?: boolean; clarity?: number… — ⚠ undocumented · used by `ocean`: Declares an ocean water body for `environment()` — bounds, level, and wave tuning.

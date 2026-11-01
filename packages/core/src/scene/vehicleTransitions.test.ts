@@ -34,7 +34,7 @@ for (const kind of ["ground", "boat"] as const) {
     const movement = resolvePlayerMovementTuning({});
     stepPlayerMovement(ctx, "local", { held: ["moveForward"], pointer: null }, 0.25, movement);
     expect(snapshotPlayerMovement(ctx, "local")).not.toBeNull();
-    expect(boardVehicle(ctx, seats, "local", "v", { rig: "chase", config: { chase: { height: 4 } }, chase: { distance: 9 } }).ok).toBe(true);
+    expect(boardVehicle(ctx, seats, "local", "v", { rig: "chase", config: { rigs: { chase: { height: 4 } } }, chase: { distance: 9 } }).ok).toBe(true);
     expect(snapshotPlayerMovement(ctx, "local")).toBeNull();
     expect(boardVehicle(ctx, seats, "alice", "v", { camera: false }).ok).toBe(true);
     expect(seats.drivenBy("local")).toBe("v"); expect(seats.drivenBy("alice")).toBeNull();
@@ -43,7 +43,12 @@ for (const kind of ["ground", "boat"] as const) {
     const frozen = ctx.scene.entity.get("local")!.position;
     stepPlayerMovement(ctx, "local", { held: ["moveForward"], pointer: null }, 0.25, movement);
     expect(ctx.scene.entity.get("local")!.position).toEqual(frozen);
-    const sim = kind === "ground" ? createVehicleDynamics(vehicleTuning({ topSpeed: 15, accel: 8, brake: 10, reverseSpeed: 3, turnRate: 1, grip: 1, handbrakeGrip: 1 })) : createBoatDynamics({
+    const sim = kind === "ground" ? createVehicleDynamics(vehicleTuning({
+      engine: { topSpeed: 15, accel: 8, reverseSpeed: 3 },
+      brakes: { brake: 10, handbrakeGrip: 1 },
+      steering: { turnRate: 1 },
+      tires: { grip: 1 },
+    })) : createBoatDynamics({
       massKg: 5000, length: 9, beam: 3, maxThrust: 20000, propSpeed: 8, steering: { kind: "rudder", area: 1 },
     });
     ctx.input.publish(["moveForward"]);
@@ -160,7 +165,7 @@ test("new camera mutations notify the owning context once and reject invalid pol
   const before = ctx.version(); ctx.camera.setRig("chase"); expect(changes).toBe(1); expect(ctx.version()).toBeGreaterThan(before);
   ctx.camera.restore(ctx.camera.snapshot()); expect(changes).toBe(2);
   ctx.camera.reset(); expect(changes).toBe(3);
-  expect(() => ctx.camera.setRig("chase", { chase: { distance: NaN } })).toThrow(); expect(changes).toBe(3);
+  expect(() => ctx.camera.setRig("chase", { rigs: { chase: { distance: NaN } } })).toThrow(); expect(changes).toBe(3);
 });
 
 test("explicit rider entity distinct from possession user clears that user's retained movement",()=>{

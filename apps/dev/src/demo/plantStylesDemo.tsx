@@ -100,12 +100,16 @@ function PlantStyles() {
 export const plantStylesGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "plant-styles" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => <PlantStyles />,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  lighting: { ambient: { intensity: 0.6 }, directional: [{ intensity: 2.4, position: [40, 60, 30], color: "#fff1dc" }] },
-  backdrop: { background: "#a8c8e0" },
-  environment: () => <PlantStyles />,
+  rendering: {
+    lighting: { ambient: { intensity: 0.6 }, directional: [{ intensity: 2.4, position: [40, 60, 30], color: "#fff1dc" }] },
+    backdrop: { background: "#a8c8e0" },
+  },
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#fff", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
       <div style={{ position: "absolute", top: 12, left: 16, fontSize: 15, fontWeight: 600 }}>

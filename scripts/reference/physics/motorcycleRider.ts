@@ -1,4 +1,5 @@
 import type { AxisInput } from "@jgengine/core/input/axisInput";
+import type { VehicleStepBody, VehicleStepMotion, VehicleStepSteering } from "@jgengine/core/physics/vehicleDynamics";
 import {
   createReferenceMotorcycle,
   type ReferenceMotorcycle,
@@ -32,12 +33,20 @@ export interface RiddenMotorcycleState {
   target: number;
 }
 
+/** One ridden-bike tick in the grouped shape the handling probes read, plus the full reference sample. */
+export interface RiddenMotorcycleStep {
+  motion: Pick<VehicleStepMotion, "position" | "heading" | "forwardSpeed" | "lateralSpeed" | "yawRate" | "lateralAccel" | "longitudinalAccel">;
+  steering: Pick<VehicleStepSteering, "steerAngle">;
+  body: Pick<VehicleStepBody, "lean">;
+  sample: ReferenceMotorcycleStep;
+}
+
 /**
  * A reference motorcycle with a rider on it, driven like a game bike: `steer` asks for a lean (`steer · maxLean`,
  * positive right), throttle and brake go to the bike's own launch, shift, wheelie and brake-limit logic.
  */
 export interface RiddenMotorcycle {
-  tick(dt: number, input: AxisInput): ReferenceMotorcycleStep;
+  tick(dt: number, input: AxisInput): RiddenMotorcycleStep;
   velocity(): readonly [number, number];
   pose(): { position: readonly [number, number, number]; heading: number };
   readonly bike: ReferenceMotorcycle;
@@ -92,7 +101,20 @@ export function createRiddenMotorcycle(spec: ReferenceMotorcycleSpec, options: M
         const torque = active ? Math.max(-maxTorque, Math.min(maxTorque, -kp * error - ki * integral + kd * rate)) : 0;
         last = bike.step(RIDER_STEP, { steerTorque: torque, throttle: input.throttle, brake: input.brake });
       }
-      return last;
+      return {
+        motion: {
+          position: last.position,
+          heading: last.heading,
+          forwardSpeed: last.forwardSpeed,
+          lateralSpeed: last.lateralSpeed,
+          yawRate: last.yawRate,
+          lateralAccel: last.lateralAccel,
+          longitudinalAccel: last.longitudinalAccel,
+        },
+        steering: { steerAngle: last.steerAngle },
+        body: { lean: last.lean },
+        sample: last,
+      };
     },
     velocity: () => bike.velocity(),
     pose: () => bike.pose(),

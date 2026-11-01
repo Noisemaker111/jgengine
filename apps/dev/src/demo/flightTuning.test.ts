@@ -63,7 +63,7 @@ describe("flight demo plane assists", () => {
 describe("flight demo helicopter", () => {
   function hover(pedal: number, seconds: number) {
     const heli = createRigidAircraft(flightDemoHelicopter, { position: [0, 40, 0] });
-    heli.restore({ ...heli.snapshot(), rotorSpeed: 1 });
+    { const held = heli.snapshot(); heli.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
     let step = heli.tick(DT, { throttle: 1, collective: flightDemoHover.collective, pitch: 0, roll: 0, yaw: pedal });
     for (let i = 0; i < Math.round(seconds / DT); i += 1) step = heli.tick(DT, { throttle: 1, collective: flightDemoHover.collective, pitch: 0, roll: 0, yaw: pedal });
     return step;
@@ -75,7 +75,7 @@ describe("flight demo helicopter", () => {
 
   test("with assists on it holds heading and position with the pedals and cyclic hands-off", () => {
     const heli = createRigidAircraft({ ...flightDemoHelicopter, assists: flightDemoHelicopterAssists }, { position: [0, 40, 0] });
-    heli.restore({ ...heli.snapshot(), rotorSpeed: 1 });
+    { const held = heli.snapshot(); heli.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
     let step = heli.tick(DT, { throttle: 1, collective: flightDemoHover.collective, pitch: 0, roll: 0, yaw: 0 });
     for (let i = 0; i < Math.round(8 / DT); i += 1) step = heli.tick(DT, { throttle: 1, collective: flightDemoHover.collective, pitch: 0, roll: 0, yaw: 0 });
     expect(Math.abs(step.heading)).toBeLessThan(0.1);

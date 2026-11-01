@@ -32,30 +32,36 @@ export const game = defineGame({
   content,
   // A refused build/upgrade reaches the player as a deny notice; its cue is the keep's own "denied" knock.
   audio: { sounds: BEACON_SOUNDS, uiCues: { deny: BEACON_SOUNDS.denied } },
-  notices: { cap: 3 },
+  chrome: {
+    notices: { cap: 3 },
+    settings: {
+      variant: "panel",
+    },
+  },
   // The keep's own theme: beacon-fire accent, soot timber surfaces, Cinzel and Alegreya Sans.
   hudTheme: beaconTheme,
-  // The phone HUD is laid out for 390x844 in style.css, so it draws at its own size instead of the
+  controls: {
+    // The phone HUD is laid out for 390x844 in style.css, so it draws at its own size instead of the
   // desktop layout shrunk to 0.4.
-  hudFit: { mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
-  // Every action already has a control on the HUD itself (the rack's plaques, the mason's tablet), so
+    hudFit: { mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
+    // Every action already has a control on the HUD itself (the rack's plaques, the mason's tablet), so
   // the derived touch buttons would only repeat them over the field.
-  touch: { hidden: ["buildTower1", "buildTower2", "buildTower3", "buildTower4", "upgradeTower", "sellTower", "cycleAim", "abilityFire", "abilityBell"] },
+    touch: { hidden: ["buildTower1", "buildTower2", "buildTower3", "buildTower4", "upgradeTower", "sellTower", "cycleAim", "abilityFire", "abilityBell"] },
+    pointer: { moveCommand: "tower.build" },
+  },
   systems,
   loop,
   GameUI,
-  settings: {
-    variant: "panel",
-  },
-  entityModels,
-  // Draped creep path + instanced foliage render from the document; towers/creeps/props spawn as
+  scene: {
+    entityModels,
+    // Draped creep path + instanced foliage render from the document; towers/creeps/props spawn as
   // entities in the loop, so object placement stays off — no double render.
-  editorLayers,
+    editorLayers,
+    WorldOverlay: BeaconBastionWorldOverlay,
+    worldHealthBars: { statId: "health" },
+  },
   scenePlacement: false,
   sceneScatterModels: scatterModels,
-  WorldOverlay: BeaconBastionWorldOverlay,
-  worldHealthBars: { statId: "health" },
-  pointer: { moveCommand: "tower.build" },
   capture: {
     play: ["run.begin"],
     // Every state starts from the boot title, so each one opens the run first - without that the builds
@@ -106,31 +112,35 @@ export const game = defineGame({
       wave: currentWaveNumber(),
     }),
   },
-  shadows: true,
-  // Graded post stack without the cinematic preset's image-based light, which washed the slopes
+  rendering: {
+    shadows: true,
+    // Graded post stack without the cinematic preset's image-based light, which washed the slopes
   // blue under this world's own golden-hour sky.
-  postProcessing: {
-    toneMapping: "aces",
-    exposure: 0.95,
-    bloom: { strength: 0.16, radius: 0.5, threshold: 0.95 },
-    ao: { intensity: 1.3, radius: 1.4 },
-    grade: { saturation: 1.12, gain: [1.05, 1.02, 0.95], vignette: 0.22 },
-  },
-  // Warm low sun rakes the relief so mounds, towers, and the keep cast long readable shadows; a cool
+    postProcessing: {
+      toneMapping: "aces",
+      exposure: 0.95,
+      bloom: { strength: 0.16, radius: 0.5, threshold: 0.95 },
+      ao: { intensity: 1.3, radius: 1.4 },
+      grade: { saturation: 1.12, gain: [1.05, 1.02, 0.95], vignette: 0.22 },
+    },
+    // Warm low sun rakes the relief so mounds, towers, and the keep cast long readable shadows; a cool
   // hemisphere fill keeps the shadow sides from going muddy black.
-  mood: { preset: "day", sun: { azimuth: 237, elevation: 49, color: "#ffeccb", intensity: 1.45 }, fog: { near: 110, far: 230 } },
+    mood: { preset: "day", sun: { azimuth: 237, elevation: 49, color: "#ffeccb", intensity: 1.45 }, fog: { near: 110, far: 230 } },
+  },
   camera: {
     rig: "topDown",
-    followEntityId: null,
-    // The arena is 60x48 world units and the rig's 45-degree azimuth projects that diagonal
+    follow: { followEntityId: null },
+    rigs: {
+      // The arena is 60x48 world units and the rig's 45-degree azimuth projects that diagonal
     // vertically, so the default height has to clear both ends of the raider route plus the
     // bottom build bar; the offset centres the route in the band the HUD leaves free.
-    topDown: {
-      height: 70,
-      pitch: 1.08,
-      yaw: Math.PI / 4,
-      targetOffset: { x: -16, z: -6 },
-      zoom: { min: 0.6, max: 1.8 },
+      topDown: {
+        height: 70,
+        pitch: 1.08,
+        yaw: Math.PI / 4,
+        targetOffset: { x: -16, z: -6 },
+        zoom: { min: 0.6, max: 1.8 },
+      },
     },
   },
 });

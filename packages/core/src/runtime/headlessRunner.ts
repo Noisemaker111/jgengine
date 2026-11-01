@@ -141,8 +141,8 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
   const content = playable?.content ?? options.content ?? {};
   // A definition's own loop carries its systems; a test that passes no loop still runs them.
   const loop: GameLoop<GameContext> | undefined = playable?.loop ?? options.loop ?? definition.loop;
-  const movement = playable?.movement ?? options.movement;
-  const collision = playable?.collision ?? options.collision;
+  const movement = playable?.controls?.movement ?? options.movement;
+  const collision = playable?.controls?.collision ?? options.collision;
   const player = options.player ?? { userId: "player", isNew: true };
   const maxStep = options.maxStepSeconds ?? 0.05;
   if (!(maxStep > 0)) throw new RangeError(`createHeadlessRunner: maxStepSeconds must be positive (got ${maxStep})`);
@@ -161,7 +161,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
   const simSnapshot = createContextSimSnapshot(ctx);
 
   // The shell's camera starts on the game's `camera.initialYaw`, so a walk faces the same way here as in the page.
-  const look = { heading: options.heading ?? playable?.camera?.initialYaw ?? 0, pitch: options.pitch ?? 0 };
+  const look = { heading: options.heading ?? playable?.camera?.orbit?.initialYaw ?? 0, pitch: options.pitch ?? 0 };
 
   const tuning: PlayerMovementTuning | null =
     (options.playerMovement ?? shellDrivesPlayerPose(definition.input))

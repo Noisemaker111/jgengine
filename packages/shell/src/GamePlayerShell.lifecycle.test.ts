@@ -29,7 +29,7 @@ beforeAll(async () => {
       habitats:[{id:'birds',species:'native',position:{x:0,y:2,z:0},radius:2,count:1,seed:1,role:'cosmetic',steering:{maxSpeed:1,separationRadius:1,neighborRadius:2}}]
     };
     const authored=JSON.stringify(document),records=[],removers=new Map();
-    const make=id=>defineGame({name:id,editorLayers:document,assets:createAssetCatalog(),presentation:'hud',camera:{rig:'none'},server:{mode:'single'},save:'none',devtools:false,settings:false,
+    const make=id=>defineGame({name:id,scene:{editorLayers:document},assets:createAssetCatalog(),chrome:{presentation:'hud',devtools:false,settings:false},camera:{rig:'none'},server:{mode:'single'},save:'none',
       GameUI:()=> <div aria-label="Active game">{id}</div>,
       loop:{onInit(ctx){const record={id,ctx,calls:0,sameContext:true,stageCalls:0,removedStage:true};records.push(record);ctx.environment.watch({id:'surface',x:0,z:0});removers.set(ctx,ctx.sim.addStage({id:'game-owned',phase:'beforeMovement',run(){record.stageCalls++}}));ctx.sim.runStages('beforeMovement',0.1);ctx.sim.advance(0.1,dt=>ctx.sim.runStages('afterTick',dt));if(id==='init-failure')throw new Error('Expected init failure')},
         onNewPlayer(){if(id==='player-failure')throw new Error('Expected player failure')},

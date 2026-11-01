@@ -446,7 +446,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
     }
   }, [playable, allowedAssets]);
 
-  const resolvedLayers = layers ?? playable.editorLayers;
+  const resolvedLayers = layers ?? playable.scene?.editorLayers;
   const host = useMemo(() => {
     const created = createEditorHost({
       gameId,
@@ -637,10 +637,13 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
             </>
           );
         },
-        WorldOverlay: function EditorHudOverlay() {
-          return <PerfProbe api={host.api} />;
+        scene: {
+          ...playable.scene,
+          WorldOverlay: function EditorHudOverlay() {
+            return <PerfProbe api={host.api} />;
+          },
         },
-        shadows: false,
+        rendering: { ...playable.rendering, shadows: false },
         loop: frozenLoop,
         camera: inspectionCamera,
       };
@@ -649,7 +652,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
     if (mode === "play") {
       const playtest = playtestPlayable;
       const BaseUI = playtest.GameUI;
-      const BaseOverlay = playtest.WorldOverlay;
+      const BaseOverlay = playtest.scene?.WorldOverlay;
       const useBuiltinPlayChrome = resolvedModeChip === EditorModeChip;
       return {
         ...playtest,
@@ -669,14 +672,17 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
             </>
           );
         },
-        WorldOverlay: function EditorPlayOverlay({ ctx }: WorldOverlayProps) {
-          return (
-            <>
-              {BaseOverlay !== undefined ? <BaseOverlay ctx={ctx} /> : null}
-              <PerfProbe api={host.api} />
-              <RuntimePlayPublisher api={host.api} />
-            </>
-          );
+        scene: {
+          ...playtest.scene,
+          WorldOverlay: function EditorPlayOverlay({ ctx }: WorldOverlayProps) {
+            return (
+              <>
+                {BaseOverlay !== undefined ? <BaseOverlay ctx={ctx} /> : null}
+                <PerfProbe api={host.api} />
+                <RuntimePlayPublisher api={host.api} />
+              </>
+            );
+          },
         },
       };
     }
@@ -687,26 +693,29 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
         GameUI: function EditorWalkUi() {
           return <EditorModeChipHost api={host.api} mode="walk" chip={resolvedModeChip} />;
         },
-        WorldOverlay: function EditorWalkOverlay() {
-          const ctx = useGameContext();
-          return (
-            <>
-              <PerfProbe api={host.api} />
-              <EditorLayerOverlays
-                document={host.api.getSession().getState().document}
-                visibility={host.api.getVisibility()}
-                selection={host.api.getSession().getState().selection}
-                onSelect={() => {}}
-                groundHeightAt={(x, z) => ctx.world.groundHeightAt(x, z)}
-              />
-            </>
-          );
+        scene: {
+          ...playable.scene,
+          WorldOverlay: function EditorWalkOverlay() {
+            const ctx = useGameContext();
+            return (
+              <>
+                <PerfProbe api={host.api} />
+                <EditorLayerOverlays
+                  document={host.api.getSession().getState().document}
+                  visibility={host.api.getVisibility()}
+                  selection={host.api.getSession().getState().selection}
+                  onSelect={() => {}}
+                  groundHeightAt={(x, z) => ctx.world.groundHeightAt(x, z)}
+                />
+              </>
+            );
+          },
         },
         loop: frozenLoop,
       };
     }
 
-    const BaseOverlay = playable.WorldOverlay;
+    const BaseOverlay = playable.scene?.WorldOverlay;
     const WorldOverlay: ComponentType<WorldOverlayProps> = function EditorOverlay({ ctx }) {
       return <>
         {BaseOverlay !== undefined ? <BaseOverlay ctx={ctx} /> : null}
@@ -746,8 +755,8 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
     return {
       ...playable,
       GameUI,
-      WorldOverlay,
-      shadows: false,
+      scene: { ...playable.scene, WorldOverlay },
+      rendering: { ...playable.rendering, shadows: false },
       loop: frozenLoop,
       // Drop FPS gun chrome; keep world only.
       // WorldOverlay above is the editor layers, not PandoraViewmodel.

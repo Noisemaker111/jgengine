@@ -9,7 +9,14 @@ import { tickDrivableVehicle } from "./drivableVehicle";
 import { createVehicleDynamics } from "./vehicleDynamics";
 import { vehicleTuning } from "./vehicleSpec";
 
-const TUNING = vehicleTuning({ grip: 1.2, drift: 0.15, abs: 1, stability: 1, bodyRoll: 0.4, topSpeed: 20, accel: 6, brake: 12, turnRate: 2 });
+const TUNING = vehicleTuning({
+  tires: { grip: 1.2, drift: 0.15 },
+  brakes: { abs: 1, brake: 12 },
+  aids: { stability: 1 },
+  chassis: { bodyRoll: 0.4 },
+  engine: { topSpeed: 20, accel: 6 },
+  steering: { turnRate: 2 },
+});
 
 describe("a car on soft ground", () => {
   test("its wheels leave ruts behind it in the terrain while the car itself is unchanged", () => {

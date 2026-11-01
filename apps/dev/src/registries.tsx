@@ -22,19 +22,26 @@ import { installCaptureCamera } from "@jgengine/core/world/captureCamera";
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
   orbit: { rig: "orbit" },
   first: { rig: "first" },
-  topdown: { rig: "topDown", topDown: { yaw: 0, pitch: 1.35, height: 20 } },
-  iso: { rig: "topDown", topDown: { yaw: Math.PI / 4, pitch: 0.95, height: 18 } },
-  rts: { rig: "rts", rts: { yaw: Math.PI / 5, pitch: 1.0, height: 22, panSpeed: 26 } },
-  shoulder: { rig: "shoulder", shoulder: { shoulderOffset: 0.7, distance: 3.4, heightOffset: 1.6 } },
-  lockon: { rig: "lockOn", lockOn: { distance: 5.5, height: 2.6, framingBias: 0.55 } },
-  chase: { rig: "chase", chase: { distance: 6.5, height: 2.8, fov: { base: 55, max: 82, speedForMax: 12 } } },
-  cockpit: { rig: "chase", chase: { view: "cockpit" } },
-  rear: { rig: "chase", chase: { view: "rear" } },
+  topdown: { rig: "topDown", rigs: { topDown: { yaw: 0, pitch: 1.35, height: 20 } } },
+  iso: { rig: "topDown", rigs: { topDown: { yaw: Math.PI / 4, pitch: 0.95, height: 18 } } },
+  rts: { rig: "rts", rigs: { rts: { yaw: Math.PI / 5, pitch: 1.0, height: 22, panSpeed: 26 } } },
+  shoulder: { rig: "shoulder", rigs: { shoulder: { shoulderOffset: 0.7, distance: 3.4, heightOffset: 1.6 } } },
+  lockon: { rig: "lockOn", rigs: { lockOn: { distance: 5.5, height: 2.6, framingBias: 0.55 } } },
+  chase: {
+    rig: "chase",
+    rigs: {
+      chase: { distance: 6.5, height: 2.8, fov: { base: 55, max: 82, speedForMax: 12 } },
+    },
+  },
+  cockpit: { rig: "chase", rigs: { chase: { view: "cockpit" } } },
+  rear: { rig: "chase", rigs: { chase: { view: "rear" } } },
   observer: {
     rig: "observer",
-    observer: { bind: { kind: "entity", entityId: "sensor-showcase-culprit" }, distance: 7, height: 3.5, orbitSpeed: 0.3 },
+    rigs: {
+      observer: { bind: { kind: "entity", entityId: "sensor-showcase-culprit" }, distance: 7, height: 3.5, orbitSpeed: 0.3 },
+    },
   },
-  side2d: { rig: "sideScroll", projection: "orthographic" },
+  side2d: { rig: "sideScroll", lens: { projection: "orthographic" } },
 };
 
 /**
@@ -100,8 +107,10 @@ export function withCameraPreset(game: PlayableGame, markers?: LookMarkers): Pla
 
 /** The data half of a camera config, which is what an installed capture camera carries. */
 function rigConfigOf(config: GameCameraConfig): CameraRigConfig {
-  const { rig: _rig, projection: _projection, pixelPerfect: _pixelPerfect, frustum: _frustum, playerFov: _playerFov, weapon: _weapon, onCameraFollow: _onCameraFollow, ...rest } = config;
-  return rest;
+  const { rig: _rig, lens: _lens, follow, ...rest } = config;
+  if (follow === undefined) return rest;
+  const { weapon: _weapon, onCameraFollow: _onCameraFollow, ...followData } = follow;
+  return { ...rest, follow: followData };
 }
 
 // Vite rewrites every `import.meta.glob(...)` call below into a module map. Outside a browser

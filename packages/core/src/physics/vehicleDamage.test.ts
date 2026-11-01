@@ -26,7 +26,12 @@ const ZONES: readonly VehicleDamageZone[] = [
   },
 ];
 
-const BASE: VehicleSpec = { topSpeed: 30, accel: 8, brake: 9, turnRate: 2, grip: 1.1, handbrakeGrip: 0.25 };
+const BASE: VehicleSpec = {
+  engine: { topSpeed: 30, accel: 8 },
+  brakes: { brake: 9, handbrakeGrip: 0.25 },
+  steering: { turnRate: 2 },
+  tires: { grip: 1.1 },
+};
 
 describe("createVehicleDamage", () => {
   test("impulse steps a zone through its thresholds and reports transitions once", () => {
@@ -173,12 +178,12 @@ describe("damage changes handling", () => {
     const damage = createVehicleDamage({ zones: ZONES });
     damage.impact("front", 100);
     const tuned = damagedSpec(BASE, damage.effect());
-    expect(tuned.accel).toBeCloseTo(BASE.accel * 0.7, 6);
-    expect(tuned.topSpeed).toBeCloseTo(BASE.topSpeed * 0.8, 6);
-    expect(tuned.grip).toBeCloseTo(BASE.grip * 0.6, 6);
-    expect(tuned.coast).toBeCloseTo(1.5, 6);
-    expect(BASE.coast).toBeUndefined();
-    expect(BASE.accel).toBe(8);
+    expect(tuned.engine.accel).toBeCloseTo(BASE.engine.accel * 0.7, 6);
+    expect(tuned.engine.topSpeed).toBeCloseTo(BASE.engine.topSpeed * 0.8, 6);
+    expect(tuned.tires.grip).toBeCloseTo(BASE.tires.grip * 0.6, 6);
+    expect(tuned.engine.coast).toBeCloseTo(1.5, 6);
+    expect(BASE.engine.coast).toBeUndefined();
+    expect(BASE.engine.accel).toBe(8);
   });
 
   test("damagedAxis adds the steer pull and clamps to the input range", () => {

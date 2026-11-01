@@ -57,23 +57,36 @@ export const game = defineGame({
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
   hudTheme: emberTheme,
-  // The command board, the formation tabs and the army call already carry every bound action as a
+  controls: {
+    // The command board, the formation tabs and the army call already carry every bound action as a
   // pressable token, so the derived touch buttons would only repeat them over the field.
-  touch: {
-    hidden: [
-      "trainPeasant", "trainFootman", "trainRifleman", "attackMove", "buildBarracks", "buildFarm", "buildTower", "rally", "hold",
-      "formationLine", "formationWedge", "formationColumn", "selectArmy", "researchWeapons", "researchArmor", "heroAbility",
-      "heroMuster", "heroVolley", "heroWard", "heroPickFirst", "heroPickSecond",
-    ],
-  },
-  // Order reports and refusals: below the stockpile strip, clear of the command console.
-  notices: { placement: "top", ttlMs: 5000 },
-  entityModels,
-  // Selection rings, marquee + click select, and right-click orders are all shell-native: the game
+    touch: {
+      hidden: [
+        "trainPeasant", "trainFootman", "trainRifleman", "attackMove", "buildBarracks", "buildFarm", "buildTower", "rally", "hold",
+        "formationLine", "formationWedge", "formationColumn", "selectArmy", "researchWeapons", "researchArmor", "heroAbility",
+        "heroMuster", "heroVolley", "heroWard", "heroPickFirst", "heroPickSecond",
+      ],
+    },
+    // Selection rings, marquee + click select, and right-click orders are all shell-native: the game
   // supplies who is selectable and the verb that receives { selection, point }. With nothing
   // selected the shell skips `orderCommand`, so the same verb takes the secondary right-click too:
   // armed buildings and rally points still land, and a bare order says to select troops first.
-  pointer: { select: true, selectFilter: isPlayerSelectable, orderCommand: "unit.order", secondaryCommand: "unit.order" },
+    pointer: { select: true, selectFilter: isPlayerSelectable, orderCommand: "unit.order", secondaryCommand: "unit.order" },
+  },
+  chrome: {
+    // Order reports and refusals: below the stockpile strip, clear of the command console.
+    notices: { placement: "top", ttlMs: 5000 },
+  },
+  scene: {
+    entityModels,
+    // Authored map dressing (war-road ribbon + forest ring) renders from the document; units, keeps,
+  // and props spawn as entities in onInit, so object placement stays off — no double render.
+    editorLayers,
+    editorCatalogs,
+    // Faction-coloured health bars (green Vanguard / red Marauders) live in the world overlay so
+  // friend/foe reads at a glance — the shell's built-in world bars are always red.
+    WorldOverlay: EmberCommandWorldOverlay,
+  },
   // The three views a reviewer asks about, pinned to authored markers so they frame the same thing
   // after the map moves — `bun run shoot ember-command --view keep-enemy`.
   capture: {
@@ -108,51 +121,48 @@ export const game = defineGame({
       },
     },
   },
-  // Authored map dressing (war-road ribbon + forest ring) renders from the document; units, keeps,
-  // and props spawn as entities in onInit, so object placement stays off — no double render.
-  editorLayers,
-  editorCatalogs,
   scenePlacement: false,
-  // Faction-coloured health bars (green Vanguard / red Marauders) live in the world overlay so
-  // friend/foe reads at a glance — the shell's built-in world bars are always red.
-  WorldOverlay: EmberCommandWorldOverlay,
-  // Soft shadows read well but are the dominant cost under software WebGL; a single 1024 map keeps
+  rendering: {
+    // Soft shadows read well but are the dominant cost under software WebGL; a single 1024 map keeps
   // the look affordable. Real-GPU play is nowhere near this budget.
-  shadows: true,
-  // Shipped-game presentation: a real day sky + IBL fill the empty horizon, and the post grade is
+    shadows: true,
+    // Shipped-game presentation: a real day sky + IBL fill the empty horizon, and the post grade is
   // tuned to the valley's warm ember banners against earthy greens. AO stays off to keep the
   // populated-wave frame cost affordable under software WebGL.
-  look: "cinematic",
-  postProcessing: {
-    toneMapping: "aces",
-    exposure: 1.0,
-    aa: "smaa",
-    bloom: { strength: 0.22, radius: 0.5, threshold: 0.92 },
-    ao: false,
-    grade: {
-      lift: [0.02, 0.014, 0.012],
-      gain: [1.06, 1.02, 0.96],
-      gamma: 0.97,
-      saturation: 1.1,
-      vignette: 0.22,
-      grain: 0.01,
+    look: "cinematic",
+    postProcessing: {
+      toneMapping: "aces",
+      exposure: 1.0,
+      aa: "smaa",
+      bloom: { strength: 0.22, radius: 0.5, threshold: 0.92 },
+      ao: false,
+      grade: {
+        lift: [0.02, 0.014, 0.012],
+        gain: [1.06, 1.02, 0.96],
+        gamma: 0.97,
+        saturation: 1.1,
+        vignette: 0.22,
+        grain: 0.01,
+      },
     },
+    // Clear afternoon over the keeps; the sun stands where the hand-built key did (south-west, 47 degrees).
+    mood: { preset: "day", sun: { azimuth: 234, elevation: 47, color: "#ffe1ad" }, fog: { near: 70, far: 190 } },
   },
-  // Clear afternoon over the keeps; the sun stands where the hand-built key did (south-west, 47 degrees).
-  mood: { preset: "day", sun: { azimuth: 234, elevation: 47, color: "#ffe1ad" }, fog: { near: 70, far: 190 } },
   camera: {
     rig: "rts",
-    followEntityId: null,
-    rts: {
-      height: 34,
-      pitch: 1.0,
-      yaw: Math.PI / 4,
-      panSpeed: 36,
-      edgeScroll: true,
-      rotateSpeed: 1.2,
-      zoom: { min: 0.6, max: 2 },
-      start: { x: 0, z: 26 },
-      bounds: { minX: -46, maxX: 46, minZ: -46, maxZ: 46 },
+    follow: { followEntityId: null },
+    rigs: {
+      rts: {
+        height: 34,
+        pitch: 1.0,
+        yaw: Math.PI / 4,
+        panSpeed: 36,
+        edgeScroll: true,
+        rotateSpeed: 1.2,
+        zoom: { min: 0.6, max: 2 },
+        start: { x: 0, z: 26 },
+        bounds: { minX: -46, maxX: 46, minZ: -46, maxZ: 46 },
+      },
     },
   },
 });

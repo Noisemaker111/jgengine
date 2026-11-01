@@ -27,7 +27,7 @@ const kindLabels: Record<string, string> = {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "shake" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#26401a", tipColor: "#7fb04a", seed: "shake" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colour: { baseColor: "#26401a", tipColor: "#7fb04a" }, seed: "shake" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -119,6 +119,16 @@ export const cameraShakeDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: CameraShakeUI,
-  environment: () => <ShakeStage />,
-  camera: { initialDistance: 12, initialHeight: 6, minDistance: 6, maxDistance: 30, targetHeight: 1, maxPolarAngle: 1.3, shake: { maxOffset: 0.8, maxRoll: 0.24, decayPerSecond: 0, frequency: 12 } },
+  scene: { environment: () => <ShakeStage /> },
+  camera: {
+    orbit: {
+      initialDistance: 12,
+      initialHeight: 6,
+      minDistance: 6,
+      maxDistance: 30,
+      targetHeight: 1,
+      maxPolarAngle: 1.3,
+    },
+    shake: { maxOffset: 0.8, maxRoll: 0.24, decayPerSecond: 0, frequency: 12 },
+  },
 };

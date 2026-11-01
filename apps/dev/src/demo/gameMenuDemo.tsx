@@ -19,7 +19,7 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3.2, frequency: 0.028, seed: "game-menu" }),
-  vegetation: grass({ area: { w: 72, d: 72 }, baseColor: "#1d3a2a", tipColor: "#7fae45", seed: "game-menu" }),
+  vegetation: grass({ area: { w: 72, d: 72 }, colour: { baseColor: "#1d3a2a", tipColor: "#7fae45" }, seed: "game-menu" }),
 });
 
 const game = defineGameDefinition({
@@ -477,10 +477,21 @@ export const gameMenuDemoGame: PlayableGame = {
   content: { entityById: () => null, objectById: () => null },
   loop: { onInit, onNewPlayer: () => {}, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: GameMenuDemoUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  WorldOverlay: () => <SceneCaptureBinding bind={(capture) => { captureRef.current = capture; }} />,
-  camera: { initialDistance: 30, initialHeight: 22, minDistance: 14, maxDistance: 60, targetHeight: 0, maxPolarAngle: 1.32 },
-  settings: { variant: "panel" },
+  scene: {
+    environment: () => <EnvironmentScene feature={terrainFeature} />,
+    WorldOverlay: () => <SceneCaptureBinding bind={(capture) => { captureRef.current = capture; }} />,
+  },
+  camera: {
+    orbit: {
+      initialDistance: 30,
+      initialHeight: 22,
+      minDistance: 14,
+      maxDistance: 60,
+      targetHeight: 0,
+      maxPolarAngle: 1.32,
+    },
+  },
+  chrome: { settings: { variant: "panel" } },
   capture: {
     states: {
       title: [{ name: "menu.seedSave" }],

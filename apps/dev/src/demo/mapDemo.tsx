@@ -41,7 +41,7 @@ const FOG_CELL = 6;
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 120, d: 120 }, height: 5, frequency: 0.03, seed: "extraction", waterLevel: -2 }),
-  vegetation: grass({ area: { w: 100, d: 100 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "extraction" }),
+  vegetation: grass({ area: { w: 100, d: 100 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "extraction" }),
 });
 
 const objectPingCategory: Record<string, PingCategory> = {
@@ -368,15 +368,19 @@ export const mapDemoGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: MapUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  WorldOverlay: () => <MapMarkerBeacons markers={markerSet} />,
-  pointer: { pingCommand: "map.ping" },
+  scene: {
+    environment: () => <EnvironmentScene feature={terrainFeature} />,
+    WorldOverlay: () => <MapMarkerBeacons markers={markerSet} />,
+  },
+  controls: { pointer: { pingCommand: "map.ping" } },
   camera: {
-    initialDistance: 40,
-    initialHeight: 34,
-    minDistance: 16,
-    maxDistance: 80,
-    targetHeight: 0,
-    maxPolarAngle: 1.35,
+    orbit: {
+      initialDistance: 40,
+      initialHeight: 34,
+      minDistance: 16,
+      maxDistance: 80,
+      targetHeight: 0,
+      maxPolarAngle: 1.35,
+    },
   },
 };

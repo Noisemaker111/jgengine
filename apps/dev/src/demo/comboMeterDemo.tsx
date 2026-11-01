@@ -32,7 +32,7 @@ const combo = createComboMeter({ windowMs: 120_000, tiers: TIERS, count: 18 });
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "combo" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#1e2a3a", tipColor: "#3a6ea5", seed: "combo" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colour: { baseColor: "#1e2a3a", tipColor: "#3a6ea5" }, seed: "combo" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -107,6 +107,15 @@ export const comboMeterDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: ComboMeterUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 26, initialHeight: 20, minDistance: 12, maxDistance: 52, targetHeight: 0, maxPolarAngle: 1.3 },
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
+  camera: {
+    orbit: {
+      initialDistance: 26,
+      initialHeight: 20,
+      minDistance: 12,
+      maxDistance: 52,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

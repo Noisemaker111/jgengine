@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import type { GrassLook } from "@jgengine/core/grass/grassKind";
+import type { GrassBlade, GrassLook } from "@jgengine/core/grass/grassKind";
 import type { GrassWindLook } from "./grassWind";
 
 /** Uniforms the grass shader reads; the stream rewrites the `uLod` row per camera. */
@@ -193,7 +193,7 @@ reflectedLight.directDiffuse += vec3(0.34, 0.28, 0.12) * jgTipMask * jgLit * uLi
  * Write a look's wind numbers into the material's wind uniforms (each frame, for a patch in a shared wind).
  * @internal
  */
-export function setGrassWindUniforms(uniforms: Pick<GrassShaderUniforms, "uWind" | "uWindDirection">, look: GrassWindLook & Pick<GrassLook, "stiffness">): void {
+export function setGrassWindUniforms(uniforms: Pick<GrassShaderUniforms, "uWind" | "uWindDirection">, look: GrassWindLook & Pick<GrassBlade, "stiffness">): void {
   const heading = (look.windDirection * Math.PI) / 180;
   const softness = 1.25 - look.stiffness;
   uniforms.uWind.value.set(look.windStrength * 0.6 * softness, look.windSpeed, 0.04 + (1 - look.windGust) * 0.02 + look.windGust * 0.5, look.windStrength * 0.18 * softness);
@@ -202,31 +202,31 @@ export function setGrassWindUniforms(uniforms: Pick<GrassShaderUniforms, "uWind"
 
 /** Build the one grass material for a look; `groundColor` is the terrain the roots blend into. */
 export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRepresentation): GrassMaterialHandle {
-  const base = new THREE.Color(look.baseColor);
-  const heading = (look.windDirection * Math.PI) / 180;
-  const stripeHeading = (look.stripeAngle * Math.PI) / 180;
-  const softness = 1.25 - look.stiffness;
-  const strength = look.windStrength * 0.6 * softness;
-  const flutter = look.windStrength * 0.18 * softness;
+  const base = new THREE.Color(look.colour.baseColor);
+  const heading = (look.wind.windDirection * Math.PI) / 180;
+  const stripeHeading = (look.mowing.stripeAngle * Math.PI) / 180;
+  const softness = 1.25 - look.blade.stiffness;
+  const strength = look.wind.windStrength * 0.6 * softness;
+  const flutter = look.wind.windStrength * 0.18 * softness;
   const uniforms: GrassShaderUniforms = {
     uTime: { value: 0 },
     uLod: { value: new THREE.Vector4(1e6, 1, 1e6, 1) },
-    uWind: { value: new THREE.Vector4(strength, look.windSpeed, 0.04 + (1 - look.windGust) * 0.02 + look.windGust * 0.5, flutter) },
+    uWind: { value: new THREE.Vector4(strength, look.wind.windSpeed, 0.04 + (1 - look.wind.windGust) * 0.02 + look.wind.windGust * 0.5, flutter) },
     uWindDirection: { value: new THREE.Vector2(Math.cos(heading), Math.sin(heading)) },
-    uShape: { value: new THREE.Vector4(look.profile, look.normalLift, 0, 0) },
-    uFlower: { value: look.flowerSize },
+    uShape: { value: new THREE.Vector4(look.blade.profile, look.lighting.normalLift, 0, 0) },
+    uFlower: { value: look.flowers.flowerSize },
     uBaseColor: { value: base },
-    uTipColor: { value: new THREE.Color(look.tipColor) },
-    uMixColor: { value: new THREE.Color(look.mixColor) },
-    uFlowerColor: { value: new THREE.Color(look.flowerColor) },
-    uFlowerColor2: { value: new THREE.Color(look.flowerColor2) },
+    uTipColor: { value: new THREE.Color(look.colour.tipColor) },
+    uMixColor: { value: new THREE.Color(look.species.mixColor) },
+    uFlowerColor: { value: new THREE.Color(look.flowers.flowerColor) },
+    uFlowerColor2: { value: new THREE.Color(look.flowers.flowerColor2) },
     uGroundColor: { value: groundColor === undefined ? base.clone().multiplyScalar(0.8) : new THREE.Color(groundColor) },
-    uTone: { value: new THREE.Vector4(look.gradient, look.season, look.dryness, look.seasonNoise) },
-    uNoise: { value: new THREE.Vector2(look.hueNoise, look.valueNoise) },
-    uLight: { value: new THREE.Vector2(look.translucency, 0) },
-    uStripe: { value: new THREE.Vector4(look.stripeWidth, look.stripeContrast, Math.cos(stripeHeading), Math.sin(stripeHeading)) },
+    uTone: { value: new THREE.Vector4(look.colour.gradient, look.season.season, look.season.dryness, look.season.seasonNoise) },
+    uNoise: { value: new THREE.Vector2(look.colour.hueNoise, look.colour.valueNoise) },
+    uLight: { value: new THREE.Vector2(look.lighting.translucency, 0) },
+    uStripe: { value: new THREE.Vector4(look.mowing.stripeWidth, look.mowing.stripeContrast, Math.cos(stripeHeading), Math.sin(stripeHeading)) },
   };
-  const material = new THREE.MeshStandardMaterial({ color: "#ffffff", side: THREE.DoubleSide, roughness: look.roughness, metalness: 0 });
+  const material = new THREE.MeshStandardMaterial({ color: "#ffffff", side: THREE.DoubleSide, roughness: look.lighting.roughness, metalness: 0 });
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader

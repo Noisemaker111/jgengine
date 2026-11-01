@@ -45,7 +45,7 @@ const CRATES: readonly [number, number, number][] = [
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 90, d: 90 }, height: 3, frequency: 0.03, seed: "pings" }),
-  vegetation: grass({ area: { w: 76, d: 76 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "pings" }),
+  vegetation: grass({ area: { w: 76, d: 76 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "pings" }),
 });
 
 const markerSet: MarkerSet = createMarkerSet();
@@ -152,15 +152,19 @@ export const worldPingDemoGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: PingUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  WorldOverlay: () => <WorldPings markers={markerSet} />,
-  pointer: { pingCommand: "map.ping" },
+  scene: {
+    environment: () => <EnvironmentScene feature={terrainFeature} />,
+    WorldOverlay: () => <WorldPings markers={markerSet} />,
+  },
+  controls: { pointer: { pingCommand: "map.ping" } },
   camera: {
-    initialDistance: 34,
-    initialHeight: 26,
-    minDistance: 12,
-    maxDistance: 70,
-    targetHeight: 0,
-    maxPolarAngle: 1.3,
+    orbit: {
+      initialDistance: 34,
+      initialHeight: 26,
+      minDistance: 12,
+      maxDistance: 70,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
   },
 };

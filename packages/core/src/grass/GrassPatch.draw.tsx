@@ -12,7 +12,7 @@ import { GRASS_COVER_MAX_SEGMENTS } from "./grassCoverGeometry.draw";
 import { grassStripeAt } from "./grassField";
 import { grassFieldColors, resolveGrassBake, type GrassExclusion } from "./grassBake.draw";
 import { createGrassMaterial, setGrassWindUniforms } from "./grassMaterial.draw";
-import { grassWindAt, grassWindLook, type GrassWind } from "./grassWind";
+import { grassWindAt, grassWindLook, type GrassWindSource } from "./grassWind";
 import { GrassStream } from "./grassStream.draw";
 
 /** Milliseconds of tuft baking one frame may spend once the patch has filled the view. */
@@ -26,7 +26,7 @@ const FILL_SLICE_MS = 8;
 
 /** The mat floats a little above the ground against z-fighting, but always under the blades, so a putting green's 1 cm blades stay visible. */
 function grassCoverLift(look: GrassLook): number {
-  return Math.min(0.035, Math.max(0.008, look.bladeHeight * 0.25));
+  return Math.min(0.035, Math.max(0.008, look.blade.bladeHeight * 0.25));
 }
 
 /** Props for {@link GrassPatch}. */
@@ -52,7 +52,7 @@ export interface GrassPatchProps extends Omit<ThreeElements["group"], "children"
   receiveShadow?: boolean;
   frustumCulled?: boolean;
   /** A shared wind the blades read each frame; omit to sway with the look's own wind numbers. */
-  wind?: GrassWind | undefined;
+  wind?: GrassWindSource | undefined;
 }
 
 /**
@@ -85,7 +85,7 @@ export function GrassPatch({
   );
   // Under a shared wind the sway can reach a full bend, so bounds are sized for it.
   const windy = wind !== undefined;
-  const handle = useMemo(() => createGrassMaterial(windy ? { ...look, windStrength: Math.max(1, look.windStrength) } : look, groundColor), [look, groundColor, windy]);
+  const handle = useMemo(() => createGrassMaterial(windy ? { ...look, wind: { ...look.wind, windStrength: Math.max(1, look.wind.windStrength) } } : look, groundColor), [look, groundColor, windy]);
   const origin = useRef<Group>(null);
   const world = useMemo(() => new Vector3(), []);
   const stream = useMemo(() => new GrassStream(bake, handle, { castShadow, receiveShadow, frustumCulled }), [bake, handle, castShadow, receiveShadow, frustumCulled]);
@@ -99,7 +99,7 @@ export function GrassPatch({
     handle.uniforms.uTime.value = state.clock.elapsedTime;
     if (wind !== undefined) {
       origin.current?.getWorldPosition(world);
-      setGrassWindUniforms(handle.uniforms, { ...grassWindLook(look, grassWindAt(wind, world.x, world.z, state.clock.elapsedTime), wind.response ?? 1), stiffness: look.stiffness });
+      setGrassWindUniforms(handle.uniforms, { ...grassWindLook(look.wind, grassWindAt(wind, world.x, world.z, state.clock.elapsedTime), wind.response ?? 1), stiffness: look.blade.stiffness });
     }
     stream.update(state.camera, state.size.height, filling.current ? FILL_SLICE_MS : BAKE_SLICE_MS);
     if (filling.current && stream.stats().pending === 0) filling.current = false;
@@ -108,24 +108,24 @@ export function GrassPatch({
   const colors = useMemo(() => grassFieldColors(look), [look]);
   const coverArea = useMemo(() => [size.width, size.depth] as const, [size.width, size.depth]);
   const coverSeed = seedToUint32(bake.seed) % 100000;
-  const striped = look.stripeWidth > 0 && look.stripeContrast > 0;
+  const striped = look.mowing.stripeWidth > 0 && look.mowing.stripeContrast > 0;
   const stripeAt = useMemo(
-    () => (striped ? (x: number, z: number) => grassStripeAt(look, x, z) * look.stripeContrast : undefined),
+    () => (striped ? (x: number, z: number) => grassStripeAt(look, x, z) * look.mowing.stripeContrast : undefined),
     [striped, look],
   );
   // A striped mat needs a few cells per stripe, or the bands alias into blotches.
   const coverSegments = striped
-    ? Math.min(GRASS_COVER_MAX_SEGMENTS, Math.max(Math.round(Math.max(size.width, size.depth) / 2), Math.ceil((Math.max(size.width, size.depth) * 8) / look.stripeWidth)))
+    ? Math.min(GRASS_COVER_MAX_SEGMENTS, Math.max(Math.round(Math.max(size.width, size.depth) / 2), Math.ceil((Math.max(size.width, size.depth) * 8) / look.mowing.stripeWidth)))
     : undefined;
   return (
     <group ref={origin} {...groupProps}>
-      {look.groundCover > 0 ? (
+      {look.growth.groundCover > 0 ? (
         <GrassCover
           area={coverArea}
           seed={coverSeed}
           colorBase={colors.base}
           colorTip={colors.tip}
-          strength={look.groundCover}
+          strength={look.growth.groundCover}
           edgeFeather={bake.edgeFeather}
           heightAt={bake.heightAt}
           coverageAt={bake.turfAt}

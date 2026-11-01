@@ -68,28 +68,17 @@ const MIN_TURN_RATE = 0.6;
  * into an ice rink.
  */
 export const BASE_HANDLING: VehicleSpec = {
-  bodyRoll: 0.4,
-  abs: 1,
-  tractionControl: 0.5775,
-  stability: 1,
-  selfAlign: 0.6875,
-  steerRate: 4.4,
-  topSpeed: 6.5,
-  accel: 9,
-  brake: 9 * BRAKE_ACCEL_FACTOR,
-  reverseSpeed: 6.5 * REVERSE_SPEED_FRACTION,
-  turnRate: 1.7,
-  turnSpeed: 6,
-  grip: 2,
-  gripCurve: DEFAULT_GRIP_CURVE,
-  drift: 0.35,
-  // Handbrake drills the kart around loose debris: the tire lets go, the yaw still answers steer.
-  handbrakeGrip: 0.45,
-  coast: 3.5,
-  weight: 220,
-  wheelbase: 1.9,
-  trackWidth: 1.35,
-  comHeight: 0.45,
+  chassis: { bodyRoll: 0.4, weight: 220, wheelbase: 1.9, trackWidth: 1.35, comHeight: 0.45 },
+  brakes: {
+    abs: 1,
+    brake: 9 * BRAKE_ACCEL_FACTOR,
+    // Handbrake drills the kart around loose debris: the tire lets go, the yaw still answers steer.
+    handbrakeGrip: 0.45,
+  },
+  aids: { tractionControl: 0.5775, stability: 1 },
+  steering: { selfAlign: 0.6875, steerRate: 4.4, turnRate: 1.7, turnSpeed: 6 },
+  engine: { topSpeed: 6.5, accel: 9, reverseSpeed: 6.5 * REVERSE_SPEED_FRACTION, coast: 3.5 },
+  tires: { grip: 2, gripCurve: DEFAULT_GRIP_CURVE, drift: 0.35 },
   hop: { speed: STUB_HOP_SPEED, gravity: HOP_GRAVITY },
 };
 
@@ -98,15 +87,13 @@ export const BASE_HANDLING: VehicleSpec = {
  * stripped-down kart to something drivable rather than a trolley.
  */
 function finalizeHandling(composed: VehicleSpec): VehicleSpec {
-  const topSpeed = Math.max(MIN_TOP_SPEED, composed.topSpeed);
-  const accel = Math.max(MIN_ACCEL, composed.accel);
+  const topSpeed = Math.max(MIN_TOP_SPEED, composed.engine.topSpeed);
+  const accel = Math.max(MIN_ACCEL, composed.engine.accel);
   return {
     ...composed,
-    topSpeed,
-    accel,
-    turnRate: Math.max(MIN_TURN_RATE, composed.turnRate),
-    brake: accel * BRAKE_ACCEL_FACTOR,
-    reverseSpeed: topSpeed * REVERSE_SPEED_FRACTION,
+    engine: { ...composed.engine, topSpeed, accel, reverseSpeed: topSpeed * REVERSE_SPEED_FRACTION },
+    steering: { ...composed.steering, turnRate: Math.max(MIN_TURN_RATE, composed.steering.turnRate) },
+    brakes: { ...composed.brakes, brake: accel * BRAKE_ACCEL_FACTOR },
   };
 }
 
@@ -127,9 +114,9 @@ export function tuningFrom(parts: readonly DriftFoundryPartDef[], damage?: Vehic
     { plow: 0, jumpPower: 0, armor: 0 },
   );
   return {
-    topSpeed: handling.topSpeed,
-    accel: handling.accel,
-    turnRate: handling.turnRate,
+    topSpeed: handling.engine.topSpeed,
+    accel: handling.engine.accel,
+    turnRate: handling.steering.turnRate,
     jumpPower: Math.max(0, grants.jumpPower),
     hasPlow: grants.plow > 0,
     armorCharges: Math.max(0, Math.round(grants.armor)),

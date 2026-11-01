@@ -269,7 +269,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
   const structures = (feature.structures ?? []).map((entry) => summarizeStructures(entry, feature.roads ?? []));
   const vegetation: VegetationSummary[] = (feature.vegetation ?? []).map((entry) => ({
     area: entry.area,
-    density: entry.look.density,
+    density: entry.look.blade.density,
   }));
   const water: WaterSummary[] = (feature.water ?? []).map((entry) => ({
     level: entry.level,

@@ -55,7 +55,7 @@ export const systems = [
       // First person looks out of the survivor's own body, so the arms and the tool in hand stay in view.
       commands.define("view", {
         apply(state) {
-          state.camera.setRig(state.camera.rig()?.kind === "first" ? null : "first", { firstPerson: { body: true, viewmodel: false } });
+          state.camera.setRig(state.camera.rig()?.kind === "first" ? null : "first", { rigs: { firstPerson: { body: true, viewmodel: false } } });
           return state;
         },
       });

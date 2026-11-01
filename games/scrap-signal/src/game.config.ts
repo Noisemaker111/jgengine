@@ -234,10 +234,21 @@ export const game = defineGame({
   // Borderlands' opening: no gun, no cash, nothing unlocked. Bolt and the crash chest hand out the rest.
   newGame: { state: { cash: {}, kit: [], unlocked: [], pieces: [], running: [] } },
   assets,
-  audio,
-  objectSounds,
+  audio: { ...audio, objectSounds },
   world,
-  editorLayers: sceneDoc,
+  scene: {
+    editorLayers: sceneDoc,
+    entityModels,
+    objectModels,
+    WorldOverlay: FerralonWorldOverlay,
+    // Bars are a screen-space overlay, so without `occlude` an enemy behind a shack still shows its
+  // health through the wall.
+    worldHealthBars: { roles: ["enemy"], occlude: true },
+    // Direct-fire guns want the muzzle→impact tracer; grenades/launchers are ballistic and
+  // skip it automatically (they arc, so a straight line would be a fake beam).
+    presentationEffects: { tracers: true },
+    worldItem: { rarityStyle, pickupRadius: 2.8 },
+  },
   scenePlacement: false,
   scenePathKinds: [],
   physics,
@@ -260,8 +271,28 @@ export const game = defineGame({
     "relay.overclock": ["KeyV"],
     "rift.callWave": ["KeyN"],
   },
-  // The context-specific relay button lives beside its stakes and progress.
-  touch: { hidden: ["relay.overclock", "rift.callWave"] },
+  controls: {
+    // The context-specific relay button lives beside its stakes and progress.
+    touch: { hidden: ["relay.overclock", "rift.callWave"] },
+    prompts,
+    hotbarSelection: () => session.selectedSlot(),
+    movement: {
+      collideObjects: true,
+      beforeCommit: (frame) => {
+        const currentGround = terrainField.sampleHeight(frame.current[0], frame.current[2]);
+        const tooSteep = (x: number, z: number) => {
+          const distance = Math.hypot(x - frame.current[0], z - frame.current[2]);
+          if (distance < 0.0001) return false;
+          return (terrainField.sampleHeight(x, z) - currentGround) / distance > CLIMB_SLOPE_LIMIT;
+        };
+        if (!tooSteep(frame.next[0], frame.next[2])) return undefined;
+        if (!tooSteep(frame.next[0], frame.current[2])) return [frame.next[0], frame.next[1], frame.current[2]];
+        if (!tooSteep(frame.current[0], frame.next[2])) return [frame.current[0], frame.next[1], frame.next[2]];
+        return [frame.current[0], frame.next[1], frame.current[2]];
+      },
+    },
+    orientation: "landscape",
+  },
   server: { mode: "campaign" },
   save: "none",
   persist: true,
@@ -270,98 +301,74 @@ export const game = defineGame({
   systems: [crashSite],
   GameUI,
   hudTheme: scrapTheme,
-  entityModels,
-  objectModels,
-  WorldOverlay: FerralonWorldOverlay,
-  // Bars are a screen-space overlay, so without `occlude` an enemy behind a shack still shows its
-  // health through the wall.
-  worldHealthBars: { roles: ["enemy"], occlude: true },
-  // Direct-fire guns want the muzzle→impact tracer; grenades/launchers are ballistic and
-  // skip it automatically (they arc, so a straight line would be a fake beam).
-  presentationEffects: { tracers: true },
-  worldItem: { rarityStyle, pickupRadius: 2.8 },
-  prompts,
-  hotbarSelection: () => session.selectedSlot(),
-  // No `backdrop.fog`: the world's sky owns the single fog config, so the two cannot drift apart.
+  rendering: {
+    // No `backdrop.fog`: the world's sky owns the single fog config, so the two cannot drift apart.
   // Fill was bright enough to erase the shadow side of everything, which is why silhouettes looked
   // pasted onto the ground. Sun up, ambient/hemisphere down, and a cool bounce from the sky so
   // shadowed metal goes blue-grey instead of muddy brown.
-  lighting: {
-    // Warm grey, not cool: the hemisphere already supplies the cold sky bounce that keeps machines
-    // blue in shade, and stacking a second cool fill on top of it turned every shadowed hillside
-    // olive-green in a world whose whole rule is that the ground stays warm.
-    ambient: { color: "#b3a693", intensity: 0.2 },
-    // Sky bounce desaturated from #7fa9c8: a saturated cyan fill times warm tan albedo lands on
-    // olive — the whole desert's shadow side was reading green. A greyer blue keeps machines cool
-    // in shade without repainting the ground.
-    hemisphere: { skyColor: "#9aa8b8", groundColor: "#6b4a30", intensity: 0.4 },
-    // Mid-afternoon, not noon. The old key was almost overhead, so nothing cast a shadow long
-    // enough to describe its own shape and every object read as a sticker on flat sand.
-    // 2.5, not 2.6: the terrain's dirt grain multiplies albedo up to ~1.5x where the map is bright,
-    // so sunlit sand was arriving at the tone-mapper above 1.0 and clipping to white on the sun side.
-    directional: [
-      {
-        color: "#ffe0b0",
-        // 2.35, not 2.5: at 2.5 the sun-side dune faces still summed past 1.0 with the dirt-grain
-        // albedo boost and clipped to one white field across the whole right of frame.
-        intensity: 2.35,
-        position: [64, 46, -52],
-        castShadow: true,
-        // The playfield sits over a kilometre from the origin — only camera-following
-        // cascades put these long afternoon shadows where the player actually is.
-        cascades: 3,
-        shadowMaxFar: 240,
-        shadowMapSize: 2048,
-      },
-      { color: "#6d90b4", intensity: 0.5, position: [-40, 26, 30] },
-    ],
-  },
-  // GTAO was dropped here after perf profiling: it re-renders the whole scene
+    lighting: {
+      // Warm grey, not cool: the hemisphere already supplies the cold sky bounce that keeps machines
+      // blue in shade, and stacking a second cool fill on top of it turned every shadowed hillside
+      // olive-green in a world whose whole rule is that the ground stays warm.
+      ambient: { color: "#b3a693", intensity: 0.2 },
+      // Sky bounce desaturated from #7fa9c8: a saturated cyan fill times warm tan albedo lands on
+      // olive — the whole desert's shadow side was reading green. A greyer blue keeps machines cool
+      // in shade without repainting the ground.
+      hemisphere: { skyColor: "#9aa8b8", groundColor: "#6b4a30", intensity: 0.4 },
+      // Mid-afternoon, not noon. The old key was almost overhead, so nothing cast a shadow long
+      // enough to describe its own shape and every object read as a sticker on flat sand.
+      // 2.5, not 2.6: the terrain's dirt grain multiplies albedo up to ~1.5x where the map is bright,
+      // so sunlit sand was arriving at the tone-mapper above 1.0 and clipping to white on the sun side.
+      directional: [
+        {
+          color: "#ffe0b0",
+          // 2.35, not 2.5: at 2.5 the sun-side dune faces still summed past 1.0 with the dirt-grain
+          // albedo boost and clipped to one white field across the whole right of frame.
+          intensity: 2.35,
+          position: [64, 46, -52],
+          castShadow: true,
+          // The playfield sits over a kilometre from the origin — only camera-following
+          // cascades put these long afternoon shadows where the player actually is.
+          cascades: 3,
+          shadowMaxFar: 240,
+          shadowMapSize: 2048,
+        },
+        { color: "#6d90b4", intensity: 0.5, position: [-40, 26, 30] },
+      ],
+    },
+    // GTAO was dropped here after perf profiling: it re-renders the whole scene
   // for depth/normals and doubled the frame's draw calls/triangles for a subtle
   // contact-shadow gain this bright, fogged desert barely shows.
-  postProcessing: {
-    toneMapping: "aces",
-    // The whole exposure chain rides on this rather than on the key light, so the sun/shade ratio
-    // that makes the afternoon dramatic survives while the sun-facing sand stops clipping to paper.
-    exposure: 0.8,
-    // Bloom runs on the raw HDR *before* exposure, so a threshold under 1.0 was picking up lit sand
-    // and smearing a white veil over the sun side of every frame. Above 1.0 only emissives — optics,
-    // hazard trim, element cells, muzzle flash — cross it, which is the glow that was wanted.
-    bloom: { strength: 0.3, radius: 0.62, threshold: 1.1 },
-    // Cool lift + warm gain splits shadow and highlight so the flats stop sitting in one mid-tone
-    // band. Saturation carries the warmth rather than a red-heavy gain: ACES desaturates hard as it
-    // approaches white, so a gain that pushes red is the channel that clips first.
-    // Saturation eased off 1.3: that boost was amplifying every residual hue error — olive shadow
-    // sides, cyan haze — faster than it warmed the sand.
-    grade: {
-      vignette: 0.32,
-      saturation: 1.15,
-      gamma: 0.93,
-      lift: [0.002, 0.008, 0.024],
-      gain: [1.02, 1.0, 0.96],
-    },
-  },
-  movement: {
-    collideObjects: true,
-    beforeCommit: (frame) => {
-      const currentGround = terrainField.sampleHeight(frame.current[0], frame.current[2]);
-      const tooSteep = (x: number, z: number) => {
-        const distance = Math.hypot(x - frame.current[0], z - frame.current[2]);
-        if (distance < 0.0001) return false;
-        return (terrainField.sampleHeight(x, z) - currentGround) / distance > CLIMB_SLOPE_LIMIT;
-      };
-      if (!tooSteep(frame.next[0], frame.next[2])) return undefined;
-      if (!tooSteep(frame.next[0], frame.current[2])) return [frame.next[0], frame.next[1], frame.current[2]];
-      if (!tooSteep(frame.current[0], frame.next[2])) return [frame.current[0], frame.next[1], frame.next[2]];
-      return [frame.current[0], frame.next[1], frame.current[2]];
+    postProcessing: {
+      toneMapping: "aces",
+      // The whole exposure chain rides on this rather than on the key light, so the sun/shade ratio
+      // that makes the afternoon dramatic survives while the sun-facing sand stops clipping to paper.
+      exposure: 0.8,
+      // Bloom runs on the raw HDR *before* exposure, so a threshold under 1.0 was picking up lit sand
+      // and smearing a white veil over the sun side of every frame. Above 1.0 only emissives — optics,
+      // hazard trim, element cells, muzzle flash — cross it, which is the glow that was wanted.
+      bloom: { strength: 0.3, radius: 0.62, threshold: 1.1 },
+      // Cool lift + warm gain splits shadow and highlight so the flats stop sitting in one mid-tone
+      // band. Saturation carries the warmth rather than a red-heavy gain: ACES desaturates hard as it
+      // approaches white, so a gain that pushes red is the channel that clips first.
+      // Saturation eased off 1.3: that boost was amplifying every residual hue error — olive shadow
+      // sides, cyan haze — faster than it warmed the sand.
+      grade: {
+        vignette: 0.32,
+        saturation: 1.15,
+        gamma: 0.93,
+        lift: [0.002, 0.008, 0.024],
+        gain: [1.02, 1.0, 0.96],
+      },
     },
   },
   camera: {
     perspective: "first",
-    firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
-    frustum: { far: 4200 },
+    rigs: {
+      firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
+    },
+    lens: { frustum: { far: 4200 } },
   },
-  orientation: "landscape",
 });
 
 

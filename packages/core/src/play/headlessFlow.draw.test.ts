@@ -9,7 +9,7 @@ import { runFlowHeadless } from "./headlessFlow.draw";
 function fixture(initialYaw?: number) {
   return defineGame({
     name: "Flow Fixture",
-    ...(initialYaw === undefined ? {} : { camera: { perspective: "third", initialYaw } }),
+    ...(initialYaw === undefined ? {} : { camera: { perspective: "third", orbit: { initialYaw } } }),
     world: environment({ terrain: terrain() }),
     input: { moveForward: ["KeyW"], fire: ["mouse0"], interact: ["KeyE"] },
     content: {

@@ -50,7 +50,7 @@ describe("createVehicleBackendLink", () => {
     let hitSeen = false;
     for (let i = 0; i < 360; i += 1) {
       const step = sim.tick(DT, axis({ throttle: 1 }));
-      link.sync(step);
+      link.sync(step.motion);
       backend.step(DT);
       if (link.lastHit() !== null) hitSeen = true;
     }
@@ -69,7 +69,7 @@ describe("createVehicleBackendLink", () => {
     let xAtContact = Number.NaN;
     for (let i = 0; i < 300; i += 1) {
       const step = sim.tick(DT, axis({ throttle: 0.6 }));
-      link.sync(step);
+      link.sync(step.motion);
       backend.step(DT);
       if (Number.isNaN(xAtContact) && link.lastHit() !== null) xAtContact = sim.pose().position[0];
     }
@@ -85,7 +85,7 @@ describe("createVehicleBackendLink", () => {
     const sim = createVehicleDynamics(car, { clampMove: link.clampMove });
     for (let i = 0; i < 240; i += 1) {
       const step = sim.tick(DT, axis({ throttle: 1 }));
-      link.sync(step);
+      link.sync(step.motion);
       backend.step(DT);
     }
     expect(backend.body(crate)!.position[2]).toBeGreaterThan(16);

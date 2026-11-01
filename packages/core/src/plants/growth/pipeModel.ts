@@ -18,7 +18,7 @@ export function hasCambium(species: PlantSpecies): boolean {
  * @internal
  */
 export function canWiden(state: GrowthState, species: PlantSpecies, cambium: boolean, i: number): boolean {
-  return cambium || state.year - (state.born[i] ?? 0) <= species.growth.spurYears + 1;
+  return cambium || state.vitals.year - (state.nodes.born[i] ?? 0) <= species.growth.spurYears + 1;
 }
 
 /**
@@ -43,14 +43,14 @@ export function pipeDemand(
 ): number {
   const { sapwoodPerFoliage, sapwoodTurnover, pipeExponent } = species.carbon;
   const woodKgPerM3 = species.wood.densityKgM3 * (1 + species.carbon.coarseRootShare);
-  const { flags, sapArea, heartArea, length, parent, foliage } = state;
+  const { flags, sapArea, heartArea, length, parent, foliage } = state.nodes;
   const cambium = hasCambium(species);
   const toChild = pipeExponent / 2;
   const toParent = 2 / pipeExponent;
   let carbon = 0;
   let pressler = 0;
-  if (gather) foliageAbove.fill(0, 0, state.nodeCount);
-  for (let i = state.nodeCount - 1; i >= 0; i -= 1) {
+  if (gather) foliageAbove.fill(0, 0, state.slots.nodeCount);
+  for (let i = state.slots.nodeCount - 1; i >= 0; i -= 1) {
     need[i] = 0;
     const dead = ((flags[i] ?? 0) & NODE_DEAD) !== 0;
     if (gather) {
@@ -99,16 +99,16 @@ export function pipeDemand(
 export function thickenNode(state: GrowthState, species: PlantSpecies, i: number, foliageAbove: number, area: number): void {
   if (!canWiden(state, species, hasCambium(species), i)) return;
   const { sapwoodPerFoliage, sapwoodTurnover } = species.carbon;
-  const sap = state.sapArea[i] ?? 0;
-  let heart = (state.heartArea[i] ?? 0) + sap * sapwoodTurnover;
+  const sap = state.nodes.sapArea[i] ?? 0;
+  let heart = (state.nodes.heartArea[i] ?? 0) + sap * sapwoodTurnover;
   let next = sap * (1 - sapwoodTurnover);
   const required = sapwoodPerFoliage * foliageAbove;
   if (next > required) {
     heart += next - required;
     next = required;
   }
-  state.sapArea[i] = next + area;
-  state.heartArea[i] = heart;
+  state.nodes.sapArea[i] = next + area;
+  state.nodes.heartArea[i] = heart;
 }
 
 /**
@@ -116,8 +116,8 @@ export function thickenNode(state: GrowthState, species: PlantSpecies, i: number
  * @internal
  */
 export function applyThickening(state: GrowthState, species: PlantSpecies, foliageAbove: Float64Array, need: Float64Array, share: number): void {
-  for (let i = 0; i < state.nodeCount; i += 1) {
-    if (((state.flags[i] ?? 0) & NODE_DEAD) !== 0) continue;
+  for (let i = 0; i < state.slots.nodeCount; i += 1) {
+    if (((state.nodes.flags[i] ?? 0) & NODE_DEAD) !== 0) continue;
     thickenNode(state, species, i, foliageAbove[i] ?? 0, (need[i] ?? 0) * share);
   }
 }
@@ -176,21 +176,21 @@ class PipeCostWalk implements PipeCost {
 
   prepare(state: GrowthState, foliageAbove: Float64Array, nodes: Int32Array, count: number): void {
     const { slot, spare, linearWood, parent, shortfall, woodPerArea, sapwoodPerFoliage, sapwoodTurnover, woodKgPerM3 } = this;
-    slot.fill(-1, 0, state.nodeCount);
+    slot.fill(-1, 0, state.slots.nodeCount);
     for (let k = 0; k < count; k += 1) {
-      for (let i = nodes[k] ?? -1; i >= 0 && (slot[i] ?? 0) < 0; i = state.parent[i] ?? -1) slot[i] = 0;
+      for (let i = nodes[k] ?? -1; i >= 0 && (slot[i] ?? 0) < 0; i = state.nodes.parent[i] ?? -1) slot[i] = 0;
     }
     let n = 0;
     let base = 0;
-    for (let i = 0; i < state.nodeCount; i += 1) {
-      const dead = ((state.flags[i] ?? 0) & NODE_DEAD) !== 0 || !canWiden(state, this.species, this.cambium, i);
-      const need = dead ? Number.NEGATIVE_INFINITY : sapwoodPerFoliage * (foliageAbove[i] ?? 0) - (state.sapArea[i] ?? 0) * (1 - sapwoodTurnover);
-      const wood = dead ? 0 : (state.length[i] ?? 0) * woodKgPerM3;
+    for (let i = 0; i < state.slots.nodeCount; i += 1) {
+      const dead = ((state.nodes.flags[i] ?? 0) & NODE_DEAD) !== 0 || !canWiden(state, this.species, this.cambium, i);
+      const need = dead ? Number.NEGATIVE_INFINITY : sapwoodPerFoliage * (foliageAbove[i] ?? 0) - (state.nodes.sapArea[i] ?? 0) * (1 - sapwoodTurnover);
+      const wood = dead ? 0 : (state.nodes.length[i] ?? 0) * woodKgPerM3;
       if ((slot[i] ?? -1) < 0) {
         if (need > 0) base += need * wood;
         continue;
       }
-      const p = state.parent[i] ?? -1;
+      const p = state.nodes.parent[i] ?? -1;
       const above = p >= 0 ? (spare[p] ?? -1) : -1;
       const carried = p >= 0 ? (linearWood[p] ?? 0) : 0;
       if (need >= 0) {

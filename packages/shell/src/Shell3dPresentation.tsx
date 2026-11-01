@@ -164,11 +164,11 @@ function PixelPerfectCamera({ pixelsPerUnit, integerScale }: { pixelsPerUnit: nu
 export function presentationLookInput(playable: PlayableGame, hasWorldSky: boolean): GameLookInput {
   const world = playable.game.world;
   return {
-    look: playable.look,
-    mood: playable.mood,
-    lighting: playable.lighting,
-    backdrop: playable.backdrop,
-    postProcessing: playable.postProcessing,
+    look: playable.rendering?.look,
+    mood: playable.rendering?.mood,
+    lighting: playable.rendering?.lighting,
+    backdrop: playable.rendering?.backdrop,
+    postProcessing: playable.rendering?.postProcessing,
     hasWorldSky,
     worldSky: world?.kind === "environment" ? world.sky : undefined,
   };
@@ -280,30 +280,30 @@ export function Shell3dPresentation({
     console.info(`[jgengine] replay saved: ${replay.frames.length} frames; play it with playReplayRecording from @jgengine/core/replay/replayPlayback.draw`);
   };
   const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
-  const WorldOverlay = playable.WorldOverlay;
+  const WorldOverlay = playable.scene?.WorldOverlay;
   const pointerService = useMemo(() => createPointerService(), []);
   // The player's entity selection lives on ctx so game HUDs can read (and write) it.
   const selection = ctx.scene.entity.selection;
   const controlledEntityId = ctx.player.possession.active(ctx.player.userId);
   const cameraOverride = useSyncExternalStore(ctx.camera.subscribe, ctx.camera.rig, ctx.camera.rig);
   const configuredCamera =
-    playable.camera?.followEntityId !== undefined
+    playable.camera?.follow?.followEntityId !== undefined
       ? playable.camera
       : { ...playable.camera, followEntityId: controlledEntityId };
   const cameraConfig = resolveCaptureCameraConfig(configuredCamera, cameraOverride);
   const rigKind = resolveRigKind(cameraConfig);
   const firstPerson = rigKind === "first";
-  const firstPersonBody = firstPerson && cameraConfig?.firstPerson?.body === true ? controlledEntityId : null;
+  const firstPersonBody = firstPerson && cameraConfig?.rigs?.firstPerson?.body === true ? controlledEntityId : null;
   const showReticle =
-    (firstPerson && cameraConfig?.firstPerson?.reticle !== false) || rigKind === "shoulder";
+    (firstPerson && cameraConfig?.rigs?.firstPerson?.reticle !== false) || rigKind === "shoulder";
   const rtsPanKeysEnabled = !rtsPanKeysConflict(playable.game.input);
   const rtsRotateKeysEnabled = !rtsRotateKeysConflict(playable.game.input);
-  const bars = resolveWorldOverlayBars(playable.worldHealthBars);
-  const nameplates = resolveWorldOverlayBars(playable.nameplates);
-  const effects = resolvePresentationEffects(playable.presentationEffects);
+  const bars = resolveWorldOverlayBars(playable.scene?.worldHealthBars);
+  const nameplates = resolveWorldOverlayBars(playable.scene?.nameplates);
+  const effects = resolvePresentationEffects(playable.scene?.presentationEffects);
   const resolveEntityRole = (entity: SceneEntity) => playable.content.entityById?.(entity.name)?.role;
 
-  const pointer: PointerConfig | undefined = playable.pointer;
+  const pointer: PointerConfig | undefined = playable.controls?.pointer;
   const pointerUsesLeft = pointer !== undefined && (pointer.select === true || pointer.moveCommand !== undefined);
   const selectFilter = pointer?.selectFilter;
   const controlGroupConfig = pointer?.select === true ? pointer.controlGroups : undefined;
@@ -328,7 +328,7 @@ export function Shell3dPresentation({
   const world = playable.game.world;
   const biomeBands = world?.kind === "environment" ? world.terrain?.biomeBands : undefined;
   const AutoEnvironment =
-    (typeof playable.environment === "function" ? playable.environment : undefined) ??
+    (typeof playable.scene?.environment === "function" ? playable.scene?.environment : undefined) ??
     (world?.kind === "environment"
       ? () => <EnvironmentScene feature={world} />
       : world?.kind === "place"
@@ -339,11 +339,11 @@ export function Shell3dPresentation({
   // The post chain and sky rebuild on identity change; a fresh look object per render recompiled every pass each frame.
   const hasWorldSky = worldSky !== undefined;
   const authoredGrade = useMemo(
-    () => (playable.editorLayers === undefined ? undefined : colorGradeFromDocument(playable.editorLayers)),
-    [playable.editorLayers],
+    () => (playable.scene?.editorLayers === undefined ? undefined : colorGradeFromDocument(playable.scene?.editorLayers)),
+    [playable.scene?.editorLayers],
   );
   const { look: resolvedLook, backdropSky } = usePresentationLook(presentationLookInput(playable, hasWorldSky), authoredGrade);
-  const cinematicLook = (playable.look ?? "cinematic") !== "flat";
+  const cinematicLook = (playable.rendering?.look ?? "cinematic") !== "flat";
   const backdrop = resolvedLook.backdrop;
   const authoredSky = backdropSky ?? worldSky;
   const lighting = resolvedLook.lighting;
@@ -370,10 +370,10 @@ export function Shell3dPresentation({
   );
   const backgroundColor = backdrop?.background ?? (effectiveSky === undefined ? DEFAULT_BACKGROUND_COLOR : undefined);
   const irradianceVolumes = useMemo(
-    () => (playable.editorLayers === undefined ? [] : lightProbesFromDocument(playable.editorLayers)),
-    [playable.editorLayers],
+    () => (playable.scene?.editorLayers === undefined ? [] : lightProbesFromDocument(playable.scene?.editorLayers)),
+    [playable.scene?.editorLayers],
   );
-  const orthographic = playable.camera?.projection === "orthographic";
+  const orthographic = playable.camera?.lens?.projection === "orthographic";
 
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const secondaryDownRef = useRef<{ x: number; y: number } | null>(null);
@@ -495,7 +495,7 @@ export function Shell3dPresentation({
       if (record !== null && itemInstanceId !== null) {
         const itemEntity = ctx.scene.entity.get(itemInstanceId);
         const localPlayer = ctx.scene.entity.get(ctx.player.userId);
-        const pickupRadius = playable.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
+        const pickupRadius = playable.scene?.worldItem?.pickupRadius ?? DEFAULT_PICKUP_RADIUS;
         const withinRadius =
           itemEntity !== null &&
           localPlayer !== null &&
@@ -579,15 +579,15 @@ export function Shell3dPresentation({
   };
 
   const controlsActive = playControlsActive(ctx);
-  const seatViewports = useSeatViewports(ctx, playable.viewports);
-  const splitScreen = playable.viewports !== undefined && seatViewports.length > 1;
-  const settingsDisabled = playable.settings === false;
+  const seatViewports = useSeatViewports(ctx, playable.controls?.viewports);
+  const splitScreen = playable.controls?.viewports !== undefined && seatViewports.length > 1;
+  const settingsDisabled = playable.chrome?.settings === false;
   const settingsConfig: GameSettingsConfig =
-    playable.settings === false || playable.settings === undefined ? {} : playable.settings;
+    playable.chrome?.settings === false || playable.chrome?.settings === undefined ? {} : playable.chrome?.settings;
   const settingsSurface = settingsDisabled ? false : settingsConfig.surface ?? false;
   const settingsVariant = settingsConfig.variant ?? "panel";
   const hideCategories = settingsDisabled ? BUILT_IN_SETTING_CATEGORIES : settingsConfig.hide ?? [];
-  const fovControlEnabled = !orthographic && playable.camera?.playerFov?.control !== false;
+  const fovControlEnabled = !orthographic && playable.camera?.lens?.playerFov?.control !== false;
   const settingsHostsFov = !settingsDisabled && !hideCategories.includes("gameplay") && fovControlEnabled;
   const settingsActions: SettingsActionView[] = settingsDisabled
     ? []
@@ -643,7 +643,7 @@ export function Shell3dPresentation({
           categories={settingsConfig.categories ?? []}
           hide={hideCategories}
           fovEnabled={fovControlEnabled}
-          graphics={playable.graphics}
+          graphics={playable.rendering?.graphics}
           postProcessing={resolvedLook.postProcessing}
           hideBindings={settingsConfig.hideBindings ?? []}
           touchStyle={
@@ -679,7 +679,7 @@ export function Shell3dPresentation({
               }
             }}
           >
-            <GameViewportProvider platforms={playable.platforms}>
+            <GameViewportProvider platforms={playable.controls?.platforms}>
               <ColorblindFrame mode={colorblind} style={{ position: "absolute", inset: 0 }}>
                 <Canvas
                   onCreated={({ gl, scene }) => {
@@ -694,14 +694,14 @@ export function Shell3dPresentation({
                   camera={
                     orthographic
                       ? {
-                          zoom: playable.camera?.frustum?.zoom ?? CAMERA_FRUSTUM_DEFAULTS.zoom,
-                          near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
-                          far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+                          zoom: playable.camera?.lens?.frustum?.zoom ?? CAMERA_FRUSTUM_DEFAULTS.zoom,
+                          near: playable.camera?.lens?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                          far: playable.camera?.lens?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
                         }
                       : {
-                          fov: playable.camera?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
-                          near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
-                          far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+                          fov: playable.camera?.lens?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
+                          near: playable.camera?.lens?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                          far: playable.camera?.lens?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
                         }
                   }
                   shadows={graphics.shadows ? "percentage" : false}
@@ -714,14 +714,14 @@ export function Shell3dPresentation({
                   {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
                   {graphics.showFps ? <FpsProbe tally={frameTally} /> : null}
                   {perfOpen ? <PerfOverlayProbe sample={perfSample} /> : null}
-                  {orthographic && playable.camera?.pixelPerfect !== undefined ? (
-                    <PixelPerfectCamera {...playable.camera.pixelPerfect} />
+                  {orthographic && playable.camera?.lens?.pixelPerfect !== undefined ? (
+                    <PixelPerfectCamera {...playable.camera.lens?.pixelPerfect} />
                   ) : null}
                   {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
                   {cinematicLook ? (
                     <BootSuspenseGuard area="the environment lighting">
                     <EnvironmentLighting
-                      source={playable.environmentSource}
+                      source={playable.rendering?.environmentSource}
                       skyColor={sceneLighting?.hemisphere?.skyColor ?? "#87b5e0"}
                       groundColor={sceneLighting?.hemisphere?.groundColor ?? "#3d4a38"}
                       horizonTint={sceneLighting?.ambient?.color}
@@ -732,7 +732,7 @@ export function Shell3dPresentation({
                     />
                     </BootSuspenseGuard>
                   ) : null}
-                  <LivingWorld ambientLife={playable.ambientLife} lowTier={graphics.quality === "low"} outdoor={effectiveSky !== undefined} />
+                  <LivingWorld ambientLife={playable.scene?.ambientLife} lowTier={graphics.quality === "low"} outdoor={effectiveSky !== undefined} />
                   {sceneLighting !== undefined ? (
                     <ConfiguredLighting
                       lighting={sceneLighting}
@@ -754,7 +754,7 @@ export function Shell3dPresentation({
                       lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
                       {...(authoredDaylight ? { modulation: daylightModulation } : {})}
                       {...(backdrop?.fog === undefined ? {} : { fogRange: backdrop.fog })}
-                      {...(playable.editorLayers?.simulation?.weather === undefined ? {} : { weather: ctx.environment })}
+                      {...(playable.scene?.editorLayers?.simulation?.weather === undefined ? {} : { weather: ctx.environment })}
                     />
                     </BootSuspenseGuard>
                   ) : null}
@@ -763,22 +763,22 @@ export function Shell3dPresentation({
                   {effectiveSky === undefined ? <BackdropFog fog={backdrop?.fog} /> : null}
                   <GameProvider context={ctx}>
                     <TerrainQualityContext.Provider value={graphics.quality}>
-                    <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.visibility} cullingDisabled={splitScreen}>
-                    <CullingProvider config={playable.visibility} drawDistance={graphics.profile.drawDistance}>
+                    <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.scene?.visibility} cullingDisabled={splitScreen}>
+                    <CullingProvider config={playable.scene?.visibility} drawDistance={graphics.profile.drawDistance}>
                       <BootSuspenseGuard area="the world">
                       <FirstPersonBodyContext.Provider value={firstPersonBody}>
                       <WorldView
-                        entitySprites={playable.entitySprites}
-                        entityModels={playable.entityModels}
-                        objectModels={playable.objectModels}
-                        objectStyles={playable.objectStyles}
+                        entitySprites={playable.scene?.entitySprites}
+                        entityModels={playable.scene?.entityModels}
+                        objectModels={playable.scene?.objectModels}
+                        objectStyles={playable.scene?.objectStyles}
                         environment={AutoEnvironment}
                         assets={playable.game.assets}
-                        renderEntity={playable.renderEntity}
-                        renderObject={playable.renderObject}
+                        renderEntity={playable.scene?.renderEntity}
+                        renderObject={playable.scene?.renderObject}
                         selectedIds={selectedIds}
                         hideLocalActor={firstPerson && firstPersonBody === null}
-                        editorLayers={playable.editorLayers}
+                        editorLayers={playable.scene?.editorLayers}
                       />
                       </FirstPersonBodyContext.Provider>
                       </BootSuspenseGuard>
@@ -815,19 +815,19 @@ export function Shell3dPresentation({
                       </group>
                     ) : null}
                     </CullingProvider>
-                    <WorldItems config={playable.worldItem} />
+                    <WorldItems config={playable.scene?.worldItem} />
                     <WorldTireMarks />
                     <ParticleEmitters quality={graphics.quality} particleCap={graphics.profile.particleCap} particleBudget={graphics.profile.particleBudget} diagnostics={devtoolsEnabled} />
                     <CombatPresentation effects={effects} />
                     {devtoolsEnabled ? <CollisionDebugWorld /> : null}
                     <AudioListener engine={audioEngine} anchor={playable.camera?.rig === "rts" || playable.camera?.rig === "topDown" ? "ground" : "camera"} />
-                    <EntityAudioEmitters engine={audioEngine} entitySounds={playable.entitySounds} />
-                    <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.objectSounds} />
+                    <EntityAudioEmitters engine={audioEngine} entitySounds={playable.audio?.entitySounds} />
+                    <ObjectAudioEmitters engine={audioEngine} objectSounds={playable.audio?.objectSounds} />
                     <GameCameraRig
                       yawRef={yawRef}
                       pitchRef={pitchRef}
                       config={cameraConfig}
-                      viewmodel={playable.viewmodel}
+                      viewmodel={playable.scene?.viewmodel}
                       pointerControls={pointerUsesLeft}
                       panKeysEnabled={rtsPanKeysEnabled}
                       rotateKeysEnabled={rtsRotateKeysEnabled}
@@ -867,7 +867,7 @@ export function Shell3dPresentation({
                     bindings={inputBindings ?? {}}
                     analogRef={analogRef}
                     input={ctx.input}
-                    feel={playable.gamepad}
+                    feel={playable.controls?.gamepad}
                     seats={localPlayers(ctx)}
                     onSeatJoin={(slot) => {
                       try {
@@ -883,7 +883,7 @@ export function Shell3dPresentation({
                     <FrameTelemetry game={playable.game.name} quality={graphics.quality === "low" ? "draft" : "full"} />
                   ) : null}
                   {splitScreen ? (
-                    <SplitScreenRenderer ctx={ctx} viewports={seatViewports} config={playable.viewports} mainCamera={playable.camera} />
+                    <SplitScreenRenderer ctx={ctx} viewports={seatViewports} config={playable.controls?.viewports} mainCamera={playable.camera} />
                   ) : null}
                   {!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
                     <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} immediate={poster} />
@@ -912,7 +912,7 @@ export function Shell3dPresentation({
                   sink={touchSink}
                   yawRef={yawRef}
                   pitchRef={pitchRef}
-                  maxPitch={playable.camera?.firstPerson?.maxPitch ?? 1.45}
+                  maxPitch={playable.camera?.rigs?.firstPerson?.maxPitch ?? 1.45}
                   onPrimaryTap={() => {
                     primaryClickRef.current = true;
                   }}

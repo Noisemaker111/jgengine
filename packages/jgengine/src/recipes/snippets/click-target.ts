@@ -24,7 +24,7 @@ const targeting = defineSystem({
 
 export const game = defineGame({
   name: "Targeting",
-  pointer: { moveCommand: "select-target" },
+  controls: { pointer: { moveCommand: "select-target" } },
   input: { "next-target": ["Tab"] },
   systems: [targeting],
 });

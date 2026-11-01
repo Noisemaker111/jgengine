@@ -34,15 +34,19 @@ function DecalStage() {
 export const decalShowcaseGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "decals" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    editorLayers: decalDocument,
+    environment: DecalStage,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  editorLayers: decalDocument,
-  look: "flat",
-  lighting: { ambient: { intensity: 0.5 }, directional: [{ intensity: 2.2, position: [5, 9, 7], color: "#fff2dd" }] },
-  backdrop: { background: "#23282c" },
-  postProcessing: { enabled: true, toneMapping: "aces", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
-  environment: DecalStage,
+  rendering: {
+    look: "flat",
+    lighting: { ambient: { intensity: 0.5 }, directional: [{ intensity: 2.2, position: [5, 9, 7], color: "#fff2dd" }] },
+    backdrop: { background: "#23282c" },
+    postProcessing: { enabled: true, toneMapping: "aces", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
+  },
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#f2f3f0", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
       <div style={{ position: "absolute", top: 14, left: 18, fontSize: 15, fontWeight: 600 }}>

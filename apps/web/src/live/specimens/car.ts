@@ -5,7 +5,7 @@
  */
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
-import { vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
+import { vehicleTuning, type VehicleSpecAids, type VehicleSpecBrakes, type VehicleSpecChassis, type VehicleSpecSteering } from "@jgengine/core/physics/vehicleSpec";
 
 import { at } from "../at";
 import { drawKeycaps, drawPill, heldKeys, mountCanvas2d, takeover } from "../canvas2d";
@@ -15,15 +15,42 @@ import type { Trace } from "../trace";
  * The demo's three driver-aid setups; grip and drift come from the dials. A looser car (more drift) gets less
  * traction control and more caster, so the slide it is built for is still catchable.
  */
-const CAR_AIDS = {
-  arcade: { abs: 1, stability: 1, selfAlign: 0.6, tractionControl: 0.7, steerRate: 4.4, bodyRoll: 0.4 },
-  sim: { abs: 0.25, stability: 0.55, selfAlign: 0.3375, tractionControl: 0.175, steerRate: 2.9, bodyRoll: 0.6 },
-  drift: { abs: 0.55, stability: 0.73, selfAlign: 0.4425, tractionControl: 0.385, steerRate: 3.5, bodyRoll: 0.6 },
-} as const satisfies Record<string, Partial<VehicleSpec>>;
+interface CarAidSet {
+  brakes: Pick<VehicleSpecBrakes, "abs">;
+  aids: Pick<VehicleSpecAids, "stability" | "tractionControl">;
+  steering: Pick<VehicleSpecSteering, "selfAlign" | "steerRate">;
+  chassis: VehicleSpecChassis;
+}
 
-function aidsFor(style: CarStyle, drift: number): Partial<VehicleSpec> {
+const CAR_AIDS = {
+  arcade: {
+    brakes: { abs: 1 },
+    aids: { stability: 1, tractionControl: 0.7 },
+    steering: { selfAlign: 0.6, steerRate: 4.4 },
+    chassis: { bodyRoll: 0.4 },
+  },
+  sim: {
+    brakes: { abs: 0.25 },
+    aids: { stability: 0.55, tractionControl: 0.175 },
+    steering: { selfAlign: 0.3375, steerRate: 2.9 },
+    chassis: { bodyRoll: 0.6 },
+  },
+  drift: {
+    brakes: { abs: 0.55 },
+    aids: { stability: 0.73, tractionControl: 0.385 },
+    steering: { selfAlign: 0.4425, steerRate: 3.5 },
+    chassis: { bodyRoll: 0.6 },
+  },
+} as const satisfies Record<string, CarAidSet>;
+
+function aidsFor(style: CarStyle, drift: number): CarAidSet {
   const aids = CAR_AIDS[style];
-  return { ...aids, tractionControl: aids.tractionControl * (1 - 0.5 * drift), selfAlign: aids.selfAlign + 0.25 * drift };
+  return {
+    brakes: { abs: aids.brakes.abs },
+    aids: { stability: aids.aids.stability, tractionControl: aids.aids.tractionControl * (1 - 0.5 * drift) },
+    steering: { selfAlign: aids.steering.selfAlign + 0.25 * drift, steerRate: aids.steering.steerRate },
+    chassis: aids.chassis,
+  };
 }
 
 export type CarStyle = keyof typeof CAR_AIDS;
@@ -81,7 +108,15 @@ function buildTrack(): { x: number; z: number }[] {
 const TRACK = buildTrack();
 
 function tuningFrom(d: CarDials) {
-  return vehicleTuning({ ...aidsFor(d.style, d.drift), topSpeed: d.topSpeed, accel: d.accel, brake: 16, turnRate: d.turnRate, grip: d.grip, drift: d.drift });
+  const aids = aidsFor(d.style, d.drift);
+  return vehicleTuning({
+    engine: { topSpeed: d.topSpeed, accel: d.accel },
+    brakes: { ...aids.brakes, brake: 16 },
+    aids: aids.aids,
+    steering: { ...aids.steering, turnRate: d.turnRate },
+    chassis: aids.chassis,
+    tires: { grip: d.grip, drift: d.drift },
+  });
 }
 
 function headingOf(a: { x: number; z: number }, b: { x: number; z: number }): number {
@@ -154,7 +189,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
       ? { throttle: on("KeyW", "ArrowUp"), brake: on("KeyS", "ArrowDown"), steer: on("KeyD", "ArrowRight") - on("KeyA", "ArrowLeft"), handbrake: on("Space") }
       : autopilot(px, pz, before.heading, speedNow);
     const step = car.tick(dt, axis);
-    const [x, , z] = step.position;
+    const [x, , z] = step.motion.position;
 
     const throttle = (axis.throttle ?? 0) > 0, brake = (axis.brake ?? 0) > 0, handbrake = (axis.handbrake ?? 0) > 0;
     const steer = axis.steer ?? 0;
@@ -162,7 +197,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
     if (brake) trace.hit("brake");
     if (Math.abs(steer) > 0.15) trace.hit("steer");
     if (handbrake) trace.hit("handbrake");
-    const sliding = step.rearSaturation >= 1 && Math.abs(step.forwardSpeed) > 3;
+    const sliding = step.tires.rearSaturation >= 1 && Math.abs(step.motion.forwardSpeed) > 3;
     if (sliding) trace.hit("slide");
     trace.hit("move");
 
@@ -224,7 +259,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
 
     ctx.save();
     ctx.translate(sx(x), sy(z));
-    ctx.rotate(-step.heading);
+    ctx.rotate(-step.motion.heading);
     const w = Math.max(7, 1.9 * scale * 1.6), l = Math.max(14, 4.3 * scale * 1.6);
     ctx.fillStyle = sliding ? "#ff5a3c" : "#f2f4f7";
     ctx.beginPath();
@@ -242,7 +277,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
     ctx.font = "11px ui-monospace, monospace";
     ctx.fillStyle = "rgba(255,255,255,0.8)";
     ctx.textAlign = "right";
-    ctx.fillText(`${Math.round(Math.abs(step.forwardSpeed) * 3.6)} km/h`, width - 12, 24);
+    ctx.fillText(`${Math.round(Math.abs(step.motion.forwardSpeed) * 3.6)} km/h`, width - 12, 24);
     ctx.fillText(`lap ${((now - lapStart) / 1000).toFixed(1)} s`, width - 12, 40);
     if (bestLap !== null) ctx.fillText(`best ${bestLap.toFixed(1)} s`, width - 12, 56);
     ctx.fillStyle = sliding ? "#ff8a70" : "rgba(255,255,255,0.55)";

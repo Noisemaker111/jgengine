@@ -258,9 +258,7 @@ const THIRD_PERSON_CAMERA = `import { defineGame, type GameCameraConfig } from "
 // that follows the player. Tune boom distance/height here; no camera component to wire.
 const camera: GameCameraConfig = {
   rig: "orbit",
-  minDistance: 3,
-  maxDistance: 9,
-  targetHeight: 1.6,
+  orbit: { minDistance: 3, maxDistance: 9, targetHeight: 1.6 },
 };
 
 export const game = defineGame({ name: "Explore", camera });
@@ -318,13 +316,15 @@ export const game = defineGame({
   content,
   inventories: { bag: { slots: 20 } },
   input: { loot: ["KeyE"] },
-  pointer: { grabWorldItems: true },
-  worldItem: {
-    rarityStyle: {
-      common: { color: "#d0d0d0", label: "Common" },
-      legendary: { color: "#ff9a1f", beam: true, label: "Legendary" },
+  controls: { pointer: { grabWorldItems: true } },
+  scene: {
+    worldItem: {
+      rarityStyle: {
+        common: { color: "#d0d0d0", label: "Common" },
+        legendary: { color: "#ff9a1f", beam: true, label: "Legendary" },
+      },
+      beamHeight: 4,
     },
-    beamHeight: 4,
   },
   systems: [looting],
 });
@@ -357,7 +357,7 @@ const targeting = defineSystem({
 
 export const game = defineGame({
   name: "Targeting",
-  pointer: { moveCommand: "select-target" },
+  controls: { pointer: { moveCommand: "select-target" } },
   input: { "next-target": ["Tab"] },
   systems: [targeting],
 });
@@ -533,7 +533,13 @@ import { vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import type { GameContext } from "@jgengine/shell/gameKit";
 
-const TUNING = vehicleTuning({ topSpeed: 28, accel: 9, brake: 14, turnRate: 2.2, grip: 1.5, abs: 1, stability: 1 });
+const TUNING = vehicleTuning({
+  engine: { topSpeed: 28, accel: 9 },
+  brakes: { brake: 14, abs: 1 },
+  steering: { turnRate: 2.2 },
+  tires: { grip: 1.5 },
+  aids: { stability: 1 },
+});
 const DRIVE = {
   throttle: { positive: ["moveForward"] }, brake: { positive: ["moveBack"] },
   steer: { positive: ["moveRight"], negative: ["moveLeft"] }, handbrake: { positive: ["jump"] },

@@ -185,13 +185,14 @@ function FireScene() {
 export const fireDemoGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "fire" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => <FireScene />,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  look: "neutral",
-  camera: { ...demoGame.camera, frustum: { far: 2500 } },
-  backdrop: { background: "#9fb4c8" },
-  environment: () => <FireScene />,
+  rendering: { look: "neutral", backdrop: { background: "#9fb4c8" } },
+  camera: { ...demoGame.camera, lens: { frustum: { far: 2500 } } },
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#f4f1ea", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
       <div style={{ position: "absolute", top: 14, left: 18, fontSize: 15, fontWeight: 600 }}>

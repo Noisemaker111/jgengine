@@ -135,7 +135,7 @@ export function GamePlayerShell({
     () => (rawMultiplayer === null ? null : withDevtoolsLatency(rawMultiplayer)),
     [rawMultiplayer],
   );
-  const devtoolsEnabled = playable.devtools !== false && !poster;
+  const devtoolsEnabled = playable.chrome?.devtools !== false && !poster;
   armFallbackSeams(devtoolsEnabled);
   armTextureErrors(devtoolsEnabled);
   armMissingModelLabels(devtoolsEnabled);
@@ -190,7 +190,7 @@ export function GamePlayerShell({
     const store = createSettingsStore();
     // `?quality=<tier>` pins the graphics tier for this page only (capture draft shots); never persisted.
     const pinned = typeof window === "undefined" ? null : parseGraphicsQuality(new URLSearchParams(window.location.search).get("quality"));
-    return pinned === null ? store : withGraphicsQualityOverride(store, pinned, playable.graphics);
+    return pinned === null ? store : withGraphicsQualityOverride(store, pinned, playable.rendering?.graphics);
   }, []);
   const [bindingOverrides, setBindingOverrides] = useState<BindingOverrides>(() =>
     loadBindingOverrides(playable.game.name),
@@ -232,8 +232,8 @@ export function GamePlayerShell({
     boundMapRef.current = activeBindingMap;
     tracker.rebind(activeBindingMap);
   }
-  const graphics = useGraphicsSettings(settingsStore, playable.shadows ?? true, playable.graphics);
-  useLayoutEffect(() => configureModelSurface(playable.surfaceDetail !== false, graphics.profile.surfaceDetail), [playable.surfaceDetail, graphics.profile.surfaceDetail]);
+  const graphics = useGraphicsSettings(settingsStore, playable.rendering?.shadows ?? true, playable.rendering?.graphics);
+  useLayoutEffect(() => configureModelSurface(playable.rendering?.surfaceDetail !== false, graphics.profile.surfaceDetail), [playable.rendering?.surfaceDetail, graphics.profile.surfaceDetail]);
   useLayoutEffect(() => configureModelScan(graphics.profile.surfaceDetail === "full"), [graphics.profile.surfaceDetail]);
   const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
@@ -254,11 +254,11 @@ export function GamePlayerShell({
     () =>
       deriveTouchScheme(playable.game.input, {
         reserved:
-          resolveRigKind(playable.camera) === "none" || playable.presentation === "hud"
+          resolveRigKind(playable.camera) === "none" || playable.chrome?.presentation === "hud"
             ? EMPTY_RESERVED
             : RESERVED_INPUT_ACTIONS,
         firstPerson: resolveRigKind(playable.camera) === "first",
-        config: playable.touch,
+        config: playable.controls?.touch,
         mode: touchMode,
       }),
     [playable, touchMode],
@@ -300,7 +300,7 @@ export function GamePlayerShell({
   }, [ctx, tracker, multiplayer, playable, poster]);
   const orientationPlatform = coarsePointer ? "mobile" : "desktop";
   const orientationRequirement = useMemo(
-    () => resolveOrientationRequirement(playable.orientation, orientationPlatform),
+    () => resolveOrientationRequirement(playable.controls?.orientation, orientationPlatform),
     [playable, orientationPlatform],
   );
   const liveOrientation: LayoutOrientation = portrait ? "portrait" : "landscape";
@@ -351,7 +351,7 @@ export function GamePlayerShell({
   }, [ctx, audioEngine, playable]);
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.documentElement.dataset["jgPresentation"] = playable.presentation ?? "3d";
+    document.documentElement.dataset["jgPresentation"] = playable.chrome?.presentation ?? "3d";
     return () => {
       delete document.documentElement.dataset["jgPresentation"];
     };
@@ -366,7 +366,7 @@ export function GamePlayerShell({
   }, [graphics.quality]);
   useEffect(() => {
     if (ctx === null || typeof document === "undefined") return;
-    const hud = resolveRigKind(playable.camera) === "none" || playable.presentation === "hud";
+    const hud = resolveRigKind(playable.camera) === "none" || playable.chrome?.presentation === "hud";
     if (!hud) return;
     const frame = requestAnimationFrame(() => {
       document.documentElement.dataset["jgFrameReady"] = "1";
@@ -439,7 +439,7 @@ export function GamePlayerShell({
         ...(models === undefined ? {} : { models }),
       });
       ownedContext = context;
-      if (playable.localPlayers !== undefined) localPlayers(context).retune(playable.localPlayers);
+      if (playable.controls?.localPlayers !== undefined) localPlayers(context).retune(playable.controls?.localPlayers);
       playable.loop.onInit(context);
       playable.loop.onNewPlayer(context);
       onContextReady?.(context);
@@ -477,7 +477,7 @@ export function GamePlayerShell({
   if (join.status !== "joined") return <JoinGate {...join} />;
 
   const cameraConfig =
-    playable.camera?.followEntityId !== undefined
+    playable.camera?.follow?.followEntityId !== undefined
       ? playable.camera
       : { ...playable.camera, followEntityId: ctx.player.possession.active(userId) };
   const rigKind = resolveRigKind(cameraConfig);
@@ -509,7 +509,7 @@ export function GamePlayerShell({
     deactivatePointerAxis,
   } as const;
 
-  if (rigKind === "none" || playable.presentation === "hud") {
+  if (rigKind === "none" || playable.chrome?.presentation === "hud") {
     return (
       <ActionBindingsProvider bindings={effectiveInput}>
       <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>

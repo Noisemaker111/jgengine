@@ -118,7 +118,7 @@ export function DevApp({ gameId }: { gameId: string }) {
         // whose `?shot=` is wrong — discovery must survive the error it exists to resolve.
         document.documentElement.dataset["jgViews"] = JSON.stringify(describeViews(loaded.capture?.views));
         // The game's own settings rows, so a harness can name and check an id it did not declare.
-        document.documentElement.dataset["jgSettings"] = JSON.stringify(describeDeclaredSettings(loaded.settings));
+        document.documentElement.dataset["jgSettings"] = JSON.stringify(describeDeclaredSettings(loaded.chrome?.settings));
 
         const view = resolveCaptureView({
           views: loaded.capture?.views,

@@ -95,10 +95,10 @@ describe("createReferenceMotorcycle — Suzuki GSX-R1000 of Sharp, Evangelou & L
     for (let i = 0; i < 30; i++) bike.tick(1 / 60, { ...NEUTRAL, throttle: 0.3, steer: 0.4 });
     const saved = bike.snapshot();
     const a: number[] = [];
-    for (let i = 0; i < 30; i++) a.push(bike.tick(1 / 60, { ...NEUTRAL, throttle: 0.3, steer: -0.2 }).lean);
+    for (let i = 0; i < 30; i++) a.push(bike.tick(1 / 60, { ...NEUTRAL, throttle: 0.3, steer: -0.2 }).sample.lean);
     bike.restore(saved);
     const b: number[] = [];
-    for (let i = 0; i < 30; i++) b.push(bike.tick(1 / 60, { ...NEUTRAL, throttle: 0.3, steer: -0.2 }).lean);
+    for (let i = 0; i < 30; i++) b.push(bike.tick(1 / 60, { ...NEUTRAL, throttle: 0.3, steer: -0.2 }).sample.lean);
     expect(b).toEqual(a);
   });
 });
@@ -107,7 +107,7 @@ describe("createRiddenMotorcycle", () => {
   test("holds a requested lean with the bar torque alone", () => {
     const bike = createRiddenMotorcycle(GSXR1000_SHARP_2004, { speed: 20 });
     let step = bike.bike.sample();
-    for (let i = 0; i < 180; i++) step = bike.tick(1 / 60, { ...NEUTRAL, throttle: 0.3, steer: 0.35 / bike.maxLean });
+    for (let i = 0; i < 180; i++) step = bike.tick(1 / 60, { ...NEUTRAL, throttle: 0.3, steer: 0.35 / bike.maxLean }).sample;
     expect(Math.abs(step.lean - 0.35)).toBeLessThan(0.03);
     expect(step.yawRate).toBeLessThan(0);
   });

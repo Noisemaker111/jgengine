@@ -6,15 +6,10 @@ export interface CarEffectSubject {
     dt: number,
     input: AxisInput,
   ): {
-    forwardSpeed: number;
-    lateralSpeed: number;
-    yawRate: number;
-    steerAngle: number;
-    longitudinalAccel: number;
-    lateralAccel: number;
-    bodyRoll: number;
-    bodyPitch: number;
-    wheelLoads: readonly [number, number, number, number];
+    motion: { forwardSpeed: number; lateralSpeed: number; yawRate: number; longitudinalAccel: number; lateralAccel: number };
+    steering: { steerAngle: number };
+    body: { bodyRoll: number; bodyPitch: number };
+    loads: { wheelLoads: readonly [number, number, number, number] };
   };
   velocity(): readonly [number, number];
 }
@@ -88,12 +83,12 @@ type Step = ReturnType<CarEffectSubject["tick"]>;
 function launchTo(car: CarEffectSubject, speed: number, dt: number): number {
   let last = 0;
   for (let i = 0; i < Math.ceil(60 / dt); i += 1) {
-    last = car.tick(dt, axis(1, 0, 0)).forwardSpeed;
+    last = car.tick(dt, axis(1, 0, 0)).motion.forwardSpeed;
     if (last >= speed) break;
   }
   for (let i = 0; i < Math.ceil(1 / dt); i += 1) {
     const hold = holdSpeed(speed, last);
-    last = car.tick(dt, axis(hold.throttle, hold.brake, 0)).forwardSpeed;
+    last = car.tick(dt, axis(hold.throttle, hold.brake, 0)).motion.forwardSpeed;
   }
   return last;
 }
@@ -112,8 +107,8 @@ function holdCircle(car: CarEffectSubject, speed: number, radius: number, dt: nu
     const hold = holdSpeed(speed, current);
     throttle = hold.throttle;
     const step = car.tick(dt, axis(hold.throttle, hold.brake, steer));
-    current = step.forwardSpeed;
-    steer = clamp(steer + 1.5 * (current / radius + step.yawRate) * dt, 0, 1);
+    current = step.motion.forwardSpeed;
+    steer = clamp(steer + 1.5 * (current / radius + step.motion.yawRate) * dt, 0, 1);
     if (i >= settle - keep) {
       steps.push(step);
       steerSum += steer;
@@ -128,7 +123,7 @@ function mean(steps: readonly Step[], read: (step: Step) => number): number {
 }
 
 function curvature(step: Step): number {
-  return Math.abs(step.yawRate) / Math.max(1, Math.hypot(step.forwardSpeed, step.lateralSpeed));
+  return Math.abs(step.motion.yawRate) / Math.max(1, Math.hypot(step.motion.forwardSpeed, step.motion.lateralSpeed));
 }
 
 function cornerTransient(
@@ -161,12 +156,12 @@ export function measureCarEffects(create: () => CarEffectSubject, options: CarEf
 
   const circleSpeed = Math.sqrt(0.4 * G * 40);
   const circle = holdCircle(create(), circleSpeed, 40, dt);
-  const ay = Math.abs(mean(circle.steps, (step) => step.lateralAccel)) / G;
-  const roll = Math.abs(mean(circle.steps, (step) => step.bodyRoll)) * RAD_TO_DEG;
+  const ay = Math.abs(mean(circle.steps, (step) => step.motion.lateralAccel)) / G;
+  const roll = Math.abs(mean(circle.steps, (step) => step.body.bodyRoll)) * RAD_TO_DEG;
   // Turning right (steer > 0) the nose points inside the path when the velocity points left of the heading.
-  const sideslip = mean(circle.steps, (step) => Math.atan2(-step.lateralSpeed, Math.max(1, step.forwardSpeed))) * RAD_TO_DEG;
-  const frontShift = mean(circle.steps, (step) => Math.abs(step.wheelLoads[0] - step.wheelLoads[1]) / 2);
-  const rearShift = mean(circle.steps, (step) => Math.abs(step.wheelLoads[2] - step.wheelLoads[3]) / 2);
+  const sideslip = mean(circle.steps, (step) => Math.atan2(-step.motion.lateralSpeed, Math.max(1, step.motion.forwardSpeed))) * RAD_TO_DEG;
+  const frontShift = mean(circle.steps, (step) => Math.abs(step.loads.wheelLoads[0] - step.loads.wheelLoads[1]) / 2);
+  const rearShift = mean(circle.steps, (step) => Math.abs(step.loads.wheelLoads[2] - step.loads.wheelLoads[3]) / 2);
 
   let pitchGradient = Number.NaN;
   let longitudinalTransferPerG = Number.NaN;
@@ -177,13 +172,13 @@ export function measureCarEffects(create: () => CarEffectSubject, options: CarEf
     const held: Step[] = [];
     for (let i = 0; i < Math.ceil(2.2 / dt); i += 1) {
       const step = car.tick(dt, axis(0, brake, 0));
-      brake = clamp(brake + 0.4 * (0.5 * G + step.longitudinalAccel) * dt, 0, 1);
+      brake = clamp(brake + 0.4 * (0.5 * G + step.motion.longitudinalAccel) * dt, 0, 1);
       if (i * dt >= 1.2) held.push(step);
     }
-    const decel = -mean(held, (step) => step.longitudinalAccel) / G;
+    const decel = -mean(held, (step) => step.motion.longitudinalAccel) / G;
     if (decel > 0.2) {
-      pitchGradient = (mean(held, (step) => step.bodyPitch) * RAD_TO_DEG) / decel;
-      const front = mean(held, (step) => step.wheelLoads[0] + step.wheelLoads[1]) / weight;
+      pitchGradient = (mean(held, (step) => step.body.bodyPitch) * RAD_TO_DEG) / decel;
+      const front = mean(held, (step) => step.loads.wheelLoads[0] + step.loads.wheelLoads[1]) / weight;
       longitudinalTransferPerG = (front - options.frontWeight) / decel;
     }
   }
@@ -195,8 +190,8 @@ export function measureCarEffects(create: () => CarEffectSubject, options: CarEf
     let end = 0;
     for (let i = 0; i < Math.ceil(1.5 / dt); i += 1) {
       const step = car.tick(dt, axis(0, 0, 0));
-      if (i === Math.ceil(0.5 / dt)) start = step.forwardSpeed;
-      end = step.forwardSpeed;
+      if (i === Math.ceil(0.5 / dt)) start = step.motion.forwardSpeed;
+      end = step.motion.forwardSpeed;
     }
     return (start - end) / 1;
   };
@@ -207,7 +202,7 @@ export function measureCarEffects(create: () => CarEffectSubject, options: CarEf
     const car = create();
     let at80 = -1;
     for (let i = 1; i <= Math.ceil(40 / dt); i += 1) {
-      const speed = car.tick(dt, axis(1, 0, 0)).forwardSpeed;
+      const speed = car.tick(dt, axis(1, 0, 0)).motion.forwardSpeed;
       if (zeroTo50 === Number.POSITIVE_INFINITY && speed >= 50 / 3.6) zeroTo50 = i * dt;
       if (at80 < 0 && speed >= 80 / 3.6) at80 = i * dt;
       if (speed >= 120 / 3.6) {
@@ -234,15 +229,15 @@ export function measureCarEffects(create: () => CarEffectSubject, options: CarEf
         // Speed is held through the step so cornering drag cannot drift the lateral acceleration it times.
         const hold = holdSpeed(speed, current);
         const step = car.tick(dt, axis(hold.throttle, hold.brake, steer * Math.min(1, (i * dt) / ramp)));
-        current = step.forwardSpeed;
-        lateral.push(Math.abs(step.lateralAccel));
+        current = step.motion.forwardSpeed;
+        lateral.push(Math.abs(step.motion.lateralAccel));
         if (i > total - Math.ceil(1 / dt)) tail.push(step);
       }
-      const steady = mean(tail, (step) => Math.abs(step.lateralAccel));
+      const steady = mean(tail, (step) => Math.abs(step.motion.lateralAccel));
       const first = lateral.findIndex((value) => value >= 0.9 * steady);
       if (first >= 0) lateralResponseTime = (first + 1) * dt - ramp / 2;
-      const angle = mean(tail, (step) => Math.abs(step.steerAngle));
-      if (angle > 0) yawGain80 = mean(tail, (step) => Math.abs(step.yawRate)) / angle;
+      const angle = mean(tail, (step) => Math.abs(step.steering.steerAngle));
+      if (angle > 0) yawGain80 = mean(tail, (step) => Math.abs(step.motion.yawRate)) / angle;
     }
   }
 

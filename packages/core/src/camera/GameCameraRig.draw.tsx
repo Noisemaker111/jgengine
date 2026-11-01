@@ -18,7 +18,7 @@ import { GameFirstPersonCamera, type ViewmodelProps } from "./GameFirstPersonCam
 import { GameInspectionCamera } from "./GameInspectionCamera.draw";
 import { GameOrbitCamera } from "./GameOrbitCamera.draw";
 import { resolveDirectedCamera } from "./rigMath";
-import { resolveCaptureCameraConfig, resolveRigKind, turntableAsObserver } from "./rigResolve";
+import { orbitRigConfig, resolveCaptureCameraConfig, resolveRigKind, turntableAsObserver } from "./rigResolve";
 import { CameraShakeApplier } from "@jgengine/core/camera/shake/CameraShakeApplier.draw";
 import { rigShakeConfig } from "@jgengine/core/camera/shake/cameraShake";
 import { useCameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
@@ -79,7 +79,7 @@ export function GameCameraRig({
     director === undefined
       ? undefined
       : { followEntityId: director.followedEntityId(), cinematic: director.cinematic() },
-    { followEntityId: config?.followEntityId, cinematic: config?.cinematic },
+    { followEntityId: config?.follow?.followEntityId, cinematic: config?.cinematic },
   );
   const followEntityId = directed.followEntityId;
 
@@ -109,10 +109,10 @@ export function GameCameraRig({
             <GameFirstPersonCamera
               yawRef={yawRef}
               pitchRef={pitchRef}
-              config={config?.firstPerson}
+              config={config?.rigs?.firstPerson}
               followEntityId={followEntityId ?? undefined}
               viewmodel={viewmodel}
-              weapon={config?.weapon}
+              weapon={config?.follow?.weapon}
             />
             <CameraShakeApplier />
           </>
@@ -152,7 +152,7 @@ export function GameCameraRig({
       case "inspection":
         return (
           <>
-            <GameInspectionCamera config={config?.inspection} />
+            <GameInspectionCamera config={config?.rigs?.inspection} />
             <CameraShakeApplier />
           </>
         );
@@ -164,9 +164,9 @@ export function GameCameraRig({
             <GameOrbitCamera
               yawRef={yawRef}
               pitchRef={pitchRef}
-              config={config}
+              config={orbitRigConfig(config)}
               followEntityId={followEntityId ?? undefined}
-              onCameraFollow={config?.onCameraFollow}
+              onCameraFollow={config?.follow?.onCameraFollow}
               onDragChange={onDragChange}
               pointerControls={pointerControls}
             />

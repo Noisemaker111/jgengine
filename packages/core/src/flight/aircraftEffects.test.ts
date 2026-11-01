@@ -21,7 +21,7 @@ describe("aircraft effects", () => {
       const tuning = aircraftFromReference(id);
       const options = { position: [0, 1500, 0] as const, velocity: [0, 0, id === "bo-105" ? 20 : id === "saturn-v" ? 0 : 70] as const, groundHeight: () => -1e4 };
       const first = createRigidAircraft(tuning, options);
-      first.restore({ ...first.snapshot(), rotorSpeed: 1, spool: 0.5 });
+      { const held = first.snapshot(); first.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1, spool: 0.5 } }); }
       for (let i = 0; i < 120; i += 1) first.tick(DT, input(i));
       const saved = JSON.parse(JSON.stringify(first.snapshot()));
       const second = createRigidAircraft(tuning, options);
@@ -39,7 +39,7 @@ describe("aircraft effects", () => {
   test("retuning an effect's strength mid-flight takes effect on the next tick", () => {
     const tuning = aircraftFromReference("f-16");
     const aircraft = createRigidAircraft(tuning, { position: [0, 6000, 0], velocity: [0, 0, 180], groundHeight: () => -1e4 });
-    aircraft.restore({ ...aircraft.snapshot(), spool: 1 });
+    { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, spool: 1 } }); }
     const lapsed = aircraft.tick(DT, { throttle: 0.77, pitch: 0, roll: 0, yaw: 0 }).thrust;
     aircraft.retune(aircraftFromReference("f-16", { effects: { thrustLapse: { strength: 0 } } }));
     const fresh = aircraft.tick(DT, { throttle: 0.77, pitch: 0, roll: 0, yaw: 0 }).thrust;

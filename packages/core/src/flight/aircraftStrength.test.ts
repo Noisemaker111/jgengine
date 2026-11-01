@@ -65,7 +65,7 @@ function dragDeceleration(tuning: RigidAircraftTuning, speed: number): number {
 
 function settledThrust(tuning: RigidAircraftTuning, speed: number, height: number, throttle: number, afterburner = 0): number {
   const aircraft = airborne(tuning, speed, height);
-  aircraft.restore({ ...aircraft.snapshot(), spool: 1, afterburner });
+  { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, spool: 1, afterburner } }); }
   let thrust = 0;
   for (let i = 0; i < 60; i += 1) thrust = aircraft.tick(DT, level(throttle)).thrust;
   return thrust;
@@ -120,7 +120,7 @@ function edgewiseRatio(tuning: RigidAircraftTuning): number {
   if (rotor === undefined) return Number.NaN;
   const thrust = (velocity: readonly [number, number, number]) => {
     const aircraft = createRigidAircraft(tuning, { position: [0, 0, 0], velocity, groundHeight: () => -1e4 });
-    aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 });
+    { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
     return aircraft.tick(1e-3, { throttle: 1, pitch: 0, roll: 0, yaw: 0, collective: 0.45 }).rotor?.thrust ?? Number.NaN;
   };
   return thrust([0, 0, 20]) / thrust([0, 0, 0]);
@@ -128,7 +128,7 @@ function edgewiseRatio(tuning: RigidAircraftTuning): number {
 
 function rotorSpeedAfterCut(tuning: RigidAircraftTuning): number {
   const aircraft = createRigidAircraft(tuning, { position: [0, 1000, 0], velocity: [0, 0, 35], groundHeight: () => -1e4 });
-  aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 });
+  { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
   let step = aircraft.tick(0, { throttle: 0, pitch: 0, roll: 0, yaw: 0 });
   for (let time = 0; time < 5; time += 0.02) {
     step = aircraft.tick(0.02, {
@@ -200,7 +200,7 @@ describe("effect strength: each dial is finite and monotone on the metric it gov
       for (const id of ["cessna-172", "f-16", "bo-105"] as const) {
         const tuning = everyEffectAt(id, strength);
         const aircraft = airborne(tuning, id === "bo-105" ? 20 : id === "f-16" ? 150 : 50, 2000);
-        aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1, spool: 1 });
+        { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1, spool: 1 } }); }
         for (let i = 0; i < 60 * 60; i += 1) {
           const step = aircraft.tick(DT, { throttle: i % 600 < 300 ? 1 : 0.2, pitch: Math.sin(i / 50), roll: Math.sin(i / 37), yaw: Math.sin(i / 23) * 0.5, collective: 0.45 });
           for (const value of [...step.position, ...step.velocity, ...step.orientation, step.pitchRate, step.rollRate, step.yawRate]) expect(Number.isFinite(value)).toBe(true);

@@ -91,21 +91,34 @@ function Legend() {
 export const vfxLibraryGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "vfx-library" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => <>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[34, 30]} />
+        <meshStandardMaterial color="#1b1f24" roughness={0.95} />
+      </mesh>
+    </>,
+  },
   loop: { ...demoGame.loop, onInit, onTick: () => {}, onReset },
-  look: "flat",
-  lighting: { ambient: { intensity: 0.35 }, directional: [{ position: [6, 12, 8], intensity: 1.1 }] },
-  backdrop: { background: "#0e1114" },
-  postProcessing: { enabled: true, toneMapping: "agx", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
-  environment: () => <>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-      <planeGeometry args={[34, 30]} />
-      <meshStandardMaterial color="#1b1f24" roughness={0.95} />
-    </mesh>
-  </>,
+  rendering: {
+    look: "flat",
+    lighting: { ambient: { intensity: 0.35 }, directional: [{ position: [6, 12, 8], intensity: 1.1 }] },
+    backdrop: { background: "#0e1114" },
+    postProcessing: { enabled: true, toneMapping: "agx", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
+  },
   GameUI: Legend,
-  camera: { initialDistance: 17, initialHeight: 12, minDistance: 8, maxDistance: 60, targetHeight: 1.5, maxPolarAngle: 1.35 },
+  camera: {
+    orbit: {
+      initialDistance: 17,
+      initialHeight: 12,
+      minDistance: 8,
+      maxDistance: 60,
+      targetHeight: 1.5,
+      maxPolarAngle: 1.35,
+    },
+  },
   capture: {
     views: {
       sheet: { look: "0,1,0", lookFrom: "19,15,0.6" },

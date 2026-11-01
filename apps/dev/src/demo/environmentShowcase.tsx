@@ -28,7 +28,7 @@ export const showcaseEnvironment = environment({
     waterLevel: -1,
     detail: { material: { maps: groundMaterialMaps, repeat: 6 } },
   }),
-  vegetation: grass({ area: { w: 120, d: 120 }, baseColor: "#31531f", tipColor: "#8fbf4a", seed: "showcase" }),
+  vegetation: grass({ area: { w: 120, d: 120 }, colour: { baseColor: "#31531f", tipColor: "#8fbf4a" }, seed: "showcase" }),
   water: ocean({ bounds: { w: 520, d: 520 }, level: -1.4, waveHeight: 0.9, waveSpeed: 0.5, color: "#1f6f92" }),
   weather: rain({ area: { w: 160, d: 160, h: 70 }, density: 0.5, wind: [1.4, 0.4] }),
   structures: building({ count: 6, footprint: { w: 12, d: 9 }, stories: [3, 7], storyHeight: 2.8, spacing: 6, seed: "showcase" }),
@@ -36,7 +36,9 @@ export const showcaseEnvironment = environment({
 
 export const environmentShowcaseGame: PlayableGame = {
   ...demoGame,
-  // Keep the distance cutoff inside the fixture camera's 300-unit far plane.
-  graphics: { high: { drawDistance: 120 } },
-  environment: () => <EnvironmentScene feature={showcaseEnvironment} />,
+  rendering: {
+    // Keep the distance cutoff inside the fixture camera's 300-unit far plane.
+    graphics: { high: { drawDistance: 120 } },
+  },
+  scene: { environment: () => <EnvironmentScene feature={showcaseEnvironment} /> },
 };

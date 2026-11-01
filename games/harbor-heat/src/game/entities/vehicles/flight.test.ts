@@ -22,7 +22,7 @@ function hoverDrift(tuning: RigidAircraftTuning, collective: number): { drift: n
   const start = sim.snapshot();
   let step = sim.tick(1 / 60, { throttle: 1, collective, pitch: 0, roll: 0, yaw: 0 }, { thrustScale: 0 });
   for (let i = 0; i < 600; i += 1) step = sim.tick(1 / 60, { throttle: 1, collective, pitch: 0, roll: 0, yaw: 0 }, { thrustScale: 0 });
-  return { drift: Math.hypot(step.position[0] - start.x, step.position[2] - start.z), climb: step.position[1] - start.y };
+  return { drift: Math.hypot(step.position[0] - start.body.x, step.position[2] - start.body.z), climb: step.position[1] - start.body.y };
 }
 
 describe("Harbor Heat aircraft fly like their brief", () => {

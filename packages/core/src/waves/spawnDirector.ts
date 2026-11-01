@@ -73,7 +73,6 @@ export interface DirectorStep {
 }
 
 const DEFAULT_MAX_SPAWNS_PER_TICK = 64;
-const DEFAULT_ALERT_DECAY = 0.1;
 
 /** The semantic distance preference a signed `spawnPointBias` names. */
 function distanceBiasOf(bias: number): DistanceBias {
@@ -149,7 +148,7 @@ export function advanceSpawnDirector(
 
   const maxAlive = config.maxAlive ?? Number.POSITIVE_INFINITY;
   const maxSpawns = config.maxSpawnsPerTick ?? DEFAULT_MAX_SPAWNS_PER_TICK;
-  const alertDecay = config.alertDecayPerSecond ?? DEFAULT_ALERT_DECAY;
+  const alertDecay = config.alertDecayPerSecond ?? 0;
   const players = ctx.players ?? 0;
 
   let wave = state.wave;

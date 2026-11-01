@@ -253,44 +253,70 @@ const content: GameContextContent = {
 };
 export const credit = { text: "Original Deepward vault geometry, signage and item art", handle: "Deepward" };
 export const game = defineGame({
-  name: "Deepward", assets: stationAssets, world, physics, content, input: keybinds, editorLayers, audio,
-  server: { mode: "campaign" }, save: "none", persist: false,
-  settings: {},
-  presentation: "3d", scenePlacement: false, touch: false, platforms: ["web"],
-  // Engine records own acquisition; the vault's authored meshes own presentation.
-  worldItem: { filter: [{ id: "authored-salvage", hide: true }] },
+  name: "Deepward",
+  assets: stationAssets,
+  world,
+  physics,
+  content,
+  input: keybinds,
+  scene: {
+    editorLayers,
+    // Engine records own acquisition; the vault's authored meshes own presentation.
+    worldItem: { filter: [{ id: "authored-salvage", hide: true }] },
+    WorldOverlay,
+    renderEntity,
+  },
+  audio,
+  server: { mode: "campaign" },
+  save: "none",
+  persist: false,
+  chrome: { settings: {}, presentation: "3d" },
+  scenePlacement: false,
+  controls: {
+    touch: false,
+    platforms: ["web"],
+    movement: {
+      beforeCommit(frame) {
+        const view = viewStore.read(frame.ctx);
+        if (view.paused || view.panel !== null || (view.mode !== "home" && view.mode !== "dive")) return frame.current;
+        const place: Place = view.mode === "home" || view.dive === null ? "home" : view.dive.stratum;
+        // Ink pools drag at the suit: a step through one covers a little over half the ground.
+        const drag = view.dive !== null && place !== "home" && hazardsAt(frame.current, place, false).has("ink") ? 0.55 : 1;
+        // Subdivide the whole displacement so a long frame cannot tunnel through a wall.
+        const steps = Math.max(1, Math.ceil(groundDistance(frame.current, frame.next) / 0.15));
+        let x = frame.current[0], z = frame.current[2];
+        const dx = (frame.next[0] - x) / steps * drag, dz = (frame.next[2] - z) / steps * drag;
+        for (let n = 0; n < steps; n++) {
+          if (walkable(x + dx, z + dz, place)) { x += dx; z += dz; }
+          else if (walkable(x + dx, z, place)) x += dx;
+          else if (walkable(x, z + dz, place)) z += dz;
+        }
+        return [x, frame.next[1], z];
+      },
+    },
+    orientation: "landscape",
+  },
   // Marrow's base and story run on the engine's world model: bays, power, galley flows, story facts.
   systems: [marrowSpec.system],
   loop: { onInit: (ctx) => { initialize(ctx); registerCaptureCommands(ctx); }, onNewPlayer: seatPlayer, onTick: tickControls },
-  GameUI, WorldOverlay, renderEntity,
+  GameUI,
   hudTheme: shiftTheme,
   // Marrow's console draws the menu verbs as hull switch plates and every pane as the dive-log screen.
   uiKit: deepwardKit,
-  camera: { perspective: "first", firstPerson: { eyeHeight: 1.62, sensitivity: 0.0021, reticle: false, viewmodel: false }, frustum: { far: 95 } },
-  movement: {
-    beforeCommit(frame) {
-      const view = viewStore.read(frame.ctx);
-      if (view.paused || view.panel !== null || (view.mode !== "home" && view.mode !== "dive")) return frame.current;
-      const place: Place = view.mode === "home" || view.dive === null ? "home" : view.dive.stratum;
-      // Ink pools drag at the suit: a step through one covers a little over half the ground.
-      const drag = view.dive !== null && place !== "home" && hazardsAt(frame.current, place, false).has("ink") ? 0.55 : 1;
-      // Subdivide the whole displacement so a long frame cannot tunnel through a wall.
-      const steps = Math.max(1, Math.ceil(groundDistance(frame.current, frame.next) / 0.15));
-      let x = frame.current[0], z = frame.current[2];
-      const dx = (frame.next[0] - x) / steps * drag, dz = (frame.next[2] - z) / steps * drag;
-      for (let n = 0; n < steps; n++) {
-        if (walkable(x + dx, z + dz, place)) { x += dx; z += dz; }
-        else if (walkable(x + dx, z, place)) x += dx;
-        else if (walkable(x, z + dz, place)) z += dz;
-      }
-      return [x, frame.next[1], z];
+  camera: {
+    perspective: "first",
+    rigs: {
+      firstPerson: { eyeHeight: 1.62, sensitivity: 0.0021, reticle: false, viewmodel: false },
     },
+    lens: { frustum: { far: 95 } },
   },
-  lighting: { ambient: { color: "#d4d5c8", intensity: 0.72 }, hemisphere: { skyColor: "#c7d9df", groundColor: "#514639", intensity: 0.5 } },
-  backdrop: { background: C.black, fog: { color: C.black, near: 24, far: 75 } },
-  // Lamp housings and amber signage sit near the bloom threshold; a high strength smeared the ceiling into haze.
+  rendering: {
+    lighting: { ambient: { color: "#d4d5c8", intensity: 0.72 }, hemisphere: { skyColor: "#c7d9df", groundColor: "#514639", intensity: 0.5 } },
+    backdrop: { background: C.black, fog: { color: C.black, near: 24, far: 75 } },
+    // Lamp housings and amber signage sit near the bloom threshold; a high strength smeared the ceiling into haze.
   // Indoor air: a thin haze the scene fog colours per floor, and a glow around each lit lamp in it.
-  postProcessing: { toneMapping: "aces", exposure: 1.05, bloom: { strength: 0.05, radius: 0.3, threshold: 1.35 }, atmosphere: { indoor: true, fogDensity: 0.013, fogFalloff: 0.02, fogHeight: 0, fogMax: 0.4, shafts: 0, lamps: 1.25, beams: 0.35 } },
+    postProcessing: { toneMapping: "aces", exposure: 1.05, bloom: { strength: 0.05, radius: 0.3, threshold: 1.35 }, atmosphere: { indoor: true, fogDensity: 0.013, fogFalloff: 0.02, fogHeight: 0, fogMax: 0.4, shafts: 0, lamps: 1.25, beams: 0.35 } },
+  },
   capture: {
     probe: captureProbe,
     // "Enter Marrow" is `deepward.enter`; declaring it keeps a play capture on the same path the title button takes.
@@ -325,5 +351,4 @@ export const game = defineGame({
       choir: { description: "IV / the choir hall toward the sanctum", state: "floor-choir", look: "-3.75,1.7,-4", lookFrom: "14,-0.1,0", settleMs: 2500 },
     },
   },
-  orientation: "landscape",
 });

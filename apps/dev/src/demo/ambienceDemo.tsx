@@ -59,7 +59,7 @@ const impact = {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 120, d: 120 }, height: 2, frequency: 0.02, seed: "ambience" }),
-  vegetation: grass({ area: { w: 110, d: 110 }, baseColor: "#223f19", tipColor: "#7fa04a", seed: "ambience" }),
+  vegetation: grass({ area: { w: 110, d: 110 }, colour: { baseColor: "#223f19", tipColor: "#7fa04a" }, seed: "ambience" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -177,8 +177,17 @@ export const ambienceDemoGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick: () => undefined, onReset: () => undefined, onDispose: () => undefined },
   GameUI: AmbienceUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 22, initialHeight: 16, minDistance: 10, maxDistance: 60, targetHeight: 0, maxPolarAngle: 1.3 },
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
+  camera: {
+    orbit: {
+      initialDistance: 22,
+      initialHeight: 16,
+      minDistance: 10,
+      maxDistance: 60,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
   audio: {
     sounds: {
       bed_meadow: {
@@ -211,7 +220,7 @@ export const ambienceDemoGame: PlayableGame = {
     buses: { ambient: { id: "ambient", gain: 0.6 }, sfx: { id: "sfx", gain: 0.6 } },
     zones: ZONES,
     occlusion: { maxTestsPerTick: 4, intervalMs: 120 },
+    entitySounds: { [MACHINE]: "machine_hum" },
   },
-  entitySounds: { [MACHINE]: "machine_hum" },
   capture: { probe },
 };

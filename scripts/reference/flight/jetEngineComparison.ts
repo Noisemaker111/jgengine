@@ -59,7 +59,7 @@ function gameThrust(tuning: RigidAircraftTuning, altitude: number, mach: number,
     velocity: [0, 0, mach * standardAtmosphere(altitude).speedOfSound],
     airDensity: (height) => standardAtmosphere(height).density,
   });
-  aircraft.restore({ ...aircraft.snapshot(), spool: 1, afterburner: throttle > dryThrottle(tuning) ? 1 : 0 });
+  { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, spool: 1, afterburner: throttle > dryThrottle(tuning) ? 1 : 0 } }); }
   return aircraft.tick(1e-3, { throttle, pitch: 0, roll: 0, yaw: 0 }).thrust;
 }
 

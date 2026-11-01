@@ -6,7 +6,14 @@ import { createTireMarks } from "./tireMarks";
 import { createVehicleDynamics } from "./vehicleDynamics";
 import { vehicleTuning } from "./vehicleSpec";
 
-const TUNING = vehicleTuning({ grip: 1.5, drift: 0.15, abs: 1, stability: 1, bodyRoll: 0.4, topSpeed: 28, accel: 9, brake: 12, turnRate: 2 });
+const TUNING = vehicleTuning({
+  tires: { grip: 1.5, drift: 0.15 },
+  brakes: { abs: 1, brake: 12 },
+  aids: { stability: 1 },
+  chassis: { bodyRoll: 0.4 },
+  engine: { topSpeed: 28, accel: 9 },
+  steering: { turnRate: 2 },
+});
 const DT = 1 / 60;
 
 describe("tickDrivableVehicle", () => {
@@ -16,7 +23,7 @@ describe("tickDrivableVehicle", () => {
     for (let i = 0; i < 10; i += 1) result = tickDrivableVehicle(vehicle, DT, { ...NEUTRAL_AXIS, throttle: 1 });
     expect(result.pose.dt).toBeCloseTo(DT);
     expect(result.pose.position[2]).toBeGreaterThan(0);
-    expect(result.step.forwardSpeed).toBeGreaterThan(0);
+    expect(result.step.motion.forwardSpeed).toBeGreaterThan(0);
   });
 
   test("ground snaps the resulting pose when groundHeight is given", () => {

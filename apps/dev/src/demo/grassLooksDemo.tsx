@@ -45,12 +45,16 @@ function GrassLooks() {
 export const grassLooksGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "grass-looks" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => <GrassLooks />,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  lighting: { ambient: { intensity: 0.55 }, directional: [{ intensity: 2.6, position: [30, 40, 20], color: "#fff1dc" }] },
-  backdrop: { background: "#9cc0dc" },
-  environment: () => <GrassLooks />,
+  rendering: {
+    lighting: { ambient: { intensity: 0.55 }, directional: [{ intensity: 2.6, position: [30, 40, 20], color: "#fff1dc" }] },
+    backdrop: { background: "#9cc0dc" },
+  },
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#fff", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
       <div style={{ position: "absolute", top: 12, left: 16, fontSize: 15, fontWeight: 600 }}>One grass system · {LOOKS.length} looks from the same knobs</div>

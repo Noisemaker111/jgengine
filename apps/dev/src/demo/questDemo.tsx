@@ -29,7 +29,7 @@ const SIDE_QUEST: QuestDef = {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 70, d: 70 }, height: 3, frequency: 0.03, seed: "quest" }),
-  vegetation: grass({ area: { w: 60, d: 60 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "quest" }),
+  vegetation: grass({ area: { w: 60, d: 60 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "quest" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -95,6 +95,15 @@ export const questDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: QuestUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 28, initialHeight: 22, minDistance: 12, maxDistance: 56, targetHeight: 0, maxPolarAngle: 1.3 },
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
+  camera: {
+    orbit: {
+      initialDistance: 28,
+      initialHeight: 22,
+      minDistance: 12,
+      maxDistance: 56,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

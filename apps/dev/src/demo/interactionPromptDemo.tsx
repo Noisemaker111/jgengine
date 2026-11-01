@@ -57,7 +57,7 @@ const ACCENT_BY_ID: Record<string, string> = Object.fromEntries(INTERACTABLES.ma
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 70, d: 70 }, height: 2, frequency: 0.03, seed: "prompt" }),
-  vegetation: grass({ area: { w: 60, d: 60 }, baseColor: "#26401a", tipColor: "#7fb04a", seed: "prompt" }),
+  vegetation: grass({ area: { w: 60, d: 60 }, colour: { baseColor: "#26401a", tipColor: "#7fb04a" }, seed: "prompt" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -129,6 +129,15 @@ export const interactionPromptDemoGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: InteractionPromptUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 24, initialHeight: 18, minDistance: 12, maxDistance: 52, targetHeight: 0, maxPolarAngle: 1.3 },
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
+  camera: {
+    orbit: {
+      initialDistance: 24,
+      initialHeight: 18,
+      minDistance: 12,
+      maxDistance: 52,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

@@ -125,11 +125,11 @@ describe("vehicle dynamics collision recovery", () => {
     });
     const car = createVehicleDynamics(gripRwd, { heading: -Math.PI, clampMove: clamp.clampMove });
     const step = car.tick(DT, axis({}));
-    expect(step.position[2]).toBeLessThan(-2.4);
+    expect(step.motion.position[2]).toBeLessThan(-2.4);
     expect(car.velocity()).toEqual([0, 0]);
     expect(clamp.takeImpact()).toBeNull();
     for (let i = 0; i < 60; i++) car.tick(DT, axis({}));
-    expect(car.pose().position[2]).toBeCloseTo(step.position[2], 9);
+    expect(car.pose().position[2]).toBeCloseTo(step.motion.position[2], 9);
   });
 
   test("a plain diagonal clamp preserves motion and is called once per physics substep", () => {
@@ -166,11 +166,11 @@ describe("createVehicleDynamics — integration", () => {
     const car = createVehicleDynamics(gripRwd);
     let step = car.tick(DT, axis({}));
     for (let i = 0; i < 600; i += 1) step = car.tick(DT, axis({ throttle: 1 }));
-    expect(step.heading).toBe(0);
-    expect(Math.abs(step.lateralSpeed)).toBeLessThan(1e-9);
-    expect(step.forwardSpeed).toBeGreaterThan(40);
-    expect(step.gear).toBeGreaterThan(3);
-    expect(step.rpm).toBeLessThanOrEqual(gearbox.redlineRpm);
+    expect(step.motion.heading).toBe(0);
+    expect(Math.abs(step.motion.lateralSpeed)).toBeLessThan(1e-9);
+    expect(step.motion.forwardSpeed).toBeGreaterThan(40);
+    expect(step.engine.gear).toBeGreaterThan(3);
+    expect(step.engine.rpm).toBeLessThanOrEqual(gearbox.redlineRpm);
   });
 
   test("the same inputs produce the same state", () => {
@@ -198,24 +198,24 @@ describe("createVehicleDynamics — integration", () => {
   test("frame rate does not change where the car ends up", () => {
     const slow = driveScript(gripRwd, 1 / 30, 7).step;
     const fast = driveScript(gripRwd, 1 / 144, 7).step;
-    expect(Math.abs(slow.heading - fast.heading)).toBeLessThan(0.03);
-    expect(Math.hypot(slow.position[0] - fast.position[0], slow.position[2] - fast.position[2])).toBeLessThan(1);
+    expect(Math.abs(slow.motion.heading - fast.motion.heading)).toBeLessThan(0.03);
+    expect(Math.hypot(slow.motion.position[0] - fast.motion.position[0], slow.motion.position[2] - fast.motion.position[2])).toBeLessThan(1);
   });
 
   test("brakes stop the car without reversing, then a held brake reverses it", () => {
     const car = createVehicleDynamics(gripRwd);
     for (let i = 0; i < 240; i += 1) car.tick(DT, axis({ throttle: 1 }));
     let step = car.tick(DT, axis({ brake: 1 }));
-    let lowest = step.forwardSpeed;
-    for (let i = 0; i < 300 && step.forwardSpeed > 0.2; i += 1) {
+    let lowest = step.motion.forwardSpeed;
+    for (let i = 0; i < 300 && step.motion.forwardSpeed > 0.2; i += 1) {
       step = car.tick(DT, axis({ brake: 1 }));
-      lowest = Math.min(lowest, step.forwardSpeed);
+      lowest = Math.min(lowest, step.motion.forwardSpeed);
     }
     expect(lowest).toBeGreaterThanOrEqual(-0.01);
     for (let i = 0; i < 240; i += 1) step = car.tick(DT, axis({ brake: 1 }));
-    expect(step.gear).toBe(-1);
-    expect(step.forwardSpeed).toBeLessThan(-2);
-    expect(step.forwardSpeed).toBeGreaterThanOrEqual(-(gripRwd.reverseSpeed ?? 8) - 0.01);
+    expect(step.engine.gear).toBe(-1);
+    expect(step.motion.forwardSpeed).toBeLessThan(-2);
+    expect(step.motion.forwardSpeed).toBeGreaterThanOrEqual(-(gripRwd.reverseSpeed ?? 8) - 0.01);
   });
 
   test("retune swaps tuning without costing momentum", () => {
@@ -231,19 +231,19 @@ describe("createVehicleDynamics — integration", () => {
     const car = createVehicleDynamics(ballCar);
     let step = car.tick(DT, axis({}));
     for (let i = 0; i < 300; i += 1) step = car.tick(DT, axis({ throttle: 1 }));
-    expect(step.forwardSpeed).toBeCloseTo(23, 0);
+    expect(step.motion.forwardSpeed).toBeCloseTo(23, 0);
     for (let i = 0; i < 60; i += 1) step = car.tick(DT, axis({ throttle: 1, steer: 0.5 }));
-    expect(Math.abs(step.yawRate)).toBeGreaterThan(0.5);
+    expect(Math.abs(step.motion.yawRate)).toBeGreaterThan(0.5);
     const boosted = createVehicleDynamics(ballCar);
     for (let i = 0; i < 400; i += 1) step = boosted.tick(DT, axis({ throttle: 1 }), { thrust: 1800 });
-    expect(step.forwardSpeed).toBeGreaterThan(30);
+    expect(step.motion.forwardSpeed).toBeGreaterThan(30);
   });
 
   test("tickDrivableVehicle drives it into a setPose patch", () => {
     const car = createVehicleDynamics(gripRwd, { position: [2, 0, 3] });
     const drive = tickDrivableVehicle(car, DT, axis({ throttle: 1 }), { groundHeight: () => 1.5 });
     expect(drive.pose.position[1]).toBe(1.5);
-    expect(drive.step.gear).toBe(1);
+    expect(drive.step.engine.gear).toBe(1);
   });
 });
 
@@ -282,10 +282,10 @@ describe("createVehicleDynamics — handling emerges from physical knobs", () =>
   test("rear drive turns throttle into oversteer, front drive into understeer", () => {
     const powerOn = (driveFront: number) => {
       const car = createVehicleDynamics({ ...gripRwd, driveFront, powertrain: { ...gearbox, peakTorque: 700 } });
-      for (let i = 0; i < 600; i += 1) if (car.tick(DT, axis({ throttle: 1 })).forwardSpeed > 12) break;
+      for (let i = 0; i < 600; i += 1) if (car.tick(DT, axis({ throttle: 1 })).motion.forwardSpeed > 12) break;
       for (let i = 0; i < 60; i += 1) car.tick(DT, axis({ throttle: 0.3, steer: 0.5 }));
       let peak = 0;
-      for (let i = 0; i < 90; i += 1) peak = Math.max(peak, Math.abs(car.tick(DT, axis({ throttle: 1, steer: 0.5 })).sideslip));
+      for (let i = 0; i < 90; i += 1) peak = Math.max(peak, Math.abs(car.tick(DT, axis({ throttle: 1, steer: 0.5 })).tires.sideslip));
       return peak;
     };
     expect(powerOn(0)).toBeGreaterThan(powerOn(1) * 2);
@@ -321,7 +321,7 @@ describe("createVehicleDynamics — handling emerges from physical knobs", () =>
   test("ABS keeps the front steering under full brake", () => {
     const headingChange = (abs: number) => {
       const car = createVehicleDynamics(withVehicleEffects(gripRwd, { abs: abs > 0 && { strength: abs } }));
-      for (let i = 0; i < 600; i += 1) if (car.tick(DT, axis({ throttle: 1 })).forwardSpeed > 25) break;
+      for (let i = 0; i < 600; i += 1) if (car.tick(DT, axis({ throttle: 1 })).motion.forwardSpeed > 25) break;
       const start = car.pose().heading;
       for (let i = 0; i < 60; i += 1) car.tick(DT, axis({ brake: 1, steer: 1 }));
       return Math.abs(car.pose().heading - start);
@@ -339,26 +339,26 @@ describe("createVehicleDynamics — suspension", () => {
     const car = createVehicleDynamics(sprung, { position: [0, 2, 0] });
     let step = car.tick(DT, axis({}));
     for (let i = 0; i < 120; i += 1) step = car.tick(DT, axis({}));
-    expect(step.position[1]).toBeCloseTo(2, 3);
-    expect(step.airborne).toBe(false);
-    const total = step.wheelLoads.reduce((sum, load) => sum + load, 0);
+    expect(step.motion.position[1]).toBeCloseTo(2, 3);
+    expect(step.air.airborne).toBe(false);
+    const total = step.loads.wheelLoads.reduce((sum, load) => sum + load, 0);
     expect(total).toBeCloseTo(sprung.massKg * 9.81, -1);
-    expect((step.wheelLoads[0] + step.wheelLoads[1]) / total).toBeCloseTo(sprung.frontWeight, 2);
+    expect((step.loads.wheelLoads[0] + step.loads.wheelLoads[1]) / total).toBeCloseTo(sprung.frontWeight, 2);
   });
 
   test("braking dives the nose and a right-hand corner loads and drops the left side", () => {
     const car = createVehicleDynamics(sprung);
     let step = car.tick(DT, axis({}));
-    for (let i = 0; i < 600 && step.forwardSpeed < 20; i += 1) step = car.tick(DT, axis({ throttle: 1 }));
+    for (let i = 0; i < 600 && step.motion.forwardSpeed < 20; i += 1) step = car.tick(DT, axis({ throttle: 1 }));
     for (let i = 0; i < 90; i += 1) step = car.tick(DT, axis({ throttle: 0.4, steer: 0.5 }));
-    expect(step.bodyRoll).toBeGreaterThan(0.02);
-    expect(step.wheelLoads[0] + step.wheelLoads[2]).toBeGreaterThan((step.wheelLoads[1] + step.wheelLoads[3]) * 2);
+    expect(step.body.bodyRoll).toBeGreaterThan(0.02);
+    expect(step.loads.wheelLoads[0] + step.loads.wheelLoads[2]).toBeGreaterThan((step.loads.wheelLoads[1] + step.loads.wheelLoads[3]) * 2);
     const straight = createVehicleDynamics(sprung);
     step = straight.tick(DT, axis({}));
-    for (let i = 0; i < 600 && step.forwardSpeed < 20; i += 1) step = straight.tick(DT, axis({ throttle: 1 }));
+    for (let i = 0; i < 600 && step.motion.forwardSpeed < 20; i += 1) step = straight.tick(DT, axis({ throttle: 1 }));
     for (let i = 0; i < 20; i += 1) step = straight.tick(DT, axis({ brake: 1 }));
-    expect(step.bodyPitch).toBeGreaterThan(0.01);
-    expect(step.wheelLoads[0] + step.wheelLoads[1]).toBeGreaterThan(step.wheelLoads[2] + step.wheelLoads[3]);
+    expect(step.body.bodyPitch).toBeGreaterThan(0.01);
+    expect(step.loads.wheelLoads[0] + step.loads.wheelLoads[1]).toBeGreaterThan(step.loads.wheelLoads[2] + step.loads.wheelLoads[3]);
   });
 
   test("drives off a ledge, flies, lands at the free-fall speed and settles without bouncing away", () => {
@@ -368,14 +368,14 @@ describe("createVehicleDynamics — suspension", () => {
     let step = car.tick(DT, axis({}));
     for (let i = 0; i < 400; i += 1) {
       step = car.tick(DT, axis({ throttle: 1 }));
-      if (step.airborne) airborneTicks += 1;
-      landing = Math.max(landing, step.landingSpeed);
+      if (step.air.airborne) airborneTicks += 1;
+      landing = Math.max(landing, step.air.landingSpeed);
     }
     expect(landing).toBeGreaterThan(Math.sqrt(2 * 9.81 * 3) - 1);
     expect(airborneTicks * DT).toBeGreaterThan(0.5);
     expect(airborneTicks * DT).toBeLessThan(1);
-    expect(step.airborne).toBe(false);
-    expect(step.position[1]).toBeCloseTo(-3, 1);
+    expect(step.air.airborne).toBe(false);
+    expect(step.motion.position[1]).toBeCloseTo(-3, 1);
   });
 
   test("rolls back down a grade in neutral and the handbrake holds it", () => {
@@ -385,10 +385,10 @@ describe("createVehicleDynamics — suspension", () => {
     expect(rolling.pose().position[2]).toBeLessThan(-0.3);
     const parked = createVehicleDynamics(sprung, { groundHeight: grade });
     let step = parked.tick(DT, axis({ handbrake: 1 }));
-    expect(step.airborne).toBe(false);
-    expect(step.bodyPitch).toBeCloseTo(-Math.atan(0.2), 2);
+    expect(step.air.airborne).toBe(false);
+    expect(step.body.bodyPitch).toBeCloseTo(-Math.atan(0.2), 2);
     for (let i = 0; i < 180; i += 1) step = parked.tick(DT, axis({ handbrake: 1 }));
-    expect(Math.abs(step.forwardSpeed)).toBeLessThan(0.05);
+    expect(Math.abs(step.motion.forwardSpeed)).toBeLessThan(0.05);
   });
 
   test("snapshot/restore resumes bit-for-bit over rough ground", () => {
@@ -429,7 +429,7 @@ describe("createVehicleDynamics — suspension", () => {
     const car = createVehicleDynamics(sprung, { groundHeight: ground });
     let drive = tickDrivableVehicle(car, DT, axis({ throttle: 1 }), { groundHeight: ground });
     for (let i = 0; i < 120; i += 1) drive = tickDrivableVehicle(car, DT, axis({ throttle: 1 }), { groundHeight: ground });
-    expect(drive.pose.position[1]).toBeCloseTo(Math.max(drive.step.position[1], ground(0, drive.step.position[2])), 2);
+    expect(drive.pose.position[1]).toBeCloseTo(Math.max(drive.step.motion.position[1], ground(0, drive.step.motion.position[2])), 2);
   });
 });
 
@@ -459,13 +459,13 @@ describe("createVehicleDynamics — jumps and air control", () => {
     for (let i = 0; i < 10; i += 1) car.tick(DT, axis({}));
     expect(car.jump()).toBe(false);
     for (let i = 0; i < 300; i += 1) car.tick(DT, axis({}));
-    expect(car.snapshot().jumpsUsed).toBe(0);
+    expect(car.snapshot().air.jumpsUsed).toBe(0);
     expect(car.jump()).toBe(true);
     const late = createVehicleDynamics({ ...jumper, jump: { speed: 6, count: 2, window: 0.3 } });
     late.tick(DT, axis({}));
     late.jump();
     for (let i = 0; i < 30; i += 1) late.tick(DT, axis({}));
-    expect(late.snapshot().airborne).toBe(true);
+    expect(late.snapshot().air.airborne).toBe(true);
     expect(late.jump()).toBe(false);
   });
 
@@ -477,7 +477,7 @@ describe("createVehicleDynamics — jumps and air control", () => {
     expect(report.airRollRate).toBeGreaterThan(2.5);
     const grounded = createVehicleDynamics(jumper);
     for (let i = 0; i < 30; i += 1) grounded.tick(DT, axis({}), { air: { pitch: 1, yaw: 0, roll: 1 } });
-    expect(Math.abs(grounded.snapshot().rollRate)).toBeLessThan(0.05);
+    expect(Math.abs(grounded.snapshot().body.rollRate)).toBeLessThan(0.05);
     const noAir = measureAir(() => createVehicleDynamics({ ...jumper, air: undefined }));
     expect(noAir.airRollRate).toBeLessThan(0.05);
   });
@@ -488,8 +488,8 @@ describe("createVehicleDynamics — jumps and air control", () => {
     car.jump();
     for (let i = 0; i < 20; i += 1) car.tick(DT, axis({ throttle: 1, steer: 1 }));
     const state = car.snapshot();
-    expect(state.pitchRate).toBeGreaterThan(1);
-    expect(state.yawRate).toBeLessThan(-1);
+    expect(state.body.pitchRate).toBeGreaterThan(1);
+    expect(state.motion.yawRate).toBeLessThan(-1);
   });
 
   test("snapshot/restore resumes bit-for-bit through jumps and air control", () => {
@@ -560,11 +560,11 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
     expect(report.counterLeanDeg).toBeGreaterThan(1);
     const bike = createVehicleDynamics(sportBike);
     let step = bike.tick(DT, axis({}));
-    for (let i = 0; i < 600 && step.forwardSpeed < 20; i += 1) step = bike.tick(DT, axis({ throttle: 1 }));
+    for (let i = 0; i < 600 && step.motion.forwardSpeed < 20; i += 1) step = bike.tick(DT, axis({ throttle: 1 }));
     for (let i = 0; i < 120; i += 1) step = bike.tick(DT, axis({ throttle: 0.3, steer: 1 }));
-    expect(step.yawRate).toBeLessThan(0);
-    expect(step.lean).toBeCloseTo(Math.atan(step.lateralAccel / 9.81), 6);
-    expect(step.bodyRoll).toBeCloseTo(-step.lean, 6);
+    expect(step.motion.yawRate).toBeLessThan(0);
+    expect(step.body.lean).toBeCloseTo(Math.atan(step.motion.lateralAccel / 9.81), 6);
+    expect(step.body.bodyRoll).toBeCloseTo(-step.body.lean, 6);
   });
 
   test("lean rate sets how fast a bike tips in", () => {
@@ -583,9 +583,9 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
   test("at walking pace the bar steers directly", () => {
     const bike = createVehicleDynamics(sportBike);
     let step = bike.tick(DT, axis({}));
-    for (let i = 0; i < 600 && step.forwardSpeed < 1.5; i += 1) step = bike.tick(DT, axis({ throttle: 0.2 }));
+    for (let i = 0; i < 600 && step.motion.forwardSpeed < 1.5; i += 1) step = bike.tick(DT, axis({ throttle: 0.2 }));
     for (let i = 0; i < 30; i += 1) step = bike.tick(DT, axis({ throttle: 0.1, steer: 1 }));
-    expect(step.yawRate).toBeLessThan(-0.3);
+    expect(step.motion.yawRate).toBeLessThan(-0.3);
   });
 
   test("hard launch lifts the front and hard front braking lifts the rear", () => {
@@ -597,13 +597,13 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
     };
     const launch = createVehicleDynamics(hooligan);
     let wheelie = false;
-    for (let i = 0; i < 90; i += 1) wheelie ||= launch.tick(DT, axis({ throttle: 1 })).wheelie;
+    for (let i = 0; i < 90; i += 1) wheelie ||= launch.tick(DT, axis({ throttle: 1 })).loads.wheelie;
     expect(wheelie).toBe(true);
     const stop = createVehicleDynamics({ ...hooligan, brakeForce: 6000, brakeFront: 1 });
     let step = stop.tick(DT, axis({}));
-    for (let i = 0; i < 600 && step.forwardSpeed < 25; i += 1) step = stop.tick(DT, axis({ throttle: 0.6 }));
+    for (let i = 0; i < 600 && step.motion.forwardSpeed < 25; i += 1) step = stop.tick(DT, axis({ throttle: 0.6 }));
     let stoppie = false;
-    for (let i = 0; i < 60; i += 1) stoppie ||= stop.tick(DT, axis({ brake: 1 })).stoppie;
+    for (let i = 0; i < 60; i += 1) stoppie ||= stop.tick(DT, axis({ brake: 1 })).loads.stoppie;
     expect(stoppie).toBe(true);
   });
 
@@ -620,18 +620,18 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
     let step = launch.tick(DT, axis({}));
     for (let i = 0; i < 90; i += 1) {
       step = launch.tick(DT, axis({ throttle: 1 }));
-      wheelie ||= step.wheelie;
-      traction ||= step.tractionLimited;
+      wheelie ||= step.loads.wheelie;
+      traction ||= step.aids.tractionLimited;
     }
     expect(wheelie).toBe(false);
     expect(traction).toBe(true);
     // The cap sits just under the lift limit, g·b/h, so the launch gives up little.
-    expect(step.longitudinalAccel).toBeGreaterThan(0.8 * 9.81 * (1.35 * 0.5) / 0.8);
+    expect(step.motion.longitudinalAccel).toBeGreaterThan(0.8 * 9.81 * (1.35 * 0.5) / 0.8);
     const stop = createVehicleDynamics({ ...hooligan, brakeForce: 6000, brakeFront: 1 });
     step = stop.tick(DT, axis({}));
-    for (let i = 0; i < 600 && step.forwardSpeed < 25; i += 1) step = stop.tick(DT, axis({ throttle: 0.6 }));
+    for (let i = 0; i < 600 && step.motion.forwardSpeed < 25; i += 1) step = stop.tick(DT, axis({ throttle: 0.6 }));
     let stoppie = false;
-    for (let i = 0; i < 60; i += 1) stoppie ||= stop.tick(DT, axis({ brake: 1 })).stoppie;
+    for (let i = 0; i < 60; i += 1) stoppie ||= stop.tick(DT, axis({ brake: 1 })).loads.stoppie;
     expect(stoppie).toBe(false);
   });
 
@@ -654,11 +654,11 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
       let step = bike.tick(DT, axis({}));
       for (let i = 0; i < 180; i += 1) {
         step = bike.tick(DT, axis({ throttle: 1 }));
-        if (step.wheelLoads![0] + step.wheelLoads![1] <= 0) front += 1;
+        if (step.loads.wheelLoads![0] + step.loads.wheelLoads![1] <= 0) front += 1;
       }
-      for (let i = 0; i < 120 && step.forwardSpeed > 1; i += 1) {
+      for (let i = 0; i < 120 && step.motion.forwardSpeed > 1; i += 1) {
         step = bike.tick(DT, axis({ brake: 1 }));
-        if (step.wheelLoads![2] + step.wheelLoads![3] <= 0) rear += 1;
+        if (step.loads.wheelLoads![2] + step.loads.wheelLoads![3] <= 0) rear += 1;
       }
       return { front, rear };
     }
@@ -683,7 +683,7 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
     for (let i = 0; i < 240; i += 1) step = bike.tick(DT, axis({ throttle: 0.6 }));
     for (let i = 0; i < 180; i += 1) {
       step = bike.tick(DT, axis({ throttle: 0.3, steer: 1 }));
-      expect(step.airborne).toBe(false);
+      expect(step.air.airborne).toBe(false);
     }
   });
 

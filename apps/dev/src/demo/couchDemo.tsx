@@ -90,12 +90,11 @@ function makeCouchGame(): PlayableGame {
         context = null;
       },
     },
-    localPlayers: { maxSlots: 4 },
-    viewports: VIEWPORTS,
-    backdrop: { background: "#a9c8e6" },
-    environment: () => <Stage />,
+    controls: { localPlayers: { maxSlots: 4 }, viewports: VIEWPORTS },
+    rendering: { backdrop: { background: "#a9c8e6" } },
+    scene: { environment: () => <Stage /> },
     GameUI: SeatHud,
-    camera: { rig: "topDown", topDown: { height: 12, pitch: 0.9 } },
+    camera: { rig: "topDown", rigs: { topDown: { height: 12, pitch: 0.9 } } },
     capture: {
       probe: (): Record<string, number> => {
         if (context === null) return {};

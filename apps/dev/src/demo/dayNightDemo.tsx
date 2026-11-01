@@ -30,7 +30,7 @@ const cycleClock = { calendar: () => ({ dayFraction: cycle.sample().dayFraction 
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3, frequency: 0.03, seed: "daynight" }),
-  vegetation: grass({ area: { w: 70, d: 70 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "daynight" }),
+  vegetation: grass({ area: { w: 70, d: 70 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "daynight" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {
@@ -134,13 +134,26 @@ export const dayNightDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: DayNightUI,
-  // Opt out of the cinematic default sky so this demo's cycle-driven sky is the only sky/lighting.
-  look: "flat",
-  environment: () => (
-    <>
-      <Sky sky={daySky} clock={cycleClock} />
-      <EnvironmentScene feature={terrainFeature} />
-    </>
-  ),
-  camera: { initialDistance: 30, initialHeight: 9, minDistance: 12, maxDistance: 60, targetHeight: 7, maxPolarAngle: 1.5 },
+  rendering: {
+    // Opt out of the cinematic default sky so this demo's cycle-driven sky is the only sky/lighting.
+    look: "flat",
+  },
+  scene: {
+    environment: () => (
+      <>
+        <Sky sky={daySky} clock={cycleClock} />
+        <EnvironmentScene feature={terrainFeature} />
+      </>
+    ),
+  },
+  camera: {
+    orbit: {
+      initialDistance: 30,
+      initialHeight: 9,
+      minDistance: 12,
+      maxDistance: 60,
+      targetHeight: 7,
+      maxPolarAngle: 1.5,
+    },
+  },
 };
