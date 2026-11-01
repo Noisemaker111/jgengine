@@ -1,7 +1,10 @@
 // @skill jgengine-world
 import type { ComparisonTable } from "../flight/flightComparison";
 import { createBoatDynamics, type BoatTuning } from "@jgengine/core/physics/boatDynamics";
-import { bSeriesShipOpenWater, type BSeriesPropeller } from "./marinePropeller";
+import { prepareOpenWater, propellerPoint } from "@jgengine/core/physics/boatPropeller";
+import { boatFromReference } from "@jgengine/core/physics/boatReferences";
+import { regularWaveField } from "@jgengine/core/water/seaState";
+import { bSeriesOpenWater, bSeriesShipOpenWater, type BSeriesPropeller } from "./marinePropeller";
 import { wigleyHull } from "./hullForm";
 import { planingEquilibrium, type PlaningHull } from "./planingHull";
 import {
@@ -51,9 +54,21 @@ export interface ReferenceBoat {
   porpoisingTrim?(speed: number): number;
 }
 
-/** The game's straight-line thrust law, shared by both models so the comparison isolates the hull. */
-function gameThrust(tuning: BoatTuning, speed: number): number {
-  return tuning.maxThrust * Math.max(0, 1 - Math.max(0, speed) / Math.max(0.1, tuning.propSpeed));
+/** Net thrust along the hull at a forward speed and throttle, N. */
+export type PropulsionLaw = (speed: number, throttle: number) => number;
+
+/**
+ * The game boat's own straight-line thrust: its `propeller` effect (wake, thrust deduction, engine) when on, else the
+ * simple thrust law. A reference with no propeller of its own shares it, so the comparison isolates the hull.
+ */
+function gamePropulsion(tuning: BoatTuning): PropulsionLaw {
+  const propeller = tuning.effects?.propeller;
+  if (propeller !== undefined && propeller.enabled !== false) {
+    const curve = prepareOpenWater(propeller.openWater, propeller.diameter);
+    const density = tuning.water?.density ?? RHO;
+    return (u, throttle) => (1 - (propeller.thrustDeduction ?? 0)) * propellerPoint(propeller, curve, Math.max(0, u * (1 - (propeller.wake ?? 0))), throttle, 0, density).thrust;
+  }
+  return (u, throttle) => throttle * tuning.maxThrust * Math.max(0, 1 - Math.max(0, u) / Math.max(0.1, tuning.propSpeed));
 }
 
 /** Straight-line results of one model, SI units. */
@@ -63,11 +78,11 @@ interface StraightLine {
   coastDistance: number;
 }
 
-function referenceStraightLine(boat: ReferenceBoat, tuning: BoatTuning): StraightLine {
+function referenceStraightLine(boat: ReferenceBoat, propulsion: PropulsionLaw, ceiling: number): StraightLine {
   const inertia = boat.massKg + boat.addedMass;
-  const accel = (u: number, throttle: number) => (throttle * gameThrust(tuning, u) - boat.resistance(u)) / inertia;
+  const accel = (u: number, throttle: number) => ((throttle > 0 ? propulsion(u, throttle) : 0) - boat.resistance(u)) / inertia;
   let low = 0;
-  let high = tuning.propSpeed;
+  let high = ceiling;
   for (let i = 0; i < 100; i += 1) {
     const mid = 0.5 * (low + high);
     if (accel(mid, 1) > 0) low = mid;
@@ -101,13 +116,15 @@ function referenceStraightLine(boat: ReferenceBoat, tuning: BoatTuning): Straigh
   return { topSpeed, timeTo90, coastDistance: distance };
 }
 
-/** Resistance of a game boat at a speed: the deceleration of one tiny coasting step from that speed. */
+/** Resistance of a game boat held at a speed until its running trim settles, N. */
 function gameResistance(tuning: BoatTuning, speed: number): number {
   const boat = createBoatDynamics(tuning);
-  boat.restore({ ...boat.snapshot(), vx: 0, vz: speed });
-  const dt = 1e-3;
-  const step = boat.tick(dt, { throttle: 0, brake: 0, steer: 0, handbrake: 0 });
-  return (-tuning.massKg * (step.forwardSpeed - speed)) / dt;
+  let resistance = 0;
+  for (let i = 0; i < 200; i += 1) {
+    boat.restore({ ...boat.snapshot(), vx: 0, vz: speed, heading: 0, yawRate: 0 });
+    resistance = boat.tick(0.02, { throttle: 0, brake: 0, steer: 0, handbrake: 0 }).resistance;
+  }
+  return resistance;
 }
 
 function gameStraightLine(tuning: BoatTuning): StraightLine & { timeToPlane: number; trimAt: (speed: number) => number } {
@@ -155,8 +172,10 @@ function gameStraightLine(tuning: BoatTuning): StraightLine & { timeToPlane: num
 export interface BoatComparisonSubject {
   name: string;
   reference: ReferenceBoat;
-  /** The boat as a game author would build it on `createBoatDynamics`. */
+  /** The boat as built on `createBoatDynamics`: `boatFromReference` for the built-in hulls, or a game's own tuning. */
   tuning: BoatTuning;
+  /** The reference's own propulsion law; absent, it shares the game boat's. */
+  propulsion?: PropulsionLaw;
   /** Speeds the resistance rows are read at, m/s. */
   speeds: readonly number[];
   /** Published resistance at a speed, N. */
@@ -226,7 +245,7 @@ function gameHeavePitch(tuning: BoatTuning, wavelength: number, amplitude: numbe
   const k = (2 * Math.PI) / wavelength;
   const omega = Math.sqrt(G * k);
   // The boat faces +z; head waves travel toward −z.
-  const boat = createBoatDynamics(tuning, { waterHeight: (_x, z, t) => amplitude * Math.cos(k * z + omega * t) });
+  const boat = createBoatDynamics(tuning, { sea: regularWaveField(amplitude, (2 * Math.PI) / omega, -Math.PI / 2) });
   const period = (2 * Math.PI) / omega;
   const dt = period / 40;
   let heaveCos = 0, heaveSin = 0, pitchCos = 0, pitchSin = 0, samples = 0;
@@ -267,11 +286,24 @@ function seakeepingRows(tuning: BoatTuning): ComparisonRow[] {
  */
 function gameTrialBoat(tuning: BoatTuning, speed: number, maxAngle: number): ManoeuvringTrialBoat {
   const trial: BoatTuning = { ...tuning, steering: { ...tuning.steering, maxAngle } };
-  const drag = gameResistance(trial, speed);
-  const thrust = gameThrust(trial, speed);
-  const throttle = thrust > drag ? drag / thrust : 1;
   const boat = createBoatDynamics(trial);
-  boat.restore({ ...boat.snapshot(), vx: 0, vz: speed, heading: 0 });
+  const start = { ...boat.snapshot(), vx: 0, vz: speed, heading: 0 };
+  const surge = (throttle: number) => {
+    boat.restore(start);
+    return boat.tick(1e-3, { throttle, brake: 0, steer: 0, handbrake: 0 }).forwardSpeed - speed;
+  };
+  let throttle = 1;
+  if (surge(1) > 0) {
+    let low = 0;
+    let high = 1;
+    for (let i = 0; i < 50; i += 1) {
+      const mid = 0.5 * (low + high);
+      if (surge(mid) < 0) low = mid;
+      else high = mid;
+    }
+    throttle = 0.5 * (low + high);
+  }
+  boat.restore(start);
   return {
     step(steerTarget, dt) {
       // Positive game steer turns to port; the game heading grows turning toward +x, which is starboard here.
@@ -281,18 +313,47 @@ function gameTrialBoat(tuning: BoatTuning, speed: number, maxAngle: number): Man
   };
 }
 
+/** How far a metric may sit from its reference before the comparison fails, as a share of the reference. */
+export const BOAT_TOLERANCES: readonly { prefix: string; allowed: number }[] = [
+  { prefix: "resistance at", allowed: 0.1 },
+  { prefix: "top speed", allowed: 0.1 },
+  { prefix: "running trim", allowed: 0.1 },
+  { prefix: "advance", allowed: 0.1 },
+  { prefix: "tactical diameter", allowed: 0.1 },
+  { prefix: "heave RAO", allowed: 0.2 },
+  { prefix: "pitch RAO", allowed: 0.2 },
+  { prefix: "10/10 zig-zag", allowed: 0.2 },
+  { prefix: "20/20 zig-zag", allowed: 0.2 },
+];
+
+/** One toleranced metric: the game against the reference, the gap, what is allowed and whether it holds. */
+export interface BoatMetricCheck {
+  label: string;
+  game: number;
+  reference: number;
+  /** `game / reference − 1`. */
+  gap: number;
+  allowed: number;
+  pass: boolean;
+}
+
+/** A comparison table with its toleranced metrics checked. */
+export interface BoatComparisonTable extends ComparisonTable {
+  checks: readonly BoatMetricCheck[];
+}
+
 /**
  * Runs a game boat tuning and its reference hull through the same straight-line tests (calm-water resistance at set
- * speeds, top speed and time to 90% of it on the game's own thrust law, coast-down distance to a quarter of top speed,
+ * speeds, top speed and time to 90% of it on the reference's propulsion, coast-down distance to a quarter of top speed,
  * and running trim for planing hulls), heave and pitch in regular head waves against strip theory on the boat's
- * {@link wigleyStandIn}, turning circles and zig-zags when the subject has an MMG model, and lines them up beside
- * published figures.
- * @capability boat-comparison compare a game boat with a reference hull and published figures, metric by metric
+ * {@link wigleyStandIn}, turning circles and zig-zags when the subject has an MMG model, lines them up beside published
+ * figures, and checks every metric in {@link BOAT_TOLERANCES} (`allowed`, `pass`).
+ * @capability boat-comparison compare a game boat with a reference hull and published figures, metric by metric, with tolerances
  */
-export function compareBoat(subject: BoatComparisonSubject, gameName = `${subject.name} (game build)`): ComparisonTable {
+export function compareBoat(subject: BoatComparisonSubject, gameName = `${subject.name} (game build)`): BoatComparisonTable {
   const { reference, tuning } = subject;
   const game = gameStraightLine(tuning);
-  const ref = referenceStraightLine(reference, tuning);
+  const ref = referenceStraightLine(reference, subject.propulsion ?? gamePropulsion(tuning), Math.max(4 * game.topSpeed, tuning.propSpeed));
   const fastest = Math.max(...subject.speeds);
   const [unit, scale] = reference.resistance(fastest) < 1000 ? ["N", 1] : ["kN", 1000];
   const rows: ComparisonRow[] = subject.speeds.map((speed) => {
@@ -300,7 +361,7 @@ export function compareBoat(subject: BoatComparisonSubject, gameName = `${subjec
     return { label: `resistance at ${(speed / KNOT).toFixed(1)} kn`, unit, game: gameResistance(tuning, speed) / scale, reference: reference.resistance(speed) / scale, real: published };
   });
   rows.push(
-    { label: "top speed (game thrust law)", unit: "kn", game: game.topSpeed / KNOT, reference: ref.topSpeed / KNOT, real: undefined },
+    { label: "top speed", unit: "kn", game: game.topSpeed / KNOT, reference: ref.topSpeed / KNOT, real: undefined },
     { label: "time to 90% of top speed", unit: "s", game: game.timeTo90, reference: ref.timeTo90, real: undefined },
     { label: "coast from top speed to 25%", unit: "m", game: game.coastDistance, reference: ref.coastDistance, real: undefined },
   );
@@ -313,11 +374,28 @@ export function compareBoat(subject: BoatComparisonSubject, gameName = `${subjec
   rows.push(...(subject.extra ?? []));
   if (subject.manoeuvring !== undefined) rows.push(...manoeuvringRows(tuning, subject.manoeuvring));
   rows.push(...seakeepingRows(tuning));
-  return { aircraft: gameName, reference: reference.name, rows };
+  const checks: BoatMetricCheck[] = [];
+  for (const row of rows) {
+    const rule = BOAT_TOLERANCES.find((entry) => row.label.startsWith(entry.prefix));
+    if (rule === undefined) continue;
+    const gap = row.game / row.reference - 1;
+    checks.push({ label: row.label, game: row.game, reference: row.reference, gap, allowed: rule.allowed, pass: Number.isFinite(gap) && Math.abs(gap) <= rule.allowed });
+  }
+  return { aircraft: gameName, reference: reference.name, rows, checks };
+}
+
+/** Net thrust of a B-series screw at fixed revolutions behind a hull, its curve at model or full scale. */
+function screwAtRevs(screw: BSeriesPropeller, revs: number, wake: number, deduction: number, fullScale: boolean, density = RHO): PropulsionLaw {
+  const curve = fullScale ? bSeriesShipOpenWater : bSeriesOpenWater;
+  return (u, throttle) => {
+    const n = throttle * revs;
+    return n <= 0 ? 0 : (1 - deduction) * density * n * n * screw.diameter ** 4 * curve(screw, (u * (1 - wake)) / (n * screw.diameter)).thrust;
+  };
 }
 
 /**
- * Holtrop–Mennen's 1982 example ship as a reference boat, with its B-series propeller and a game build of it.
+ * Holtrop–Mennen's 1982 example ship as a reference boat, with its B-series propeller at the paper's revolutions, and
+ * `boatFromReference("holtrop-mennen-1982")` as the game build.
  * @capability boat-comparison the Holtrop–Mennen example ship as a reference boat with a game build
  */
 export function holtropExampleSubject(): BoatComparisonSubject {
@@ -335,20 +413,9 @@ export function holtropExampleSubject(): BoatComparisonSubject {
     else high = mid;
   }
   const screw = geometry(0.5 * (low + high));
-  const n = published.revolutions;
-  const D = propeller.diameter;
-  const bollard = RHO * n * n * D ** 4 * bSeriesShipOpenWater(screw, 0).thrust * (1 - factors.thrustDeduction);
-  let zeroAdvance = 0.5;
-  while (bSeriesShipOpenWater(screw, zeroAdvance).thrust > 0) zeroAdvance += 0.001;
+  const propulsion = screwAtRevs(screw, published.revolutions, factors.wake, factors.thrustDeduction, true);
   const massKg = RHO * hull.volume;
-  const tuning: BoatTuning = {
-    massKg,
-    length: hull.length,
-    beam: hull.beam,
-    maxThrust: bollard,
-    propSpeed: (zeroAdvance * n * D) / (1 - factors.wake),
-    steering: { kind: "rudder", area: 0.016 * hull.length * hull.draftAft },
-  };
+  const tuning = boatFromReference("holtrop-mennen-1982");
   return {
     name: "Holtrop–Mennen 1982 example ship",
     reference: {
@@ -358,9 +425,10 @@ export function holtropExampleSubject(): BoatComparisonSubject {
       resistance: (u) => holtropMennenResistance(hull, u).total,
     },
     tuning,
+    propulsion,
     speeds: [15 * KNOT, 20 * KNOT, speed],
     published: { speed, resistance: published.total, label: "Holtrop and Mennen (1982)" },
-    extra: [{ label: "net bollard thrust", unit: "kN", game: tuning.maxThrust / 1000, reference: bollard / 1000, real: undefined }],
+    extra: [{ label: "net bollard thrust", unit: "kN", game: gamePropulsion(tuning)(0, 1) / 1000, reference: propulsion(0, 1) / 1000, real: undefined }],
   };
 }
 
@@ -386,17 +454,39 @@ function planingReference(name: string, hull: PlaningHull, length: number): Refe
 }
 
 /**
- * The 6 m outboard speedboat of the `boatDynamics` docs as a reference boat: an 18° deadrise prismatic planing hull of
- * the same beam and mass, centre of gravity 38% of the length forward of the transom, run through Savitsky's equations.
+ * The 6 m outboard speedboat as a reference boat: an 18° deadrise prismatic planing hull of the same beam and mass,
+ * centre of gravity 38% of the length forward of the transom, run through Savitsky's equations, driven by the same
+ * 100 kW outboard and 3-blade B-series screw solved on the reference's own open-water curve; the game build is
+ * `boatFromReference("speedboat-6m")`.
  * @capability boat-comparison a 6 m outboard speedboat as a Savitsky reference boat with a game build
  */
 export function speedboatSubject(): BoatComparisonSubject {
-  const tuning: BoatTuning = { massKg: 900, length: 6, beam: 2.3, maxThrust: 7000, propSpeed: 30, planingSpeed: 8, steering: { kind: "outboard" } };
+  const tuning = boatFromReference("speedboat-6m");
   const hull: PlaningHull = { massKg: tuning.massKg, beam: tuning.beam, deadrise: 18 * DEG, lcg: 0.38 * tuning.length, vcg: 0.45 };
+  const screw: BSeriesPropeller = { diameter: 0.35, blades: 3, areaRatio: 0.6, pitchRatio: 1.3 };
+  const [maxRevs, maxPower, wake, deduction] = [46.7, 100e3, 0.03, 0.05];
+  const propulsion: PropulsionLaw = (u, throttle) => {
+    const inflow = u * (1 - wake);
+    const power = (n: number) => 2 * Math.PI * RHO * n ** 3 * screw.diameter ** 5 * bSeriesOpenWater(screw, inflow / (n * screw.diameter)).torque;
+    const target = throttle * maxPower;
+    let n = throttle * maxRevs;
+    if (power(maxRevs) > target) {
+      let low = 1e-6;
+      let high = maxRevs;
+      for (let i = 0; i < 80; i += 1) {
+        const mid = 0.5 * (low + high);
+        if (power(mid) < target) low = mid;
+        else high = mid;
+      }
+      n = 0.5 * (low + high);
+    } else n = maxRevs;
+    return (1 - deduction) * RHO * n * n * screw.diameter ** 4 * bSeriesOpenWater(screw, inflow / (n * screw.diameter)).thrust;
+  };
   return {
     name: "6 m outboard speedboat",
     reference: planingReference("18° deadrise prismatic hull (Savitsky)", hull, tuning.length),
     tuning,
+    propulsion,
     speeds: [4, 8, 12, 16],
     extra: [
       { label: "porpoising limit trim at 31.1 kn", unit: "deg", game: Number.NaN, reference: planingEquilibrium(hull, 16).porpoisingTrim / DEG, real: undefined },
@@ -405,9 +495,9 @@ export function speedboatSubject(): BoatComparisonSubject {
 }
 
 /**
- * The KVLCC2 L7 tanker model as a reference boat: its MMG model for resistance and manoeuvring, a game build with the
- * same mass, rudder, steering rate and propeller (bollard thrust and zero-thrust speed at the self-propulsion
- * revolutions), and MARIN's free-running turning and zig-zag results.
+ * The KVLCC2 L7 tanker model as a reference boat: its MMG model for resistance and manoeuvring, its propeller at the
+ * self-propulsion revolutions, MARIN's free-running turning and zig-zag results, and `boatFromReference("kvlcc2-l7")`
+ * as the game build.
  * @capability boat-comparison the KVLCC2 L7 model as an MMG reference boat with a game build
  */
 export function kvlcc2Subject(): BoatComparisonSubject {
@@ -416,19 +506,16 @@ export function kvlcc2Subject(): BoatComparisonSubject {
   const p = ship.propeller;
   const revs = selfPropulsionRevs(ship, speed);
   const [k0, k1, k2] = p.thrust;
-  const zeroThrust = (-k1 - Math.sqrt(k1 * k1 - 4 * k2 * k0)) / (2 * k2);
   const massKg = ship.density * ship.displacement;
-  const tuning: BoatTuning = {
-    massKg,
-    length: ship.length,
-    beam: ship.beam,
-    maxThrust: (1 - p.thrustDeduction) * ship.density * revs * revs * p.diameter ** 4 * k0,
-    propSpeed: (zeroThrust * revs * p.diameter) / (1 - p.wake),
-    steering: { kind: "rudder", area: ship.rudder?.area ?? 0, maxAngle: ship.maxSteer },
-    steerRate: ship.steerRate,
-  };
+  const tuning = boatFromReference("kvlcc2-l7");
   const { turning, zigZag } = KVLCC2_L7_PUBLISHED;
   const half = 0.5 * ship.density * ship.length * ship.draft;
+  const propulsion: PropulsionLaw = (u, throttle) => {
+    const n = throttle * revs;
+    if (n <= 0) return 0;
+    const j = (u * (1 - p.wake)) / (n * p.diameter);
+    return (1 - p.thrustDeduction) * ship.density * n * n * p.diameter ** 4 * (k0 + k1 * j + k2 * j * j);
+  };
   return {
     name: "KVLCC2 L7 tanker model",
     reference: {
@@ -438,6 +525,7 @@ export function kvlcc2Subject(): BoatComparisonSubject {
       resistance: (u) => half * u * u * ship.resistance,
     },
     tuning,
+    propulsion,
     speeds: [0.5 * speed, 0.75 * speed, speed],
     manoeuvring: {
       ship,
