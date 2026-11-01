@@ -2,9 +2,11 @@ import { type CSSProperties, useState } from "react";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
+import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { usePanels } from "@jgengine/core/ui/panels.view";
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
+import { GAME_FONTS } from "../../art/fonts/fonts";
 import { BuildBar } from "./components/BuildBar";
 import { CameraPad } from "./components/CameraPad";
 import { Inspector } from "./components/Inspector";
@@ -22,6 +24,7 @@ const MOTION_KEY = "brightway-park.reduced-motion";
 function savedMotion(): boolean { try { return localStorage.getItem(MOTION_KEY) === "true"; } catch { return false; } }
 
 export function GameUI() {
+  useGameFonts(GAME_FONTS);
   const { commands } = useGame(); const clock = useGameClock();
   const started = useGameStore(() => session.started);
   const inspecting = useGameStore((ctx) => session.selectedObject !== null || ctx.scene.entity.selection.list().length > 0);

@@ -1,3 +1,5 @@
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { defineGame } from "@jgengine/shell/defineGame";
 
 import { BRIGHTWAY_SOUNDS } from "./game/audio";
@@ -57,7 +59,12 @@ export const game = defineGame({
   },
   uiKit: parkKit,
   hudTheme: parkTheme,
-  rendering: { look: "cinematic", mood: "day" },
+  rendering: {
+    look: "cinematic",
+    mood: { preset: "bright", sun: { azimuth: 135, elevation: 52, color: "#fff1d6" }, horizonColor: "#bfe0e6", fog: { near: 260, far: 900 } },
+    environmentSource: hdriEnvironment("clear-puresky", { intensity: 1 }),
+    postProcessing: { bloom: { strength: 0.35, radius: 0.5, threshold: 0.95 }, grade: { vignette: 0.12, lut: lutGrade("sunny-postcard") } },
+  },
   capture: {
     // A new game: the menu's "Open the park" with nothing saved starts the first scenario on the empty lot.
     play: [{ name: "park.scenario", input: { id: "brightway_beginnings" } }, "park.start"],

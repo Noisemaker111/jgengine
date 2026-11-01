@@ -8,6 +8,7 @@ import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
+import { lookCredits } from "../../../art/look";
 import { captureParkThumb, parkProfile } from "../../parkProfile";
 import { parkSlots, refreshParkSlot } from "../../parkSlot";
 import { FIRST_SCENARIO, SCENARIOS, scenarioDef, scenarioLock } from "../../scenarios";
@@ -76,7 +77,10 @@ export function ParkMenu({ reducedMotion, onReducedMotion }: ParkMenuProps): Rea
         if (id === "settings") return settings;
         if (id === "credits") return <CreditsPane heading="Credits" notice="Original Brightway art. Third-party packs are CC0." sections={[
           { heading: "Brightway Park", entries: [{ label: "The seaside fair", detail: "game and art direction" }] },
-          { heading: "Assets", entries: [{ label: "KayKit, Quaternius, ambientCG", detail: "CC0 art" }] },
+          { heading: "Models", entries: [
+            { label: "Quaternius: Ultimate Animated Characters, Modular Street, Low Poly Food, Stylized Nature, Lowpoly Buildings", detail: "CC0", href: "https://quaternius.com" },
+            { label: "KayKit City Builder", detail: "CC0", href: "https://kaylousberg.itch.io" }] },
+          ...lookCredits(),
           { heading: "Engine", entries: [{ label: "JGengine", detail: "scene, save, menu" }] }]} />;
         return null;
       }}
