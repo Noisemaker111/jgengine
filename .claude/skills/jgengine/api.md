@@ -718,11 +718,12 @@
 
 ## @jgengine/core/runtime/simLoop
 
+- `DEFAULT_SIM_HZ` (const): const DEFAULT_SIM_HZ: 60 — Steps per second a loop runs at when `hz` is not set: the physics backends' own substep rate, so one sim step is one solver step.
 - `SimAdvanceResult` (interface): interface SimAdvanceResult — What one {@link SimLoop.advance} did.
 - `SimLoop` (interface): interface SimLoop — The stepper handle: advance with real time, read the tick and interpolation alpha, retune the rate, snapshot and restore.
 - `SimLoopState` (interface): interface SimLoopState — Serializable loop position: the tick count and the real seconds accumulated toward the next fixed step.
 - `SimulationConfig` (interface): interface SimulationConfig — How the simulation is stepped: a fixed rate with a catch-up cap, or once per frame with the frame's dt.
-- `createSimLoop` (function): function createSimLoop(initial?: SimulationConfig): SimLoop — The simulation stepper every driver (shell frame, headless runner, authoritative host) advances through, so the sim sees the same dt sequence regardless of who drives it. Fixed mode accumulates real time and steps in equal slices with a catch-up cap; variable mode steps once per advance.
+- `createSimLoop` (function): function createSimLoop(initial?: SimulationConfig): SimLoop — The simulation stepper every driver (shell frame, headless runner, authoritative host) advances through, so the sim sees the same dt sequence regardless of who drives it. Fixed mode accumulates real time and steps in equal slices with a catch-up cap (60 Hz unless the game picks another rate); variable mode steps once per advance.
 
 ## @jgengine/core/runtime/simSnapshot
 

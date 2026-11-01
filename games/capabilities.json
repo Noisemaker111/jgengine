@@ -9050,7 +9050,7 @@
       "module": "@jgengine/rapier/rapierBackend",
       "gameFacing": false,
       "probe": null,
-      "intent": "native capsules, shapecasts, rotation, CCD, joints, and collision queries"
+      "intent": "native capsules, shapecasts, rotation, CCD, joints, collision queries, character and ray-cast vehicle controllers"
     },
     {
       "id": "rate-window-policy",

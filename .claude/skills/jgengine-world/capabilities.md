@@ -1781,7 +1781,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `RainImpactField` (function) · `import { RainImpactField } from "@jgengine/core/weather/RainImpactField.draw"`
 
-## rapier-physics-backend — native capsules, shapecasts, rotation, CCD, joints, and collision queries
+## rapier-physics-backend — native capsules, shapecasts, rotation, CCD, joints, collision queries, character and ray-cast vehicle controllers
 
 - `createRapierBackend` (function) · `import { createRapierBackend } from "@jgengine/rapier"`
 
