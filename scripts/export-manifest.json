@@ -1220,6 +1220,7 @@
     "./time/accrueSince",
     "./time/beatClock",
     "./time/calendarClock",
+    "./time/cooldown",
     "./time/gameClock",
     "./time/idleProgress",
     "./time/pacedSchedule",

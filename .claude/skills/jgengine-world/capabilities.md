@@ -433,6 +433,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createContributionPool` (function) · `import { createContributionPool } from "@jgengine/core/world"`
 
+## cooldown — tick a per-agent seconds countdown that gates an action
+
+- `tickCooldown` (function) · `import { tickCooldown } from "@jgengine/core/time/cooldown"`
+
 ## countdown-timers — named countdown/countup timer set on an injected clock — round timers, respawn clocks, ability cooldown/charge; read remaining/elapsed/progress + expiry, snapshot/restore
 
 - `createTimerSet` (function) · `import { createTimerSet } from "@jgengine/core/world"`
