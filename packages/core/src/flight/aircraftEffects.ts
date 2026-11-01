@@ -5,6 +5,7 @@ import type { AircraftAutorotation } from "./autorotation";
 import type { AircraftDerivatives } from "./derivatives";
 import type { AircraftEngineSpool } from "./engineSpool";
 import type { AircraftMachDrag } from "./machDrag";
+import type { AircraftMainGear } from "./mainGear";
 import type { AircraftNozzle } from "./nozzle";
 import type { AircraftPolar } from "./polar";
 import type { AircraftPropeller } from "./propeller";
@@ -35,6 +36,8 @@ export interface AircraftEffects {
   polar?: AircraftPolar;
   /** Whole-aircraft moments from stability, control and damping derivatives. */
   derivatives?: AircraftDerivatives;
+  /** The runway pushes through the main wheels behind the centre of mass, so the nose lifts only when the elevator beats the weight. */
+  mainGear?: AircraftMainGear;
   /** Induced drag relief near the ground. */
   wingGroundEffect?: AircraftWingGroundEffect;
   /** Body drag coefficient by Mach number in place of the constant `dragArea`. */

@@ -7,8 +7,9 @@ import { effectStrength, mixEffect, type AircraftEffects } from "./aircraftEffec
 import { atmosphereAt, SEA_LEVEL_AIR, type AirSample } from "./atmosphere";
 import { autorotationRates, type AutorotationRates } from "./autorotation";
 import { derivativeMoments, type DerivativeMoments } from "./derivatives";
-import { spoolRate, spoolThrust } from "./engineSpool";
+import { spoolRate, spoolTarget, spoolThrust } from "./engineSpool";
 import { machDragArea } from "./machDrag";
+import { mainGearMoment } from "./mainGear";
 import { nozzleThrust } from "./nozzle";
 import { polarCoefficients, type PolarCoefficients } from "./polar";
 import { propellerLoads, settledShaftSpeed, type PropellerLoads } from "./propeller";
@@ -385,6 +386,8 @@ export interface RigidAircraftStep {
     thrust: number;
     /** Drag torque on the body, N·m, positive nose left. */
     torque: number;
+    /** Torque the air takes from the rotor, N·m; with `autorotation` the body feels the engine's torque instead. */
+    aerodynamicTorque: number;
     /** Thrust multiplier from ground effect, `≥ 1`. */
     groundEffect: number;
     /** Thrust multiplier from translational lift, `≥ 1`. */
@@ -532,7 +535,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
   const state: RigidAircraftState = fresh(options.position ?? [0, 0, 0], options.orientation ?? aircraftHeadingQuaternion(options.heading ?? 0));
   if (options.velocity !== undefined) [state.vx, state.vy, state.vz] = options.velocity;
   const telemetry = { airspeed: 0, alpha: 0, sideslip: 0, gLoad: 1, stallFraction: 0, stalled: false, thrust: 0, grounded: false, mach: 0, density: SEA_LEVEL_AIR.density };
-  const rotorTelemetry = { thrust: 0, torque: 0, groundEffect: 1, translationalLift: 1 };
+  const rotorTelemetry = { thrust: 0, torque: 0, aerodynamicTorque: 0, groundEffect: 1, translationalLift: 1 };
   const motorTelemetry = { thrust: 0 };
   const lastCommand: AircraftAssistCommand = { pitch: 0, roll: 0, yaw: 0 };
   let limited = false;
@@ -651,11 +654,17 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     const afterburner = effects?.afterburner;
     const split = afterburner === undefined ? undefined : afterburnerCommand(afterburner, effectStrength(afterburner), throttle);
     const spoolEffect = effects?.spool;
-    const rate = spoolEffect === undefined ? (engine?.spoolRate ?? 1.5) : spoolRate(spoolEffect, effectStrength(spoolEffect), engine?.spoolRate ?? 1.5);
-    state.spool += ((split?.dry ?? throttle) - state.spool) * (1 - Math.exp(-rate * h));
+    if (spoolEffect === undefined) state.spool += ((split?.dry ?? throttle) - state.spool) * (1 - Math.exp(-(engine?.spoolRate ?? 1.5) * h));
+    else {
+      const ss = effectStrength(spoolEffect);
+      const target = spoolTarget(spoolEffect, ss, split?.dry ?? throttle, state.spool);
+      const rate = spoolRate(spoolEffect, ss, engine?.spoolRate ?? 1.5, target - state.spool);
+      state.spool = Math.min(1, state.spool + (target - state.spool) * (1 - Math.exp(-rate * h)));
+    }
     if (afterburner !== undefined && split !== undefined) {
-      const light = (afterburner.rate ?? 1) * h;
-      state.afterburner += Math.max(-light, Math.min(light, split.reheat - state.afterburner));
+      // Reheat lights only once the core is at full dry.
+      const reheat = state.spool >= 0.95 ? split.reheat : 0;
+      state.afterburner += (reheat - state.afterburner) * (1 - Math.exp(-(afterburner.rate ?? 5) * h));
     }
 
     let wvx = state.vx;
@@ -963,6 +972,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       }
       rotorTelemetry.thrust = rotorThrust;
       rotorTelemetry.torque = torque;
+      rotorTelemetry.aerodynamicTorque = aeroTorque;
       rotorTelemetry.groundEffect = rotorGround;
       rotorTelemetry.translationalLift = translational;
     }
@@ -989,6 +999,8 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       if (netY <= 0) {
         supportY = -netY;
         const load = supportY;
+        const wheels = effects?.mainGear;
+        if (wheels !== undefined) mx += mainGearMoment(wheels, effectStrength(wheels), supportY * m);
         // Heading-aligned tyre frame on flat ground: rolling resistance and brakes along, grip across.
         toWorld(0, 0, 1);
         const hl = Math.hypot(out[0]!, out[2]!) || 1;
@@ -1268,6 +1280,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
               speed: state.rotorSpeed,
               thrust: rotorTelemetry.thrust,
               torque: rotorTelemetry.torque,
+              aerodynamicTorque: rotorTelemetry.aerodynamicTorque,
               groundEffect: rotorTelemetry.groundEffect,
               translationalLift: rotorTelemetry.translationalLift,
             },
