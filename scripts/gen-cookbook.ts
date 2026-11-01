@@ -13,7 +13,7 @@ export const COOKBOOK = ".claude/skills/jgengine/recipes/cookbook.md";
 const MIN_RECIPE_LINES = 5;
 const MAX_RECIPE_LINES = 15;
 
-export interface Recipe {
+export interface CookbookRecipe {
   name: string;
   sentence: string;
   imports: string[];
@@ -21,7 +21,7 @@ export interface Recipe {
 }
 
 /** Parse one recipe test file: the `@recipe` doc block, its imports and the body of its single test. */
-export function parseRecipe(file: string, source: string): Recipe {
+export function parseRecipe(file: string, source: string): CookbookRecipe {
   const doc = /\/\*\*\s*\n\s*\*\s*@recipe\s+(.+)\n([\s\S]*?)\*\//.exec(source);
   const [, name, text] = doc ?? [];
   if (name === undefined || text === undefined) throw new Error(`${file}: no "@recipe <Feature>" doc block`);
@@ -46,7 +46,7 @@ export function parseRecipe(file: string, source: string): Recipe {
   return { name: name.trim(), sentence, imports, body };
 }
 
-export function renderCookbook(recipes: readonly Recipe[]): string {
+export function renderCookbook(recipes: readonly CookbookRecipe[]): string {
   const sections = recipes.map(
     (recipe) => `## ${recipe.name}\n\n${recipe.sentence}\n\n\`\`\`ts\n${[...recipe.imports.map((line) => line.replace(/"\.\.\//, '"@jgengine/core/')), "", ...recipe.body].join("\n")}\n\`\`\``,
   );

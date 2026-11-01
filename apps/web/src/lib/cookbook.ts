@@ -4,14 +4,14 @@ const SOURCE = import.meta.glob<string>("../../../../.claude/skills/jgengine/rec
   eager: true,
 });
 
-export interface CookbookRecipe {
+export interface CookbookEntry {
   name: string;
   sentence: string;
   code: string;
 }
 
 /** Splits the generated cookbook (`## name`, a sentence, one ts block) into recipes. */
-export function parseCookbook(markdown: string): CookbookRecipe[] {
+export function parseCookbook(markdown: string): CookbookEntry[] {
   return markdown
     .split(/^## /m)
     .slice(1)
@@ -22,4 +22,4 @@ export function parseCookbook(markdown: string): CookbookRecipe[] {
     });
 }
 
-export const COOKBOOK: readonly CookbookRecipe[] = parseCookbook(Object.values(SOURCE)[0] ?? "");
+export const COOKBOOK: readonly CookbookEntry[] = parseCookbook(Object.values(SOURCE)[0] ?? "");

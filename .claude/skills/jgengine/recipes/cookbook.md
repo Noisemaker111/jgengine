@@ -4,6 +4,30 @@
 
 Each common feature built from the parts in a few lines. The code is the test body, so it runs; the lines after the blank line check that it behaves.
 
+## Growth stages
+
+Phases the game names, each applying its own Modifiers source to size and strength as it begins.
+
+```ts
+import { createPhaseSchedule, createStatGraph } from "@jgengine/core/parts";
+
+const stages = createPhaseSchedule({
+  phases: [{ state: "hatchling", durationSeconds: 100 }, { state: "juvenile", durationSeconds: 300 }, { state: "adult" }],
+});
+const body = createStatGraph({ inputs: [{ id: "size", base: 1 }, { id: "strength", base: 2 }] }).create();
+const scale = { hatchling: 0.25, juvenile: 0.6, adult: 1 };
+const grow = (dt: number) => {
+  for (const t of stages.tick(dt)) body.addSource("stage", { size: { source: t.to, op: "mul", value: scale[t.to] } });
+};
+
+grow(100);
+expect(stages.state()).toBe("juvenile");
+expect(body.get("size")).toBe(0.6);
+grow(300);
+expect(stages.state()).toBe("adult");
+expect(body.get("size")).toBe(1);
+```
+
 ## Ammo and reload
 
 The magazine and the reserve are two Meters, and a countdown gates firing while the reload runs.
@@ -188,27 +212,6 @@ cooldown = tickCooldown(cooldown, 5);
 expect(cast()).toBe(false);
 ```
 
-## Crafting recipe with station requirement
-
-A Requirement names the station and skill, and the materials are Meters the craft drains.
-
-```ts
-import { changeStatPool, createStatPool, evaluatePredicate, type Predicate } from "@jgengine/core/parts";
-
-let iron = createStatPool({ max: 99, current: 5 });
-const sword: Predicate = { all: [{ eq: ["station", "forge"] }, { gte: ["skill.smithing", 2] }, { gte: ["iron", 3] }] };
-const craft = (station: string) => {
-  if (!evaluatePredicate(sword, { station, skill: { smithing: 2 }, iron: iron.current })) return false;
-  iron = changeStatPool(iron, -3).pool;
-  return true;
-};
-
-expect(craft("workbench")).toBe(false);
-expect(craft("forge")).toBe(true);
-expect(iron.current).toBe(2);
-expect(craft("forge")).toBe(false);
-```
-
 ## Day and night
 
 Phases that loop: each day part holds for its own seconds and the cycle wraps from night back to dawn.
@@ -277,28 +280,25 @@ growth.tick(1);
 expect(growth.state()).toBe("adult");
 ```
 
-## Growth stages
+## Crafting recipe with station requirement
 
-Phases the game names, each applying its own Modifiers source to size and strength as it begins.
+A Requirement names the station and skill, and the materials are Meters the craft drains.
 
 ```ts
-import { createPhaseSchedule, createStatGraph } from "@jgengine/core/parts";
+import { changeStatPool, createStatPool, evaluatePredicate, type Predicate } from "@jgengine/core/parts";
 
-const stages = createPhaseSchedule({
-  phases: [{ state: "hatchling", durationSeconds: 100 }, { state: "juvenile", durationSeconds: 300 }, { state: "adult" }],
-});
-const body = createStatGraph({ inputs: [{ id: "size", base: 1 }, { id: "strength", base: 2 }] }).create();
-const scale = { hatchling: 0.25, juvenile: 0.6, adult: 1 };
-const grow = (dt: number) => {
-  for (const t of stages.tick(dt)) body.addSource("stage", { size: { source: t.to, op: "mul", value: scale[t.to] } });
+let iron = createStatPool({ max: 99, current: 5 });
+const sword: Predicate = { all: [{ eq: ["station", "forge"] }, { gte: ["skill.smithing", 2] }, { gte: ["iron", 3] }] };
+const craft = (station: string) => {
+  if (!evaluatePredicate(sword, { station, skill: { smithing: 2 }, iron: iron.current })) return false;
+  iron = changeStatPool(iron, -3).pool;
+  return true;
 };
 
-grow(100);
-expect(stages.state()).toBe("juvenile");
-expect(body.get("size")).toBe(0.6);
-grow(300);
-expect(stages.state()).toBe("adult");
-expect(body.get("size")).toBe(1);
+expect(craft("workbench")).toBe(false);
+expect(craft("forge")).toBe(true);
+expect(iron.current).toBe(2);
+expect(craft("forge")).toBe(false);
 ```
 
 ## Hunger and thirst
@@ -323,30 +323,6 @@ live(30);
 expect(tierAt(bands, hunger.pool.current)?.id).toBe("starving");
 hunger = changeMeter(hunger, 20).meter;
 expect(tierAt(bands, hunger.pool.current)?.id).toBe("hungry");
-```
-
-## Loot table by rarity
-
-A Ladder turns a roll into a rarity, and a Table per rarity picks the item.
-
-```ts
-import { pickWeighted, tierAt } from "@jgengine/core/parts";
-import { seededRng } from "@jgengine/core/random/rng";
-
-const rng = seededRng("loot");
-const rarities = [{ id: "common", at: 0 }, { id: "rare", at: 80 }, { id: "epic", at: 97 }];
-const pools: Record<string, string[]> = { common: ["stick", "rag"], rare: ["sword"], epic: ["crown"] };
-const drop = () => {
-  const rarity = tierAt(rarities, rng() * 100)?.id ?? "common";
-  return { rarity, item: pickWeighted(rng, pools[rarity] ?? [], () => 1) };
-};
-
-const drops = Array.from({ length: 2000 }, drop);
-const count = (rarity: string) => drops.filter((d) => d.rarity === rarity).length;
-expect(drops.every((d) => pools[d.rarity]?.includes(d.item ?? ""))).toBe(true);
-expect(count("common")).toBeGreaterThan(count("rare"));
-expect(count("rare")).toBeGreaterThan(count("epic"));
-expect(count("epic")).toBeGreaterThan(0);
 ```
 
 ## Patrol route
@@ -396,6 +372,33 @@ facts.player.level = 4;
 expect(mayStart(facts)).toBe(false);
 ```
 
+## Weather event
+
+A Schedule decides when weather rolls in, a Table picks which, and Phases hold it for a while before clear skies return.
+
+```ts
+import { createPacedSchedule, createPhaseSchedule, pickWeighted } from "@jgengine/core/parts";
+import { seededRng } from "@jgengine/core/random/rng";
+
+const rng = seededRng("weather");
+const rolls = createPacedSchedule({ firstAt: 300, every: 600, jitter: 60 }, rng);
+const sky = createPhaseSchedule({
+  phases: [{ state: "clear" }, { state: "rain", durationSeconds: 120, next: "clear" }, { state: "storm", durationSeconds: 60, next: "clear" }],
+});
+const weather = [{ id: "rain", weight: 3 }, { id: "storm", weight: 1 }];
+const update = (now: number, dt: number) => {
+  if (rolls.due(now).length > 0) sky.enter(pickWeighted(rng, weather, (w) => w.weight)?.id === "storm" ? "storm" : "rain");
+  sky.tick(dt);
+};
+
+update(299, 1);
+expect(sky.state()).toBe("clear");
+update(300, 1);
+expect(sky.state()).not.toBe("clear");
+update(301, 130);
+expect(sky.state()).toBe("clear");
+```
+
 ## Rank ladder
 
 A Ladder over rating points names the rank, and the crossings between old and new points are the promotions.
@@ -416,6 +419,30 @@ expect(win(20)).toEqual(["silver"]);
 expect(win(250)).toEqual(["gold"]);
 expect(tierAt(ranks, points)?.id).toBe("gold");
 expect(crossThresholds(ranks, points, 50).map((c) => c.id)).toEqual(["gold", "silver"]);
+```
+
+## Loot table by rarity
+
+A Ladder turns a roll into a rarity, and a Table per rarity picks the item.
+
+```ts
+import { pickWeighted, tierAt } from "@jgengine/core/parts";
+import { seededRng } from "@jgengine/core/random/rng";
+
+const rng = seededRng("loot");
+const rarities = [{ id: "common", at: 0 }, { id: "rare", at: 80 }, { id: "epic", at: 97 }];
+const pools: Record<string, string[]> = { common: ["stick", "rag"], rare: ["sword"], epic: ["crown"] };
+const drop = () => {
+  const rarity = tierAt(rarities, rng() * 100)?.id ?? "common";
+  return { rarity, item: pickWeighted(rng, pools[rarity] ?? [], () => 1) };
+};
+
+const drops = Array.from({ length: 2000 }, drop);
+const count = (rarity: string) => drops.filter((d) => d.rarity === rarity).length;
+expect(drops.every((d) => pools[d.rarity]?.includes(d.item ?? ""))).toBe(true);
+expect(count("common")).toBeGreaterThan(count("rare"));
+expect(count("rare")).toBeGreaterThan(count("epic"));
+expect(count("epic")).toBeGreaterThan(0);
 ```
 
 ## Reputation tiers
@@ -722,31 +749,4 @@ tick(100);
 expect(spawned).toHaveLength(5 + 7 + 9);
 expect(waves.done()).toBe(true);
 expect(spawned.filter((id) => id === "grunt").length).toBeGreaterThan(spawned.length / 2);
-```
-
-## Weather event
-
-A Schedule decides when weather rolls in, a Table picks which, and Phases hold it for a while before clear skies return.
-
-```ts
-import { createPacedSchedule, createPhaseSchedule, pickWeighted } from "@jgengine/core/parts";
-import { seededRng } from "@jgengine/core/random/rng";
-
-const rng = seededRng("weather");
-const rolls = createPacedSchedule({ firstAt: 300, every: 600, jitter: 60 }, rng);
-const sky = createPhaseSchedule({
-  phases: [{ state: "clear" }, { state: "rain", durationSeconds: 120, next: "clear" }, { state: "storm", durationSeconds: 60, next: "clear" }],
-});
-const weather = [{ id: "rain", weight: 3 }, { id: "storm", weight: 1 }];
-const update = (now: number, dt: number) => {
-  if (rolls.due(now).length > 0) sky.enter(pickWeighted(rng, weather, (w) => w.weight)?.id === "storm" ? "storm" : "rain");
-  sky.tick(dt);
-};
-
-update(299, 1);
-expect(sky.state()).toBe("clear");
-update(300, 1);
-expect(sky.state()).not.toBe("clear");
-update(301, 130);
-expect(sky.state()).toBe("clear");
 ```
