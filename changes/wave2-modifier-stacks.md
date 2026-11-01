@@ -8,13 +8,17 @@ Engine seam: packages/core/src/combat/damage/receivedDamage.ts, packages/core/sr
 - `applyStatRate` (`@jgengine/core/progression/statGraph`): Scale one id's `rate` by a {@link StatRateModifier}; an omitted modifier leaves it unchanged. Also `StatRateModifier`.
 - `predicateFloor` (`@jgengine/core/rules/predicate`): The `gte` floor a predicate sets on one fact path (the largest, when several), or `null` when it sets none — what a "needs 20 standing" line reads off an authored condition. Also `PredicateLeaf`, `predicateLeaves`.
 
-### Changed
-
-- Part of #2837
-
 ### Fixed
 
-- received-damage, weather, vitals and decay modifiers are stat graphs; progression gates, standing requirements and loot filters are predicates
+- Received-damage scale, flat, cap and floor policies fold through the stat ops.
+- Vital and decay rates scale through `applyStatRate`; a rate may now be a stack of named stat-op contributions.
+- Loot filter rules, standing requirements, upgrade standing gates and unlock gates are predicates.
+
+### Migrate
+
+- `LootFilterRule.when`, `GateDef.requires` and `UpgradeNodeDef.standing` take a `Predicate`: `{ standing: { trackId: "park", min: 20 } }` becomes `{ gte: ["standing.park", 20] }`, `{ balance: { currency: "cash", min: 500 } }` becomes `{ gte: ["balance.cash", 500] }`, `{ rarity: "rare" }` becomes `{ eq: ["rarity", "rare"] }`.
+- `GateFacts` is a fact record (`{ standing: {...}, balance: {...} }`); `gateFacts()` builds it. `GateStatus.missing` lists unmet predicate clauses.
+- Gates no longer reject `standing.min > standing.max`; a non-finite operand still fails at load.
 
 ### Removed
 
