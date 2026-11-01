@@ -51,6 +51,8 @@ import { arrangeHudPanels, type HudPanelClaim, type HudPanelLayout } from "./hud
 import { useHudLayoutPersist } from "./hudLayoutPersist.view";
 import { useHudViewport } from "./hudViewport.view";
 import { hudFont, hudType } from "./hudTokens";
+import type { TextDirection } from "../i18n/textDirection";
+import { useTextDirection } from "../i18n/textDirection.view";
 
 /** Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default). */
 export function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean {
@@ -1293,6 +1295,29 @@ const HUD_SLOT_ANCHORS: Record<HudSlot, { anchor: HudAnchor; inset: { x: number;
 
 const HUD_SLOT_ORDER = Object.keys(HUD_SLOT_ANCHORS) as HudSlot[];
 
+const MIRRORED_SLOT: Record<HudSlot, HudSlot> = {
+  topLeft: "topRight",
+  top: "top",
+  topRight: "topLeft",
+  left: "right",
+  right: "left",
+  bottomLeft: "bottomRight",
+  bottom: "bottom",
+  bottomRight: "bottomLeft",
+};
+
+/** The edge a slot sits at for a reading direction: a right-to-left HUD swaps left and right, so `topLeft` (the start corner) lands top right. * @internal
+ */
+export function hudSlotEdge(slot: HudSlot, direction: TextDirection): HudSlot {
+  return direction === "rtl" ? MIRRORED_SLOT[slot] : slot;
+}
+
+/** The anchor and inset a slot's panels take for a reading direction. * @internal
+ */
+export function hudSlotPlacement(slot: HudSlot, direction: TextDirection): { anchor: HudAnchor; inset: { x: number; y: number } } {
+  return HUD_SLOT_ANCHORS[hudSlotEdge(slot, direction)];
+}
+
 /** The widest a corner card draws, at the 1600x900 design size the HUD scales from. */
 export const HUD_CORNER_WIDTH = 248;
 
@@ -1344,10 +1369,11 @@ const DEFAULT_SLOT_PHASES: readonly GamePhase[] = ["playing", "ended"];
  */
 export function HudSlots({ storageKey, slots = {}, panels = {}, overlay, showDuring = DEFAULT_SLOT_PHASES, className }: HudSlotsProps): ReactNode {
   const layout = useHudLayout({ storageKey });
+  const direction = useTextDirection();
   return (
     <HudCanvas layout={layout} {...(showDuring === null ? {} : { showDuring })} {...(className === undefined ? {} : { className })}>
       {HUD_SLOT_ORDER.map((slot) => {
-        const place = HUD_SLOT_ANCHORS[slot];
+        const place = hudSlotPlacement(slot, direction);
         const single = slots[slot];
         return (
           <Fragment key={slot}>

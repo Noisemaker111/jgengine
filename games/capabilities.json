@@ -4169,6 +4169,16 @@
       "intent": "fill a drawn polygon with a believable forest grown by the stand model, with a self-thinning dial"
     },
     {
+      "id": "format-duration",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/i18n/localeFormat",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a span of seconds as locale words (1h 2m 5s)"
+    },
+    {
       "id": "formation-assignment",
       "packages": [
         "@jgengine/core"
@@ -5271,7 +5281,7 @@
       "module": "@jgengine/core/i18n/i18n",
       "gameFacing": false,
       "probe": null,
-      "intent": "translate a message catalog with fallback-locale lookup, `{param}` interpolation, and Intl pluralization; observable active-locale switching"
+      "intent": "translate a message catalog with base-locale fallback, `{param}` interpolation, and cardinal and ordinal plural messages; observable active-locale switching"
     },
     {
       "id": "immunity-window",
@@ -6388,6 +6398,26 @@
       "intent": "persist a game to on-device localStorage (offline)"
     },
     {
+      "id": "locale-root",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/i18n/i18n.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the player's locale setting drives the translator, `lang` and `dir`"
+    },
+    {
+      "id": "locale-setting",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/i18n/localeSetting",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a Language settings row defaulting from the browser and saved in the settings store"
+    },
+    {
       "id": "localized-forces",
       "packages": [
         "@jgengine/core"
@@ -6606,6 +6636,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "marker-kind key (glyph + color + label per kind) sharing the map's kindStyles"
+    },
+    {
+      "id": "match-locale",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/i18n/localeSetting",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "pick the supported locale that best matches requested tags"
     },
     {
       "id": "match-rounds",
@@ -11114,6 +11154,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Load the footprint and foreign-owner gap without scanning the world."
+    },
+    {
+      "id": "text-direction",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/i18n/textDirection",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "left-to-right or right-to-left for a locale tag, from the platform's Intl data"
     },
     {
       "id": "theropod-mass-estimate",

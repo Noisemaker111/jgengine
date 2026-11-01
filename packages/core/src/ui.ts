@@ -50,13 +50,25 @@ export {
 export {
   createI18n,
   interpolate,
+  selectPlural,
   type Catalog,
   type I18n,
   type I18nOptions,
   type Locale,
+  type Message,
   type Messages,
+  type PluralCategory,
+  type PluralMessage,
   type TParams,
 } from "./i18n/i18n";
+export {
+  LOCALE_SETTING_ID,
+  localeSettingDef,
+  matchLocale,
+  readLocale,
+  withLocaleSetting,
+} from "./i18n/localeSetting";
+export { localeDirection, type TextDirection } from "./i18n/textDirection";
 export {
   MENU_KEY_INTENTS,
   menuIntentForKey,

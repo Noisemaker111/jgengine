@@ -41,6 +41,7 @@ import type { VisibilityConfig } from "../visibility/config";
 import type { GameDefinition, GameLoop } from "./defineGame";
 import type { GameCameraConfig } from "../camera/cameraConfig";
 import type { ViewportsConfig } from "./viewports";
+import type { I18n } from "../i18n/i18n";
 import type { LootFilterRule } from "../loot/lootFilter";
 import type { RarityStyle } from "../loot/groundItem";
 import type { ImpactClass } from "../combat/impactProfile";
@@ -982,6 +983,8 @@ export interface PlayableGameContract<
   rendering?: GameRenderingConfig | undefined;
   controls?: GameControlsConfig | undefined;
   chrome?: GameChromeConfig | undefined;
+  /** The game's translator. Set, the shell adds a Language row to settings, follows the player's locale, and sets `lang` and `dir` on the root so right-to-left locales flip the HUD. */
+  i18n?: I18n | undefined;
   /** Camera tuning (perspective, orbit, first-person) for the dev game player shell. */
   camera?: GameCameraConfig;
   /** Screenshot-host recipe for reaching live gameplay past a start menu (`shoot --mode play` runs `capture.play` automatically). Any game with a start/title screen declares this. */

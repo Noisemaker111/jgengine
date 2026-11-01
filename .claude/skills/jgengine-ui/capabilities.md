@@ -229,6 +229,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createFloatingTextField` (function) · `import { createFloatingTextField } from "@jgengine/core/hud/floatingText"`
 - `layoutFloatingText` (function) · `import { layoutFloatingText } from "@jgengine/react"`
 
+## format-duration — a span of seconds as locale words (1h 2m 5s)
+
+- `formatLocaleDuration` (function) · `import { formatLocaleDuration } from "@jgengine/core/i18n/localeFormat"`
+
 ## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
 
 - `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/react"`
@@ -370,7 +374,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `HudTypeStep` (type) · `import { HudTypeStep } from "@jgengine/core/hud/hudTokens"`
 
-## i18n — translate a message catalog with fallback-locale lookup, `{param}` interpolation, and Intl pluralization; observable active-locale switching
+## i18n — translate a message catalog with base-locale fallback, `{param}` interpolation, and cardinal and ordinal plural messages; observable active-locale switching
 
 - `createI18n` (function) · `import { createI18n } from "@jgengine/core/ui"`
 
@@ -499,9 +503,21 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createTipRotation` (function) · `import { createTipRotation } from "@jgengine/core/ui/loadingTips"`
 
+## locale-root — the player's locale setting drives the translator, `lang` and `dir`
+
+- `LocaleRoot` (function) · `import { LocaleRoot } from "@jgengine/react"`
+
+## locale-setting — a Language settings row defaulting from the browser and saved in the settings store
+
+- `localeSettingDef` (function) · `import { localeSettingDef } from "@jgengine/core/ui"`
+
 ## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
 
 - `MapLegend` (function) · `import { MapLegend } from "@jgengine/react"`
+
+## match-locale — pick the supported locale that best matches requested tags
+
+- `matchLocale` (function) · `import { matchLocale } from "@jgengine/core/ui"`
 
 ## menu-key-intent — resolve a keyboard code to a menu intent (move / confirm / back)
 
@@ -816,6 +832,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## talent-tree — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
 
 - `TalentTreePanel` (function) · `import { TalentTreePanel } from "@jgengine/react"`
+
+## text-direction — left-to-right or right-to-left for a locale tag, from the platform's Intl data
+
+- `localeDirection` (function) · `import { localeDirection } from "@jgengine/core/ui"`
 
 ## timer-readout — live digital mm:ss/m:ss.d timer readout bound to a TimerSet
 

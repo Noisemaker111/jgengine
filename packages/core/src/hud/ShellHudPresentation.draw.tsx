@@ -19,6 +19,8 @@ import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "@
 import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
 import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
 import { AudioSettingsBridge } from "@jgengine/core/settings/appliedSettings.draw";
+import { LocaleScope } from "@jgengine/core/i18n/i18n.view";
+import { withLocaleSetting } from "@jgengine/core/i18n/localeSetting";
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
 import { SettingsChrome } from "@jgengine/core/settings/SettingsChrome.draw";
 import { TouchPlaySurface } from "@jgengine/core/input/TouchControlsOverlay.view";
@@ -131,13 +133,14 @@ export function ShellHudPresentation({
   return (
     <SettingsProvider store={settingsStore}>
       <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={resolvePlayableAudio(playable).buses} />
+      <LocaleScope i18n={playable.i18n}>
       <SettingsRuntime
         variant={settingsConfig.variant ?? "panel"}
         surface={settingsDisabled ? false : settingsConfig.surface ?? false}
         actions={settingsActions}
         input={playable.game.input ?? {}}
         buses={resolvePlayableAudio(playable).buses}
-        extra={settingsConfig.extra ?? []}
+        extra={withLocaleSetting(settingsConfig.extra, playable.i18n)}
         categories={settingsConfig.categories ?? []}
         hide={settingsDisabled ? BUILT_IN_SETTING_CATEGORIES : settingsConfig.hide ?? []}
         fovEnabled={false}
@@ -208,6 +211,7 @@ export function ShellHudPresentation({
           </GameViewportProvider>
         </div>
       </SettingsRuntime>
+      </LocaleScope>
     </SettingsProvider>
   );
 }
