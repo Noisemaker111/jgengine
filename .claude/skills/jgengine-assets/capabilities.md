@@ -77,7 +77,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateHairCardAuthoring` (function) · `import { validateHairCardAuthoring } from "@jgengine/core/material/hairCards"`
 
-## hdri-library — pick one of 12 shipped CC0 HDRIs (noon, golden hour, overcast, dusk, night city, industrial interior, forest, snow) by id
+## hdri-library — pick one of 13 shipped CC0 HDRIs (noon, golden hour, overcast, dusk, night city, industrial interior, forest, snow) by id
 
 - `hdriEnvironment` (function) · `import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary"`
 
@@ -153,7 +153,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `creditsForLooks` (function) · `import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits"`
 
-## lut-grade-library — pick one of 18 shipped colour grades by id for a game's post-processing
+## lut-grade-library — pick one of 19 shipped colour grades by id for a game's post-processing
 
 - `lutGrade` (function) · `import { lutGrade } from "@jgengine/assets/catalogs/lutGrades"`
 
