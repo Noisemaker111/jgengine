@@ -20,6 +20,7 @@ import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 import { bindParkCapture } from "../parkProfile";
 import { tileAt, cellCentre, groundAt, isLandTool, LEVEL_HEIGHT, lineCells, raisedCells, rectCells } from "../build/terrain";
 import { landCheck, LINE_KINDS } from "../build/commands";
+import { AuthoredScenery } from "./AuthoredScenery";
 import { currentHint } from "../onboarding";
 
 /** Each moving ride part: its own GLB whose origin is the pivot, and how it moves (spin, wheel, swing, drop). */
@@ -235,7 +236,7 @@ function OverlayBodies() {
   const objects=useGameStore(c=>parkObjects(c));
   const circuit=useMemo(()=>coasterCircuit(ctx),[ctx,objects]);
   const obj=parkObject(ctx,selection);
-  return <group><Fence/><Land/><Blueprint/>
+  return <group><Fence/><AuthoredScenery/><Land/><Blueprint/>
     {objects.filter(o=>MOTION[o.kind]).map(o=><Suspense key={o.id} fallback={null}><RideMotion object={o}/></Suspense>)}
     {objects.filter(o=>o.kind==="ride_coaster").map(o=><CoasterTrain key={o.id} object={o} circuit={circuit}/>)}
     {obj?.def.staff&&<PatrolRing x={obj.x} z={obj.z} radius={patrolRadius(park.of(ctx),obj.id)}/>}
