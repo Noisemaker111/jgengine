@@ -17,8 +17,9 @@ For a *connected* walkthrough that wires several primitives into a running loop,
 - [recipes/npc-senses.md](recipes/npc-senses.md) — perceive → remember → decide → route: perception memory written into a decision-graph blackboard, with nav-mesh routing (guards, mobs, pedestrians, police response).
 - [recipes/building-kit.md](recipes/building-kit.md) — bind the facade generator's part slots to real models: one massing, swappable art per style, blocks where the kit is silent.
 - [recipes/vehicle-feel.md](recipes/vehicle-feel.md) — feel target → handling metrics → physical knobs for a ground vehicle, plus the camera, sound and rumble hooks that hang off its telemetry.
-- [recipes/flight-feel.md](recipes/flight-feel.md) — an aircraft as physical numbers: surfaces, inertia and engine, with the symptom → knob table for how it flies.
+- [recipes/flight-feel.md](recipes/flight-feel.md) — an aircraft as physical numbers: surfaces, inertia and engine, a real aircraft in one line from `aircraftFromReference` with each effect on its own dial, and the symptom → knob table for how it flies.
 - [recipes/controls.md](recipes/controls.md) — actions → layered contexts that rebind live → keyboard, touch and gamepad on the same actions → per-axis feel.
+- [recipes/environment.md](recipes/environment.md) — one reference-grade wind for grass, weather, trees and boats; forests and ground cover from editor scene kinds; soft soil that ruts; a landform start for `jgengine create`.
 - [recipes/character-animation.md](recipes/character-animation.md) — clips → graph → rig → ground: modular instance visibility, data-driven state machines, triggers and clip events, root motion, foot IK that keeps feet on slopes, and instanced crowds.
 
 ## Canonical workflows

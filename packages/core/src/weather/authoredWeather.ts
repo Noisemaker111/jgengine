@@ -1,4 +1,5 @@
 import { createEnvironmentField, type EnvironmentField, type EnvironmentFieldConfig } from "@jgengine/core/world/envField";
+import { validateWindEffects } from "@jgengine/core/world/windEffects";
 import { windField, type WindField, type WindFieldConfig, type WindVector } from "@jgengine/core/world/wind";
 import { clamp01 } from "../math/scalar";
 
@@ -119,7 +120,7 @@ function conditions(value: WeatherConditions, profile = false): void {
 
 function validateWind(value: WindFieldConfig | undefined): void {
   if (value === undefined) return;
-  objectKeys(value, ["direction", "speed", "gust", "gustFrequency", "turbulence", "seed"], "wind");
+  objectKeys(value, ["direction", "speed", "gust", "gustFrequency", "turbulence", "seed", "effects"], "wind");
   if (value.direction !== undefined) {
     if (!Array.isArray(value.direction) || value.direction.length !== 2) throw new Error("wind direction requires world X,Z");
     for (const axis of value.direction) finite(axis, "wind direction", -MAX_MAGNITUDE, MAX_MAGNITUDE);
@@ -128,6 +129,7 @@ function validateWind(value: WindFieldConfig | undefined): void {
     if (value[key] !== undefined) finite(value[key]!, `wind.${key}`, 0, key === "gustFrequency" ? 1000 : MAX_MAGNITUDE);
   }
   if (value.seed !== undefined && typeof value.seed !== "string") finite(value.seed, "wind seed");
+  if (value.effects !== undefined) validateWindEffects(value.effects);
 }
 
 /** Validate authoring references and work bounds before persisting a weather document.

@@ -1359,6 +1359,25 @@
 - `twentyFootWind` (function): function twentyFootWind(tenMetreWind: number): number — 20-ft wind from a 10-m wind: divide by 1.15 (Turner & Lawson 1978, as in BehavePlus).
 - `windAdjustmentFactor` (function): function windAdjustmentFactor(fuelbedDepthM: number, canopy?: CanopyShelter): number — Wind adjustment factor from the 20-ft (6.1 m) open wind to midflame wind (Albini & Baughman 1979; Baughman & Albini 1980; Andrews 2012). Unsheltered fuel uses the fuel bed depth; fuel under a canopy that fills at least 5 % of the crown space and stands 6 ft or taller is sheltered.
 
+## @jgengine/core/flight/aeroTable
+
+- `AeroFactor` (type): type AeroFactor = "one" | "alpha" | "beta" | "signBeta" | "mach" | "pHat" | "qHat" | "rHat" | "alphaDotHat" | "pitch" | "roll" | "yaw" — What a coefficient term multiplies: `pHat`, `qHat` and `rHat` are the body rates made dimensionless (`p·b/2V`, `q·c̄/2V`, `r·b/2V`), `alphaDotHat` is `α̇·c̄/2V`, `pitch`, `roll` and `yaw` are the surface deflections, rad, and `signBeta` is the sign of the sideslip (for data tabled against `|β|`).
+- `AeroInput` (type): type AeroInput = "alpha" | "beta" | "absBeta" | "mach" | "pitch" | "roll" | "yaw" — What an {@link AeroTable} is looked up by. Angles and control-surface deflections are rad.
+- `AeroState` (interface): interface AeroState — The air data and controls the coefficient terms read.
+- `AeroSurfaceTravel` (interface): interface AeroSurfaceTravel — Where full pilot input puts a control surface, rad, at full positive (nose up, right roll, nose right) and full negative input.
+- `AeroTable` (interface): interface AeroTable — A gridded coefficient table: one breakpoint list per input (strictly increasing), values row-major with the last input varying fastest, multilinear between, held flat past the ends unless `extrapolate` is `"linear"`.
+- `AeroTerm` (interface): interface AeroTerm — One term of a coefficient build-up: a constant or a table, times a factor (default `"one"`).
+- `aeroTermValue` (function): function aeroTermValue(term: AeroTerm, state: AeroState): number — One term's contribution: its constant or table value times its factor.
+- `sampleAeroTable` (function): function sampleAeroTable(table: AeroTable, state: AeroState): number — Samples an {@link AeroTable} at the current air data, multilinear across its inputs; allocates nothing.
+- `sumAeroTerms` (function): function sumAeroTerms(terms: readonly AeroTerm[] | undefined, state: AeroState): number — Sums a coefficient build-up: each term's constant or table value times its factor.
+- `surfaceAngle` (function): function surfaceAngle(travel: AeroSurfaceTravel | undefined, share: number): number — The surface angle, rad, an actuator at `share` of its travel (`-1..1`) puts a surface at.
+
+## @jgengine/core/flight/afterburner
+
+- `AircraftAfterburner` (interface): interface AircraftAfterburner — The afterburner effect: throttle past the dry stop lights reheat, which adds thrust on top of full dry power once the core has spooled up to full dry.
+- `afterburnerCommand` (function): function afterburnerCommand(effect: AircraftAfterburner, strength: number, throttle: number): { dry: number; reheat: number } — Splits a throttle position into dry and afterburner commands, `0..1` each, at a strength: the dry stop moves from full throttle to `dryThrottle` up to strength 1.
+- `afterburnerRatio` (function): function afterburnerRatio(effect: AircraftAfterburner, strength: number): number — The thrust ratio at full afterburner over full dry, at a strength.
+
 ## @jgengine/core/flight/aircraftDynamics
 
 - `AircraftAssistCommand` (interface): interface AircraftAssistCommand — Control commands, `-1..1`, that drive the actuators after the assists.
@@ -1387,6 +1406,46 @@
 - `aircraftHeadingQuaternion` (function): function aircraftHeadingQuaternion(heading: number): AircraftQuaternion — Quaternion for a heading about world up, forward `[sin h, 0, cos h]`.
 - `createRigidAircraft` (function): function createRigidAircraft(initial: RigidAircraftTuning, options: RigidAircraftOptions = {}): RigidAircraft — Creates a {@link RigidAircraft}: a quaternion rigid body with a diagonal inertia tensor, pushed by lifting surfaces, fuselage drag, an engine and gravity. Controls deflect surfaces through rate-limited actuators; nothing commands a rotation rate, so a jet loops when its tail can push the nose around and a glider stalls when it runs out of speed. Fixed internal substeps make it deterministic for a given `dt` sequence.
 
+## @jgengine/core/flight/aircraftEffects
+
+- `AircraftEffects` (interface): interface AircraftEffects — The physical effects an aircraft can use. Each is a separate term with its own parameters and its own `strength`, a multiplier from `0` (off: the simple model's term) upward, where `1` is exactly what the reference measures and the dial keeps going past it; each file documents what the dial scales past `1` and its sane range. Between `0` and `1` a term blends from the simple model's value to the reference's. An effect left out keeps the simple model's term, so an arcade jet is a plain throttle and stick and a real one is `aircraftFromReference("f-16")`.
+- `effectStrength` (function): function effectStrength(effect: { strength?: number } | undefined): number — An effect's strength: `0` when absent, else its `strength` (default `1`), never below `0`.
+- `mixEffect` (function): function mixEffect(simple: number, physical: number, strength: number): number — Blends a simple term into the physical one up to strength 1, then scales the physical term with the strength.
+
+## @jgengine/core/flight/aircraftReferences
+
+- `AIRCRAFT_REFERENCE_IDS` (const): const AIRCRAFT_REFERENCE_IDS: readonly AircraftReferenceId[] — Every id {@link aircraftFromReference} accepts.
+- `AircraftOverrides` (type): type AircraftOverrides = Partial<Omit<RigidAircraftTuning, "effects">> & { effects?: { [K in keyof AircraftEffects]?: Partial<NonNullable<AircraftEffects[K]>> } } — Changes to a reference's defaults: any top-level field, and per effect the parameters or `strength` to change.
+- `AircraftReferenceId` (type): type AircraftReferenceId = "cessna-172" | "f-16" | "bo-105" | "saturn-v" | "trainer" | "jet" | "light-helicopter" | "rocket" — The published airframes {@link aircraftFromReference} knows, and the class names that start from them.
+- `aircraftFromReference` (function): function aircraftFromReference(id: AircraftReferenceId, overrides: AircraftOverrides = {}): RigidAircraftTuning — The full tuning of a published aircraft with every effect it has data for at full strength, so a game gets a real aircraft in one line and tunes from there: `createRigidAircraft(aircraftFromReference("cessna-172"))`. The class names start from the matching airframe: `trainer` the Cessna 172N, `jet` the F-16, `light-helicopter` the Bo-105, `rocket` the Saturn V S-IC. `overrides` change any top-level number and each effect's parameters or `strength` (`0` off … `1` as measured … past `1` stronger), so a fleet is data: one record per aircraft from a class plus a few overrides. An override retunes an effect the airframe has; add a new effect on the result. `bun run perf flight` checks each airframe against its reference sim.
+
+## @jgengine/core/flight/atmosphere
+
+- `AirSample` (interface): interface AirSample — Air state at one altitude.
+- `AircraftAtmosphere` (interface): interface AircraftAtmosphere — The standard atmosphere effect: air density, pressure and the speed of sound fall with altitude as the U.S. Standard Atmosphere 1976 gives them, so wings, rotors and engines lose their grip on the air as the aircraft climbs.
+- `SEA_LEVEL_AIR` (const): const SEA_LEVEL_AIR: Readonly<AirSample> — Sea-level standard air, SI units.
+- `atmosphereAt` (function): function atmosphereAt(effect: AircraftAtmosphere, strength: number, y: number, out: AirSample): AirSample — The air an aircraft at world height `y` flies in under an {@link AircraftAtmosphere} effect at its strength: each of density, pressure and speed of sound is its sea-level value times its standard-atmosphere ratio raised to the strength, so `0` is sea-level air and `1` the standard atmosphere.
+- `standardAir` (function): function standardAir(altitude: number, temperatureOffset = 0, out: AirSample = { density: 0, pressure: 0, temperature: 0, speedOfSound: 0 }): AirSample — The U.S. Standard Atmosphere 1976 (NOAA-S/T 76-1562) at a geometric altitude above mean sea level, m, from −5 km to 86 km: geopotential layers with their temperature gradients and hydrostatic pressure. `temperatureOffset`, K, shifts the whole temperature profile (a hot or cold day) at the standard pressures.
+
+## @jgengine/core/flight/autorotation
+
+- `AircraftAutorotation` (interface): interface AircraftAutorotation — The autorotation effect: rotor speed is a spinning inertia driven by the engine through a speed governor and slowed by the rotor's aerodynamic torque, so when the engine stops the rotor keeps turning on its stored energy, and air coming up through a descending disc drives it back toward flight speed. The airframe feels the engine's torque, not the rotor's, so a dead engine stops the yaw kick.
+- `AutorotationRates` (interface): interface AutorotationRates — One substep of rotor speed dynamics.
+- `autorotationRates` (function): function autorotationRates(effect: AircraftAutorotation, strength: number, speedShare: number, governor: number, throttle: number, rotorTorque: number, densityRatio: number, out: AutorotationRates): AutorotationRates — Rotor speed and governor rates for a speed share, governor integral, throttle (engine power share) and aerodynamic rotor torque, N·m, in air of `densityRatio` to sea level.
+- `settledGovernor` (function): function settledGovernor(effect: AircraftAutorotation, strength: number, rotorTorque: number): number — The governor integral that holds rated speed against a steady rotor torque, for a clean start.
+
+## @jgengine/core/flight/derivatives
+
+- `AircraftDerivatives` (interface): interface AircraftDerivatives extends AircraftAeroGeometry — The stability and control derivatives effect: whole-aircraft rolling, pitching and yawing moment coefficients from published data, so static stability, control power and the damping of each rate come out as measured. Roll rate under full aileron is set by aileron power against roll damping (`Clδa` against `Clp`), the short period by `Cmα`, `Cmq` and `Cmα̇`. At strength 1 these replace the lifting surfaces' moments.
+- `DerivativeMoments` (interface): interface DerivativeMoments — Moment coefficients split into static-and-control and damping parts.
+- `derivativeMoments` (function): function derivativeMoments(effect: AircraftDerivatives, state: AeroState, out: DerivativeMoments): DerivativeMoments — Sums the moment coefficients at an air state, keeping the damping part apart so the strength can scale it alone.
+
+## @jgengine/core/flight/engineSpool
+
+- `AircraftEngineSpool` (interface): interface AircraftEngineSpool — The engine spool effect: a turbine takes seconds to wind up, slowest from idle, so thrust follows the throttle through a lag whose time constant grows with the size of the step (the shape of Stevens and Lewis's F100 power lag, from NASA TP-1538), and a running engine at closed throttle still gives its idle thrust.
+- `spoolRate` (function): function spoolRate(effect: AircraftEngineSpool, strength: number, simpleRate: number, step: number): number — The spool's response rate, 1/s, for a step of `step` (share of the dry range) toward its target, at a strength: blends from the simple `spoolRate` up to strength 1, then divides by the strength.
+- `spoolThrust` (function): function spoolThrust(effect: AircraftEngineSpool, strength: number, spool: number): number — Thrust share of full dry thrust at a spool position `0..1`, with idle thrust blended in up to strength 1.
+
 ## @jgengine/core/flight/freeFlight
 
 - `CREATIVE_FLIGHT_TUNING` (const): const CREATIVE_FLIGHT_TUNING: FreeFlightTuning — Preset for Minecraft-like creative flight — weightless, collides, yaw-relative strafe.
@@ -1406,6 +1465,64 @@
 - `resolveFlightStep` (function): function resolveFlightStep(position: readonly [number, number, number], stepX: number, stepY: number, stepZ: number, obstacles: readonly CollisionObstacle[], radius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS): { stepX: number; stepY: number; stepZ: number } — Resolve a flight step against world solids (XZ slide + Y clamp).
 - `resolveFreeFlightIntent` (function): function resolveFreeFlightIntent(keys: MovementKeysState, analog: AnalogMoveIntent | null | undefined): FreeFlightIntent — Translate held keys + analog into a free-flight intent. Vertical is `space - (control|c)` so jump ascends and crouch descends — the same keys that walk/jump/crouch use, re-mapped for flight without re-binding.
 - `resolveFreeFlightIntentFromInput` (function): function resolveFreeFlightIntentFromInput(isDown: (action: string) => boolean, value: (action: string) => number, pointer: PointerAxisState | null, bindings?: FreeFlightBindings): FreeFlightIntent — Translate live input (held actions + analog + pointer) into a flight intent using per-profile axis bindings. Unlisted bindings fall back to the defaults above so existing games keep WASD/Space/Ctrl/Shift without declaring anything.
+
+## @jgengine/core/flight/machDrag
+
+- `AircraftMachDrag` (interface): interface AircraftMachDrag — The Mach drag effect: a body's drag coefficient by Mach number, so drag rises through the transonic hump the way a rocket's axial-force coefficient or an airliner's drag-divergence curve does. It replaces the tuning's constant `dragArea`.
+- `machDragArea` (function): function machDragArea(effect: AircraftMachDrag, mach: number): number — Drag area, m², at a Mach number before the strength: the tabled coefficient times the reference area.
+
+## @jgengine/core/flight/mainGear
+
+- `AircraftMainGear` (interface): interface AircraftMainGear — The main gear effect: on the ground the runway pushes up through the main wheels, behind the centre of mass, so the weight on the wheels holds the nose down and the elevator has to beat that moment before the nose lifts. That is what makes a heavy jet rotate late and a light aircraft rotate early.
+- `mainGearMoment` (function): function mainGearMoment(effect: AircraftMainGear, strength: number, load: number): number — Nose-down pitching moment, N·m, from a ground reaction `load`, N, at the main wheels.
+
+## @jgengine/core/flight/nozzle
+
+- `AircraftNozzle` (interface): interface AircraftNozzle — The nozzle pressure effect of a rocket motor: the motor's thrust curve is its vacuum thrust, and the air pressing on the nozzle exit takes back `p∞·Aₑ`, so a first stage gains about a sixth of its thrust as it climbs out of the air. Mass flow stays tied to the vacuum thrust (constant vacuum specific impulse).
+- `nozzleThrust` (function): function nozzleThrust(effect: AircraftNozzle, strength: number, vacuumThrust: number, peakThrust: number, ambientPressure: number): number — Delivered thrust, N, for the curve's vacuum thrust, its peak and the ambient pressure, Pa.
+
+## @jgengine/core/flight/polar
+
+- `AircraftAeroGeometry` (interface): interface AircraftAeroGeometry — Reference geometry and conventions for whole-aircraft coefficient data (the `polar` and `derivatives` effects): forces are `q̄·S·C`, rolling and yawing moments `q̄·S·b·C`, pitching moments `q̄·S·c̄·C`.
+- `AircraftPolar` (interface): interface AircraftPolar extends AircraftAeroGeometry — The lift and drag polar effect: whole-aircraft lift, drag and side-force coefficients from published data (tables by angle of attack, sideslip and deflection, plus rate and control terms), with induced drag in the drag polar and the stall in the lift curve. Lift acts across the relative wind in the plane of symmetry, drag along it, side force along the body's right; at strength 1 they replace the lifting surfaces' forces (the surfaces still give the moments unless the `derivatives` effect is on).
+- `PolarCoefficients` (interface): interface PolarCoefficients — Whole-aircraft force coefficients at one air state.
+- `polarCoefficients` (function): function polarCoefficients(effect: AircraftPolar, state: AeroState, out: PolarCoefficients): PolarCoefficients — Sums the polar's lift, drag and side-force coefficients at an air state.
+
+## @jgengine/core/flight/propeller
+
+- `AircraftPropeller` (interface): interface AircraftPropeller — The propeller effect: a piston engine turns a fixed-pitch propeller whose thrust and power coefficients follow the advance ratio `J = V/nD` and tip Mach number, so static thrust is high and falls off with airspeed, and the shaft speed settles where engine torque meets propeller torque. Engine torque lapses with air density (Gagg–Ferrar); the shaft's torque reaction rolls the airframe and its spin adds gyroscopic moments.
+- `C172_PROPELLER_POWER` (const): const C172_PROPELLER_POWER: readonly number[] — McCauley 1C160/DTM7553 power coefficients, same grid.
+- `C172_PROPELLER_THRUST` (const): const C172_PROPELLER_THRUST: readonly number[] — McCauley 1C160/DTM7553 thrust coefficients from the reference blade-element solver, by advance ratio then tip Mach.
+- `PropellerLoads` (interface): interface PropellerLoads — What the propeller does at one shaft speed.
+- `propellerLoads` (function): function propellerLoads(effect: AircraftPropeller, omega: number, axial: number, throttle: number, density: number, speedOfSound: number, out: PropellerLoads): PropellerLoads — Propeller thrust and torque and engine torque at a shaft speed, rad/s, axial airspeed, m/s, throttle `0..1` and air.
+- `propellerThrust` (function): function propellerThrust(simple: number, physical: number, strength: number): number — Delivered thrust at a strength: a blend from the simple thrust to the propeller's up to strength 1, then the propeller's thrust times its ratio to the simple thrust raised to the extra strength.
+- `settledShaftSpeed` (function): function settledShaftSpeed(effect: AircraftPropeller, axial: number, throttle: number, density: number, speedOfSound: number): number — The shaft speed, rad/s, where engine torque meets propeller torque at a throttle, axial airspeed and air.
+
+## @jgengine/core/flight/rotatingEarth
+
+- `AircraftRotatingEarth` (interface): interface AircraftRotatingEarth — The rotating Earth effect: the world is a patch of a spinning sphere, origin on its surface. Gravity points at the centre and falls with the inverse square of distance, so a fast flight downrange curves over the horizon and feels lighter, and the frame's spin adds Coriolis and centrifugal accelerations. Velocities stay Earth-relative; the space-fixed velocity (what an orbit needs) comes from {@link rotatingEarthFrame}.
+- `RotatingEarthFrame` (interface): interface RotatingEarthFrame — Where a world point sits on the rotating planet.
+- `rotatingEarthAcceleration` (function): function rotatingEarthAcceleration(effect: AircraftRotatingEarth, strength: number, position: AircraftVector, velocity: AircraftVector, simple: AircraftVector, out: [number, number, number]): [number, number, number] — Acceleration, m/s² world axes, at a position and Earth-relative velocity: gravity toward the centre blended from the flat field (`simple`) up to strength 1, plus Coriolis and centrifugal terms for the frame's spin.
+- `rotatingEarthFrame` (function): function rotatingEarthFrame(effect: AircraftRotatingEarth, strength: number, position: AircraftVector, velocity: AircraftVector): RotatingEarthFrame — Altitude, local vertical, space-fixed velocity and surface range of a world point and Earth-relative velocity.
+
+## @jgengine/core/flight/rotorInflow
+
+- `AircraftRotorInflow` (interface): interface AircraftRotorInflow — The rotor inflow effect: blade-element thrust and torque over the disc with momentum inflow, so thrust at a fixed collective falls in a climb, rises in a descent (through the vortex ring state on Leishman's empirical curve), rises with forward speed as the induced flow is blown away (translational lift), and rises near the ground (Cheeseman–Bennett, fading with forward speed). Torque is induced and climb power plus Bailey's profile drag. The collective lever `0..1` sets blade pitch through `collective`.
+- `RotorInflowLoads` (interface): interface RotorInflowLoads — What the rotor does at one condition.
+- `rotorInflowLoads` (function): function rotorInflowLoads(effect: AircraftRotorInflow, strength: number, radius: number, lever: number, speedShare: number, climb: number, edgewise: number, density: number, height: number, inflow: number, out: RotorInflowLoads): RotorInflowLoads — Rotor thrust and torque at a collective lever `0..1`, rotor speed (share of rated), axial velocity through the disc (m/s, positive climbing), edgewise speed (m/s), air density and hub height above the ground (m). `inflow` is the previous induced inflow ratio; the solve relaxes from it until it settles, so calling every substep costs a step or two.
+
+## @jgengine/core/flight/thrustLapse
+
+- `AircraftThrustLapse` (interface): interface AircraftThrustLapse — The thrust lapse effect of a jet engine: thrust at full dry (and full afterburner) power changes with altitude and Mach number, the way a real engine loses most of its thrust in thin air and regains some from ram pressure. Ratios are to sea-level static thrust; between breakpoints they are bilinear, past the ends held flat.
+- `F100_DRY_LAPSE` (const): const F100_DRY_LAPSE: readonly number[] — F100-PW-220 installed thrust lapse from the reference engine cycle (`scripts/reference/flight/gasTurbine.ts`, sized to the published ratings and fitted to NASA TP-1538's F-16 thrust tables): full dry thrust over sea-level static.
+- `F100_WET_LAPSE` (const): const F100_WET_LAPSE: readonly number[] — F100-PW-220 full afterburner thrust lapse from the same cycle, over its sea-level static value.
+- `lapseRatio` (function): function lapseRatio(effect: AircraftThrustLapse, altitude: number, mach: number, afterburner: boolean): number — The tabled thrust ratio at an altitude above mean sea level, m, and Mach, before the strength.
+- `thrustLapse` (function): function thrustLapse(effect: AircraftThrustLapse, strength: number, y: number, mach: number, afterburner: boolean): number — The thrust multiplier the lapse effect applies at a strength: a blend from `1` (no lapse) to the tabled ratio up to strength 1, then the ratio raised to the strength.
+
+## @jgengine/core/flight/wingGroundEffect
+
+- `AircraftWingGroundEffect` (interface): interface AircraftWingGroundEffect — The wing ground effect: near the ground the wingtip vortices are squashed and induced drag falls, which shortens the take-off roll and lets an aircraft float in the flare. McCormick's factor `φ = (16h/b)² / (1 + (16h/b)²)` scales the induced drag at wing height `h` over span `b`.
+- `inducedDragFactor` (function): function inducedDragFactor(effect: AircraftWingGroundEffect, strength: number, heightAboveGround: number): number — Share of free-air induced drag left at a centre-of-gravity height above the ground, `0..1`, at a strength.
 
 ## @jgengine/core/fracture/convexCell
 
@@ -1591,6 +1708,16 @@
 - `createGranularTerrain` (function): function createGranularTerrain(terrain: EditableTerrain, options: GranularTerrainOptions): GranularTerrain — Bind a granular layer to a terrain's vertex grid.
 - `landformLooseCover` (function): function landformLooseCover(surface: LandformSurface, placement: LandformCoverPlacement): Pick<GranularTerrainOptions, "looseDepth" | "materialAt"> — Loose depth and material callbacks for {@link createGranularTerrain} from a landform simulation's cover: depth is the cover thickness, material the heaviest-weighted loose kind the placement maps.
 
+## @jgengine/core/granular/softGround
+
+- `SoftGround` (interface): interface SoftGround — Soft ground bound to a terrain.
+- `SoftGroundOptions` (interface): interface SoftGroundOptions — Options for {@link createSoftGround}.
+- `SoftGroundSnapshot` (interface): interface SoftGroundSnapshot — Plain JSON of a {@link SoftGround}: the soil, where it started, each wheel's last contact and the dials.
+- `SoftGroundWheel` (interface): interface SoftGroundWheel — One wheel's contact this tick: where it is, the load it carries and its size.
+- `SoftSurfaceClass` (interface): interface SoftSurfaceClass — A painted terrain surface that is soft: the material it is made of and how deep it lies over firm ground, m.
+- `createSoftGround` (function): function createSoftGround(terrain: EditableTerrain, options: SoftGroundOptions): SoftGround — Lay soft ground over a terrain's vertex grid.
+- `softSurfaceSoil` (function): function softSurfaceSoil(terrain: Pick<EditableTerrain, "surfaceAt">, classes: Readonly<Record<string, SoftSurfaceClass>>): GranularTerrainOptions — The soil for {@link createSoftGround} from the terrain's paint: each surface id listed is that material that deep, and every other surface stays hard ground, as it is with no soft ground at all.
+
 ## @jgengine/core/grass/GrassCover.draw
 
 - `GrassCover` (function): function GrassCover({ area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, stripeAt, position, }: GrassCoverProps): React.JSX.Element | null — The turf surface under one authored `grass_field` patch: a ground-draped, edge-feathered mat that turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
@@ -1598,7 +1725,7 @@
 
 ## @jgengine/core/grass/GrassPatch.draw
 
-- `GrassPatch` (function): function GrassPatch({ look, area, seed, edgeFeather, exclude, heightAt, coverageAt, baseHeight, groundColor, castShadow = false, receiveShadow = true, frustumCulled = true, ...groupProps }: GrassPatchProps): React.JSX.Element — The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance where a blade would be under a pixel — so a patch of any size costs what the view shows.
+- `GrassPatch` (function): function GrassPatch({ look, area, seed, edgeFeather, exclude, heightAt, coverageAt, baseHeight, groundColor, castShadow = false, receiveShadow = true, frustumCulled = true, wind, ...groupProps }: GrassPatchProps): React.JSX.Element — The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance where a blade would be under a pixel — so a patch of any size costs what the view shows.
 - `GrassPatchProps` (interface): interface GrassPatchProps extends Omit<ThreeElements["group"], "children"> — Props for {@link GrassPatch}.
 
 ## @jgengine/core/grass/grassBake.draw
@@ -1667,6 +1794,16 @@
 - `GrassStream` (class): class GrassStream — Camera-streamed grass for one patch. A quadtree over the patch's base cells splits near the camera and stays coarse far away; each leaf node bakes only the share of tufts its distance needs, so resident and drawn work follow what the camera sees rather than the patch area. Leaves are three meshes under {@link GrassStream.group}; three frustum-culls them per camera, and each draw trims its instance count and segment detail to that camera's distance.
 - `GrassStreamOptions` (interface): interface GrassStreamOptions — Options for {@link GrassStream}.
 - `GrassStreamStats` (interface): interface GrassStreamStats — Per-frame bookkeeping the stream reports, for tests and devtools.
+
+## @jgengine/core/grass/grassWind
+
+- `GRASS_WIND_REFERENCE_SPEED` (const): const GRASS_WIND_REFERENCE_SPEED: 5 — Wind speed, m/s, a grass kind's `windStrength` was tuned to: a gentle-to-moderate breeze (Beaufort 3–4).
+- `GRASS_WIND_SAMPLE_HEIGHT` (const): const GRASS_WIND_SAMPLE_HEIGHT: 1 — Height, m, grass samples the field at; the log-law profile holds speed constant below its minimum height.
+- `GrassWindLook` (type): type GrassWindLook = GrassWind — The wind numbers a grass look animates with.
+- `GrassWindSource` (interface): interface GrassWindSource — A shared wind for a grass patch. `response` is the patch's dial: `0` blades stand still, `1` the kind's own `windStrength` at {@link GRASS_WIND_REFERENCE_SPEED}, past `1` softer grass; sway stays below one blade-bend and is monotone over the sane range `0..4`.
+- `grassSwayAmplitude` (function): function grassSwayAmplitude(look: Pick<GrassWind, "windStrength"> & Pick<GrassBlade, "stiffness">): number — Largest sideways blade-tip travel, m, a look's wind numbers give a blade of `stiffness` (the shader's sway and flutter).
+- `grassWindAt` (function): function grassWindAt(wind: GrassWindSource, x: number, z: number, time: number): WindVector — Sample a shared wind at a grass patch's world centre.
+- `grassWindLook` (function): function grassWindLook(look: GrassWindLook, wind: WindVector, response = 1): GrassWindLook — The look's wind numbers under a wind vector: sway saturates with the drag (∝ U²), animation speeds up with √U.
 
 ## @jgengine/core/haptics/haptics
 
@@ -2151,8 +2288,15 @@
 - `landformKey` (function): function landformKey(recipe: LandformRecipe, seed: string): string — The cache key of a grown landform: model version, recipe and seed.
 - `landformRecipe` (function): function landformRecipe(params: LandformGeneratorParams, detail = 1): LandformRecipe — The recipe a generator's params and detail level grow: lower detail keeps the map size with fewer, larger cells.
 
+## @jgengine/core/landform/generator/landformStart
+
+- `LANDFORM_START_PARAMS` (const): const LANDFORM_START_PARAMS: Readonly<Record<LandformStart, Partial<LandformGeneratorParams>>> — Each start's generator params, about a 960 m map: a range cut by rivers then worked by ice above its snowline, a sand sea under one wind, and a river-cut range drowned to a coast. Simulated at full scale and shrunk to the map.
+- `landformStartTerrain` (function): function landformStartTerrain(start: LandformStart, seed: string): TerraformSnapshot — The terrain a start grows from a seed, origin at ground level 0. Deterministic and cached.
+- `withGeneratedTerrain` (function): function withGeneratedTerrain(doc: EditorDocument): EditorDocument — The document with its generated terrain grown in when it has a generator and no sculpt; otherwise unchanged.
+
 ## @jgengine/core/landform/generator/landformTerrain
 
+- `GLACIAL_PHASE_YEARS` (const): const GLACIAL_PHASE_YEARS: 20000 — Years glaciers work a range when a recipe has a `glacierEla`.
 - `LANDFORM_TERRAIN_MAX_SIDE` (const): const LANDFORM_TERRAIN_MAX_SIDE: 256 — Largest landform side `growLandform` accepts, so one job's work stays bounded.
 - `LANDFORM_TERRAIN_SURFACES` (const): const LANDFORM_TERRAIN_SURFACES: Readonly<Record<LandformSurfaceKind, string>> — The terrain paint palette id each landform surface kind paints by default.
 - `LandformRecipe` (interface): interface LandformRecipe — What a landform is grown from: plain data, so it crosses to a worker unchanged.
@@ -3240,6 +3384,12 @@
 - `sectionRadiation` (function): function sectionRadiation(section: HalfSection, frequency: number, density = 1025, gravity = 9.81, panels = 6): SectionRadiation — Heave added mass and radiation damping of a symmetric section by Frank's close-fit source method: pulsating sources of constant strength on straight panels mirrored to port, the deep-water free-surface Green's function, the body condition at panel midpoints. The section runs keel to waterline as `[half-breadth, depth ≤ 0]` points.
 - `wigleyOffsets` (function): function wigleyOffsets(length: number, beam: number, draft: number, stations = 11, waterlines = 6): HullOffsetTable — A Wigley hull `y = (B/2)·(1 − ξ²)·(1 − ζ²)` as a table of offsets, stations clustered toward the ends.
 
+## @jgengine/core/physics/boatWindage
+
+- `AIR_DENSITY` (const): const AIR_DENSITY: 1.225 — Sea-level air density, kg/m³ (ISA).
+- `BoatWind` (interface): interface BoatWind — A boat in a {@link WindField}. `strength` `0` is no windage, `1` the drag the coefficients give, past `1` more; the force is linear in it, so it stays finite and monotone over the sane range `0..4`.
+- `boatWindageForce` (function): function boatWindageForce(wind: BoatWind, hull: { length: number; beam: number }, x: number, z: number, heading: number, vx: number, vz: number, time: number): [number, number] — Windage force, N, in world x/z on a hull at `x, z` heading `heading` moving at `vx, vz`.
+
 ## @jgengine/core/physics/buoyancy
 
 - `BuoyantBody` (class): class BuoyantBody — Floats a {@link PhysicsWorld} body on a CPU {@link WaterSurface}: each hull sample point pushes the body up by its submerged depth (Archimedes, coarse), with vertical and horizontal water drag so the hull settles at the waterline and rides the Gerstner waves. Passing an {@link AxisInput} drives it as a boat — throttle thrusts along the heading, steer yaws, a keel bleeds sideways slip. Call `update(dt, time, input?)` before the shared `world.step(dt)`.
@@ -3263,6 +3413,7 @@
 
 ## @jgengine/core/physics/drivableVehicle
 
+- `DrivableSoil` (interface): interface DrivableSoil — Soft ground a car's wheels rut, and the wheel size they press with.
 - `DrivableTireEffects` (interface): interface DrivableTireEffects — Where a car's sliding tires leave their trace: skid marks on the ground and smoke in the air.
 - `DrivableVehicleOptions` (interface): interface DrivableVehicleOptions — Options for {@link tickDrivableVehicle} — ground snapping, per-tick modifiers and tire effects.
 - `DrivableVehiclePose` (interface): interface DrivableVehiclePose — A `setPose`-ready patch — spread straight into `entities.setPose(vehicleId, drive.pose)`.
@@ -3683,6 +3834,14 @@
 - `encodePlantMesh` (function): function encodePlantMesh(mesh: PlantMesh): Uint8Array — A styled plant mesh as bytes for a {@link PlantCacheStorage}.
 - `encodePlantStructure` (function): function encodePlantStructure(structure: PlantStructure, hash: string): Uint8Array — A grown plant's structure as bytes, with its hash, for a {@link PlantCacheStorage}.
 
+## @jgengine/core/plants/groundCover/groundCoverField
+
+- `GROUND_COVER_FIELD_KIND` (const): const GROUND_COVER_FIELD_KIND: "ground_cover" — The editor volume kind a ground-cover field is placed as.
+- `GROUND_COVER_SCHEMA` (const): const GROUND_COVER_SCHEMA: ParamSchema<readonly [{ readonly type: "weightedList"; readonly key: "species"; readonly label: "sown (share)"; readonly itemLabel: "ground-cover species id"; readonly default: readonly [{ readonly item: "lolium-perenne"; readonly weight: 2; }, { readonly item: "trifolium-… — The `ground_cover` params.
+- `GroundCoverParams` (type): type GroundCoverParams = ParamsOf<typeof GROUND_COVER_SCHEMA> — Parsed `ground_cover` params.
+- `growGroundCoverLook` (function): function growGroundCoverLook(params: GroundCoverParams): GrassLook — Grow the sward for the params, a week at a time under its care, and return the look it renders with. Cached and deterministic.
+- `resolveGroundCoverObject` (function): function resolveGroundCoverObject(object: SceneKindObject): ResolvedGrass | null — A ground-cover volume's footprint and grown look, the same shape a `grass_field` resolves to.
+
 ## @jgengine/core/plants/groundCover/groundCoverSpecies
 
 - `GRASS_LIBRARY` (const): const GRASS_LIBRARY: readonly GroundCoverSpecies[] — The grasses shipped with the engine.
@@ -4092,6 +4251,18 @@
 - `PLANT_SOURCES` (const): const PLANT_SOURCES: { readonly "carmean-1989": "Carmean, Hahn & Jacobs 1989, Site index curves for forest tree species in the eastern United States, USDA Forest Service GTR NC-128 (US public domain)"; readonly fvs: "USDA Forest Service, Forest Vegetation Simulator, Lake States variant htcalc.f (US … — Every source a plant species value or growth rule comes from; each one is credited in CREDITS.md.
 - `PlantSourceId` (type): type PlantSourceId = keyof typeof PLANT_SOURCES — Id of a credited plant data or model source.
 
+## @jgengine/core/plants/stand/forestStand
+
+- `FOREST_STAND_KIND` (const): const FOREST_STAND_KIND: "forest_stand" — The editor path kind a forest stand is drawn as.
+- `FOREST_STAND_SCHEMA` (const): const FOREST_STAND_SCHEMA: ParamSchema<readonly [{ readonly type: "weightedList"; readonly key: "species"; readonly label: "species (planting share)"; readonly itemLabel: "species id"; readonly default: readonly [{ readonly item: "pinus-resinosa"; readonly weight: 1; }]; }, { readonly type: "range";… — The `forest_stand` params.
+- `FOREST_STAND_TREE_BUDGET` (const): const FOREST_STAND_TREE_BUDGET: 20000 — Most trees one stand places, so a huge polygon stays bounded work.
+- `ForestStandParams` (type): type ForestStandParams = ParamsOf<typeof FOREST_STAND_SCHEMA> — Parsed `forest_stand` params.
+- `ForestStandPlot` (interface): interface ForestStandPlot — A grown plot tile and its stand statistics.
+- `ForestStandTree` (interface): interface ForestStandTree — One grown tree on the plot tile, plot-local metres.
+- `growForestStandPlot` (function): function growForestStandPlot(params: ForestStandParams): ForestStandPlot — Grow one plot tile for the params: plant `plantedPerHa` stems of the species mix at their planting shares, then step the stand `ageYears`. Deterministic per params and cached, so a document loads to the same trees every time.
+- `readForestStandParams` (function): function readForestStandParams(object: Pick<SceneKindObject, "meta">): ForestStandParams — Read a path's forest params.
+- `resolveForestStand` (function): function resolveForestStand(path: ScenePathLike, terrain?: ScatterTerrain, masks?: AvoidMasks): ScatterInstance[] — The trees of one drawn stand: the plot tiled over the polygon, kept inside it and out of clearance masks, grounded on `terrain`. Same path, same trees.
+
 ## @jgengine/core/plants/stand/standSim
 
 - `Stand` (interface): interface Stand — A stateful forest plot: step it, read its trees, snapshot and restore it.
@@ -4387,11 +4558,13 @@
 - `ScatterPaletteEntry` (interface): interface ScatterPaletteEntry — One species/prop in a scatter region's palette, with a relative spawn weight.
 - `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint plus its fill rules.
 - `ScatterRegionRules` (interface): interface ScatterRegionRules — How a scatter region fills its polygon: density, spacing, variation, and masking rules.
+- `ScatterSource` (type): type ScatterSource = (path: ScenePathLike, terrain: ScatterTerrain | undefined, masks: AvoidMasks) => readonly ScatterInstance[] — Fills one authored path of a kind other than `scatter` with placements (a forest stand from its growth model). It receives the clearance masks the region would honor; placements join the document's scatter, so rendering, solids, harvest and navigation read them like any other.
 - `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
 - `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
 - `isScatterPath` (function): function isScatterPath(path: ScenePathLike): boolean — True when an editor path is a foliage/scatter region.
 - `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
 - `readScatterRules` (function): function readScatterRules(path: ScenePathLike): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
+- `registerScatterSource` (function): function registerScatterSource(kind: string, source: ScatterSource): void — Register the {@link ScatterSource} for a path kind; idempotent, last registration wins.
 - `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): readonly ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
 - `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
 - `scatterRegionEstimate` (function): function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
@@ -5161,6 +5334,12 @@
 - `createTerrainSurfaceTextures` (function): function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): TerrainSurfaceTextures | undefined — Bake a terrain's generated surfaces (shared per spec) and stack them into array textures. `detail` 1 bakes each map at its own resolution, 0.5 at half; layers are rebaked at the smallest size any role asks for so they stack. Undefined when the terrain names no surfaces.
 - `createTerrainSurfaceTexturesJob` (function): function createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): SlicedJob<TerrainSurfaceTextures | undefined> — {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze.
 
+## @jgengine/core/terrain/terrainGenerator
+
+- `EditorTerrainGenerator` (interface): interface EditorTerrainGenerator — A document's terrain generator: what grows its ground when it has no sculpt yet.
+- `LANDFORM_STARTS` (const): const LANDFORM_STARTS: readonly ["glacial-valley", "dunes", "coast"] — The plain data a document stores to have its ground grown on first load; `landform/generator/landformStart` grows it.
+- `LandformStart` (type): type LandformStart = (typeof LANDFORM_STARTS)[number] — One named landform start.
+
 ## @jgengine/core/terrain/terrainGrade
 
 - `resolveTerrainGradeStep` (function): function resolveTerrainGradeStep(sampler: { sampleHeight(x: number, z: number): number } | ((x: number, z: number) => number), position: readonly [number, number, number], stepX: number, stepZ: number, maxClimbGrade: number): { stepX: number; stepZ: number } — Constrain an uphill heightfield step by its sampled rise/run grade. Try the full step, then X-only, then Z-only, preserving downhill travel and sliding along a traversable axis. The sampler can represent a game's terrain policy independently of the ground used for feet. This endpoint test also applies while jumping; it is not continuous terrain collision.
@@ -5650,7 +5829,7 @@
 
 ## @jgengine/core/weather/WeatherLayer.draw
 
-- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, timeSeconds, sample, shelters, metrics, rain, snow, dust, dustAlways = false, impacts, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — Draw one weather mode (rain, snow, mixed or dust) with shared wind and clock uniforms.
+- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, timeSeconds, sample, shelters, metrics, rain, snow, dust, dustAlways = false, impacts, enabled = true, children, windField, }: WeatherLayerProps): React.JSX.Element | null — Draw one weather mode (rain, snow, mixed or dust) with shared wind and clock uniforms.
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust" — `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`.
 - `WeatherLayerProps` (interface): interface WeatherLayerProps — Props for {@link WeatherLayer}: weather mode, intensity, wind, lightning and clock.
 
@@ -5707,6 +5886,7 @@
 
 ## @jgengine/core/weather/weatherUniforms.draw
 
+- `WEATHER_WIND_SAMPLE_HEIGHT` (const): const WEATHER_WIND_SAMPLE_HEIGHT: 10 — Height, m, precipitation reads the shared wind at: the meteorological 10 m.
 - `WeatherParticleMetrics` (interface): interface WeatherParticleMetrics — Actual procedural weather submissions and per-frame impact query work.
 - `WeatherUniformOptions` (interface): interface WeatherUniformOptions — Options for the shared weather uniforms: wind, lightning, time scale or an authoritative clock, and an authored weather sampler.
 - `WeatherUniformSet` (interface): interface WeatherUniformSet extends WeatherShelterUniforms — Uniforms every weather field shares: time, wind, lightning flash, rain, snow and dust amounts, and roof shelters.
@@ -6355,7 +6535,7 @@
 - `WedgeFormationOptions` (interface): interface WedgeFormationOptions — Options for {@link wedgeFormation}.
 - `WeightedParamEntry` (interface): interface WeightedParamEntry — The typed parameter schema every generator and studio shares: an ordered list of fields (sliders, toggles, colours, enums, seeds, weighted lists, curves, gradients) in optionally nested groups, plus presets. One schema drives the editor inspector, `meta` parsing and validation, randomize and reset, and the seeded variant grid, so a new generator writes no UI or parsing code of its own. Declare a schema with {@link defineParamSchema} and {@link ParamsOf} gives the parsed params' type.
 - `WeightedRegionEntry` (interface): interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> — A weighted member of a {@link weightedRegion} composite.
-- `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number } — ⚠ undocumented
+- `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number; atHeight(x: number, z: number, heightM:… — ⚠ undocumented
 - `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/placement/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
 - `WorldGridCell` (interface): interface WorldGridCell { x: number; z: number; height?: number; color?: string } — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
@@ -7223,10 +7403,29 @@
 
 ## @jgengine/core/world/wind
 
-- `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number } — ⚠ undocumented
-- `WindFieldConfig` (interface): interface WindFieldConfig { direction?: WindVector; speed?: number; gust?: number; gustFrequency?: number; turbulence?: number; seed?: string | number } — ⚠ undocumented
-- `WindVector` (type): type WindVector = readonly [number, number] — ⚠ undocumented
+- `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number; atHeight(x: number, z: number, heightM:… — ⚠ undocumented
+- `WindFieldConfig` (interface): interface WindFieldConfig { direction?: WindVector; speed?: number; gust?: number; gustFrequency?: number; turbulence?: number; seed?: string | number; effects?: WindEffects } — ⚠ undocumented
+- `WindVector` (type): type WindVector = readonly [number, number] — ⚠ undocumented · used by `grassWindAt` (@jgengine/core/grass/grassWind): Sample a shared wind at a grass patch's world centre.
 - `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
+
+## @jgengine/core/world/windEffects
+
+- `PreparedWindEffects` (interface): interface PreparedWindEffects — The prepared effects a field samples each call.
+- `WIND_SURFACE_ROUGHNESS` (const): const WIND_SURFACE_ROUGHNESS: Readonly<Record<WindSurfaceClass, WindSurfaceRoughness>> — EN 1991-1-4 Table 4.1: z₀ and z_min per terrain category.
+- `WindEffects` (interface): interface WindEffects — The physical effects a wind field carries; one optional field on `WindFieldConfig`. Plain data.
+- `WindGustEffect` (interface): interface WindGustEffect — The `gusts` effect: along-wind gusts whose variance is (strength · I_v · U)² and whose spectrum is the EN 1991-1-4 Annex B form S_L(f_L) = 6.8 f_L / (1 + 10.2 f_L)^(5/3), carried downwind at the mean speed (Taylor's frozen turbulence). `strength` `0` is no gusts, `1` the published intensity, past `1` gustier; the standard deviation is linear in it, so it stays finite and monotone over the sane range `0..4`.
+- `WindGustSynthesis` (interface): interface WindGustSynthesis — A resolved gust synthesis: normalized frequencies f_L, amplitudes (σ = 1) and phases.
+- `WindProfileEffect` (interface): interface WindProfileEffect — The `profile` effect: mean speed scales with height as ln(z/z₀)/ln(z_ref/z₀), so `speed` is the mean at the reference height. `strength` is an exponent on that ratio: `0` the same speed at every height, `1` the log law, past `1` a steeper shear; finite, bounded and monotone over the sane range `0..4`.
+- `WindSurfaceClass` (type): type WindSurfaceClass = "openWater" | "grass" | "forest" | "city" — The ground a wind blows over, by EN 1991-1-4 Table 4.1 terrain category: sea (0), open grass (II), forest (III), city (IV).
+- `WindSurfaceRoughness` (interface): interface WindSurfaceRoughness — Roughness of one surface class: roughness length z₀ and the height below which the profile stops falling, both metres.
+- `validateWindEffects` (function): function validateWindEffects(value: WindEffects): void — Throw on effects an authored document must not persist: unknown keys or surface, a negative or non-finite number.
+- `windGustSpectrum` (function): function windGustSpectrum(fL: number): number — The non-dimensional along-wind spectrum S_L(f_L) = n S(n)/σ² = 6.8 f_L / (1 + 10.2 f_L)^(5/3) (EN 1991-1-4 eq. B.2).
+- `windGustSynthesis` (function): function windGustSynthesis(components: number, seed: string): WindGustSynthesis — Split the spectrum into `components` log-spaced bands covering 0.2%..98.5% of its variance, one cosine per band at the band's geometric centre with the band's variance, renormalized so the sum has unit variance.
+- `windGustVarianceBelow` (function): function windGustVarianceBelow(fL: number): number — Share of the gust variance below f_L: the closed-form integral of {@link windGustSpectrum}, 1 − (1 + 10.2 f_L)^(−2/3).
+- `windProfileFactor` (function): function windProfileFactor(heightM: number, roughness: WindSurfaceRoughness, referenceHeightM = 10, strength = 1): number — Mean speed at `heightM` over the mean speed at the reference height, raised to the profile strength.
+- `windRoughness` (function): function windRoughness(effects: Pick<WindEffects, "surface" | "roughnessLengthM" | "minHeightM">): WindSurfaceRoughness — The roughness a set of effects resolves to.
+- `windTurbulenceIntensity` (function): function windTurbulenceIntensity(heightM: number, roughness: WindSurfaceRoughness): number — Turbulence intensity I_v(z) = 1 / ln(z/z₀) (EN 1991-1-4 eq. 4.7 with k_I = c₀ = 1).
+- `windTurbulenceScale` (function): function windTurbulenceScale(heightM: number, roughness: WindSurfaceRoughness): number — Turbulence length scale L(z) = 300 (z/200)^α, α = 0.67 + 0.05 ln z₀ (EN 1991-1-4 eq. B.1), metres.
 
 ## @jgengine/core/world/windZones
 

@@ -3,6 +3,7 @@ import { createRigidAircraft, type RigidAircraftTuning } from "@jgengine/core/fl
 import { BO105_DESIGN, BO105_FORWARD_FLIGHT_DATA, BO105_HOVER_DATA, BO105_MAIN_ROTOR, BO105_TUNNEL_AIR, createBo105Model } from "./bo105Helicopter";
 import { trimHelicopter } from "./helicopter";
 import { createRotorLoads, evaluateRotor, rotorStateCount, settleRotor, solveNewton, trimIsolatedRotor } from "./helicopterRotor";
+import { withTolerance } from "./flightComparison";
 import { createReferenceAircraft, type ReferencePilotInput } from "./referenceAircraft";
 
 const GRAVITY = 9.80665;
@@ -13,6 +14,8 @@ const DEG = Math.PI / 180;
 export interface RotorcraftComparisonAircraft {
   name: string;
   tuning: RigidAircraftTuning;
+  /** Largest allowed gap to the reference on every row, share of it; rows then report `pass`. */
+  tolerance?: number;
 }
 
 /** One metric: the game rotor, the Bo-105 reference and the NASA wind-tunnel figure; `real` is absent where none exists. */
@@ -22,6 +25,8 @@ export interface RotorcraftComparisonRow {
   game: number;
   reference: number;
   real: number | undefined;
+  allowed?: number;
+  pass?: boolean;
 }
 
 /** A game rotor's metrics beside the Bo-105 reference helicopter's and the measured Bo-105 rotor's. */
@@ -38,41 +43,82 @@ interface GameRotor {
   torque: number;
 }
 
-/** The game rotor's thrust and torque at its hover collective, rotor speed 1, flying at `velocity` (world, y up). */
-function gameRotor(tuning: RigidAircraftTuning, velocity: readonly [number, number, number], hubHeight = 1000): GameRotor {
+/** The game rotor's thrust and torque at a collective, rotor speed 1, flying at `velocity` (world, y up). */
+function gameRotor(tuning: RigidAircraftTuning, velocity: readonly [number, number, number], collective: number, hubHeight = 1000): GameRotor {
   const rotor = tuning.rotor;
   if (rotor === undefined) return { thrust: Number.NaN, torque: Number.NaN };
   const hubAbove = rotor.at?.[1] ?? 1.5;
-  const aircraft = createRigidAircraft(tuning, { position: [0, hubHeight - hubAbove, 0], velocity: [velocity[0], velocity[1], velocity[2]], airDensity: () => DENSITY });
+  // The hub sits at sea level and the ground `hubHeight` below it, so a model with an atmosphere sees sea-level air.
+  const aircraft = createRigidAircraft(tuning, { position: [0, -hubAbove, 0], velocity: [velocity[0], velocity[1], velocity[2]], airDensity: () => DENSITY, groundHeight: () => -hubHeight });
   { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
-  const collective = (tuning.massKg * GRAVITY) / rotor.maxThrust;
   const step = aircraft.tick(1e-3, { throttle: 1, pitch: 0, roll: 0, yaw: 0, collective });
-  return { thrust: step.rotor?.thrust ?? Number.NaN, torque: step.rotor?.torque ?? Number.NaN };
+  return { thrust: step.rotor?.thrust ?? Number.NaN, torque: step.rotor?.aerodynamicTorque ?? Number.NaN };
 }
 
-function gameEngineCut(tuning: RigidAircraftTuning): number {
+/** The collective that makes `thrust` at `velocity` out of ground effect, by bisection. */
+function collectiveFor(tuning: RigidAircraftTuning, thrust: number, velocity: readonly [number, number, number] = [0, 0, 0]): number {
+  let low = 0;
+  let high = 1;
+  for (let i = 0; i < 50; i += 1) {
+    const middle = 0.5 * (low + high);
+    if (gameRotor(tuning, velocity, middle).thrust < thrust) low = middle;
+    else high = middle;
+  }
+  return 0.5 * (low + high);
+}
+
+/**
+ * Rotor speed share after an engine cut at 35 m/s from the collective that carries the weight there: the same pilot as
+ * the reference lowers the collective after one second and holds the attitude.
+ */
+function gameEngineCut(tuning: RigidAircraftTuning, trimCollective: number): number {
   const aircraft = createRigidAircraft(tuning, { position: [0, 1000, 0], velocity: [0, 0, 35], airDensity: () => DENSITY });
   { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
-  const collective = tuning.rotor === undefined ? 0 : (tuning.massKg * GRAVITY) / tuning.rotor.maxThrust;
   let speed = Number.NaN;
-  for (let time = 0; time < ENGINE_CUT_SECONDS; time += 0.02) speed = aircraft.tick(0.02, { throttle: 0, pitch: 0, roll: 0, yaw: 0, collective }).rotor?.speed ?? Number.NaN;
+  let pitch = 0;
+  let bank = 0;
+  let pitchRate = 0;
+  let rollRate = 0;
+  let yawRate = 0;
+  for (let time = 0; time < ENGINE_CUT_SECONDS; time += 0.02) {
+    const step = aircraft.tick(0.02, {
+      throttle: 0,
+      pitch: Math.max(-1, Math.min(1, 2.5 * (0 - pitch) - 0.8 * pitchRate)),
+      roll: Math.max(-1, Math.min(1, 2.5 * (0 - bank) - 0.5 * rollRate)),
+      yaw: Math.max(-1, Math.min(1, -2 * yawRate)),
+      collective: time < 1 ? trimCollective : 0.1,
+    });
+    ({ pitch, bank, pitchRate, rollRate, yawRate } = step);
+    speed = step.rotor?.speed ?? Number.NaN;
+  }
   return speed;
 }
+
+/** Shaft angle of the TM-110356 μ 0.15 flight-matched run, rad (forward tilt). */
+const CRUISE_SHAFT = 3.3 * DEG;
 
 function gameColumn(tuning: RigidAircraftTuning): number[] {
   const rotor = tuning.rotor;
   if (rotor === undefined) return [];
   const weight = tuning.massKg * GRAVITY;
   const induced = Math.sqrt(weight / (2 * DENSITY * Math.PI * rotor.radius ** 2));
-  const hover = gameRotor(tuning, [0, 0, 0]);
+  const collective = collectiveFor(tuning, weight);
+  const hover = gameRotor(tuning, [0, 0, 0], collective);
+  const inflow = tuning.effects?.rotorInflow;
+  let power = Number.NaN;
+  if (inflow !== undefined) {
+    const speed = 0.15 * (inflow.ratedSpeed ?? 44.5) * rotor.radius;
+    const cruise: [number, number, number] = [0, speed * Math.sin(CRUISE_SHAFT), speed * Math.cos(CRUISE_SHAFT)];
+    power = Math.abs(gameRotor(tuning, cruise, collectiveFor(tuning, weight, cruise)).torque) / Math.abs(hover.torque);
+  }
   return [
-    gameRotor(tuning, [0, induced, 0]).thrust / hover.thrust,
-    gameRotor(tuning, [0, -induced, 0]).thrust / hover.thrust,
-    gameRotor(tuning, [0, 0, 2 * induced]).thrust / hover.thrust,
-    gameRotor(tuning, [0, 0, 0], rotor.radius / 2).thrust / hover.thrust,
+    gameRotor(tuning, [0, induced, 0], collective).thrust / hover.thrust,
+    gameRotor(tuning, [0, -induced, 0], collective).thrust / hover.thrust,
+    gameRotor(tuning, [0, 0, 2 * induced], collective).thrust / hover.thrust,
+    gameRotor(tuning, [0, 0, 0], collective, rotor.radius / 2).thrust / hover.thrust,
     (100 * Math.abs(hover.torque)) / (hover.thrust * rotor.radius),
-    Number.NaN,
-    gameEngineCut(tuning),
+    power,
+    gameEngineCut(tuning, collectiveFor(tuning, weight, [0, 0, 35])),
   ];
 }
 
@@ -146,6 +192,6 @@ export function compareRotorcraft(aircraft: readonly RotorcraftComparisonAircraf
   const reference = referenceColumn();
   return rotorcraft.map((entry) => {
     const game = gameColumn(entry.tuning);
-    return { aircraft: entry.name, reference: "Bo-105 blade-element rotor", rows: reference.map((row, index) => ({ ...row, game: game[index] ?? Number.NaN })) };
+    return { aircraft: entry.name, reference: "Bo-105 blade-element rotor", rows: reference.map((row, index) => withTolerance({ ...row, game: game[index] ?? Number.NaN }, entry.tolerance)) };
   });
 }

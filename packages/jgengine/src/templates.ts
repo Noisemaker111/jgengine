@@ -8,7 +8,7 @@ import {
   boardRulesTs,
   boardWorldTs,
 } from "./templates/boardFiles";
-import { withStarterTerrain } from "./templates/starterTerrain";
+import { withLandformStart, withStarterTerrain } from "./templates/starterTerrain";
 import {
   agentsMd,
   artDirectionMd,
@@ -16,6 +16,7 @@ import {
   editorLayersTestFor,
   editorLayersTs,
   editorSceneJson,
+  grownEditorLayersTs,
   STARTER_ENVIRONMENT,
   gameAssetsTs,
   gameConfigTs,
@@ -64,10 +65,12 @@ export {
 export type {
   EditorSceneDoc,
   EditorSceneMarker,
+  LandformStartName,
   TemplateFile,
   TemplateOptions,
   TemplateVariant,
 } from "./templates/types";
+export { LANDFORM_START_NAMES } from "./templates/types";
 
 /** @internal */
 export function gameTemplate(options: TemplateOptions): TemplateFile[] {
@@ -88,8 +91,9 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
   const sceneDoc = scene ?? (options.sceneMode === "empty" ? emptyScene : undefined);
   const baseSceneContents = sceneDoc ? `${JSON.stringify(sceneDoc, null, 2)}\n` : editorSceneJson;
   // A promoted --from-scene document keeps whatever ground its author made.
-  const seedsTerrain = world && (options.ground ?? "terrain") === "terrain" && scene === undefined;
-  const sceneContents = seedsTerrain ? withStarterTerrain(baseSceneContents, id) : baseSceneContents;
+  const landform = world && editor && scene === undefined ? options.landform : undefined;
+  const seedsTerrain = world && (options.ground ?? "terrain") === "terrain" && scene === undefined && landform === undefined;
+  const sceneContents = landform !== undefined ? withLandformStart(baseSceneContents, landform, id) : seedsTerrain ? withStarterTerrain(baseSceneContents, id) : baseSceneContents;
   const sceneTest = sceneDoc ? (scene ? editorLayersTestFor(scene) : editorLayersTestFor(emptyScene)) : editorLayersTest;
   const builder = options.shape === "shared-world-builder";
   // The starter loop reads the starter scene's caches and beacon; any other scene starts from a walk.
@@ -127,7 +131,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     ...(editor
       ? [
           { path: "src/editor.scene.json", contents: sceneContents },
-          { path: "src/editorLayers.ts", contents: editorLayersTs },
+          { path: "src/editorLayers.ts", contents: landform === undefined ? editorLayersTs : grownEditorLayersTs },
           { path: "src/editorLayers.test.ts", contents: sceneTest },
         ]
       : []),

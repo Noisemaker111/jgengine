@@ -16,6 +16,12 @@ export interface EditorSceneDoc {
   [key: string]: unknown;
 }
 
+/** The landform starts `create --landform` offers; core's `terrain/terrainGenerator` grows them. */
+export const LANDFORM_START_NAMES = ["glacial-valley", "dunes", "coast"] as const;
+
+/** One landform start name. */
+export type LandformStartName = (typeof LANDFORM_START_NAMES)[number];
+
 export interface TemplateOptions {
   id: string;
   shape?: "shared-world-builder" | undefined;
@@ -41,6 +47,8 @@ export interface TemplateOptions {
   brief?: string | undefined;
   /** `"2d"` scaffolds a board game with no 3D scene, editor document, or models (`create --template 2d`). Default `"3d"`. */
   dimension?: "2d" | "3d";
+  /** Grow the scene's terrain from this landform start on first load instead of the starter hills (`create --landform`). */
+  landform?: LandformStartName | undefined;
 }
 
 export interface TemplateFile {

@@ -180,18 +180,21 @@ export function referenceFlightSubject(model: ReferenceAircraftModel, cruiseSpee
  * stay on, air density is the model's default, and the ground is flat at `y = 0`.
  * @capability flight-tests fly a game RigidAircraft through the flight tests
  */
-export function rigidAircraftFlightSubject(name: string, tuning: RigidAircraftTuning, cruiseSpeed: number, options: RigidAircraftOptions = {}): FlightTestSubject {
-  const altitude = 3000;
+export function rigidAircraftFlightSubject(name: string, tuning: RigidAircraftTuning, cruiseSpeed: number, options: RigidAircraftOptions = {}, maxMach?: number): FlightTestSubject {
   let aircraft = createRigidAircraft(tuning, options);
   let start: readonly [number, number, number] = [0, 0, 0];
   let time = 0;
-  const density = options.airDensity;
+  const airborne: RigidAircraftOptions = { ...options, groundHeight: () => -20000 };
   return {
     name,
     cruiseSpeed,
-    startAirborne(eas) {
-      aircraft = createRigidAircraft(tuning, { ...options, position: [0, altitude, 0], velocity: [0, 0, eas] });
-      start = [0, altitude, 0];
+    ...(maxMach === undefined ? {} : { maxMach }),
+    startAirborne(eas, altitudeOffset = 0) {
+      // A probe for the air at the start height turns equivalent into true airspeed.
+      const density = createRigidAircraft(tuning, { ...airborne, position: [0, altitudeOffset, 0] }).tick(0, { throttle: 0, pitch: 0, roll: 0, yaw: 0 }).airDensity;
+      const tas = eas * Math.sqrt(1.225 / density);
+      aircraft = createRigidAircraft(tuning, { ...airborne, position: [0, altitudeOffset, 0], velocity: [0, 0, tas] });
+      start = [0, altitudeOffset, 0];
       time = 0;
       return { pitch: 0, throttle: 0.5 };
     },
@@ -204,13 +207,12 @@ export function rigidAircraftFlightSubject(name: string, tuning: RigidAircraftTu
     step(dt, controls) {
       const s = aircraft.tick(dt, { throttle: controls.throttle, pitch: controls.pitch, roll: controls.roll, yaw: controls.yaw, brake: controls.brake });
       time += dt;
-      const rho = density === undefined ? 1.225 : density(s.position[1]);
       return {
         time,
         altitude: s.position[1] - start[1],
         climbRate: s.velocity[1],
         airspeed: s.airspeed,
-        equivalentAirspeed: s.airspeed * Math.sqrt(rho / 1.225),
+        equivalentAirspeed: s.airspeed * Math.sqrt(s.airDensity / 1.225),
         pitch: s.pitch,
         bank: s.bank,
         heading: s.heading,
@@ -220,7 +222,7 @@ export function rigidAircraftFlightSubject(name: string, tuning: RigidAircraftTu
         onGround: s.grounded,
         stalled: s.stalled,
         sideslip: s.sideslip,
-        mach: s.airspeed / 340.294,
+        mach: s.mach,
       };
     },
   };

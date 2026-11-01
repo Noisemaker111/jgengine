@@ -1,4 +1,5 @@
 import type { AircraftAssistTuning, RigidAircraftTuning } from "@jgengine/core/flight/aircraftDynamics";
+import { aircraftFromReference } from "@jgengine/core/flight/aircraftReferences";
 
 // A 950 kg aerobatic monoplane: a short-coupled tail and big ailerons, so it loops in about ten seconds
 // and rolls at a few hundred degrees a second. Wing incidence trims it level near 80 m/s at a third throttle.
@@ -19,6 +20,12 @@ export const flightDemoPlane: RigidAircraftTuning = {
 
 /** Spawn state: in the air, level, at cruise. */
 export const flightDemoSpawn = { position: [0, 250, 0] as const, velocity: [0, 0, 80] as const };
+
+/** The real-aircraft swap G makes: a Cessna 172N with every effect at full strength, one line from the reference. */
+export const flightDemoTrainer: RigidAircraftTuning = aircraftFromReference("trainer");
+
+/** The trainer's spawn: in the air at about its 105 kt cruise. */
+export const flightDemoTrainerSpawn = { position: [0, 250, 0] as const, velocity: [0, 0, 54] as const };
 
 // A light single-rotor helicopter. The main rotor turns counter-clockwise seen from above, so its torque yaws the nose
 // left; about a third of right pedal holds heading in a hover. The tail rotor sits at the centre of mass height so

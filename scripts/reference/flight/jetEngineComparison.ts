@@ -3,6 +3,7 @@ import { createRigidAircraft, type RigidAircraftTuning } from "@jgengine/core/fl
 import { f16CycleEngine, f16Thrust } from "./f16Aircraft";
 import type { GasTurbineFlight } from "./gasTurbine";
 import type { GasTurbineEngine, GasTurbineEngineOutput } from "./gasTurbineEngine";
+import { withTolerance } from "./flightComparison";
 import { F100_PW_220_PUBLISHED } from "./referenceEngines";
 import { standardAtmosphere } from "./standardAtmosphere";
 
@@ -13,6 +14,8 @@ export interface JetComparisonAircraft {
   name: string;
   tuning: RigidAircraftTuning;
   afterburner?: number;
+  /** Largest allowed gap to the reference cycle on every row, share of it; rows then report `pass`. */
+  tolerance?: number;
 }
 
 /** One metric: the game jet, the F100 cycle engine and the published or NASA-table figure; `real` is absent where none exists. */
@@ -22,6 +25,8 @@ export interface JetComparisonRow {
   game: number;
   reference: number;
   real: number | undefined;
+  allowed?: number;
+  pass?: boolean;
 }
 
 /** A game jet's engine metrics beside the F100-PW-220 cycle engine's and the real engine's. */
@@ -42,24 +47,31 @@ function flightAt(altitude: number, mach: number): GasTurbineFlight {
   return { mach, temperature: air.temperature, pressure: air.pressure };
 }
 
-/** Full-throttle thrust of the game model at a flight condition, its spool already settled. */
-function gameThrust(tuning: RigidAircraftTuning, altitude: number, mach: number): number {
+/** Throttle position of full dry power: the afterburner effect's dry stop, else full throttle. */
+function dryThrottle(tuning: RigidAircraftTuning): number {
+  return tuning.effects?.afterburner === undefined ? 1 : (tuning.effects.afterburner.dryThrottle ?? 0.77);
+}
+
+/** Thrust of the game model at a flight condition and throttle, its spool (and any reheat) already settled. */
+function gameThrust(tuning: RigidAircraftTuning, altitude: number, mach: number, throttle = dryThrottle(tuning)): number {
   const aircraft = createRigidAircraft(tuning, {
     position: [0, altitude, 0],
     velocity: [0, 0, mach * standardAtmosphere(altitude).speedOfSound],
     airDensity: (height) => standardAtmosphere(height).density,
   });
-  { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, spool: 1 } }); }
-  return aircraft.tick(1e-3, { throttle: 1, pitch: 0, roll: 0, yaw: 0 }).thrust;
+  { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, spool: 1, afterburner: throttle > dryThrottle(tuning) ? 1 : 0 } }); }
+  return aircraft.tick(1e-3, { throttle, pitch: 0, roll: 0, yaw: 0 }).thrust;
 }
 
-/** Seconds the game model takes from idle to 90% of its full dry thrust, standing on the runway with the brakes on. */
+/** Seconds the game model takes from idle to 90% of the way to its full dry thrust, standing on the runway with the brakes on. */
 function gameSpoolTime(tuning: RigidAircraftTuning): number {
   const aircraft = createRigidAircraft(tuning, { position: [0, tuning.gear?.height ?? 0, 0] });
-  const full = tuning.engine?.maxThrust ?? 0;
+  const throttle = dryThrottle(tuning);
+  const idle = aircraft.tick(1e-3, { throttle: 0, pitch: 0, roll: 0, yaw: 0, brake: 1 }).thrust;
+  const full = gameThrust(tuning, 0, 0);
   const dt = 0.005;
   for (let time = dt; time < 20; time += dt) {
-    if (aircraft.tick(dt, { throttle: 1, pitch: 0, roll: 0, yaw: 0, brake: 1 }).thrust >= 0.9 * full) return time;
+    if (aircraft.tick(dt, { throttle, pitch: 0, roll: 0, yaw: 0, brake: 1 }).thrust - idle >= 0.9 * (full - idle)) return time;
   }
   return Number.POSITIVE_INFINITY;
 }
@@ -134,11 +146,12 @@ export function compareJetEngines(aircraft: readonly JetComparisonAircraft[]): J
   const reference = referenceColumn();
   return jets.map((entry) => {
     const sls = gameThrust(entry.tuning, 0, 0);
-    const game = [sls, ...CONDITIONS.map(({ altitude, mach }) => gameThrust(entry.tuning, altitude, mach) / sls), entry.afterburner ?? 1, gameSpoolTime(entry.tuning)];
+    const reheat = entry.afterburner ?? (entry.tuning.effects?.afterburner === undefined ? 1 : gameThrust(entry.tuning, 0, 0, 1) / sls);
+    const game = [sls, ...CONDITIONS.map(({ altitude, mach }) => gameThrust(entry.tuning, altitude, mach) / sls), reheat, gameSpoolTime(entry.tuning)];
     return {
       aircraft: entry.name,
       reference: "F100-PW-220 cycle (F-16)",
-      rows: reference.rows.map((row, index) => ({ ...row, game: game[index] ?? Number.NaN })),
+      rows: reference.rows.map((row, index) => withTolerance({ ...row, game: game[index] ?? Number.NaN }, entry.tolerance)),
     };
   });
 }

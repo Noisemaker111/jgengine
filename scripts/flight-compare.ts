@@ -7,6 +7,7 @@ import type { RigidAircraftTuning } from "../packages/core/src/flight/aircraftDy
 import { compareFlight, formatFlightComparison, type FlightComparisonAircraft } from "./reference/flight/flightComparison";
 import { compareJetEngines, type JetComparisonAircraft } from "./reference/flight/jetEngineComparison";
 import { compareRocketAscent } from "./reference/flight/rocketComparison";
+import { compareReferenceBuilds, failingRows } from "./reference/flight/referenceBuildComparison";
 import { compareRotorcraft } from "./reference/flight/rotorcraftComparison";
 import { printHelpIfAsked } from "./script-help";
 
@@ -73,10 +74,13 @@ for (const file of sourceFiles(games)) {
   const loaded: unknown = await import(pathToFileURL(resolve(root, file)).href);
   if (isRecord(loaded)) aircraft.push(...aircraftIn(loaded, file, rotors));
 }
-if (aircraft.length === 0 && rotors.length === 0) {
-  console.log("no game aircraft built on createRigidAircraft found");
-  process.exit(0);
-}
+if (aircraft.length === 0 && rotors.length === 0) console.log("no game aircraft built on createRigidAircraft found");
 const rockets = aircraft.filter((entry) => entry.tuning.motor !== undefined).map((entry) => compareRocketAscent(entry.tuning, entry.name));
 const tables = [...compareFlight(aircraft), ...compareJetEngines(aircraft), ...compareRotorcraft(rotors), compareRocketAscent(), ...rockets];
 console.log(formatFlightComparison(tables));
+// The runtime's own reference airframes, every effect at 1, against the same reference sims with their tolerances.
+const builds = compareReferenceBuilds();
+console.log(`\n${formatFlightComparison(builds)}`);
+const failing = failingRows(builds);
+console.log(failing.length === 0 ? "\nevery aircraftFromReference build is within its tolerance" : `\noutside tolerance:\n${failing.join("\n")}`);
+if (failing.length > 0) process.exitCode = 1;
