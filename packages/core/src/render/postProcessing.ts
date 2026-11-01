@@ -167,10 +167,70 @@ export interface AtmosphereConfig {
    * out. Default false, which skips the whole pass while there is no sun.
    */
   indoor?: boolean;
+  /** Haze colour (CSS). Omitted, the haze takes the scene fog's colour, else the background's. */
+  color?: string;
+  /**
+   * How patchy the haze is, 0..1: 0 is an even layer, 1 lets drifting banks thin to nothing and
+   * thicken to twice the density. Default 0.
+   */
+  variation?: number;
+  /** Width of one haze bank in world units. Default 60. */
+  patchSize?: number;
+  /**
+   * How fast the banks ride the shared wind (`windDirection`, `windGust`, `windClock` in
+   * `model/modelWind.draw`), in world units per second per unit of gust. 0 holds them still. Default 1.5.
+   */
+  drift?: number;
 }
 
 /**
- * Declarative post-processing chain (RenderPass → AO → contact shadows → atmosphere → Bloom → DOF
+ * Screen-space reflections: each pixel of an upward-facing glossy surface marches its mirrored view ray
+ * through the depth buffer and takes the colour of what it hits, weighted by Fresnel. Wet streets,
+ * polished floors and still water pick up the scene above them; off-screen hits fall back to the
+ * surface's own environment reflection.
+ */
+export interface SsrConfig {
+  /** How much of a hit replaces the surface colour at full Fresnel, 0..1. Default 0.5. */
+  intensity?: number;
+  /** Reflectance looking straight down at the surface (Schlick F0). 0.04 is most dielectrics; 0.02 is water. Default 0.04. */
+  reflectance?: number;
+  /** Longest reflected ray in world units. Default 24. */
+  maxDistance?: number;
+  /** Depth a surface the ray passes behind is assumed to have, world units. Default 0.6. */
+  thickness?: number;
+  /**
+   * Upward tilt a surface needs before it reflects: the world-space normal's y, -1..1. 0.6 keeps
+   * floors, roads and water; -1 reflects walls too. Default 0.6.
+   */
+  minUp?: number;
+  /** Camera distance in world units where reflections have faded out. Default 120. */
+  fadeDistance?: number;
+  /**
+   * Roughness below which a standard material reflects, fading in as it gets smoother; rough ground,
+   * foliage and textured-roughness materials never do. A mesh's `userData.ssr` (`true`, a 0..1
+   * strength, or `false`) overrides it, which is how a custom water shader opts in. Default 0.4.
+   */
+  maxRoughness?: number;
+}
+
+/**
+ * Motion blur (#1658): the camera's own movement blurs the whole frame by reprojecting each pixel
+ * to where it was last frame, and registered moving bodies (`registerMotionBlurBody`; every model
+ * entity is registered) blur along their own screen motion. Each part has its own strength.
+ */
+export interface MotionBlurConfig {
+  /** Strength of the blur from camera movement; 0 turns it off, 1 is the shutter below. Default 1. */
+  camera?: number;
+  /** Strength of the blur from moving bodies; 0 turns it off. Default 1. */
+  objects?: number;
+  /** Shutter open time as a fraction of a 60 Hz frame, so blur length is the same at any frame rate. Default 0.5. */
+  shutter?: number;
+  /** Longest blur as a fraction of the frame's width. Default 0.05. */
+  maxBlur?: number;
+}
+
+/**
+ * Declarative post-processing chain (RenderPass → AO → contact shadows → SSR → atmosphere → Bloom → DOF → motion blur
  * → SMAA or TAA → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns
  * the render; absent means the renderer draws directly (unchanged). Each stage is
  * a config object, `false` to skip, or omitted for its default. Pure data — no
@@ -215,6 +275,16 @@ export interface PostProcessingConfig {
    * tuned per `mood`, on medium and up; `false` turns both off.
    */
   atmosphere?: AtmosphereConfig | false;
+  /**
+   * Screen-space reflections ({@link SsrConfig}). Omitted or `false` builds none; runs on medium and
+   * up while the player's `ssr` toggle is on.
+   */
+  ssr?: SsrConfig | false;
+  /**
+   * Camera and per-object motion blur ({@link MotionBlurConfig}). Omitted or `false` builds none;
+   * runs on medium and up while the player's `motionBlur` toggle is on.
+   */
+  motionBlur?: MotionBlurConfig | false;
   /** Depth-of-field / bokeh. Heavier stage — omit or `false` to skip. Default off (omitted). */
   dof?: DofConfig | false;
   grade?: GradeConfig | false;
@@ -243,6 +313,29 @@ export const DEFAULT_ATMOSPHERE: Readonly<Required<AtmosphereConfig>> = {
   lamps: 1,
   beams: 0,
   indoor: false,
+  color: "", // empty: the scene fog colour
+  variation: 0,
+  patchSize: 60,
+  drift: 1.5,
+};
+
+/** Screen-space reflections used for the fields an `ssr` config leaves unset. */
+export const DEFAULT_SSR: Readonly<Required<SsrConfig>> = {
+  intensity: 0.5,
+  reflectance: 0.04,
+  maxDistance: 24,
+  thickness: 0.6,
+  minUp: 0.6,
+  fadeDistance: 120,
+  maxRoughness: 0.4,
+};
+
+/** Motion blur used for the fields a `motionBlur` config leaves unset. */
+export const DEFAULT_MOTION_BLUR: Readonly<Required<MotionBlurConfig>> = {
+  camera: 1,
+  objects: 1,
+  shutter: 0.5,
+  maxBlur: 0.05,
 };
 
 /**

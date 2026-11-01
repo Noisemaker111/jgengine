@@ -91,9 +91,11 @@ test("a stage the game never authored stays out even when the tier and the playe
 test("a settings surface is offered only the stages this chain can build", () => {
   expect(availablePostfxStages(bare)).toEqual([]);
   expect(availablePostfxStages({ ...bare, ao: undefined })).toEqual(["ao"]);
-  expect(availablePostfxStages({ ao: {}, bloom: {}, dof: { focus: 12 } })).toEqual(["ao", "bloom", "dof", "smaa"]);
+  expect(availablePostfxStages({ ao: {}, bloom: {}, dof: { focus: 12 } })).toEqual(["ao", "bloom", "dof", "smaa", "fog"]);
+  expect(availablePostfxStages({ ...bare, ssr: {}, motionBlur: {} })).toEqual(["ssr", "motionBlur"]);
   // The tier's own defaults never take a stage away: the player can raise quality to reach it.
-  expect(availablePostfxStages({ ao: false, bloom: false, aa: false })).toEqual([]);
+  expect(availablePostfxStages({ ao: false, bloom: false, aa: false })).toEqual(["fog"]);
+  expect(availablePostfxStages({ ao: false, bloom: false, aa: false, atmosphere: false })).toEqual([]);
 });
 
 test("AO reads the beauty pass depth instead of rendering the scene again", () => {
@@ -292,5 +294,59 @@ describe("effects after the reveal", () => {
     expect(projections[1]).not.toEqual(projections[0]);
     target.dispose();
     disposeGraph(graph);
+  });
+});
+
+describe("each render effect is off unless the game or its look asks for it", () => {
+  const graphStages = (config: Parameters<typeof planPostStages>[0], quality: "low" | "medium" | "high" | "ultra" = "high") => {
+    const original = globalThis.Image;
+    globalThis.Image = class {
+      src = "";
+      width = 0;
+      height = 0;
+    } as unknown as typeof Image;
+    try {
+      const graph = buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages(config, quality), 320, 180);
+      const stages = graph.stages;
+      disposeGraph(graph);
+      return stages;
+    } finally {
+      globalThis.Image = original;
+    }
+  };
+
+  test("screen-space reflections build only when authored, and never on low", () => {
+    expect(graphStages({ toneMapping: "aces" })).not.toContain("ssr");
+    expect(graphStages({ toneMapping: "aces", ssr: false })).not.toContain("ssr");
+    expect(graphStages({ toneMapping: "aces", ssr: {} })).toContain("ssr");
+    expect(graphStages({ toneMapping: "aces", ssr: {} }, "low")).not.toContain("ssr");
+    expect(graphStages({ toneMapping: "aces", ssr: { intensity: 0 } })).not.toContain("ssr");
+    expect(planPostStages({ ssr: {} }, "high", { ssr: false }).ssr).toBeNull();
+  });
+
+  test("motion blur builds only when authored, and never on low", () => {
+    expect(graphStages({ toneMapping: "aces" })).not.toContain("motionBlur");
+    expect(graphStages({ toneMapping: "aces", motionBlur: {} })).toContain("motionBlur");
+    expect(graphStages({ toneMapping: "aces", motionBlur: {} }, "low")).not.toContain("motionBlur");
+    expect(graphStages({ toneMapping: "aces", motionBlur: { camera: 0, objects: 0 } })).not.toContain("motionBlur");
+    expect(planPostStages({ motionBlur: {} }, "high", { motionBlur: false }).motionBlur).toBeNull();
+  });
+
+  test("volumetric fog keeps an even layer with no drift until the game asks for banks, and the player can turn it off", () => {
+    const plain = planPostStages({}, "high");
+    expect(plain.atmosphere?.variation).toBe(0);
+    expect(plain.fogVariationTaps).toBe(0);
+    const banks = planPostStages({ atmosphere: { variation: 0.6, color: "#c8d0d8" } }, "high");
+    expect(banks.fogVariationTaps).toBeGreaterThan(0);
+    expect(banks.atmosphere?.color).toBe("#c8d0d8");
+    expect(planPostStages({ atmosphere: { variation: 0.6 } }, "low").atmosphere).toBeNull();
+    expect(planPostStages({}, "high", { fog: false }).atmosphere).toBeNull();
+  });
+
+  test("the reflection pass sits before the haze and the blur after depth of field", () => {
+    const stages = graphStages({ toneMapping: "aces", ssr: {}, motionBlur: {}, dof: { focus: 10 } });
+    expect(stages.indexOf("ssr")).toBeLessThan(stages.indexOf("atmosphere"));
+    expect(stages.indexOf("motionBlur")).toBeGreaterThan(stages.indexOf("dof"));
+    expect(stages.indexOf("motionBlur")).toBeLessThan(stages.indexOf("taa"));
   });
 });

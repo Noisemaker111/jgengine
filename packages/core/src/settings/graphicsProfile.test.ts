@@ -15,7 +15,7 @@ describe("resolveGraphicsProfile", () => {
     });
     expect(profile.renderScale).toBe(1.25);
     expect(profile.shadowMapSize).toBe(1024);
-    expect(profile.postStages).toEqual({ ao: false, bloom: true, dof: true, smaa: true });
+    expect(profile.postStages).toEqual({ ao: false, bloom: true, dof: true, smaa: true, ssr: true, fog: true, motionBlur: true });
     expect(DEFAULT_GRAPHICS_PROFILES.medium.postStages.ao).toBe(true);
   });
 });

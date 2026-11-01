@@ -85,6 +85,7 @@ export const SETTING_IDS = {
   masterVolume: "sound.master",
   graphicsQuality: "graphics.quality",
   graphicsShadows: "graphics.shadows",
+  graphicsSoftShadows: "graphics.softShadows",
   graphicsUiScale: "graphics.uiScale",
   graphicsRenderScale: "graphics.renderScale",
   graphicsPostAo: "graphics.post.ao",
