@@ -37,6 +37,7 @@ default render distance.
 | `defaultMaxRenderDistance` | `Infinity` | Never distance-cull unless a game opts in |
 | `occlusionCulling` | `false` | Off: the stage is fed no occluders yet, so it cannot hide anything |
 | `hlod` | unset | Far static cells keep drawing their props unless a game sets `{ distance, hysteresis, cluster }` |
+| `meshLods` | unset | Props and scatter draw their source mesh unless a game sets `{ screenSizes, hysteresis?, impostorDistance? }` |
 | streaming `preloadMargin` | 32 | Assets load ahead of visibility |
 | `unloadGraceSeconds` | 10 | Grace period before an idle asset is unloaded |
 | `maxLoadsPerFrame` / `maxUnloadsPerFrame` | 4 / 2 | Per-frame budgets to avoid spikes |
@@ -57,8 +58,36 @@ visibility: {
   entities: { boss: { alwaysVisible: true } },   // by entity kind
   objects:  { beacon: { neverUnload: true } },   // by object catalog id
   hlod: { distance: 350, hysteresis: 40, cluster: 1.5 }, // far 128 m cells draw one merged proxy
+  meshLods: { screenSizes: [0.2, 0.07], hysteresis: 0.1, impostorDistance: 120 }, // built levels by size on screen
 }
 ```
+
+## Built mesh levels and impostors
+
+`bun run games:provision build <game>` reads the game's `jgengine.json` `assetBuild` and writes, beside
+each named model file, `<file>.lods/`: simplified levels (`lod1.glb`, ...; geometry only, the runtime
+reuses the source's materials and maps), an optional baked impostor atlas, and `meta.json`. It also
+encodes the KTX2 texture twins. Every step is cached by content; at most 4 workers.
+
+```json
+"assetBuild": {
+  "lods": { "include": ["models/library/nature/*/near.gltf"], "levels": [{ "ratio": 0.4, "error": 0.01 }, { "ratio": 0.12, "error": 0.03 }] },
+  "impostors": { "include": ["models/library/nature/jacaranda/near.gltf"], "frames": 8, "cell": 128 }
+}
+```
+
+At runtime `visibility.meshLods.screenSizes` gives one share of the viewport height per built level:
+a level takes over once the model's bounding sphere spans less than it. Static props switch per
+placement (per unit of placement scale), scatter switches per chunk. Past `impostorDistance` a model
+with a baked atlas draws one card per placement in a shared instanced draw. A model overrides any
+field with `ModelConfig.meshLods`, or turns it off with `meshLods: false`. A model with no built files
+draws as before, so a checkout that never ran the build is unchanged.
+
+Built files of a committed model (`public/models/imported/`) are committed beside it; built files of a
+store-provisioned model (library scans, packs) live in the asset store and come from the build.
+
+Far HLOD proxies hold one level per model: its coarsest mesh level. A model drawn as impostor cards
+adds nothing to the proxy and keeps its cards in far cells.
 
 Override precedence (earlier wins): **per-object → per-layer → per-scene → global**. Available
 controls: `alwaysVisible`, `neverUnload`, `minRenderDistance`, `maxRenderDistance`, `preloadMargin`,

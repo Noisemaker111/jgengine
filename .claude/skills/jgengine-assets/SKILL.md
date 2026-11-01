@@ -101,6 +101,8 @@ Material sources declare the map roles in their pinned archive through `AssetSou
 
 A game picks a sky, a grade, a surface and fonts by id, one line each. Naming the id in source is enough: `bun run games:provision` serves the file (packs-release mirror first, origin second).
 
+`bun run games:provision build <game>` is the asset pipeline in one call: provision, KTX2 texture twins, and the simplified mesh levels and baked impostors the game's `jgengine.json` `assetBuild` names (see `jgengine-world/visibility.md`, "Built mesh levels and impostors"). Cached by content, at most 4 workers, idle priority; `--no-impostors` skips the headless-browser bake.
+
 - Sky: `environment: hdriEnvironment("golden-hour")` (`@jgengine/assets/catalogs/hdriLibrary`; CC0 Poly Haven 2K HDRIs incl. `harbour-sunset`, `HDRI_LIBRARY`), passed as `EnvironmentLighting`'s `source`.
 - Grade: `postProcessing: { grade: { lut: lutGrade("cold-teal") } }` (`catalogs/lutGrades`; `.cube` 32³ grades incl. `neon-sunset`, baked by `packages/assets/scripts/gen-lut-grades.ts`). A game naming none keeps its look.
 - Surface: `librarySurfaceScan("asphalt/dry")`, `libraryTerrainMaterial(name)` or `libraryBuildingSurface(name)` (`catalogs/materialLibrary`; ambientCG surfaces, 1K colour, normal, roughness and AO where the scan has them).
