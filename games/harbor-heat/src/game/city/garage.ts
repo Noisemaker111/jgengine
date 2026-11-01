@@ -5,7 +5,7 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 import { editorLayers } from "../../editorLayers";
 import { cityEvent } from "../cityRuntime";
 import { vehicleById } from "../entities/vehicles/catalog";
-import { handrollOf } from "../handroll";
+import { streetPlayOf } from "../streetPlay";
 import { quietOnYourBlock } from "./street";
 
 /**
@@ -48,20 +48,20 @@ const inBay = (at: readonly [number, number, number]) => bay !== null && Math.hy
 export function registerGarage(ctx: GameContext): void {
   ctx.game.commands.define<Record<string, never>>("garage.store", {
     validate(state) {
-      const handroll = handrollOf(state);
-      const id = handroll.drivingVehicleId();
+      const streetPlay = streetPlayOf(state);
+      const id = streetPlay.drivingVehicleId();
       const car = id === null ? null : state.scene.entity.get(id);
       if (car === null) return { reason: "no-car", message: "Drive a car into the bay to park it." };
-      if (handroll.wanted().stars > 0) return { reason: "hot", message: "Rita won't park a hot car. Lose the heat or respray it." };
+      if (streetPlay.wanted().stars > 0) return { reason: "hot", message: "Rita won't park a hot car. Lose the heat or respray it." };
       if ((storedCarsStore.read(state) ?? []).length >= GARAGE_SLOTS) return { reason: "full", message: `The bay holds ${GARAGE_SLOTS} cars.` };
       return null;
     },
     apply(state) {
-      const handroll = handrollOf(state);
-      const id = handroll.drivingVehicleId();
+      const streetPlay = streetPlayOf(state);
+      const id = streetPlay.drivingVehicleId();
       const car = id === null ? null : state.scene.entity.get(id);
       if (id === null || car === null) return;
-      handroll.exitVehicle(state, true);
+      streetPlay.exitVehicle(state, true);
       state.scene.entity.despawn(id);
       storedCarsStore.write(state, [...(storedCarsStore.read(state) ?? []), car.name]);
       state.game.notices.push({ text: `Parked the ${vehicleById(car.name)?.label ?? "car"} in Sunset Motors' bay.`, tone: "success" });
@@ -88,15 +88,15 @@ export function registerGarage(ctx: GameContext): void {
 /** Park the car you're driving, or take one out on foot. */
 export function garagePrompts(ctx: GameContext): PositionedPrompt[] {
   if (bay === null) return [];
-  const handroll = handrollOf(ctx);
-  const driving = handroll.drivingVehicleId();
+  const streetPlay = streetPlayOf(ctx);
+  const driving = streetPlay.drivingVehicleId();
   const body = ctx.scene.entity.get(driving ?? ctx.player.userId);
   if (body === null || !inBay(body.position)) return [];
   const stored = storedCarsStore.read(ctx) ?? [];
   const base = { position: { x: bay.x, z: bay.z }, priority: 2 };
   const reach = { radius: bay.radius, display: { kind: "keybind" as const, actionId: "interact" } };
   if (driving !== null) {
-    if (handroll.wanted().stars > 0 || stored.length >= GARAGE_SLOTS) return [];
+    if (streetPlay.wanted().stars > 0 || stored.length >= GARAGE_SLOTS) return [];
     return [{ ...base, id: "bay:store", prompt: { ...reach, invoke: { name: "garage.store", input: {} } } }];
   }
   if (stored.length === 0) return [];

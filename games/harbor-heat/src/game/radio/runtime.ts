@@ -6,7 +6,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { cityOf } from "../cityRuntime";
 import { startedStore } from "../commands";
-import { handrollOf, raceStore } from "../handroll";
+import { streetPlayOf, raceStore } from "../streetPlay";
 import { vehicleById } from "../entities/vehicles/catalog";
 import { bulletinForLog, bulletinForRace, bulletinForWanted } from "./bulletins";
 import { HARBOR_RADIO, RADIO_VOICES } from "./stations";
@@ -72,7 +72,7 @@ function placeName(ctx: GameContext, id: string | null): string | null {
 }
 
 function playerPlace(ctx: GameContext): string | null {
-  const id = handrollOf(ctx).drivingVehicleId() ?? ctx.player.userId;
+  const id = streetPlayOf(ctx).drivingVehicleId() ?? ctx.player.userId;
   const at = ctx.scene.entity.get(id)?.position;
   return at === undefined ? null : placeName(ctx, cityOf(ctx).placeAt(at[0], at[2]));
 }
@@ -106,7 +106,7 @@ function feedLog(ctx: GameContext, runtime: RadioRuntime): void {
 }
 
 function feedWanted(ctx: GameContext, runtime: RadioRuntime): void {
-  const stars = handrollOf(ctx).wanted().stars;
+  const stars = streetPlayOf(ctx).wanted().stars;
   if (stars === runtime.stars) return;
   report(runtime, bulletinForWanted(runtime.stars, stars, playerPlace(ctx)));
   runtime.stars = stars;
@@ -121,7 +121,7 @@ function feedRace(ctx: GameContext, runtime: RadioRuntime): void {
 
 /** The radio sits a little under a car at speed, the way a real one fights road and engine noise. */
 function duckUnderRoad(ctx: GameContext, runtime: RadioRuntime, driving: boolean): void {
-  const kmh = driving ? handrollOf(ctx).carSpeedKmh() : 0;
+  const kmh = driving ? streetPlayOf(ctx).carSpeedKmh() : 0;
   const target = Math.round(Math.min(0.35, (kmh / 200) * 0.35) * 20) / 20;
   if (target === runtime.duck) return;
   runtime.duck = target;
@@ -154,7 +154,7 @@ export function tickRadio(ctx: GameContext, dt: number): void {
     return;
   }
   runtime.playback.resume();
-  const driving = handrollOf(ctx).drivingVehicleId() !== null;
+  const driving = streetPlayOf(ctx).drivingVehicleId() !== null;
   runtime.radio.power(driving);
   feedLog(ctx, runtime);
   feedWanted(ctx, runtime);
@@ -168,7 +168,7 @@ export function registerRadio(ctx: GameContext): void {
   const runtime = runtimes(ctx);
   ctx.game.commands.define<{ direction?: 1 | -1 }>("radio", {
     validate(state) {
-      return handrollOf(state).drivingVehicleId() === null ? { reason: "on-foot", message: "The radio is in the car." } : null;
+      return streetPlayOf(state).drivingVehicleId() === null ? { reason: "on-foot", message: "The radio is in the car." } : null;
     },
     apply(state, input) {
       radioOf(state).step(input?.direction ?? 1);
@@ -185,7 +185,7 @@ export function registerRadio(ctx: GameContext): void {
       const audio = (globalThis as { __jgengineAudio?: { speech?: () => unknown; busLevel?: (bus: string) => number; measure?: () => unknown } }).__jgengineAudio;
       return {
         powered: radio.powered(),
-        vehicle: handrollOf(ctx).drivingVehicleId(),
+        vehicle: streetPlayOf(ctx).drivingVehicleId(),
         dial: radio.dial(),
         paused: runtime.playback.paused(),
         nowPlaying: radio.nowPlaying(),

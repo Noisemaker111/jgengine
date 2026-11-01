@@ -24,11 +24,25 @@ import { streets } from "../../world";
 import { vehicleById, type VehicleDef } from "../entities/vehicles/catalog";
 import { objectById as objectDefById } from "../objects/catalog";
 import { createDrivingAudio, type DrivingAudio } from "../audio/driving";
-import { drivingStore, type VehicleTelemetry } from "./shared";
+import { defineStore } from "@jgengine/core/store/defineStore";
 import { landBlast, landHit } from "../combat/hitModel";
 import { crashVehicle, forgetVehicleDamage, rebaseVehicleDamage, restoreVehicleDamage, vehicleDamageSave } from "./bodywork";
 import { crashShare, moddedTuning } from "../progression/upgrades";
 import type { VehicleDamageState } from "@jgengine/core/physics/vehicleDamage";
+
+export const drivingStore = defineStore<string | null | undefined>("harbor.driving", undefined);
+
+export interface VehicleTelemetry {
+  mode: "ground" | "aircraft";
+  /** Raw ground/air speed in meters per second; the HUD converts to km/h via `formatSpeed` at the edge. */
+  speedMs: number;
+  altitude: number;
+  verticalSpeed: number;
+  gear: number;
+  rpm: number;
+  stalled: boolean;
+  vtol: boolean;
+}
 
 /** Road-grip sampler for the car sims: full bite on asphalt, a linear washout across the curb, less off-road. */
 const SURFACE_SAMPLER = roadSurfaceSampler(streets, { onRoad: 1, offRoad: 0.72, shoulder: 3 });

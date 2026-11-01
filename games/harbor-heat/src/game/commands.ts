@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { handrollOf } from "./handroll";
+import { streetPlayOf } from "./streetPlay";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { CRED_GATES, credLevel } from "./progression/cred";
 import { GARAGE_POS } from "./world/districts";
@@ -93,7 +93,7 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("throwGrenade", {
     apply(state) {
-      if (handrollOf(state).drivingVehicleId() !== null) return;
+      if (streetPlayOf(state).drivingVehicleId() !== null) return;
       state.item.use.use({ from: state.player.userId, itemId: "grenade_pineapple" });
     },
   });
@@ -139,17 +139,17 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("vehicle.enter", {
     apply(state, input) {
       const vehicleId = (input as { vehicle?: string }).vehicle;
-      if (vehicleId === undefined || handrollOf(state).drivingVehicleId() !== null) return;
+      if (vehicleId === undefined || streetPlayOf(state).drivingVehicleId() !== null) return;
       const vehicle = state.scene.entity.get(vehicleId);
       if (vehicle === null || vehicleById(vehicle.name) === undefined) return;
-      handrollOf(state).enterVehicle(state, vehicleId);
+      streetPlayOf(state).enterVehicle(state, vehicleId);
       stealCar(state, vehicle);
     },
   });
 
   ctx.game.commands.define("exitVehicle", {
     apply(state) {
-      handrollOf(state).exitVehicle(state);
+      streetPlayOf(state).exitVehicle(state);
     },
   });
 
@@ -236,16 +236,16 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("race.start", {
     apply(state) {
-      if (handrollOf(state).drivingVehicleId() === null) {
+      if (streetPlayOf(state).drivingVehicleId() === null) {
         state.game.notices.push({ text: "You need a car to race.", tone: "deny" });
         return;
       }
-      if (handrollOf(state).raceActive()) return;
+      if (streetPlayOf(state).raceActive()) return;
       if (!spend(state, RACE_ENTRY_FEE, "race-entry")) {
         state.game.notices.push({ text: `Race entry is $${RACE_ENTRY_FEE}.`, tone: "deny" });
         return;
       }
-      if (!handrollOf(state).startRace(state)) {
+      if (!streetPlayOf(state).startRace(state)) {
         earn(state, RACE_ENTRY_FEE, "race-refund");
         return;
       }
@@ -291,7 +291,7 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("safehouse.sleep", {
     validate(state) {
       if (safehouseStore.read(state) !== true) return { reason: "no-house", message: "You need a bed of your own." };
-      if (handrollOf(state).wanted().stars > 0) return { reason: "hot", message: "Nobody sleeps with HHPD on the street. Lose the heat first." };
+      if (streetPlayOf(state).wanted().stars > 0) return { reason: "hot", message: "Nobody sleeps with HHPD on the street. Lose the heat first." };
       return null;
     },
     apply(state) {
@@ -324,7 +324,7 @@ export function registerCommands(ctx: GameContext): void {
         state.game.notices.push({ text, tone: "deny" });
         return;
       }
-      if (node.shop === "garage") handrollOf(state).retuneOwnedCars(state);
+      if (node.shop === "garage") streetPlayOf(state).retuneOwnedCars(state);
       const rank = upgradeRank(state, input.id);
       state.game.notices.push({ text: `${node.label}${(node.maxRank ?? 1) > 1 ? ` ${rank}` : ""}: ${node.lines[rank - 1] ?? "installed"}.`, tone: "success" });
     },
@@ -332,14 +332,14 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("shop.bribe", {
     apply(state) {
-      const wanted = handrollOf(state).wanted();
+      const wanted = streetPlayOf(state).wanted();
       if (wanted.stars === 0) return;
       const cost = wanted.stars * 250;
       if (!spend(state, cost, "bribe")) {
         state.game.notices.push({ text: "Not enough cash.", tone: "deny" });
         return;
       }
-      handrollOf(state).clearWanted(state);
+      streetPlayOf(state).clearWanted(state);
       state.game.notices.push({ text: `Bribed HHPD for $${cost}`, tone: "success" });
     },
   });

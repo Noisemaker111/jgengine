@@ -10,9 +10,34 @@ import type { DifficultyProfile } from "@jgengine/core/ai/difficulty";
 import { createDriverState, driveStep, type DriverGoal, type DriverState, type DriverTuning, type PaceBand } from "@jgengine/core/ai/driver";
 import { seededRng } from "@jgengine/core/random/rng";
 import { vehicleById } from "../entities/vehicles/catalog";
-import type { Driving } from "./driving";
+import type { Driving } from "../driving/driving";
 import { landHit } from "../combat/hitModel";
-import { MAX_STARS, PURSUIT_STARS, wantedStore, type SearchAreaSnapshot, type WantedSnapshot } from "./shared";
+
+/** The last-sighting circle HHPD is working; `center` is world XZ, `radius` metres. */
+export interface SearchAreaSnapshot {
+  center: readonly [number, number];
+  radius: number;
+  lastSeenAt: number;
+}
+
+export interface WantedSnapshot {
+  heat: number;
+  /** Escalation tier, 0 (clean) to {@link MAX_STARS}. */
+  stars: number;
+  peakStars: number;
+  /** What HHPD is doing about it right now. */
+  response: "patrol" | "investigate" | "pursue" | "roadblock";
+  /** Where the search is, from the last sighting; null while clean. */
+  search: SearchAreaSnapshot | null;
+}
+
+export const MAX_STARS = 5;
+/** Heat at the top tier; the HUD bar is a fraction of this. */
+export const MAX_HEAT = MAX_STARS * 100;
+export const PURSUIT_STARS = 3;
+
+export const wantedStore = defineStore<WantedSnapshot | undefined>("harbor.wanted", undefined);
+import { defineStore } from "@jgengine/core/store/defineStore";
 
 /** Cruiser driving skill by wanted stars: 3★ rookies drive sloppy, 5★ interceptors drive sharp. */
 const CRUISER_SKILL: readonly DifficultyProfile[] = [

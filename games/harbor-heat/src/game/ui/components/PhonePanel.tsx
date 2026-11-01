@@ -7,14 +7,14 @@ import { useActionGlyph } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { cityOf, phoneStore } from "../../cityRuntime";
 import { frontViews } from "../../city/fronts";
 import { payoffCost, turfViews } from "../../city/street";
-import { handrollOf } from "../../handroll";
+import { streetPlayOf } from "../../streetPlay";
 import { GIG_RACE_STAKE, gigStore } from "../../jobs/gigs";
 import { BurnerPhone } from "../fiction/BurnerPhone";
 
 function readPhone(ctx: GameContext) {
   const world = cityOf(ctx);
   const factions = Object.entries(world.def.factions ?? {}).map(([id, faction]) => ({ id, label: faction.label ?? id, mood: Math.round(world.num(`${id}.mood`)) }));
-  const stars = handrollOf(ctx).wanted().stars;
+  const stars = streetPlayOf(ctx).wanted().stars;
   const dee = world.fact("dee.known") === true && world.num("dee.trust") > -20;
   return {
     contacts: world.contacts(),
@@ -24,7 +24,7 @@ function readPhone(ctx: GameContext) {
     fronts: frontViews(ctx).filter((front) => front.owned),
     takings: Math.floor(world.num("fronts.takings")),
     payoff: dee && stars > 0 ? payoffCost(stars) : null,
-    gigs: { duty: gigStore.read(ctx).duty, busy: gigStore.read(ctx).view !== null, streak: gigStore.read(ctx).streak, driving: handrollOf(ctx).drivingVehicleId() !== null },
+    gigs: { duty: gigStore.read(ctx).duty, busy: gigStore.read(ctx).view !== null, streak: gigStore.read(ctx).streak, driving: streetPlayOf(ctx).drivingVehicleId() !== null },
   };
 }
 

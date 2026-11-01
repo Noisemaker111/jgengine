@@ -17,7 +17,7 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 import { editorLayers } from "../../editorLayers";
 import { earn, spend } from "../cash";
 import { vehicleById } from "../entities/vehicles/catalog";
-import { handrollOf } from "../handroll";
+import { streetPlayOf } from "../streetPlay";
 import { grantCred } from "../progression/cred";
 import { RACE_ROUTES } from "../world/districts";
 
@@ -166,13 +166,13 @@ export function gigBoard(ctx: GameContext): SideJobs {
 }
 
 function groundCar(ctx: GameContext): string | null {
-  const id = handrollOf(ctx).drivingVehicleId();
+  const id = streetPlayOf(ctx).drivingVehicleId();
   if (id === null) return null;
   return vehicleById(ctx.scene.entity.get(id)?.name ?? "")?.dynamics.type === "ground" ? id : null;
 }
 
 function bodyAt(ctx: GameContext): { x: number; z: number } | null {
-  const body = ctx.scene.entity.get(handrollOf(ctx).drivingVehicleId() ?? ctx.player.userId);
+  const body = ctx.scene.entity.get(streetPlayOf(ctx).drivingVehicleId() ?? ctx.player.userId);
   return body === null ? null : { x: body.position[0], z: body.position[2] };
 }
 
@@ -349,7 +349,7 @@ export function tickGigs(ctx: GameContext, dt: number): void {
   const rt = runtimes(ctx);
   const car = groundCar(ctx);
   const at = bodyAt(ctx);
-  const speed = car === null ? 0 : kmh(handrollOf(ctx).carSpeedKmh());
+  const speed = car === null ? 0 : kmh(streetPlayOf(ctx).carSpeedKmh());
   const hull = car === null ? null : (ctx.scene.entity.stats.get(car, "health")?.current ?? null);
   const crash = car !== null && dt > 0 && (rt.lastSpeed - speed) / dt > CRASH_DECEL;
   const damage = hull !== null && rt.lastHull !== null ? Math.max(0, rt.lastHull - hull) : 0;
@@ -372,7 +372,7 @@ export function tickGigs(ctx: GameContext, dt: number): void {
     pageNightRace(ctx, at);
   }
   const racers = tickRivals(ctx, dt);
-  const events = rt.board.tick(dt, { position: at, speed, racers, facts: { crash, damage, stars: handrollOf(ctx).wanted().stars } });
+  const events = rt.board.tick(dt, { position: at, speed, racers, facts: { crash, damage, stars: streetPlayOf(ctx).wanted().stars } });
   handle(ctx, events);
   if (rt.walkOff !== null && ctx.scene.entity.get(FARE_ID) !== null) ctx.scene.entity.moveToward(FARE_ID, rt.walkOff.to, { speed: 1.8, dt });
   syncFare(ctx);
@@ -477,9 +477,9 @@ export function registerGigs(ctx: GameContext): void {
  * loaded at the florist (flowers).
  */
 export function stageGig(ctx: GameContext, mode: "taxi" | "race" | "flowers"): void {
-  const handroll = handrollOf(ctx);
+  const streetPlay = streetPlayOf(ctx);
   if (mode === "flowers" && FLORIST !== null) {
-    handroll.exitVehicle(ctx, true);
+    streetPlay.exitVehicle(ctx, true);
     ctx.scene.entity.setPose(ctx.player.userId, { position: ground(ctx, FLORIST.x + 2, FLORIST.z) });
     ctx.game.commands.run("gigs.flowers", {});
     return;
@@ -489,7 +489,7 @@ export function stageGig(ctx: GameContext, mode: "taxi" | "race" | "flowers"): v
     const car = ctx.scene.entity.list()
       .filter((entity) => vehicleById(entity.name)?.dynamics.type === "ground" && !entity.id.startsWith("cruiser_") && !entity.id.includes(":rival:"))
       .sort((a, b) => (player === null ? 0 : Math.hypot(a.position[0] - player.position[0], a.position[2] - player.position[2]) - Math.hypot(b.position[0] - player.position[0], b.position[2] - player.position[2])))[0];
-    if (car !== undefined) handroll.enterVehicle(ctx, car.id);
+    if (car !== undefined) streetPlay.enterVehicle(ctx, car.id);
   }
   const at = bodyAt(ctx);
   if (at === null) return;
@@ -515,7 +515,7 @@ function warpToTarget(ctx: GameContext, short: number): void {
   const back = Math.max(0, short);
   const x = target.x - (dx / length) * back;
   const z = target.z - (dz / length) * back;
-  handrollOf(ctx).placeVehicle(ctx, car, ground(ctx, x, z), Math.atan2(dx, dz));
+  streetPlayOf(ctx).placeVehicle(ctx, car, ground(ctx, x, z), Math.atan2(dx, dz));
 }
 
 /** The florist's counter prompt. */

@@ -11,7 +11,7 @@
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { handrollOf } from "../src/game/handroll";
+import { streetPlayOf } from "../src/game/streetPlay";
 import { courierRuntime, courierStore, DISPATCH } from "../src/game/jobs/courier";
 
 const CRIME = 130;
@@ -60,11 +60,11 @@ export default {
     ctx.scene.entity.setPose(ctx.player.userId, { position: [x, ctx.world.groundHeightAt(x, z), z] });
   },
   onTick(ctx, tick) {
-    const wanted = handrollOf(ctx).wanted();
+    const wanted = streetPlayOf(ctx).wanted();
     if (stage === 0) {
       unwatch(ctx);
       courierPhase = ctx.game.commands.run("courier.accept").status;
-      handrollOf(ctx).addHeat(ctx, CRIME);
+      streetPlayOf(ctx).addHeat(ctx, CRIME);
       stage = 1;
       stageTick = tick;
       return;
@@ -72,7 +72,7 @@ export default {
     if (stage === 1 && tick > stageTick) {
       unseenHeat = wanted.heat;
       watch(ctx);
-      handrollOf(ctx).addHeat(ctx, CRIME);
+      streetPlayOf(ctx).addHeat(ctx, CRIME);
       stage = 2;
       stageTick = tick;
       return;

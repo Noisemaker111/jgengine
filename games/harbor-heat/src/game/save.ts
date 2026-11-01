@@ -7,10 +7,10 @@ import type { StoreHandle } from "@jgengine/core/store/defineStore";
 import type { SpawnDirectorState } from "@jgengine/core/waves/spawnDirector";
 import type { SessionLoopState } from "@jgengine/core/run/sessionLoop";
 
-import { handrollOf } from "./handroll";
+import { streetPlayOf } from "./streetPlay";
 import { harborProfileSystem } from "./menuProfile";
 import { catchUpAway, noteSavedAt } from "./away";
-import type { PursuitSave } from "./handroll/pursuit";
+import type { PursuitSave } from "./hhpd/pursuit";
 import { ledgerState, restoreLedger, resetLedger, type CashReason } from "./cash";
 import { cargoStore } from "./items/cargoHaul";
 import { courierLoopState, courierMissionStore, courierObjectiveStore, courierStore, restoreCourierLoop, type CourierState } from "./jobs/courier";
@@ -122,13 +122,13 @@ function isLedgerShape(value: unknown): boolean {
 function wantedSystem(ctx: GameContext): GameSaveSystem {
   return {
     name: "wanted",
-    snapshot: () => handrollOf(ctx).pursuitSave(),
+    snapshot: () => streetPlayOf(ctx).pursuitSave(),
     restore(section) {
       if (!isPursuitSave(section)) return;
-      handrollOf(ctx).restorePursuit(ctx, section);
+      streetPlayOf(ctx).restorePursuit(ctx, section);
     },
     reset() {
-      handrollOf(ctx).clearWanted(ctx);
+      streetPlayOf(ctx).clearWanted(ctx);
     },
   };
 }
@@ -192,10 +192,10 @@ function restoreNullable<T>(store: StoreHandle<T | null>, ctx: GameContext, valu
 function vehiclesSystem(ctx: GameContext): GameSaveSystem {
   return {
     name: "vehicles",
-    snapshot: () => handrollOf(ctx).vehicleDamageSave(ctx),
+    snapshot: () => streetPlayOf(ctx).vehicleDamageSave(ctx),
     restore(section) {
       if (!isRecord(section)) return;
-      handrollOf(ctx).restoreVehicleDamage(ctx, section as never);
+      streetPlayOf(ctx).restoreVehicleDamage(ctx, section as never);
     },
   };
 }
@@ -295,9 +295,9 @@ export async function loadHarborSave(ctx: GameContext): Promise<boolean> {
 function adoptLegacyWanted(ctx: GameContext): boolean {
   const stored = wantedStoreValue(ctx);
   if (stored === null || stored.heat <= 0) return false;
-  const handroll = handrollOf(ctx);
-  const delta = stored.heat - handroll.wanted().heat;
-  if (delta > 0) handroll.addHeat(ctx, delta);
+  const streetPlay = streetPlayOf(ctx);
+  const delta = stored.heat - streetPlay.wanted().heat;
+  if (delta > 0) streetPlay.addHeat(ctx, delta);
   void harborSave(ctx).save();
   return true;
 }
