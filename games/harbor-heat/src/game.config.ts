@@ -159,7 +159,7 @@ export const game = defineGame({
       "drive-cop": ["game.start", { name: "drive.stage", input: { vehicle: "car_cop" } }],
       "drive-bus": ["game.start", { name: "drive.stage", input: { vehicle: "car_bus" } }],
       "fly-heli": ["game.start", { name: "drive.stage", input: { vehicle: "air_helicopter" } }],
-      evening: ["game.start", { name: "time.stage", input: { at: 500 } }],
+      noon: ["game.start", { name: "time.stage", input: { at: 360 } }],
       night: ["game.start", { name: "time.stage", input: { at: 700 } }],
       shop: ["game.start", "shop.open"],
       garage: ["game.start", "garage.open"],
@@ -220,6 +220,7 @@ export const game = defineGame({
     environmentSource: hdriEnvironment("harbour-sunset", { intensity: 1 }),
     postProcessing: {
       toneMapping: "aces",
+      exposure: 0.85,
       bloom: { strength: 0.3, threshold: 0.85 },
       grade: { lut: lutGrade("neon-sunset") },
     },
@@ -243,9 +244,9 @@ export const game = defineGame({
     shake: { maxOffset: 0.24, maxRoll: 0.045, decayPerSecond: 2.8, exponent: 2, frequency: 21 },
     lens: { frustum: { far: 900 } },
   },
-  // Starts at the day curve's noon keyframe, where the mood's sky colours reach the dome unblended
-  // with the engine's dawn and dusk presets.
-  time: { dayLength: 720, start: 360 },
+  // The city opens at golden hour, the art direction's hero time; the day curve runs on into night
+  // and round through a bright noon (the `noon` capture state jumps there).
+  time: { dayLength: 720, start: 500 },
 });
 
 
