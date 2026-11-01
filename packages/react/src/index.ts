@@ -12,6 +12,7 @@ export * from "@jgengine/core/settings/settings.view";
 export * from "@jgengine/core/save/saveStore.view";
 export * from "@jgengine/core/achievements/achievements.view";
 export * from "@jgengine/core/i18n/i18n.view";
+export * from "@jgengine/core/i18n/textDirection.view";
 export * from "@jgengine/core/ui/accessibility.view";
 export * from "@jgengine/core/ui/photoMode.view";
 export * from "@jgengine/core/menu/radialMenu.view";

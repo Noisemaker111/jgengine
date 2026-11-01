@@ -11,8 +11,8 @@ interface TextInfoLocale {
 }
 
 /**
- * Reading direction of a locale tag (`"ar"`, `"he-IL"`, `"ur-PK"` are `rtl`). Uses the platform's
- * `Intl.Locale` text info when it has it, then the language and script subtags; an unparseable
+ * Reading direction of a locale tag (`"ar"`, `"he-IL"`, `"ur-PK"` are `rtl`). An explicit script
+ * subtag decides, then the platform's `Intl.Locale` text info, then the language; an unparseable
  * tag is `ltr`.
  *
  * @capability text-direction left-to-right or right-to-left for a locale tag, from the platform's Intl data
@@ -25,8 +25,8 @@ export function localeDirection(locale: string): TextDirection {
     return "ltr";
   }
   const info: TextInfoLocale = parsed;
+  if (parsed.script !== undefined) return RTL_SCRIPTS.has(parsed.script) ? "rtl" : "ltr";
   const platform = (info.getTextInfo?.() ?? info.textInfo)?.direction;
   if (platform === "rtl" || platform === "ltr") return platform;
-  if (parsed.script !== undefined) return RTL_SCRIPTS.has(parsed.script) ? "rtl" : "ltr";
   return RTL_LANGUAGES.has(parsed.language) ? "rtl" : "ltr";
 }

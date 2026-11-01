@@ -19,9 +19,7 @@ const CATALOG: Catalog = {
     "hud.score": "Score: {value}",
     "hud.language": "Language",
     "hud.hint": "Switch language — every HUD string is bound to the message catalog.",
-    "enemies.zero": "Sector clear",
-    "enemies.one": "{count} raider inbound",
-    "enemies.other": "{count} raiders inbound",
+    enemies: { zero: "Sector clear", one: "{count} raider inbound", other: "{count} raiders inbound" },
   },
   es: {
     "app.title": "Puesto Fronterizo",
@@ -29,9 +27,7 @@ const CATALOG: Catalog = {
     "hud.score": "Puntuación: {value}",
     "hud.language": "Idioma",
     "hud.hint": "Cambia el idioma — cada texto del HUD viene del catálogo de mensajes.",
-    "enemies.zero": "Sector despejado",
-    "enemies.one": "{count} asaltante en camino",
-    "enemies.other": "{count} asaltantes en camino",
+    enemies: { zero: "Sector despejado", one: "{count} asaltante en camino", many: "{count} de asaltantes en camino", other: "{count} asaltantes en camino" },
   },
   ja: {
     "app.title": "辺境の前哨基地",
@@ -39,7 +35,7 @@ const CATALOG: Catalog = {
     "hud.score": "スコア: {value}",
     "hud.language": "言語",
     "hud.hint": "言語を切り替え — HUD の文字はすべてメッセージカタログから来ています。",
-    "enemies.other": "敵 {count} 体が接近中",
+    enemies: { other: "敵 {count} 体が接近中" },
   },
 };
 
@@ -49,7 +45,7 @@ const LOCALES: readonly { id: string; label: string }[] = [
   { id: "ja", label: "日本語" },
 ];
 
-const i18n: I18n = createI18n({ catalog: CATALOG, locale: "en", fallbackLocale: "en" });
+const i18n: I18n = createI18n({ catalog: CATALOG, locale: "en", baseLocale: "en" });
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3, frequency: 0.03, seed: "l10n" }),

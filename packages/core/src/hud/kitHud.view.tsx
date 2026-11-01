@@ -144,7 +144,7 @@ export function KitWaveClock({ text, detail, alarm = false, banner }: KitWaveClo
         <span data-wave-clock="" style={{ fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", fontSize: 13 }}>
           {text}
         </span>
-        {detail === undefined ? null : <span style={{ marginLeft: 10, opacity: 0.7, fontSize: 11 }}>{detail}</span>}
+        {detail === undefined ? null : <span style={{ marginInlineStart: 10, opacity: 0.7, fontSize: 11 }}>{detail}</span>}
       </KitPanel>
       {banner === undefined ? null : <KitBanner {...banner} />}
     </div>
@@ -255,7 +255,7 @@ export function KitVitalIcons({ vitals, size = 32, readout = false, direction = 
               <SpriteIcon src={vital.icon} size={size} color={color} style={{ ...glyph, clipPath: `inset(${(1 - fill) * 100}% 0 0 0)` }} />
             </span>
             {readout ? (
-              <span style={{ fontSize: 10, lineHeight: 1.15, textAlign: direction === "column" ? "right" : "center", whiteSpace: "nowrap", color: "var(--kit-ink, #e8e4da)", textShadow: "0 1px 2px #000", fontVariantNumeric: "tabular-nums" }}>
+              <span style={{ fontSize: 10, lineHeight: 1.15, textAlign: direction === "column" ? "end" : "center", whiteSpace: "nowrap", color: "var(--kit-ink, #e8e4da)", textShadow: "0 1px 2px #000", fontVariantNumeric: "tabular-nums" }}>
                 {vital.label}
                 <br />
                 {vital.text ?? `${Math.floor(vital.value)} / ${Math.round(vital.max)}`}

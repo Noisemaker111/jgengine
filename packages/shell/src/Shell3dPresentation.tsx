@@ -100,6 +100,8 @@ import { defaultHudTheme, hudThemeVars } from "@jgengine/core/hud/hudTheme.view"
 import type { PlayableGame } from "./registry";
 import type { AuthoritativeFrameHandler } from "@jgengine/core/multiplayer/authoritativeSync";
 import { TouchControlsDock, TouchPlaySurface, useTouchViewport, type TouchCodeSink } from "@jgengine/core/input/TouchControlsOverlay.view";
+import { LocaleScope } from "@jgengine/core/i18n/i18n.view";
+import { withLocaleSetting } from "@jgengine/core/i18n/localeSetting";
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
 import { SettingsChrome } from "@jgengine/core/settings/SettingsChrome.draw";
 import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
@@ -633,13 +635,14 @@ export function Shell3dPresentation({
     <SettingsProvider store={settingsStore}>
       <PlayerFovProvider config={playable.camera} orthographic={orthographic}>
         <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={resolvePlayableAudio(playable).buses} />
+        <LocaleScope i18n={playable.i18n}>
         <SettingsRuntime
           variant={settingsVariant}
           surface={settingsSurface}
           actions={settingsActions}
           input={playable.game.input ?? {}}
           buses={resolvePlayableAudio(playable).buses}
-          extra={settingsConfig.extra ?? []}
+          extra={withLocaleSetting(settingsConfig.extra, playable.i18n)}
           categories={settingsConfig.categories ?? []}
           hide={hideCategories}
           fovEnabled={fovControlEnabled}
@@ -965,6 +968,7 @@ export function Shell3dPresentation({
             </GameViewportProvider>
           </div>
         </SettingsRuntime>
+        </LocaleScope>
       </PlayerFovProvider>
     </SettingsProvider>
   );

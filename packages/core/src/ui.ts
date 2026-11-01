@@ -54,9 +54,17 @@ export {
   type I18n,
   type I18nOptions,
   type Locale,
+  type Message,
   type Messages,
+  type PluralCategory,
+  type PluralMessage,
   type TParams,
+  pluralCategory,
+  selectPlural,
 } from "./i18n/i18n";
+export * from "./i18n/localeFormat";
+export { localeDirection, type TextDirection } from "./i18n/textDirection";
+export { LOCALE_SETTING_ID, browserLocales, localeOptions, localeSettingDef, matchLocale, readLocale, withLocaleSetting } from "./i18n/localeSetting";
 export {
   MENU_KEY_INTENTS,
   menuIntentForKey,

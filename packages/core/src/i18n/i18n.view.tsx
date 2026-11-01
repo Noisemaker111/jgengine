@@ -1,6 +1,10 @@
-import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import type { I18n, Locale, TParams } from "@jgengine/core/i18n/i18n";
+import { readLocale } from "@jgengine/core/i18n/localeSetting";
+import { localeDirection } from "@jgengine/core/i18n/textDirection";
+import { TextDirectionProvider } from "@jgengine/core/i18n/textDirection.view";
+import { useSettingsStore } from "@jgengine/core/settings/settings.view";
 
 const I18nContext = createContext<I18n | null>(null);
 
@@ -48,4 +52,51 @@ export function usePlural(): (key: string, count: number, params?: TParams) => s
  */
 export function Trans({ k, params }: { k: string; params?: TParams }): ReactNode {
   return useT()(k, params);
+}
+
+/**
+ * The shell's locale root: keeps `i18n` on the player's locale setting (browser default, base-locale
+ * fallback), provides it to the tree, and sets `lang` and `dir` on the document and a wrapper so
+ * right-to-left locales flip the HUD.
+ *
+ * @capability locale-root the player's locale setting drives the translator, `lang` and `dir`
+ */
+export function LocaleRoot({ i18n, children }: { i18n: I18n; children: ReactNode }): ReactNode {
+  const store = useSettingsStore();
+  const [, settle] = useState(() => {
+    i18n.setLocale(readLocale(store, i18n.locales(), i18n.baseLocale()));
+    return 0;
+  });
+  useEffect(() => {
+    const apply = () => i18n.setLocale(readLocale(store, i18n.locales(), i18n.baseLocale()));
+    apply();
+    settle((n) => n + 1);
+    return store.subscribe(apply);
+  }, [i18n, store]);
+  const locale = useSyncExternalStore(i18n.subscribe, i18n.locale, i18n.locale);
+  const direction = localeDirection(locale);
+  useEffect(() => {
+    const root = document.documentElement;
+    const before = { lang: root.lang, dir: root.dir };
+    root.lang = locale;
+    root.dir = direction;
+    return () => {
+      root.lang = before.lang;
+      root.dir = before.dir;
+    };
+  }, [locale, direction]);
+  return (
+    <I18nProvider i18n={i18n}>
+      <TextDirectionProvider direction={direction}>
+        <div lang={locale} dir={direction} style={{ display: "contents" }}>
+          {children}
+        </div>
+      </TextDirectionProvider>
+    </I18nProvider>
+  );
+}
+
+/** {@link LocaleRoot} for a game with a translator; just the children for one without. */
+export function LocaleScope({ i18n, children }: { i18n: I18n | undefined; children: ReactNode }): ReactNode {
+  return i18n === undefined ? children : <LocaleRoot i18n={i18n}>{children}</LocaleRoot>;
 }
