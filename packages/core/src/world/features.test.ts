@@ -189,8 +189,8 @@ describe("world features", () => {
     expect(terrain()).toEqual({ kind: "terrain", bounds: { w: 512, d: 512 }, height: 0 });
     expect(rain()).toMatchObject({ kind: "rain", density: 0.65, speed: 18, width: 0.018, opacity: 0.48 });
     expect(snow()).toMatchObject({ kind: "snow", density: 0.35, drift: 0.4, opacity: 0.86 });
-    expect(grass()).toMatchObject({ kind: "grass", look: { density: GRASS_DEFAULTS.density } });
-    expect(grass({ density: 2 }).look.density).toBe(1);
+    expect(grass()).toMatchObject({ kind: "grass", look: { blade: { density: GRASS_DEFAULTS.blade.density } } });
+    expect(grass({ blade: { density: 2 } }).look.blade.density).toBe(1);
     expect(ocean()).toMatchObject({ kind: "ocean", bounds: { w: 1024, d: 1024 }, waveHeight: 1.2 });
     expect(building()).toMatchObject({ kind: "building", count: 1, stories: [1, 4], style: "generic" });
     expect(sky()).toEqual({ kind: "sky", preset: "day", timeOfDay: false });

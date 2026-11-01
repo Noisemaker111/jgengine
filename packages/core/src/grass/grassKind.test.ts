@@ -9,6 +9,7 @@ import {
   GRASS_FIELD_OUTPUT,
   GRASS_GENERATOR,
   GRASS_PRESETS,
+  groupGrassKnobs,
   GRASS_SCHEMA,
   grassBladeDensity,
   readGrassLook,
@@ -19,42 +20,42 @@ import {
 describe("readGrassLook", () => {
   test("fills defaults and reads overrides", () => {
     const look = readGrassLook({ windStrength: 0.5, tipColor: "#fff" });
-    expect(look.windStrength).toBe(0.5);
-    expect(look.tipColor).toBe("#fff");
-    expect(look.density).toBe(GRASS_DEFAULTS.density);
-    expect(look.groundCover).toBe(GRASS_DEFAULTS.groundCover);
+    expect(look.wind.windStrength).toBe(0.5);
+    expect(look.colour.tipColor).toBe("#fff");
+    expect(look.blade.density).toBe(GRASS_DEFAULTS.blade.density);
+    expect(look.growth.groundCover).toBe(GRASS_DEFAULTS.growth.groundCover);
   });
 
   test("grows everywhere by default and only above the ground height a field names", () => {
-    expect(readGrassLook({}).growAbove).toBeLessThan(-50);
-    expect(readGrassLook({ growAbove: 3.2 }).growAbove).toBe(3.2);
+    expect(readGrassLook({}).growth.growAbove).toBeLessThan(-50);
+    expect(readGrassLook({ growAbove: 3.2 }).growth.growAbove).toBe(3.2);
   });
 
   test("clamps every knob to its schema range and rejects bad colours", () => {
     const look = readGrassLook({ groundCover: 4, density: -3, bladeHeight: 90, tuftBlades: 4.6, clumping: 3, baseColor: "green", flowerColor: "#abcdef" });
-    expect(look.groundCover).toBe(1);
-    expect(look.density).toBe(0);
-    expect(look.bladeHeight).toBe(2.5);
-    expect(look.tuftBlades).toBe(5);
-    expect(look.clumping).toBe(1);
-    expect(look.baseColor).toBe(GRASS_DEFAULTS.baseColor);
-    expect(look.flowerColor).toBe("#abcdef");
+    expect(look.growth.groundCover).toBe(1);
+    expect(look.blade.density).toBe(0);
+    expect(look.blade.bladeHeight).toBe(2.5);
+    expect(look.tuft.tuftBlades).toBe(5);
+    expect(look.tuft.clumping).toBe(1);
+    expect(look.colour.baseColor).toBe(GRASS_DEFAULTS.colour.baseColor);
+    expect(look.flowers.flowerColor).toBe("#abcdef");
   });
 
   test("reads the same values the schema parser does", () => {
     const meta = { ...defaultParamMeta(GRASS_SCHEMA), season: 0.4, mixShare: 0.3 };
     const parsed = parseParams(GRASS_SCHEMA, meta);
     const look = readGrassLook(meta);
-    for (const key of Object.keys(GRASS_DEFAULTS) as (keyof typeof GRASS_DEFAULTS)[]) expect(look[key]).toEqual(parsed[key] as never);
+    expect(look).toEqual(groupGrassKnobs(parsed));
   });
 });
 
 describe("grass coverage", () => {
   test("blade count follows blade size, so thin, short or light grass still covers the ground", () => {
     const base = grassBladeDensity(GRASS_DEFAULTS);
-    expect(grassBladeDensity({ ...GRASS_DEFAULTS, bladeWidth: GRASS_DEFAULTS.bladeWidth / 2 })).toBeCloseTo(base * 2, 5);
-    expect(grassBladeDensity({ ...GRASS_DEFAULTS, bladeHeight: 0.1 })).toBeGreaterThan(base);
-    expect(grassBladeDensity({ ...GRASS_DEFAULTS, density: 0 })).toBeGreaterThan(base * 0.6);
+    expect(grassBladeDensity({ ...GRASS_DEFAULTS, blade: { ...GRASS_DEFAULTS.blade, bladeWidth: GRASS_DEFAULTS.blade.bladeWidth / 2 } })).toBeCloseTo(base * 2, 5);
+    expect(grassBladeDensity({ ...GRASS_DEFAULTS, blade: { ...GRASS_DEFAULTS.blade, bladeHeight: 0.1 } })).toBeGreaterThan(base);
+    expect(grassBladeDensity({ ...GRASS_DEFAULTS, blade: { ...GRASS_DEFAULTS.blade, density: 0 } })).toBeGreaterThan(base * 0.6);
   });
 
   test("presets and randomized knobs all resolve inside the schema", () => {
@@ -69,8 +70,8 @@ describe("grass coverage", () => {
     for (const meta of looks) {
       const look = readGrassLook(meta);
       expect(Number.isFinite(grassBladeDensity(look))).toBe(true);
-      const width = look.bladeWidth * (1 - look.widthVariation * 0.3);
-      const height = Math.min(1.2, look.bladeHeight * (1 - look.heightVariation * 0.3));
+      const width = look.blade.bladeWidth * (1 - look.blade.widthVariation * 0.3);
+      const height = Math.min(1.2, look.blade.bladeHeight * (1 - look.blade.heightVariation * 0.3));
       expect(grassBladeDensity(look) * width * (0.3 + height)).toBeGreaterThanOrEqual(2.6 - 1e-9);
     }
   });
@@ -93,7 +94,7 @@ describe("grass generator", () => {
   test("one schema spans a putting green to tall savanna and dune grass", () => {
     const ids = GRASS_PRESETS.map((preset) => preset.id);
     for (const id of ["green", "fairway", "lawn", "meadow", "savanna", "dune"]) expect(ids).toContain(id);
-    const height = (id: string) => readGrassLook(GRASS_PRESETS.find((preset) => preset.id === id)?.values).bladeHeight;
+    const height = (id: string) => readGrassLook(GRASS_PRESETS.find((preset) => preset.id === id)?.values).blade.bladeHeight;
     expect(height("green")).toBeLessThan(0.03);
     expect(height("savanna")).toBeGreaterThan(1.5);
   });
@@ -113,23 +114,23 @@ describe("grass generator", () => {
   test("a variant grid around one look stays inside the schema", () => {
     const grid = generatorVariants(GRASS_GENERATOR, { ...GRASS_PRESETS[0]?.values, seed: "base" }, { count: 20, explore: 0.5 });
     expect(grid).toHaveLength(20);
-    for (const variant of grid) expect(readGrassLook(variant.meta)).toEqual({ ...variant.params });
+    for (const variant of grid) expect(readGrassLook(variant.meta)).toEqual(groupGrassKnobs({ ...variant.params }));
   });
 });
 
 describe("grass masks", () => {
   test("mow stripes alternate across their heading and vanish when off", () => {
-    const look = { stripeWidth: 2, stripeContrast: 0.5, stripeAngle: 0 };
+    const look = { mowing: { stripeWidth: 2, stripeContrast: 0.5, stripeAngle: 0 } };
     expect(grassStripeAt(look, 1, 0)).toBeCloseTo(1);
     expect(grassStripeAt(look, 3, 0)).toBeCloseTo(-1);
     expect(grassStripeAt(look, 3, 7)).toBeCloseTo(-1);
-    expect(grassStripeAt({ ...look, stripeWidth: 0 }, 3, 0)).toBe(0);
+    expect(grassStripeAt({ mowing: { ...look.mowing, stripeWidth: 0 } }, 3, 0)).toBe(0);
   });
 
   test("bare ground opens more of the field as it rises", () => {
     const share = (bareGround: number) => {
       let total = 0;
-      for (let i = 0; i < 400; i += 1) total += grassBareAt({ bareGround, noiseScale: 18 }, 9, (i % 20) * 3.1, Math.floor(i / 20) * 3.1);
+      for (let i = 0; i < 400; i += 1) total += grassBareAt({ growth: { ...GRASS_DEFAULTS.growth, bareGround }, season: { ...GRASS_DEFAULTS.season, noiseScale: 18 } }, 9, (i % 20) * 3.1, Math.floor(i / 20) * 3.1);
       return total / 400;
     };
     expect(share(0)).toBe(1);

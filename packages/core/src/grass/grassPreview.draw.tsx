@@ -9,14 +9,14 @@ const SAND = "#c9b48a";
 
 /** Side of the square a grass preview grows, sized so a putting green, a lawn and tall savanna all read. */
 function previewSide(look: GrassLook): number {
-  return Math.max(2.5, Math.min(9, look.bladeHeight * 5), Math.min(10, look.stripeWidth * 2.5));
+  return Math.max(2.5, Math.min(9, look.blade.bladeHeight * 5), Math.min(10, look.mowing.stripeWidth * 2.5));
 }
 
 function GrassPreview({ variant }: GeneratorPreviewProps) {
   const look = useMemo(() => readGrassLook(variant.meta), [variant.meta]);
   const side = previewSide(look);
   const area = useMemo(() => [side, side] as const, [side]);
-  const ground = look.groundCover < 0.4 ? SAND : SOIL;
+  const ground = look.growth.groundCover < 0.4 ? SAND : SOIL;
   return (
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
@@ -34,7 +34,7 @@ export function registerGrassPreview(): void {
     Component: GrassPreview,
     frame: ({ variant }) => {
       const look = readGrassLook(variant.meta);
-      return { target: [0, look.bladeHeight * 0.3, 0], distance: previewSide(look) * 1.15 };
+      return { target: [0, look.blade.bladeHeight * 0.3, 0], distance: previewSide(look) * 1.15 };
     },
   });
 }

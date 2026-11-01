@@ -67,7 +67,7 @@ export function createGrassSpecimen(container: HTMLElement, trace: Trace): Grass
 
   function build(dials: Readonly<Record<string, unknown>>) {
     const look = readGrassLook({ ...dials, seed: "site-meadow" });
-    const groundColor = new THREE.Color(look.baseColor).multiplyScalar(0.55);
+    const groundColor = new THREE.Color(look.colour.baseColor).multiplyScalar(0.55);
     if (ground === null) {
       ground = new THREE.Mesh(new THREE.CircleGeometry(60, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ roughness: 1 }));
       live.scene.add(ground);

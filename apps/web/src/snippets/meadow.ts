@@ -17,17 +17,13 @@ const world = environment({
   vegetation: [
     grass({
       area: { w: 200, d: 200 },
-      // Every look knob is optional. These are a few of about forty.
-      bladeHeight: 0.6,
-      density: 0.85,
-      curvature: 0.35,
-      season: 0.1,
-      dryness: 0,
-      mixShare: 0.08,
-      flowerShare: 0.05,
-      windStrength: 0.5,
-      baseColor: "#3f7d2d",
-      tipColor: "#6bbf4a",
+      // Every look knob is optional, grouped by the part of the field it shapes. These are a few of about forty.
+      blade: { bladeHeight: 0.6, density: 0.85, curvature: 0.35 },
+      season: { season: 0.1, dryness: 0 },
+      species: { mixShare: 0.08 },
+      flowers: { flowerShare: 0.05 },
+      wind: { windStrength: 0.5 },
+      colour: { baseColor: "#3f7d2d", tipColor: "#6bbf4a" },
     }),
   ],
 });

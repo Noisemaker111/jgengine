@@ -30,7 +30,7 @@ const cycleClock = { calendar: () => ({ dayFraction: cycle.sample().dayFraction 
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 3, frequency: 0.03, seed: "daynight" }),
-  vegetation: grass({ area: { w: 70, d: 70 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "daynight" }),
+  vegetation: grass({ area: { w: 70, d: 70 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "daynight" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

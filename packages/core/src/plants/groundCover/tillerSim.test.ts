@@ -33,8 +33,8 @@ describe("tiller field", () => {
     expect(cell.heightM).toBeGreaterThan(0.4);
     expect(cell.cohorts.some((cohort) => cohort.inFlower)).toBe(true);
     const look = tillerCellLook(field, [PHLEUM_PRATENSE, LOLIUM_PERENNE], 0, 0, GRASS_DEFAULTS);
-    expect(look.flowerShare).toBeGreaterThan(0.2);
-    expect(look.bladeHeight).toBeGreaterThan(0.4);
+    expect(look.flowers.flowerShare).toBeGreaterThan(0.2);
+    expect(look.blade.bladeHeight).toBeGreaterThan(0.4);
   });
 
   test("a meadow sets seed by late summer and its flowering tillers die", () => {
@@ -86,7 +86,7 @@ describe("tiller field", () => {
     expect(shaded.tillersPerM2).toBeLessThan(0.5 * open.tillersPerM2);
     const openLook = tillerCellLook(field, GRASS_LIBRARY, 0, 0, GRASS_DEFAULTS);
     const shadedLook = tillerCellLook(field, GRASS_LIBRARY, 1, 0, GRASS_DEFAULTS);
-    expect(shadedLook.density).toBeLessThan(openLook.density);
+    expect(shadedLook.blade.density).toBeLessThan(openLook.blade.density);
   });
 
   test("moss takes over a shaded lawn and stays sparse in sun", () => {
@@ -109,7 +109,7 @@ describe("tiller field", () => {
     expect(moss(sunny)).toBeLessThan(sward(sunny));
     expect(moss(shadedCohorts)).toBeGreaterThan(0.7);
     expect(moss(shadedCohorts)).toBeGreaterThan(sward(shadedCohorts));
-    expect(tillerCellLook(shaded, species, 0, 0, GRASS_DEFAULTS).baseColor).toBe(RHYTIDIADELPHUS_SQUARROSUS.colors.leaf);
+    expect(tillerCellLook(shaded, species, 0, 0, GRASS_DEFAULTS).colour.baseColor).toBe(RHYTIDIADELPHUS_SQUARROSUS.colors.leaf);
   });
 
   test("meadow daisies flower in June and their rosettes outlive the seed, while mowing keeps them flat", () => {
@@ -126,7 +126,7 @@ describe("tiller field", () => {
         bloomWeek = week % 52;
         rosettes = daisy.tillersPerM2;
         const look = tillerCellLook(meadow, species, 0, 0, GRASS_DEFAULTS);
-        flowerColors = new Set([look.flowerColor, look.flowerColor2]);
+        flowerColors = new Set([look.flowers.flowerColor, look.flowers.flowerColor2]);
       }
     }
     // Late June to mid July.

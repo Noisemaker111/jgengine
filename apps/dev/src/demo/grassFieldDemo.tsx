@@ -42,7 +42,7 @@ function grownLook(scene: Scene): GrassLook {
     scene.care(field, week);
     field.step();
   }
-  return tillerCellLook(field, SPECIES, 0, 0, { ...GRASS_DEFAULTS, windStrength: 0.25 });
+  return tillerCellLook(field, SPECIES, 0, 0, { ...GRASS_DEFAULTS, wind: { ...GRASS_DEFAULTS.wind, windStrength: 0.25 } });
 }
 
 const patchX = (index: number): number => (index - (SCENES.length - 1) / 2) * (PATCH + GAP);

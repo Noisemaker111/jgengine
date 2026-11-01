@@ -37,7 +37,7 @@ function seedSlots() {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "save-slots" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#1f2937", tipColor: "#334155", seed: "save-slots" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colour: { baseColor: "#1f2937", tipColor: "#334155" }, seed: "save-slots" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

@@ -29,7 +29,7 @@ const CUES: readonly SequenceCue<CutscenePayload>[] = [
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "cutscene" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "cutscene" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "cutscene" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

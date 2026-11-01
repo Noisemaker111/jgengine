@@ -413,21 +413,29 @@ export function tillerCellLook(field: TillerField, species: readonly GroundCover
   const bloomSecond = (bloom[1] >= 0 && (cohorts[bloom[1]]?.inFlower ?? false) ? species[bloom[1]] : undefined) ?? bloomFirst;
   return {
     ...base,
-    density: Math.min(1, fullness),
-    bladeHeight: leadHeight,
-    heightVariation: Math.min(0.8, 0.1 + 0.6 * (cohort.leafHeightM / grass.maxLeafLengthM)),
-    bladeWidth: leadWidth,
-    mixHeight: second === undefined ? base.mixHeight : Math.min(30, Math.max(0.1, cohortHeight(cohorts[lead[1]]) / leadHeight)),
-    mixWidth: second === undefined ? base.mixWidth : Math.max(MIN_BLADE_WIDTH_M, second.leafWidthM * 1.5) / leadWidth,
-    baseColor: grass.colors.leaf,
-    tipColor: grass.colors.tip,
-    flowerShare: Math.min(1, flowering),
-    flowerColor: bloomFirst.colors.flower,
-    flowerColor2: bloomSecond.colors.flower,
-    season: autumn > 0 ? 0.5 + 0.5 * autumn : 0.5 * Math.min(1, seeded * 2),
-    mixShare: secondShare,
-    mixColor: second?.colors.tip ?? grass.colors.tip,
-    groundCover: Math.min(1, 0.2 + fullness),
+    blade: {
+      ...base.blade,
+      density: Math.min(1, fullness),
+      bladeHeight: leadHeight,
+      heightVariation: Math.min(0.8, 0.1 + 0.6 * (cohort.leafHeightM / grass.maxLeafLengthM)),
+      bladeWidth: leadWidth,
+    },
+    colour: { ...base.colour, baseColor: grass.colors.leaf, tipColor: grass.colors.tip },
+    season: { ...base.season, season: autumn > 0 ? 0.5 + 0.5 * autumn : 0.5 * Math.min(1, seeded * 2) },
+    species: {
+      ...base.species,
+      mixHeight: second === undefined ? base.species.mixHeight : Math.min(30, Math.max(0.1, cohortHeight(cohorts[lead[1]]) / leadHeight)),
+      mixWidth: second === undefined ? base.species.mixWidth : Math.max(MIN_BLADE_WIDTH_M, second.leafWidthM * 1.5) / leadWidth,
+      mixShare: secondShare,
+      mixColor: second?.colors.tip ?? grass.colors.tip,
+    },
+    flowers: {
+      ...base.flowers,
+      flowerShare: Math.min(1, flowering),
+      flowerColor: bloomFirst.colors.flower,
+      flowerColor2: bloomSecond.colors.flower,
+    },
+    growth: { ...base.growth, groundCover: Math.min(1, 0.2 + fullness) },
   };
 }
 

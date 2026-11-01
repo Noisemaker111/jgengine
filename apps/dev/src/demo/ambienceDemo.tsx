@@ -59,7 +59,7 @@ const impact = {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 120, d: 120 }, height: 2, frequency: 0.02, seed: "ambience" }),
-  vegetation: grass({ area: { w: 110, d: 110 }, baseColor: "#223f19", tipColor: "#7fa04a", seed: "ambience" }),
+  vegetation: grass({ area: { w: 110, d: 110 }, colour: { baseColor: "#223f19", tipColor: "#7fa04a" }, seed: "ambience" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

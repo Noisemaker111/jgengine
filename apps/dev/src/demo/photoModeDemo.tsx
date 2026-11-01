@@ -18,7 +18,7 @@ let captureFn: (() => string | null) | null = null;
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 4, frequency: 0.03, seed: "photo" }),
-  vegetation: grass({ area: { w: 68, d: 68 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "photo" }),
+  vegetation: grass({ area: { w: 68, d: 68 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "photo" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

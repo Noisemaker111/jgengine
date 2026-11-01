@@ -57,7 +57,7 @@ const ACCENT_BY_ID: Record<string, string> = Object.fromEntries(INTERACTABLES.ma
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 70, d: 70 }, height: 2, frequency: 0.03, seed: "prompt" }),
-  vegetation: grass({ area: { w: 60, d: 60 }, baseColor: "#26401a", tipColor: "#7fb04a", seed: "prompt" }),
+  vegetation: grass({ area: { w: 60, d: 60 }, colour: { baseColor: "#26401a", tipColor: "#7fb04a" }, seed: "prompt" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

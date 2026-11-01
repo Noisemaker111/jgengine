@@ -27,7 +27,7 @@ const kindLabels: Record<string, string> = {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "shake" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#26401a", tipColor: "#7fb04a", seed: "shake" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, colour: { baseColor: "#26401a", tipColor: "#7fb04a" }, seed: "shake" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

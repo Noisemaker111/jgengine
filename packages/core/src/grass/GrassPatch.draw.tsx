@@ -24,7 +24,7 @@ const FILL_SLICE_MS = 8;
 
 /** The mat floats a little above the ground against z-fighting, but always under the blades, so a putting green's 1 cm blades stay visible. */
 function grassCoverLift(look: GrassLook): number {
-  return Math.min(0.035, Math.max(0.008, look.bladeHeight * 0.25));
+  return Math.min(0.035, Math.max(0.008, look.blade.bladeHeight * 0.25));
 }
 
 /** Props for {@link GrassPatch}. */
@@ -95,24 +95,24 @@ export function GrassPatch({
   const colors = useMemo(() => grassFieldColors(look), [look]);
   const coverArea = useMemo(() => [size.width, size.depth] as const, [size.width, size.depth]);
   const coverSeed = seedToUint32(bake.seed) % 100000;
-  const striped = look.stripeWidth > 0 && look.stripeContrast > 0;
+  const striped = look.mowing.stripeWidth > 0 && look.mowing.stripeContrast > 0;
   const stripeAt = useMemo(
-    () => (striped ? (x: number, z: number) => grassStripeAt(look, x, z) * look.stripeContrast : undefined),
+    () => (striped ? (x: number, z: number) => grassStripeAt(look, x, z) * look.mowing.stripeContrast : undefined),
     [striped, look],
   );
   // A striped mat needs a few cells per stripe, or the bands alias into blotches.
   const coverSegments = striped
-    ? Math.min(GRASS_COVER_MAX_SEGMENTS, Math.max(Math.round(Math.max(size.width, size.depth) / 2), Math.ceil((Math.max(size.width, size.depth) * 8) / look.stripeWidth)))
+    ? Math.min(GRASS_COVER_MAX_SEGMENTS, Math.max(Math.round(Math.max(size.width, size.depth) / 2), Math.ceil((Math.max(size.width, size.depth) * 8) / look.mowing.stripeWidth)))
     : undefined;
   return (
     <group {...groupProps}>
-      {look.groundCover > 0 ? (
+      {look.growth.groundCover > 0 ? (
         <GrassCover
           area={coverArea}
           seed={coverSeed}
           colorBase={colors.base}
           colorTip={colors.tip}
-          strength={look.groundCover}
+          strength={look.growth.groundCover}
           edgeFeather={bake.edgeFeather}
           heightAt={bake.heightAt}
           coverageAt={bake.turfAt}

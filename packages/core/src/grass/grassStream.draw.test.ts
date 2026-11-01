@@ -186,8 +186,8 @@ test("every preset and random knob mix stays full: blade cover never drops below
   }
   for (const look of looks) {
     const bake = resolveGrassBake({ look, area: 16 });
-    const width = look.bladeWidth * (1 - look.widthVariation * 0.3);
-    const height = Math.min(1.2, look.bladeHeight * (1 - look.heightVariation * 0.3));
+    const width = look.blade.bladeWidth * (1 - look.blade.widthVariation * 0.3);
+    const height = Math.min(1.2, look.blade.bladeHeight * (1 - look.blade.heightVariation * 0.3));
     // Blade area per m² of ground, side-on: under ~1.5 the ground shows through between tufts.
     expect(bake.bladesPerM2 * width * (0.3 + height)).toBeGreaterThan(2.4);
   }

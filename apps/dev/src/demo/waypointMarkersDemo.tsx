@@ -35,7 +35,7 @@ waypoints.place([8, 90], { id: "extract", height: 1, kind: "extraction", label: 
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 120, d: 120 }, height: 2.5, frequency: 0.03, seed: "waypoints" }),
-  vegetation: grass({ area: { w: 104, d: 104 }, baseColor: "#26401a", tipColor: "#7fb04a", seed: "waypoints" }),
+  vegetation: grass({ area: { w: 104, d: 104 }, colour: { baseColor: "#26401a", tipColor: "#7fb04a" }, seed: "waypoints" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

@@ -41,7 +41,7 @@ const FOG_CELL = 6;
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 120, d: 120 }, height: 5, frequency: 0.03, seed: "extraction", waterLevel: -2 }),
-  vegetation: grass({ area: { w: 100, d: 100 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "extraction" }),
+  vegetation: grass({ area: { w: 100, d: 100 }, colour: { baseColor: "#2f4f1e", tipColor: "#8fbf4a" }, seed: "extraction" }),
 });
 
 const objectPingCategory: Record<string, PingCategory> = {

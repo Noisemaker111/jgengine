@@ -159,24 +159,20 @@ const terrainDescriptor = terrain({
 const scrubClump = (x: number, z: number, size: number, seed: string): GrassEnvironmentDescriptor =>
   grass({
     area: { w: size, d: size, position: [x, z] },
-    bladeHeight: 0.48,
-    heightVariation: 0.66,
-    bladeWidth: 0.06,
-    widthVariation: 0.55,
-    windStrength: 0.55,
-    baseColor: "#6e5a34",
-    tipColor: "#b9a064",
-    dryness: 0.45,
+    blade: {
+      bladeHeight: 0.48,
+      heightVariation: 0.66,
+      bladeWidth: 0.06,
+      widthVariation: 0.55,
+      curvature: 0.45,
+    },
+    wind: { windStrength: 0.55 },
+    colour: { baseColor: "#6e5a34", tipColor: "#b9a064", valueNoise: 0.3 },
+    season: { dryness: 0.45 },
     seed,
-    curvature: 0.45,
-    tuftSpread: 0.3,
-    valueNoise: 0.3,
-    normalLift: 0.8,
-    clumping: 0.6,
-    clumpSize: 1.8,
-    mixShare: 0.1,
-    mixHeight: 2.1,
-    mixColor: "#e2c878",
+    tuft: { tuftSpread: 0.3, clumping: 0.6, clumpSize: 1.8 },
+    lighting: { normalLift: 0.8 },
+    species: { mixShare: 0.1, mixHeight: 2.1, mixColor: "#e2c878" },
   });
 
 const scrubClumps = (
