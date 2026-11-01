@@ -8,7 +8,7 @@ export interface FaunaView {
   z: number;
 }
 
-/** A fresh view with all planes open. */
+/** A fresh view with all planes open. @internal */
 export function createFaunaView(): FaunaView {
   return { planes: new Float32Array(24), x: 0, y: 0, z: 0 };
 }
@@ -16,6 +16,7 @@ export function createFaunaView(): FaunaView {
 /**
  * Write the six frustum planes of a column-major view-projection matrix (three.js `Matrix4.elements`
  * of projection × viewInverse) and the eye position. Allocates nothing.
+ * @internal
  */
 export function writeFaunaView(view: FaunaView, viewProjection: ArrayLike<number>, eyeX: number, eyeY: number, eyeZ: number): void {
   const e = viewProjection;
@@ -23,10 +24,10 @@ export function writeFaunaView(view: FaunaView, viewProjection: ArrayLike<number
   for (let p = 0; p < 6; p += 1) {
     const axis = p >> 1;
     const sign = p % 2 === 1 ? -1 : 1;
-    const a = e[3]! + sign * e[axis]!;
-    const b = e[7]! + sign * e[4 + axis]!;
-    const c = e[11]! + sign * e[8 + axis]!;
-    const d = e[15]! + sign * e[12 + axis]!;
+    const a = (e[3] ?? 0) + sign * (e[axis] ?? 0);
+    const b = (e[7] ?? 0) + sign * (e[4 + axis] ?? 0);
+    const c = (e[11] ?? 0) + sign * (e[8 + axis] ?? 0);
+    const d = (e[15] ?? 0) + sign * (e[12 + axis] ?? 0);
     const length = Math.hypot(a, b, c) || 1;
     planes[p * 4] = a / length;
     planes[p * 4 + 1] = b / length;
@@ -38,11 +39,11 @@ export function writeFaunaView(view: FaunaView, viewProjection: ArrayLike<number
   view.z = eyeZ;
 }
 
-/** True when a sphere touches the frustum. */
+/** True when a sphere touches the frustum. @internal */
 export function sphereInView(view: FaunaView, x: number, y: number, z: number, radius: number): boolean {
   const planes = view.planes;
   for (let p = 0; p < 24; p += 4) {
-    if (planes[p]! * x + planes[p + 1]! * y + planes[p + 2]! * z + planes[p + 3]! < -radius) return false;
+    if ((planes[p] ?? 0) * x + (planes[p + 1] ?? 0) * y + (planes[p + 2] ?? 0) * z + (planes[p + 3] ?? 0) < -radius) return false;
   }
   return true;
 }
@@ -57,6 +58,7 @@ export interface FaunaSelection {
  * Pick which of a group's out agents to draw: inside the frustum and within `lod.far`, at most
  * `limit`, each in the `near` list (model) up to `lod.near` or the `far` list (sprite) past it. Fills
  * the caller's index arrays and `out`; allocates nothing.
+ * @internal
  */
 export function selectVisible(
   state: FaunaGroupState,
@@ -76,9 +78,9 @@ export function selectVisible(
   const cap = Math.min(limit, state.spec.budget);
   let drawn = 0;
   for (let i = 0; i < state.active && drawn < cap; i += 1) {
-    const x = position[i * 3]!;
-    const y = position[i * 3 + 1]!;
-    const z = position[i * 3 + 2]!;
+    const x = (position[i * 3] ?? 0);
+    const y = (position[i * 3 + 1] ?? 0);
+    const z = (position[i * 3 + 2] ?? 0);
     const dx = x - view.x;
     const dy = y - view.y;
     const dz = z - view.z;

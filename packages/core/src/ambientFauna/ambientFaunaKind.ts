@@ -11,6 +11,8 @@ import type { FaunaArea, FaunaGroup, FaunaMotion, FaunaWindow } from "./ambientF
  */
 export const AMBIENT_FAUNA_KIND = "ambient_fauna";
 
+const MOTIONS: readonly FaunaMotion[] = ["school", "swarm", "drift", "soar"];
+
 const WINDOWS: Record<string, FaunaWindow | undefined> = {
   always: undefined,
   day: { sunMin: 0.05 },
@@ -86,7 +88,7 @@ export function faunaGroupsFromVolumes(volumes: readonly Pick<EditorVolume, "id"
     if (source === undefined) continue;
     const area = footprint(source);
     if (area === null) continue;
-    const motion = p["motion"] as FaunaMotion;
+    const motion = MOTIONS.find((candidate) => candidate === p["motion"]) ?? "school";
     const count = Number(p["count"]);
     const low = Number(p["bandMin"]);
     const high = Number(p["bandMax"]);
@@ -123,8 +125,8 @@ export function registerAmbientFaunaKind(): void {
     accent: "#3fd0c9",
     schema: AMBIENT_FAUNA_SCHEMA,
     note: (object: SceneKindObject) => {
-      const groups = faunaGroupsFromVolumes([{ id: object.id, kind: object.kind, shape: object.halfExtents === undefined ? "sphere" : "box", center: object.center ?? { x: 0, y: 0, z: 0 }, ...(object.radius === undefined ? {} : { radius: object.radius }), ...(object.halfExtents === undefined ? {} : { halfExtents: object.halfExtents }), ...(object.meta === undefined ? {} : { meta: object.meta }) }]);
-      return groups.length === 0 ? "Name a species and give the volume a footprint." : `${groups[0]!.motion} of ${groups[0]!.species}`;
+      const [group] = faunaGroupsFromVolumes([{ id: object.id, kind: object.kind, shape: object.halfExtents === undefined ? "sphere" : "box", center: object.center ?? { x: 0, y: 0, z: 0 }, ...(object.radius === undefined ? {} : { radius: object.radius }), ...(object.halfExtents === undefined ? {} : { halfExtents: object.halfExtents }), ...(object.meta === undefined ? {} : { meta: object.meta }) }]);
+      return group === undefined ? "Name a species and give the volume a footprint." : `${group.motion} of ${group.species}`;
     },
   });
 }

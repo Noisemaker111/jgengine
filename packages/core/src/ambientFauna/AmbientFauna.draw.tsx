@@ -46,8 +46,8 @@ const viewProjection = new THREE.Matrix4();
 
 function writeAgent(state: FaunaGroupState, index: number, nose: THREE.Vector3, scale: number, stretch: number, out: THREE.Matrix4): void {
   const b = index * 3;
-  scratchPosition.set(state.position[b]!, state.position[b + 1]!, state.position[b + 2]!);
-  scratchHeading.set(state.velocity[b]!, state.velocity[b + 1]!, state.velocity[b + 2]!);
+  scratchPosition.set((state.position[b] ?? 0), (state.position[b + 1] ?? 0), (state.position[b + 2] ?? 0));
+  scratchHeading.set((state.velocity[b] ?? 0), (state.velocity[b + 1] ?? 0), (state.velocity[b + 2] ?? 0));
   if (scratchHeading.lengthSq() > 1e-8) scratchQuaternion.setFromUnitVectors(nose, scratchHeading.normalize());
   else scratchQuaternion.identity();
   scratchScale.set(scale, scale, scale * stretch);
@@ -92,9 +92,10 @@ function SpeciesBatch({ species, groups, shared, sources }: BatchProps): ReactEl
       const scale = species.scale ?? 1;
       if (model) {
         for (let k = 0; k < selection.near; k += 1) {
-          writeAgent(state, nearList[k]!, nose, scale, 1, scratchMatrix);
+          writeAgent(state, (nearList[k] ?? 0), nose, scale, 1, scratchMatrix);
           for (let s = 0; s < sources.length; s += 1) {
-            modelMeshes.current[s]?.setMatrixAt(modelCount, sourceMatrix.multiplyMatrices(scratchMatrix, sources[s]!.localMatrix));
+            const source = sources[s];
+            if (source !== undefined) modelMeshes.current[s]?.setMatrixAt(modelCount, sourceMatrix.multiplyMatrices(scratchMatrix, source.localMatrix));
           }
           modelCount += 1;
         }
@@ -102,7 +103,7 @@ function SpeciesBatch({ species, groups, shared, sources }: BatchProps): ReactEl
       if (sprites !== null) {
         const total = selection.near + selection.far;
         for (let k = model ? selection.near : 0; k < total; k += 1) {
-          const index = k < selection.near ? nearList[k]! : farList[k - selection.near]!;
+          const index = k < selection.near ? (nearList[k] ?? 0) : (farList[k - selection.near] ?? 0);
           writeAgent(state, index, nose, sprite.size, sprite.length ?? 1, scratchMatrix);
           sprites.setMatrixAt(spriteCount, scratchMatrix);
           spriteCount += 1;
@@ -201,7 +202,7 @@ export function AmbientFauna({ config, zones, assets, groundAt, lowTier = false 
         const species = config.species[id];
         if (species === undefined) return null;
         const own = shared.fauna.groups.filter((g) => g.spec.species === id);
-        const model = species.model === undefined || (assets === undefined && typeof species.model === "string") ? undefined : resolveModel(species.model, assets!);
+        const model = typeof species.model === "string" ? (assets === undefined ? undefined : resolveModel(species.model, assets)) : species.model;
         const plain = <SpeciesBatch key={`${id}:sprite`} species={species} groups={own} shared={shared} sources={null} />;
         if (model === undefined) return plain;
         return (

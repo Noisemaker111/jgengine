@@ -150,9 +150,12 @@
 
 ## @jgengine/core/ai/flock
 
+- `FLOCK_MAX_NEIGHBORS` (const): const FLOCK_MAX_NEIGHBORS: 12 — Flockmates one agent considers per step in {@link createFlockStepper} unless `maxNeighbors` says otherwise.
 - `FlockAgent` (interface): interface FlockAgent { position: FlockVec3; velocity: FlockVec3 } — ⚠ undocumented
+- `FlockBuffers` (interface): interface FlockBuffers — Typed-array agents for {@link createFlockStepper}: `position` and `velocity` hold x,y,z per agent.
 - `FlockConfig` (interface): interface FlockConfig { maxSpeed: number; accel?: number; separationRadius: number; separationWeight?: number; neighborRadius: number; cohesionWeight?: number; alignmentWeight?: number; seekWeight?: number; stragglerRadius?: number; stragglerBoost?: number } — ⚠ undocumented
 - `FlockStepAgent` (interface): interface FlockStepAgent { position: FlockVec3; velocity: FlockVec3 } — ⚠ undocumented
+- `FlockStepper` (interface): interface FlockStepper — Allocation-free flock stepping over typed arrays, sized once for `capacity` agents.
 - `FlockVec3` (type): type FlockVec3 = readonly [number, number, number] — ⚠ undocumented
 
 ## @jgengine/core/ai/groupAssist
@@ -308,6 +311,44 @@
 - `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
 - `createUtilityBrain` (function): function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain — Create a utility brain over an existing {@link NeedSet}. The need set is injected, not owned, so the game shows the same hunger the brain scores and persists one copy.
 - `sampleResponseCurve` (function): function sampleResponseCurve(curve: ResponseCurve, satisfaction: number): number — Sample a response curve at a `0..1` satisfaction. Deterministic, allocation-free.
+
+## @jgengine/core/ambientFauna/AmbientFauna.draw
+
+- `AmbientFauna` (function): function AmbientFauna({ config, zones, assets, groundAt, lowTier = false }: AmbientFaunaProps): ReactElement | null — Ambient fauna: fish schools, insect swarms, drifting motes and soaring flyers, one instanced draw per species part. Agents within a group's `lod.near` draw the species model, the rest to `lod.far` a sprite; off-screen agents are skipped, each group draws at most its `budget`, all groups at most `config.drawCap`. Groups come from `config.groups` and the `ambient_fauna` zones in the editor scene.
+- `AmbientFaunaProps` (interface): interface AmbientFaunaProps — Props of {@link AmbientFauna}.
+
+## @jgengine/core/ambientFauna/ambientFauna
+
+- `AmbientFauna` (interface): interface AmbientFauna — Ambient groups moving by their motion kind, all state in preallocated typed arrays.
+- `AmbientFaunaOptions` (interface): interface AmbientFaunaOptions — Limits and rates of one {@link createAmbientFauna}.
+- `AmbientFaunaState` (interface): interface AmbientFaunaState — Plain-JSON state of every group.
+- `FAUNA_GLOBAL_CAP` (const): const FAUNA_GLOBAL_CAP: 2000 — Default of {@link AmbientFaunaOptions.globalCap}.
+- `FAUNA_GROUP_LIMIT` (const): const FAUNA_GROUP_LIMIT: 4096 — Hard bound on one group's agents.
+- `FaunaArea` (type): type FaunaArea = | { shape: "disc"; x: number; z: number; radius: number } | { shape: "box"; x: number; z: number; halfX: number; halfZ: number } — Ground footprint of a group on X and Z, in metres.
+- `FaunaFrame` (interface): interface FaunaFrame — What {@link AmbientFauna.update} reads each frame; the caller reuses one object.
+- `FaunaGroup` (interface): interface FaunaGroup — One ambient group as data; the game supplies every species and number.
+- `FaunaGroupState` (interface): interface FaunaGroupState — The live state of one group; the arrays are read by the renderer.
+- `FaunaMotion` (type): type FaunaMotion = "school" | "swarm" | "drift" | "soar" — How a group moves: `school` in water below its surface, `swarm` and `drift` around plants, `soar` on a loop over its area.
+- `FaunaWindow` (interface): interface FaunaWindow — When a group is out. The sun height is -1 (deep night) to 1 (noon); the group fades in over `fade` above `sunMin` and out over `fade` below `sunMax`. No sun in the scene leaves the group out.
+- `FaunaWorld` (interface): interface FaunaWorld — What the world gives fauna to read. Everything is optional; groups degrade to their own numbers.
+- `ResolvedFaunaGroup` (interface): interface ResolvedFaunaGroup extends Required<Pick<FaunaGroup, "id" | "species" | "motion" | "area" | "wander">> — A group with every default filled in and its footprint measured.
+- `createAmbientFauna` (function): function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWorld = {}, options: AmbientFaunaOptions = {}): AmbientFauna — Build ambient groups: fish schools below the water surface, swarms and drifting motes near plants, and flyers soaring on the wind. Schools and swarms steer with the flock stepper, soarers ride a motion track, every spawn point is a seeded spatial sample. Species, counts and areas are the caller's data.
+
+## @jgengine/core/ambientFauna/ambientFaunaConfig
+
+- `AmbientFaunaConfig` (interface): interface AmbientFaunaConfig — Turn ambient fauna on: the species table plus how groups see the world.
+- `FaunaSpecies` (interface): interface FaunaSpecies — How one species looks: a model up close, a sprite far off, or the sprite alone.
+
+## @jgengine/core/ambientFauna/ambientFaunaKind
+
+- `AMBIENT_FAUNA_KIND` (const): const AMBIENT_FAUNA_KIND: "ambient_fauna" — The editor volume kind that places an ambient group: its footprint is the area, or it borrows the footprint of another volume (a water volume for a school, a grass field for a swarm).
+- `AMBIENT_FAUNA_SCHEMA` (const): const AMBIENT_FAUNA_SCHEMA: ParamSchema — The ambient group zone's parameters.
+- `faunaGroupsFromVolumes` (function): function faunaGroupsFromVolumes(volumes: readonly Pick<EditorVolume, "id" | "kind" | "shape" | "center" | "radius" | "halfExtents" | "meta">[]): FaunaGroup[] — The ambient groups an editor document places: one per `ambient_fauna` volume. A volume with no `species` is skipped; `volumeId` borrows another volume's footprint and, for a water volume, its top face as the school's surface.
+
+## @jgengine/core/ambientFauna/faunaCull
+
+- `FaunaSelection` (interface): interface FaunaSelection — How many agents {@link selectVisible} put in each LOD list.
+- `FaunaView` (interface): interface FaunaView — The camera as the cull reads it: six frustum planes (nx,ny,nz,d each, normalised) and the eye.
 
 ## @jgengine/core/anim/CharacterCrowd.draw
 

@@ -61,8 +61,8 @@ export interface FaunaWorld {
   surfaceAt?(x: number, z: number, time: number): number;
   /** Ground height at a point; the seabed for a school. */
   groundAt?(x: number, z: number): number;
-  /** True where a plant or grass grows; swarms and drift spawn only there. */
-  plantAt?(x: number, z: number): boolean;
+  /** True where a plant or grass grows, given the ground height there; swarms and drift spawn only there. */
+  plantAt?(x: number, z: number, groundY: number): boolean;
   /** Wind at a height: a `windField(...)` fits. */
   wind?: { atHeight(x: number, z: number, heightM: number, time: number): readonly [number, number] };
 }
@@ -153,7 +153,7 @@ function clamp01(value: number): number {
   return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
-/** How far into its window a group is, 0 (out of it) to 1 (fully in), for `sunHeight`. */
+/** How far into its window a group is, 0 (out of it) to 1 (fully in), for `sunHeight`. @internal */
 export function windowPresence(window: FaunaWindow | undefined, sunHeight: number | null): number {
   if (window === undefined || (window.sunMin === undefined && window.sunMax === undefined)) return 1;
   if (sunHeight === null) return 0;
@@ -227,24 +227,24 @@ interface GroupRuntime extends FaunaGroupState {
 
 function insideAreaProject(area: FaunaArea, position: Float32Array, velocity: Float32Array, base: number): void {
   if (area.shape === "disc") {
-    const dx = position[base]! - area.x;
-    const dz = position[base + 2]! - area.z;
+    const dx = (position[base] ?? 0) - area.x;
+    const dz = (position[base + 2] ?? 0) - area.z;
     const distance = Math.hypot(dx, dz);
     if (distance <= area.radius) return;
     const nx = dx / distance;
     const nz = dz / distance;
     position[base] = area.x + nx * area.radius;
     position[base + 2] = area.z + nz * area.radius;
-    const out = velocity[base]! * nx + velocity[base + 2]! * nz;
-    if (out > 0) { velocity[base] = velocity[base]! - 2 * out * nx; velocity[base + 2] = velocity[base + 2]! - 2 * out * nz; }
+    const out = (velocity[base] ?? 0) * nx + (velocity[base + 2] ?? 0) * nz;
+    if (out > 0) { velocity[base] = (velocity[base] ?? 0) - 2 * out * nx; velocity[base + 2] = (velocity[base + 2] ?? 0) - 2 * out * nz; }
     return;
   }
-  const lx = position[base]! - area.x;
-  const lz = position[base + 2]! - area.z;
-  if (lx > area.halfX) { position[base] = area.x + area.halfX; if (velocity[base]! > 0) velocity[base] = -velocity[base]!; }
-  else if (lx < -area.halfX) { position[base] = area.x - area.halfX; if (velocity[base]! < 0) velocity[base] = -velocity[base]!; }
-  if (lz > area.halfZ) { position[base + 2] = area.z + area.halfZ; if (velocity[base + 2]! > 0) velocity[base + 2] = -velocity[base + 2]!; }
-  else if (lz < -area.halfZ) { position[base + 2] = area.z - area.halfZ; if (velocity[base + 2]! < 0) velocity[base + 2] = -velocity[base + 2]!; }
+  const lx = (position[base] ?? 0) - area.x;
+  const lz = (position[base + 2] ?? 0) - area.z;
+  if (lx > area.halfX) { position[base] = area.x + area.halfX; if ((velocity[base] ?? 0) > 0) velocity[base] = -(velocity[base] ?? 0); }
+  else if (lx < -area.halfX) { position[base] = area.x - area.halfX; if ((velocity[base] ?? 0) < 0) velocity[base] = -(velocity[base] ?? 0); }
+  if (lz > area.halfZ) { position[base + 2] = area.z + area.halfZ; if ((velocity[base + 2] ?? 0) > 0) velocity[base + 2] = -(velocity[base + 2] ?? 0); }
+  else if (lz < -area.halfZ) { position[base + 2] = area.z - area.halfZ; if ((velocity[base + 2] ?? 0) < 0) velocity[base + 2] = -(velocity[base + 2] ?? 0); }
 }
 
 function surfaceOf(spec: ResolvedFaunaGroup, world: FaunaWorld, x: number, z: number, time: number): number {
@@ -262,18 +262,18 @@ function placeAgents(group: GroupRuntime, world: FaunaWorld): void {
   const rng = seededRng(spec.seed);
   const region = areaRegion(spec.area);
   const accept = (point: readonly number[]): boolean => {
-    const x = point[0]!;
-    const z = point[1]!;
+    const x = (point[0] ?? 0);
+    const z = (point[1] ?? 0);
     if (spec.motion === "school") return waterAllows(spec, world, x, z, 0);
     if (spec.motion === "soar") return true;
-    return world.plantAt?.(x, z) ?? true;
+    return world.plantAt?.(x, z, world.groundAt?.(x, z) ?? 0) ?? true;
   };
   let placed = 0;
   for (let i = 0; i < group.count; i += 1) {
     const result = samplePoint({ region, rng, constraints: { accept }, maxAttempts: 40 });
     if (!result.ok || result.point === null) continue;
-    const x = result.point[0]!;
-    const z = result.point[1]!;
+    const x = (result.point[0] ?? 0);
+    const z = (result.point[1] ?? 0);
     const b = placed * 3;
     let y: number;
     if (spec.motion === "school") {
@@ -313,33 +313,33 @@ function stepSchool(g: GroupRuntime, world: FaunaWorld, time: number, dt: number
   const reachX = area.shape === "disc" ? area.radius * 0.6 : area.halfX * 0.6;
   const reachZ = area.shape === "disc" ? area.radius * 0.6 : area.halfZ * 0.6;
   const t = g.schoolTarget;
-  t[0] = area.x + Math.sin(time * 0.05 + g.phase[0]! * TWO_PI) * reachX;
-  t[2] = area.z + Math.sin(time * 0.037 + g.phase[0]! * 5) * reachZ;
+  t[0] = area.x + Math.sin(time * 0.05 + (g.phase[0] ?? 0) * TWO_PI) * reachX;
+  t[2] = area.z + Math.sin(time * 0.037 + (g.phase[0] ?? 0) * 5) * reachZ;
   t[1] = 0;
-  for (let i = 0; i < active * 3; i += 1) before[i] = position[i]!;
+  for (let i = 0; i < active * 3; i += 1) before[i] = (position[i] ?? 0);
   for (let i = 0; i < active; i += 1) {
     const b = i * 3;
-    g.targets[b] = t[0]; g.targets[b + 1] = position[b + 1]!; g.targets[b + 2] = t[2];
+    g.targets[b] = t[0]; g.targets[b + 1] = (position[b + 1] ?? 0); g.targets[b + 2] = t[2];
   }
-  g.stepper!.step(g.buffers, active, spec.steering, dt, null, g.targets);
+  g.stepper?.step(g.buffers, active, spec.steering, dt, null, g.targets);
   for (let i = 0; i < active; i += 1) {
     const b = i * 3;
     insideAreaProject(area, position, velocity, b);
-    const x = position[b]!;
-    const z = position[b + 2]!;
+    const x = (position[b] ?? 0);
+    const z = (position[b + 2] ?? 0);
     if (!waterAllows(spec, world, x, z, time)) {
-      position[b] = before[b]!; position[b + 2] = before[b + 2]!;
-      velocity[b] = -velocity[b]! * 0.6; velocity[b + 2] = -velocity[b + 2]! * 0.6;
+      position[b] = (before[b] ?? 0); position[b + 2] = (before[b + 2] ?? 0);
+      velocity[b] = -(velocity[b] ?? 0) * 0.6; velocity[b + 2] = -(velocity[b + 2] ?? 0) * 0.6;
     }
-    const px = position[b]!;
-    const pz = position[b + 2]!;
+    const px = (position[b] ?? 0);
+    const pz = (position[b + 2] ?? 0);
     const surface = surfaceOf(spec, world, px, pz, time);
     const floor = world.groundAt?.(px, pz) ?? -Infinity;
     const top = surface - spec.band.min;
     const bottom = Math.min(top, Math.max(floor + SEABED_CLEARANCE, surface - spec.band.max));
-    const y = position[b + 1]!;
-    if (y > top) { position[b + 1] = top; if (velocity[b + 1]! > 0) velocity[b + 1] = 0; }
-    else if (y < bottom) { position[b + 1] = bottom; if (velocity[b + 1]! < 0) velocity[b + 1] = 0; }
+    const y = (position[b + 1] ?? 0);
+    if (y > top) { position[b + 1] = top; if ((velocity[b + 1] ?? 0) > 0) velocity[b + 1] = 0; }
+    else if (y < bottom) { position[b + 1] = bottom; if ((velocity[b + 1] ?? 0) < 0) velocity[b + 1] = 0; }
   }
 }
 
@@ -347,13 +347,13 @@ function stepSwarm(g: GroupRuntime, world: FaunaWorld, time: number, dt: number)
   const { spec, active, home, targets, phase } = g;
   for (let i = 0; i < active; i += 1) {
     const b = i * 3;
-    const w = phase[i]! * TWO_PI;
-    const orbit = time * (0.4 + phase[i]! * 0.5) + w;
-    targets[b] = home[b]! + Math.cos(orbit) * spec.wander;
-    targets[b + 1] = home[b + 1]! + Math.sin(orbit * 1.3) * spec.wander * 0.3;
-    targets[b + 2] = home[b + 2]! + Math.sin(orbit) * spec.wander;
+    const w = (phase[i] ?? 0) * TWO_PI;
+    const orbit = time * (0.4 + (phase[i] ?? 0) * 0.5) + w;
+    targets[b] = (home[b] ?? 0) + Math.cos(orbit) * spec.wander;
+    targets[b + 1] = (home[b + 1] ?? 0) + Math.sin(orbit * 1.3) * spec.wander * 0.3;
+    targets[b + 2] = (home[b + 2] ?? 0) + Math.sin(orbit) * spec.wander;
   }
-  g.stepper!.step(g.buffers, active, spec.steering, dt, null, targets);
+  g.stepper?.step(g.buffers, active, spec.steering, dt, null, targets);
   clampToPlants(g, world, active);
 }
 
@@ -364,19 +364,19 @@ function stepDrift(g: GroupRuntime, world: FaunaWorld, time: number, dt: number)
   const pull = 0.35;
   for (let i = 0; i < active; i += 1) {
     const b = i * 3;
-    const w = phase[i]! * TWO_PI;
-    const gx = g.windX * 0.5 + Math.sin(time * 0.9 + w) * spec.speed * 0.6 + (home[b]! - position[b]!) * pull;
-    const gy = Math.sin(time * 0.7 + w * 1.7) * spec.speed * 0.3 + (home[b + 1]! - position[b + 1]!) * pull;
-    const gz = g.windZ * 0.5 + Math.cos(time * 0.8 + w) * spec.speed * 0.6 + (home[b + 2]! - position[b + 2]!) * pull;
-    let vx = velocity[b]! + (gx - velocity[b]!) * relax;
-    let vy = velocity[b + 1]! + (gy - velocity[b + 1]!) * relax;
-    let vz = velocity[b + 2]! + (gz - velocity[b + 2]!) * relax;
+    const w = (phase[i] ?? 0) * TWO_PI;
+    const gx = g.windX * 0.5 + Math.sin(time * 0.9 + w) * spec.speed * 0.6 + ((home[b] ?? 0) - (position[b] ?? 0)) * pull;
+    const gy = Math.sin(time * 0.7 + w * 1.7) * spec.speed * 0.3 + ((home[b + 1] ?? 0) - (position[b + 1] ?? 0)) * pull;
+    const gz = g.windZ * 0.5 + Math.cos(time * 0.8 + w) * spec.speed * 0.6 + ((home[b + 2] ?? 0) - (position[b + 2] ?? 0)) * pull;
+    let vx = (velocity[b] ?? 0) + (gx - (velocity[b] ?? 0)) * relax;
+    let vy = (velocity[b + 1] ?? 0) + (gy - (velocity[b + 1] ?? 0)) * relax;
+    let vz = (velocity[b + 2] ?? 0) + (gz - (velocity[b + 2] ?? 0)) * relax;
     const speed = Math.hypot(vx, vy, vz);
     if (speed > spec.speed) { const k = spec.speed / speed; vx *= k; vy *= k; vz *= k; }
     velocity[b] = vx; velocity[b + 1] = vy; velocity[b + 2] = vz;
-    position[b] = position[b]! + vx * dt;
-    position[b + 1] = position[b + 1]! + vy * dt;
-    position[b + 2] = position[b + 2]! + vz * dt;
+    position[b] = (position[b] ?? 0) + vx * dt;
+    position[b + 1] = (position[b + 1] ?? 0) + vy * dt;
+    position[b + 2] = (position[b + 2] ?? 0) + vz * dt;
   }
   clampToPlants(g, world, active);
 }
@@ -386,12 +386,12 @@ function clampToPlants(g: GroupRuntime, world: FaunaWorld, active: number): void
   for (let i = 0; i < active; i += 1) {
     const b = i * 3;
     insideAreaProject(spec.area, position, velocity, b);
-    const ground = world.groundAt?.(position[b]!, position[b + 2]!) ?? 0;
+    const ground = world.groundAt?.((position[b] ?? 0), (position[b + 2] ?? 0)) ?? 0;
     const low = ground + spec.band.min;
     const high = Math.max(low, ground + spec.band.max);
-    const y = position[b + 1]!;
-    if (y < low) { position[b + 1] = low; if (velocity[b + 1]! < 0) velocity[b + 1] = 0; }
-    else if (y > high) { position[b + 1] = high; if (velocity[b + 1]! > 0) velocity[b + 1] = 0; }
+    const y = (position[b + 1] ?? 0);
+    if (y < low) { position[b + 1] = low; if ((velocity[b + 1] ?? 0) < 0) velocity[b + 1] = 0; }
+    else if (y > high) { position[b + 1] = high; if ((velocity[b + 1] ?? 0) > 0) velocity[b + 1] = 0; }
   }
 }
 
@@ -405,7 +405,8 @@ function refreshWind(g: GroupRuntime, world: FaunaWorld, time: number, height: n
 
 function stepSoar(g: GroupRuntime, world: FaunaWorld, time: number, dt: number): void {
   const { spec, active, position, velocity, phase, track, trackPoint } = g;
-  const loop = track!;
+  if (track === null) return;
+  const loop = track;
   const period = Math.max(1e-3, loop.length() / Math.max(0.1, spec.speed));
   const mid = (spec.band.min + spec.band.max) / 2;
   refreshWind(g, world, mid, mid);
@@ -418,7 +419,7 @@ function stepSoar(g: GroupRuntime, world: FaunaWorld, time: number, dt: number):
   const invDt = dt > 1e-6 ? 1 / dt : 0;
   for (let i = 0; i < active; i += 1) {
     const b = i * 3;
-    const own = phase[i]!;
+    const own = (phase[i] ?? 0);
     const at = ((time / period + own) % 1) * period;
     loop.sampleInto(own > 0.5 ? at : period - at, trackPoint);
     const spread = 0.55 + 0.45 * ((own * 7.13) % 1);
@@ -426,9 +427,9 @@ function stepSoar(g: GroupRuntime, world: FaunaWorld, time: number, dt: number):
     const z = spec.area.z + (trackPoint[2] - spec.area.z) * spread + leanZ;
     const rise = 0.5 + 0.5 * Math.sin(time * 0.06 + own * TWO_PI);
     const y = ground + spec.band.min + (spec.band.max - spec.band.min) * Math.min(1, rise * (0.7 + 0.3 * lift));
-    velocity[b] = (x - position[b]!) * invDt;
-    velocity[b + 1] = (y - position[b + 1]!) * invDt;
-    velocity[b + 2] = (z - position[b + 2]!) * invDt;
+    velocity[b] = (x - (position[b] ?? 0)) * invDt;
+    velocity[b + 1] = (y - (position[b + 1] ?? 0)) * invDt;
+    velocity[b + 2] = (z - (position[b + 2] ?? 0)) * invDt;
     position[b] = x; position[b + 1] = y; position[b + 2] = z;
   }
 }
@@ -477,7 +478,7 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
       const requested = g.position.length / 3;
       g.count = requested;
       placeAgents(g, world);
-      for (let i = 0; i < g.count; i += 1) { g.targets[i * 3] = g.home[i * 3]!; g.targets[i * 3 + 1] = g.home[i * 3 + 1]!; g.targets[i * 3 + 2] = g.home[i * 3 + 2]!; }
+      for (let i = 0; i < g.count; i += 1) { g.targets[i * 3] = (g.home[i * 3] ?? 0); g.targets[i * 3 + 1] = (g.home[i * 3 + 1] ?? 0); g.targets[i * 3 + 2] = (g.home[i * 3 + 2] ?? 0); }
       g.windAt = -Infinity;
       if (g.spec.motion === "soar") stepSoar(g, world, 0, 0);
       g.active = 0;
@@ -507,7 +508,8 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
     restore(state) {
       if (state.groups.length !== runtimes.length) throw new Error("restored fauna cardinality differs from its groups");
       state.groups.forEach((saved, index) => {
-        const g = runtimes[index]!;
+        const g = runtimes[index];
+        if (g === undefined) return;
         if (saved.id !== g.spec.id || saved.position.length !== g.count * 3 || saved.velocity.length !== g.count * 3) throw new Error(`invalid restored fauna group ${saved.id}`);
         if (![...saved.position, ...saved.velocity].every(Number.isFinite)) throw new Error(`non-finite restored fauna group ${saved.id}`);
         g.position.set(saved.position);

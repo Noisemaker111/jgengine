@@ -256,6 +256,7 @@ export const FLOCK_MAX_NEIGHBORS = 12;
  * Build a {@link FlockStepper}: the hot-path form of {@link stepFlock} for hundreds to thousands of
  * agents. The grid is a fixed hash table over `neighborRadius` cells, so a step touches only
  * nearby agents and creates no objects.
+ * @internal
  */
 export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NEIGHBORS): FlockStepper {
   const size = Math.max(1, Math.floor(capacity));
@@ -288,17 +289,17 @@ export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NE
 
     head.fill(-1);
     for (let i = 0; i < n; i += 1) {
-      const c = slot(Math.floor(pos[i * 3]! * inv), Math.floor(pos[i * 3 + 2]! * inv));
+      const c = slot(Math.floor((pos[i * 3] ?? 0) * inv), Math.floor((pos[i * 3 + 2] ?? 0) * inv));
       cell[i] = c;
-      next[i] = head[c]!;
+      next[i] = (head[c] ?? 0);
       head[c] = i;
     }
 
     for (let i = 0; i < n; i += 1) {
       const b = i * 3;
-      const px = pos[b]!;
-      const py = pos[b + 1]!;
-      const pz = pos[b + 2]!;
+      const px = (pos[b] ?? 0);
+      const py = (pos[b + 1] ?? 0);
+      const pz = (pos[b + 2] ?? 0);
       const cx = Math.floor(px * inv);
       const cz = Math.floor(pz * inv);
       let sepX = 0, sepY = 0, sepZ = 0, cohX = 0, cohY = 0, cohZ = 0, alX = 0, alY = 0, alZ = 0;
@@ -306,19 +307,19 @@ export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NE
       let seen = 0;
       scan: for (let dz = -1; dz <= 1; dz += 1) {
         for (let dx = -1; dx <= 1; dx += 1) {
-          for (let j = head[slot(cx + dx, cz + dz)]!; j >= 0; j = next[j]!) {
+          for (let j = (head[slot(cx + dx, cz + dz)] ?? 0); j >= 0; j = (next[j] ?? 0)) {
             if (j === i) continue;
             if (seen >= maxNeighbors) break scan;
             const o = j * 3;
-            const ox = pos[o]! - px;
-            const oy = pos[o + 1]! - py;
-            const oz = pos[o + 2]! - pz;
+            const ox = (pos[o] ?? 0) - px;
+            const oy = (pos[o + 1] ?? 0) - py;
+            const oz = (pos[o + 2] ?? 0) - pz;
             const distance = Math.hypot(ox, oy, oz);
             if (distance > config.neighborRadius) continue;
             seen += 1;
             mates += 1;
-            cohX += pos[o]!; cohY += pos[o + 1]!; cohZ += pos[o + 2]!;
-            alX += vel[o]!; alY += vel[o + 1]!; alZ += vel[o + 2]!;
+            cohX += (pos[o] ?? 0); cohY += (pos[o + 1] ?? 0); cohZ += (pos[o + 2] ?? 0);
+            alX += (vel[o] ?? 0); alY += (vel[o + 1] ?? 0); alZ += (vel[o + 2] ?? 0);
             if (distance < separationRadius && distance > 1e-9) {
               const push = (separationRadius - distance) / separationRadius / distance;
               sepX -= ox * push; sepY -= oy * push; sepZ -= oz * push;
@@ -336,7 +337,7 @@ export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NE
         if (align > 1e-9) { sx += (alX / align) * alignmentWeight; sy += (alY / align) * alignmentWeight; sz += (alZ / align) * alignmentWeight; }
       }
       let gx: number, gy: number, gz: number, seeking = true;
-      if (targets != null) { gx = targets[b]!; gy = targets[b + 1]!; gz = targets[b + 2]!; }
+      if (targets != null) { gx = (targets[b] ?? 0); gy = (targets[b + 1] ?? 0); gz = (targets[b + 2] ?? 0); }
       else if (target != null) { gx = target[0]; gy = target[1]; gz = target[2]; }
       else { gx = gy = gz = 0; seeking = false; }
       if (seeking) {
@@ -351,13 +352,13 @@ export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NE
 
     for (let i = 0; i < n; i += 1) {
       const b = i * 3;
-      let vx = vel[b]! + steer[b]! * dt;
-      let vy = vel[b + 1]! + steer[b + 1]! * dt;
-      let vz = vel[b + 2]! + steer[b + 2]! * dt;
+      let vx = (vel[b] ?? 0) + (steer[b] ?? 0) * dt;
+      let vy = (vel[b + 1] ?? 0) + (steer[b + 1] ?? 0) * dt;
+      let vz = (vel[b + 2] ?? 0) + (steer[b + 2] ?? 0) * dt;
       const speed = Math.hypot(vx, vy, vz);
       if (speed > config.maxSpeed) { const clamp = config.maxSpeed / speed; vx *= clamp; vy *= clamp; vz *= clamp; }
       vel[b] = vx; vel[b + 1] = vy; vel[b + 2] = vz;
-      pos[b] = pos[b]! + vx * dt; pos[b + 1] = pos[b + 1]! + vy * dt; pos[b + 2] = pos[b + 2]! + vz * dt;
+      pos[b] = (pos[b] ?? 0) + vx * dt; pos[b + 1] = (pos[b + 1] ?? 0) + vy * dt; pos[b + 2] = (pos[b + 2] ?? 0) + vz * dt;
     }
   }
 

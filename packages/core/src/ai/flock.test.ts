@@ -248,12 +248,12 @@ describe("createFlockStepper", () => {
   test("steers like flockSteer on the same agents", () => {
     const buffers = seed();
     const agents = Array.from({ length: 10 }, (_, i) => ({
-      position: [buffers.position[i * 3]!, buffers.position[i * 3 + 1]!, buffers.position[i * 3 + 2]!] as const,
-      velocity: [buffers.velocity[i * 3]!, buffers.velocity[i * 3 + 1]!, buffers.velocity[i * 3 + 2]!] as const,
+      position: [(buffers.position[i * 3] ?? 0), (buffers.position[i * 3 + 1] ?? 0), (buffers.position[i * 3 + 2] ?? 0)] as const,
+      velocity: [(buffers.velocity[i * 3] ?? 0), (buffers.velocity[i * 3 + 1] ?? 0), (buffers.velocity[i * 3 + 2] ?? 0)] as const,
     }));
     stepFlock(agents, config, 0.1, [10, 0, 0]);
     createFlockStepper(10).step(buffers, 10, config, 0.1, [10, 0, 0]);
-    for (let i = 0; i < 10; i += 1) for (let axis = 0; axis < 3; axis += 1) expect(buffers.position[i * 3 + axis]).toBeCloseTo(agents[i]!.position[axis]!, 4);
+    for (let i = 0; i < 10; i += 1) for (let axis = 0; axis < 3; axis += 1) expect(buffers.position[i * 3 + axis]).toBeCloseTo(agents[i]?.position[axis] ?? Number.NaN, 4);
   });
 
   test("seeks per-agent targets and stays finite over a long run", () => {

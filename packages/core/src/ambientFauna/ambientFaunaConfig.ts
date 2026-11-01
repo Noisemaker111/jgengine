@@ -23,8 +23,8 @@ export interface AmbientFaunaConfig {
   surface?: number | ((x: number, z: number, time: number) => number);
   /** Wind for soarers and drift: a `windField(...)` fits. */
   wind?: FaunaWorld["wind"];
-  /** True where a plant or grass grows, for swarms and drift. Default everywhere. */
-  plantAt?: (x: number, z: number) => boolean;
+  /** True where a plant or grass grows, given the ground height there, for swarms and drift. Default everywhere. */
+  plantAt?: (x: number, z: number, groundY: number) => boolean;
   /** Most agents simulated across every group. Default 2000; the low tier halves it. */
   globalCap?: number;
   /** Most agents drawn per frame across every group. Default 1200. */

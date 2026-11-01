@@ -13,6 +13,12 @@ import {
   type FaunaWorld,
 } from "./ambientFauna";
 
+function only<T>(list: readonly T[]): T {
+  const first = list[0];
+  if (first === undefined) throw new Error("expected one entry");
+  return first;
+}
+
 const SEA = 0;
 const wavy = (x: number, z: number, time: number): number => SEA + Math.sin(x * 0.3 + time) * 0.25 + Math.cos(z * 0.2 + time * 0.7) * 0.15;
 const shore = (x: number): number => (x < 0 ? -6 : -6 + x * 0.5);
@@ -41,7 +47,7 @@ function inside(area: FaunaArea, x: number, z: number): boolean {
 }
 
 function everyAgent(state: FaunaGroupState, visit: (x: number, y: number, z: number, i: number) => void): void {
-  for (let i = 0; i < state.count; i += 1) visit(state.position[i * 3]!, state.position[i * 3 + 1]!, state.position[i * 3 + 2]!, i);
+  for (let i = 0; i < state.count; i += 1) visit((state.position[i * 3] ?? 0), (state.position[i * 3 + 1] ?? 0), (state.position[i * 3 + 2] ?? 0), i);
 }
 
 describe("each motion stays inside its area", () => {
@@ -49,7 +55,7 @@ describe("each motion stays inside its area", () => {
     for (const area of [disc, box]) {
       test(`${motion} in a ${area.shape} over 30 simulated minutes`, () => {
         const fauna = createAmbientFauna([group(motion, area, 40)], world);
-        const state = fauna.groups[0]!;
+        const state = only(fauna.groups);
         expect(state.count).toBeGreaterThan(0);
         for (let step = 0; step < 54_000; step += 1) {
           fauna.update(frame(step / 30));
@@ -66,12 +72,12 @@ describe("each motion stays inside its area", () => {
 
   test("soarers circle the area's centre at their altitude band", () => {
     const fauna = createAmbientFauna([group("soar", disc, 12, { band: { min: 50, max: 80 } })], world);
-    const state = fauna.groups[0]!;
+    const state = only(fauna.groups);
     for (let step = 0; step < 6000; step += 1) fauna.update(frame(step / 30));
     everyAgent(state, (x, y, z) => {
       expect(Math.hypot(x, z)).toBeLessThan(30 * 0.7 + 30 * 0.25 + 0.5);
-      expect(y).toBeGreaterThanOrEqual(world.groundAt!(0, 0) + 50 - 1e-3);
-      expect(y).toBeLessThanOrEqual(world.groundAt!(0, 0) + 80 + 1e-3);
+      expect(y).toBeGreaterThanOrEqual(shore(0) + 50 - 1e-3);
+      expect(y).toBeLessThanOrEqual(shore(0) + 80 + 1e-3);
     });
   });
 });
@@ -79,20 +85,20 @@ describe("each motion stays inside its area", () => {
 describe("fish", () => {
   test("never break the surface or touch the seabed, over waves and a sloping shore", () => {
     const fauna = createAmbientFauna([group("school", box, 120, { band: { min: 0.3, max: 2.5 } })], world);
-    const state = fauna.groups[0]!;
+    const state = only(fauna.groups);
     for (let step = 0; step < 36_000; step += 1) {
       const time = step / 30;
       fauna.update(frame(time));
       if (step % 5 === 0) everyAgent(state, (x, y, z) => {
         expect(y).toBeLessThanOrEqual(wavy(x, z, time) - 0.3 + 1e-4);
-        expect(y).toBeGreaterThanOrEqual(world.groundAt!(x, z) + 0.25 - 1e-4);
+        expect(y).toBeGreaterThanOrEqual(shore(x) + 0.25 - 1e-4);
       });
     }
   });
 
   test("never leave the water for the beach", () => {
     const fauna = createAmbientFauna([group("school", box, 80)], world);
-    const state = fauna.groups[0]!;
+    const state = only(fauna.groups);
     for (let step = 0; step < 18_000; step += 1) {
       const time = step / 30;
       fauna.update(frame(time));
@@ -103,7 +109,7 @@ describe("fish", () => {
   test("a zone with no water holds no fish", () => {
     const dry: FaunaWorld = { ...world, groundAt: () => 5 };
     const fauna = createAmbientFauna([group("school", disc, 50)], dry);
-    expect(fauna.groups[0]!.count).toBe(0);
+    expect(only(fauna.groups).count).toBe(0);
   });
 });
 
@@ -114,11 +120,11 @@ describe("insects and motes", () => {
     const starts = fauna.groups.map((state) => Array.from(state.position));
     for (let step = 0; step < 9000; step += 1) fauna.update(frame(step / 30));
     fauna.groups.forEach((state, index) => {
-      const start = starts[index]!;
+      const start = starts[index] ?? [];
       everyAgent(state, (x, y, z, i) => {
-        expect(Math.hypot(x - start[i * 3]!, z - start[i * 3 + 2]!)).toBeLessThan(state.spec.wander * 4 + 2);
-        expect(y).toBeGreaterThanOrEqual(world.groundAt!(x, z) + state.spec.band.min - 1e-3);
-        expect(y).toBeLessThanOrEqual(world.groundAt!(x, z) + state.spec.band.max + 1e-3);
+        expect(Math.hypot(x - (start[i * 3] ?? 0), z - (start[i * 3 + 2] ?? 0))).toBeLessThan(state.spec.wander * 4 + 2);
+        expect(y).toBeGreaterThanOrEqual(shore(x) + state.spec.band.min - 1e-3);
+        expect(y).toBeLessThanOrEqual(shore(x) + state.spec.band.max + 1e-3);
       });
     });
   });
@@ -130,12 +136,12 @@ describe("budget and window", () => {
     expect(fauna.total()).toBeLessThanOrEqual(1500);
     expect(fauna.groups.map((g) => g.count)).toEqual([900, 600, 0]);
     const huge = createAmbientFauna([group("drift", { shape: "disc", x: 0, z: 0, radius: 1000 }, 1e9)], world, { globalCap: 1e9 });
-    expect(huge.groups[0]!.count).toBeLessThanOrEqual(4096);
+    expect(only(huge.groups).count).toBeLessThanOrEqual(4096);
   });
 
   test("density counts agents per 1000 m²", () => {
     const fauna = createAmbientFauna([{ id: "d", species: "x", motion: "soar", area: { shape: "box", x: 0, z: 0, halfX: 50, halfZ: 50 }, density: 2 }], world);
-    expect(fauna.groups[0]!.count).toBe(20);
+    expect(only(fauna.groups).count).toBe(20);
   });
 
   test("a time-of-day window fades the group in and out", () => {
@@ -155,9 +161,9 @@ describe("budget and window", () => {
 
   test("a group beyond the simulate range stays where it is", () => {
     const fauna = createAmbientFauna([group("drift", disc, 20)], world, { simulateRange: 100 });
-    const before = Array.from(fauna.groups[0]!.position);
+    const before = Array.from(only(fauna.groups).position);
     for (let step = 0; step < 100; step += 1) fauna.update({ ...frame(step / 30), focusX: 5000 });
-    expect(Array.from(fauna.groups[0]!.position)).toEqual(before);
+    expect(Array.from(only(fauna.groups).position)).toEqual(before);
   });
 });
 
@@ -166,15 +172,15 @@ describe("state", () => {
     const make = () => createAmbientFauna([group("school", box, 30), group("swarm", disc, 30, { id: "b" })], world);
     const a = make();
     const b = make();
-    expect(Array.from(a.groups[0]!.position)).toEqual(Array.from(b.groups[0]!.position));
+    expect(Array.from(only(a.groups).position)).toEqual(Array.from(only(b.groups).position));
     for (let step = 0; step < 300; step += 1) { a.update(frame(step / 30)); b.update(frame(step / 30)); }
     const saved = JSON.parse(JSON.stringify(a.snapshot()));
     for (let step = 300; step < 600; step += 1) a.update(frame(step / 30));
     a.restore(saved);
     for (let step = 300; step < 600; step += 1) { a.update(frame(step / 30)); b.update(frame(step / 30)); }
-    expect(Array.from(a.groups[0]!.position)).toEqual(Array.from(b.groups[0]!.position));
+    expect(Array.from(only(a.groups).position)).toEqual(Array.from(only(b.groups).position));
     a.reset();
-    expect(Array.from(a.groups[0]!.position)).toEqual(Array.from(make().groups[0]!.position));
+    expect(Array.from(only(a.groups).position)).toEqual(Array.from(only(make().groups).position));
     expect(() => a.restore({ groups: [] })).toThrow();
   });
 });

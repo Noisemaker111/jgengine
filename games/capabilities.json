@@ -489,6 +489,36 @@
       "intent": "a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting."
     },
     {
+      "id": "ambient-fauna",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ambientFauna/ambientFauna",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "groups of fish, insects, motes and soaring flyers that stay in an area, below the water surface or near plants, out in a time-of-day window, with a global agent cap"
+    },
+    {
+      "id": "ambient-fauna-render",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ambientFauna/AmbientFauna.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw ambient fauna as instanced species models with distance LOD, frustum culling, a per-group budget and a global draw cap"
+    },
+    {
+      "id": "ambient-fauna-zone",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ambientFauna/ambientFaunaKind",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "editor-authorable ambient group zone stored in editor.scene.json"
+    },
+    {
       "id": "ambient-temperature",
       "packages": [
         "@jgengine/core"
