@@ -258,7 +258,7 @@ export const game = defineGame({
   settings: {},
   presentation: "3d", scenePlacement: false, touch: false, platforms: ["web"],
   // Engine records own acquisition; the vault's authored meshes own presentation.
-  worldItem: { filter: [{ id: "authored-salvage", when: {}, hide: true }] },
+  worldItem: { filter: [{ id: "authored-salvage", hide: true }] },
   // Marrow's base and story run on the engine's world model: bays, power, galley flows, story facts.
   systems: [marrowSpec.system],
   loop: { onInit: (ctx) => { initialize(ctx); registerCaptureCommands(ctx); }, onNewPlayer: seatPlayer, onTick: tickControls },

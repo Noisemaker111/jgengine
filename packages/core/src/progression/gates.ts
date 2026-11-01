@@ -1,18 +1,9 @@
 import type { UnlockCatalog } from "../game/unlocks";
-import type { Standing, StandingRequirement } from "./standing";
+import { evaluatePredicate, predicateLeaves, type Predicate, type PredicateFacts } from "../rules/predicate";
+import { standingTracksRead, type Standing } from "./standing";
 
-/** What a gate is evaluated against: standing by track and money by currency. */
-export interface GateFacts {
-  standing(trackId: string): number;
-  balance(currency: string): number;
-}
-
-/** Every condition a gate can require; all named conditions must hold. */
-export interface GateRequirement {
-  standing?: StandingRequirement;
-  /** Smallest balance of `currency` that passes. */
-  balance?: { currency: string; min: number };
-}
+/** What a gate is evaluated against: `standing.<trackId>` and `balance.<currency>` numbers, plus any fact the game names. */
+export type GateFacts = PredicateFacts;
 
 /**
  * A milestone: content that opens exactly when its requirements hold and names the unlock it
@@ -23,17 +14,16 @@ export interface GateDef {
   unlock: string;
   label?: string;
   category?: string;
-  requires?: GateRequirement;
+  /** Over the {@link GateFacts}, e.g. `{ gte: ["standing.park", 20] }`; omitted opens the gate from the start. */
+  requires?: Predicate;
 }
-
-/** Which named condition a closed gate still needs. */
-export type GateMiss = "standing" | "balance";
 
 /** One gate against live facts. */
 export interface GateStatus {
   gate: GateDef;
   open: boolean;
-  missing: readonly GateMiss[];
+  /** The unmet clauses: each failing child of a top-level `all`, or the whole predicate. */
+  missing: readonly Predicate[];
 }
 
 /** Evaluated gate content: the table, its status against facts, and the grants a caller applies. */
@@ -56,16 +46,13 @@ export interface GateSetConfig {
   standing?: Pick<Standing, "hasTrack">;
 }
 
-/** Read a {@link Standing} and a balance record as {@link GateFacts}. */
+/** Read a {@link Standing} and a balance record as `standing.*` and `balance.*` {@link GateFacts}. */
 export function gateFacts(
-  standing: Pick<Standing, "standing">,
+  standing: Pick<Standing, "standings">,
   actorId: string,
   balances: Readonly<Record<string, number>> = {},
 ): GateFacts {
-  return {
-    standing: (trackId) => standing.standing(actorId, trackId),
-    balance: (currency) => balances[currency] ?? 0,
-  };
+  return { standing: standing.standings(actorId), balance: { ...balances } };
 }
 
 function check(condition: boolean, message: string): void {
@@ -85,40 +72,24 @@ export function assertGates(config: GateSetConfig): void {
       config.catalog.has(gate.unlock),
       `Gate "${id}" unlocks unknown id "${gate.unlock}" - the reward resolves to nothing`,
     );
-    const standing = gate.requires?.standing;
-    if (standing !== undefined) {
-      check(standing.trackId.trim() !== "", `Gate "${id}" names an empty standing track`);
-      check(
-        config.standing === undefined || config.standing.hasTrack(standing.trackId),
-        `Gate "${id}" reads unknown standing track "${standing.trackId}"`,
-      );
-      if (standing.min !== undefined) check(Number.isFinite(standing.min), `Gate "${id}" standing min must be finite`);
-      if (standing.max !== undefined) check(Number.isFinite(standing.max), `Gate "${id}" standing max must be finite`);
-      check(
-        standing.min === undefined || standing.max === undefined || standing.min <= standing.max,
-        `Gate "${id}" needs standing min <= max`,
-      );
+    for (const leaf of predicateLeaves(gate.requires)) {
+      if (typeof leaf.operand === "number") check(Number.isFinite(leaf.operand), `Gate "${id}" operand must be finite`);
     }
-    const balance = gate.requires?.balance;
-    if (balance !== undefined) {
-      check(balance.currency.trim() !== "", `Gate "${id}" names an empty currency`);
-      check(Number.isFinite(balance.min) && balance.min >= 0, `Gate "${id}" balance min must be finite and >= 0`);
+    for (const trackId of standingTracksRead(gate.requires)) {
+      check(trackId.trim() !== "", `Gate "${id}" names an empty standing track`);
+      check(
+        config.standing === undefined || config.standing.hasTrack(trackId),
+        `Gate "${id}" reads unknown standing track "${trackId}"`,
+      );
     }
   }
 }
 
-function missingFor(gate: GateDef, facts: GateFacts): GateMiss[] {
-  const missing: GateMiss[] = [];
-  const standing = gate.requires?.standing;
-  if (standing !== undefined) {
-    const value = facts.standing(standing.trackId);
-    if ((standing.min !== undefined && value < standing.min) || (standing.max !== undefined && value > standing.max)) {
-      missing.push("standing");
-    }
-  }
-  const balance = gate.requires?.balance;
-  if (balance !== undefined && facts.balance(balance.currency) < balance.min) missing.push("balance");
-  return missing;
+function missingFor(gate: GateDef, facts: GateFacts): Predicate[] {
+  const requires = gate.requires;
+  if (requires === undefined) return [];
+  const clauses = "all" in requires ? requires.all : [requires];
+  return clauses.filter((clause) => !evaluatePredicate(clause, facts));
 }
 
 /**

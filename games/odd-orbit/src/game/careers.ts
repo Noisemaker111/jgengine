@@ -1,7 +1,8 @@
 import type { ReputationTier } from "@jgengine/core/faction/reputation";
+import { predicateFloor } from "@jgengine/core/rules/predicate";
 import { createGateSet, gateFacts, type GateDef, type GateStatus } from "@jgengine/core/progression/gates";
 import { createStanding, type Standing, type StandingState } from "@jgengine/core/progression/standing";
-import { createUpgradeTree, type UpgradeState } from "@jgengine/core/progression/upgrades";
+import { createUpgradeTree, type UpgradeNodeDef, type UpgradeState } from "@jgengine/core/progression/upgrades";
 
 import { householdBook } from "./agents";
 import { JOBS } from "./entities/aliens/catalog";
@@ -108,7 +109,7 @@ export const CAREER_BOARD = createGateSet({
     id: `post:${career.id}`,
     unlock: career.id,
     label: career.label,
-    requires: career.postGate === 0 ? {} : { standing: { trackId: "orbit", min: career.postGate } },
+    requires: career.postGate === 0 ? { all: [] } : { gte: ["standing.orbit", career.postGate] },
   })),
   catalog: { has: (id) => CAREER_BY_ID.has(id as CareerId) },
   standing: createStanding({ tracks: ORBIT_STANDING.tracks, outcomes: ORBIT_STANDING.outcomes }),
@@ -120,9 +121,9 @@ export function rungNode(career: CareerId, rung: 2 | 3): string {
 }
 
 /** Every rung node, in one place so a save can validate the ranks it stores. */
-export const CAREER_NODES = CAREERS.flatMap((career) => [
-  { id: rungNode(career.id, 2), label: `${career.label} ${RUNG_NAMES[1]}`, cost: { kind: "const", value: 0 } as const, maxRank: 1, standing: { trackId: "orbit", min: 3 } },
-  { id: rungNode(career.id, 3), label: `${career.label} ${RUNG_NAMES[2]}`, cost: { kind: "const", value: 0 } as const, maxRank: 1, requires: [rungNode(career.id, 2)], standing: { trackId: "orbit", min: 9 } },
+export const CAREER_NODES: readonly UpgradeNodeDef[] = CAREERS.flatMap((career): UpgradeNodeDef[] => [
+  { id: rungNode(career.id, 2), label: `${career.label} ${RUNG_NAMES[1]}`, cost: { kind: "const", value: 0 } as const, maxRank: 1, standing: { gte: ["standing.orbit", 3] } },
+  { id: rungNode(career.id, 3), label: `${career.label} ${RUNG_NAMES[2]}`, cost: { kind: "const", value: 0 } as const, maxRank: 1, requires: [rungNode(career.id, 2)], standing: { gte: ["standing.orbit", 9] } },
 ]);
 
 export const CAREER_NODE_IDS: ReadonlySet<string> = new Set(CAREER_NODES.map((node) => node.id));
@@ -278,7 +279,7 @@ export function rungProgressIn(view: CareerView, member: MemberState): RungProgr
   const rung = rungIn(view, member);
   const have = view.standing.standing(member.id, "orbit");
   const nextRung: 2 | 3 | null = rung === 1 ? 2 : rung === 2 ? 3 : null;
-  const needs = nextRung === null ? null : CAREER_NODES.find((node) => node.id === rungNode(career.id, nextRung))!.standing.min;
+  const needs = nextRung === null ? null : predicateFloor(CAREER_NODES.find((node) => node.id === rungNode(career.id, nextRung))!.standing, "standing.orbit");
   const buy = nextRung === null ? null : view.tree.canBuy(rungNode(career.id, nextRung), member.id);
   return {
     career, rung, nextRung,
