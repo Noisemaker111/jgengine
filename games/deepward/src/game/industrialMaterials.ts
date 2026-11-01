@@ -16,7 +16,7 @@ export const INDUSTRIAL = {
   // Pure reflective metal disappears between fixtures without a reflection map.
   steel: { color: PALETTE.steel, roughness: 0.46, metalness: 0.68 },
   brass: { color: PALETTE.brass, roughness: 0.46, metalness: 0.7 },
-  paint: { color: PALETTE.panel, roughness: 0.76, metalness: 0 },
+  paint: { color: PALETTE.wall, roughness: 0.76, metalness: 0 },
   floor: { color: "#4b5c61", roughness: 0.88, metalness: 0 },
   rubber: { color: "#202a2c", roughness: 0.94, metalness: 0 },
   glass: { color: "#193a40", roughness: 0.16, metalness: 0, transparent: true, opacity: 0.72, depthWrite: false },
