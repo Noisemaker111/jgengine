@@ -160,7 +160,7 @@ export const objectModels: Record<string, ModelConfig> = (() => {
     obj_driveway: {
       url: CITY_BLOCK_URL,
       anchor: "origin",
-      material: { color: "#c4beb2", scan: librarySurfaceScan("concrete/poured", { tint: 0 }) },
+      material: { color: "#c4beb2", scan: librarySurfaceScan("concrete/smooth", { tint: 0 }) },
     },
     // The plaza's paving is the same unit block flattened to a slab, laid in plaza stone.
     obj_plaza_paving: {

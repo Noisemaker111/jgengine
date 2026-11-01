@@ -18,12 +18,12 @@ const GROUND_MATERIAL = "ambientcg-ground055s";
 
 /**
  * The scans behind the library surfaces the streets and buildings name (`asphalt/boulevard`,
- * `concrete/poured`, `paving/stone`, and the `facade/*` brick and glass walls), listed by source id so provisioning
+ * `concrete/smooth`, `paving/stone`, and the `facade/*` brick and glass walls), listed by source id so provisioning
  * pulls them.
  */
 const SURFACE_MATERIALS = [
   "ambientcg-asphalt012",
-  "ambientcg-concrete013",
+  "ambientcg-concrete006",
   "ambientcg-pavingstones002",
   "ambientcg-facade018a",
   "ambientcg-facade019a",

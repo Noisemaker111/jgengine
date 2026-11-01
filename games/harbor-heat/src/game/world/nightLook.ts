@@ -24,7 +24,7 @@ function lightPools(ctx: GameContext): void {
   const night = nightStore(ctx);
   clearPools(ctx);
   for (const [x, z] of night.lamps) {
-    const id = ctx.scene.object.place("obj_lamp_pool", x, ctx.world.groundHeightAt(x, z) + 0.07, z);
+    const id = ctx.scene.object.place("obj_lamp_pool", x, ctx.world.groundHeightAt(x, z) + 0.26, z);
     ctx.scene.object.setColliders(id, {});
     night.pools.push(id);
   }
