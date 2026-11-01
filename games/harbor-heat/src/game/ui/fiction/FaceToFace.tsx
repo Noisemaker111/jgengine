@@ -6,7 +6,8 @@ import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
 import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { entityModels } from "../../world/models";
-import { HH, KeyLegend, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
+import { KeyLegend, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
+import { HH } from "../theme";
 
 /** One reply the courier can give. */
 export interface Reply {

@@ -1,41 +1,64 @@
 import { describe, expect, test } from "bun:test";
 
-import { compareBoat, holtropExampleSubject, kvlcc2Subject, referenceSubjectFor, speedboatSubject, surgeAddedMass } from "./boatComparison";
+import type { BoatTuning } from "@jgengine/core/physics/boatDynamics";
+import { compareBoat, holtropExampleSubject, kvlcc2Subject, referenceSubjectFor, speedboatSubject, surgeAddedMass, type BoatComparisonSubject } from "./boatComparison";
+
+function failures(subject: BoatComparisonSubject): string[] {
+  return compareBoat(subject).checks.filter((check) => !check.pass).map((check) => `${check.label}: ${(100 * check.gap).toFixed(1)}%`);
+}
 
 describe("compareBoat", () => {
-  test("lines the Holtrop–Mennen example ship's game build up against its reference and the published 25-knot resistance", () => {
-    const table = compareBoat(holtropExampleSubject());
-    const row = (label: string) => table.rows.find((entry) => entry.label.startsWith(label));
-    const atDesign = row("resistance at 25.0 kn");
+  test("boatFromReference's Holtrop–Mennen ship holds resistance, top speed and RAOs to its reference, and the reference holds the published 25-knot resistance", () => {
+    const subject = holtropExampleSubject();
+    const table = compareBoat(subject);
+    const atDesign = table.rows.find((entry) => entry.label.startsWith("resistance at 25.0 kn"));
     expect(Math.abs((atDesign?.reference ?? 0) / (atDesign?.real ?? 1) - 1)).toBeLessThan(1e-3);
-    // The game hull's drag is two orders of magnitude below the ship's, so it overshoots the ship's top speed.
-    expect(atDesign?.game).toBeLessThan(0.05 * (atDesign?.reference ?? 0));
-    expect(row("top speed")?.game).toBeGreaterThan(row("top speed")?.reference ?? 0);
-    expect(row("net bollard thrust")?.game).toBeCloseTo(row("net bollard thrust")?.reference ?? 0, 6);
+    expect(table.checks.map((check) => check.label)).toContain("top speed");
+    expect(table.checks.filter((check) => !check.pass)).toEqual([]);
   });
 
-  test("measures the speedboat's resistance, top speed and running trim on its planing reference", () => {
+  test("boatFromReference's speedboat holds Savitsky resistance and running trim, top speed on its outboard, and RAOs", () => {
     const table = compareBoat(speedboatSubject());
-    expect(table.rows.every((row) => Number.isFinite(row.reference))).toBe(true);
-    const trim = table.rows.find((row) => row.label.startsWith("running trim"));
-    expect(trim?.reference).toBeGreaterThan(1);
-    expect(trim?.reference).toBeLessThan(6);
-    const heave = table.rows.find((row) => row.label === "heave RAO, head seas λ = L");
-    // The game hull rides the surface point under it; a real hull a boat length long averages the wave out.
-    expect(Math.abs((heave?.game ?? 0) - 1)).toBeLessThan(0.02);
-    expect(heave?.reference).toBeLessThan(0.6);
+    expect(table.checks.filter((check) => check.label.startsWith("running trim"))).toHaveLength(2);
+    expect(table.checks.filter((check) => !check.pass)).toEqual([]);
   });
 
-  test("runs the KVLCC2 game build and its MMG model through the same turning circles and zig-zags, beside the tank", () => {
+  test("boatFromReference's KVLCC2 holds MMG turning circles and zig-zags, and the MMG model holds the tank", () => {
     const table = compareBoat(kvlcc2Subject());
     const row = (label: string) => table.rows.find((entry) => entry.label.startsWith(label));
     const tactical = row("tactical diameter, 35° to starboard");
     expect(Math.abs((tactical?.reference ?? 0) / (tactical?.real ?? 1) - 1)).toBeLessThan(0.07);
-    expect(Number.isFinite(tactical?.game)).toBe(true);
-    const overshoot = row("10/10 zig-zag, 1st overshoot");
-    expect(overshoot?.reference).toBeGreaterThan(3);
-    expect(Number.isFinite(overshoot?.game)).toBe(true);
-    expect(row("resistance at")?.unit).toBe("N");
+    expect(table.checks.filter((check) => check.label.includes("zig-zag"))).toHaveLength(3);
+    expect(table.checks.filter((check) => !check.pass)).toEqual([]);
+  });
+
+  test("a metric that drifts fails its tolerance", () => {
+    const subject = kvlcc2Subject();
+    const effects = subject.tuning.effects ?? {};
+    const resistance = effects.resistance;
+    const manoeuvring = effects.manoeuvring;
+    if (resistance === undefined || manoeuvring === undefined) throw new Error("kvlcc2 build lost its effects");
+    const drifted: BoatTuning = {
+      ...subject.tuning,
+      effects: {
+        ...effects,
+        resistance: { ...resistance, coefficient: 1.25 * (resistance.coefficient ?? 0) },
+        manoeuvring: { ...manoeuvring, derivatives: { ...manoeuvring.derivatives, Nr: 1.4 * manoeuvring.derivatives.Nr } },
+      },
+    };
+    const missed = failures({ ...subject, tuning: drifted });
+    expect(missed.some((label) => label.startsWith("resistance at"))).toBe(true);
+    expect(missed.some((label) => label.startsWith("tactical diameter"))).toBe(true);
+  });
+
+  test("the simple model a game builds by hand is reported, not passed", () => {
+    const simple: BoatTuning = { massKg: 900, length: 6, beam: 2.3, maxThrust: 7000, propSpeed: 30, planingSpeed: 8, steering: { kind: "outboard" } };
+    const table = compareBoat(referenceSubjectFor("speedboat", simple));
+    const resistance = table.checks.find((check) => check.label.startsWith("resistance at"));
+    expect(resistance?.pass).toBe(false);
+    const heave = table.rows.find((row) => row.label === "heave RAO, head seas λ = L");
+    // The simple hull rides the surface point under it; a hull a boat length long averages the wave out.
+    expect(Math.abs((heave?.game ?? 0) - 1)).toBeLessThan(0.02);
   });
 
   test("builds a reference for any game tuning, planing or not", () => {

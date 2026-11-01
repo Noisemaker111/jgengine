@@ -4,7 +4,7 @@ import { teleportPlayer } from "@jgengine/core/movement/teleport";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { ridingOf } from "@jgengine/core/scene/riding";
-import { createSummonedEncounter, type SummonCandidate, type SummonedEncounter, type SummonedEncounterState } from "@jgengine/core/summonedEncounter/summonedEncounter";
+import { createSummonedEncounter, type SummonCandidate, type SummonedEncounter, type SummonedEncounterState } from "../engine-local/summonedEncounter/summonedEncounter";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { ringWallSolids } from "@jgengine/core/world/worldSolids";
 

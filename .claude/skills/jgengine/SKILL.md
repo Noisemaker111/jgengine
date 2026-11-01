@@ -31,6 +31,8 @@ Break every feature into these before looking anything up: "supply drop" is a Sc
 | Inheritance | `inheritance/inheritance.ts` |
 | Motion track | `movement/motionTrack.ts` |
 
+The cookbook shows each common feature built from these in a few lines: [recipes/cookbook.md](recipes/cookbook.md).
+
 ## Domains
 
 | Load | When |

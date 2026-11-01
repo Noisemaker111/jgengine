@@ -3,11 +3,12 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { memorySaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import { upgradeSaveEnvelope } from "@jgengine/core/save/saveDocument";
 
 import { game } from "../game.config";
 import { loop } from "../loop";
 import { content } from "./content";
-import { handrollOf } from "./handroll";
+import { streetPlayOf } from "./streetPlay";
 import {
   HARBOR_SAVE_VERSION,
   STORE_POLICY,
@@ -16,7 +17,6 @@ import {
   harborSave,
   harborSaveDigest,
   loadHarborSave,
-  migrateHarborSave,
   saveHarborState,
 } from "./save";
 import { convoyRunners, mission, patchMission } from "./runState";
@@ -63,10 +63,10 @@ function watch(ctx: GameContext): void {
 }
 
 function run(ctx: GameContext, seconds: number): void {
-  const handroll = handrollOf(ctx);
+  const streetPlay = streetPlayOf(ctx);
   for (let t = 0; t < seconds; t += STEP) {
     ctx.time.advance(STEP);
-    handroll.tick(ctx, STEP);
+    streetPlay.tick(ctx, STEP);
   }
 }
 
@@ -75,9 +75,9 @@ describe("harbor-heat save document", () => {
     const backend = memorySaveBackend();
     const host = boot(backend);
     watch(host);
-    handrollOf(host).addHeat(host, 130);
+    streetPlayOf(host).addHeat(host, 130);
     run(host, 0.3);
-    const committed = handrollOf(host).wanted();
+    const committed = streetPlayOf(host).wanted();
     expect(committed.heat).toBeGreaterThan(0);
     expect(committed.stars).toBeGreaterThan(0);
     expect(committed.search).not.toBeNull();
@@ -87,13 +87,13 @@ describe("harbor-heat save document", () => {
     // The reload path: the world snapshot first, the run document after it.
     const reboot = await bootLoaded(backend);
 
-    const restored = handrollOf(reboot).wanted();
+    const restored = streetPlayOf(reboot).wanted();
     expect(restored.heat).toBeCloseTo(committed.heat, 6);
     expect(restored.stars).toBe(committed.stars);
     expect(restored.peakStars).toBe(committed.peakStars);
     // The search area is the anchor's, recomputed by the next tick the way the live game does it.
     run(reboot, 0.05);
-    const searching = handrollOf(reboot).wanted();
+    const searching = streetPlayOf(reboot).wanted();
     expect(searching.search?.center).toEqual(committed.search?.center);
     expect(searching.search!.radius).toBeCloseTo(committed.search!.radius, 0);
     expect(cashEntries(reboot, 5).some((entry) => entry.reason === "bounty")).toBe(true);
@@ -108,9 +108,9 @@ describe("harbor-heat save document", () => {
     expect(await harborSave(host).peek("default")).toBeNull();
 
     watch(host);
-    handrollOf(host).addHeat(host, 130);
+    streetPlayOf(host).addHeat(host, 130);
     run(host, 0.3);
-    const heat = handrollOf(host).wanted().heat;
+    const heat = streetPlayOf(host).wanted().heat;
     expect(heat).toBeGreaterThan(0);
 
     expect(await harborSave(host).peek("default")).toBeNull();
@@ -166,7 +166,7 @@ describe("harbor-heat save document", () => {
     const backend = memorySaveBackend();
     const host = boot(backend);
     watch(host);
-    handrollOf(host).addHeat(host, 90);
+    streetPlayOf(host).addHeat(host, 90);
     run(host, 0.3);
     earn(host, 250, "stash-claim", "stash_1");
     await saveHarborState(host);
@@ -182,7 +182,7 @@ describe("harbor-heat save document", () => {
 
   test("a version-0 document migrates to the current shape", () => {
     const legacy = { systems: { wanted: { police: {}, peakStars: 2 } }, time: 12 };
-    const migrated = migrateHarborSave(legacy, 0);
+    const migrated = upgradeSaveEnvelope(legacy, { game: "harbor-heat", version: HARBOR_SAVE_VERSION });
     expect(migrated.version).toBe(HARBOR_SAVE_VERSION);
     expect(migrated.game).toBe("harbor-heat");
     expect(migrated.systems.wanted).toEqual({ police: {}, peakStars: 2 });

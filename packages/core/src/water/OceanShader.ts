@@ -3,6 +3,7 @@ const oceanCommon = `
 uniform float uTime;
 uniform vec2 uWaveDirections[6];
 uniform vec4 uWaveParams[6];
+uniform float uWavePhases[6];
 uniform float uChoppiness;
 uniform sampler2D uBedMap;
 uniform vec4 uBedRect;
@@ -51,7 +52,7 @@ void main() {
     vec4 wave = uWaveParams[i];
     float k = wave.x;
     float amplitude = wave.y * depthDamp;
-    float phase = k * dot(direction, local) - wave.w * uTime;
+    float phase = k * dot(direction, local) - wave.w * uTime + uWavePhases[i];
     float sine = sin(phase);
     float horizontal = wave.z * amplitude * uChoppiness;
     offset.xz += horizontal * direction * cos(phase);
@@ -131,7 +132,7 @@ vec3 jgWaveNormal(vec2 local, float damp) {
     vec4 wave = uWaveParams[i];
     float k = wave.x;
     float amplitude = wave.y * damp;
-    float phase = k * dot(direction, local) - wave.w * uTime;
+    float phase = k * dot(direction, local) - wave.w * uTime + uWavePhases[i];
     float slope = amplitude * k * cos(phase);
     n.xz -= direction * slope;
     n.y -= wave.z * amplitude * uChoppiness * k * sin(phase);

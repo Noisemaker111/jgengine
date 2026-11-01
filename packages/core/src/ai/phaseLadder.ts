@@ -1,3 +1,4 @@
+import { clamp01 } from "../math/scalar";
 import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 
 /** The warning a phase change gives, and how long it stays up. */
@@ -63,10 +64,6 @@ function validate(phases: readonly PhaseLike[]): void {
   }
 }
 
-function clampFraction(fraction: number): number {
-  return Math.max(0, Math.min(1, Number.isFinite(fraction) ? fraction : 1));
-}
-
 /**
  * The same ladder read as the share of the value already gone, so the threshold part's ascending
  * cut points fit a list authored high to low. Built once per phase list.
@@ -84,7 +81,7 @@ function spentLadder(phases: readonly PhaseLike[]): readonly ThresholdBoundary<s
 /** The index of the phase a fraction sits in, resolved through the threshold part's cut points. */
 function phaseIndexAt(phases: readonly PhaseLike[], fraction: number): number {
   const ladder = spentLadder(phases);
-  const band = tierAt(ladder, 1 - clampFraction(fraction));
+  const band = tierAt(ladder, 1 - clamp01(Number.isFinite(fraction) ? fraction : 1));
   if (band === null) return phases.length - 1;
   const index = ladder.findIndex((entry) => entry.id === band.id);
   return index < 0 ? phases.length - 1 : index;

@@ -28,10 +28,10 @@ const pools: AffixPool[] = [
 ];
 
 const rarities: RarityTier[] = [
-  { id: "common", weight: 50, affixCount: 1 },
-  { id: "uncommon", weight: 28, affixCount: 2, statScale: 1.12, namePart: "Tuned" },
-  { id: "rare", weight: 16, affixCount: 2, statScale: 1.3, namePart: "Custom" },
-  { id: "epic", weight: 6, affixCount: 3, statScale: 1.55, namePart: "Prototype" },
+  { id: "common", at: 0, weight: 50, affixCount: 1 },
+  { id: "uncommon", at: 1, weight: 28, affixCount: 2, statScale: 1.12, namePart: "Tuned" },
+  { id: "rare", at: 2, weight: 16, affixCount: 2, statScale: 1.3, namePart: "Custom" },
+  { id: "epic", at: 3, weight: 6, affixCount: 3, statScale: 1.55, namePart: "Prototype" },
 ];
 
 const catalog: LootCatalog = {

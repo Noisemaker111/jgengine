@@ -93,32 +93,6 @@
 - `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
 - `createAgentSystem` (function): function createAgentSystem(config: AgentSystemConfig): AgentSystem — One call for a whole cast: a game hands over its needs, options, mood weights, schedules and one target selector, and gets back a running system with a single `tick(dt)` and a save blob that goes into the game's own save.
 
-## @jgengine/core/basebuilding/BaseStructures.draw
-
-- `BaseStructures` (function): function BaseStructures({ building, colorOf, ghost, validColor = "#34d399", invalidColor = "#f87171" }: BaseStructuresProps): React.JSX.Element — Draws a base-building model: every placed piece as its solid boxes, darkened as it loses health, plus the build ghost tinted valid or invalid. Re-renders only when the model's version moves or the ghost changes.
-- `BaseStructuresProps` (interface): interface BaseStructuresProps — Props for {@link BaseStructures}.
-
-## @jgengine/core/basebuilding/baseBuilding
-
-- `BaseBuilding` (interface): interface BaseBuilding — Handle returned by {@link createBaseBuilding}.
-- `BaseBuildingConfig` (interface): interface BaseBuildingConfig — Everything a base-building model is made from.
-- `BaseBuildingState` (interface): interface BaseBuildingState — Serializable contents of a {@link BaseBuilding}.
-- `BasePiece` (interface): interface BasePiece — A piece standing in the world. `rotationY` uses the engine's entity convention.
-- `BaseVec3` (type): type BaseVec3 = readonly [number, number, number] — A `[x, y, z]` triple in metres.
-- `StructureBox` (interface): interface StructureBox — One solid box of a piece, in the piece's local space (origin at the piece's snap origin).
-- `StructureDamage` (interface): interface StructureDamage extends StructureRemoval — Result of {@link BaseBuilding.damage}.
-- `StructureGroundRule` (interface): interface StructureGroundRule — Where a shape may stand without snapping to another piece.
-- `StructureHit` (interface): interface StructureHit — A piece hit by {@link BaseBuilding.raycast}.
-- `StructurePieceDef` (interface): interface StructurePieceDef — One buildable piece: a shape in a tier with its hit points.
-- `StructurePlan` (interface): interface StructurePlan — Where a piece would go for a cursor, and whether it may.
-- `StructurePlanBlock` (type): type StructurePlanBlock = "unknown-piece" | "overlap" | "no-support" | "too-steep" — Why a plan cannot be placed: an unknown piece, something in the way, nothing to stand on, or ground too steep.
-- `StructurePlanOptions` (interface): interface StructurePlanOptions — Options for {@link BaseBuilding.plan}.
-- `StructureRemoval` (interface): interface StructureRemoval — What a removal or a destroying blow took down: the piece itself first, then everything that lost support.
-- `StructureShapeDef` (interface): interface StructureShapeDef — A piece shape: its solid boxes (the same boxes collide, raycast and draw), its snap sockets and where it may stand. Socket positions are local; socket `yaw` follows `placement/buildSockets` (the angle `atan2(z, x)` of the socket's outward direction).
-- `StructureTierDef` (interface): interface StructureTierDef — A material tier: how much of each damage class reaches its pieces.
-- `StructureWorldBox` (interface): interface StructureWorldBox — A world box of a placed or planned piece, ready for a mesh or a solid.
-- `createBaseBuilding` (function): function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding — Snap-together base building: pieces of a shape and a material tier, snapped socket to socket through `placement/buildSockets` or stood on terrain, refused when they overlap what stands, held up by a support graph that drops whatever loses its last path to the ground, damaged per tier and damage class, with doors that swing and solids that collide. Pure and serializable; the game owns items, costs and input, `BaseStructures.draw` draws it.
-
 ## @jgengine/core/behaviour/behaviour
 
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.
@@ -140,7 +114,7 @@
 ## @jgengine/core/breeding/breeding
 
 - `BreedingEgg` (interface): interface BreedingEgg<P> — A fertilized egg lying where it was laid, carrying its young one's genes `P`; it progresses only inside its incubation band.
-- `BreedingEggSpec` (interface): interface BreedingEggSpec — An egg's temperature band in °C, inclusive, and the seconds it survives out of that band before it is lost.
+- `BreedingEggSpec` (interface): interface BreedingEggSpec — An egg's incubation condition and the seconds it survives while the condition fails before it is lost.
 - `BreedingEvent` (type): type BreedingEvent<P> = | { type: "conceived"; mother: string; father: string; species: string; count: number } | { type: "laid"; egg: BreedingEgg<P> } | { type: "hatched"; egg: BreedingEgg<P> } | { type: "eggLost"; egg: BreedingEgg<P> } | { type: "born"; mother: string; species: string; offspring: … — What happened this tick.
 - `BreedingField` (interface): interface BreedingField<P> — The breeding of a world's creatures, made by {@link createBreedingField}.
 - `BreedingOffspring` (interface): interface BreedingOffspring — A young one growing up: its stage, how far it has grown (0-1), its bond (0-1), the care it wants now and when it next asks.
@@ -149,6 +123,7 @@
 - `BreedingSnapshot` (interface): interface BreedingSnapshot<P> — Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, the growing young and speeds.
 - `BreedingSpecies` (interface): interface BreedingSpecies — How one species breeds.
 - `BreedingSpeeds` (interface): interface BreedingSpeeds — How much faster each part of breeding runs than its times say. All start at 1.
+- `GrowthStage` (interface): interface GrowthStage — One growth stage: its name and the share of a species' maturation time it lasts. Shares add up to 1.
 - `MateCandidate` (interface): interface MateCandidate — A creature offered for mating this tick.
 - `createBreedingField` (function): function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> — Pairs left together mate, a mother lays an egg that hatches only in its temperature band or carries her young to birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace through the game's stage list and ask for care on an interval; each answered request adds its share of the bond. Species times, care kinds, stages, the size of a litter and what a young one is all come from the game.
 
@@ -1021,7 +996,7 @@
 - `TribeEvent` (interface): interface TribeEvent — One entry in a tribe's bounded event log. Optional fields present only when meaningful.
 - `TribeEventType` (type): type TribeEventType = | "member-added" | "member-removed" | "member-left" | "rank-changed" | "founder-transferred" | "asset-registered" | "asset-unregistered" | "alliance-formed" | "alliance-broken" — The kind of change recorded in a tribe's event log (membership, ownership, or alliance).
 - `TribeMemberRecord` (interface): interface TribeMemberRecord — A member of a tribe and the rank id that governs their permissions.
-- `TribeRankDef` (interface): interface TribeRankDef — A rank within a group's hierarchy. Higher `level` means more authority: a member can only manage (kick, re-rank) members strictly below their own level, and cannot promote anyone to a level at or above their own. `permissions` are opaque, genre-agnostic capability slugs the game checks with {@link Tribe.can} (e.g. `"build"`, `"demolish"`, `"invite"`, `"kick"`, `"manage-ranks"`, plus the {@link AssetAction} slugs `"inventory"`, `"use"`, `"command"` for group-owned assets). A `bypass` rank (an admin) skips every permission check, exactly like the founder.
+- `TribeRankDef` (interface): interface TribeRankDef extends ThresholdBoundary — A rank within a group's hierarchy, a Ladder step: higher `at` means more authority: a member can only manage (kick, re-rank) members strictly below their own `at`, and cannot promote anyone to a `at` at or above their own. `permissions` are opaque, genre-agnostic capability slugs the game checks with {@link Tribe.can} (e.g. `"build"`, `"demolish"`, `"invite"`, `"kick"`, `"manage-ranks"`, plus the {@link AssetAction} slugs `"inventory"`, `"use"`, `"command"` for group-owned assets). A `bypass` rank (an admin) skips every permission check, exactly like the founder.
 - `TribeRegistry` (interface): interface TribeRegistry — A collection of {@link Tribe tribes} with mutual alliance management and cross-member relation lookups. Alliances are kept symmetric here (both sides updated together), and member-to-member relations resolve through tribe membership + alliances, mirroring the `faction` graph vocabulary.
 - `TribeRegistryDeps` (interface): interface TribeRegistryDeps — Injected dependencies for {@link createTribeRegistry} (e.g. a `now()` clock for event timestamps).
 - `TribeRegistrySnapshot` (interface): interface TribeRegistrySnapshot — Full serializable state of a tribe registry — every tribe's snapshot in one payload.
@@ -1886,7 +1861,7 @@
 - `tick` (function): function tick<TSpec, TReserve, TOutput>(state: WorkQueueState<TSpec, TReserve>, config: WorkQueueConfig<TSpec, TReserve, TOutput>, dt: number): TickResult<TSpec, TReserve, TOutput> — Advance the queue by `dt` seconds. Promotes queued jobs into up to `concurrency` active slots, advances active jobs, and completes those that reach their duration — emitting `started`/`completed` events in deterministic order. A large `dt` catches up across many jobs in one call: when a job completes with leftover time, the freed slot promotes the next queued job and applies the remainder, so a reconnect or save/load gap resolves in a single bounded pass. Completed jobs are removed from the returned state.
 - `tickProduction` (function): function tickProduction(def: ProductionBuildingDef, state: ProductionState, input: ProductionTickInput): ProductionState — ⚠ undocumented
 - `tickRaceSession` (function): function tickRaceSession(session: RaceSessionState, dt: number): RaceSessionState — Advance the session by `dt` seconds: bleed the countdown down and flip to `racing` when it reaches zero, or accumulate `elapsed` while `racing`. `idle` and `finished` are inert. Overshoot past the countdown is dropped rather than banked into `elapsed`, so the race clock always starts from zero.
-- `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
+- `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean; readonly descending?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
 - `timeScaledRarity` (function): function timeScaledRarity<TCtx extends { elapsedMs: number }>(options: TimeScaledRarityOptions): LootModifier<TCtx> — Multiply weighted odds (or independent chances, clamped to one) by a caller-authored elapsed-time curve. Keeps source tables unchanged and uses the existing pipeline's modifier provenance. Elapsed time and multipliers must be finite and nonnegative; invalid curves reject the roll.
 - `touchButtonShape` (function): function touchButtonShape(action: string): TouchButtonShape — Default silhouette for an action; `circle` when nothing more specific fits.
 - `touchCode` (function): function touchCode(action: string): string — ⚠ undocumented
@@ -2091,7 +2066,7 @@
 - `AffixPool` (interface): interface AffixPool { id: string; affixes: readonly AffixDef[] } — ⚠ undocumented
 - `AffixRoller` (interface): interface AffixRoller { rollRarity(rng: () => number): RarityTier; roll(base: ItemBaseDef, rarityId: string, rng: () => number): RolledItem; rollRandom(base: ItemBaseDef, rng: () => number): RolledItem } — ⚠ undocumented · used by `createAffixRoller`: Rolls randomized gear from a base item: a weighted rarity tier scales base stats and picks prefix/suffix affixes that name and modify the it…
 - `ItemBaseDef` (interface): interface ItemBaseDef { id: string; name: string; baseStats: Record<string, number>; pools: readonly string[] } — ⚠ undocumented
-- `RarityTier` (interface): interface RarityTier { id: string; weight: number; affixCount: number | [number, number]; statScale?: number; namePart?: string; pools?: readonly string[] } — ⚠ undocumented
+- `RarityTier` (interface): interface RarityTier extends ThresholdBoundary — A rarity step of the Ladder: `at` is its place in the rarity order, the roll itself is by `weight`.
 - `RolledAffix` (interface): interface RolledAffix { id: string; stat: string; op: AffixOp; value: number } — ⚠ undocumented
 - `RolledItem` (interface): interface RolledItem { baseId: string; rarity: string; name: string; affixes: readonly RolledAffix[]; stats: Record<string, number> } — ⚠ undocumented
 - `RollerConfig` (interface): interface RollerConfig { pools: readonly AffixPool[]; rarities: readonly RarityTier[] } — ⚠ undocumented · used by `createAffixRoller`: Rolls randomized gear from a base item: a weighted rarity tier scales base stats and picks prefix/suffix affixes that name and modify the it…
@@ -2840,16 +2815,6 @@
 - `setValue` (function): function setValue(record: Record<string, number>, key: string, value: number, bounds?: NumericBounds): number — Set `key` to `value` (clamped to `bounds`), writing the record in place. Returns the stored value.
 - `towardValue` (function): function towardValue(record: Record<string, number>, key: string, target: number, maxDelta: number, bounds?: NumericBounds): number — Step `key` toward `target` by at most `maxDelta` without overshooting, then clamp to `bounds`. Writes in place and returns the stored value.
 
-## @jgengine/core/remains/remains
-
-- `Remains` (interface): interface Remains<T = undefined> — A heap of stacks left at a place: what it holds, when it falls apart, and whatever was kept with it.
-- `RemainsField` (interface): interface RemainsField<T = undefined> — The remains lying in a world: left on death, taken back from, and gone when they fall apart.
-- `RemainsLeaveInput` (interface): interface RemainsLeaveInput<T = undefined> — What {@link RemainsField.leave} is given.
-- `RemainsOptions` (interface): interface RemainsOptions — {@link createRemainsField} knobs.
-- `RemainsSnapshot` (interface): interface RemainsSnapshot<T = undefined> — Everything a remains field holds, for a save.
-- `RemainsStack` (interface): interface RemainsStack — One stack held in remains: an item id and how many.
-- `createRemainsField` (function): function createRemainsField<T = undefined>(options: RemainsOptions): RemainsField<T> — Remains: a heap of stacks left at a place that can be taken from, and falls apart after a while (a body where someone died, a crate where it landed). The owner, or anyone the game allows, walks back and takes it; after `lastsSeconds` it falls apart and its contents are lost. Keep anything about it the game needs in its typed `data`. Pure state on the game's clock; saving is a snapshot.
-
 ## @jgengine/core/rules/predicate
 
 - `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value; `in` asks whether a scalar fact is one of a listed set, and `includes` whether a list fact holds a named value.
@@ -2932,6 +2897,7 @@
 - `GameSaveSystem` (interface): interface GameSaveSystem<T = unknown> — One stateful system inside a game save: a stable `name` (its section key in the document) and the `snapshot()`/`restore()` pair every Lane B module exposes. The name is the contract — a document written by one build restores into the next build's system with the same name. `reset` runs when a loaded slot has no section for this system (a fresh slot), so switching to an empty slot starts a new game instead of leaving the previous one's state behind; a system without it is left as-is.
 - `createGameSave` (function): function createGameSave(config: GameSaveConfig): GameSave — Create a {@link GameSave}. Register every stateful system once; `capture()` writes one versioned document with a section per system, `save()`/`touch()` persist it through the injected backend (autosave cadence is the caller's), `load()` restores every section and the shared RNG cursor, and `digest()`/`digests()` give a determinism test a hash over the whole state.
 - `gameSaveDigest` (function): function gameSaveDigest(document: GameSaveDocument): string — A stable hash over the state-bearing part of a document — every system section, the world clock and the shared RNG cursor — excluding the wall-clock `savedAt`, which is not state.
+- `upgradeSaveEnvelope` (function): function upgradeSaveEnvelope(document: unknown, options: { readonly game: string; readonly version: number }): GameSaveDocument — Lift a stored payload into the current {@link GameSaveDocument} envelope: keep its sections, clock and RNG fields where they have the right type, fill the rest, and stamp `game` and `version`. It is what `createGameSave` does to an older document when the game passes no `migrate`, and a game's own `migrate` can call it first and then reshape only the sections that changed.
 
 ## @jgengine/core/save/saveSlotIndex
 
@@ -3200,34 +3166,6 @@
 - `StoreHandle` (interface): interface StoreHandle<T> — A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single type parameter is fixed at definition; `read`/`write`/`update` never widen to `unknown`, so no call site repeats `store.get(key) as T`. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `store.get`/`store.set` pair gives up the moment it forks run state into a module-level singleton.
 - `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a React selector, no allocation on a hot path). A value that carries functions (a closure-based run store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in place. Hold such objects with `perContext` when they need no store notifications.
 
-## @jgengine/core/subdual/subdualFeeding
-
-- `FeedingDose` (interface): interface FeedingDose — A dose that releases into the subdual meter over some seconds.
-- `FeedingFood` (interface): interface FeedingFood — One food a subdued creature will eat. The order foods are listed in is the order it prefers them; every number is the caller's.
-- `FeedingSupply` (interface): interface FeedingSupply — What a subdued creature holds, as the feeding loop reads and spends it.
-- `SubdualFeeding` (interface): interface SubdualFeeding — Winning over creatures by keeping them subdued and feeding them: hits and doses fill a subdual meter, the creature goes down once it reaches its capacity, it eats what it holds on its own clock (the first food in the caller's list it has), each meal fills the progress meter and costs quality, damage taken while down costs quality too, and it gets away — losing the progress — when the subdual meter empties. Levels scale the caller's tables, never a formula here.
-- `SubdualFeedingConfig` (interface): interface SubdualFeedingConfig — How one kind of creature goes down and is won over. Every rate, list and threshold is the caller's.
-- `SubdualFeedingEvent` (type): type SubdualFeedingEvent = | { type: "subdued" } | { type: "ate"; itemId: string } | { type: "released" } | { type: "won"; quality: number } — What changed this tick.
-- `SubdualFeedingState` (interface): interface SubdualFeedingState — One tracked creature's progress. Plain data, JSON round-trips.
-- `createSubdualFeeding` (function): function createSubdualFeeding(configs: Readonly<Record<string, SubdualFeedingConfig>>): SubdualFeeding — Track subdual, feeding and quality for every creature the caller names.
-
-## @jgengine/core/summonedEncounter/summonedEncounter
-
-- `CostSource` (interface): interface CostSource — What the summoner carries, for a cost: how many of an item, and taking them.
-- `RefusedCandidate` (interface): interface RefusedCandidate — A candidate the portal left behind, and why.
-- `SummonCandidate` (interface): interface SummonCandidate — Someone the portal could take in and where they stood to be sent back to.
-- `SummonCheck` (interface): interface SummonCheck — What a requirement check found: what the source is short of, and whether the rest of the requirement held.
-- `SummonResult` (type): type SummonResult = | { ok: true } | { ok: false; reason: "busy" | "unknown" | "requirement"; check?: SummonCheck } — What a summon did.
-- `SummonReturn` (interface): interface SummonReturn — Who goes back where, when a fight ends.
-- `SummonTier` (interface): interface SummonTier — One difficulty of a summoned fight: what the summon spends and what else it asks.
-- `SummonedEncounter` (interface): interface SummonedEncounter<C extends SummonCandidate> — A fight started by meeting a requirement at a place, with its own time limit, outcome and trip home.
-- `SummonedEncounterEvent` (type): type SummonedEncounterEvent<C extends SummonCandidate> = | { type: "entered"; tier: string; admitted: readonly C[]; refused: readonly RefusedCandidate[] } /** The portal closed with no lead kind in range: the cost is spent. */ | { type: "closed"; tier: string } | { type: "won"; tier: string; party: … — Things that happened on one step of the encounter clock.
-- `SummonedEncounterHooks` (interface): interface SummonedEncounterHooks<C extends SummonCandidate> — What the encounter clock asks the game each step.
-- `SummonedEncounterOptions` (interface): interface SummonedEncounterOptions — How a summoned fight runs: the tiers, the portal, who may come in, and how long the winners stay.
-- `SummonedEncounterPhase` (type): type SummonedEncounterPhase = "idle" | "portal" | "fight" | "victory" — Where a summoned encounter stands: nothing summoned, the portal counting down, the fight, or the winners' wait.
-- `SummonedEncounterState` (interface): interface SummonedEncounterState — Serializable encounter state.
-- `createSummonedEncounter` (function): function createSummonedEncounter<C extends SummonCandidate>(options: SummonedEncounterOptions): SummonedEncounter<C> — A fight a game starts by meeting a requirement at a place: the summoner pays a tier's cost and its extra condition, a portal counts down, then takes every candidate in range up to each kind's cap, each remembered where they stood. The fight is won when the target dies, after which the winners stay `victorySeconds` and are sent back; it is lost when no lead is left inside (or time runs out), and the party still inside is lost with it. The game owns the bodies, teleports and the target; this owns the rules and the clock. Deterministic in `now`; serializable.
-
 ## @jgengine/core/survival/bodyTemperature
 
 - `AmbientInput` (interface): interface AmbientInput — What sets the air temperature at a spot: its climate plus the hour, the weather, the height and nearby heat.
@@ -3334,7 +3272,7 @@
 - `ThresholdCrossing` (interface): interface ThresholdCrossing<Id = string> — A single boundary transition between a `before` and `after` value.
 - `ThresholdDirection` (type): type ThresholdDirection = "up" | "down" — Generic threshold-crossing detection over ordered numeric boundaries.
 - `crossThresholds` (function): function crossThresholds<Id>(boundaries: readonly ThresholdBoundary<Id>[], before: number, after: number, options: CrossThresholdsOptions = {}): ThresholdCrossing<Id>[] — Report every boundary crossed moving from `before` to `after`.
-- `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
+- `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean; readonly descending?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
 
 ## @jgengine/core/turn/commit
 

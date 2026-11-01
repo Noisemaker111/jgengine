@@ -22,8 +22,8 @@ const pools: AffixPool[] = [
 ];
 
 const rarities: RarityTier[] = [
-  { id: "common", weight: 4, affixCount: 1 },
-  { id: "rare", weight: 2, affixCount: 2, statScale: 1.2, namePart: "Fine" },
+  { id: "common", at: 0, weight: 4, affixCount: 1 },
+  { id: "rare", at: 1, weight: 2, affixCount: 2, statScale: 1.2, namePart: "Fine" },
 ];
 
 const bases: LootBaseDef[] = [

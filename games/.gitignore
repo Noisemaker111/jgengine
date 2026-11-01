@@ -3,3 +3,5 @@ shots/
 !**/public/models/imported/
 **/public/materials/*
 !**/public/materials/imported/
+**/public/sprites/*
+!**/public/sprites/imported/

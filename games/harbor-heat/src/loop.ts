@@ -17,7 +17,7 @@ import { enemyById } from "./game/entities/enemies/catalog";
 import { landHit } from "./game/combat/hitModel";
 import { earn, openBooks, recordWalletChange, spend } from "./game/cash";
 import { lootTables } from "./game/entities/enemies/loot-tables";
-import { drivingStore, raceStore, handrollOf } from "./game/handroll";
+import { drivingStore, raceStore, streetPlayOf } from "./game/streetPlay";
 import { vehicleById } from "./game/entities/vehicles/catalog";
 import { advanceBustedHold, BUSTED_HOLD_SEC, BUSTED_RADIUS, bustedFine, clinicFee } from "./game/failStates";
 import { itemUseHandlers, resetWeaponState } from "./game/items/use-handlers";
@@ -168,8 +168,8 @@ function tickRaceEconomy(ctx: GameContext): void {
 
 /** A cop on top of an on-foot wanted player for a sustained beat makes the arrest. */
 function tickBusted(ctx: GameContext, dt: number): void {
-  const stars = handrollOf(ctx).wanted().stars;
-  if (stars === 0 || handrollOf(ctx).drivingVehicleId() !== null) {
+  const stars = streetPlayOf(ctx).wanted().stars;
+  if (stars === 0 || streetPlayOf(ctx).drivingVehicleId() !== null) {
     patchMission(ctx, { bustedHold: 0 });
     return;
   }
@@ -190,7 +190,7 @@ function tickBusted(ctx: GameContext, dt: number): void {
   if (fine > 0) spend(ctx, fine, "busted-fine");
   const y = ctx.world.groundHeightAt(HHPD_POS[0], HHPD_POS[2]);
   ctx.scene.entity.setPose(ctx.player.userId, { position: [HHPD_POS[0], y, HHPD_POS[2]] });
-  handrollOf(ctx).clearWanted(ctx);
+  streetPlayOf(ctx).clearWanted(ctx);
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "BUSTED", kind: "warn" });
   finishCourier(ctx, false);
   failGigs(ctx, "busted");
@@ -202,7 +202,7 @@ function tickBusted(ctx: GameContext, dt: number): void {
 function tickWasted(ctx: GameContext): void {
   const health = ctx.scene.entity.stats.get(ctx.player.userId, "health");
   if (health === null || health.current > 0) return;
-  handrollOf(ctx).exitVehicle(ctx, true);
+  streetPlayOf(ctx).exitVehicle(ctx, true);
   ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: health.max });
   ctx.scene.entity.stats.set(ctx.player.userId, "armor", { current: 0 });
   const home = safehouseStore.read(ctx) === true ? SAFEHOUSE_POS : PLAYER_SPAWN;
@@ -210,7 +210,7 @@ function tickWasted(ctx: GameContext): void {
   ctx.scene.entity.setPose(ctx.player.userId, { position: [home[0], y, home[2]] });
   const fee = clinicFee(ctx.game.economy.balance(ctx.player.userId, "cash"));
   if (fee > 0) spend(ctx, fee, "clinic-fee");
-  handrollOf(ctx).clearWanted(ctx);
+  streetPlayOf(ctx).clearWanted(ctx);
   failActiveJob(ctx);
   finishCourier(ctx, false);
   failGigs(ctx, "wasted");
@@ -283,7 +283,7 @@ function onInit(ctx: GameContext): void {
     if (dead.instanceId !== undefined) onBountyKilled(ctx, dead.instanceId);
     if (vehicleById(catalogId) !== undefined && dead.instanceId !== undefined) {
       const at = dead.at ?? ctx.scene.entity.get(dead.instanceId)?.position ?? [0, 0, 0];
-      handrollOf(ctx).explodeVehicle(ctx, dead.instanceId, at);
+      streetPlayOf(ctx).explodeVehicle(ctx, dead.instanceId, at);
       cityEvent(ctx, { kind: "wreck", at });
     }
   });
@@ -332,7 +332,7 @@ function onTick(ctx: GameContext, dt: number): void {
     docClock.at = ctx.time.now();
     harborSave(ctx).touch();
   }
-  handrollOf(ctx).tick(ctx, dt);
+  streetPlayOf(ctx).tick(ctx, dt);
   tickTraffic(ctx, dt);
   tickResidents(ctx, dt);
   tickGangers(ctx, dt);

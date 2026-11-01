@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { clamp } from "@jgengine/core/math/scalar";
 import { synthesizeWaves, type GerstnerWave, type WaterSurfaceConfig } from "@jgengine/core/water/waterSurface";
 
 /** Waves the ocean shader draws; a longer {@link synthesizeWaves} set keeps its first six. */
@@ -155,10 +156,6 @@ function finiteOr(value: number | undefined, fallback: number): number {
   return value === undefined || !Number.isFinite(value) ? fallback : value;
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
 /** @internal */
 export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig {
   const quality = patch.quality ?? DEFAULT_OCEAN_CONFIG.quality;
@@ -207,21 +204,25 @@ export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig 
 export function buildOceanWaveUniforms(config: ResolvedOceanConfig): {
   directions: THREE.Vector2[];
   params: THREE.Vector4[];
+  phases: number[];
 } {
   const directions: THREE.Vector2[] = [];
   const params: THREE.Vector4[] = [];
+  const phases: number[] = [];
   for (let index = 0; index < MAX_OCEAN_WAVES; index += 1) {
     const wave = config.waves[index];
     if (wave === undefined) {
       directions.push(new THREE.Vector2(1, 0));
       params.push(new THREE.Vector4(1, 0, 0, 0));
+      phases.push(0);
       continue;
     }
     const waveNumber = (Math.PI * 2) / wave.wavelength;
     directions.push(new THREE.Vector2(wave.direction[0], wave.direction[1]));
     params.push(new THREE.Vector4(waveNumber, wave.amplitude, wave.steepness, wave.speed * waveNumber));
+    phases.push(wave.phase ?? 0);
   }
-  return { directions, params };
+  return { directions, params, phases };
 }
 
 /** Bed-map texels per side for a bed spanning `span` metres: the authored count, else about one per two metres, 16..256. @internal */

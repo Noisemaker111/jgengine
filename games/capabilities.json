@@ -265,6 +265,16 @@
       "intent": "fresh serializable state for one difficulty-aware AI driver"
     },
     {
+      "id": "ai-driver-tail",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ai/driver",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "tail a moving target with a pace band measured along the chaser's nose"
+    },
+    {
       "id": "air-metrics",
       "packages": [
         "@jgengine/core"
@@ -285,6 +295,18 @@
         "kind": "devtools"
       },
       "intent": "witness-gated alert value, labelled cut points and a stand-down beat"
+    },
+    {
+      "id": "alert-search-area",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ai/alertLevel",
+      "gameFacing": true,
+      "probe": {
+        "kind": "devtools"
+      },
+      "intent": "last-sighting search circle that widens while the trail is cold"
     },
     {
       "id": "ambience-zones",
@@ -840,16 +862,6 @@
       "intent": "run authoritative game servers with sessions, ticking and persistence behind any transport"
     },
     {
-      "id": "auto-rig",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/autoRig",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "turn a static animal model (any downloaded GLB) into an animated, skinned creature with idle, walk, run, attack and death"
-    },
-    {
       "id": "auto-scroll",
       "packages": [
         "@jgengine/react"
@@ -888,26 +900,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "trim flat ambient under IBL and add a key light to directionless lighting"
-    },
-    {
-      "id": "base-building",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/basebuilding/baseBuilding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "snap-together base pieces with tiers, health, support collapse, doors, overlap rejection and collision solids"
-    },
-    {
-      "id": "base-structures-draw",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/basebuilding/BaseStructures.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "render placed base pieces and the snap build ghost"
     },
     {
       "id": "behavior-actions",
@@ -1027,7 +1019,57 @@
       "module": "@jgengine/core/physics/boatDynamics",
       "gameFacing": false,
       "probe": null,
-      "intent": "force-based powered hull — hull-speed drag hump, planing, keel, rudder that needs flow or outboard thrust"
+      "intent": "surge added mass of a hull from Lamb's prolate-spheroid coefficient"
+    },
+    {
+      "id": "boat-manoeuvring",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatManoeuvring",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "MMG hull manoeuvring forces from hull derivatives"
+    },
+    {
+      "id": "boat-planing",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatPlaning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Savitsky planing lift, friction, resistance and trimming moment at a trim"
+    },
+    {
+      "id": "boat-propeller",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatPropeller",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Wageningen B-series and polynomial open-water curves (K_T, K_Q against advance ratio)"
+    },
+    {
+      "id": "boat-resistance",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatResistance",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "ITTC-1957 and Schoenherr friction lines"
+    },
+    {
+      "id": "boat-seakeeping",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatSeakeeping",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "2-D heave added mass and radiation damping of a hull section (Frank close-fit)"
     },
     {
       "id": "body-bind",
@@ -1390,36 +1432,6 @@
       "intent": "sagging cable curve between two anchors"
     },
     {
-      "id": "cave-draw",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/cave/Cave.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "draw a cave's rock from its layout"
-    },
-    {
-      "id": "cave-layout",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/cave/caveLayout",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a walkable cave (tunnel and chamber) from a centreline: collision, spawn spots, inside test"
-    },
-    {
-      "id": "cave-mesh",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/cave/caveMesh",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "triangle meshes for a cave's inside and the hill around it, from its layout"
-    },
-    {
       "id": "cell-grid",
       "packages": [
         "@jgengine/core"
@@ -1528,46 +1540,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "editor-authorable procedural city district (streets, zoning, buildings, furniture)"
-    },
-    {
-      "id": "city-layout",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/city/cityLayout",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "one street, sidewalk, kerb and lot layout with real-world defaults and live sliders"
-    },
-    {
-      "id": "city-layout-sliders",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/city/cityLayout",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "live dev-runner sliders for every city layout number"
-    },
-    {
-      "id": "city-layout-store",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/city/cityLayout",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a city layout a game sets once and sliders change live"
-    },
-    {
-      "id": "city-lots",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/city/cityLayout",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "lay zoned building lots, corners and driveways from one city layout"
     },
     {
       "id": "client-error-reporting",
@@ -2070,26 +2042,6 @@
       "intent": "save and reopen named versioned player creations through injected durable storage"
     },
     {
-      "id": "creature-body",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/bodyPlan",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "give a creature an animated low-poly body from knobs (torso, legs, neck, head, tail, horns, frill, plates, wings...) without a model file"
-    },
-    {
-      "id": "creature-body-glb",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/bodyPlan",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a body plan as a raw node tree and clips, to edit or write out yourself before encoding"
-    },
-    {
       "id": "creature-driver",
       "packages": [
         "@jgengine/core"
@@ -2098,16 +2050,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "wild creatures that graze, flee, defend and hunt by temperament, and tamed ones that follow, stay and fight on order"
-    },
-    {
-      "id": "creature-gait",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/gait",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "idle, walk, run, attack and death clips for any limb-and-tail creature rig"
     },
     {
       "id": "creature-temperament",
@@ -4331,36 +4273,6 @@
       "intent": "unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing"
     },
     {
-      "id": "glb-data-url",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/glbWrite",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "load generated GLB bytes through the normal model loader with no file on disk"
-    },
-    {
-      "id": "glb-read",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/glbRead",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "take a static GLB apart into model-space triangles, materials and textures"
-    },
-    {
-      "id": "glb-write",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/glbWrite",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "write an animated binary glTF from meshes, nodes and clips made in code"
-    },
-    {
       "id": "glide",
       "packages": [
         "@jgengine/core"
@@ -4399,6 +4311,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "deliver rolled loot drops into inventory and currency"
+    },
+    {
+      "id": "granular-flow",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/granular/granularLayer",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield"
     },
     {
       "id": "grapple-swing",
@@ -7867,6 +7789,18 @@
       "intent": "pause a queued or active job in place, retaining its progress"
     },
     {
+      "id": "perception-nearby-roster",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/sensor/perception",
+      "gameFacing": true,
+      "probe": {
+        "kind": "devtools"
+      },
+      "intent": "observe one target from a capped, deterministic roster of nearby observers"
+    },
+    {
       "id": "perception-service",
       "packages": [
         "@jgengine/core"
@@ -8879,16 +8813,6 @@
       "intent": "familiarity and opinion between agents, with a bond that changes behaviour"
     },
     {
-      "id": "remains-field",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/remains/remains",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "leave what a fallen player carried where they fell, take it back stack by stack, lose it when the remains fall apart"
-    },
-    {
       "id": "render-fallback-diagnostics",
       "packages": [
         "@jgengine/core"
@@ -9287,6 +9211,18 @@
       "intent": "reciprocal collision avoidance between many steering agents"
     },
     {
+      "id": "save-envelope-upgrade",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/save/saveDocument",
+      "gameFacing": true,
+      "probe": {
+        "kind": "devtools"
+      },
+      "intent": "lift an older or pre-versioned save payload into the current document envelope"
+    },
+    {
       "id": "save-slot-card",
       "packages": [
         "@jgengine/core"
@@ -9475,6 +9411,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "reachable horizontal controls with visible overflow navigation and keyboard focus reveal"
+    },
+    {
+      "id": "sea-state",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/water/seaState",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Pierson–Moskowitz and JONSWAP wave spectra"
+    },
+    {
+      "id": "search-beat",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ai/searchBeat",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "walk waypoints around a search circle so searchers sweep it instead of standing on its centre"
     },
     {
       "id": "seed-sweep",
@@ -10546,26 +10502,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "cinematic lighting rig + backdrop + turntable for parametric studios"
-    },
-    {
-      "id": "subdual-feeding",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/subdual/subdualFeeding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "win over a creature by keeping it subdued and feeding it, with its quality and doses"
-    },
-    {
-      "id": "summoned-encounter",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/summonedEncounter/summonedEncounter",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a fight started by meeting a cost at a place: a portal, party caps, win, wipe and the trip home"
     },
     {
       "id": "supply-demand-pricing",

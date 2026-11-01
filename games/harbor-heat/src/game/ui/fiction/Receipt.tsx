@@ -4,7 +4,8 @@ import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
-import { clockText, HH, KeyLegend, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
+import { clockText, KeyLegend, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
+import { HH } from "../theme";
 
 /** A choice printed under the slip: next parcel, free roam, back to the title. */
 export interface SlipAction {

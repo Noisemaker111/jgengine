@@ -28,6 +28,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDriverState` (function) · `import { createDriverState } from "@jgengine/core/ai/driver"`
 
+## ai-driver-tail — tail a moving target with a pace band measured along the chaser's nose
+
+- `tailGoal` (function) · `import { tailGoal } from "@jgengine/core/ai/driver"`
+
 ## air-metrics — measure a vehicle's jumps and air control — apex height and time, double jump, air rotation rates
 
 - `measureAir` (function) · `import { measureAir } from "@jgengine/core/physics/handlingProbe"`
@@ -35,6 +39,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## alert-level — witness-gated alert value, labelled cut points and a stand-down beat
 
 - `createAlertLevel` (function) · `import { createAlertLevel } from "@jgengine/core/world"`
+
+## alert-search-area — last-sighting search circle that widens while the trail is cold
+
+- `alertSearchArea` (function) · `import { alertSearchArea } from "@jgengine/core/ai/alertLevel"`
 
 ## ambience-zones — a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting.
 
@@ -283,9 +291,40 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `boardVehicle` (function) · `import { boardVehicle } from "@jgengine/core/world"`
 
-## boat-dynamics — force-based powered hull — hull-speed drag hump, planing, keel, rudder that needs flow or outboard thrust
+## boat-dynamics — a published hull class (6 m speedboat, KVLCC2 tanker model, Holtrop–Mennen ship) with every effect at full strength, plus per-boat overrides
 
+- `boatFromReference` (function) · `import { boatFromReference } from "@jgengine/core/physics/boatReferences"`
 - `createBoatDynamics` (function) · `import { createBoatDynamics } from "@jgengine/core/physics/boatDynamics"`
+- `hullSurgeAddedMass` (function) · `import { hullSurgeAddedMass } from "@jgengine/core/physics/boatDynamics"`
+
+## boat-manoeuvring — MMG hull manoeuvring forces from hull derivatives
+
+- `hullManoeuvringForces` (function) · `import { hullManoeuvringForces } from "@jgengine/core/physics/boatManoeuvring"`
+- `rudderForces` (function) · `import { rudderForces } from "@jgengine/core/physics/boatManoeuvring"`
+
+## boat-planing — Savitsky planing lift, friction, resistance and trimming moment at a trim
+
+- `planingForces` (function) · `import { planingForces } from "@jgengine/core/physics/boatPlaning"`
+- `planingTrim` (function) · `import { planingTrim } from "@jgengine/core/physics/boatPlaning"`
+
+## boat-propeller — Wageningen B-series and polynomial open-water curves (K_T, K_Q against advance ratio)
+
+- `prepareOpenWater` (function) · `import { prepareOpenWater } from "@jgengine/core/physics/boatPropeller"`
+- `propellerPoint` (function) · `import { propellerPoint } from "@jgengine/core/physics/boatPropeller"`
+
+## boat-resistance — ITTC-1957 and Schoenherr friction lines
+
+- `frictionLineCoefficient` (function) · `import { frictionLineCoefficient } from "@jgengine/core/physics/boatResistance"`
+- `prepareHullResistance` (function) · `import { prepareHullResistance } from "@jgengine/core/physics/boatResistance"`
+
+## boat-seakeeping — strip-theory heave, pitch and roll coefficients of a hull
+
+- `prepareSeakeeping` (function) · `import { prepareSeakeeping } from "@jgengine/core/physics/boatSeakeeping"`
+- `seakeepingExcitation` (function) · `import { seakeepingExcitation } from "@jgengine/core/physics/boatSeakeeping"`
+- `seakeepingForces` (function) · `import { seakeepingForces } from "@jgengine/core/physics/boatSeakeeping"`
+- `seakeepingForcesFromHeight` (function) · `import { seakeepingForcesFromHeight } from "@jgengine/core/physics/boatSeakeeping"`
+- `sectionRadiation` (function) · `import { sectionRadiation } from "@jgengine/core/physics/boatSeakeeping"`
+- `wigleyOffsets` (function) · `import { wigleyOffsets } from "@jgengine/core/physics/boatSeakeeping"`
 
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
@@ -364,18 +403,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/core/scene/sceneCapture.draw"`
 
-## cave-draw — draw a cave's rock from its layout
-
-- `Cave` (function) · `import { Cave } from "@jgengine/core/cave/Cave.draw"`
-
-## cave-layout — a walkable cave (tunnel and chamber) from a centreline: collision, spawn spots, inside test
-
-- `caveLayout` (function) · `import { caveLayout } from "@jgengine/core/cave/caveLayout"`
-
-## cave-mesh — triangle meshes for a cave's inside and the hill around it, from its layout
-
-- `caveMesh` (function) · `import { caveMesh } from "@jgengine/core/cave/caveMesh"`
-
 ## change-of-direction-505 — simulated 505 change-of-direction test time of a sprint profile
 
 - `test505Time` (function) · `import { test505Time } from "@jgengine/core/movement/reference/humanEnvelope"`
@@ -400,18 +427,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `rectClearsPolyline` (function) · `import { rectClearsPolyline } from "@jgengine/core/world/polygon"`
 - `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/polygon"`
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`
-
-## city-layout-sliders — live dev-runner sliders for every city layout number
-
-- `tuneCityLayout` (function) · `import { tuneCityLayout } from "@jgengine/core/city/cityLayout"`
-
-## city-layout-store — a city layout a game sets once and sliders change live
-
-- `createCityLayout` (function) · `import { createCityLayout } from "@jgengine/core/city/cityLayout"`
-
-## city-lots — lay zoned building lots, corners and driveways from one city layout
-
-- `cityLots` (function) · `import { cityLots } from "@jgengine/core/city/cityLayout"`
 
 ## cma-es — derivative-free ask/tell minimiser for tuning controllers and fitting models
 
@@ -877,6 +892,29 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## glide — gliding/wingsuit descent control from a launch
 
 - `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/world"`
+
+## granular-flow — sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
+
+- `BekkerSoil` (interface) · `import { BekkerSoil } from "@jgengine/core/granular/granularMaterial"`
+- `DAMP_SAND` (const) · `import { DAMP_SAND } from "@jgengine/core/granular/granularMaterial"`
+- `DRY_SAND` (const) · `import { DRY_SAND } from "@jgengine/core/granular/granularMaterial"`
+- `GLASS_BEADS` (const) · `import { GLASS_BEADS } from "@jgengine/core/granular/granularMaterial"`
+- `GRAVEL` (const) · `import { GRAVEL } from "@jgengine/core/granular/granularMaterial"`
+- `SANDY_LOAM` (const) · `import { SANDY_LOAM } from "@jgengine/core/granular/granularMaterial"`
+- `continuumCollapse` (function) · `import { continuumCollapse } from "@jgengine/core/granular/granularExperiments"`
+- `createGranularLayer` (function) · `import { createGranularLayer } from "@jgengine/core/granular/granularLayer"`
+- `createGranularTerrain` (function) · `import { createGranularTerrain } from "@jgengine/core/granular/granularTerrain"`
+- `culmannHeight` (function) · `import { culmannHeight } from "@jgengine/core/granular/granularMaterial"`
+- `flowFriction` (function) · `import { flowFriction } from "@jgengine/core/granular/granularMaterial"`
+- `inclinedFlume` (function) · `import { inclinedFlume } from "@jgengine/core/granular/granularExperiments"`
+- `landformLooseCover` (function) · `import { landformLooseCover } from "@jgengine/core/granular/granularTerrain"`
+- `plateSinkage` (function) · `import { plateSinkage } from "@jgengine/core/granular/granularMaterial"`
+- `plateSinkagePressure` (function) · `import { plateSinkagePressure } from "@jgengine/core/granular/granularMaterial"`
+- `pouredHeap` (function) · `import { pouredHeap } from "@jgengine/core/granular/granularExperiments"`
+- `startFriction` (function) · `import { startFriction } from "@jgengine/core/granular/granularMaterial"`
+- `stopFriction` (function) · `import { stopFriction } from "@jgengine/core/granular/granularMaterial"`
+- `stoppingDepth` (function) · `import { stoppingDepth } from "@jgengine/core/granular/granularMaterial"`
+- `wheelSinkage` (function) · `import { wheelSinkage } from "@jgengine/core/granular/granularMaterial"`
 
 ## grapple-swing — grappling-hook rope swing physics with reel-in
 
@@ -1369,6 +1407,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `definePatrolOrder` (function) · `import { definePatrolOrder } from "@jgengine/core/world"`
 
+## perception-nearby-roster — observe one target from a capped, deterministic roster of nearby observers
+
+- `observeNearby` (function) · `import { observeNearby } from "@jgengine/core/sensor/perception"`
+
 ## perception-service — retain sightings, sounds and damage with cone, range, occlusion, decaying memory and shared squad knowledge
 
 - `createPerception` (function) · `import { createPerception } from "@jgengine/core/world"`
@@ -1770,6 +1812,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
 
 - `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/core/postfx/ScreenEffectsOverlay.draw"`
+
+## sea-state — seeded wave field from a Pierson–Moskowitz or JONSWAP spectrum, shared by boats and the drawn ocean
+
+- `createWaveField` (function) · `import { createWaveField } from "@jgengine/core/water/seaState"`
+- `regularWaveField` (function) · `import { regularWaveField } from "@jgengine/core/water/seaState"`
+- `seaSpectrumDensity` (function) · `import { seaSpectrumDensity } from "@jgengine/core/water/seaState"`
+- `waveFieldHeight` (function) · `import { waveFieldHeight } from "@jgengine/core/water/seaState"`
+- `waveFieldSignificantHeight` (function) · `import { waveFieldSignificantHeight } from "@jgengine/core/water/seaState"`
+
+## search-beat — walk waypoints around a search circle so searchers sweep it instead of standing on its centre
+
+- `searchBeatStep` (function) · `import { searchBeatStep } from "@jgengine/core/ai/searchBeat"`
 
 ## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
 

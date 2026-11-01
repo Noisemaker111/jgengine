@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ThresholdBoundary } from "../threshold/thresholds";
-import { createBreedingField, type BreedingSpecies, type MateCandidate } from "./breeding";
+import { createBreedingField, type BreedingSpecies, type GrowthStage, type MateCandidate } from "./breeding";
 
 function rngOf(seed: number): () => number {
   let state = seed;
@@ -11,13 +10,13 @@ function rngOf(seed: number): () => number {
   };
 }
 
-const BUG: BreedingSpecies = { mateSeconds: 10, mateRange: 4, carrySeconds: 100, egg: { band: [20, 30], healthSeconds: 50 }, maturationSeconds: 1000, cooldownSeconds: [100, 200] };
+const BUG: BreedingSpecies = { mateSeconds: 10, mateRange: 4, carrySeconds: 100, egg: { incubation: { all: [{ gte: ["temperature", 20] }, { lte: ["temperature", 30] }] }, healthSeconds: 50 }, maturationSeconds: 1000, cooldownSeconds: [100, 200] };
 const BEAST: BreedingSpecies = { mateSeconds: 10, mateRange: 5, carrySeconds: 200, egg: null, maturationSeconds: 2000, cooldownSeconds: [100, 200] };
 
 /** A made-up two-stage list: the engine never names a stage. */
-const STAGES: readonly ThresholdBoundary[] = [
-  { id: "small", at: 0 },
-  { id: "large", at: 0.5 },
+const STAGES: readonly GrowthStage[] = [
+  { id: "small", share: 0.5 },
+  { id: "large", share: 0.5 },
 ];
 
 const field = () =>
@@ -38,28 +37,28 @@ describe("breeding", () => {
   test("a pair kept together for the mating time lays an egg; apart, the bar starts over; then she rests", () => {
     const breeding = field();
     const rng = rngOf(3);
-    breeding.mate(pair(3), 0, 5, rng);
+    breeding.mate(pair(3), 5, rng);
     expect(breeding.matingProgress("her")).toBeCloseTo(0.5, 6);
     // Walked apart: the bar is gone.
-    breeding.mate(pair(10), 5, 1, rng);
+    breeding.mate(pair(10), 1, rng);
     expect(breeding.matingProgress("her")).toBeNull();
-    expect(breeding.mate(pair(3), 6, 5, rng)).toEqual([]);
+    expect(breeding.mate(pair(3), 5, rng)).toEqual([]);
     // A male of another kind does nothing.
-    expect(breeding.mate([{ id: "her", species: "bug", sex: "female", at: [0, 0, 0] }, { id: "x", species: "beast", sex: "male", at: [1, 0, 0] }], 11, 10, rng)).toEqual([]);
-    expect(breeding.mate(pair(3), 12, 5, rng)).toEqual([]);
-    const events = breeding.mate(pair(3), 17, 5, rng);
+    expect(breeding.mate([{ id: "her", species: "bug", sex: "female", at: [0, 0, 0] }, { id: "x", species: "beast", sex: "male", at: [1, 0, 0] }], 10, rng)).toEqual([]);
+    expect(breeding.mate(pair(3), 5, rng)).toEqual([]);
+    const events = breeding.mate(pair(3), 5, rng);
     expect(events.map((event) => event.type)).toEqual(["conceived", "laid"]);
     expect(breeding.eggs()).toHaveLength(1);
     expect(breeding.eggs()[0]?.offspring).toEqual({ from: "her+him" });
-    expect(breeding.cooldown("her", 17)).toBeGreaterThanOrEqual(100);
-    expect(breeding.cooldown("her", 17)).toBeLessThanOrEqual(200);
-    expect(breeding.mate(pair(3), 20, 20, rng)).toEqual([]);
+    expect(breeding.cooldown("her")).toBeGreaterThanOrEqual(100);
+    expect(breeding.cooldown("her")).toBeLessThanOrEqual(200);
+    expect(breeding.mate(pair(3), 20, rng)).toEqual([]);
   });
 
   test("an egg hatches only inside its temperature band, and out of it loses health until it is lost", () => {
     const breeding = field();
     const rng = rngOf(5);
-    breeding.mate(pair(2), 0, 10, rng);
+    breeding.mate(pair(2), 10, rng);
     const warm = () => 24;
     breeding.tick(50, 50, warm, rng);
     expect(breeding.eggs()[0]?.progress).toBeCloseTo(0.5, 6);
@@ -71,7 +70,8 @@ describe("breeding", () => {
     expect(hatched.map((event) => event.type)).toEqual(["hatched"]);
     expect(breeding.eggs()).toHaveLength(0);
     // A second egg left out of its band is lost after its health runs out.
-    breeding.mate(pair(2), 1000, 10, rng);
+    breeding.tick(1000, 875, () => 0, rng);
+    breeding.mate(pair(2), 10, rng);
     const lost = breeding.tick(1050, 50, () => -10, rng);
     expect(lost.map((event) => event.type)).toEqual(["eggLost"]);
   });
@@ -79,7 +79,7 @@ describe("breeding", () => {
   test("a carrier grows her young for the carrying time and gives birth, then rests", () => {
     const breeding = field();
     const rng = rngOf(7);
-    const events = breeding.mate(pair(4, "beast"), 0, 10, rng);
+    const events = breeding.mate(pair(4, "beast"), 10, rng);
     expect(events.map((event) => event.type)).toEqual(["conceived"]);
     expect(breeding.eggs()).toHaveLength(0);
     expect(breeding.pregnancy("her")?.progress).toBe(0);
@@ -88,7 +88,7 @@ describe("breeding", () => {
     const born = breeding.tick(200, 100, () => 0, rng);
     expect(born).toEqual([{ type: "born", mother: "her", species: "beast", offspring: { from: "her+him" } }]);
     expect(breeding.pregnancy("her")).toBeNull();
-    expect(breeding.cooldown("her", 200)).toBeGreaterThan(0);
+    expect(breeding.cooldown("her")).toBeGreaterThan(0);
   });
 
   test("the young grow through the game's stages, ask for care every interval, and answering every request bonds them", () => {
@@ -121,12 +121,12 @@ describe("breeding", () => {
     const breeding = field();
     const rng = rngOf(13);
     breeding.setSpeeds({ carry: 10, grow: 10, bond: 10, pair: 10 });
-    breeding.mate(pair(2), 0, 10, rng);
-    expect(breeding.cooldown("her", 0)).toBeLessThanOrEqual(20);
+    breeding.mate(pair(2), 10, rng);
+    expect(breeding.cooldown("her")).toBeLessThanOrEqual(20);
     expect(breeding.tick(9, 9, () => 25, rng)).toEqual([]);
     expect(breeding.tick(10, 1, () => 25, rng).map((event) => event.type)).toEqual(["hatched"]);
     breeding.raise("kid", "bug", 10);
-    breeding.mate(pair(2, "beast", "her2", "him2"), 10, 10, rng);
+    breeding.mate(pair(2, "beast", "her2", "him2"), 10, rng);
     const copy = field();
     copy.restore(breeding.snapshot());
     expect(copy.offspringOf("kid")?.nextCareAt).toBeCloseTo(30, 6);
@@ -155,7 +155,8 @@ describe("breeding", () => {
     const rng = rngOf(17);
     const sizes: number[] = [];
     for (let n = 0; n < 3; n += 1) {
-      const events = breeding.mate(pair(2), n * 1e6, 10, rng);
+      breeding.tick(n * 1e6, 1e6, () => 0, rng);
+      const events = breeding.mate(pair(2), 10, rng);
       const conceived = events.find((event) => event.type === "conceived");
       const count = conceived?.type === "conceived" ? conceived.count : 0;
       sizes.push(count);
@@ -163,7 +164,7 @@ describe("breeding", () => {
     }
     expect(sizes).toEqual([1, 2, 3]);
     const alone = field();
-    alone.mate(pair(2), 0, 10, rngOf(19));
+    alone.mate(pair(2), 10, rngOf(19));
     expect(alone.eggs()).toHaveLength(1);
   });
 });

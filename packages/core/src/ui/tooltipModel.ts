@@ -6,6 +6,7 @@
  * flip and clamp against the viewport. Both are rendering-agnostic.
  */
 
+import { clamp } from "../math/scalar";
 import type { ActionCooldown, ActionCost, ResolvedAction } from "./actionModel";
 
 /** Structured tooltip content — a renderer lays these fields out; the model owns what is shown. */
@@ -78,8 +79,6 @@ const OPPOSITE: Record<PopoverSide, PopoverSide> = {
   right: "left",
 };
 
-const clamp = (value: number, min: number, max: number): number =>
-  Math.max(min, Math.min(max, max < min ? min : value));
 
 /** @internal Room in pixels between the anchor and the viewport edge on a given side. */
 function roomOn(side: PopoverSide, anchor: UiRect, viewport: UiSize): number {
@@ -126,9 +125,12 @@ export function placePopover(
     side = opposite;
   }
   const { left, top } = topLeftFor(side, anchor, content, gap);
+  // A viewport smaller than the content pins the popover to the margin instead of reversing the range.
+  const maxLeft = Math.max(margin, viewport.width - content.width - margin);
+  const maxTop = Math.max(margin, viewport.height - content.height - margin);
   return {
     side,
-    left: clamp(left, margin, viewport.width - content.width - margin),
-    top: clamp(top, margin, viewport.height - content.height - margin),
+    left: clamp(left, margin, maxLeft),
+    top: clamp(top, margin, maxTop),
   };
 }

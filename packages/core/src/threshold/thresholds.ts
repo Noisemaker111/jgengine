@@ -85,6 +85,9 @@ export function crossThresholds<Id>(
  * The highest boundary at-or-below `value` — the band the value currently sits in.
  * Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
  *
+ * With `descending`, the lookup runs the other way: the lowest boundary at-or-above
+ * `value` (the smallest window that still holds it), `null` when `value` is past every boundary.
+ *
  * Tier labels stay caller policy: pass an `Id` object carrying whatever label,
  * relation, or colour the game needs.
  *
@@ -93,13 +96,16 @@ export function crossThresholds<Id>(
 export function tierAt<Id>(
   boundaries: readonly ThresholdBoundary<Id>[],
   value: number,
-  options: { readonly inclusive?: boolean } = {},
+  options: { readonly inclusive?: boolean; readonly descending?: boolean } = {},
 ): ThresholdBoundary<Id> | null {
   const inclusive = options.inclusive ?? true;
+  const descending = options.descending === true;
   let match: ThresholdBoundary<Id> | null = null;
   for (const boundary of boundaries) {
-    const occupied = inclusive ? value >= boundary.at : value > boundary.at;
-    if (occupied && (match === null || boundary.at > match.at)) match = boundary;
+    const occupied = descending
+      ? inclusive ? value <= boundary.at : value < boundary.at
+      : inclusive ? value >= boundary.at : value > boundary.at;
+    if (occupied && (match === null || (descending ? boundary.at < match.at : boundary.at > match.at))) match = boundary;
   }
   return match;
 }

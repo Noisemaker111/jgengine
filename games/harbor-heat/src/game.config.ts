@@ -15,9 +15,9 @@ import { harborKit, harborTheme } from "./game/ui/theme";
 import { loop } from "./loop";
 import { residentBoardStore } from "./game/world/residents";
 import { physics, world } from "./world";
-import { drivingStore } from "./game/handroll";
+import { drivingStore } from "./game/streetPlay";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { wantedStore } from "./game/handroll/shared";
+import { wantedStore } from "./game/streetPlay";
 import { convoySnapshot } from "./game/runState";
 
 /** The HUD's wanted mirror, read without creating the pursuit slice. */
@@ -81,7 +81,7 @@ export const game = defineGame({
   controls: {
     // Touch controls are context-curated (#1370): each mode shows only the verbs that context uses.
   // On foot the joystick walks (analog) and the cluster is the five gameplay verbs; flight and
-  // vehicle actions never appear until a vehicle is boarded (game/handroll/driving.ts switches
+  // vehicle actions never appear until a vehicle is boarded (game/driving/driving.ts switches
   // modes via setTouchControlsMode). Slot switching on touch is the tappable hotbar cards.
     touch: {
       buttons: [
@@ -219,7 +219,7 @@ export const game = defineGame({
     rigs: {
       // The static chase block is the ON-FOOT baseline: flat FOV (speedForMax 0 pins it at base so
     // sprinting never pumps the lens), no bank roll, no velocity lead, no speed shake — every
-    // driving-feel extra lives in DRIVE_CAMERA_TUNING (game/handroll/driving.ts), overlaid via
+    // driving-feel extra lives in DRIVE_CAMERA_TUNING (game/driving/driving.ts), overlaid via
     // ctx.camera.setChaseTuning while a vehicle is piloted and cleared on exit (#1299).
       chase: {
         distance: 7.5,

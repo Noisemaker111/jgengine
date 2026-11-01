@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createPerception, type PerceptionConfig } from "@jgengine/core/world";
 import { createWorldSolids } from "@jgengine/core/world/worldSolids";
 import { devtools } from "../devtools/devtools";
+import { observeNearby } from "./perception";
 
 const observer = { id: "guard", position: [0, 0, 0] as const, yaw: 0 };
 
@@ -288,5 +289,16 @@ describe("state", () => {
     probed.dispose();
     expect(devtools.probes.read()["perception:test"]).toBeUndefined();
     expect(() => probed.retune({ maxSharesPerTick: -1 })).toThrow("maxSharesPerTick");
+  });
+});
+
+describe("observeNearby", () => {
+  test("asks only observers in range, lowest ids first, up to the cap", () => {
+    const asked: string[] = [];
+    const perception = { observe: (who: { id: string }) => void asked.push(who.id) };
+    const at = (id: string, x: number) => ({ id, position: [x, 0, 0] as const, yaw: 0 });
+    const roster = observeNearby(perception, [at("c", 1), at("far", 50), at("a", 2), at("b", 3)], { id: "t", position: [0, 0, 0] }, 0, { radius: 10, max: 2 });
+    expect(roster).toEqual(["a", "b"]);
+    expect(asked).toEqual(["a", "b"]);
   });
 });

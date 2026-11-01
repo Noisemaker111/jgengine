@@ -6,7 +6,8 @@ import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view";
 import { useCurrency, useEntityStat, usePlayer } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { BurnerPhone, type PhonePad } from "../fiction/BurnerPhone";
-import { HH, KeyLegend, money, navItem, useMenuSound, useMoveTick } from "../fiction/kit";
+import { KeyLegend, money, navItem, useMenuSound, useMoveTick } from "../fiction/kit";
+import { HH } from "../theme";
 import { PhoneSettings, type SettingsPad } from "../fiction/PhoneSettings";
 
 const HOME: readonly { id: "resume" | "save" | "settings"; label: string; icon: GameIconName }[] = [

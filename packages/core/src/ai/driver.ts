@@ -90,6 +90,30 @@ export function paceBandFactor(band: PaceBand, gap: number): number {
   return 1;
 }
 
+/** How a chaser tails a moving target: the cruise it holds and the band it keeps off the target. */
+export interface TailTuning {
+  /** Cruise cap, m/s; held below the car's top speed so the band's push has somewhere to go. */
+  speedLimit: number;
+  /** The gap to hold behind the target, eased when close and pushed when far. */
+  band: PaceBand;
+}
+
+/**
+ * A {@link DriverGoal} that tails a moving target: aim at it, cruise at `speedLimit`, and pace with
+ * `band` on the gap measured along the chaser's own nose. A chaser that has run past the target
+ * reads it as behind and eases, instead of turning back to ram it.
+ *
+ * @capability ai-driver-tail tail a moving target with a pace band measured along the chaser's nose
+ */
+export function tailGoal(
+  pose: Pick<DriverPose, "x" | "z" | "heading">,
+  target: { readonly x: number; readonly z: number },
+  tuning: TailTuning,
+): DriverGoal {
+  const ahead = (target.x - pose.x) * Math.sin(pose.heading) + (target.z - pose.z) * Math.cos(pose.heading);
+  return { x: target.x, z: target.z, speedLimit: tuning.speedLimit, paceGap: -ahead, paceBand: tuning.band };
+}
+
 /** Vehicle-feel numbers the game supplies; everything has a sensible default except `maxSpeed`. */
 export interface DriverTuning {
   /** Top desired speed on a straight, world units/second. */

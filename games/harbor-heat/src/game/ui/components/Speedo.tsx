@@ -3,7 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useActionGlyph } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { vehicleById } from "../../entities/vehicles/catalog";
-import { drivingStore, handrollOf } from "../../handroll";
+import { drivingStore, streetPlayOf } from "../../streetPlay";
 import { KeyCap } from "../fiction/kit";
 
 /** Label steps a dial face can count in; the face shows six of them, so every number is round. */
@@ -24,7 +24,7 @@ function topKmhOf(name: string | undefined): number {
 function speedoView(ctx: GameContext) {
   const id = drivingStore.read(ctx);
   if (id == null) return null;
-  const t = handrollOf(ctx).telemetry();
+  const t = streetPlayOf(ctx).telemetry();
   const name = ctx.scene.entity.get(id)?.name;
   const def = name === undefined ? undefined : vehicleById(name);
   const air = t.mode !== "aircraft" ? null : t.stalled ? "Stall" : `${Math.round(t.altitude)} m up`;

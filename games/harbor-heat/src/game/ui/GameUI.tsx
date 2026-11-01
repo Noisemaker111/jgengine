@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
+import { HudSlots } from "@jgengine/core/hud/hudLayout.view";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
@@ -30,7 +30,6 @@ function useLootNotices() {
 
 export function GameUI() {
   useGameFonts(GAME_FONTS);
-  const layout = useHudLayout({ storageKey: "harbor-heat" });
   const started = useGameStarted();
   const compact = useRoom() !== "wide";
   const paused = useStore(sessionStore, (session) => session.paused);
@@ -40,17 +39,26 @@ export function GameUI() {
       <HarborMenu />
       <SessionUI />
       {started && !paused ? (
-        <HudCanvas layout={layout} className={`z-20 hh-hud ${compact ? "hh-hud-compact" : ""}`}>
-          <HudPanel id="objective" anchor="top-left"><Objective /></HudPanel>
-          <HudPanel id="pause" anchor="top-right" order={-1} priority="critical"><div className="hh-hudkeys"><PhoneButton /><PauseButton /></div></HudPanel>
-          <HudPanel id="status" anchor="top-right" priority="critical" interactive={false}><StatusPanel /></HudPanel>
-          <HudPanel id="wanted" anchor="top" interactive={false}><WantedStars /></HudPanel>
-          <HudPanel id="minimap" anchor="bottom-left" chip="map" interactive={false}><CityMinimap /></HudPanel>
-          <HudPanel id="hotbar" anchor="bottom" priority="critical"><BeltHotbar /></HudPanel>
-          <HudPanel id="speedo" anchor="bottom-right" priority="tertiary" interactive={false}><Speedo /></HudPanel>
-          <HudPanel id="radio" anchor="bottom-right" order={-1} priority="tertiary"><RadioReadout /></HudPanel>
-          <HudPanel id="phone" anchor="right" priority="critical"><PhonePanel /></HudPanel>
-        </HudCanvas>
+        <HudSlots
+          storageKey="harbor-heat"
+          showDuring={null}
+          className={`z-20 hh-hud ${compact ? "hh-hud-compact" : ""}`}
+          panels={{
+            topLeft: [{ id: "objective", content: <Objective /> }],
+            top: [{ id: "wanted", content: <WantedStars />, interactive: false }],
+            topRight: [
+              { id: "pause", content: <div className="hh-hudkeys"><PhoneButton /><PauseButton /></div>, order: -1, priority: "critical" },
+              { id: "status", content: <StatusPanel />, priority: "critical", interactive: false },
+            ],
+            right: [{ id: "phone", content: <PhonePanel />, priority: "critical" }],
+            bottomLeft: [{ id: "minimap", content: <CityMinimap />, chip: "map", interactive: false }],
+            bottom: [{ id: "hotbar", content: <BeltHotbar />, priority: "critical" }],
+            bottomRight: [
+              { id: "radio", content: <RadioReadout />, order: -1, priority: "tertiary" },
+              { id: "speedo", content: <Speedo />, priority: "tertiary", interactive: false },
+            ],
+          }}
+        />
       ) : null}
       {/* Counters and talk are full-screen moments over the HUD, laid out at their own phone sizes. */}
       {started && !paused ? <Counters /> : null}

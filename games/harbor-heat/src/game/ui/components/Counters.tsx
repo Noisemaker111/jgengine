@@ -8,7 +8,7 @@ import { UPGRADES, upgradesStore, type UpgradeShop } from "../../progression/upg
 import type { BoardRow } from "../fiction/PriceBoard";
 import { ITEM_LABELS } from "../../content";
 import { VEHICLES, type VehicleDef } from "../../entities/vehicles/catalog";
-import { wantedStore } from "../../handroll";
+import { wantedStore } from "../../streetPlay";
 import { marketStore } from "../../items/nightMarket";
 import { GEAR, WEAPONS, type GearDef, type WeaponDef } from "../../items/weapons/catalog";
 import { CRED_GATES } from "../../progression/cred";

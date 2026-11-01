@@ -2,7 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { safehouseStore, SHOP_CLOSES, SHOP_OPENS } from "./commands";
 import { vehicleById } from "./entities/vehicles/catalog";
-import { handrollOf } from "./handroll";
+import { streetPlayOf } from "./streetPlay";
 import { courierPrompts } from "./jobs/courier";
 import { gigPromptLabel, gigPrompts } from "./jobs/gigs";
 import { cityOf } from "./cityRuntime";
@@ -90,8 +90,8 @@ function safehousePrompt(ctx: GameContext): PositionedPrompt {
 }
 
 export function prompts(ctx: GameContext): readonly PositionedPrompt[] {
-  if (handrollOf(ctx).drivingVehicleId() !== null) {
-    if (handrollOf(ctx).raceActive()) return [];
+  if (streetPlayOf(ctx).drivingVehicleId() !== null) {
+    if (streetPlayOf(ctx).raceActive()) return [];
     return [...streetPrompts(ctx), ...garagePrompts(ctx), ...courierPrompts(ctx), ...gigPrompts(ctx), ...racePrompts];
   }
   const player = ctx.scene.entity.get(ctx.player.userId);

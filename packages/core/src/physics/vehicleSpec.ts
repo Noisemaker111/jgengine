@@ -1,3 +1,4 @@
+import { clamp } from "../math/scalar";
 import { DEFAULT_GRIP_CURVE, gripCurvePeak, type GripCurve } from "./gripCurve";
 import { withVehicleEffects, type VehicleDynamicsTuning, type VehicleEffectName, type VehicleEffects } from "./vehicleDynamics";
 
@@ -124,10 +125,6 @@ export interface VehicleSpec {
 }
 
 const DEFAULT_TORQUE: GripCurve = { points: [[0, 0.7], [0.35, 0.95], [0.6, 1], [0.85, 0.92], [1, 0.7]] };
-
-function clamp(value: number, low: number, high: number): number {
-  return Math.max(low, Math.min(high, value));
-}
 
 /**
  * Build the physical tuning for a {@link VehicleSpec}. Pure and deterministic, so a parts change or a dent

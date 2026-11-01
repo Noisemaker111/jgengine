@@ -1,3 +1,4 @@
+import { createWaveField } from "./seaState";
 import { describe, expect, test } from "bun:test";
 import { synthesizeWaves, waterSurface } from "@jgengine/core/water/waterSurface";
 
@@ -66,5 +67,15 @@ describe("buildOceanWaveUniforms", () => {
     expect(uniforms.params[0]!.y).toBeCloseTo(first.amplitude);
     expect(uniforms.params[0]!.w).toBeCloseTo(first.speed * k);
     expect(uniforms.params[2]!.y).toBe(0);
+  });
+
+  test("a wave field reaches the shader with its phases, largest components first", () => {
+    const field = createWaveField({ significantHeight: 2, peakPeriod: 8 }, { seed: 3, components: 24 });
+    const config = createOceanConfig({ waves: { field } });
+    const uniforms = buildOceanWaveUniforms(config);
+    expect(config.waves).toHaveLength(MAX_OCEAN_WAVES);
+    expect(uniforms.phases).toHaveLength(MAX_OCEAN_WAVES);
+    expect(uniforms.phases[0]).toBeCloseTo((field.components[0]?.phase ?? 0) + Math.PI / 2, 9);
+    expect(config.waves[0]?.steepness).toBe(0);
   });
 });

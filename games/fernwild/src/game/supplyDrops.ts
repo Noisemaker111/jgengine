@@ -2,7 +2,7 @@ import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgeng
 import { createLootRegistry } from "@jgengine/core/loot/lootTable";
 import { createMotionTrack } from "@jgengine/core/movement/motionTrack";
 import { pickWeighted } from "@jgengine/core/random/pick";
-import { createRemainsField, type Remains, type RemainsField, type RemainsSnapshot, type RemainsStack } from "@jgengine/core/remains/remains";
+import { createRemainsField, type Remains, type RemainsField, type RemainsSnapshot, type RemainsStack } from "../engine-local/remains/remains";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { createRefillSlots, type RefillSlotsState } from "@jgengine/core/time/refillSlots";

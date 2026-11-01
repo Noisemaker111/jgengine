@@ -13,12 +13,15 @@
 - `AlertLevel` (interface): interface AlertLevel<Tier> — Stateful alert/pursuit API with retuning and save/restore support.
 - `AlertLevelConfig` (interface): interface AlertLevelConfig<Tier> — Everything {@link createAlertLevel} needs: the sight seam, the observer roster and the caller's numbers.
 - `AlertLevelState` (interface): interface AlertLevelState<Tier> — Serializable alert state — the tuning, the meter, the sight clock, the anchor and the counters.
+- `AlertSearchArea` (interface): interface AlertSearchArea — Where a search works: around the last sighting, out to `radius` metres.
+- `AlertSearchTuning` (interface): interface AlertSearchTuning<Tier> — How wide a search starts at each tier and how it widens while the trail is cold.
 - `AlertSighting` (interface): interface AlertSighting — One remembered sighting of the target, as a perception service reports it — `PerceptionMemory` from `sensor/perception` satisfies this shape.
 - `AlertStats` (interface): interface AlertStats — Counters a devtools probe, a HUD or a test reads.
 - `AlertStep` (interface): interface AlertStep<Tier> — One tick's answer: the value, the tier, the anchor and the escape.
 - `AlertTickContext` (interface): interface AlertTickContext — Per-tick world facts {@link AlertLevel.tick} needs but cannot derive itself.
 - `AlertTuning` (interface): interface AlertTuning<Tier> — Everything an alert level runs on; the game supplies it all.
 - `AlertWitness` (interface): interface AlertWitness — The sight seam: what each observer remembers of the target, asked one observer at a time. Pass `createPerception` (`sensor/perception`) straight in — a report counts when an observer still holds the target in view, so there is no second sight path to keep in step.
+- `alertSearchArea` (function): function alertSearchArea<Tier>(step: Pick<AlertStep<Tier>, "tier" | "anchor" | "outOfSightSeconds">, tuning: AlertSearchTuning<Tier>): AlertSearchArea | null — The circle a search should work this tick: centred on the step's anchor, the tier's radius grown by the seconds out of sight, capped. `null` with no tier or no sighting yet.
 - `createAlertLevel` (function): function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLevel<Tier> — An alert level any stealth, heist or pursuit game can use, over the meter and ladder parts: reports raise a bounded value only while an observer holds the target in view, the value bleeds on the caller's curve once the target has been out of every observer's sight, labelled cut points decide what the alert resolves to, and a stand-down countdown tells the caller when to call its units off. The value, its rates, the cut points and every label are caller policy; sight facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
 
 ## @jgengine/core/ai/buildOrder
@@ -138,10 +141,12 @@
 - `DriverStep` (interface): interface DriverStep extends AxisInput — {@link driveStep}'s result: the axis sample to feed the vehicle sim, plus arrival.
 - `DriverTuning` (interface): interface DriverTuning — Vehicle-feel numbers the game supplies; everything has a sensible default except `maxSpeed`.
 - `PaceBand` (interface): interface PaceBand — Catch-up pacing for one car in a field: the gap it tries to hold to a reference car (a rival, the player, a convoy lead) and how its pace bends when it drifts off that gap. Past `margin` by `tolerance` it sheds up to `ease` of its pace; short of it by `tolerance` it gains up to `push`; inside that tolerance it leaves the car alone. The push never outdrives `DriverTuning.maxSpeed`, so a band changes how hard a car tries, never what it is built to do.
+- `TailTuning` (interface): interface TailTuning — How a chaser tails a moving target: the cruise it holds and the band it keeps off the target.
 - `createDriverState` (function): function createDriverState(targetX = 0, targetZ = 0): DriverState — Fresh driver state committed to an initial target (usually the spawn-time goal or the spawn position itself).
 - `driveStep` (function): function driveStep(state: DriverState, dt: number, pose: DriverPose, goal: DriverGoal, profile: DifficultyProfile, tuning: DriverTuning, rng: () => number, obstacleAhead: number | null = null): DriverStep — Advance one driving step, mutating `state`, and return the {@link AxisInput} to feed the vehicle sim. `obstacleAhead` is the caller-measured distance to the nearest blocker in the driving corridor this step (`null`/omitted when clear) — the driver perceives it late by `speed * reactionSeconds`, so easy tiers brake at the last moment and expert tiers with proper margin. The steering target is a delay-line over the goal — resampled every `reactionSeconds`, so it trails a moving goal by up to that long, which is what makes an easy chaser visibly cut toward where the target *was*. A {@link PaceBand} on the goal eases a car ahead of its margin and pushes one behind it, bounded by the car's own top speed. When throttle produces no motion for a tier-scaled while the driver reverses out with counter-steer (brake past standstill — the shared sim's reverse).
 - `paceBandFactor` (function): function paceBandFactor(band: PaceBand, gap: number): number — The pace multiplier a {@link PaceBand} asks for at `gap`: `1` inside the tolerance, `1 - ease * scale` fully ahead of it, `1 + push * scale` fully behind it, ramped linearly across `easeAt` / `pushAt` in between. Pure scalar math, so a band is deterministic and costs no allocation per step; the result never goes negative.
 - `pathTargetAhead` (function): function pathTargetAhead(path: readonly DrivePathPoint[], x: number, z: number, lookahead: number, loop = false): DrivePathPoint | null — The pure-pursuit target for street/route following: the point `lookahead` meters further along the polyline from wherever the vehicle currently projects onto it. Feed the result to {@link driveStep} as the goal each tick and the driver follows the road; `loop` wraps a circuit (traffic block, race lap) instead of pinning at the final point. Returns `null` for a degenerate path. Give sharper tiers a longer `lookahead` to cut corners cleanly and duller tiers a short one so they steer segment-to-segment.
+- `tailGoal` (function): function tailGoal(pose: Pick<DriverPose, "x" | "z" | "heading">, target: { readonly x: number; readonly z: number }, tuning: TailTuning): DriverGoal — A {@link DriverGoal} that tails a moving target: aim at it, cruise at `speedLimit`, and pace with `band` on the gap measured along the chaser's own nose. A chaser that has run past the target reads it as behind and eases, instead of turning back to ram it.
 
 ## @jgengine/core/ai/flock
 
@@ -240,6 +245,14 @@
 - `RvoSnapshot` (interface): interface RvoSnapshot — Serializable crowd state: tuning plus every agent's position, velocity and footprint.
 - `RvoTunables` (interface): interface RvoTunables — Serializable avoidance tuning, retunable in play through {@link RvoCrowd.retune}.
 - `createRvoCrowd` (function): function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd — Reciprocal velocity obstacle avoidance over circular agents. Each nearby pair contributes one or two half-plane constraints on the agent's velocity, and a small linear program picks the velocity closest to the preferred one that satisfies them all. The neighbour search is a uniform grid capped at `maxNeighbors`, so a tick costs the same for 50 agents and 5,000.
+
+## @jgengine/core/ai/searchBeat
+
+- `SearchBeatArea` (interface): interface SearchBeatArea — The circle being searched. `AlertSearchArea` from `ai/alertLevel` fits.
+- `SearchBeatState` (interface): interface SearchBeatState — A searcher's place on its beat; one serializable number, `null` until the first step picks one.
+- `SearchBeatTuning` (interface): interface SearchBeatTuning — How a searcher walks its beat.
+- `createSearchBeat` (function): function createSearchBeat(): SearchBeatState — A fresh beat; the first step picks a random bearing.
+- `searchBeatStep` (function): function searchBeatStep(state: SearchBeatState, position: readonly [number, number], area: SearchBeatArea, tuning: SearchBeatTuning, rng: () => number): readonly [number, number] | null — One step of walking a beat inside a search circle instead of standing on its centre: returns the XZ waypoint to move toward, or `null` on the step the searcher reaches it and turns to the next. Mutates `state`; draws only from the injected `rng`.
 
 ## @jgengine/core/ai/tacticalQueries
 
@@ -1107,24 +1120,6 @@
 
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeController> — Override which controller the rigs below apply; defaults to {@link defaultCameraShake}.
 
-## @jgengine/core/cave/Cave.draw
-
-- `Cave` (function): function Cave({ layout, ground, colors = DEFAULT_COLORS }: { layout: CaveLayout; ground: CaveGround; colors?: CaveColors }): ReactNode — Draw a cave laid out by `caveLayout`: the rock inside and the hill outside, both casting shadow so the tunnel and chamber are dark until the game lights them.
-- `CaveColors` (interface): interface CaveColors — Colours of a cave's rock: the inside you walk through, the hill outside and the floor underfoot.
-
-## @jgengine/core/cave/caveLayout
-
-- `CaveConfig` (interface): interface CaveConfig — A cave dug into the ground along a centreline: a tunnel from the mouth that opens into a chamber at its far end.
-- `CaveGround` (type): type CaveGround = (x: number, z: number) => number — Ground height under a point, so the cave's floor, walls and roof follow the terrain.
-- `CaveLayout` (interface): interface CaveLayout — Everything a game needs to place, draw and fill a cave.
-- `caveLayout` (function): function caveLayout(config: CaveConfig, ground: CaveGround): CaveLayout — Lay out a cave along an authored centreline: wall collision down both sides of the tunnel, a round chamber at the end walled all round except where the tunnel comes in, spots to put creatures and loot, and tests for whether a point is inside. Pair with `caveMesh` to draw it.
-
-## @jgengine/core/cave/caveMesh
-
-- `CaveMesh` (interface): interface CaveMesh — A cave's rock: the inside surface you walk through, the outside hill it sits in, and the floor laid over the ground.
-- `CaveMeshPart` (interface): interface CaveMeshPart — One triangle mesh: xyz per vertex and three vertex indices per triangle.
-- `caveMesh` (function): function caveMesh(layout: CaveLayout, ground: CaveGround): CaveMesh — The rock of a cave laid out by `caveLayout`: an arched tunnel swept down its centreline into a domed chamber, inside and out, with a rock face round the mouth, and a floor that follows the ground under both. Lumpy by the layout's seed.
-
 ## @jgengine/core/city/cityBlocks
 
 - `CityBlockKind` (type): type CityBlockKind = "buildable" | "park" | "plaza" | "field" | "buffer" — How a block (a face of the road graph) is used.
@@ -1194,32 +1189,6 @@
 - `ResolvedRace` (interface): interface ResolvedRace — An instanced street race lifted out of the district's OWN streets: a closed lap through the city, with every side street leaving it sealed off. World space, like the rest of {@link ResolvedCity}.
 - `citySolids` (function): function citySolids(city: ResolvedCity, sampleHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per wall and roof piece of every lot, grounded the way the city renderer grounds it: grade at the highest lot corner, foundations down to half a metre under the lowest.
 - `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned frontage lots with massing pieces → furniture, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. When `context.zoneOverrides` carries sibling `cityzone` volumes, lots inside them adopt the override band/mix. Returns null without a usable footprint.
-
-## @jgengine/core/city/cityLayout
-
-- `CITY_ZONES` (const): const CITY_ZONES: readonly CityZone[] — Every zone, in slider order.
-- `CityLayout` (interface): interface CityLayout — A whole city's layout. Lengths are metres.
-- `CityLayoutDriveway` (interface): interface CityLayoutDriveway — A driveway strip from the kerb to a lot's front, beside the building.
-- `CityLayoutLot` (interface): interface CityLayoutLot extends PlacedBuildingLot — A lot with the zone it is built in and the building it gets.
-- `CityLayoutPatch` (type): type CityLayoutPatch = Partial<Omit<CityLayout, "zones">> & { zones?: Partial<Record<CityZone, Partial<CityZoneLayout>>>; } — Partial layout a game passes: any top-level number, and any zone field.
-- `CityLayoutStore` (interface): interface CityLayoutStore — A city layout that can change while the game runs.
-- `CityLotOptions` (interface): interface CityLotOptions — Options for {@link cityLots}.
-- `CityLotRoad` (interface): interface CityLotRoad — One road a city's lots line.
-- `CityRoadClass` (type): type CityRoadClass = "avenue" | "street" — Street class: an avenue carries `avenueLanes`, a street `streetLanes`.
-- `CityRoadSpec` (interface): interface CityRoadSpec extends Omit<RoadEnvironmentConfig, "width"> — A road for {@link cityRoad}: any `road()` field, plus the class that sizes it.
-- `CityZone` (type): type CityZone = "core" | "commercial" | "residential" | "industrial" — Zone a lot is built in; each carries its own setback, lot size and height range.
-- `CityZoneLayout` (interface): interface CityZoneLayout — One zone's lots and buildings. Lengths are metres.
-- `TuneCityLayoutOptions` (interface): interface TuneCityLayoutOptions — Options for {@link tuneCityLayout}.
-- `US_CITY_LAYOUT` (const): const US_CITY_LAYOUT: CityLayout — US city defaults: 3.5 m lanes, 2.5 m sidewalks, 15 cm kerbs, zone setbacks 0 / 1.5 / 6 / 4 m.
-- `cityLaneCount` (function): function cityLaneCount(layout: CityLayout, roadClass: CityRoadClass): number — Lanes a road class carries, both directions together.
-- `cityLaneOffsets` (function): function cityLaneOffsets(layout: CityLayout, roadClass: CityRoadClass): readonly number[] — Signed lane-centre offsets from a road's centreline, right-hand traffic: negative offsets run with the path, positive against it. Parking lanes are outside these.
-- `cityLots` (function): function cityLots(layout: CityLayout, options: CityLotOptions): CityLayoutLot[] — Lay a city's building lots from its layout. Each zone lines every road with its own frontage, depth and side gap, set back past the sidewalk by its own setback; lots keep `cornerClearance` from the roads they do not front, never touch asphalt or each other, and a zone with driveways gets one per lot in the side gap. Deterministic for the same inputs and seed.
-- `cityRoad` (function): function cityRoad(layout: CityLayout, spec: CityRoadSpec): RoadEnvironmentDescriptor — A `road()` sized by the layout: lane count times lane width plus parking, the layout's sidewalk and kerb.
-- `cityRoadSource` (function): function cityRoadSource(store: CityLayoutStore, specs: readonly CityRoadSpec[]): LiveRoadSource & { /** The roads for the layout at boot, for `environment({ roads })`. */ readonly initial: readonly RoadEnvironmentDescriptor[]; } — Roads that follow a layout store: `current()` is rebuilt from `specs` whenever the layout changes, so an `environment({ roadSource })` redraws streets as a slider moves.
-- `cityRoadWidth` (function): function cityRoadWidth(layout: CityLayout, roadClass: CityRoadClass): number — Kerb-to-kerb width of a road class: its lanes plus a parking lane each side.
-- `createCityLayout` (function): function createCityLayout(patch: CityLayoutPatch = {}): CityLayoutStore — Create a city layout from US defaults plus the game's patch.
-- `resolveCityLayout` (function): function resolveCityLayout(patch: CityLayoutPatch = {}, base: CityLayout = US_CITY_LAYOUT): CityLayout — Merge a patch over a full layout, clamping every number to its slider range.
-- `tuneCityLayout` (function): function tuneCityLayout(store: CityLayoutStore, options: TuneCityLayoutOptions = {}): void — Register a devtools slider for every number in the layout (and a toggle per zone's driveways); dragging one sets the store, which re-lays whatever listens to it. Registering again keeps the values already dragged, so a hot reload does not snap the sliders back.
 
 ## @jgengine/core/cutscene/cutscene.view
 
@@ -1577,6 +1546,50 @@
 - `parseParams` (function): function parseParams<Schema extends ParamSchema>(schema: Schema, meta: Readonly<Record<string, unknown>> | undefined): ParamsOf<Schema> — Parse a raw `meta` bag against a schema into typed params — every field present, invalid or missing values replaced by the field default, numbers clamped to their range (and rounded when `step >= 1`), colours checked as hex. The single parser every generator and studio shares.
 - `sampleCurve` (function): function sampleCurve(points: readonly CurvePoint[], x: number): number — The value of a curve at `x` (0..1), linear between control points and flat past the ends.
 - `sampleGradient` (function): function sampleGradient(stops: readonly GradientStop[], t: number): string — The hex colour of a gradient at `t` (0..1), mixed between neighbouring stops.
+
+## @jgengine/core/granular/granularExperiments
+
+- `ContinuumCollapse` (interface): interface ContinuumCollapse — Where a released column of the continuum came to rest.
+- `FlumeFlow` (interface): interface FlumeFlow — Steady flow down a rough incline, read at the middle of a long channel.
+- `PouredHeap` (interface): interface PouredHeap — A heap poured from a point.
+- `continuumCollapse` (function): function continuumCollapse(material: GranularMaterial, aspect: number, radius = 0.1, cellsPerRadius = 20): ContinuumCollapse — Release a column of `aspect` = h_i / r_i, radius `radius` m, on a flat bed and measure the deposit. The edge is the farthest cell deeper than 1% of the initial height.
+- `inclinedFlume` (function): function inclinedFlume(material: GranularMaterial, angle: number, depth: number, seconds = 3, gravity = 9.81): FlumeFlow — A uniform layer `depth` m deep released on a `angle`° incline, run for `seconds`, then read far from both ends: the steady uniform flow Pouliquen (1999) measured.
+- `pouredHeap` (function): function pouredHeap(material: GranularMaterial, volume = 0.6, cell = 0.1, cells = 61): PouredHeap — Pour `volume` m³ in small batches onto the middle of a flat bed of `cell` m cells and measure the heap once still.
+
+## @jgengine/core/granular/granularLayer
+
+- `GranularLayer` (interface): interface GranularLayer — A granular layer. Cell arrays are row-major, `gz * cols + gx`.
+- `GranularLayerConfig` (interface): interface GranularLayerConfig — Grid, starting ground and tuning for {@link createGranularLayer}.
+- `GranularLayerSnapshot` (interface): interface GranularLayerSnapshot — Plain JSON of a {@link GranularLayer}.
+- `GranularPressReport` (interface): interface GranularPressReport — What a load did to the ground.
+- `GranularStepReport` (interface): interface GranularStepReport — What one {@link GranularLayer.step} did.
+- `createGranularLayer` (function): function createGranularLayer(config: GranularLayerConfig): GranularLayer — Create a granular layer over a bedrock grid.
+
+## @jgengine/core/granular/granularMaterial
+
+- `BekkerSoil` (interface): interface BekkerSoil — What a loose granular material is, for the depth-averaged model in {@link createGranularLayer}: how steep it stands and how it flows, from the friction law of Pouliquen & Forterre (2002), how it packs, and how far a load sinks into it, from the pressure–sinkage law of Bekker (1956) with the soil values Wong (2008) tabulates.
+- `DAMP_SAND` (const): const DAMP_SAND: GranularMaterial — Sand with about 1% water. Repose angle from the damp poured-cone DEM (3.3° over dry, about half the Nowak et al. 2005 maximum excess); cohesion 0.5 kPa, the tensile strength Rumpf (1958) gives for capillary bridges between 0.5 mm grains, (1 − ε)/ε · 2πRγ/d², which lets a cut stand.
+- `DRY_SAND` (const): const DRY_SAND: GranularMaterial — Dry quartz sand. Repose angle from the poured-cone DEM (`scripts/reference/physics`, mean of three heaps 32.3°); the span to δ₂ and δ₃ and β from the glass-bead fit; packing 0.56 to 0.64 (porosity 0.44 to 0.36); Bekker values for dry sand from Wong (2008).
+- `GLASS_BEADS` (const): const GLASS_BEADS: GranularMaterial — Glass beads 0.5 mm across on a rough plane, the material Pouliquen & Forterre (2002) fitted their law to.
+- `GRAVEL` (const): const GRAVEL: GranularMaterial — Rounded river gravel, 10–20 mm: repose 38° (Al-Hashemi & Al-Amoudi 2018); depth scale for a 15 mm grain.
+- `GranularMaterial` (interface): interface GranularMaterial — A loose granular material. Angles are in degrees.
+- `SANDY_LOAM` (const): const SANDY_LOAM: GranularMaterial — Sandy loam (Michigan), Bekker values and cohesion 1.72 kPa from Wong (2008); stands at its friction angle, 29°.
+- `culmannHeight` (function): function culmannHeight(cohesion: number, unitWeight: number, slope: number, friction: number): number — Tallest bank, m, of cohesion `cohesion` Pa and unit weight `unitWeight` N/m³ that stands at slope angle `slope` with friction angle `friction` (both radians): Culmann's planar wedge, H_c = 4c sin β cos φ / (γ (1 − cos(β − φ))). Infinite at or below the friction angle.
+- `flowFriction` (function): function flowFriction(material: GranularMaterial, depth: number, froude: number): number — Basal friction of a layer `depth` m deep flowing at Froude number `froude` = u/√(gh), Pouliquen & Forterre (2002): μ_stop(hβ/Fr) above Fr = β and (Fr/β)^γ (μ_stop − μ_start) + μ_start below, γ = 10⁻³. Steady uniform flow then obeys Fr = β h/h_stop(θ).
+- `plateSinkage` (function): function plateSinkage(soil: BekkerSoil, pressure: number, width: number): number — Bekker sinkage, m, of a flat plate pressing `pressure` Pa on soil, `width` m its smaller dimension: z = (p/(k_c/b + k_φ))^(1/n).
+- `plateSinkagePressure` (function): function plateSinkagePressure(soil: BekkerSoil, sinkage: number, width: number): number — Pressure, Pa, that sinks a plate `width` m wide to `sinkage` m: the inverse of {@link plateSinkage}.
+- `startFriction` (function): function startFriction(material: GranularMaterial, depth: number): number — Friction μ_start(h) a static layer `depth` m deep must exceed to start: tan δ₃ + (tan δ₂ − tan δ₁)/(h/L + 1).
+- `stopFriction` (function): function stopFriction(material: GranularMaterial, depth: number): number — Basal friction μ_stop(h) of a layer `depth` m deep that is just stopping: tan δ₁ + (tan δ₂ − tan δ₁)/(h/L + 1).
+- `stoppingDepth` (function): function stoppingDepth(material: GranularMaterial, angle: number): number — Thickness h_stop(θ) a layer leaves behind when it stops on a slope of `angle` degrees: L (tan δ₂ − tan θ)/(tan θ − tan δ₁). Infinite at or below δ₁, 0 at or above δ₂.
+- `wheelSinkage` (function): function wheelSinkage(soil: BekkerSoil, load: number, width: number, diameter: number): number — Static sinkage, m, of a rigid wheel of `diameter` and `width` m carrying `load` N, Bekker's closed form: z₀ = (3W / ((3 − n)(k_c + b k_φ) √D))^(2/(2n+1)).
+
+## @jgengine/core/granular/granularTerrain
+
+- `GranularTerrain` (interface): interface GranularTerrain — A granular layer bound to a terrain; positions are world x/z.
+- `GranularTerrainOptions` (interface): interface GranularTerrainOptions — Options for {@link createGranularTerrain}.
+- `LandformCoverPlacement` (interface): interface LandformCoverPlacement — Where a landform's cover grid sits in the world: cell (gx, gz) spans `origin + g · cellSize` to the next cell.
+- `createGranularTerrain` (function): function createGranularTerrain(terrain: EditableTerrain, options: GranularTerrainOptions): GranularTerrain — Bind a granular layer to a terrain's vertex grid.
+- `landformLooseCover` (function): function landformLooseCover(surface: LandformSurface, placement: LandformCoverPlacement): Pick<GranularTerrainOptions, "looseDepth" | "materialAt"> — Loose depth and material callbacks for {@link createGranularTerrain} from a landform simulation's cover: depth is the cover thickness, material the heaviest-weighted loose kind the placement maps.
 
 ## @jgengine/core/grass/GrassCover.draw
 
@@ -2023,7 +2036,7 @@
 - `LockCellKind` (type): type LockCellKind = "open" | "gate" | "seat" | "trap" — What a revealed cell renders as: a plain open notch, an exact tumbler gate, the bolt seat (win condition), or a ward-trap that looks open but jams on contact.
 - `LockSpec` (interface): interface LockSpec — A generated lock board. `open[col]` holds every enterable row in that column.
 - `LockStepResult` (type): type LockStepResult = "advanced" | "slip" | "bind" | "trap" | "success" — Outcome of one {@link stepLock} call: `advanced`/`success` move the pick, `slip`/`bind`/`trap` do not and should cost a life.
-- `LockTierSpec` (interface): interface LockTierSpec — Difficulty dials for one lock: board size, forgiveness band, gates, fog window, traps.
+- `LockTierSpec` (interface): interface LockTierSpec extends ThresholdBoundary — Difficulty dials for one lock, a Ladder step (`at` is its place in the difficulty order): board size, forgiveness band, gates, fog window, traps.
 - `generateLock` (function): function generateLock(seed: string | number, tier: LockTierSpec): LockSpec — Generate a solvable depth-puzzle lock: a "Tumbler's Path" board with a guaranteed solution path carved first, an open-row forgiveness band wrapped around it, tumbler gate columns that pinch to a single exact row, and optional ward-traps that look open but jam on contact. Deterministic: the same (seed, tier) always yields the same board.
 - `solveLock` (function): function solveLock(spec: LockSpec): boolean — Whether the board has a path from the start row to the bolt seat at all.
 - `solveLockPath` (function): function solveLockPath(spec: LockSpec): number[] | null — Return a concrete row-per-column solution, or null if the board is unsolvable.
@@ -3158,13 +3171,74 @@
 
 ## @jgengine/core/physics/boatDynamics
 
+- `BoatAddedMass` (interface): interface BoatAddedMass — Hydrodynamic inertia, the `addedMass` effect: the water the hull carries along when it surges, sways and yaws, plus the hull's own yaw inertia and centre of gravity for the coupled sway–yaw equations.
 - `BoatDynamics` (interface): interface BoatDynamics — A force-based powered hull on the same tick/snapshot/retune contract as `VehicleDynamics`.
+- `BoatEffects` (interface): interface BoatEffects — The physical effects a boat can use. Each is a separate term with its own parameters and its own `strength`, a multiplier from `0` (off: the simple model's term) where `1` is exactly what the reference measures; between them the two blend, and past `1` the dial keeps going. Each stays finite, bounded and monotone over `0..4`: - `addedMass`: past 1, more entrained water (slower to surge, sway and yaw). - `resistance`, `planing`: past 1, more drag (lower top speed, shorter coast); planing trim scales with it. - `propeller`: past 1, more thrust from the same engine and screw. - `manoeuvring`: past 1, the hull keeps its measured derivatives and the rudder gains authority (a quicker, tighter turn). - `seakeeping`: past 1, more added mass and radiation damping (a calmer ride in the same sea). So a game takes only what it wants and as much of it as it wants (a real propeller on an arcade hull, a fifth of the drag, seakeeping on a raft). `boatFromReference` gives a published hull's defaults with every effect at strength 1.
 - `BoatOptions` (interface): interface BoatOptions — World hooks for a boat instance.
 - `BoatState` (interface): interface BoatState — Serializable boat state.
 - `BoatSteering` (type): type BoatSteering = | { kind: "rudder"; /** Rudder area, m². */ area: number; /** Largest rudder angle, rad (default `0.6`). */ maxAngle?: number; /** Share of prop thrust that washes over the rudder as flow, `0..1` (default `0.5`) — steering at low speed. */ propWash?: number; } | { kind: "outboard… — How the boat turns: a rudder needs water flowing past it; an outboard swings its own thrust.
 - `BoatStep` (interface): interface BoatStep — One boat tick: pose plus the telemetry wake, spray and engine sound read, grouped like `VehicleDynamicsStep`.
 - `BoatTuning` (interface): interface BoatTuning — A powered hull in physical units. Drag rises toward hull speed (`√(g·L)·1.34`) and then falls away once the hull planes, the keel resists sliding sideways, and the prop's thrust fades as the boat approaches the prop's speed.
-- `createBoatDynamics` (function): function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {}): BoatDynamics — Creates a {@link BoatDynamics}: throttle drives the prop, brake reverses it, steer swings the rudder or outboard. A rudder boat barely turns at rest unless the prop is washing over it; an outboard turns at rest because it swings the thrust itself. Deterministic for a given `dt` sequence.
+- `createBoatDynamics` (function): function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {}): BoatDynamics — Creates a {@link BoatDynamics}: throttle drives the prop, brake reverses it, steer swings the rudder or outboard. A rudder boat barely turns at rest unless the prop is washing over it; an outboard turns at rest because it swings the thrust itself. Deterministic for a given `dt` sequence. With no `effects` the hull is the simple model above; each effect in `tuning.effects` replaces its part of it with the physical term (see {@link BoatEffects}).
+- `hullSurgeAddedMass` (function): function hullSurgeAddedMass(massKg: number, length: number, density = WATER_DENSITY): number — Surge added mass of a hull as half a prolate spheroid of its length and twice its volume (the double-body image across the still surface): Lamb's `k₁ = α₀/(2 − α₀)` times the displaced mass.
+
+## @jgengine/core/physics/boatManoeuvring
+
+- `HullManoeuvring` (interface): interface HullManoeuvring — Hull and rudder manoeuvring forces of the MMG standard method (Yasukawa & Yoshimura 2015), the `manoeuvring` effect of `boatDynamics`: sway and yaw from the hull's drift and turn through its derivatives, and, with a `rudder`, the rudder normal force from the propeller race and the flow-straightened drift at the rudder with its hull interaction. So advance, tactical diameter and zig-zag overshoot come from the hull's own coefficients. Without a `rudder` the boat's `steering` acts as usual (an outboard swings its thrust at the propeller position).
+- `ManoeuvringDerivatives` (interface): interface ManoeuvringDerivatives — Hull force derivatives of the MMG standard method, over `½ρ·L·d·U²` (forces) and `½ρ·L²·d·U²` (moment).
+- `ManoeuvringLoads` (type): type ManoeuvringLoads = [x: number, y: number, n: number] — Forces at midship in ship axes (x forward, y to starboard, yaw to starboard), N and N·m.
+- `ManoeuvringRudder` (interface): interface ManoeuvringRudder — A rudder behind the propeller and its interaction with hull and race (MMG standard method).
+- `RudderInflow` (interface): interface RudderInflow — The propeller race the rudder sits in: inflow speed at the propeller, its `K_T` and advance ratio, and its diameter.
+- `hullManoeuvringForces` (function): function hullManoeuvringForces(hull: HullManoeuvring, length: number, density: number, u: number, v: number, r: number, out: ManoeuvringLoads = [0, 0, 0]): ManoeuvringLoads — Hull forces from drift and yaw rate at midship (the MMG `X_H` without straight-running resistance, `Y_H`, `N_H`). `v` is to starboard, `r` turning to starboard.
+- `rudderForces` (function): function rudderForces(rudder: ManoeuvringRudder, length: number, density: number, u: number, v: number, r: number, steer: number, race: RudderInflow, out: ManoeuvringLoads = [0, 0, 0]): ManoeuvringLoads — Rudder forces at midship (MMG): effective inflow from the propeller race, flow straightening of the drift at the rudder, normal force `½ρA·U_R²·f_α·sin α_R`, steering resistance and the hull's extra side force. `steer` is positive to starboard.
+
+## @jgengine/core/physics/boatPlaning
+
+- `PlaningBottom` (interface): interface PlaningBottom — A prismatic planing bottom for Savitsky's method, the `planing` effect of `boatDynamics`: the hull carries its weight on bottom pressure at a running trim set by the balance of that pressure's centre against the centre of gravity, and drags friction along the wetted bottom. Below `C_V = 0.6` (the bottom of Savitsky's fits) the drag at `C_V = 0.6` is scaled with speed squared and the trim eases to level at rest.
+- `PlaningForces` (interface): interface PlaningForces — The planing bottom's forces at one speed and trim.
+- `planingForces` (function): function planingForces(bottom: PlaningBottom, beam: number, massKg: number, speed: number, trim: number, water: BoatWater = {}): PlaningForces — Savitsky's (1964) planing forces at a trim: the mean wetted length that carries the weight, the mean bottom velocity, Schoenherr friction, the centre of pressure `l_p/(λb) = 0.75 − 1/(5.21·C_V²/λ² + 2.39)`, and the trimming moment about G with the thrust line.
+- `planingTrim` (function): function planingTrim(bottom: PlaningBottom, beam: number, massKg: number, speed: number, water: BoatWater = {}): number — The running trim where the planing bottom leaves no moment about G (bisection between 0.3° and 20°).
+
+## @jgengine/core/physics/boatPropeller
+
+- `BoatEngine` (interface): interface BoatEngine — What turns the propeller: a governor holding `throttle · maxRevs`, or an engine of `maxPower` limited to `maxRevs`.
+- `BoatPropeller` (interface): interface BoatPropeller — A screw propeller and its engine, the `propeller` effect of `boatDynamics`: thrust `(1 − t)·ρn²D⁴·K_T(J)` at the advance ratio `J = u·(1 − w)/(n·D)`, so top speed and acceleration follow from engine and propeller instead of a thrust law.
+- `PreparedOpenWater` (interface): interface PreparedOpenWater — A propeller's open-water curve reduced to cubics in `J`, ready to evaluate.
+- `PropellerOpenWater` (type): type PropellerOpenWater = | { kind: "bseries"; /** Blades, 2–7. */ blades: number; /** Expanded blade-area ratio `A_E/A_0`, 0.3–1.05. */ areaRatio: number; /** Pitch–diameter ratio, 0.5–1.4. */ pitchRatio: number; /** Apply the ITTC-1978 model-to-full-scale correction at this blade roughness, m (omi… — A propeller's open-water curve: a Wageningen B-series screw, or a polynomial in the advance ratio `J`.
+- `PropellerPoint` (interface): interface PropellerPoint — Where the propeller runs this instant.
+- `prepareOpenWater` (function): function prepareOpenWater(openWater: PropellerOpenWater, diameter: number): PreparedOpenWater — Reduces an open-water description to cubics in `J`: the B-series polynomials with pitch, area ratio and blades fixed (plus the ITTC-1978 correction `K_T −= ΔC_D·0.3·(P/D)·(cZ/D)`, `K_Q += ΔC_D·0.25·(cZ/D)` when full scale), or the given polynomial.
+- `propellerPoint` (function): function propellerPoint(propeller: BoatPropeller, curve: PreparedOpenWater, inflow: number, throttle: number, reverse: number, density: number): PropellerPoint — The propeller's operating point at an inflow speed (`u·(1 − w)`, m/s) and throttle: revs from the governor, or from the power balance `2πρn³D⁵·K_Q(J) = throttle·P` capped at `maxRevs`; astern, a share of the bollard thrust.
+
+## @jgengine/core/physics/boatReferences
+
+- `BOAT_REFERENCE_IDS` (const): const BOAT_REFERENCE_IDS: readonly BoatReferenceId[] — Every id {@link boatFromReference} accepts.
+- `BoatOverrides` (type): type BoatOverrides = Partial<Omit<BoatTuning, "effects">> & { effects?: { [K in keyof BoatEffects]?: Partial<NonNullable<BoatEffects[K]>> } } — Changes to a class's defaults: any top-level number, and per effect the parameters or `strength` to change.
+- `BoatReferenceId` (type): type BoatReferenceId = "holtrop-mennen-1982" | "speedboat-6m" | "kvlcc2-l7" — The published hulls {@link boatFromReference} knows.
+- `boatFromReference` (function): function boatFromReference(id: BoatReferenceId, overrides: BoatOverrides = {}): BoatTuning — The full tuning of a published hull class with every effect it has data for at full strength (added mass, resistance or planing, propeller and engine, MMG manoeuvring where published, seakeeping on a Wigley hull of its proportions), so a game gets a real boat in one line and tunes from there: `createBoatDynamics(boatFromReference("speedboat-6m"))`. `overrides` change the class's numbers and each effect's parameters or `strength` (`0` off … `1` as measured), so a fleet is data: one record per boat from a class plus a few overrides. An override retunes an effect the class has; add a new effect on the result. `bun run perf boat` checks each class against its reference sim.
+
+## @jgengine/core/physics/boatResistance
+
+- `BoatWater` (interface): interface BoatWater — Water for the hydrodynamic terms.
+- `FrictionLine` (type): type FrictionLine = "ittc1957" | "schoenherr" — A flat-plate friction line for the viscous term.
+- `HullResistance` (interface): interface HullResistance — Calm-water resistance of a displacement hull, the `resistance` effect of `boatDynamics`. Either a measured total coefficient (`coefficient`, `R = C·½ρ·L·T·U²`, a captive-test or MMG `R'0`), or the terms of Holtrop and Mennen's method: friction from a friction line on the wetted area times the form factor `1 + k`, wave-making and wave-breaking, a bulb near the surface, an immersed transom, appendages and the model–ship correlation allowance. Length and beam come from the boat's tuning; any coefficient left out is estimated from the hull.
+- `SEA_WATER_KINEMATIC_VISCOSITY` (const): const SEA_WATER_KINEMATIC_VISCOSITY: 0.00000118831 — Kinematic viscosity of sea water at 15 °C (ITTC 7.5-02-01-03), m²/s.
+- `frictionLineCoefficient` (function): function frictionLineCoefficient(line: FrictionLine, reynolds: number): number — Flat-plate friction coefficient at a Reynolds number: ITTC-1957 `0.075/(log₁₀Re − 2)²`, or Schoenherr's `0.242/√C_F = log₁₀(Re·C_F)` solved by Newton's method.
+- `prepareHullResistance` (function): function prepareHullResistance(form: HullResistance, length: number, beam: number, massKg: number, water: BoatWater = {}): (speed: number) => number — Prepares a {@link HullResistance} for a hull of `length` and `beam` displacing `massKg`: every speed-independent coefficient is worked out once and the returned function gives the resistance, N, at a forward speed, m/s.
+
+## @jgengine/core/physics/boatSeakeeping
+
+- `HullOffsetTable` (interface): interface HullOffsetTable — A hull as a table of offsets: `x` forward from the aft end, `z` up from the keel, half-breadths `[station][waterline]`, m.
+- `HullSeakeeping` (interface): interface HullSeakeeping — Heave, pitch and roll in waves, the `seakeeping` effect of `boatDynamics`. The hull is cut into strips; each strip's heave added mass and radiation damping come from Frank's close-fit source method at a reference frequency, the restoring from its waterline breadth, and the wave force from the incident pressure on its contour (Froude–Krylov, decaying with depth) plus diffraction. Summed about G they drive heave and pitch in the time domain; roll is a damped oscillator on the metacentric height forced by the wave slope across the hull. With a `sea` wave field the forcing is per component; without one the hull samples `waterHeight` along its length (the long-wave limit).
+- `PreparedSeakeeping` (interface): interface PreparedSeakeeping — A hull's strips and coefficients, ready for {@link seakeepingForces}.
+- `SeakeepingExcitation` (interface): interface SeakeepingExcitation — Each wave component's sectional exciting force per unit amplitude, ready to sum: `[component][station]`, real and imaginary.
+- `SeakeepingLoads` (type): type SeakeepingLoads = [heave: number, pitch: number, roll: number] — Heave force, pitch moment (bow down) and roll moment (port down) on a hull, N and N·m.
+- `SectionRadiation` (interface): interface SectionRadiation — A section's radiation solution at one frequency: heave added mass and damping, and its panels for the wave-force integrals.
+- `prepareSeakeeping` (function): function prepareSeakeeping(hull: HullSeakeeping, length: number, beam: number, massKg: number, water: BoatWater = {}, seaFrequency?: number): PreparedSeakeeping — Cuts a hull into strips at its draught and works out its heave–pitch added mass, damping and restoring about G at the reference frequency (strip theory, zero speed), its roll oscillator, and each strip's radiation solution.
+- `seakeepingExcitation` (function): function seakeepingExcitation(prepared: PreparedSeakeeping, field: WaveField): SeakeepingExcitation — Sectional exciting force per unit wave amplitude for every component of a wave field: the Froude–Krylov pressure `−ρg·∫e^(kz)·n_z ds` on each section plus diffraction `ρω²·∫φ₃·n_z·e^(kz) ds` from the radiation potential, times the strip's length weight.
+- `seakeepingForces` (function): function seakeepingForces(prepared: PreparedSeakeeping, excitation: SeakeepingExcitation, field: WaveField, x: number, z: number, forwardX: number, forwardZ: number, time: number, out: SeakeepingLoads = [0, 0, 0]): SeakeepingLoads — Wave loads on a hull at G `(x, z)` heading along `(forwardX, forwardZ)` at a time: each component's sectional force summed with its phase along the hull and the beam-averaging `sinc(k_t·b)` of its crests across each strip, and the roll moment from the wave slope across the hull.
+- `seakeepingForcesFromHeight` (function): function seakeepingForcesFromHeight(prepared: PreparedSeakeeping, height: (x: number, z: number) => number, level: number, x: number, z: number, forwardX: number, forwardZ: number, out: SeakeepingLoads = [0, 0, 0]): SeakeepingLoads — Wave loads from a plain surface-height function (no wave field): each strip's waterline breadth times its surface elevation above `level` (Froude–Krylov in the long-wave limit), and roll from the height difference across the beam.
+- `sectionRadiation` (function): function sectionRadiation(section: HalfSection, frequency: number, density = 1025, gravity = 9.81, panels = 6): SectionRadiation — Heave added mass and radiation damping of a symmetric section by Frank's close-fit source method: pulsating sources of constant strength on straight panels mirrored to port, the deep-water free-surface Green's function, the body condition at panel midpoints. The section runs keel to waterline as `[half-breadth, depth ≤ 0]` points.
+- `wigleyOffsets` (function): function wigleyOffsets(length: number, beam: number, draft: number, stations = 11, waterlines = 6): HullOffsetTable — A Wigley hull `y = (B/2)·(1 − ξ²)·(1 − ζ²)` as a table of offsets, stations clustered toward the ends.
 
 ## @jgengine/core/physics/buoyancy
 
@@ -4820,6 +4894,7 @@
 
 ## @jgengine/core/sensor/perception
 
+- `NearbyObserverLimit` (interface): interface NearbyObserverLimit — How many observers {@link observeNearby} asks, and from how far.
 - `PerceptionCandidate` (interface): interface PerceptionCandidate — A candidate target considered by a sight check.
 - `PerceptionConfig` (interface): interface PerceptionConfig — Configuration for sight, hearing, memory decay, squad sharing and optional occlusion.
 - `PerceptionMemory` (interface): interface PerceptionMemory — A remembered target and its linearly decaying confidence.
@@ -4831,6 +4906,7 @@
 - `PerceptionStimulus` (interface): interface PerceptionStimulus — An event that can seed an observer's memory.
 - `PerceptionStimulusKind` (type): type PerceptionStimulusKind = "sight" | "sound" | "damage" | "scent" — The kinds of stimulus the perception service can retain. A `scent` (blood, bait, fuel) carries `scentRange × loudness` and, like a sound, needs no clear line: it seeps around corners.
 - `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory. Signals are judged in the order the caller supplies them, never from the wall clock.
+- `observeNearby` (function): function observeNearby(perception: Pick<PerceptionService, "observe">, observers: Iterable<PerceptionObserver>, candidate: PerceptionCandidate, nowMs: number, limit: NearbyObserverLimit): string[] — Ask a bounded roster of observers what they see of one candidate: those within `radius` on the ground, sorted by id and capped at `max`. Returns the roster's ids, to hand an alert level as its observers. The caller picks who can be an observer; this bounds the work.
 
 ## @jgengine/core/sensor/revealQuery
 
@@ -5170,7 +5246,7 @@
 
 ## @jgengine/core/time/beatClock
 
-- `BeatAccuracyTier` (interface): interface BeatAccuracyTier { id: string; windowSec: number } — ⚠ undocumented
+- `BeatAccuracyTier` (interface): interface BeatAccuracyTier extends ThresholdBoundary — A judgement window, a Ladder step read descending: `at` is the maximum absolute delta (game-seconds) from the beat that still earns this tier.
 - `BeatBufferedAction` (interface): interface BeatBufferedAction<T> — An action queued on a beat buffer, with when it was pressed and the beat it fires on.
 - `BeatClock` (interface): interface BeatClock { advance(gameDt: number): BeatSnapshot; snapshot(): BeatSnapshot; now(): number; beatDurationSec(): number; bpm(): number } — ⚠ undocumented
 - `BeatClockConfig` (interface): interface BeatClockConfig { bpm: number; beatsPerBar?: number } — ⚠ undocumented
@@ -5500,8 +5576,8 @@
 
 ## @jgengine/core/water/OceanShader
 
-- `oceanFragmentShader` (const): const oceanFragmentShader: "\n\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform sampler2D uBedMap;\nuniform vec4 uBedRect;\nuniform float uSurfaceY;\n\n// Water depth under a point in ocean-local XZ: the surface height minus t… — GLSL fragment shader: depth colour and clarity, sky reflection, sun and moon light, crest and shore foam.
-- `oceanVertexShader` (const): const oceanVertexShader: "\n\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform sampler2D uBedMap;\nuniform vec4 uBedRect;\nuniform float uSurfaceY;\n\n// Water depth under a point in ocean-local XZ: the surface height minus the… — GLSL vertex shader that displaces the ocean sheet by the summed Gerstner waves, in world space.
+- `oceanFragmentShader` (const): const oceanFragmentShader: "\n\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uWavePhases[6];\nuniform float uChoppiness;\nuniform sampler2D uBedMap;\nuniform vec4 uBedRect;\nuniform float uSurfaceY;\n\n// Water depth under a point in ocean-local… — GLSL fragment shader: depth colour and clarity, sky reflection, sun and moon light, crest and shore foam.
+- `oceanVertexShader` (const): const oceanVertexShader: "\n\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uWavePhases[6];\nuniform float uChoppiness;\nuniform sampler2D uBedMap;\nuniform vec4 uBedRect;\nuniform float uSurfaceY;\n\n// Water depth under a point in ocean-local X… — GLSL vertex shader that displaces the ocean sheet by the summed Gerstner waves, in world space.
 
 ## @jgengine/core/water/oceanBed
 
@@ -5510,6 +5586,18 @@
 ## @jgengine/core/water/oceanColor
 
 - `oceanColor` (function): function oceanColor(ocean: Pick<OceanEnvironmentDescriptor, "color" | "palette" | "clarity">): { clarity?: number | undefined; fresnelStrength?: number | undefined; foam?: string | undefined; crest?: string | undefined; deep?: string | undefined; shallow: string; } — The descriptor's colors in the shell Ocean's terms; unset palette fields keep the Ocean default.
+
+## @jgengine/core/water/seaState
+
+- `SeaStateSpectrum` (interface): interface SeaStateSpectrum — A sea spectrum by significant height and peak period; `peakEnhancement` 1 is Pierson–Moskowitz, 3.3 the mean JONSWAP sea.
+- `WaveField` (interface): interface WaveField — A sea state as plain data: a sum of regular components on a still level. The boat (`boatDynamics` `sea`) and the drawn water (`WaterSurfaceConfig.field`) read the same object, so a hull rises on the wave the player sees.
+- `WaveFieldComponent` (interface): interface WaveFieldComponent — One regular deep-water component: `η = a·cos(k·(x·cos θ + z·sin θ) − ω·t + φ)` on the XZ plane.
+- `WaveFieldOptions` (interface): interface WaveFieldOptions — How {@link createWaveField} samples a spectrum.
+- `createWaveField` (function): function createWaveField(spectrum: SeaStateSpectrum, options: WaveFieldOptions): WaveField — Samples a spectrum into a deterministic wave field: frequencies in equal bands from 0.5ωp to 4ωp, each jittered within its band, amplitudes `√(2·S(ω)·Δω)`, seeded phases, and with `spreading` each heading drawn from `cos^(2s)` about the mean. Components come out largest first, so a renderer that draws only the first few draws the ones that matter.
+- `regularWaveField` (function): function regularWaveField(amplitude: number, period: number, direction = 0, options: { phase?: number; level?: number; density?: number; gravity?: number } = {}): WaveField — One regular wave as a {@link WaveField}: amplitude, m, and period, s, travelling toward `direction` on the XZ plane.
+- `seaSpectrumDensity` (function): function seaSpectrumDensity(spectrum: SeaStateSpectrum, omega: number): number — Spectral density `S(ω)`, m²·s, of a Pierson–Moskowitz (`γ = 1`) or JONSWAP sea (DNV-RP-C205 form, `σ` 0.07 below the peak and 0.09 above it).
+- `waveFieldHeight` (function): function waveFieldHeight(field: WaveField, x: number, z: number, time: number): number — Surface height, m, of a wave field at a point and time (still level plus every component).
+- `waveFieldSignificantHeight` (function): function waveFieldSignificantHeight(field: WaveField): number — Significant wave height of a field, m: `4·√(Σa²/2)`.
 
 ## @jgengine/core/water/waterKind
 
@@ -5521,10 +5609,10 @@
 
 ## @jgengine/core/water/waterSurface
 
-- `GerstnerWave` (interface): interface GerstnerWave { direction: readonly [number, number]; wavelength: number; amplitude: number; steepness: number; speed: number } — ⚠ undocumented · used by `synthesizeWaves`: The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list.
+- `GerstnerWave` (interface): interface GerstnerWave { direction: readonly [number, number]; wavelength: number; amplitude: number; steepness: number; speed: number; phase?: number } — ⚠ undocumented · used by `synthesizeWaves`: The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list.
 - `WaterNormal` (type): type WaterNormal = readonly [number, number, number] — ⚠ undocumented
 - `WaterSurface` (interface): interface WaterSurface { readonly level: number; readonly waves: readonly GerstnerWave[]; height(x: number, z: number, time: number): number; normal(x: number, z: number, time: number): WaterNormal; displace(x: number, z: number, time: number): readonly [number, … — ⚠ undocumented
-- `WaterSurfaceConfig` (interface): interface WaterSurfaceConfig { level?: number; levelAt?: (time: number) => number; waveHeight?: number; waveScale?: number; waveSpeed?: number; waves?: number; choppiness?: number; direction?: number; steepness?: number } — ⚠ undocumented · used by `synthesizeWaves`: The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list.
+- `WaterSurfaceConfig` (interface): interface WaterSurfaceConfig { level?: number; levelAt?: (time: number) => number; waveHeight?: number; waveScale?: number; waveSpeed?: number; waves?: number; choppiness?: number; direction?: number; steepness?: number; field?: WaveField } — ⚠ undocumented · used by `synthesizeWaves`: The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list.
 - `synthesizeWaves` (function): function synthesizeWaves(config: WaterSurfaceConfig = {}): GerstnerWave[] — The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list.
 - `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
 - `waterSurfaceConfigFromDescriptor` (function): function waterSurfaceConfigFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurfaceConfig — The wave config an `ocean()` descriptor describes, for the CPU surface and the drawn water alike.
@@ -5628,7 +5716,7 @@
 
 - `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
 - `AUTO_TARGET_POLICIES` (const): const AUTO_TARGET_POLICIES: readonly AutoTargetPolicy[] — Every policy, in the order a "cycle targeting" button steps through them.
-- `Aabb` (interface): interface Aabb — ⚠ undocumented · used by `rectRegion`: An axis-aligned rectangle on the XZ plane.
+- `Aabb` (interface): interface Aabb { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `rectRegion`: An axis-aligned rectangle on the XZ plane.
 - `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
 - `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
 - `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
@@ -5875,7 +5963,7 @@
 - `LockCell` (interface): interface LockCell — One cell inside the fogged {@link visibleCells} window: its board position and kind.
 - `LockSpec` (interface): interface LockSpec — A generated lock board. `open[col]` holds every enterable row in that column.
 - `LockStepResult` (type): type LockStepResult = "advanced" | "slip" | "bind" | "trap" | "success" — Outcome of one {@link stepLock} call: `advanced`/`success` move the pick, `slip`/`bind`/`trap` do not and should cost a life.
-- `LockTierSpec` (interface): interface LockTierSpec — Difficulty dials for one lock: board size, forgiveness band, gates, fog window, traps.
+- `LockTierSpec` (interface): interface LockTierSpec extends ThresholdBoundary — Difficulty dials for one lock, a Ladder step (`at` is its place in the difficulty order): board size, forgiveness band, gates, fog window, traps.
 - `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly backpedalSpeedMultiplier: 0.65; readonly groundAcceleration: 26; readonly airAcceleration: 12; … — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
 - `MagnitudeOf` (type): type MagnitudeOf<P> = (membership: AreaMembership<P>) => number — Read a comparable magnitude from a membership (e.g. buff strength, damage per tick).
 - `MapCellStates` (interface): interface MapCellStates — Sparse per-cell tones drawn on the map over a grid.

@@ -1,7 +1,7 @@
 import { useMemo, useRef, type ReactNode } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
-import { Cave } from "@jgengine/core/cave/Cave.draw";
+import { Cave } from "../../engine-local/cave/Cave.draw";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 

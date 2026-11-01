@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { devtools } from "../devtools/devtools";
 import { seededRng } from "../random/rng";
-import { createGameSave, GAME_SAVE_VERSION, type GameSaveDocument, type GameSaveSystem } from "./saveDocument";
+import { createGameSave, GAME_SAVE_VERSION, upgradeSaveEnvelope, type GameSaveDocument, type GameSaveSystem } from "./saveDocument";
 import { memorySaveBackend, type SaveBackend, type SaveTimers } from "./saveStore";
 
 /** A recording backend so a test can assert what was written without a real store. */
@@ -302,6 +302,27 @@ describe("createGameSave — migration", () => {
     });
     await save.load();
     expect(counter.read()).toBe(3);
+  });
+});
+
+describe("upgradeSaveEnvelope", () => {
+  test("a bare system bag gains the current envelope and keeps its sections and clock", () => {
+    const upgraded = upgradeSaveEnvelope({ systems: { wanted: { peakStars: 2 } }, time: 12, rng: "junk" }, { game: "demo", version: 3 });
+    expect(upgraded).toEqual({ version: 3, game: "demo", savedAt: 0, time: 12, playtime: 0, rng: null, systems: { wanted: { peakStars: 2 } } });
+  });
+
+  test("a non-object payload becomes an empty document", () => {
+    expect(upgradeSaveEnvelope("nope", { game: "demo", version: 1 }).systems).toEqual({});
+  });
+
+  test("without a migrate, createGameSave lifts a pre-versioned payload through it", async () => {
+    const recorder = recordingBackend({ "game-save:demo:default": JSON.stringify({ systems: { modern: { value: 4 } }, time: 9 }) });
+    const counter = counterSystem("modern");
+    const save = createGameSave({ backend: recorder.backend, game: "demo", version: 2, systems: [counter.system] });
+    const document = await save.load();
+    expect(document.game).toBe("demo");
+    expect(document.time).toBe(9);
+    expect(counter.read()).toBe(4);
   });
 });
 

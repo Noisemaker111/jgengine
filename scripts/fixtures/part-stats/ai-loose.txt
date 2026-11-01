@@ -1,0 +1,3 @@
+export function createTimer() {
+  return { reloadTimer: 1, tick(dt: number) { this.reloadTimer -= dt; } };
+}

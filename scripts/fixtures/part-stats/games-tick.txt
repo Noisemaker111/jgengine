@@ -1,0 +1,8 @@
+import { pick } from "@jgengine/core/random/pick";
+import { createStatPool } from "@jgengine/core/stats/statPool";
+
+export function createTick() {
+  let roll = 1;
+  for (const entry of [{ weight: 1 }]) roll -= entry.weight;
+  return roll;
+}

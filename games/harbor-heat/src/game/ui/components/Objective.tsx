@@ -13,7 +13,7 @@ import { city } from "../../city";
 import { cityOf } from "../../cityRuntime";
 import { frontViews } from "../../city/fronts";
 import { RACE_ENTRY_FEE, SAFEHOUSE_PRICE } from "../../commands";
-import { drivingStore, raceStore } from "../../handroll";
+import { drivingStore, raceStore } from "../../streetPlay";
 import { cargoStore } from "../../items/cargoHaul";
 import { bountyPayout, bountyStore } from "../../jobs/bounties";
 import { courierDeadline, courierObjectiveStore, courierStore, DELIVERY_ROUTES, DISPATCH, RUSH_BOND, THIEF } from "../../jobs/courier";

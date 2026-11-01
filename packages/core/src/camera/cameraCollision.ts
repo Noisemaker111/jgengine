@@ -13,6 +13,7 @@
  * cannot leave the camera inside geometry.
  */
 
+import { clamp } from "../math/scalar";
 import type { SceneRaycastApi } from "@jgengine/core/scene/sceneRaycast";
 
 /** Minimal structural view of a raycast hit object: its own tags plus a parent link to walk. Keeps this filter free of a three.js import so it stays unit-testable. */
@@ -84,10 +85,6 @@ export interface CameraClearanceResult {
   pulled: boolean;
 }
 
-function clampNumber(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
-}
-
 /**
  * Pull a camera in along its boom so it never sits inside world collision.
  * A blocking surface rejects the desired position: the camera moves to
@@ -116,7 +113,7 @@ export function clearCameraBoom(input: CameraClearanceInput): CameraClearanceRes
   if (hit !== null && hit <= 0) {
     return { position: { ...desired }, arm: length, pulled: false };
   }
-  const allowed = hit === null ? length : clampNumber(hit - clearance, 0, length);
+  const allowed = hit === null ? length : clamp(hit - clearance, 0, length);
 
   let arm = allowed;
   const previous = input.previousArm;

@@ -1,0 +1,7 @@
+import { pick } from "../random/pick";
+
+export function drawEntry(entries: { weight: number }[]) {
+  let roll = 1;
+  for (const entry of entries) roll -= entry.weight;
+  return roll;
+}

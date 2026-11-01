@@ -6,7 +6,7 @@ import type { WorldHookCall } from "@jgengine/core/worldModel/worldModel";
 import { editorLayers } from "../../editorLayers";
 import { earn, spend } from "../cash";
 import { cityEvent, cityOf } from "../cityRuntime";
-import { handrollOf } from "../handroll";
+import { streetPlayOf } from "../streetPlay";
 
 /** A business lot as the scene authors it: which city kind it becomes, its price and where it stands. */
 export interface FrontLot {
@@ -56,7 +56,7 @@ export function buyRefusal(ctx: GameContext, lot: FrontLot): string | null {
   const place = world.placeAt(lot.position[0], lot.position[1]);
   const owner = place === null ? null : world.fact(`${place}.owner`);
   if (owner === "carmine" || owner === "riptide") return `${owner === "carmine" ? "The Carmines" : "The Riptides"} run ${world.def.places?.[place ?? ""]?.label ?? "this block"}. Take it first.`;
-  if (handrollOf(ctx).wanted().stars >= 2) return "Nobody sells a business to someone the cops are chasing.";
+  if (streetPlayOf(ctx).wanted().stars >= 2) return "Nobody sells a business to someone the cops are chasing.";
   if (ctx.game.economy.balance(ctx.player.userId, "cash") < lot.price) return `${lot.label} costs $${lot.price.toLocaleString()}.`;
   return null;
 }

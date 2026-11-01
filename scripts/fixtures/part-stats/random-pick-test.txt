@@ -1,0 +1,4 @@
+import { pick } from "./pick";
+export function createPickFixture() {
+  return pick([1]);
+}

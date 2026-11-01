@@ -11,7 +11,8 @@ import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
 import { entityModels } from "../../world/models";
 import { tribuneAds } from "../../credits";
 import { BurnerPhone, type PhonePad } from "../fiction/BurnerPhone";
-import { HH, KeyLegend, navItem, useMenuSound, useMoveTick, useRoom } from "../fiction/kit";
+import { KeyLegend, navItem, useMenuSound, useMoveTick, useRoom } from "../fiction/kit";
+import { HH } from "../theme";
 import { PhoneSettings, type SettingsPad } from "../fiction/PhoneSettings";
 
 export interface TitleItem {

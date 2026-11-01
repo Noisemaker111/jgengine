@@ -1,3 +1,5 @@
+import { clamp } from "../math/scalar";
+
 /** One foot's animated ankle height and the ground found under it, both in world units. */
 export interface FootGroundSample {
   /** Animated ankle (foot bone) height this frame, before any correction. */
@@ -29,10 +31,6 @@ export interface FootPlacement {
   grounded: boolean;
 }
 
-function clamp(value: number, limit: number): number {
-  return Math.max(-limit, Math.min(limit, value));
-}
-
 /**
  * Resolves foot placement for a rig whose clips were authored on flat ground at its origin.
  * Each foot keeps its animated lift and moves by its ground's height above or below the origin,
@@ -55,7 +53,7 @@ export function placeFeet(input: FootPlacementInput, out?: FootPlacement): FootP
       continue;
     }
     lowestGap = Math.min(lowestGap, foot.ankleY - input.ankleHeight - foot.groundY);
-    const followed = foot.ankleY + clamp(foot.groundY - input.originY, limit);
+    const followed = foot.ankleY + clamp(foot.groundY - input.originY, -limit, limit);
     const target = Math.min(foot.ankleY + limit, Math.max(followed, foot.groundY + input.ankleHeight));
     result.ankleTargets[i] = target;
     pelvis = Math.min(pelvis, target - foot.ankleY);

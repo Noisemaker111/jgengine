@@ -4,7 +4,7 @@ import { game } from "../../game.config";
 import { loop } from "../../loop";
 import { content } from "../content";
 import { cityEvent } from "../cityRuntime";
-import { handrollOf } from "../handroll";
+import { streetPlayOf } from "../streetPlay";
 import { RADIO_THEMES } from "./songs";
 import { HARBOR_RADIO } from "./stations";
 import { bulletinForLog, bulletinForWanted } from "./bulletins";
@@ -30,7 +30,7 @@ function run(ctx: GameContext, seconds: number): void {
 function drive(ctx: GameContext): void {
   const me = ctx.scene.entity.get(ctx.player.userId)!;
   ctx.scene.entity.spawn("car_compact", { id: "radio_car", position: [me.position[0] + 2, me.position[1], me.position[2]], role: "prop" });
-  handrollOf(ctx).enterVehicle(ctx, "radio_car");
+  streetPlayOf(ctx).enterVehicle(ctx, "radio_car");
 }
 
 describe("Harbor Heat radio content", () => {
@@ -67,7 +67,7 @@ describe("Harbor Heat radio in play", () => {
     ctx.game.commands.run("radio", {});
     run(ctx, 0.2);
     expect(radioStore.read(ctx)?.frequency).toBe("1040 AM");
-    handrollOf(ctx).exitVehicle(ctx, true);
+    streetPlayOf(ctx).exitVehicle(ctx, true);
     run(ctx, 0.5);
     expect(radioStore.read(ctx)).toBeNull();
     expect(radioOf(ctx).dial()).toBe("harbor_talk");

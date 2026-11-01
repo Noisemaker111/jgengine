@@ -1,0 +1,8 @@
+import { readyAfter } from "../time/cooldown";
+
+export interface Brain {
+  cooldownLeft: number;
+}
+export function createBrain() {
+  return { tick(dt: number, brain: Brain) { brain.cooldownLeft -= dt; } };
+}

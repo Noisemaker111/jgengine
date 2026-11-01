@@ -108,8 +108,8 @@ const LOOT_CATALOG: LootCatalog = {
     },
   ],
   rarities: [
-    { id: "common", weight: 70, affixCount: 0 },
-    { id: "rare", weight: 30, affixCount: 1, statScale: 1.2, namePart: "Rare" },
+    { id: "common", at: 0, weight: 70, affixCount: 0 },
+    { id: "rare", at: 1, weight: 30, affixCount: 1, statScale: 1.2, namePart: "Rare" },
   ],
   manufacturers: [{ id: "voss", name: "Voss" }],
   levelScale: [

@@ -1,3 +1,4 @@
+import { clamp } from "../math/scalar";
 import { resolveGraphicsProfile, type GraphicsProfile } from "./graphicsProfile";
 import {
   asSettingType,
@@ -65,10 +66,6 @@ function isGraphicsQuality(value: unknown): value is GraphicsQuality {
   return typeof value === "string" && QUALITY_VALUES.has(value);
 }
 
-function clampRenderScale(value: number): number {
-  return Math.min(RENDER_SCALE_MAX, Math.max(RENDER_SCALE_MIN, value));
-}
-
 /** The stored quality tier, falling back to the default when the value is missing or unknown. */
 export function readGraphicsQuality(store: Pick<SettingsStore, "get">): GraphicsQuality {
   const raw = store.get(SETTING_IDS.graphicsQuality, DEFAULT_GRAPHICS_QUALITY);
@@ -93,7 +90,7 @@ export function readGraphicsSettings(
     quality,
     profile: {
       ...tier,
-      renderScale: clampRenderScale(store.get(SETTING_IDS.graphicsRenderScale, tier.renderScale)),
+      renderScale: clamp(store.get(SETTING_IDS.graphicsRenderScale, tier.renderScale), RENDER_SCALE_MIN, RENDER_SCALE_MAX),
       anisotropy: toAnisotropy(store.get(SETTING_IDS.graphicsAnisotropy, String(tier.anisotropy)), tier.anisotropy),
       postStages,
     },

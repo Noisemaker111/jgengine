@@ -1,6 +1,6 @@
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useStore } from "@jgengine/react/store";
-import { MAX_HEAT, MAX_STARS, type WantedSnapshot, wantedStore } from "../../handroll";
+import { MAX_HEAT, MAX_STARS, type WantedSnapshot, wantedStore } from "../../streetPlay";
 
 /** HHPD's own words for what it is doing, so the stars read as a search rather than a score. */
 function heatLine(wanted: WantedSnapshot): string {

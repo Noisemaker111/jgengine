@@ -226,6 +226,9 @@ function Home() {
             <Link to="/docs" className="btn btn-secondary">
               Search all {CAPABILITIES.length} capabilities <span className="arrow" aria-hidden>→</span>
             </Link>
+            <Link to="/cookbook" className="btn btn-secondary">
+              Thirty features in a few lines <span className="arrow" aria-hidden>→</span>
+            </Link>
           </div>
         </div>
       </section>

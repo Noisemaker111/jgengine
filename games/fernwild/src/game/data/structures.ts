@@ -1,4 +1,4 @@
-import type { BaseBuildingConfig, StructureShapeDef } from "@jgengine/core/basebuilding/baseBuilding";
+import type { BaseBuildingConfig, StructureShapeDef } from "../../engine-local/basebuilding/baseBuilding";
 import type { SocketDef } from "@jgengine/core/placement/buildSockets";
 
 /**
@@ -130,10 +130,10 @@ const RULES: BaseBuildingConfig["rules"] = [
  * plain ranged shots; stone only takes metal tools and explosives.
  */
 const TIERS: BaseBuildingConfig["tiers"] = [
-  { id: "thatch", damage: { ranged: 0 } },
-  { id: "wood", damage: { fist: 0, primitive: 0, ranged: 0 } },
-  { id: "stone", damage: { "*": 0, metal: 1, explosive: 1 } },
-  { id: "station" },
+  { id: "thatch", at: 0, damage: { ranged: 0 } },
+  { id: "wood", at: 1, damage: { fist: 0, primitive: 0, ranged: 0 } },
+  { id: "stone", at: 2, damage: { "*": 0, metal: 1, explosive: 1 } },
+  { id: "station", at: 3 },
 ];
 
 export const TIER_COLORS: Record<TierId, string> = { thatch: "#c9a85a", wood: "#8a5a34", stone: "#9a978f", station: "#6b5a48" };

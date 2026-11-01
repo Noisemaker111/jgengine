@@ -1,3 +1,4 @@
+import { clamp } from "../math/scalar";
 import type { AxisBinding, AxisRange } from "./axisInput";
 
 /**
@@ -66,10 +67,6 @@ export interface AxisShaper<TAxes extends string> {
 
 const FULL_RANGE: AxisRange = { min: -1, max: 1 };
 
-function clampTo(value: number, range: AxisRange): number {
-  return value < range.min ? range.min : value > range.max ? range.max : value;
-}
-
 /** Deadzone, saturation and curve applied to one raw value; sign is preserved. */
 export function shapeAxisValue(raw: number, profile: AxisShapeProfile | undefined): number {
   if (profile === undefined) return raw;
@@ -116,7 +113,7 @@ export function createAxisShaper<TAxes extends string>(initial: AxisShaperConfig
         const range = axis.range ?? FULL_RANGE;
         const profile = isAnalog(name, sample?.analog) ? axis.analog : axis.digital;
         const scale = axis.scale === undefined ? 1 : axis.scale(sample?.signal ?? 0);
-        const target = clampTo(shapeAxisValue(raw[name] ?? 0, profile) * scale, range);
+        const target = clamp(shapeAxisValue(raw[name] ?? 0, profile) * scale, range.min, range.max);
         const from = current[name] ?? 0;
         const rate = rateFor(from, target, profile);
         let next: number;
@@ -131,7 +128,7 @@ export function createAxisShaper<TAxes extends string>(initial: AxisShaperConfig
           const move = rate * step;
           next = Math.abs(delta) <= move ? target : from + Math.sign(delta) * move;
         }
-        current[name] = clampTo(next, range);
+        current[name] = clamp(next, range.min, range.max);
       }
       return current;
     },

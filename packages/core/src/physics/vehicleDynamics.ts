@@ -2,7 +2,7 @@ import type { AxisInput } from "../input/axisInput";
 import type { CollisionObstacle } from "../movement/movementModel";
 import { createVehicleObstacleClamp, type VehicleImpact, type VehicleMoveClamp } from "./vehicleObstacles";
 import { sampleGripCurve, type GripCurve } from "./gripCurve";
-import { clamp01 } from "../math/scalar";
+import { clamp, clamp01 } from "../math/scalar";
 
 /**
  * One axle's tire, in physical terms. Lateral force follows a simplified Pacejka curve
@@ -1448,9 +1448,9 @@ export function createVehicleDynamics(
   }
 
   function steerInAir(air: VehicleAirTuning, input: AxisInput, explicit: VehicleAirInput | undefined, h: number): void {
-    const pitch = clampUnit(explicit?.pitch ?? clamp01(input.throttle) - clamp01(input.brake));
-    const yaw = clampUnit(explicit?.yaw ?? input.steer);
-    const roll = clampUnit(explicit?.roll ?? 0);
+    const pitch = clamp(explicit?.pitch ?? clamp01(input.throttle) - clamp01(input.brake), -1, 1);
+    const yaw = clamp(explicit?.yaw ?? input.steer, -1, 1);
+    const roll = clamp(explicit?.roll ?? 0, -1, 1);
     const damping = air.damping ?? 1.5;
     const maxRate = air.maxRate ?? 5.5;
     state.body.pitchRate = driveRate(state.body.pitchRate, pitch * air.pitchAccel, damping, maxRate, h);
@@ -1763,9 +1763,6 @@ function balanceLean(lateralAccel: number): number {
   return Math.atan(lateralAccel / GRAVITY);
 }
 
-function clampUnit(value: number): number {
-  return Math.max(-1, Math.min(1, value));
-}
 
 /** Angular rate driven by input acceleration and slowed by damping, capped at `maxRate` only while input pushes past it. */
 function driveRate(rate: number, accel: number, damping: number, maxRate: number, h: number): number {

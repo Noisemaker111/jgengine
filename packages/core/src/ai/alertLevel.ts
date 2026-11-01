@@ -97,6 +97,42 @@ export interface AlertStep<Tier> {
   standDown: boolean;
 }
 
+/** Where a search works: around the last sighting, out to `radius` metres. */
+export interface AlertSearchArea {
+  /** World XZ of the last sighting. */
+  center: readonly [number, number];
+  radius: number;
+  lastSeenAt: number;
+}
+
+/** How wide a search starts at each tier and how it widens while the trail is cold. */
+export interface AlertSearchTuning<Tier> {
+  /** Starting radius, metres, while the sighting is fresh. */
+  radius: (tier: Tier) => number;
+  /** Metres added per second out of sight. */
+  growPerSecond: number;
+  /** The radius never grows past this. */
+  maxRadius: number;
+}
+
+/**
+ * The circle a search should work this tick: centred on the step's anchor, the tier's radius grown by
+ * the seconds out of sight, capped. `null` with no tier or no sighting yet.
+ *
+ * @capability alert-search-area last-sighting search circle that widens while the trail is cold
+ */
+export function alertSearchArea<Tier>(
+  step: Pick<AlertStep<Tier>, "tier" | "anchor" | "outOfSightSeconds">,
+  tuning: AlertSearchTuning<Tier>,
+): AlertSearchArea | null {
+  if (step.tier === null || step.anchor === null) return null;
+  return {
+    center: [step.anchor.at[0], step.anchor.at[1]],
+    radius: Math.min(tuning.maxRadius, tuning.radius(step.tier) + step.outOfSightSeconds * tuning.growPerSecond),
+    lastSeenAt: step.anchor.lastSeenAt,
+  };
+}
+
 /** Counters a devtools probe, a HUD or a test reads. */
 export interface AlertStats {
   value: number;

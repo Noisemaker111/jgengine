@@ -15,6 +15,7 @@ import { Route as PlaygroundRouteImport } from './routes/playground'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as DocsRouteImport } from './routes/docs'
+import { Route as CookbookRouteImport } from './routes/cookbook'
 import { Route as AgentsDotmdRouteImport } from './routes/agents[.]md'
 import { Route as AdoptRouteImport } from './routes/adopt'
 import { Route as IndexRouteImport } from './routes/index'
@@ -51,6 +52,11 @@ const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
   path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookbookRoute = CookbookRouteImport.update({
+  id: '/cookbook',
+  path: '/cookbook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentsDotmdRoute = AgentsDotmdRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/adopt': typeof AdoptRoute
   '/agents.md': typeof AgentsDotmdRoute
+  '/cookbook': typeof CookbookRoute
   '/docs': typeof DocsRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/adopt': typeof AdoptRoute
   '/agents.md': typeof AgentsDotmdRoute
+  '/cookbook': typeof CookbookRoute
   '/docs': typeof DocsRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/adopt': typeof AdoptRoute
   '/agents.md': typeof AgentsDotmdRoute
+  '/cookbook': typeof CookbookRoute
   '/docs': typeof DocsRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/'
     | '/adopt'
     | '/agents.md'
+    | '/cookbook'
     | '/docs'
     | '/llms-full.txt'
     | '/llms.txt'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/adopt'
     | '/agents.md'
+    | '/cookbook'
     | '/docs'
     | '/llms-full.txt'
     | '/llms.txt'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/'
     | '/adopt'
     | '/agents.md'
+    | '/cookbook'
     | '/docs'
     | '/llms-full.txt'
     | '/llms.txt'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdoptRoute: typeof AdoptRoute
   AgentsDotmdRoute: typeof AgentsDotmdRoute
+  CookbookRoute: typeof CookbookRoute
   DocsRoute: typeof DocsRoute
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
@@ -241,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/docs'
       fullPath: '/docs'
       preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookbook': {
+      id: '/cookbook'
+      path: '/cookbook'
+      fullPath: '/cookbook'
+      preLoaderRoute: typeof CookbookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agents.md': {
@@ -299,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdoptRoute: AdoptRoute,
   AgentsDotmdRoute: AgentsDotmdRoute,
+  CookbookRoute: CookbookRoute,
   DocsRoute: DocsRoute,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
@@ -313,6 +334,7 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
 
 import type { getRouter } from './router.tsx'
 import type { createStart } from '@tanstack/react-start'

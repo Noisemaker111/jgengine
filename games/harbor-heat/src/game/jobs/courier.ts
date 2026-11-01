@@ -14,7 +14,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { createSessionLoop, installSessionProbe, type SessionLoop, type SessionLoopState } from "@jgengine/core/run/sessionLoop";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { editorLayers } from "../../editorLayers";
-import { handrollOf } from "../handroll";
+import { streetPlayOf } from "../streetPlay";
 import { bankContraband, failContraband, loadContraband } from "../items/cargoHaul";
 import { grantCred } from "../progression/cred";
 import { earn, spend } from "../cash";
@@ -263,7 +263,7 @@ function commit(ctx: GameContext): void {
 }
 
 export function courierPosition(ctx: GameContext): readonly [number, number, number] | null {
-  return ctx.scene.entity.get(handrollOf(ctx).drivingVehicleId() ?? ctx.player.userId)?.position ?? null;
+  return ctx.scene.entity.get(streetPlayOf(ctx).drivingVehicleId() ?? ctx.player.userId)?.position ?? null;
 }
 
 function near(ctx: GameContext, target: readonly [number, number], radius: number): boolean {
@@ -411,7 +411,7 @@ export function registerCourier(ctx: GameContext): void {
       const mission = courierRuntime(state).state();
       if (mission === null || mission.objective !== "deliver") return { reason: "no-handoff", message: "Nothing to hand over yet." };
       if (!near(state, routeOf(current).position, 8)) return { reason: "not-at-drop", message: "Take the parcel to the drop." };
-      if (handrollOf(state).carSpeedKmh() > 8) return { reason: "moving", message: "Slow down to deliver." };
+      if (streetPlayOf(state).carSpeedKmh() > 8) return { reason: "moving", message: "Slow down to deliver." };
       return null;
     },
     apply(state) {
@@ -425,7 +425,7 @@ export function registerCourier(ctx: GameContext): void {
   // The receipt's "Try again" / "Next parcel": back at the booth with the parcel in hand, no walk back.
   ctx.game.commands.define<{ service?: string }>("courier.retry", { apply(state, input) {
     dismissReceipt(state);
-    handrollOf(state).exitVehicle(state, true);
+    streetPlayOf(state).exitVehicle(state, true);
     const x = DISPATCH[0] + 3;
     state.scene.entity.setPose(state.player.userId, { position: [x, state.world.groundHeightAt(x, DISPATCH[1]), DISPATCH[1]] });
     const service = acceptRefusal(state, input) === null ? input : undefined;
@@ -441,7 +441,7 @@ export function tickCourier(ctx: GameContext, dt: number): void {
   const route = routeOf(current);
   const position = courierPosition(ctx);
   const health = ctx.scene.entity.stats.get(ctx.player.userId, "health")?.current ?? 100;
-  const condition = current.service === "rush" ? cargoCondition(current.condition ?? 100, dt, handrollOf(ctx).carSpeedKmh(), (current.lastHealth ?? health) - health) : 100;
+  const condition = current.service === "rush" ? cargoCondition(current.condition ?? 100, dt, streetPlayOf(ctx).carSpeedKmh(), (current.lastHealth ?? health) - health) : 100;
   const dx = route.position[0] - (position?.[0] ?? DISPATCH[0]);
   const dz = route.position[1] - (position?.[2] ?? DISPATCH[1]);
   moveThief(ctx, dt);
@@ -454,7 +454,7 @@ export function tickCourier(ctx: GameContext, dt: number): void {
       [PLAYER_ACTOR]: position === null ? {} : { position: { x: position[0], y: position[1], z: position[2] } },
       [THIEF]: thiefFact,
     },
-    facts: { cargo_condition: condition, [POLICE_TIER_FACT]: handrollOf(ctx).wanted().stars },
+    facts: { cargo_condition: condition, [POLICE_TIER_FACT]: streetPlayOf(ctx).wanted().stars },
   });
   courierStore.write(ctx, {
     ...current,

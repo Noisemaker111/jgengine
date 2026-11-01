@@ -11,6 +11,7 @@ export interface OceanMaterialUniforms {
   uTime: { value: number };
   uWaveDirections: { value: THREE.Vector2[] };
   uWaveParams: { value: THREE.Vector4[] };
+  uWavePhases: { value: number[] };
   uChoppiness: { value: number };
   uWaveCount: { value: number };
   uBedMap: { value: THREE.Texture };
@@ -87,6 +88,7 @@ export function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMat
       uTime: { value: 0 },
       uWaveDirections: { value: [] },
       uWaveParams: { value: [] },
+      uWavePhases: { value: [] },
       uChoppiness: { value: config.choppiness },
       uWaveCount: { value: config.waves.length },
       uBedMap: { value: deepBedTexture() },
@@ -137,6 +139,7 @@ export function syncOceanMaterial(material: OceanShaderMaterial, config: Resolve
     const waveUniforms = buildOceanWaveUniforms(config);
     u.uWaveDirections.value = waveUniforms.directions;
     u.uWaveParams.value = waveUniforms.params;
+    u.uWavePhases.value = waveUniforms.phases;
     material.userData["waveConfig"] = config;
   }
   u.uChoppiness.value = config.choppiness;
