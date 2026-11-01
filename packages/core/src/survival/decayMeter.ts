@@ -1,12 +1,10 @@
 import type { Moodle, MoodleSeverity } from "./moodle";
+import { type ThresholdBoundary } from "../threshold/thresholds";
 import { changeStatPool, createStatPool } from "../stats/statPool";
 
-export interface MeterThreshold {
-  /** Moodle id raised while the meter is on the wrong side of `at`. */
-  id: string;
+/** A Ladder step on the meter: `id` is the moodle raised while the meter is on the wrong side of `at`. */
+export interface MeterThreshold extends ThresholdBoundary {
   label: string;
-  /** Boundary value. */
-  at: number;
   /** Raise the moodle when the meter is `below` (hunger/thirst) or `above` (temperature, radiation) this value. */
   when: "below" | "above";
   severity?: MoodleSeverity;
