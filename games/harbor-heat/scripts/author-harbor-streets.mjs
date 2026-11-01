@@ -236,7 +236,10 @@ function buildGull() {
     batch.add(gull, wing);
   }
   batch.add(gull, paint(new THREE.BoxGeometry(0.1, 0.012, 0.16), () => hex('#f4f6f7')), [0, 0, -0.26]);
-  return batch.group('gull');
+  // Habitat flocks fly along -Z, so the bill points that way.
+  const flier = batch.group('gull');
+  flier.rotation.y = Math.PI;
+  return flier;
 }
 await exportModel('gull', buildGull());
 
@@ -293,17 +296,17 @@ await exportModel('runabout', buildMotorboat());
 function buildLampPool() {
   const batch = new Batch();
   const pool = vertex('lamp pool', { side: THREE.DoubleSide, transparent: true, roughness: 1, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
-  const rings = 6, around = 24, radius = 5;
+  const rings = 6, around = 24, radius = 6.5;
   const positions = [], colors = [], index = [];
   const amber = hex('#ffb020');
   positions.push(0, 0, 0);
-  colors.push(...amber, 0.34);
+  colors.push(...amber, 0.6);
   for (let r = 1; r <= rings; r++) {
     const t = r / rings;
     for (let a = 0; a < around; a++) {
       const angle = (a / around) * Math.PI * 2;
       positions.push(Math.cos(angle) * radius * t, 0, Math.sin(angle) * radius * t);
-      colors.push(...amber, 0.34 * Math.pow(1 - t, 1.6));
+      colors.push(...amber, 0.6 * Math.pow(1 - t, 1.4));
     }
   }
   for (let a = 0; a < around; a++) index.push(0, 1 + ((a + 1) % around), 1 + a);

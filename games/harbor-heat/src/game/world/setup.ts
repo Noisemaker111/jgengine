@@ -116,7 +116,7 @@ function districtProp(x: number, z: number, index: number, rng: () => number): s
   switch (district?.id) {
     case "mainsail_boulevard": {
       const roll = rng();
-      return roll < 0.5 ? palmAt(index) : roll < 0.68 ? "obj_bench" : roll < 0.84 ? "obj_planter" : "obj_signal";
+      return roll < 0.55 ? palmAt(index) : roll < 0.66 ? "obj_bench" : roll < 0.76 ? "obj_planter" : roll < 0.88 ? "obj_neon" : "obj_signal";
     }
     case "downtown": {
       const roll = rng();
@@ -186,6 +186,12 @@ function pickFor<T>(list: readonly T[], x: number, z: number): T | undefined {
 
 /** Roof pieces a building may carry, one pick per lot by position. */
 const ROOF_PIECES = ["obj_roof_a", "obj_roof_b", "obj_roof_c", "obj_roof_a"] as const;
+/** Library props at the front of a lot by zone: planting where people live and shop, drums and cabinets at the docks. */
+const YARD_PROPS: Partial<Record<CityZone, readonly [string, string]>> = {
+  commercial: ["obj_planter", "obj_planter"],
+  residential: ["obj_bush", "obj_fern"],
+  industrial: ["obj_barrel", "obj_dumpster"],
+};
 /** Zones whose ground floor is shopfronts, so they take awnings. */
 const SHOP_ZONES: readonly CityZone[] = ["core", "commercial"];
 
@@ -209,6 +215,15 @@ function dressBuilding(
       const awning = ctx.scene.object.place("obj_awning", ax, lot.floor + 3.1, az, { rotation: lot.rotationY });
       ctx.scene.object.setColliders(awning, {});
       ids.push(awning);
+    }
+  }
+  // Library street props in the yard or on the kerb side of the lot, never on the driveway side.
+  const yard = YARD_PROPS[zone];
+  if (yard !== undefined) {
+    for (const [slot, prop] of yard.entries()) {
+      const [px, pz] = at((slot === 0 ? -0.3 : 0.3) * lot.w, lot.d / 2 + (zone === "commercial" ? 0.9 : 1.6));
+      const id = ctx.scene.object.place(prop, px, ctx.world.groundHeightAt(px, pz), pz, { rotation: lot.rotationY });
+      ids.push(id);
     }
   }
   const piece = pickFor(ROOF_PIECES, lot.x + 11, lot.z - 7);

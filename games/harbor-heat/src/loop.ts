@@ -42,6 +42,7 @@ import {
   HHPD_POS,
 } from "./game/world/districts";
 import { disposeWorld, setupWorld } from "./game/world/setup";
+import { setupHarbourLife, tickHarbourLife } from "./game/world/harbourLife";
 import { tickNightLook } from "./game/world/nightLook";
 import { disposeTraffic, setupTraffic, tickTraffic } from "./game/world/traffic";
 import { disposeResidents, setupResidents, tickResidents } from "./game/world/residents";
@@ -299,6 +300,7 @@ function onInit(ctx: GameContext): void {
   ensureNightMarket(ctx);
   const buildings = setupWorld(ctx);
   setupTraffic(ctx);
+  setupHarbourLife(ctx);
   setupResidents(ctx, buildings);
   setupCourierLandmarks(ctx);
 }
@@ -336,6 +338,7 @@ function onTick(ctx: GameContext, dt: number): void {
   streetPlayOf(ctx).tick(ctx, dt);
   tickTraffic(ctx, dt);
   tickNightLook(ctx);
+  tickHarbourLife(ctx, dt);
   tickResidents(ctx, dt);
   tickGangers(ctx, dt);
   tickCity(ctx, dt);

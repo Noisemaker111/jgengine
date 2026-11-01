@@ -8,7 +8,7 @@ import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { DEFAULT_WALK_CODES, hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { prompts } from "./game/prompts";
-import { entityModels, objectModels } from "./game/world/models";
+import { entityModels, flockModels, objectModels } from "./game/world/models";
 import { GameUI } from "./game/ui/GameUI";
 import { bindHarborCapture } from "./game/menuProfile";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
@@ -53,6 +53,7 @@ export const game = defineGame({
       },
     },
   },
+  sceneFlockModels: flockModels,
   scenePlacement: false,
   scenePathKinds: [],
   physics,

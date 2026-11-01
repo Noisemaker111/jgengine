@@ -83,8 +83,14 @@ export const entityModels: Record<string, ModelConfig> = {
   air_prop: aircraft("floatplane", "plane paint", "#7fd1c4"),
   air_jet: aircraft("jet", "jet paint"),
   air_vtol: aircraft("jet", "jet paint", "#f2c9a8"),
+  boat_sail: { url: art("sailboat"), anchor: "origin" },
+  boat_runabout: { url: art("runabout"), anchor: "origin" },
+  heli_ambient: aircraft("helicopter", "heli paint", "#ff4f8b"),
   ...castModels,
 };
+
+/** Habitat species the scene document's flocks draw: gulls over the beach and the bay. */
+export const flockModels: Record<string, ModelConfig> = { gull: { url: art("gull"), anchor: "origin" } };
 
 /**
  * The palm is one authored GLB drawn at three street sizes, so all three species share its two
