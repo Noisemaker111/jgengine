@@ -310,3 +310,17 @@ describe("pathTargetAhead", () => {
     expect(pathTargetAhead([[0, 0]], 0, 0, 5)).toBeNull();
   });
 });
+
+describe("driveStep delay line", () => {
+  test("the steering target is resampled only once every reactionSeconds", () => {
+    const state = createDriverState(0, 10);
+    const profile = exact({ reactionSeconds: 0.5 });
+    const at = (z: number, dt: number) => driveStep(state, dt, pose(0, 0, 0, 0), { x: 0, z }, profile, TUNING, noRng);
+    at(10, 0.1);
+    expect(state.targetZ).toBe(10);
+    at(50, 0.3);
+    expect(state.targetZ).toBe(10);
+    at(50, 0.3);
+    expect(state.targetZ).toBe(50);
+  });
+});
