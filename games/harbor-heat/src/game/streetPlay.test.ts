@@ -5,8 +5,8 @@ import { game } from "../game.config";
 import { loop } from "../loop";
 import { content } from "./content";
 import { createStreetPlay, streetPlayOf } from "./streetPlay";
-import { cruiserGoal } from "./hhpd/pursuit";
-import { paceBandFactor } from "@jgengine/core/ai/driver";
+import { CRUISER_TAIL } from "./hhpd/pursuit";
+import { paceBandFactor, tailGoal } from "@jgengine/core/ai/driver";
 import { RESIDENTS, residentAt, residentStats, tickResidents } from "./world/residents";
 import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime";
 
@@ -148,15 +148,15 @@ describe("streetPlay drivable-vehicle adoption", () => {
   });
 
   test("a cruiser's chase goal carries the shared pace band: pushed when the player is far, eased at the bumper", () => {
-    const facing = { position: [0, 0, 0] as const, heading: 0 };
-    const far = cruiserGoal(facing, [0, 0, 40]);
+    const facing = { x: 0, z: 0, heading: 0 };
+    const far = tailGoal(facing, { x: 0, z: 40 }, CRUISER_TAIL);
     expect(paceBandFactor(far.paceBand!, far.paceGap!)).toBeGreaterThan(1);
     // Cruise is held below the car's top speed, so the push has somewhere to go and the cap holds.
     expect(far.speedLimit).toBeLessThan(40);
-    const near = cruiserGoal(facing, [0, 0, 2]);
+    const near = tailGoal(facing, { x: 0, z: 2 }, CRUISER_TAIL);
     expect(paceBandFactor(near.paceBand!, near.paceGap!)).toBeLessThan(0.2);
     // A cruiser that has run past the player counts as ahead and eases rather than ramming back.
-    const overshot = cruiserGoal(facing, [0, 0, -10]);
+    const overshot = tailGoal(facing, { x: 0, z: -10 }, CRUISER_TAIL);
     expect(paceBandFactor(overshot.paceBand!, overshot.paceGap!)).toBeLessThan(0.2);
   });
 

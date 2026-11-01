@@ -6,7 +6,7 @@ import { createPursuit, type PursuitSave, type WantedSnapshot, type WitnessFilte
 import { createRace } from "./race/race";
 
 export { drivingStore, type VehicleTelemetry } from "./driving/driving";
-export { MAX_HEAT, MAX_STARS, PURSUIT_STARS, wantedStore, type SearchAreaSnapshot, type WantedSnapshot } from "./hhpd/pursuit";
+export { MAX_HEAT, MAX_STARS, PURSUIT_STARS, wantedStore, type WantedSnapshot } from "./hhpd/pursuit";
 export { RIVAL_RACER_ID, raceStore, type RaceSnapshot } from "./race/race";
 
 export interface StreetPlay {

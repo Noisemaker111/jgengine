@@ -490,3 +490,35 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
     },
   };
 }
+
+/** How many observers {@link observeNearby} asks, and from how far. */
+export interface NearbyObserverLimit {
+  /** Ground (XZ) distance from the candidate, metres. */
+  radius: number;
+  /** At most this many, lowest ids first, so the roster is the same on every machine. */
+  max: number;
+}
+
+/**
+ * Ask a bounded roster of observers what they see of one candidate: those within `radius` on the
+ * ground, sorted by id and capped at `max`. Returns the roster's ids, to hand an alert level as its
+ * observers. The caller picks who can be an observer; this bounds the work.
+ *
+ * @capability perception-nearby-roster observe one target from a capped, deterministic roster of nearby observers
+ */
+export function observeNearby(
+  perception: Pick<PerceptionService, "observe">,
+  observers: Iterable<PerceptionObserver>,
+  candidate: PerceptionCandidate,
+  nowMs: number,
+  limit: NearbyObserverLimit,
+): string[] {
+  const near: PerceptionObserver[] = [];
+  for (const observer of observers) {
+    if (Math.hypot(observer.position[0] - candidate.position[0], observer.position[2] - candidate.position[2]) <= limit.radius) near.push(observer);
+  }
+  near.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const roster = near.slice(0, Math.max(0, limit.max));
+  for (const observer of roster) perception.observe(observer, [candidate], nowMs);
+  return roster.map((observer) => observer.id);
+}

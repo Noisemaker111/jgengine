@@ -6,6 +6,7 @@ import {
   driveStep,
   paceBandFactor,
   pathTargetAhead,
+  tailGoal,
   type DriverPose,
   type DriverTuning,
   type PaceBand,
@@ -322,5 +323,23 @@ describe("driveStep delay line", () => {
     expect(state.targetZ).toBe(10);
     at(50, 0.3);
     expect(state.targetZ).toBe(50);
+  });
+});
+
+describe("tailGoal", () => {
+  const band: PaceBand = { margin: -6, tolerance: 0.5, easeAt: 3, ease: 0.9, pushAt: 25, push: 0.7 };
+  const facing = { x: 0, z: 0, heading: 0 };
+
+  test("pushes a chaser far behind, eases one at the bumper and caps the cruise", () => {
+    const far = tailGoal(facing, { x: 0, z: 40 }, { speedLimit: 30, band });
+    expect(paceBandFactor(far.paceBand!, far.paceGap!)).toBeGreaterThan(1);
+    expect(far.speedLimit).toBe(30);
+    const near = tailGoal(facing, { x: 0, z: 2 }, { speedLimit: 30, band });
+    expect(paceBandFactor(near.paceBand!, near.paceGap!)).toBeLessThan(0.2);
+  });
+
+  test("a chaser that ran past the target reads it as behind and eases", () => {
+    const overshot = tailGoal(facing, { x: 0, z: -10 }, { speedLimit: 30, band });
+    expect(paceBandFactor(overshot.paceBand!, overshot.paceGap!)).toBeLessThan(0.2);
   });
 });

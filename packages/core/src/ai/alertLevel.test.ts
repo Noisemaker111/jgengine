@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createPerception } from "../sensor/perception";
 import type { ThresholdBoundary } from "../threshold/thresholds";
 import {
+  alertSearchArea,
   createAlertLevel,
   type AlertLevel,
   type AlertSighting,
@@ -442,5 +443,21 @@ describe("alertLevel determinism and budget", () => {
     const seen = level.tick(1 / 60, { nowMs: 0, activeUnits: 0 });
     expect(seen.value).toBe(30);
     expect(seen.anchor?.at).toEqual([10, 0]);
+  });
+});
+
+describe("alertSearchArea", () => {
+  const tuning = { radius: (tier: string) => (tier === "high" ? 40 : 20), growPerSecond: 2, maxRadius: 45 };
+  const anchor = { at: [3, 4] as const, lastSeenAt: 100, sourceId: "w", sourceTick: 1 };
+
+  test("no tier or no sighting means no search", () => {
+    expect(alertSearchArea({ tier: null, anchor, outOfSightSeconds: 0 }, tuning)).toBeNull();
+    expect(alertSearchArea({ tier: "low", anchor: null, outOfSightSeconds: 0 }, tuning)).toBeNull();
+  });
+
+  test("starts at the tier's radius on the sighting and widens while cold, up to the cap", () => {
+    expect(alertSearchArea({ tier: "low", anchor, outOfSightSeconds: 0 }, tuning)).toEqual({ center: [3, 4], radius: 20, lastSeenAt: 100 });
+    expect(alertSearchArea({ tier: "low", anchor, outOfSightSeconds: 5 }, tuning)?.radius).toBe(30);
+    expect(alertSearchArea({ tier: "high", anchor, outOfSightSeconds: 10 }, tuning)?.radius).toBe(45);
   });
 });
