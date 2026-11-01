@@ -13,7 +13,7 @@
  * @capability soft-ground wheels and feet rut granular soil by the material's published sinkage, with sinkage and recovery dials
  */
 import type { EditableTerrain, TerraformDelta } from "../terrain/terraform";
-import type { GranularPressReport, GranularStepReport } from "./granularLayer";
+import type { GranularLayerSnapshot, GranularPressReport, GranularStepReport } from "./granularLayer";
 import type { GranularMaterial } from "./granularMaterial";
 import { createGranularTerrain, type GranularTerrain, type GranularTerrainOptions } from "./granularTerrain";
 
@@ -39,6 +39,15 @@ export interface SoftGroundWheel {
   diameter: number;
 }
 
+/** Plain JSON of a {@link SoftGround}: the soil, where it started, each wheel's last contact and the dials. */
+export interface SoftGroundSnapshot {
+  layer: GranularLayerSnapshot;
+  start: number[];
+  wheels: [string, { x: number; z: number }][];
+  sinkage: number;
+  recovery: number;
+}
+
 /** Soft ground bound to a terrain. */
 export interface SoftGround {
   readonly ground: GranularTerrain;
@@ -54,6 +63,9 @@ export interface SoftGround {
   rutDepthAt(x: number, z: number): number;
   /** Retune the dials during play. */
   retune(dials: Pick<SoftGroundOptions, "sinkage" | "recovery">): void;
+  snapshot(): SoftGroundSnapshot;
+  /** Put a snapshot back and write its surface into the terrain. */
+  restore(snapshot: SoftGroundSnapshot): TerraformDelta;
 }
 
 const NO_PRESS: GranularPressReport = { sinkage: 0, cells: 0, displaced: 0 };
@@ -113,6 +125,19 @@ export function createSoftGround(terrain: EditableTerrain, options: SoftGroundOp
     retune(dials) {
       if (dials.sinkage !== undefined) sinkage = dial(dials.sinkage, "sinkage");
       if (dials.recovery !== undefined) recovery = dial(dials.recovery, "recovery");
+    },
+    snapshot() {
+      return { layer: ground.layer.snapshot(), start: Array.from(start), wheels: [...last.entries()].map(([key, at]) => [key, { ...at }]), sinkage, recovery };
+    },
+    restore(snapshot) {
+      if (snapshot.start.length !== start.length) throw new Error("SoftGround.restore: grid size differs");
+      ground.layer.restore(snapshot.layer);
+      start.set(snapshot.start);
+      last.clear();
+      for (const [key, at] of snapshot.wheels) last.set(key, { ...at });
+      sinkage = dial(snapshot.sinkage, "sinkage");
+      recovery = dial(snapshot.recovery, "recovery");
+      return ground.sync();
     },
   };
 }

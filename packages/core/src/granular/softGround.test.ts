@@ -58,3 +58,17 @@ describe("soft surface classes", () => {
     expect(soft.rutDepthAt(3, 0)).toBe(0);
   });
 });
+
+describe("soft ground state", () => {
+  test("a snapshot restores the ruts into the terrain and keeps each wheel's track", () => {
+    const { soft, terrain } = drive(1, 0);
+    const saved = JSON.parse(JSON.stringify(soft.snapshot()));
+    const rut = soft.rutDepthAt(0, 0);
+    soft.foot(2, 1, 0.3, 20000);
+    soft.restore(saved);
+    expect(soft.rutDepthAt(0, 0)).toBeCloseTo(rut, 9);
+    expect(soft.rutDepthAt(2, 1)).toBeCloseTo(0, 9);
+    expect(terrain.sampleHeight(0, 0)).toBeCloseTo(-rut, 5);
+    expect(soft.snapshot().wheels).toEqual(saved.wheels);
+  });
+});
