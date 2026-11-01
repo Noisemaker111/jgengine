@@ -39,8 +39,13 @@ export const game = defineGame({
     WorldOverlay: () => createElement(SceneCaptureBinding),
     entityModels,
     objectModels,
-    // Blocks past 350 m read as massing: their props draw as one merged proxy per cell.
-    visibility: { hlod: { distance: 350, hysteresis: 40, cluster: 1.5 } },
+    // Blocks past 350 m read as massing: their props draw as one merged proxy per cell. Closer in,
+    // props step down to the levels `games:provision build` wrote once they span a fifth and then
+    // a fourteenth of the screen, and the shade trees turn to baked impostors past 120 m.
+    visibility: {
+      hlod: { distance: 350, hysteresis: 40, cluster: 1.5 },
+      meshLods: { screenSizes: [0.2, 0.07], hysteresis: 0.1, impostorDistance: 120 },
+    },
     worldHealthBars: { roles: ["enemy", "hostile"] },
     // Direct-fire weapons want the muzzle→impact tracer; ballistic/exploding shots skip it
   // automatically so a lobbed round never draws a straight fake beam.

@@ -224,8 +224,7 @@ export async function buildModelLods(
 }
 
 /** A short line for one result: `name: 12,400 → 4,960 / 1,240 tris + impostor`. */
-export function describeLodBuild(result: ModelLodBuildResult): string {
-  const name = basename(result.file);
+export function describeLodBuild(result: ModelLodBuildResult, name = basename(result.file)): string {
   if (result.meta === null) return `${name}: skipped (${result.reason ?? "nothing to build"})`;
   const levels = result.meta.levels.map((level) => level.triangles.toLocaleString("en-US")).join(" / ");
   return `${name}: ${result.meta.triangles.toLocaleString("en-US")}${levels === "" ? "" : ` → ${levels}`} tris${result.meta.impostor === undefined ? "" : " + impostor"}${result.status === "cached" ? " (cached)" : ""}`;

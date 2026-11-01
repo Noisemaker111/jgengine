@@ -9,5 +9,23 @@
     "editor",
     "react",
     "shell"
-  ]
+  ],
+  "assetBuild": {
+    "lods": {
+      "include": [
+        "models/imported/quaternius-stylized-nature/{Grass_Common_Tall,Grass_Wispy_Tall,Flower_4_Group,Plant_1_Big,Mushroom_Common,Rock_Medium_1,Rock_Medium_2,Rock_Medium_3}.glb"
+      ],
+      "levels": [
+        {
+          "ratio": 0.45,
+          "error": 0.02
+        },
+        {
+          "ratio": 0.15,
+          "error": 0.05
+        }
+      ],
+      "minTriangles": 300
+    }
+  }
 }

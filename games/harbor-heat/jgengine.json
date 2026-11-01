@@ -38,5 +38,33 @@
         "issue": 2488
       }
     }
+  },
+  "assetBuild": {
+    "lods": {
+      "include": [
+        "models/library/city/*/near.gltf",
+        "models/library/park/*/near.gltf",
+        "models/library/industrial/*/near.gltf",
+        "models/library/nature/*/near.gltf"
+      ],
+      "levels": [
+        {
+          "ratio": 0.4,
+          "error": 0.01
+        },
+        {
+          "ratio": 0.12,
+          "error": 0.03
+        }
+      ]
+    },
+    "impostors": {
+      "include": [
+        "models/library/nature/jacaranda/near.gltf",
+        "models/library/nature/quiver-tree/near.gltf"
+      ],
+      "frames": 8,
+      "cell": 128
+    }
   }
 }
