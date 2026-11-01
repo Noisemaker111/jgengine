@@ -216,12 +216,12 @@ export function MarrowBays({ world }: { world: WorldModel }) {
  * Each floor's air: fog closes in and the ambient light drops the deeper you go. The shell owns the
  * lights and fog; this only retunes them when the floor changes.
  */
-const STRATA_FILL = 0.45;
+const STRATA_FILL = 1;
 export function StratumAtmosphere({ place }: { place: Place }) {
   const { scene } = useThree();
   useEffect(() => {
-    const fog = place === "home" ? { color: C.black, near: 24, far: 75 } : STRATA[place].fog;
-    // Below Marrow the fill drops by half again, so the lamps, not the ambient, shape each room.
+    const fog = place === "home" ? { color: C.black, near: 12, far: 48 } : STRATA[place].fog;
+    // Each floor scales the third-strength base fill by its own ambient ratio.
     const ambient = place === "home" ? 1 : STRATA[place].ambient / STRATA.vault.ambient * STRATA_FILL;
     if (scene.fog instanceof Fog) { scene.fog.color.set(fog.color); scene.fog.near = fog.near; scene.fog.far = fog.far; }
     if (scene.background instanceof Color) scene.background.set(place === "home" || place === "vault" ? C.black : fog.color);

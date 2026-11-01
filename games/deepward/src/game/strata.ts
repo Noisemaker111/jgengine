@@ -32,7 +32,7 @@ export interface StratumDef {
 export const STRATA: Record<Stratum, StratumDef> = {
   vault: {
     id: "vault", numeral: "I", name: "Receiving", metres: 40, pressure: 1, above: null, below: "cold",
-    lamp: { color: "#a4ded2", intensity: 27, reach: 12 }, fog: { color: "#000000", near: 24, far: 75 }, ambient: 0.72,
+    lamp: { color: "#a4ded2", intensity: 27, reach: 12 }, fog: { color: "#0b171b", near: 12, far: 48 }, ambient: 0.72,
     arrival: "Bellwether / receiving. The rail behind you is the only way home.",
     drain: { food: 1, water: 1, air: 1 },
   },
