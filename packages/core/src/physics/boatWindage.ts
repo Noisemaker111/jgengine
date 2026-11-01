@@ -30,7 +30,10 @@ export interface BoatWind {
   heightM?: number;
 }
 
-/** Windage force, N, in world x/z on a hull at `x, z` heading `heading` moving at `vx, vz`. */
+/**
+ * Windage force, N, in world x/z on a hull at `x, z` heading `heading` moving at `vx, vz`.
+ * @capability boat-windage push a hull with the shared wind field on its above-water areas, its own 0-upward strength dial
+ */
 export function boatWindageForce(wind: BoatWind, hull: { length: number; beam: number }, x: number, z: number, heading: number, vx: number, vz: number, time: number): [number, number] {
   const strength = wind.strength ?? 1;
   if (!Number.isFinite(strength) || strength < 0) throw new Error(`boat wind strength must be finite and >= 0 (got ${strength})`);

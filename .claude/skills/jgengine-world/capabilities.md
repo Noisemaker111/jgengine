@@ -326,6 +326,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `sectionRadiation` (function) · `import { sectionRadiation } from "@jgengine/core/physics/boatSeakeeping"`
 - `wigleyOffsets` (function) · `import { wigleyOffsets } from "@jgengine/core/physics/boatSeakeeping"`
 
+## boat-windage — push a hull with the shared wind field on its above-water areas, its own 0-upward strength dial
+
+- `boatWindageForce` (function) · `import { boatWindageForce } from "@jgengine/core/physics/boatWindage"`
+
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
@@ -818,6 +822,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateForceField` (function) · `import { validateForceField } from "@jgengine/core/physics/forceVolume"`
 
+## forest-stand — fill a drawn polygon with a believable forest grown by the stand model, with a self-thinning dial
+
+- `growForestStandPlot` (function) · `import { growForestStandPlot } from "@jgengine/core/plants/stand/forestStand"`
+- `readForestStandParams` (function) · `import { readForestStandParams } from "@jgengine/core/plants/stand/forestStand"`
+- `resolveForestStand` (function) · `import { resolveForestStand } from "@jgengine/core/plants/stand/forestStand"`
+
 ## formation-assignment — stable deterministic member-to-slot matching for a group formation
 
 - `assignFormationSlots` (function) · `import { assignFormationSlots } from "@jgengine/core/world"`
@@ -920,11 +930,21 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
 
+## grass-wind — sway grass in the shared wind field with a per-kind response dial
+
+- `grassSwayAmplitude` (function) · `import { grassSwayAmplitude } from "@jgengine/core/grass/grassWind"`
+- `grassWindAt` (function) · `import { grassWindAt } from "@jgengine/core/grass/grassWind"`
+- `grassWindLook` (function) · `import { grassWindLook } from "@jgengine/core/grass/grassWind"`
+
 ## gravity-field — sample configurable uniform, radial, or combined gravity
 
 - `combineGravity` (function) · `import { combineGravity } from "@jgengine/core/world"`
 - `pointGravity` (function) · `import { pointGravity } from "@jgengine/core/world"`
 - `uniformGravity` (function) · `import { uniformGravity } from "@jgengine/core/world"`
+
+## ground-cover-field — place a lawn, meadow or path the tiller model grows into the grass renderer's look
+
+- `growGroundCoverLook` (function) · `import { growGroundCoverLook } from "@jgengine/core/plants/groundCover/groundCoverField"`
 
 ## ground-edge-fade — fade merged ground layers into the terrain at their outer edge, keeping inner seams crisp
 
@@ -1137,6 +1157,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `landformSurface` (function) · `import { landformSurface } from "@jgengine/core/landform/materials/landformSurface"`
 - `settlingVelocity` (function) · `import { settlingVelocity } from "@jgengine/core/landform/materials/sedimentCover"`
 - `weatheredDepth` (function) · `import { weatheredDepth } from "@jgengine/core/landform/materials/sedimentCover"`
+
+## landform-start — start a scene on a glacial valley, dunes or a coast grown by the landform generator from a seed
+
+- `LANDFORM_STARTS` (const) · `import { LANDFORM_STARTS } from "@jgengine/core/terrain/terrainGenerator"`
+- `landformStartTerrain` (function) · `import { landformStartTerrain } from "@jgengine/core/terrain/landformStart"`
+- `withGeneratedTerrain` (function) · `import { withGeneratedTerrain } from "@jgengine/core/terrain/landformStart"`
 
 ## lane-graph — directed lane topology with junctions, signals and parking for vehicle traffic
 
@@ -1801,6 +1827,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `scatterSolids` (function) · `import { scatterSolids } from "@jgengine/core/scatter/scatterSolids"`
 - `syncScatterSolids` (function) · `import { syncScatterSolids } from "@jgengine/core/scatter/scatterSolids"`
 
+## scatter-source — fill a non-scatter path kind with placements that join the document's scatter
+
+- `registerScatterSource` (function) · `import { registerScatterSource } from "@jgengine/core/scatter/scatterRegion"`
+
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw"`
@@ -1871,6 +1901,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## slope-speed — iso-metabolic human walking and running speed on a gradient (Minetti 2002)
 
 - `slopeSpeed` (function) · `import { slopeSpeed } from "@jgengine/core/movement/reference/humanEnvelope"`
+
+## soft-ground — wheels and feet rut granular soil by the material's published sinkage, with sinkage and recovery dials
+
+- `createSoftGround` (function) · `import { createSoftGround } from "@jgengine/core/granular/softGround"`
+- `softSurfaceSoil` (function) · `import { softSurfaceSoil } from "@jgengine/core/granular/softGround"`
 
 ## soil-patch — editor-authorable terrain crack/moss material variation
 
@@ -2245,6 +2280,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weather-surface-accumulation — Persist and retune bounded surface wetness, snow, temperature and exposure independently of rendering.
 
 - `createWeatherExposure` (function) · `import { createWeatherExposure } from "@jgengine/core/weather/authoredWeather"`
+
+## wind-effects — log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
+
+- `validateWindEffects` (function) · `import { validateWindEffects } from "@jgengine/core/world/windEffects"`
+- `windGustSpectrum` (function) · `import { windGustSpectrum } from "@jgengine/core/world/windEffects"`
+- `windGustSynthesis` (function) · `import { windGustSynthesis } from "@jgengine/core/world/windEffects"`
+- `windGustVarianceBelow` (function) · `import { windGustVarianceBelow } from "@jgengine/core/world/windEffects"`
+- `windProfileFactor` (function) · `import { windProfileFactor } from "@jgengine/core/world/windEffects"`
+- `windRoughness` (function) · `import { windRoughness } from "@jgengine/core/world/windEffects"`
+- `windTurbulenceIntensity` (function) · `import { windTurbulenceIntensity } from "@jgengine/core/world/windEffects"`
+- `windTurbulenceScale` (function) · `import { windTurbulenceScale } from "@jgengine/core/world/windEffects"`
 
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 

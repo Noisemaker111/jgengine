@@ -387,11 +387,11 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
 
   test("a landform start writes a terrain generator seeded by the game id and grows it in editorLayers", () => {
     const files = render("standalone", { landform: "dunes" });
-    const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as { terrain?: unknown; terrainGenerator?: unknown };
-    expect(scene.terrain).toBeUndefined();
-    expect(scene.terrainGenerator).toEqual({ kind: "landform", start: "dunes", seed: "probe-game" });
+    const scene: unknown = JSON.parse(fileOf(files, "src/editor.scene.json"));
+    expect(scene).not.toHaveProperty("terrain");
+    expect(scene).toHaveProperty("terrainGenerator", { kind: "landform", start: "dunes", seed: "probe-game" });
     expect(fileOf(files, "src/editorLayers.ts")).toContain("withGeneratedTerrain(normalizeEditorLayers(");
-    expect(JSON.parse(fileOf(render("standalone"), "src/editor.scene.json")).terrainGenerator).toBeUndefined();
+    expect(JSON.parse(fileOf(render("standalone"), "src/editor.scene.json"))).not.toHaveProperty("terrainGenerator");
   });
 
   test("flat ground and promoted scenes get no seeded sculpt", () => {

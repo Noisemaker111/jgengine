@@ -189,7 +189,10 @@ float jgLit = clamp(dot(reflectedLight.directDiffuse, vec3(0.3333)) * 1.6, 0.0, 
 reflectedLight.directDiffuse += vec3(0.34, 0.28, 0.12) * jgTipMask * jgLit * uLight.x * (1.0 - vGrassFade * 0.7);
 `;
 
-/** Write a look's wind numbers into the material's wind uniforms (each frame, for a patch in a shared wind). */
+/**
+ * Write a look's wind numbers into the material's wind uniforms (each frame, for a patch in a shared wind).
+ * @internal
+ */
 export function setGrassWindUniforms(uniforms: Pick<GrassShaderUniforms, "uWind" | "uWindDirection">, look: GrassWindLook & Pick<GrassLook, "stiffness">): void {
   const heading = (look.windDirection * Math.PI) / 180;
   const softness = 1.25 - look.stiffness;

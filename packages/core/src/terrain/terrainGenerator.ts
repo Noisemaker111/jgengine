@@ -18,7 +18,10 @@ export interface EditorTerrainGenerator {
   seed: string;
 }
 
-/** Narrow an unknown value to a terrain generator. */
+/**
+ * Narrow an unknown value to a terrain generator.
+ * @internal
+ */
 export function isEditorTerrainGenerator(value: unknown): value is EditorTerrainGenerator {
   if (typeof value !== "object" || value === null) return false;
   const record: Record<string, unknown> = { ...value };

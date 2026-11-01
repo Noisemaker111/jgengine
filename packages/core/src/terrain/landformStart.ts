@@ -26,7 +26,10 @@ export const LANDFORM_START_PARAMS: Readonly<Record<LandformStart, Partial<Landf
 
 const grown = new Map<string, TerraformSnapshot>();
 
-/** The terrain a start grows from a seed, origin at ground level 0. Deterministic and cached. */
+/**
+ * The terrain a start grows from a seed, origin at ground level 0. Deterministic and cached.
+ * @capability landform-start start a scene on a glacial valley, dunes or a coast grown by the landform generator from a seed
+ */
 export function landformStartTerrain(start: LandformStart, seed: string): TerraformSnapshot {
   const key = `${start}|${seed}`;
   const cached = grown.get(key);
@@ -39,7 +42,10 @@ export function landformStartTerrain(start: LandformStart, seed: string): Terraf
   return snapshot;
 }
 
-/** The document with its generated terrain grown in when it has a generator and no sculpt; otherwise unchanged. */
+/**
+ * The document with its generated terrain grown in when it has a generator and no sculpt; otherwise unchanged.
+ * @capability landform-start start a scene on a glacial valley, dunes or a coast grown by the landform generator from a seed
+ */
 export function withGeneratedTerrain(doc: EditorDocument): EditorDocument {
   const generator = doc.terrainGenerator;
   if (doc.terrain !== undefined || generator === undefined) return doc;

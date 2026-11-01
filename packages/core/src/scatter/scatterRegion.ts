@@ -434,7 +434,10 @@ export type ScatterSource = (path: ScenePathLike, terrain: ScatterTerrain | unde
 
 const scatterSources = new Map<string, ScatterSource>();
 
-/** Register the {@link ScatterSource} for a path kind; idempotent, last registration wins. */
+/**
+ * Register the {@link ScatterSource} for a path kind; idempotent, last registration wins.
+ * @capability scatter-source fill a non-scatter path kind with placements that join the document's scatter
+ */
 export function registerScatterSource(kind: string, source: ScatterSource): void {
   scatterSources.set(kind, source);
 }

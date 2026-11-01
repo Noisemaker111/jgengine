@@ -35,7 +35,10 @@ export type GroundCoverParams = ParamsOf<typeof GROUND_COVER_SCHEMA>;
 const looks = new Map<string, GrassLook>();
 const LOOK_CACHE_LIMIT = 64;
 
-/** Grow the sward for the params, a week at a time under its care, and return the look it renders with. Cached and deterministic. */
+/**
+ * Grow the sward for the params, a week at a time under its care, and return the look it renders with. Cached and deterministic.
+ * @capability ground-cover-field place a lawn, meadow or path the tiller model grows into the grass renderer's look
+ */
 export function growGroundCoverLook(params: GroundCoverParams): GrassLook {
   const key = JSON.stringify(params);
   const cached = looks.get(key);

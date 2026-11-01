@@ -71,7 +71,10 @@ function dial(value: number | undefined): number {
   return value;
 }
 
-/** The roughness a set of effects resolves to. */
+/**
+ * The roughness a set of effects resolves to.
+ * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
+ */
 export function windRoughness(effects: Pick<WindEffects, "surface" | "roughnessLengthM" | "minHeightM">): WindSurfaceRoughness {
   const base = WIND_SURFACE_ROUGHNESS[effects.surface ?? "grass"];
   return { roughnessLengthM: effects.roughnessLengthM ?? base.roughnessLengthM, minHeightM: effects.minHeightM ?? base.minHeightM };
@@ -82,30 +85,45 @@ function clampHeight(heightM: number, roughness: WindSurfaceRoughness): number {
   return Number.isFinite(heightM) ? Math.min(1e5, Math.max(floor, heightM)) : floor;
 }
 
-/** Mean speed at `heightM` over the mean speed at the reference height, raised to the profile strength. */
+/**
+ * Mean speed at `heightM` over the mean speed at the reference height, raised to the profile strength.
+ * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
+ */
 export function windProfileFactor(heightM: number, roughness: WindSurfaceRoughness, referenceHeightM = 10, strength = 1): number {
   const z0 = roughness.roughnessLengthM;
   const ratio = Math.log(clampHeight(heightM, roughness) / z0) / Math.log(clampHeight(referenceHeightM, roughness) / z0);
   return strength === 0 ? 1 : ratio ** strength;
 }
 
-/** Turbulence intensity I_v(z) = 1 / ln(z/z₀) (EN 1991-1-4 eq. 4.7 with k_I = c₀ = 1). */
+/**
+ * Turbulence intensity I_v(z) = 1 / ln(z/z₀) (EN 1991-1-4 eq. 4.7 with k_I = c₀ = 1).
+ * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
+ */
 export function windTurbulenceIntensity(heightM: number, roughness: WindSurfaceRoughness): number {
   return 1 / Math.log(clampHeight(heightM, roughness) / roughness.roughnessLengthM);
 }
 
-/** Turbulence length scale L(z) = 300 (z/200)^α, α = 0.67 + 0.05 ln z₀ (EN 1991-1-4 eq. B.1), metres. */
+/**
+ * Turbulence length scale L(z) = 300 (z/200)^α, α = 0.67 + 0.05 ln z₀ (EN 1991-1-4 eq. B.1), metres.
+ * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
+ */
 export function windTurbulenceScale(heightM: number, roughness: WindSurfaceRoughness): number {
   const alpha = 0.67 + 0.05 * Math.log(roughness.roughnessLengthM);
   return 300 * (clampHeight(heightM, roughness) / 200) ** alpha;
 }
 
-/** The non-dimensional along-wind spectrum S_L(f_L) = n S(n)/σ² = 6.8 f_L / (1 + 10.2 f_L)^(5/3) (EN 1991-1-4 eq. B.2). */
+/**
+ * The non-dimensional along-wind spectrum S_L(f_L) = n S(n)/σ² = 6.8 f_L / (1 + 10.2 f_L)^(5/3) (EN 1991-1-4 eq. B.2).
+ * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
+ */
 export function windGustSpectrum(fL: number): number {
   return fL <= 0 ? 0 : (6.8 * fL) / (1 + 10.2 * fL) ** (5 / 3);
 }
 
-/** Share of the gust variance below f_L: the closed-form integral of {@link windGustSpectrum}, 1 − (1 + 10.2 f_L)^(−2/3). */
+/**
+ * Share of the gust variance below f_L: the closed-form integral of {@link windGustSpectrum}, 1 − (1 + 10.2 f_L)^(−2/3).
+ * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
+ */
 export function windGustVarianceBelow(fL: number): number {
   return fL <= 0 ? 0 : 1 - (1 + 10.2 * fL) ** (-2 / 3);
 }
@@ -127,6 +145,7 @@ function inverseShare(share: number): number {
 /**
  * Split the spectrum into `components` log-spaced bands covering 0.2%..98.5% of its variance, one cosine per band at the
  * band's geometric centre with the band's variance, renormalized so the sum has unit variance.
+ * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
  */
 export function windGustSynthesis(components: number, seed: string): WindGustSynthesis {
   const count = Math.max(4, Math.min(256, Math.round(components)));
@@ -164,7 +183,10 @@ export interface PreparedWindEffects {
   gustAt(mean: number, heightM: number, t: number, along: number): number;
 }
 
-/** Resolve effects once for a field. */
+/**
+ * Resolve effects once for a field.
+ * @internal
+ */
 export function prepareWindEffects(effects: WindEffects, seed: string): PreparedWindEffects {
   const roughness = windRoughness(effects);
   if (!(roughness.roughnessLengthM > 0) || !Number.isFinite(roughness.roughnessLengthM)) throw new Error("wind roughnessLengthM must be finite and > 0");
@@ -196,7 +218,10 @@ export function prepareWindEffects(effects: WindEffects, seed: string): Prepared
 
 const SURFACES: readonly string[] = Object.keys(WIND_SURFACE_ROUGHNESS);
 
-/** Throw on effects an authored document must not persist: unknown keys or surface, a negative or non-finite number. */
+/**
+ * Throw on effects an authored document must not persist: unknown keys or surface, a negative or non-finite number.
+ * @capability wind-effects log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial
+ */
 export function validateWindEffects(value: WindEffects): void {
   const record = (input: unknown, keys: readonly string[], label: string): Record<string, unknown> => {
     if (typeof input !== "object" || input === null || Array.isArray(input)) throw new Error(`${label} must be an object`);

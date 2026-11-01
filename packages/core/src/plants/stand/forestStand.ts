@@ -69,6 +69,7 @@ const PLOT_CACHE_LIMIT = 32;
 /**
  * Grow one plot tile for the params: plant `plantedPerHa` stems of the species mix at their planting shares, then step
  * the stand `ageYears`. Deterministic per params and cached, so a document loads to the same trees every time.
+ * @capability forest-stand fill a drawn polygon with a believable forest grown by the stand model, with a self-thinning dial
  */
 export function growForestStandPlot(params: ForestStandParams): ForestStandPlot {
   const key = JSON.stringify(params);
@@ -94,7 +95,10 @@ export function growForestStandPlot(params: ForestStandParams): ForestStandPlot 
   return plot;
 }
 
-/** Read a path's forest params. */
+/**
+ * Read a path's forest params.
+ * @capability forest-stand fill a drawn polygon with a believable forest grown by the stand model, with a self-thinning dial
+ */
 export function readForestStandParams(object: Pick<SceneKindObject, "meta">): ForestStandParams {
   return parseParams(FOREST_STAND_SCHEMA, object.meta);
 }
@@ -102,6 +106,7 @@ export function readForestStandParams(object: Pick<SceneKindObject, "meta">): Fo
 /**
  * The trees of one drawn stand: the plot tiled over the polygon, kept inside it and out of clearance masks, grounded on
  * `terrain`. Same path, same trees.
+ * @capability forest-stand fill a drawn polygon with a believable forest grown by the stand model, with a self-thinning dial
  */
 export function resolveForestStand(path: ScenePathLike, terrain?: ScatterTerrain, masks?: AvoidMasks): ScatterInstance[] {
   if (path.points.length < 3) return [];
