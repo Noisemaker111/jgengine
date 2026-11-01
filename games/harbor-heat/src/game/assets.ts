@@ -3,10 +3,10 @@ import { buildMaterialCatalog } from "@jgengine/assets/materials";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 /**
- * Kit packs still cast where the realistic library has nothing yet: KayKit cars, people, aircraft,
- * signs and cargo. Buildings and street furniture come from the realistic library (see `props.ts`).
+ * Quaternius' CC0 low-poly cars give traffic its bodies beyond the library's one sports car: real
+ * 4 m sedans, a taxi and a coupe, resprayed into the city's palette (see `world/models.ts`).
  */
-const MODEL_SOURCES = ["kaykit-city-builder", "kaykit-space-base", "kaykit-dungeon"] as const;
+const MODEL_SOURCES = ["quaternius-lowpoly-cars"] as const;
 
 /**
  * Ground grain under the isle's authored sand/scrub palette. Blended at a low `tint` so the beach,

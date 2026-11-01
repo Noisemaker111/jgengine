@@ -27,7 +27,10 @@ const JOIN_RADIUS = 7.5;
 const SPEED_BY_LEVEL = { avenue: 16, street: 13 };
 
 /** The car models a traffic variant picks from, indexed by the injected generator's `variant`. */
-const CAR_KINDS = ["car_compact", "car_muscle", "car_sport", "car_suv", "car_compact", "car_muscle", "car_suv", "car_sport"];
+const CAR_KINDS = [
+  "car_compact", "car_taxi", "car_sedan", "car_sport", "car_hatch", "car_suv", "car_muscle", "car_coupe",
+  "car_taxi", "car_sedan", "car_compact", "car_hatch", "car_sport", "car_coupe", "car_suv", "car_muscle",
+];
 
 /**
  * Fleet target by in-game hour. Mainsail has a morning and an evening rush, a busy working day and

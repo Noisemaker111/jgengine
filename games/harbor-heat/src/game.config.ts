@@ -156,6 +156,8 @@ export const game = defineGame({
       "drive-cop": ["game.start", { name: "drive.stage", input: { vehicle: "car_cop" } }],
       "drive-bus": ["game.start", { name: "drive.stage", input: { vehicle: "car_bus" } }],
       "fly-heli": ["game.start", { name: "drive.stage", input: { vehicle: "air_helicopter" } }],
+      evening: ["game.start", { name: "time.stage", input: { at: 500 } }],
+      night: ["game.start", { name: "time.stage", input: { at: 700 } }],
       shop: ["game.start", "shop.open"],
       garage: ["game.start", "garage.open"],
       dialogue: ["game.start", { name: "dialogue.open", input: { id: "person:marco" } }],

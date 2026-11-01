@@ -2,21 +2,20 @@ import { librarySurfaceParameters, librarySurfaceScan } from "@jgengine/assets/c
 import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
+
+import { BUILDING_SPECS } from "./buildings";
 import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "../assets";
-import { BUILDING_SPECS } from "./buildings";
 import { CAR_MODEL_NAME, CAST } from "./cast";
 import { LIBRARY_PROPS } from "./props";
 
-const CITY = "kaykit-city-builder";
-const SPACE = "kaykit-space-base";
-const DUNGEON = "kaykit-dungeon";
+const art = (file: string): string => new URL(`../../art/${file}.glb`, import.meta.url).href;
 
 /** Lacquered body paint: the clearcoat is what separates a car from a clay toy. */
 const GLOSS = librarySurfaceParameters("paint/gloss");
 /** The unit building every lot scales to its own width, depth and storey height. */
-const CITY_BLOCK_URL = new URL("../../art/city-block.glb", import.meta.url).href;
+const CITY_BLOCK_URL = art("city-block");
 
 /**
  * Traffic is the library's Khronos CarConcept (CC-BY 4.0) at its real 4.4 m length, resprayed per
@@ -62,34 +61,28 @@ const castModels: Record<string, ModelConfig> = {
   car_bus: { url: new URL("../../art/islander-bus.glb", import.meta.url).href, anchor: "origin" },
 };
 
+/** Aircraft are authored for Harbor Heat (`scripts/author-harbor-streets.mjs`): wheels and skids sit a metre under the origin, as the airframes' gear expects. */
+const aircraft = (file: string, paintMaterial: string, color?: string): ModelConfig => ({
+  url: art(file),
+  anchor: "origin",
+  ...(color === undefined ? {} : { material: { color, materials: [paintMaterial] } }),
+});
+
+/** The traffic cars the library's one sports car cannot be: Quaternius' real-size sedans and a taxi, as they were painted. */
+const TRAFFIC_BODIES: Record<string, ModelPick> = {
+  car_taxi: { model: "quaternius-lowpoly-cars/Taxi" },
+  car_sedan: { model: "quaternius-lowpoly-cars/BasicCar" },
+  car_hatch: { model: "quaternius-lowpoly-cars/SimpleCarShort" },
+  car_coupe: { model: "quaternius-lowpoly-cars/SimpleCarHigh" },
+};
+
 export const entityModels: Record<string, ModelConfig> = {
-  ...resolveModelPlan(assets, {
-  air_helicopter: {
-    model: `${SPACE}/lander_B`,
-    fallbackModel: `${CITY}/car_sedan`,
-    style: { targetHeight: 2.2, material: { color: "#e7e9ee", metalness: 0.55, roughness: 0.32 } },
-  },
-  air_trainer: {
-    model: `${SPACE}/lander_A`,
-    fallbackModel: `${CITY}/car_sedan`,
-    style: { targetHeight: 1.8, material: { color: "#f4d35e", metalness: 0.28, roughness: 0.45 } },
-  },
-  air_prop: {
-    model: `${SPACE}/spacetruck`,
-    fallbackModel: `${CITY}/car_stationwagon`,
-    style: { targetHeight: 2, material: { color: "#e85d4a", metalness: 0.35, roughness: 0.38 } },
-  },
-  air_jet: {
-    model: `${SPACE}/spacetruck_large`,
-    fallbackModel: `${CITY}/car_police`,
-    style: { targetHeight: 1.65, material: { color: "#697582", metalness: 0.72, roughness: 0.25 } },
-  },
-  air_vtol: {
-    model: `${SPACE}/lander_base`,
-    fallbackModel: `${CITY}/car_police`,
-    style: { targetHeight: 1.9, material: { color: "#3d5a45", metalness: 0.68, roughness: 0.3 } },
-  },
-  }),
+  ...resolveModelPlan(assets, TRAFFIC_BODIES),
+  air_helicopter: aircraft("helicopter", "heli paint"),
+  air_trainer: aircraft("floatplane", "plane paint"),
+  air_prop: aircraft("floatplane", "plane paint", "#7fd1c4"),
+  air_jet: aircraft("jet", "jet paint"),
+  air_vtol: aircraft("jet", "jet paint", "#f2c9a8"),
   ...castModels,
 };
 
@@ -116,41 +109,24 @@ export const PALM_IDS: readonly string[] = [
   "obj_palm_tall",
 ];
 
-const objectPlan: Record<string, ModelPick> = {
-  obj_gunshop_sign: {
-    model: `${CITY}/trafficlight_A`,
-    fallbackModel: `${DUNGEON}/banner_red`,
-    style: { targetHeight: 2.4 },
-  },
-  obj_safehouse_sign: {
-    model: `${DUNGEON}/banner_green`,
-    fallbackModel: `${DUNGEON}/banner_red`,
-    style: { targetHeight: 2.4 },
-  },
-  obj_hhpd_sign: {
-    model: `${DUNGEON}/banner_blue`,
-    fallbackModel: `${DUNGEON}/banner_red`,
-    style: { targetHeight: 2.4 },
-  },
-  // Emissive, not just pink: the bloom stage needs something above threshold to glow around, and a
-  // storefront sign is the only light source a daylit street legitimately has.
-  obj_neon: {
-    model: `${DUNGEON}/banner_red`,
-    fallbackModel: `${CITY}/trafficlight_B`,
-    style: { targetHeight: 3.4, material: { color: "#ff5aa8", emissive: "#ff2f95", emissiveIntensity: 1.5 } },
-  },
-  // Street signal rather than a second banner: at kerb height a hanging cloth reads as a stick, and
-  // a lit signal head is the piece of furniture a junction is actually missing.
-  obj_signal: {
-    model: `${CITY}/trafficlight_B`,
-    fallbackModel: `${CITY}/trafficlight_A`,
-    style: { targetHeight: 3.6, material: { emissive: "#2fd8b0", emissiveIntensity: 0.55 } },
-  },
-  obj_cargo: {
-    model: `${SPACE}/containers_B`,
-    fallbackModel: `${CITY}/box_B`,
-    style: { targetHeight: 2.4, material: { color: "#c08a3c" } },
-  },
+/** Shop signs share one authored board; each shop paints it in its own colour. */
+const shopSign = (color: string): ModelConfig => ({ url: art("shop-sign"), anchor: "origin", material: { color, materials: ["board"] } });
+/** Containers share one authored box; the paint is the only difference. */
+const container = (color: string): ModelConfig => ({ url: art("shipping-container"), anchor: "origin", material: { color, materials: ["container paint"] } });
+
+const AUTHORED_OBJECTS: Record<string, ModelConfig> = {
+  obj_gunshop_sign: shopSign("#ffb020"),
+  obj_safehouse_sign: shopSign("#7fd1c4"),
+  obj_hhpd_sign: shopSign("#4f7de8"),
+  obj_neon: { url: art("neon-pole"), anchor: "origin" },
+  obj_signal: { url: art("traffic-signal"), anchor: "origin" },
+  obj_cargo: container("#d9694a"),
+  obj_cargo_teal: container("#2c8c97"),
+  obj_cargo_amber: container("#e0a53c"),
+  obj_awning: { url: art("awning"), anchor: "origin" },
+  obj_roof_a: { url: art("roof-clutter-a"), anchor: "origin" },
+  obj_roof_b: { url: art("roof-clutter-b"), anchor: "origin" },
+  obj_roof_c: { url: art("roof-clutter-c"), anchor: "origin" },
 };
 
 /**
@@ -163,15 +139,14 @@ const BUILDING_MODELS: Record<string, ModelConfig> = Object.fromEntries(
     {
       url: CITY_BLOCK_URL,
       anchor: "origin",
-      material: { scan: librarySurfaceScan(b.facade, { tint: 1 }), materials: ["facade"] },
+      material: { color: b.paint, scan: librarySurfaceScan(b.facade, { tint: b.scanTint }), materials: ["facade"] },
     } satisfies ModelConfig,
   ]),
 );
 
 export const objectModels: Record<string, ModelConfig> = (() => {
-  const plan = resolveModelPlan(assets, objectPlan);
   return {
-    ...plan,
+    ...AUTHORED_OBJECTS,
     ...LIBRARY_PROPS,
     ...BUILDING_MODELS,
     // Driveways are the unit block flattened to a slab, in the sidewalk's concrete.
