@@ -118,15 +118,18 @@ export function magicFormulaCoefficients(effect: VehicleMagicFormulaEffect, axle
 
 /**
  * One wheel's pure-slip Magic Formula at load `fz` and inclination `gamma`. `loadSensitivity` scales how far the
- * friction coefficients and the curvature move with load (`1` as fitted), so the dial past `1` keeps the curve at
- * nominal load and only steepens its fall with load.
+ * friction coefficients and the curvature move with load about `pivot` (`1` as fitted), so the dial past `1` keeps the
+ * curve at the pivot load and only steepens its fall with load.
  * @capability vehicle-magic-formula one wheel's Magic Formula 6.1 grip, cornering stiffness and curve shape at its own load
  */
-export function magicFormulaWheel(p: Readonly<MagicFormulaTireCoefficients>, fz: number, gamma = 0, loadSensitivity = 1): MagicFormulaWheelCurve {
+export function magicFormulaWheel(p: Readonly<MagicFormulaTireCoefficients>, fz: number, gamma = 0, loadSensitivity = 1, pivot = p.fnomin): MagicFormulaWheelCurve {
   const fz0 = Math.max(1, p.fnomin);
   const load = Math.max(0, fz);
   const dfz = (load - fz0) / fz0;
-  const spread = dfz * loadSensitivity;
+  // Past 1 the dial steepens the fall with load about `pivot` (the axle's mean wheel load), so it costs a loaded axle
+  // grip without lifting the level of a car whose wheels all sit below the tyre's nominal load.
+  const around = (pivot - fz0) / fz0;
+  const spread = loadSensitivity === 1 ? dfz : around + (dfz - around) * loadSensitivity;
   const floorY = 0.1 * Math.abs(p.pdy1);
   const floorX = 0.1 * Math.abs(p.pdx1);
   const muY = Math.max(floorY, p.lmuy * (p.pdy1 + p.pdy2 * spread) * (1 - p.pdy3 * gamma * gamma));

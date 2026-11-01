@@ -8,9 +8,9 @@ import { sampleGripCurve } from "./gripCurve";
  */
 export interface VehicleTorqueCurveEffect {
   /**
-   * Multiplier on the effect: `0` a flat curve at peak torque with no friction and instant shifts, `1` the published
-   * curve, friction and shift time (default), past `1` deeper dips off the peak, more friction and longer shifts; sane
-   * over `0..4`.
+   * Multiplier on the effect: `0` off (the powertrain's own normalised curve, constant engine braking and part-drive
+   * shifts), up to `1` blending into the published curve, friction and shift time (default), past `1` deeper dips off
+   * the peak, more friction and longer shifts; sane over `0..4`.
    */
   strength?: number;
   /** Full-throttle crank torque, `[rpm, N·m]` points in rising rpm (default the powertrain's curve × `peakTorque`). */

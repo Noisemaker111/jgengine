@@ -26,7 +26,14 @@ export function crownShownLean(effect: VehicleTireCrownEffect, comHeight: number
  * @capability vehicle-tire-crown round motorcycle tyre crowns: the extra lean past balance a wide tyre needs, and a lean that leads the turn
  */
 export function crownBalanceLean(effect: VehicleTireCrownEffect, comHeight: number, lean: number, strength: number): number {
-  let balance = lean;
-  for (let i = 0; i < 16; i += 1) balance = lean - (crownShownLean(effect, comHeight, balance, strength) - balance);
-  return balance;
+  // The shown lean rises monotonically with the balance lean, so bisect on [0, |lean|].
+  const target = Math.abs(lean);
+  let low = 0;
+  let high = target;
+  for (let i = 0; i < 40; i += 1) {
+    const mid = (low + high) / 2;
+    if (crownShownLean(effect, comHeight, mid, strength) < target) low = mid;
+    else high = mid;
+  }
+  return Math.sign(lean) * (low + high) / 2;
 }

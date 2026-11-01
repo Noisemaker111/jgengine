@@ -225,7 +225,7 @@ export interface VehicleRotatingInertiaEffect {
 }
 
 /** The driven axle's differential: how drive is shared between its left and right wheels. */
-export type VehicleDifferentialEffect =
+export type VehicleDifferentialEffect = (
   /** Equal torque both sides: the unloaded inside wheel spins first and caps the axle at twice its grip. */
   | { kind: "open" }
   /** Torque may differ by up to `bias` times between sides (Torsen, clutch LSD). */
@@ -241,7 +241,11 @@ export type VehicleDifferentialEffect =
    * Both wheels turn together: every bit of grip drives, but the axle fights the car's yaw (spool understeer).
    * `slipStiffness` is each tyre's longitudinal force per unit slip as a multiple of its load (default `20`).
    */
-  | { kind: "locked"; slipStiffness?: number };
+  | { kind: "locked"; slipStiffness?: number }
+) & {
+  /** Multiplier on the locking (bias above `1`, clutch capacity, spool stiffness): `0` off, `1` as given (default), past `1` tighter; sane over `0..4`. */
+  strength?: number;
+};
 
 /** Brake hydraulics: pressure follows the pedal with a lag. */
 export interface VehicleBrakeLagEffect {
@@ -259,6 +263,8 @@ export interface VehicleSelfAlignEffect {
 
 /** Speed-sensitive lock: full lock is cut back as speed rises so a full input at speed stays near the grip limit. */
 export interface VehicleSpeedSensitiveSteeringEffect {
+  /** Multiplier on the lock cut: `0` off, `1` as given (default), past `1` cut further (never below a tenth of full lock); sane over `0..4`. */
+  strength?: number;
   /** Lock at and above `at`, rad. */
   angle: number;
   /** Speed where lock reaches `angle`, m/s. */
@@ -1066,7 +1072,7 @@ export function createVehicleDynamics(
     const blendTo = Math.min(1, formulaDial);
     const spread = Math.max(1, formulaDial);
     const wheel = (fz: number, cap: number, capX: number, b: number, c: number, e: number) => {
-      const mf = magicFormulaWheel(formula, fz, 0, spread);
+      const mf = magicFormulaWheel(formula, fz, 0, spread, half);
       const simpleMu = fz > 0 ? cap / fz : muY;
       const simpleMuX = fz > 0 ? capX / fz : muX;
       const mu = simpleMu + (mf.muY * gripScale - simpleMu) * blendTo;
@@ -1141,12 +1147,14 @@ export function createVehicleDynamics(
 
     // Rack: requested angle is in "heading-positive" sign, the opposite of AxisInput.steer.
     const steering = t.steering;
-    const speedLock = fx_.speedSensitiveSteering;
+    const speedLock = on(fx_.speedSensitiveSteering);
     const lockBlend = speedLock === undefined ? 0 : Math.min(1, Math.abs(u) / Math.max(0.1, speedLock.at));
-    const lock = speedLock === undefined ? steering.maxAngle : steering.maxAngle + (speedLock.angle - steering.maxAngle) * lockBlend;
+    const lockDial = strengthOf(speedLock);
+    const lockCut = speedLock === undefined ? 0 : (speedLock.angle - steering.maxAngle) * lockBlend;
+    const lock = speedLock === undefined ? steering.maxAngle : lockDial === 1 ? steering.maxAngle + lockCut : Math.max(0.1 * steering.maxAngle, steering.maxAngle + lockCut * lockDial);
     const sideslipNow = Math.abs(u) > 1 ? Math.atan2(v, Math.abs(u)) : 0;
     // Caster: the wheels trail the velocity, so at `selfAlign` they steer into a slide by that share of β.
-    const align = (fx_.selfAlign?.strength ?? 0) * -sideslipNow * Math.sign(u || 1);
+    const align = (on(fx_.selfAlign)?.strength ?? 0) * -sideslipNow * Math.sign(u || 1);
     let target = Math.max(-steering.maxAngle, Math.min(steering.maxAngle, -steerInput * lock + align));
     const leanTuning = t.lean;
     if (leanTuning !== undefined) {
@@ -1352,7 +1360,7 @@ export function createVehicleDynamics(
     const room = (latUse: number) => (combined === undefined ? 1 : ellipseRoom(latUse, exponent, combinedDial));
     const longRoomFront = gripFront.capX * room(frontLatUse);
     const longRoomRear = gripRear.capX * room(rearLatUse);
-    const abs = fx_.abs;
+    const abs = on(fx_.abs);
     if (abs !== undefined) {
       const strength = abs.strength ?? 1;
       const holds = abs.holds ?? 1 - 0.2 * strength;
@@ -1375,7 +1383,7 @@ export function createVehicleDynamics(
       if (dragFront > roomFront) longFront = -moving * (roomFront + (dragFront - roomFront) * (1 - strength));
       if (dragRear > roomRear) longRear = -moving * (roomRear + (dragRear - roomRear) * (1 - strength));
     }
-    const differential = fx_.differential;
+    const differential = lockScaled(on(fx_.differential));
     if (differential !== undefined && differential.kind !== "locked") {
       // The inside wheel's grip caps what the axle can put down once it starts to spin.
       const bias = differential.kind === "open" ? 1 : differential.kind === "clutch" ? 1 : Math.max(1, differential.bias);
@@ -1391,7 +1399,7 @@ export function createVehicleDynamics(
         out.wheelspin = true;
       }
     }
-    const tc = fx_.tractionControl;
+    const tc = on(fx_.tractionControl);
     if (tc !== undefined) {
       const strength = tc.strength ?? 1;
       const holds = tc.holds ?? 1 - 0.35 * strength;
@@ -1409,7 +1417,7 @@ export function createVehicleDynamics(
     // Pitch-over limits: the front lifts once m·ax·h exceeds its static moment (weight·b plus aero), the rear
     // under braking once it exceeds weight·a. Springs overshoot that static limit as the body pitches, so a
     // sprung vehicle also backs off in proportion to how light the axle already is.
-    const antiWheelie = fx_.antiWheelie;
+    const antiWheelie = on(fx_.antiWheelie);
     const driveSum = longFront + longRear;
     if (antiWheelie !== undefined && driveSum > 0 && u >= 0) {
       const strength = antiWheelie.strength ?? 1;
@@ -1422,7 +1430,7 @@ export function createVehicleDynamics(
         out.traction = true;
       }
     }
-    const antiStoppie = fx_.antiStoppie;
+    const antiStoppie = on(fx_.antiStoppie);
     const brakeSum = brakeF + brakeR;
     if (antiStoppie !== undefined && brakeSum > 0) {
       const strength = antiStoppie.strength ?? 1;
@@ -1534,7 +1542,7 @@ export function createVehicleDynamics(
     // clutch differential carries the same torque split up to its locking capacity.
     if (splitFront > 0 || splitRear > 0) yawMoment -= Math.sign(r) * (splitFront + splitRear) * spoolHalf;
 
-    const stabilityEffect = fx_.stability;
+    const stabilityEffect = on(fx_.stability);
     if (stabilityEffect !== undefined && grounded && Math.abs(u) > 3) {
       const stab = stabilityEffect.strength ?? 1;
       const allowed = stabilityEffect.maxSideslip ?? 0.2;
@@ -1791,7 +1799,8 @@ export function createVehicleDynamics(
     const rpmResponse = 1 - Math.exp(-18 * h);
     state.drivetrain.rpm += (targetRpm - state.drivetrain.rpm) * rpmResponse;
     if (!state.drivetrain.reversing && state.drivetrain.shiftRemaining <= 0) {
-      const shiftSeconds = curveEffect === undefined ? pt.shiftSeconds : torqueCurveShiftSeconds(curveEffect, pt, curveDial);
+      const curveShift = curveEffect === undefined ? pt.shiftSeconds : torqueCurveShiftSeconds(curveEffect, pt, Math.max(1, curveDial));
+      const shiftSeconds = curveDial >= 1 ? curveShift : pt.shiftSeconds + (curveShift - pt.shiftSeconds) * curveDial;
       if (coupled >= pt.shiftUpRpm && state.drivetrain.gearIndex < pt.gears.length - 1 && pedal > 0) {
         state.drivetrain.gearIndex += 1;
         state.drivetrain.shiftRemaining = shiftSeconds;
@@ -1805,20 +1814,24 @@ export function createVehicleDynamics(
     const shifting = state.drivetrain.shiftRemaining > 0 ? 0.2 : 1;
     const toWheel = (ratio * pt.finalDrive * eff) / Math.max(0.05, pt.wheelRadius);
     out.engineLoad = pedal * limiter * shifting;
-    if (curveEffect !== undefined) {
-      // The published engine: part throttle between the curve and the friction, the clutch fully open through a shift.
-      if (state.drivetrain.shiftRemaining > 0) return 0;
-      const crank = engineTorque(curveEffect, pt, state.drivetrain.rpm, pedal * limiter, curveDial);
-      if (pedal <= 0 && Math.abs(u) < 0.5) return 0;
+    const simple = (): number => {
+      if (pedal > 0) {
+        const torque = pt.peakTorque * sampleGripCurve(pt.torqueCurve, normalized) * pedal * limiter * shifting;
+        return (reverse > 0 ? -1 : 1) * torque * toWheel;
+      }
+      if (Math.abs(u) < 0.5) return 0;
+      return -Math.sign(u) * ((pt.engineBrakeTorque ?? pt.peakTorque * 0.12) * toWheel + (pt.coastForce ?? 0));
+    };
+    if (curveEffect === undefined) return simple();
+    // The published engine: part throttle between the curve and the friction, the clutch fully open through a shift.
+    // Below strength 1 the drive blends from the powertrain's own curve; past 1 the curve's dips deepen.
+    let published = 0;
+    if (state.drivetrain.shiftRemaining <= 0 && !(pedal <= 0 && Math.abs(u) < 0.5)) {
+      const crank = engineTorque(curveEffect, pt, state.drivetrain.rpm, pedal * limiter, Math.max(1, curveDial));
       const signed = pedal > 0 ? (reverse > 0 ? -1 : 1) * crank : Math.sign(u) * crank;
-      return signed * toWheel - (pedal > 0 ? 0 : Math.sign(u) * (pt.coastForce ?? 0));
+      published = signed * toWheel - (pedal > 0 ? 0 : Math.sign(u) * (pt.coastForce ?? 0));
     }
-    if (pedal > 0) {
-      const torque = pt.peakTorque * sampleGripCurve(pt.torqueCurve, normalized) * pedal * limiter * shifting;
-      return (reverse > 0 ? -1 : 1) * torque * toWheel;
-    }
-    if (Math.abs(u) < 0.5) return 0;
-    return -Math.sign(u) * ((pt.engineBrakeTorque ?? pt.peakTorque * 0.12) * toWheel + (pt.coastForce ?? 0));
+    return curveDial >= 1 ? published : simple() + (published - simple()) * curveDial;
   }
 
   function assignState(next: VehicleDynamicsState): void {
@@ -2000,6 +2013,22 @@ function combine(
   if (axle === "front") out.satFront = Math.max(out.satFront, saturation);
   else out.satRear = Math.max(out.satRear, saturation);
   return { fx, fy };
+}
+
+/** The differential with its locking scaled by `strength` (the same object at `1`). */
+function lockScaled(diff: VehicleDifferentialEffect | undefined): VehicleDifferentialEffect | undefined {
+  const dial = strengthOf(diff);
+  if (diff === undefined || dial === 1) return diff;
+  switch (diff.kind) {
+    case "open":
+      return diff;
+    case "limitedSlip":
+      return { ...diff, bias: 1 + (Math.max(1, diff.bias) - 1) * dial };
+    case "clutch":
+      return { ...diff, preload: diff.preload * dial, powerLock: diff.powerLock * dial, coastLock: diff.coastLock * dial };
+    case "locked":
+      return { ...diff, slipStiffness: (diff.slipStiffness ?? 20) * dial };
+  }
 }
 
 /** Torque a clutch differential can hold between its wheels at axle torque `axleTorque`, N·m. */

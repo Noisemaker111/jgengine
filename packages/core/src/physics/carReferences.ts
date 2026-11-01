@@ -322,7 +322,7 @@ function truck(): VehicleDynamicsTuning {
 
 /**
  * A racing kart with its driver: 160 kg, 1.04 m wheelbase, 1.2 m track, a 0.25 m centre of mass, no suspension and a
- * solid rear axle (`locked`), direct drive from a 22 kW engine, sticky kart tyres (the TNO tyre carried to a 400 N
+ * solid rear axle (`locked`, softened for the inside wheel the chassis lifts), direct drive from a 22 kW engine, sticky kart tyres (the TNO tyre carried to a 400 N
  * nominal load at 1.3× friction). Sizes are class estimates.
  */
 function kart(): VehicleDynamicsTuning {
@@ -352,7 +352,9 @@ function kart(): VehicleDynamicsTuning {
       tireRelaxation: { length: 0.15 },
       aeroDrag: { area: 0.5, sideArea: 0.6 },
       rollingResistance: { coefficient: 0.012 },
-      differential: { kind: "locked" },
+      // A solid axle at a tenth of a car's spool stiffness: a kart's chassis flex lifts the inside rear wheel, which the
+      // axle load model cannot.
+      differential: { kind: "locked", strength: 0.1 },
       roadFriction: {},
     },
   };
