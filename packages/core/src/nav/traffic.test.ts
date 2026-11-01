@@ -266,4 +266,17 @@ describe("traffic", () => {
       expect(Number.isFinite(car.position[0])).toBe(true);
     }
   });
+
+  test("an intersection waits its box cooldown after a car leaves before it grants again, then the cooldown reaches 0", () => {
+    const traffic = createTraffic({ graph: crossGraph(), seed: "box-cooldown", tuning: { boxCooldownSeconds: 2 } });
+    traffic.add("east", { laneId: "east-in", arc: 52, speed: 8 });
+    const cooldowns = (): number[] => traffic.snapshot().intersections.map((state) => state.cooldown);
+    let peak = 0;
+    run(traffic, 20, () => {
+      peak = Math.max(peak, ...cooldowns());
+    });
+    expect(peak).toBeGreaterThan(1.5);
+    expect(peak).toBeLessThanOrEqual(2);
+    expect(Math.max(...cooldowns())).toBe(0);
+  });
 });
