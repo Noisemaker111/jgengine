@@ -71,7 +71,7 @@ function Architecture({ place, shell = true }: { place: Place; shell?: boolean }
     };
     for (const s of plan.surfaces) {
       if (isBayWall(s)) continue;
-      part(s.id, s.at, s.size, s.kind === "floor" ? "#4b5c61" : s.kind === "ceiling" ? C.panel : C.wall, s.kind === "floor" ? "floor" : "paint");
+      part(s.id, s.at, s.size, s.kind === "floor" ? "#4b5c61" : s.kind === "ceiling" ? C.panel : C.panel, s.kind === "floor" ? "floor" : "paint");
       if (s.kind !== "wall") continue;
       part(`${s.id}:base`, [s.at[0],s.at[1]-s.size[1]/2+0.14,s.at[2]], [s.size[0]+0.02,0.18,s.size[2]+0.02], C.steel, "steel");
       part(`${s.id}:stripe`, [s.at[0],s.at[1]+0.46,s.at[2]], [s.size[0]+0.025,0.065,s.size[2]+0.025], C.brass, "brass");

@@ -16,11 +16,11 @@ export const INDUSTRIAL = {
   // Pure reflective metal disappears between fixtures without a reflection map.
   steel: { color: PALETTE.steel, roughness: 0.46, metalness: 0.68 },
   brass: { color: PALETTE.brass, roughness: 0.46, metalness: 0.7 },
-  paint: { color: PALETTE.wall, roughness: 0.76, metalness: 0 },
+  paint: { color: PALETTE.panel, roughness: 0.76, metalness: 0 },
   floor: { color: "#4b5c61", roughness: 0.88, metalness: 0 },
   rubber: { color: "#202a2c", roughness: 0.94, metalness: 0 },
   glass: { color: "#193a40", roughness: 0.16, metalness: 0, transparent: true, opacity: 0.72, depthWrite: false },
-  printed: { color: "#b9b4a1", roughness: 0.68, metalness: 0 },
+  printed: { color: "#6b756f", roughness: 0.68, metalness: 0 },
   lamp: { color: PALETTE.cyan, roughness: 0.48, metalness: 0, emissive: PALETTE.cyan, emissiveIntensity: 0.8 },
 } as const satisfies Record<string, IndustrialMaterialProps>;
 export type IndustrialSurface = keyof typeof INDUSTRIAL;
