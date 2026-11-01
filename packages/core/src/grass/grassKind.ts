@@ -211,7 +211,7 @@ const FLAT_DEFAULTS: GrassKnobs = {
   seed: "",
 };
 
-/** Group a flat knob set into a {@link GrassLook}. */
+/** Group a flat knob set into a {@link GrassLook}. @internal */
 export function groupGrassKnobs(knobs: GrassKnobs): GrassLook {
   return {
     blade: { density: knobs.density, bladeHeight: knobs.bladeHeight, heightVariation: knobs.heightVariation, bladeWidth: knobs.bladeWidth, widthVariation: knobs.widthVariation, profile: knobs.profile, curvature: knobs.curvature, stiffness: knobs.stiffness },
@@ -234,7 +234,7 @@ export const GRASS_DEFAULTS: GrassLook = groupGrassKnobs(FLAT_DEFAULTS);
 /** A partial {@link GrassLook}: any groups, each with any of its knobs. */
 export type GrassLookGroups = { [Group in Exclude<keyof GrassLook, "seed">]?: Partial<GrassLook[Group]> } & { seed?: string };
 
-/** The flat knobs of a grouped look or partial look, for a `meta` or schema parse. */
+/** The flat knobs of a grouped look or partial look, for a `meta` or schema parse. @internal */
 export function flattenGrassLook(look: GrassLookGroups): Partial<GrassKnobs> {
   const { seed, ...groups } = look;
   const flat: Partial<GrassKnobs> = seed === undefined ? {} : { seed };

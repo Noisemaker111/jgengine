@@ -67,7 +67,7 @@ describe("nextChaseView", () => {
 test("rig overrides own their data, notify consumers and reset independently of chase tuning", () => {
   const director = createCameraDirector(); let changes = 0; director.subscribe(() => changes++);
   const config: CameraRigConfig = { rigs: { chase: { distance: 10, collision: false } } };
-  director.setRig("chase", config); config.rigs!.chase!.distance = 99;
+  director.setRig("chase", config); const held = config.rigs?.chase; if (held !== undefined) held.distance = 99;
   expect(director.rig()).toEqual({ kind: "chase", config: { rigs: { chase: { distance: 10, collision: false } } } });
   director.setChaseTuning({ height: 3 }); director.setRig(null);
   expect(director.rig()).toBeNull(); expect(director.chaseTuning()).toEqual({ height: 3 }); expect(changes).toBe(3);
