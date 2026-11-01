@@ -41,7 +41,7 @@ export const cityLayout = createCityLayout({
 
 /** Scanned asphalt, concrete paving and gutters; the sidewalk keeps its sand tone and takes the grain. */
 const STREET_SURFACES = {
-  road: librarySurfaceScan("asphalt/boulevard"),
+  road: librarySurfaceScan("asphalt/dark-cracked"),
   sidewalk: librarySurfaceScan("concrete/smooth", { tint: 0 }),
   curb: librarySurfaceScan("concrete/smooth", { tint: 0 }),
 };

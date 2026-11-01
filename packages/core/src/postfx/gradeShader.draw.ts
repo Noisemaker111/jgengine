@@ -1,9 +1,9 @@
 import * as THREE from "three";
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { requireUniform } from "@jgengine/core/render/uniformMaterial.draw";
 import { ShaderPass } from "three-stdlib";
 
 import type { GradeConfig, LutCube } from "@jgengine/core/render/postProcessing";
-import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { parseCubeLut } from "./cubeLut";
 
 const DEFAULT_LIFT: readonly [number, number, number] = [0.012, 0.01, 0.018];

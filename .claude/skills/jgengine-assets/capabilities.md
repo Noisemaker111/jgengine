@@ -77,7 +77,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateHairCardAuthoring` (function) · `import { validateHairCardAuthoring } from "@jgengine/core/material/hairCards"`
 
-## hdri-library — pick a shipped CC0 HDRI (noon, golden hour, harbour sunset, overcast, dusk, night city, industrial interior, forest, snow) by id
+## hdri-library — pick a shipped CC0 HDRI (noon, golden hour, harbour sunset, industrial sunset, overcast, dusk, night city, industrial interior, forest, snow) by id
 
 - `hdriEnvironment` (function) · `import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary"`
 

@@ -37,7 +37,7 @@ A hot, rusting scrapyard at the end of the day: oil-black ground, slag glow, haz
 - Rival karts differ by colour and one roof shape each.
 
 ## UI typography
-- Display: Saira Stencil One (Google Fonts, OFL). Body: Barlow Condensed (Google Fonts, OFL). Both already ship in `src/art/fonts/`.
+- Display: Saira Stencil One (Google Fonts, OFL). Body: Barlow Condensed (Google Fonts, OFL). Both come from the shared font library (`libraryFontPairing`).
 - HUD kit: `signal`, accent `#f2c230` hazard yellow.
 
 ## Chosen look

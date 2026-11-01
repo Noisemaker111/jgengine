@@ -14,6 +14,7 @@ shots/
 !apps/dev/public/models/kaykit-furniture/
 !apps/dev/public/models/kaykit-skeletons/
 !apps/dev/public/models/kaykit-space-base/
+!apps/dev/public/models/quaternius-5-low-poly-animals/
 !apps/dev/public/models/quaternius-medieval-village/
 !apps/dev/public/models/quaternius-lowpoly-cars/
 !apps/dev/public/models/quaternius-modular-scifi/
@@ -67,6 +68,7 @@ apps/web/.wrangler/
 # Shared asset library pulls (assets pull <source>:<id>); bytes live in the shared asset store.
 **/public/sprites/gameicons-icons/
 **/public/hdri/
+**/public/fonts/
 **/public/models/sketchfab/
 **/public/materials/polyhaven-*/
 

@@ -17,7 +17,7 @@ const MODEL_SOURCES = ["quaternius-lowpoly-cars"] as const;
 const GROUND_MATERIAL = "ambientcg-ground055s";
 
 /**
- * The scans behind the library surfaces the streets and buildings name (`asphalt/boulevard`,
+ * The scans behind the library surfaces the streets and buildings name (`asphalt/dark-cracked`,
  * `concrete/smooth`, `paving/stone`, and the `facade/*` brick and glass walls), listed by source id so provisioning
  * pulls them.
  */

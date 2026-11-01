@@ -25,6 +25,7 @@ export const HDRI_LIBRARY = [
   { id: "interior-industrial", title: "Industrial Workshop Foundry", polyhaven: "industrial_workshop_foundry", author: "Dimitrios Savva, Jarod Guest", look: "Large workshop with window light and dark corners." },
   { id: "forest-shade", title: "Forest Slope", polyhaven: "forest_slope", author: "Andreas Mischok", look: "Green dappled shade under trees." },
   { id: "tropical-clouds", title: "Kloofendal 38d Partly Cloudy (Pure Sky)", polyhaven: "kloofendal_38d_partly_cloudy_puresky", author: "Greg Zaal, Jarod Guest", look: "Bright blue sky with scattered white clouds, high sun." },
+  { id: "industrial-sunset", title: "Industrial Sunset 02 (Pure Sky)", polyhaven: "industrial_sunset_02_puresky", author: "Greg Zaal, Jarod Guest", look: "Low orange sun over a hazy industrial horizon, no ground." },
   { id: "snow", title: "Snowy Park 01", polyhaven: "snowy_park_01", author: "Oliksiy Yakovlyev", look: "Bright snow under a pale overcast sky." },
 ] as const satisfies readonly HdriEntry[];
 
@@ -66,7 +67,7 @@ export function hdriOriginUrl(id: string): string {
  * A curated HDRI by id as the lighting source a scene takes: `environment: hdriEnvironment("golden-hour")`.
  * Pass `intensity` or `rotation` to retune it. Throws on an unknown id.
  *
- * @capability hdri-library pick a shipped CC0 HDRI (noon, golden hour, harbour sunset, overcast, dusk, night city, industrial interior, forest, snow) by id
+ * @capability hdri-library pick a shipped CC0 HDRI (noon, golden hour, harbour sunset, industrial sunset, overcast, dusk, night city, industrial interior, forest, snow) by id
  */
 export function hdriEnvironment(id: HdriId, options: { intensity?: number; rotation?: number; baseUrl?: string } = {}): Extract<EnvironmentSource, { kind: "hdri" }> {
   const { baseUrl = `/${HDRI_DIR}`, ...rest } = options;

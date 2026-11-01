@@ -1,13 +1,9 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
-import { buildMaterialCatalog } from "@jgengine/assets/materials";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-const MODEL_SOURCES = ["kaykit-city-builder", "kaykit-dungeon"] as const;
-/**
- * Packed dirt, not plate steel: the metal set's roughness map turned patches of the yard into a
- * mirror that reflected the sky as a blue-white pool, and its rivet grid read as repeated decals.
- */
-const FLOOR_MATERIAL_SOURCE = "ambientcg-ground025";
+const MODEL_SOURCES = ["kaykit-city-builder", "kaykit-space-base", "quaternius-5-low-poly-animals"] as const;
+/** Packed dirt on the yard and dark cracked asphalt on the racing line, named by the shared material library. */
+const GROUND_SOURCES = ["ambientcg-ground025", "ambientcg-asphalt012"] as const;
 /**
  * Scans behind the shared library's corridor facades (`metal/rust`, `concrete/rough`,
  * `metal/corrugated`). Declared here so `bun run provision` pulls them and the credits screen names
@@ -22,7 +18,7 @@ const FACADE_MATERIAL_SOURCES = [
 /** Every pack this game ships — the credits screen is generated from it, so it cannot drift. */
 export const ASSET_SOURCE_IDS: readonly string[] = [
   ...MODEL_SOURCES,
-  FLOOR_MATERIAL_SOURCE,
+  ...GROUND_SOURCES,
   ...FACADE_MATERIAL_SOURCES,
 ];
 
@@ -30,6 +26,3 @@ export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
   sources: [...MODEL_SOURCES],
 });
-
-const materials = buildMaterialCatalog({ basePath: "/materials" });
-export const YARD_FLOOR_MATERIAL = materials.resolve(FLOOR_MATERIAL_SOURCE)!.maps;

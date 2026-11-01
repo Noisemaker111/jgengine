@@ -4690,7 +4690,7 @@
       "module": "@jgengine/assets/catalogs/hdriLibrary",
       "gameFacing": false,
       "probe": null,
-      "intent": "pick a shipped CC0 HDRI (noon, golden hour, harbour sunset, overcast, dusk, night city, industrial interior, forest, snow) by id"
+      "intent": "pick a shipped CC0 HDRI (noon, golden hour, harbour sunset, industrial sunset, overcast, dusk, night city, industrial interior, forest, snow) by id"
     },
     {
       "id": "headless-flow",

@@ -34,6 +34,8 @@ export const FONT_LIBRARY = [
   { id: "bangers", family: "Bangers", role: "display", moods: ["sports", "comic"], author: "Vernon Adams", package: "bangers" },
   { id: "russo-one", family: "Russo One", role: "display", moods: ["industrial", "sports"], author: "Jovanny Lemonad", package: "russo-one" },
   { id: "source-sans-3", family: "Source Sans 3", role: "body", moods: ["neutral", "cozy"], author: "Paul D. Hunt", package: "source-sans-3" },
+  { id: "saira-stencil-one", family: "Saira Stencil One", role: "display", moods: ["industrial", "military"], author: "Omnibus-Type", package: "saira-stencil-one" },
+  { id: "barlow-condensed", family: "Barlow Condensed", role: "body", moods: ["industrial", "sports"], author: "Jeremy Tribby", package: "barlow-condensed" },
   { id: "inter", family: "Inter", role: "body", moods: ["neutral", "industrial"], author: "Rasmus Andersson", package: "inter" },
 ] as const satisfies readonly FontEntry[];
 

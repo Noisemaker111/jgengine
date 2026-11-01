@@ -4,11 +4,16 @@ import { UPGRADE_KINDS } from "./upgrades";
 // Module URLs survive both the standalone build and the engine's configured /play host.
 export const buggyModel: ModelConfig = { url: new URL("./row-six-buggy.glb", import.meta.url).href, anchor: "origin" };
 
-/** Rival karts are the same welded buggy in yard paint, so the field reads apart at speed. */
+/** Rival karts are the welded buggy in yard paint with one roof shape each (slab, fin, hoop), so the field reads apart at speed. */
+const rivalModel = (roof: string, color: string): ModelConfig => ({
+  url: new URL(`./row-six-rival-${roof}.glb`, import.meta.url).href,
+  anchor: "origin",
+  material: { color, roughness: 0.72 },
+});
 export const rivalKartModels: Record<string, ModelConfig> = {
-  kart_rival_tally: { ...buggyModel, material: { color: "#2f8f7a", roughness: 0.72 } },
-  kart_rival_moss: { ...buggyModel, material: { color: "#b7a13a", roughness: 0.72 } },
-  kart_rival_hobbs: { ...buggyModel, material: { color: "#7a3fb0", roughness: 0.72 } },
+  kart_rival_tally: rivalModel("tally", "#2f8f7a"),
+  kart_rival_moss: rivalModel("moss", "#b7a13a"),
+  kart_rival_hobbs: rivalModel("hobbs", "#7a3fb0"),
 };
 
 /** The best-run ghost: the same buggy as see-through teal glass, so it never reads as a rival. */
