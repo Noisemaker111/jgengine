@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAgent } from "@jgengine/core/agents/agent";
 import { createRelationshipBook } from "@jgengine/core/agents/relationships";
+import { PAIR_MILESTONES } from "../agents";
 
 import { game } from "../../game.config";
 import { onInit, onTick } from "../../loop";
@@ -96,7 +97,7 @@ describe("agent desire", () => {
 
 describe("relationships", () => {
   test("a friendship starts at the shared milestone and labels scale with standing", () => {
-    const book = createRelationshipBook();
+    const book = createRelationshipBook({ milestones: PAIR_MILESTONES });
     const outcome = book.socialise("a", "b", { familiarity: 0.4, opinion: 36 });
     expect(outcome.crossed.map((milestone) => milestone.id)).toEqual(["friends"]);
     expect(book.prefersCompanyOf("a", "b")).toBe(true);
@@ -105,7 +106,7 @@ describe("relationships", () => {
   });
 
   test("a bond needs opinion and time shared before the pair refuses to split", () => {
-    const book = createRelationshipBook();
+    const book = createRelationshipBook({ milestones: PAIR_MILESTONES });
     book.socialise("a", "b", { opinion: 96, familiarity: 0.4 });
     expect(book.refusesToSplit("a", "b")).toBe(false);
     book.socialise("a", "b", { familiarity: 0.2 });

@@ -12,13 +12,6 @@ export interface RelationshipMilestone {
   readonly requiresFamiliarity?: number;
 }
 
-/** The pair levels every game starts from; a game overrides the words and the cut points. */
-export const DEFAULT_RELATIONSHIP_MILESTONES: readonly RelationshipMilestone[] = [
-  { id: "friends", label: "Friends", at: 35 },
-  { id: "close", label: "Close", at: 70 },
-  { id: "bonded", label: "Bonded", at: 95, requiresFamiliarity: 0.5 },
-];
-
 /** How one pair stands: how much time they have shared, and what they think of each other. */
 export interface Relationship {
   /** 0 (strangers) . 1 (they know each other well). */
@@ -103,7 +96,7 @@ const DEFAULTS: Required<RelationshipPolicy> = {
   opinionMin: -100,
   opinionMax: 100,
   familiarityMax: 1,
-  milestones: DEFAULT_RELATIONSHIP_MILESTONES,
+  milestones: [],
 };
 
 /**

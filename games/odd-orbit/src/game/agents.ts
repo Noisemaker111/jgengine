@@ -6,8 +6,8 @@ import {
 import { readMood, type Mood, type MoodTier } from "@jgengine/core/agents/mood";
 import {
   createRelationshipBook,
-  DEFAULT_RELATIONSHIP_MILESTONES,
   type RelationshipBook,
+  type RelationshipMilestone,
 } from "@jgengine/core/agents/relationships";
 import type { NeedDefinition } from "@jgengine/core/sim/needs";
 
@@ -18,6 +18,13 @@ import { decayFactor } from "./traits";
 import { pairKey, type HouseholdState, type MemberState } from "./session/types";
 
 /** The household's tone on the shared mood scale; the face is the game's own art. */
+/** Pair levels the crew reaches, by opinion of each other. */
+export const PAIR_MILESTONES: readonly RelationshipMilestone[] = [
+  { id: "friends", label: "Friends", at: 35 },
+  { id: "close", label: "Close", at: 70 },
+  { id: "bonded", label: "Bonded", at: 95, requiresFamiliarity: 0.5 },
+];
+
 export const MOOD_TIERS: readonly MoodTier[] = [
   { at: 82, id: "radiant", label: "Radiant" },
   { at: 64, id: "content", label: "Content" },
@@ -166,7 +173,7 @@ export function memberTargets(
 
 /** The household's relationship book, built from the saved records so no state hides in a module. */
 export function householdBook(state: HouseholdState): RelationshipBook {
-  const book = createRelationshipBook({ milestones: DEFAULT_RELATIONSHIP_MILESTONES });
+  const book = createRelationshipBook({ milestones: PAIR_MILESTONES });
   for (const id of state.order) {
     for (const other of state.order) {
       if (id >= other) continue;
