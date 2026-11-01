@@ -22,6 +22,7 @@ export const HDRI_LIBRARY = [
   { id: "night-city", title: "Shanghai Bund", polyhaven: "shanghai_bund", author: "Greg Zaal", look: "City skyline lit at night across a river." },
   { id: "night-clear", title: "Satara Night", polyhaven: "satara_night", author: "Greg Zaal", look: "Open country under a clear night sky." },
   { id: "interior-industrial", title: "Industrial Workshop Foundry", polyhaven: "industrial_workshop_foundry", author: "Dimitrios Savva, Jarod Guest", look: "Large workshop with window light and dark corners." },
+  { id: "industrial-pipe-valve", title: "Industrial Pipe & Valve 01", polyhaven: "industrial_pipe_and_valve_01", author: "Philip Modin", look: "Dim industrial warehouse, warm lamps over pipework and valves." },
   { id: "forest-shade", title: "Forest Slope", polyhaven: "forest_slope", author: "Andreas Mischok", look: "Green dappled shade under trees." },
   { id: "tropical-clouds", title: "Kloofendal 38d Partly Cloudy (Pure Sky)", polyhaven: "kloofendal_38d_partly_cloudy_puresky", author: "Greg Zaal, Jarod Guest", look: "Bright blue sky with scattered white clouds, high sun." },
   { id: "industrial-sunset", title: "Industrial Sunset 02 (Pure Sky)", polyhaven: "industrial_sunset_02_puresky", author: "Greg Zaal, Jarod Guest", look: "Low orange sun over a hazy industrial horizon, no ground." },

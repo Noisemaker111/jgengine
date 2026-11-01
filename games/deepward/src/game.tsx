@@ -31,6 +31,8 @@ import { GameUI } from "./game/ui/GameUI";
 import { shiftTheme } from "./game/ui/ItemMark";
 import { deepwardKit } from "./game/ui/menu/deepwardKit";
 import { audio } from "./game/audio";
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 
 function Block({ at, size, color = C.panel, glow = false, surface }: { at: Triple; size: Triple; color?: string; glow?: boolean; surface?: IndustrialSurface }) {
   return <IndustrialBox at={at} size={size} color={color} surface={surface ?? (glow ? "lamp" : color === C.steel ? "steel" : color === C.brass ? "brass" : "paint")} emission={glow ? 0.8 : 0} />;
@@ -311,11 +313,21 @@ export const game = defineGame({
     lens: { frustum: { far: 95 } },
   },
   rendering: {
-    lighting: { ambient: { color: "#d4d5c8", intensity: 0.72 }, hemisphere: { skyColor: "#c7d9df", groundColor: "#514639", intensity: 0.5 } },
-    backdrop: { background: C.black, fog: { color: C.black, near: 24, far: 75 } },
-    // Lamp housings and amber signage sit near the bloom threshold; a high strength smeared the ceiling into haze.
-  // Indoor air: a thin haze the scene fog colours per floor, and a glow around each lit lamp in it.
-    postProcessing: { toneMapping: "aces", exposure: 1.05, bloom: { strength: 0.05, radius: 0.3, threshold: 1.35 }, atmosphere: { indoor: true, fogDensity: 0.013, fogFalloff: 0.02, fogHeight: 0, fogMax: 0.4, shafts: 0, lamps: 1.25, beams: 0.35 } },
+    look: "cinematic",
+    mood: { preset: "night", fog: { near: 12, far: 48 }, exposure: 0.9, contrast: 1.1 },
+    // Practical lamps carry every room: a third of the old 0.72 ambient and 0.5 hemisphere.
+    lighting: { ambient: { color: "#d4d5c8", intensity: 0.24 }, hemisphere: { skyColor: "#c7d9df", groundColor: "#514639", intensity: 0.17 } },
+    backdrop: { background: C.black, fog: { color: C.black, near: 12, far: 48 } },
+    // Reflections only: the vault has no sky.
+    environmentSource: hdriEnvironment("industrial-pipe-valve", { intensity: 0.25 }),
+    postProcessing: {
+      toneMapping: "aces",
+      bloom: { strength: 0.18, radius: 0.3, threshold: 0.9 },
+      ao: { radius: 1, intensity: 1, distanceFalloff: 3, blend: 1 },
+      grade: { vignette: 0.28, lut: lutGrade("cold-teal") },
+      // Indoor air: a thin haze the scene fog colours per floor, and a glow around each lit lamp in it.
+      atmosphere: { indoor: true, fogDensity: 0.013, fogFalloff: 0.02, fogHeight: 0, fogMax: 0.4, shafts: 0, lamps: 1.25, beams: 0.35 },
+    },
   },
   capture: {
     probe: captureProbe,
