@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { freezeStaticTransforms, thawStaticTransforms } from "./staticTransforms.draw";
+import { freezeStaticTransforms, refreshStaticTransforms, thawStaticTransforms } from "./staticTransforms.draw";
 
 function frozenScene(): { scene: THREE.Scene; mesh: THREE.Object3D } {
   const scene = new THREE.Scene();
@@ -55,4 +55,32 @@ test("freezing a node mounted under a parent placed in the same commit bakes the
   expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([6, 1, 0]);
   scene.updateMatrixWorld();
   expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([6, 1, 0]);
+});
+
+test("refreshing a frozen subtree re-bakes it where it was moved to, and it stays frozen", () => {
+  const { scene, mesh } = frozenScene();
+  freezeStaticTransforms(mesh);
+  mesh.position.set(1, 0, 0);
+  mesh.parent?.position.set(10, 0, 0);
+  scene.updateMatrixWorld();
+  expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([6, 1, 0]);
+  refreshStaticTransforms(mesh);
+  expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([11, 0, 0]);
+  expect(mesh.matrixAutoUpdate).toBe(false);
+});
+
+test("a hand-written matrix survives freezing, refreshing and thawing", () => {
+  const scene = new THREE.Scene();
+  const node = new THREE.Object3D();
+  node.matrixAutoUpdate = false;
+  node.matrix.makeTranslation(3, 4, 5);
+  scene.add(node);
+  freezeStaticTransforms(node);
+  refreshStaticTransforms(node);
+  expect(node.matrixWorld.elements.slice(12, 15)).toEqual([3, 4, 5]);
+  thawStaticTransforms(node);
+  expect(node.matrixAutoUpdate).toBe(false);
+  expect(node.matrixWorldAutoUpdate).toBe(true);
+  scene.updateMatrixWorld();
+  expect(node.matrixWorld.elements.slice(12, 15)).toEqual([3, 4, 5]);
 });

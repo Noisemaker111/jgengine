@@ -1,6 +1,6 @@
 // @skill jgengine-world
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react";
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
@@ -21,7 +21,9 @@ import { acquireImpostor, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, i
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
-import { canInstanceStaticScene, countStaticBatchDraws, gatherStaticMembers, harvestStaticPieces, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, staticModelPieces, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
+import { staticDrawPoolFor, type StaticDrawSlot } from "./staticDrawPool.draw";
+import type { HlodConfig } from "@jgengine/core/visibility/config";
+import { canInstanceStaticScene, countStaticBatchDraws, staticBatchCell, gatherStaticMembers, harvestStaticPieces, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, staticModelPieces, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
 
 /**
  * Report what static object batching is doing to `debug_snapshot().systems`: the grouped batches, the
@@ -85,7 +87,64 @@ function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObjec
   return members;
 }
 
-function ObjectSource({ source, members, capacity }: {
+function ObjectSource({ source, members, objects }: {
+  source: ScatterModelSource;
+  members: { current: readonly SceneObject[] };
+  objects: readonly SceneObject[];
+}) {
+  const scene = useThree((state) => state.scene);
+  const [slot, setSlot] = useState<StaticDrawSlot | null | undefined>(undefined);
+  const cell = staticBatchCell(objects);
+  const capacity = objects.length;
+  useLayoutEffect(() => {
+    const acquired = staticDrawPoolFor(scene).acquire(source, cell, capacity);
+    setSlot(acquired);
+    return () => acquired?.release();
+  }, [scene, source, cell, capacity]);
+  if (slot === undefined) return null;
+  return slot === null
+    ? <InstancedObjectSource source={source} members={members} capacity={capacity} />
+    : <PooledObjectSource slot={slot} source={source} members={members} objects={objects} />;
+}
+
+/** A source whose material a pool batch shares: its placements are instances of that batch. */
+function PooledObjectSource({ slot, source, members, objects }: {
+  slot: StaticDrawSlot;
+  source: ScatterModelSource;
+  members: { current: readonly SceneObject[] };
+  objects: readonly SceneObject[];
+}) {
+  const indexOf = useMemo(() => new Map(objects.map((object, index) => [object.instanceId, index])), [objects]);
+  const scratch = useMemo(() => new THREE.Object3D(), []);
+  const slotOf = useCallback((live: SceneObject) => indexOf.get(live.instanceId), [indexOf]);
+  const matrixOf = useCallback((live: SceneObject, out: THREE.Matrix4) => {
+    scratch.position.fromArray(live.position);
+    scratch.rotation.set(0, live.rotationY, 0);
+    scratch.scale.fromArray(objectVisualScale(live.visual));
+    scratch.updateMatrix();
+    return out.multiplyMatrices(scratch.matrix, source.localMatrix);
+  }, [scratch, source]);
+  const ctx = useGameContext();
+  const placedAt = useRef<{ slot: StaticDrawSlot; version: number } | null>(null);
+  const live = useMemo((): SceneObject[] => [], []);
+  useFrame(() => {
+    const version = ctx.scene.object.version();
+    if (placedAt.current?.slot !== slot || placedAt.current.version !== version) {
+      placedAt.current = { slot, version };
+      live.length = 0;
+      for (const object of objects) {
+        const current = ctx.scene.object.get(object.instanceId);
+        if (current !== null) live.push(current);
+      }
+      slot.place(live, slotOf, matrixOf);
+    }
+    slot.sync(members.current, slotOf, matrixOf);
+  }, CAMERA_POST_FRAME_PRIORITY + 0.2);
+  return null;
+}
+
+/** A source drawn on its own: one instanced draw holding this batch's placements. */
+function InstancedObjectSource({ source, members, capacity }: {
   source: ScatterModelSource;
   members: { current: readonly SceneObject[] };
   capacity: number;
@@ -152,7 +211,7 @@ function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; sing
     </>;
   }
   return <>
-    {harvested.sources.map((source, index) => objects.length === 0 ? null : <ObjectSource key={index} source={source} members={members} capacity={objects.length} />)}
+    {harvested.sources.map((source, index) => objects.length === 0 ? null : <ObjectSource key={index} source={source} members={members} objects={objects} />)}
     {excluded.map((id) => { const live = ctx.scene.object.get(id); return live === null ? null : single(live); })}
   </>;
 }
@@ -237,7 +296,7 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
   useFrame((state) => card?.pool.pack(state.clock.elapsedTime), CAMERA_POST_FRAME_PRIORITY + 0.3);
   const members = useStaticMembers(batch, objects, assignment, 0);
   return <>
-    {sources.map((source, index) => <ObjectSource key={index} source={source} members={members} capacity={objects.length} />)}
+    {sources.map((source, index) => <ObjectSource key={index} source={source} members={members} objects={objects} />)}
   </>;
 }
 
@@ -266,7 +325,7 @@ function VariantLevel({ url, model, batch, objects, level, assignment, measure, 
   }, [ctx, harvested, batch, measure]);
   const members = useStaticMembers(batch, objects, assignment, level);
   if (harvested === null) return <LevelSingles objects={objects} level={level} assignment={assignment} single={single} />;
-  return <>{harvested.sources.map((source, index) => <ObjectSource key={index} source={source} members={members} capacity={objects.length} />)}</>;
+  return <>{harvested.sources.map((source, index) => <ObjectSource key={index} source={source} members={members} objects={objects} />)}</>;
 }
 
 /** Members of one level drawn through the individual renderer, for a level whose asset cannot be instanced. @internal */
@@ -346,6 +405,28 @@ export function VariantStaticObjects({ batch, single }: { batch: StaticObjectBat
     ))}
     {excluded.map((id) => { const live = ctx.scene.object.get(id); return live === null ? null : single(live); })}
   </>;
+}
+
+/**
+ * Keeps the scene's static draw pool on the game's far-cell proxy settings and switches each cell
+ * between its batches and its proxy as the camera moves.
+ * @internal
+ */
+export function StaticDrawPoolDriver({ hlod }: { hlod: HlodConfig | undefined }) {
+  const scene = useThree((state) => state.scene);
+  const pool = staticDrawPoolFor(scene);
+  const distance = hlod?.distance;
+  const hysteresis = hlod?.hysteresis;
+  const cluster = hlod?.cluster;
+  useEffect(() => {
+    pool.configure(distance === undefined || hysteresis === undefined || cluster === undefined ? null : { distance, hysteresis, cluster });
+    return () => pool.configure(null);
+  }, [pool, distance, hysteresis, cluster]);
+  const eye = useMemo(() => new THREE.Vector3(), []);
+  useFrame((state) => {
+    if (distance !== undefined) pool.update(state.camera.getWorldPosition(eye));
+  }, CAMERA_POST_FRAME_PRIORITY + 0.18);
+  return null;
 }
 
 /** Render compatible authored or `scenery` props as shared model draws, preserving unsupported models. @internal */

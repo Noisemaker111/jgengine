@@ -1589,7 +1589,7 @@
       "module": "@jgengine/core/scene/sceneCapture.draw",
       "gameFacing": false,
       "probe": null,
-      "intent": "read the live R3F frame to a PNG data URL (needs preserveDrawingBuffer)"
+      "intent": "read the frame an R3F canvas just rendered to a PNG data URL"
     },
     {
       "id": "capture-effectiveness-tame",
@@ -9760,7 +9760,7 @@
       "module": "@jgengine/core/scene/sceneCapture.draw",
       "gameFacing": false,
       "probe": null,
-      "intent": "expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)"
+      "intent": "expose the live scene to outside-Canvas HUD (photo mode, save thumbnails)"
     },
     {
       "id": "scene-ownership",

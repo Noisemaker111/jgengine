@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 
 import type { ModelWindConfig } from "@jgengine/core/game/playableGame";
+import { batchSafeSignature, markBatchSafe } from "@jgengine/core/material/compileLayers.draw";
 
 /** Shared gust clock every foliage material reads; advanced once per frame by `WindClock`. */
 export const windClock = { value: 0 };
@@ -52,8 +53,10 @@ const VERTEX_SWAY = /* glsl */ `#include <begin_vertex>
 {
   float jgWindT = clamp(position.y / max(uJgWindHeight, 0.001), 0.0, 1.0);
   float jgWindRamp = jgWindT * jgWindT;
-  #ifdef USE_INSTANCING
+  #if defined(USE_INSTANCING)
     vec3 jgWindWorld = (instanceMatrix * vec4(transformed, 1.0)).xyz;
+  #elif defined(USE_BATCHING)
+    vec3 jgWindWorld = (modelMatrix * batchingMatrix * vec4(transformed, 1.0)).xyz;
   #else
     vec3 jgWindWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;
   #endif
@@ -92,6 +95,11 @@ export function applyModelWind(material: THREE.MeshStandardMaterial, wind: Resol
       .replace("#include <begin_vertex>", VERTEX_SWAY);
   };
   material.customProgramCacheKey = () => `${previousKey.call(material)}|jg-wind:v2`;
+  const wrapped = batchSafeSignature(previousCompile);
+  if (wrapped !== undefined) {
+    const direction = wind.sharedDirection ? "shared" : `${wind.direction.x},${wind.direction.y}`;
+    markBatchSafe(material.onBeforeCompile, { signature: `wind(${wind.strength},${wind.speed},${wind.height},${direction})${wrapped}`, userData: [WIND_KEY] });
+  }
   material.needsUpdate = true;
   return material;
 }

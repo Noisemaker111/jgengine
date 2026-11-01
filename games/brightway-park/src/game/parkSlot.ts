@@ -8,7 +8,7 @@ const num = (save: ParkSave, key: string): number => {
 };
 import { parkProfile } from "./parkProfile";
 
-export { bindParkCapture, captureParkThumb, parkProfile } from "./parkProfile";
+export { captureParkThumb, parkProfile } from "./parkProfile";
 /** Brightway keeps one park; the card is that document. */
 export const parkSlots = createSaveSlots({
   capacity: 1,

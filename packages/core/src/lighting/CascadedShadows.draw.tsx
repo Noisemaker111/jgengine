@@ -10,6 +10,7 @@ import { prepareBeforeWarmup } from "@jgengine/core/render/shaderWarmup.draw";
 import { DEFAULT_SHADOW_RADIUS, lightShadowFilter, type ShadowFilter } from "./softShadows";
 import { resolveCascadeCount, resolveShadowMapSize } from "./shadowTiers";
 import type { DaylightModulation } from "./SceneLighting.draw";
+import { recordCompileLayer } from "@jgengine/core/material/compileLayers.draw";
 
 /** @internal Reach in metres used when neither the game nor a graphics profile sets one. */
 export const DEFAULT_SHADOW_DISTANCE = 200;
@@ -281,6 +282,8 @@ export function releaseCascadedShadows(csm: Pick<CSM, "remove" | "dispose" | "li
   csm.dispose();
 }
 
+const CSM_DEFINES = ["USE_CSM", "CSM_CASCADES", "CSM_FADE"];
+
 function setupMaterial(material: THREE.Material, csm: CsmMaterialSetup): void {
   const prior = material.onBeforeCompile;
   csm.setupMaterial(material);
@@ -291,6 +294,7 @@ function setupMaterial(material: THREE.Material, csm: CsmMaterialSetup): void {
       csmHook.call(this, shader, renderer);
     };
   }
+  recordCompileLayer(material, { hook: prior }, { defines: CSM_DEFINES });
   material.needsUpdate = true;
 }
 
@@ -310,7 +314,7 @@ export function bindCsmMaterials(scene: THREE.Scene, csm: CsmMaterialSetup): () 
       material.removeEventListener("dispose", release);
       csm.shaders?.delete(material);
       if (material.onBeforeCompile === hook) material.onBeforeCompile = prior;
-      for (const key of ["USE_CSM", "CSM_CASCADES", "CSM_FADE"]) {
+      for (const key of CSM_DEFINES) {
         if (key in priorDefines) (material.defines ??= {})[key] = priorDefines[key];
         else if (material.defines !== undefined) delete material.defines[key];
       }

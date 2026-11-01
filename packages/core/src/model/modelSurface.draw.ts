@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import type { SurfaceDetailLevel } from "@jgengine/core/settings/graphicsProfile";
+import { markBatchSafe } from "@jgengine/core/material/compileLayers.draw";
 import { SURFACE_BUMP_NORMAL_GLSL } from "@jgengine/core/terrain/terrainSurfaceShader.draw";
 
 const ORIGINAL_KEY = "jgSurfaceOriginal";
@@ -31,6 +32,10 @@ vJgSurfPos = transformed * jgSurfScale;
 #ifdef USE_INSTANCING
   vJgSurfPos *= vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
   vJgSurfPos += mod(instanceMatrix[3].xyz, 97.0);
+#endif
+#ifdef USE_BATCHING
+  vJgSurfPos *= vec3(length(batchingMatrix[0].xyz), length(batchingMatrix[1].xyz), length(batchingMatrix[2].xyz));
+  vJgSurfPos += mod(batchingMatrix[3].xyz, 97.0);
 #endif
 #include <skinning_vertex>`;
 
@@ -130,6 +135,9 @@ function surfaceOnBeforeCompile(this: THREE.Material, shader: THREE.WebGLProgram
   if (level === "full") fragment = fragment.replace("#include <normal_fragment_maps>", NORMAL_MAIN);
   shader.fragmentShader = fragment;
 }
+
+// The pass reads the batched instance matrix as it reads the instanced one.
+markBatchSafe(surfaceOnBeforeCompile);
 
 function surfaceCacheKey(this: THREE.Material): string {
   return `jg-surface:v1:${materialSurfaceLevel(this)}`;

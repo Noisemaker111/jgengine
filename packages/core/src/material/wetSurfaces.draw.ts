@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { recordCompileLayer } from "@jgengine/core/material/compileLayers.draw";
 import { wetnessUniform } from "@jgengine/core/weather/livingWorld.draw";
 
 const WET_KEY = "jgWet";
@@ -10,8 +11,10 @@ varying vec3 vJgWetNormal;`;
 
 const VERTEX_MAIN = /* glsl */ `#include <worldpos_vertex>
 {
-  #ifdef USE_INSTANCING
+  #if defined(USE_INSTANCING)
     mat4 jgWetModel = modelMatrix * instanceMatrix;
+  #elif defined(USE_BATCHING)
+    mat4 jgWetModel = modelMatrix * batchingMatrix;
   #else
     mat4 jgWetModel = modelMatrix;
   #endif
@@ -89,6 +92,7 @@ export function applyWetness(material: THREE.MeshStandardMaterial): void {
       .replace("#include <normal_fragment_maps>", FRAGMENT_NORMAL);
   };
   material.customProgramCacheKey = () => `${previousKey.call(material)}|jg-wet:v1`;
+  recordCompileLayer(material, { hook: previousCompile, key: previousKey }, { userData: [WET_KEY] });
   material.needsUpdate = true;
 }
 

@@ -1,8 +1,5 @@
+import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 import type { GameSaveSystem } from "@jgengine/core/save/saveDocument";
-import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view";
-
-/** The live frame a run card shows, read inside the canvas by `SceneCaptureBinding`. */
-const reader: { current: (() => string | null) | null } = { current: null };
 
 /** What a kept run remembers: the reclaimer's call sign and the frame it left. */
 export const scrapProfile: { name: string | null; thumbnail: string | null } = {
@@ -10,14 +7,10 @@ export const scrapProfile: { name: string | null; thumbnail: string | null } = {
   thumbnail: null,
 };
 
-export function bindScrapCapture(read: () => string | null): void {
-  reader.current = read;
-}
-
+/** The frame a save card shows: the live scene when the binding answers, else the last one kept. */
 export async function captureScrapThumb(): Promise<string | null> {
-  if (reader.current === null) return scrapProfile.thumbnail;
-  const shot = await shrinkCapture(reader.current(), { width: 320, height: 180 });
-  if (shot !== null) scrapProfile.thumbnail = shot;
+  const shot = await requestSceneThumbnail({ width: 320, height: 180, bindingTimeoutMs: 600 });
+  if (shot.ok) scrapProfile.thumbnail = shot.thumbnail;
   return scrapProfile.thumbnail;
 }
 

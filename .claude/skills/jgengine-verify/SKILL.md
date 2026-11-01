@@ -46,7 +46,7 @@ Steps, headless runners, flows, `simulate`, `shoot` modes and load guards: [refe
 A PR that touches a rendered surface embeds the inspected shots. Any change to a map, world or scene document counts as rendered.
 
 - Standalone game: `bun run shoot` (`--device desktop|mobile|mobile-landscape`). Shots needing play first use `drive --shot`.
-- Engine monorepo: `bun run shoot <game> --mode play --quality draft --inspect` while iterating, a final `--quality full` shot as evidence. Draft and `--quick` shots are never PR evidence. After two capture failures, stop and report lower-rung evidence. Aiming, fixtures, recording and PR media: [references/monorepo-capture.md](references/monorepo-capture.md).
+- Engine monorepo: `bun run shoot <game> --mode play --quality draft --inspect` while iterating, a final `--quality full` shot as evidence. Draft and `--quick` shots are never PR evidence. The game canvas keeps no copy of its last frame: in-game captures go through `requestSceneCapture`/`requestSceneThumbnail`, which read the next frame as it renders, never `toDataURL` from outside a frame. After two capture failures, stop and report lower-rung evidence. Aiming, fixtures, recording and PR media: [references/monorepo-capture.md](references/monorepo-capture.md).
 - Whole-game look claims ("premium", "showcase") use the ten-category [visual scorecard](references/visual-scorecard.md); an ordinary rendered change does not.
 - Use deterministic preview states for HUD and menu shots, live play for scene look. Check desktop and mobile when responsive UI changes.
 - A shot on disk is self-describing: a failed run leaves no file, `SAME PICTURE as the shot it replaced` is a no-op or the wrong view, and a blank viewport fails.

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import * as THREE from "three";
 
+import { freezeStaticTransforms, refreshStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import { setCulled, skipCulledMatrices } from "./culledTransforms.draw";
 
 function marker(scene: THREE.Scene, x: number): { group: THREE.Group; mesh: THREE.Mesh } {
@@ -155,4 +156,21 @@ test("a world matrix something else wrote (a pose held for one render) is put ba
   group.matrixWorld.makeTranslation(4, 0, 0);
   scene.updateMatrixWorld();
   expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([4, 2, 0]);
+});
+
+test("a frozen subtree leaves the scene's matrix pass whole, and a refresh moves it", () => {
+  const scene = new THREE.Scene();
+  skipCulledMatrices(scene);
+  const { group, mesh } = marker(scene, 4);
+  scene.updateMatrixWorld();
+  freezeStaticTransforms(group);
+  let composed = 0;
+  const compose = mesh.updateMatrix.bind(mesh);
+  mesh.updateMatrix = () => { composed += 1; compose(); };
+  group.position.x = 9;
+  for (let frame = 0; frame < 3; frame += 1) scene.updateMatrixWorld();
+  expect(composed).toBe(0);
+  expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([4, 2, 0]);
+  refreshStaticTransforms(group);
+  expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([9, 2, 0]);
 });

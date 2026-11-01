@@ -5,6 +5,7 @@ import type { GameContextObjectEntry } from "@jgengine/core/runtime/gameContext"
 import { buildScatterModelSources, type ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
 import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { submitInstanceCount, submitsDraw } from "@jgengine/core/render/submittedDraws.draw";
+import { shownPooledIds, STATIC_POOL_MESH_KEY, type StaticDrawPool } from "./staticDrawPool.draw";
 
 /** @internal */
 export interface StaticObjectCandidate {
@@ -147,6 +148,20 @@ export function incompatibleStaticObjectIds(
  */
 export const STATIC_BATCH_CELL = 128;
 
+/**
+ * Cell edge in metres of the shared batched draws ({@link StaticDrawPool}). Wider than a model batch's
+ * cell: a batched draw culls each instance against every camera itself, so its cell only has to keep
+ * the draw's one bounding sphere useful to the shadow cascades.
+ * @internal
+ */
+export const STATIC_POOL_CELL = 512;
+
+/** The cell a batch's placements draw in, from its first placement. @internal */
+export function staticBatchCell(objects: readonly SceneObject[], cell = STATIC_POOL_CELL): string {
+  const first = objects[0];
+  return first === undefined ? "" : `${Math.floor(first.position[0] / cell)},${Math.floor(first.position[2] / cell)}`;
+}
+
 /** Smallest same-model group a cell batches on its own. @internal */
 export const STATIC_BATCH_MIN = 2;
 
@@ -266,6 +281,12 @@ export function countStaticBatchDraws(scene: THREE.Object3D): StaticBatchCounts 
   let draws = 0;
   const drawn = new Set<string>();
   scene.traverse((node) => {
+    if (node instanceof THREE.BatchedMesh && node.userData[STATIC_POOL_MESH_KEY] === true) {
+      if (!node.visible) return;
+      draws += 1;
+      shownPooledIds(node, drawn);
+      return;
+    }
     if (node.userData[STATIC_BATCH_MESH_KEY] !== true || !submitsDraw(node)) return;
     draws += 1;
     const ids = node.userData[POINTER_OBJECT_INSTANCES_KEY];

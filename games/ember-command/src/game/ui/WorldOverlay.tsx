@@ -1,6 +1,5 @@
 import { WorldNameplates, type NameplateSample } from "@jgengine/core/hud/WorldHud.draw";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
-import { registerSceneCapture } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 
 import { session } from "../session";
 
@@ -38,7 +37,7 @@ function renderBar(sample: NameplateSample) {
  * spawned as entities elsewhere, so `scenePlacement` stays off — no double render. */
 export function EmberCommandWorldOverlay() {
   return <>
-    <SceneCaptureBinding bind={registerSceneCapture} />
+    <SceneCaptureBinding />
     <WorldNameplates statId="health" maxDistance={999} tickMs={100} renderNameplate={renderBar} />
   </>;
 }
