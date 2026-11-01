@@ -2322,6 +2322,16 @@
       "intent": "stance/pose transitions that change the hitbox"
     },
     {
+      "id": "cube-lut-parse",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/postfx/cubeLut",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "read a .cube colour-grade file into a LUT cube the grade stage applies"
+    },
+    {
       "id": "currency-format",
       "packages": [
         "@jgengine/core"
@@ -4129,6 +4139,16 @@
       "intent": "trailing follower/snake formation that chases a leader"
     },
     {
+      "id": "font-library",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/catalogs/fontLibrary",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "pick a display and a body font from 14 shipped OFL families by id"
+    },
+    {
       "id": "foot-ground-contact",
       "packages": [
         "@jgengine/core"
@@ -4661,6 +4681,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "send a feedback pulse to the gamepad when one is connected, else to the phone's vibration motor"
+    },
+    {
+      "id": "hdri-library",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/catalogs/hdriLibrary",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "pick one of 10 shipped CC0 HDRIs (noon, golden hour, overcast, dusk, night city, industrial interior, forest, snow) by id"
     },
     {
       "id": "headless-flow",
@@ -6488,6 +6518,16 @@
       "intent": "what a real person achieves at a game character's speed: start, stop, turn radius, reversal, jump and uphill speed"
     },
     {
+      "id": "looks-credits",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/catalogs/looksCredits",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "credit lines for the shipped HDRIs, colour grades and fonts a game uses"
+    },
+    {
       "id": "loot-beams",
       "packages": [
         "@jgengine/core"
@@ -6596,6 +6636,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "feed a rolled item into a weapon definition so generated gear fires through the weapon system"
+    },
+    {
+      "id": "lut-grade-library",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/catalogs/lutGrades",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "pick one of 16 shipped colour grades by id for a game's post-processing"
     },
     {
       "id": "magazine",

@@ -775,7 +775,7 @@
 - `DEFAULT_CONTACT_SHADOWS` (const): const DEFAULT_CONTACT_SHADOWS: Readonly<Required<ContactShadowConfig>> — Contact shadows used when a post chain leaves `contactShadows` unset.
 - `DofConfig` (interface): interface DofConfig — Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance.
 - `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
-- `GradeLut` (type): type GradeLut = { url: string; size?: number } | { cube: LutCube } — A grade's LUT: a strip PNG (one `size`-wide tile per blue slice) or a baked cube.
+- `GradeLut` (type): type GradeLut = { url: string; size?: number } | { cube: LutCube } — A grade's LUT: a strip PNG (one `size`-wide tile per blue slice), a `.cube` file URL or a baked cube.
 - `LutCube` (interface): interface LutCube — A baked display-space LUT cube: `size³` RGB entries with red varying fastest, three bytes per entry in 0..255. Kept as plain data so a scene document can author one and a test can assert on it.
 - `OutlineConfig` (interface): interface OutlineConfig — Ink outlines traced from depth and surface-normal edges — silhouettes plus interior creases.
 - `PostAaMode` (type): type PostAaMode = "taa" | "smaa" | "msaa" | false — Edge antialiasing for the post chain. `"taa"` jitters the camera a fraction of a pixel each frame and blends the frames, which also settles shimmering foliage, thin wires and specular sparkle. SMAA runs in linear-sRGB before the output tone-map and cleans alpha-tested foliage/particles that MSAA samples alone leave crawling. `"msaa"` keeps only the render-target multisample resolve; `false` disables AA stages.

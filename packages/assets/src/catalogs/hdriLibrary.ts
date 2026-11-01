@@ -12,6 +12,7 @@ export interface HdriEntry {
   look: string;
 }
 
+/** The 10 shipped HDRIs, each one Poly Haven asset under a plain id. */
 export const HDRI_LIBRARY = [
   { id: "clear-noon", title: "Noon Grass", polyhaven: "noon_grass", author: "Greg Zaal", look: "Clear blue sky, high sun, open grass." },
   { id: "partly-cloudy", title: "Kloppenheim 06 (Pure Sky)", polyhaven: "kloppenheim_06_puresky", author: "Greg Zaal, Jarod Guest", look: "Soft clouds, low contrast daylight." },
@@ -38,6 +39,7 @@ export const HDRI_LICENSE = "CC0-1.0";
 export const HDRI_DIR = "hdri/library";
 
 /** The curated HDRI record for `id`; throws naming the known ids. */
+/** @internal */
 export function hdriOf(id: string): HdriEntry {
   const entry = HDRI_LIBRARY.find((candidate) => candidate.id === id);
   if (entry === undefined) throw new Error(`unknown HDRI "${id}"; known: ${HDRI_LIBRARY.map((candidate) => candidate.id).join(", ")}`);
@@ -45,12 +47,14 @@ export function hdriOf(id: string): HdriEntry {
 }
 
 /** Path of an HDRI under {@link HDRI_DIR}, one folder per id: `golden-hour/golden-hour.hdr`. */
+/** @internal */
 export function hdriFileName(id: string): string {
   const { id: known } = hdriOf(id);
   return `${known}/${known}.hdr`;
 }
 
 /** Poly Haven's own URL for the 2K file behind an id. */
+/** @internal */
 export function hdriOriginUrl(id: string): string {
   const { polyhaven } = hdriOf(id);
   return `https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/${HDRI_RESOLUTION}/${polyhaven}_${HDRI_RESOLUTION}.hdr`;

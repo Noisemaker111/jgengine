@@ -40,6 +40,7 @@ describe("curated looks", () => {
   test("unknown ids and swapped roles throw", () => {
     expect(() => hdriOf("nope")).toThrow("unknown HDRI");
     expect(() => fontOf("nope")).toThrow("unknown font");
+    // type-escape: roles are checked at runtime for callers that bypass the typed ids
     expect(() => libraryFontPairing("barlow" as never, "oswald" as never)).toThrow("body face");
     expect(libraryFontPairing("oswald", "barlow").display.family).toBe("Oswald");
   });

@@ -29,10 +29,10 @@ describe("lut grades", () => {
   test("a grade id reaches the grade stage and a missing one throws", async () => {
     const fetched: string[] = [];
     const realFetch = globalThis.fetch;
-    globalThis.fetch = (async (url: string) => {
+    globalThis.fetch = Object.assign(async (url: string) => {
       fetched.push(url);
       return new Response(lutGradeFile("night-blue"));
-    }) as unknown as typeof fetch;
+    }, { preconnect: () => undefined });
     try {
       const loaded = createGradePass({ lut: lutGrade("night-blue") });
       await new Promise((done) => setTimeout(done, 5)); // wait-ok: lets the fetch microtasks settle
@@ -42,6 +42,7 @@ describe("lut grades", () => {
     } finally {
       globalThis.fetch = realFetch;
     }
+    // type-escape: the point of the test is an id outside the typed list
     expect(() => lutGrade("missing" as never)).toThrow("unknown LUT grade");
   });
 });

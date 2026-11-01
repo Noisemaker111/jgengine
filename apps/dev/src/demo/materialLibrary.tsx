@@ -24,8 +24,8 @@ const compare = params.get("compare") === "1";
 const group = params.get("group") as LibraryGroup | null;
 
 /** `?hdri=golden-hour` lights the sheet with a shipped HDRI; `?lut=cold-teal` grades it with a shipped colour grade. */
-const hdriId = HDRI_LIBRARY.find((entry) => entry.id === params.get("hdri"))?.id as HdriId | undefined;
-const lutId = LUT_GRADES.find((entry) => entry.id === params.get("lut"))?.id as LutGradeId | undefined;
+const hdriId = HDRI_LIBRARY.find((entry) => entry.id === params.get("hdri"))?.id as HdriId | undefined; // type-escape: the query value was just matched against the id list
+const lutId = LUT_GRADES.find((entry) => entry.id === params.get("lut"))?.id as LutGradeId | undefined; // type-escape: the query value was just matched against the id list
 
 const COLUMNS = 8;
 const SPACING = 1.2;

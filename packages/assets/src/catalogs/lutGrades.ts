@@ -37,6 +37,7 @@ export interface LutGrade {
 const clamp = (value: number): number => Math.min(1, Math.max(0, value));
 const luma = (r: number, g: number, b: number): number => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
+/** The 16 shipped colour grades, each a recipe baked into a 32³ cube. */
 export const LUT_GRADES = [
   { id: "warm-filmic", title: "Warm filmic", look: "Gentle S-curve, amber highlights, soft cool shadows.", recipe: { contrast: 1.08, saturation: 1.04, gain: [1.04, 1.0, 0.94], shadowTint: [-0.005, 0.0, 0.02], highlightTint: [0.03, 0.012, -0.015], fade: 0.012 } },
   { id: "cold-teal", title: "Cold teal", look: "Blue-green cast, held highlights, crisp shadows.", recipe: { contrast: 1.06, saturation: 0.92, gain: [0.93, 1.0, 1.06], shadowTint: [-0.015, 0.012, 0.025], highlightTint: [-0.01, 0.01, 0.025] } },
@@ -71,6 +72,7 @@ export const LUT_GRADE_LICENSE = "CC0-1.0";
 const byId: ReadonlyMap<string, LutGrade> = new Map(LUT_GRADES.map((grade) => [grade.id, grade]));
 
 /** The grade record for `id`, or a thrown error naming the ids that exist. */
+/** @internal */
 export function lutGradeOf(id: string): LutGrade {
   const grade = byId.get(id);
   if (grade === undefined) throw new Error(`unknown LUT grade "${id}"; known: ${LUT_GRADES.map((entry) => entry.id).join(", ")}`);
@@ -78,6 +80,7 @@ export function lutGradeOf(id: string): LutGrade {
 }
 
 /** Applies a recipe to one display-space colour (each channel 0..1). */
+/** @internal */
 export function applyLutRecipe(recipe: LutGradeRecipe, r: number, g: number, b: number): [number, number, number] {
   const gain = recipe.gain ?? [1, 1, 1];
   const gamma = recipe.gamma ?? [1, 1, 1];
@@ -115,6 +118,7 @@ export function applyLutRecipe(recipe: LutGradeRecipe, r: number, g: number, b: 
 }
 
 /** Bakes one grade into a `size³` display-space cube (red fastest), deterministically. */
+/** @internal */
 export function bakeLutGrade(id: string, size = LUT_GRADE_SIZE): LutCube {
   const { recipe } = lutGradeOf(id);
   const data = new Uint8Array(size ** 3 * 3);
@@ -133,11 +137,13 @@ export function bakeLutGrade(id: string, size = LUT_GRADE_SIZE): LutCube {
 }
 
 /** The `.cube` text for one grade, as `scripts/gen-lut-grades.ts` writes it. */
+/** @internal */
 export function lutGradeFile(id: string): string {
   return formatCubeLut(bakeLutGrade(id), lutGradeOf(id).title);
 }
 
 /** Path of a grade under {@link LUT_GRADE_DIR}, one folder per id: `cold-teal/cold-teal.cube`. */
+/** @internal */
 export function lutGradeFileName(id: string): string {
   const { id: known } = lutGradeOf(id);
   return `${known}/${known}.cube`;

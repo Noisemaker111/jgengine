@@ -28,12 +28,12 @@ describe("curated pulls", () => {
     try {
       const woff = new Uint8Array([119, 79, 70, 50, 1, 2, 3]);
       const requested: string[] = [];
-      const fetchImpl = (async (url: string) => {
+      const fetchImpl = Object.assign(async (url: string) => {
         requested.push(url);
         if (url.endsWith(lookMirrorName("hdri", "snow"))) return new Response(new Uint8Array([1, 2, 3]));
         if (url.endsWith(".tgz")) return new Response(gzipSync(tarOf("package/files/oswald-latin-400-normal.woff2", woff)));
         return new Response("no", { status: 404 });
-      }) as unknown as typeof fetch;
+      }, { preconnect: () => undefined });
       await pullCuratedLook("lut", "sepia", { outRoot: out, fetchImpl });
       expect(readFileSync(join(out, lookServedPath("lut", "sepia")), "utf8")).toContain("LUT_3D_SIZE 32");
       await pullCuratedLook("hdri", "snow", { outRoot: out, fetchImpl });

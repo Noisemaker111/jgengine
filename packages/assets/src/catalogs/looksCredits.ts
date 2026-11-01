@@ -44,6 +44,7 @@ export function creditsForLooks(used: LooksUsed): CreditsSection[] {
 }
 
 /** {@link creditsForLooks} as a ready credits document. */
+/** @internal */
 export function creditsDocumentForLooks(used: LooksUsed, title = "Looks"): CreditsDocument {
   return { title, sections: creditsForLooks(used) };
 }

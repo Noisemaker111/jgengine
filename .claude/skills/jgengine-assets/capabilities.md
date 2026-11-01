@@ -64,6 +64,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `findAssets` (function) · `import { findAssets } from "@jgengine/assets/findAssets"`
 
+## font-library — pick a display and a body font from 14 shipped OFL families by id
+
+- `libraryFontPairing` (function) · `import { libraryFontPairing } from "@jgengine/assets/catalogs/fontLibrary"`
+
 ## gltf-material-inspection — inspect material slots and texture metadata directly from complete GLB bytes
 
 - `inspectGlbMaterials` (function) · `import { inspectGlbMaterials } from "@jgengine/assets/gltfMaterials"`
@@ -72,6 +76,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hair-card-geometry — validate authored ribbon guides and their vertex allocation ceiling
 
 - `validateHairCardAuthoring` (function) · `import { validateHairCardAuthoring } from "@jgengine/core/material/hairCards"`
+
+## hdri-library — pick one of 10 shipped CC0 HDRIs (noon, golden hour, overcast, dusk, night city, industrial interior, forest, snow) by id
+
+- `hdriEnvironment` (function) · `import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary"`
 
 ## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
 
@@ -140,6 +148,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## library-validate — check every library entry has an allowed licence and full credit fields
 
 - `validateLibrary` (function) · `import { validateLibrary } from "@jgengine/assets/library/assetLibrary"`
+
+## looks-credits — credit lines for the shipped HDRIs, colour grades and fonts a game uses
+
+- `creditsForLooks` (function) · `import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits"`
+
+## lut-grade-library — pick one of 16 shipped colour grades by id for a game's post-processing
+
+- `lutGrade` (function) · `import { lutGrade } from "@jgengine/assets/catalogs/lutGrades"`
 
 ## makehuman-character — build a rigged, animated CC0 MakeHuman person from its base mesh and targets into one GLB
 

@@ -35,6 +35,7 @@ function job(kind: CuratedKind, id: string): CuratedJob {
 }
 
 /** Every curated look a game's source names through `hdriEnvironment`, `lutGrade`, `libraryFont` or `libraryFontPairing`. */
+/** @internal */
 export function curatedJobsIn(text: string): CuratedJob[] {
   const found = new Map<string, CuratedJob>();
   for (const match of text.matchAll(CALLS.hdri)) if (match[1] !== undefined && HDRI_LIBRARY.some((entry) => entry.id === match[1])) found.set(`hdri/${match[1]}`, job("hdri", match[1]));
@@ -48,12 +49,16 @@ export function curatedJobsIn(text: string): CuratedJob[] {
 }
 
 /** Parses a `look:<kind>/<id>` pull target. Returns undefined for any other target. */
+/** @internal */
 export function parseLookTarget(target: string): { kind: CuratedKind; id: string } | undefined {
   const match = /^look:(hdri|lut|font)\/([a-z0-9-]+)$/.exec(target);
-  return match === null ? undefined : { kind: match[1] as CuratedKind, id: match[2] ?? "" };
+  const kind = match?.[1];
+  if (kind !== "hdri" && kind !== "lut" && kind !== "font") return undefined;
+  return { kind, id: match?.[2] ?? "" };
 }
 
 /** Name of the file in the `packs` release that mirrors a curated binary, e.g. `look-hdri-golden-hour.hdr`. */
+/** @internal */
 export function lookMirrorName(kind: CuratedKind, id: string): string {
   if (kind === "hdri") return `look-hdri-${hdriOf(id).id}.hdr`;
   if (kind === "font") return `look-font-${fontOf(id).id}.woff2`;
@@ -61,6 +66,7 @@ export function lookMirrorName(kind: CuratedKind, id: string): string {
 }
 
 /** The served path under `public/` of a curated file. */
+/** @internal */
 export function lookServedPath(kind: CuratedKind, id: string): string {
   if (kind === "hdri") return `${HDRI_DIR}/${hdriFileName(id)}`;
   if (kind === "font") return `${FONT_DIR}/${fontFileName(id)}`;
@@ -68,6 +74,7 @@ export function lookServedPath(kind: CuratedKind, id: string): string {
 }
 
 /** Reads one file out of an uncompressed ustar archive. */
+/** @internal */
 export function untarFile(tar: Uint8Array, path: string): Uint8Array {
   let offset = 0;
   const text = (from: number, length: number): string => new TextDecoder().decode(tar.subarray(from, from + length)).replace(/\0.*$/s, "");
@@ -100,6 +107,8 @@ export interface CuratedPullContext {
 /**
  * Writes one curated look to `ctx.outRoot`: a grade is baked locally, an HDRI comes from the packs
  * mirror (else Poly Haven's 2K file) and a font from the mirror (else its pinned Fontsource npm tarball).
+ *
+ * @internal
  */
 export async function pullCuratedLook(kind: CuratedKind, id: string, ctx: CuratedPullContext): Promise<string> {
   const fetchImpl = ctx.fetchImpl ?? fetch;

@@ -17,6 +17,7 @@ export interface FontEntry {
   package: string;
 }
 
+/** The 14 shipped font families, each a display or a body face. */
 export const FONT_LIBRARY = [
   { id: "cinzel", family: "Cinzel", role: "display", moods: ["fantasy"], author: "Natanael Gama", package: "cinzel" },
   { id: "crimson-pro", family: "Crimson Pro", role: "body", moods: ["fantasy", "cozy"], author: "Jacques Le Bailly", package: "crimson-pro" },
@@ -47,6 +48,7 @@ export const FONT_PACKAGE_VERSION = "5.3.0";
 export const FONT_DIR = "fonts";
 
 /** The curated family for `id`; throws naming the known ids. */
+/** @internal */
 export function fontOf(id: string): FontEntry {
   const entry = FONT_LIBRARY.find((candidate) => candidate.id === id);
   if (entry === undefined) throw new Error(`unknown font "${id}"; known: ${FONT_LIBRARY.map((candidate) => candidate.id).join(", ")}`);
@@ -54,23 +56,27 @@ export function fontOf(id: string): FontEntry {
 }
 
 /** Path of a family under {@link FONT_DIR}, one folder per id: `oswald/oswald.woff2`. */
+/** @internal */
 export function fontFileName(id: string): string {
   const { id: known } = fontOf(id);
   return `${known}/${known}.woff2`;
 }
 
 /** Path of the woff2 inside the Fontsource npm tarball. */
+/** @internal */
 export function fontOriginPath(id: string): string {
   return `package/files/${fontOf(id).package}-latin-400-normal.woff2`;
 }
 
 /** The npm registry tarball the family's file is extracted from. */
+/** @internal */
 export function fontOriginUrl(id: string): string {
   const { package: name } = fontOf(id);
   return `https://registry.npmjs.org/@fontsource/${name}/-/${name}-${FONT_PACKAGE_VERSION}.tgz`;
 }
 
 /** One family as the face {@link useGameFonts} loads. */
+/** @internal */
 export function libraryFont(id: FontId, baseUrl = `/${FONT_DIR}`): GameFontFace {
   return { family: fontOf(id).family, src: `${baseUrl}/${fontFileName(id)}`, weight: 400 };
 }
