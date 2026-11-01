@@ -87,7 +87,7 @@ export function GameUiPreview({
       style={{ background: "linear-gradient(180deg, #2a3d33 0%, #1a2320 55%, #141b18 100%)" }}
     >
       <GameProvider context={ctx}>
-        <HudViewportProvider platforms={playable.platforms} config={playable.hudFit}>
+        <HudViewportProvider platforms={playable.controls?.platforms} config={playable.controls?.hudFit}>
           <HudThemeRoot theme={playable.hudTheme} accessibility={accessibility}>
             <GameUI />
           </HudThemeRoot>

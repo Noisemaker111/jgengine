@@ -111,7 +111,7 @@ const game = defineGame({
     lens: { projection: "perspective" },
     rigs: { topDown: { yaw: 0.18, pitch: 0.9, height: 22 } },
   },
-  WorldOverlay: PhysicsProbeOverlay,
+  scene: { WorldOverlay: PhysicsProbeOverlay },
   GameUI: PhysicsProbeUi,
 });
 

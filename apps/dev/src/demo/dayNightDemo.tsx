@@ -134,14 +134,18 @@ export const dayNightDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: DayNightUI,
-  // Opt out of the cinematic default sky so this demo's cycle-driven sky is the only sky/lighting.
-  look: "flat",
-  environment: () => (
-    <>
-      <Sky sky={daySky} clock={cycleClock} />
-      <EnvironmentScene feature={terrainFeature} />
-    </>
-  ),
+  rendering: {
+    // Opt out of the cinematic default sky so this demo's cycle-driven sky is the only sky/lighting.
+    look: "flat",
+  },
+  scene: {
+    environment: () => (
+      <>
+        <Sky sky={daySky} clock={cycleClock} />
+        <EnvironmentScene feature={terrainFeature} />
+      </>
+    ),
+  },
   camera: {
     orbit: {
       initialDistance: 30,

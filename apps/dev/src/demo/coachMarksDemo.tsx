@@ -110,7 +110,7 @@ export const coachMarksDemoGame: PlayableGame = {
     onDispose: (ctx) => composed?.onDispose?.(ctx),
   },
   GameUI: CoachMarksUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
   camera: {
     orbit: {
       initialDistance: 26,

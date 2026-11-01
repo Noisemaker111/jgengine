@@ -119,7 +119,7 @@ export const cameraShakeDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: CameraShakeUI,
-  environment: () => <ShakeStage />,
+  scene: { environment: () => <ShakeStage /> },
   camera: {
     orbit: {
       initialDistance: 12,

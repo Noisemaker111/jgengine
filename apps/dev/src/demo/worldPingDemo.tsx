@@ -152,9 +152,11 @@ export const worldPingDemoGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: PingUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  WorldOverlay: () => <WorldPings markers={markerSet} />,
-  pointer: { pingCommand: "map.ping" },
+  scene: {
+    environment: () => <EnvironmentScene feature={terrainFeature} />,
+    WorldOverlay: () => <WorldPings markers={markerSet} />,
+  },
+  controls: { pointer: { pingCommand: "map.ping" } },
   camera: {
     orbit: {
       initialDistance: 34,

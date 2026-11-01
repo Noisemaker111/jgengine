@@ -62,15 +62,19 @@ function Legend() {
 export const materialShowcaseGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, assets: catalog },
-  renderObject: () => <group />,
+  scene: {
+    renderObject: () => <group />,
+    renderEntity: () => <group />,
+    editorLayers: document,
+    environment: Samples,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  renderEntity: () => <group />,
-  editorLayers: document,
-  look: "flat",
-  lighting: { ambient: { intensity: 0.12 }, directional: [{ intensity: 0, position: [0, 5, 8], color: "#ffffff" }] },
-  backdrop: { background: "#25292d" },
-  postProcessing: { enabled: true, toneMapping: "aces", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
-  environment: Samples,
+  rendering: {
+    look: "flat",
+    lighting: { ambient: { intensity: 0.12 }, directional: [{ intensity: 0, position: [0, 5, 8], color: "#ffffff" }] },
+    backdrop: { background: "#25292d" },
+    postProcessing: { enabled: true, toneMapping: "aces", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
+  },
   GameUI: Legend,
   capture: { views: { overview: { look: "0,1.5,0", lookFrom: "11,2,0" }, upholstery: { look: "-0.8,0.8,0", lookFrom: "5,2,0" }, fibres: { look: "4,2.4,0", lookFrom: "3,0.4,0" } } },
 };

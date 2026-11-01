@@ -37,9 +37,11 @@ function VariantPanel() {
 export const generatorVariantsGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "generator-variants" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => <group />,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  environment: () => <group />,
   GameUI: () => <VariantPanel />,
 };

@@ -177,7 +177,7 @@ export const feelAudioDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit, onNewPlayer, onTick, onReset: () => undefined, onDispose: () => undefined },
   GameUI: FeelAudioUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
   camera: {
     orbit: {
       initialDistance: 22,

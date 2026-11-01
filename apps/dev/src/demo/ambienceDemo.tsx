@@ -177,7 +177,7 @@ export const ambienceDemoGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick: () => undefined, onReset: () => undefined, onDispose: () => undefined },
   GameUI: AmbienceUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
   camera: {
     orbit: {
       initialDistance: 22,
@@ -220,7 +220,7 @@ export const ambienceDemoGame: PlayableGame = {
     buses: { ambient: { id: "ambient", gain: 0.6 }, sfx: { id: "sfx", gain: 0.6 } },
     zones: ZONES,
     occlusion: { maxTestsPerTick: 4, intervalMs: 120 },
+    entitySounds: { [MACHINE]: "machine_hum" },
   },
-  entitySounds: { [MACHINE]: "machine_hum" },
   capture: { probe },
 };

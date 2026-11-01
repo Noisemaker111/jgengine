@@ -35,10 +35,12 @@ const PIECES: ReadonlySet<string> = new Set(STRUCTURES.map((entry) => entry.id))
 export const game = defineGame({
   name: "Fernwild",
   simulation: { hz: 60 },
-  look: "cinematic",
-  mood: "day",
-  // The open sky and the sea carry the frame; a dark vignette only muddies their corners.
-  postProcessing: { grade: { vignette: 0.04 } },
+  rendering: {
+    look: "cinematic",
+    mood: "day",
+    // The open sky and the sea carry the frame; a dark vignette only muddies their corners.
+    postProcessing: { grade: { vignette: 0.04 } },
+  },
   assets,
   world,
   time,
@@ -67,22 +69,21 @@ export const game = defineGame({
     pause: ["Escape", "KeyP"],
     ...Object.fromEntries(Array.from({ length: HOTBAR_SLOTS }, (_, slot) => [`slot${slot + 1}`, [`Digit${(slot + 1) % 10}`]])),
   },
-  movement: { canSprint: canRun, swim: { speedMultiplier: 0.6 }, feel: { runMultiplier: SURVIVOR.runMultiplier } },
+  controls: {
+    movement: { canSprint: canRun, swim: { speedMultiplier: 0.6 }, feel: { runMultiplier: SURVIVOR.runMultiplier } },
+    // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
+    prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
+  },
   systems: [createGameFlowSystem(), ...systems, firstDay],
   newGame: survivorStart,
   loop: { onNewPlayer },
   GameUI,
-  WorldOverlay: BaseWorld,
-  editorLayers,
-  entityModels,
-  objectModels,
+  scene: { WorldOverlay: BaseWorld, editorLayers, entityModels, objectModels },
   sceneScatterModels: scatterModels,
   // The whole Island's forests, rocks and ore plus the dense south beach: about 48k placements, all drawn.
   sceneScatterBudget: 60_000,
   sceneScatterSolids: rockSolids,
   persist: { mode: "manual" },
-  // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
-  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
   camera: {
     perspective: "third",
     orbit: { initialYaw: authoredSpawnRotation(editorLayers) },

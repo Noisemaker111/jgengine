@@ -390,7 +390,9 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
     assets: createAssetCatalog(),
     multiplayer: "off",
     world: { kind: "flat" },
-    backdrop: { sky: { preset: "day" }, fog: { color: "#c7d7e6", near: 80, far: 320 } },
+    rendering: {
+      backdrop: { sky: { preset: "day" }, fog: { color: "#c7d7e6", near: 80, far: 320 } },
+    },
     input: {
       throttle: ["KeyW", "ArrowUp", "pad:7"],
       brake: ["KeyS", "ArrowDown", "pad:6"],
@@ -445,9 +447,11 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
         },
       },
     },
-    renderEntity: (entity) =>
-      entity.name !== CAR ? null : choice.kind === "bike" ? <BikeBody entity={entity} /> : <CarBody entity={entity} />,
-    WorldOverlay: Course,
+    scene: {
+      renderEntity: (entity) =>
+        entity.name !== CAR ? null : choice.kind === "bike" ? <BikeBody entity={entity} /> : <CarBody entity={entity} />,
+      WorldOverlay: Course,
+    },
     GameUI: Telemetry,
     capture: {
       probe: (): Record<string, number> => {

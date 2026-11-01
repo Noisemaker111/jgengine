@@ -33,7 +33,24 @@ export const game = defineGame({
   assets,
   audio,
   world,
-  editorLayers,
+  scene: {
+    editorLayers,
+    WorldOverlay: () => createElement(SceneCaptureBinding, { bind: bindHarborCapture }),
+    entityModels,
+    objectModels,
+    worldHealthBars: { roles: ["enemy", "hostile"] },
+    // Direct-fire weapons want the muzzle→impact tracer; ballistic/exploding shots skip it
+  // automatically so a lobbed round never draws a straight fake beam.
+    presentationEffects: { tracers: true },
+    worldItem: {
+      pickupRadius: 2.4,
+      rarityStyle: {
+        common: { color: "#cfd6de" },
+        rare: { color: "#4fa5e8", beam: true },
+        legendary: { color: "#ffb020", beam: true, label: "LEDGER" },
+      },
+    },
+  },
   scenePlacement: false,
   scenePathKinds: [],
   physics,
@@ -61,43 +78,55 @@ export const game = defineGame({
     ...hotbarSlotBindings(4, { action: (slot) => `selectSlot${slot}` }),
   },
   server: { mode: "openworld" },
-  // Touch controls are context-curated (#1370): each mode shows only the verbs that context uses.
+  controls: {
+    // Touch controls are context-curated (#1370): each mode shows only the verbs that context uses.
   // On foot the joystick walks (analog) and the cluster is the five gameplay verbs; flight and
   // vehicle actions never appear until a vehicle is boarded (game/handroll/driving.ts switches
   // modes via setTouchControlsMode). Slot switching on touch is the tappable hotbar cards.
-  touch: {
-    buttons: [
-      { action: "fire", label: "Fire" },
-      { action: "jump", label: "Jump" },
-      { action: "interact", label: "Use" },
-      { action: "throwGrenade", label: "Grenade", icon: "bomb" },
-      { action: "useMedkit", label: "Medkit", icon: "heart" },
-      { action: "sprint", label: "Sprint" },
-    ],
-    modes: {
-      // A counter, a conversation or a receipt owns the screen: no stick or verbs over its buttons.
-      screen: { movement: false, buttons: [], look: false },
-      car: {
-        buttons: [
-          { action: "jump", label: "Handbrake", shape: "lever" },
-          { action: "taxiDuty", label: "Taxi", kind: "utility" },
-          { action: "radio", label: "Radio", kind: "utility" },
-          { action: "exitVehicle", label: "Exit", kind: "utility" },
-        ],
-      },
-      aircraft: {
-        buttons: [
-          { action: "flightThrottleUp", label: "Throttle +", shape: "lever" },
-          { action: "flightThrottleDown", label: "Throttle −", shape: "lever" },
-          { action: "jump", label: "Boost" },
-          { action: "flightAirbrake", label: "Airbrake" },
-          { action: "flightYawLeft", label: "Yaw L", icon: false },
-          { action: "flightYawRight", label: "Yaw R", icon: false },
-          { action: "flightVectorToggle", label: "VTOL", kind: "utility" },
-          { action: "exitVehicle", label: "Exit", kind: "utility" },
-        ],
+    touch: {
+      buttons: [
+        { action: "fire", label: "Fire" },
+        { action: "jump", label: "Jump" },
+        { action: "interact", label: "Use" },
+        { action: "throwGrenade", label: "Grenade", icon: "bomb" },
+        { action: "useMedkit", label: "Medkit", icon: "heart" },
+        { action: "sprint", label: "Sprint" },
+      ],
+      modes: {
+        // A counter, a conversation or a receipt owns the screen: no stick or verbs over its buttons.
+        screen: { movement: false, buttons: [], look: false },
+        car: {
+          buttons: [
+            { action: "jump", label: "Handbrake", shape: "lever" },
+            { action: "taxiDuty", label: "Taxi", kind: "utility" },
+            { action: "radio", label: "Radio", kind: "utility" },
+            { action: "exitVehicle", label: "Exit", kind: "utility" },
+          ],
+        },
+        aircraft: {
+          buttons: [
+            { action: "flightThrottleUp", label: "Throttle +", shape: "lever" },
+            { action: "flightThrottleDown", label: "Throttle −", shape: "lever" },
+            { action: "jump", label: "Boost" },
+            { action: "flightAirbrake", label: "Airbrake" },
+            { action: "flightYawLeft", label: "Yaw L", icon: false },
+            { action: "flightYawRight", label: "Yaw R", icon: false },
+            { action: "flightVectorToggle", label: "VTOL", kind: "utility" },
+            { action: "exitVehicle", label: "Exit", kind: "utility" },
+          ],
+        },
       },
     },
+    // The phone HUD is drawn at its own compact size (pager, scanner, chart and belt each have a
+  // phone cut in hud.css), so on a phone it scales against a square 480 px design instead of
+  // shrinking the 1600 px desktop layout to the 0.4 floor, upright or sideways alike.
+    hudFit: { mobile: { designSize: { width: 480, height: 480 }, minScale: 0.6 } },
+    prompts,
+    pointer: { grabWorldItems: true },
+    // turnSpeed rate-limits body facing so the chase camera arcs behind the runner
+  // instead of snap-whipping 90° on every strafe tap.
+    movement: { collideObjects: true, turnSpeed: 8 },
+    orientation: "landscape",
   },
   // Offline whole-world save: autosaves cash, cred, quests, inventory, safehouse, best lap,
   // and the player's position to localStorage; restored behind the title's Continue.
@@ -105,13 +134,8 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
-  WorldOverlay: () => createElement(SceneCaptureBinding, { bind: bindHarborCapture }),
   hudTheme: harborTheme,
   uiKit: harborKit,
-  // The phone HUD is drawn at its own compact size (pager, scanner, chart and belt each have a
-  // phone cut in hud.css), so on a phone it scales against a square 480 px design instead of
-  // shrinking the 1600 px desktop layout to the 0.4 floor, upright or sideways alike.
-  hudFit: { mobile: { designSize: { width: 480, height: 480 }, minScale: 0.6 } },
   capture: {
     play: ["game.start"],
     // The dispatch poster is the first thing a player sees; a capture state keeps it reproducible.
@@ -183,30 +207,13 @@ export const game = defineGame({
       };
     },
   },
-  prompts,
-  entityModels,
-  objectModels,
-  // Mid-afternoon Gulf sun under a clear tropical sky. The scene document places the sun low in
+  rendering: {
+    // Mid-afternoon Gulf sun under a clear tropical sky. The scene document places the sun low in
   // the east-southeast so palms and blocks throw long shadows; the mood owns the rig, haze and grade.
-  look: "cinematic",
-  mood: "day",
-  shadows: true,
-  worldHealthBars: { roles: ["enemy", "hostile"] },
-  // Direct-fire weapons want the muzzle→impact tracer; ballistic/exploding shots skip it
-  // automatically so a lobbed round never draws a straight fake beam.
-  presentationEffects: { tracers: true },
-  worldItem: {
-    pickupRadius: 2.4,
-    rarityStyle: {
-      common: { color: "#cfd6de" },
-      rare: { color: "#4fa5e8", beam: true },
-      legendary: { color: "#ffb020", beam: true, label: "LEDGER" },
-    },
+    look: "cinematic",
+    mood: "day",
+    shadows: true,
   },
-  pointer: { grabWorldItems: true },
-  // turnSpeed rate-limits body facing so the chase camera arcs behind the runner
-  // instead of snap-whipping 90° on every strafe tap.
-  movement: { collideObjects: true, turnSpeed: 8 },
   camera: {
     rig: "chase",
     rigs: {
@@ -228,7 +235,6 @@ export const game = defineGame({
   // Starts at the day curve's noon keyframe, where the mood's sky colours reach the dome unblended
   // with the engine's dawn and dusk presets.
   time: { dayLength: 720, start: 360 },
-  orientation: "landscape",
 });
 
 

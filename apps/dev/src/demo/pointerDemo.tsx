@@ -193,11 +193,13 @@ export const pointerDemoGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: CommanderUI,
-  pointer: {
-    select: true,
-    selectFilter: (id) => id !== CREEP_ID,
-    orderCommand: "unit.order",
-    contextMenu: true,
+  controls: {
+    pointer: {
+      select: true,
+      selectFilter: (id) => id !== CREEP_ID,
+      orderCommand: "unit.order",
+      contextMenu: true,
+    },
   },
   camera: {
     orbit: {

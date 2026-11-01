@@ -296,7 +296,7 @@ export const builderDemoGame: PlayableGame = {
   content: {},
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: BuilderUI,
-  environment: BuilderScene,
+  scene: { environment: BuilderScene },
   camera: {
     perspective: "third",
     follow: { followEnabled: false },

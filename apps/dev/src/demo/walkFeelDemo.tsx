@@ -92,9 +92,9 @@ function makeWalkFeelGame(feel: WalkFeel): PlayableGame {
         context = null;
       },
     },
-    movement: feel.movement,
-    backdrop: { background: "#a9c8e6" },
-    environment: () => <Stage color={feel.color} />,
+    controls: { movement: feel.movement },
+    rendering: { backdrop: { background: "#a9c8e6" } },
+    scene: { environment: () => <Stage color={feel.color} /> },
     GameUI: () => <FeelPanel feel={feel} />,
     camera: {
       orbit: {

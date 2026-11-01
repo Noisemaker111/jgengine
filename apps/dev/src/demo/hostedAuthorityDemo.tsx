@@ -61,7 +61,12 @@ function AuthorityUI() {
 }
 
 export const hostedAuthorityDemoGame: PlayableGame = {
-  game: authorityDefinition, content: authorityContent, presentation: "hud", GameUI: AuthorityUI,
-  settings: { extra: displaySettings, categories: [{ id: "gameplay", label: "Display" }], hide: ["sound", "graphics", "controls"] },
+  game: authorityDefinition,
+  content: authorityContent,
+  chrome: {
+    presentation: "hud",
+    settings: { extra: displaySettings, categories: [{ id: "gameplay", label: "Display" }], hide: ["sound", "graphics", "controls"] },
+  },
+  GameUI: AuthorityUI,
   loop: { onInit: authorityLoop.onInit!, onNewPlayer: authorityLoop.onNewPlayer!, onTick: authorityLoop.onTick!, onReset: () => {}, onDispose: () => {} },
 };

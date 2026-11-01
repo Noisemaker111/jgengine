@@ -39,9 +39,11 @@ function VariantPanel() {
 export const natureVariantsGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "nature-variants" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => <group />,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  environment: () => <group />,
   GameUI: () => <VariantPanel />,
 };

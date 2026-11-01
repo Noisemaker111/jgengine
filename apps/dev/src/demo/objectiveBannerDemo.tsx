@@ -97,7 +97,7 @@ export const objectiveBannerDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: ObjectiveBannerUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
   camera: {
     orbit: {
       initialDistance: 26,

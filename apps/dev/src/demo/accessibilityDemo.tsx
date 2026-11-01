@@ -213,7 +213,7 @@ export const accessibilityDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: AccessibilityUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
   camera: {
     orbit: {
       initialDistance: 28,

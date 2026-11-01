@@ -102,12 +102,16 @@ function LifeCycle() {
 export const plantLifeCycleGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "plant-life-cycle" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => <LifeCycle />,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  lighting: { ambient: { intensity: 0.6 }, directional: [{ intensity: 2.4, position: [40, 60, 30], color: "#fff1dc" }] },
-  backdrop: { background: "#a8c8e0" },
-  environment: () => <LifeCycle />,
+  rendering: {
+    lighting: { ambient: { intensity: 0.6 }, directional: [{ intensity: 2.4, position: [40, 60, 30], color: "#fff1dc" }] },
+    backdrop: { background: "#a8c8e0" },
+  },
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", top: 12, left: 16, color: "#fff", font: "600 15px sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
       One 40-year sugar maple · its year, then standing dead · a highbush blueberry clump · palms and ferns

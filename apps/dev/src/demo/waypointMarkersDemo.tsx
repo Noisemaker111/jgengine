@@ -114,8 +114,10 @@ export const waypointMarkersDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: WaypointUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  WorldOverlay: () => <WaypointOverlay tracker={waypoints} />,
+  scene: {
+    environment: () => <EnvironmentScene feature={terrainFeature} />,
+    WorldOverlay: () => <WaypointOverlay tracker={waypoints} />,
+  },
   camera: {
     orbit: {
       initialDistance: 20,

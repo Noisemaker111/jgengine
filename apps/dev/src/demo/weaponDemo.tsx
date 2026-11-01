@@ -203,8 +203,8 @@ function makeGame(rig: "first" | "shoulder"): PlayableGame {
     content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
     loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: () => {} },
     GameUI: WeaponHud,
-    environment: () => <Range />,
-    backdrop: { sky: { preset: "day" } },
+    scene: { environment: () => <Range /> },
+    rendering: { backdrop: { sky: { preset: "day" } } },
     camera: {
       rig,
       rigs: {

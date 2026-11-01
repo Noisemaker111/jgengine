@@ -477,8 +477,10 @@ export const gameMenuDemoGame: PlayableGame = {
   content: { entityById: () => null, objectById: () => null },
   loop: { onInit, onNewPlayer: () => {}, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: GameMenuDemoUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  WorldOverlay: () => <SceneCaptureBinding bind={(capture) => { captureRef.current = capture; }} />,
+  scene: {
+    environment: () => <EnvironmentScene feature={terrainFeature} />,
+    WorldOverlay: () => <SceneCaptureBinding bind={(capture) => { captureRef.current = capture; }} />,
+  },
   camera: {
     orbit: {
       initialDistance: 30,
@@ -489,7 +491,7 @@ export const gameMenuDemoGame: PlayableGame = {
       maxPolarAngle: 1.32,
     },
   },
-  settings: { variant: "panel" },
+  chrome: { settings: { variant: "panel" } },
   capture: {
     states: {
       title: [{ name: "menu.seedSave" }],

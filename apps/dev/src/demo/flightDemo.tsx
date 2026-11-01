@@ -399,7 +399,9 @@ function makeGame(name: string, choice: Craft): PlayableGame {
     assets: createAssetCatalog(),
     multiplayer: "off",
     world: { kind: "flat" },
-    backdrop: { sky: { preset: "day", radius: 2800 }, fog: { color: "#c7d7e6", near: 600, far: 2400 } },
+    rendering: {
+      backdrop: { sky: { preset: "day", radius: 2800 }, fog: { color: "#c7d7e6", near: 600, far: 2400 } },
+    },
     input: {
       pitchUp: ["KeyS", "ArrowDown"],
       pitchDown: ["KeyW", "ArrowUp"],
@@ -426,9 +428,11 @@ function makeGame(name: string, choice: Craft): PlayableGame {
         },
       },
     },
-    renderEntity: (entity) =>
-      entity.name !== PLANE ? null : choice.kind === "helicopter" ? <HelicopterBody entity={entity} /> : choice.kind === "rocket" ? <RocketBody entity={entity} /> : <PlaneBody entity={entity} />,
-    WorldOverlay: Landscape,
+    scene: {
+      renderEntity: (entity) =>
+        entity.name !== PLANE ? null : choice.kind === "helicopter" ? <HelicopterBody entity={entity} /> : choice.kind === "rocket" ? <RocketBody entity={entity} /> : <PlaneBody entity={entity} />,
+      WorldOverlay: Landscape,
+    },
     GameUI: Telemetry,
     capture: {
       probe: (): Record<string, number> => {

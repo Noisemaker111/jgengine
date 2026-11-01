@@ -118,8 +118,8 @@ export function ShellHudPresentation({
     controlsActive: () => playControlsActive(ctx),
   });
 
-  const settingsDisabled = playable.settings === false;
-  const settingsConfig: GameSettingsConfig = playable.settings === false || playable.settings === undefined ? {} : playable.settings;
+  const settingsDisabled = playable.chrome?.settings === false;
+  const settingsConfig: GameSettingsConfig = playable.chrome?.settings === false || playable.chrome?.settings === undefined ? {} : playable.chrome?.settings;
   const settingsActions: SettingsActionView[] = (settingsConfig.actions ?? []).map((action) => ({
     id: action.id,
     label: action.label,
@@ -141,7 +141,7 @@ export function ShellHudPresentation({
         categories={settingsConfig.categories ?? []}
         hide={settingsDisabled ? BUILT_IN_SETTING_CATEGORIES : settingsConfig.hide ?? []}
         fovEnabled={false}
-        graphics={playable.graphics}
+        graphics={playable.rendering?.graphics}
         hideBindings={settingsConfig.hideBindings ?? []}
         touchStyle={coarsePointer && touchScheme !== null && (touchScheme.joystick !== null || touchScheme.buttons.length > 0)}
         overrides={bindingOverrides}
@@ -161,7 +161,7 @@ export function ShellHudPresentation({
           onPointerCancel={deactivatePointerAxis}
           onContextMenu={suppressBrowserContextMenu}
         >
-          <GameViewportProvider platforms={playable.platforms}>
+          <GameViewportProvider platforms={playable.controls?.platforms}>
             <HudOnlyDriver
               ctx={ctx}
               multiplayer={multiplayer}

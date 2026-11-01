@@ -468,6 +468,6 @@ export const survivalDemoGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: SurvivalGameUI,
-  environment: SurvivalWorld,
+  scene: { environment: SurvivalWorld },
   camera: { orbit: { minDistance: 8, maxDistance: 40, initialDistance: 26, targetHeight: 1.4 } },
 };

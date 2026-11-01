@@ -41,19 +41,23 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
-  entityModels,
-  objectModels,
-  WorldOverlay: BrightwayParkWorldOverlay,
-  worldHealthBars: false,
+  scene: {
+    entityModels,
+    objectModels,
+    WorldOverlay: BrightwayParkWorldOverlay,
+    worldHealthBars: false,
+  },
   // A refused build is a deny notice; its cue is the park's own "denied" chime.
   audio: { sounds: BRIGHTWAY_SOUNDS, uiCues: { deny: BRIGHTWAY_SOUNDS.denied } },
-  notices: { cap: 3, ttlMs: 5000 },
-  // The build palette is the touch control: no derived pick/clear buttons over it.
-  touch: { buttons: [] },
+  chrome: { notices: { cap: 3, ttlMs: 5000 } },
+  controls: {
+    // The build palette is the touch control: no derived pick/clear buttons over it.
+    touch: { buttons: [] },
+    pointer: { moveCommand: "park.pointer", secondaryCommand: "build.clear" },
+  },
   uiKit: parkKit,
   hudTheme: parkTheme,
-  look: "cinematic",
-  mood: "day",
+  rendering: { look: "cinematic", mood: "day" },
   capture: {
     // A new game: the menu's "Open the park" with nothing saved starts the first scenario on the empty lot.
     play: [{ name: "park.scenario", input: { id: "brightway_beginnings" } }, "park.start"],
@@ -75,7 +79,6 @@ export const game = defineGame({
     },
     probe: parkProbe,
   },
-  pointer: { moveCommand: "park.pointer", secondaryCommand: "build.clear" },
   camera: {
     rig: "rts",
     follow: { followEntityId: null },

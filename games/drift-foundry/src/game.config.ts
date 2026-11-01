@@ -17,7 +17,13 @@ import { physics, world } from "./world";
 export const game = defineGame({
   name: "Drift Foundry",
   world,
-  editorLayers,
+  scene: {
+    editorLayers,
+    // Hands the live corridor frame to the card Continue opens.
+    WorldOverlay: () => createElement(SceneCaptureBinding, {}),
+    entityModels,
+    objectModels,
+  },
   physics,
   // The kart, rivals, compactor and run clock all integrate `dt` per tick; a fixed 60 Hz step keeps a
   // corridor run the same distance at 30 and 144 fps.
@@ -37,15 +43,30 @@ export const game = defineGame({
   loop: { onInit, onNewPlayer, onTick },
   lifecycle,
   GameUI,
-  // Hands the live corridor frame to the card Continue opens.
-  WorldOverlay: () => createElement(SceneCaptureBinding, {}),
   hudTheme: driftTheme,
   // The pit wall: stencilled steel menu plates and the pit sheet on a clipboard for every pane.
   uiKit: foundryKit,
-  // One salvage call at a time, above the speed/route plates, like the old pit-radio toast.
-  notices: { placement: "bottom", cap: 1 },
-  // This run uses its own held throttle/jump pad alongside the branded HUD.
-  touch: false,
+  chrome: {
+    // One salvage call at a time, above the speed/route plates, like the old pit-radio toast.
+    notices: { placement: "bottom", cap: 1 },
+    settings: {
+      variant: "sheet",
+      hideBindings: ["restart", "startRun"],
+      actions: [
+        {
+          id: "restart",
+          label: "Restart run",
+          kind: "danger",
+          description: "Wreck the corridor run again from the start.",
+          run: (ctx) => ctx.game.commands.run("restart", {}),
+        },
+      ],
+    },
+  },
+  controls: {
+    // This run uses its own held throttle/jump pad alongside the branded HUD.
+    touch: false,
+  },
   capture: {
     // The compactor catches a parked kart within seconds, and the capture keeps the sim running while
     // models stream, so a live shot hands the wheel to the course autopilot; otherwise it films the
@@ -81,47 +102,47 @@ export const game = defineGame({
       return { car: 1, x: car.position[0], y: car.position[1], z: car.position[2] };
     },
   },
-  entityModels,
-  objectModels,
   audio: { sounds: DRIFT_SOUNDS },
-  shadows: true,
-  // Low warm key over the driver's right wall: the near row is short enough that its shadow stops
+  rendering: {
+    shadows: true,
+    // Low warm key over the driver's right wall: the near row is short enough that its shadow stops
   // mid-corridor, so the run is split lit/shadow lengthwise. The cool hemisphere and blue fill keep
   // the shadow half readable instead of collapsing to black under a dusk key this low.
-  lighting: {
-    // Warm, not cool: a neutral-grey fill made every wall shadow read as a sheet of standing water
-    // beside sunlit orange dirt. Shade here is a value step inside one hue family.
-    ambient: { color: "#7a6455", intensity: 0.28 },
-    hemisphere: { skyColor: "#a08a72", groundColor: "#6b4526", intensity: 0.68 },
-    directional: [
-      {
-        color: "#ffb066",
-        intensity: 2.6,
-        position: [110, 95, -46],
-        castShadow: true,
-        // A track runs up to 790 m, so a single ortho frustum drops contact shadows a few seconds in.
-        cascades: 3,
-        shadowMapSize: 1024,
-        shadowCameraSize: 64,
-        shadowMaxFar: 220,
-        shadowNormalBias: 0.035,
+    lighting: {
+      // Warm, not cool: a neutral-grey fill made every wall shadow read as a sheet of standing water
+      // beside sunlit orange dirt. Shade here is a value step inside one hue family.
+      ambient: { color: "#7a6455", intensity: 0.28 },
+      hemisphere: { skyColor: "#a08a72", groundColor: "#6b4526", intensity: 0.68 },
+      directional: [
+        {
+          color: "#ffb066",
+          intensity: 2.6,
+          position: [110, 95, -46],
+          castShadow: true,
+          // A track runs up to 790 m, so a single ortho frustum drops contact shadows a few seconds in.
+          cascades: 3,
+          shadowMapSize: 1024,
+          shadowCameraSize: 64,
+          shadowMaxFar: 220,
+          shadowNormalBias: 0.035,
+        },
+        { color: "#9a8478", intensity: 0.3, position: [82, 38, 96] },
+      ],
+    },
+    postProcessing: {
+      toneMapping: "aces",
+      // Threshold under the hazard trim's luminance so compactor teeth, tail lights, and lamp heads
+      // are what blooms — the accents the player has to read at speed.
+      bloom: { strength: 0.34, radius: 0.6, threshold: 0.78 },
+      grade: {
+        vignette: 0.18,
+        saturation: 1.05,
+        gamma: 1.02,
+        lift: [0, 0.005, 0.016],
+        gain: [1.08, 0.99, 0.89],
+        grain: 0.024,
+        chromaticAberration: 0.0016,
       },
-      { color: "#9a8478", intensity: 0.3, position: [82, 38, 96] },
-    ],
-  },
-  postProcessing: {
-    toneMapping: "aces",
-    // Threshold under the hazard trim's luminance so compactor teeth, tail lights, and lamp heads
-    // are what blooms — the accents the player has to read at speed.
-    bloom: { strength: 0.34, radius: 0.6, threshold: 0.78 },
-    grade: {
-      vignette: 0.18,
-      saturation: 1.05,
-      gamma: 1.02,
-      lift: [0, 0.005, 0.016],
-      gain: [1.08, 0.99, 0.89],
-      grain: 0.024,
-      chromaticAberration: 0.0016,
     },
   },
   camera: {
@@ -139,18 +160,5 @@ export const game = defineGame({
       },
     },
     lens: { frustum: { far: 900 } },
-  },
-  settings: {
-    variant: "sheet",
-    hideBindings: ["restart", "startRun"],
-    actions: [
-      {
-        id: "restart",
-        label: "Restart run",
-        kind: "danger",
-        description: "Wreck the corridor run again from the start.",
-        run: (ctx) => ctx.game.commands.run("restart", {}),
-      },
-    ],
   },
 });

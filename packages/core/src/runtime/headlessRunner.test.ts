@@ -241,7 +241,7 @@ describe("createHeadlessRunner", () => {
         content,
         loop: { onInit() {}, onNewPlayer(ctx) { ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] }); }, onTick() {}, onReset() {}, onDispose() {} },
         GameUI: null,
-        movement: { canSprint: () => false },
+        controls: { movement: { canSprint: () => false } },
       },
     });
     runner.step(0.5, { held: ["moveForward"] });

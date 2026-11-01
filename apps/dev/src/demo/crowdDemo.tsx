@@ -127,8 +127,10 @@ function crowdGame(instanced: boolean): PlayableGame {
     content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
     loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
     GameUI: () => <CrowdCaption instanced={instanced} />,
-    backdrop: { sky: { preset: "day" }, fog: { color: "#c9d8e4", near: 40, far: 140 } },
-    environment: () => <CrowdScene instanced={instanced} />,
+    rendering: {
+      backdrop: { sky: { preset: "day" }, fog: { color: "#c9d8e4", near: 40, far: 140 } },
+    },
+    scene: { environment: () => <CrowdScene instanced={instanced} /> },
     capture: {
       probe: (ctx) => {
         const position = ctx.scene.entity.get(ctx.player.userId)?.position ?? [0, 0, 0];

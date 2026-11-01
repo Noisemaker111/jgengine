@@ -153,10 +153,9 @@ function makeGuardProbe(): PlayableGame {
         context = null;
       },
     },
-    movement: { feel: { runMultiplier: 2.2 } },
-    backdrop: { background: "#a9c8e6" },
-    environment: () => <Yard />,
-    WorldOverlay: GuardOverlay,
+    controls: { movement: { feel: { runMultiplier: 2.2 } } },
+    rendering: { backdrop: { background: "#a9c8e6" } },
+    scene: { environment: () => <Yard />, WorldOverlay: GuardOverlay },
     GameUI: () => <GuardPanel read={readContext} />,
     camera: {
       orbit: {

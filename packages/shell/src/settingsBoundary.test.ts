@@ -31,7 +31,7 @@ beforeAll(async () => {
       extra:mode==='saved'?[{id:'survey.hints',label:'Hints',category:'survey',kind:'toggle',default:true}]:[],
       actions:[{id:'restart',label:'Restart survey',run:ctx=>calls.push(ctx)}]};
     let snapshot;function Hud(){const s=useSettings();snapshot={variant:s.variant,surface:s.surface,open:s.isOpen,actions:s.actions.map(a=>a.id),categories:s.categories.map(c=>c.id)};return <><SettingsTrigger label="Survey settings"/><output id="ready">Ready</output></>;}
-    const playable=defineGame({name:'Configured survey settings',multiplayer:'off',presentation:'hud',settings,GameUI:Hud});
+    const playable=defineGame({name:'Configured survey settings',multiplayer:'off',chrome:{presentation:'hud',settings},GameUI:Hud});
     const ctx=createGameContext({definition:playable.game,content:playable.content,player:{userId:'settings-user',isNew:true}});
     const audio=createAudioEngine();const root=createRoot(document.getElementById('root'));
     window.fixture={snapshot:()=>snapshot,calls:()=>calls.length,sameContext:()=>calls.every(c=>c===ctx),active:()=>playControlsActive(ctx),saved:()=>store.get('survey.hints',true),configDefault:()=>settings?.extra?.[0]?.default,errors:()=>errors,unmount:()=>root.unmount()};

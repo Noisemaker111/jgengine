@@ -409,7 +409,7 @@ export const menuFrameworkDemoGame: PlayableGame = {
   content: { entityById: () => null, objectById: () => null },
   loop: { onInit, onNewPlayer: () => {}, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: MenuFrameworkUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
+  scene: { environment: () => <EnvironmentScene feature={terrainFeature} /> },
   camera: {
     orbit: {
       initialDistance: 30,
@@ -420,9 +420,11 @@ export const menuFrameworkDemoGame: PlayableGame = {
       maxPolarAngle: 1.32,
     },
   },
-  settings: {
-    variant: "panel",
-    extra: [{ id: "demo.hints", label: "Show hints", category: "gameplay", kind: "toggle", default: true }],
+  chrome: {
+    settings: {
+      variant: "panel",
+      extra: [{ id: "demo.hints", label: "Show hints", category: "gameplay", kind: "toggle", default: true }],
+    },
   },
   capture: {
     states: {

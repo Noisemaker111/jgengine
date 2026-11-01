@@ -49,13 +49,15 @@ export const game = defineGame({
   content,
   inventories: { bag: { slots: 20 } },
   input: { loot: ["KeyE"] },
-  pointer: { grabWorldItems: true },
-  worldItem: {
-    rarityStyle: {
-      common: { color: "#d0d0d0", label: "Common" },
-      legendary: { color: "#ff9a1f", beam: true, label: "Legendary" },
+  controls: { pointer: { grabWorldItems: true } },
+  scene: {
+    worldItem: {
+      rarityStyle: {
+        common: { color: "#d0d0d0", label: "Common" },
+        legendary: { color: "#ff9a1f", beam: true, label: "Legendary" },
+      },
+      beamHeight: 4,
     },
-    beamHeight: 4,
   },
   systems: [looting],
 });

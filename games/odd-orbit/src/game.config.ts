@@ -31,19 +31,26 @@ export const game = defineGame({
   content,
   loop,
   GameUI,
-  // Hands the live habitat frame to the save card's thumbnail request.
-  WorldOverlay: () => createElement(SceneCaptureBinding, {}),
+  scene: {
+    // Hands the live habitat frame to the save card's thumbnail request.
+    WorldOverlay: () => createElement(SceneCaptureBinding, {}),
+    editorLayers,
+    objectModels,
+    renderEntity,
+  },
   hudTheme: orbitTheme,
-  // Household journal lines are full sentences; give them time to read above the habitat tools.
-  notices: { placement: "bottom", ttlMs: 8000 },
+  chrome: {
+    // Household journal lines are full sentences; give them time to read above the habitat tools.
+    notices: { placement: "bottom", ttlMs: 8000 },
+  },
   assets,
-  editorLayers,
   scenePlacement: false,
-  objectModels,
   audio: { sounds: ORBIT_SOUNDS },
-  renderEntity,
-  pointer: { moveCommand: "world.pointer" },
-  touch: { buttons: [] },
+  controls: {
+    pointer: { moveCommand: "world.pointer" },
+    touch: { buttons: [] },
+    hudFit: { mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
+  },
   capture: {
     // "New household" is `orbit.new`; the boot screen is a real menu, so a play capture has to open it.
     play: ["orbit.new"],
@@ -71,32 +78,33 @@ export const game = defineGame({
       return { day: state.day, members: state.order.length, working, credits: state.credits, incident: state.incident == null ? 0 : 1, term: state.charter?.term ?? 0, review: state.charter?.review == null ? 0 : 1 };
     },
   },
-  hudFit: { mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
-  lighting: {
-    // A warm low key against a cool lilac fill: with the fill as bright as the key everything
-    // flattened into one pink wash and the cream living floor never read as cream.
-    ambient: { color: "#9c8fbf", intensity: 0.32 },
-    hemisphere: { skyColor: "#b9a2dc", groundColor: "#3a3150", intensity: 0.45 },
-    directional: [{ color: "#ffdca6", intensity: 2.3, position: [30, 48, 24], castShadow: true }],
-  },
-  // Dusk-moon presentation: the world owns its sky, so "cinematic" only fills the unset post stack
+  rendering: {
+    lighting: {
+      // A warm low key against a cool lilac fill: with the fill as bright as the key everything
+      // flattened into one pink wash and the cream living floor never read as cream.
+      ambient: { color: "#9c8fbf", intensity: 0.32 },
+      hemisphere: { skyColor: "#b9a2dc", groundColor: "#3a3150", intensity: 0.45 },
+      directional: [{ color: "#ffdca6", intensity: 2.3, position: [30, 48, 24], castShadow: true }],
+    },
+    // Dusk-moon presentation: the world owns its sky, so "cinematic" only fills the unset post stack
   // (IBL + tone-map/bloom/AO/grade). Lighting above is authored explicitly and wins.
-  look: "cinematic",
-  postProcessing: {
-    toneMapping: "aces",
-    exposure: 0.9,
-    aa: "smaa",
-    // Soft glow on the luminous green gardens and amber Yield console without bleeding the lilac stone.
-    bloom: { strength: 0.3, radius: 0.6, threshold: 0.92 },
-    // Contact creases under furniture and beside the habitat walls, kept modest for the draw budget.
-    ao: { radius: 1.2, intensity: 1.6, distanceFalloff: 2.6 },
-    grade: {
-      lift: [0.02, 0.012, 0.03],
-      gain: [1.04, 1.0, 1.02],
-      gamma: 0.97,
-      saturation: 1.12,
-      vignette: 0.26,
-      grain: 0.008,
+    look: "cinematic",
+    postProcessing: {
+      toneMapping: "aces",
+      exposure: 0.9,
+      aa: "smaa",
+      // Soft glow on the luminous green gardens and amber Yield console without bleeding the lilac stone.
+      bloom: { strength: 0.3, radius: 0.6, threshold: 0.92 },
+      // Contact creases under furniture and beside the habitat walls, kept modest for the draw budget.
+      ao: { radius: 1.2, intensity: 1.6, distanceFalloff: 2.6 },
+      grade: {
+        lift: [0.02, 0.012, 0.03],
+        gain: [1.04, 1.0, 1.02],
+        gamma: 0.97,
+        saturation: 1.12,
+        vignette: 0.26,
+        grain: 0.008,
+      },
     },
   },
   camera: {

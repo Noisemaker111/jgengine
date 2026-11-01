@@ -59,14 +59,18 @@ const time = Number(pinnedTime ?? "0.6");
 export const foliageWindGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "foliage-wind" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => <Foliage time={time} />,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  look: "flat",
-  lighting: { ambient: { intensity: 0.5 }, directional: [{ intensity: 2.4, position: [4, 8, 6], color: "#fff3e0" }] },
-  backdrop: { background: "#20262b" },
-  postProcessing: { enabled: true, toneMapping: "aces", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
-  environment: () => <Foliage time={time} />,
+  rendering: {
+    look: "flat",
+    lighting: { ambient: { intensity: 0.5 }, directional: [{ intensity: 2.4, position: [4, 8, 6], color: "#fff3e0" }] },
+    backdrop: { background: "#20262b" },
+    postProcessing: { enabled: true, toneMapping: "aces", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
+  },
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#f2f3f0", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
       <div style={{ position: "absolute", top: 14, left: 18, fontSize: 15, fontWeight: 600 }}>

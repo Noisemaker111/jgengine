@@ -76,12 +76,16 @@ const views = Object.fromEntries(
 export const plantLibraryGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "plant-library" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => <PlantLibrary />,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  lighting: { ambient: { intensity: 0.6 }, directional: [{ intensity: 2.4, position: [40, 60, 30], color: "#fff1dc" }] },
-  backdrop: { background: "#a8c8e0" },
-  environment: () => <PlantLibrary />,
+  rendering: {
+    lighting: { ambient: { intensity: 0.6 }, directional: [{ intensity: 2.4, position: [40, 60, 30], color: "#fff1dc" }] },
+    backdrop: { background: "#a8c8e0" },
+  },
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", top: 12, left: 16, color: "#fff", font: "600 15px sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
       Plant library · every species open-grown to {SHEET.age} years from its fitted record · seed "{SEED}"

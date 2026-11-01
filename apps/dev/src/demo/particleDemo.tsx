@@ -102,14 +102,16 @@ export const particleDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: Vfx,
-  environment: () => (
-    <>
-      <EnvironmentScene feature={terrainFeature} />
-      <ParticleField system={fire} blending="additive" scale={500} />
-      <ParticleField system={smoke} blending="normal" depthWrite scale={500} />
-      <ParticleField system={sparks} blending="additive" scale={500} />
-    </>
-  ),
+  scene: {
+    environment: () => (
+      <>
+        <EnvironmentScene feature={terrainFeature} />
+        <ParticleField system={fire} blending="additive" scale={500} />
+        <ParticleField system={smoke} blending="normal" depthWrite scale={500} />
+        <ParticleField system={sparks} blending="additive" scale={500} />
+      </>
+    ),
+  },
   camera: {
     orbit: {
       initialDistance: 15,

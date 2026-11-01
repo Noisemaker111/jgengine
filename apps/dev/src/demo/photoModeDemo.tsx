@@ -92,8 +92,10 @@ export const photoModeDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: PhotoUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  WorldOverlay: () => <SceneCaptureBinding bind={(fn) => { captureFn = fn; }} />,
+  scene: {
+    environment: () => <EnvironmentScene feature={terrainFeature} />,
+    WorldOverlay: () => <SceneCaptureBinding bind={(fn) => { captureFn = fn; }} />,
+  },
   camera: {
     orbit: {
       initialDistance: 30,

@@ -66,8 +66,8 @@ export function ShellGameUiChrome({
         <SettingsPlayControlGate ctx={ctx} />
         <GamePhaseStamp />
         <HudViewportProvider
-          platforms={playable.platforms}
-          config={playable.hudFit}
+          platforms={playable.controls?.platforms}
+          config={playable.controls?.hudFit}
           userScale={uiScale}
         >
           {orientationGate ? null : (
@@ -75,7 +75,7 @@ export function ShellGameUiChrome({
               <HudThemeRoot theme={playable.hudTheme} accessibility={accessibility}>
                 <ShellUiKit playable={playable}>
                   <GameUI />
-                  <ShellNotices ctx={ctx} config={playable.notices} scale={uiScale} />
+                  <ShellNotices ctx={ctx} config={playable.chrome?.notices} scale={uiScale} />
                   <FeedbackHost ctx={ctx} engine={audioEngine} />
                 </ShellUiKit>
               </HudThemeRoot>

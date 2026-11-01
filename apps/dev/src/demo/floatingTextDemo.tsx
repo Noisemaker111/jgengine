@@ -97,12 +97,14 @@ export const floatingTextDemoGame: PlayableGame = {
   content: { entityById: (catalogId) => entityCatalog[catalogId] ?? null, objectById: () => null },
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: FloatingTextHud,
-  environment: () => (
-    <>
-      <EnvironmentScene feature={terrainFeature} />
-      <WorldFloatingText field={field} styleFor={styleFor} fontSizePx={22} offsetY={-8} />
-    </>
-  ),
+  scene: {
+    environment: () => (
+      <>
+        <EnvironmentScene feature={terrainFeature} />
+        <WorldFloatingText field={field} styleFor={styleFor} fontSizePx={22} offsetY={-8} />
+      </>
+    ),
+  },
   camera: {
     orbit: {
       initialDistance: 12,

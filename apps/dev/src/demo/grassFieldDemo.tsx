@@ -72,12 +72,16 @@ function GrassFields() {
 export const grassFieldGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "grass-field" },
-  renderEntity: () => <group />,
-  renderObject: () => <group />,
+  scene: {
+    renderEntity: () => <group />,
+    renderObject: () => <group />,
+    environment: () => <GrassFields />,
+  },
   loop: { ...demoGame.loop, onTick: () => {} },
-  lighting: { ambient: { intensity: 0.55 }, directional: [{ intensity: 2.6, position: [20, 30, 25], color: "#fff1dc" }] },
-  backdrop: { background: "#9cc0dc" },
-  environment: () => <GrassFields />,
+  rendering: {
+    lighting: { ambient: { intensity: 0.55 }, directional: [{ intensity: 2.6, position: [20, 30, 25], color: "#fff1dc" }] },
+    backdrop: { background: "#9cc0dc" },
+  },
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", top: 12, left: 16, color: "#fff", font: "600 15px sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
       Grasses, clover, dandelion, oxeye daisy and moss sown the same way, grown 18 months

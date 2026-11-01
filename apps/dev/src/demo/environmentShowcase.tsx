@@ -36,7 +36,9 @@ export const showcaseEnvironment = environment({
 
 export const environmentShowcaseGame: PlayableGame = {
   ...demoGame,
-  // Keep the distance cutoff inside the fixture camera's 300-unit far plane.
-  graphics: { high: { drawDistance: 120 } },
-  environment: () => <EnvironmentScene feature={showcaseEnvironment} />,
+  rendering: {
+    // Keep the distance cutoff inside the fixture camera's 300-unit far plane.
+    graphics: { high: { drawDistance: 120 } },
+  },
+  scene: { environment: () => <EnvironmentScene feature={showcaseEnvironment} /> },
 };

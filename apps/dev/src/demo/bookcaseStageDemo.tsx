@@ -35,8 +35,10 @@ export const bookcaseStageGame = defineGame({
   name: "bookcase-stage",
   world: flat(),
   multiplayer: null,
-  environment: () => <BookcaseStage />,
-  postProcessing: { ...STUDIO_STAGE_POST, dof: { focus: 5, aperture: 0.00035, maxBlur: 0.009 } },
+  scene: { environment: () => <BookcaseStage /> },
+  rendering: {
+    postProcessing: { ...STUDIO_STAGE_POST, dof: { focus: 5, aperture: 0.00035, maxBlur: 0.009 } },
+  },
   camera: {
     rigs: {
       turntable: { target: { x: 0, y: 1.1, z: 0 }, distance: 4.4, height: 1.5, lookHeight: 1.1, orbitSpeed: 0.25, startAngle: 0.42, fov: 38 },

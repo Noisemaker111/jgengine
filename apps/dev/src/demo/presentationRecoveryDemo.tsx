@@ -74,8 +74,10 @@ function RecoveryUI() {
   </aside>;
 }
 export const presentationRecoveryDemoGame: PlayableGame = {
-  ...hostedAuthorityDemoGame, presentation: "3d", GameUI: RecoveryUI, environment: () => <RecoveryEnvironment />,
-  editorLayers: authoredDocument,
+  ...hostedAuthorityDemoGame,
+  chrome: { presentation: "3d" },
+  GameUI: RecoveryUI,
+  scene: { environment: () => <RecoveryEnvironment />, editorLayers: authoredDocument },
   camera: {
     rig: "topDown",
     rigs: {

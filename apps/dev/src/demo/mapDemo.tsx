@@ -368,9 +368,11 @@ export const mapDemoGame: PlayableGame = {
   },
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: MapUI,
-  environment: () => <EnvironmentScene feature={terrainFeature} />,
-  WorldOverlay: () => <MapMarkerBeacons markers={markerSet} />,
-  pointer: { pingCommand: "map.ping" },
+  scene: {
+    environment: () => <EnvironmentScene feature={terrainFeature} />,
+    WorldOverlay: () => <MapMarkerBeacons markers={markerSet} />,
+  },
+  controls: { pointer: { pingCommand: "map.ping" } },
   camera: {
     orbit: {
       initialDistance: 40,
