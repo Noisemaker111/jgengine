@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { createAuthoredWeather } from "@jgengine/core/weather/authoredWeather";
+import { windField } from "@jgengine/core/world/wind";
 import { createWeatherUniformSet, updateWeatherUniformSet } from "./weatherUniforms.draw";
 
 test("authoritative weather shares sampled wind and time, freezes on pause and rewinds on restore", () => {
@@ -27,4 +28,18 @@ test("absolute clock works for standalone fields and legacy render-time accumula
   updateWeatherUniformSet(uniforms, { timeSeconds: () => 5 }, 100);
   expect(uniforms.time.value).toBe(5);
   expect(uniforms.controlsWind).toBe(false);
+});
+
+test("rain, snow and dust drift with the shared wind field at the camera, and a fixed vector still wins", () => {
+  const field = windField({ direction: [1, 0], speed: 6, effects: { surface: "grass", profile: {} } });
+  const options = { windField: field, timeSeconds: 3 };
+  const uniforms = createWeatherUniformSet(options);
+  expect(uniforms.controlsWind).toBe(true);
+  updateWeatherUniformSet(uniforms, options, 0.1, 5, 7, 2);
+  const [wx, wz] = field.atHeight(5, 7, 10, 3);
+  expect(uniforms.wind.value.x).toBeCloseTo(wx, 9);
+  expect(uniforms.wind.value.y).toBe(0);
+  expect(uniforms.wind.value.z).toBeCloseTo(wz, 9);
+  updateWeatherUniformSet(uniforms, { ...options, wind: [0, 0, 2] }, 0.1);
+  expect(uniforms.wind.value.toArray()).toEqual([0, 0, 2]);
 });
