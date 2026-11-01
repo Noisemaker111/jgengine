@@ -26,6 +26,7 @@ import type { WornLayer } from "@jgengine/core/anim/wearable/wornRegion";
 import { resolveRigNode } from "./rigNode.draw";
 import { PartMotionRig } from "@jgengine/core/anim/PartMotion.draw";
 import { useCharacterGlance } from "@jgengine/core/anim/characterGlance.draw";
+import { registerMotionBlurBody } from "@jgengine/core/postfx/motionBlurPass.draw";
 import { useEntityMuzzle } from "@jgengine/core/anim/entityMuzzle.draw";
 import { registerEntityBody } from "@jgengine/core/anim/CorpseRagdolls.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
@@ -398,6 +399,7 @@ export function EntityModel({
   const muzzleFacing = useCallback(() => (instanceId === undefined ? undefined : ctx?.scene.entity.get(instanceId)?.rotationY) ?? 0, [ctx, instanceId]);
   useEntityMuzzle(scene, instanceId, muzzleFacing);
   useLayoutEffect(() => (instanceId === undefined ? undefined : registerEntityBody(instanceId, scene)), [instanceId, scene]);
+  useLayoutEffect(() => (instanceId === undefined ? undefined : registerMotionBlurBody(scene)), [instanceId, scene]);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);
