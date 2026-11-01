@@ -77,12 +77,15 @@ function CoasterTrain({object,circuit}:{object:ParkObject;circuit:ReturnType<typ
   });
   return <group userData={{jgObjectId:object.id}}><group ref={ref}><primitive object={scene}/></group></group>;
 }
-function Entrance() {  const sign=useLoader(TextureLoader,new URL("../../../public/art/brightway-sign.svg",import.meta.url).href);
+const GATE_URL = new URL("../../../public/art/models/deco_gate.glb", import.meta.url).href;
+function Entrance() {
+  const sign=useLoader(TextureLoader,new URL("../../../public/art/brightway-sign.svg",import.meta.url).href);
+  const gate=useLoader(GLTFLoader,GATE_URL);
+  const model=useMemo(()=>{const copy=gate.scene.clone(true);copy.traverse(node=>{node.castShadow=true;node.receiveShadow=true;});return copy;},[gate]);
   return <group position={[0,0,56]}>
-    {[-6,6].map(x=><group key={x}><mesh castShadow position={[x,2.3,0]}><boxGeometry args={[.65,4.6,.65]}/><meshStandardMaterial color="#247f83"/></mesh><mesh position={[x,4.85,0]}><sphereGeometry args={[.4,12,8]}/><meshStandardMaterial color="#edbc5c"/></mesh><mesh castShadow position={[x,1.2,0]}><boxGeometry args={[2,2.4,2.4]}/><meshStandardMaterial color="#ef7059"/></mesh><mesh position={[x,1.65,1.22]}><boxGeometry args={[1.4,.8,.06]}/><meshStandardMaterial color="#77b8c8"/></mesh></group>)}
-    <mesh position={[0,4.2,0]}><boxGeometry args={[12,.35,.4]}/><meshStandardMaterial color="#edbc5c"/></mesh>
-    <mesh position={[0,4.4,.24]}><planeGeometry args={[9,2.8]}/><meshBasicMaterial map={sign} transparent/></mesh>
-    <mesh position={[0,4.4,-.24]} rotation={[0,Math.PI,0]}><planeGeometry args={[9,2.8]}/><meshBasicMaterial map={sign} transparent/></mesh>
+    <primitive object={model}/>
+    <mesh position={[0,4.4,.3]}><planeGeometry args={[9,2.8]}/><meshBasicMaterial map={sign} transparent/></mesh>
+    <mesh position={[0,4.4,-.3]} rotation={[0,Math.PI,0]}><planeGeometry args={[9,2.8]}/><meshBasicMaterial map={sign} transparent/></mesh>
   </group>;
 }
 function Fence() {
