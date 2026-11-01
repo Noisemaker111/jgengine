@@ -257,6 +257,7 @@ export class StaticDrawPool {
   private readonly groups = new Map<string, PoolGroup>();
   private readonly cells = new Map<string, ProxyCell>();
   private hlod: HlodConfig | null = null;
+  private hold: ((x: number, z: number) => boolean) | null = null;
   private building: { cell: ProxyCell; run: SlicedRun<THREE.BufferGeometry> } | null = null;
   private proxyMaterial: THREE.MeshStandardMaterial | null = null;
 
@@ -276,6 +277,37 @@ export class StaticDrawPool {
   }
 
   /**
+   * Let world streaming hold cells on their proxy: a held cell draws its proxy whatever the camera
+   * distance (building one if it has none), and keeps it after its props leave the scene, until the
+   * hold lifts. Null releases every hold.
+   */
+  holdProxies(hold: ((x: number, z: number) => boolean) | null): void {
+    this.hold = hold;
+  }
+
+  /**
+   * Whether every proxy cell inside an XZ box has a proxy matching its current props, so a streamed
+   * cell can let its props go without leaving a hole. True when the box holds no props or proxies are off.
+   */
+  proxiesSettledIn(min: readonly [number, number], max: readonly [number, number]): boolean {
+    if (this.hlod === null) return true;
+    for (let cz = Math.floor(min[1] / STATIC_PROXY_CELL); cz < Math.ceil(max[1] / STATIC_PROXY_CELL); cz += 1) {
+      for (let cx = Math.floor(min[0] / STATIC_PROXY_CELL); cx < Math.ceil(max[0] / STATIC_PROXY_CELL); cx += 1) {
+        const cell = this.cells.get(`${cx},${cz}`);
+        if (cell === undefined || cell.members.size === 0) continue;
+        if (cell.proxy === null || cell.proxyVersion !== cell.version) return false;
+      }
+    }
+    return true;
+  }
+
+  private held(cell: ProxyCell): boolean {
+    if (this.hold === null) return false;
+    const [cx, cz] = cell.key.split(",").map(Number) as [number, number];
+    return this.hold((cx + 0.5) * STATIC_PROXY_CELL, (cz + 0.5) * STATIC_PROXY_CELL);
+  }
+
+  /**
    * Switch each proxy cell between its props and its proxy for a camera at `eye`, and build at most one
    * stale proxy at a time in small slices. Bounded per frame: one distance test per cell. Run it before
    * the slots sync, so a cell's props and its proxy change over in the same frame.
@@ -284,10 +316,18 @@ export class StaticDrawPool {
     const hlod = this.hlod;
     if (hlod === null) return;
     for (const cell of this.cells.values()) {
+      const held = this.held(cell);
+      if (cell.members.size === 0) {
+        if (!held) {
+          this.dropProxy(cell);
+          this.cells.delete(cell.key);
+        }
+        continue;
+      }
       if (cell.boundsDirty) refreshCellBounds(cell);
       if (cell.sphere.isEmpty()) continue;
       const distance = Math.max(0, cell.sphere.distanceToPoint(eye));
-      const far = cell.far ? distance > hlod.distance - hlod.hysteresis / 2 : distance > hlod.distance + hlod.hysteresis / 2;
+      const far = held || (cell.far ? distance > hlod.distance - hlod.hysteresis / 2 : distance > hlod.distance + hlod.hysteresis / 2);
       if (far && (cell.proxy === null || cell.proxyVersion !== cell.version)) this.buildProxy(cell, hlod);
       if (far !== cell.far) this.switchCell(cell, far);
     }
@@ -389,6 +429,8 @@ export class StaticDrawPool {
     cell.version += 1;
     cell.boundsDirty = true;
     if (cell.members.size > 0) return;
+    // A streamed-out cell keeps its proxy standing in for the props it parked; update() drops it once the hold lifts.
+    if (cell.proxy !== null && this.held(cell)) return;
     this.dropProxy(cell);
     this.cells.delete(cell.key);
   }

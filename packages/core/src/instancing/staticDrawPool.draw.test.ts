@@ -337,3 +337,37 @@ test("a far block hides only its own props in a batch it shares with the near st
   expect([slot.mesh.getVisibleAt(0), slot.mesh.getVisibleAt(1)]).toEqual([true, false]);
   pool.dispose();
 });
+
+test("a streaming hold puts a near cell on its proxy and keeps the proxy after its props leave", async () => {
+  const scene = new THREE.Scene();
+  const pool = new StaticDrawPool(scene);
+  pool.configure({ distance: 500, hysteresis: 0, cluster: 0.25 });
+  let held = false;
+  pool.holdProxies((x) => held && x < STATIC_PROXY_CELL);
+  const slot = pool.acquire({ geometry: box(), material: palette() }, "0,0", 2);
+  if (slot === null) throw new Error("expected a pooled slot");
+  const members = placements(2);
+  const indexOf = new Map(members.map((member, index) => [member.instanceId, index]));
+  slot.sync(members, (member) => indexOf.get(member.instanceId), at);
+  const eye = new THREE.Vector3(0, 0, 10);
+  const proxy = () => scene.children.find((child) => child.userData[STATIC_POOL_PROXY_KEY] === true);
+  pool.update(eye);
+  expect(proxy()).toBeUndefined();
+  expect(pool.proxiesSettledIn([0, 0], [STATIC_PROXY_CELL, STATIC_PROXY_CELL])).toBe(false);
+
+  held = true;
+  pool.update(eye);
+  await settled();
+  expect(proxy()?.visible).toBe(true);
+  expect(slot.mesh.visible).toBe(false);
+  expect(pool.proxiesSettledIn([0, 0], [STATIC_PROXY_CELL, STATIC_PROXY_CELL])).toBe(true);
+
+  slot.release();
+  pool.update(eye);
+  expect(proxy()?.visible).toBe(true);
+
+  held = false;
+  pool.update(eye);
+  expect(proxy()).toBeUndefined();
+  pool.dispose();
+});
