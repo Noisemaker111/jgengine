@@ -23,6 +23,7 @@ import {
 } from "@jgengine/core/runtime/hostPersistence";
 import {
   isListablePublicly,
+  resolveHostTickMs,
   isPrivateJoinBlocked,
   isServerFull,
   isServerMember,
@@ -147,7 +148,7 @@ function opLedgerKey(serverId: string, userId: string): string {
  */
 export function createGameServerHost(options: GameServerHostOptions): GameServerHost {
   const now = options.now ?? Date.now;
-  const tickMs = options.tickMs ?? 1_000;
+  const tickMs = resolveHostTickMs(options.tickMs);
   const defaultSlots = options.slotsPerServer ?? 16;
   const createServerId = options.createServerId ?? (() => `srv-${crypto.randomUUID()}`);
   const persistence = options.persistence;

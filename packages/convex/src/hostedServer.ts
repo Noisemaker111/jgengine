@@ -25,6 +25,7 @@ import {
 } from "@jgengine/core/runtime/hostedWorldSession";
 import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
 import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
+import { DEFAULT_HOST_TICK_MS, resolveHostTickMs } from "@jgengine/core/runtime/hostPolicy";
 import { commitIfRevisionMatch } from "./occ";
 import { jgengineHostedTables, resolveActor, type JgAuthMode } from "./server";
 
@@ -98,7 +99,7 @@ const internalMutation = internalMutationGeneric as MutationBuilder<HostedDataMo
 type HostedWorldDoc = DocumentByName<HostedDataModel, "jgHostedWorlds">;
 
 /** Default minimum elapsed ms before `tickHostedWorlds` advances a world — override via the factory's `tickMs`. */
-export const JG_HOSTED_TICK_MS = 1_000;
+export const JG_HOSTED_TICK_MS = DEFAULT_HOST_TICK_MS;
 
 async function getWorldRow(
   ctx: HostedQueryCtx | HostedMutationCtx,
@@ -185,7 +186,7 @@ export function createHostedGameServerFunctions(options: {
   tickMs?: number;
 }) {
   const mode: JgAuthMode = options.auth ?? "anonymous";
-  const tickMs = options.tickMs ?? JG_HOSTED_TICK_MS;
+  const tickMs = resolveHostTickMs(options.tickMs ?? JG_HOSTED_TICK_MS);
 
   function resolveGame(gameId: string): HostedGameConfig {
     const game = options.games[gameId];
