@@ -1,3 +1,4 @@
+import { boatWindageForce, type BoatWind } from "./boatWindage";
 import type { AxisInput } from "../input/axisInput";
 import { waveFieldHeight, type WaveField } from "../water/seaState";
 import { hullManoeuvringForces, rudderForces, type HullManoeuvring, type ManoeuvringLoads } from "./boatManoeuvring";
@@ -128,6 +129,8 @@ export interface BoatOptions {
   sea?: WaveField;
   /** Still-water level for the `seakeeping` effect without a `sea`, m (default the spawn height). */
   waterLevel?: number;
+  /** The shared wind on the hull's above-water areas; omit for still air. */
+  wind?: BoatWind;
 }
 
 /** Serializable boat state. */
@@ -674,6 +677,11 @@ export function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {
         if (prepared.planar) effectSubstep(h, input);
         else simpleSubstep(h, input);
         seakeepingSubstep(h);
+        if (options.wind !== undefined) {
+          const [ax, az] = boatWindageForce(options.wind, tuning, state.x, state.z, state.heading, state.vx, state.vz, state.time);
+          state.vx += (ax / tuning.massKg) * h;
+          state.vz += (az / tuning.massKg) * h;
+        }
       }
       const [fx, fz] = forwardOf(state.heading);
       return {
