@@ -124,7 +124,7 @@ export const COMBATANTS = {
 } satisfies Record<string, CombatantDef>;
 
 /** Decorative props spawned from the scene — no health, not selectable. Forest fill is instanced
- * scatter (see scatterModels); these are the placed hero props: base dressing and resource nodes. */
+ * scatter; these are the placed hero props: base dressing and resource nodes. */
 export const DECOR = new Set(["banner_blue", "banner_red", "torch", "barrel"]);
 
 /** Harvestable resource nodes: gold from mines, lumber from logging camps. Placed in the scene, they
