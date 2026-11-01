@@ -121,7 +121,6 @@ const PINNED: readonly PinnedMaterial[] = [
   { assetId: "ScatteredLeaves008", categories: ["foliage", "leaf", "ground"], maps: ["roughness", "ao"] },
   { assetId: "Ground037", categories: ["ground", "dirt", "forest"], maps: ["roughness", "ao"] },
   { assetId: "Ground055S", categories: ["ground", "sand", "beach"], maps: ["roughness", "ao"] },
-  { assetId: "Ground033", categories: ["ground", "sand", "beach"], maps: ["roughness"] },
   { assetId: "Ground080", categories: ["ground", "sand", "beach"], maps: ["roughness", "ao"] },
   { assetId: "Ground095B", categories: ["ground", "mud", "wet"], maps: ["roughness", "ao"] },
   { assetId: "Gravel002", categories: ["ground", "gravel"], maps: ["roughness"] },
