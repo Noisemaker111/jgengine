@@ -1587,6 +1587,7 @@
 
 - `SoftGround` (interface): interface SoftGround — Soft ground bound to a terrain.
 - `SoftGroundOptions` (interface): interface SoftGroundOptions — Options for {@link createSoftGround}.
+- `SoftGroundSnapshot` (interface): interface SoftGroundSnapshot — Plain JSON of a {@link SoftGround}: the soil, where it started, each wheel's last contact and the dials.
 - `SoftGroundWheel` (interface): interface SoftGroundWheel — One wheel's contact this tick: where it is, the load it carries and its size.
 - `SoftSurfaceClass` (interface): interface SoftSurfaceClass — A painted terrain surface that is soft: the material it is made of and how deep it lies over firm ground, m.
 - `createSoftGround` (function): function createSoftGround(terrain: EditableTerrain, options: SoftGroundOptions): SoftGround — Lay soft ground over a terrain's vertex grid.
