@@ -1,3 +1,5 @@
+import { hdriEnvironment, HDRI_LIBRARY, type HdriId } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade, LUT_GRADES, type LutGradeId } from "@jgengine/assets/catalogs/lutGrades";
 import { filterLibraryMaterials, libraryMaterialAsset, type LibraryGroup, type LibraryMaterial } from "@jgengine/assets/catalogs/materialLibrary";
 import { Suspense, useMemo } from "react";
 import * as THREE from "three";
@@ -20,6 +22,10 @@ const uvProjection = params.get("projection") === "uv";
 /** `?compare=1` renders each entry twice: UV-mapped left, world-space triplanar right. */
 const compare = params.get("compare") === "1";
 const group = params.get("group") as LibraryGroup | null;
+
+/** `?hdri=golden-hour` lights the sheet with a shipped HDRI; `?lut=cold-teal` grades it with a shipped colour grade. */
+const hdriId = HDRI_LIBRARY.find((entry) => entry.id === params.get("hdri"))?.id as HdriId | undefined;
+const lutId = LUT_GRADES.find((entry) => entry.id === params.get("lut"))?.id as LutGradeId | undefined;
 
 const COLUMNS = 8;
 const SPACING = 1.2;
@@ -98,9 +104,11 @@ function Sheet({ entries }: { entries: readonly LibraryMaterial[] }) {
   }, [entries]);
   return <>
     <ambientLight intensity={0.35} />
-    <EnvironmentLighting intensity={0.9} skyColor="#dfe7ef" groundColor="#4a4d50" sunDirection={[6, 9, 8]} />
-    <directionalLight position={[6, 9, 8]} intensity={2} />
-    <directionalLight position={[-7, 4, -6]} intensity={0.55} color="#cfe0ff" />
+    <EnvironmentLighting intensity={0.9} skyColor="#dfe7ef" groundColor="#4a4d50" sunDirection={[6, 9, 8]} source={hdriId === undefined ? undefined : hdriEnvironment(hdriId, { intensity: 1.1 })} />
+    {hdriId === undefined ? <>
+      <directionalLight position={[6, 9, 8]} intensity={2} />
+      <directionalLight position={[-7, 4, -6]} intensity={0.55} color="#cfe0ff" />
+    </> : null}
     {cells.map(({ entry, position }) => <mesh key={entry.name} geometry={compare ? SPHERE_UV : SPHERE} position={position} castShadow>
       {flat
         ? <meshStandardMaterial color={entry.response.color ?? FLAT[entry.group]} roughness={entry.response.roughness ?? 0.85} metalness={entry.response.metalness ?? 0} transparent={(entry.response.transmission ?? 0) > 0} opacity={(entry.response.transmission ?? 0) > 0 ? 0.35 : 1} />
@@ -122,7 +130,7 @@ function Legend({ entries }: { entries: readonly LibraryMaterial[] }) {
   const groups = Array.from(new Set(entries.map((entry) => entry.group)));
   return <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#f2f3f0", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.7)" }}>
     <div style={{ position: "absolute", top: 14, left: 18, fontSize: 15, fontWeight: 600 }}>
-      Material library · {entries.length} ambientCG PBR surfaces · {flat ? "flat colour baseline" : uvProjection ? "UV-mapped" : "triplanar, geometry has no UVs"}
+      Material library · {entries.length} ambientCG PBR surfaces · sky {hdriId ?? "none"} · grade {lutId ?? "none"} · {flat ? "flat colour baseline" : uvProjection ? "UV-mapped" : "triplanar, geometry has no UVs"}
     </div>
     <div style={{ position: "absolute", top: 36, left: 18, fontSize: 11, opacity: 0.85 }}>
       {groups.join(" · ")} · one texture tile per sphere for inspection; each name authors its own world tile size
@@ -149,7 +157,7 @@ export const materialLibraryGame: PlayableGame = {
     look: "flat",
     lighting: { ambient: { intensity: 0 }, directional: [] },
     backdrop: { background: "#1c1f22" },
-    postProcessing: { enabled: true, toneMapping: "agx", exposure: 1, bloom: false, ao: false, grade: false, stylize: false, aa: "msaa" },
+    postProcessing: { enabled: true, toneMapping: "agx", exposure: 1, bloom: false, ao: false, grade: lutId === undefined ? false : { lut: lutGrade(lutId), lift: [0, 0, 0], gain: [1, 1, 1], gamma: 1, saturation: 1, vignette: 0, grain: 0 }, stylize: false, aa: "msaa" },
   },
   GameUI: () => (worldMode ? <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#f2f3f0", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
     <div style={{ position: "absolute", top: 14, left: 18, fontSize: 15, fontWeight: 600 }}>
