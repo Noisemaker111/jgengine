@@ -20,6 +20,13 @@ describe("drift-foundry world", () => {
     expect(summary.counts.buildings).toBeGreaterThan(30);
   });
 
+  test("the racing line is dark cracked asphalt and the yard is packed dirt", () => {
+    const roads = world.roads ?? [];
+    expect(roads.length).toBeGreaterThan(0);
+    for (const road of roads) expect(road.materials?.road?.maps?.color).toBe("/materials/ambientcg-asphalt012/color.jpg");
+    expect(world.terrain?.detail?.material?.maps?.color).toBe("/materials/ambientcg-ground025/color.jpg");
+  });
+
   test("terrain resolves finite height everywhere", () => {
     expect(summary.terrain?.height.finite).toBe(true);
     expect(summary.terrain?.height.max).toBeGreaterThan(summary.terrain?.height.min ?? 0);

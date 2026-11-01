@@ -1,6 +1,7 @@
 import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { useEffect } from "react";
 
+
 /** One font file a game ships (an OFL or other licensed TTF/WOFF2 bundled with the game). */
 export interface GameFontFace {
   /** Family name the game's CSS uses, e.g. `"Bangers"`. */

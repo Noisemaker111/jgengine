@@ -2,7 +2,7 @@ import { IconTreatment } from '@jgengine/core/ui/icons/iconTreatment.view';
 import { hudTheme } from '@jgengine/core/hud/hudTheme.view';
 import { gameFontStacks } from '@jgengine/core/ui/fonts.view';
 import { ITEMS, type ItemKind } from '../state';
-import { GAME_FONTS } from '../../art/fonts/fonts';
+import { GAME_FONTS } from '../../art/look';
 
 const FONTS = gameFontStacks(GAME_FONTS);
 

@@ -17,9 +17,10 @@ export const DECAL_KIND = "decal";
  * The authored decal looks; each has its own deterministic procedural texture. `grime` is the dark
  * band that collects along the foot of a wall, `leak` a streak running down from a pipe or seam,
  * `rust` a bloom of corrosion, `wet` a standing puddle that renders glossy, `paper` a few dropped
- * sheets, `scorch` a soot burn and `hazard` a worn yellow-and-black stripe border painted round a spot.
+ * sheets, `scorch` a soot burn and `hazard` a worn yellow-and-black stripe border painted round a spot,
+ * `stencil` the decal's `text` sprayed through a stencil in its `color`, and `chevrons` a band of arrowheads in `color` pointing up the decal.
  */
-export const DECAL_STYLES = ["dirt", "cracks", "paint", "blood", "grime", "leak", "rust", "wet", "paper", "scorch", "hazard"] as const;
+export const DECAL_STYLES = ["dirt", "cracks", "paint", "blood", "grime", "leak", "rust", "wet", "paper", "scorch", "hazard", "stencil", "chevrons"] as const;
 /** One of the authored decal looks. */
 export type DecalStyle = (typeof DECAL_STYLES)[number];
 
@@ -38,6 +39,10 @@ export interface DecalRules {
   opacity: number;
   /** Deterministic shape seed. */
   seed: string;
+  /** Lettering a `stencil` decal paints: digits, A-Z, `-`, `/` and `.`. */
+  text: string;
+  /** `#rrggbb` paint of a `stencil` or `chevrons` decal. */
+  color: string;
 }
 
 /** Default decal rules: a small dirt smudge lying on the ground. */
@@ -49,6 +54,8 @@ export const DECAL_DEFAULTS: DecalRules = {
   offset: 0.04,
   opacity: 0.9,
   seed: "",
+  text: "",
+  color: "#e0b040",
 };
 
 /** The decal parameter schema — drives the inspector and the `meta` parse. */
@@ -61,6 +68,8 @@ export const DECAL_SCHEMA: ParamSchema = {
     { type: "range", key: "offset", label: "surface offset", min: 0, max: 2, step: 0.01, default: DECAL_DEFAULTS.offset, unit: "m" },
     { type: "range", key: "opacity", label: "opacity", min: 0.05, max: 1, step: 0.01, default: DECAL_DEFAULTS.opacity },
     { type: "seed", key: "seed", label: "seed", default: DECAL_DEFAULTS.seed },
+    { type: "text", key: "text", label: "stencil text", default: DECAL_DEFAULTS.text },
+    { type: "color", key: "color", label: "paint", default: DECAL_DEFAULTS.color },
   ],
 };
 
@@ -85,6 +94,8 @@ export function readDecalRules(meta: Record<string, unknown> | undefined): Decal
     offset: Math.max(0, number(meta, "offset", DECAL_DEFAULTS.offset)),
     opacity: Math.min(1, Math.max(0.05, number(meta, "opacity", DECAL_DEFAULTS.opacity))),
     seed: text(meta, "seed", DECAL_DEFAULTS.seed),
+    text: text(meta, "text", DECAL_DEFAULTS.text),
+    color: /^#[0-9a-f]{6}$/i.test(text(meta, "color", "")) ? text(meta, "color", DECAL_DEFAULTS.color) : DECAL_DEFAULTS.color,
   };
 }
 

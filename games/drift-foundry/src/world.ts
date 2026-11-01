@@ -14,12 +14,16 @@ import {
   type WorldFeature,
 } from "@jgengine/core/world/features";
 
-import { YARD_FLOOR_MATERIAL } from "./game/assets";
+import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
+
 import { SALVAGE_FACADE_KIT } from "./game/art/facades";
 import { CORRIDOR_HALF_WIDTH, EXIT_Z, HAUL_ROAD_HALF_WIDTH } from "./game/run/constants";
 import { ZONES, type ZoneDef } from "./game/zones/catalog";
 import { ROW_SIX_TRACK, TRACKS, type Track } from "./game/tracks/catalog";
 import { YARD_GROUND } from "./game/tracks/ground";
+
+/** The racing line everywhere is dark cracked asphalt: oil-black against the packed-dirt yard. */
+const RACING_LINE_SCAN = librarySurfaceScan("asphalt/dark-cracked");
 
 /** Every yard track but Row Six, each laid in its own stretch of the yard along z. */
 const LAID_TRACKS: readonly Track[] = TRACKS.filter((track) => track !== ROW_SIX_TRACK);
@@ -61,6 +65,7 @@ function trackRoads(track: Track): RoadEnvironmentDescriptor[] {
       path: routePath(route.points),
       width: 2 * (route.id === "main" ? track.def.pavedHalfWidth : Math.min(track.def.pavedHalfWidth, track.def.branches.find((branch) => branch.id === route.id)!.halfWidth)),
       color: "#38322c",
+      materials: { road: RACING_LINE_SCAN },
       markings: route.id === "main",
       markingColor: "#e8c24a",
       sidewalk: false,
@@ -190,7 +195,7 @@ export const world: WorldFeature = environment({
       strength: 1,
       // `tint` well under 1 keeps the authored oil-black corridor and rust-dirt bands: at the default
       // the map's own pale albedo wins and every zone flattens to one grey.
-      material: { maps: YARD_FLOOR_MATERIAL, repeat: 1.8, strength: 0.72, tint: 0.3 },
+      material: librarySurfaceScan("ground/packed-dirt", { repeat: 1.8, strength: 0.72, tint: 0.3 }),
     },
   }),
   roads: [
@@ -203,6 +208,7 @@ export const world: WorldFeature = environment({
       // either side, rather than one untextured slab filling the near frame.
       width: HAUL_ROAD_HALF_WIDTH * 2,
       color: "#453a30",
+      materials: { road: RACING_LINE_SCAN },
       markings: true,
       markingColor: "#e8c24a",
       sidewalk: false,
@@ -215,6 +221,8 @@ export const world: WorldFeature = environment({
     preset: "day",
     horizonColor: "#ff9d3d",
     zenithColor: "#8a5230",
+    sun: { azimuth: 250, elevation: 14 },
+    sunColor: "#ffb066",
     sunIntensity: 2.6,
     ambientIntensity: 0.95,
     // The dome tracks the camera in xz, so this only has to clear the visible terrain (±500m along
@@ -226,7 +234,7 @@ export const world: WorldFeature = environment({
     // zenith straight into an eye-level frame and the dusk reads as night.
     gradientExponent: 1.4,
     cloudiness: 0.55,
-    fog: { color: "#7a4a24", near: 55, far: 300 },
+    fog: { color: "#c98a52", near: 60, far: 320 },
   }),
   structures: ZONES.flatMap((zone) => [nearWall(zone), farWall(zone)]),
 });

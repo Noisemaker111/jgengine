@@ -11,7 +11,7 @@ import { editorLayers, floorDressing } from "../world";
 import { FLOOR_DEBRIS, FLOOR_PROPS } from "./interiorPlan";
 import { blendTint, FLOOR_LOOK, librarySurface, type FloorLook } from "./interiorLook";
 import { stationModelReplacements } from "./stationModels";
-import { deriveRoomPresentation } from "./roomPresentation";
+import { deriveRoomPresentation, isBayWall } from "./roomPresentation";
 import { STRATA, type Stratum } from "./strata";
 
 // Rooms are short sight lines: the lighter level takes over at 10 m, and clutter only receives
@@ -27,7 +27,7 @@ export function shellShapes(stratum: Stratum, look: FloorLook = FLOOR_LOOK[strat
   const lamp = STRATA[stratum].lamp.color;
   const lampLens: AuthoredSurfaceConfig = { color: "#ffffff", emissive: lamp, emissiveIntensity: 2.6, roughness: 0.4, metalness: 0 };
   const housing = look.dressing.housing;
-  const shapes: StaticShapeInstance[] = room.surfaces.map(surface => ({
+  const shapes: StaticShapeInstance[] = room.surfaces.filter(surface => !isBayWall(surface)).map(surface => ({
     shape: "box",
     position: surface.at,
     scale: surface.size,

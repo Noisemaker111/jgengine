@@ -77,11 +77,11 @@ const dark: AuthoredSurfaceConfig = { color: "#3a3835", roughness: 0.3, metalnes
  */
 export const FLOOR_LOOK: Readonly<Record<Stratum, FloorLook>> = {
   vault: {
-    wall: librarySurface("metal/plate", "#a9b8b3"),
-    floor: librarySurface("metal/diamond-plate", "#7c8688"),
-    ceiling: librarySurface("concrete/poured", "#6c7472"),
-    structure: { paint: "metal/plate", steel: "metal/steel", floor: "metal/diamond-plate", printed: "metal/plate", brass: "metal/painted" },
-    structureBlend: 0.25, structureTint: "#8b9a96",
+    wall: librarySurface("metal/painted", "#3b4d54"),
+    floor: librarySurface("metal/diamond-plate", "#566267"),
+    ceiling: librarySurface("concrete/poured", "#3a4447"),
+    structure: { paint: "metal/plate", steel: "metal/rust", floor: "metal/diamond-plate", printed: "metal/plate", brass: "metal/painted" },
+    structureBlend: 0.45, structureTint: "#5b6a67",
     dressing: {
       trim: librarySurface("metal/steel", "#77827f"),
       pipe: librarySurface("metal/painted", "#c9b98e"),
@@ -97,11 +97,11 @@ export const FLOOR_LOOK: Readonly<Record<Stratum, FloorLook>> = {
     practical: { color: "#ffd29a", intensity: 26, distance: 8, count: 4, shadowed: 1 },
   },
   cold: {
-    wall: librarySurface("tile/ceramic", "#c9d6de"),
-    floor: librarySurface("concrete/smooth", "#8b979d"),
-    ceiling: librarySurface("metal/corrugated", "#7d8890"),
+    wall: librarySurface("tile/ceramic", "#586e76"),
+    floor: librarySurface("concrete/smooth", "#46555b"),
+    ceiling: librarySurface("metal/corrugated", "#44525a"),
     structure: { paint: "metal/plate", steel: "metal/steel", floor: "concrete/smooth", printed: "metal/plate", brass: "metal/steel" },
-    structureBlend: 0.45, structureTint: "#d5e1e8",
+    structureBlend: 0.55, structureTint: "#6d838c",
     dressing: {
       trim: librarySurface("metal/steel", "#9aa7af"),
       pipe: librarySurface("metal/steel", "#c3d0d8"),
@@ -136,7 +136,7 @@ export const FLOOR_LOOK: Readonly<Record<Stratum, FloorLook>> = {
     practical: { color: "#f0a468", intensity: 9, distance: 7, count: 3, shadowed: 1 },
   },
   choir: {
-    wall: librarySurface("concrete/rough", "#8e857e"),
+    wall: librarySurface("concrete/rough", "#5c5652"),
     floor: librarySurface("stone/terrazzo", "#6f6561"),
     ceiling: librarySurface("concrete/smooth", "#4a4442"),
     structure: { paint: "concrete/smooth", steel: "metal/chipped", floor: "stone/terrazzo", printed: "concrete/smooth", brass: "metal/chipped" },

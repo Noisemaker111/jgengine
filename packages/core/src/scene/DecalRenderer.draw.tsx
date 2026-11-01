@@ -12,8 +12,8 @@ import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneK
 /** Tilts at or above this stand the decal up on a wall instead of draping it on the ground. */
 const WALL_TILT = 45;
 
-function dataTexture(style: Parameters<typeof createDecalTexture>[0], seed: string): THREE.DataTexture {
-  const baked = createDecalTexture(style, seed);
+function dataTexture(style: Parameters<typeof createDecalTexture>[0], seed: string, paint: { text: string; color: string }): THREE.DataTexture {
+  const baked = createDecalTexture(style, seed, 128, paint);
   const texture = new THREE.DataTexture(baked.data, baked.size, baked.size, THREE.RGBAFormat, THREE.UnsignedByteType);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.magFilter = THREE.LinearFilter;
@@ -30,7 +30,8 @@ function OneDecal({ object, context }: { object: SceneKindObject; context: Scene
   const rules = resolved?.rules;
   const style = rules?.style ?? "dirt";
   const seed = rules?.seed ?? "";
-  const texture = useDisposable(() => dataTexture(style, seed), [style, seed]);
+  const text = rules?.text ?? "", color = rules?.color ?? "#e0b040";
+  const texture = useDisposable(() => dataTexture(style, seed, { text, color }), [style, seed, text, color]);
   const wall = (rules?.tilt ?? 0) >= WALL_TILT;
   const geometry = useDisposable(() => {
     if (resolved === null || rules === undefined) return new THREE.BufferGeometry();

@@ -1,0 +1,253 @@
+{
+  "schema": 1,
+  "author": "Deepward project contributors",
+  "license": "CC0-1.0",
+  "original": true,
+  "source": "scripts/build-modular-architecture.ts",
+  "units": "metres",
+  "pivot": "floor centre [0,0,0]; wall bays pivot on their interior face",
+  "facing": "+Z",
+  "up": "+Y",
+  "models": [
+    {
+      "id": "deepward/architecture/wall-bay-3p9",
+      "file": "wall-bay-3p9.glb",
+      "url": "/models/imported/deepward/architecture/wall-bay-3p9.glb",
+      "sha256": "1d2b159ef5d78e9752cc8582826e0e5325da3b56e432c00026816ff17ea9d1ac",
+      "bytes": 23316,
+      "bounds": {
+        "min": [
+          -1.5,
+          0,
+          -0.22
+        ],
+        "max": [
+          1.5,
+          3.9,
+          0.060000000000000005
+        ]
+      },
+      "dims": [
+        3,
+        3.9,
+        0.28
+      ]
+    },
+    {
+      "id": "deepward/architecture/wall-bay-4p2",
+      "file": "wall-bay-4p2.glb",
+      "url": "/models/imported/deepward/architecture/wall-bay-4p2.glb",
+      "sha256": "161c95f365b4573f30eb1c64f4e9aeb34d51b883c280ec0a958718c6f660fd58",
+      "bytes": 25812,
+      "bounds": {
+        "min": [
+          -1.5,
+          0,
+          -0.22
+        ],
+        "max": [
+          1.5,
+          4.2,
+          0.060000000000000005
+        ]
+      },
+      "dims": [
+        3,
+        4.2,
+        0.28
+      ]
+    },
+    {
+      "id": "deepward/architecture/wall-bay-4p4",
+      "file": "wall-bay-4p4.glb",
+      "url": "/models/imported/deepward/architecture/wall-bay-4p4.glb",
+      "sha256": "c91eeb84d52ce089e4a04e8ac7ad984c5bddfc4ba6ba3ac79e1170e947e36c5d",
+      "bytes": 25812,
+      "bounds": {
+        "min": [
+          -1.5,
+          0,
+          -0.22
+        ],
+        "max": [
+          1.5,
+          4.4,
+          0.060000000000000005
+        ]
+      },
+      "dims": [
+        3,
+        4.4,
+        0.28
+      ]
+    },
+    {
+      "id": "deepward/architecture/wall-bay-6",
+      "file": "wall-bay-6.glb",
+      "url": "/models/imported/deepward/architecture/wall-bay-6.glb",
+      "sha256": "4a3cf6eb0597af29098169f5416dbd22600d15d3831697f614104143b75197c0",
+      "bytes": 33248,
+      "bounds": {
+        "min": [
+          -1.5,
+          0,
+          -0.22
+        ],
+        "max": [
+          1.5,
+          6,
+          0.060000000000000005
+        ]
+      },
+      "dims": [
+        3,
+        6,
+        0.28
+      ]
+    },
+    {
+      "id": "deepward/architecture/rib-3p9",
+      "file": "rib-3p9.glb",
+      "url": "/models/imported/deepward/architecture/rib-3p9.glb",
+      "sha256": "9109af5f8e87ace76b5b96fb273be5e95318290873d2ba92a150f584f9039c56",
+      "bytes": 6716,
+      "bounds": {
+        "min": [
+          -0.15,
+          0,
+          -0.14
+        ],
+        "max": [
+          0.15,
+          3.9,
+          0.14
+        ]
+      },
+      "dims": [
+        0.3,
+        3.9,
+        0.28
+      ]
+    },
+    {
+      "id": "deepward/architecture/column-3p9",
+      "file": "column-3p9.glb",
+      "url": "/models/imported/deepward/architecture/column-3p9.glb",
+      "sha256": "88f859dc0d934f5b15a5e6db7801a107a8310cf67a534b90233ddd075ce5c409",
+      "bytes": 13940,
+      "bounds": {
+        "min": [
+          -0.37,
+          0,
+          -0.37
+        ],
+        "max": [
+          0.37,
+          3.9,
+          0.37
+        ]
+      },
+      "dims": [
+        0.74,
+        3.9,
+        0.74
+      ]
+    },
+    {
+      "id": "deepward/architecture/column-6",
+      "file": "column-6.glb",
+      "url": "/models/imported/deepward/architecture/column-6.glb",
+      "sha256": "4b80f5dae20803e2968a3c93164b9cf75e6b13729b5e127379e9134502496dc5",
+      "bytes": 13896,
+      "bounds": {
+        "min": [
+          -0.37,
+          0,
+          -0.37
+        ],
+        "max": [
+          0.37,
+          6,
+          0.37
+        ]
+      },
+      "dims": [
+        0.74,
+        6,
+        0.74
+      ]
+    },
+    {
+      "id": "deepward/architecture/gantry-span",
+      "file": "gantry-span.glb",
+      "url": "/models/imported/deepward/architecture/gantry-span.glb",
+      "sha256": "b42dfded82541bcbb94424facbf8289dc6ea00be002044cc92fe878ee00de24d",
+      "bytes": 21796,
+      "bounds": {
+        "min": [
+          -2.775,
+          0,
+          -0.15
+        ],
+        "max": [
+          2.75,
+          0.5,
+          0.15
+        ]
+      },
+      "dims": [
+        5.525,
+        0.5,
+        0.3
+      ]
+    },
+    {
+      "id": "deepward/architecture/pipe-run",
+      "file": "pipe-run.glb",
+      "url": "/models/imported/deepward/architecture/pipe-run.glb",
+      "sha256": "ac17cfe879c8ba56da90b4bc8ef8590632c4df225d2c04b9bec928e5fff855ca",
+      "bytes": 19844,
+      "bounds": {
+        "min": [
+          -0.264,
+          -0.2573809688160014,
+          -2
+        ],
+        "max": [
+          0.264,
+          0.44000000000000006,
+          2
+        ]
+      },
+      "dims": [
+        0.528,
+        0.6973809688160015,
+        4
+      ]
+    },
+    {
+      "id": "deepward/architecture/pipe-stand",
+      "file": "pipe-stand.glb",
+      "url": "/models/imported/deepward/architecture/pipe-stand.glb",
+      "sha256": "d226cdf0daec2d57fc7bb2e9c0a5fb0e9f863978092b32dd97709bdeeac46224",
+      "bytes": 19128,
+      "bounds": {
+        "min": [
+          -0.264,
+          0,
+          -0.2573809688160014
+        ],
+        "max": [
+          0.264,
+          4,
+          0.2573809688160014
+        ]
+      },
+      "dims": [
+        0.528,
+        4,
+        0.5147619376320028
+      ]
+    }
+  ]
+}

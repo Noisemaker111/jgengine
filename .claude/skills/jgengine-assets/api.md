@@ -168,18 +168,18 @@
 ## @jgengine/assets/catalogs/fontLibrary
 
 - `FONT_DIR` (const): const FONT_DIR: "fonts" — Where a game serves fonts from, relative to `public/`.
-- `FONT_LIBRARY` (const): const FONT_LIBRARY: readonly [{ readonly id: "cinzel"; readonly family: "Cinzel"; readonly role: "display"; readonly moods: readonly ["fantasy"]; readonly author: "Natanael Gama"; readonly package: "cinzel"; }, { readonly id: "crimson-pro"; readonly family: "Crimson Pro"; readonly role: "body"; read… — The 15 shipped font families, each a display or a body face.
+- `FONT_LIBRARY` (const): const FONT_LIBRARY: readonly [{ readonly id: "cinzel"; readonly family: "Cinzel"; readonly role: "display"; readonly moods: readonly ["fantasy"]; readonly author: "Natanael Gama"; readonly package: "cinzel"; }, { readonly id: "crimson-pro"; readonly family: "Crimson Pro"; readonly role: "body"; read… — The 17 shipped font families, each a display or a body face.
 - `FONT_LICENSE` (const): const FONT_LICENSE: "OFL-1.1" — Licence of every shipped family.
 - `FONT_PACKAGE_VERSION` (const): const FONT_PACKAGE_VERSION: "5.3.0" — The Fontsource release every file is taken from.
 - `FontEntry` (interface): interface FontEntry — One curated OFL family, shipped as its Latin 400 woff2 file.
 - `FontId` (type): type FontId = (typeof FONT_LIBRARY)[number]["id"] — The id of one family in {@link FONT_LIBRARY}.
-- `FontRole` (type): type FontRole = "display" | "body" — What a family is for: titles and numbers, or reading text.
+- `FontRole` (type): type FontRole = "display" | "body" | "both" — What a family is for: titles and numbers, reading text, or either.
 - `libraryFontPairing` (function): function libraryFontPairing(display: FontId, body: FontId, numeric?: FontId, baseUrl?: string): GameFontPairing — A display and a body family by id as the pairing a game's HUD kit and menus take: `const FONTS = libraryFontPairing("oswald", "barlow"); useGameFonts(FONTS); gameFontStacks(FONTS)`. Throws on an unknown id or a family used in the wrong role.
 
 ## @jgengine/assets/catalogs/hdriLibrary
 
 - `HDRI_DIR` (const): const HDRI_DIR: "hdri/library" — Where a game serves the HDRI folder from, relative to `public/`.
-- `HDRI_LIBRARY` (const): const HDRI_LIBRARY: readonly [{ readonly id: "clear-noon"; readonly title: "Noon Grass"; readonly polyhaven: "noon_grass"; readonly author: "Greg Zaal"; readonly look: "Clear blue sky, high sun, open grass."; }, { readonly id: "partly-cloudy"; readonly title: "Kloppenheim 06 (Pure Sky)"; readonly po… — The 11 shipped HDRIs, each one Poly Haven asset under a plain id.
+- `HDRI_LIBRARY` (const): const HDRI_LIBRARY: readonly [{ readonly id: "clear-noon"; readonly title: "Noon Grass"; readonly polyhaven: "noon_grass"; readonly author: "Greg Zaal"; readonly look: "Clear blue sky, high sun, open grass."; }, { readonly id: "partly-cloudy"; readonly title: "Kloppenheim 06 (Pure Sky)"; readonly po… — The 12 shipped HDRIs, each one Poly Haven asset under a plain id.
 - `HDRI_LICENSE` (const): const HDRI_LICENSE: "CC0-1.0" — Licence of every shipped HDRI (Poly Haven publishes all of them as CC0).
 - `HDRI_RESOLUTION` (const): const HDRI_RESOLUTION: "2k" — Resolution every shipped HDRI is pulled at.
 - `HdriEntry` (interface): interface HdriEntry — One curated Poly Haven HDRI.
@@ -193,7 +193,7 @@
 
 ## @jgengine/assets/catalogs/lutGrades
 
-- `LUT_GRADES` (const): const LUT_GRADES: readonly [{ readonly id: "warm-filmic"; readonly title: "Warm filmic"; readonly look: "Gentle S-curve, amber highlights, soft cool shadows."; readonly recipe: { readonly contrast: 1.08; readonly saturation: 1.04; readonly gain: readonly [1.04, 1, 0.94]; readonly shadowTint: readonl… — The 17 shipped colour grades, each a recipe baked into a 32³ cube.
+- `LUT_GRADES` (const): const LUT_GRADES: readonly [{ readonly id: "warm-filmic"; readonly title: "Warm filmic"; readonly look: "Gentle S-curve, amber highlights, soft cool shadows."; readonly recipe: { readonly contrast: 1.08; readonly saturation: 1.04; readonly gain: readonly [1.04, 1, 0.94]; readonly shadowTint: readonl… — The 18 shipped colour grades, each a recipe baked into a 32³ cube.
 - `LUT_GRADE_DIR` (const): const LUT_GRADE_DIR: "lut" — Where a game serves the grade files from, relative to `public/`.
 - `LUT_GRADE_LICENSE` (const): const LUT_GRADE_LICENSE: "CC0-1.0" — Licence of every grade: authored in this repository by `bakeLutGrade`.
 - `LUT_GRADE_SIZE` (const): const LUT_GRADE_SIZE: 32 — Edge length of every shipped cube.
