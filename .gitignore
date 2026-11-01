@@ -18,6 +18,7 @@ shots/
 !apps/dev/public/models/quaternius-medieval-village/
 !apps/dev/public/models/quaternius-modular-scifi/
 !apps/dev/public/models/quaternius-stylized-nature/
+!apps/dev/public/models/quaternius-textured-cute-monster-pack/
 **/.jgengine-assets-tmp/
 *.tsbuildinfo
 
