@@ -1,5 +1,6 @@
 import type { Moodle, MoodleSeverity } from "./moodle";
 import { type ThresholdBoundary } from "../threshold/thresholds";
+import { applyStatRate, type StatRateModifier } from "../progression/statGraph";
 import { changeStatPool, createStatPool } from "../stats/statPool";
 
 /** A Ladder step on the meter: `id` is the moodle raised while the meter is on the wrong side of `at`. */
@@ -42,11 +43,11 @@ export interface DecayMeterState {
 export type DecayMeterValues = Record<string, number>;
 
 /**
- * Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's
- * metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only).
- * `1` / omitted leaves the base rates unscaled.
+ * Rate scaling for {@link decayMeters}: one multiplier for every meter (a member's metabolism, a
+ * game-mode harshness dial), a per-meter record (cold biome → warmth only), or named stat-op
+ * contributions that stack. `1` / omitted leaves the base rates unscaled.
  */
-export type DecayModifier = number | Record<string, number>;
+export type DecayModifier = StatRateModifier;
 
 function meterMin(def: DecayMeterConfig): number {
   return def.min ?? 0;
@@ -64,12 +65,6 @@ function initialValue(def: DecayMeterConfig): number {
 function valueOf(values: DecayMeterValues, def: DecayMeterConfig): number {
   const current = values[def.id];
   return current === undefined ? initialValue(def) : current;
-}
-
-function modifierFor(modifier: DecayModifier | undefined, id: string): number {
-  if (modifier === undefined) return 1;
-  if (typeof modifier === "number") return modifier;
-  return modifier[id] ?? 1;
 }
 
 function findDef(defs: readonly DecayMeterConfig[], id: string): DecayMeterConfig {
@@ -122,7 +117,7 @@ export function decayMeters(
   if (dt <= 0) return values;
   const out: DecayMeterValues = {};
   for (const def of defs) {
-    out[def.id] = bounded(def, valueOf(values, def), -def.rate * modifierFor(modifier, def.id) * dt);
+    out[def.id] = bounded(def, valueOf(values, def), -applyStatRate(def.rate, modifier, def.id) * dt);
   }
   return out;
 }

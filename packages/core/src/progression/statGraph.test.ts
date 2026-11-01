@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   applyStatOp,
+  applyStatRate,
   boundStatValue,
   createStatGraph,
   foldStatContributions,
@@ -309,5 +310,20 @@ describe("stat stack over one value", () => {
     expect(boundStatValue(8.1, { min: 0, max: 10, round: "floor" })).toBe(8);
     expect(boundStatValue(-3, { min: 0 })).toBe(0);
     expect(boundStatValue(2.5, { round: "round" })).toBe(3);
+  });
+});
+
+describe("applyStatRate", () => {
+  test("a number, a per-id record and a named stack scale a rate; a missing id is unscaled", () => {
+    expect(applyStatRate(2, undefined, "food")).toBe(2);
+    expect(applyStatRate(2, 3, "food")).toBe(6);
+    expect(applyStatRate(2, { food: 0.5 }, "food")).toBe(1);
+    expect(applyStatRate(2, { food: 0.5 }, "water")).toBe(2);
+    const stack = [
+      { source: "cold", op: "mul", value: 2 },
+      { source: "pack", op: "add", value: 1 },
+    ] as const;
+    expect(applyStatRate(2, stack, "food")).toBe(5);
+    expect(applyStatRate(2, { food: stack }, "food")).toBe(5);
   });
 });
