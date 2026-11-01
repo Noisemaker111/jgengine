@@ -11,6 +11,7 @@ import { content } from "./game/content";
 import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings";
 import { entityModels, flockModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
+import { ErrorScreen } from "./game/ui/ErrorScreen";
 import { driftTheme } from "./game/ui/theme";
 import { foundryKit } from "./game/ui/menu/foundryKit";
 import { lifecycle, onInit, onNewPlayer, onTick } from "./loop";
@@ -50,6 +51,8 @@ export const game = defineGame({
   lifecycle,
   GameUI,
   hudTheme: driftTheme,
+  // Auto quality holds 60 fps; the reporter and telemetry sink stay unset until the host wires them.
+  health: { autoQuality: { targetFrameMs: 1000 / 60 }, errorScreen: ErrorScreen },
   // The pit wall: stencilled steel menu plates and the pit sheet on a clipboard for every pane.
   uiKit: foundryKit,
   chrome: {
