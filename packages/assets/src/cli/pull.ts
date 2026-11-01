@@ -34,6 +34,7 @@ import { STARTER_PEOPLE, STARTER_SOURCE_PACKS } from "../packs/starter";
 import { materialSources, sourceById, spriteSources } from "../sources";
 import { reindexSprites } from "../spriteIndexGen";
 import { verifyManifest } from "../verify";
+import { parseLookTarget, pullCuratedLook } from "../catalogs/curatedPull";
 import { cmdLibrary } from "../library/libraryCli";
 import { assetLibrary } from "../library/libraryIndex";
 import { pullLibraryEntry } from "../library/libraryPull";
@@ -262,6 +263,16 @@ export async function cmdPull(argv: string[]): Promise<void> {
       }
     }
     console.log(`model library: ${entries.length} model(s), ${(total / 1e6).toFixed(2)} MB written`);
+    return;
+  }
+  // `look:<hdri|lut|font>/<id>` pulls one curated HDRI, colour grade or font.
+  const look = parseLookTarget(sourceId);
+  if (look !== undefined) {
+    const dirFlag = flag(argv, "dir");
+    const outRoot = dirFlag !== undefined ? resolve(dirFlag) : resolveDefaultOutputRoot(here);
+    const mirrorBase = flag(argv, "mirror") ?? process.env["JGENGINE_ASSETS_MIRROR"];
+    const written = await pullCuratedLook(look.kind, look.id, { outRoot, fetchImpl: cliFetch, ...(mirrorBase === undefined ? {} : { mirrorBase }), log: (line) => console.log(line) });
+    console.log(`${sourceId} -> ${written}`);
     return;
   }
   // `<source>:<id>` pulls one shared-library entry (`polyhaven:ArmChair_01`, `gameicons:lorc/broadsword`).

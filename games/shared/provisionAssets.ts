@@ -19,6 +19,8 @@ export interface AssetCatalogs {
   aliases?: readonly { key: string; target: string }[];
   /** Shared-library keys (`gameicons:lorc/wheat`, `polyhaven:ArmChair_01`): what to pull and where it is served. */
   libraryPull?: (key: string) => LibraryPullJob | undefined;
+  /** Curated HDRIs, colour grades and fonts a game's source names by id (`hdriEnvironment("golden-hour")`). */
+  lookJobs?: (text: string) => readonly { target: string; dir: string }[];
 }
 
 /** A pull for one shared-library key, with the URL the game loads once it is served. */
@@ -58,6 +60,9 @@ export function missingPulls(text: string, publicDir: string, catalogs: AssetCat
     if (entry.origin.provider === "generated" || !text.includes(`"${entry.name}"`)) continue;
     const dir = join("models", "library", ...entry.name.split("/"));
     if (!dirHasEntries(join(publicDir, dir))) jobs.push({ target: `model:${entry.name}`, dir });
+  }
+  for (const look of catalogs.lookJobs?.(text) ?? []) {
+    if (!dirHasEntries(join(publicDir, look.dir))) jobs.push({ target: look.target, dir: look.dir });
   }
   if (catalogs.libraryPull !== undefined) {
     for (const match of text.matchAll(LIBRARY_KEY)) {
@@ -114,7 +119,8 @@ export async function loadCatalogs(): Promise<AssetCatalogs> {
     const path = served.libraryServedPath(entry);
     return { target: entry.pack ?? entry.key, dir: join(...path.dir.split("/")), url: path.url };
   };
-  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [], libraryPull };
+  const curated: typeof import("../../packages/assets/src/catalogs/curatedPull") = await import(join(assetsDir, "src/catalogs/curatedPull.ts"));
+  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [], libraryPull, lookJobs: curated.curatedJobsIn };
 }
 
 function runPull(cwd: string, target: string, outRoot: string): Promise<boolean> {

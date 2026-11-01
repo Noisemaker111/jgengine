@@ -109,3 +109,19 @@ test("a failed LUT keeps the normal grade pass usable without an unhandled rejec
   expect(pass.uniforms.uLutSize.value).toBe(0);
   pass.dispose();
 });
+
+test("a .cube LUT url is fetched, parsed and bound as the grade LUT", async () => {
+  const entries = Array.from({ length: 8 }, (_, index) => `${index % 2} ${Math.floor(index / 2) % 2} ${Math.floor(index / 4)}`);
+  const text = `LUT_3D_SIZE 2\n${entries.join("\n")}\n`;
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = Object.assign(async () => new Response(text), { preconnect: () => undefined });
+  try {
+    const pass = createGradePass({ lut: { url: "/lut/test.cube" } });
+    await new Promise((done) => setTimeout(done, 0)); // wait-ok: lets the fetch microtasks settle
+    expect(pass.uniforms.uLutSize.value).toBe(2);
+    expect(pass.uniforms.uLut.value).not.toBeNull();
+    pass.dispose();
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

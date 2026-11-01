@@ -560,6 +560,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
 
+## cube-lut-parse — read a .cube colour-grade file into a LUT cube the grade stage applies
+
+- `parseCubeLut` (function) · `import { parseCubeLut } from "@jgengine/core/postfx/cubeLut"`
+
 ## curve-running — fastest speed a human runner holds on a flat curve from leg force and friction
 
 - `maxCurveSpeed` (function) · `import { maxCurveSpeed } from "@jgengine/core/movement/reference/curveRunning"`

@@ -68,3 +68,6 @@ apps/web/.wrangler/
 **/public/hdri/
 **/public/models/sketchfab/
 **/public/materials/polyhaven-*/
+
+# Colour grades are baked by games:provision from packages/assets (lutGrades.ts)
+**/public/lut/

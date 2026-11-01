@@ -4391,6 +4391,11 @@
 
 - `MAX_HAZE_LAMPS` (const): const MAX_HAZE_LAMPS: 8 — Point and spot lights the haze glows around at once, nearest the camera first.
 
+## @jgengine/core/postfx/cubeLut
+
+- `formatCubeLut` (function): function formatCubeLut(cube: LutCube, title = "JGengine grade"): string — Writes a {@link LutCube} as `.cube` text (the inverse of {@link parseCubeLut}).
+- `parseCubeLut` (function): function parseCubeLut(text: string): LutCube — Parses an Adobe/Resolve `.cube` 3D LUT (`LUT_3D_SIZE n`, then `n³` lines of `r g b` in 0..1, red fastest) into a {@link LutCube}. Throws on a 1D table, a wrong entry count or an out-of-range size.
+
 ## @jgengine/core/postfx/gradeShader.draw
 
 - `createGradePass` (function): function createGradePass(config: GradeConfig = {}): ShaderPass — Build the display-space colour-grade pass and load its optional LUT. Dispose the pass to release its LUT; advance `uniforms.uTime.value` each frame to animate grain.
