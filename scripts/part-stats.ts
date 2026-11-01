@@ -150,9 +150,78 @@ export function readSources(root: string, paths: readonly string[]): Source[] {
   return paths.filter((path) => layerOf(path) !== null).map((path) => ({ path, text: readFileSync(join(root, path), "utf8") }));
 }
 
+/** A private copy of a part that is still written by hand, with where it is. */
+export interface PrivateCopy {
+  pattern: string;
+  file: string;
+  line: number;
+  text: string;
+}
+
+const LIST_NAME = /\bname\??\s*:\s*string\b/;
+const AT_NUMBER = /\b(?:at|atSeconds|threshold)\??\s*:\s*number\b/;
+const WEIGHT_SUBTRACT = /-=[^;\n]*weight/i;
+const COUNTDOWN = /[\w.$\][]*(?:cooldown|timer)[\w.$\][]*\s*-=\s*dt\b/i;
+const LOCAL_CLAMP_LERP = /\b(?:function\s+(?:clamp|lerp)\b|const\s+(?:clamp|lerp)\s*=\s*\()/;
+const LIST_WINDOW = 4;
+
+/** The part each private-copy pattern replaces, named as the worklist heading. */
+export const PATTERN_NAMES = [
+  "ordered threshold list (use threshold/thresholds)",
+  "weight-subtract loop (use random/pick)",
+  "countdown (use time/cooldown or time/refillSlots)",
+  "local clamp or lerp (use math/scalar)",
+] as const;
+
+/** A part's own file is the part, not a private copy of it. */
+function isPartHome(path: string): boolean {
+  return path.startsWith(CORE_SRC) && PART_HOMES.includes(path.slice(CORE_SRC.length).replace(/\.tsx?$/, ""));
+}
+
+function importsAny(source: Source, homes: readonly string[]): boolean {
+  for (const home of importedHomes(source)) if (homes.includes(home)) return true;
+  return false;
+}
+
+/** Each private copy of a part in core and game source, one row per matching line. */
+export function privateCopies(sources: readonly Source[]): PrivateCopy[] {
+  const found: PrivateCopy[] = [];
+  for (const source of sources) {
+    if (layerOf(source.path) === null || isPartHome(source.path)) continue;
+    const lines = source.text.split("\n");
+    const thresholdOwned = importsAny(source, ["threshold/thresholds"]);
+    const countdownOwned = importsAny(source, ["time/cooldown", "time/refillSlots"]);
+    const clampHome = source.path.startsWith(`${CORE_SRC}math/`);
+    lines.forEach((text, index) => {
+      const row = { file: source.path, line: index + 1, text: text.trim() };
+      const window = lines.slice(Math.max(0, index - LIST_WINDOW), index + LIST_WINDOW + 1).join("\n");
+      if (!thresholdOwned && AT_NUMBER.test(text) && LIST_NAME.test(window)) found.push({ ...row, pattern: PATTERN_NAMES[0] });
+      if (WEIGHT_SUBTRACT.test(text)) found.push({ ...row, pattern: PATTERN_NAMES[1] });
+      if (!countdownOwned && COUNTDOWN.test(text)) found.push({ ...row, pattern: PATTERN_NAMES[2] });
+      if (!clampHome && LOCAL_CLAMP_LERP.test(text)) found.push({ ...row, pattern: PATTERN_NAMES[3] });
+    });
+  }
+  return found;
+}
+
+export function renderWorklist(copies: readonly PrivateCopy[]): string {
+  const lines: string[] = [];
+  for (const name of PATTERN_NAMES) {
+    const rows = copies.filter((copy) => copy.pattern === name);
+    lines.push(`${name}: ${rows.length}`);
+    for (const row of rows) lines.push(`  ${row.file}:${row.line}  ${row.text}`);
+    lines.push("");
+  }
+  return lines.join("\n").trimEnd();
+}
+
 export function main(argv: readonly string[], root = repoRoot()): number {
   if (printHelpIfAsked("part-stats", USAGE, argv)) return 0;
   const sources = readSources(root, trackedSourcePaths(root));
+  if (argv.includes("--worklist")) {
+    console.log(renderWorklist(privateCopies(sources)));
+    return 0;
+  }
   console.log(renderTable(countImporters(sources), countCreates(sources), coreFolders(sources).length));
   return 0;
 }
