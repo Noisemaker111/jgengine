@@ -4146,7 +4146,7 @@
       "module": "@jgengine/assets/catalogs/fontLibrary",
       "gameFacing": false,
       "probe": null,
-      "intent": "pick a display and a body font from 15 shipped OFL families by id"
+      "intent": "pick a display and a body font from 17 shipped OFL families by id"
     },
     {
       "id": "foot-ground-contact",
@@ -4690,7 +4690,7 @@
       "module": "@jgengine/assets/catalogs/hdriLibrary",
       "gameFacing": false,
       "probe": null,
-      "intent": "pick one of 11 shipped CC0 HDRIs (noon, golden hour, overcast, dusk, night city, industrial interior, forest, snow) by id"
+      "intent": "pick one of 12 shipped CC0 HDRIs (noon, golden hour, overcast, dusk, night city, industrial interior, forest, snow) by id"
     },
     {
       "id": "headless-flow",
@@ -6645,7 +6645,7 @@
       "module": "@jgengine/assets/catalogs/lutGrades",
       "gameFacing": false,
       "probe": null,
-      "intent": "pick one of 17 shipped colour grades by id for a game's post-processing"
+      "intent": "pick one of 18 shipped colour grades by id for a game's post-processing"
     },
     {
       "id": "magazine",
