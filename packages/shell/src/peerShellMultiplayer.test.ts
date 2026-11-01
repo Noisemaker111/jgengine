@@ -196,7 +196,8 @@ describe("playable peer worlds through injected pipes", () => {
       await until(() => puzzle(a)?.stage === 1 && puzzle(b)?.stage === 1);
       expect(puzzle(a)).toEqual(puzzle(b));
       transport.tick();
-      await until(() => puzzle(a).ticks === 1 && puzzle(b).ticks === 1);
+      // One 20 Hz host tick is three steps of the default 60 Hz simulation.
+      await until(() => puzzle(a).ticks === 3 && puzzle(b).ticks === 3);
       third = await resolvePeerShellMultiplayer({ gameId: "paired", role: "join", userId: "third", playable: game, signaling: transport.signaling(), peers: transport.peers });
       expect(await third.backend.transport.joinServer({ gameId: "paired" })).toEqual({ ok: false, reason: "full" });
       await guest.backend.transport.leaveServer({ serverId: joinedB.serverId });
@@ -217,7 +218,7 @@ describe("playable peer worlds through injected pipes", () => {
     expect(transport.canceled()).toBe(1);
     expect(transport.closedSignals()).toBe(4);
     transport.tick();
-    expect(puzzle(a).ticks).toBe(1);
+    expect(puzzle(a).ticks).toBe(3);
   });
 
   test("host close awaits persistence, and a restarted host restores progression", async () => {

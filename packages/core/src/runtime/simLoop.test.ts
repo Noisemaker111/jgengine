@@ -3,8 +3,16 @@ import { describe, expect, test } from "bun:test";
 import { createSimLoop } from "./simLoop";
 
 describe("createSimLoop", () => {
-  test("variable mode steps once per advance with the frame dt", () => {
+  test("the default is a fixed 60 Hz step; variable is an explicit choice", () => {
     const loop = createSimLoop();
+    expect(loop.isFixed()).toBe(true);
+    expect(loop.stepSeconds()).toBeCloseTo(1 / 60, 12);
+    loop.retune({ hz: 30 });
+    expect(loop.stepSeconds()).toBeCloseTo(1 / 30, 12);
+  });
+
+  test("variable mode steps once per advance with the frame dt", () => {
+    const loop = createSimLoop({ hz: "variable" });
     const seen: number[] = [];
     const result = loop.advance(0.033, (dt) => seen.push(dt));
     expect(seen).toEqual([0.033]);

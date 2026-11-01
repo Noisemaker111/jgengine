@@ -14,6 +14,13 @@ import { closeDay } from "./sim/economy";
 import { ratingTarget } from "./sim/rating";
 import { GATE_PLAZA, resetPark } from "./parkReset";
 
+/** Park days are fast-forwarded a second per step, not at the 60 Hz the game plays at. */
+function parkRunner() {
+  const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+  runner.ctx.sim.retune({ hz: "variable" });
+  return runner;
+}
+
 const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 beforeEach(() => {
   const records = new Map<string, string>();
@@ -30,7 +37,7 @@ afterEach(() => {
 
 /** A started park on the composed loop (the world system installed): the authored starter park, its gates open mid-morning. */
 function openPark() {
-  const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+  const runner = parkRunner();
   resetPark(runner.ctx, { layout: "starter", guests: 0 });
   runner.ui.invoke("park.start");
   runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });
@@ -53,7 +60,7 @@ describe("a new park", () => {
   }, 30_000);
 
   test("is an empty lot with a shut gate: no guests until a connected ride runs and the player opens it", () => {
-    const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+    const runner = parkRunner();
     runner.ui.invoke("park.start");
     runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });
     const w = park.of(runner.ctx);
@@ -175,7 +182,7 @@ describe("Brightway Park as one declaration", () => {
     expect(reliability(carousel, 0)).toBeGreaterThan(reliability(carousel, 20));
     expect(reliability(carousel, 0)).toBeLessThan(100);
     // The empty lot: no guests dropping litter and no handyman sweeping it, so only the bins move it.
-    const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+    const runner = parkRunner();
     resetPark(runner.ctx);
     runner.ui.invoke("park.start");
     runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });

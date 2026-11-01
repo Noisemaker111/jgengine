@@ -15,6 +15,7 @@ import type {
 import { snapPixelPerfectPosition } from "@jgengine/core/game/pixelPerfect";
 import { clamp } from "@jgengine/core/math/scalar";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { usePlayer } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 
@@ -96,13 +97,15 @@ interface FollowSample {
   yaw: number;
 }
 
+const followPose: RenderPose = [0, 0, 0, 0];
+
 function readFollow(ctx: GameContext, followId: string | null): FollowSample | null {
   if (followId === null) return null;
-  const entity = ctx.scene.entity.get(followId);
-  if (entity === null) return null;
+  // The drawn pose, not the live one: under a fixed step the camera then moves with the interpolated body.
+  if (!ctx.sim.renderPose(followId, followPose)) return null;
   return {
-    pos: { x: entity.position[0], y: entity.position[1], z: entity.position[2] },
-    yaw: entity.rotationY,
+    pos: { x: followPose[0], y: followPose[1], z: followPose[2] },
+    yaw: followPose[3],
   };
 }
 
@@ -558,7 +561,7 @@ export function ChaseRig(props: RigProps) {
     }
 
     const entity = followId === null ? null : ctx.scene.entity.get(followId);
-    const follow: Xyz = entity === null ? { x: 0, y: 0, z: 0 } : { x: entity.position[0], y: entity.position[1], z: entity.position[2] };
+    const follow: Xyz = followId === null || !ctx.sim.renderPose(followId, followPose) ? { x: 0, y: 0, z: 0 } : { x: followPose[0], y: followPose[1], z: followPose[2] };
     if (!inputSeededRef.current && merged?.headingSource === "input" && view === "chase" && (entity !== null || props.config?.orbit?.initialYaw !== undefined)) {
       props.yawRef.current = resolveChaseHeading(merged, entity?.rotationY ?? 0, undefined, props.config?.orbit?.initialYaw);
       inputSeededRef.current = true;

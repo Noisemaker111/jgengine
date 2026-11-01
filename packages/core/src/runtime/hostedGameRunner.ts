@@ -199,6 +199,24 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
   syncLifecyclePhase(ctx, definition.lifecycle);
   if (restore !== undefined) ctx.restore(restore);
 
+  /** One authoritative simulation step: recorded inputs, movement, the game's tick, behaviors and stages. */
+  function hostStep(stepDt: number, tick: number, gameDt: number): void {
+    for (const [userId, recorder] of inputs) {
+      const frame = recorder.frameAt(tick);
+      if (frame !== null) ctx.game.players?.setInput(userId, frame);
+    }
+    ctx.sim.runStages("beforeMovement", stepDt);
+    for (const userId of members.keys()) {
+      const frame = inputs.get(userId)?.frameAt(tick) ?? null;
+      if (frame !== null && gameDt > 0) serverStep(ctx, userId, frame, gameDt, movementTuning);
+    }
+    ctx.sim.runStages("afterMovement", stepDt);
+    loop.onTick?.(ctx, gameDt);
+    advanceBehaviors(ctx, gameDt);
+    ctx.sim.runStages("afterTick", stepDt);
+    for (const recorder of inputs.values()) compactRecorder(recorder, tick);
+  }
+
   return {
     join(userId, isNew) {
       expireDeparted();
@@ -276,22 +294,10 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     tick(dt) {
       expireDeparted();
       hostTick += 1;
-      ctx.sim.advance(dt, (stepDt, tick, gameDt) => {
-        for (const [userId, recorder] of inputs) {
-          const frame = recorder.frameAt(tick);
-          if (frame !== null) ctx.game.players?.setInput(userId, frame);
-        }
-        ctx.sim.runStages("beforeMovement", stepDt);
-        for (const userId of members.keys()) {
-          const frame = inputs.get(userId)?.frameAt(tick) ?? null;
-          if (frame !== null && gameDt > 0) serverStep(ctx, userId, frame, gameDt, movementTuning);
-        }
-        ctx.sim.runStages("afterMovement", stepDt);
-        loop.onTick?.(ctx, gameDt);
-        advanceBehaviors(ctx, gameDt);
-        ctx.sim.runStages("afterTick", stepDt);
-        for (const recorder of inputs.values()) compactRecorder(recorder, tick);
-      });
+      // A host tick is authoritative time: slice it under the fixed loop's catch-up cap so none is dropped.
+      const stepSeconds = ctx.sim.loop.stepSeconds();
+      const slice = stepSeconds === null ? dt : stepSeconds * ctx.sim.loop.config().maxCatchUpSteps;
+      for (let left = dt; left > 0; left -= slice) ctx.sim.advance(Math.min(left, slice), hostStep);
       syncLifecyclePhase(ctx, definition.lifecycle);
       return replicator.commit();
     },

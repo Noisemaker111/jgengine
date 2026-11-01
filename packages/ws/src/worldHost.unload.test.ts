@@ -99,8 +99,9 @@ for (const kind of ["profiles-async", "actors-sync"] as const) {
       const restored = data.sessions.at(-1)!;
       expect(restored).not.toBe(original);
       expect(restored.runner().context().game.store.get("progress:alice")).toBe(7);
-      if (kind === "profiles-async") expect(restored.runner().context().game.store.get("elapsed")).toBe(2);
-      else expect(restored.runner().context().scene.entity.get("marker")!.position).toEqual([2, 0, 0]);
+      // Two seconds of 60 Hz steps sum to 2 within float rounding.
+      if (kind === "profiles-async") expect(restored.runner().context().game.store.get("elapsed")).toBeCloseTo(2, 9);
+      else expect(restored.runner().context().scene.entity.get("marker")!.position[0]).toBeCloseTo(2, 9);
       expect(restored.revision()).toBeGreaterThan(revision);
       expect(await data.host.getServerView({ userId: "alice", serverId: "world-0" })).toMatchObject({ serverId: "world-0", gameId: "game" });
       expect(await data.host.getServerView({ userId: "outsider", serverId: "world-0" })).toBeNull();

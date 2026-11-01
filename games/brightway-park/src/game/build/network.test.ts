@@ -11,6 +11,13 @@ import { cellCentre, levelAt, LAND_COST } from "./terrain";
 import { clearUndo } from "./undo";
 import { resetPark } from "../parkReset";
 
+/** Park days are fast-forwarded a second per step, not at the 60 Hz the game plays at. */
+function parkRunner() {
+  const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+  runner.ctx.sim.retune({ hz: "variable" });
+  return runner;
+}
+
 const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 beforeEach(() => {
   const records = new Map<string, string>();
@@ -28,7 +35,7 @@ afterEach(() => {
 
 /** The authored starter park, running mid-morning. */
 function openPark() {
-  const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+  const runner = parkRunner();
   resetPark(runner.ctx, { layout: "starter", guests: 0 });
   runner.ui.invoke("park.start");
   runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });

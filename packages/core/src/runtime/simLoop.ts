@@ -2,9 +2,9 @@
 export interface SimulationConfig {
   /**
    * Fixed simulation rate in steps per second, or `"variable"` to run one step per frame with the frame's
-   * clamped dt. Default `"variable"` (the historical behavior). A fixed rate makes every step's dt identical,
-   * which is what determinism, replay, rollback, and a stable physics solver need; renderers read
-   * `ctx.sim.renderPose` to interpolate between steps.
+   * clamped dt. Default {@link DEFAULT_SIM_HZ}. A fixed rate makes every step's dt identical, which is what
+   * determinism, replay, rollback, and a stable physics solver need; the shell draws entities and points its
+   * follow cameras at `ctx.sim.renderPose`, interpolated between steps. `"variable"` is an explicit choice.
    */
   hz?: number | "variable";
   /** Fixed steps run per advance before the loop drops the remaining time instead of spiralling. Default 5. */
@@ -46,13 +46,15 @@ export interface SimLoop {
   restore(state: SimLoopState): void;
 }
 
+/** Steps per second a loop runs at when `hz` is not set: the physics backends' own substep rate, so one sim step is one solver step. */
+export const DEFAULT_SIM_HZ = 60;
 const DEFAULT_MAX_CATCH_UP = 5;
 const DEFAULT_SNAP_DISTANCE = 8;
 
 function resolveConfig(config: SimulationConfig | undefined): Required<SimulationConfig> {
   const hz = config?.hz;
   return {
-    hz: typeof hz === "number" && Number.isFinite(hz) && hz > 0 ? hz : "variable",
+    hz: hz === "variable" ? "variable" : typeof hz === "number" && Number.isFinite(hz) && hz > 0 ? hz : DEFAULT_SIM_HZ,
     maxCatchUpSteps: Math.max(1, Math.floor(config?.maxCatchUpSteps ?? DEFAULT_MAX_CATCH_UP)),
     snapDistance: config?.snapDistance ?? DEFAULT_SNAP_DISTANCE,
   };
@@ -61,7 +63,7 @@ function resolveConfig(config: SimulationConfig | undefined): Required<Simulatio
 /**
  * The simulation stepper every driver (shell frame, headless runner, authoritative host) advances through, so
  * the sim sees the same dt sequence regardless of who drives it. Fixed mode accumulates real time and steps in
- * equal slices with a catch-up cap; variable mode steps once per advance.
+ * equal slices with a catch-up cap (60 Hz unless the game picks another rate); variable mode steps once per advance.
  *
  * @capability sim-loop fixed-step or variable simulation stepping with tick count, catch-up cap, and interpolation alpha
  */
@@ -86,17 +88,19 @@ export function createSimLoop(initial?: SimulationConfig): SimLoop {
         return { steps: 1, alpha, tick, dropped: 0 };
       }
       accumulator += realDt;
+      // Time fed as exact multiples of a step (1 s at 60 Hz in slices) must run every step despite float drift.
+      const due = stepDt * (1 - 1e-9);
       let steps = 0;
-      while (accumulator >= stepDt && steps < config.maxCatchUpSteps) {
+      while (accumulator >= due && steps < config.maxCatchUpSteps) {
         tick += 1;
         step(stepDt, tick);
-        accumulator -= stepDt;
+        accumulator = Math.max(0, accumulator - stepDt);
         steps += 1;
       }
       let dropped = 0;
-      if (accumulator >= stepDt) {
-        dropped = Math.floor(accumulator / stepDt);
-        accumulator -= dropped * stepDt;
+      if (accumulator >= due) {
+        dropped = Math.floor(accumulator / due);
+        accumulator = Math.max(0, accumulator - dropped * stepDt);
       }
       alpha = accumulator / stepDt;
       return { steps, alpha, tick, dropped };

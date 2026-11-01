@@ -3515,6 +3515,9 @@
 - `BodyShape` (type): type BodyShape = | { kind: "box"; halfExtents: PhysicsVec3 } | { kind: "sphere"; radius: number } | { kind: "capsule"; radius: number; halfHeight: number } | { kind: "convex"; points: readonly PhysicsVec3[] } | { kind: "trimesh"; vertices: ArrayLike<number>; indices: ArrayLike<number> } | { kind: "h… — Collision shape of a body or a cast. Capsules stand along +Y; a trimesh or heightfield is static-only on every backend.
 - `BodyShapeKind` (type): type BodyShapeKind = BodyShape["kind"] — Shape discriminator, as listed in {@link PhysicsCapabilities.shapes}.
 - `BodyState` (interface): interface BodyState — A body's live pose and motion. Rotation-free backends report identity rotation and zero angular velocity.
+- `CharacterMotion` (interface): interface CharacterMotion — A backend-native kinematic character mover: collide-and-slide, stepping, slopes and ground snap in the solver.
+- `CharacterMotionDesc` (interface): interface CharacterMotionDesc — Walk rules for a backend's own kinematic character mover ({@link PhysicsBackend.createCharacterMotion}).
+- `CharacterMotionResult` (interface): interface CharacterMotionResult — What one {@link CharacterMotion.move} resolved; the object passed in is filled and returned.
 - `ContactEvent` (interface): interface ContactEvent — A contact reported during {@link PhysicsBackend.step}; the object is reused between calls, so copy what you keep.
 - `IDENTITY_QUAT` (const): const IDENTITY_QUAT: PhysicsQuat — The identity rotation.
 - `JointDesc` (interface): interface JointDesc — Joint between two bodies, or between `bodyA` and a world anchor when `bodyB` is omitted.
@@ -3524,7 +3527,13 @@
 - `PhysicsBackendConfig` (interface): interface PhysicsBackendConfig — Solver-wide knobs a backend accepts at creation and through `retune`.
 - `PhysicsCapabilities` (interface): interface PhysicsCapabilities — What a backend can actually simulate, so a game or the conformance suite can adapt instead of guessing.
 - `PhysicsQuat` (type): type PhysicsQuat = readonly [number, number, number, number] — Unit quaternion `[x, y, z, w]`; `[0, 0, 0, 1]` is identity.
+- `PhysicsQuatOut` (type): type PhysicsQuatOut = [number, number, number, number] — A writable `[x, y, z, w]` a backend fills in place.
 - `PhysicsVec3` (type): type PhysicsVec3 = readonly [number, number, number] — `[x, y, z]`.
+- `PhysicsVec3Out` (type): type PhysicsVec3Out = [number, number, number] — A writable `[x, y, z]` a backend fills in place, so a reused result object allocates nothing.
+- `RayCastVehicle` (interface): interface RayCastVehicle — A backend-native ray-cast vehicle: wheel rays, suspension and tyre impulses on a chassis body.
+- `RayCastVehicleDesc` (interface): interface RayCastVehicleDesc — A ray-cast vehicle on an existing chassis body.
+- `RayCastWheelDesc` (interface): interface RayCastWheelDesc — One wheel of a {@link RayCastVehicle}, in the chassis frame (forward is +z, up is +y).
+- `RayCastWheelState` (interface): interface RayCastWheelState — A wheel's last cast; the object passed to {@link RayCastVehicle.wheel} is filled and returned.
 - `RayDesc` (interface): interface RayDesc — A ray query.
 - `RayHit` (interface): interface RayHit — Nearest surface a ray reached.
 - `ShapeCastDesc` (interface): interface ShapeCastDesc — Sweep `shape` from `position` along `motion` and report the first body it touches.
@@ -3624,6 +3633,7 @@
 
 - `VehicleBackendLink` (interface): interface VehicleBackendLink — A vehicle sim's presence in a physics backend: a kinematic chassis that shoves props, and a wall-aware move clamp.
 - `VehicleBackendLinkOptions` (interface): interface VehicleBackendLinkOptions — Options for {@link createVehicleBackendLink}.
+- `VehicleBackendLinkState` (interface): interface VehicleBackendLinkState — A link's serializable state: the pose its chassis last synced to. Wheel states are re-probed, not stored.
 - `VehicleLinkHit` (interface): interface VehicleLinkHit — A wall the last clamped move ran into.
 - `VehicleLinkPose` (interface): interface VehicleLinkPose — The pose fields {@link VehicleBackendLink.sync} reads; a `VehicleDynamicsStep` fits.
 - `createVehicleBackendLink` (function): function createVehicleBackendLink(backend: PhysicsBackend, options: VehicleBackendLinkOptions): VehicleBackendLink — Puts a vehicle sim (`createVehicleDynamics`) into a {@link PhysicsBackend} world without handing its handling to the rigid-body solver: the sim still owns grip and balance, while a kinematic chassis box follows it so Rapier or `PhysicsWorld` props get shoved, and `clampMove` sweeps that box so walls and parked cars stop it and it slides along them.
@@ -7520,9 +7530,11 @@
 ## @jgengine/rapier
 
 - `RapierBackendOptions` (interface): interface RapierBackendOptions extends PhysicsBackendConfig — Construction options for the Rapier-backed {@link PhysicsBackend}.
-- `createRapierBackend` (function): function createRapierBackend(options: RapierBackendOptions = {}): Promise<PhysicsBackend> — Create a Rapier-backed {@link PhysicsBackend}; initialization loads Rapier's WASM module asynchronously.
+- `RapierSnapshot` (interface): interface RapierSnapshot — A Rapier backend's serializable state: the world bytes plus the engine-handle tables over Rapier's own handles.
+- `createRapierBackend` (function): function createRapierBackend(options: RapierBackendOptions = {}): Promise<PhysicsBackend> — Create a Rapier-backed {@link PhysicsBackend}; initialization loads Rapier's WASM module asynchronously. Bodies, colliders and joints are kept in handle maps, so a contact or a query hit resolves its body in O(1).
 
 ## @jgengine/rapier/rapierBackend
 
 - `RapierBackendOptions` (interface): interface RapierBackendOptions extends PhysicsBackendConfig — Construction options for the Rapier-backed {@link PhysicsBackend}.
-- `createRapierBackend` (function): function createRapierBackend(options: RapierBackendOptions = {}): Promise<PhysicsBackend> — Create a Rapier-backed {@link PhysicsBackend}; initialization loads Rapier's WASM module asynchronously.
+- `RapierSnapshot` (interface): interface RapierSnapshot — A Rapier backend's serializable state: the world bytes plus the engine-handle tables over Rapier's own handles.
+- `createRapierBackend` (function): function createRapierBackend(options: RapierBackendOptions = {}): Promise<PhysicsBackend> — Create a Rapier-backed {@link PhysicsBackend}; initialization loads Rapier's WASM module asynchronously. Bodies, colliders and joints are kept in handle maps, so a contact or a query hit resolves its body in O(1).

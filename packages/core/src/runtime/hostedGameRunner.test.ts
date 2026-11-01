@@ -8,6 +8,7 @@ import { applyWorldDiff } from "./worldReplication";
 import { createHostedGameRunner, type HostedGameRunner, type InputFrame } from "./hostedGameRunner";
 import type { GameContext, GameContextContent } from "./gameContext";
 import type { WorldSnapshot } from "./worldSnapshot";
+import type { SimulationConfig } from "./simLoop";
 
 const CONTENT: GameContextContent = {
   entityById(catalogId) {
@@ -17,11 +18,12 @@ const CONTENT: GameContextContent = {
   },
 };
 
-function runner(restore?: WorldSnapshot): HostedGameRunner {
+function runner(restore?: WorldSnapshot, simulation?: SimulationConfig): HostedGameRunner {
   return createHostedGameRunner({
     ...(restore === undefined ? {} : { restore }),
     definition: defineGameDefinition({
       name: "Hosted",
+      ...(simulation === undefined ? {} : { simulation }),
       assets: createAssetCatalog(),
       multiplayer: "off",
       features: { players: true },
@@ -81,8 +83,9 @@ describe("hosted game runner", () => {
   });
 
   test("host player movement uses scaled seconds matching its game clock", () => {
+    // One step each, so the only difference is the clock scale: a variable loop isolates it.
     const move = (speed: number, dt: number) => {
-      const host = runner();
+      const host = runner(undefined, { hz: "variable" });
       host.join("alice", true);
       host.input("alice", { held: ["moveForward"], pointer: null });
       host.context().time.setSpeed(speed);
@@ -265,8 +268,8 @@ describe("hosted game runner", () => {
     const host = runner();
     host.context().time.setSpeed(2);
     host.tick(1);
-    expect(host.context().time.now()).toBe(2);
-    expect(host.context().scene.entity.get("mover")?.position[0]).toBe(2);
+    expect(host.context().time.now()).toBeCloseTo(2, 9);
+    expect(host.context().scene.entity.get("mover")?.position[0]).toBeCloseTo(2, 9);
     host.context().time.pause();
     host.tick(1);
     const saved = host.state();
@@ -274,8 +277,8 @@ describe("hosted game runner", () => {
     expect(restored.context().time.isPaused()).toBe(true);
     expect(restored.context().sim.tick()).toBe(host.context().sim.tick());
     restored.tick(1);
-    expect(restored.context().time.now()).toBe(2);
-    expect(restored.context().scene.entity.get("mover")?.position[0]).toBe(2);
+    expect(restored.context().time.now()).toBe(host.context().time.now());
+    expect(restored.context().scene.entity.get("mover")?.position[0]).toBe(host.context().scene.entity.get("mover")?.position[0]);
   });
 
   test("onInit runs once at construction", () => {

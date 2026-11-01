@@ -2,6 +2,19 @@ import { describe, expect, test } from "bun:test";
 
 import { createInputSnapshot } from "@jgengine/core/runtime/inputSnapshot";
 
+test("a hold released between two steps is the next step's press even without an explicit edge", () => {
+  const input = createInputSnapshot();
+  input.publish([], {});
+  input.beginStep();
+  input.publish(["jump"], {});
+  input.publish([], {});
+  input.beginStep();
+  expect(input.isDown("jump")).toBe(false);
+  expect(input.justPressed("jump")).toBe(true);
+  input.beginStep();
+  expect(input.justPressed("jump")).toBe(false);
+});
+
 test("released taps survive zero-step frames and are sampled on only one simulation step", () => {
   const input = createInputSnapshot();
   input.publish(["fire"], { pressed: ["fire"] });
