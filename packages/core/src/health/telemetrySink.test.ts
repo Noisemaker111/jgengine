@@ -50,8 +50,12 @@ describe("frame time window", () => {
     expect(window.percentiles()).toMatchObject({ frames: 100, p50: 51, p95: 96, p99: 100, maxMs: 100 });
     for (let i = 0; i < 100; i += 1) window.push(10);
     expect(window.percentiles().maxMs).toBe(10);
+    const frames = window.snapshot();
+    expect(frames).toHaveLength(100);
     window.reset();
     expect(window.percentiles()).toMatchObject({ frames: 0, p95: 0 });
+    window.restore(frames);
+    expect(window.percentiles()).toMatchObject({ frames: 100, p95: 10 });
   });
 });
 

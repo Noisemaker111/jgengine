@@ -342,14 +342,19 @@ function readWireEntity(value: unknown, positionScale: number, angleScale: numbe
   if (!isVector3(position) || !isVector3(velocity)) return null;
   if (typeof rotationY !== "number" || typeof rotationX !== "number" || typeof rotationZ !== "number") return null;
   if (![rotationY, rotationX, rotationZ].every(Number.isFinite)) return null;
-  const numbers = new Array<number>(NUMERIC_FIELDS);
-  for (let i = 0; i < 3; i += 1) {
-    numbers[i] = quantise(position[i]!, positionScale);
-    numbers[6 + i] = quantise(velocity[i]!, positionScale);
-  }
-  numbers[3] = quantise(rotationY, angleScale);
-  numbers[4] = quantise(rotationX, angleScale);
-  numbers[5] = quantise(rotationZ, angleScale);
+  const [px, py, pz] = position;
+  const [vx, vy, vz] = velocity;
+  const numbers = [
+    quantise(px, positionScale),
+    quantise(py, positionScale),
+    quantise(pz, positionScale),
+    quantise(rotationY, angleScale),
+    quantise(rotationX, angleScale),
+    quantise(rotationZ, angleScale),
+    quantise(vx, positionScale),
+    quantise(vy, positionScale),
+    quantise(vz, positionScale),
+  ];
   const rest: Record<string, unknown> = {};
   const restJson = new Map<string, string>();
   for (const key in value) {

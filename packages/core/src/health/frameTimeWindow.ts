@@ -16,6 +16,10 @@ export interface FrameTimeWindow {
   count(): number;
   full(): boolean;
   percentiles(): FrameTimePercentiles;
+  /** The kept frames, oldest first. */
+  snapshot(): number[];
+  /** Replace the window with `frames` (oldest first); extra leading frames beyond the size are dropped. */
+  restore(frames: readonly number[]): void;
   reset(): void;
 }
 
@@ -41,8 +45,24 @@ export function createFrameTimeWindow(size: number): FrameTimeWindow {
         p50: percentile(sorted, 0.5),
         p95: percentile(sorted, 0.95),
         p99: percentile(sorted, 0.99),
-        maxMs: sorted.length === 0 ? 0 : sorted[sorted.length - 1]!,
+        maxMs: sorted.at(-1) ?? 0,
       };
+    },
+    snapshot() {
+      const out: number[] = [];
+      const start = filled < capacity ? 0 : next;
+      for (let i = 0; i < filled; i += 1) out.push(ring[(start + i) % capacity] ?? 0);
+      return out;
+    },
+    restore(frames) {
+      filled = 0;
+      next = 0;
+      for (const frameMs of frames) {
+        if (!Number.isFinite(frameMs) || frameMs <= 0) continue;
+        ring[next] = frameMs;
+        next = (next + 1) % capacity;
+        if (filled < capacity) filled += 1;
+      }
     },
     reset() {
       filled = 0;

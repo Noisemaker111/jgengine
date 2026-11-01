@@ -285,7 +285,7 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
       for (let cx = cxMin; cx <= cxMax; cx += 1) {
         const bucket = index.cells.get(packCell(cx, cz));
         if (bucket === undefined) continue;
-        for (let i = 0; i < bucket.length; i += 1) out.push(bucket[i]!);
+        for (const id of bucket) out.push(id);
       }
     }
   }

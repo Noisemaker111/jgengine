@@ -81,6 +81,49 @@
 - `SpeedUnit` (type): type SpeedUnit = "kmh" | "mph" | "knots" | "ms" — Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s.
 - `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 
+## @jgengine/core/health/autoQuality
+
+- `AUTO_QUALITY_MAX_FRAME_MS` (const): const AUTO_QUALITY_MAX_FRAME_MS: 1000 — Longest frame still counted; a longer one is a hidden tab or a debugger pause, not a load signal.
+- `AutoQuality` (interface): interface AutoQuality<TTier extends string> — Picks a graphics tier from measured frame time.
+- `AutoQualityChange` (interface): interface AutoQualityChange<TTier extends string> — What {@link AutoQuality.observe} returns when it moves the tier.
+- `AutoQualityConfig` (interface): interface AutoQualityConfig — Game-owned thresholds for {@link createAutoQuality}; only `targetFrameMs` is required.
+- `AutoQualityState` (interface): interface AutoQualityState<TTier extends string> — Serializable controller state.
+- `createAutoQuality` (function): function createAutoQuality<TTier extends string>(args: { tiers: readonly TTier[]; initial: TTier; config: AutoQualityConfig; now: () => number; }): AutoQuality<TTier> — Hysteresis controller: steps one tier down when p95 stays over `downFrameMs`, one tier up when it stays well under the target, never inside a cooldown, and backs off when an up step is immediately undone. It only picks the tier; the caller applies it and owns every per-effect toggle. Time comes from the injected clock.
+
+## @jgengine/core/health/crashSeam
+
+- `CrashEvent` (interface): interface CrashEvent — One recent engine or game event kept for a crash report.
+- `CrashEventTarget` (interface): interface CrashEventTarget — The slice of `window` the global handlers need.
+- `CrashReport` (interface): interface CrashReport — What the engine hands a game's reporter. It carries no personal data: text is scrubbed of emails, URL queries and home paths.
+- `CrashReporter` (interface): interface CrashReporter — The injected receiver. A game wires its own (Sentry, a fetch, a file); the engine ships no vendor SDK.
+- `CrashSeam` (interface): interface CrashSeam — Where a caught error goes.
+- `CrashSeamOptions` (interface): interface CrashSeamOptions — Tunables and injected dependencies for {@link createCrashSeam}.
+- `CrashSeamState` (interface): interface CrashSeamState — Serializable seam state.
+- `createCrashSeam` (function): function createCrashSeam(options: CrashSeamOptions): CrashSeam — The one place the engine catches render, tick and async errors and hands a structured, scrubbed report to the game's reporter.
+- `installCrashHandlers` (function): function installCrashHandlers(seam: CrashSeam, target: CrashEventTarget): () => void — Route uncaught script errors and unhandled promise rejections into the seam; returns the uninstall function.
+- `scrubCrashText` (function): function scrubCrashText(text: string): string — Strip what could identify a person from error text: emails, URL queries and fragments, home directories.
+
+## @jgengine/core/health/frameTimeWindow
+
+- `FrameTimePercentiles` (interface): interface FrameTimePercentiles — Frame-time percentiles over the window, in milliseconds.
+- `FrameTimeWindow` (interface): interface FrameTimeWindow — A fixed-size ring of recent frame times.
+- `createFrameTimeWindow` (function): function createFrameTimeWindow(size: number): FrameTimeWindow — Keep the last `size` frame times and read percentiles over them; the ring never grows.
+
+## @jgengine/core/health/runtimeHealth
+
+- `GameHealthConfig` (interface): interface GameHealthConfig — What a game supplies to turn on crash reports, telemetry and auto quality. Every part is off unless set.
+- `RuntimeHealth` (interface): interface RuntimeHealth — The running health parts for one session.
+- `createRuntimeHealth` (function): function createRuntimeHealth(args: { game: string; config: GameHealthConfig; tier: () => string; now?: () => number; }): RuntimeHealth — Compose the crash seam and telemetry queue a shell session uses, with the injected clock and tier source.
+
+## @jgengine/core/health/telemetrySink
+
+- `Telemetry` (interface): interface Telemetry — A batched, bounded event queue in front of the game's sink.
+- `TelemetryEvent` (type): type TelemetryEvent = | { kind: "session_start"; at: number; game: string; build: string; tier: string } | { kind: "load"; at: number; name: string; ms: number } | { kind: "tier_change"; at: number; from: string; to: string; reason: "auto" | "player" } | ({ kind: "frame_percentiles"; at: number; tie… — One runtime-health event; `at` is the injected clock's ms.
+- `TelemetryOptions` (interface): interface TelemetryOptions — Tunables and injected dependencies for {@link createTelemetry}.
+- `TelemetrySink` (interface): interface TelemetrySink — The injected receiver. A game wires its own transport; the engine never sends anywhere itself.
+- `TelemetryState` (interface): interface TelemetryState — Queue state for tests and devtools.
+- `createTelemetry` (function): function createTelemetry(options: TelemetryOptions = {}): Telemetry — Build the event queue; with no sink it is a set of no-ops, so telemetry stays off unless a game supplies one.
+
 ## @jgengine/core/hud/FrustumSensorHud.draw
 
 - `FrustumSensorProbeOptions` (interface): interface FrustumSensorProbeOptions extends FramingConfig { subjectIds: readonly string[]; subjectRadius?: number } — ⚠ undocumented · used by `FrustumSensorReadout`: Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a…
@@ -939,11 +982,12 @@
 - `RENDER_SCALE_MAX` (const): const RENDER_SCALE_MAX: 2 — Highest player render scale.
 - `RENDER_SCALE_MIN` (const): const RENDER_SCALE_MIN: 0.5 — Lowest player render scale; the value is the device-pixel-ratio cap handed to the canvas.
 - `RENDER_SCALE_STEP` (const): const RENDER_SCALE_STEP: 0.05 — Render-scale slider increment.
+- `applyAutoGraphicsTier` (function): function applyAutoGraphicsTier(store: Pick<SettingsStore, "get" | "set">, to: GraphicsQuality, overrides?: GraphicsProfileOverrides): void — Move the tier for auto quality. Only fields still equal to the tier being left follow the move; a render scale, filter or effect toggle the player changed keeps its value, so auto never undoes a manual choice.
 - `applyGraphicsQuality` (function): function applyGraphicsQuality(store: Pick<SettingsStore, "set">, quality: GraphicsQuality, overrides?: GraphicsProfileOverrides): GraphicsProfile — Select a quality tier and re-apply its render scale, texture filtering and stage defaults, so picking a preset resets the individual overrides instead of leaving stale toggles behind.
 - `graphicsPostStageSettingId` (function): function graphicsPostStageSettingId(stage: GraphicsPostStage): string — Setting id that stores one stage toggle (`graphics.post.<stage>`).
 - `parseGraphicsQuality` (function): function parseGraphicsQuality(raw: string | null | undefined): GraphicsQuality | null — Parse a `?quality=` value into a graphics tier, or null when absent or unknown.
 - `readGraphicsQuality` (function): function readGraphicsQuality(store: Pick<SettingsStore, "get">): GraphicsQuality — The stored quality tier, falling back to the default when the value is missing or unknown.
-- `readGraphicsSettings` (function): function readGraphicsSettings(store: Pick<SettingsStore, "get">, overrides?: GraphicsProfileOverrides): GraphicsSettingsState — Resolve the player's graphics state from a settings store. The tier profile (with the game's overrides) supplies every default; a stored render scale or stage toggle replaces its field.
+- `readGraphicsSettings` (function): function readGraphicsSettings(store: Pick<SettingsStore, "get">, overrides?: GraphicsProfileOverrides, autoDefault = false): GraphicsSettingsState — Resolve the player's graphics state from a settings store. The tier profile (with the game's overrides) supplies every default; a stored render scale or stage toggle replaces its field.
 - `withGraphicsQualityOverride` (function): function withGraphicsQualityOverride(store: SettingsStore, quality: GraphicsQuality, overrides?: GraphicsProfileOverrides): SettingsStore — Wrap a settings store so the graphics tier reads as `quality` for this session only: every graphics field resolves from that tier until the player changes it, and nothing is persisted. Capture hosts use it (`?quality=low`) to render cheap iteration shots without leaving the draft tier in the browser profile for the next full-quality shot.
 
 ## @jgengine/core/settings/keybindingMenu.view
@@ -1007,7 +1051,7 @@
 - `GameSettingsConfig` (interface): interface GameSettingsConfig { variant?: SettingsVariant; surface?: SettingsSurface | false; extra?: readonly GameSettingDef[]; categories?: readonly SettingCategoryDef[]; hide?: readonly SettingCategory[]; actions?: readonly SettingsActionDef[]; hideBindings?: readonl… — ⚠ undocumented
 - `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" | "ultra" — ⚠ undocumented · used by `GRAPHICS_QUALITY_DPR`: Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
 - `SETTINGS_STORAGE_PREFIX` (const): const SETTINGS_STORAGE_PREFIX: "jgengine:setting:" — ⚠ undocumented
-- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsSoftShadows: "graphics.softShadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly graphicsRenderScale: "graphics.renderSc… — ⚠ undocumented
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsAuto: "graphics.auto"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsSoftShadows: "graphics.softShadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly… — ⚠ undocumented
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
@@ -1122,7 +1166,7 @@
 - `RadialSlice` (interface): interface RadialSlice — One wedge of a radial menu — geometry for rendering a slice. Angles are radians from "up" (−Y), clockwise.
 - `RadialVectorOptions` (interface): interface RadialVectorOptions extends RadialArc — Options for {@link radialIndexFromVector}.
 - `ResolvedAction` (interface): interface ResolvedAction — A resolved action view model — availability computed once from cooldown, cost, `disabled`, and any caller reasons. `enabled` is the single truth a renderer gates interaction on; `reasons` is the ordered explanation (cooldown, then unmet costs, then caller reasons, then a generic disable).
-- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsSoftShadows: "graphics.softShadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly graphicsRenderScale: "graphics.renderSc… — ⚠ undocumented
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsAuto: "graphics.auto"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsSoftShadows: "graphics.softShadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly… — ⚠ undocumented
 - `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
 - `ScreenMarkerLayout` (interface): interface ScreenMarkerLayout — Where and how to draw one marker, from {@link layoutScreenMarker}.
 - `ScreenMarkerOptions` (interface): interface ScreenMarkerOptions — Options for {@link layoutScreenMarker}.
@@ -2384,11 +2428,13 @@
 
 ## @jgengine/shell/drivers/FrameDriver
 
-- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, authoritativeFrameRef, recorder, }: { ctx: GameContext; playable: Playable… — ⚠ undocumented
+- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, authoritativeFrameRef, recorder, onFrameMs, }: { ctx: GameContext; playabl… — ⚠ undocumented
 - `POSTER_SETTLE_SECONDS` (const): const POSTER_SETTLE_SECONDS: 1.6 — ⚠ undocumented
 
 ## @jgengine/shell/registry
 
+- `GameErrorScreenProps` (type): type GameErrorScreenProps = { report: CrashReport | null; phase: string; retry: () => void } — Props the game's own error screen receives when the UI or the tick fails. `report` is the scrubbed report the reporter got, or null when the seam dropped it as a duplicate.
+- `GameHealth` (interface): interface GameHealth extends GameHealthConfig — Crash, telemetry and auto-quality config plus the game's own recoverable error screen.
 - `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
 - `PlayableGame` (type): type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = PlayableGameContract< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps>, TProbe > & { /** HUD theme the shell applies at the `GameUI` root. Unset uses `defaultHud… — The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle. `TProbe` is what the game's `capture.probe` returns, so a proof flow over `typeof game` names only real probes.
 - `RenderEntity` (type): type RenderEntity = (entity: SceneEntity) => ReactNode — ⚠ undocumented
@@ -2399,6 +2445,10 @@
 
 - `EMPTY_RESERVED` (const): const EMPTY_RESERVED: ReadonlySet<string> — No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own.
 - `NO_ACTIONS` (const): const NO_ACTIONS: string[] — Empty action list — published while the orientation gate is up to suppress all held input without touching the tracker.
+
+## @jgengine/shell/useRuntimeHealth
+
+- `useRuntimeHealth` (function): function useRuntimeHealth(args: { playable: PlayableGame; settingsStore: SettingsStore; quality: GraphicsQuality; overrides: GraphicsProfileOverrides | undefined; }): { health: RuntimeHealth | null; onFrameMs: ((frameMs: number) => void) | undefined } — Wire the game's `health` config for one session: the crash seam (with window error and unhandled-rejection handlers), the telemetry queue, and auto quality. Returns `null` health when the game set none. `onFrameMs` takes each rendered frame; auto quality moves the tier through the settings store only while the player's Auto quality setting is on, and a tier the player picks ends it.
 
 ## @jgengine/shell/world/GridWorldScene
 

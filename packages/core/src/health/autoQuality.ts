@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 import { createFrameTimeWindow, type FrameTimePercentiles } from "./frameTimeWindow";
 
 /** Game-owned thresholds for {@link createAutoQuality}; only `targetFrameMs` is required. */
@@ -81,6 +82,9 @@ export function createAutoQuality<TTier extends string>(args: {
   const highest = Math.min(tiers.length - 1, config.maxTier ?? tiers.length - 1);
   const window = createFrameTimeWindow(config.windowFrames ?? 120);
 
+  const first = tiers[0];
+  if (first === undefined) throw new Error("tiers must not be empty");
+  const tierAt = (i: number): TTier => tiers[i] ?? first;
   const indexOf = (tier: TTier): number => Math.max(0, tiers.indexOf(tier));
   let index = indexOf(args.initial);
   let changedAt = now();
@@ -90,7 +94,7 @@ export function createAutoQuality<TTier extends string>(args: {
 
   function move(to: number, direction: "down" | "up", at: number): AutoQualityChange<TTier> {
     const measured = window.percentiles();
-    const from = tiers[index]!;
+    const from = tierAt(index);
     if (direction === "up") {
       lastDirection = "up";
     } else {
@@ -101,7 +105,7 @@ export function createAutoQuality<TTier extends string>(args: {
     index = to;
     changedAt = at;
     window.reset();
-    return { from, to: tiers[to]!, direction, window: measured };
+    return { from, to: tierAt(to), direction, window: measured };
   }
 
   return {
@@ -117,7 +121,7 @@ export function createAutoQuality<TTier extends string>(args: {
       if (p95 < upBelow && index < highest && since >= upCooldown * backoff) return move(index + 1, "up", at);
       return null;
     },
-    tier: () => tiers[index]!,
+    tier: () => tierAt(index),
     setTier(tier) {
       index = indexOf(tier);
       changedAt = now();
@@ -125,7 +129,7 @@ export function createAutoQuality<TTier extends string>(args: {
       lastDirection = null;
       window.reset();
     },
-    snapshot: () => ({ tier: tiers[index]!, changedAt, startedAt, backoff, lastDirection }),
+    snapshot: () => ({ tier: tierAt(index), changedAt, startedAt, backoff, lastDirection }),
     restore(state) {
       index = indexOf(state.tier);
       changedAt = state.changedAt;
