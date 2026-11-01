@@ -244,6 +244,7 @@ const REMOTE_FETCH: Record<string, string> = {
   "packages/jgengine/src/releaseNotes.ts": "the published CHANGELOG.md",
   "packages/core/src/audio/audioEngine.view.ts": "asset URLs the page loads",
   "packages/core/src/boot/assetPrefetch.ts": "browser-side download of the game files the page loads",
+  "packages/core/src/postfx/gradeShader.draw.ts": "browser-side download of the .cube grade file the page names",
   "packages/core/src/devtools/agentBridge.draw.ts": "browser-side bridge to an endpoint the page was handed",
   "packages/core/src/devtools/frameSampler.view.ts": "browser-side sampler for an endpoint the page was handed",
 };
