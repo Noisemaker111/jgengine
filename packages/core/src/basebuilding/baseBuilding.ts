@@ -1,4 +1,5 @@
 // @skill jgengine-gameplay
+import type { ThresholdBoundary } from "../threshold/thresholds";
 import { createBuildSocketCatalog, type ConnectionRule, type SocketDef } from "../placement/buildSockets";
 import type { WorldSolid } from "../world/worldSolids";
 
@@ -36,9 +37,8 @@ export interface StructureShapeDef {
   floor?: boolean;
 }
 
-/** A material tier: how much of each damage class reaches its pieces. */
-export interface StructureTierDef {
-  id: string;
+/** A material tier, a Ladder step (`at` is its place in the material order): how much of each damage class reaches its pieces. */
+export interface StructureTierDef extends ThresholdBoundary {
   /** Damage class → multiplier; `"*"` is the fallback, default `1`. `0` makes the tier immune to that class. */
   damage?: Readonly<Record<string, number>>;
 }

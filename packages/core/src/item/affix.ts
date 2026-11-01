@@ -1,3 +1,4 @@
+import type { ThresholdBoundary } from "../threshold/thresholds";
 import { pickWeighted } from "../random/pick";
 import { foldStatContributions, type StatContribution } from "../progression/statGraph";
 
@@ -19,8 +20,8 @@ export interface AffixPool {
   affixes: readonly AffixDef[];
 }
 
-export interface RarityTier {
-  id: string;
+/** A rarity step of the Ladder: `at` is its place in the rarity order, the roll itself is by `weight`. */
+export interface RarityTier extends ThresholdBoundary {
   weight: number;
   affixCount: number | [number, number];
   statScale?: number;

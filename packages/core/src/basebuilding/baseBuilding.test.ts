@@ -40,8 +40,8 @@ const shapes: StructureShapeDef[] = [
 const config: BaseBuildingConfig = {
   shapes,
   tiers: [
-    { id: "thatch", damage: { ranged: 0 } },
-    { id: "wood", damage: { fist: 0, primitive: 0, ranged: 0 } },
+    { id: "thatch", at: 0, damage: { ranged: 0 } },
+    { id: "wood", at: 1, damage: { fist: 0, primitive: 0, ranged: 0 } },
   ],
   pieces: [
     { id: "thatch_foundation", shape: "foundation", tier: "thatch", health: 2400 },

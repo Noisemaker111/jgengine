@@ -28,9 +28,9 @@ const levelAtLeast = (level: number): Predicate => ({ gte: ["level", level] });
  * each survivor takes home: Element, a Spider Flag and her trophy.
  */
 export const BROOD_TIERS: readonly BroodTier[] = [
-  { id: "gamma", label: "Gamma", minLevel: 30, cost: { ...ARTIFACTS }, requirement: levelAtLeast(30), species: "broodmother_gamma", rewards: { element: 20, spider_flag: 1, broodmother_trophy_gamma: 1 } },
-  { id: "beta", label: "Beta", minLevel: 50, cost: { ...ARTIFACTS, ...trophies(5) }, requirement: levelAtLeast(50), species: "broodmother_beta", rewards: { element: 56, spider_flag: 1, broodmother_trophy_beta: 1 } },
-  { id: "alpha", label: "Alpha", minLevel: 70, cost: { ...ARTIFACTS, ...trophies(10) }, requirement: levelAtLeast(70), species: "broodmother_alpha", rewards: { element: 148, spider_flag: 1, broodmother_trophy_alpha: 1 } },
+  { id: "gamma", at: 0, label: "Gamma", minLevel: 30, cost: { ...ARTIFACTS }, requirement: levelAtLeast(30), species: "broodmother_gamma", rewards: { element: 20, spider_flag: 1, broodmother_trophy_gamma: 1 } },
+  { id: "beta", at: 1, label: "Beta", minLevel: 50, cost: { ...ARTIFACTS, ...trophies(5) }, requirement: levelAtLeast(50), species: "broodmother_beta", rewards: { element: 56, spider_flag: 1, broodmother_trophy_beta: 1 } },
+  { id: "alpha", at: 2, label: "Alpha", minLevel: 70, cost: { ...ARTIFACTS, ...trophies(10) }, requirement: levelAtLeast(70), species: "broodmother_alpha", rewards: { element: 148, spider_flag: 1, broodmother_trophy_alpha: 1 } },
 ];
 
 export function broodTier(id: string): BroodTier | null {

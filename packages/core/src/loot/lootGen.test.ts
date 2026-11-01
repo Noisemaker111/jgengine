@@ -74,11 +74,11 @@ const catalog: LootCatalog = {
     },
   ],
   rarities: [
-    { id: "common", weight: 60, affixCount: [0, 1] },
-    { id: "uncommon", weight: 25, affixCount: 1 },
-    { id: "rare", weight: 10, affixCount: [2, 3], statScale: 1.15, namePart: "Rare" },
-    { id: "epic", weight: 4, affixCount: [3, 4], statScale: 1.35, namePart: "Epic" },
-    { id: "legendary", weight: 1, affixCount: [4, 5], statScale: 1.7, namePart: "Legendary" },
+    { id: "common", at: 0, weight: 60, affixCount: [0, 1] },
+    { id: "uncommon", at: 1, weight: 25, affixCount: 1 },
+    { id: "rare", at: 2, weight: 10, affixCount: [2, 3], statScale: 1.15, namePart: "Rare" },
+    { id: "epic", at: 3, weight: 4, affixCount: [3, 4], statScale: 1.35, namePart: "Epic" },
+    { id: "legendary", at: 4, weight: 1, affixCount: [4, 5], statScale: 1.7, namePart: "Legendary" },
   ],
   manufacturers: [
     { id: "voss", name: "Voss", weight: 2, bias: { power: 5, cadence: -20 }, scale: { spread: 1.1 }, favoredPools: ["edge"] },

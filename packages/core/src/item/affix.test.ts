@@ -13,8 +13,8 @@ const config: RollerConfig = {
     },
   ],
   rarities: [
-    { id: "common", weight: 70, affixCount: 1 },
-    { id: "legendary", weight: 30, affixCount: 2, statScale: 2, namePart: "Legendary" },
+    { id: "common", at: 0, weight: 70, affixCount: 1 },
+    { id: "legendary", at: 1, weight: 30, affixCount: 2, statScale: 2, namePart: "Legendary" },
   ],
 };
 
@@ -53,6 +53,12 @@ describe("affix roller", () => {
     expect(ids).toEqual(["fire", "honed"]);
   });
 
+  test("rollRarity walks the weights in list order", () => {
+    const roller = createAffixRoller(config);
+    const at = (roll: number) => roller.rollRarity(() => roll).id;
+    expect([at(0), at(0.999)]).toEqual(["common", "legendary"]);
+  });
+
   test("rollRarity is weighted toward the heavier tier", () => {
     const roller = createAffixRoller(config);
     const rng = seededRng("gun-seed");
@@ -73,7 +79,7 @@ describe("affix roller", () => {
   test("rarity.pools filters which base pools are drawable", () => {
     const scoped: RollerConfig = {
       pools: config.pools,
-      rarities: [{ id: "elite", weight: 1, affixCount: 2, pools: [] }],
+      rarities: [{ id: "elite", at: 0, weight: 1, affixCount: 2, pools: [] }],
     };
     const roller = createAffixRoller(scoped);
     const rolled = roller.roll(pistol, "elite", queueRng([0, 0, 0, 0]));

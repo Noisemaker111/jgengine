@@ -1,18 +1,16 @@
+import type { ThresholdBoundary } from "../threshold/thresholds";
 import type { FactionRelation } from "../faction/factions";
 
 /**
- * A rank within a group's hierarchy. Higher `level` means more authority: a member can only
- * manage (kick, re-rank) members strictly below their own level, and cannot promote anyone to a
- * level at or above their own. `permissions` are opaque, genre-agnostic capability slugs the game
+ * A rank within a group's hierarchy, a Ladder step: higher `at` means more authority: a member can only
+ * manage (kick, re-rank) members strictly below their own `at`, and cannot promote anyone to a
+ * `at` at or above their own. `permissions` are opaque, genre-agnostic capability slugs the game
  * checks with {@link Tribe.can} (e.g. `"build"`, `"demolish"`, `"invite"`, `"kick"`, `"manage-ranks"`,
  * plus the {@link AssetAction} slugs `"inventory"`, `"use"`, `"command"` for group-owned assets).
  * A `bypass` rank (an admin) skips every permission check, exactly like the founder.
  */
-export interface TribeRankDef {
-  id: string;
+export interface TribeRankDef extends ThresholdBoundary {
   name: string;
-  /** Higher = more authority. Determines who can manage/promote whom. */
-  level: number;
   /** Capability slugs this rank grants; checked by {@link Tribe.can} and {@link Tribe.canAccess}. */
   permissions?: readonly string[];
   /** Admin rank — bypasses all permission and hierarchy checks (like the founder). */
@@ -156,7 +154,7 @@ export interface Tribe {
 interface RankRuntime {
   id: string;
   name: string;
-  level: number;
+  at: number;
   permissions: Set<string>;
   bypass: boolean;
 }
@@ -177,7 +175,7 @@ function toRankRuntime(def: TribeRankDef): RankRuntime {
   return {
     id: def.id,
     name: def.name,
-    level: def.level,
+    at: def.at,
     permissions: new Set(def.permissions ?? []),
     bypass: def.bypass === true,
   };
@@ -187,7 +185,7 @@ function rankToDef(rank: RankRuntime): TribeRankDef {
   return {
     id: rank.id,
     name: rank.name,
-    level: rank.level,
+    at: rank.at,
     ...(rank.permissions.size > 0 ? { permissions: [...rank.permissions] } : {}),
     ...(rank.bypass ? { bypass: true } : {}),
   };
@@ -217,8 +215,8 @@ export function createTribe(config: TribeConfig): Tribe {
     if (ranks.has(def.id)) throw new Error(`duplicate rank id "${def.id}"`);
     const rank = toRankRuntime(def);
     ranks.set(rank.id, rank);
-    if (lowest === undefined || rank.level < lowest.level) lowest = rank;
-    if (highest === undefined || rank.level > highest.level) highest = rank;
+    if (lowest === undefined || rank.at < lowest.at) lowest = rank;
+    if (highest === undefined || rank.at > highest.at) highest = rank;
   }
 
   const resolveRankId = (id: string | undefined, fallback: RankRuntime): string => {
@@ -259,7 +257,7 @@ export function createTribe(config: TribeConfig): Tribe {
 
   function levelOf(memberId: string): number {
     if (isAdmin(memberId)) return Number.POSITIVE_INFINITY;
-    return rankRuntimeOf(memberId)?.level ?? Number.NEGATIVE_INFINITY;
+    return rankRuntimeOf(memberId)?.at ?? Number.NEGATIVE_INFINITY;
   }
 
   function log(type: TribeEventType, fields: Omit<TribeEvent, "seq" | "type" | "at">): void {
@@ -304,7 +302,7 @@ export function createTribe(config: TribeConfig): Tribe {
       const targetRankId = rankId ?? defaultRankId;
       const targetRank = ranks.get(targetRankId);
       if (targetRank === undefined) return { reason: `unknown rank id "${targetRankId}"` };
-      if (!isAdmin(actorId) && targetRank.level >= levelOf(actorId)) {
+      if (!isAdmin(actorId) && targetRank.at >= levelOf(actorId)) {
         return { reason: "cannot invite at or above your own rank" };
       }
       members.set(memberId, { id: memberId, rankId: targetRankId, joinedAt: now() });
@@ -343,7 +341,7 @@ export function createTribe(config: TribeConfig): Tribe {
       if (nextRank === undefined) return { reason: `unknown rank id "${rankId}"` };
       if (!isAdmin(actorId)) {
         if (levelOf(actorId) <= levelOf(memberId)) return { reason: "cannot manage an equal or higher rank" };
-        if (nextRank.level >= levelOf(actorId)) return { reason: "cannot assign a rank at or above your own" };
+        if (nextRank.at >= levelOf(actorId)) return { reason: "cannot assign a rank at or above your own" };
       }
       members.get(memberId)!.rankId = rankId;
       log("rank-changed", { actor: actorId, subject: memberId, rankId });

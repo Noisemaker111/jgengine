@@ -1,10 +1,10 @@
 // @skill jgengine-gameplay
 import { evaluatePredicate, type Predicate, type PredicateFacts } from "../rules/predicate";
+import type { ThresholdBoundary } from "../threshold/thresholds";
 import { createPacedSchedule, type PacedSchedule, type PacedScheduleState } from "../time/pacedSchedule";
 
-/** One difficulty of a summoned fight: what the summon spends and what else it asks. */
-export interface SummonTier {
-  id: string;
+/** One difficulty of a summoned fight, a Ladder step (`at` is its place in the difficulty order): what the summon spends and what else it asks. */
+export interface SummonTier extends ThresholdBoundary {
   /** Counted things the summon spends from the caller's source. */
   cost?: Readonly<Record<string, number>>;
   /** Anything else it asks, over the facts the caller passes to `check` and `summon`. */

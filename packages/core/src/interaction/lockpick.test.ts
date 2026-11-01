@@ -10,6 +10,8 @@ import {
 } from "./lockpick";
 
 const EASY: LockTierSpec = {
+  id: "easy",
+  at: 0,
   cols: 10,
   rows: 6,
   width: 2,
@@ -19,6 +21,8 @@ const EASY: LockTierSpec = {
 };
 
 const HARD: LockTierSpec = {
+  id: "hard",
+  at: 1,
   cols: 14,
   rows: 7,
   width: 1,
@@ -29,6 +33,11 @@ const HARD: LockTierSpec = {
 };
 
 describe("generateLock", () => {
+  test("a seed keeps producing the board it always did", () => {
+    const lock = generateLock("pin", EASY);
+    expect([lock.gates, lock.startRow, lock.seatRow]).toEqual([[6], 0, 1]);
+  });
+
   test("is deterministic for the same seed and tier", () => {
     const a = generateLock("seed-1", EASY);
     const b = generateLock("seed-1", EASY);

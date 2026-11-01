@@ -1,3 +1,4 @@
+import type { ThresholdBoundary } from "../threshold/thresholds";
 import { seededRng } from "../random/rng";
 
 /** One discrete pick move: how far the pick drives into the lock this step. */
@@ -15,8 +16,8 @@ export const LOCK_ACTION_DELTA: Readonly<Record<LockAction, number>> = {
 /** The five pick actions, in display order (shallow → deep). */
 export const LOCK_ACTIONS: readonly LockAction[] = ["hardSet", "set", "steady", "ease", "drop"];
 
-/** Difficulty dials for one lock: board size, forgiveness band, gates, fog window, traps. */
-export interface LockTierSpec {
+/** Difficulty dials for one lock, a Ladder step (`at` is its place in the difficulty order): board size, forgiveness band, gates, fog window, traps. */
+export interface LockTierSpec extends ThresholdBoundary {
   cols: number;
   rows: number;
   width: number;
