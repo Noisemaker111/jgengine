@@ -1,8 +1,8 @@
-const SOURCE = import.meta.glob("../../../../.claude/skills/jgengine/recipes/cookbook.md", {
+const SOURCE = import.meta.glob<string>("../../../../.claude/skills/jgengine/recipes/cookbook.md", {
   query: "?raw",
   import: "default",
   eager: true,
-}) as Record<string, string>;
+});
 
 export interface CookbookRecipe {
   name: string;
@@ -17,7 +17,8 @@ export function parseCookbook(markdown: string): CookbookRecipe[] {
     .slice(1)
     .flatMap((section) => {
       const match = /^(.+)\n\n([\s\S]*?)\n\n```ts\n([\s\S]*?)\n```/.exec(section);
-      return match === null ? [] : [{ name: match[1]!.trim(), sentence: match[2]!.trim(), code: match[3]! }];
+      const [, name, sentence, code] = match ?? [];
+      return name === undefined || sentence === undefined || code === undefined ? [] : [{ name: name.trim(), sentence: sentence.trim(), code }];
     });
 }
 

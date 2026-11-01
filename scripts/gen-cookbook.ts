@@ -23,8 +23,9 @@ export interface Recipe {
 /** Parse one recipe test file: the `@recipe` doc block, its imports and the body of its single test. */
 export function parseRecipe(file: string, source: string): Recipe {
   const doc = /\/\*\*\s*\n\s*\*\s*@recipe\s+(.+)\n([\s\S]*?)\*\//.exec(source);
-  if (doc === null) throw new Error(`${file}: no "@recipe <Feature>" doc block`);
-  const sentence = doc[2]!.split("\n").map((line) => line.replace(/^\s*\*\s?/, "").trim()).filter(Boolean).join(" ");
+  const [, name, text] = doc ?? [];
+  if (name === undefined || text === undefined) throw new Error(`${file}: no "@recipe <Feature>" doc block`);
+  const sentence = text.split("\n").map((line) => line.replace(/^\s*\*\s?/, "").trim()).filter(Boolean).join(" ");
   if (sentence === "") throw new Error(`${file}: the doc block needs one sentence of what the feature is made of`);
   const tests = source.match(/^test\(/gm) ?? [];
   if (tests.length !== 1) throw new Error(`${file}: a recipe file holds exactly one test, found ${tests.length}`);
@@ -42,7 +43,7 @@ export function parseRecipe(file: string, source: string): Recipe {
   if (imports.some((line) => /\.\.\/(?!parts"|random\/rng"|time\/cooldown"|anim\/easing"|world\/geometry")/.test(line))) {
     throw new Error(`${file}: a recipe imports parts only, not a feature folder`);
   }
-  return { name: doc[1]!.trim(), sentence, imports, body };
+  return { name: name.trim(), sentence, imports, body };
 }
 
 export function renderCookbook(recipes: readonly Recipe[]): string {
