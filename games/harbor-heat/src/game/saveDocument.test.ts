@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { memorySaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import { upgradeSaveEnvelope } from "@jgengine/core/save/saveDocument";
 
 import { game } from "../game.config";
 import { loop } from "../loop";
@@ -16,7 +17,6 @@ import {
   harborSave,
   harborSaveDigest,
   loadHarborSave,
-  migrateHarborSave,
   saveHarborState,
 } from "./save";
 import { convoyRunners, mission, patchMission } from "./runState";
@@ -182,7 +182,7 @@ describe("harbor-heat save document", () => {
 
   test("a version-0 document migrates to the current shape", () => {
     const legacy = { systems: { wanted: { police: {}, peakStars: 2 } }, time: 12 };
-    const migrated = migrateHarborSave(legacy, 0);
+    const migrated = upgradeSaveEnvelope(legacy, { game: "harbor-heat", version: HARBOR_SAVE_VERSION });
     expect(migrated.version).toBe(HARBOR_SAVE_VERSION);
     expect(migrated.game).toBe("harbor-heat");
     expect(migrated.systems.wanted).toEqual({ police: {}, peakStars: 2 });

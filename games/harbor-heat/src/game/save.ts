@@ -1,4 +1,4 @@
-import { createGameSave, type GameSave, type GameSaveDocument, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
+import { createGameSave, type GameSave, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
 import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
 import { isRecord } from "@jgengine/core/data/untyped";
 import { perContext } from "@jgengine/core/runtime/perContext";
@@ -24,7 +24,7 @@ import {
   type MissionFlags,
 } from "./runState";
 
-/** The document's own format version; bump it with {@link migrateHarborSave} when a section changes shape. */
+/** The document's own format version; bump it with a `migrate` when a section changes shape. */
 export const HARBOR_SAVE_VERSION = 2;
 
 /**
@@ -215,30 +215,6 @@ function cashSystem(ctx: GameContext): GameSaveSystem {
   };
 }
 
-/**
- * Upgrade a stored document to the current shape. Version 0 is a document written before the version
- * field existed (a bare system bag), and a pre-document save has no game section at all - that boot
- * falls back to the heat the world snapshot's `harbor.wanted` store already restored.
- */
-function numberOr(value: unknown, fallback: number): number {
-  return typeof value === "number" ? value : fallback;
-}
-
-export function migrateHarborSave(document: unknown, fromVersion: number): GameSaveDocument {
-  const base = isRecord(document) ? document : {};
-  if (fromVersion >= HARBOR_SAVE_VERSION) return base as unknown as GameSaveDocument;
-  const systems = base["systems"];
-  return {
-    version: HARBOR_SAVE_VERSION,
-    game: "harbor-heat",
-    savedAt: numberOr(base["savedAt"], 0),
-    time: numberOr(base["time"], 0),
-    playtime: numberOr(base["playtime"], 0),
-    rng: (base["rng"] as GameSaveDocument["rng"]) ?? null,
-    systems: isRecord(systems) ? { ...systems } : {},
-  };
-}
-
 /** The game's document, one per context, writing beside the world snapshot. */
 export function createHarborSave(ctx: GameContext, options: { backend?: SaveBackend; slot?: string } = {}): GameSave {
   return createGameSave({
@@ -246,7 +222,6 @@ export function createHarborSave(ctx: GameContext, options: { backend?: SaveBack
     game: "harbor-heat",
     slot: options.slot ?? ctx.game.save?.slot() ?? "default",
     version: HARBOR_SAVE_VERSION,
-    migrate: migrateHarborSave,
     clock: () => ctx.time.now(),
     playtime: () => ctx.time.now(),
     // Play touches the document every few seconds; with autosave off, a touch only marked the

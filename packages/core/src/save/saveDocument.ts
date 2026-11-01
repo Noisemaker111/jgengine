@@ -1,4 +1,5 @@
 import { devtools } from "../devtools/devtools";
+import { isRecord } from "../data/untyped";
 import { hashString, restoreRng, rngStateOf } from "../random/rng";
 import {
   createSaveStore,
@@ -185,6 +186,40 @@ export function gameSaveDigest(document: GameSaveDocument): string {
   });
 }
 
+function numberOr(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function rngStateOr(value: unknown): GameSaveRngState | null {
+  if (!isRecord(value)) return null;
+  const seed = value["seed"];
+  const cursor = value["cursor"];
+  if (typeof seed !== "string" && typeof seed !== "number") return null;
+  return { seed, cursor: typeof cursor === "number" ? cursor : null };
+}
+
+/**
+ * Lift a stored payload into the current {@link GameSaveDocument} envelope: keep its sections, clock
+ * and RNG fields where they have the right type, fill the rest, and stamp `game` and `version`. It is
+ * what `createGameSave` does to an older document when the game passes no `migrate`, and a game's own
+ * `migrate` can call it first and then reshape only the sections that changed.
+ *
+ * @capability save-envelope-upgrade lift an older or pre-versioned save payload into the current document envelope
+ */
+export function upgradeSaveEnvelope(document: unknown, options: { readonly game: string; readonly version: number }): GameSaveDocument {
+  const base = isRecord(document) ? document : {};
+  const systems = base["systems"];
+  return {
+    version: options.version,
+    game: options.game,
+    savedAt: numberOr(base["savedAt"], 0),
+    time: numberOr(base["time"], 0),
+    playtime: numberOr(base["playtime"], 0),
+    rng: rngStateOr(base["rng"]),
+    systems: isRecord(systems) ? { ...systems } : {},
+  };
+}
+
 function emptyDocument(config: GameSaveConfig, version: number): GameSaveDocument {
   return {
     version,
@@ -263,7 +298,7 @@ export function createGameSave(config: GameSaveConfig): GameSave {
     migrate: (data, fromVersion) => {
       if (fromVersion === version) return data as GameSaveDocument;
       if (config.migrate !== undefined) return { ...config.migrate(data, fromVersion), version };
-      return { ...(data as GameSaveDocument), version };
+      return upgradeSaveEnvelope(data, { game: config.game, version });
     },
   });
 
