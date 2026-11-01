@@ -22907,5 +22907,515 @@
       "near": 160,
       "far": 900
     }
+  },
+  "simulation": {
+    "emitters": [
+      {
+        "id": "spores-1",
+        "position": {
+          "x": -26,
+          "y": 0.6,
+          "z": -20
+        },
+        "config": {
+          "rate": 6,
+          "max": 60,
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            7,
+            0.4,
+            7
+          ],
+          "speed": {
+            "min": 0.15,
+            "max": 0.45
+          },
+          "gravity": [
+            0.04,
+            0.05,
+            0.02
+          ],
+          "drag": 0.3,
+          "lifetime": {
+            "min": 6,
+            "max": 10
+          },
+          "size": {
+            "start": 0.18,
+            "end": 0.04
+          },
+          "colorStart": 10477764,
+          "colorEnd": 16773334,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "spores-2",
+        "position": {
+          "x": 24,
+          "y": 0.6,
+          "z": -24
+        },
+        "config": {
+          "rate": 6,
+          "max": 60,
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            7,
+            0.4,
+            7
+          ],
+          "speed": {
+            "min": 0.15,
+            "max": 0.45
+          },
+          "gravity": [
+            0.04,
+            0.05,
+            0.02
+          ],
+          "drag": 0.3,
+          "lifetime": {
+            "min": 6,
+            "max": 10
+          },
+          "size": {
+            "start": 0.18,
+            "end": 0.04
+          },
+          "colorStart": 16164559,
+          "colorEnd": 16773334,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "spores-3",
+        "position": {
+          "x": 30,
+          "y": 0.6,
+          "z": 12
+        },
+        "config": {
+          "rate": 6,
+          "max": 60,
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            7,
+            0.4,
+            7
+          ],
+          "speed": {
+            "min": 0.15,
+            "max": 0.45
+          },
+          "gravity": [
+            0.04,
+            0.05,
+            0.02
+          ],
+          "drag": 0.3,
+          "lifetime": {
+            "min": 6,
+            "max": 10
+          },
+          "size": {
+            "start": 0.18,
+            "end": 0.04
+          },
+          "colorStart": 10477764,
+          "colorEnd": 16773334,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "spores-4",
+        "position": {
+          "x": -28,
+          "y": 0.6,
+          "z": 18
+        },
+        "config": {
+          "rate": 6,
+          "max": 60,
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            7,
+            0.4,
+            7
+          ],
+          "speed": {
+            "min": 0.15,
+            "max": 0.45
+          },
+          "gravity": [
+            0.04,
+            0.05,
+            0.02
+          ],
+          "drag": 0.3,
+          "lifetime": {
+            "min": 6,
+            "max": 10
+          },
+          "size": {
+            "start": 0.18,
+            "end": 0.04
+          },
+          "colorStart": 16164559,
+          "colorEnd": 16773334,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "spores-5",
+        "position": {
+          "x": 4,
+          "y": 0.6,
+          "z": 30
+        },
+        "config": {
+          "rate": 6,
+          "max": 60,
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            7,
+            0.4,
+            7
+          ],
+          "speed": {
+            "min": 0.15,
+            "max": 0.45
+          },
+          "gravity": [
+            0.04,
+            0.05,
+            0.02
+          ],
+          "drag": 0.3,
+          "lifetime": {
+            "min": 6,
+            "max": 10
+          },
+          "size": {
+            "start": 0.18,
+            "end": 0.04
+          },
+          "colorStart": 10477764,
+          "colorEnd": 16773334,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "spores-6",
+        "position": {
+          "x": -6,
+          "y": 0.6,
+          "z": -32
+        },
+        "config": {
+          "rate": 6,
+          "max": 60,
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "spread": 0.5,
+          "spawnJitter": [
+            7,
+            0.4,
+            7
+          ],
+          "speed": {
+            "min": 0.15,
+            "max": 0.45
+          },
+          "gravity": [
+            0.04,
+            0.05,
+            0.02
+          ],
+          "drag": 0.3,
+          "lifetime": {
+            "min": 6,
+            "max": 10
+          },
+          "size": {
+            "start": 0.18,
+            "end": 0.04
+          },
+          "colorStart": 16164559,
+          "colorEnd": 16773334,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "shell-light-1",
+        "position": {
+          "x": -12,
+          "y": 2.2,
+          "z": -9
+        },
+        "config": {
+          "rate": 0.4,
+          "max": 3,
+          "direction": [
+            0,
+            0,
+            0
+          ],
+          "spread": 0,
+          "speed": {
+            "min": 0,
+            "max": 0
+          },
+          "lifetime": {
+            "min": 2.4,
+            "max": 2.4
+          },
+          "size": {
+            "start": 0.2,
+            "end": 0.9
+          },
+          "colorStart": 16767370,
+          "colorEnd": 16164559,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "shell-light-2",
+        "position": {
+          "x": 12,
+          "y": 2.2,
+          "z": -9
+        },
+        "config": {
+          "rate": 0.4,
+          "max": 3,
+          "direction": [
+            0,
+            0,
+            0
+          ],
+          "spread": 0,
+          "speed": {
+            "min": 0,
+            "max": 0
+          },
+          "lifetime": {
+            "min": 2.4,
+            "max": 2.4
+          },
+          "size": {
+            "start": 0.2,
+            "end": 0.9
+          },
+          "colorStart": 16767370,
+          "colorEnd": 16164559,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "shell-light-3",
+        "position": {
+          "x": -12,
+          "y": 2.2,
+          "z": 9
+        },
+        "config": {
+          "rate": 0.4,
+          "max": 3,
+          "direction": [
+            0,
+            0,
+            0
+          ],
+          "spread": 0,
+          "speed": {
+            "min": 0,
+            "max": 0
+          },
+          "lifetime": {
+            "min": 2.4,
+            "max": 2.4
+          },
+          "size": {
+            "start": 0.2,
+            "end": 0.9
+          },
+          "colorStart": 16767370,
+          "colorEnd": 16164559,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "shell-light-4",
+        "position": {
+          "x": 12,
+          "y": 2.2,
+          "z": 9
+        },
+        "config": {
+          "rate": 0.4,
+          "max": 3,
+          "direction": [
+            0,
+            0,
+            0
+          ],
+          "spread": 0,
+          "speed": {
+            "min": 0,
+            "max": 0
+          },
+          "lifetime": {
+            "min": 2.4,
+            "max": 2.4
+          },
+          "size": {
+            "start": 0.2,
+            "end": 0.9
+          },
+          "colorStart": 16767370,
+          "colorEnd": 16164559,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "shell-light-5",
+        "position": {
+          "x": 0,
+          "y": 2.2,
+          "z": -9
+        },
+        "config": {
+          "rate": 0.4,
+          "max": 3,
+          "direction": [
+            0,
+            0,
+            0
+          ],
+          "spread": 0,
+          "speed": {
+            "min": 0,
+            "max": 0
+          },
+          "lifetime": {
+            "min": 2.4,
+            "max": 2.4
+          },
+          "size": {
+            "start": 0.2,
+            "end": 0.9
+          },
+          "colorStart": 16767370,
+          "colorEnd": 16164559,
+          "alpha": {
+            "start": 0.9,
+            "end": 0
+          }
+        },
+        "options": {
+          "blending": "additive",
+          "space": "world"
+        }
+      }
+    ]
   }
 }
