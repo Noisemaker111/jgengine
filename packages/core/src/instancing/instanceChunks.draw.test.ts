@@ -216,7 +216,7 @@ describe("instance chunks", () => {
     }, {
       update: (attribute: THREE.BufferAttribute) => resident.add(attribute),
       remove: (attribute: THREE.BufferAttribute) => resident.delete(attribute),
-    }, { render: { frame: 1 } });
+    }, { releaseStatesOfObject: () => {} }, { render: { frame: 1 } });
     let sharedDisposals = 0;
     geometry.addEventListener("dispose", () => sharedDisposals += 1);
     materials.forEach((material) => material.addEventListener("dispose", () => sharedDisposals += 1));
