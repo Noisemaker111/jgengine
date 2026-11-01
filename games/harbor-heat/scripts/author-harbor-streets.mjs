@@ -288,3 +288,35 @@ function buildMotorboat() {
   return batch.group('runabout');
 }
 await exportModel('runabout', buildMotorboat());
+
+/** The pool of sodium light a streetlamp throws on the road, 5 m across: an amber disc fading to nothing at its edge. */
+function buildLampPool() {
+  const batch = new Batch();
+  const pool = vertex('lamp pool', { side: THREE.DoubleSide, transparent: true, roughness: 1, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  const rings = 6, around = 24, radius = 5;
+  const positions = [], colors = [], index = [];
+  const amber = hex('#ffb020');
+  positions.push(0, 0, 0);
+  colors.push(...amber, 0.34);
+  for (let r = 1; r <= rings; r++) {
+    const t = r / rings;
+    for (let a = 0; a < around; a++) {
+      const angle = (a / around) * Math.PI * 2;
+      positions.push(Math.cos(angle) * radius * t, 0, Math.sin(angle) * radius * t);
+      colors.push(...amber, 0.34 * Math.pow(1 - t, 1.6));
+    }
+  }
+  for (let a = 0; a < around; a++) index.push(0, 1 + ((a + 1) % around), 1 + a);
+  for (let r = 1; r < rings; r++) for (let a = 0; a < around; a++) {
+    const i0 = 1 + (r - 1) * around + a, i1 = 1 + (r - 1) * around + ((a + 1) % around), o0 = 1 + r * around + a, o1 = 1 + r * around + ((a + 1) % around);
+    index.push(i0, i1, o0, i1, o1, o0);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
+  geometry.setIndex(index);
+  geometry.computeVertexNormals();
+  batch.add(pool, geometry);
+  return batch.group('lamp pool');
+}
+await exportModel('lamp-pool', buildLampPool());

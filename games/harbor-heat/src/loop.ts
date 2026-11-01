@@ -42,6 +42,7 @@ import {
   HHPD_POS,
 } from "./game/world/districts";
 import { disposeWorld, setupWorld } from "./game/world/setup";
+import { tickNightLook } from "./game/world/nightLook";
 import { disposeTraffic, setupTraffic, tickTraffic } from "./game/world/traffic";
 import { disposeResidents, setupResidents, tickResidents } from "./game/world/residents";
 import { courierLoop, courierStore, finishCourier, registerCourier, restoreCourier, setupCourierLandmarks, tickCourier } from "./game/jobs/courier";
@@ -334,6 +335,7 @@ function onTick(ctx: GameContext, dt: number): void {
   }
   streetPlayOf(ctx).tick(ctx, dt);
   tickTraffic(ctx, dt);
+  tickNightLook(ctx);
   tickResidents(ctx, dt);
   tickGangers(ctx, dt);
   tickCity(ctx, dt);

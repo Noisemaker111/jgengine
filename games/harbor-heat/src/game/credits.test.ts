@@ -11,5 +11,9 @@ describe("harbor-heat credits", () => {
     expect(text).toMatch(/Quaternius/);
     expect(text).toMatch(/ambientCG/);
     expect(text).toMatch(/CC0/);
+    expect(text).toMatch(/Small Harbour Sunset/);
+    expect(text).toMatch(/Neon sunset/);
+    expect(text).toMatch(/Bangers/);
+    expect(text).toMatch(/Barlow/);
   });
 });

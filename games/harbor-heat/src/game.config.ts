@@ -1,3 +1,5 @@
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { defineGame } from "@jgengine/shell/defineGame";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
@@ -210,10 +212,16 @@ export const game = defineGame({
     },
   },
   rendering: {
-    // Mid-afternoon Gulf sun under a clear tropical sky. The scene document places the sun low in
-  // the east-southeast so palms and blocks throw long shadows; the mood owns the rig, haze and grade.
+    // Golden hour is the hero time and the cycle runs on into a neon night. The mood owns the sun,
+    // sky fill and haze; the sunset HDRI lights the surfaces and the neon sunset grade ties them.
     look: "cinematic",
-    mood: "day",
+    mood: { preset: "golden", sun: { azimuth: 260, elevation: 12, color: "#ffb27a" }, horizonColor: "#f0b8a0", fog: { near: 150, far: 700 } },
+    environmentSource: hdriEnvironment("harbour-sunset", { intensity: 1 }),
+    postProcessing: {
+      toneMapping: "aces",
+      bloom: { strength: 0.3, threshold: 0.85 },
+      grade: { lut: lutGrade("neon-sunset") },
+    },
     shadows: true,
   },
   camera: {

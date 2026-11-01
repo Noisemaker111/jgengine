@@ -1012,8 +1012,8 @@
         "z": 60
       },
       "rotationY": 0,
-      "catalogId": "obj_flametree",
       "label": "Palm Court",
+      "catalogId": "obj_flametree",
       "meta": {
         "catalogId": "obj_flametree"
       }
@@ -5123,8 +5123,8 @@
           "z": 280
         }
       ],
-      "label": "Avenue W",
       "width": 14,
+      "label": "Avenue W",
       "meta": {
         "level": "avenue"
       }
@@ -5144,8 +5144,8 @@
           "z": 280
         }
       ],
-      "label": "Avenue C-W",
       "width": 14,
+      "label": "Avenue C-W",
       "meta": {
         "level": "avenue"
       }
@@ -5165,8 +5165,8 @@
           "z": 280
         }
       ],
-      "label": "Avenue C-E",
       "width": 14,
+      "label": "Avenue C-E",
       "meta": {
         "level": "avenue"
       }
@@ -5186,8 +5186,8 @@
           "z": 280
         }
       ],
-      "label": "Avenue E",
       "width": 14,
+      "label": "Avenue E",
       "meta": {
         "level": "avenue"
       }
@@ -5207,8 +5207,8 @@
           "z": -240
         }
       ],
-      "label": "Street N",
       "width": 9,
+      "label": "Street N",
       "meta": {
         "level": "street"
       }
@@ -5228,8 +5228,8 @@
           "z": -120
         }
       ],
-      "label": "Street NC",
       "width": 9,
+      "label": "Street NC",
       "meta": {
         "level": "street"
       }
@@ -5249,8 +5249,8 @@
           "z": 0
         }
       ],
-      "label": "Street Mid",
       "width": 9,
+      "label": "Street Mid",
       "meta": {
         "level": "street"
       }
@@ -5270,8 +5270,8 @@
           "z": 120
         }
       ],
-      "label": "Street SC",
       "width": 9,
+      "label": "Street SC",
       "meta": {
         "level": "street"
       }
@@ -5291,8 +5291,8 @@
           "z": 240
         }
       ],
-      "label": "Street S",
       "width": 9,
+      "label": "Street S",
       "meta": {
         "level": "street"
       }
@@ -8314,7 +8314,13 @@
   "environment": {
     "preset": "day",
     "timeOfDay": true,
-    "sunAzimuth": 104.5,
-    "sunElevation": 22.6
+    "horizonColor": "#f0b8a0",
+    "sunAzimuth": 260,
+    "sunElevation": 12,
+    "fog": {
+      "color": "#f0b8a0",
+      "near": 150,
+      "far": 700
+    }
   }
 }

@@ -11,7 +11,7 @@ import {
 } from "@jgengine/core/world/features";
 import { editorLayers } from "./editorLayers";
 import { GROUND_MAPS } from "./game/assets";
-import { roadSource } from "./game/world/cityLayout";
+import { initialRoads, roadSource } from "./game/world/cityLayout";
 import { DISTRICTS, ROADS, SHORE_X, WORLD_D, WORLD_W } from "./game/world/districts";
 
 /** The sky the scene document authors; the day/night cycle runs on it. */
@@ -22,7 +22,7 @@ const authoredSky = skyFromDocument(editorLayers);
  * `game/world/cityLayout.ts`; `roadSource` below keeps the drawn streets in step when a layout slider
  * moves.
  */
-export const streets = roadSource.initial;
+export const streets = initialRoads;
 
 /**
  * Region order is paint order — later entries win overlaps. Districts wash first, streets lay

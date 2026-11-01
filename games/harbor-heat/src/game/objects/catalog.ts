@@ -44,6 +44,7 @@ export const OBJECTS: readonly ObjectDef[] = [
   { id: "obj_cargo", label: "Cargo Container", color: "#c08a3c", footprint: { w: 3, h: 2, d: 2 }, solid: true },
   { id: "obj_cargo_teal", label: "Cargo Container", color: "#2c8c97", footprint: { w: 3, h: 2, d: 2 }, solid: true },
   { id: "obj_cargo_amber", label: "Cargo Container", color: "#e0a53c", footprint: { w: 3, h: 2, d: 2 }, solid: true },
+  { id: "obj_lamp_pool", label: "Lamp light", color: "#ffb020", footprint: { w: 5, h: 0.1, d: 5 }, solid: false },
   { id: "obj_awning", label: "Awning", color: "#7fd1c4", footprint: { w: 4, h: 1, d: 1.5 }, solid: false },
   { id: "obj_roof_a", label: "Roof air-handlers", color: "#d9d2c4", footprint: { w: 3, h: 1, d: 3 }, solid: false },
   { id: "obj_roof_b", label: "Roof water tank", color: "#8a5a3c", footprint: { w: 3, h: 5, d: 3 }, solid: false },

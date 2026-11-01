@@ -123,6 +123,7 @@ const AUTHORED_OBJECTS: Record<string, ModelConfig> = {
   obj_cargo: container("#d9694a"),
   obj_cargo_teal: container("#2c8c97"),
   obj_cargo_amber: container("#e0a53c"),
+  obj_lamp_pool: { url: art("lamp-pool"), anchor: "origin" },
   obj_awning: { url: art("awning"), anchor: "origin" },
   obj_roof_a: { url: art("roof-clutter-a"), anchor: "origin" },
   obj_roof_b: { url: art("roof-clutter-b"), anchor: "origin" },

@@ -12,6 +12,7 @@ import { streets } from "../../world";
 import { editorLayers } from "../../editorLayers";
 import { buildingsForZone } from "./buildings";
 import { cityLayout, LOT_ROADS, roadSource, zoneAt } from "./cityLayout";
+import { setLampSpots } from "./nightLook";
 import { PALM_IDS } from "./models";
 import {
   BOUNTY_SPOTS,
@@ -322,10 +323,12 @@ function placeStreetFurniture(ctx: GameContext, layout: CityLayout, ids: string[
   const rng = seededRng("harbor-heat-street-props");
   const propOutset = Math.max(0.4, layout.sidewalkWidth - 1.6);
   let propIndex = 0;
+  const lamps: (readonly [number, number])[] = [];
   for (const street of roadSource.current()) {
     // Denser lighting the length of every street reads as a lived-in city at night.
     for (const spot of furnitureSpots(street, { spacing: 40, outset: 0.1 })) {
       const [x, z] = spot.position;
+      lamps.push([x, z]);
       ids.push(ctx.scene.object.place("obj_streetlight", x, ctx.world.groundHeightAt(x, z), z, { rotation: spot.heading }));
     }
     // District-flavored sidewalk dressing: neon + hydrants downtown, palms + benches on Mainsail Boulevard,
@@ -345,6 +348,7 @@ function placeStreetFurniture(ctx: GameContext, layout: CityLayout, ids: string[
       );
     }
   }
+  setLampSpots(ctx, lamps);
 }
 
 /** The open square at Mainsail's bounty marker; its dressing keeps this radius clear for the fight. */
