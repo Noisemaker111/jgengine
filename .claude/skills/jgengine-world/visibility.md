@@ -35,7 +35,8 @@ default render distance.
 | `preloadMargin` (culling) | 24 world units | Preload/consider region beyond the visible frustum |
 | `hysteresis` | 2 world units | Re-test band for already-visible objects (no flicker) |
 | `defaultMaxRenderDistance` | `Infinity` | Never distance-cull unless a game opts in |
-| `occlusionCulling` | `false` | Off until proven reliable for the renderer |
+| `occlusionCulling` | `false` | Off: the stage is fed no occluders yet, so it cannot hide anything |
+| `hlod` | unset | Far static cells keep drawing their props unless a game sets `{ distance, hysteresis, cluster }` |
 | streaming `preloadMargin` | 32 | Assets load ahead of visibility |
 | `unloadGraceSeconds` | 10 | Grace period before an idle asset is unloaded |
 | `maxLoadsPerFrame` / `maxUnloadsPerFrame` | 4 / 2 | Per-frame budgets to avoid spikes |
@@ -55,6 +56,7 @@ visibility: {
   scene: { preloadMargin: 60 },            // scene-wide override
   entities: { boss: { alwaysVisible: true } },   // by entity kind
   objects:  { beacon: { neverUnload: true } },   // by object catalog id
+  hlod: { distance: 350, hysteresis: 40, cluster: 1.5 }, // far 128 m cells draw one merged proxy
 }
 ```
 
