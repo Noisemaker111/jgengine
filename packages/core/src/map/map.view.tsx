@@ -31,6 +31,7 @@ import {
 } from "@jgengine/core/map/mapLayers";
 import { createFogDataUrl } from "./fogOverlay.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
+import { clamp } from "@jgengine/core/math/scalar";
 
 type ProjectFn = (x: number, z: number) => { x: number; y: number };
 
@@ -1191,10 +1192,6 @@ export function WorldMap({
   );
 }
 
-function clampScale(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
 function mapControlEvent(event: { currentTarget: Element; nativeEvent: Event }): boolean {
   for (const target of event.nativeEvent.composedPath()) {
     if (target === event.currentTarget) break;
@@ -1292,7 +1289,7 @@ export function FullscreenMap({
 
   const zoomBy = (factor: number, sx: number, sy: number): void => {
     setViewport((prev) => {
-      const next = clampScale(prev.scale * factor, minScale, maxScale);
+      const next = clamp(prev.scale * factor, minScale, Math.max(minScale, maxScale));
       const k = next / prev.scale;
       return { scale: next, tx: sx - k * (sx - prev.tx), ty: sy - k * (sy - prev.ty) };
     });
