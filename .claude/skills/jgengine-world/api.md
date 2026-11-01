@@ -1191,32 +1191,6 @@
 - `citySolids` (function): function citySolids(city: ResolvedCity, sampleHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per wall and roof piece of every lot, grounded the way the city renderer grounds it: grade at the highest lot corner, foundations down to half a metre under the lowest.
 - `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned frontage lots with massing pieces → furniture, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. When `context.zoneOverrides` carries sibling `cityzone` volumes, lots inside them adopt the override band/mix. Returns null without a usable footprint.
 
-## @jgengine/core/city/cityLayout
-
-- `CITY_ZONES` (const): const CITY_ZONES: readonly CityZone[] — Every zone, in slider order.
-- `CityLayout` (interface): interface CityLayout — A whole city's layout. Lengths are metres.
-- `CityLayoutDriveway` (interface): interface CityLayoutDriveway — A driveway strip from the kerb to a lot's front, beside the building.
-- `CityLayoutLot` (interface): interface CityLayoutLot extends PlacedBuildingLot — A lot with the zone it is built in and the building it gets.
-- `CityLayoutPatch` (type): type CityLayoutPatch = Partial<Omit<CityLayout, "zones">> & { zones?: Partial<Record<CityZone, Partial<CityZoneLayout>>>; } — Partial layout a game passes: any top-level number, and any zone field.
-- `CityLayoutStore` (interface): interface CityLayoutStore — A city layout that can change while the game runs.
-- `CityLotOptions` (interface): interface CityLotOptions — Options for {@link cityLots}.
-- `CityLotRoad` (interface): interface CityLotRoad — One road a city's lots line.
-- `CityRoadClass` (type): type CityRoadClass = "avenue" | "street" — Street class: an avenue carries `avenueLanes`, a street `streetLanes`.
-- `CityRoadSpec` (interface): interface CityRoadSpec extends Omit<RoadEnvironmentConfig, "width"> — A road for {@link cityRoad}: any `road()` field, plus the class that sizes it.
-- `CityZone` (type): type CityZone = "core" | "commercial" | "residential" | "industrial" — Zone a lot is built in; each carries its own setback, lot size and height range.
-- `CityZoneLayout` (interface): interface CityZoneLayout — One zone's lots and buildings. Lengths are metres.
-- `TuneCityLayoutOptions` (interface): interface TuneCityLayoutOptions — Options for {@link tuneCityLayout}.
-- `US_CITY_LAYOUT` (const): const US_CITY_LAYOUT: CityLayout — US city defaults: 3.5 m lanes, 2.5 m sidewalks, 15 cm kerbs, zone setbacks 0 / 1.5 / 6 / 4 m.
-- `cityLaneCount` (function): function cityLaneCount(layout: CityLayout, roadClass: CityRoadClass): number — Lanes a road class carries, both directions together.
-- `cityLaneOffsets` (function): function cityLaneOffsets(layout: CityLayout, roadClass: CityRoadClass): readonly number[] — Signed lane-centre offsets from a road's centreline, right-hand traffic: negative offsets run with the path, positive against it. Parking lanes are outside these.
-- `cityLots` (function): function cityLots(layout: CityLayout, options: CityLotOptions): CityLayoutLot[] — Lay a city's building lots from its layout. Each zone lines every road with its own frontage, depth and side gap, set back past the sidewalk by its own setback; lots keep `cornerClearance` from the roads they do not front, never touch asphalt or each other, and a zone with driveways gets one per lot in the side gap. Deterministic for the same inputs and seed.
-- `cityRoad` (function): function cityRoad(layout: CityLayout, spec: CityRoadSpec): RoadEnvironmentDescriptor — A `road()` sized by the layout: lane count times lane width plus parking, the layout's sidewalk and kerb.
-- `cityRoadSource` (function): function cityRoadSource(store: CityLayoutStore, specs: readonly CityRoadSpec[]): LiveRoadSource & { /** The roads for the layout at boot, for `environment({ roads })`. */ readonly initial: readonly RoadEnvironmentDescriptor[]; } — Roads that follow a layout store: `current()` is rebuilt from `specs` whenever the layout changes, so an `environment({ roadSource })` redraws streets as a slider moves.
-- `cityRoadWidth` (function): function cityRoadWidth(layout: CityLayout, roadClass: CityRoadClass): number — Kerb-to-kerb width of a road class: its lanes plus a parking lane each side.
-- `createCityLayout` (function): function createCityLayout(patch: CityLayoutPatch = {}): CityLayoutStore — Create a city layout from US defaults plus the game's patch.
-- `resolveCityLayout` (function): function resolveCityLayout(patch: CityLayoutPatch = {}, base: CityLayout = US_CITY_LAYOUT): CityLayout — Merge a patch over a full layout, clamping every number to its slider range.
-- `tuneCityLayout` (function): function tuneCityLayout(store: CityLayoutStore, options: TuneCityLayoutOptions = {}): void — Register a devtools slider for every number in the layout (and a toggle per zone's driveways); dragging one sets the store, which re-lays whatever listens to it. Registering again keeps the values already dragged, so a hot reload does not snap the sliders back.
-
 ## @jgengine/core/cutscene/cutscene.view
 
 - `CutsceneLetterbox` (function): function CutsceneLetterbox({ active, caption, onSkip, skipLabel = "Skip", progress, theme, className, style, }: CutsceneLetterboxProps): ReactNode — A drop-in cinematic letterbox overlay: black bars slide in top and bottom while a cutscene is `active`, an optional caption/dialogue line sits above the lower bar with an optional progress line, and a Skip button rides the top bar. Presentation only — it never touches the director; wire `active`/`caption`/`progress`/`onSkip` from {@link useSequenceDirector} and your `onCue` handler. Reskin via {@link CutsceneLetterboxTheme}.

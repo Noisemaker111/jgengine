@@ -1530,46 +1530,6 @@
       "intent": "editor-authorable procedural city district (streets, zoning, buildings, furniture)"
     },
     {
-      "id": "city-layout",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/city/cityLayout",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "one street, sidewalk, kerb and lot layout with real-world defaults and live sliders"
-    },
-    {
-      "id": "city-layout-sliders",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/city/cityLayout",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "live dev-runner sliders for every city layout number"
-    },
-    {
-      "id": "city-layout-store",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/city/cityLayout",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a city layout a game sets once and sliders change live"
-    },
-    {
-      "id": "city-lots",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/city/cityLayout",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "lay zoned building lots, corners and driveways from one city layout"
-    },
-    {
       "id": "client-error-reporting",
       "packages": [
         "@jgengine/convex"
