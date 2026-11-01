@@ -766,6 +766,2506 @@
       "meta": {
         "catalogId": "prop_container_stack"
       }
+    },
+    {
+      "id": "d04-1-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.169924169033767,
+        "y": 0,
+        "z": -30
+      },
+      "rotationY": 2.674241457713724,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-2-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.937134565226735,
+        "y": 0,
+        "z": -21
+      },
+      "rotationY": 6.259443224923705,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-3-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.254962189868095,
+        "y": 0,
+        "z": -12
+      },
+      "rotationY": 0.11713823077463643,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-4-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.82734708879143,
+        "y": 0,
+        "z": -3
+      },
+      "rotationY": 2.0747712613166844,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-5-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.84736648052931,
+        "y": 0,
+        "z": 6
+      },
+      "rotationY": 1.9597496579537899,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-6-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.780971175991,
+        "y": 0,
+        "z": 15
+      },
+      "rotationY": 1.7278654068611132,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-7-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.64523273641244,
+        "y": 0,
+        "z": 33
+      },
+      "rotationY": 5.779789470242394,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-8-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.714815651532263,
+        "y": 0,
+        "z": 42
+      },
+      "rotationY": 4.218364669809187,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-9-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.031086615193637,
+        "y": 0,
+        "z": 51
+      },
+      "rotationY": 1.7353987810449576,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-10-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.24471328286454,
+        "y": 0,
+        "z": 60
+      },
+      "rotationY": 4.505262034270282,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-11-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.149401010666043,
+        "y": 0,
+        "z": 69
+      },
+      "rotationY": 4.191724776516415,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-12-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.982652252633127,
+        "y": 0,
+        "z": 96
+      },
+      "rotationY": 4.838553870675927,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-13-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.91015210999176,
+        "y": 0,
+        "z": 105
+      },
+      "rotationY": 3.2681234401735084,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-14-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.26198963392526,
+        "y": 0,
+        "z": 123
+      },
+      "rotationY": 5.12441414178935,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-15-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.728605397511274,
+        "y": 0,
+        "z": 141
+      },
+      "rotationY": 2.0031528852095644,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-16-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.500834684446456,
+        "y": 0,
+        "z": 159
+      },
+      "rotationY": 4.90303025438754,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-17-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.80785348210484,
+        "y": 0,
+        "z": 168
+      },
+      "rotationY": 4.1918381921663475,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-18-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.4365278756246,
+        "y": 0,
+        "z": 195
+      },
+      "rotationY": 3.3795976178747424,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-19-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.065631262585523,
+        "y": 0,
+        "z": 204
+      },
+      "rotationY": 1.8882895096032053,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-20-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.73849914390594,
+        "y": 0,
+        "z": 213
+      },
+      "rotationY": 0.8942627176088175,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-21-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.502275523822757,
+        "y": 0,
+        "z": 249
+      },
+      "rotationY": 2.3539568282533145,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-22-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.97863128045574,
+        "y": 0,
+        "z": 258
+      },
+      "rotationY": 1.6513371031729445,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-23-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.76519452771172,
+        "y": 0,
+        "z": 267
+      },
+      "rotationY": 1.5944677925321737,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-24-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.162549093086273,
+        "y": 0,
+        "z": 276
+      },
+      "rotationY": 2.6831871359371293,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-25-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.03766893213615,
+        "y": 0,
+        "z": 321
+      },
+      "rotationY": 3.9926788465059078,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-26-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.914224569965157,
+        "y": 0,
+        "z": 330
+      },
+      "rotationY": 2.804409782786947,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-27-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.873446299508217,
+        "y": 0,
+        "z": 348
+      },
+      "rotationY": 4.633694583635765,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-28-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.116189512517305,
+        "y": 0,
+        "z": 366
+      },
+      "rotationY": 5.4014681727160925,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-29-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.649739916343243,
+        "y": 0,
+        "z": 375
+      },
+      "rotationY": 4.280591742365104,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-30-inner",
+      "kind": "prop",
+      "position": {
+        "x": -24.444480371661484,
+        "y": 0,
+        "z": 411
+      },
+      "rotationY": 3.005045420523734,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-31-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.600735066086056,
+        "y": 0,
+        "z": 420
+      },
+      "rotationY": 5.336301198044309,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-32-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.8125797925517,
+        "y": 0,
+        "z": 429
+      },
+      "rotationY": 3.468730255498298,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-33-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.75944235865027,
+        "y": 0,
+        "z": 456
+      },
+      "rotationY": 2.488737777918009,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-34-inner",
+      "kind": "prop",
+      "position": {
+        "x": -23.663925396464766,
+        "y": 0,
+        "z": 483
+      },
+      "rotationY": 2.6380586045412264,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-35-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.44266715552658,
+        "y": 0,
+        "z": -24
+      },
+      "rotationY": 4.723398789204563,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-36-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.027379002887756,
+        "y": 0,
+        "z": -10
+      },
+      "rotationY": 3.6505006297982825,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d04-37-outer",
+      "kind": "prop",
+      "position": {
+        "x": -30.91387783549726,
+        "y": 0,
+        "z": 4
+      },
+      "rotationY": 4.6335035791996635,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d04-38-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.616406868677586,
+        "y": 0,
+        "z": 18
+      },
+      "rotationY": 4.924529166817822,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-39-outer",
+      "kind": "prop",
+      "position": {
+        "x": -31.82640176732093,
+        "y": 0,
+        "z": 32
+      },
+      "rotationY": 0.23028668164463953,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-40-outer",
+      "kind": "prop",
+      "position": {
+        "x": -30.542394439224154,
+        "y": 0,
+        "z": 46
+      },
+      "rotationY": 1.7009703192127583,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d04-41-outer",
+      "kind": "prop",
+      "position": {
+        "x": -30.799500518012792,
+        "y": 0,
+        "z": 144
+      },
+      "rotationY": 2.739362316818895,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-42-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.7852912414819,
+        "y": 0,
+        "z": 158
+      },
+      "rotationY": 5.470416705773532,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d04-43-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.11888835532591,
+        "y": 0,
+        "z": 172
+      },
+      "rotationY": 4.917331352394246,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d04-44-outer",
+      "kind": "prop",
+      "position": {
+        "x": -31.644556980812922,
+        "y": 0,
+        "z": 200
+      },
+      "rotationY": 6.108704492747601,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-45-outer",
+      "kind": "prop",
+      "position": {
+        "x": -30.706681456184015,
+        "y": 0,
+        "z": 214
+      },
+      "rotationY": 3.4747242390231996,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d04-46-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.32438220735639,
+        "y": 0,
+        "z": 270
+      },
+      "rotationY": 2.0983824519032597,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d04-47-outer",
+      "kind": "prop",
+      "position": {
+        "x": -30.309228946454823,
+        "y": 0,
+        "z": 368
+      },
+      "rotationY": 2.136914742733552,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-48-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.874318938702345,
+        "y": 0,
+        "z": 410
+      },
+      "rotationY": 0.9207954433747741,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-49-outer",
+      "kind": "prop",
+      "position": {
+        "x": -30.974088328890502,
+        "y": 0,
+        "z": 452
+      },
+      "rotationY": 0.1756158296642109,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d04-50-outer",
+      "kind": "prop",
+      "position": {
+        "x": -32.76551674352959,
+        "y": 0,
+        "z": 466
+      },
+      "rotationY": 0.9754174075588298,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-51-outer",
+      "kind": "prop",
+      "position": {
+        "x": -30.785082975402474,
+        "y": 0,
+        "z": 480
+      },
+      "rotationY": 6.17393269931851,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-52-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.98550597410649,
+        "y": 0,
+        "z": -25.5
+      },
+      "rotationY": 1.1248533950932469,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-53-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.14268347658217,
+        "y": 0,
+        "z": -16.5
+      },
+      "rotationY": 4.697411453927737,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-54-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.81477048341185,
+        "y": 0,
+        "z": -7.5
+      },
+      "rotationY": 1.6869445394627336,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-55-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.7997415214777,
+        "y": 0,
+        "z": 1.5
+      },
+      "rotationY": 3.347467685614097,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-56-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.332598762772978,
+        "y": 0,
+        "z": 10.5
+      },
+      "rotationY": 0.20360796835771672,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-57-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.231114059314134,
+        "y": 0,
+        "z": 19.5
+      },
+      "rotationY": 1.1145398021535602,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-58-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.84263909328729,
+        "y": 0,
+        "z": 28.5
+      },
+      "rotationY": 5.864492647932593,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-59-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.927677001804113,
+        "y": 0,
+        "z": 37.5
+      },
+      "rotationY": 2.3284938072048535,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-60-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.46239321064204,
+        "y": 0,
+        "z": 46.5
+      },
+      "rotationY": 2.8390861243843335,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-61-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.59081562170759,
+        "y": 0,
+        "z": 64.5
+      },
+      "rotationY": 4.48202851061505,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-62-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.63504589945078,
+        "y": 0,
+        "z": 82.5
+      },
+      "rotationY": 3.4508556172792972,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-63-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.6447799121961,
+        "y": 0,
+        "z": 91.5
+      },
+      "rotationY": 5.06126169455072,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-64-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.118440775200725,
+        "y": 0,
+        "z": 100.5
+      },
+      "rotationY": 3.7417549404380352,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-65-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.099730022903533,
+        "y": 0,
+        "z": 118.5
+      },
+      "rotationY": 5.234181699740163,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-66-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.73645241307095,
+        "y": 0,
+        "z": 127.5
+      },
+      "rotationY": 0.7128718023148238,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-67-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.040867230575532,
+        "y": 0,
+        "z": 136.5
+      },
+      "rotationY": 0.0536966480180661,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-68-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.09375716308132,
+        "y": 0,
+        "z": 145.5
+      },
+      "rotationY": 5.36772258202536,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-69-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.411090770084414,
+        "y": 0,
+        "z": 172.5
+      },
+      "rotationY": 3.913148548606916,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-70-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.96428707195446,
+        "y": 0,
+        "z": 181.5
+      },
+      "rotationY": 2.2081551212898427,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-71-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.690892637614162,
+        "y": 0,
+        "z": 190.5
+      },
+      "rotationY": 6.026131181877762,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-72-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.756300807651133,
+        "y": 0,
+        "z": 199.5
+      },
+      "rotationY": 4.634566852929282,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-73-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.86541332183406,
+        "y": 0,
+        "z": 226.5
+      },
+      "rotationY": 1.00953719660214,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-74-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.82424415657297,
+        "y": 0,
+        "z": 235.5
+      },
+      "rotationY": 1.5079706866776665,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-75-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.65838515451178,
+        "y": 0,
+        "z": 244.5
+      },
+      "rotationY": 4.3594587298002665,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-76-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.35381366731599,
+        "y": 0,
+        "z": 253.5
+      },
+      "rotationY": 1.9785264382534862,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-77-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.791941882297397,
+        "y": 0,
+        "z": 271.5
+      },
+      "rotationY": 3.900353470634846,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-78-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.39802182931453,
+        "y": 0,
+        "z": 280.5
+      },
+      "rotationY": 4.02501549933158,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-79-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.56390205398202,
+        "y": 0,
+        "z": 289.5
+      },
+      "rotationY": 4.9725442067455345,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-80-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.68105553528294,
+        "y": 0,
+        "z": 343.5
+      },
+      "rotationY": 4.4408946511218375,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-81-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.103072190005335,
+        "y": 0,
+        "z": 352.5
+      },
+      "rotationY": 4.81894234200561,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-82-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.588361516129225,
+        "y": 0,
+        "z": 361.5
+      },
+      "rotationY": 3.8532501314945597,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-83-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.739011869486422,
+        "y": 0,
+        "z": 388.5
+      },
+      "rotationY": 1.12750950280508,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-84-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.721603955794127,
+        "y": 0,
+        "z": 397.5
+      },
+      "rotationY": 3.7060310061299218,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-85-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.919830917101354,
+        "y": 0,
+        "z": 406.5
+      },
+      "rotationY": 0.21242244038442853,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-86-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.032186132576317,
+        "y": 0,
+        "z": 433.5
+      },
+      "rotationY": 2.647358139241317,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-87-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.107126836199313,
+        "y": 0,
+        "z": 442.5
+      },
+      "rotationY": 6.180068966255802,
+      "catalogId": "prop_dumpster",
+      "meta": {
+        "catalogId": "prop_dumpster"
+      }
+    },
+    {
+      "id": "d04-88-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.710030133556575,
+        "y": 0,
+        "z": 451.5
+      },
+      "rotationY": 4.143445633062017,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-89-inner",
+      "kind": "prop",
+      "position": {
+        "x": 23.605025651399046,
+        "y": 0,
+        "z": 460.5
+      },
+      "rotationY": 2.12411752597525,
+      "catalogId": "prop_tire_wall",
+      "meta": {
+        "catalogId": "prop_tire_wall"
+      }
+    },
+    {
+      "id": "d04-90-inner",
+      "kind": "prop",
+      "position": {
+        "x": 24.570543998945507,
+        "y": 0,
+        "z": 487.5
+      },
+      "rotationY": 5.409436830859832,
+      "catalogId": "prop_stripped_car",
+      "meta": {
+        "catalogId": "prop_stripped_car"
+      }
+    },
+    {
+      "id": "d04-91-outer",
+      "kind": "prop",
+      "position": {
+        "x": 30.232501902384683,
+        "y": 0,
+        "z": -24
+      },
+      "rotationY": 6.151805544033676,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d04-92-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.359640669310465,
+        "y": 0,
+        "z": -10
+      },
+      "rotationY": 3.336974418538833,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-93-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.28498130640946,
+        "y": 0,
+        "z": 4
+      },
+      "rotationY": 0.45501808110090614,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-94-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.30414994736202,
+        "y": 0,
+        "z": 18
+      },
+      "rotationY": 6.07235655512153,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d04-95-outer",
+      "kind": "prop",
+      "position": {
+        "x": 30.105288623599336,
+        "y": 0,
+        "z": 32
+      },
+      "rotationY": 4.7216055807959485,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d04-96-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.871149914572015,
+        "y": 0,
+        "z": 46
+      },
+      "rotationY": 1.0885763109785092,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-97-outer",
+      "kind": "prop",
+      "position": {
+        "x": 30.585061070742086,
+        "y": 0,
+        "z": 88
+      },
+      "rotationY": 3.1143254902829938,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d04-98-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.919757862575352,
+        "y": 0,
+        "z": 116
+      },
+      "rotationY": 5.580321299649586,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-99-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.03061121935025,
+        "y": 0,
+        "z": 130
+      },
+      "rotationY": 1.7762415973750543,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d04-100-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.527667354792356,
+        "y": 0,
+        "z": 144
+      },
+      "rotationY": 4.632675602676832,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d04-101-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.88871345925145,
+        "y": 0,
+        "z": 172
+      },
+      "rotationY": 1.003140768702386,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-102-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.98581704334356,
+        "y": 0,
+        "z": 186
+      },
+      "rotationY": 1.7221694782656813,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d04-103-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.59502318291925,
+        "y": 0,
+        "z": 200
+      },
+      "rotationY": 1.4069153164472983,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d04-104-outer",
+      "kind": "prop",
+      "position": {
+        "x": 32.812542096711695,
+        "y": 0,
+        "z": 256
+      },
+      "rotationY": 4.904514027826945,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d04-105-outer",
+      "kind": "prop",
+      "position": {
+        "x": 30.751757292542607,
+        "y": 0,
+        "z": 270
+      },
+      "rotationY": 3.1742095078926957,
+      "catalogId": "prop_wreck_pile",
+      "meta": {
+        "catalogId": "prop_wreck_pile"
+      }
+    },
+    {
+      "id": "d04-106-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.523122675716877,
+        "y": 0,
+        "z": 284
+      },
+      "rotationY": 1.0053129021518916,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-107-outer",
+      "kind": "prop",
+      "position": {
+        "x": 30.293535155709833,
+        "y": 0,
+        "z": 298
+      },
+      "rotationY": 4.844884243435648,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d04-108-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.401292111258954,
+        "y": 0,
+        "z": 396
+      },
+      "rotationY": 3.0571827266060922,
+      "catalogId": "prop_container_stack",
+      "meta": {
+        "catalogId": "prop_container_stack"
+      }
+    },
+    {
+      "id": "d04-109-outer",
+      "kind": "prop",
+      "position": {
+        "x": 30.249260131269693,
+        "y": 0,
+        "z": 466
+      },
+      "rotationY": 0.8968317217152931,
+      "catalogId": "prop_scrap_heap",
+      "meta": {
+        "catalogId": "prop_scrap_heap"
+      }
+    },
+    {
+      "id": "d04-110-outer",
+      "kind": "prop",
+      "position": {
+        "x": 31.642696449067444,
+        "y": 0,
+        "z": 480
+      },
+      "rotationY": 4.220390239348003,
+      "catalogId": "prop_appliance_stack",
+      "meta": {
+        "catalogId": "prop_appliance_stack"
+      }
+    },
+    {
+      "id": "d05-1-apron",
+      "kind": "decal",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 12
+      },
+      "rotationY": 0,
+      "meta": {
+        "style": "hazard",
+        "size": 14,
+        "opacity": 0.75,
+        "seed": "launch-apron"
+      }
+    },
+    {
+      "id": "d05-2-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -1.8386190969496965,
+        "y": 0,
+        "z": 33.15465686889365
+      },
+      "rotationY": 0.03282206090167165,
+      "meta": {
+        "style": "scorch",
+        "size": 6.820841862354428,
+        "opacity": 0.4,
+        "seed": "tyre-2"
+      }
+    },
+    {
+      "id": "d05-3-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.5638428695499895,
+        "y": 0,
+        "z": 35.1785963200964
+      },
+      "rotationY": 0.02912232605740428,
+      "meta": {
+        "style": "scorch",
+        "size": 6.468480960000306,
+        "opacity": 0.4,
+        "seed": "tyre-3"
+      }
+    },
+    {
+      "id": "d05-4-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -1.9547517266124486,
+        "y": 0,
+        "z": 56.827709906268865
+      },
+      "rotationY": 0.0449628003872931,
+      "meta": {
+        "style": "scorch",
+        "size": 6.227380263153464,
+        "opacity": 0.4,
+        "seed": "tyre-4"
+      }
+    },
+    {
+      "id": "d05-5-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.7627968788146973,
+        "y": 0,
+        "z": 58.78995300689712
+      },
+      "rotationY": 0.05890426537021994,
+      "meta": {
+        "style": "scorch",
+        "size": 5.510725368279964,
+        "opacity": 0.4,
+        "seed": "tyre-5"
+      }
+    },
+    {
+      "id": "d05-6-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.0305367086082695,
+        "y": 0,
+        "z": 82.84192693652585
+      },
+      "rotationY": 0.01700857060030103,
+      "meta": {
+        "style": "scorch",
+        "size": 5.6551103801466525,
+        "opacity": 0.4,
+        "seed": "tyre-6"
+      }
+    },
+    {
+      "id": "d05-7-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 1.846589731425047,
+        "y": 0,
+        "z": 78.27990921819583
+      },
+      "rotationY": 0.046156504880636925,
+      "meta": {
+        "style": "scorch",
+        "size": 6.076909982133657,
+        "opacity": 0.4,
+        "seed": "tyre-7"
+      }
+    },
+    {
+      "id": "d05-8-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.9639118175953625,
+        "y": 0,
+        "z": 103.82549323188141
+      },
+      "rotationY": -0.04923589518293738,
+      "meta": {
+        "style": "scorch",
+        "size": 6.164979631546885,
+        "opacity": 0.4,
+        "seed": "tyre-8"
+      }
+    },
+    {
+      "id": "d05-9-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 1.9160019144415854,
+        "y": 0,
+        "z": 107.84958723792806
+      },
+      "rotationY": 0.01227240091189742,
+      "meta": {
+        "style": "scorch",
+        "size": 6.440933879930526,
+        "opacity": 0.4,
+        "seed": "tyre-9"
+      }
+    },
+    {
+      "id": "d05-10-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.4368236172944306,
+        "y": 0,
+        "z": 129.25852277548984
+      },
+      "rotationY": -0.019214398842304945,
+      "meta": {
+        "style": "scorch",
+        "size": 5.018252818379551,
+        "opacity": 0.4,
+        "seed": "tyre-10"
+      }
+    },
+    {
+      "id": "d05-11-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.2467895008623597,
+        "y": 0,
+        "z": 130.88602243596688
+      },
+      "rotationY": 0.018232712130993603,
+      "meta": {
+        "style": "scorch",
+        "size": 5.891466647852212,
+        "opacity": 0.4,
+        "seed": "tyre-11"
+      }
+    },
+    {
+      "id": "d05-12-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.4035087104886768,
+        "y": 0,
+        "z": 154.73477701144293
+      },
+      "rotationY": -0.057572402413934465,
+      "meta": {
+        "style": "scorch",
+        "size": 6.086668374482542,
+        "opacity": 0.4,
+        "seed": "tyre-12"
+      }
+    },
+    {
+      "id": "d05-13-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.488902899622917,
+        "y": 0,
+        "z": 151.91138201812282
+      },
+      "rotationY": -0.00859752545133233,
+      "meta": {
+        "style": "scorch",
+        "size": 5.204604629892856,
+        "opacity": 0.4,
+        "seed": "tyre-13"
+      }
+    },
+    {
+      "id": "d05-14-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -1.8037749890238046,
+        "y": 0,
+        "z": 179.59838359476998
+      },
+      "rotationY": -0.002610153090208769,
+      "meta": {
+        "style": "scorch",
+        "size": 5.387594616506249,
+        "opacity": 0.4,
+        "seed": "tyre-14"
+      }
+    },
+    {
+      "id": "d05-15-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.640705605596304,
+        "y": 0,
+        "z": 176.90718377614394
+      },
+      "rotationY": 0.009827876519411803,
+      "meta": {
+        "style": "scorch",
+        "size": 6.241527177859098,
+        "opacity": 0.4,
+        "seed": "tyre-15"
+      }
+    },
+    {
+      "id": "d05-16-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.101282883808017,
+        "y": 0,
+        "z": 200.9555551414378
+      },
+      "rotationY": 0.03676419178023934,
+      "meta": {
+        "style": "scorch",
+        "size": 5.744185993913561,
+        "opacity": 0.4,
+        "seed": "tyre-16"
+      }
+    },
+    {
+      "id": "d05-17-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.198192949593067,
+        "y": 0,
+        "z": 200.01351483771577
+      },
+      "rotationY": -0.03596686625853181,
+      "meta": {
+        "style": "scorch",
+        "size": 6.671152901370078,
+        "opacity": 0.4,
+        "seed": "tyre-17"
+      }
+    },
+    {
+      "id": "d05-18-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.8468266148120165,
+        "y": 0,
+        "z": 226.06130797835067
+      },
+      "rotationY": 0.021581439692527054,
+      "meta": {
+        "style": "scorch",
+        "size": 6.57053933897987,
+        "opacity": 0.4,
+        "seed": "tyre-18"
+      }
+    },
+    {
+      "id": "d05-19-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.0792108483612535,
+        "y": 0,
+        "z": 226.60325041646138
+      },
+      "rotationY": 0.03631736425682902,
+      "meta": {
+        "style": "scorch",
+        "size": 5.817795917857438,
+        "opacity": 0.4,
+        "seed": "tyre-19"
+      }
+    },
+    {
+      "id": "d05-20-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.8666154410690066,
+        "y": 0,
+        "z": 249.0811808933504
+      },
+      "rotationY": -0.05914176201447844,
+      "meta": {
+        "style": "scorch",
+        "size": 6.781850116793066,
+        "opacity": 0.4,
+        "seed": "tyre-20"
+      }
+    },
+    {
+      "id": "d05-21-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.1226745545864105,
+        "y": 0,
+        "z": 248.7312725619413
+      },
+      "rotationY": -0.04244853654876351,
+      "meta": {
+        "style": "scorch",
+        "size": 5.633822102565318,
+        "opacity": 0.4,
+        "seed": "tyre-21"
+      }
+    },
+    {
+      "id": "d05-22-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.2755549106746913,
+        "y": 0,
+        "z": 270.22795388521627
+      },
+      "rotationY": -0.012856051158159972,
+      "meta": {
+        "style": "scorch",
+        "size": 6.82956867525354,
+        "opacity": 0.4,
+        "seed": "tyre-22"
+      }
+    },
+    {
+      "id": "d05-23-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.562787406891584,
+        "y": 0,
+        "z": 274.9586889096536
+      },
+      "rotationY": 0.041474979054182765,
+      "meta": {
+        "style": "scorch",
+        "size": 6.797305338550359,
+        "opacity": 0.4,
+        "seed": "tyre-23"
+      }
+    },
+    {
+      "id": "d05-24-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.9155281107872724,
+        "y": 0,
+        "z": 297.2733669136651
+      },
+      "rotationY": -0.010432475712150335,
+      "meta": {
+        "style": "scorch",
+        "size": 5.861556495074183,
+        "opacity": 0.4,
+        "seed": "tyre-24"
+      }
+    },
+    {
+      "id": "d05-25-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.278259579837322,
+        "y": 0,
+        "z": 294.55205143103376
+      },
+      "rotationY": 0.036492986138910055,
+      "meta": {
+        "style": "scorch",
+        "size": 5.934683766681701,
+        "opacity": 0.4,
+        "seed": "tyre-25"
+      }
+    },
+    {
+      "id": "d05-26-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.4186769176274536,
+        "y": 0,
+        "z": 323.43483864935115
+      },
+      "rotationY": 0.024384381193667648,
+      "meta": {
+        "style": "scorch",
+        "size": 6.007242439780384,
+        "opacity": 0.4,
+        "seed": "tyre-26"
+      }
+    },
+    {
+      "id": "d05-27-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.216526833921671,
+        "y": 0,
+        "z": 320.0575751834549
+      },
+      "rotationY": -0.005027037877589464,
+      "meta": {
+        "style": "scorch",
+        "size": 5.968416035640985,
+        "opacity": 0.4,
+        "seed": "tyre-27"
+      }
+    },
+    {
+      "id": "d05-28-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.2956832464784385,
+        "y": 0,
+        "z": 347.63718522386625
+      },
+      "rotationY": 0.04302327627316117,
+      "meta": {
+        "style": "scorch",
+        "size": 5.787779005710036,
+        "opacity": 0.4,
+        "seed": "tyre-28"
+      }
+    },
+    {
+      "id": "d05-29-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 1.9929692655801772,
+        "y": 0,
+        "z": 346.25035706022754
+      },
+      "rotationY": 0.040041661765426395,
+      "meta": {
+        "style": "scorch",
+        "size": 5.589637551922351,
+        "opacity": 0.4,
+        "seed": "tyre-29"
+      }
+    },
+    {
+      "id": "d05-30-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.4490503016859293,
+        "y": 0,
+        "z": 371.1493389797397
+      },
+      "rotationY": -0.04236681891605258,
+      "meta": {
+        "style": "scorch",
+        "size": 6.651198572013527,
+        "opacity": 0.4,
+        "seed": "tyre-30"
+      }
+    },
+    {
+      "id": "d05-31-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.865130057185888,
+        "y": 0,
+        "z": 369.45859454059973
+      },
+      "rotationY": -0.010118007827550173,
+      "meta": {
+        "style": "scorch",
+        "size": 5.855816729832441,
+        "opacity": 0.4,
+        "seed": "tyre-31"
+      }
+    },
+    {
+      "id": "d05-32-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.5113838266581294,
+        "y": 0,
+        "z": 394.5960672204383
+      },
+      "rotationY": -0.05586984297260642,
+      "meta": {
+        "style": "scorch",
+        "size": 6.63256965065375,
+        "opacity": 0.4,
+        "seed": "tyre-32"
+      }
+    },
+    {
+      "id": "d05-33-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.6819342270493505,
+        "y": 0,
+        "z": 395.262804439757
+      },
+      "rotationY": 0.03952988779172301,
+      "meta": {
+        "style": "scorch",
+        "size": 5.913411241490394,
+        "opacity": 0.4,
+        "seed": "tyre-33"
+      }
+    },
+    {
+      "id": "d05-34-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.8086733538657427,
+        "y": 0,
+        "z": 415.3446909603663
+      },
+      "rotationY": 0.0027442303486168384,
+      "meta": {
+        "style": "scorch",
+        "size": 5.139153136406094,
+        "opacity": 0.4,
+        "seed": "tyre-34"
+      }
+    },
+    {
+      "id": "d05-35-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.0079073794186115,
+        "y": 0,
+        "z": 416.57004165882245
+      },
+      "rotationY": -0.019828814584761857,
+      "meta": {
+        "style": "scorch",
+        "size": 5.8455242668278515,
+        "opacity": 0.4,
+        "seed": "tyre-35"
+      }
+    },
+    {
+      "id": "d05-36-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.5485734548419714,
+        "y": 0,
+        "z": 443.2668036748655
+      },
+      "rotationY": -0.023933732863515616,
+      "meta": {
+        "style": "scorch",
+        "size": 6.86055855685845,
+        "opacity": 0.4,
+        "seed": "tyre-36"
+      }
+    },
+    {
+      "id": "d05-37-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.2223944544792174,
+        "y": 0,
+        "z": 440.06311793485656
+      },
+      "rotationY": -0.044061500821262596,
+      "meta": {
+        "style": "scorch",
+        "size": 6.644560743588954,
+        "opacity": 0.4,
+        "seed": "tyre-37"
+      }
+    },
+    {
+      "id": "d05-38-tyre",
+      "kind": "decal",
+      "position": {
+        "x": -2.433684990182519,
+        "y": 0,
+        "z": 462.8749900502153
+      },
+      "rotationY": 0.024594848323613406,
+      "meta": {
+        "style": "scorch",
+        "size": 6.803900322411209,
+        "opacity": 0.4,
+        "seed": "tyre-38"
+      }
+    },
+    {
+      "id": "d05-39-tyre",
+      "kind": "decal",
+      "position": {
+        "x": 2.7937784783542154,
+        "y": 0,
+        "z": 465.0248205908574
+      },
+      "rotationY": -0.0017919044382870197,
+      "meta": {
+        "style": "scorch",
+        "size": 5.3098836173303425,
+        "opacity": 0.4,
+        "seed": "tyre-39"
+      }
+    },
+    {
+      "id": "d05-40-oil",
+      "kind": "decal",
+      "position": {
+        "x": 15.669089467264712,
+        "y": 0,
+        "z": 24.981928723864257
+      },
+      "rotationY": 4.567731130530315,
+      "meta": {
+        "style": "wet",
+        "size": 3.8573986262083055,
+        "opacity": 0.7,
+        "seed": "oil-40"
+      }
+    },
+    {
+      "id": "d05-41-oil",
+      "kind": "decal",
+      "position": {
+        "x": -11.739676838740706,
+        "y": 0,
+        "z": 42.352350457105786
+      },
+      "rotationY": 5.344033663675397,
+      "meta": {
+        "style": "wet",
+        "size": 3.9400764333084224,
+        "opacity": 0.7,
+        "seed": "oil-41"
+      }
+    },
+    {
+      "id": "d05-42-oil",
+      "kind": "decal",
+      "position": {
+        "x": -4.349874666891992,
+        "y": 0,
+        "z": 68.96893672272563
+      },
+      "rotationY": 1.1052591727438081,
+      "meta": {
+        "style": "wet",
+        "size": 3.8451742764562367,
+        "opacity": 0.7,
+        "seed": "oil-42"
+      }
+    },
+    {
+      "id": "d05-43-oil",
+      "kind": "decal",
+      "position": {
+        "x": 10.10602605715394,
+        "y": 0,
+        "z": 92.54633319703862
+      },
+      "rotationY": 4.7912306651887535,
+      "meta": {
+        "style": "wet",
+        "size": 3.6450507430359718,
+        "opacity": 0.7,
+        "seed": "oil-43"
+      }
+    },
+    {
+      "id": "d05-44-oil",
+      "kind": "decal",
+      "position": {
+        "x": 8.715575215406716,
+        "y": 0,
+        "z": 114.39020044822246
+      },
+      "rotationY": 0.4786261746899076,
+      "meta": {
+        "style": "wet",
+        "size": 3.90973439142108,
+        "opacity": 0.7,
+        "seed": "oil-44"
+      }
+    },
+    {
+      "id": "d05-45-oil",
+      "kind": "decal",
+      "position": {
+        "x": 6.814125524833798,
+        "y": 0,
+        "z": 137.60169971035793
+      },
+      "rotationY": 0.9871281647988747,
+      "meta": {
+        "style": "wet",
+        "size": 3.947614792920649,
+        "opacity": 0.7,
+        "seed": "oil-45"
+      }
+    },
+    {
+      "id": "d05-46-oil",
+      "kind": "decal",
+      "position": {
+        "x": 15.001469600014389,
+        "y": 0,
+        "z": 158.6823163535446
+      },
+      "rotationY": 3.1347210742866474,
+      "meta": {
+        "style": "wet",
+        "size": 3.2046508390456436,
+        "opacity": 0.7,
+        "seed": "oil-46"
+      }
+    },
+    {
+      "id": "d05-47-oil",
+      "kind": "decal",
+      "position": {
+        "x": 5.317872598767281,
+        "y": 0,
+        "z": 182.93356565153226
+      },
+      "rotationY": 3.5982523423616763,
+      "meta": {
+        "style": "wet",
+        "size": 4.380294098518789,
+        "opacity": 0.7,
+        "seed": "oil-47"
+      }
+    },
+    {
+      "id": "d05-48-oil",
+      "kind": "decal",
+      "position": {
+        "x": -6.208830379880965,
+        "y": 0,
+        "z": 196.18407253082842
+      },
+      "rotationY": 3.5751681899569285,
+      "meta": {
+        "style": "wet",
+        "size": 3.436583675444126,
+        "opacity": 0.7,
+        "seed": "oil-48"
+      }
+    },
+    {
+      "id": "d05-49-oil",
+      "kind": "decal",
+      "position": {
+        "x": -14.595722703263164,
+        "y": 0,
+        "z": 221.47122065955773
+      },
+      "rotationY": 3.7253194551941045,
+      "meta": {
+        "style": "wet",
+        "size": 2.6686750503256915,
+        "opacity": 0.7,
+        "seed": "oil-49"
+      }
+    },
+    {
+      "id": "d05-50-oil",
+      "kind": "decal",
+      "position": {
+        "x": -7.824002250097692,
+        "y": 0,
+        "z": 241.81513294577599
+      },
+      "rotationY": 4.1011905595057385,
+      "meta": {
+        "style": "wet",
+        "size": 4.561776201054453,
+        "opacity": 0.7,
+        "seed": "oil-50"
+      }
+    },
+    {
+      "id": "d05-51-oil",
+      "kind": "decal",
+      "position": {
+        "x": 15.94682427868247,
+        "y": 0,
+        "z": 264.0960746775381
+      },
+      "rotationY": 0.6680966724280837,
+      "meta": {
+        "style": "wet",
+        "size": 3.9773201359435912,
+        "opacity": 0.7,
+        "seed": "oil-51"
+      }
+    },
+    {
+      "id": "d05-52-oil",
+      "kind": "decal",
+      "position": {
+        "x": 7.593327273614705,
+        "y": 0,
+        "z": 285.5941076586023
+      },
+      "rotationY": 2.771585118045048,
+      "meta": {
+        "style": "wet",
+        "size": 3.140545622259378,
+        "opacity": 0.7,
+        "seed": "oil-52"
+      }
+    },
+    {
+      "id": "d05-53-oil",
+      "kind": "decal",
+      "position": {
+        "x": -13.355940351262689,
+        "y": 0,
+        "z": 312.2050010007806
+      },
+      "rotationY": 1.037670615146233,
+      "meta": {
+        "style": "wet",
+        "size": 2.9242744708433746,
+        "opacity": 0.7,
+        "seed": "oil-53"
+      }
+    },
+    {
+      "id": "d05-54-oil",
+      "kind": "decal",
+      "position": {
+        "x": 14.070225874893367,
+        "y": 0,
+        "z": 332.6310187969357
+      },
+      "rotationY": 5.606894083038389,
+      "meta": {
+        "style": "wet",
+        "size": 4.64576541222632,
+        "opacity": 0.7,
+        "seed": "oil-54"
+      }
+    },
+    {
+      "id": "d05-55-oil",
+      "kind": "decal",
+      "position": {
+        "x": 9.04385594278574,
+        "y": 0,
+        "z": 355.95498425653204
+      },
+      "rotationY": 1.5898241540774216,
+      "meta": {
+        "style": "wet",
+        "size": 3.0918003564700482,
+        "opacity": 0.7,
+        "seed": "oil-55"
+      }
+    },
+    {
+      "id": "d05-56-oil",
+      "kind": "decal",
+      "position": {
+        "x": 11.287460939027369,
+        "y": 0,
+        "z": 381.7936251712963
+      },
+      "rotationY": 3.9577355106557106,
+      "meta": {
+        "style": "wet",
+        "size": 2.7955542147159576,
+        "opacity": 0.7,
+        "seed": "oil-56"
+      }
+    },
+    {
+      "id": "d05-57-oil",
+      "kind": "decal",
+      "position": {
+        "x": 9.034814288839698,
+        "y": 0,
+        "z": 398.2391221434809
+      },
+      "rotationY": 4.490314393766771,
+      "meta": {
+        "style": "wet",
+        "size": 3.7633203344419597,
+        "opacity": 0.7,
+        "seed": "oil-57"
+      }
+    },
+    {
+      "id": "d05-58-oil",
+      "kind": "decal",
+      "position": {
+        "x": 9.888081110082567,
+        "y": 0,
+        "z": 420.2021465487778
+      },
+      "rotationY": 0.2166342561434607,
+      "meta": {
+        "style": "wet",
+        "size": 3.3983548846095797,
+        "opacity": 0.7,
+        "seed": "oil-58"
+      }
+    },
+    {
+      "id": "d05-59-oil",
+      "kind": "decal",
+      "position": {
+        "x": -8.756118584424257,
+        "y": 0,
+        "z": 442.26629538415
+      },
+      "rotationY": 4.828616601708787,
+      "meta": {
+        "style": "wet",
+        "size": 4.087642955593765,
+        "opacity": 0.7,
+        "seed": "oil-59"
+      }
+    },
+    {
+      "id": "d05-60-oil",
+      "kind": "decal",
+      "position": {
+        "x": 13.122758132405579,
+        "y": 0,
+        "z": 468.17763172555715
+      },
+      "rotationY": 3.021371908130333,
+      "meta": {
+        "style": "wet",
+        "size": 2.8103060089051723,
+        "opacity": 0.7,
+        "seed": "oil-60"
+      }
     }
   ],
   "volumes": [
