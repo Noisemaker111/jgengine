@@ -23,6 +23,7 @@ import { ScatterImpostorField } from "./ScatterImpostorField.draw";
 import { bakeGeneratorVariants, getGenerator, prepareGeneratorVariants, type GeneratorDefinition } from "@jgengine/core/generator/generator";
 import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
 import { ScatterHeroes } from "./ScatterHeroes.draw";
+import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import {
   assignScatterVariants,
   isScatterGeneratorItem,
@@ -133,7 +134,9 @@ function ScatterBatchMesh({ batch, geometry }: { batch: ScatterBatch; geometry: 
   const meshRef = useRef<THREE.InstancedMesh>(null);
   useEffect(() => {
     const mesh = meshRef.current;
-    if (mesh !== null) uploadInstances(mesh, batch.matrices);
+    if (mesh === null) return;
+    uploadInstances(mesh, batch.matrices);
+    freezeStaticTransforms(mesh);
   }, [batch]);
   return (
     <instancedMesh ref={meshRef} args={[geometry, undefined, batch.matrices.length]} castShadow receiveShadow>
@@ -147,7 +150,9 @@ function ScatterModelSourceInstances({ source, matrices }: { source: ScatterMode
   const meshRef = useRef<THREE.InstancedMesh>(null);
   useEffect(() => {
     const mesh = meshRef.current;
-    if (mesh !== null) uploadInstances(mesh, matrices, { localMatrix: source.localMatrix });
+    if (mesh === null) return;
+    uploadInstances(mesh, matrices, { localMatrix: source.localMatrix });
+    freezeStaticTransforms(mesh);
   }, [matrices, source]);
   return <instancedMesh ref={meshRef} args={[source.geometry, source.material, matrices.length]} castShadow={source.skipShadow !== true} receiveShadow />;
 }
@@ -187,6 +192,7 @@ function ScatterVariantSourceInstances({ source, batch, level, selector }: {
     camera.getWorldPosition(cameraPosition);
     lastCamera.current.copy(cameraPosition);
     writeLevel(cameraPosition);
+    if (meshRef.current !== null) freezeStaticTransforms(meshRef.current);
   }, [camera, writeLevel, cameraPosition]);
   useFrame((state) => {
     state.camera.getWorldPosition(cameraPosition);

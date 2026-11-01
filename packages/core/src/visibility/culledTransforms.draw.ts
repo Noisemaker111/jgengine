@@ -1,5 +1,6 @@
 import type * as THREE from "three";
 import { SkinnedMesh } from "three";
+import { isFrozenRoot } from "@jgengine/core/model/staticTransforms.draw";
 
 const culled = new WeakSet<THREE.Object3D>();
 
@@ -155,7 +156,7 @@ function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): void {
     const children = node.children;
     for (let index = children.length - 1; index >= 0; index -= 1) {
       const child = children[index];
-      if (child === undefined || (!child.visible && culled.has(child))) continue;
+      if (child === undefined || isFrozenRoot(child) || (!child.visible && culled.has(child))) continue;
       nodes.push(child);
       forced.push(childForce);
     }
@@ -166,6 +167,7 @@ function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): void {
  * Three walks and recomposes every node of the scene each frame, culled ones included; this scene's
  * pass skips the subtrees {@link setCulled} hid, so props and actors out of view cost nothing there,
  * and recomposes only nodes whose position, rotation or scale changed, so a still prop costs a compare.
+ * A subtree `freezeStaticTransforms` froze is skipped whole: static content costs nothing here.
  * A matrix written by hand needs `matrixAutoUpdate = false`, as in three.
  * @internal
  */
