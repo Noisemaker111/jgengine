@@ -1,3 +1,4 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 /**
  * A small glTF 2.0 binary writer for generated models: meshes of indexed triangles with smooth
  * normals (optionally textured, vertex-coloured and skinned), a node tree, materials and node

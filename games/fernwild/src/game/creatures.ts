@@ -12,7 +12,7 @@ import { createCompanionRoster, type CompanionCommand, type CompanionRecord } fr
 import { ridingOf, type SeatOffset } from "@jgengine/core/scene/riding";
 import type { MountedRider } from "@jgengine/core/scene/mount";
 import { scatterPoints } from "@jgengine/core/inheritance/inheritance";
-import { createSubdualFeeding, type FeedingSupply, type SubdualFeedingState } from "@jgengine/core/subdual/subdualFeeding";
+import { createSubdualFeeding, type FeedingSupply, type SubdualFeedingState } from "../engine-local/subdual/subdualFeeding";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { createResourceNodeField, type ResourceGrant, type ResourceNodeState, type ToolProfile } from "@jgengine/core/world/resourceNode";
 

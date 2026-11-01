@@ -1,3 +1,4 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 import type { CaveGround, CaveLayout } from "./caveLayout";
 
 /** One triangle mesh: xyz per vertex and three vertex indices per triangle. */

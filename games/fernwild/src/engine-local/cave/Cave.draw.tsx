@@ -1,3 +1,4 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 // @skill jgengine-world
 import { useEffect, useMemo, type ReactNode } from "react";
 import { BufferAttribute, BufferGeometry, DoubleSide } from "three";

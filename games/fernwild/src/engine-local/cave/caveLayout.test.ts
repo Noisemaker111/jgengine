@@ -1,7 +1,8 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 import { describe, expect, test } from "bun:test";
 
-import { resolveObstacleStep } from "../movement/movementModel";
-import { obstacleFromSolid } from "../movement/solidObstacles";
+import { resolveObstacleStep } from "@jgengine/core/movement/movementModel";
+import { obstacleFromSolid } from "@jgengine/core/movement/solidObstacles";
 import { caveLayout } from "./caveLayout";
 import { caveMesh } from "./caveMesh";
 

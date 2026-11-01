@@ -1,5 +1,5 @@
 import type { TemperamentConfig } from "@jgengine/core/ai/temperament";
-import type { FeedingFood, SubdualFeedingConfig } from "@jgengine/core/subdual/subdualFeeding";
+import type { FeedingFood, SubdualFeedingConfig } from "../../engine-local/subdual/subdualFeeding";
 
 import { food, tamingTable } from "./taming";
 

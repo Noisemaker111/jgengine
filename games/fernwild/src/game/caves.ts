@@ -1,4 +1,4 @@
-import { caveLayout, type CaveLayout } from "@jgengine/core/cave/caveLayout";
+import { caveLayout, type CaveLayout } from "../engine-local/cave/caveLayout";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";

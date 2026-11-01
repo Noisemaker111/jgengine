@@ -1,3 +1,4 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 // @skill jgengine-assets
 import { gaitClips, type GaitLimb } from "./gait";
 import type { ReadModel } from "./glbRead";

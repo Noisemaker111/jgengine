@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BaseStructures } from "@jgengine/core/basebuilding/BaseStructures.draw";
+import { BaseStructures } from "../../engine-local/basebuilding/BaseStructures.draw";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { OnboardingPointer } from "@jgengine/core/onboarding/OnboardingPointer.draw";
 

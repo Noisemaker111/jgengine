@@ -1,4 +1,4 @@
-import type { AutoRigOptions } from "@jgengine/core/creatureBody/autoRig";
+import type { AutoRigOptions } from "../../engine-local/creatureBody/autoRig";
 
 /**
  * Where each creature's model comes from. Every file is a free model (CC0 or CC-BY), never ARK's

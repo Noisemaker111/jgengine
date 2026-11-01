@@ -1,7 +1,8 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 // @skill jgengine-gameplay
-import type { ThresholdBoundary } from "../threshold/thresholds";
-import { createBuildSocketCatalog, type ConnectionRule, type SocketDef } from "../placement/buildSockets";
-import type { WorldSolid } from "../world/worldSolids";
+import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
+import { createBuildSocketCatalog, type ConnectionRule, type SocketDef } from "@jgengine/core/placement/buildSockets";
+import type { WorldSolid } from "@jgengine/core/world/worldSolids";
 
 /** A `[x, y, z]` triple in metres. */
 export type BaseVec3 = readonly [number, number, number];

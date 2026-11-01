@@ -2,11 +2,11 @@
   "parts": [
     {
       "home": "stats/statPool",
-      "importers": 14
+      "importers": 13
     },
     {
       "home": "threshold/thresholds",
-      "importers": 24
+      "importers": 22
     },
     {
       "home": "time/stateSchedule",
@@ -14,7 +14,7 @@
     },
     {
       "home": "time/pacedSchedule",
-      "importers": 4
+      "importers": 3
     },
     {
       "home": "time/refillSlots",
@@ -38,7 +38,7 @@
     },
     {
       "home": "rules/predicate",
-      "importers": 16
+      "importers": 14
     },
     {
       "home": "progression/statGraph",
@@ -53,6 +53,6 @@
       "importers": 1
     }
   ],
-  "creates": 537,
-  "folders": 114
+  "creates": 533,
+  "folders": 108
 }

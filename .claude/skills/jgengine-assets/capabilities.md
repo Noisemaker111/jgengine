@@ -32,10 +32,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `AuthoredSurfaceMaterial` (function) · `import { AuthoredSurfaceMaterial } from "@jgengine/core/material/authoredSurfaceMaterial.draw"`
 - `useAuthoredSurfaceMaterial` (function) · `import { useAuthoredSurfaceMaterial } from "@jgengine/core/material/authoredSurfaceMaterial.draw"`
 
-## auto-rig — turn a static animal model (any downloaded GLB) into an animated, skinned creature with idle, walk, run, attack and death
-
-- `autoRig` (function) · `import { autoRig } from "@jgengine/core/creatureBody/autoRig"`
-
 ## clip-metadata — read a GLB's animation clip names for the asset index at reindex
 
 - `readGlbClips` (function) · `import { readGlbClips } from "@jgengine/assets/dims"`
@@ -43,18 +39,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## clip-retarget — retarget a clip between differently built humanoid skeletons in an asset pipeline
 
 - `retargetClipByRest` (function) · `import { retargetClipByRest } from "@jgengine/assets/clipRetarget"`
-
-## creature-body — give a creature an animated low-poly body from knobs (torso, legs, neck, head, tail, horns, frill, plates, wings...) without a model file
-
-- `bodyModel` (function) · `import { bodyModel } from "@jgengine/core/creatureBody/bodyPlan"`
-
-## creature-body-glb — a body plan as a raw node tree and clips, to edit or write out yourself before encoding
-
-- `bodyGlbModel` (function) · `import { bodyGlbModel } from "@jgengine/core/creatureBody/bodyPlan"`
-
-## creature-gait — idle, walk, run, attack and death clips for any limb-and-tail creature rig
-
-- `gaitClips` (function) · `import { gaitClips } from "@jgengine/core/creatureBody/gait"`
 
 ## credits-for-asset-ids — build a credits document from the asset ids a game ships
 
@@ -79,18 +63,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## find-assets — look up many asset names at once: licence, game path, on-disk state and where else to look
 
 - `findAssets` (function) · `import { findAssets } from "@jgengine/assets/findAssets"`
-
-## glb-data-url — load generated GLB bytes through the normal model loader with no file on disk
-
-- `glbDataUrl` (function) · `import { glbDataUrl } from "@jgengine/core/creatureBody/glbWrite"`
-
-## glb-read — take a static GLB apart into model-space triangles, materials and textures
-
-- `readGlbModel` (function) · `import { readGlbModel } from "@jgengine/core/creatureBody/glbRead"`
-
-## glb-write — write an animated binary glTF from meshes, nodes and clips made in code
-
-- `encodeGlb` (function) · `import { encodeGlb } from "@jgengine/core/creatureBody/glbWrite"`
 
 ## gltf-material-inspection — inspect material slots and texture metadata directly from complete GLB bytes
 
