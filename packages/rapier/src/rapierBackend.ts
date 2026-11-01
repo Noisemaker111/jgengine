@@ -1,4 +1,5 @@
 import type * as RAPIER from "@dimforge/rapier3d-compat";
+import { shapeHalfExtents } from "@jgengine/core/physics/physicsBackend";
 import type {
   BodyDesc, BodyHandle, BodyShape, BodyState, CharacterMotion, CharacterMotionDesc, ContactEvent, JointDesc,
   JointHandle, OverlapDesc, PhysicsBackend, PhysicsBackendConfig, PhysicsQuat, PhysicsVec3, PhysicsVec3Out,
@@ -223,7 +224,8 @@ export async function createRapierBackend(options: RapierBackendOptions = {}): P
       kcc.setApplyImpulsesToDynamicBodies(false);
       kcc.setMaxSlopeClimbAngle(desc.maxSlopeDeg * DEG);
       kcc.setMinSlopeSlideAngle(desc.maxSlopeDeg * DEG);
-      if (desc.stepHeight > 0) kcc.enableAutostep(desc.stepHeight, desc.skinWidth, false);
+      // Rapier only steps onto a ledge at least this wide; half the character's width clears real stairs.
+      if (desc.stepHeight > 0) kcc.enableAutostep(desc.stepHeight, Math.max(desc.skinWidth, shapeHalfExtents(desc.shape)[0] * 0.5), false);
       else kcc.disableAutostep();
       if (desc.snapDistance > 0) kcc.enableSnapToGround(desc.snapDistance);
       else kcc.disableSnapToGround();

@@ -44,11 +44,12 @@ describe("createRapierBackend", () => {
       const backend = await createRapierBackend({ gravity: [0, 0, 0], fixedDt: 1 / 60 });
       const ball = backend.addBody({ shape: { kind: "sphere", radius: 0.2 }, position: [0, 0, 0], velocity: [10, 0, 0] });
       for (let i = 0; i < fps; i += 1) backend.step(1 / fps);
-      travelled.push(backend.body(ball)!.position[0]);
+      travelled.push(backend.body(ball)?.position[0] ?? Number.NaN);
       backend.dispose();
     }
     expect(travelled[0]).toBeCloseTo(10, 0);
-    expect(Math.abs(travelled[0]! - travelled[1]!)).toBeLessThan(0.2);
+    const [at30 = Number.NaN, at144 = Number.NaN] = travelled;
+    expect(Math.abs(at30 - at144)).toBeLessThan(0.2);
   });
 
   test("character controller lands and walks", async () => {

@@ -100,3 +100,23 @@ describe("createVehicleBackendLink", () => {
     expect(backend.hasBody(link.body)).toBe(false);
   });
 });
+
+describe("vehicleBackendLink wheel probes", () => {
+  test("each wheel finds the ground under it, and a ledge under one wheel shortens its suspension", () => {
+    const backend = world();
+    backend.addBody({ shape: { kind: "box", halfExtents: [1, 0.1, 1] }, position: [0.8, 0.1, 1.3], kind: "static" });
+    const wheels = [[-0.8, 1.3], [0.8, 1.3], [-0.8, -1.3], [0.8, -1.3]].map(([x, z]) => ({ connection: [x ?? 0, -0.3, z ?? 0] as const, radius: 0.35, restLength: 0.4 }));
+    const link = createVehicleBackendLink(backend, { halfExtents: [0.9, 0.5, 2.1], clearance: 0.3, wheels });
+    link.sync({ position: [0, 0, 0], heading: 0 });
+    backend.step(DT);
+    const states = link.probeWheels(DT);
+    expect(states.length).toBe(4);
+    for (const state of states) expect(state.inContact).toBe(true);
+    const [leftFront, rightFront] = states;
+    expect(leftFront?.suspensionLength).toBeCloseTo(0.15, 2);
+    expect(rightFront?.suspensionLength).toBeCloseTo(-0, 1);
+    expect(rightFront?.contactPoint[1]).toBeCloseTo(0.2, 2);
+    expect(link.probeWheels(DT)).toBe(states);
+    link.dispose();
+  });
+});

@@ -1,4 +1,4 @@
-import type { BodyHandle, BodyShape, PhysicsBackend, PhysicsVec3 } from "../physics/physicsBackend";
+import type { BodyHandle, BodyShape, CharacterMotion, CharacterMotionResult, PhysicsBackend, PhysicsVec3 } from "../physics/physicsBackend";
 
 /** Capsule dimensions and the walk rules a controller applies; every field is retunable during play. */
 export interface CharacterControllerConfig {
@@ -19,6 +19,12 @@ export interface CharacterControllerConfig {
   maxSlides?: number;
   /** Collision mask for the controller's casts. Default all layers. */
   mask?: number;
+  /**
+   * Resolve walls, steps, slopes and ground snap with the backend's own character mover when it has one
+   * (`PhysicsBackend.createCharacterMotion`, e.g. Rapier's), instead of this controller's shapecast sweeps.
+   * Jump, gravity, crouch and platform carry stay here either way. Default `false`.
+   */
+  backendMotion?: boolean;
 }
 
 /** The controller's serializable state. `position` is the feet point; the capsule stands above it. */
@@ -77,6 +83,8 @@ export interface CharacterController {
   /** Set stance before resolving movement intent. Returns false only when standing lacks headroom. */
   setCrouch(backend: PhysicsBackend, crouch: boolean, self?: BodyHandle): boolean;
   move(backend: PhysicsBackend, input: CharacterMoveInput): CharacterMoveResult;
+  /** Free the backend character mover `backendMotion` created, if any. */
+  dispose(): void;
 }
 
 function resolve(config: CharacterControllerConfig): Required<CharacterControllerConfig> {
@@ -90,6 +98,7 @@ function resolve(config: CharacterControllerConfig): Required<CharacterControlle
     snapDistance: config.snapDistance ?? 0.3,
     maxSlides: config.maxSlides ?? 4,
     mask: config.mask ?? 0xffffffff,
+    backendMotion: config.backendMotion ?? false,
   };
   for (const field of ["radius", "height", "crouchHeight"] as const) {
     if (!Number.isFinite(cfg[field]) || cfg[field] <= 0) throw new RangeError(`CharacterController.${field} must be finite and greater than zero.`);
@@ -137,6 +146,30 @@ export function createCharacterController(initial: CharacterControllerConfig): C
 
   function centerFor(position: readonly number[], height: number): [number, number, number] {
     return [position[0]!, position[1]! + height / 2, position[2]!];
+  }
+
+  let native: { backend: PhysicsBackend; motion: CharacterMotion; shape: BodyShape } | null = null;
+  const nativeResult: CharacterMotionResult = { moved: [0, 0, 0], grounded: false, groundNormal: [0, 1, 0], groundBody: null, hitWall: false, hitCeiling: false };
+
+  function releaseNative(): void {
+    native?.motion.dispose();
+    native = null;
+  }
+
+  function nativeMotion(backend: PhysicsBackend, shape: BodyShape): CharacterMotion | null {
+    if (!cfg.backendMotion || backend.createCharacterMotion === undefined) return null;
+    if (native !== null && native.backend !== backend) releaseNative();
+    const desc = { shape, skinWidth: cfg.skinWidth, maxSlopeDeg: cfg.maxSlopeDeg, stepHeight: cfg.stepHeight, snapDistance: cfg.snapDistance, mask: cfg.mask };
+    if (native === null) native = { backend, motion: backend.createCharacterMotion(desc), shape };
+    else if (!sameCapsule(native.shape, shape)) {
+      native.motion.retune({ shape });
+      native.shape = shape;
+    }
+    return native.motion;
+  }
+
+  function sameCapsule(a: BodyShape, b: BodyShape): boolean {
+    return a.kind === "capsule" && b.kind === "capsule" && a.halfHeight === b.halfHeight && a.radius === b.radius;
   }
 
   function walkable(normal: PhysicsVec3): boolean {
@@ -191,7 +224,10 @@ export function createCharacterController(initial: CharacterControllerConfig): C
       const resolved = resolve(updated);
       declaration = updated;
       cfg = resolved;
+      if (!cfg.backendMotion) releaseNative();
+      else native?.motion.retune({ skinWidth: cfg.skinWidth, maxSlopeDeg: cfg.maxSlopeDeg, stepHeight: cfg.stepHeight, snapDistance: cfg.snapDistance, mask: cfg.mask });
     },
+    dispose: releaseNative,
     state: () => state,
     snapshot: () => ({
       position: [state.position[0], state.position[1], state.position[2]],
@@ -236,6 +272,9 @@ export function createCharacterController(initial: CharacterControllerConfig): C
         const ground = backend.body(state.groundBody);
         if (ground !== null) carry = [ground.velocity[0] * dt, ground.velocity[1] * dt, ground.velocity[2] * dt];
       }
+
+      const motion = nativeMotion(backend, shapeFor(height));
+      if (motion !== null) return moveNative(motion, input, height, carry, start, result);
 
       let remaining: [number, number, number] = [input.motion[0] + carry[0], 0, input.motion[2] + carry[2]];
       for (let i = 0; i < cfg.maxSlides; i += 1) {
@@ -306,6 +345,49 @@ export function createCharacterController(initial: CharacterControllerConfig): C
       return result;
     },
   };
+
+  function moveNative(
+    motion: CharacterMotion,
+    input: CharacterMoveInput,
+    height: number,
+    carry: readonly [number, number, number],
+    start: readonly [number, number, number],
+    result: CharacterMoveResult,
+  ): CharacterMoveResult {
+    const { dt } = input;
+    const verticalBefore = state.verticalVelocity;
+    if (input.gravity !== undefined) state.verticalVelocity -= input.gravity * dt;
+    let jumped = false;
+    if (input.jumpVelocity !== undefined && state.grounded) {
+      state.verticalVelocity = input.jumpVelocity;
+      state.grounded = false;
+      jumped = true;
+    }
+    const verticalStep =
+      input.verticalStep ?? (jumped ? state.verticalVelocity : (verticalBefore + state.verticalVelocity) / 2) * dt;
+    const desired: PhysicsVec3 = [input.motion[0] + carry[0], verticalStep + carry[1], input.motion[2] + carry[2]];
+    const out = motion.move(centerFor(state.position, height), desired, nativeResult, input.self);
+    const pos: [number, number, number] = [start[0] + out.moved[0], start[1] + out.moved[1], start[2] + out.moved[2]];
+    result.hitWall = out.hitWall;
+    result.hitCeiling = out.hitCeiling;
+    result.steppedUp = out.grounded && out.hitWall && out.moved[1] > desired[1] + cfg.skinWidth;
+    if (out.hitCeiling && state.verticalVelocity > 0) state.verticalVelocity = 0;
+    if (out.grounded && !(jumped || state.verticalVelocity > 0)) {
+      state.grounded = true;
+      state.groundNormal = [out.groundNormal[0], out.groundNormal[1], out.groundNormal[2]];
+      state.groundBody = out.groundBody;
+      if (state.verticalVelocity < 0) state.verticalVelocity = 0;
+    } else {
+      state.grounded = false;
+      state.groundBody = null;
+      state.groundNormal = [0, 1, 0];
+    }
+    state.position = pos;
+    result.moved = [pos[0] - start[0], pos[1] - start[1], pos[2] - start[2]];
+    result.grounded = state.grounded;
+    result.groundNormal = [state.groundNormal[0], state.groundNormal[1], state.groundNormal[2]];
+    return result;
+  }
 
   function tryStepUp(
     backend: PhysicsBackend,
