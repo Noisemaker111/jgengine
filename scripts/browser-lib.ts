@@ -211,6 +211,21 @@ export function chromeRenderArgs(backend: SoftwareGl | null, headed = false): st
   return ["--headless=new", ...(backend === "swiftshader" ? chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" }) : ["--ignore-gpu-blocklist"])];
 }
 
+/**
+ * Whether a capture opens a real window or runs headless. A headed request needs a display to
+ * open on; a cloud container has none (and Chrome exits 1 without one), so it runs headless there
+ * with `--no-sandbox` and the SwiftShader GL flags instead.
+ */
+export function chromeLaunchMode(
+  headed: boolean,
+  env: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+): "headed" | "headless" {
+  if (!headed) return "headless";
+  if (platform !== "linux") return "headed";
+  return (env["DISPLAY"] ?? "") !== "" || (env["WAYLAND_DISPLAY"] ?? "") !== "" ? "headed" : "headless";
+}
+
 function xvfbExecutable(): string | null {
   for (const dir of (process.env["PATH"] ?? "/usr/bin").split(":")) {
     const candidate = join(dir, "Xvfb");
@@ -1415,7 +1430,7 @@ export function launchChrome(
 ): ChromeProcess {
   const chrome = findChromeExecutable();
   const userDataDir = createProfileDir(prefix);
-  const headed = options.headed === true;
+  const headed = chromeLaunchMode(options.headed === true) === "headed";
   let backend = softwareGlBackend();
   const display = headed || backend !== "llvmpipe" ? null : ensureXvfbDisplay();
   if (backend === "llvmpipe" && display === null) backend = "swiftshader";

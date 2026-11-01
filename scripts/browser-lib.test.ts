@@ -9,6 +9,7 @@ import { deflateSync } from "node:zlib";
 
 import { CAPTURE_HOLD_KEY } from "../packages/core/src/runtime/browserLifecycle.view";
 import {
+  chromeLaunchMode,
   type CdpSession,
   isShaderCompilerChatter,
   CAPTURE_HOLD_SOURCE,
@@ -154,6 +155,17 @@ describe("worktree-scoped ports", () => {
     // Extremely small collision chance across 483 buckets; flaky only if both collide.
     expect(here === other || here !== other).toBe(true);
     expect(typeof other).toBe("number");
+  });
+});
+
+describe("Chrome launch mode", () => {
+  test("a headed request with a display opens a window", () => {
+    expect(chromeLaunchMode(true, { DISPLAY: ":0" }, "linux")).toBe("headed");
+    expect(chromeLaunchMode(true, {}, "win32")).toBe("headed");
+  });
+  test("a headed request with no display runs headless", () => {
+    expect(chromeLaunchMode(true, {}, "linux")).toBe("headless");
+    expect(chromeLaunchMode(false, { DISPLAY: ":0" }, "linux")).toBe("headless");
   });
 });
 
