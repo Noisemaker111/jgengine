@@ -54,26 +54,26 @@ function kit(id: string, overrides: Partial<ModelConfig> = {}): ModelConfig {
 
 // Part offsets are metres under the entity's transform; a parent's own `scale` sizes only its mesh.
 
-/** A crusted vent the slag spurts from: a black drum with a molten throat. */
+/** A crusted vent the slag spurts from: a black drill housing with a molten throat. */
 function slagVent(): ModelConfig {
-  return kit("kaykit-dungeon/barrel_large", {
-    scale: 1.4,
+  return kit("kaykit-space-base/drill_structure", {
+    targetHeight: 2.8,
     material: { color: OIL_BLACK, roughness: 0.9, metalness: 0.2 },
     parts: [
-      { model: kit("kaykit-dungeon/floor_tile_grate", { material: { color: SLAG_ORANGE, emissive: SLAG_ORANGE, emissiveIntensity: 2.4 } }), position: [0, 2.85, 0], scale: 0.5 },
-      { model: kit("kaykit-dungeon/rubble_half", { material: { color: "#2a1a12", roughness: 1 } }), position: [1.2, 0, 0.6], scale: 0.5 },
+      { model: kit("kaykit-space-base/lights", { targetHeight: 0.9, material: { color: SLAG_ORANGE, emissive: SLAG_ORANGE, emissiveIntensity: 2.4 } }), position: [0, 2.85, 0] },
+      { model: kit("kaykit-space-base/rocks_A", { targetHeight: 0.9, material: { color: "#2a1a12", roughness: 1 } }), position: [1.2, 0, 0.6] },
     ],
   });
 }
 
 /** The ladle on its stand: a tipped steel bucket glowing at the lip, the slag river's landmark. */
 function ladle(): ModelConfig {
-  return kit("kaykit-dungeon/pillar", {
-    scale: 2,
+  return kit("kaykit-space-base/structure_tall", {
+    targetHeight: 8,
     material: { color: STEEL, roughness: 0.55, metalness: 0.6 },
     parts: [
-      { model: kit("kaykit-dungeon/barrel_large", { material: { color: RUST, roughness: 0.7, metalness: 0.4 } }), position: [0, 8, 0.6], rotation: [0.6, 0, 0], scale: 2 },
-      { model: kit("kaykit-dungeon/floor_tile_grate", { material: { color: SLAG_ORANGE, emissive: SLAG_ORANGE, emissiveIntensity: 3 } }), position: [0, 10.9, 2.6], rotation: [0.6, 0, 0], scale: 0.7 },
+      { model: kit("kaykit-space-base/lander_A", { targetHeight: 4, material: { color: RUST, roughness: 0.7, metalness: 0.4 } }), position: [0, 8, 0.6], rotation: [0.6, 0, 0] },
+      { model: kit("kaykit-space-base/lights", { targetHeight: 1.4, material: { color: SLAG_ORANGE, emissive: SLAG_ORANGE, emissiveIntensity: 3 } }), position: [0, 10.9, 2.6], rotation: [0.6, 0, 0] },
     ],
   });
 }
@@ -84,7 +84,7 @@ function furnace(): ModelConfig {
     scale: 25,
     material: { color: RUST, roughness: 0.75, metalness: 0.35 },
     parts: [
-      { model: kit("kaykit-dungeon/wall_arched", { material: { color: OIL_BLACK, emissive: SLAG_ORANGE, emissiveIntensity: 0.9 } }), position: [0, 0, 6.6], scale: 2 },
+      { model: kit("kaykit-space-base/tunnel_straight_B", { targetHeight: 5, material: { color: OIL_BLACK, emissive: SLAG_ORANGE, emissiveIntensity: 0.9 } }), position: [0, 0, 6.6] },
     ],
   });
 }
@@ -94,21 +94,21 @@ function crossing(): ModelConfig {
   return kit("kaykit-city-builder/trafficlight_A", {
     scale: 6,
     material: { color: "#30333a", emissive: SIGNAL_RED, emissiveIntensity: 0.9 },
-    parts: [{ model: kit("kaykit-dungeon/barrier_half", { material: { color: HAZARD_YELLOW, roughness: 0.5 } }), position: [0.5, 0, 0], scale: 1.4 }],
+    parts: [{ model: kit("kaykit-space-base/structure_low", { targetHeight: 1.5, material: { color: HAZARD_YELLOW, roughness: 0.5 } }), position: [0.5, 0, 0] }],
   });
 }
 
 function gantryLeg(): ModelConfig {
-  return kit("kaykit-dungeon/pillar", {
-    scale: 3,
+  return kit("kaykit-space-base/structure_tall", {
+    targetHeight: 12,
     material: { color: HAZARD_YELLOW, roughness: 0.5, metalness: 0.45 },
-    parts: [{ model: kit("kaykit-dungeon/torch_lit", { material: { emissive: HAZARD_YELLOW, emissiveIntensity: 1.4, color: OIL_BLACK } }), position: [0, 12.4, 0], scale: 2 }],
+    parts: [{ model: kit("kaykit-space-base/lights", { targetHeight: 2.6, material: { emissive: HAZARD_YELLOW, emissiveIntensity: 1.4 } }), position: [0, 12.4, 0] }],
   });
 }
 
-/** A belt section: an 8 m square of black rubber on grates, laid flat in the road. */
+/** A belt section: an 8 m square of black rubber, laid flat in the road (the slab's top face is the surface). */
 function belt(): ModelConfig {
-  return kit("kaykit-dungeon/floor_tile_extralarge_grates", { material: { color: "#15171b", roughness: 0.85, metalness: 0.3 } });
+  return kit("kaykit-space-base/terrain_low", { scale: 4, material: { color: "#15171b", roughness: 0.85, metalness: 0.3 } });
 }
 
 function signalBox(): ModelConfig {
@@ -121,24 +121,29 @@ function pumpRig(): ModelConfig {
     ...libraryModel(LIBRARY_OBJECTS[TRACK_OBJECT.compressor]!.name, { targetHeight: 3 }),
     parts: [
       { model: libraryModel(LIBRARY_OBJECTS[TRACK_OBJECT.pipes]!.name, { targetHeight: 3.4 }), position: [2.6, 0, 0] },
-      { model: kit("kaykit-dungeon/pillar", { material: { color: HAZARD_YELLOW, metalness: 0.4 } }), position: [-2.2, 0, 0], scale: 1 },
+      { model: kit("kaykit-space-base/structure_tall", { targetHeight: 4, material: { color: HAZARD_YELLOW, metalness: 0.4 } }), position: [-2.2, 0, 0] },
     ],
   };
 }
 
-/** A steel guard rail section for the rail yard's edges. */
+/** A steel guard rail section for the rail yard's edges: a low tunnel arch lying along the verge. */
 function edgeRail(): ModelConfig {
-  return kit("kaykit-dungeon/barrier", { material: { color: STEEL, roughness: 0.45, metalness: 0.7 } });
+  return kit("kaykit-space-base/tunnel_straight_A", { targetHeight: 1.1, material: { color: STEEL, roughness: 0.45, metalness: 0.7 } });
 }
 
-/** The freight: five rusted box sections, a 17 m wagon that fills a crossing, with a red tail lamp. */
+/** The freight: five rusted cargo-depot sections, a 17 m wagon that fills a crossing, with a red tail lamp. */
 const WAGON_BOX = 3.45;
-const FREIGHT_CAR: ModelConfig = kit("kaykit-dungeon/box_large", {
-  scale: 2.3,
+const WAGON_COLORS = ["#5b2a1a", "#6b3420"] as const;
+const wagonSection = (z: number, index: number) => ({
+  model: kit("kaykit-space-base/cargodepot_A", { targetHeight: 1.9, material: { color: WAGON_COLORS[index % 2] ?? "#5b2a1a", roughness: 0.7, metalness: 0.35 } }),
+  position: [0, 0, z] as [number, number, number],
+});
+const FREIGHT_CAR: ModelConfig = kit("kaykit-space-base/cargodepot_A", {
+  targetHeight: 1.9,
   material: { color: "#5b2a1a", roughness: 0.7, metalness: 0.35 },
   parts: [
-    ...[-2, -1, 1, 2].map((i) => ({ model: kit("kaykit-dungeon/box_large", { material: { color: i % 2 === 0 ? "#5b2a1a" : "#6b3420", roughness: 0.7, metalness: 0.35 } }), position: [0, 0, i * WAGON_BOX] as [number, number, number], scale: 2.3 })),
-    { model: kit("kaykit-dungeon/torch_lit", { material: { emissive: SIGNAL_RED, emissiveIntensity: 2.4, color: OIL_BLACK } }), position: [0, 2.4, 2.5 * WAGON_BOX + 0.1], scale: 1.2 },
+    ...[-2, -1, 1, 2].map((i) => wagonSection(i * WAGON_BOX, i + 2)),
+    { model: kit("kaykit-space-base/lights", { targetHeight: 1, material: { emissive: SIGNAL_RED, emissiveIntensity: 2.4 } }), position: [0, 1.9, 2.5 * WAGON_BOX + 0.1] },
   ],
 });
 

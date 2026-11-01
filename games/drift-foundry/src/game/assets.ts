@@ -2,7 +2,7 @@ import { buildCatalog } from "@jgengine/assets/catalogs/build";
 import { buildMaterialCatalog } from "@jgengine/assets/materials";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-const MODEL_SOURCES = ["kaykit-city-builder", "kaykit-dungeon"] as const;
+const MODEL_SOURCES = ["kaykit-city-builder", "kaykit-space-base"] as const;
 /**
  * Packed dirt, not plate steel: the metal set's roughness map turned patches of the yard into a
  * mirror that reflected the sky as a blue-white pool, and its rivet grid read as repeated decals.
