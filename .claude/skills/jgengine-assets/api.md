@@ -356,7 +356,7 @@
 
 ## @jgengine/assets/gltfMaterials
 
-- `GLTF_MATERIAL_EXTENSIONS_R182` (const): const GLTF_MATERIAL_EXTENSIONS_R182: readonly string[] — Native material/texture extensions implemented by Three.js GLTFLoader r182. Decoders are still required.
+- `GLTF_MATERIAL_EXTENSIONS` (const): const GLTF_MATERIAL_EXTENSIONS: readonly string[] — Native material/texture extensions the pinned Three.js GLTFLoader implements. Decoders are still required.
 - `GltfImportedMaterial` (interface): interface GltfImportedMaterial — One imported material with the native definition retained as an independent JSON snapshot.
 - `GltfMaterialDiagnostic` (interface): interface GltfMaterialDiagnostic — Actionable fidelity warning or error; this inspector never changes imported surfaces.
 - `GltfMaterialInspection` (interface): interface GltfMaterialInspection — Native material inventory, primitive selectors, attribution, and renderer compatibility diagnostics.

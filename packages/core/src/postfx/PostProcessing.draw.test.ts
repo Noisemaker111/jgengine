@@ -300,18 +300,14 @@ describe("effects after the reveal", () => {
 describe("each render effect is off unless the game or its look asks for it", () => {
   const graphStages = (config: Parameters<typeof planPostStages>[0], quality: "low" | "medium" | "high" | "ultra" = "high") => {
     const original = globalThis.Image;
-    globalThis.Image = class {
-      src = "";
-      width = 0;
-      height = 0;
-    } as unknown as typeof Image;
+    Object.assign(globalThis, { Image: class { src = ""; width = 0; height = 0; } });
     try {
       const graph = buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), planPostStages(config, quality), 320, 180);
       const stages = graph.stages;
       disposeGraph(graph);
       return stages;
     } finally {
-      globalThis.Image = original;
+      Object.assign(globalThis, { Image: original });
     }
   };
 

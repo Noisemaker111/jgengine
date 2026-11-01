@@ -20,7 +20,7 @@ For a *connected* walkthrough that wires several primitives into a running loop,
 - [recipes/flight-feel.md](recipes/flight-feel.md) — an aircraft as physical numbers: surfaces, inertia and engine, a real aircraft in one line from `aircraftFromReference` with each effect on its own dial, and the symptom → knob table for how it flies.
 - [recipes/controls.md](recipes/controls.md) — actions → layered contexts that rebind live → keyboard, touch and gamepad on the same actions → per-axis feel.
 - [recipes/environment.md](recipes/environment.md) — one reference-grade wind for grass, weather, trees and boats; forests and ground cover from editor scene kinds; soft soil that ruts; a landform start for `jgengine create`.
-- [recipes/character-animation.md](recipes/character-animation.md) — clips → graph → rig → ground: modular instance visibility, data-driven state machines, triggers and clip events, root motion, foot IK that keeps feet on slopes, and instanced crowds.
+- [recipes/character-animation.md](recipes/character-animation.md) — clips → graph → rig → ground: modular instance visibility, data-driven state machines, triggers and clip events, root motion, foot IK that keeps feet on slopes, the default locomotion, foot IK and glance every rigged entity gets (switch each with `characterMotion` per game, model or entity), and instanced crowds.
 
 ## Canonical workflows
 

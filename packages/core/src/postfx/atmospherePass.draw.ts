@@ -256,6 +256,7 @@ export class AtmospherePass extends Pass {
   private readonly tint: THREE.Color | null;
   private readonly drift: number;
   private driftClock = Number.NaN;
+  private readonly driftOffset = new THREE.Vector2();
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -298,7 +299,7 @@ export class AtmospherePass extends Pass {
         uBeams: { value: Math.min(1, Math.max(0, settings.beams)) },
         uVariation: { value: Math.min(1, Math.max(0, settings.variation)) },
         uPatch: { value: 1 / Math.max(1, settings.patchSize) },
-        uDrift: { value: new THREE.Vector2() },
+        uDrift: { value: this.driftOffset },
       },
       vertexShader,
       fragmentShader: atmosphereFragment(Math.max(1, steps), settings.variation > 0 ? variationTaps : 0),
@@ -354,7 +355,7 @@ export class AtmospherePass extends Pass {
     (uniforms["uFogColor"]!.value as THREE.Color).copy(
       this.tint ?? (fog !== null ? fog.color : background instanceof THREE.Color ? background : FALLBACK_FOG),
     );
-    this.advanceDrift(uniforms["uDrift"]!.value as THREE.Vector2);
+    this.advanceDrift(this.driftOffset);
     (uniforms["uProjectionInverse"]!.value as THREE.Matrix4).copy(this.camera.projectionMatrixInverse);
     (uniforms["uCameraWorld"]!.value as THREE.Matrix4).copy(this.camera.matrixWorld);
     const cameraPosition = (uniforms["uCameraPosition"]!.value as THREE.Vector3).setFromMatrixPosition(this.camera.matrixWorld);

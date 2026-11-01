@@ -48,7 +48,7 @@ export function softShadowRadius(input: SoftShadowInput): number {
 
 /**
  * The PCF radius one shadow map of `entry` filters with: its fixed `shadowRadius`, widened to the
- * penumbra its `lightSize` throws while the profile's soft shadows are on.
+ * penumbra its `lightSize` throws while the profile's soft shadows are on. @internal
  */
 export function lightShadowRadius(entry: DirectionalLightingConfig, profile: GraphicsProfile | undefined, frustumWidth: number, mapSize: number): number {
   const base = entry.shadowRadius ?? DEFAULT_SHADOW_RADIUS;

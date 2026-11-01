@@ -94,7 +94,8 @@ describe("resolveGameLook mood", () => {
     const look = resolveGameLook({ look: "cinematic" });
     const day = resolveMood("day");
     const [key, ...rest] = day.lighting.directional ?? [];
-    expect(look.lighting).toEqual({ ...day.lighting, directional: [{ ...key!, lightSize: SUN_ANGULAR_DIAMETER_DEG }, ...rest] });
+    if (key === undefined) throw new Error("the day mood has a key light");
+    expect(look.lighting).toEqual({ ...day.lighting, directional: [{ ...key, lightSize: SUN_ANGULAR_DIAMETER_DEG }, ...rest] });
     expect(keyOf(look)).toMatchObject({ castShadow: true, cascades: 3 });
     expect(look.backdrop?.fog).toEqual(day.fog);
     expect(look.backdrop?.sky).toEqual(day.sky);

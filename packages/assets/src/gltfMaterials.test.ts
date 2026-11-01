@@ -102,7 +102,7 @@ describe("native glTF material inspection", () => {
 
   test("accepts KHR_materials_diffuse_roughness as a native extension", () => {
     const json = model();
-    json.extensionsUsed!.push("KHR_materials_diffuse_roughness");
+    json.extensionsUsed = [...(json.extensionsUsed ?? []), "KHR_materials_diffuse_roughness"];
     json.extensionsRequired = ["KHR_materials_diffuse_roughness"];
     const result = inspectGltfMaterials(json, "game/hero");
     expect(result.diagnostics.filter((entry) => entry.code === "unsupported-extension")).toEqual([]);

@@ -515,6 +515,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `CharacterCrowd` (function) · `import { CharacterCrowd } from "@jgengine/core/anim/CharacterCrowd.draw"`
 
+## character-motion — switch foot IK, glance and locomotion per game, model or entity
+
+- `resolveCharacterMotion` (function) · `import { resolveCharacterMotion } from "@jgengine/core/anim/characterMotion"`
+
 ## chase-heading — keep camera-relative input heading independent of body facing while retaining vehicle and seat camera follow
 
 - `resolveChaseHeading` (function) · `import { resolveChaseHeading } from "@jgengine/core/camera/chaseHeading"`
@@ -2018,6 +2022,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSoftGround` (function) · `import { createSoftGround } from "@jgengine/core/granular/softGround"`
 - `softSurfaceSoil` (function) · `import { softSurfaceSoil } from "@jgengine/core/granular/softGround"`
+
+## soft-shadow-radius — size a shadow's penumbra from its light's angular size, per shadow map
+
+- `softShadowRadius` (function) · `import { softShadowRadius } from "@jgengine/core/lighting/softShadows"`
 
 ## soil-patch — editor-authorable terrain crack/moss material variation
 
