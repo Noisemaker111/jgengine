@@ -107,7 +107,7 @@ export interface PlantStructureSource {
 }
 
 function radiusOf(state: GrowthState, i: number): number {
-  return Math.sqrt(((state.sapArea[i] ?? 0) + (state.heartArea[i] ?? 0)) / PLANT_PI);
+  return Math.sqrt(((state.nodes.sapArea[i] ?? 0) + (state.nodes.heartArea[i] ?? 0)) / PLANT_PI);
 }
 
 function leafColor(day: number, season: GrowingSeason, out: Float32Array, at: number): void {
@@ -130,7 +130,7 @@ function leafColor(day: number, season: GrowingSeason, out: Float32Array, at: nu
  */
 export function buildPlantStructure(source: PlantStructureSource): PlantStructure {
   const { species, state, season, dayOfYear } = source;
-  const n = state.nodeCount;
+  const n = state.slots.nodeCount;
   const start = new Float32Array(n * 3);
   const end = new Float32Array(n * 3);
   const radiusStart = new Float32Array(n);
@@ -152,42 +152,42 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
   let heightM = 0;
   let totalFoliage = 0;
   for (let i = 0; i < n; i += 1) {
-    const p = state.parent[i] ?? -1;
-    const flags = state.flags[i] ?? 0;
+    const p = state.nodes.parent[i] ?? -1;
+    const flags = state.nodes.flags[i] ?? 0;
     if (p >= 0 && (flags & NODE_AXIS_START) === 0 && (mainChild[p] ?? -1) < 0) mainChild[p] = i;
     axis[i] = p < 0 || (flags & NODE_AXIS_START) !== 0 ? i : (axis[p] ?? i);
     for (let k = 0; k < 3; k += 1) {
-      start[i * 3 + k] = p >= 0 ? (state.end[p * 3 + k] ?? 0) : 0;
-      end[i * 3 + k] = state.end[i * 3 + k] ?? 0;
+      start[i * 3 + k] = p >= 0 ? (state.nodes.end[p * 3 + k] ?? 0) : 0;
+      end[i * 3 + k] = state.nodes.end[i * 3 + k] ?? 0;
     }
-    const y = state.end[i * 3 + 1] ?? 0;
+    const y = state.nodes.end[i * 3 + 1] ?? 0;
     if (y > heightM) heightM = y;
-    totalFoliage += state.foliage[i] ?? 0;
-    subFoliage[i] = state.foliage[i] ?? 0;
+    totalFoliage += state.nodes.foliage[i] ?? 0;
+    subFoliage[i] = state.nodes.foliage[i] ?? 0;
   }
   for (let i = n - 1; i >= 1; i -= 1) {
-    const p = state.parent[i] ?? -1;
+    const p = state.nodes.parent[i] ?? -1;
     if (p >= 0) subFoliage[p] = (subFoliage[p] ?? 0) + (subFoliage[i] ?? 0);
   }
   // Several stems at breast height read as one, by the quadratic sum forest inventories use.
   let dbhSquared = 0;
   let crownBaseM = heightM;
   for (let i = 0; i < n; i += 1) {
-    const p = state.parent[i] ?? -1;
-    const flags = state.flags[i] ?? 0;
-    const length = state.length[i] ?? 0;
+    const p = state.nodes.parent[i] ?? -1;
+    const flags = state.nodes.flags[i] ?? 0;
+    const length = state.nodes.length[i] ?? 0;
     const r = radiusOf(state, i);
     const main = mainChild[i] ?? -1;
     radiusStart[i] = r;
     radiusEnd[i] = main >= 0 ? radiusOf(state, main) : r;
     parent[i] = p;
-    order[i] = state.order[i] ?? 0;
-    bornYear[i] = state.born[i] ?? 0;
+    order[i] = state.nodes.order[i] ?? 0;
+    bornYear[i] = state.nodes.born[i] ?? 0;
     const startDist = p >= 0 ? (dist[p] ?? 0) : 0;
     dist[i] = startDist + length;
     distFromRoot[i] = startDist;
     if (p >= 0 && length > 0) {
-      const dot = (state.dir[i * 3] ?? 0) * (state.dir[p * 3] ?? 0) + (state.dir[i * 3 + 1] ?? 0) * (state.dir[p * 3 + 1] ?? 0) + (state.dir[i * 3 + 2] ?? 0) * (state.dir[p * 3 + 2] ?? 0);
+      const dot = (state.nodes.dir[i * 3] ?? 0) * (state.nodes.dir[p * 3] ?? 0) + (state.nodes.dir[i * 3 + 1] ?? 0) * (state.nodes.dir[p * 3 + 1] ?? 0) + (state.nodes.dir[i * 3 + 2] ?? 0) * (state.nodes.dir[p * 3 + 2] ?? 0);
       curvature[i] = Math.sqrt(Math.max(0, 2 - 2 * Math.min(1, dot))) / length;
     }
     const dead = (flags & NODE_DEAD) !== 0;
@@ -195,32 +195,32 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     let code: PlantRegion = PLANT_REGION.branch;
     if (dead) code = PLANT_REGION.deadwood;
     else if ((flags & NODE_SCAR) !== 0) code = PLANT_REGION.scar;
-    else if ((state.order[i] ?? 0) === 0) code = sy < ROOT_FLARE_HEIGHT_M && r > 0.02 ? PLANT_REGION.rootFlare : PLANT_REGION.trunk;
+    else if ((state.nodes.order[i] ?? 0) === 0) code = sy < ROOT_FLARE_HEIGHT_M && r > 0.02 ? PLANT_REGION.rootFlare : PLANT_REGION.trunk;
     else if (r < TWIG_RADIUS_M) code = PLANT_REGION.twig;
     region[i] = code;
-    health[i] = dead ? 0 : state.health;
-    light[i] = state.light[i] ?? 0;
+    health[i] = dead ? 0 : state.vitals.health;
+    light[i] = state.nodes.light[i] ?? 0;
     const a = axis[i] ?? i;
-    const ap = state.parent[a] ?? -1;
-    for (let k = 0; k < 3; k += 1) windPivot[i * 3 + k] = ap >= 0 ? (state.end[ap * 3 + k] ?? 0) : 0;
-    windLevel[i] = Math.min(3, state.order[i] ?? 0);
-    const ey = state.end[i * 3 + 1] ?? 0;
-    if ((state.order[i] ?? 0) === 0 && sy <= 1.3 && ey > 1.3) dbhSquared += (2 * r * 100) ** 2;
-    if (!dead && (state.order[i] ?? 0) === 1 && (flags & NODE_AXIS_START) !== 0 && (subFoliage[i] ?? 0) >= 0.01 * totalFoliage && sy < crownBaseM) crownBaseM = sy;
+    const ap = state.nodes.parent[a] ?? -1;
+    for (let k = 0; k < 3; k += 1) windPivot[i * 3 + k] = ap >= 0 ? (state.nodes.end[ap * 3 + k] ?? 0) : 0;
+    windLevel[i] = Math.min(3, state.nodes.order[i] ?? 0);
+    const ey = state.nodes.end[i * 3 + 1] ?? 0;
+    if ((state.nodes.order[i] ?? 0) === 0 && sy <= 1.3 && ey > 1.3) dbhSquared += (2 * r * 100) ** 2;
+    if (!dead && (state.nodes.order[i] ?? 0) === 1 && (flags & NODE_AXIS_START) !== 0 && (subFoliage[i] ?? 0) >= 0.01 * totalFoliage && sy < crownBaseM) crownBaseM = sy;
   }
 
   // Fronds reach well past the node that bears them, so they set the plant's height and crown.
   const fronds = isFrondShape(species.leaf.shape);
-  const frondLength = (species.leaf.sizeCm / 100) * frondLengthShare(species.growth, state.year);
+  const frondLength = (species.leaf.sizeCm / 100) * frondLengthShare(species.growth, state.vitals.year);
   const frondPoints: number[] = [];
   if (fronds) {
     const pose: FrondPose = { azimuth: 0, elevation: 0, sag: 0 };
     const spine = new Float64Array((FROND_STATS_SEGMENTS + 1) * 2);
     for (let i = 0; i < n; i += 1) {
-      const foliage = state.foliage[i] ?? 0;
+      const foliage = state.nodes.foliage[i] ?? 0;
       if (foliage <= 0) continue;
       const count = frondCount(foliage, frondLength);
-      const rowAge = state.year - (state.born[i] ?? 0);
+      const rowAge = state.vitals.year - (state.nodes.born[i] ?? 0);
       for (let k = 0; k < count; k += 1) {
         frondPose(i, k, count, rowAge, pose);
         frondSpine(pose, frondLength, FROND_STATS_SEGMENTS, spine);
@@ -243,9 +243,9 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
 
   const leafOn = dayOfYear >= season.leafOnDay && dayOfYear < season.leafOffDay;
   let leafRows = 0;
-  if (leafOn) for (let i = 0; i < n; i += 1) if ((state.foliage[i] ?? 0) > 0) leafRows += 1;
+  if (leafOn) for (let i = 0; i < n; i += 1) if ((state.nodes.foliage[i] ?? 0) > 0) leafRows += 1;
   if (leafRows === 0) {
-    for (let i = 0; i < n; i += 1) if ((state.foliage[i] ?? 0) > 0 && (state.end[i * 3 + 1] ?? 0) < crownBaseM) crownBaseM = state.end[i * 3 + 1] ?? 0;
+    for (let i = 0; i < n; i += 1) if ((state.nodes.foliage[i] ?? 0) > 0 && (state.nodes.end[i * 3 + 1] ?? 0) < crownBaseM) crownBaseM = state.nodes.end[i * 3 + 1] ?? 0;
   }
   const position = new Float32Array(leafRows * 3);
   const normal = new Float32Array(leafRows * 3);
@@ -263,8 +263,8 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
   const limb1 = new Int32Array(n);
   for (let i = 0; i < n; i += 1) {
     const a = axis[i] ?? i;
-    const ap = state.parent[a] ?? -1;
-    const o = state.order[a] ?? 0;
+    const ap = state.nodes.parent[a] ?? -1;
+    const o = state.nodes.order[a] ?? 0;
     limb2[i] = o <= 2 || ap < 0 ? a : (limb2[ap] ?? a);
     limb1[i] = o <= 1 || ap < 0 ? a : (limb1[ap] ?? a);
   }
@@ -273,11 +273,11 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
   const openSky = Math.max(1e-6, maxLight(state));
   let row = 0;
   for (let i = 0; i < n && leafOn; i += 1) {
-    if ((state.foliage[i] ?? 0) <= 0) continue;
-    const dx = state.dir[i * 3] ?? 0;
-    const dy = state.dir[i * 3 + 1] ?? 1;
-    const dz = state.dir[i * 3 + 2] ?? 0;
-    for (let k = 0; k < 3; k += 1) position[row * 3 + k] = state.end[i * 3 + k] ?? 0;
+    if ((state.nodes.foliage[i] ?? 0) <= 0) continue;
+    const dx = state.nodes.dir[i * 3] ?? 0;
+    const dy = state.nodes.dir[i * 3 + 1] ?? 1;
+    const dz = state.nodes.dir[i * 3 + 2] ?? 0;
+    for (let k = 0; k < 3; k += 1) position[row * 3 + k] = state.nodes.end[i * 3 + k] ?? 0;
     const nx = 0.3 * dx;
     const ny = 0.3 * dy + 1;
     const nz = 0.3 * dz;
@@ -289,7 +289,7 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     up[row * 3 + 1] = dy;
     up[row * 3 + 2] = dz;
     size[row] = fronds ? frondLength : species.leaf.sizeCm / 100;
-    count[row] = fronds ? frondCount(state.foliage[i] ?? 0, frondLength) : species.leaf.leavesPerNode;
+    count[row] = fronds ? frondCount(state.nodes.foliage[i] ?? 0, frondLength) : species.leaf.leavesPerNode;
     segment[row] = i;
     for (let level = 0; level < PLANT_CLUSTER_LEVELS; level += 1) {
       const key = keyOf[level]?.[i] ?? i;
@@ -302,10 +302,10 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
       }
       cluster[row * PLANT_CLUSTER_LEVELS + level] = id;
     }
-    const depth = 1 - (state.light[i] ?? 0) / openSky;
+    const depth = 1 - (state.nodes.light[i] ?? 0) / openSky;
     crownDepth[row] = depth < 0 ? 0 : depth > 1 ? 1 : depth;
     leafColor(dayOfYear, season, colorState, row * 4);
-    leafHealth[row] = state.health;
+    leafHealth[row] = state.vitals.health;
     row += 1;
   }
 
@@ -347,10 +347,10 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
   const sectorMax = new Float64Array(CROWN_HULL_SECTORS);
   const span = Math.max(1e-6, hullTop - hullBottom);
   for (let i = 0; i < n; i += 1) {
-    if ((state.foliage[i] ?? 0) <= 0) continue;
-    const x = state.end[i * 3] ?? 0;
-    const y = state.end[i * 3 + 1] ?? 0;
-    const z = state.end[i * 3 + 2] ?? 0;
+    if ((state.nodes.foliage[i] ?? 0) <= 0) continue;
+    const x = state.nodes.end[i * 3] ?? 0;
+    const y = state.nodes.end[i * 3 + 1] ?? 0;
+    const z = state.nodes.end[i * 3 + 2] ?? 0;
     const r = Math.sqrt(x * x + z * z);
     const sector = sectorOf(x, z);
     if (r > (sectorMax[sector] ?? 0)) sectorMax[sector] = r;
@@ -374,7 +374,7 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
   for (let s = 0; s < CROWN_HULL_SECTORS; s += 1) crownRadiusM += (sectorMax[s] ?? 0) / CROWN_HULL_SECTORS;
 
   let organs = 0;
-  if (leafOn) for (let i = 0; i < n; i += 1) if ((state.flowers[i] ?? 0) > 0) organs += 1;
+  if (leafOn) for (let i = 0; i < n; i += 1) if ((state.nodes.flowers[i] ?? 0) > 0) organs += 1;
   const organKind = new Uint8Array(organs);
   const organPosition = new Float32Array(organs * 3);
   const organSize = new Float32Array(organs);
@@ -384,24 +384,24 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
   const stage = Math.max(0, Math.min(1, (dayOfYear - season.leafOnDay) / seasonLength));
   let organ = 0;
   for (let i = 0; i < n && leafOn; i += 1) {
-    const flowers = state.flowers[i] ?? 0;
+    const flowers = state.nodes.flowers[i] ?? 0;
     if (flowers <= 0) continue;
     organKind[organ] = stage < 0.15 ? PLANT_ORGAN.flower : PLANT_ORGAN.fruit;
-    for (let k = 0; k < 3; k += 1) organPosition[organ * 3 + k] = state.end[i * 3 + k] ?? 0;
+    for (let k = 0; k < 3; k += 1) organPosition[organ * 3 + k] = state.nodes.end[i * 3 + k] ?? 0;
     organSize[organ] = 0.01 + 0.02 * stage;
     organStage[organ] = stage;
     organCount[organ] = flowers;
     organ += 1;
   }
 
-  const barkAge = state.year - species.bark.smoothUntilYears;
+  const barkAge = state.vitals.year - species.bark.smoothUntilYears;
   const furrow = barkAge <= 0 ? 0 : species.bark.furrowDepth * Math.min(1, barkAge / 60);
   return {
     speciesId: species.id,
-    ageYears: state.year,
+    ageYears: state.vitals.year,
     dayOfYear,
     seed: source.seed,
-    health: state.health,
+    health: state.vitals.health,
     stats: { heightM, dbhCm: Math.sqrt(dbhSquared), crownRadiusM, crownBaseM: Math.min(crownBaseM, heightM) },
     crownHull,
     segments: { start, end, radiusStart, radiusEnd, parent, order, bornYear, distFromRoot, curvature, region, health, light, windPivot, windLevel },
@@ -417,7 +417,7 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
 
 function maxLight(state: GrowthState): number {
   let best = 0;
-  for (let i = 0; i < state.nodeCount; i += 1) if ((state.light[i] ?? 0) > best) best = state.light[i] ?? 0;
+  for (let i = 0; i < state.slots.nodeCount; i += 1) if ((state.nodes.light[i] ?? 0) > best) best = state.nodes.light[i] ?? 0;
   return best;
 }
 

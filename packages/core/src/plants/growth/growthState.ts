@@ -7,18 +7,18 @@ export const NODE_SCAR = 4;
 /** Node flag: the short shoots on this node died in shade and bear no more leaves. */
 export const NODE_NO_SPUR = 8;
 
-/**
- * The whole simulation state as struct-of-arrays. Nodes are annual shoots (later merged into longer
- * bare segments) kept in creation order, so a
- * parent always sits before its children: a reverse loop is a basipetal pass, a forward loop acropetal.
- */
-export interface GrowthState {
+/** Slot capacities, fill counts and id counters of a {@link GrowthState}. */
+export interface GrowthSlots {
   nodeCap: number;
   budCap: number;
   nodeCount: number;
   budCount: number;
   nextNodeId: number;
   nextBudId: number;
+}
+
+/** Whole-tree condition: age, carbohydrate economy and life. */
+export interface GrowthVitals {
   year: number;
   /** Carbohydrate reserve carried between years, kg dry mass. */
   reserveKg: number;
@@ -28,6 +28,10 @@ export interface GrowthState {
   health: number;
   /** Dead wood shed so far, kg dry mass. */
   shedKg: number;
+}
+
+/** Per-node struct-of-arrays: structure, geometry, tissue, light and flowering. */
+export interface GrowthNodeArrays {
   nodeId: Uint32Array;
   parent: Int32Array;
   born: Uint16Array;
@@ -60,10 +64,26 @@ export interface GrowthState {
   deficit: Uint8Array;
   deadAge: Uint8Array;
   flowers: Uint16Array;
+}
+
+/** Per-bud struct-of-arrays. */
+export interface GrowthBudArrays {
   budId: Uint32Array;
   budNode: Int32Array;
   /** Years the bud has idled: shaded, or a lateral losing the contest for scarce bud slots. */
   budIdle: Uint8Array;
+}
+
+/**
+ * The whole simulation state as struct-of-arrays. Nodes are annual shoots (later merged into longer
+ * bare segments) kept in creation order, so a
+ * parent always sits before its children: a reverse loop is a basipetal pass, a forward loop acropetal.
+ */
+export interface GrowthState {
+  slots: GrowthSlots;
+  vitals: GrowthVitals;
+  nodes: GrowthNodeArrays;
+  buds: GrowthBudArrays;
 }
 
 /** Typed-array fields of {@link GrowthState}, in snapshot order. */
@@ -98,50 +118,40 @@ export function fieldWidth(field: GrowthArrayField): number {
  */
 export function createGrowthState(nodeCap: number, budCap: number): GrowthState {
   return {
-    nodeCap,
-    budCap,
-    nodeCount: 0,
-    budCount: 0,
-    nextNodeId: 0,
-    nextBudId: 0,
-    year: 0,
-    reserveKg: 0,
-    stressYears: 0,
-    alive: 1,
-    health: 1,
-    shedKg: 0,
-    nodeId: new Uint32Array(nodeCap),
-    parent: new Int32Array(nodeCap),
-    born: new Uint16Array(nodeCap),
-    leafBorn: new Uint16Array(nodeCap),
-    order: new Uint8Array(nodeCap),
-    flags: new Uint8Array(nodeCap),
-    length: new Float32Array(nodeCap),
-    dir: new Float32Array(nodeCap * 3),
-    end: new Float32Array(nodeCap * 3),
-    phase: new Float32Array(nodeCap),
-    sapArea: new Float32Array(nodeCap),
-    heartArea: new Float32Array(nodeCap),
-    foliage: new Float32Array(nodeCap),
-    metamers: new Uint8Array(nodeCap),
-    latent: new Uint8Array(nodeCap),
-    latentAge: new Uint8Array(nodeCap),
-    light: new Float32Array(nodeCap),
-    vigour: new Float32Array(nodeCap),
-    moment: new Float32Array(nodeCap),
-    deficit: new Uint8Array(nodeCap),
-    deadAge: new Uint8Array(nodeCap),
-    flowers: new Uint16Array(nodeCap),
-    budId: new Uint32Array(budCap),
-    budNode: new Int32Array(budCap),
-    budIdle: new Uint8Array(budCap),
+    slots: { nodeCap, budCap, nodeCount: 0, budCount: 0, nextNodeId: 0, nextBudId: 0 },
+    vitals: { year: 0, reserveKg: 0, stressYears: 0, alive: 1, health: 1, shedKg: 0 },
+    nodes: {
+      nodeId: new Uint32Array(nodeCap),
+      parent: new Int32Array(nodeCap),
+      born: new Uint16Array(nodeCap),
+      leafBorn: new Uint16Array(nodeCap),
+      order: new Uint8Array(nodeCap),
+      flags: new Uint8Array(nodeCap),
+      length: new Float32Array(nodeCap),
+      dir: new Float32Array(nodeCap * 3),
+      end: new Float32Array(nodeCap * 3),
+      phase: new Float32Array(nodeCap),
+      sapArea: new Float32Array(nodeCap),
+      heartArea: new Float32Array(nodeCap),
+      foliage: new Float32Array(nodeCap),
+      metamers: new Uint8Array(nodeCap),
+      latent: new Uint8Array(nodeCap),
+      latentAge: new Uint8Array(nodeCap),
+      light: new Float32Array(nodeCap),
+      vigour: new Float32Array(nodeCap),
+      moment: new Float32Array(nodeCap),
+      deficit: new Uint8Array(nodeCap),
+      deadAge: new Uint8Array(nodeCap),
+      flowers: new Uint16Array(nodeCap),
+    },
+    buds: { budId: new Uint32Array(budCap), budNode: new Int32Array(budCap), budIdle: new Uint8Array(budCap) },
   };
 }
 
 /** Scalar fields of {@link GrowthState} carried in a snapshot. */
-export const SCALAR_FIELDS = [
-  "nodeCount", "budCount", "nextNodeId", "nextBudId", "year", "reserveKg", "stressYears", "alive", "health", "shedKg",
-] as const;
+export const SLOT_FIELDS = ["nodeCount", "budCount", "nextNodeId", "nextBudId"] as const;
+/** Vitals fields of {@link GrowthState} carried in a snapshot. */
+export const VITAL_FIELDS = ["year", "reserveKg", "stressYears", "alive", "health", "shedKg"] as const;
 
 const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 

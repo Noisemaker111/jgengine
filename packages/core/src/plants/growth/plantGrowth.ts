@@ -12,7 +12,8 @@ import {
   NODE_FIELDS,
   NODE_NO_SPUR,
   NODE_SCAR,
-  SCALAR_FIELDS,
+  SLOT_FIELDS,
+  VITAL_FIELDS,
   base64ToBytes,
   bytesToBase64,
   createGrowthState,
@@ -188,11 +189,11 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   const frondSpineScratch = new Float64Array((FROND_SPINE_POINTS + 1) * 2);
 
   function depositFronds(i: number, x: number, y: number, z: number, foliage: number): void {
-    const length = (species.leaf.sizeCm / 100) * frondLengthShare(g, state.year);
+    const length = (species.leaf.sizeCm / 100) * frondLengthShare(g, state.vitals.year);
     const count = frondCount(foliage, length);
     const drawn = count < FROND_LIGHT_FRONDS ? count : FROND_LIGHT_FRONDS;
     const share = foliage / (drawn * FROND_SPINE_POINTS);
-    const rowAge = state.year - (state.born[i] ?? 0);
+    const rowAge = state.vitals.year - (state.nodes.born[i] ?? 0);
     const every = Math.max(1, Math.floor(drawn / FROND_LIGHT_SAMPLES));
     let sampled = 0;
     for (let f = 0; f < drawn; f += 1) {
@@ -234,7 +235,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     const vigourShare = 1 - g.vigourIndexWeight + g.vigourIndexWeight * (index > 1 ? 1 : index);
     // Shoot length follows the light the bud sees (LIGNUM's f(Q)), so shaded shoots stay short.
     const lightShare = light > 1 ? 1 : light;
-    const establishment = g.establishmentYears > state.year ? state.year / g.establishmentYears : 1;
+    const establishment = g.establishmentYears > state.vitals.year ? state.vitals.year / g.establishmentYears : 1;
     return Math.max(1, Math.floor(g.maxMetamersPerShoot * posture * vigourShare * lightShare * establishment + 0.5));
   };
   const hydraulicFactor = (path: number, maxPath: number): number => hydraulicFactorWith(path, maxPath, c.hydraulicExponent);
@@ -261,7 +262,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   const subFoliage = new Float64Array(nodeCap);
   const vigour = new Float64Array(nodeCap);
   const latentShare = new Float64Array(nodeCap);
-  const movedArrays: GrowthState[(typeof NODE_FIELDS)[number]][] = [];
+  const movedArrays: GrowthState["nodes"][(typeof NODE_FIELDS)[number]][] = [];
   const movedWidths: number[] = [];
   /** Light-field cell of each leafy node's shoot midpoint, from this year's flush. */
   const midCell = new Int32Array(nodeCap);
@@ -299,46 +300,46 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   };
 
   function addNode(parent: number, order: number, flags: number, dir: Float64Array, length: number, phase: number, metamers: number): number {
-    const i = state.nodeCount;
-    state.nodeCount += 1;
-    state.nodeId[i] = state.nextNodeId;
-    state.nextNodeId += 1;
-    state.parent[i] = parent;
-    state.born[i] = state.year;
-    state.leafBorn[i] = state.year;
-    state.order[i] = order;
-    state.flags[i] = flags;
-    state.length[i] = length;
-    const sx = parent >= 0 ? (state.end[parent * 3] ?? 0) : 0;
-    const sy = parent >= 0 ? (state.end[parent * 3 + 1] ?? 0) : 0;
-    const sz = parent >= 0 ? (state.end[parent * 3 + 2] ?? 0) : 0;
-    for (let k = 0; k < 3; k += 1) state.dir[i * 3 + k] = dir[k] ?? 0;
-    state.end[i * 3] = sx + (dir[0] ?? 0) * length;
-    state.end[i * 3 + 1] = sy + (dir[1] ?? 0) * length;
-    state.end[i * 3 + 2] = sz + (dir[2] ?? 0) * length;
-    state.phase[i] = phase;
-    state.sapArea[i] = shootArea;
-    state.heartArea[i] = 0;
-    state.foliage[i] = leafAreaPerNode * metamers;
-    state.metamers[i] = metamers;
-    state.latent[i] = g.lateralBudsPerNode;
-    state.latentAge[i] = 0;
-    state.light[i] = 0;
-    state.vigour[i] = 0;
-    state.moment[i] = 0;
-    state.deficit[i] = 0;
-    state.deadAge[i] = 0;
-    state.flowers[i] = 0;
+    const i = state.slots.nodeCount;
+    state.slots.nodeCount += 1;
+    state.nodes.nodeId[i] = state.slots.nextNodeId;
+    state.slots.nextNodeId += 1;
+    state.nodes.parent[i] = parent;
+    state.nodes.born[i] = state.vitals.year;
+    state.nodes.leafBorn[i] = state.vitals.year;
+    state.nodes.order[i] = order;
+    state.nodes.flags[i] = flags;
+    state.nodes.length[i] = length;
+    const sx = parent >= 0 ? (state.nodes.end[parent * 3] ?? 0) : 0;
+    const sy = parent >= 0 ? (state.nodes.end[parent * 3 + 1] ?? 0) : 0;
+    const sz = parent >= 0 ? (state.nodes.end[parent * 3 + 2] ?? 0) : 0;
+    for (let k = 0; k < 3; k += 1) state.nodes.dir[i * 3 + k] = dir[k] ?? 0;
+    state.nodes.end[i * 3] = sx + (dir[0] ?? 0) * length;
+    state.nodes.end[i * 3 + 1] = sy + (dir[1] ?? 0) * length;
+    state.nodes.end[i * 3 + 2] = sz + (dir[2] ?? 0) * length;
+    state.nodes.phase[i] = phase;
+    state.nodes.sapArea[i] = shootArea;
+    state.nodes.heartArea[i] = 0;
+    state.nodes.foliage[i] = leafAreaPerNode * metamers;
+    state.nodes.metamers[i] = metamers;
+    state.nodes.latent[i] = g.lateralBudsPerNode;
+    state.nodes.latentAge[i] = 0;
+    state.nodes.light[i] = 0;
+    state.nodes.vigour[i] = 0;
+    state.nodes.moment[i] = 0;
+    state.nodes.deficit[i] = 0;
+    state.nodes.deadAge[i] = 0;
+    state.nodes.flowers[i] = 0;
     return i;
   }
 
   function addBud(node: number): void {
-    const b = state.budCount;
-    state.budCount += 1;
-    state.budId[b] = state.nextBudId;
-    state.nextBudId += 1;
-    state.budNode[b] = node;
-    state.budIdle[b] = 0;
+    const b = state.slots.budCount;
+    state.slots.budCount += 1;
+    state.buds.budId[b] = state.slots.nextBudId;
+    state.slots.nextBudId += 1;
+    state.buds.budNode[b] = node;
+    state.buds.budIdle[b] = 0;
   }
 
   function germinate(): void {
@@ -352,7 +353,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     heading[2] = 0;
     const root = addNode(-1, 0, 0, heading, SEEDLING_LENGTH_M, spin * 2 * PLANT_PI, 1);
     // Cotyledons: half a node's leaf area from seed reserves.
-    state.foliage[root] = leafAreaPerNode * 0.5;
+    state.nodes.foliage[root] = leafAreaPerNode * 0.5;
     // A shrub's root is only its collar: every stem rises from it, so each can die and be replaced.
     const shrub = g.stemLifespanYears !== undefined;
     if (!shrub) addBud(root);
@@ -362,23 +363,23 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       const azimuth = spin * 2 * PLANT_PI + (s * 2 * PLANT_PI) / extra;
       lateralDirection(heading, BASAL_STEM_LEAN, azimuth, axisDir);
       const stem = addNode(root, 0, NODE_AXIS_START, axisDir, SEEDLING_LENGTH_M, azimuth, 1);
-      state.foliage[stem] = leafAreaPerNode * 0.5;
+      state.nodes.foliage[stem] = leafAreaPerNode * 0.5;
       addBud(stem);
     }
     lastPhotosynthesis = 0;
-    lastLeafArea = state.foliage[root] ?? 0;
-    maxNodesSeen = state.nodeCount;
-    maxBudsSeen = state.budCount;
+    lastLeafArea = state.nodes.foliage[root] ?? 0;
+    maxNodesSeen = state.slots.nodeCount;
+    maxBudsSeen = state.slots.budCount;
   }
 
   /** Child lists in index order: firstChild, nextSibling, lastChild and childCount per node. */
   function buildChildren(): void {
-    const n = state.nodeCount;
+    const n = state.slots.nodeCount;
     firstChild.fill(-1, 0, n);
     lastChild.fill(-1, 0, n);
     childCount.fill(0, 0, n);
     for (let i = n - 1; i >= 1; i -= 1) {
-      const p = state.parent[i] ?? -1;
+      const p = state.nodes.parent[i] ?? -1;
       if (p < 0) continue;
       const first = firstChild[p] ?? -1;
       nextSibling[i] = first;
@@ -391,12 +392,12 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
 
   /** Append nodes `from..nodeCount` (all newer than every other node) to their parents' child lists. */
   function appendChildren(from: number): void {
-    for (let i = from; i < state.nodeCount; i += 1) {
+    for (let i = from; i < state.slots.nodeCount; i += 1) {
       firstChild[i] = -1;
       lastChild[i] = -1;
       childCount[i] = 0;
       nextSibling[i] = -1;
-      const p = state.parent[i] ?? -1;
+      const p = state.nodes.parent[i] ?? -1;
       if (p < 0) continue;
       const last = lastChild[p] ?? -1;
       if (last < 0) firstChild[p] = i;
@@ -407,20 +408,20 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   }
 
   function indexBuds(): void {
-    budAt.fill(-1, 0, state.nodeCount);
-    for (let b = 0; b < state.budCount; b += 1) budAt[state.budNode[b] ?? 0] = b;
+    budAt.fill(-1, 0, state.slots.nodeCount);
+    for (let b = 0; b < state.slots.budCount; b += 1) budAt[state.buds.budNode[b] ?? 0] = b;
   }
 
   function die(): void {
-    state.alive = 0;
-    for (let i = 0; i < state.nodeCount; i += 1) {
-      state.flags[i] = (state.flags[i] ?? 0) | NODE_DEAD;
-      state.foliage[i] = 0;
-      state.latent[i] = 0;
-      state.flowers[i] = 0;
+    state.vitals.alive = 0;
+    for (let i = 0; i < state.slots.nodeCount; i += 1) {
+      state.nodes.flags[i] = (state.nodes.flags[i] ?? 0) | NODE_DEAD;
+      state.nodes.foliage[i] = 0;
+      state.nodes.latent[i] = 0;
+      state.nodes.flowers[i] = 0;
     }
-    state.budCount = 0;
-    state.health = 0;
+    state.slots.budCount = 0;
+    state.vitals.health = 0;
   }
 
   /**
@@ -436,16 +437,16 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   }
 
   function radiusCmOf(i: number): number {
-    return Math.sqrt(((state.sapArea[i] ?? 0) + (state.heartArea[i] ?? 0)) / PLANT_PI) * 100;
+    return Math.sqrt(((state.nodes.sapArea[i] ?? 0) + (state.nodes.heartArea[i] ?? 0)) / PLANT_PI) * 100;
   }
 
   function decayClass(): number {
-    if (state.alive === 1) return 0;
+    if (state.vitals.alive === 1) return 0;
     let top = 0;
     let finest = Infinity;
-    for (let i = 0; i < state.nodeCount; i += 1) {
-      top = Math.max(top, state.end[i * 3 + 1] ?? 0);
-      if ((state.order[i] ?? 0) > 0) finest = Math.min(finest, radiusCmOf(i));
+    for (let i = 0; i < state.slots.nodeCount; i += 1) {
+      top = Math.max(top, state.nodes.end[i * 3 + 1] ?? 0);
+      if ((state.nodes.order[i] ?? 0) > 0) finest = Math.min(finest, radiusCmOf(i));
     }
     if (top < BREAST_HEIGHT_M) return 5;
     if (finest === Infinity) return 4;
@@ -454,7 +455,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   }
 
   function isDead(i: number): boolean {
-    return ((state.flags[i] ?? 0) & NODE_DEAD) !== 0;
+    return ((state.nodes.flags[i] ?? 0) & NODE_DEAD) !== 0;
   }
 
   /**
@@ -463,12 +464,12 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
    * totals; `removed` marks it for {@link markDeadBranches}. Returns true when any branch died.
    */
   function gatherCarbon(): boolean {
-    const n = state.nodeCount;
+    const n = state.slots.nodeCount;
     const lue = (c.lueGPerMJ / 1000) * season.parMJ * site * g.extinction;
     const maxHeight = species.limits.maxHeightM * c.hydraulicHeightShare;
     const efficiency = c.growthEfficiency;
     const threshold = g.budLightThreshold;
-    const { parent, flags, foliage: leaves, light: nodeLight, sapArea, length, leafBorn, latent, end } = state;
+    const { parent, flags, foliage: leaves, light: nodeLight, sapArea, length, leafBorn, latent, end } = state.nodes;
     let photosynthesis = 0;
     let respiration = 0;
     let turnover = 0;
@@ -498,10 +499,10 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
           p = lue * lightResponse(light) * foliage * hydraulicGas(midY, maxHeight);
           const leafMass = (foliage / species.leaf.sla) * acclimation(light);
           const upkeep = leafMass * (c.respiration + c.rootPerFoliage * c.rootRespiration);
-          const regrown = state.year - (leafBorn[i] ?? 0) > species.leaf.lifespanYears ? c.foliageTurnover : 0;
+          const regrown = state.vitals.year - (leafBorn[i] ?? 0) > species.leaf.lifespanYears ? c.foliageTurnover : 0;
           const renewal = leafMass * (regrown + c.rootPerFoliage * c.rootTurnover);
           // Short-shoot leaves below their compensation point are shed for good (leaf-level carbon balance).
-          if (state.year - (leafBorn[i] ?? 0) > 1 && efficiency * (p - upkeep) < renewal) {
+          if (state.vitals.year - (leafBorn[i] ?? 0) > 1 && efficiency * (p - upkeep) < renewal) {
             flags[i] = nodeFlags | NODE_NO_SPUR;
             leaves[i] = 0;
             foliage = 0;
@@ -524,15 +525,15 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         if (tip >= threshold) subQ[i] = (subQ[i] ?? 0) + ((budAt[i] ?? -1) >= 0 ? tip : 0) + (latent[i] ?? 0) * tip;
         if (i > 0 && (nodeFlags & NODE_AXIS_START) !== 0) {
           if (efficiency * (sp - sr) - st < 0) {
-            const deficit = (state.deficit[i] ?? 0) + 1;
-            state.deficit[i] = deficit > 255 ? 255 : deficit;
+            const deficit = (state.nodes.deficit[i] ?? 0) + 1;
+            state.nodes.deficit[i] = deficit > 255 ? 255 : deficit;
             if (deficit >= c.pruneDeficitYears) {
               removed[i] = 1;
               killed = true;
               continue;
             }
           } else {
-            state.deficit[i] = 0;
+            state.nodes.deficit[i] = 0;
           }
         }
       }
@@ -561,15 +562,15 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
 
   /** Flag every node under a branch {@link gatherCarbon} killed as dead wood and drop its buds. */
   function markDeadBranches(): void {
-    const n = state.nodeCount;
+    const n = state.slots.nodeCount;
     for (let i = 1; i < n; i += 1) {
-      const p = state.parent[i] ?? -1;
+      const p = state.nodes.parent[i] ?? -1;
       if (removed[i] === 0 && p >= 0 && removed[p] === 1) removed[i] = 1;
       if (removed[i] === 1) {
-        state.flags[i] = (state.flags[i] ?? 0) | NODE_DEAD;
-        state.foliage[i] = 0;
-        state.latent[i] = 0;
-        state.deadAge[i] = 0;
+        state.nodes.flags[i] = (state.nodes.flags[i] ?? 0) | NODE_DEAD;
+        state.nodes.foliage[i] = 0;
+        state.nodes.latent[i] = 0;
+        state.nodes.deadAge[i] = 0;
         subFoliage[i] = 0;
         subQ[i] = 0;
       }
@@ -582,31 +583,31 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
    * the clump's stem count.
    */
   function renewStems(lifespanYears: number): void {
-    const n = state.nodeCount;
+    const n = state.slots.nodeCount;
     removed.fill(0, 0, n);
     let dying = 0;
     let lostHeight = 0;
     for (let i = 1; i < n; i += 1) {
-      if ((state.parent[i] ?? -1) !== 0 || ((state.flags[i] ?? 0) & NODE_AXIS_START) === 0 || isDead(i)) continue;
-      const [roll] = stepRandomSeed(streamFor(state.nodeId[i] ?? 0, 0x5eed));
-      if (state.year - (state.born[i] ?? 0) > lifespanYears * (0.6 + 0.8 * roll)) {
+      if ((state.nodes.parent[i] ?? -1) !== 0 || ((state.nodes.flags[i] ?? 0) & NODE_AXIS_START) === 0 || isDead(i)) continue;
+      const [roll] = stepRandomSeed(streamFor(state.nodes.nodeId[i] ?? 0, 0x5eed));
+      if (state.vitals.year - (state.nodes.born[i] ?? 0) > lifespanYears * (0.6 + 0.8 * roll)) {
         removed[i] = 1;
         dying += 1;
       }
     }
     if (dying === 0) return;
     for (let i = 1; i < n; i += 1) {
-      const p = state.parent[i] ?? -1;
+      const p = state.nodes.parent[i] ?? -1;
       if (removed[i] === 0 && p >= 0 && removed[p] === 1) removed[i] = 1;
-      if (removed[i] === 1) lostHeight = Math.max(lostHeight, state.end[i * 3 + 1] ?? 0);
+      if (removed[i] === 1) lostHeight = Math.max(lostHeight, state.nodes.end[i * 3 + 1] ?? 0);
     }
     markDeadBranches();
     // The sucker shoots up on root reserves in its first season, to half the height of the stem it
     // replaces (Bond & Midgley 2001), as a leafy cane of full-length internodes.
     const internodes = Math.max(1, Math.min(40, Math.round((0.5 * lostHeight) / g.internodeMax)));
     for (let s = 0; s < dying; s += 1) {
-      if (state.nodeCount + internodes > nodeCap || state.budCount >= budCap) break;
-      const [spin] = stepRandomSeed(streamFor(state.year, 0x5ec0 + s));
+      if (state.slots.nodeCount + internodes > nodeCap || state.slots.budCount >= budCap) break;
+      const [spin] = stepRandomSeed(streamFor(state.vitals.year, 0x5ec0 + s));
       const azimuth = spin * 2 * PLANT_PI;
       heading[0] = 0;
       heading[1] = 1;
@@ -620,15 +621,15 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
 
   function dropBuds(drop: (node: number) => boolean): void {
     let kept = 0;
-    for (let b = 0; b < state.budCount; b += 1) {
-      const node = state.budNode[b] ?? 0;
+    for (let b = 0; b < state.slots.budCount; b += 1) {
+      const node = state.buds.budNode[b] ?? 0;
       if (drop(node)) continue;
-      state.budId[kept] = state.budId[b] ?? 0;
-      state.budNode[kept] = node;
-      state.budIdle[kept] = state.budIdle[b] ?? 0;
+      state.buds.budId[kept] = state.buds.budId[b] ?? 0;
+      state.buds.budNode[kept] = node;
+      state.buds.budIdle[kept] = state.buds.budIdle[b] ?? 0;
       kept += 1;
     }
-    state.budCount = kept;
+    state.slots.budCount = kept;
   }
 
   /**
@@ -637,9 +638,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
    * read light at the shoot tip. Dead wood just ages.
    */
   function flushAndLight(): void {
-    const n = state.nodeCount;
-    const { parent, flags, foliage: leaves, end, born, leafBorn, latent, latentAge, metamers, deadAge, flowers } = state;
-    const year = state.year;
+    const n = state.slots.nodeCount;
+    const { parent, flags, foliage: leaves, end, born, leafBorn, latent, latentAge, metamers, deadAge, flowers } = state.nodes;
+    const year = state.vitals.year;
     field.clear();
     let lowest = Number.POSITIVE_INFINITY;
     let top = 0;
@@ -685,13 +686,13 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     field.setPeriod(environment.stand ? Math.max(1, environment.stand.spacingIndex * top) : 0);
     const sky = environment.light;
     for (let i = 0; i < n; i += 1) {
-      state.light[i] = 0;
+      state.nodes.light[i] = 0;
       tipLight[i] = 0;
       const nodeFlags = flags[i] ?? 0;
       if ((nodeFlags & NODE_DEAD) !== 0) continue;
       if ((leaves[i] ?? 0) > 0) {
         const light = frondShoots ? frondLight(i, sky, extinction) : field.lightAtCell(midCell[i] ?? -1, sky, extinction);
-        state.light[i] = light;
+        state.nodes.light[i] = light;
         if (light < g.budLightThreshold) {
           // Short shoots starve in deep shade and never leaf again.
           flags[i] = nodeFlags | NODE_NO_SPUR;
@@ -706,11 +707,11 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
 
   /** Extended Borchert–Honda: split the root's vigour down the tree by light, with apical control λ. */
   function distributeVigour(): void {
-    const n = state.nodeCount;
-    const lambda = apicalControlAt(g, state.year);
+    const n = state.slots.nodeCount;
+    const lambda = apicalControlAt(g, state.vitals.year);
     vigour.fill(0, 0, n);
     latentShare.fill(0, 0, n);
-    budShare.fill(0, 0, state.budCount);
+    budShare.fill(0, 0, state.slots.budCount);
     vigour[0] = 1;
     vigourIndex[0] = 1;
     for (let i = 0; i < n; i += 1) {
@@ -719,23 +720,23 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       let main = -1;
       let lateralQ = 0;
       for (let child = firstChild[i] ?? -1; child >= 0; child = nextSibling[child] ?? -1) {
-        const childFlags = state.flags[child] ?? 0;
+        const childFlags = state.nodes.flags[child] ?? 0;
         if ((childFlags & NODE_DEAD) !== 0) continue;
-        const area = (state.sapArea[child] ?? 0) + (state.heartArea[child] ?? 0);
+        const area = (state.nodes.sapArea[child] ?? 0) + (state.nodes.heartArea[child] ?? 0);
         if (area > thickest) thickest = area;
         if ((childFlags & NODE_AXIS_START) === 0 && main < 0) main = child;
         else lateralQ += subQ[child] ?? 0;
       }
       for (let child = firstChild[i] ?? -1; child >= 0; child = nextSibling[child] ?? -1) {
-        const area = (state.sapArea[child] ?? 0) + (state.heartArea[child] ?? 0);
+        const area = (state.nodes.sapArea[child] ?? 0) + (state.nodes.heartArea[child] ?? 0);
         vigourIndex[child] = thickest > 0 ? ((vigourIndex[i] ?? 0) * area) / thickest : 0;
       }
       const v = vigour[i] ?? 0;
-      state.vigour[i] = v;
+      state.nodes.vigour[i] = v;
       if (v <= 0 || isDead(i)) continue;
       const tip = tipLight[i] ?? 0;
       const lit = tip >= g.budLightThreshold ? tip : 0;
-      const latent = state.latent[i] ?? 0;
+      const latent = state.nodes.latent[i] ?? 0;
       lateralQ += latent * lit;
       const bud = budAt[i] ?? -1;
       const mainQ = main >= 0 ? (subQ[main] ?? 0) : bud >= 0 ? lit : 0;
@@ -761,37 +762,37 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   /** Leaf area and metamer cost of the fronds grown this year. */
   function syncLeafArea(): void {
     if (g.frondEstablishmentYears === undefined) return;
-    leafAreaPerNode = leafAreaIn(state.year);
+    leafAreaPerNode = leafAreaIn(state.vitals.year);
     metamerCostKg = (leafAreaPerNode / species.leaf.sla) * (1 + c.rootPerFoliage) + metamerWoodKg;
   }
 
   function collectCandidates(): void {
     let count = 0;
-    for (let b = 0; b < state.budCount; b += 1) {
+    for (let b = 0; b < state.slots.budCount; b += 1) {
       const share = budShare[b] ?? 0;
       if (share <= 0) continue;
       candidates.share[count] = share;
       candidates.costKg[count] = metamerCostKg;
-      const node = state.budNode[b] ?? 0;
+      const node = state.buds.budNode[b] ?? 0;
       candidates.node[count] = node;
-      candidates.maxMetamers[count] = metamerCap(state.dir[node * 3 + 1] ?? 1, vigourIndex[node] ?? 0, tipLight[node] ?? 0);
+      candidates.maxMetamers[count] = metamerCap(state.nodes.dir[node * 3 + 1] ?? 1, vigourIndex[node] ?? 0, tipLight[node] ?? 0);
       candidates.copies[count] = 1;
       candidates.opensAxis[count] = 0;
       candidateRef[count] = b;
       count += 1;
     }
     const lateralStart = count;
-    for (let i = 0; i < state.nodeCount; i += 1) {
+    for (let i = 0; i < state.slots.nodeCount; i += 1) {
       const share = latentShare[i] ?? 0;
       if (share <= 0) continue;
-      const latent = state.latent[i] ?? 1;
+      const latent = state.nodes.latent[i] ?? 1;
       // Each dormant bud on the node takes its own slice of the node's lateral vigour.
       candidates.share[count] = share / latent;
       candidates.costKg[count] = metamerCostKg;
       candidates.node[count] = i;
-      const parentArea = (state.sapArea[i] ?? 0) + (state.heartArea[i] ?? 0);
+      const parentArea = (state.nodes.sapArea[i] ?? 0) + (state.nodes.heartArea[i] ?? 0);
       const lateralIndex = parentArea > 0 ? ((vigourIndex[i] ?? 0) * shootArea) / parentArea : 0;
-      candidates.maxMetamers[count] = metamerCap((state.dir[i * 3 + 1] ?? 1) * cosBranch, lateralIndex, tipLight[i] ?? 0);
+      candidates.maxMetamers[count] = metamerCap((state.nodes.dir[i * 3 + 1] ?? 1) * cosBranch, lateralIndex, tipLight[i] ?? 0);
       candidates.copies[count] = latent;
       candidates.opensAxis[count] = 1;
       candidateRef[count] = -1 - i;
@@ -802,7 +803,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     // A lateral it refuses still grows, as a leafy short shoot on its node: the cap bounds how much
     // skeleton is drawn, not how much leaf area the tree's carbon buys.
     const lateralEnd = count;
-    const freeBuds = budCap - state.budCount;
+    const freeBuds = budCap - state.slots.budCount;
     let copies = 0;
     for (let k = lateralStart; k < lateralEnd; k += 1) copies += candidates.copies[k] ?? 0;
     budSlotsShort = copies > freeBuds;
@@ -860,11 +861,11 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
 
   /** Add `metamers` leafy short-shoot metamers to a node's leaf pool; returns how many fit. */
   function addShortShoots(node: number, metamers: number): number {
-    const leafy = (state.foliage[node] ?? 0) > 0 ? leafMetamers(node) : 0;
+    const leafy = (state.nodes.foliage[node] ?? 0) > 0 ? leafMetamers(node) : 0;
     const room = 255 - leafy;
     const add = metamers < room ? metamers : room;
     if (add <= 0) return 0;
-    state.leafBorn[node] = Math.floor(((state.leafBorn[node] ?? 0) * leafy + state.year * add) / (leafy + add) + 0.5);
+    state.nodes.leafBorn[node] = Math.floor(((state.nodes.leafBorn[node] ?? 0) * leafy + state.vitals.year * add) / (leafy + add) + 0.5);
     setLeafMetamers(node, leafy + add, leafAreaPerNode * (leafy + add));
     return add;
   }
@@ -902,7 +903,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   function growShoot(fromNode: number, order: number, firstFlags: number, metamers: number, startDir: Float64Array, startPhase: number, stream: RandomSeed): number {
     let cursor = stream;
     const weights = weightsFor(order);
-    field.optimalDirection(state.end[fromNode * 3] ?? 0, state.end[fromNode * 3 + 1] ?? 0, state.end[fromNode * 3 + 2] ?? 0, optimal);
+    field.optimalDirection(state.nodes.end[fromNode * 3] ?? 0, state.nodes.end[fromNode * 3 + 1] ?? 0, state.nodes.end[fromNode * 3 + 2] ?? 0, optimal);
     heading[0] = startDir[0] ?? 0;
     heading[1] = startDir[1] ?? 1;
     heading[2] = startDir[2] ?? 0;
@@ -924,7 +925,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     axisDir[1] = cy;
     axisDir[2] = cz;
     normalize3(axisDir);
-    const height = (state.end[fromNode * 3 + 1] ?? 0) + 0.5 * metamers * g.internodeMax * (axisDir[1] ?? 0);
+    const height = (state.nodes.end[fromNode * 3 + 1] ?? 0) + 0.5 * metamers * g.internodeMax * (axisDir[1] ?? 0);
     const length = metamers * g.internodeMax * hydraulicFactor(height, species.limits.maxHeightM * c.hydraulicHeightShare);
     return addNode(fromNode, order, firstFlags, axisDir, length, startPhase + (metamers - 1) * divergence, metamers);
   }
@@ -932,8 +933,8 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   /** Grow every candidate at vigour scale α; returns the metamers added as short shoots. */
   function grow(scale: number): number {
     if (scale <= 0) return 0;
-    const year = state.year;
-    const budsBefore = state.budCount;
+    const year = state.vitals.year;
+    const budsBefore = state.slots.budCount;
     let shortMetamers = 0;
     for (let k = 0; k < candidates.count; k += 1) {
       const raw = Math.floor(scale * (candidates.share[k] ?? 0));
@@ -943,40 +944,40 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       const ref = candidateRef[k] ?? 0;
       if (ref < -nodeCap) {
         const node = -1 - nodeCap - ref;
-        const available = state.latent[node] ?? 0;
+        const available = state.nodes.latent[node] ?? 0;
         const want = candidates.copies[k] ?? 1;
         const used = want < available ? want : available;
         if (used === 0) continue;
-        state.latent[node] = available - used;
+        state.nodes.latent[node] = available - used;
         shortMetamers += addShortShoots(node, metamers * used);
       } else if (ref >= 0) {
         if (ref >= budsBefore) continue;
-        const node = state.budNode[ref] ?? 0;
-        axisDir[0] = state.dir[node * 3] ?? 0;
-        axisDir[1] = state.dir[node * 3 + 1] ?? 1;
-        axisDir[2] = state.dir[node * 3 + 2] ?? 0;
-        const tip = growShoot(node, state.order[node] ?? 0, 0, metamers, axisDir, (state.phase[node] ?? 0) + divergence, streamFor(state.budId[ref] ?? 0, year));
-        state.budNode[ref] = tip;
-        state.budIdle[ref] = 0;
+        const node = state.buds.budNode[ref] ?? 0;
+        axisDir[0] = state.nodes.dir[node * 3] ?? 0;
+        axisDir[1] = state.nodes.dir[node * 3 + 1] ?? 1;
+        axisDir[2] = state.nodes.dir[node * 3 + 2] ?? 0;
+        const tip = growShoot(node, state.nodes.order[node] ?? 0, 0, metamers, axisDir, (state.nodes.phase[node] ?? 0) + divergence, streamFor(state.buds.budId[ref] ?? 0, year));
+        state.buds.budNode[ref] = tip;
+        state.buds.budIdle[ref] = 0;
       } else {
         const node = -1 - ref;
         const copies = candidates.copies[k] ?? 1;
         for (let copy = 0; copy < copies; copy += 1) {
-          const available = state.latent[node] ?? 0;
-          if (available === 0 || state.budCount >= budCap || state.nodeCount + metamers > nodeCap) break;
+          const available = state.nodes.latent[node] ?? 0;
+          if (available === 0 || state.slots.budCount >= budCap || state.slots.nodeCount + metamers > nodeCap) break;
           const slot = g.lateralBudsPerNode - available;
-          state.latent[node] = available - 1;
-          const stream = streamFor(((state.nodeId[node] ?? 0) * 8 + slot) | 0x40000000, year);
+          state.nodes.latent[node] = available - 1;
+          const stream = streamFor(((state.nodes.nodeId[node] ?? 0) * 8 + slot) | 0x40000000, year);
           const [tilt, next] = stepRandomSeed(stream);
-          axisDir[0] = state.dir[node * 3] ?? 0;
-          axisDir[1] = state.dir[node * 3 + 1] ?? 1;
-          axisDir[2] = state.dir[node * 3 + 2] ?? 0;
-          const azimuth = (state.phase[node] ?? 0) + (slot * 2 * PLANT_PI) / Math.max(1, g.lateralBudsPerNode);
+          axisDir[0] = state.nodes.dir[node * 3] ?? 0;
+          axisDir[1] = state.nodes.dir[node * 3 + 1] ?? 1;
+          axisDir[2] = state.nodes.dir[node * 3 + 2] ?? 0;
+          const azimuth = (state.nodes.phase[node] ?? 0) + (slot * 2 * PLANT_PI) / Math.max(1, g.lateralBudsPerNode);
           lateralDirection(axisDir, branchAngle + g.jitter * (tilt - 0.5), azimuth, heading);
           axisDir[0] = heading[0] ?? 0;
           axisDir[1] = heading[1] ?? 1;
           axisDir[2] = heading[2] ?? 0;
-          const order = Math.min(255, (state.order[node] ?? 0) + 1);
+          const order = Math.min(255, (state.nodes.order[node] ?? 0) + 1);
           const tip = growShoot(node, order, NODE_AXIS_START, metamers, axisDir, azimuth + PLANT_PI / 2, next);
           addBud(tip);
         }
@@ -993,19 +994,19 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
    */
   function ageBuds(competed: boolean): void {
     let kept = 0;
-    for (let b = 0; b < state.budCount; b += 1) {
-      const node = state.budNode[b] ?? 0;
-      let idle = state.budIdle[b] ?? 0;
-      if ((state.born[node] ?? 0) !== state.year) {
-        if ((tipLight[node] ?? 0) < g.budLightThreshold || (competed && (state.order[node] ?? 0) > 0)) idle += 1;
+    for (let b = 0; b < state.slots.budCount; b += 1) {
+      const node = state.buds.budNode[b] ?? 0;
+      let idle = state.buds.budIdle[b] ?? 0;
+      if ((state.nodes.born[node] ?? 0) !== state.vitals.year) {
+        if ((tipLight[node] ?? 0) < g.budLightThreshold || (competed && (state.nodes.order[node] ?? 0) > 0)) idle += 1;
         if (idle > g.budDeathYears) continue;
       }
-      state.budId[kept] = state.budId[b] ?? 0;
-      state.budNode[kept] = node;
-      state.budIdle[kept] = Math.min(255, idle);
+      state.buds.budId[kept] = state.buds.budId[b] ?? 0;
+      state.buds.budNode[kept] = node;
+      state.buds.budIdle[kept] = Math.min(255, idle);
       kept += 1;
     }
-    state.budCount = kept;
+    state.slots.budCount = kept;
   }
 
   function placeFlowers(budgetKg: number): void {
@@ -1013,19 +1014,19 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     const count = Math.floor(budgetKg / flowerKg);
     if (count <= 0) return;
     let weight = 0;
-    for (let i = 0; i < state.nodeCount; i += 1) {
-      if ((state.foliage[i] ?? 0) > 0 && state.year - (state.born[i] ?? 0) <= 2 && (state.light[i] ?? 0) > 0.5) weight += state.light[i] ?? 0;
+    for (let i = 0; i < state.slots.nodeCount; i += 1) {
+      if ((state.nodes.foliage[i] ?? 0) > 0 && state.vitals.year - (state.nodes.born[i] ?? 0) <= 2 && (state.nodes.light[i] ?? 0) > 0.5) weight += state.nodes.light[i] ?? 0;
     }
     if (weight <= 0) return;
-    for (let i = 0; i < state.nodeCount; i += 1) {
-      if ((state.foliage[i] ?? 0) > 0 && state.year - (state.born[i] ?? 0) <= 2 && (state.light[i] ?? 0) > 0.5) {
-        state.flowers[i] = Math.min(65535, Math.floor((count * (state.light[i] ?? 0)) / weight));
+    for (let i = 0; i < state.slots.nodeCount; i += 1) {
+      if ((state.nodes.foliage[i] ?? 0) > 0 && state.vitals.year - (state.nodes.born[i] ?? 0) <= 2 && (state.nodes.light[i] ?? 0) > 0.5) {
+        state.nodes.flowers[i] = Math.min(65535, Math.floor((count * (state.nodes.light[i] ?? 0)) / weight));
       }
     }
   }
 
   function leafMetamers(i: number): number {
-    return ((state.flags[i] ?? 0) & NODE_NO_SPUR) !== 0 ? 0 : (state.metamers[i] ?? 0);
+    return ((state.nodes.flags[i] ?? 0) & NODE_NO_SPUR) !== 0 ? 0 : (state.nodes.metamers[i] ?? 0);
   }
 
   /** Pool node `from`'s leaf cohort into node `into`'s, keeping the leaf-weighted mean flush year. */
@@ -1033,17 +1034,17 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     const a = leafMetamers(into);
     const b = leafMetamers(from);
     if (a + b > 0) {
-      const year = ((state.leafBorn[into] ?? 0) * a + (state.leafBorn[from] ?? 0) * b) / (a + b);
-      state.leafBorn[into] = Math.floor(year + 0.5);
+      const year = ((state.nodes.leafBorn[into] ?? 0) * a + (state.nodes.leafBorn[from] ?? 0) * b) / (a + b);
+      state.nodes.leafBorn[into] = Math.floor(year + 0.5);
     }
-    setLeafMetamers(into, a + b, (state.foliage[into] ?? 0) + (state.foliage[from] ?? 0));
+    setLeafMetamers(into, a + b, (state.nodes.foliage[into] ?? 0) + (state.nodes.foliage[from] ?? 0));
   }
 
   function setLeafMetamers(i: number, metamers: number, foliage: number): void {
-    state.metamers[i] = metamers;
-    state.foliage[i] = foliage;
-    if (metamers > 0) state.flags[i] = (state.flags[i] ?? 0) & ~NODE_NO_SPUR;
-    else state.flags[i] = (state.flags[i] ?? 0) | NODE_NO_SPUR;
+    state.nodes.metamers[i] = metamers;
+    state.nodes.foliage[i] = foliage;
+    if (metamers > 0) state.nodes.flags[i] = (state.nodes.flags[i] ?? 0) & ~NODE_NO_SPUR;
+    else state.nodes.flags[i] = (state.nodes.flags[i] ?? 0) | NODE_NO_SPUR;
   }
 
   /**
@@ -1051,9 +1052,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
    * leaves into its parent's leaf pool and leaves the arrays.
    */
   function foldTwig(i: number): void {
-    if (i === 0 || (budAt[i] ?? -1) >= 0 || (state.latent[i] ?? 0) > 0 || (state.flowers[i] ?? 0) > 0) return;
-    if (state.year - (state.born[i] ?? 0) <= g.dormantBudYears) return;
-    let target = state.parent[i] ?? -1;
+    if (i === 0 || (budAt[i] ?? -1) >= 0 || (state.nodes.latent[i] ?? 0) > 0 || (state.nodes.flowers[i] ?? 0) > 0) return;
+    if (state.vitals.year - (state.nodes.born[i] ?? 0) <= g.dormantBudYears) return;
+    let target = state.nodes.parent[i] ?? -1;
     if (target < 0) return;
     if (removed[target] === 2) target = remap[target] ?? target;
     if (removed[target] !== 0 || isDead(target)) return;
@@ -1068,31 +1069,31 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
    * straight internodes, keeping creation order.
    */
   function compact(): void {
-    const n = state.nodeCount;
+    const n = state.slots.nodeCount;
     // Child lists are current: growth appends to them and nothing else changes the topology.
     indexBuds();
     removed.fill(0, 0, n);
     for (let i = 0; i < n; i += 1) remap[i] = i;
     for (let i = 1; i < n; i += 1) {
       if (removed[i] === 1) continue;
-      const p = state.parent[i] ?? -1;
+      const p = state.nodes.parent[i] ?? -1;
       if (p >= 0 && removed[p] === 1) {
         removed[i] = 1;
         continue;
       }
       // A living tree sheds its dead limbs; a dead one falls apart from the twigs in.
-      const standing = state.alive === 0;
+      const standing = state.vitals.alive === 0;
       if (isDead(i) && p >= 0 && (standing || !isDead(p))) {
-        if ((state.deadAge[i] ?? 0) > deadwoodYears(radiusCmOf(i), standing)) {
+        if ((state.nodes.deadAge[i] ?? 0) > deadwoodYears(radiusCmOf(i), standing)) {
           removed[i] = 1;
-          state.flags[p] = (state.flags[p] ?? 0) | NODE_SCAR;
+          state.nodes.flags[p] = (state.nodes.flags[p] ?? 0) | NODE_SCAR;
         }
       }
     }
     for (let i = 0; i < n; i += 1) {
       if (removed[i] === 2 || removed[i] === 3) continue;
       if (removed[i] === 1) {
-        state.shedKg += ((state.sapArea[i] ?? 0) + (state.heartArea[i] ?? 0)) * (state.length[i] ?? 0) * species.wood.densityKgM3;
+        state.vitals.shedKg += ((state.nodes.sapArea[i] ?? 0) + (state.nodes.heartArea[i] ?? 0)) * (state.nodes.length[i] ?? 0) * species.wood.densityKgM3;
         continue;
       }
       if (isDead(i)) continue;
@@ -1105,34 +1106,34 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       if ((childCount[i] ?? 0) !== 1) continue;
       const child = firstChild[i] ?? -1;
       if (child < 0 || removed[child] !== 0 || isDead(child)) continue;
-      if (((state.flags[child] ?? 0) & NODE_AXIS_START) !== 0) continue;
-      if ((budAt[i] ?? -1) >= 0 || (state.latent[i] ?? 0) > 0) continue;
-      if ((state.flowers[i] ?? 0) > 0 || (state.flowers[child] ?? 0) > 0) continue;
-      if (((state.flags[i] ?? 0) & NODE_SCAR) !== 0) continue;
-      const length = (state.length[i] ?? 0) + (state.length[child] ?? 0);
-      const settled = state.year - (state.born[child] ?? 0) > SETTLED_WOOD_YEARS;
+      if (((state.nodes.flags[child] ?? 0) & NODE_AXIS_START) !== 0) continue;
+      if ((budAt[i] ?? -1) >= 0 || (state.nodes.latent[i] ?? 0) > 0) continue;
+      if ((state.nodes.flowers[i] ?? 0) > 0 || (state.nodes.flowers[child] ?? 0) > 0) continue;
+      if (((state.nodes.flags[i] ?? 0) & NODE_SCAR) !== 0) continue;
+      const length = (state.nodes.length[i] ?? 0) + (state.nodes.length[child] ?? 0);
+      const settled = state.vitals.year - (state.nodes.born[child] ?? 0) > SETTLED_WOOD_YEARS;
       if (length > (settled ? SETTLED_MERGE_MAX_LENGTH_M : MERGE_MAX_LENGTH_M)) continue;
-      const dot = (state.dir[i * 3] ?? 0) * (state.dir[child * 3] ?? 0) + (state.dir[i * 3 + 1] ?? 0) * (state.dir[child * 3 + 1] ?? 0) + (state.dir[i * 3 + 2] ?? 0) * (state.dir[child * 3 + 2] ?? 0);
+      const dot = (state.nodes.dir[i * 3] ?? 0) * (state.nodes.dir[child * 3] ?? 0) + (state.nodes.dir[i * 3 + 1] ?? 0) * (state.nodes.dir[child * 3 + 1] ?? 0) + (state.nodes.dir[i * 3 + 2] ?? 0) * (state.nodes.dir[child * 3 + 2] ?? 0);
       if (dot < (settled ? SETTLED_MERGE_COS : MERGE_COS)) continue;
       const leafy = leafMetamers(i) + leafMetamers(child);
       if (leafy > 255) continue;
-      const p = state.parent[i] ?? -1;
-      const sx = p >= 0 ? (state.end[p * 3] ?? 0) : 0;
-      const sy = p >= 0 ? (state.end[p * 3 + 1] ?? 0) : 0;
-      const sz = p >= 0 ? (state.end[p * 3 + 2] ?? 0) : 0;
-      heading[0] = (state.end[child * 3] ?? 0) - sx;
-      heading[1] = (state.end[child * 3 + 1] ?? 0) - sy;
-      heading[2] = (state.end[child * 3 + 2] ?? 0) - sz;
+      const p = state.nodes.parent[i] ?? -1;
+      const sx = p >= 0 ? (state.nodes.end[p * 3] ?? 0) : 0;
+      const sy = p >= 0 ? (state.nodes.end[p * 3 + 1] ?? 0) : 0;
+      const sz = p >= 0 ? (state.nodes.end[p * 3 + 2] ?? 0) : 0;
+      heading[0] = (state.nodes.end[child * 3] ?? 0) - sx;
+      heading[1] = (state.nodes.end[child * 3 + 1] ?? 0) - sy;
+      heading[2] = (state.nodes.end[child * 3 + 2] ?? 0) - sz;
       normalize3(heading);
       for (let k = 0; k < 3; k += 1) {
-        state.dir[i * 3 + k] = heading[k] ?? 0;
-        state.end[i * 3 + k] = state.end[child * 3 + k] ?? 0;
+        state.nodes.dir[i * 3 + k] = heading[k] ?? 0;
+        state.nodes.end[i * 3 + k] = state.nodes.end[child * 3 + k] ?? 0;
       }
-      state.length[i] = length;
+      state.nodes.length[i] = length;
       poolLeaves(i, child);
-      state.latent[i] = state.latent[child] ?? 0;
-      state.latentAge[i] = state.latentAge[child] ?? 0;
-      state.flags[i] = (state.flags[i] ?? 0) | ((state.flags[child] ?? 0) & NODE_SCAR);
+      state.nodes.latent[i] = state.nodes.latent[child] ?? 0;
+      state.nodes.latentAge[i] = state.nodes.latentAge[child] ?? 0;
+      state.nodes.flags[i] = (state.nodes.flags[i] ?? 0) | ((state.nodes.flags[child] ?? 0) & NODE_SCAR);
       removed[child] = 2;
       remap[child] = i;
     }
@@ -1149,7 +1150,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         remap[i] = -1;
         continue;
       }
-      const target = state.parent[i] ?? -1;
+      const target = state.nodes.parent[i] ?? -1;
       keptParent[kept] = target >= 0 ? (remap[target] ?? -1) : -1;
       remap[i] = kept;
       kept += 1;
@@ -1159,7 +1160,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     movedWidths.length = 0;
     for (const name of NODE_FIELDS) {
       if (name === "parent") continue;
-      movedArrays.push(state[name]);
+      movedArrays.push(state.nodes[name]);
       movedWidths.push(fieldWidth(name));
     }
     let to = 0;
@@ -1174,18 +1175,18 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       to += end - i;
       i = end;
     }
-    state.parent.set(keptParent.subarray(0, kept));
-    state.nodeCount = kept;
+    state.nodes.parent.set(keptParent.subarray(0, kept));
+    state.slots.nodeCount = kept;
     let budsKept = 0;
-    for (let b = 0; b < state.budCount; b += 1) {
-      const node = remap[state.budNode[b] ?? 0] ?? -1;
+    for (let b = 0; b < state.slots.budCount; b += 1) {
+      const node = remap[state.buds.budNode[b] ?? 0] ?? -1;
       if (node < 0) continue;
-      state.budId[budsKept] = state.budId[b] ?? 0;
-      state.budNode[budsKept] = node;
-      state.budIdle[budsKept] = state.budIdle[b] ?? 0;
+      state.buds.budId[budsKept] = state.buds.budId[b] ?? 0;
+      state.buds.budNode[budsKept] = node;
+      state.buds.budIdle[budsKept] = state.buds.budIdle[b] ?? 0;
       budsKept += 1;
     }
-    state.budCount = budsKept;
+    state.slots.budCount = budsKept;
   }
 
   function moveNodes(from: number, end: number, to: number): void {
@@ -1196,11 +1197,11 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   }
 
   function stepYear(): void {
-    state.year += 1;
+    state.vitals.year += 1;
     syncLeafArea();
-    const n = state.nodeCount;
-    if (state.alive === 0) {
-      for (let i = 0; i < n; i += 1) state.deadAge[i] = Math.min(255, (state.deadAge[i] ?? 0) + 1);
+    const n = state.slots.nodeCount;
+    if (state.vitals.alive === 0) {
+      for (let i = 0; i < n; i += 1) state.nodes.deadAge[i] = Math.min(255, (state.nodes.deadAge[i] ?? 0) + 1);
       compact();
       return;
     }
@@ -1214,19 +1215,19 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     }
     lastPhotosynthesis = totals.photosynthesis;
     lastLeafArea = totals.leafArea;
-    let budget = c.growthEfficiency * (totals.photosynthesis - totals.respiration) - totals.turnover + state.reserveKg;
-    state.reserveKg = 0;
+    let budget = c.growthEfficiency * (totals.photosynthesis - totals.respiration) - totals.turnover + state.vitals.reserveKg;
+    state.vitals.reserveKg = 0;
     const upkeep = totals.turnover + totals.respiration;
-    state.health = upkeep > 0 ? Math.max(0, Math.min(1, (c.growthEfficiency * totals.photosynthesis) / upkeep / 1.5)) : 1;
-    if (budget <= 0 || (state.budCount === 0 && totals.leafArea <= 0)) {
-      state.stressYears += 1;
-      if (state.stressYears >= 5) die();
+    state.vitals.health = upkeep > 0 ? Math.max(0, Math.min(1, (c.growthEfficiency * totals.photosynthesis) / upkeep / 1.5)) : 1;
+    if (budget <= 0 || (state.slots.budCount === 0 && totals.leafArea <= 0)) {
+      state.vitals.stressYears += 1;
+      if (state.vitals.stressYears >= 5) die();
       ageBuds(false);
       compact();
       return;
     }
-    state.stressYears = 0;
-    if (state.year >= species.reproduction.firstFlowerYears) {
+    state.vitals.stressYears = 0;
+    if (state.vitals.year >= species.reproduction.firstFlowerYears) {
       const reproduction = budget * c.reproductiveShare;
       budget -= reproduction;
       placeFlowers(reproduction);
@@ -1246,13 +1247,13 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     }
     const scale = solveShootScale(candidates, {
       carbonKg: budget,
-      freeNodes: nodeCap - state.nodeCount,
-      freeBuds: budCap - state.budCount,
+      freeNodes: nodeCap - state.slots.nodeCount,
+      freeBuds: budCap - state.slots.budCount,
       leafAreaPerMetamer: leafAreaPerNode,
     }, pipeCost);
-    const before = state.nodeCount;
+    const before = state.slots.nodeCount;
     let grown = grow(scale);
-    for (let i = before; i < state.nodeCount; i += 1) grown += state.metamers[i] ?? 0;
+    for (let i = before; i < state.slots.nodeCount; i += 1) grown += state.nodes.metamers[i] ?? 0;
     const spent = grown * metamerCostKg;
     appendChildren(before);
     const finalThickening = pipeDemand(state, species, subFoliage, firstChild, nextSibling, need, pressler);
@@ -1267,21 +1268,21 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       if (cambium && pressler.pressler > 0) surplusPerFoliage = (unspent - totals.storeKg) / pressler.pressler;
       unspent = totals.storeKg;
     }
-    state.reserveKg = Math.max(0, unspent);
+    state.vitals.reserveKg = Math.max(0, unspent);
     ageBuds(scale > 0 && budSlotsShort);
     applySag(state, species, sag, { foliageAbove: subFoliage, need, share, surplusPerFoliage });
     compact();
-    if (state.nodeCount > maxNodesSeen) maxNodesSeen = state.nodeCount;
-    if (state.budCount > maxBudsSeen) maxBudsSeen = state.budCount;
+    if (state.slots.nodeCount > maxNodesSeen) maxNodesSeen = state.slots.nodeCount;
+    if (state.slots.budCount > maxBudsSeen) maxBudsSeen = state.slots.budCount;
   }
 
   function sapwoodAtBreastHeight(): number {
     let area = 0;
-    for (let i = 0; i < state.nodeCount; i += 1) {
-      if ((state.order[i] ?? 0) !== 0) continue;
-      const p = state.parent[i] ?? -1;
-      const startY = p >= 0 ? (state.end[p * 3 + 1] ?? 0) : 0;
-      if (startY <= BREAST_HEIGHT_M && (state.end[i * 3 + 1] ?? 0) > BREAST_HEIGHT_M) area += state.sapArea[i] ?? 0;
+    for (let i = 0; i < state.slots.nodeCount; i += 1) {
+      if ((state.nodes.order[i] ?? 0) !== 0) continue;
+      const p = state.nodes.parent[i] ?? -1;
+      const startY = p >= 0 ? (state.nodes.end[p * 3 + 1] ?? 0) : 0;
+      if (startY <= BREAST_HEIGHT_M && (state.nodes.end[i * 3 + 1] ?? 0) > BREAST_HEIGHT_M) area += state.nodes.sapArea[i] ?? 0;
     }
     return area;
   }
@@ -1289,13 +1290,13 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   function snapshotArrays(): Record<string, string> {
     const arrays: Record<string, string> = {};
     for (const name of NODE_FIELDS) {
-      const array = state[name];
-      const used = array.subarray(0, state.nodeCount * fieldWidth(name));
+      const array = state.nodes[name];
+      const used = array.subarray(0, state.slots.nodeCount * fieldWidth(name));
       arrays[name] = bytesToBase64(new Uint8Array(used.buffer, used.byteOffset, used.byteLength));
     }
     for (const name of BUD_FIELDS) {
-      const array = state[name];
-      const used = array.subarray(0, state.budCount);
+      const array = state.buds[name];
+      const used = array.subarray(0, state.slots.budCount);
       arrays[name] = bytesToBase64(new Uint8Array(used.buffer, used.byteOffset, used.byteLength));
     }
     return arrays;
@@ -1307,7 +1308,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     step(years = 1) {
       for (let y = 0; y < years; y += 1) stepYear();
     },
-    ageYears: () => state.year,
+    ageYears: () => state.vitals.year,
     structure(dayOfYear = 200) {
       return buildPlantStructure({
         species,
@@ -1318,22 +1319,23 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       });
     },
     stats: () => ({
-      ageYears: state.year,
-      alive: state.alive === 1,
-      nodes: state.nodeCount,
-      buds: state.budCount,
+      ageYears: state.vitals.year,
+      alive: state.vitals.alive === 1,
+      nodes: state.slots.nodeCount,
+      buds: state.slots.budCount,
       maxNodesSeen,
       maxBudsSeen,
-      health: state.health,
+      health: state.vitals.health,
       photosynthesisKg: lastPhotosynthesis,
       leafAreaM2: lastLeafArea,
       sapwoodAtBreastHeightM2: sapwoodAtBreastHeight(),
-      shedKg: state.shedKg,
+      shedKg: state.vitals.shedKg,
       decayClass: decayClass(),
     }),
     snapshot() {
       const scalars: Record<string, number> = {};
-      for (const name of SCALAR_FIELDS) scalars[name] = state[name];
+      for (const name of SLOT_FIELDS) scalars[name] = state.slots[name];
+      for (const name of VITAL_FIELDS) scalars[name] = state.vitals[name];
       scalars["lastPhotosynthesis"] = lastPhotosynthesis;
       scalars["lastLeafArea"] = lastLeafArea;
       scalars["maxNodesSeen"] = maxNodesSeen;
@@ -1356,15 +1358,16 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       }
       if (snapshot.seed !== seed) throw new Error(`plant snapshot: seed ${snapshot.seed}, expected ${seed}`);
       const next = createGrowthState(nodeCap, budCap);
-      for (const name of SCALAR_FIELDS) next[name] = snapshot.scalars[name] ?? 0;
-      if (next.nodeCount > nodeCap || next.budCount > budCap) throw new Error("plant snapshot: larger than this plant's caps");
-      const fields: readonly (typeof NODE_FIELDS[number] | typeof BUD_FIELDS[number])[] = [...NODE_FIELDS, ...BUD_FIELDS];
-      for (const name of fields) {
+      for (const name of SLOT_FIELDS) next.slots[name] = snapshot.scalars[name] ?? 0;
+      for (const name of VITAL_FIELDS) next.vitals[name] = snapshot.scalars[name] ?? 0;
+      if (next.slots.nodeCount > nodeCap || next.slots.budCount > budCap) throw new Error("plant snapshot: larger than this plant's caps");
+      const load = (name: string, target: ArrayBufferView): void => {
         const encoded = snapshot.arrays[name];
         if (encoded === undefined) throw new Error(`plant snapshot: missing ${name}`);
-        const bytes = base64ToBytes(encoded);
-        new Uint8Array(next[name].buffer).set(bytes);
-      }
+        new Uint8Array(target.buffer).set(base64ToBytes(encoded));
+      };
+      for (const name of NODE_FIELDS) load(name, next.nodes[name]);
+      for (const name of BUD_FIELDS) load(name, next.buds[name]);
       state = next;
       syncLeafArea();
       environment = copyEnvironment(snapshot.env);
@@ -1373,8 +1376,8 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       site = siteModifier(environment);
       lastPhotosynthesis = snapshot.scalars["lastPhotosynthesis"] ?? 0;
       lastLeafArea = snapshot.scalars["lastLeafArea"] ?? 0;
-      maxNodesSeen = snapshot.scalars["maxNodesSeen"] ?? state.nodeCount;
-      maxBudsSeen = snapshot.scalars["maxBudsSeen"] ?? state.budCount;
+      maxNodesSeen = snapshot.scalars["maxNodesSeen"] ?? state.slots.nodeCount;
+      maxBudsSeen = snapshot.scalars["maxBudsSeen"] ?? state.slots.budCount;
     },
     reset() {
       germinate();
@@ -1387,7 +1390,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     },
     environment: () => copyEnvironment(environment),
     kill() {
-      if (state.alive === 1) die();
+      if (state.vitals.alive === 1) die();
     },
   };
   return growth;

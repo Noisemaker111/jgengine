@@ -69,14 +69,14 @@ export interface SagRing {
  * @internal
  */
 export function applySag(state: GrowthState, species: PlantSpecies, scratch: SagScratch, ring: SagRing): void {
-  const n = state.nodeCount;
+  const n = state.slots.nodeCount;
   const { mass, mx, mz, turn, before } = scratch;
   const woodLoad = species.wood.densityKgM3 * species.wood.greenFactor;
   const leafLoad = LEAF_FRESH_FACTOR / species.leaf.sla;
   const stiffness = species.wood.modulusGPa * 1e9;
   const keep = 1 - species.wood.reactionCompensation;
-  const { end, parent, sapArea, heartArea, length, foliage, flags, dir } = state;
-  const moments = state.moment;
+  const { end, parent, sapArea, heartArea, length, foliage, flags, dir } = state.nodes;
+  const moments = state.nodes.moment;
   const { foliageAbove, need, share, surplusPerFoliage } = ring;
   before.set(end.subarray(0, n * 3));
   mass.fill(0, 0, n);
