@@ -12,6 +12,7 @@ import { SCATTER_PATH_KIND } from "../scatter/scatterRegion";
 import { registerWaterKind } from "../water/waterKind";
 import { registerGrassKind } from "@jgengine/core/grass/grassKind";
 import { registerSoilKind } from "../world/soilKind";
+import { registerAmbientFaunaKind } from "../ambientFauna/ambientFaunaKind";
 import { registerPoleLineKind } from "../world/poleLineKind";
 import { registerDecalKind } from "../world/decalKind";
 import { registerBuildingGenerator } from "../buildings/buildingGenerator";
@@ -90,6 +91,7 @@ export function registerBuiltinSceneKinds(): void {
   registerWaterKind();
   registerGrassKind();
   registerSoilKind();
+  registerAmbientFaunaKind();
   registerCityKind();
   registerForestStandKind();
   registerGroundCoverKind();
