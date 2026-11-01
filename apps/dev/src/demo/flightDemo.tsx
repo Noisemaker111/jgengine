@@ -414,14 +414,16 @@ function makeGame(name: string, choice: Craft): PlayableGame {
     loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: resetRun },
     camera: {
       rig: "chase",
-      frustum: { far: 3000 },
-      chase: {
-        distance: choice.kind === "helicopter" ? 18 : choice.kind === "rocket" ? 34 : 16,
-        height: choice.kind === "helicopter" ? 6 : choice.kind === "rocket" ? 3 : 4,
-        lookHeight: 1,
-        springDamping: 8,
-        fov: { base: 60, max: 72, speedForMax: 110 },
-        yawResponse: 4,
+      lens: { frustum: { far: 3000 } },
+      rigs: {
+        chase: {
+          distance: choice.kind === "helicopter" ? 18 : choice.kind === "rocket" ? 34 : 16,
+          height: choice.kind === "helicopter" ? 6 : choice.kind === "rocket" ? 3 : 4,
+          lookHeight: 1,
+          springDamping: 8,
+          fov: { base: 60, max: 72, speedForMax: 110 },
+          yawResponse: 4,
+        },
       },
     },
     renderEntity: (entity) =>

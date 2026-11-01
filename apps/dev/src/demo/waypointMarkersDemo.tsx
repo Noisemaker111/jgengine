@@ -116,5 +116,14 @@ export const waypointMarkersDemoGame: PlayableGame = {
   GameUI: WaypointUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
   WorldOverlay: () => <WaypointOverlay tracker={waypoints} />,
-  camera: { initialDistance: 20, initialHeight: 12, minDistance: 8, maxDistance: 60, targetHeight: 1, maxPolarAngle: 1.35 },
+  camera: {
+    orbit: {
+      initialDistance: 20,
+      initialHeight: 12,
+      minDistance: 8,
+      maxDistance: 60,
+      targetHeight: 1,
+      maxPolarAngle: 1.35,
+    },
+  },
 };

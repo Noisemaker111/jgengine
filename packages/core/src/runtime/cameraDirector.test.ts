@@ -66,8 +66,8 @@ describe("nextChaseView", () => {
 
 test("rig overrides own their data, notify consumers and reset independently of chase tuning", () => {
   const director = createCameraDirector(); let changes = 0; director.subscribe(() => changes++);
-  const config: CameraRigConfig = { chase: { distance: 10, collision: false } };
-  director.setRig("chase", config); config.chase!.distance = 99;
+  const config: CameraRigConfig = { rigs: { chase: { distance: 10, collision: false } } };
+  director.setRig("chase", config); config.rigs?.chase!.distance = 99;
   expect(director.rig()).toEqual({ kind: "chase", config: { chase: { distance: 10, collision: false } } });
   director.setChaseTuning({ height: 3 }); director.setRig(null);
   expect(director.rig()).toBeNull(); expect(director.chaseTuning()).toEqual({ height: 3 }); expect(changes).toBe(3);
@@ -77,11 +77,15 @@ test("rig overrides own their data, notify consumers and reset independently of 
 
 test("camera JSON roundtrip restores rig/follow/tuning atomically and excludes transient FOV impulses", () => {
   const source = createCameraDirector(), target = createCameraDirector();
-  source.follow(null); source.setRig("observer", { observer: { bind: { kind: "point", position: { x: 1, y: 2, z: 3 } }, distance: 12 } });
+  source.follow(null); source.setRig("observer", {
+    rigs: {
+      observer: { bind: { kind: "point", position: { x: 1, y: 2, z: 3 } }, distance: 12 },
+    },
+  });
   source.setChaseTuning({ view: "hood", distance: 8 }); source.kickFov(4);
   const saved = JSON.parse(JSON.stringify(source.snapshot())); target.restore(saved);
   expect(target.snapshot()).toEqual(source.snapshot()); expect(target.takeFovKick()).toBe(0);
-  saved.rig.config.observer.distance = 99; expect(target.rig()?.config.observer?.distance).toBe(12);
+  saved.rig.config.observer.distance = 99; expect(target.rig()?.config.rigs?.observer?.distance).toBe(12);
   const before = target.snapshot(); let changes = 0; target.subscribe(() => changes++);
   for (const bad of [null, {}, { ...before, followEntityId: 7 }, { ...before, rig: { kind: "chase" } },
     { ...before, rig: { kind: "unknown", config: {} } }, { ...before, rig: { kind: "chase", config: { chase: { distance: "bad" } } } },
@@ -93,7 +97,7 @@ test("camera JSON roundtrip restores rig/follow/tuning atomically and excludes t
 });
 
 test("runtime rig config rejects callbacks, nonfinite numbers and invalid fields before replacing policy", () => {
-  const director = createCameraDirector(); director.setRig("orbit", { initialDistance: 5 }); const before = director.snapshot();
+  const director = createCameraDirector(); director.setRig("orbit", { orbit: { initialDistance: 5 } }); const before = director.snapshot();
   for (const bad of [{ onCameraFollow() {} }, { chase: { distance: Infinity } }, { chase: { view: "unknown" } },
     { observer: { bind: { kind: "entity" } } }, { pitchClamp: [1] }, { unexpected: 1 }]) {
     expect(() => director.setRig("chase", bad as CameraRigConfig)).toThrow(); expect(director.snapshot()).toEqual(before);
@@ -102,9 +106,9 @@ test("runtime rig config rejects callbacks, nonfinite numbers and invalid fields
 
 test("documented instant chase responses remain valid in runtime rig overlays and JSON snapshots", () => {
   const source = createCameraDirector(), target = createCameraDirector();
-  source.setRig("chase", { chase: { yawResponse: Infinity, fov: { response: Infinity }, distance: 7 } });
+  source.setRig("chase", { rigs: { chase: { yawResponse: Infinity, fov: { response: Infinity }, distance: 7 } } });
   const json = JSON.parse(JSON.stringify(source.snapshot()));
   expect(json).toEqual(source.snapshot()); target.restore(json);
-  expect(target.rig()).toEqual(source.rig()); expect(target.rig()?.config.chase?.yawResponse).toBe(Infinity);
-  expect(target.rig()?.config.chase?.fov?.response).toBe(Infinity);
+  expect(target.rig()).toEqual(source.rig()); expect(target.rig()?.config.rigs?.chase?.yawResponse).toBe(Infinity);
+  expect(target.rig()?.config.rigs?.chase?.fov?.response).toBe(Infinity);
 });

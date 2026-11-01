@@ -160,5 +160,14 @@ export const localizationDemoGame: PlayableGame = {
   loop: { onInit, onNewPlayer, onTick, onReset: () => {}, onDispose: () => {} },
   GameUI: LocalizationUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 30, initialHeight: 24, minDistance: 12, maxDistance: 60, targetHeight: 0, maxPolarAngle: 1.3 },
+  camera: {
+    orbit: {
+      initialDistance: 30,
+      initialHeight: 24,
+      minDistance: 12,
+      maxDistance: 60,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

@@ -358,8 +358,10 @@ export const game = defineGame({
   },
   camera: {
     perspective: "first",
-    firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
-    frustum: { far: 4200 },
+    rigs: {
+      firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
+    },
+    lens: { frustum: { far: 4200 } },
   },
   orientation: "landscape",
 });

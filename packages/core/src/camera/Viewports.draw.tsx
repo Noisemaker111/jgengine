@@ -117,7 +117,7 @@ export function SplitScreenRenderer({
     const follow: Xyz = entity === null ? { x: 0, y: 0, z: 0 } : { x: entity.position[0], y: entity.position[1], z: entity.position[2] };
     let pose: CameraPose;
     if (seatRigKind(cameraConfig, mainCamera) === "topDown") {
-      const resolved = resolveTopDown(cameraConfig?.topDown ?? mainCamera?.topDown);
+      const resolved = resolveTopDown(cameraConfig?.topDown ?? mainCamera?.rigs?.topDown);
       pose = topDownPose(follow, resolved, rig.camera.fov);
       yaws.set(slot.userId, resolved.yaw);
     } else {
@@ -132,7 +132,7 @@ export function SplitScreenRenderer({
           lookBack: false,
           fovKick: 0,
         },
-        resolveChase(cameraConfig?.chase ?? mainCamera?.chase),
+        resolveChase(cameraConfig?.chase ?? mainCamera?.rigs?.chase),
         dt,
       );
       pose = step.pose;

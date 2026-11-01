@@ -156,11 +156,13 @@ export const worldPingDemoGame: PlayableGame = {
   WorldOverlay: () => <WorldPings markers={markerSet} />,
   pointer: { pingCommand: "map.ping" },
   camera: {
-    initialDistance: 34,
-    initialHeight: 26,
-    minDistance: 12,
-    maxDistance: 70,
-    targetHeight: 0,
-    maxPolarAngle: 1.3,
+    orbit: {
+      initialDistance: 34,
+      initialHeight: 26,
+      minDistance: 12,
+      maxDistance: 70,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
   },
 };

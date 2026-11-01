@@ -207,9 +207,11 @@ function makeGame(rig: "first" | "shoulder"): PlayableGame {
     backdrop: { sky: { preset: "day" } },
     camera: {
       rig,
-      firstPerson: { eyeHeight: 1.6 },
-      shoulder: { shoulderOffset: 0.8, distance: 3, heightOffset: 1.6, ads: { distance: 1.9, shoulderOffset: 0.85, fov: 42 } },
-      weapon: () => held.view,
+      rigs: {
+        firstPerson: { eyeHeight: 1.6 },
+        shoulder: { shoulderOffset: 0.8, distance: 3, heightOffset: 1.6, ads: { distance: 1.9, shoulderOffset: 0.85, fov: 42 } },
+      },
+      follow: { weapon: () => held.view },
     },
     capture: {
       states: {

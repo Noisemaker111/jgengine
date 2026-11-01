@@ -95,7 +95,7 @@ function makeCouchGame(): PlayableGame {
     backdrop: { background: "#a9c8e6" },
     environment: () => <Stage />,
     GameUI: SeatHud,
-    camera: { rig: "topDown", topDown: { height: 12, pitch: 0.9 } },
+    camera: { rig: "topDown", rigs: { topDown: { height: 12, pitch: 0.9 } } },
     capture: {
       probe: (): Record<string, number> => {
         if (context === null) return {};

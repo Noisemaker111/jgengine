@@ -479,7 +479,16 @@ export const gameMenuDemoGame: PlayableGame = {
   GameUI: GameMenuDemoUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
   WorldOverlay: () => <SceneCaptureBinding bind={(capture) => { captureRef.current = capture; }} />,
-  camera: { initialDistance: 30, initialHeight: 22, minDistance: 14, maxDistance: 60, targetHeight: 0, maxPolarAngle: 1.32 },
+  camera: {
+    orbit: {
+      initialDistance: 30,
+      initialHeight: 22,
+      minDistance: 14,
+      maxDistance: 60,
+      targetHeight: 0,
+      maxPolarAngle: 1.32,
+    },
+  },
   settings: { variant: "panel" },
   capture: {
     states: {

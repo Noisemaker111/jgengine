@@ -287,15 +287,15 @@ export function Shell3dPresentation({
   const controlledEntityId = ctx.player.possession.active(ctx.player.userId);
   const cameraOverride = useSyncExternalStore(ctx.camera.subscribe, ctx.camera.rig, ctx.camera.rig);
   const configuredCamera =
-    playable.camera?.followEntityId !== undefined
+    playable.camera?.follow?.followEntityId !== undefined
       ? playable.camera
       : { ...playable.camera, followEntityId: controlledEntityId };
   const cameraConfig = resolveCaptureCameraConfig(configuredCamera, cameraOverride);
   const rigKind = resolveRigKind(cameraConfig);
   const firstPerson = rigKind === "first";
-  const firstPersonBody = firstPerson && cameraConfig?.firstPerson?.body === true ? controlledEntityId : null;
+  const firstPersonBody = firstPerson && cameraConfig?.rigs?.firstPerson?.body === true ? controlledEntityId : null;
   const showReticle =
-    (firstPerson && cameraConfig?.firstPerson?.reticle !== false) || rigKind === "shoulder";
+    (firstPerson && cameraConfig?.rigs?.firstPerson?.reticle !== false) || rigKind === "shoulder";
   const rtsPanKeysEnabled = !rtsPanKeysConflict(playable.game.input);
   const rtsRotateKeysEnabled = !rtsRotateKeysConflict(playable.game.input);
   const bars = resolveWorldOverlayBars(playable.worldHealthBars);
@@ -373,7 +373,7 @@ export function Shell3dPresentation({
     () => (playable.editorLayers === undefined ? [] : lightProbesFromDocument(playable.editorLayers)),
     [playable.editorLayers],
   );
-  const orthographic = playable.camera?.projection === "orthographic";
+  const orthographic = playable.camera?.lens?.projection === "orthographic";
 
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const secondaryDownRef = useRef<{ x: number; y: number } | null>(null);
@@ -587,7 +587,7 @@ export function Shell3dPresentation({
   const settingsSurface = settingsDisabled ? false : settingsConfig.surface ?? false;
   const settingsVariant = settingsConfig.variant ?? "panel";
   const hideCategories = settingsDisabled ? BUILT_IN_SETTING_CATEGORIES : settingsConfig.hide ?? [];
-  const fovControlEnabled = !orthographic && playable.camera?.playerFov?.control !== false;
+  const fovControlEnabled = !orthographic && playable.camera?.lens?.playerFov?.control !== false;
   const settingsHostsFov = !settingsDisabled && !hideCategories.includes("gameplay") && fovControlEnabled;
   const settingsActions: SettingsActionView[] = settingsDisabled
     ? []
@@ -694,14 +694,14 @@ export function Shell3dPresentation({
                   camera={
                     orthographic
                       ? {
-                          zoom: playable.camera?.frustum?.zoom ?? CAMERA_FRUSTUM_DEFAULTS.zoom,
-                          near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
-                          far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+                          zoom: playable.camera?.lens?.frustum?.zoom ?? CAMERA_FRUSTUM_DEFAULTS.zoom,
+                          near: playable.camera?.lens?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                          far: playable.camera?.lens?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
                         }
                       : {
-                          fov: playable.camera?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
-                          near: playable.camera?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
-                          far: playable.camera?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
+                          fov: playable.camera?.lens?.frustum?.fov ?? CAMERA_FRUSTUM_DEFAULTS.fov,
+                          near: playable.camera?.lens?.frustum?.near ?? CAMERA_FRUSTUM_DEFAULTS.near,
+                          far: playable.camera?.lens?.frustum?.far ?? CAMERA_FRUSTUM_DEFAULTS.far,
                         }
                   }
                   shadows={graphics.shadows ? "percentage" : false}
@@ -714,8 +714,8 @@ export function Shell3dPresentation({
                   {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
                   {graphics.showFps ? <FpsProbe tally={frameTally} /> : null}
                   {perfOpen ? <PerfOverlayProbe sample={perfSample} /> : null}
-                  {orthographic && playable.camera?.pixelPerfect !== undefined ? (
-                    <PixelPerfectCamera {...playable.camera.pixelPerfect} />
+                  {orthographic && playable.camera?.lens?.pixelPerfect !== undefined ? (
+                    <PixelPerfectCamera {...playable.camera.lens?.pixelPerfect} />
                   ) : null}
                   {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
                   {cinematicLook ? (
@@ -912,7 +912,7 @@ export function Shell3dPresentation({
                   sink={touchSink}
                   yawRef={yawRef}
                   pitchRef={pitchRef}
-                  maxPitch={playable.camera?.firstPerson?.maxPitch ?? 1.45}
+                  maxPitch={playable.camera?.rigs?.firstPerson?.maxPitch ?? 1.45}
                   onPrimaryTap={() => {
                     primaryClickRef.current = true;
                   }}

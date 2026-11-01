@@ -78,18 +78,20 @@ export const game = defineGame({
   pointer: { moveCommand: "park.pointer", secondaryCommand: "build.clear" },
   camera: {
     rig: "rts",
-    followEntityId: null,
-    frustum: { far: 1200 },
-    rts: {
-      start: { x: 0, z: 16 },
-      height: 52,
-      pitch: 0.86,
-      yaw: Math.PI / 4,
-      panSpeed: 55,
-      edgeScroll: false,
-      rotateSpeed: 1.1,
-      bounds: { minX: -80, maxX: 80, minZ: -80, maxZ: 80 },
-      zoom: { min: 0.5, max: 2.4, speed: 1 },
+    follow: { followEntityId: null },
+    lens: { frustum: { far: 1200 } },
+    rigs: {
+      rts: {
+        start: { x: 0, z: 16 },
+        height: 52,
+        pitch: 0.86,
+        yaw: Math.PI / 4,
+        panSpeed: 55,
+        edgeScroll: false,
+        rotateSpeed: 1.1,
+        bounds: { minX: -80, maxX: 80, minZ: -80, maxZ: 80 },
+        zoom: { min: 0.5, max: 2.4, speed: 1 },
+      },
     },
   },
 });

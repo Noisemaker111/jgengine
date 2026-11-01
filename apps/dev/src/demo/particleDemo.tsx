@@ -110,5 +110,14 @@ export const particleDemoGame: PlayableGame = {
       <ParticleField system={sparks} blending="additive" scale={500} />
     </>
   ),
-  camera: { initialDistance: 15, initialHeight: 5, minDistance: 6, maxDistance: 40, targetHeight: 2.5, maxPolarAngle: 1.45 },
+  camera: {
+    orbit: {
+      initialDistance: 15,
+      initialHeight: 5,
+      minDistance: 6,
+      maxDistance: 40,
+      targetHeight: 2.5,
+      maxPolarAngle: 1.45,
+    },
+  },
 };

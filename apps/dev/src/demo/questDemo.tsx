@@ -96,5 +96,14 @@ export const questDemoGame: PlayableGame = {
   loop: { onInit, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: QuestUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 28, initialHeight: 22, minDistance: 12, maxDistance: 56, targetHeight: 0, maxPolarAngle: 1.3 },
+  camera: {
+    orbit: {
+      initialDistance: 28,
+      initialHeight: 22,
+      minDistance: 12,
+      maxDistance: 56,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

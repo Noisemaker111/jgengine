@@ -142,5 +142,14 @@ export const dayNightDemoGame: PlayableGame = {
       <EnvironmentScene feature={terrainFeature} />
     </>
   ),
-  camera: { initialDistance: 30, initialHeight: 9, minDistance: 12, maxDistance: 60, targetHeight: 7, maxPolarAngle: 1.5 },
+  camera: {
+    orbit: {
+      initialDistance: 30,
+      initialHeight: 9,
+      minDistance: 12,
+      maxDistance: 60,
+      targetHeight: 7,
+      maxPolarAngle: 1.5,
+    },
+  },
 };

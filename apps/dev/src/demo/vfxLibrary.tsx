@@ -105,7 +105,16 @@ export const vfxLibraryGame: PlayableGame = {
     </mesh>
   </>,
   GameUI: Legend,
-  camera: { initialDistance: 17, initialHeight: 12, minDistance: 8, maxDistance: 60, targetHeight: 1.5, maxPolarAngle: 1.35 },
+  camera: {
+    orbit: {
+      initialDistance: 17,
+      initialHeight: 12,
+      minDistance: 8,
+      maxDistance: 60,
+      targetHeight: 1.5,
+      maxPolarAngle: 1.35,
+    },
+  },
   capture: {
     views: {
       sheet: { look: "0,1,0", lookFrom: "19,15,0.6" },

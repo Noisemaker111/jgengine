@@ -30,7 +30,7 @@
   - `measureLean` reports steady lean, time to lean and counter-lean.
 - **Pose.** `tickDrivableVehicle(car, dt, ctx.input.axis(bindings, ranges), { groundHeight, modifiers })` returns a `setPose` patch. Pitch and roll come from load transfer, or from the springs when `suspension` is set.
 - **Skid marks and tire smoke.** Add `tires: { id: vehicleId, time: ctx.time.now(), marks: ctx.tireMarks, particles: ctx.particles }` to `tickDrivableVehicle`. Sliding, spinning or locked wheels lay fading rubber that the shell draws on the ground, and hard slides play `smoke/tire`. `markFrom`/`smokeFrom` set the slip each starts at.
-- **Camera.** `camera: { rig: "chase", chase: { fov, lead, bank, velocityYaw, yawResponse } }`. `velocityYaw` shows the car's side in a slide, and `fov` widens with speed.
+- **Camera.** `camera: { rig: "chase", rigs: { chase: { fov, lead, bank, velocityYaw, yawResponse } } }`. `velocityYaw` shows the car's side in a slide, and `fov` widens with speed.
   - `headingSource: "body"` (default) follows the vehicle. For camera-relative walking, use `headingSource: "input"` so strafe/backpedal body turns cannot steer the next movement frame; yaw smoothing never overwrites input/aim heading. Board with `ctx.camera.setChaseTuning({ headingSource: "body", ...drivingFeel })`, then restore the authored input mode with `setChaseTuning(null)` on exit. Hood, cockpit and rear seat views always use body heading.
   - Input-owned chase seeds its heading once from the first acquired target. Set `camera.initialYaw` to choose another starting direction; later target turns do not reseed it.
   - Speed comes from the entity's sim `velocity`, so publish poses with `setPose({ ..., dt })` (`tickDrivableVehicle` does). `fov.response` eases the FOV.

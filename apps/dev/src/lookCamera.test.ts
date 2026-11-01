@@ -26,7 +26,7 @@ describe("resolveLookCamera", () => {
     const { camera: config, applied } = camera(
       resolveLookCamera({ look: "10,20", lookFrom: null, terrain: slope }),
     );
-    expect(config.observer?.bind).toEqual({ kind: "point", position: { x: 10, y: 20, z: 20 } });
+    expect(config.rigs?.observer?.bind).toEqual({ kind: "point", position: { x: 10, y: 20, z: 20 } });
     expect(applied.target).toEqual({ x: 10, y: 20, z: 20 });
   });
 
@@ -150,8 +150,8 @@ describe("subject aiming", () => {
     const { camera: config, applied } = camera(
       resolveLookCamera({ look: "@entity:boss-01", lookFrom: "20,6", terrain: flat }),
     );
-    expect(config.observer?.bind).toEqual({ kind: "entity", entityId: "boss-01" });
-    expect(config.observer?.distance).toBe(20);
+    expect(config.rigs?.observer?.bind).toEqual({ kind: "entity", entityId: "boss-01" });
+    expect(config.rigs?.observer?.distance).toBe(20);
     expect(applied.subject).toBe("@entity:boss-01");
   });
 

@@ -189,7 +189,7 @@ export const fireDemoGame: PlayableGame = {
   renderObject: () => <group />,
   loop: { ...demoGame.loop, onTick: () => {} },
   look: "neutral",
-  camera: { ...demoGame.camera, frustum: { far: 2500 } },
+  camera: { ...demoGame.camera, lens: { frustum: { far: 2500 } } },
   backdrop: { background: "#9fb4c8" },
   environment: () => <FireScene />,
   GameUI: () => (

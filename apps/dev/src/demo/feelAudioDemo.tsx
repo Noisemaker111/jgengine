@@ -178,5 +178,14 @@ export const feelAudioDemoGame: PlayableGame = {
   loop: { onInit, onNewPlayer, onTick, onReset: () => undefined, onDispose: () => undefined },
   GameUI: FeelAudioUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 22, initialHeight: 16, minDistance: 10, maxDistance: 48, targetHeight: 0, maxPolarAngle: 1.3 },
+  camera: {
+    orbit: {
+      initialDistance: 22,
+      initialHeight: 16,
+      minDistance: 10,
+      maxDistance: 48,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

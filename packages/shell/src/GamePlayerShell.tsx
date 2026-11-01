@@ -477,7 +477,7 @@ export function GamePlayerShell({
   if (join.status !== "joined") return <JoinGate {...join} />;
 
   const cameraConfig =
-    playable.camera?.followEntityId !== undefined
+    playable.camera?.follow?.followEntityId !== undefined
       ? playable.camera
       : { ...playable.camera, followEntityId: ctx.player.possession.active(userId) };
   const rigKind = resolveRigKind(cameraConfig);

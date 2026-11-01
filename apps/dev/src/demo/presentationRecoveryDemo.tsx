@@ -76,7 +76,12 @@ function RecoveryUI() {
 export const presentationRecoveryDemoGame: PlayableGame = {
   ...hostedAuthorityDemoGame, presentation: "3d", GameUI: RecoveryUI, environment: () => <RecoveryEnvironment />,
   editorLayers: authoredDocument,
-  camera: { rig: "topDown", topDown: { height: authoredCamera.position.y, pitch: Math.atan2(authoredCamera.position.y, Math.hypot(authoredCamera.position.x, authoredCamera.position.z)), yaw: Math.atan2(authoredCamera.position.x, -authoredCamera.position.z) } },
+  camera: {
+    rig: "topDown",
+    rigs: {
+      topDown: { height: authoredCamera.position.y, pitch: Math.atan2(authoredCamera.position.y, Math.hypot(authoredCamera.position.x, authoredCamera.position.z)), yaw: Math.atan2(authoredCamera.position.x, -authoredCamera.position.z) },
+    },
+  },
   capture: { probe(ctx) {
     const view = ctx.game.store.get(`relay.view:${ctx.player.userId}`) as AuthorityView | undefined;
     const rendered = previewFor(ctx).rendered;

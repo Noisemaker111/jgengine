@@ -41,6 +41,6 @@ const driving = defineSystem({
 export const game = defineGame({
   name: "Drive",
   input: DEFAULT_DRIVE_CODES, // WASD or arrows, Space for the handbrake
-  camera: { rig: "chase", chase: { distance: 7, height: 3 } },
+  camera: { rig: "chase", rigs: { chase: { distance: 7, height: 3 } } },
   systems: [driving],
 });

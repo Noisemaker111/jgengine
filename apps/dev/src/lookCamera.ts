@@ -223,13 +223,15 @@ function observerCamera(opts: {
     // A detached camera has no hands, so the first-person viewmodel and reticle would just be
     // furniture drawn over an establishing shot.
     perspective: "third",
-    firstPerson: { viewmodel: false, reticle: false },
-    observer: {
-      bind: opts.bind,
-      distance: opts.distance,
-      height: opts.height,
-      startAngle: opts.angle,
-      orbitSpeed: 0,
+    rigs: {
+      firstPerson: { viewmodel: false, reticle: false },
+      observer: {
+        bind: opts.bind,
+        distance: opts.distance,
+        height: opts.height,
+        startAngle: opts.angle,
+        orbitSpeed: 0,
+      },
     },
   };
 }

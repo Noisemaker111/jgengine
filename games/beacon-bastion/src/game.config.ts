@@ -121,16 +121,18 @@ export const game = defineGame({
   mood: { preset: "day", sun: { azimuth: 237, elevation: 49, color: "#ffeccb", intensity: 1.45 }, fog: { near: 110, far: 230 } },
   camera: {
     rig: "topDown",
-    followEntityId: null,
-    // The arena is 60x48 world units and the rig's 45-degree azimuth projects that diagonal
+    follow: { followEntityId: null },
+    rigs: {
+      // The arena is 60x48 world units and the rig's 45-degree azimuth projects that diagonal
     // vertically, so the default height has to clear both ends of the raider route plus the
     // bottom build bar; the offset centres the route in the band the HUD leaves free.
-    topDown: {
-      height: 70,
-      pitch: 1.08,
-      yaw: Math.PI / 4,
-      targetOffset: { x: -16, z: -6 },
-      zoom: { min: 0.6, max: 1.8 },
+      topDown: {
+        height: 70,
+        pitch: 1.08,
+        yaw: Math.PI / 4,
+        targetOffset: { x: -16, z: -6 },
+        zoom: { min: 0.6, max: 1.8 },
+      },
     },
   },
 });

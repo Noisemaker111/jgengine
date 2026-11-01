@@ -120,5 +120,15 @@ export const cameraShakeDemoGame: PlayableGame = {
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: CameraShakeUI,
   environment: () => <ShakeStage />,
-  camera: { initialDistance: 12, initialHeight: 6, minDistance: 6, maxDistance: 30, targetHeight: 1, maxPolarAngle: 1.3, shake: { maxOffset: 0.8, maxRoll: 0.24, decayPerSecond: 0, frequency: 12 } },
+  camera: {
+    orbit: {
+      initialDistance: 12,
+      initialHeight: 6,
+      minDistance: 6,
+      maxDistance: 30,
+      targetHeight: 1,
+      maxPolarAngle: 1.3,
+    },
+    shake: { maxOffset: 0.8, maxRoll: 0.24, decayPerSecond: 0, frequency: 12 },
+  },
 };

@@ -126,17 +126,19 @@ export const game = defineGame({
   },
   camera: {
     rig: "chase",
-    chase: {
-      distance: 7.6,
-      height: 2.7,
-      lookHeight: 1.25,
-      springDamping: 6.5,
-      fov: { base: 64, max: 94, speedForMax: 22 },
-      shakePerSpeed: 0.022,
-      lead: { time: 0.32, max: 5 },
-      bank: { perYawRate: 0.32, max: 0.3, damping: 7 },
+    rigs: {
+      chase: {
+        distance: 7.6,
+        height: 2.7,
+        lookHeight: 1.25,
+        springDamping: 6.5,
+        fov: { base: 64, max: 94, speedForMax: 22 },
+        shakePerSpeed: 0.022,
+        lead: { time: 0.32, max: 5 },
+        bank: { perYawRate: 0.32, max: 0.3, damping: 7 },
+      },
     },
-    frustum: { far: 900 },
+    lens: { frustum: { far: 900 } },
   },
   settings: {
     variant: "sheet",

@@ -178,7 +178,16 @@ export const ambienceDemoGame: PlayableGame = {
   loop: { onInit, onNewPlayer, onTick: () => undefined, onReset: () => undefined, onDispose: () => undefined },
   GameUI: AmbienceUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 22, initialHeight: 16, minDistance: 10, maxDistance: 60, targetHeight: 0, maxPolarAngle: 1.3 },
+  camera: {
+    orbit: {
+      initialDistance: 22,
+      initialHeight: 16,
+      minDistance: 10,
+      maxDistance: 60,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
   audio: {
     sounds: {
       bed_meadow: {

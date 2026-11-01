@@ -299,13 +299,15 @@ export const builderDemoGame: PlayableGame = {
   environment: BuilderScene,
   camera: {
     perspective: "third",
-    followEnabled: false,
-    initialDistance: 46,
-    initialHeight: 40,
-    minDistance: 14,
-    maxDistance: 120,
-    targetHeight: 1,
-    targetOffset: { x: 0, z: -2 },
-    maxPolarAngle: 1.15,
+    follow: { followEnabled: false },
+    orbit: {
+      initialDistance: 46,
+      initialHeight: 40,
+      minDistance: 14,
+      maxDistance: 120,
+      targetHeight: 1,
+      targetOffset: { x: 0, z: -2 },
+      maxPolarAngle: 1.15,
+    },
   },
 };

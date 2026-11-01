@@ -266,7 +266,13 @@ export const game = defineGame({
   hudTheme: shiftTheme,
   // Marrow's console draws the menu verbs as hull switch plates and every pane as the dive-log screen.
   uiKit: deepwardKit,
-  camera: { perspective: "first", firstPerson: { eyeHeight: 1.62, sensitivity: 0.0021, reticle: false, viewmodel: false }, frustum: { far: 95 } },
+  camera: {
+    perspective: "first",
+    rigs: {
+      firstPerson: { eyeHeight: 1.62, sensitivity: 0.0021, reticle: false, viewmodel: false },
+    },
+    lens: { frustum: { far: 95 } },
+  },
   movement: {
     beforeCommit(frame) {
       const view = viewStore.read(frame.ctx);

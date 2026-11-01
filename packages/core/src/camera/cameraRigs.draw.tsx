@@ -161,7 +161,7 @@ function useCameraCommit(props: RigProps, followId: string | null) {
 
     applyCameraShake(camera, shake, dt);
 
-    props.config?.onCameraFollow?.({
+    props.config?.follow?.onCameraFollow?.({
       entityId: followId ?? "",
       target: composed.lookAt,
       camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
@@ -198,7 +198,7 @@ export function TopDownRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);
-  const config = props.config?.topDown;
+  const config = props.config?.rigs?.topDown;
   const resolved = useMemo(() => resolveTopDown(config), [config]);
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
   const followRef = useRef<Xyz | null>(null);
@@ -235,7 +235,7 @@ export function SideScrollRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);
-  const config: SideScrollCameraConfig | undefined = props.config?.sideScroll;
+  const config: SideScrollCameraConfig | undefined = props.config?.rigs?.sideScroll;
   const resolved = useMemo(() => resolveSideScroll(config), [config]);
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
   const followRef = useRef<Xyz | null>(null);
@@ -254,7 +254,7 @@ export function SideScrollRig(props: RigProps) {
     };
     followRef.current = follow;
     const pose = resolveSideScrollPose(follow, resolved, config?.fov ?? currentFov(camera));
-    const pixelPerfect = props.config?.projection === "orthographic" ? props.config.pixelPerfect : undefined;
+    const pixelPerfect = props.config?.lens?.projection === "orthographic" ? props.config.lens?.pixelPerfect : undefined;
     if (pixelPerfect !== undefined) {
       const snapped = snapPixelPerfectPosition(pose.position, pixelPerfect.pixelsPerUnit);
       pose.position = snapped;
@@ -296,7 +296,7 @@ export function RtsRig(props: RigProps & { panKeysEnabled?: boolean | undefined;
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);
-  const config: RtsCameraConfig | undefined = props.config?.rts;
+  const config: RtsCameraConfig | undefined = props.config?.rigs?.rts;
   const resolved = useMemo(() => resolveTopDown(config), [config]);
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
   const wasdPanEnabled = followId === null && props.panKeysEnabled !== false;
@@ -401,7 +401,7 @@ export function ShoulderRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);
-  const config: ShoulderCameraConfig | undefined = props.config?.shoulder;
+  const config: ShoulderCameraConfig | undefined = props.config?.rigs?.shoulder;
   const { commit, beginTransition } = useCameraCommit(props, followId);
   const domElement = useThree((state) => state.gl.domElement);
   const sideRef = useRef(config?.side === "left" ? -1 : 1);
@@ -451,7 +451,7 @@ export function ShoulderRig(props: RigProps) {
     if (turn !== null) props.yawRef.current = turn;
     const sample = readFollow(ctx, followId);
     const follow = sample?.pos ?? { x: 0, y: 0, z: 0 };
-    const weapon = followId === null ? null : (props.config?.weapon?.(followId) ?? null);
+    const weapon = followId === null ? null : (props.config?.follow?.weapon?.(followId) ?? null);
     if (weapon === null) {
       const adsTarget = aimingRef.current ? 1 : 0;
       aimRef.current += (adsTarget - aimRef.current) * (1 - Math.exp(-(config?.adsTransitionSpeed ?? 10) * dt));
@@ -503,7 +503,7 @@ export function LockOnRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);
-  const config: LockOnCameraConfig | undefined = props.config?.lockOn;
+  const config: LockOnCameraConfig | undefined = props.config?.rigs?.lockOn;
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
   const yawRef = useRef(0);
   const seeded = useRef(false);
@@ -538,7 +538,7 @@ export function ChaseRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);
-  const config: ChaseCameraConfig | undefined = props.config?.chase;
+  const config: ChaseCameraConfig | undefined = props.config?.rigs?.chase;
   const staticResolved = useMemo(() => resolveChase(config), [config]);
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
   const shake = useCameraShake();
@@ -559,8 +559,8 @@ export function ChaseRig(props: RigProps) {
 
     const entity = followId === null ? null : ctx.scene.entity.get(followId);
     const follow: Xyz = entity === null ? { x: 0, y: 0, z: 0 } : { x: entity.position[0], y: entity.position[1], z: entity.position[2] };
-    if (!inputSeededRef.current && merged?.headingSource === "input" && view === "chase" && (entity !== null || props.config?.initialYaw !== undefined)) {
-      props.yawRef.current = resolveChaseHeading(merged, entity?.rotationY ?? 0, undefined, props.config?.initialYaw);
+    if (!inputSeededRef.current && merged?.headingSource === "input" && view === "chase" && (entity !== null || props.config?.orbit?.initialYaw !== undefined)) {
+      props.yawRef.current = resolveChaseHeading(merged, entity?.rotationY ?? 0, undefined, props.config?.orbit?.initialYaw);
       inputSeededRef.current = true;
     }
     const turn = ctx.camera.takeTurnTo();
@@ -654,7 +654,7 @@ function observerSubject(
 export function ObserverRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
-  const config: ObserverCameraConfig | undefined = props.config?.observer;
+  const config: ObserverCameraConfig | undefined = props.config?.rigs?.observer;
   const followId = resolveFollowId(props.followEntityId, userId);
   const resolved = useMemo(() => resolveObserver(config), [config]);
   const angleRef = useRef(config?.startAngle ?? 0);

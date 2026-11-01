@@ -130,5 +130,14 @@ export const interactionPromptDemoGame: PlayableGame = {
   loop: { onInit, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: InteractionPromptUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 24, initialHeight: 18, minDistance: 12, maxDistance: 52, targetHeight: 0, maxPolarAngle: 1.3 },
+  camera: {
+    orbit: {
+      initialDistance: 24,
+      initialHeight: 18,
+      minDistance: 12,
+      maxDistance: 52,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

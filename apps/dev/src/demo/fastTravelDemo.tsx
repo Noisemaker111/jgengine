@@ -98,5 +98,14 @@ export const fastTravelDemoGame: PlayableGame = {
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: FastTravelUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 40, initialHeight: 30, minDistance: 16, maxDistance: 72, targetHeight: 0, maxPolarAngle: 1.3 },
+  camera: {
+    orbit: {
+      initialDistance: 40,
+      initialHeight: 30,
+      minDistance: 16,
+      maxDistance: 72,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

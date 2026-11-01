@@ -135,7 +135,16 @@ function crowdGame(instanced: boolean): PlayableGame {
         return { x: position[0]!, z: position[2]!, visible: Number(crowdVisible.read(ctx)), paused: Number(crowdPaused.read(ctx)) };
       },
     },
-    camera: { initialDistance: 18, initialHeight: 7, minDistance: 6, maxDistance: 60, targetHeight: 1, maxPolarAngle: 1.45 },
+    camera: {
+      orbit: {
+        initialDistance: 18,
+        initialHeight: 7,
+        minDistance: 6,
+        maxDistance: 60,
+        targetHeight: 1,
+        maxPolarAngle: 1.45,
+      },
+    },
   };
 }
 

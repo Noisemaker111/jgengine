@@ -104,5 +104,14 @@ export const countdownTimerDemoGame: PlayableGame = {
   loop: { onInit: () => {}, onNewPlayer, onTick: () => {}, onReset: () => {}, onDispose: () => {} },
   GameUI: CountdownTimerUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
-  camera: { initialDistance: 26, initialHeight: 20, minDistance: 12, maxDistance: 52, targetHeight: 0, maxPolarAngle: 1.3 },
+  camera: {
+    orbit: {
+      initialDistance: 26,
+      initialHeight: 20,
+      minDistance: 12,
+      maxDistance: 52,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

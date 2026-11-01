@@ -200,11 +200,13 @@ export const pointerDemoGame: PlayableGame = {
     contextMenu: true,
   },
   camera: {
-    initialDistance: 34,
-    initialHeight: 28,
-    minDistance: 12,
-    maxDistance: 64,
-    targetHeight: 0,
-    maxPolarAngle: 1.25,
+    orbit: {
+      initialDistance: 34,
+      initialHeight: 28,
+      minDistance: 12,
+      maxDistance: 64,
+      targetHeight: 0,
+      maxPolarAngle: 1.25,
+    },
   },
 };

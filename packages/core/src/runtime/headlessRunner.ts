@@ -161,7 +161,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
   const simSnapshot = createContextSimSnapshot(ctx);
 
   // The shell's camera starts on the game's `camera.initialYaw`, so a walk faces the same way here as in the page.
-  const look = { heading: options.heading ?? playable?.camera?.initialYaw ?? 0, pitch: options.pitch ?? 0 };
+  const look = { heading: options.heading ?? playable?.camera?.orbit?.initialYaw ?? 0, pitch: options.pitch ?? 0 };
 
   const tuning: PlayerMovementTuning | null =
     (options.playerMovement ?? shellDrivesPlayerPose(definition.input))

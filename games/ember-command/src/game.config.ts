@@ -142,17 +142,19 @@ export const game = defineGame({
   mood: { preset: "day", sun: { azimuth: 234, elevation: 47, color: "#ffe1ad" }, fog: { near: 70, far: 190 } },
   camera: {
     rig: "rts",
-    followEntityId: null,
-    rts: {
-      height: 34,
-      pitch: 1.0,
-      yaw: Math.PI / 4,
-      panSpeed: 36,
-      edgeScroll: true,
-      rotateSpeed: 1.2,
-      zoom: { min: 0.6, max: 2 },
-      start: { x: 0, z: 26 },
-      bounds: { minX: -46, maxX: 46, minZ: -46, maxZ: 46 },
+    follow: { followEntityId: null },
+    rigs: {
+      rts: {
+        height: 34,
+        pitch: 1.0,
+        yaw: Math.PI / 4,
+        panSpeed: 36,
+        edgeScroll: true,
+        rotateSpeed: 1.2,
+        zoom: { min: 0.6, max: 2 },
+        start: { x: 0, z: 26 },
+        bounds: { minX: -46, maxX: 46, minZ: -46, maxZ: 46 },
+      },
     },
   },
 });

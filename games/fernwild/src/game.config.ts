@@ -83,7 +83,11 @@ export const game = defineGame({
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
   prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
-  camera: { perspective: "third", initialYaw: authoredSpawnRotation(editorLayers), frustum: { far: 2400 } },
+  camera: {
+    perspective: "third",
+    orbit: { initialYaw: authoredSpawnRotation(editorLayers) },
+    lens: { frustum: { far: 2400 } },
+  },
   capture: {
     play: [{ name: "start", input: {} }],
     probe: (ctx) => {

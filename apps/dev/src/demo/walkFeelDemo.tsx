@@ -96,7 +96,15 @@ function makeWalkFeelGame(feel: WalkFeel): PlayableGame {
     backdrop: { background: "#a9c8e6" },
     environment: () => <Stage color={feel.color} />,
     GameUI: () => <FeelPanel feel={feel} />,
-    camera: { initialDistance: 9, initialHeight: 3.5, minDistance: 5, maxDistance: 20, targetHeight: 1 },
+    camera: {
+      orbit: {
+        initialDistance: 9,
+        initialHeight: 3.5,
+        minDistance: 5,
+        maxDistance: 20,
+        targetHeight: 1,
+      },
+    },
     capture: {
       probe: (): Record<string, number> => {
         const hero = context?.scene.entity.get(context.player.userId);

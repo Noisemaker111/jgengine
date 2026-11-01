@@ -94,5 +94,14 @@ export const photoModeDemoGame: PlayableGame = {
   GameUI: PhotoUI,
   environment: () => <EnvironmentScene feature={terrainFeature} />,
   WorldOverlay: () => <SceneCaptureBinding bind={(fn) => { captureFn = fn; }} />,
-  camera: { initialDistance: 30, initialHeight: 24, minDistance: 12, maxDistance: 60, targetHeight: 0, maxPolarAngle: 1.3 },
+  camera: {
+    orbit: {
+      initialDistance: 30,
+      initialHeight: 24,
+      minDistance: 12,
+      maxDistance: 60,
+      targetHeight: 0,
+      maxPolarAngle: 1.3,
+    },
+  },
 };

@@ -258,9 +258,7 @@ const THIRD_PERSON_CAMERA = `import { defineGame, type GameCameraConfig } from "
 // that follows the player. Tune boom distance/height here; no camera component to wire.
 const camera: GameCameraConfig = {
   rig: "orbit",
-  minDistance: 3,
-  maxDistance: 9,
-  targetHeight: 1.6,
+  orbit: { minDistance: 3, maxDistance: 9, targetHeight: 1.6 },
 };
 
 export const game = defineGame({ name: "Explore", camera });

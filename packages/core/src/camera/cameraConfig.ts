@@ -357,10 +357,8 @@ export interface PlayerFovConfig {
   control?: boolean;
 }
 
-/** Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig. */
-export interface GameCameraConfig {
-  /** Selects the rig — the one camera-selection knob. Overrides the legacy `perspective` shorthand. */
-  rig?: CameraRigKind;
+/** Projection and frustum of the canvas camera. */
+export interface GameCameraLensConfig {
   /** Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default perspective. */
   projection?: CameraProjection;
   /** Pixel-perfect orthographic rendering; ignored for perspective cameras. */
@@ -369,8 +367,10 @@ export interface GameCameraConfig {
   frustum?: { fov?: number; near?: number; far?: number; zoom?: number };
   /** Universal player FOV preference (slider + persistence) for perspective rigs. Ignored when `projection` is `"orthographic"`. */
   playerFov?: PlayerFovConfig;
-  /** @deprecated Legacy shorthand for `rig: "orbit" | "first"` — set `rig` instead. "third" mounts the orbit camera (default); "first" mounts pointer-lock mouse-look. */
-  perspective?: "third" | "first";
+}
+
+/** Per-rig tuning blocks; each is read only when its rig is selected. */
+export interface GameCameraRigConfigs {
   /** First-person tuning; only read when the rig resolves to "first". */
   firstPerson?: FirstPersonCameraConfig;
   /** Top-down / isometric tuning (#23); read when `rig: "topDown"`. */
@@ -391,12 +391,10 @@ export interface GameCameraConfig {
   sideScroll?: SideScrollCameraConfig;
   /** Model-viewer / inspection tuning (#207.7); read when `rig: "inspection"`. */
   inspection?: InspectionCameraConfig;
-  /** Camera-shake / trauma channel defaults (#28); read by every rig. */
-  shake?: CameraRigShakeConfig;
-  /** Scripted keyframe path (#29); when set, plays over the active rig. */
-  cinematic?: CinematicCameraConfig;
-  /** Seconds to cross-fade the camera when the rig changes (#29). 0 hard-cuts. Default 0.6. */
-  transitionSeconds?: number;
+}
+
+/** Boom, orbit and input-feel tuning of the default orbit rig. */
+export interface GameCameraOrbitConfig {
   minDistance?: number;
   maxDistance?: number;
   targetHeight?: number;
@@ -408,6 +406,23 @@ export interface GameCameraConfig {
   initialYaw?: number;
   /** Initial boom elevation (radians): 0 = level, positive = camera above the target looking down. Seeds the orbit rig; unset derives elevation from `initialHeight`/`initialDistance`. */
   initialPitch?: number;
+  rotateSpeed?: number;
+  zoomSpeed?: number;
+  dampingFactor?: number;
+  targetSmoothing?: number;
+  dragTargetSmoothing?: number;
+  distanceSmoothing?: number;
+  /** Vertical look clamp (three.js polar angle, radians): 0 = top-down over the head, PI/2 = level, >PI/2 = look up from below. Widen for top-down or vertical aim; unset keeps the standard chase feel. */
+  minPolarAngle?: number;
+  maxPolarAngle?: number;
+  /** Signed boom-elevation clamp `[min, max]` (radians): min < 0 dips the camera below the target, max > 0 rises overhead. Maps onto `minPolarAngle`/`maxPolarAngle` (polar = PI/2 − pitch); explicit polar fields win. */
+  pitchClamp?: readonly [number, number];
+  /** Spring-arm occlusion for the orbit rig: pull the camera in past walls/terrain so it never clips inside geometry. Off unless `enabled`. */
+  collision?: { enabled?: boolean; padding?: number; minTargetDistance?: number };
+}
+
+/** What the camera follows and what it reads from the followed entity. */
+export interface GameCameraFollowConfig {
   /** Lock orbit radius while the follow target moves (default true in shell). */
   followLock?: boolean;
   /** When false, orbit target stays fixed (cinematic / debug). Default true. */
@@ -423,17 +438,22 @@ export interface GameCameraConfig {
    * the look; over-the-shoulder takes its ADS blend from `adsProgress` and adds the same recoil.
    */
   weapon?: (entityId: string) => CameraWeaponView | null;
-  rotateSpeed?: number;
-  zoomSpeed?: number;
-  dampingFactor?: number;
-  targetSmoothing?: number;
-  dragTargetSmoothing?: number;
-  distanceSmoothing?: number;
-  /** Vertical look clamp (three.js polar angle, radians): 0 = top-down over the head, PI/2 = level, >PI/2 = look up from below. Widen for top-down or vertical aim; unset keeps the standard chase feel. */
-  minPolarAngle?: number;
-  maxPolarAngle?: number;
-  /** Signed boom-elevation clamp `[min, max]` (radians): min < 0 dips the camera below the target, max > 0 rises overhead. Maps onto `minPolarAngle`/`maxPolarAngle` (polar = PI/2 − pitch); explicit polar fields win. */
-  pitchClamp?: readonly [number, number];
-  /** Spring-arm occlusion for the orbit rig: pull the camera in past walls/terrain so it never clips inside geometry. Off unless `enabled`. */
-  collision?: { enabled?: boolean; padding?: number; minTargetDistance?: number };
+}
+
+/** Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig. */
+export interface GameCameraConfig {
+  /** Selects the rig — the one camera-selection knob. Overrides the legacy `perspective` shorthand. */
+  rig?: CameraRigKind;
+  /** @deprecated Legacy shorthand for `rig: "orbit" | "first"` — set `rig` instead. "third" mounts the orbit camera (default); "first" mounts pointer-lock mouse-look. */
+  perspective?: "third" | "first";
+  lens?: GameCameraLensConfig;
+  rigs?: GameCameraRigConfigs;
+  orbit?: GameCameraOrbitConfig;
+  follow?: GameCameraFollowConfig;
+  /** Camera-shake / trauma channel defaults (#28); read by every rig. */
+  shake?: CameraRigShakeConfig;
+  /** Scripted keyframe path (#29); when set, plays over the active rig. */
+  cinematic?: CinematicCameraConfig;
+  /** Seconds to cross-fade the camera when the rig changes (#29). 0 hard-cuts. Default 0.6. */
+  transitionSeconds?: number;
 }

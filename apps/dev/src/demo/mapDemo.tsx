@@ -372,11 +372,13 @@ export const mapDemoGame: PlayableGame = {
   WorldOverlay: () => <MapMarkerBeacons markers={markerSet} />,
   pointer: { pingCommand: "map.ping" },
   camera: {
-    initialDistance: 40,
-    initialHeight: 34,
-    minDistance: 16,
-    maxDistance: 80,
-    targetHeight: 0,
-    maxPolarAngle: 1.35,
+    orbit: {
+      initialDistance: 40,
+      initialHeight: 34,
+      minDistance: 16,
+      maxDistance: 80,
+      targetHeight: 0,
+      maxPolarAngle: 1.35,
+    },
   },
 };

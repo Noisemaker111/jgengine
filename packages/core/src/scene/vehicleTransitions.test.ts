@@ -34,7 +34,7 @@ for (const kind of ["ground", "boat"] as const) {
     const movement = resolvePlayerMovementTuning({});
     stepPlayerMovement(ctx, "local", { held: ["moveForward"], pointer: null }, 0.25, movement);
     expect(snapshotPlayerMovement(ctx, "local")).not.toBeNull();
-    expect(boardVehicle(ctx, seats, "local", "v", { rig: "chase", config: { chase: { height: 4 } }, chase: { distance: 9 } }).ok).toBe(true);
+    expect(boardVehicle(ctx, seats, "local", "v", { rig: "chase", config: { rigs: { chase: { height: 4 } } }, chase: { distance: 9 } }).ok).toBe(true);
     expect(snapshotPlayerMovement(ctx, "local")).toBeNull();
     expect(boardVehicle(ctx, seats, "alice", "v", { camera: false }).ok).toBe(true);
     expect(seats.drivenBy("local")).toBe("v"); expect(seats.drivenBy("alice")).toBeNull();
@@ -165,7 +165,7 @@ test("new camera mutations notify the owning context once and reject invalid pol
   const before = ctx.version(); ctx.camera.setRig("chase"); expect(changes).toBe(1); expect(ctx.version()).toBeGreaterThan(before);
   ctx.camera.restore(ctx.camera.snapshot()); expect(changes).toBe(2);
   ctx.camera.reset(); expect(changes).toBe(3);
-  expect(() => ctx.camera.setRig("chase", { chase: { distance: NaN } })).toThrow(); expect(changes).toBe(3);
+  expect(() => ctx.camera.setRig("chase", { rigs: { chase: { distance: NaN } } })).toThrow(); expect(changes).toBe(3);
 });
 
 test("explicit rider entity distinct from possession user clears that user's retained movement",()=>{

@@ -103,5 +103,14 @@ export const floatingTextDemoGame: PlayableGame = {
       <WorldFloatingText field={field} styleFor={styleFor} fontSizePx={22} offsetY={-8} />
     </>
   ),
-  camera: { initialDistance: 12, initialHeight: 6, minDistance: 6, maxDistance: 30, targetHeight: 2, maxPolarAngle: 1.4 },
+  camera: {
+    orbit: {
+      initialDistance: 12,
+      initialHeight: 6,
+      minDistance: 6,
+      maxDistance: 30,
+      targetHeight: 2,
+      maxPolarAngle: 1.4,
+    },
+  },
 };

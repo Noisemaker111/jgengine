@@ -209,19 +209,21 @@ export const game = defineGame({
   movement: { collideObjects: true, turnSpeed: 8 },
   camera: {
     rig: "chase",
-    // The static chase block is the ON-FOOT baseline: flat FOV (speedForMax 0 pins it at base so
+    rigs: {
+      // The static chase block is the ON-FOOT baseline: flat FOV (speedForMax 0 pins it at base so
     // sprinting never pumps the lens), no bank roll, no velocity lead, no speed shake — every
     // driving-feel extra lives in DRIVE_CAMERA_TUNING (game/handroll/driving.ts), overlaid via
     // ctx.camera.setChaseTuning while a vehicle is piloted and cleared on exit (#1299).
-    chase: {
-      distance: 7.5,
-      height: 3,
-      lookHeight: 1.15,
-      springDamping: 7.5,
-      fov: { base: 60, speedForMax: 0 },
+      chase: {
+        distance: 7.5,
+        height: 3,
+        lookHeight: 1.15,
+        springDamping: 7.5,
+        fov: { base: 60, speedForMax: 0 },
+      },
     },
     shake: { maxOffset: 0.24, maxRoll: 0.045, decayPerSecond: 2.8, exponent: 2, frequency: 21 },
-    frustum: { far: 900 },
+    lens: { frustum: { far: 900 } },
   },
   // Starts at the day curve's noon keyframe, where the mood's sky colours reach the dome unblended
   // with the engine's dawn and dusk presets.
