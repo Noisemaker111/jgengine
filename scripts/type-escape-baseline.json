@@ -487,7 +487,6 @@
   "games/odd-orbit/src/game/careers.test.ts": {"nonNull":17,"cast":5,"any":4},
   "games/odd-orbit/src/game/careers.ts": {"cast":2,"nonNull":6},
   "games/odd-orbit/src/game/creatures/bodyPlan.ts": {"nonNull":1},
-  "games/odd-orbit/src/game/models.ts": {"nonNull":1},
   "games/odd-orbit/src/game/objects/catalog.ts": {"cast":1},
   "games/odd-orbit/src/game/odd-orbit.world.test.ts": {"nonNull":1},
   "games/odd-orbit/src/game/render/AlienMesh.tsx": {"cast":1,"nonNull":1},
