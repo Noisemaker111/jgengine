@@ -122,7 +122,7 @@
 ## @jgengine/core/ai/director/storyteller
 
 - `StoryBeat` (interface): interface StoryBeat<R = unknown> — One incident the storyteller chose, with the points it spent.
-- `StoryIncident` (interface): interface StoryIncident<R = unknown> — The storyteller: what happens to a colony, a household or a crew between the player's own decisions. Threat points build with play time (and with whatever the game says makes it a richer target), and every gap an incident is drawn from the ones the points can afford, so early days get small trouble and boons while later days can afford the big ones. A threat that spends a lot buys extra quiet afterwards. The game owns what an incident does; this owns when and which.
+- `StoryIncident` (interface): interface StoryIncident<R = unknown> — One thing that can happen. Boons cost nothing; threats spend the points they cost.
 - `Storyteller` (interface): interface Storyteller<R = unknown> — A running storyteller: advance it with play time and apply the incidents it draws.
 - `StorytellerConfig` (interface): interface StorytellerConfig<R = unknown> — Pacing: how fast points build, how far apart incidents are and how picks lean.
 - `StorytellerState` (interface): interface StorytellerState — Serializable storyteller state.
