@@ -28,6 +28,11 @@ export const ASSET_SOURCE_IDS: readonly string[] = [
   "kaykit-furniture",
   "kaykit-space-base",
   "ambientcg-metalplates001",
+  "ambientcg-terrazzo005",
+  "ambientcg-tiles007",
+  "ambientcg-woodfloor009",
+  "ambientcg-plastic006",
+  "ambientcg-grass001",
   GROUND_MATERIAL_SOURCE,
 ];
 

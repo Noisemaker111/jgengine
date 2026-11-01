@@ -1,3 +1,4 @@
+import { ambientFauna } from "./game/ambientFauna";
 import { defineGame } from "@jgengine/shell/defineGame";
 import { createElement } from "react";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
@@ -40,6 +41,7 @@ export const game = defineGame({
     editorLayers,
     objectModels,
     renderEntity,
+    ambientLife: { fauna: ambientFauna },
   },
   hudTheme: orbitTheme,
   uiKit: orbitKit,

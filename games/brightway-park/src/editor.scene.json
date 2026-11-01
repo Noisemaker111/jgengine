@@ -1386,6 +1386,50 @@
         "roughness": 0.94,
         "seed": "brightway-maintained-lawn"
       }
+    },
+    {
+      "id": "fauna_gulls_gate",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 56
+      },
+      "radius": 36,
+      "label": "Gulls over the gate",
+      "meta": {
+        "species": "gull",
+        "motion": "soar",
+        "count": 4,
+        "window": "day",
+        "bandMin": 12,
+        "bandMax": 26,
+        "speed": 5,
+        "seed": "gulls-gate"
+      }
+    },
+    {
+      "id": "fauna_gulls_shore",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 0,
+        "y": 0,
+        "z": 96
+      },
+      "radius": 48,
+      "label": "Gulls over the shore",
+      "meta": {
+        "species": "gull",
+        "motion": "soar",
+        "count": 6,
+        "window": "day",
+        "bandMin": 10,
+        "bandMax": 24,
+        "speed": 5,
+        "seed": "gulls-shore"
+      }
     }
   ],
   "paths": [
@@ -25915,34 +25959,65 @@
       {
         "id": "grass",
         "surface": "grass",
-        "tint": "#6c9646",
+        "material": "foliage/grass",
+        "tint": "#7fb05a",
         "tiling": 2,
         "roughness": 0.96,
-        "triplanar": true
+        "triplanar": true,
+        "materialMaps": {
+          "color": "/materials/ambientcg-grass001/color.jpg",
+          "normal": "/materials/ambientcg-grass001/normal.jpg",
+          "roughness": "/materials/ambientcg-grass001/roughness.jpg",
+          "ao": "/materials/ambientcg-grass001/ao.jpg",
+          "displacement": "/materials/ambientcg-grass001/displacement.jpg"
+        }
       },
       {
         "id": "sand",
         "surface": "sand",
-        "tint": "#d8c8a5",
-        "tiling": 3,
-        "roughness": 0.96,
-        "triplanar": true
+        "material": "paving/plaza",
+        "tint": "#f2e3c2",
+        "tiling": 2.4,
+        "roughness": 0.9,
+        "triplanar": false,
+        "materialMaps": {
+          "color": "/materials/ambientcg-pavingstones070/color.jpg",
+          "normal": "/materials/ambientcg-pavingstones070/normal.jpg",
+          "roughness": "/materials/ambientcg-pavingstones070/roughness.jpg",
+          "displacement": "/materials/ambientcg-pavingstones070/displacement.jpg"
+        }
       },
       {
         "id": "gravel",
         "surface": "gravel",
+        "material": "ground/gravel-fine",
         "tint": "#c1b7a0",
-        "tiling": 2,
+        "tiling": 1.4,
         "roughness": 0.96,
-        "triplanar": true
+        "triplanar": false,
+        "materialMaps": {
+          "color": "/materials/ambientcg-gravel022/color.jpg",
+          "normal": "/materials/ambientcg-gravel022/normal.jpg",
+          "roughness": "/materials/ambientcg-gravel022/roughness.jpg",
+          "ao": "/materials/ambientcg-gravel022/ao.jpg",
+          "displacement": "/materials/ambientcg-gravel022/displacement.jpg"
+        }
       },
       {
         "id": "dirt",
         "surface": "dirt",
+        "material": "ground/dirt-road",
         "tint": "#9a866d",
-        "tiling": 2,
+        "tiling": 2.4,
         "roughness": 0.96,
-        "triplanar": true
+        "triplanar": true,
+        "materialMaps": {
+          "color": "/materials/ambientcg-ground054/color.jpg",
+          "normal": "/materials/ambientcg-ground054/normal.jpg",
+          "roughness": "/materials/ambientcg-ground054/roughness.jpg",
+          "ao": "/materials/ambientcg-ground054/ao.jpg",
+          "displacement": "/materials/ambientcg-ground054/displacement.jpg"
+        }
       }
     ]
   }
