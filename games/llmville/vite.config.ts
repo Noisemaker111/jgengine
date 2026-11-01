@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { defineConfig } from "vite";
 
-import { engineSource } from "../shared/viteEngineSource.ts";
+import { engineSource } from "../shared/viteEngineSource";
 
 const engine = engineSource(new URL(".", import.meta.url));
 
