@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { evaluatePredicate, readPath, type Predicate } from "@jgengine/core/rules/predicate";
+import { evaluatePredicate, predicateFloor, predicateLeaves, readPath, type Predicate } from "@jgengine/core/rules/predicate";
 
 describe("readPath", () => {
   test("descends dot paths through plain objects", () => {
@@ -70,5 +70,22 @@ describe("evaluatePredicate", () => {
     const rule: Predicate = { all: [{ gte: ["amount", 10] }, { eq: ["element", "fire"] }] };
     const restored = JSON.parse(JSON.stringify(rule)) as Predicate;
     expect(evaluatePredicate(restored, facts)).toBe(true);
+  });
+});
+
+describe("predicateLeaves", () => {
+  test("lists every comparison through combinators", () => {
+    const leaves = predicateLeaves({ all: [{ gte: ["a.b", 3] }, { not: { has: "c" } }, { any: [{ in: ["d", ["x"]] }] }] });
+    expect(leaves.map((leaf) => `${leaf.op}:${leaf.path}`)).toEqual(["gte:a.b", "has:c", "in:d"]);
+    expect(predicateLeaves(undefined)).toEqual([]);
+  });
+});
+
+describe("predicateFloor", () => {
+  test("reads the largest gte on a path, or null", () => {
+    const rule: Predicate = { all: [{ gte: ["standing.yard", 12] }, { gte: ["standing.yard", 25] }, { gte: ["balance.cash", 9] }] };
+    expect(predicateFloor(rule, "standing.yard")).toBe(25);
+    expect(predicateFloor(rule, "standing.other")).toBeNull();
+    expect(predicateFloor(undefined, "standing.yard")).toBeNull();
   });
 });

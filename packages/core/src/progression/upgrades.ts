@@ -1,5 +1,6 @@
 import { evalCurve, type Curve } from "./leveling";
-import type { Standing, StandingRequirement } from "./standing";
+import { predicateLeaves, type Predicate } from "../rules/predicate";
+import { evaluateStandingPredicate, standingTracksRead, type Standing } from "./standing";
 
 /**
  * One upgrade node. Its price is the shared progression {@link Curve} evaluated at the rank being
@@ -14,7 +15,8 @@ export interface UpgradeNodeDef {
   maxRank?: number;
   /** Node ids that must be owned before this one can be bought. */
   requires?: readonly string[];
-  standing?: StandingRequirement;
+  /** Over `standing.<trackId>` facts; omitted means no standing gate. */
+  standing?: Predicate;
 }
 
 /** Plain JSON state: node id → ranks owned. Nodes at rank `0` are absent. */
@@ -74,16 +76,14 @@ export function assertUpgrades(config: UpgradeTreeConfig): void {
       const cost = evalCurve(node.cost, rank);
       check(Number.isFinite(cost) && cost >= 0, `Upgrade node "${id}" cost at rank ${rank} must be finite and >= 0`);
     }
-    const standing = node.standing;
-    if (standing !== undefined) {
-      check(standing.trackId.trim() !== "", `Upgrade node "${id}" names an empty standing track`);
+    for (const leaf of predicateLeaves(node.standing)) {
+      if (typeof leaf.operand === "number") check(Number.isFinite(leaf.operand), `Upgrade node "${id}" standing operand must be finite`);
+    }
+    for (const trackId of standingTracksRead(node.standing)) {
+      check(trackId.trim() !== "", `Upgrade node "${id}" names an empty standing track`);
       check(
-        config.standing === undefined || config.standing.hasTrack(standing.trackId),
-        `Upgrade node "${id}" reads unknown standing track "${standing.trackId}"`,
-      );
-      check(
-        standing.min === undefined || standing.max === undefined || standing.min <= standing.max,
-        `Upgrade node "${id}" needs standing min <= max`,
+        config.standing === undefined || config.standing.hasTrack(trackId),
+        `Upgrade node "${id}" reads unknown standing track "${trackId}"`,
       );
     }
   }
@@ -138,12 +138,9 @@ export function createUpgradeTree(config: UpgradeTreeConfig): UpgradeTree {
     if (current >= (node.maxRank ?? 1)) return { ok: false, reason: "max-rank" };
     const missing = (node.requires ?? []).filter((required) => rankOf(required) < 1);
     if (missing.length > 0) return { ok: false, reason: "missing-prerequisites" };
-    const standing = node.standing;
-    if (standing !== undefined) {
+    if (node.standing !== undefined) {
       const reader = config.standing;
-      if (reader === undefined) return { ok: false, reason: "standing" };
-      const value = reader.standing(actorId, standing.trackId);
-      if ((standing.min !== undefined && value < standing.min) || (standing.max !== undefined && value > standing.max)) {
+      if (reader === undefined || !evaluateStandingPredicate(node.standing, reader, actorId)) {
         return { ok: false, reason: "standing" };
       }
     }
