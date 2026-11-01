@@ -150,14 +150,14 @@ describe("streetPlay drivable-vehicle adoption", () => {
   test("a cruiser's chase goal carries the shared pace band: pushed when the player is far, eased at the bumper", () => {
     const facing = { x: 0, z: 0, heading: 0 };
     const far = tailGoal(facing, { x: 0, z: 40 }, CRUISER_TAIL);
-    expect(paceBandFactor(far.paceBand!, far.paceGap!)).toBeGreaterThan(1);
+    expect(paceBandFactor(CRUISER_TAIL.band, far.paceGap ?? Number.NaN)).toBeGreaterThan(1);
     // Cruise is held below the car's top speed, so the push has somewhere to go and the cap holds.
     expect(far.speedLimit).toBeLessThan(40);
     const near = tailGoal(facing, { x: 0, z: 2 }, CRUISER_TAIL);
-    expect(paceBandFactor(near.paceBand!, near.paceGap!)).toBeLessThan(0.2);
+    expect(paceBandFactor(CRUISER_TAIL.band, near.paceGap ?? Number.NaN)).toBeLessThan(0.2);
     // A cruiser that has run past the player counts as ahead and eases rather than ramming back.
     const overshot = tailGoal(facing, { x: 0, z: -10 }, CRUISER_TAIL);
-    expect(paceBandFactor(overshot.paceBand!, overshot.paceGap!)).toBeLessThan(0.2);
+    expect(paceBandFactor(CRUISER_TAIL.band, overshot.paceGap ?? Number.NaN)).toBeLessThan(0.2);
   });
 
   test("interceptors close on the player from the spawn ring instead of driving off", () => {

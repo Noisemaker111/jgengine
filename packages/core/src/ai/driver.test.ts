@@ -332,14 +332,14 @@ describe("tailGoal", () => {
 
   test("pushes a chaser far behind, eases one at the bumper and caps the cruise", () => {
     const far = tailGoal(facing, { x: 0, z: 40 }, { speedLimit: 30, band });
-    expect(paceBandFactor(far.paceBand!, far.paceGap!)).toBeGreaterThan(1);
+    expect(paceBandFactor(band, far.paceGap ?? Number.NaN)).toBeGreaterThan(1);
     expect(far.speedLimit).toBe(30);
     const near = tailGoal(facing, { x: 0, z: 2 }, { speedLimit: 30, band });
-    expect(paceBandFactor(near.paceBand!, near.paceGap!)).toBeLessThan(0.2);
+    expect(paceBandFactor(band, near.paceGap ?? Number.NaN)).toBeLessThan(0.2);
   });
 
   test("a chaser that ran past the target reads it as behind and eases", () => {
     const overshot = tailGoal(facing, { x: 0, z: -10 }, { speedLimit: 30, band });
-    expect(paceBandFactor(overshot.paceBand!, overshot.paceGap!)).toBeLessThan(0.2);
+    expect(paceBandFactor(band, overshot.paceGap ?? Number.NaN)).toBeLessThan(0.2);
   });
 });

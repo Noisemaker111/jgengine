@@ -28,6 +28,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDriverState` (function) · `import { createDriverState } from "@jgengine/core/ai/driver"`
 
+## ai-driver-tail — tail a moving target with a pace band measured along the chaser's nose
+
+- `tailGoal` (function) · `import { tailGoal } from "@jgengine/core/ai/driver"`
+
 ## air-metrics — measure a vehicle's jumps and air control — apex height and time, double jump, air rotation rates
 
 - `measureAir` (function) · `import { measureAir } from "@jgengine/core/physics/handlingProbe"`
@@ -35,6 +39,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## alert-level — witness-gated alert value, labelled cut points and a stand-down beat
 
 - `createAlertLevel` (function) · `import { createAlertLevel } from "@jgengine/core/world"`
+
+## alert-search-area — last-sighting search circle that widens while the trail is cold
+
+- `alertSearchArea` (function) · `import { alertSearchArea } from "@jgengine/core/ai/alertLevel"`
 
 ## ambience-zones — a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting.
 
@@ -1380,6 +1388,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `definePatrolOrder` (function) · `import { definePatrolOrder } from "@jgengine/core/world"`
 
+## perception-nearby-roster — observe one target from a capped, deterministic roster of nearby observers
+
+- `observeNearby` (function) · `import { observeNearby } from "@jgengine/core/sensor/perception"`
+
 ## perception-service — retain sightings, sounds and damage with cone, range, occlusion, decaying memory and shared squad knowledge
 
 - `createPerception` (function) · `import { createPerception } from "@jgengine/core/world"`
@@ -1781,6 +1793,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
 
 - `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/core/postfx/ScreenEffectsOverlay.draw"`
+
+## search-beat — walk waypoints around a search circle so searchers sweep it instead of standing on its centre
+
+- `searchBeatStep` (function) · `import { searchBeatStep } from "@jgengine/core/ai/searchBeat"`
 
 ## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
 

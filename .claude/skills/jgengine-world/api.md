@@ -13,12 +13,15 @@
 - `AlertLevel` (interface): interface AlertLevel<Tier> — Stateful alert/pursuit API with retuning and save/restore support.
 - `AlertLevelConfig` (interface): interface AlertLevelConfig<Tier> — Everything {@link createAlertLevel} needs: the sight seam, the observer roster and the caller's numbers.
 - `AlertLevelState` (interface): interface AlertLevelState<Tier> — Serializable alert state — the tuning, the meter, the sight clock, the anchor and the counters.
+- `AlertSearchArea` (interface): interface AlertSearchArea — Where a search works: around the last sighting, out to `radius` metres.
+- `AlertSearchTuning` (interface): interface AlertSearchTuning<Tier> — How wide a search starts at each tier and how it widens while the trail is cold.
 - `AlertSighting` (interface): interface AlertSighting — One remembered sighting of the target, as a perception service reports it — `PerceptionMemory` from `sensor/perception` satisfies this shape.
 - `AlertStats` (interface): interface AlertStats — Counters a devtools probe, a HUD or a test reads.
 - `AlertStep` (interface): interface AlertStep<Tier> — One tick's answer: the value, the tier, the anchor and the escape.
 - `AlertTickContext` (interface): interface AlertTickContext — Per-tick world facts {@link AlertLevel.tick} needs but cannot derive itself.
 - `AlertTuning` (interface): interface AlertTuning<Tier> — Everything an alert level runs on; the game supplies it all.
 - `AlertWitness` (interface): interface AlertWitness — The sight seam: what each observer remembers of the target, asked one observer at a time. Pass `createPerception` (`sensor/perception`) straight in — a report counts when an observer still holds the target in view, so there is no second sight path to keep in step.
+- `alertSearchArea` (function): function alertSearchArea<Tier>(step: Pick<AlertStep<Tier>, "tier" | "anchor" | "outOfSightSeconds">, tuning: AlertSearchTuning<Tier>): AlertSearchArea | null — The circle a search should work this tick: centred on the step's anchor, the tier's radius grown by the seconds out of sight, capped. `null` with no tier or no sighting yet.
 - `createAlertLevel` (function): function createAlertLevel<Tier>(config: AlertLevelConfig<Tier>): AlertLevel<Tier> — An alert level any stealth, heist or pursuit game can use, over the meter and ladder parts: reports raise a bounded value only while an observer holds the target in view, the value bleeds on the caller's curve once the target has been out of every observer's sight, labelled cut points decide what the alert resolves to, and a stand-down countdown tells the caller when to call its units off. The value, its rates, the cut points and every label are caller policy; sight facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
 
 ## @jgengine/core/ai/buildOrder
@@ -138,10 +141,12 @@
 - `DriverStep` (interface): interface DriverStep extends AxisInput — {@link driveStep}'s result: the axis sample to feed the vehicle sim, plus arrival.
 - `DriverTuning` (interface): interface DriverTuning — Vehicle-feel numbers the game supplies; everything has a sensible default except `maxSpeed`.
 - `PaceBand` (interface): interface PaceBand — Catch-up pacing for one car in a field: the gap it tries to hold to a reference car (a rival, the player, a convoy lead) and how its pace bends when it drifts off that gap. Past `margin` by `tolerance` it sheds up to `ease` of its pace; short of it by `tolerance` it gains up to `push`; inside that tolerance it leaves the car alone. The push never outdrives `DriverTuning.maxSpeed`, so a band changes how hard a car tries, never what it is built to do.
+- `TailTuning` (interface): interface TailTuning — How a chaser tails a moving target: the cruise it holds and the band it keeps off the target.
 - `createDriverState` (function): function createDriverState(targetX = 0, targetZ = 0): DriverState — Fresh driver state committed to an initial target (usually the spawn-time goal or the spawn position itself).
 - `driveStep` (function): function driveStep(state: DriverState, dt: number, pose: DriverPose, goal: DriverGoal, profile: DifficultyProfile, tuning: DriverTuning, rng: () => number, obstacleAhead: number | null = null): DriverStep — Advance one driving step, mutating `state`, and return the {@link AxisInput} to feed the vehicle sim. `obstacleAhead` is the caller-measured distance to the nearest blocker in the driving corridor this step (`null`/omitted when clear) — the driver perceives it late by `speed * reactionSeconds`, so easy tiers brake at the last moment and expert tiers with proper margin. The steering target is a delay-line over the goal — resampled every `reactionSeconds`, so it trails a moving goal by up to that long, which is what makes an easy chaser visibly cut toward where the target *was*. A {@link PaceBand} on the goal eases a car ahead of its margin and pushes one behind it, bounded by the car's own top speed. When throttle produces no motion for a tier-scaled while the driver reverses out with counter-steer (brake past standstill — the shared sim's reverse).
 - `paceBandFactor` (function): function paceBandFactor(band: PaceBand, gap: number): number — The pace multiplier a {@link PaceBand} asks for at `gap`: `1` inside the tolerance, `1 - ease * scale` fully ahead of it, `1 + push * scale` fully behind it, ramped linearly across `easeAt` / `pushAt` in between. Pure scalar math, so a band is deterministic and costs no allocation per step; the result never goes negative.
 - `pathTargetAhead` (function): function pathTargetAhead(path: readonly DrivePathPoint[], x: number, z: number, lookahead: number, loop = false): DrivePathPoint | null — The pure-pursuit target for street/route following: the point `lookahead` meters further along the polyline from wherever the vehicle currently projects onto it. Feed the result to {@link driveStep} as the goal each tick and the driver follows the road; `loop` wraps a circuit (traffic block, race lap) instead of pinning at the final point. Returns `null` for a degenerate path. Give sharper tiers a longer `lookahead` to cut corners cleanly and duller tiers a short one so they steer segment-to-segment.
+- `tailGoal` (function): function tailGoal(pose: Pick<DriverPose, "x" | "z" | "heading">, target: { readonly x: number; readonly z: number }, tuning: TailTuning): DriverGoal — A {@link DriverGoal} that tails a moving target: aim at it, cruise at `speedLimit`, and pace with `band` on the gap measured along the chaser's own nose. A chaser that has run past the target reads it as behind and eases, instead of turning back to ram it.
 
 ## @jgengine/core/ai/flock
 
@@ -240,6 +245,14 @@
 - `RvoSnapshot` (interface): interface RvoSnapshot — Serializable crowd state: tuning plus every agent's position, velocity and footprint.
 - `RvoTunables` (interface): interface RvoTunables — Serializable avoidance tuning, retunable in play through {@link RvoCrowd.retune}.
 - `createRvoCrowd` (function): function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd — Reciprocal velocity obstacle avoidance over circular agents. Each nearby pair contributes one or two half-plane constraints on the agent's velocity, and a small linear program picks the velocity closest to the preferred one that satisfies them all. The neighbour search is a uniform grid capped at `maxNeighbors`, so a tick costs the same for 50 agents and 5,000.
+
+## @jgengine/core/ai/searchBeat
+
+- `SearchBeatArea` (interface): interface SearchBeatArea — The circle being searched. `AlertSearchArea` from `ai/alertLevel` fits.
+- `SearchBeatState` (interface): interface SearchBeatState — A searcher's place on its beat; one serializable number, `null` until the first step picks one.
+- `SearchBeatTuning` (interface): interface SearchBeatTuning — How a searcher walks its beat.
+- `createSearchBeat` (function): function createSearchBeat(): SearchBeatState — A fresh beat; the first step picks a random bearing.
+- `searchBeatStep` (function): function searchBeatStep(state: SearchBeatState, position: readonly [number, number], area: SearchBeatArea, tuning: SearchBeatTuning, rng: () => number): readonly [number, number] | null — One step of walking a beat inside a search circle instead of standing on its centre: returns the XZ waypoint to move toward, or `null` on the step the searcher reaches it and turns to the next. Mutates `state`; draws only from the injected `rng`.
 
 ## @jgengine/core/ai/tacticalQueries
 
@@ -4793,6 +4806,7 @@
 
 ## @jgengine/core/sensor/perception
 
+- `NearbyObserverLimit` (interface): interface NearbyObserverLimit — How many observers {@link observeNearby} asks, and from how far.
 - `PerceptionCandidate` (interface): interface PerceptionCandidate — A candidate target considered by a sight check.
 - `PerceptionConfig` (interface): interface PerceptionConfig — Configuration for sight, hearing, memory decay, squad sharing and optional occlusion.
 - `PerceptionMemory` (interface): interface PerceptionMemory — A remembered target and its linearly decaying confidence.
@@ -4804,6 +4818,7 @@
 - `PerceptionStimulus` (interface): interface PerceptionStimulus — An event that can seed an observer's memory.
 - `PerceptionStimulusKind` (type): type PerceptionStimulusKind = "sight" | "sound" | "damage" | "scent" — The kinds of stimulus the perception service can retain. A `scent` (blood, bait, fuel) carries `scentRange × loudness` and, like a sound, needs no clear line: it seeps around corners.
 - `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory. Signals are judged in the order the caller supplies them, never from the wall clock.
+- `observeNearby` (function): function observeNearby(perception: Pick<PerceptionService, "observe">, observers: Iterable<PerceptionObserver>, candidate: PerceptionCandidate, nowMs: number, limit: NearbyObserverLimit): string[] — Ask a bounded roster of observers what they see of one candidate: those within `radius` on the ground, sorted by id and capped at `max`. Returns the roster's ids, to hand an alert level as its observers. The caller picks who can be an observer; this bounds the work.
 
 ## @jgengine/core/sensor/revealQuery
 
