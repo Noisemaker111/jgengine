@@ -7,19 +7,24 @@
 //
 // A report, not a gate: exit 0 always.
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { printHelpIfAsked, type Usage } from "./script-help";
 
 const USAGE: Usage = {
-  summary: "Show how many files import each part home, the core create* count and the core folder count.",
+  summary: "Show how many files import each part home, the core create* count and the core folder count; writes scripts/part-stats.json.",
   usage: "bun run part-stats [--worklist]",
-  flags: [{ flag: "--worklist", detail: "list the private copies of parts that remain, by pattern, with file:line" }],
+  flags: [{ flag: "--worklist", detail: "list the private copies of parts that remain, by pattern, with file:line (writes nothing)" }],
   example: "bun run part-stats --worklist",
 };
 
+/**
+ * The committed record of the core counts, rewritten by `bun run gen`, so a branch shows how far the engine moved.
+ * It holds core only: the gen row reads core, and a games-only diff must not leave it stale.
+ */
+export const RECORD = "scripts/part-stats.json";
 const CORE_SRC = "packages/core/src/";
 const CORE_PACKAGE = "@jgengine/core/";
 
@@ -222,7 +227,12 @@ export function main(argv: readonly string[], root = repoRoot()): number {
     console.log(renderWorklist(privateCopies(sources)));
     return 0;
   }
-  console.log(renderTable(countImporters(sources), countCreates(sources), coreFolders(sources).length));
+  const counts = countImporters(sources);
+  const creates = countCreates(sources);
+  const folders = coreFolders(sources);
+  const core = counts.map(({ home, core: importers }) => ({ home, importers }));
+  writeFileSync(join(root, RECORD), `${JSON.stringify({ parts: core, creates, folders: folders.length }, null, 2)}\n`);
+  console.log(renderTable(counts, creates, folders.length));
   return 0;
 }
 
