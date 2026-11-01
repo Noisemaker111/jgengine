@@ -10,7 +10,8 @@ import { SEA_LEVEL_AIR } from "./atmosphere";
 export interface AircraftPropeller {
   /**
    * Multiplier on the effect: `0` off (the tuning's `maxThrust` times spool, the simple model), `1` as measured
-   * (default), past `1` the propeller's thrust scales with the strength; sane over `0..4`.
+   * (default), past `1` thrust falls off with airspeed faster (its ratio to the simple thrust is raised to the
+   * strength); sane over `0..4`.
    */
   strength?: number;
   /** Propeller diameter, m (default `1.905`, the Cessna 172's McCauley 1C160). */
@@ -111,6 +112,18 @@ export function propellerLoads(effect: AircraftPropeller, omega: number, axial: 
   const manifold = idle + (1 - idle) * Math.max(0, Math.min(1, throttle));
   out.engineTorque = ratedTorque * ((lapse * sigma - (lapse - 1)) * manifold - (effect.pumpingLoss ?? 0.1) * (1 - manifold) * (omega / ratedSpeed));
   return out;
+}
+
+/**
+ * Delivered thrust at a strength: a blend from the simple thrust to the propeller's up to strength 1, then the
+ * propeller's thrust times its ratio to the simple thrust raised to the extra strength.
+ * @capability aircraft-propeller propeller thrust under a strength dial
+ */
+export function propellerThrust(simple: number, physical: number, strength: number): number {
+  if (strength <= 0) return simple;
+  if (strength <= 1) return simple + (physical - simple) * strength;
+  if (simple <= 0 || physical <= 0) return physical;
+  return physical * (physical / simple) ** (strength - 1);
 }
 
 /**
