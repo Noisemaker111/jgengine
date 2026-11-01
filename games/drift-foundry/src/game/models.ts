@@ -242,3 +242,8 @@ export const objectModels: Record<string, ModelConfig> = {
   [EXIT_GATE_ARCH]: exitGateArch(),
   ...trackObjectModels,
 };
+
+/** Gulls over the dumps: the authored habitats' species, sized to read as a bird from the road. */
+export const flockModels: Record<string, ModelConfig> = {
+  gull: sized("quaternius-5-low-poly-animals/bird", 1.4, { material: { color: "#ece3cc", roughness: 0.8 } }),
+};

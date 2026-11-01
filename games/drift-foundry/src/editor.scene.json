@@ -3346,5 +3346,250 @@
   "annotations": [],
   "prefabs": [],
   "collections": [],
-  "catalogs": []
+  "catalogs": [],
+  "simulation": {
+    "emitters": [
+      {
+        "id": "dump-smoke-1",
+        "position": {
+          "x": -36,
+          "y": 0.5,
+          "z": 70
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "dump-smoke-2",
+        "position": {
+          "x": 37,
+          "y": 0.5,
+          "z": 120
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "dump-smoke-3",
+        "position": {
+          "x": -38,
+          "y": 0.5,
+          "z": 200
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "dump-smoke-4",
+        "position": {
+          "x": 36,
+          "y": 0.5,
+          "z": 260
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "dump-smoke-5",
+        "position": {
+          "x": -37,
+          "y": 0.5,
+          "z": 340
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "dump-smoke-6",
+        "position": {
+          "x": 38,
+          "y": 0.5,
+          "z": 400
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "dump-smoke-7",
+        "position": {
+          "x": -36,
+          "y": 0.5,
+          "z": 450
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "compactor-sparks",
+        "position": {
+          "x": 0,
+          "y": 0.6,
+          "z": 0
+        },
+        "config": {
+          "rate": 70,
+          "max": 160,
+          "direction": [
+            0,
+            0.6,
+            1
+          ],
+          "spread": 0.9,
+          "spawnJitter": [
+            18,
+            0.3,
+            0.5
+          ],
+          "speed": {
+            "min": 4,
+            "max": 9
+          },
+          "gravity": [
+            0,
+            -14,
+            0
+          ],
+          "lifetime": {
+            "min": 0.4,
+            "max": 0.9
+          },
+          "size": {
+            "start": 0.3,
+            "end": 0.05
+          },
+          "colorStart": 16773808,
+          "colorEnd": 16738842,
+          "alpha": {
+            "start": 1,
+            "end": 0
+          }
+        },
+        "options": {
+          "follow": "compactor_wall",
+          "offset": [
+            0,
+            0.6,
+            2.4
+          ],
+          "blending": "additive",
+          "space": "world"
+        }
+      },
+      {
+        "id": "compactor-heat",
+        "position": {
+          "x": 0,
+          "y": 24,
+          "z": 0
+        },
+        "config": {
+          "rate": 18,
+          "max": 80,
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "spread": 0.25,
+          "spawnJitter": [
+            24,
+            0.5,
+            2
+          ],
+          "speed": {
+            "min": 1.2,
+            "max": 2.4
+          },
+          "gravity": [
+            0,
+            0.8,
+            0
+          ],
+          "drag": 0.4,
+          "lifetime": {
+            "min": 2,
+            "max": 3.2
+          },
+          "size": {
+            "start": 3,
+            "end": 7
+          },
+          "colorStart": 16747066,
+          "colorEnd": 16756838,
+          "alpha": {
+            "start": 0.07,
+            "end": 0
+          }
+        },
+        "options": {
+          "follow": "compactor_wall",
+          "offset": [
+            0,
+            24,
+            0
+          ],
+          "blending": "additive",
+          "space": "world"
+        }
+      }
+    ],
+    "habitats": [
+      {
+        "id": "gulls-1",
+        "species": "gull",
+        "position": {
+          "x": -30,
+          "y": 26,
+          "z": 90
+        },
+        "radius": 26,
+        "count": 6,
+        "seed": "gulls-1",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 7,
+          "separationRadius": 3,
+          "neighborRadius": 14,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 36
+        }
+      },
+      {
+        "id": "gulls-2",
+        "species": "gull",
+        "position": {
+          "x": 31,
+          "y": 26,
+          "z": 230
+        },
+        "radius": 26,
+        "count": 6,
+        "seed": "gulls-2",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 7,
+          "separationRadius": 3,
+          "neighborRadius": 14,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 36
+        }
+      },
+      {
+        "id": "gulls-3",
+        "species": "gull",
+        "position": {
+          "x": -30,
+          "y": 26,
+          "z": 390
+        },
+        "radius": 26,
+        "count": 6,
+        "seed": "gulls-3",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 7,
+          "separationRadius": 3,
+          "neighborRadius": 14,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 36
+        }
+      }
+    ]
+  }
 }

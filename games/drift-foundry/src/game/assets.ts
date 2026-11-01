@@ -1,7 +1,7 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-const MODEL_SOURCES = ["kaykit-city-builder", "kaykit-space-base"] as const;
+const MODEL_SOURCES = ["kaykit-city-builder", "kaykit-space-base", "quaternius-5-low-poly-animals"] as const;
 /** Packed dirt on the yard and dark cracked asphalt on the racing line, named by the shared material library. */
 const GROUND_SOURCES = ["ambientcg-ground025", "ambientcg-asphalt012"] as const;
 /**

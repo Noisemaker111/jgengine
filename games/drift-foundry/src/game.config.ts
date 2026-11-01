@@ -9,7 +9,7 @@ import { DRIFT_SOUNDS } from "./game/audio";
 import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings";
-import { entityModels, objectModels } from "./game/models";
+import { entityModels, flockModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
 import { driftTheme } from "./game/ui/theme";
 import { foundryKit } from "./game/ui/menu/foundryKit";
@@ -26,6 +26,8 @@ export const game = defineGame({
     entityModels,
     objectModels,
   },
+  // The authored gull habitats circle the dumps; the species name is the document's, the model is the game's.
+  sceneFlockModels: flockModels,
   physics,
   // The kart, rivals, compactor and run clock all integrate `dt` per tick; a fixed 60 Hz step keeps a
   // corridor run the same distance at 30 and 144 fps.
