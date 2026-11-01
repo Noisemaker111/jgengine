@@ -1,5 +1,10 @@
 import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
+import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+
+import { GAME_FONTS } from "../../art/fonts/fonts";
+
+const FONTS = gameFontStacks(GAME_FONTS);
 
 /**
  * Brightway's fair-day paper, recut from the park sign: cream ticket stock, teal sign-plate stickers
@@ -20,7 +25,8 @@ export const parkKit = customizeKit(UI_KITS.paper, {
     pencil: "#587779",
     tape: "repeating-linear-gradient(90deg, #ef7059 0 7px, #fff1cf 7px 14px)",
     scrim: "rgba(20, 50, 56, 0.5)",
-    fontDisplay: "Georgia, \"Times New Roman\", serif",
+    fontDisplay: FONTS.fontDisplay,
+    fontBody: FONTS.fontBody,
   },
   css: `
 .jgk-paper-title { box-shadow: 0 0 0 3px #edbc5c, 0 3px 0 3px rgba(33, 66, 74, 0.25); font-weight: 700; }

@@ -40,6 +40,7 @@ export function seedPlacements(): SeedPlacement[] {
   const rides: SeedPlacement[] = [];
   const rest: SeedPlacement[] = [];
   for (const marker of editorLayers.markers) {
+    if (marker.kind === "scenery") continue;
     const catalogId = markerCatalogId(marker.meta);
     const category = buildableDef(catalogId).category;
     const target = category === "ride" || category === "stall" ? rides : rest;

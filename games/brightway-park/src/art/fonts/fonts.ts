@@ -1,7 +1,4 @@
-import type { GameFontPairing } from "@jgengine/core/ui/fonts.view";
+import { libraryFontPairing } from "@jgengine/assets/catalogs/fontLibrary";
 
-/** This game's bundled fonts (OFL 1.1; see OFL.txt and SOURCE.md beside them). Load with `useGameFonts(GAME_FONTS)`, style with `gameFontStacks(GAME_FONTS)`. */
-export const GAME_FONTS: GameFontPairing = {
-  display: { family: "Lilita One", src: new URL("./LilitaOne-Regular.ttf", import.meta.url).href },
-  body: { family: "Nunito", src: new URL("./Nunito-VF.ttf", import.meta.url).href },
-};
+/** Lilita One for titles and numbers, Nunito for reading text: the shared library's OFL files. Load with `useGameFonts(GAME_FONTS)`, style with `gameFontStacks(GAME_FONTS)`. */
+export const GAME_FONTS = libraryFontPairing("lilita-one", "nunito");

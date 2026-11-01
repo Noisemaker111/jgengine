@@ -1,3 +1,5 @@
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { defineGame } from "@jgengine/shell/defineGame";
 
 import { BRIGHTWAY_SOUNDS } from "./game/audio";
@@ -57,7 +59,12 @@ export const game = defineGame({
   },
   uiKit: parkKit,
   hudTheme: parkTheme,
-  rendering: { look: "cinematic", mood: "day" },
+  rendering: {
+    look: "cinematic",
+    mood: { preset: "bright", sun: { azimuth: 135, elevation: 52, color: "#fff1d6" }, horizonColor: "#bfe0e6", fog: { near: 260, far: 900 } },
+    environmentSource: hdriEnvironment("clear-puresky", { intensity: 0.55 }),
+    postProcessing: { toneMapping: "aces", bloom: { strength: 0.35, radius: 0.5, threshold: 0.95 }, grade: { vignette: 0.12, lut: lutGrade("sunny-postcard") } },
+  },
   capture: {
     // A new game: the menu's "Open the park" with nothing saved starts the first scenario on the empty lot.
     play: [{ name: "park.scenario", input: { id: "brightway_beginnings" } }, "park.start"],
@@ -75,6 +82,8 @@ export const game = defineGame({
     views: {
       menu: { description: "Gate board over the park, Continue highlighted", state: "menu", settleMs: 1800 },
       menuSaves: { description: "Park saves with the saved day", state: "menu-saves", settleMs: 1800 },
+      plaza: { description: "Gate plaza and the crowd at the build camera's near zoom", state: "full-park", look: "0,10", lookFrom: "34,20,0.8", settleMs: 1500 },
+      crowd: { description: "Guests and staff close up", state: "full-park", look: "0,18", lookFrom: "16,7,0.8", settleMs: 1500 },
       menuNew: { description: "New day pane with the scenarios", state: "menu-new", settleMs: 1200 },
     },
     probe: parkProbe,

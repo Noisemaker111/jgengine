@@ -11,8 +11,11 @@ describe("brightway-park world", () => {
     expect(summary.isEmpty).toBe(false);
   });
 
-  test("frames the park with three building clusters", () => {
-    expect(summary.counts.buildings).toBe(14);
+  test("frames the park with three building clusters from the scene, not procedural boxes", () => {
+    expect(summary.counts.buildings).toBe(0);
+    const town = editorLayers.markers.filter((marker) => marker.kind === "scenery" && marker.id.startsWith("town-"));
+    for (const side of ["north", "west", "east"]) expect(town.filter((marker) => marker.id.startsWith(`town-${side}-`)).length).toBeGreaterThanOrEqual(4);
+    for (const marker of town) expect(String(marker.meta?.["assetId"])).toStartWith("quaternius-lowpoly-buildings-pack/");
   });
 
   test("has finite, resolvable terrain", () => {
@@ -21,7 +24,6 @@ describe("brightway-park world", () => {
 
   test("uses this game's own look, not engine defaults", () => {
     expect(summary.terrain?.palette.low).not.toBe("#30402c");
-    expect(summary.structures[0]?.palette.wall).not.toBe("#83766a");
   });
 
   test("the world consumes editor terrain with a distinct clear circulation surface and one grass owner", () => {
