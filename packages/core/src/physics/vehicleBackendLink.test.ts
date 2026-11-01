@@ -117,6 +117,12 @@ describe("vehicleBackendLink wheel probes", () => {
     expect(rightFront?.suspensionLength).toBeCloseTo(-0, 1);
     expect(rightFront?.contactPoint[1]).toBeCloseTo(0.2, 2);
     expect(link.probeWheels(DT)).toBe(states);
+    link.sync({ position: [3, 0, -2], heading: 0.5 });
+    const saved = link.snapshot();
+    link.sync({ position: [9, 0, 9], heading: 2 });
+    link.restore(saved);
+    expect(link.snapshot()).toEqual({ position: [3, 0, -2], heading: 0.5, pitch: 0, roll: 0 });
+    expect(backend.body(link.body)?.position[0]).toBeCloseTo(3, 6);
     link.dispose();
   });
 });

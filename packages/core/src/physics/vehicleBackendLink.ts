@@ -28,6 +28,14 @@ export interface VehicleLinkPose {
   bodyRoll?: number;
 }
 
+/** A link's serializable state: the pose its chassis last synced to. Wheel states are re-probed, not stored. */
+export interface VehicleBackendLinkState {
+  position: [number, number, number];
+  heading: number;
+  pitch: number;
+  roll: number;
+}
+
 /** A wall the last clamped move ran into. */
 export interface VehicleLinkHit {
   body: BodyHandle;
@@ -50,6 +58,9 @@ export interface VehicleBackendLink {
    * ray-cast vehicle when it has one (Rapier), else one backend ray per wheel. The returned states are reused.
    */
   probeWheels(dt: number): readonly RayCastWheelState[];
+  snapshot(): VehicleBackendLinkState;
+  /** Put the chassis back at a saved pose (teleports it; the backend snapshot restores the body itself). */
+  restore(state: VehicleBackendLinkState): void;
   dispose(): void;
 }
 
@@ -208,6 +219,18 @@ export function createVehicleBackendLink(backend: PhysicsBackend, options: Vehic
         }
       });
       return wheelStates;
+    },
+    snapshot: () => ({ position: [center[0], pose.baseY, center[2]], heading: pose.heading, pitch: pose.pitch, roll: pose.roll }),
+    restore(state) {
+      pose.baseY = state.position[1];
+      pose.heading = state.heading;
+      pose.pitch = state.pitch;
+      pose.roll = state.roll;
+      center[0] = state.position[0];
+      center[1] = state.position[1] + half[1] + clearance;
+      center[2] = state.position[2];
+      backend.setPosition(body, center);
+      backend.setRotation(body, poseQuat(pose.heading, pose.pitch, pose.roll));
     },
     dispose() {
       native?.dispose();
