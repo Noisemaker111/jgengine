@@ -4,7 +4,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { patrol } from "@jgengine/core/scene/behaviors";
 import type { Waypoint } from "@jgengine/core/nav/pathFollow";
 import type { EntityColliderSet } from "@jgengine/core/scene/colliders";
-import { cityLots, cityRoadWidth, tuneCityLayout, type CityLayout } from "../../engine-local/city/cityLayout";
+import { cityLots, cityRoadWidth, tuneCityLayout, type CityLayout, type CityZone } from "../../engine-local/city/cityLayout";
 import { placeAuthoredObjectsFromDocument } from "@jgengine/core/world/authoredObjects";
 import { nearestOnPath } from "@jgengine/core/roads/roads";
 import { furnitureSpots, parkingSpots, sidewalkPoint } from "@jgengine/core/roads/streets";
@@ -12,6 +12,7 @@ import { streets } from "../../world";
 import { editorLayers } from "../../editorLayers";
 import { buildingsForZone } from "./buildings";
 import { cityLayout, LOT_ROADS, roadSource, zoneAt } from "./cityLayout";
+import { setLampSpots } from "./nightLook";
 import { PALM_IDS } from "./models";
 import {
   BOUNTY_SPOTS,
@@ -115,7 +116,7 @@ function districtProp(x: number, z: number, index: number, rng: () => number): s
   switch (district?.id) {
     case "mainsail_boulevard": {
       const roll = rng();
-      return roll < 0.5 ? palmAt(index) : roll < 0.68 ? "obj_bench" : roll < 0.84 ? "obj_planter" : "obj_signal";
+      return roll < 0.55 ? palmAt(index) : roll < 0.66 ? "obj_bench" : roll < 0.76 ? "obj_planter" : roll < 0.88 ? "obj_neon" : "obj_signal";
     }
     case "downtown": {
       const roll = rng();
@@ -183,6 +184,57 @@ function pickFor<T>(list: readonly T[], x: number, z: number): T | undefined {
   return list[hash % list.length];
 }
 
+/** Roof pieces a building may carry, one pick per lot by position. */
+const ROOF_PIECES = ["obj_roof_a", "obj_roof_b", "obj_roof_c", "obj_roof_a"] as const;
+/** Library props at the front of a lot by zone: planting where people live and shop, drums and cabinets at the docks. */
+const YARD_PROPS: Partial<Record<CityZone, readonly [string, string]>> = {
+  commercial: ["obj_planter", "obj_planter"],
+  residential: ["obj_bush", "obj_fern"],
+  industrial: ["obj_barrel", "obj_dumpster"],
+};
+/** Zones whose ground floor is shopfronts, so they take awnings. */
+const SHOP_ZONES: readonly CityZone[] = ["core", "commercial"];
+
+/**
+ * Shop awnings over a street-facing ground floor and a rooftop piece on the lot's roof, so a block is
+ * a building with a shopfront and a roof line, not a bare box. Both stay clear of the lot's collider.
+ */
+function dressBuilding(
+  ctx: GameContext,
+  zone: CityZone,
+  lot: { x: number; z: number; rotationY: number; w: number; d: number; floor: number; height: number },
+  ids: string[],
+): void {
+  const sin = Math.sin(lot.rotationY);
+  const cos = Math.cos(lot.rotationY);
+  const at = (local: number, depth: number): readonly [number, number] => [lot.x + cos * local + sin * depth, lot.z - sin * local + cos * depth];
+  if (SHOP_ZONES.includes(zone)) {
+    const bays = Math.min(3, Math.floor(lot.w / 6));
+    for (let bay = 0; bay < bays; bay += 1) {
+      const [ax, az] = at(((bay + 0.5) / bays - 0.5) * (lot.w - 2), lot.d / 2);
+      const awning = ctx.scene.object.place("obj_awning", ax, lot.floor + 3.1, az, { rotation: lot.rotationY });
+      ctx.scene.object.setColliders(awning, {});
+      ids.push(awning);
+    }
+  }
+  // Library street props in the yard or on the kerb side of the lot, never on the driveway side.
+  const yard = YARD_PROPS[zone];
+  if (yard !== undefined) {
+    for (const [slot, prop] of yard.entries()) {
+      const [px, pz] = at((slot === 0 ? -0.3 : 0.3) * lot.w, lot.d / 2 + (zone === "commercial" ? 0.9 : 1.6));
+      const id = ctx.scene.object.place(prop, px, ctx.world.groundHeightAt(px, pz), pz, { rotation: lot.rotationY });
+      ids.push(id);
+    }
+  }
+  const piece = pickFor(ROOF_PIECES, lot.x + 11, lot.z - 7);
+  if (piece !== undefined && lot.w >= 8 && lot.d >= 8) {
+    const [rx, rz] = at(((Math.abs(Math.round(lot.x)) % 5) - 2) * (lot.w / 10), -lot.d * 0.15);
+    const roof = ctx.scene.object.place(piece, rx, lot.floor + lot.height, rz, { rotation: lot.rotationY + (Math.abs(Math.round(lot.z)) % 4) * (Math.PI / 2) });
+    ctx.scene.object.setColliders(roof, {});
+    ids.push(roof);
+  }
+}
+
 /**
  * Line every street with buildings from the city layout (`cityLots`): each zone's frontage, depth,
  * setback past the sidewalk, spacing and floor range, corner clearance off crossing streets, and a
@@ -210,6 +262,7 @@ function placeBuildings(ctx: GameContext, layout: CityLayout, ids: string[]): Bu
     ctx.scene.object.setColliders(id, blockColliders(size));
     ids.push(id);
     placed.push({ x, z, rotationY: lot.rotationY, halfW: w / 2, halfD: d / 2 });
+    dressBuilding(ctx, lot.zone, { x, z, rotationY: lot.rotationY, w, d, floor: y + 0.1, height: lot.height }, ids);
     if (lot.driveway !== undefined) {
       const [dx, dz] = lot.driveway.center;
       const drive = ctx.scene.object.place("obj_driveway", dx, ctx.world.groundHeightAt(dx, dz) - 0.02, dz, {
@@ -285,10 +338,12 @@ function placeStreetFurniture(ctx: GameContext, layout: CityLayout, ids: string[
   const rng = seededRng("harbor-heat-street-props");
   const propOutset = Math.max(0.4, layout.sidewalkWidth - 1.6);
   let propIndex = 0;
+  const lamps: (readonly [number, number])[] = [];
   for (const street of roadSource.current()) {
     // Denser lighting the length of every street reads as a lived-in city at night.
     for (const spot of furnitureSpots(street, { spacing: 40, outset: 0.1 })) {
       const [x, z] = spot.position;
+      lamps.push([x, z]);
       ids.push(ctx.scene.object.place("obj_streetlight", x, ctx.world.groundHeightAt(x, z), z, { rotation: spot.heading }));
     }
     // District-flavored sidewalk dressing: neon + hydrants downtown, palms + benches on Mainsail Boulevard,
@@ -308,6 +363,7 @@ function placeStreetFurniture(ctx: GameContext, layout: CityLayout, ids: string[
       );
     }
   }
+  setLampSpots(ctx, lamps);
 }
 
 /** The open square at Mainsail's bounty marker; its dressing keeps this radius clear for the fight. */
@@ -374,6 +430,9 @@ function dressPlaza(ctx: GameContext, layout: CityLayout, boxes: readonly Buildi
     }
   }
   spots.sort((a, b) => a.order - b.order);
+  const paving = ctx.scene.object.place("obj_plaza_paving", cx, ctx.world.groundHeightAt(cx, cz) - 0.03, cz, { visual: { scale: [PLAZA_REACH * 1.7, 0.08, PLAZA_REACH * 1.7] } });
+  ctx.scene.object.setColliders(paving, {});
+  ids.push(paving);
   const placed: { x: number; z: number; prop: string; spacing: number; footprint: number }[] = [];
   for (const piece of PLAZA_PIECES) {
     let left = piece.count;
@@ -529,8 +588,9 @@ export function setupWorld(ctx: GameContext): readonly BuildingFootprintXZ[] {
     [DOCK_FIGHT_CENTER[0] + 40, 0, DOCK_FIGHT_CENTER[2] - 2],
     [DOCK_FIGHT_CENTER[0] + 6, 0, DOCK_FIGHT_CENTER[2] + 28],
   ];
+  const cargoKinds = ["obj_cargo", "obj_cargo_teal", "obj_cargo_amber"] as const;
   cargoSpots.forEach(([x, , z], i) => {
-    ctx.scene.object.place("obj_cargo", Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
+    ctx.scene.object.place(cargoKinds[i % cargoKinds.length] ?? "obj_cargo", Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
       rotation: i % 2 === 0 ? 0 : Math.PI / 2,
     });
   });

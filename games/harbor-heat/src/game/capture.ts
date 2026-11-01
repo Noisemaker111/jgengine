@@ -100,6 +100,16 @@ export function registerCaptureCommands(ctx: GameContext): void {
       return state;
     },
   });
+  // Jump the day clock (a 720 s cycle, noon at 360) to see the evening or the night.
+  ctx.game.commands.define<{ at?: number }>("time.stage", {
+    apply(state, input) {
+      const clock = state.time.snapshot();
+      const cycle = 720;
+      const at = typeof input?.at === "number" ? input.at : 360;
+      state.time.hydrate({ ...clock, now: Math.floor(clock.now / cycle) * cycle + cycle + at });
+      return state;
+    },
+  });
   // The end-of-run receipt, paid or missed, without carrying a parcel across town.
   ctx.game.commands.define<{ won?: boolean }>("result.stage", {
     apply(state, input) {

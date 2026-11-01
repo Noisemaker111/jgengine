@@ -20,7 +20,7 @@ import { runGenerator } from "@jgengine/core/generator/generator";
 import { validateParams } from "@jgengine/core/generator/paramSchema";
 import { LANDFORM_GENERATOR, LANDFORM_SCHEMA } from "@jgengine/core/landform/generator/landformGenerator";
 import { landformTerrainSnapshot } from "@jgengine/core/landform/generator/landformTerrain";
-import { libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
+import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 import type { HandlerTable } from "./context";
 
 function brushError(request: { x: number; z: number; radius?: number; strength?: number }): string | null {
@@ -192,17 +192,17 @@ export const terrainHandlers: Pick<
     const layers: TerrainMaterialLayer[] = [];
     for (const layer of request.layers) {
       if (layer.material === undefined || layer.material.length === 0) {
-        layers.push({ ...layer, materialUrl: undefined });
+        layers.push({ ...layer, materialMaps: undefined });
         continue;
       }
-      let url: string | undefined;
+      let scan: ReturnType<typeof librarySurfaceScan>;
       try {
-        url = libraryMaterialAsset(layer.material).textures?.color?.url;
+        scan = librarySurfaceScan(layer.material);
       } catch {
-        return { ok: false, error: `unknown material library name "${layer.material}"` };
+        return { ok: false, error: `unknown or unpulled material library name "${layer.material}"` };
       }
-      if (url === undefined) return { ok: false, error: `material "${layer.material}" has no color map` };
-      layers.push({ ...layer, materialUrl: url });
+      const tiling = layer.tiling ?? scan.repeat;
+      layers.push({ ...layer, ...(tiling === undefined ? {} : { tiling }), materialMaps: scan.maps });
     }
     ctx.session.dispatch({ type: "setTerrainLayers", layers });
     return { ok: true, result: { layers: ctx.session.getState().document.terrain?.layers ?? [] } };

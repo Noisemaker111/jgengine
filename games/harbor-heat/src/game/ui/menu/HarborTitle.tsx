@@ -407,9 +407,8 @@ export function TribuneCredits() {
       <span className="hh-tribune-mast"><b>The Mainsail Tribune</b><small>Late edition · Credits</small></span>
       <span className="hh-tribune-head">Who made the heat</span>
       <span className="hh-tribune-lede">
-        <span><b>Harbor Heat</b> Mainsail dispatch: game and art direction. Original city, booth, towers and poster.</span>
+        <span><b>Harbor Heat</b> Mainsail dispatch: game and art direction. Original city blocks, awnings, signs, aircraft, boats, booth, towers and poster.</span>
         <span><b>Engine</b> JGengine: scene, save, menu.</span>
-        <span><b>Type</b> Bangers and Barlow, SIL Open Font License.</span>
       </span>
       <span className="hh-tribune-rule">Classifieds · props and people on loan</span>
       <span className="hh-tribune-ads" tabIndex={0} aria-label="Asset credits">

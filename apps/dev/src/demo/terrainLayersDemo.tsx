@@ -1,9 +1,9 @@
 import { createEditableTerrain } from "@jgengine/core/terrain/terraform";
-import { environment, terrain } from "@jgengine/core/world/features";
+import { environment, terrain, type TerrainMaterialMaps } from "@jgengine/core/world/features";
 import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import { libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
+import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 
 import { demoGame } from "./demoGame";
 
@@ -11,10 +11,10 @@ const params = new URLSearchParams(typeof window === "undefined" ? "" : window.l
 /** `?procedural=1` drops the layer maps: the mask blend is still there, one procedural surface per layer. */
 const procedural = params.get("procedural") === "1";
 
-/** What `set_terrain_layers` writes: the authored library name plus the URL the editor resolved it to. */
-function layerMap(name: string): { material?: string; materialUrl?: string | undefined } {
+/** What `set_terrain_layers` writes: the authored library name plus the maps the editor resolved it to. */
+function layerMap(name: string): { material?: string; materialMaps?: TerrainMaterialMaps | undefined } {
   if (procedural) return {};
-  return { material: name, materialUrl: libraryMaterialAsset(name).textures?.color?.url };
+  return { material: name, materialMaps: librarySurfaceScan(name).maps };
 }
 
 const LAYERS: readonly TerrainMaterialLayer[] = [

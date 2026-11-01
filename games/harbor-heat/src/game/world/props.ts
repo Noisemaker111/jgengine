@@ -20,6 +20,8 @@ const PROP_MODELS: Record<string, string> = {
   obj_planter: "park/potted-plant",
   obj_hedge: "park/planter-box",
   obj_cactus: "nature/quiver-tree",
+  obj_bush: "nature/bush",
+  obj_fern: "nature/fern",
   obj_shade_tree: "nature/jacaranda",
   obj_patio: "park/patio-set",
   obj_picnic: "park/picnic-table",
@@ -31,7 +33,7 @@ const PROP_MODELS: Record<string, string> = {
 export const LIBRARY_MODEL_NAMES: readonly string[] = [...new Set([...Object.values(PROP_MODELS), ...CAST_MODEL_NAMES, CAR_MODEL_NAME])];
 
 /** The lamp head glows after dark; only its glass takes the warm self-lit finish. */
-const LAMP_GLASS = { emissive: "#ffcf94", emissiveIntensity: 0.9, materials: ["street_lamp_01_glass"] };
+const LAMP_GLASS = { emissive: "#ffcf94", emissiveIntensity: 2.4, materials: ["street_lamp_01_glass"] };
 
 export const LIBRARY_PROPS: Record<string, ModelConfig> = Object.fromEntries(
   Object.entries(PROP_MODELS).map(([id, name]) => {

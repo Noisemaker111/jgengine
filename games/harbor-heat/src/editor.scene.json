@@ -1,5 +1,78 @@
 {
   "version": 1,
+  "simulation": {
+    "habitats": [
+      {
+        "id": "gulls_beach_north",
+        "species": "gull",
+        "position": {
+          "x": -212,
+          "y": 16,
+          "z": 60
+        },
+        "radius": 38,
+        "count": 9,
+        "seed": "gulls-north",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 5.5,
+          "accel": 4,
+          "separationRadius": 3,
+          "separationWeight": 1.4,
+          "neighborRadius": 22,
+          "cohesionWeight": 0.7,
+          "alignmentWeight": 0.8,
+          "stragglerRadius": 55
+        }
+      },
+      {
+        "id": "gulls_beach_south",
+        "species": "gull",
+        "position": {
+          "x": -214,
+          "y": 18,
+          "z": -150
+        },
+        "radius": 42,
+        "count": 8,
+        "seed": "gulls-south",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 6,
+          "accel": 4,
+          "separationRadius": 3,
+          "separationWeight": 1.4,
+          "neighborRadius": 22,
+          "cohesionWeight": 0.7,
+          "alignmentWeight": 0.8,
+          "stragglerRadius": 55
+        }
+      },
+      {
+        "id": "gulls_bay",
+        "species": "gull",
+        "position": {
+          "x": -300,
+          "y": 22,
+          "z": -20
+        },
+        "radius": 50,
+        "count": 7,
+        "seed": "gulls-bay",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 6.5,
+          "accel": 4,
+          "separationRadius": 3.5,
+          "separationWeight": 1.4,
+          "neighborRadius": 26,
+          "cohesionWeight": 0.6,
+          "alignmentWeight": 0.8,
+          "stragglerRadius": 60
+        }
+      }
+    ]
+  },
   "markers": [
     {
       "id": "courier_dispatch",
@@ -1012,8 +1085,8 @@
         "z": 60
       },
       "rotationY": 0,
-      "catalogId": "obj_flametree",
       "label": "Palm Court",
+      "catalogId": "obj_flametree",
       "meta": {
         "catalogId": "obj_flametree"
       }
@@ -5123,8 +5196,8 @@
           "z": 280
         }
       ],
-      "label": "Avenue W",
       "width": 14,
+      "label": "Avenue W",
       "meta": {
         "level": "avenue"
       }
@@ -5144,8 +5217,8 @@
           "z": 280
         }
       ],
-      "label": "Avenue C-W",
       "width": 14,
+      "label": "Avenue C-W",
       "meta": {
         "level": "avenue"
       }
@@ -5165,8 +5238,8 @@
           "z": 280
         }
       ],
-      "label": "Avenue C-E",
       "width": 14,
+      "label": "Avenue C-E",
       "meta": {
         "level": "avenue"
       }
@@ -5186,8 +5259,8 @@
           "z": 280
         }
       ],
-      "label": "Avenue E",
       "width": 14,
+      "label": "Avenue E",
       "meta": {
         "level": "avenue"
       }
@@ -5207,8 +5280,8 @@
           "z": -240
         }
       ],
-      "label": "Street N",
       "width": 9,
+      "label": "Street N",
       "meta": {
         "level": "street"
       }
@@ -5228,8 +5301,8 @@
           "z": -120
         }
       ],
-      "label": "Street NC",
       "width": 9,
+      "label": "Street NC",
       "meta": {
         "level": "street"
       }
@@ -5249,8 +5322,8 @@
           "z": 0
         }
       ],
-      "label": "Street Mid",
       "width": 9,
+      "label": "Street Mid",
       "meta": {
         "level": "street"
       }
@@ -5270,8 +5343,8 @@
           "z": 120
         }
       ],
-      "label": "Street SC",
       "width": 9,
+      "label": "Street SC",
       "meta": {
         "level": "street"
       }
@@ -5291,8 +5364,8 @@
           "z": 240
         }
       ],
-      "label": "Street S",
       "width": 9,
+      "label": "Street S",
       "meta": {
         "level": "street"
       }
@@ -8305,6 +8378,182 @@
         "entry": true,
         "exit": false
       }
+    },
+    {
+      "id": "boat_route_sloop",
+      "kind": "boat_route",
+      "points": [
+        {
+          "x": -300,
+          "y": 0,
+          "z": -90
+        },
+        {
+          "x": -340,
+          "y": 0,
+          "z": -50
+        },
+        {
+          "x": -330,
+          "y": 0,
+          "z": 10
+        },
+        {
+          "x": -285,
+          "y": 0,
+          "z": 30
+        },
+        {
+          "x": -250,
+          "y": 0,
+          "z": -20
+        },
+        {
+          "x": -262,
+          "y": 0,
+          "z": -70
+        }
+      ],
+      "label": "Bay sloop",
+      "meta": {
+        "vessel": "boat_sail",
+        "speed": 2.4
+      }
+    },
+    {
+      "id": "boat_route_runabout",
+      "kind": "boat_route",
+      "points": [
+        {
+          "x": -260,
+          "y": 0,
+          "z": 170
+        },
+        {
+          "x": -400,
+          "y": 0,
+          "z": 170
+        },
+        {
+          "x": -410,
+          "y": 0,
+          "z": 60
+        },
+        {
+          "x": -270,
+          "y": 0,
+          "z": 70
+        }
+      ],
+      "label": "Runabout run",
+      "meta": {
+        "vessel": "boat_runabout",
+        "speed": 8
+      }
+    },
+    {
+      "id": "boat_route_far_sloop",
+      "kind": "boat_route",
+      "points": [
+        {
+          "x": -470,
+          "y": 0,
+          "z": 230
+        },
+        {
+          "x": -530,
+          "y": 0,
+          "z": 170
+        },
+        {
+          "x": -500,
+          "y": 0,
+          "z": 110
+        },
+        {
+          "x": -440,
+          "y": 0,
+          "z": 130
+        }
+      ],
+      "label": "Far sloop",
+      "meta": {
+        "vessel": "boat_sail",
+        "speed": 2
+      }
+    },
+    {
+      "id": "boat_route_south",
+      "kind": "boat_route",
+      "points": [
+        {
+          "x": -250,
+          "y": 0,
+          "z": -200
+        },
+        {
+          "x": -420,
+          "y": 0,
+          "z": -210
+        },
+        {
+          "x": -430,
+          "y": 0,
+          "z": -290
+        },
+        {
+          "x": -260,
+          "y": 0,
+          "z": -300
+        }
+      ],
+      "label": "South cruise",
+      "meta": {
+        "vessel": "boat_runabout",
+        "speed": 6.5
+      }
+    },
+    {
+      "id": "air_route_city",
+      "kind": "air_route",
+      "points": [
+        {
+          "x": -330,
+          "y": 0,
+          "z": -170
+        },
+        {
+          "x": 60,
+          "y": 0,
+          "z": -190
+        },
+        {
+          "x": 230,
+          "y": 0,
+          "z": -30
+        },
+        {
+          "x": 170,
+          "y": 0,
+          "z": 170
+        },
+        {
+          "x": -120,
+          "y": 0,
+          "z": 200
+        },
+        {
+          "x": -340,
+          "y": 0,
+          "z": 60
+        }
+      ],
+      "label": "Helicopter pass",
+      "meta": {
+        "vessel": "heli_ambient",
+        "speed": 26,
+        "altitude": 90
+      }
     }
   ],
   "annotations": [],
@@ -8314,7 +8563,13 @@
   "environment": {
     "preset": "day",
     "timeOfDay": true,
-    "sunAzimuth": 104.5,
-    "sunElevation": 22.6
+    "horizonColor": "#f0b8a0",
+    "sunAzimuth": 260,
+    "sunElevation": 12,
+    "fog": {
+      "color": "#f0b8a0",
+      "near": 150,
+      "far": 700
+    }
   }
 }

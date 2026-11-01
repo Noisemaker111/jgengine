@@ -1,3 +1,4 @@
+import { ambientFauna } from "./game/ambientFauna";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
@@ -87,7 +88,7 @@ export const game = defineGame({
   newGame: survivorStart,
   loop: { onNewPlayer },
   GameUI,
-  scene: { WorldOverlay: BaseWorld, editorLayers, entityModels, objectModels },
+  scene: { WorldOverlay: BaseWorld, editorLayers, entityModels, objectModels, ambientLife: { fauna: ambientFauna } },
   sceneScatterModels: scatterModels,
   // The whole Island's forests, rocks and ore plus the dense south beach: about 48k placements, all drawn.
   sceneScatterBudget: 60_000,

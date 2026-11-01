@@ -489,6 +489,36 @@
       "intent": "a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting."
     },
     {
+      "id": "ambient-fauna",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ambientFauna/ambientFauna",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "groups of fish, insects, motes and soaring flyers that stay in an area, below the water surface or near plants, out in a time-of-day window, with a global agent cap"
+    },
+    {
+      "id": "ambient-fauna-render",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ambientFauna/AmbientFauna.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw ambient fauna as instanced species models with distance LOD, frustum culling, a per-group budget and a global draw cap"
+    },
+    {
+      "id": "ambient-fauna-zone",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ambientFauna/ambientFaunaKind",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "editor-authorable ambient group zone stored in editor.scene.json"
+    },
+    {
       "id": "ambient-temperature",
       "packages": [
         "@jgengine/core"
@@ -4146,7 +4176,7 @@
       "module": "@jgengine/assets/catalogs/fontLibrary",
       "gameFacing": false,
       "probe": null,
-      "intent": "pick a display and a body font from 18 shipped OFL families by id"
+      "intent": "pick a display and a body font from the shipped OFL families by id"
     },
     {
       "id": "foot-ground-contact",
@@ -4690,7 +4720,7 @@
       "module": "@jgengine/assets/catalogs/hdriLibrary",
       "gameFacing": false,
       "probe": null,
-      "intent": "pick one of 13 shipped CC0 HDRIs (noon, golden hour, overcast, dusk, night city, industrial interior, forest, snow) by id"
+      "intent": "pick a shipped CC0 HDRI (noon, clear sky, golden hour, harbour sunset, industrial sunset, overcast, dusk, night city, industrial interior, forest, snow) by id"
     },
     {
       "id": "headless-flow",
@@ -6254,6 +6284,16 @@
       "intent": "put a named library material on terrain without faking optional maps"
     },
     {
+      "id": "library-terrain-surface",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/catalogs/materialLibrary",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "scanned library ground for a terrain's ground, sand or rock role, with slope projection and height blending"
+    },
+    {
       "id": "library-validate",
       "packages": [
         "@jgengine/assets"
@@ -6342,6 +6382,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval"
+    },
+    {
+      "id": "live-road-surface",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/liveRoadSurface",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "swap a road source's asphalt, sidewalk or kerb scan at runtime (wet at night, snow in winter)"
     },
     {
       "id": "loading-screen",
@@ -6645,7 +6695,7 @@
       "module": "@jgengine/assets/catalogs/lutGrades",
       "gameFacing": false,
       "probe": null,
-      "intent": "pick one of 19 shipped colour grades by id for a game's post-processing"
+      "intent": "pick a shipped colour grade by id for a game's post-processing"
     },
     {
       "id": "magazine",

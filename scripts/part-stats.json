@@ -26,7 +26,7 @@
     },
     {
       "home": "world/spatialSample",
-      "importers": 4
+      "importers": 5
     },
     {
       "home": "game/spawnPoints",
@@ -50,9 +50,9 @@
     },
     {
       "home": "movement/motionTrack",
-      "importers": 1
+      "importers": 2
     }
   ],
-  "creates": 536,
-  "folders": 108
+  "creates": 539,
+  "folders": 109
 }

@@ -65,6 +65,11 @@ export interface TerrainDetailConfig {
    */
   surfaceStrength?: number;
   /**
+   * Slope in degrees from horizontal where a scanned surface or paint layer switches from its
+   * top-down projection to side projections (triplanar), so cliffs are not smeared. Default 45.
+   */
+  scanTriplanarAngle?: number;
+  /**
    * RGB multipliers for the two macro colour sweeps painted over the base ground. `dry` tints the
    * sun-bleached patches, `wet` the cooler pockets between them. The defaults ([1.14, 1.05, 0.76]
    * and [0.78, 1.0, 0.86]) suit temperate meadows; the green-leaning `wet` default paints mossy
@@ -81,8 +86,10 @@ export interface TerrainDetailConfig {
   surfaces?: TerrainSurfacesConfig;
 }
 
-/** One generated terrain surface: a material spec plus how it tiles and tints. */
+/** One terrain surface: a generated material spec or a scanned `scan`, plus how it tiles and tints. */
 export interface TerrainSurfaceLayer extends SurfaceMaterialSpec {
+  /** Scanned maps (e.g. `libraryTerrainSurface(name)` from `@jgengine/assets`); replaces the generated spec. */
+  scan?: TerrainMaterialMaps;
   /** World metres one tile covers. Default 5 ground, 4 sand, 8 rock. */
   tile?: number;
   /**
@@ -114,8 +121,8 @@ export interface TerrainMaterialMaps {
   roughness?: string;
   ao?: string;
   /**
-   * Height map for callers that displace geometry themselves. The terrain detail shader never
-   * samples it, so pass the URL only when the pulled set actually ships one — never invent it.
+   * Height map. Scanned terrain surfaces and paint layers use it to decide which layer breaks
+   * through at a blend edge; pass the URL only when the pulled set actually ships one — never invent it.
    */
   displacement?: string;
 }

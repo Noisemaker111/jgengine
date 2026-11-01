@@ -45,13 +45,16 @@ function itemById(itemId: string): GameContextItemEntry | null {
   return null;
 }
 
+/** The boats in the bay and the helicopter over the city: scenery that moves along authored circuits. */
+const AMBIENT_VESSELS: ReadonlySet<string> = new Set(["boat_sail", "boat_runabout", "heli_ambient"]);
+
 function entityById(catalogId: string): GameContextEntityEntry | null {
   if (catalogId === playerCatalog.id) return playerCatalog;
   const enemy = ENEMIES.find((e) => e.id === catalogId);
   if (enemy !== undefined) return enemyEntry(enemy);
   const npc = NPCS.find((n) => n.id === catalogId);
   if (npc !== undefined) return npcEntry(npc);
-  if (VEHICLES.some((v) => v.id === catalogId)) return vehicleEntry();
+  if (VEHICLES.some((v) => v.id === catalogId) || AMBIENT_VESSELS.has(catalogId)) return vehicleEntry();
   return null;
 }
 

@@ -12,8 +12,3 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 bun run agent:bootstrap
-# Brightway Park's Quaternius packs: not committed, pulled into the shared asset store on a fresh session.
-bun run jgengine assets pull quaternius-animated-characters-pack
-bun run jgengine assets pull quaternius-lowpoly-modular-street-pack
-bun run jgengine assets pull quaternius-low-poly-food-pack
-bun run jgengine assets pull quaternius-lowpoly-buildings-pack

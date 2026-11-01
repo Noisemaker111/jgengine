@@ -128,6 +128,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `AmbienceZoneDef` (interface) · `import { AmbienceZoneDef } from "@jgengine/core/audio/ambience"`
 
+## ambient-fauna — groups of fish, insects, motes and soaring flyers that stay in an area, below the water surface or near plants, out in a time-of-day window, with a global agent cap
+
+- `createAmbientFauna` (function) · `import { createAmbientFauna } from "@jgengine/core/ambientFauna/ambientFauna"`
+
+## ambient-fauna-render — draw ambient fauna as instanced species models with distance LOD, frustum culling, a per-group budget and a global draw cap
+
+- `AmbientFauna` (function) · `import { AmbientFauna } from "@jgengine/core/ambientFauna/AmbientFauna.draw"`
+
+## ambient-fauna-zone — editor-authorable ambient group zone stored in editor.scene.json
+
+- `AMBIENT_FAUNA_KIND` (const) · `import { AMBIENT_FAUNA_KIND } from "@jgengine/core/ambientFauna/ambientFaunaKind"`
+
 ## anim-graph — data-first animation state machine with blend trees, crossfades, layers, and clip events
 
 - `createAnimGraphRuntime` (function) · `import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph"`
@@ -1291,6 +1303,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## linear-solve — dense linear solve with partial pivoting for reference physics plants and constraints
 
 - `solveLinearSystem` (function) · `import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra"`
+
+## live-road-surface — swap a road source's asphalt, sidewalk or kerb scan at runtime (wet at night, snow in winter)
+
+- `withSwappableRoadSurface` (function) · `import { withSwappableRoadSurface } from "@jgengine/core/roads/liveRoadSurface"`
 
 ## local-avoidance — bounded deterministic local collision avoidance for moving agents
 

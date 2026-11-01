@@ -168,7 +168,7 @@
 ## @jgengine/assets/catalogs/fontLibrary
 
 - `FONT_DIR` (const): const FONT_DIR: "fonts" — Where a game serves fonts from, relative to `public/`.
-- `FONT_LIBRARY` (const): const FONT_LIBRARY: readonly [{ readonly id: "cinzel"; readonly family: "Cinzel"; readonly role: "display"; readonly moods: readonly ["fantasy"]; readonly author: "Natanael Gama"; readonly package: "cinzel"; }, { readonly id: "crimson-pro"; readonly family: "Crimson Pro"; readonly role: "body"; read… — The 18 shipped font families, each a display or a body face.
+- `FONT_LIBRARY` (const): const FONT_LIBRARY: readonly [{ readonly id: "cinzel"; readonly family: "Cinzel"; readonly role: "display"; readonly moods: readonly ["fantasy"]; readonly author: "Natanael Gama"; readonly package: "cinzel"; }, { readonly id: "crimson-pro"; readonly family: "Crimson Pro"; readonly role: "body"; read… — The shipped font families, each a display or a body face.
 - `FONT_LICENSE` (const): const FONT_LICENSE: "OFL-1.1" — Licence of every shipped family.
 - `FONT_PACKAGE_VERSION` (const): const FONT_PACKAGE_VERSION: "5.3.0" — The Fontsource release every file is taken from.
 - `FontEntry` (interface): interface FontEntry — One curated OFL family, shipped as its Latin 400 woff2 file.
@@ -179,7 +179,7 @@
 ## @jgengine/assets/catalogs/hdriLibrary
 
 - `HDRI_DIR` (const): const HDRI_DIR: "hdri/library" — Where a game serves the HDRI folder from, relative to `public/`.
-- `HDRI_LIBRARY` (const): const HDRI_LIBRARY: readonly [{ readonly id: "clear-noon"; readonly title: "Noon Grass"; readonly polyhaven: "noon_grass"; readonly author: "Greg Zaal"; readonly look: "Clear blue sky, high sun, open grass."; }, { readonly id: "partly-cloudy"; readonly title: "Kloppenheim 06 (Pure Sky)"; readonly po… — The 13 shipped HDRIs, each one Poly Haven asset under a plain id.
+- `HDRI_LIBRARY` (const): const HDRI_LIBRARY: readonly [{ readonly id: "clear-noon"; readonly title: "Noon Grass"; readonly polyhaven: "noon_grass"; readonly author: "Greg Zaal"; readonly look: "Clear blue sky, high sun, open grass."; }, { readonly id: "partly-cloudy"; readonly title: "Kloppenheim 06 (Pure Sky)"; readonly po… — The shipped HDRIs, each one Poly Haven asset under a plain id.
 - `HDRI_LICENSE` (const): const HDRI_LICENSE: "CC0-1.0" — Licence of every shipped HDRI (Poly Haven publishes all of them as CC0).
 - `HDRI_RESOLUTION` (const): const HDRI_RESOLUTION: "2k" — Resolution every shipped HDRI is pulled at.
 - `HdriEntry` (interface): interface HdriEntry — One curated Poly Haven HDRI.
@@ -193,7 +193,7 @@
 
 ## @jgengine/assets/catalogs/lutGrades
 
-- `LUT_GRADES` (const): const LUT_GRADES: readonly [{ readonly id: "warm-filmic"; readonly title: "Warm filmic"; readonly look: "Gentle S-curve, amber highlights, soft cool shadows."; readonly recipe: { readonly contrast: 1.08; readonly saturation: 1.04; readonly gain: readonly [1.04, 1, 0.94]; readonly shadowTint: readonl… — The 19 shipped colour grades, each a recipe baked into a 32³ cube.
+- `LUT_GRADES` (const): const LUT_GRADES: readonly [{ readonly id: "warm-filmic"; readonly title: "Warm filmic"; readonly look: "Gentle S-curve, amber highlights, soft cool shadows."; readonly recipe: { readonly contrast: 1.08; readonly saturation: 1.04; readonly gain: readonly [1.04, 1, 0.94]; readonly shadowTint: readonl… — The shipped colour grades, each a recipe baked into a 32³ cube.
 - `LUT_GRADE_DIR` (const): const LUT_GRADE_DIR: "lut" — Where a game serves the grade files from, relative to `public/`.
 - `LUT_GRADE_LICENSE` (const): const LUT_GRADE_LICENSE: "CC0-1.0" — Licence of every grade: authored in this repository by `bakeLutGrade`.
 - `LUT_GRADE_SIZE` (const): const LUT_GRADE_SIZE: 32 — Edge length of every shipped cube.
@@ -212,6 +212,7 @@
 - `LibrarySurface` (type): type LibrarySurface = "opaque" | "foliage" | "glass" | "water" — How a library surface renders: an ordinary PBR surface, cut-out foliage, glass or water.
 - `LibraryTerrainDetail` (interface): interface LibraryTerrainDetail — Blend policy for putting a library scan on terrain; only entries whose scale needs it declare one.
 - `LibraryTerrainOptions` (interface): interface LibraryTerrainOptions — Options for {@link libraryTerrainMaterial}.
+- `LibraryTerrainSurfaceOptions` (interface): interface LibraryTerrainSurfaceOptions — Options for {@link libraryTerrainSurface}.
 - `MATERIAL_LIBRARY` (const): const MATERIAL_LIBRARY: readonly LibraryMaterial[] — The shared library: 40+ ambientCG PBR materials plus the glass and water surfaces that need a shader rather than a scan. `satisfies` keeps every entry complete, so a missing tile size or response is a type error instead of a silently grey surface.
 - `filterLibraryMaterials` (function): function filterLibraryMaterials(query: string, group?: LibraryGroup): readonly LibraryMaterial[] — Filter the library for a picker: case-insensitive match on name, title, group or source. Empty query returns everything, so a browser can render the full library first.
 - `findLibraryMaterial` (function): function findLibraryMaterial(name: string): LibraryMaterial | null — Resolve a library name; unknown names return `null` so a caller can report them by name.
@@ -223,6 +224,7 @@
 - `librarySurfaceParameters` (function): function librarySurfaceParameters(name: string): MaterialSurfaceParameters — A library name as the sparse surface parameters a `MaterialAsset` or a render-time override takes, so a material picked by name keeps its authored roughness, metalness and cut-out policy.
 - `librarySurfaceScan` (function): function librarySurfaceScan(name: string, options: LibraryTerrainOptions = {}): TerrainDetailMaterialConfig — A library name as a scanned surface for any renderer that tiles one over authored colour: terrain detail, a `road({ materials })` layer, or a model's `material.scan`. Tiling comes from the entry's authored metres and blend from its terrain policy (else full strength, full tint), so `road({ materials: { road: librarySurfaceScan("asphalt/dry") } })` shows real asphalt and `material: { scan: librarySurfaceScan("stucco/painted", { tint: 0 }) }` keeps a model's paint and adds the plaster's grain. Only maps the pulled archive ships are named.
 - `libraryTerrainMaterial` (function): function libraryTerrainMaterial(name: string, options: LibraryTerrainOptions = {}): TerrainDetailMaterialConfig — A library name as terrain detail material config: `terrain({ detail: { material: libraryTerrainMaterial("foliage/grass-macro") } })`. Tiling comes from the entry's authored metres and blend from its terrain policy, so a game selects a ground by name instead of assembling map URLs. A map the archive does not ship is omitted, so `displacement` is never a URL the caller had to invent.
+- `libraryTerrainSurface` (function): function libraryTerrainSurface(name: string, options: LibraryTerrainSurfaceOptions = {}): { scan: TerrainMaterialMaps; tile: number; tint?: number } — A library name as a terrain surface role: `terrain({ detail: { surfaces: { ground: libraryTerrainSurface("foliage/meadow") } } })`. The terrain shader samples its colour, normal, roughness, AO and height maps, projected from above and on their own face on slopes, and uses the height to decide which layer breaks through at a blend edge. An unknown name throws.
 
 ## @jgengine/assets/catalogs/modelLibrary
 

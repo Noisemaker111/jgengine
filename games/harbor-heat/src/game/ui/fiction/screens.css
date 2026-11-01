@@ -359,7 +359,8 @@
   padding: 26px 26px 30px;
   box-sizing: border-box;
   color: #2c2a26;
-  font-family: "Cascadia Mono", "Consolas", "Courier New", ui-monospace, monospace;
+  font-family: var(--kit-font-body, "Barlow", sans-serif);
+  font-variant-numeric: tabular-nums;
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.04), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.05)),
     #f7f4ec;

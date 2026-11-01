@@ -11,7 +11,7 @@ import {
 } from "@jgengine/core/world/features";
 import { editorLayers } from "./editorLayers";
 import { GROUND_MAPS } from "./game/assets";
-import { roadSource } from "./game/world/cityLayout";
+import { initialRoads, roadSource } from "./game/world/cityLayout";
 import { DISTRICTS, ROADS, SHORE_X, WORLD_D, WORLD_W } from "./game/world/districts";
 
 /** The sky the scene document authors; the day/night cycle runs on it. */
@@ -22,7 +22,7 @@ const authoredSky = skyFromDocument(editorLayers);
  * `game/world/cityLayout.ts`; `roadSource` below keeps the drawn streets in step when a layout slider
  * moves.
  */
-export const streets = roadSource.initial;
+export const streets = initialRoads;
 
 /**
  * Region order is paint order — later entries win overlaps. Districts wash first, streets lay
@@ -35,12 +35,12 @@ const districtRegions: TerrainMaterialRegion[] = DISTRICTS.map((district) => ({
   falloff: district.radius * 0.45,
   colors:
     district.id === "downtown"
-      ? { low: "#7e838a", high: "#8d9299" }
+      ? { low: "#c4b4a0", high: "#d3c4b0" }
       : district.id === "port_carmine"
-        ? { low: "#6e7378", high: "#7d8288" }
+        ? { low: "#a39d92", high: "#b3ada2" }
         : district.id === "palm_heights"
-          ? { low: "#8d8a6a", high: "#9c9878" }
-          : { low: "#a2937a", high: "#b0a189" },
+          ? { low: "#b3a47c", high: "#c2b48c" }
+          : { low: "#d4bb94", high: "#e0c9a4" },
 }));
 
 /** A pavement apron either side of every authored street, so a city block is paved, not lawn. */
@@ -49,7 +49,7 @@ const pavementRegions: TerrainMaterialRegion[] = ROADS.map((segment) => ({
   points: [segment.from, segment.to],
   width: 44,
   falloff: 18,
-  colors: { low: "#8a8f96", high: "#989da4" },
+  colors: { low: "#bcb1a0", high: "#cbc0ae" },
 }));
 
 /** Beach and wet-sand bands, hugging the coastline the terrain's shore falloff already carves. */
@@ -62,7 +62,7 @@ const beachRegions: TerrainMaterialRegion[] = [
     ],
     width: 62,
     falloff: 11,
-    colors: { low: "#c9ac7a", high: "#d6bd92" },
+    colors: { low: "#e0c493", high: "#ecd3a8" },
   },
   {
     shape: "polyline",
@@ -72,7 +72,7 @@ const beachRegions: TerrainMaterialRegion[] = [
     ],
     width: 20,
     falloff: 9,
-    colors: { low: "#a89269", high: "#c4a878", waterline: "#3ec6cf" },
+    colors: { low: "#b89e72", high: "#d6bb8c", waterline: "#3ec6cf" },
   },
 ];
 
@@ -122,7 +122,7 @@ export const world: EnvironmentWorldFeature = environment({
       // channel, and ambientCG's ground reads about 0.45 there, so a strong blend turned the dunes
       // glossy enough to throw a blown sun blob across the middle of any shot facing the light. Half
       // keeps the grain and the normal relief; the procedural layer above carries the rest.
-      material: { maps: GROUND_MAPS, repeat: 2.4, strength: 0.5, tint: 0.18 },
+      material: { maps: GROUND_MAPS, repeat: 2.4, strength: 0.5, tint: 0.3 },
     },
   }),
   // The dome's shape lives here; its colours, haze and the light come from the game's `mood`, and
@@ -156,7 +156,7 @@ export const world: EnvironmentWorldFeature = environment({
       bounds: { w: 470, d: 780 },
       position: [-430, 0],
       level: -0.4,
-      color: "#12b0cd",
+      color: "#1a7886",
       waveHeight: 0.55,
       waveScale: 26,
       waveSpeed: 0.5,

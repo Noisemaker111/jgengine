@@ -5,6 +5,7 @@ import { basename, extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { assetStoreRoot, dirHasEntries, provisionJobs, type ProvisionResult, type PullJob } from "../../packages/assets/src/assetStore";
+import { MATERIAL_LIBRARY } from "../../packages/assets/src/catalogs/materialLibrary";
 import { compressedVariant, textureVariantDir } from "./textureVariants";
 
 const assetsDir = fileURLToPath(new URL("../../packages/assets", import.meta.url));
@@ -44,14 +45,15 @@ function sourceText(dir: string): string {
 /**
  * The packs and library models a game's `src/` names that its `public/` lacks. A pack counts as
  * referenced when its id, or an alias that resolves into it (`"asset:prop_crate"`), appears as a
- * string literal; generated library models are committed by the game itself, so they never need a pull.
+ * string literal, as does a material-library name (`"ground/beach"`) that maps to it; generated library models are committed by the game itself, so they never need a pull.
  */
 export function missingPulls(text: string, publicDir: string, catalogs: AssetCatalogs): PullJob[] {
   const quoted = (id: string): boolean => text.includes(`"${id}"`) || text.includes(`'${id}'`);
   const aliased = new Set((catalogs.aliases ?? []).filter((alias) => quoted(alias.key)).map((alias) => alias.target.split("/")[0]!));
   const jobs: PullJob[] = [];
+  const named = new Set(MATERIAL_LIBRARY.filter((entry) => entry.source !== undefined && quoted(entry.name)).map((entry) => entry.source));
   for (const source of catalogs.sources) {
-    if (!quoted(source.id) && !aliased.has(source.id)) continue;
+    if (!quoted(source.id) && !aliased.has(source.id) && !named.has(source.id)) continue;
     const subdir = source.kind === "material" ? "materials" : source.kind === "sprite" ? "sprites" : "models";
     const dir = join(subdir, source.id);
     if (!dirHasEntries(join(publicDir, dir))) jobs.push({ target: source.id, dir });
