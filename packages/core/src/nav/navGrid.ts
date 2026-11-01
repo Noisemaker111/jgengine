@@ -1,3 +1,4 @@
+import { clamp } from "../math/scalar";
 import type { Aabb } from "../world/geometry";
 
 export type NavPoint = readonly [number, number];
@@ -49,10 +50,6 @@ export interface NavGrid {
 
 const SQRT2 = Math.SQRT2;
 
-function clampInt(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
-}
-
 export function createNavGrid(config: NavGridConfig): NavGrid {
   const { bounds, cellSize } = config;
   if (!(cellSize > 0)) throw new Error("navGrid cellSize must be positive.");
@@ -68,8 +65,8 @@ export function createNavGrid(config: NavGridConfig): NavGrid {
 
   function cellAt(point: NavPoint): NavCell {
     return {
-      col: clampInt(Math.floor((point[0] - bounds.minX) / cellSize), 0, cols - 1),
-      row: clampInt(Math.floor((point[1] - bounds.minZ) / cellSize), 0, rows - 1),
+      col: clamp(Math.floor((point[0] - bounds.minX) / cellSize), 0, cols - 1),
+      row: clamp(Math.floor((point[1] - bounds.minZ) / cellSize), 0, rows - 1),
     };
   }
 
