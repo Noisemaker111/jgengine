@@ -6,9 +6,9 @@ import { createGradePass } from "@jgengine/core/postfx/gradeShader.draw";
 import { LUT_GRADES, LUT_GRADE_LICENSE, LUT_GRADE_SIZE, applyLutRecipe, bakeLutGrade, lutGrade, lutGradeFile } from "./lutGrades";
 
 describe("lut grades", () => {
-  test("ships 18 distinct, licensed 32³ grades", () => {
-    expect(LUT_GRADES).toHaveLength(18);
-    expect(new Set(LUT_GRADES.map((grade) => grade.id)).size).toBe(18);
+  test("ships 19 distinct, licensed 32³ grades", () => {
+    expect(LUT_GRADES).toHaveLength(19);
+    expect(new Set(LUT_GRADES.map((grade) => grade.id)).size).toBe(19);
     expect(LUT_GRADE_LICENSE).toBe("CC0-1.0");
     const cube = bakeLutGrade("cold-teal");
     expect(cube.size).toBe(LUT_GRADE_SIZE);

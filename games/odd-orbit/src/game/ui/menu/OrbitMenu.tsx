@@ -15,6 +15,7 @@ import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { ASSET_SOURCE_IDS } from "../../assets";
+import { lookCredits } from "../orbitKit";
 import { moodOfNeeds } from "../../agents";
 import { AlienMesh } from "../../render/AlienMesh";
 import { orbitSession } from "../../session/lifecycle";
@@ -35,8 +36,12 @@ const credits = mergeCredits({
       { label: "JG Engine", detail: "Apache-2.0", href: "https://github.com/Noisemaker111/jgengine" },
       { label: "React / Three.js", detail: "MIT" },
     ] },
+    { heading: "Fonts", entries: [
+      { label: "Comfortaa — Johan Aakerlund", detail: "OFL-1.1", href: "https://fonts.google.com/specimen/Comfortaa" },
+      { label: "Quicksand — Andrew Paglinawan", detail: "OFL-1.1", href: "https://fonts.google.com/specimen/Quicksand" },
+    ] },
   ],
-}, creditsForSourceIds(ASSET_SOURCE_IDS));
+}, creditsForSourceIds(ASSET_SOURCE_IDS), { sections: lookCredits() });
 
 export interface OrbitPreferences {
   calm: boolean;
