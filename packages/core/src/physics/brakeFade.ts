@@ -52,7 +52,10 @@ export function brakeFadeShare(effect: VehicleBrakeFadeEffect, temperature: numb
   return strength === 1 ? share : Math.max(0.1, Math.min(1, 1 - strength * (1 - share)));
 }
 
-/** Disc temperature after `seconds` with `brakePower` W going into the brakes at `speed` m/s, °C. */
+/**
+ * Disc temperature after `seconds` with `brakePower` W going into the brakes at `speed` m/s, °C.
+ * @internal
+ */
 export function brakeTemperatureStep(effect: VehicleBrakeFadeEffect, temperature: number, brakePower: number, speed: number, seconds: number): number {
   const ambient = effect.ambient ?? 20;
   const capacity = Math.max(1, effect.heatCapacity ?? 9600);

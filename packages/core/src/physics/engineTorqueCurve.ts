@@ -37,7 +37,7 @@ function tableAt(curve: readonly (readonly [number, number])[], rpm: number): nu
 }
 
 /** Peak of the effect's full-throttle curve, N·m. */
-export function torqueCurvePeak(effect: VehicleTorqueCurveEffect, powertrain: VehicleGearboxTuning): number {
+function torqueCurvePeak(effect: VehicleTorqueCurveEffect, powertrain: VehicleGearboxTuning): number {
   const curve = effect.curve;
   if (curve === undefined) return powertrain.peakTorque;
   let peak = 0;
@@ -62,7 +62,10 @@ export function engineTorque(effect: VehicleTorqueCurveEffect, powertrain: Vehic
   return pedal * shaped - (1 - pedal) * friction;
 }
 
-/** Seconds a shift keeps the clutch open at `strength`. */
+/**
+ * Seconds a shift keeps the clutch open at `strength`.
+ * @internal
+ */
 export function torqueCurveShiftSeconds(effect: VehicleTorqueCurveEffect, powertrain: VehicleGearboxTuning, strength: number): number {
   return (effect.shiftSeconds ?? powertrain.shiftSeconds) * strength;
 }

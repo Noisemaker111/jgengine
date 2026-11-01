@@ -15,7 +15,10 @@ function crown(effect: VehicleTireCrownEffect, comHeight: number, strength: numb
   return Math.min(0.5 * comHeight, Math.max(0, (effect.radius ?? 0.075) * strength));
 }
 
-/** The roll angle a bike needs for balance lean `balance`, rad, same sign. */
+/**
+ * The roll angle a bike needs for balance lean `balance`, rad, same sign.
+ * @internal
+ */
 export function crownShownLean(effect: VehicleTireCrownEffect, comHeight: number, balance: number, strength: number): number {
   const r = crown(effect, comHeight, strength);
   return balance + Math.asin(Math.min(1, (r * Math.sin(balance)) / Math.max(1e-3, comHeight - r)));

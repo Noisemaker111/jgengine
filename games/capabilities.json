@@ -1292,6 +1292,16 @@
       "intent": "play positional or flat cues with listener orientation, voice budgets, and per-source cleanup"
     },
     {
+      "id": "brake-fade",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/brakeFade",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "brake force that fades as the discs heat up under repeated hard stops and recovers as they cool"
+    },
+    {
       "id": "breeding",
       "packages": [
         "@jgengine/core"
@@ -3264,6 +3274,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "inject the engine stylesheet (jg-"
+    },
+    {
+      "id": "engine-torque-curve",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/engineTorqueCurve",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "an engine's published torque curve, rpm-rising friction and part throttle, with a strength dial from flat torque up"
     },
     {
       "id": "enqueue-work",
@@ -9289,6 +9309,16 @@
       "intent": "solid ring wall round a circular floor, following the ground"
     },
     {
+      "id": "road-friction",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/roadFriction",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "road surface friction as one number per road and per named surface, scaling every tyre's grip"
+    },
+    {
       "id": "road-ribbons",
       "packages": [
         "@jgengine/core"
@@ -11350,6 +11380,16 @@
       "intent": "a cast-free typed handle onto one reactive game-store slot, replayable and host-authoritative"
     },
     {
+      "id": "tyre-pneumatic-trail",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/tireMagicFormula",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the Magic Formula pneumatic trail at a load and slip, the lever of a tyre's self-aligning torque"
+    },
+    {
       "id": "ui-kit-arcade",
       "packages": [
         "@jgengine/core"
@@ -11852,6 +11892,16 @@
       "intent": "a child's values from two parents per field, picked or blended, with rare mutations"
     },
     {
+      "id": "vehicle-aligning-torque",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/vehicleAligningTorque",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the front tyres' self-aligning torque steering the road wheels through the steering compliance — understeer on the road, counter-steer in a slide"
+    },
+    {
       "id": "vehicle-backend-link",
       "packages": [
         "@jgengine/core"
@@ -11894,6 +11944,16 @@
       "intent": "switch a car's physical effects and aids off, swap or retune them one at a time"
     },
     {
+      "id": "vehicle-magic-formula",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/tireMagicFormula",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "one wheel's Magic Formula 6.1 grip, cornering stiffness and curve shape at its own load"
+    },
+    {
       "id": "vehicle-parts",
       "packages": [
         "@jgengine/core"
@@ -11902,6 +11962,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "compose data-driven tuning parts (tires, engine, brakes) onto a vehicle spec and read the resulting feel"
+    },
+    {
+      "id": "vehicle-references",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/carReferences",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a published car or bike (MX-5, FR-S, GSX-R1000) or a class (sports car, hatchback, truck, kart, motorcycle) with every effect at full strength, plus per-car overrides"
     },
     {
       "id": "vehicle-seats",
@@ -11922,6 +11992,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "describe a car by feel (top speed, accel, grip, turn rate, balance, each aid) and get force-based handling built from separate effects"
+    },
+    {
+      "id": "vehicle-suspension-kinematics",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/vehicleSuspensionKinematics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "roll centres, roll-stiffness distribution and camber gain splitting a car's lateral load transfer"
+    },
+    {
+      "id": "vehicle-tire-crown",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/vehicleTireCrown",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "round motorcycle tyre crowns: the extra lean past balance a wide tyre needs, and a lean that leads the turn"
     },
     {
       "id": "vfx-preset-resolve",

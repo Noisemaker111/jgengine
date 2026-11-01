@@ -109,7 +109,10 @@ export interface MagicFormulaWheelCurve {
   e: number;
 }
 
-/** The coefficients a {@link VehicleMagicFormulaEffect} runs on one axle. */
+/**
+ * The coefficients a {@link VehicleMagicFormulaEffect} runs on one axle.
+ * @internal
+ */
 export function magicFormulaCoefficients(effect: VehicleMagicFormulaEffect, axle: "front" | "rear"): MagicFormulaTireCoefficients {
   const p = { ...TNO_205_60R15_TIRE, ...effect.coefficients, ...(axle === "rear" ? effect.rear : undefined) };
   const grip = Math.max(0, effect.grip ?? 1);
@@ -139,7 +142,10 @@ export function magicFormulaWheel(p: Readonly<MagicFormulaTireCoefficients>, fz:
   return { muY, muX, stiffness, c: Math.max(0.5, p.pcy1), e };
 }
 
-/** Pneumatic trail at load `fz` and slip `alpha`, m: how far behind the contact centre the lateral force acts (Magic Formula 6.1 `t`). */
+/**
+ * Pneumatic trail at load `fz` and slip `alpha`, m: how far behind the contact centre the lateral force acts (Magic Formula 6.1 `t`).
+ * @capability tyre-pneumatic-trail the Magic Formula pneumatic trail at a load and slip, the lever of a tyre's self-aligning torque
+ */
 export function magicFormulaTrail(p: Readonly<MagicFormulaTireCoefficients>, fz: number, alpha: number): number {
   const fz0 = Math.max(1, p.fnomin);
   const load = Math.max(0, fz);

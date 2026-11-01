@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { engineTorque, torqueCurvePeak, torqueCurveShiftSeconds } from "./engineTorqueCurve";
+import { engineTorque, torqueCurveShiftSeconds } from "./engineTorqueCurve";
 import type { VehicleGearboxTuning } from "./vehicleDynamics";
 
 const box: VehicleGearboxTuning = {
@@ -23,7 +23,6 @@ describe("engineTorque", () => {
   test("full throttle reads the published curve, closed throttle the friction that rises with rpm", () => {
     expect(engineTorque({ curve }, box, 4600, 1, 1)).toBeCloseTo(201, 9);
     expect(engineTorque({ curve }, box, 2800, 1, 1)).toBeCloseTo(170.5, 9);
-    expect(torqueCurvePeak({ curve }, box)).toBe(201);
     const idle = engineTorque({ curve }, box, 1000, 0, 1);
     const high = engineTorque({ curve }, box, 6800, 0, 1);
     expect(idle).toBeLessThan(0);
