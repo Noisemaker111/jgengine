@@ -11,6 +11,7 @@ import {
   BABY_FOOD_DRAIN_SECONDS,
   breedingOf,
   BREEDING_STAGES,
+  incubationBand,
   CARE_INTERVAL,
   CARE_KINDS,
   CREATURE_FOOD,
@@ -103,7 +104,7 @@ export function tickBreeding(ctx: GameContext, dt: number): void {
       const carries = breedingOf(event.species, 1)?.egg === null;
       ctx.game.notices.push({ text: carries ? `Your ${label(event.species)} is pregnant` : `Your ${label(event.species)}s mated`, tone: "success" });
     } else if (event.type === "laid") {
-      const band = breedingOf(event.egg.species, 1)?.egg?.band.join("–") ?? "";
+      const band = incubationBand(event.egg.species)?.join("–") ?? "";
       ctx.game.notices.push({ text: `A fertilized ${label(event.egg.species)} egg was laid. Keep it ${band} °C`, tone: "success" });
     }
   }
@@ -112,9 +113,9 @@ export function tickBreeding(ctx: GameContext, dt: number): void {
       bringIntoWorld(ctx, event.egg.species, event.egg.at, event.egg.offspring);
       ctx.game.notices.push({ text: `A baby ${label(event.egg.species)} hatched!`, tone: "success" });
     } else if (event.type === "eggLost") {
-      const band = breedingOf(event.egg.species, 1)?.egg?.band;
+      const band = incubationBand(event.egg.species);
       const temperature = climateAt(ctx, event.egg.at).temperature;
-      const tooCold = band !== undefined && temperature < band[0];
+      const tooCold = band !== null && temperature < band[0];
       ctx.game.notices.push({ text: `A ${label(event.egg.species)} egg was too ${tooCold ? "cold" : "hot"} and is lost`, tone: "deny" });
     } else if (event.type === "born") {
       // A mother who died carrying takes her baby with her.
@@ -224,9 +225,9 @@ export function breedingCard(ctx: GameContext, id: string) {
   return {
     breeds: def !== null,
     mode: def === null ? null : def.egg === null ? "carry" : "egg",
-    incubation: def?.egg?.band ?? null,
+    incubation: incubationBand(tame.species),
     mating: nursery.field.matingProgress(id),
-    cooldown: Math.ceil(nursery.field.cooldown(id, now)),
+    cooldown: Math.ceil(nursery.field.cooldown(id)),
     pregnancy: pregnancy === null || def === null ? null : { progress: pregnancy.progress, secondsLeft: Math.ceil(((1 - pregnancy.progress) * def.carrySeconds) / speeds.carry) },
     baby:
       baby === null || def === null

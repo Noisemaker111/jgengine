@@ -12,7 +12,7 @@ import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { breedingCard, breedingView, eggs } from "./breeding";
 import { content } from "./content";
 import { creatureCard, genesOf, tames } from "./creatures";
-import { breedingOf, BREEDING_STAGES, CARE_INTERVAL, CARE_KINDS, IMPRINT_BONUS, litterOf, NEWBORN_SIZE } from "./data/breeding";
+import { breedingOf, BREEDING_STAGES, incubationBand, CARE_INTERVAL, CARE_KINDS, IMPRINT_BONUS, litterOf, NEWBORN_SIZE } from "./data/breeding";
 import { itemTraits } from "./data/items";
 import { WILD_STATS } from "./data/species";
 
@@ -61,9 +61,9 @@ function face(game: HeadlessRunner, id: string): void {
 }
 
 test("every Island species that breeds in ARK has its wiki times; the sterile and non-breeding ones do not", () => {
-  expect(breedingOf("raptor", 1)).toMatchObject({ egg: { band: [20, 28], healthSeconds: 600 }, carrySeconds: 7140, maturationSeconds: 133_320 });
+  expect(breedingOf("raptor", 1)).toMatchObject({ egg: { incubation: { all: [{ gte: ["temperature", 20] }, { lte: ["temperature", 28] }] }, healthSeconds: 600 }, carrySeconds: 7140, maturationSeconds: 133_320 });
   expect(breedingOf("phiomia", 1)).toMatchObject({ egg: null, carrySeconds: 35_700 });
-  expect(breedingOf("rex", 1)?.egg?.band).toEqual([32, 34]);
+  expect(incubationBand("rex")).toEqual([32, 34]);
   for (const sterile of ["titanoboa", "leech", "titanomyrma", "meganeura"]) expect(breedingOf(sterile, 1)).toBeNull();
 });
 
@@ -222,8 +222,8 @@ describe("breeding field", () => {
     expect(breeding.eggs()).toHaveLength(1);
     expect(breeding.eggs()[0]?.offspring).toEqual({ from: "her+him" });
     // ARK's 18 to 48 hours before she mates again.
-    expect(breeding.cooldown("her", 70)).toBeGreaterThanOrEqual(64_800);
-    expect(breeding.cooldown("her", 70)).toBeLessThanOrEqual(172_800);
+    expect(breeding.cooldown("her")).toBeGreaterThanOrEqual(64_800);
+    expect(breeding.cooldown("her")).toBeLessThanOrEqual(172_800);
     expect(breeding.mate(mates(3), 100, 120, rng)).toEqual([]);
   });
 
@@ -243,6 +243,7 @@ describe("breeding field", () => {
     expect(hatched).toBe("hatched");
     expect(breeding.eggs()).toHaveLength(0);
     // A second egg left in the snow is lost after its ten minutes.
+    breeding.tick(200_000, 200_000, () => 0, rng);
     breeding.mate(mates(2), 200_000, 61, rng);
     const lost = breeding.tick(200_100, 600, () => -10, rng);
     expect(lost.map((event) => event.type)).toEqual(["eggLost"]);
@@ -259,17 +260,23 @@ describe("breeding field", () => {
     const born = breeding.tick(35_700, 700, () => 0, rng);
     expect(born).toEqual([{ type: "born", mother: "her", species: "phiomia", offspring: { from: "her+him" } }]);
     expect(breeding.pregnancy("her")).toBeNull();
-    expect(breeding.cooldown("her", 35_700)).toBeGreaterThan(0);
+    expect(breeding.cooldown("her")).toBeGreaterThan(0);
   });
 
   test("a baby grows through ARK's stages, asks for care every interval, and answering every request imprints it fully", () => {
     const breeding = field();
     const rng = rngOf(11);
-    const stageAt = (matured: number) => tierAt(BREEDING_STAGES, matured)?.id ?? "";
     expect(breeding.raise("baby", "raptor", 0).stage).toBe("baby");
-    expect(stageAt(0.05)).toBe("baby");
-    expect(stageAt(0.2)).toBe("juvenile");
-    expect(stageAt(0.7)).toBe("adolescent");
+    // Same cut points ARK's stage list always gave: 10% and 50% of the 133320 s a raptor takes to grow.
+    const stageAfter = (matured: number) => {
+      const other = field();
+      other.raise("x", "raptor", 0);
+      other.tick(0, matured * 133_320, () => 0, rngOf(1));
+      return other.offspringOf("x")?.stage;
+    };
+    expect(stageAfter(0.05)).toBe("baby");
+    expect(stageAfter(0.2)).toBe("juvenile");
+    expect(stageAfter(0.7)).toBe("adolescent");
     let asked = 0;
     let imprint = 0;
     let grown: number | null = null;
@@ -296,7 +303,7 @@ describe("breeding field", () => {
     const rng = rngOf(13);
     breeding.setSpeeds({ carry: 10, grow: 10, bond: 10, pair: 10 });
     breeding.mate(mates(2), 0, 61, rng);
-    expect(breeding.cooldown("her", 0)).toBeLessThanOrEqual(17_280);
+    expect(breeding.cooldown("her")).toBeLessThanOrEqual(17_280);
     const hatched = breeding.tick(714, 714, () => 25, rng);
     expect(hatched.map((event) => event.type)).toEqual(["hatched"]);
     breeding.raise("baby", "raptor", 714);
@@ -316,6 +323,7 @@ describe("breeding field", () => {
     const rng = rngOf(17);
     const litters = [0, 0, 0];
     for (let n = 0; n < 4000; n += 1) {
+      breeding.tick(n * 1e7, 1e7, () => 0, rng);
       const conceived = breeding.mate(mates(2), n * 1e7, 61, rng).find((event) => event.type === "conceived");
       if (conceived?.type === "conceived") {
         const index = conceived.count - 1;
