@@ -377,7 +377,7 @@ describe("resourceLedger policy pipeline", () => {
       { min: 100, factor: 0.9 },
     ]);
     const at = (income: number) =>
-      advanceLedger(incomeLedger(), 10, { policies: [bracket], vars: { income } }).applied[0]!.amount;
+      advanceLedger(incomeLedger(), 10, { policies: [bracket], vars: { income } }).applied[0]?.amount;
     expect([at(50), at(100), at(999), at(1000)]).toEqual([100, 90, 90, 50]);
   });
 

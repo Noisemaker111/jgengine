@@ -494,7 +494,7 @@
 - `ResourceTransaction` (interface): interface ResourceTransaction — One resource movement produced by a due cycle, before it is applied to balances.
 - `RuleCursor` (interface): interface RuleCursor — Mutable per-rule progress, kept separate from the immutable {@link ScheduledRule} definition.
 - `ScheduledRule` (interface): interface ScheduledRule — A serializable recurring resource flow. Every field is plain JSON so the whole {@link ResourceLedger} round-trips through `structuredClone`/`JSON`. Dynamic, context-aware behaviour (providers, tax curves, affordability caps) lives in the runtime {@link ResourcePolicy} pipeline, never in this data.
-- `ThresholdBand` (interface): interface ThresholdBand — A `{ min, factor }` band for {@link thresholdScale}; the highest band whose `min` is met wins.
+- `ThresholdBand` (interface): interface ThresholdBand — A `{ min, factor }` step of the Ladder for {@link thresholdScale}; the highest `min` met wins.
 - `addScheduledRule` (function): function addScheduledRule(ledger: ResourceLedger, rule: ScheduledRule): ResourceLedger — Register a recurring rule and seed its cursor. Returns a new ledger; the rule's first cycle is due at `rule.startSeconds` (defaulting to the current clock).
 - `advanceLedger` (function): function advanceLedger(ledger: ResourceLedger, toSeconds: number, options: AdvanceOptions = {}): AdvanceResult — Advance the ledger clock to `toSeconds`, settling every due cycle deterministically. Rules are processed in sorted-id order; cycle counts are integer math; large deltas are bounded by `catchUp`, `maxCatchUpCycles`, and `maxCyclesPerRule`. Every produced transaction flows through the policy pipeline (transform, cap, reject, split, redirect, annotate) before it is quantised and applied to balances.
 - `annotate` (function): function annotate(tag: string): ResourcePolicy — Append a provenance tag to a transaction without changing its value.
@@ -1547,7 +1547,7 @@
 - `TargetRole` (type): type TargetRole = "subject" | "object" | "source" | "owner" — Role slots an event exposes; a target selector resolves one of these to a concrete id.
 - `TargetSelector` (type): type TargetSelector = | { readonly role: TargetRole } | { readonly path: string } | { readonly literal: string } — How a rule picks the id its effect lands on: a fixed event role, a dot path into the event facts, or a literal id. Data-only so it saves with the rule.
 - `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef { requires?: readonly string[]; cost?: Readonly<Record<string, number>>; grants?: readonly string[]; recipe?: string } — ⚠ undocumented
-- `ThresholdBand` (interface): interface ThresholdBand — A `{ min, factor }` band for {@link thresholdScale}; the highest band whose `min` is met wins.
+- `ThresholdBand` (interface): interface ThresholdBand — A `{ min, factor }` step of the Ladder for {@link thresholdScale}; the highest `min` met wins.
 - `ThresholdBoundary` (interface): interface ThresholdBoundary<Id = string> — A labelled cut point on the value axis. `Id` is caller-owned (string, enum, or a policy object).
 - `ThresholdCrossing` (interface): interface ThresholdCrossing<Id = string> — A single boundary transition between a `before` and `after` value.
 - `ThresholdDirection` (type): type ThresholdDirection = "up" | "down" — Generic threshold-crossing detection over ordered numeric boundaries.
@@ -3238,7 +3238,7 @@
 - `DecayMeterState` (interface): interface DecayMeterState { id: string; value: number; max: number; min: number; fraction: number } — ⚠ undocumented · used by `decayMeterSnapshot`: Numeric state for every meter, keyed by id — the pure counterpart to `NeedSet.states`.
 - `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. The value half of a save — a tuned meter also needs its rate and rate modifiers, which `createNeedSet` (`sim/needs`) snapshots and restores.
 - `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
-- `MeterThreshold` (interface): interface MeterThreshold { id: string; label: string; at: number; when: "below" | "above"; severity?: MoodleSeverity; icon?: string } — ⚠ undocumented
+- `MeterThreshold` (interface): interface MeterThreshold extends ThresholdBoundary — A Ladder step on the meter: `id` is the moodle raised while the meter is on the wrong side of `at`.
 - `decayMeterMoodles` (function): function decayMeterMoodles(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Moodle[] — Moodles for every crossed threshold, worst-first per meter in declared order.
 - `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to `NeedSet.states`.
 - `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
