@@ -61,7 +61,7 @@ function stencilCoverage(text: string, u: number, v: number): number {
   if (x < 0 || y < 0 || x >= chars.length * 6 - 1 || y >= 7 || width <= 0 || height <= 0) return 0;
   const index = Math.floor(x / 6), column = Math.floor(x - index * 6), row = Math.floor(y);
   if (column > 4) return 0;
-  const glyph = GLYPHS[chars[index]!];
+  const glyph = GLYPHS[chars[index] ?? ""];
   return glyph !== undefined && glyph[row * 5 + column] === "1" ? 1 : 0;
 }
 
@@ -77,7 +77,9 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
  * @internal
  */
 export function createDecalTexture(style: DecalStyle, seed: string, size = 128, paint: { text?: string; color?: string } = {}): DecalTextureData {
-  const rgb = /^#[0-9a-f]{6}$/i.test(paint.color ?? "") ? [1, 3, 5].map((i) => parseInt(paint.color!.slice(i, i + 2), 16) / 255) : [0.88, 0.69, 0.25];
+  const hexPaint = paint.color ?? "";
+  const channel = (i: number): number => parseInt(hexPaint.slice(i, i + 2), 16) / 255;
+  const rgb: readonly [number, number, number] = /^#[0-9a-f]{6}$/i.test(hexPaint) ? [channel(1), channel(3), channel(5)] : [0.88, 0.69, 0.25];
   const seedNumber = hashString(seed.length > 0 ? seed : style);
   const data = new Uint8Array(size * size * 4);
   for (let y = 0; y < size; y += 1) {
@@ -212,7 +214,7 @@ export function createDecalTexture(style: DecalStyle, seed: string, size = 128, 
           coverage = Math.abs(u) < 0.45 && arrow > 0.2 && arrow < 0.52 ? 1 : 0;
         }
         alpha = coverage * (0.45 + wear * 0.55);
-        [red, green, blue] = rgb as [number, number, number];
+        [red, green, blue] = rgb;
       } else if (style === "hazard") {
         // A painted border of diagonal yellow-and-black bands, scuffed through where boots wear it.
         const edge = Math.max(Math.abs(u), Math.abs(v));

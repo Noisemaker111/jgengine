@@ -173,7 +173,7 @@
 - `FONT_PACKAGE_VERSION` (const): const FONT_PACKAGE_VERSION: "5.3.0" — The Fontsource release every file is taken from.
 - `FontEntry` (interface): interface FontEntry — One curated OFL family, shipped as its Latin 400 woff2 file.
 - `FontId` (type): type FontId = (typeof FONT_LIBRARY)[number]["id"] — The id of one family in {@link FONT_LIBRARY}.
-- `FontRole` (type): type FontRole = "display" | "body" — What a family is for: titles and numbers, or reading text.
+- `FontRole` (type): type FontRole = "display" | "body" | "both" — What a family is for: titles and numbers, reading text, or either.
 - `libraryFontPairing` (function): function libraryFontPairing(display: FontId, body: FontId, numeric?: FontId, baseUrl?: string): GameFontPairing — A display and a body family by id as the pairing a game's HUD kit and menus take: `const FONTS = libraryFontPairing("oswald", "barlow"); useGameFonts(FONTS); gameFontStacks(FONTS)`. Throws on an unknown id or a family used in the wrong role.
 
 ## @jgengine/assets/catalogs/hdriLibrary

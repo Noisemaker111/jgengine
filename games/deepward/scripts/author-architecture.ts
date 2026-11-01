@@ -26,15 +26,15 @@ const TURN_Z = (side: number) => (side > 0 ? -Math.PI / 2 : Math.PI / 2);
 const TURN_X = (side: number) => (side > 0 ? Math.PI : 0);
 const T = 0.22;
 for (const placeName of PLACES) {
-  const { surfaces, floorY } = deriveRoomPresentation(placeName as never);
+  const { surfaces, floorY } = deriveRoomPresentation(placeName as never); // type-escape: authoring script indexes its own fixed tables
   for (const s of surfaces.filter(isBayWall)) {
     const side = Number(s.id.split(":")[4]);
     const length = wallLength(s), count = Math.ceil(length / WALL_BAY_WIDTH);
     const stride = count === 1 ? 0 : (length - WALL_BAY_WIDTH) / (count - 1);
     for (let i = 0; i < count; i++) {
       const along = count === 1 ? 0 : -length / 2 + WALL_BAY_WIDTH / 2 + i * stride;
-      if (s.axis === "z") place(placeName, WALL_MODEL[placeName]!, s.at[0] - side * (T / 2), floorY, s.at[2] + along, TURN_Z(side));
-      else place(placeName, WALL_MODEL[placeName]!, s.at[0] + along, floorY, s.at[2] - side * (T / 2), TURN_X(side));
+      if (s.axis === "z") place(placeName, WALL_MODEL[placeName]!, s.at[0] - side * (T / 2), floorY, s.at[2] + along, TURN_Z(side)); // type-escape: authoring script indexes its own fixed tables
+      else place(placeName, WALL_MODEL[placeName]!, s.at[0] + along, floorY, s.at[2] - side * (T / 2), TURN_X(side)); // type-escape: authoring script indexes its own fixed tables
     }
   }
 }
@@ -53,9 +53,9 @@ for (const v of structure.filter((v) => v.shape === "cylinder" && PIPES.includes
   const module = 4 * scale, count = Math.max(1, Math.ceil(length / module - 1e-6)), stride = count === 1 ? 0 : (length - module) / (count - 1);
   for (let i = 0; i < count; i++) {
     const along = count === 1 ? 0 : -length / 2 + module / 2 + i * stride;
-    if (axis === "y") place(name, "pipe-stand", v.center.x, v.center.y - length / 2 + (count === 1 ? (length - module) / 2 : i * stride), v.center.z, 0, scale, [v.label!]);
-    else if (axis === "x") place(name, "pipe-run", v.center.x + along, v.center.y, v.center.z, Math.PI / 2, scale, [v.label!]);
-    else place(name, "pipe-run", v.center.x, v.center.y, v.center.z + along, 0, scale, [v.label!]);
+    if (axis === "y") place(name, "pipe-stand", v.center.x, v.center.y - length / 2 + (count === 1 ? (length - module) / 2 : i * stride), v.center.z, 0, scale, [v.label!]); // type-escape: authoring script indexes its own fixed tables
+    else if (axis === "x") place(name, "pipe-run", v.center.x + along, v.center.y, v.center.z, Math.PI / 2, scale, [v.label!]); // type-escape: authoring script indexes its own fixed tables
+    else place(name, "pipe-run", v.center.x, v.center.y, v.center.z + along, 0, scale, [v.label!]); // type-escape: authoring script indexes its own fixed tables
   }
 }
 writeFileSync(scenePath, session.exportJson(true).replace(/\r\n/g, "\n") + "\n");

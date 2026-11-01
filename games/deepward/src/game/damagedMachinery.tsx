@@ -30,7 +30,8 @@ export function DamagedMachinery({ place }: { place: Place }) {
   const ctx = useGameContext(), vents = useMemo(() => ventMarkers(place), [place]);
   useEffect(() => {
     for (const vent of vents) {
-      const recipe = RECIPES[String(vent.meta?.["effect"]) as VentEffect];
+      const effect = vent.meta?.["effect"];
+      const recipe = effect === "steam" ? RECIPES.steam : effect === "drip" ? RECIPES.drip : effect === "spark" ? RECIPES.spark : undefined;
       if (recipe === undefined) throw new Error(`Deepward vent has an unknown effect: ${vent.id}`);
       ctx.particles.attach(vent.id, { ...recipe.config, position: [vent.position.x, vent.position.y, vent.position.z], seed: vent.id }, { blending: recipe.blending, render: recipe.render });
     }

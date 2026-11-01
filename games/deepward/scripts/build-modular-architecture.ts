@@ -20,7 +20,7 @@ async function write(name: string, mesh: Mesh): Promise<{ id: string; file: stri
   const gltfMesh = doc.createMesh(name);
   const min: V3 = [Infinity, Infinity, Infinity], max: V3 = [-Infinity, -Infinity, -Infinity];
   for (const [material, part] of mesh.parts) {
-    const def = PALETTE[material]!;
+    const def = PALETTE[material]!; // type-escape: authoring script indexes its own fixed tables
     const mat = doc.createMaterial(material).setBaseColorFactor([...def.color, 1]).setMetallicFactor(def.metal).setRoughnessFactor(def.rough);
     if (def.emissive) mat.setEmissiveFactor(def.emissive);
     const position = doc.createAccessor().setType("VEC3").setArray(new Float32Array(part.positions)).setBuffer(buffer);
@@ -28,8 +28,8 @@ async function write(name: string, mesh: Mesh): Promise<{ id: string; file: stri
     const index = doc.createAccessor().setType("SCALAR").setArray(new Uint32Array(part.indices)).setBuffer(buffer);
     gltfMesh.addPrimitive(doc.createPrimitive().setAttribute("POSITION", position).setAttribute("NORMAL", normal).setIndices(index).setMaterial(mat));
     for (let i = 0; i < part.positions.length; i += 3) for (let k = 0; k < 3; k++) {
-      min[k] = Math.min(min[k]!, part.positions[i + k]!);
-      max[k] = Math.max(max[k]!, part.positions[i + k]!);
+      min[k] = Math.min(min[k]!, part.positions[i + k]!); // type-escape: authoring script indexes its own fixed tables
+      max[k] = Math.max(max[k]!, part.positions[i + k]!); // type-escape: authoring script indexes its own fixed tables
     }
   }
   node.setMesh(gltfMesh);
