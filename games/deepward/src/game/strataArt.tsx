@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { AmbientLight, Color, Fog, HemisphereLight, SpotLight, type Object3D } from "three";
+import { IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
+import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
+import { stationAssets } from "./assets";
 import type { WorldModel } from "@jgengine/core/worldModel/worldModel";
 import { BAYS, FABRICATOR, FRAGMENTS, HAZARDS, LIFTS, NODES, PRINTER_ZERO, SUPPLIES, type Place } from "../world";
 import { IndustrialBox, IndustrialCylinder, PALETTE as C, signTexture, type Triple } from "./art";
@@ -114,30 +117,22 @@ function PrinterZero({ taken }: { taken: boolean }) {
     <Sign at={[0, 4.1, 0.3]} title="PRINTER ZERO" sub={taken ? "PATTERN COPIED" : "PATTERN 406 / ORIGINAL"} color={C.danger} width={3.2} />
   </group>;
 }
-/** A creature's body: a pale crawling hand, a long-legged courier, the Overrun's armoured hulk. */
+const FAUNA_MODEL: Readonly<Record<Creature["species"], string>> = { hand: "deepward/fauna/hand", courier: "deepward/fauna/courier", overrun: "deepward/fauna/tank-crawler" };
+/** The creature's clip: the strike's own countdown holds the windup pose, otherwise it walks or idles. */
+export function faunaAnimation(creature: Creature): ModelAnimationConfig {
+  const def = SPECIES[creature.species];
+  if (creature.mode === "winding" && def.strike !== null) return { clip: "windup", paused: true, time: 0.7 * (1 - Math.max(0, Math.min(1, creature.windup / def.strike.windup))), loop: false };
+  const moving = creature.mode === "flee" || creature.mode === "stalk" || creature.mode === "attack";
+  return { clip: moving ? "walk" : "idle", loop: true, timeScale: moving ? Math.max(0.6, def.run / 3) : 1 };
+}
+/** A creature's body: a rigged hand, courier or tank-crawler from the same pipeline as the Fitter. */
 function CreatureModel({ creature }: { creature: Creature }) {
-  const def = SPECIES[creature.species], winding = creature.mode === "winding";
-  const hunting = winding || creature.mode === "attack" || creature.mode === "stalk";
-  const eye = hunting ? C.danger : creature.mode === "flee" ? "#7fc6ff" : C.amber;
-  const lift = winding ? 0.25 : 0;
+  const def = SPECIES[creature.species], asset = stationAssets.resolve(FAUNA_MODEL[creature.species]);
+  if (asset === null) throw new Error(`Deepward is missing the ${creature.species} model`);
+  const hunting = creature.mode === "winding" || creature.mode === "attack" || creature.mode === "stalk";
   return <group position={[creature.at[0], 0, creature.at[2]]} rotation-y={creature.facing}>
-    {creature.species === "hand" ? <>
-      <mesh position={[0, 0.2, 0]} scale={[1, 0.45, 1.2]}><sphereGeometry args={[0.3, 14, 10]} /><meshStandardMaterial color="#d8c8b4" roughness={0.7} /></mesh>
-      {[-0.24, -0.12, 0, 0.12, 0.24].map((x, i) => <IndustrialCylinder key={i} at={[x, 0.12, 0.38 + (i === 2 ? 0.06 : 0)]} turn={[Math.PI / 2 - 0.3, 0, 0]} radius={0.04} length={0.36} color="#cdb9a2" surface="printed" />)}
-    </> : creature.species === "courier" ? <>
-      {[-0.18, 0.18].map(x => <IndustrialCylinder key={x} at={[x, 0.6, 0]} radius={0.07} length={1.2} color="#5a5f63" surface="printed" />)}
-      <IndustrialCylinder at={[0, 1.45 + lift, 0]} turn={[0.35, 0, 0]} radius={0.22} length={0.9} color="#6d7378" surface="printed" />
-      <mesh position={[0, 2.0 + lift, 0.25]}><sphereGeometry args={[0.18, 12, 10]} /><meshStandardMaterial color="#4a4f52" roughness={0.6} /></mesh>
-      <Glow at={[0.07, 2.04 + lift, 0.41]} radius={0.035} color={eye} /><Glow at={[-0.07, 2.04 + lift, 0.41]} radius={0.035} color={eye} />
-      {[-0.32, 0.32].map(x => <IndustrialCylinder key={x} at={[x, 1.35 + lift, 0.25]} turn={[winding ? -1.2 : 0.6, 0, 0]} radius={0.05} length={0.9} color="#5a5f63" surface="printed" />)}
-    </> : <>
-      <IndustrialBox at={[0, 1.6 + lift, 0]} size={[2.8, 2.4, 3.6]} color="#4a3c33" surface="steel" />
-      <IndustrialBox at={[0, 3.0 + lift, -0.3]} size={[2.2, 0.6, 2.8]} color="#6b5a48" surface="steel" />
-      <IndustrialBox at={[0, 1.9 + lift, 2.0]} size={[1.8, 1.0, 0.6]} color="#3b302a" surface="steel" />
-      {[-1.25, 1.25].map(x => [-1.2, 1.2].map(z => <IndustrialCylinder key={`${x}${z}`} at={[x, 0.45, z]} radius={0.35} length={0.9} color="#2b2522" surface="rubber" />))}
-      {[-0.5, 0, 0.5].map(x => <Glow key={x} at={[x, 2.05 + lift, 2.32]} radius={0.12} color={eye} />)}
-      {hunting && <pointLight position={[0, 2.8, 4.6]} color={C.danger} intensity={2} distance={5} />}
-    </>}
+    <IsolatedEntityModel instanceId={creature.id} model={{ ...asset, anchor: "origin", shadows: "both", animation: faunaAnimation(creature) }} />
+    {creature.species === "overrun" && hunting && <pointLight position={[0, 2.8, 4.6]} color={C.danger} intensity={2} distance={5} />}
     {creature.health < def.health && <IndustrialBox at={[0, def.size * 2.4 + 0.4, 0]} size={[0.8 * Math.max(0.05, creature.health / def.health), 0.06, 0.06]} color={C.danger} emission={0.9} />}
   </group>;
 }
@@ -216,12 +211,12 @@ export function MarrowBays({ world }: { world: WorldModel }) {
  * Each floor's air: fog closes in and the ambient light drops the deeper you go. The shell owns the
  * lights and fog; this only retunes them when the floor changes.
  */
-const STRATA_FILL = 0.45;
+const STRATA_FILL = 1;
 export function StratumAtmosphere({ place }: { place: Place }) {
   const { scene } = useThree();
   useEffect(() => {
-    const fog = place === "home" ? { color: C.black, near: 24, far: 75 } : STRATA[place].fog;
-    // Below Marrow the fill drops by half again, so the lamps, not the ambient, shape each room.
+    const fog = place === "home" ? { color: C.black, near: 12, far: 48 } : STRATA[place].fog;
+    // Each floor scales the third-strength base fill by its own ambient ratio.
     const ambient = place === "home" ? 1 : STRATA[place].ambient / STRATA.vault.ambient * STRATA_FILL;
     if (scene.fog instanceof Fog) { scene.fog.color.set(fog.color); scene.fog.near = fog.near; scene.fog.far = fog.far; }
     if (scene.background instanceof Color) scene.background.set(place === "home" || place === "vault" ? C.black : fog.color);

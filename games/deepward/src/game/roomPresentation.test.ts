@@ -1,6 +1,7 @@
-import { expect, test } from "bun:test";
+import { describe, expect, test, it } from "bun:test";
 import { ROOMS, floorAt, type Place } from "../world";
-import { activeRoomLamps, deriveRoomPresentation, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH } from "./roomPresentation";
+
+import { activeRoomLamps, deriveRoomPresentation, lampFlicker, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH } from "./roomPresentation";
 
 for (const place of ["home", "vault"] as const) {
   test(`${place} floors cover exactly the authored union without overlaps; walls stay outside it`, () => {
@@ -41,4 +42,19 @@ test("fractional editor footprints keep an open shared boundary without grid rou
   const plan = deriveRoomPresentation(place, rooms, volumes);
   expect(plan.surfaces.filter(s => s.kind === "floor").reduce((area, s) => area + s.size[0] * s.size[2], 0)).toBeCloseTo(12.5);
   expect(plan.surfaces.some(s => s.kind === "wall" && Math.abs(s.at[0] - 1.5) < 0.2 && Math.abs(s.at[2] - 0.25) < 0.2)).toBe(false);
+});
+
+describe("lampFlicker", () => {
+  it("stays in [1 - depth, 1], is deterministic, and never dips at depth 0", () => {
+    let dipped = false;
+    for (let t = 0; t < 60; t += 0.05) {
+      const value = lampFlicker("lamp-a", t, 0.4);
+      expect(value).toBe(lampFlicker("lamp-a", t, 0.4));
+      expect(value).toBeGreaterThanOrEqual(0.6 - 1e-9);
+      expect(value).toBeLessThanOrEqual(1);
+      if (value < 0.99) dipped = true;
+      expect(lampFlicker("lamp-a", t, 0)).toBe(1);
+    }
+    expect(dipped).toBe(true);
+  });
 });

@@ -18,19 +18,24 @@ import { PALETTE as C, signTexture, IndustrialBox, SALVAGE_PLACARD, type Triple 
 import { surfaceMaterial, type IndustrialSurface } from "./game/industrialMaterials";
 import { FitterModel } from "./game/fitterArt";
 import { ServiceWeapon, serviceWeaponPose } from "./game/weaponArt";
-import { activeRoomLamps, deriveRoomPresentation, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
+import { activeRoomLamps, deriveRoomPresentation, isBayWall, lampFlicker, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
 import { captureProbe, initialize, keybinds, seatPlayer, setAim, tickControls, viewStore } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { registerSceneCapture } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 import { ITEMS } from "./game/state";
 import { StationStructure, StationBatch } from "./game/stationArt";
+import { ModularArchitecture } from "./game/modularArt";
+import { StencilDecals } from "./game/stencilDecals";
+import { DamagedMachinery } from "./game/damagedMachinery";
 import { InteriorArt } from "./game/interiorArt";
 import { ShiftLocker } from "./game/fixtureArt";
 import { GameUI } from "./game/ui/GameUI";
 import { shiftTheme } from "./game/ui/ItemMark";
 import { deepwardKit } from "./game/ui/menu/deepwardKit";
 import { audio } from "./game/audio";
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 
 function Block({ at, size, color = C.panel, glow = false, surface }: { at: Triple; size: Triple; color?: string; glow?: boolean; surface?: IndustrialSurface }) {
   return <IndustrialBox at={at} size={size} color={color} surface={surface ?? (glow ? "lamp" : color === C.steel ? "steel" : color === C.brass ? "brass" : "paint")} emission={glow ? 0.8 : 0} />;
@@ -67,7 +72,8 @@ function Architecture({ place, shell = true }: { place: Place; shell?: boolean }
       groups.set(key, list);
     };
     for (const s of plan.surfaces) {
-      part(s.id, s.at, s.size, s.kind === "floor" ? "#4b5c61" : s.kind === "ceiling" ? C.panel : C.wall, s.kind === "floor" ? "floor" : "paint");
+      if (isBayWall(s)) continue;
+      part(s.id, s.at, s.size, s.kind === "floor" ? "#4b5c61" : s.kind === "ceiling" ? C.panel : C.panel, s.kind === "floor" ? "floor" : "paint");
       if (s.kind !== "wall") continue;
       part(`${s.id}:base`, [s.at[0],s.at[1]-s.size[1]/2+0.14,s.at[2]], [s.size[0]+0.02,0.18,s.size[2]+0.02], C.steel, "steel");
       part(`${s.id}:stripe`, [s.at[0],s.at[1]+0.46,s.at[2]], [s.size[0]+0.025,0.065,s.size[2]+0.025], C.brass, "brass");
@@ -110,11 +116,12 @@ function RoomLights() {
     light.target.position.set(0, -4, 0);
     return light;
   }), [place]);
-  useFrame(({ camera }) => {
+  const flicker = place === "home" ? 0 : STRATA[place].lamp.flicker;
+  useFrame(({ camera, clock }) => {
     const closest = activeRoomLamps(lamps, [camera.position.x, camera.position.y, camera.position.z]);
     lights.forEach((light, i) => {
       const candidate = closest[i];
-      light.intensity = candidate ? ROOM_LIGHT_INTENSITY[place] * ROOM_SPOT_GAIN : 0;
+      light.intensity = candidate ? ROOM_LIGHT_INTENSITY[place] * ROOM_SPOT_GAIN * lampFlicker(candidate.id, clock.elapsedTime, flicker) : 0;
       if (candidate) light.position.set(...candidate.light);
     });
   });
@@ -186,7 +193,7 @@ function WorldOverlay() {
     <SceneCaptureBinding bind={registerSceneCapture} />
     <StratumAtmosphere place={place} /><Headlamp on={dive?.lamp === true} />
     {place === "home" ? <><Architecture place={place} /><StationStructure place={place} /></> : <><InteriorArt stratum={place} /><Architecture place={place} shell={false} /></>}
-    <RoomLights /><StationModels place={place} assets={stationAssets} />
+    <RoomLights /><StationModels place={place} assets={stationAssets} /><ModularArchitecture place={place} /><DamagedMachinery place={place} /><StencilDecals place={place} />
     {dive === null && <MarrowBays world={base} />}
     {dive !== null && <StratumDressing dive={dive} deep={view.deep} world={base} />}
     {editorLayers.markers.filter(m => m.kind === "deepward-station-sign" && m.meta?.["place"] === place).map(m => <Sign key={m.id} at={[m.position.x,m.position.y,m.position.z]} title={m.label ?? m.id} sub={String(m.meta?.["subtitle"] ?? "")} width={Number(m.meta?.["width"] ?? 2.6)} turn={m.rotationY ?? 0} color={C.amber} />)}
@@ -311,11 +318,21 @@ export const game = defineGame({
     lens: { frustum: { far: 95 } },
   },
   rendering: {
-    lighting: { ambient: { color: "#d4d5c8", intensity: 0.72 }, hemisphere: { skyColor: "#c7d9df", groundColor: "#514639", intensity: 0.5 } },
-    backdrop: { background: C.black, fog: { color: C.black, near: 24, far: 75 } },
-    // Lamp housings and amber signage sit near the bloom threshold; a high strength smeared the ceiling into haze.
-  // Indoor air: a thin haze the scene fog colours per floor, and a glow around each lit lamp in it.
-    postProcessing: { toneMapping: "aces", exposure: 1.05, bloom: { strength: 0.05, radius: 0.3, threshold: 1.35 }, atmosphere: { indoor: true, fogDensity: 0.013, fogFalloff: 0.02, fogHeight: 0, fogMax: 0.4, shafts: 0, lamps: 1.25, beams: 0.35 } },
+    look: "cinematic",
+    mood: { preset: "night", fog: { near: 12, far: 48 }, exposure: 0.9, contrast: 1.1 },
+    // Practical lamps carry every room: a third of the old 0.72 ambient and 0.5 hemisphere.
+    lighting: { ambient: { color: "#d4d5c8", intensity: 0.24 }, hemisphere: { skyColor: "#c7d9df", groundColor: "#514639", intensity: 0.17 } },
+    backdrop: { background: C.black, fog: { color: C.black, near: 12, far: 48 } },
+    // Reflections only: the vault has no sky.
+    environmentSource: hdriEnvironment("industrial-pipe-valve", { intensity: 0.25 }),
+    postProcessing: {
+      toneMapping: "aces",
+      bloom: { strength: 0.18, radius: 0.3, threshold: 0.9 },
+      ao: { radius: 1, intensity: 1, distanceFalloff: 3, blend: 1 },
+      grade: { vignette: 0.28, lut: lutGrade("cold-teal") },
+      // Indoor air: a thin haze the scene fog colours per floor, and a glow around each lit lamp in it.
+      atmosphere: { indoor: true, fogDensity: 0.013, fogFalloff: 0.02, fogHeight: 0, fogMax: 0.4, shafts: 0, lamps: 1.25, beams: 0.35 },
+    },
   },
   capture: {
     probe: captureProbe,

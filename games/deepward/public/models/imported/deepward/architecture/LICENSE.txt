@@ -1,0 +1,27 @@
+Deepward original industrial machinery
+
+All seven GLB models in this directory and their source generator
+deepward/scripts/build-original-machinery.py were authored for Deepward by the
+Deepward project contributors. No third-party meshes, image textures, downloaded
+models, or other game's assets are included. Geometry, markings, material maps,
+and UVs are original. Blender's built-in font is used to construct mesh markings;
+no font file is shipped. Blender is an authoring tool and its software license
+does not impose a license on generated art.
+
+To the extent possible under law, the Deepward project contributors have waived
+all copyright and related or neighboring rights to these model assets and their
+generator under CC0 1.0 Universal:
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The models use embedded original 256px basecolor/roughness/normal maps plus modeled
+surface details. These reproducible authored enamel wear, scratches, and grain
+patterns are not photographed scans. They are unrigged, static props. All units are metres,
+glTF +Y is up, +Z is the operator-facing side, and each origin is floor centre.
+See asset-manifest.json for file hashes, dimensions, and mesh costs.
+
+Rebuild with Blender 4.3 or newer:
+blender -b -t 2 -P deepward/scripts/build-original-machinery.py
+
+Optional DEEPWARD_ASSET_EVIDENCE=/absolute/scratch/path writes Blender source
+snapshots and studio inspection renders outside shipped assets. Studio renders
+are asset inspection evidence, not evidence of integration into the game.
