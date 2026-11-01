@@ -231,7 +231,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## format-duration — a span of seconds as locale words (1h 2m 5s)
 
-- `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/i18n/localeFormat"`
+- `formatLocaleDuration` (function) · `import { formatLocaleDuration } from "@jgengine/core/i18n/localeFormat"`
 
 ## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
 

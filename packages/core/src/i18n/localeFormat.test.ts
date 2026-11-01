@@ -2,10 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import {
   formatCompact,
-  formatCurrency,
+  formatLocaleCurrency,
   formatDate,
-  formatDuration,
-  formatNumber,
+  formatLocaleDuration,
+  formatLocaleNumber,
   formatPercent,
   formatRelative,
   formatRelativeTo,
@@ -14,15 +14,15 @@ import {
 
 describe("locale formatting", () => {
   test("numbers group and separate by locale", () => {
-    expect(formatNumber("en", 1234567.891, { maximumFractionDigits: 2 })).toBe("1,234,567.89");
-    expect(formatNumber("de", 1234567.891, { maximumFractionDigits: 2 })).toBe("1.234.567,89");
-    expect(formatNumber("fr", 1234.5)).toBe("1 234,5");
+    expect(formatLocaleNumber("en", 1234567.891, { maximumFractionDigits: 2 })).toBe("1,234,567.89");
+    expect(formatLocaleNumber("de", 1234567.891, { maximumFractionDigits: 2 })).toBe("1.234.567,89");
+    expect(formatLocaleNumber("fr", 1234.5)).toBe("1 234,5");
   });
 
   test("currency uses the currency's own decimals", () => {
-    expect(formatCurrency("en-US", 1234.5, "USD")).toBe("$1,234.50");
-    expect(formatCurrency("ja-JP", 1234, "JPY")).toMatch(/^[¥￥]1,234$/);
-    expect(formatCurrency("de-DE", 1234.5, "EUR")).toBe("1.234,50 €");
+    expect(formatLocaleCurrency("en-US", 1234.5, "USD")).toBe("$1,234.50");
+    expect(formatLocaleCurrency("ja-JP", 1234, "JPY")).toMatch(/^[¥￥]1,234$/);
+    expect(formatLocaleCurrency("de-DE", 1234.5, "EUR")).toBe("1.234,50 €");
   });
 
   test("percent and compact", () => {
@@ -42,11 +42,11 @@ describe("locale formatting", () => {
   });
 
   test("durations drop zero parts and bound by largest and smallest", () => {
-    expect(formatDuration("en", 3725)).toBe("1h 2m 5s");
-    expect(formatDuration("en", 3600)).toBe("1h");
-    expect(formatDuration("en", 0)).toBe("0s");
-    expect(formatDuration("en", 90061, { largest: "hour", smallest: "minute" })).toBe("25h 1m");
-    expect(formatDuration("en", 125, { unitDisplay: "long" })).toBe("2 minutes, 5 seconds");
+    expect(formatLocaleDuration("en", 3725)).toBe("1h 2m 5s");
+    expect(formatLocaleDuration("en", 3600)).toBe("1h");
+    expect(formatLocaleDuration("en", 0)).toBe("0s");
+    expect(formatLocaleDuration("en", 90061, { largest: "hour", smallest: "minute" })).toBe("25h 1m");
+    expect(formatLocaleDuration("en", 125, { unitDisplay: "long" })).toBe("2 minutes, 5 seconds");
   });
 
   test("relative times, explicit and from timestamps", () => {

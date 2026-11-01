@@ -5,9 +5,10 @@ export type TextDirection = "ltr" | "rtl";
 const RTL_LANGUAGES: ReadonlySet<string> = new Set(["ar", "he", "iw", "fa", "ur", "ps", "sd", "ug", "yi", "dv", "ckb", "ks", "ku"]);
 const RTL_SCRIPTS: ReadonlySet<string> = new Set(["Arab", "Hebr", "Thaa", "Syrc", "Nkoo", "Adlm", "Rohg"]);
 
-interface TextInfoLocale {
-  getTextInfo?: () => { direction?: string };
-  textInfo?: { direction?: string };
+function platformDirection(locale: Intl.Locale): unknown {
+  const getter: unknown = Reflect.get(locale, "getTextInfo");
+  const info: unknown = typeof getter === "function" ? Reflect.apply(getter, locale, []) : Reflect.get(locale, "textInfo");
+  return typeof info === "object" && info !== null ? Reflect.get(info, "direction") : undefined;
 }
 
 /**
@@ -24,9 +25,8 @@ export function localeDirection(locale: string): TextDirection {
   } catch {
     return "ltr";
   }
-  const info: TextInfoLocale = parsed;
   if (parsed.script !== undefined) return RTL_SCRIPTS.has(parsed.script) ? "rtl" : "ltr";
-  const platform = (info.getTextInfo?.() ?? info.textInfo)?.direction;
+  const platform = platformDirection(parsed);
   if (platform === "rtl" || platform === "ltr") return platform;
   return RTL_LANGUAGES.has(parsed.language) ? "rtl" : "ltr";
 }

@@ -2,7 +2,7 @@
 /** A locale tag (e.g. `"en"`, `"es"`, `"ja"`) — a key into a {@link Catalog}. */
 export type Locale = string;
 
-import { formatNumber } from "./localeFormat";
+import { formatLocaleNumber } from "./localeFormat";
 
 /** Flat message table for one locale: key → template string or plural forms. */
 export type Messages = Readonly<Record<string, Message>>;
@@ -43,7 +43,7 @@ export function interpolate(template: string, params?: TParams, locale?: Locale)
   return template.replace(/\{(\w+)\}/g, (whole, name: string) => {
     const value = params[name];
     if (value === undefined) return whole;
-    return typeof value === "number" && locale !== undefined ? formatNumber(locale, value) : String(value);
+    return typeof value === "number" && locale !== undefined ? formatLocaleNumber(locale, value) : String(value);
   });
 }
 

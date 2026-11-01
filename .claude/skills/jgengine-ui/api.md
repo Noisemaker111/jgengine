@@ -459,12 +459,12 @@
 
 ## @jgengine/core/i18n/localeFormat
 
-- `DurationFormatOptions` (interface): interface DurationFormatOptions — Bounds and style of {@link formatDuration}.
+- `DurationFormatOptions` (interface): interface DurationFormatOptions — Bounds and style of {@link formatLocaleDuration}.
 - `formatCompact` (function): function formatCompact(locale: Locale, value: number, options?: Intl.NumberFormatOptions): string — A short large number: `12500` is `12.5K` in English, `1.25万` in Japanese.
-- `formatCurrency` (function): function formatCurrency(locale: Locale, value: number, currency: string, options?: Intl.NumberFormatOptions): string — An amount of money in an ISO 4217 `currency` (`"USD"`, `"JPY"`), with that currency's own decimals.
 - `formatDate` (function): function formatDate(locale: Locale, value: number | Date, options?: Intl.DateTimeFormatOptions): string — An absolute date and time.
-- `formatDuration` (function): function formatDuration(locale: Locale, totalSeconds: number, options: DurationFormatOptions = {}): string — A span in seconds as words in the locale: `3725` is `1h 2m 5s` in English. Zero parts are dropped; zero seconds is `0s`.
-- `formatNumber` (function): function formatNumber(locale: Locale, value: number, options?: Intl.NumberFormatOptions): string — Number grouping, decimals and digits for `locale`.
+- `formatLocaleCurrency` (function): function formatLocaleCurrency(locale: Locale, value: number, currency: string, options?: Intl.NumberFormatOptions): string — An amount of money in an ISO 4217 `currency` (`"USD"`, `"JPY"`), with that currency's own decimals.
+- `formatLocaleDuration` (function): function formatLocaleDuration(locale: Locale, totalSeconds: number, options: DurationFormatOptions = {}): string — A span in seconds as words in the locale: `3725` is `1h 2m 5s` in English. Zero parts are dropped; zero seconds is `0s`.
+- `formatLocaleNumber` (function): function formatLocaleNumber(locale: Locale, value: number, options?: Intl.NumberFormatOptions): string — Number grouping, decimals and digits for `locale`.
 - `formatPercent` (function): function formatPercent(locale: Locale, fraction: number, options?: Intl.NumberFormatOptions): string — A fraction as a percentage: `0.256` is `25.6%` with `maximumFractionDigits: 1`.
 - `formatRelative` (function): function formatRelative(locale: Locale, value: number, unit: Intl.RelativeTimeFormatUnit, options?: Intl.RelativeTimeFormatOptions): string — "in 3 days", "2 hours ago": `value` is negative for the past.
 - `formatRelativeTo` (function): function formatRelativeTo(locale: Locale, thenMs: number, nowMs: number, options?: Intl.RelativeTimeFormatOptions): string — The relative time from `now` to `then` (both epoch milliseconds) in the largest unit that fits.
