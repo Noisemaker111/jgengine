@@ -209,28 +209,28 @@ describe("breeding field", () => {
   test("a raptor pair kept together for the mating time lays an egg; apart, the bar starts over; then she rests", () => {
     const breeding = field();
     const rng = rngOf(3);
-    breeding.mate(mates(3), 0, 30, rng);
+    breeding.mate(mates(3), 30, rng);
     expect(breeding.matingProgress("her")).toBeCloseTo(0.5, 6);
     // Walked apart: the bar is gone.
-    breeding.mate(mates(10), 30, 1, rng);
+    breeding.mate(mates(10), 1, rng);
     expect(breeding.matingProgress("her")).toBeNull();
     // A male of another kind does nothing.
-    expect(breeding.mate([{ id: "her", species: "raptor", sex: "female", at: [0, 0, 0] }, { id: "x", species: "phiomia", sex: "male", at: [1, 0, 0] }], 31, 60, rng)).toEqual([]);
-    breeding.mate(mates(3), 40, 30, rng);
-    const events = breeding.mate(mates(3), 70, 30, rng);
+    expect(breeding.mate([{ id: "her", species: "raptor", sex: "female", at: [0, 0, 0] }, { id: "x", species: "phiomia", sex: "male", at: [1, 0, 0] }], 60, rng)).toEqual([]);
+    breeding.mate(mates(3), 30, rng);
+    const events = breeding.mate(mates(3), 30, rng);
     expect(events.map((event) => event.type)).toEqual(["conceived", "laid"]);
     expect(breeding.eggs()).toHaveLength(1);
     expect(breeding.eggs()[0]?.offspring).toEqual({ from: "her+him" });
     // ARK's 18 to 48 hours before she mates again.
     expect(breeding.cooldown("her")).toBeGreaterThanOrEqual(64_800);
     expect(breeding.cooldown("her")).toBeLessThanOrEqual(172_800);
-    expect(breeding.mate(mates(3), 100, 120, rng)).toEqual([]);
+    expect(breeding.mate(mates(3), 120, rng)).toEqual([]);
   });
 
   test("a raptor egg hatches only in its temperature, and out of it loses health until it is lost", () => {
     const breeding = field();
     const rng = rngOf(5);
-    breeding.mate(mates(2), 0, 61, rng);
+    breeding.mate(mates(2), 61, rng);
     const warm = () => 24;
     for (let t = 0; t < 3570; t += 10) expect(breeding.tick(t, 10, warm, rng)).toEqual([]);
     expect(breeding.eggs()[0]?.progress).toBeCloseTo(0.5, 2);
@@ -244,7 +244,7 @@ describe("breeding field", () => {
     expect(breeding.eggs()).toHaveLength(0);
     // A second egg left in the snow is lost after its ten minutes.
     breeding.tick(200_000, 200_000, () => 0, rng);
-    breeding.mate(mates(2), 200_000, 61, rng);
+    breeding.mate(mates(2), 61, rng);
     const lost = breeding.tick(200_100, 600, () => -10, rng);
     expect(lost.map((event) => event.type)).toEqual(["eggLost"]);
   });
@@ -252,7 +252,7 @@ describe("breeding field", () => {
   test("a phiomia carries for its gestation and gives birth, then rests", () => {
     const breeding = field();
     const rng = rngOf(7);
-    const events = breeding.mate(mates(4, "phiomia"), 0, 61, rng);
+    const events = breeding.mate(mates(4, "phiomia"), 61, rng);
     expect(events.map((event) => event.type)).toEqual(["conceived"]);
     expect(breeding.eggs()).toHaveLength(0);
     expect(breeding.pregnancy("her")?.progress).toBe(0);
@@ -302,12 +302,12 @@ describe("breeding field", () => {
     const breeding = field();
     const rng = rngOf(13);
     breeding.setSpeeds({ carry: 10, grow: 10, bond: 10, pair: 10 });
-    breeding.mate(mates(2), 0, 61, rng);
+    breeding.mate(mates(2), 61, rng);
     expect(breeding.cooldown("her")).toBeLessThanOrEqual(17_280);
     const hatched = breeding.tick(714, 714, () => 25, rng);
     expect(hatched.map((event) => event.type)).toEqual(["hatched"]);
     breeding.raise("baby", "raptor", 714);
-    breeding.mate(mates(2, "phiomia", "her2", "him2"), 714, 61, rng);
+    breeding.mate(mates(2, "phiomia", "her2", "him2"), 61, rng);
     const copy = field();
     copy.restore(breeding.snapshot());
     expect(copy.offspringOf("baby")?.nextCareAt).toBeCloseTo(714 + 2880, 6);
@@ -324,7 +324,7 @@ describe("breeding field", () => {
     const litters = [0, 0, 0];
     for (let n = 0; n < 4000; n += 1) {
       breeding.tick(n * 1e7, 1e7, () => 0, rng);
-      const conceived = breeding.mate(mates(2), n * 1e7, 61, rng).find((event) => event.type === "conceived");
+      const conceived = breeding.mate(mates(2), 61, rng).find((event) => event.type === "conceived");
       if (conceived?.type === "conceived") {
         const index = conceived.count - 1;
         litters[index] = (litters[index] ?? 0) + 1;

@@ -99,7 +99,7 @@ export function tickBreeding(ctx: GameContext, dt: number): void {
   const all = tames(ctx);
   const growing = new Set(nursery.field.offspring().map((baby) => baby.id));
   const candidates = all.filter((tame) => tame.mating && !growing.has(tame.id));
-  for (const event of nursery.field.mate(candidates, now, dt, ctx.rng)) {
+  for (const event of nursery.field.mate(candidates, dt, ctx.rng)) {
     if (event.type === "conceived") {
       const carries = breedingOf(event.species, 1)?.egg === null;
       ctx.game.notices.push({ text: carries ? `Your ${label(event.species)} is pregnant` : `Your ${label(event.species)}s mated`, tone: "success" });

@@ -137,7 +137,7 @@ export interface BreedingField<P> {
    * Pairs mating: each ready mother with the nearest willing male of her kind in range fills her mating bar; apart,
    * it starts over. A full bar lays an egg where she stands or makes her pregnant.
    */
-  mate(candidates: readonly MateCandidate[], now: number, dt: number, rng: () => number): BreedingEvent<P>[];
+  mate(candidates: readonly MateCandidate[], dt: number, rng: () => number): BreedingEvent<P>[];
   /** Eggs incubate in their temperature (and lose health out of it), mothers carry, the young grow and ask for care. */
   tick(now: number, dt: number, temperatureAt: (at: Vec3) => number, rng: () => number): BreedingEvent<P>[];
   /** Start raising a hatched or newborn young one: it grows from 0 and first asks for care one interval in. */
@@ -261,7 +261,7 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
   };
 
   return {
-    mate(candidates, now, dt, rng) {
+    mate(candidates, dt, rng) {
       const events: BreedingEvent<P>[] = [];
       const busy = new Set<string>();
       const seen = new Set<string>();
