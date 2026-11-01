@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { SITE_URL } from "../lib/site";
 
-const STATIC_PATHS = ["/", "/why", "/playground", "/games", "/docs", "/adopt"];
+const STATIC_PATHS = ["/", "/why", "/playground", "/games", "/docs", "/adopt", "/cookbook"];
 
 function buildSitemap(): string {
   const body = STATIC_PATHS.map((path) => {

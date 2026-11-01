@@ -1,3 +1,4 @@
+// @skill jgengine
 import { expect, test } from "bun:test";
 
 import { createMotionTrack, createPacedSchedule, createRefillSlots, discRegion, evaluatePredicate, pickWeighted, samplePoint, tierAt } from "../parts";

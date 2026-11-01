@@ -9,13 +9,13 @@ import { tickCooldown } from "../time/cooldown";
  */
 test("buff stack", () => {
   const sheet = createStatGraph({ inputs: [{ id: "speed", base: 10 }] }).create();
-  const buffs = { haste: 5, boots: 60 };
+  const buffs = new Map([["haste", 5], ["boots", 60]]);
   sheet.addSource("boots", { speed: { source: "boots", op: "add", value: 2 } });
   sheet.addSource("haste", { speed: { source: "haste", op: "mul", value: 1.5 } });
   const tick = (dt: number) => {
-    for (const [id, left] of Object.entries(buffs)) {
-      buffs[id as keyof typeof buffs] = tickCooldown(left, dt);
-      if (buffs[id as keyof typeof buffs] === 0) sheet.removeSource(id);
+    for (const [id, left] of buffs) {
+      buffs.set(id, tickCooldown(left, dt));
+      if (buffs.get(id) === 0) sheet.removeSource(id);
     }
   };
 

@@ -9,7 +9,8 @@ import { changeMeter, createMeter, evaluatePredicate, tickMeter } from "../parts
 test("taming by feeding", () => {
   let trust = createMeter({ max: 100, current: 0 });
   const favourite = { in: ["food", ["berry", "meat"]] } as const;
-  const feed = (food: string) => (trust = changeMeter(trust, evaluatePredicate(favourite, { food }) ? 30 : 10).meter);
+  const worth = (food: string) => (evaluatePredicate(favourite, { food }) ? 30 : 10);
+  const feed = (food: string) => (trust = changeMeter(trust, worth(food)).meter);
   const wait = (dt: number) => (trust = tickMeter(trust, { decay: 1, decayDelay: 20 }, dt).meter);
 
   feed("bread");

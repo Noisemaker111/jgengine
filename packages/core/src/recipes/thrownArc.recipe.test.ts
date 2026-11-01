@@ -7,11 +7,9 @@ import { createMotionTrack } from "../parts";
  * A Motion track through points sampled along a parabola; the track reports where the item is and when it lands.
  */
 test("thrown item arc", () => {
-  const from = [0, 1, 0];
-  const to = [12, 0, 0];
   const arc = Array.from({ length: 9 }, (_, i) => {
     const t = i / 8;
-    return [(from[0] ?? 0) + ((to[0] ?? 0) - (from[0] ?? 0)) * t, 1 + 4 * 3 * t * (1 - t) - t, 0] as [number, number, number];
+    return [12 * t, 1 + 12 * t * (1 - t) - t, 0] satisfies [number, number, number];
   });
   const flight = createMotionTrack({ points: arc, duration: 1.2, startAt: 0 });
   const where: [number, number, number] = [0, 0, 0];

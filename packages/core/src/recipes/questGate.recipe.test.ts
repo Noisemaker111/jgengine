@@ -8,13 +8,14 @@ import { evaluatePredicate, type Predicate } from "../parts";
  */
 test("quest gate", () => {
   const dragonQuest: Predicate = {
-    all: [{ gte: ["player.level", 10] }, { includes: ["quests.done", "intro"] }, { has: "items.dragonKey" }],
+    all: [{ gte: ["player.level", 10] }, { includes: ["quests.done", "intro"] }, { includes: ["items", "dragonKey"] }],
   };
-  const facts = { player: { level: 12 }, quests: { done: ["intro"] }, items: {} as Record<string, number> };
+  const mayStart = (facts: Record<string, unknown>) => evaluatePredicate(dragonQuest, facts);
+  const facts = { player: { level: 12 }, quests: { done: ["intro"] }, items: ["torch"] };
 
-  expect(evaluatePredicate(dragonQuest, facts)).toBe(false);
-  facts.items.dragonKey = 1;
-  expect(evaluatePredicate(dragonQuest, facts)).toBe(true);
+  expect(mayStart(facts)).toBe(false);
+  facts.items.push("dragonKey");
+  expect(mayStart(facts)).toBe(true);
   facts.player.level = 4;
-  expect(evaluatePredicate(dragonQuest, facts)).toBe(false);
+  expect(mayStart(facts)).toBe(false);
 });
