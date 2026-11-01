@@ -79,3 +79,16 @@ export function deriveRoomPresentation(place: Place, rooms: readonly Room[] = RO
   }
   return { surfaces, lamps, floorY, ceilingY };
 }
+
+/**
+ * A failing lamp's brightness factor at `time`: steady most of the time, dipping toward `1 - depth` in short
+ * stutters whose timing is its own. Deterministic in (id, time); a depth of 0 never dips.
+ */
+export function lampFlicker(id: string, time: number, depth: number): number {
+  if (depth <= 0) return 1;
+  let seed = 0;
+  for (let i = 0; i < id.length; i++) seed = (seed * 31 + id.charCodeAt(i)) % 9973;
+  const wave = Math.sin(time * 2.3 + seed) * Math.sin(time * 7.1 + seed * 0.37) + Math.sin(time * 23 + seed * 1.7) * 0.35;
+  const dip = Math.min(1, Math.max(0, (wave - 0.55) / 0.5));
+  return 1 - Math.min(1, depth) * dip;
+}
