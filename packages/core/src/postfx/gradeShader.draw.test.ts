@@ -129,11 +129,10 @@ test("a .cube LUT url is fetched, parsed and bound as the grade LUT", async () =
 test("a .cube grade is fetched from the running game's folder under the host", async () => {
   const { setGameAssetFiles } = await import("@jgengine/core/assets/assetBase");
   const requested: string[] = [];
-  const realFetch = globalThis.fetch;
-  globalThis.fetch = (async (url: string) => {
-    requested.push(url);
+  const fetched = spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    requested.push(String(input));
     return new Response("", { status: 404 });
-  }) as unknown as typeof fetch;
+  });
   setGameAssetFiles("demo", ["/lut/warm/warm.cube"]);
   try {
     createGradePass({ lut: { url: "/lut/warm/warm.cube", size: 32 } });
@@ -141,6 +140,6 @@ test("a .cube grade is fetched from the running game's folder under the host", a
     expect(requested).toEqual(["/demo/lut/warm/warm.cube"]);
   } finally {
     setGameAssetFiles(null);
-    globalThis.fetch = realFetch;
+    fetched.mockRestore();
   }
 });
