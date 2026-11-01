@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
+import { clamp } from "@jgengine/core/math/scalar";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms, type SurfaceScanBlend } from "@jgengine/core/material/surfaceScanShader.draw";
@@ -71,7 +72,6 @@ export function isSoftRibbonSurface(surface: string): boolean {
   return SOFT_GROUND.has(terrainSurfaceClass(surface));
 }
 
-const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
 /**
  * Default ribbon look for an authored path: the surface comes from `meta.surface`, else the path
