@@ -19,6 +19,13 @@ export interface AircraftAeroGeometry {
   axes?: "body" | "stability";
   /** Surface angles, rad, at full input per channel; the terms' `pitch`, `roll` and `yaw` read these (default the actuator deflection itself). */
   travel?: { pitch?: AeroSurfaceTravel; roll?: AeroSurfaceTravel; yaw?: AeroSurfaceTravel };
+  /**
+   * Angle of attack range the data covers, rad `[low, high]` (default unlimited). Outside it the tables are read at the
+   * nearest edge, and the polar's lift and drag blend over 0.2 rad into a flat plate's, so a tumbling aircraft stays bounded.
+   */
+  alphaRange?: readonly [number, number];
+  /** Largest sideslip the data covers, rad (default unlimited); beyond it the tables are read at the edge. */
+  sideslipRange?: number;
 }
 
 /**

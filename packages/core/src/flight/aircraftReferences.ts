@@ -287,9 +287,13 @@ function f16(): RigidAircraftTuning {
       drag: [{ value: table(["pitch", "alpha"], [elevators, alphas], drag) }, { value: byAlpha(dragQ), times: "qHat" }],
       side,
       stallAngle: 32 * DEG,
+      alphaRange: [-10 * DEG, 45 * DEG],
+      sideslipRange: 30 * DEG,
     },
     derivatives: {
       ...geometry,
+      alphaRange: [-10 * DEG, 45 * DEG],
+      sideslipRange: 30 * DEG,
       roll: [
         { value: table(["absBeta", "alpha"], [betaHalf, alphas], F16_CL), times: "signBeta" },
         { value: table(["beta", "alpha"], [betas, alphas], scaled(F16_DLDA, aileron)), times: "roll" },
@@ -315,7 +319,7 @@ function f16(): RigidAircraftTuning {
   return {
     massKg,
     inertia: { roll: 9496 * SLUG_FT2, pitch: 55814 * SLUG_FT2, yaw: 63100 * SLUG_FT2 },
-    surfaces: simpleSurfaces(area, span, 5.5, 0.1, 3.5, 0.5, 0.02, 0.15),
+    surfaces: simpleSurfaces(area, span, 5.5, 0.1, 3.5, 0.5, 0.01, 0.15),
     engine: { maxThrust: 56819, spoolRate: 1.5 },
     controls: { pitch: { maxDeflection: 25 * DEG, rate: 60 * DEG }, roll: { maxDeflection: 21.5 * DEG, rate: 80 * DEG }, yaw: { maxDeflection: 30 * DEG, rate: 120 * DEG } },
     gear: { height: 1.7, rollingResistance: 0.03, brakeDecel: 3.5, sideGrip: 0.8, maxPitch: 0.25 },

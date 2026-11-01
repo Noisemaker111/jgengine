@@ -7,12 +7,12 @@ import { effectStrength, mixEffect, type AircraftEffects } from "./aircraftEffec
 import { atmosphereAt, SEA_LEVEL_AIR, type AirSample } from "./atmosphere";
 import { autorotationRates, type AutorotationRates } from "./autorotation";
 import { derivativeMoments, type DerivativeMoments } from "./derivatives";
-import { spoolRate, spoolTarget, spoolThrust } from "./engineSpool";
+import { spoolRate, spoolThrust } from "./engineSpool";
 import { machDragArea } from "./machDrag";
 import { mainGearMoment } from "./mainGear";
 import { nozzleThrust } from "./nozzle";
 import { polarCoefficients, type PolarCoefficients } from "./polar";
-import { propellerLoads, settledShaftSpeed, type PropellerLoads } from "./propeller";
+import { propellerLoads, propellerThrust, settledShaftSpeed, type PropellerLoads } from "./propeller";
 import { rotatingEarthAcceleration, rotatingEarthFrame, type RotatingEarthFrame } from "./rotatingEarth";
 import { rotorInflowLoads, type RotorInflowLoads } from "./rotorInflow";
 import { thrustLapse } from "./thrustLapse";
@@ -654,13 +654,9 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     const afterburner = effects?.afterburner;
     const split = afterburner === undefined ? undefined : afterburnerCommand(afterburner, effectStrength(afterburner), throttle);
     const spoolEffect = effects?.spool;
-    if (spoolEffect === undefined) state.spool += ((split?.dry ?? throttle) - state.spool) * (1 - Math.exp(-(engine?.spoolRate ?? 1.5) * h));
-    else {
-      const ss = effectStrength(spoolEffect);
-      const target = spoolTarget(spoolEffect, ss, split?.dry ?? throttle, state.spool);
-      const rate = spoolRate(spoolEffect, ss, engine?.spoolRate ?? 1.5, target - state.spool);
-      state.spool = Math.min(1, state.spool + (target - state.spool) * (1 - Math.exp(-rate * h)));
-    }
+    const dryCommand = split?.dry ?? throttle;
+    const rate = spoolEffect === undefined ? (engine?.spoolRate ?? 1.5) : spoolRate(spoolEffect, effectStrength(spoolEffect), engine?.spoolRate ?? 1.5, dryCommand - state.spool);
+    state.spool += (dryCommand - state.spool) * (1 - Math.exp(-rate * h));
     if (afterburner !== undefined && split !== undefined) {
       // Reheat lights only once the core is at full dry.
       const reheat = state.spool >= 0.95 ? split.reheat : 0;
@@ -768,8 +764,11 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       const q = -wx;
       const r = -wy;
       const stability = geometry.axes === "stability";
-      aero.alpha = alpha;
-      aero.beta = Math.asin(Math.max(-1, Math.min(1, -bx / Math.max(1e-6, airspeed))));
+      const range = geometry.alphaRange;
+      aero.alpha = range === undefined ? alpha : Math.max(range[0], Math.min(range[1], alpha));
+      const beta = Math.asin(Math.max(-1, Math.min(1, -bx / Math.max(1e-6, airspeed))));
+      const betaLimit = geometry.sideslipRange;
+      aero.beta = betaLimit === undefined ? beta : Math.max(-betaLimit, Math.min(betaLimit, beta));
       aero.mach = mach;
       aero.pHat = ((stability ? p * ca + r * sa : p) * geometry.span) / (2 * v);
       aero.qHat = (q * geometry.chord) / (2 * v);
@@ -785,8 +784,13 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       if (polar !== undefined) {
         const sp = effectStrength(polar);
         polarCoefficients(polar, aero, polarOut);
-        const lift = polarOut.lift * liftScale;
-        const drag = (polarOut.drag - (polar.inducedDrag ?? 0) * polarOut.lift * polarOut.lift * (1 - induced)) * Math.max(1, sp) * dragScale;
+        // Past the data's angle-of-attack range, blend into a flat plate.
+        const outside = range === undefined ? 0 : Math.min(1, Math.max(range[0] - alpha, alpha - range[1], 0) / 0.2);
+        const plateLift = 1.1 * Math.sin(2 * alpha);
+        const plateDrag = 0.05 + 1.8 * sa * sa;
+        const lift = (polarOut.lift + (plateLift - polarOut.lift) * outside) * liftScale;
+        const cleanDrag = polarOut.drag - (polar.inducedDrag ?? 0) * polarOut.lift * polarOut.lift * (1 - induced);
+        const drag = (cleanDrag + (plateDrag - cleanDrag) * outside) * Math.max(1, sp) * dragScale;
         const qs = qbar * polar.area;
         const px = qs * (-drag * ca + lift * sa);
         const pz = qs * (-drag * sa - lift * ca);
@@ -1086,7 +1090,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       propellerLoads(propeller, state.shaftSpeed, axial, throttle, rho, air.speedOfSound, propellerOut);
       const net = propellerOut.engineTorque - propellerOut.torque;
       state.shaftSpeed = state.shaftSpeed < 10 && net < 0 ? state.shaftSpeed : Math.max(0, state.shaftSpeed + (net / (propeller.inertia ?? 1.9)) * h);
-      thrust = mixEffect(thrust, propellerOut.thrust, effectStrength(propeller));
+      thrust = propellerThrust(thrust, propellerOut.thrust, effectStrength(propeller));
     }
     return thrust;
   }
