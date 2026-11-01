@@ -1,4 +1,5 @@
 {
   "drawsFrame": 401,
+  "bundleKb": 4032,
   "baseline": "2026-10-23 bun run perf odd-orbit --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e. drawsFrame is that run's whole-frame draw ceiling, printed beside each gate run as a reference, not gated; every game is judged on the shared 16.7 ms p95 frame."
 }

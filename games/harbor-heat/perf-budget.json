@@ -1,4 +1,5 @@
 {
   "drawsFrame": 679,
+  "bundleKb": 4459,
   "baseline": "2026-10-25 bun run perf harbor-heat --seconds 6 --uncapped --quality high, GeForce RTX 3070 ANGLE D3D11, 1600x900, tier high, engine 5b64fdd6 (0.42.0) serving Games on origin/beta a6267c7f plus the harbor-look lane. drawsFrame is that run's whole-frame draw ceiling, printed beside each gate run as a reference, not gated; every game is judged on the shared 16.7 ms p95 frame."
 }

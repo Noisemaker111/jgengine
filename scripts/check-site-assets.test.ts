@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { assetLiterals } from "../apps/dev/gamePublicPlugin";
-import { missingGameAssets } from "./check-site-assets";
+import { bundleBudgetReport, gameBundles, missingGameAssets } from "./check-site-assets";
 
 const catalogs = { sources: [{ id: "kaykit-dungeon" }], library: [{ name: "city/street-lamp", origin: { provider: "quaternius" } }] };
 
@@ -47,5 +47,47 @@ describe("the site asset gate", () => {
     writeFileSync(join(root, "games", "harbor", "models", "town", "settlements", "inn.glb"), Buffer.concat([header, json]));
     writeFileSync(join(root, "games", "harbor", "models", "town", "scenery", "T_Wood.png"), "x");
     expect(missingGameAssets("harbor", `"/models/town/settlements/inn.glb"`, root, catalogs)).toEqual(["/models/town/scenery/T_Stone.png"]);
+  });
+});
+
+describe("the per-game bundle budget", () => {
+  function runner(): string {
+    // fixture-location: allow plain bytes on disk standing in for a built runner
+    const root = mkdtempSync(join(tmpdir(), "bundle-budget-"));
+    mkdirSync(join(root, "assets"), { recursive: true });
+    const put = (name: string, bytes: number) => writeFileSync(join(root, "assets", name), "x".repeat(bytes));
+    put("shell.js", 1000);
+    put("engine.js", 2048);
+    put("a-own.js", 1024);
+    put("b-own.js", 512);
+    put("a.css", 100);
+    put("entry-a.js", 10);
+    put("entry-b.js", 20);
+    writeFileSync(join(root, "index.html"), '<script src="/play/assets/shell.js"></script>');
+    const files = ["assets/shell.js", "assets/engine.js", "assets/a-own.js", "assets/b-own.js", "assets/a.css"];
+    writeFileSync(
+      join(root, "assets", "registries-X.js"),
+      `m.f=${JSON.stringify(files)}` +
+        '"../../../games/alpha/src/index.tsx":()=>a(()=>import(`./entry-a.js`),__vite__mapDeps([0,1,2,4])),' +
+        '"../../../games/beta/src/index.tsx":()=>a(()=>import(`./entry-b.js`),__vite__mapDeps([0,1,3]))',
+    );
+    return root;
+  }
+
+  test("counts a game's preloaded JS and CSS past the shell, and what only it loads", () => {
+    const bundles = gameBundles(runner());
+    expect(bundles.get("alpha")).toEqual({ bytes: 10 + 2048 + 1024 + 100, ownBytes: 10 + 1024 + 100, files: 4 });
+    expect(bundles.get("beta")).toEqual({ bytes: 20 + 2048 + 512, ownBytes: 20 + 512, files: 3 });
+  });
+
+  test("fails a game over its budget or without one, and prints a row per game", () => {
+    const bundles = gameBundles(runner());
+    const report = bundleBudgetReport(bundles, (game) => (game === "alpha" ? 3 : undefined));
+    expect(report.failures).toEqual([
+      "alpha: bundle 3.1 KiB is over its 3 KiB budget",
+      "beta: no bundleKb budget (add it to its perf-budget.json; today it is 2.5 KiB)",
+    ]);
+    expect(report.table.split("\n")).toHaveLength(3);
+    expect(bundleBudgetReport(bundles, () => 4).failures).toEqual([]);
   });
 });
