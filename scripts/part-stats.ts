@@ -54,7 +54,7 @@ const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)["']([^"'\n]+)["'
 const CREATE = /\bexport function create/g;
 
 /** Which count a source file belongs to, or null when it is neither core source nor game source. */
-export function layerOf(path: string): Layer | null {
+export function sourceLayer(path: string): Layer | null {
   if (!COUNTED.test(path) || NOT_COUNTED.test(path)) return null;
   if (path.startsWith(CORE_SRC)) return "core";
   if (/^games\/[^/]+\/src\//.test(path)) return "game";
@@ -90,7 +90,7 @@ export interface PartCount {
 export function countImporters(sources: readonly Source[]): PartCount[] {
   const counts = new Map<string, { core: number; games: number }>(PART_HOMES.map((home) => [home, { core: 0, games: 0 }]));
   for (const source of sources) {
-    const layer = layerOf(source.path);
+    const layer = sourceLayer(source.path);
     if (layer === null) continue;
     for (const home of importedHomes(source)) {
       const row = counts.get(home);
@@ -106,7 +106,7 @@ export function countImporters(sources: readonly Source[]): PartCount[] {
 export function countCreates(sources: readonly Source[]): number {
   let total = 0;
   for (const source of sources) {
-    if (layerOf(source.path) !== "core") continue;
+    if (sourceLayer(source.path) !== "core") continue;
     total += [...source.text.matchAll(CREATE)].length;
   }
   return total;
@@ -116,7 +116,7 @@ export function countCreates(sources: readonly Source[]): number {
 export function coreFolders(sources: readonly Source[]): string[] {
   const folders = new Set<string>();
   for (const source of sources) {
-    if (layerOf(source.path) !== "core") continue;
+    if (sourceLayer(source.path) !== "core") continue;
     const rest = source.path.slice(CORE_SRC.length);
     const slash = rest.indexOf("/");
     if (slash > 0) folders.add(rest.slice(0, slash));
@@ -143,11 +143,11 @@ export function trackedSourcePaths(root: string): string[] {
   return (result.stdout ?? "")
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => layerOf(line) !== null);
+    .filter((line) => sourceLayer(line) !== null);
 }
 
 export function readSources(root: string, paths: readonly string[]): Source[] {
-  return paths.filter((path) => layerOf(path) !== null).map((path) => ({ path, text: readFileSync(join(root, path), "utf8") }));
+  return paths.filter((path) => sourceLayer(path) !== null).map((path) => ({ path, text: readFileSync(join(root, path), "utf8") }));
 }
 
 /** A private copy of a part that is still written by hand, with where it is. */
@@ -187,7 +187,7 @@ function importsAny(source: Source, homes: readonly string[]): boolean {
 export function privateCopies(sources: readonly Source[]): PrivateCopy[] {
   const found: PrivateCopy[] = [];
   for (const source of sources) {
-    if (layerOf(source.path) === null || isPartHome(source.path)) continue;
+    if (sourceLayer(source.path) === null || isPartHome(source.path)) continue;
     const lines = source.text.split("\n");
     const thresholdOwned = importsAny(source, ["threshold/thresholds"]);
     const countdownOwned = importsAny(source, ["time/cooldown", "time/refillSlots"]);
