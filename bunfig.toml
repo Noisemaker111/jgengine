@@ -1,2 +1,4 @@
+preload = ["./scripts/three-preload.ts"]
+
 [test]
-preload = ["./scripts/test-preload.ts"]
+preload = ["./scripts/three-preload.ts"]
