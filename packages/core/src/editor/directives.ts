@@ -1,5 +1,6 @@
 import type { Aabb, Vec2 } from "../world/geometry";
 import { scatter } from "../scatter/scatter";
+import { pickWeighted } from "../random/pick";
 import { hashUnit } from "../random/rng";
 import { pointInPolygon, ringBounds } from "../world/polygon";
 import type {
@@ -136,14 +137,7 @@ export function materializeScatterDirective(
 }
 
 function pickSpecies(available: readonly EditorPopulationSpecies[], roll: number): EditorPopulationSpecies {
-  const total = available.reduce((sum, s) => sum + Math.max(0, s.weight ?? 1), 0);
-  if (total <= 0) return available[0]!;
-  let acc = roll * total;
-  for (const species of available) {
-    acc -= Math.max(0, species.weight ?? 1);
-    if (acc <= 0) return species;
-  }
-  return available[available.length - 1]!;
+  return pickWeighted(() => roll, available, (s) => Math.max(0, s.weight ?? 1)) ?? available[0]!;
 }
 
 /**

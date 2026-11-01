@@ -1,4 +1,5 @@
 import { length2 } from "../math/scalar";
+import { pickWeighted } from "../random/pick";
 import { seededRng } from "../random/rng";
 import type { NavGrid, NavPoint } from "../nav/navGrid";
 
@@ -249,26 +250,15 @@ function euclidean(from: NavPoint, poi: Poi): number {
 export function selectPoi(pois: readonly Poi[], from: NavPoint, options: SelectPoiOptions): Poi | null {
   const distanceBias = options.distanceBias ?? 1;
   const distanceOf = options.distance ?? euclidean;
-  const weights: number[] = [];
-  const eligible: Poi[] = [];
-  let total = 0;
+  const eligible: { poi: Poi; weight: number }[] = [];
   for (const poi of pois) {
     if (poi.capacity !== undefined && (options.occupancy?.(poi.id) ?? 0) >= poi.capacity) continue;
     const distance = distanceOf(from, poi);
     if (!Number.isFinite(distance)) continue;
-    const weight = Math.max(1e-6, (poi.appeal ?? 1) / (1 + distance) ** distanceBias);
-    eligible.push(poi);
-    weights.push(weight);
-    total += weight;
+    eligible.push({ poi, weight: Math.max(1e-6, (poi.appeal ?? 1) / (1 + distance) ** distanceBias) });
   }
-  if (eligible.length === 0 || total <= 0) return null;
   const roll = options.roll < 0 ? 0 : options.roll > 1 ? 1 : options.roll;
-  let cursor = roll * total;
-  for (let i = 0; i < eligible.length; i += 1) {
-    cursor -= weights[i]!;
-    if (cursor <= 0) return eligible[i]!;
-  }
-  return eligible[eligible.length - 1]!;
+  return pickWeighted(() => roll, eligible, (c) => c.weight)?.poi ?? null;
 }
 
 /** A many-agent visitor's current step of the seek→travel→arrive→dwell→depart loop. */
