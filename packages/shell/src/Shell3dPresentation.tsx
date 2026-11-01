@@ -716,7 +716,7 @@ export function Shell3dPresentation({
                   }
                   shadows={graphics.shadows ? "percentage" : false}
                   dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
-                  gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance" }}
+                  gl={{ powerPreference: "high-performance" }}
                   style={{ touchAction: "none" }}
                 >
                   <CanvasCoverFrameloop authored={canvasFrameloop} />

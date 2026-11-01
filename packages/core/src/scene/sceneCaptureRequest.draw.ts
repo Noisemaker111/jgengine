@@ -8,8 +8,8 @@
 
 import { shrinkCapture, type SaveThumbnailOptions } from "@jgengine/core/save/saveThumbnail.view";
 
-/** Reads the current scene frame as an image data URL, or null when the frame cannot be read. */
-export type SceneCapture = () => string | null;
+/** Reads a scene frame as an image data URL, or null when the frame cannot be read. */
+export type SceneCapture = () => string | null | Promise<string | null>;
 
 /** Why a capture request produced no image. */
 export type SceneCaptureFailure = "no-binding" | "no-frame" | "undecodable";
@@ -92,9 +92,9 @@ function waitForBinding(timeoutMs: number): Promise<SceneCapture | null> {
   });
 }
 
-function read(capture: SceneCapture): string | null {
+async function read(capture: SceneCapture): Promise<string | null> {
   try {
-    const image = capture();
+    const image = await capture();
     return typeof image === "string" && image.startsWith("data:image") ? image : null;
   } catch {
     return null;
@@ -115,7 +115,7 @@ export async function requestSceneCapture(
   await settleFrames(options.settleFrames ?? 2);
   const attempts = options.attempts ?? 3;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const image = read(capture);
+    const image = await read(capture);
     if (image !== null) return { ok: true, capture: image };
     if (attempt < attempts - 1) await settleFrames(1);
   }

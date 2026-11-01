@@ -8,13 +8,12 @@ import { createPhotoModeStore } from "@jgengine/core/ui/photoMode";
 import { PhotoModeControls, usePhotoMode } from "@jgengine/core/ui/photoMode.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import { SceneCaptureBinding, downloadImage } from "@jgengine/core/scene/sceneCapture.draw";
+import { SceneCaptureBinding, downloadImage, requestSceneCapture } from "@jgengine/core/scene/sceneCapture.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const SCOUT = "scout";
 
 const store = createPhotoModeStore({ active: false, hideHud: true });
-let captureFn: (() => string | null) | null = null;
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 80, d: 80 }, height: 4, frequency: 0.03, seed: "photo" }),
@@ -60,10 +59,9 @@ function PhotoUI() {
   const capture = (): void => {
     if (busy.current) return;
     busy.current = true;
-    // Let the HUD hide for a clean frame before grabbing it.
-    requestAnimationFrame(() => {
-      const url = captureFn?.();
-      if (url !== null && url !== undefined) downloadImage(url, "photo-mode.png");
+    // The request reads the frame drawn after the HUD hides.
+    void requestSceneCapture().then((shot) => {
+      if (shot.ok) downloadImage(shot.capture, "photo-mode.png");
       busy.current = false;
     });
   };
@@ -94,7 +92,7 @@ export const photoModeDemoGame: PlayableGame = {
   GameUI: PhotoUI,
   scene: {
     environment: () => <EnvironmentScene feature={terrainFeature} />,
-    WorldOverlay: () => <SceneCaptureBinding bind={(fn) => { captureFn = fn; }} />,
+    WorldOverlay: () => <SceneCaptureBinding />,
   },
   camera: {
     orbit: {

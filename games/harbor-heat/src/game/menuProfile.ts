@@ -1,10 +1,5 @@
-import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view";
 import type { GameSaveSystem } from "@jgengine/core/save/saveDocument";
-
-/**
- * The live frame a save card shows, read inside the canvas by `SceneCaptureBinding`.
- */
-const reader: { current: (() => string | null) | null } = { current: null };
+import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 
 /** What a dispatch keeps about its courier: the name they gave and the frame they left. */
 export const harborProfile: { driver: string | null; thumbnail: string | null } = {
@@ -12,20 +7,10 @@ export const harborProfile: { driver: string | null; thumbnail: string | null } 
   thumbnail: null,
 };
 
-export function bindHarborCapture(read: () => string | null): void {
-  reader.current = read;
-}
-
+/** The frame a save card shows: the live scene when the binding answers, else the last one kept. */
 export async function captureHarborThumb(): Promise<string | null> {
-  for (let attempt = 0; attempt < 12 && reader.current === null; attempt += 1) {
-    await new Promise<void>((resolve) => setTimeout(resolve, 50));
-  }
-  if (reader.current === null) return harborProfile.thumbnail;
-  if (typeof requestAnimationFrame === "function") {
-    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-  }
-  const shot = await shrinkCapture(reader.current(), { width: 320, height: 180 });
-  if (shot !== null) harborProfile.thumbnail = shot;
+  const shot = await requestSceneThumbnail({ width: 320, height: 180, bindingTimeoutMs: 600 });
+  if (shot.ok) harborProfile.thumbnail = shot.thumbnail;
   return harborProfile.thumbnail;
 }
 

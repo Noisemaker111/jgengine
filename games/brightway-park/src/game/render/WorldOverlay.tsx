@@ -17,7 +17,6 @@ import { traceNative } from "../evidence";
 import { hoverRefusal, placementHintStore } from "../build/placementHint";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
-import { bindParkCapture } from "../parkProfile";
 import { tileAt, cellCentre, groundAt, isLandTool, LEVEL_HEIGHT, lineCells, raisedCells, rectCells } from "../build/terrain";
 import { landCheck, LINE_KINDS } from "../build/commands";
 import { StallWares } from "./StallWares";
@@ -228,7 +227,7 @@ export function BrightwayParkWorldOverlay() {
     <>
       {import.meta.env.DEV&&<ScreenProbe/>}
       <HintArrow/>
-      <SceneCaptureBinding bind={bindParkCapture} />
+      <SceneCaptureBinding />
       <OverlayBodies />
     </>
   );

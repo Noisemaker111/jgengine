@@ -22,7 +22,6 @@ import { activeRoomLamps, deriveRoomPresentation, isBayWall, lampFlicker, ROOM_L
 import { captureProbe, initialize, keybinds, seatPlayer, setAim, tickControls, viewStore } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
-import { registerSceneCapture } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 import { ITEMS } from "./game/state";
 import { StationStructure, StationBatch } from "./game/stationArt";
 import { ModularArchitecture } from "./game/modularArt";
@@ -190,7 +189,7 @@ function WorldOverlay() {
   const place: Place = dive === null ? "home" : dive.stratum;
   const base = marrowOf(ctx);
   return <>
-    <SceneCaptureBinding bind={registerSceneCapture} />
+    <SceneCaptureBinding />
     <StratumAtmosphere place={place} /><Headlamp on={dive?.lamp === true} />
     {place === "home" ? <><Architecture place={place} /><StationStructure place={place} /></> : <><InteriorArt stratum={place} /><Architecture place={place} shell={false} /></>}
     <RoomLights /><StationModels place={place} assets={stationAssets} /><ModularArchitecture place={place} /><DamagedMachinery place={place} /><StencilDecals place={place} />

@@ -10,11 +10,11 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { ContinuePane, CreditsPane, GameMenu, PauseMenu, NewCharacterPane, SaveSlotsPane } from "@jgengine/react";
-import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
+import { requestSceneThumbnail } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const terrainFeature = environment({
@@ -133,8 +133,6 @@ const AVATARS = [
   { id: "mason", label: "Mason", glyph: "M" },
 ];
 
-const captureRef: { current: (() => string | null) | null } = { current: null };
-
 /**
  * Authored key art for the demo: a still-horizon wall, two beacon glows and a slow drift. A real
  * game passes its own `art` image or leaves the live 3D scene behind the menu; this keeps the demo
@@ -236,8 +234,8 @@ function posterThumbnail(): string | null {
 async function writeSave(name: string, thumbnail: string | null): Promise<void> {
   playtime.seconds = Math.max(playtime.seconds, Math.floor((Date.now() - run.startedAt) / 1000));
   SLOT_NAMES["slot-1"] = name;
-  const capture = captureRef.current;
-  const shot = thumbnail ?? (capture === null ? null : await shrinkCapture(capture(), { width: 320, height: 180 })) ?? posterThumbnail();
+  const live = thumbnail === null ? await requestSceneThumbnail({ width: 320, height: 180, bindingTimeoutMs: 600 }) : null;
+  const shot = thumbnail ?? (live?.ok === true ? live.thumbnail : null) ?? posterThumbnail();
   savedMeta.character = name;
   savedMeta.thumbnail = shot;
   await save.save();
@@ -479,7 +477,7 @@ export const gameMenuDemoGame: PlayableGame = {
   GameUI: GameMenuDemoUI,
   scene: {
     environment: () => <EnvironmentScene feature={terrainFeature} />,
-    WorldOverlay: () => <SceneCaptureBinding bind={(capture) => { captureRef.current = capture; }} />,
+    WorldOverlay: () => <SceneCaptureBinding />,
   },
   camera: {
     orbit: {

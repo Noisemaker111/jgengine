@@ -1,6 +1,5 @@
-import { useThree } from "@react-three/fiber";
+import { addAfterEffect, useThree } from "@react-three/fiber";
 import { useEffect } from "react";
-import type * as THREE from "three";
 
 import { registerSceneCapture } from "./sceneCaptureRequest.draw";
 
@@ -23,11 +22,12 @@ export interface CaptureRenderer {
 }
 
 /**
- * Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have
- * been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game
- * canvas already is); returns null if the backing canvas can't be read.
+ * Read the canvas to a PNG data URL. The game canvas keeps no copy of its last frame, so read in the
+ * task that rendered it (an R3F after-effect, as {@link SceneCaptureBinding} does) or right after a
+ * `gl.render` call; read any later and the frame is already gone. Returns null when the canvas can't
+ * be read.
  *
- * @capability capture-canvas read the live R3F frame to a PNG data URL (needs preserveDrawingBuffer)
+ * @capability capture-canvas read the frame an R3F canvas just rendered to a PNG data URL
  */
 export function captureCanvas(gl: CaptureRenderer): string | null {
   try {
@@ -47,27 +47,38 @@ export function downloadImage(dataUrl: string, filename = "screenshot.png"): voi
   anchor.click();
 }
 
+/** How long a capture waits for the next frame before reporting none (a covered canvas draws none). */
+const FRAME_WAIT_MS = 1000;
+
 /**
- * In-`<Canvas>` binder that hands the scene-capture function out to HUD code
- * living outside the reconciler (a photo-mode Capture button, a save slot's
- * thumbnail). Mount it inside the game's `WorldOverlay`; the reader is
- * registered for `requestSceneCapture`/`requestSceneThumbnail`, which wait for
- * this mount and the first painted frame. `bind` is for code that wants the
- * function directly and can be left out when a game only requests captures.
- * Renders nothing.
- *
- * @capability scene-capture-binding expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
+ * Read the frame the canvas renders next, in the same task, so the canvas needs no preserved drawing
+ * buffer. Resolves null when no frame renders within a second.
+ * @internal
  */
-export function SceneCaptureBinding({ bind }: { bind?: (capture: () => string | null) => void }): null {
-  const gl = useThree((state) => state.gl as unknown as THREE.WebGLRenderer & CaptureRenderer);
-  useEffect(() => {
-    const capture = (): string | null => captureCanvas(gl);
-    const unbind = registerSceneCapture(capture);
-    bind?.(capture);
-    return () => {
-      unbind();
-      bind?.(() => null);
+export function captureNextFrame(gl: CaptureRenderer): Promise<string | null> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (image: string | null): void => {
+      if (settled) return;
+      settled = true;
+      unsubscribe();
+      clearTimeout(timer);
+      resolve(image);
     };
-  }, [gl, bind]);
+    const unsubscribe = addAfterEffect(() => finish(captureCanvas(gl)));
+    const timer = setTimeout(() => finish(null), FRAME_WAIT_MS);
+  });
+}
+
+/**
+ * In-`<Canvas>` binder that registers the live scene for `requestSceneCapture` and
+ * `requestSceneThumbnail` (a photo-mode Capture button, a save slot's thumbnail), which wait for this
+ * mount and the first painted frame. Mount it inside the game's `WorldOverlay`. Renders nothing.
+ *
+ * @capability scene-capture-binding expose the live scene to outside-Canvas HUD (photo mode, save thumbnails)
+ */
+export function SceneCaptureBinding(): null {
+  const gl = useThree((state) => state.gl);
+  useEffect(() => registerSceneCapture(() => captureNextFrame(gl)), [gl]);
   return null;
 }

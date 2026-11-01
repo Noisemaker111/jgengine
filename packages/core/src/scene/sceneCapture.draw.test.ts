@@ -28,17 +28,14 @@ describe("captureCanvas", () => {
   });
 });
 
-describe("SceneCaptureBinding's props", () => {
-  /**
-   * A game that builds the overlay with `createElement` passes its `bind` in the props object. An
-   * optional props parameter (`{ bind } = {}`) inferred `Attributes & undefined` for React's
-   * overload, so the same call stopped typechecking in 0.38.2; this line is the regression.
-   */
-  const bound = createElement(SceneCaptureBinding, { bind: () => {} });
-  const bare = createElement(SceneCaptureBinding);
+describe("SceneCaptureBinding", () => {
+  test("a game's overlay builds it with createElement and no props", () => {
+    expect(createElement(SceneCaptureBinding)).toBeDefined();
+  });
 
-  test("createElement takes a bind, and takes none", () => {
-    expect(bound).toBeDefined();
-    expect(bare).toBeDefined();
+  test("a capture request waits for a reader that reads the next frame", async () => {
+    const unbind = registerSceneCapture(() => Promise.resolve("data:image/png;base64,BBBB"));
+    expect(await requestSceneCapture({ settleFrames: 0 })).toEqual({ ok: true, capture: "data:image/png;base64,BBBB" });
+    unbind();
   });
 });

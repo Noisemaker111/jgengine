@@ -10,7 +10,6 @@ import { DEFAULT_WALK_CODES, hotbarSlotBindings } from "@jgengine/core/input/act
 import { prompts } from "./game/prompts";
 import { entityModels, flockModels, objectModels } from "./game/world/models";
 import { GameUI } from "./game/ui/GameUI";
-import { bindHarborCapture } from "./game/menuProfile";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { createElement } from "react";
 import { harborKit, harborTheme } from "./game/ui/theme";
@@ -37,7 +36,7 @@ export const game = defineGame({
   world,
   scene: {
     editorLayers,
-    WorldOverlay: () => createElement(SceneCaptureBinding, { bind: bindHarborCapture }),
+    WorldOverlay: () => createElement(SceneCaptureBinding),
     entityModels,
     objectModels,
     // Blocks past 350 m read as massing: their props draw as one merged proxy per cell.

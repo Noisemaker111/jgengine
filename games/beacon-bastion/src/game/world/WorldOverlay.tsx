@@ -6,7 +6,6 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw";
 
-import { bindKeepCapture } from "../thumbs";
 
 import { buildCost, keep, towerStats } from "../keep";
 import { session } from "../session";
@@ -170,7 +169,7 @@ function ProjectileBolts() {
 export function BeaconBastionWorldOverlay() {
   return (
     <>
-      <SceneCaptureBinding bind={bindKeepCapture} />
+      <SceneCaptureBinding />
       <SpawnGate at={SPAWN_POINT} />
       {HAS_FLANK ? <SpawnGate at={FLANK_GATE} facing={Math.PI / 2} /> : null}
       <BuildPlots />
