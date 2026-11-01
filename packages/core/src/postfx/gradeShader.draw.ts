@@ -3,6 +3,7 @@ import { requireUniform } from "@jgengine/core/render/uniformMaterial.draw";
 import { ShaderPass } from "three-stdlib";
 
 import type { GradeConfig, LutCube } from "@jgengine/core/render/postProcessing";
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { parseCubeLut } from "./cubeLut";
 
 const DEFAULT_LIFT: readonly [number, number, number] = [0.012, 0.01, 0.018];
@@ -143,7 +144,7 @@ export function createGradePass(config: GradeConfig = {}): ShaderPass {
       return pass;
     }
     if (/\.cube(\?.*)?$/i.test(lut.url)) {
-      void fetch(lut.url)
+      void fetch(resolveAssetBaseUrl(lut.url))
         .then(async (response) => {
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           return parseCubeLut(await response.text());

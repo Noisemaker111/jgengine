@@ -248,7 +248,7 @@ function NoteReader(): ReactNode {
   return (
     <div
       data-note-open=""
-      style={{ position: "absolute", right: 16, top: 40, width: 380, maxWidth: "45vw", maxHeight: "50vh", overflowY: "auto", background: "#f1e6c8f2", color: "#3a2c18", padding: "14px 18px", borderRadius: 4, boxShadow: "0 8px 30px #000a", fontFamily: "Georgia, serif", pointerEvents: "none" }}
+      style={{ position: "absolute", right: 16, top: 40, width: 380, maxWidth: "45vw", maxHeight: "50vh", overflowY: "auto", background: "#f1e6c8f2", color: "#3a2c18", padding: "14px 18px", borderRadius: 4, boxShadow: "0 8px 30px #000a", fontFamily: "var(--kit-font-body)", pointerEvents: "none" }}
     >
       <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 6 }}>{reading.title}</div>
       <div style={{ fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{reading.text}</div>

@@ -1,3 +1,4 @@
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { useEffect } from "react";
 
 /** One font file a game ships (an OFL or other licensed TTF/WOFF2 bundled with the game). */
@@ -50,7 +51,7 @@ export function loadGameFonts(faces: readonly GameFontFace[]): void {
     const key = `${face.family}|${face.src}`;
     if (loaded.has(key)) continue;
     loaded.add(key);
-    const font = new FontFace(face.family, `url(${JSON.stringify(face.src)})`, {
+    const font = new FontFace(face.family, `url(${JSON.stringify(resolveAssetBaseUrl(face.src))})`, {
       weight: String(face.weight ?? "100 900"),
       style: face.style ?? "normal",
       display: "swap",
