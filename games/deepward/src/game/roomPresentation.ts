@@ -5,6 +5,10 @@ export const ROOM_LIGHT_BUDGET = 7; // The eighth local light is the existing st
 export const ROOM_LIGHT_REACH = 12;
 export const ROOM_LIGHT_INTENSITY: Readonly<Record<Place, number>> = { home: 17, vault: 27, cold: 13, wells: 6, choir: 3 };
 const WALL_THICKNESS = 0.22, SLAB_THICKNESS = 0.14, LAMP_SPACING = 8;
+/** A wall at least this long is built from authored wall-bay models; shorter ones stay a plain slab. */
+export const WALL_BAY_WIDTH = 3;
+export const wallLength = (surface: RoomSurface): number => (surface.axis === "x" ? surface.size[0] : surface.size[2]);
+export const isBayWall = (surface: RoomSurface): boolean => surface.kind === "wall" && wallLength(surface) >= WALL_BAY_WIDTH;
 export interface RoomSurface { id: string; at: Triple; size: Triple; kind: "floor" | "ceiling" | "wall"; axis?: "x" | "z" }
 export interface RoomLamp { id: string; fixture: Triple; light: Triple; width: number; place: Place }
 export interface RoomPresentation { surfaces: RoomSurface[]; lamps: RoomLamp[]; floorY: number; ceilingY: number }

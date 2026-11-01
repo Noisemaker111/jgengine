@@ -18,13 +18,14 @@ import { PALETTE as C, signTexture, IndustrialBox, SALVAGE_PLACARD, type Triple 
 import { surfaceMaterial, type IndustrialSurface } from "./game/industrialMaterials";
 import { FitterModel } from "./game/fitterArt";
 import { ServiceWeapon, serviceWeaponPose } from "./game/weaponArt";
-import { activeRoomLamps, deriveRoomPresentation, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
+import { activeRoomLamps, deriveRoomPresentation, isBayWall, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
 import { captureProbe, initialize, keybinds, seatPlayer, setAim, tickControls, viewStore } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { registerSceneCapture } from "@jgengine/core/scene/sceneCaptureRequest.draw";
 import { ITEMS } from "./game/state";
 import { StationStructure, StationBatch } from "./game/stationArt";
+import { ModularArchitecture } from "./game/modularArt";
 import { InteriorArt } from "./game/interiorArt";
 import { ShiftLocker } from "./game/fixtureArt";
 import { GameUI } from "./game/ui/GameUI";
@@ -69,6 +70,7 @@ function Architecture({ place, shell = true }: { place: Place; shell?: boolean }
       groups.set(key, list);
     };
     for (const s of plan.surfaces) {
+      if (isBayWall(s)) continue;
       part(s.id, s.at, s.size, s.kind === "floor" ? "#4b5c61" : s.kind === "ceiling" ? C.panel : C.wall, s.kind === "floor" ? "floor" : "paint");
       if (s.kind !== "wall") continue;
       part(`${s.id}:base`, [s.at[0],s.at[1]-s.size[1]/2+0.14,s.at[2]], [s.size[0]+0.02,0.18,s.size[2]+0.02], C.steel, "steel");
@@ -188,7 +190,7 @@ function WorldOverlay() {
     <SceneCaptureBinding bind={registerSceneCapture} />
     <StratumAtmosphere place={place} /><Headlamp on={dive?.lamp === true} />
     {place === "home" ? <><Architecture place={place} /><StationStructure place={place} /></> : <><InteriorArt stratum={place} /><Architecture place={place} shell={false} /></>}
-    <RoomLights /><StationModels place={place} assets={stationAssets} />
+    <RoomLights /><StationModels place={place} assets={stationAssets} /><ModularArchitecture place={place} />
     {dive === null && <MarrowBays world={base} />}
     {dive !== null && <StratumDressing dive={dive} deep={view.deep} world={base} />}
     {editorLayers.markers.filter(m => m.kind === "deepward-station-sign" && m.meta?.["place"] === place).map(m => <Sign key={m.id} at={[m.position.x,m.position.y,m.position.z]} title={m.label ?? m.id} sub={String(m.meta?.["subtitle"] ?? "")} width={Number(m.meta?.["width"] ?? 2.6)} turn={m.rotationY ?? 0} color={C.amber} />)}

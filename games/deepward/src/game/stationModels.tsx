@@ -6,7 +6,8 @@ export function stationModelMarkers(place: Place) {
  return editorLayers.markers.filter(marker => marker.kind === 'deepward-station-model' && marker.meta?.["place"] === place);
 }
 export function stationModelReplacements(place: Place): Set<string> {
- return new Set(stationModelMarkers(place).flatMap(marker => {
+ const authored = editorLayers.markers.filter(marker => (marker.kind === 'deepward-station-model' || marker.kind === 'deepward-architecture') && marker.meta?.["place"] === place);
+ return new Set(authored.flatMap(marker => {
   const labels=marker.meta?.["replaces"];
   if(labels===undefined)return [];
   if(!Array.isArray(labels)||!labels.every(label=>typeof label==='string'))throw Error(`Invalid authored replacement links: ${marker.id}`);
