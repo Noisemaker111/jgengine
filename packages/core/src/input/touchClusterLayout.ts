@@ -1,3 +1,4 @@
+import { clamp } from "@jgengine/core/math/scalar";
 import type { TouchButton, TouchScheme } from "@jgengine/core/input/touchScheme";
 
 /** Button sizes for the thumb cluster, in CSS px, derived from the screen's short side. */
@@ -14,7 +15,6 @@ export interface TouchClusterSizes {
 /** Fallback short side when no viewport is measurable (tests, SSR): a phone held in landscape. */
 export const DEFAULT_TOUCH_SHORT_SIDE = 390;
 
-const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
 /**
  * Cluster sizes scaled to the viewport's short side: the main button about a fifth of it, secondaries

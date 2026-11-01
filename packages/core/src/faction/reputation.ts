@@ -1,3 +1,4 @@
+import { clamp } from "../math/scalar";
 import { tierAt } from "../threshold/thresholds";
 import type { FactionRelation } from "./factions";
 
@@ -60,10 +61,6 @@ export function createReputationLedger(config: ReputationLedgerConfig): Reputati
   const max = config.max ?? Number.POSITIVE_INFINITY;
   const records = new Map<string, Map<string, number>>();
 
-  function clamp(value: number): number {
-    return Math.min(max, Math.max(min, value));
-  }
-
   function standing(actorId: string, factionId: string): number {
     const stored = records.get(actorId)?.get(factionId);
     if (stored !== undefined) return stored;
@@ -71,7 +68,7 @@ export function createReputationLedger(config: ReputationLedgerConfig): Reputati
   }
 
   function store(actorId: string, factionId: string, value: number): number {
-    const clamped = clamp(value);
+    const clamped = clamp(value, Math.min(min, max), max);
     let row = records.get(actorId);
     if (row === undefined) {
       row = new Map();

@@ -1,6 +1,6 @@
 // @skill jgengine-world
 import { uniformGravity, type GravityField } from "../physics/gravityField";
-import { clamp01 } from "../math/scalar";
+import { clamp, clamp01 } from "../math/scalar";
 
 const DEFAULT_SUBSTEP = 1 / 240;
 const SEA_LEVEL_DENSITY = 1.225;
@@ -852,7 +852,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
 
   function pilotCommand(input: RigidAircraftInput): AircraftAssistCommand {
     limited = false;
-    return { pitch: clamp1(input.pitch), roll: clamp1(input.roll), yaw: clamp1(input.yaw) };
+    return { pitch: clamp(input.pitch, -1, 1), roll: clamp(input.roll, -1, 1), yaw: clamp(input.yaw, -1, 1) };
   }
 
   function assist(a: AircraftAssistTuning, input: RigidAircraftInput, h: number, bx: number, by: number, bz: number): AircraftAssistCommand {
@@ -960,9 +960,9 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       command.roll = out.roll;
       command.yaw = out.yaw;
     }
-    command.pitch = clamp1(command.pitch);
-    command.roll = clamp1(command.roll);
-    command.yaw = clamp1(command.yaw);
+    command.pitch = clamp(command.pitch, -1, 1);
+    command.roll = clamp(command.roll, -1, 1);
+    command.yaw = clamp(command.yaw, -1, 1);
     return command;
   }
 
@@ -1095,9 +1095,6 @@ function peakOf(curve: readonly (readonly [number, number])[]): number {
   return peak;
 }
 
-function clamp1(value: number): number {
-  return Math.max(-1, Math.min(1, value));
-}
 
 /** Heading, nose-up pitch and right bank of a body orientation (three.js `YXZ` Euler with `x = -pitch`). */
 function attitudeOf(q: { qx: number; qy: number; qz: number; qw: number }): { heading: number; pitch: number; bank: number } {

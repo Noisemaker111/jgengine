@@ -1,3 +1,4 @@
+import { clamp } from "../math/scalar";
 import { allActionCodes, type ActionCodesMap } from "./actionBindings";
 
 /** A serializable gamepad state sampled from the platform input API. */
@@ -97,10 +98,6 @@ export interface GamepadFrame {
 }
 
 
-function clampUnit(value: number): number {
-  return Number.isFinite(value) ? (value < -1 ? -1 : value > 1 ? 1 : value) : 0;
-}
-
 function rescale(magnitude: number, inner: number, outer: number, curve: number): number {
   if (magnitude <= inner) return 0;
   const normalized = magnitude >= outer ? 1 : (magnitude - inner) / (outer - inner);
@@ -143,7 +140,8 @@ export function resolveGamepadFrame(
   if (radial) {
     let sumSquares = 0;
     for (let index = 0; index < snapshot.axes.length; index += 1) {
-      const value = clampUnit(snapshot.axes[index] ?? 0);
+      const axisValue = snapshot.axes[index] ?? 0;
+      const value = Number.isFinite(axisValue) ? clamp(axisValue, -1, 1) : 0;
       sumSquares += value * value;
     }
     const magnitude = Math.sqrt(sumSquares);
@@ -165,7 +163,8 @@ export function resolveGamepadFrame(
       }
       const axis = readAxis(code);
       if (axis === null) continue;
-      const raw = clampUnit(snapshot.axes[axis.index] ?? 0);
+      const axisValue = snapshot.axes[axis.index] ?? 0;
+      const raw = Number.isFinite(axisValue) ? clamp(axisValue, -1, 1) : 0;
       const shaped = radial ? raw * radialFactor : Math.sign(raw) * rescale(Math.abs(raw), inner, outer, curve);
       const value = shaped * axis.sign;
       if (value > actionAnalog) actionAnalog = value;
