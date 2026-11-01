@@ -2,6 +2,7 @@ import { devtools } from "../devtools/devtools";
 import { restoreRng, rngStateOf, seededRng } from "../random/rng";
 import { lanePoseInto, type LaneGraph, type LaneIntersection, type LaneSpan } from "./laneGraph";
 import type { Waypoint } from "./pathFollow";
+import { tickCooldown } from "../time/cooldown";
 
 const EPSILON = 1e-9;
 const TWO_PI = Math.PI * 2;
@@ -482,7 +483,7 @@ export function createTraffic(options: TrafficOptions): Traffic {
   function phaseSignals(dt: number): void {
     for (const state of intersections.values()) {
       state.elapsed += dt;
-      if (state.cooldown > 0) state.cooldown = Math.max(0, state.cooldown - dt);
+      state.cooldown = tickCooldown(state.cooldown, dt);
       const lane = state.lane;
       const program = lane.signal;
       if (program === null || state.phases.length === 0) {
@@ -645,7 +646,7 @@ export function createTraffic(options: TrafficOptions): Traffic {
       const blocked =
         list !== undefined && car.queueIndex >= 0 && list[car.queueIndex + 1] !== undefined && car.speed < target * 0.6;
       car.blockedSeconds = blocked ? car.blockedSeconds + dt : 0;
-      if (car.changeCooldown > 0) car.changeCooldown = Math.max(0, car.changeCooldown - dt);
+      car.changeCooldown = tickCooldown(car.changeCooldown, dt);
 
       car.arc = arc;
       if (car.lateral > EPSILON) {

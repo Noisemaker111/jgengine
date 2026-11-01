@@ -5138,6 +5138,10 @@
 
 - `GameTime` (interface): interface GameTime { year: number; month: number; monthName: string; monthNameFull: string; dayOfMonth: number; hour: number; minute: number; second: number; formattedDate: string; formattedDateFull: string; formattedTime: string; formatted: string } — ⚠ undocumented
 
+## @jgengine/core/time/cooldown
+
+- `tickCooldown` (function): function tickCooldown(remaining: number, dt: number): number — One step of a plain-number countdown: `remaining` seconds less `dt`, never below 0. Keep the number in serializable state and read `> 0` as "still waiting"; for a clocked or paced wait use the schedule.
+
 ## @jgengine/core/time/gameClock
 
 - `DEFAULT_TIME_SCALE` (const): const DEFAULT_TIME_SCALE: 24 — Simulation clock: real time scaled into game time, plus the derived game-day counter.

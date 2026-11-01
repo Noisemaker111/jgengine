@@ -91,4 +91,20 @@ describe("refill slots", () => {
     expect(() => slots.readyAt("burrow", 0)).toThrow('no slot named "burrow"');
     expect(slots.ready(1e6)).toEqual(["den"]);
   });
+
+  test("an explicit wait skips the rng, remaining counts down, postpone pushes it later, add and remove change the slot list", () => {
+    const slots = createRefillSlots({ slots: ["a"], refillSeconds: [10, 20] }, () => {
+      throw new Error("rng must not be drawn");
+    });
+    slots.empty("a", 5, 8);
+    expect(slots.remaining("a", 6)).toBe(7);
+    slots.postpone("a", 2);
+    expect(slots.ready(14.9)).toEqual([]);
+    expect(slots.ready(15)).toEqual(["a"]);
+    slots.add("b");
+    expect(slots.ready(15)).toEqual(["a", "b"]);
+    slots.remove("a");
+    expect(slots.ready(15)).toEqual(["b"]);
+    expect(() => slots.empty("a", 0)).toThrow();
+  });
 });

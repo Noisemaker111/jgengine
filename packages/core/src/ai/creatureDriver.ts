@@ -4,6 +4,7 @@ import type { CompanionIntent } from "../scene/companion";
 import { createPerception, type PerceptionPosition, type PerceptionService } from "../sensor/perception";
 
 import { decideTemperament, type TemperamentConfig, type TemperamentMode } from "./temperament";
+import { tickCooldown } from "../time/cooldown";
 
 /** How a creature's body moves and strikes. Speeds are metres per second. */
 export interface CreatureBody {
@@ -213,7 +214,7 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
       const self = ctx.scene.entity.get(id);
       if (entry === undefined || self === null) return { mode: "still", targetId: null, struck: false, reason: "not driven" };
       const state = entry.state;
-      state.cooldown = Math.max(0, state.cooldown - dt);
+      state.cooldown = tickCooldown(state.cooldown, dt);
       if (mind.kind === "still") {
         state.wanderTo = null;
         return { mode: "still", targetId: null, struck: false, reason: "still" };

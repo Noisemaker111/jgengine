@@ -1,5 +1,6 @@
 import { clamp } from "../math/scalar";
 import { resolveRng } from "../random/resolveRng";
+import { createRefillSlots } from "../time/refillSlots";
 
 /** A quantity that is either fixed or a uniformly sampled `[min, max]` range resolved by the field rng. */
 export type Quantity = number | readonly [number, number];
@@ -124,18 +125,16 @@ interface NodeRuntime {
   budget: number;
   maxBudget: number;
   respawnBudget: number;
-  depleted: boolean;
-  respawnTimer: number;
   respawnBlocked: boolean;
 }
 
-function toState(node: NodeRuntime): ResourceNodeState {
+function toState(node: NodeRuntime, depleted: boolean, respawnTimer: number): ResourceNodeState {
   return {
     id: node.def.id,
     budget: node.budget,
     maxBudget: node.maxBudget,
-    depleted: node.depleted,
-    respawnTimer: node.respawnTimer,
+    depleted,
+    respawnTimer,
     respawnBlocked: node.respawnBlocked,
     fraction: node.maxBudget > 0 ? clamp(node.budget / node.maxBudget, 0, 1) : 0,
   };
@@ -158,6 +157,14 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
   const nodes = new Map<string, NodeRuntime>();
   const order: string[] = [];
 
+  const slots = createRefillSlots({ slots: [], refillSeconds: [0, 0] }, rng);
+  const waiting = new Set<string>();
+  let now = 0;
+  const stateOf = (node: NodeRuntime): ResourceNodeState => {
+    const id = node.def.id;
+    return toState(node, !slots.isFilled(id), slots.remaining(id, now));
+  };
+
   const listed = new Set<string>();
   const materialize = (def: ResourceNodeDef): NodeRuntime => {
     const node: NodeRuntime = {
@@ -165,12 +172,13 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
       budget: def.budget,
       maxBudget: def.budget,
       respawnBudget: def.respawnBudget ?? def.budget,
-      depleted: def.budget <= 0,
-      respawnTimer: 0,
       respawnBlocked: false,
     };
     nodes.set(def.id, node);
     order.push(def.id);
+    slots.add(def.id);
+    if (def.budget > 0) slots.fill(def.id);
+    else if (def.respawn !== undefined) waiting.add(def.id);
     return node;
   };
   for (const def of config.nodes) {
@@ -188,20 +196,22 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
   };
   const forget = (id: string): void => {
     nodes.delete(id);
+    slots.remove(id);
+    waiting.delete(id);
     order.splice(order.indexOf(id), 1);
   };
 
   const isSuppressed = (node: NodeRuntime): boolean => {
     if (node.respawnBlocked) return true;
     if (config.respawnSuppressed === undefined) return false;
-    return config.respawnSuppressed(toState(node));
+    return config.respawnSuppressed(stateOf(node));
   };
 
   return {
     harvest(nodeId, tool, options = {}) {
       const node = getNode(nodeId);
-      if (node.depleted || node.budget <= 0) {
-        return { nodeId, granted: [], spent: 0, harvested: false, depleted: node.depleted };
+      if (!slots.isFilled(nodeId) || node.budget <= 0) {
+        return { nodeId, granted: [], spent: 0, harvested: false, depleted: !slots.isFilled(nodeId) };
       }
 
       const power = tool.power !== undefined && tool.power > 0 ? tool.power : 1;
@@ -222,35 +232,36 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
       let depleted = false;
       if (node.budget <= 0) {
         node.budget = 0;
-        node.depleted = true;
         depleted = true;
-        node.respawnTimer = node.def.respawn ?? 0;
+        slots.empty(nodeId, now, node.def.respawn ?? 0);
+        if (node.def.respawn !== undefined) waiting.add(nodeId);
       }
 
       return { nodeId, granted, spent, harvested: true, depleted };
     },
     tick(dt) {
       if (dt <= 0) return;
-      for (const id of [...order]) {
+      now += dt;
+      for (const id of waiting) {
         const node = nodes.get(id)!;
-        if (!node.depleted || node.def.respawn === undefined) continue;
-        if (isSuppressed(node)) continue;
-        node.respawnTimer -= dt;
-        if (node.respawnTimer <= 0) {
-          node.budget = node.respawnBudget;
-          node.depleted = false;
-          node.respawnTimer = 0;
-          if (!listed.has(id) && node.budget >= node.maxBudget) forget(id);
+        if (isSuppressed(node)) {
+          slots.postpone(id, dt);
+          continue;
         }
+        if (slots.remaining(id, now) > 0) continue;
+        node.budget = node.respawnBudget;
+        slots.fill(id);
+        waiting.delete(id);
+        if (!listed.has(id) && node.budget >= node.maxBudget) forget(id);
       }
     },
     state(nodeId) {
-      return toState(getNode(nodeId));
+      return stateOf(getNode(nodeId));
     },
     isDepleted(nodeId) {
       // An untouched resolvable node is full; asking must not materialize it.
       const node = nodes.get(nodeId);
-      if (node !== undefined) return node.depleted;
+      if (node !== undefined) return !slots.isFilled(nodeId);
       if (config.resolve?.(nodeId)?.id === nodeId) return false;
       throw new Error(`unknown resource node "${nodeId}"`);
     },
@@ -262,7 +273,7 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
     },
     snapshot() {
       const out: Record<string, ResourceNodeState> = {};
-      for (const id of order) out[id] = toState(nodes.get(id)!);
+      for (const id of order) out[id] = stateOf(nodes.get(id)!);
       return out;
     },
     hydrate(snapshot) {
@@ -273,8 +284,13 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
         if (saved === undefined) continue;
         const node = nodes.get(id)!;
         node.budget = saved.budget;
-        node.depleted = saved.depleted;
-        node.respawnTimer = saved.respawnTimer;
+        if (saved.depleted) {
+          slots.empty(id, now, saved.respawnTimer);
+          if (node.def.respawn !== undefined) waiting.add(id);
+        } else {
+          slots.fill(id);
+          waiting.delete(id);
+        }
         node.respawnBlocked = saved.respawnBlocked;
       }
     },

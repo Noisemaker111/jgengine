@@ -1950,6 +1950,16 @@
       "intent": "save a game to Convex (cloud) through the SaveBackend seam"
     },
     {
+      "id": "cooldown",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/time/cooldown",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "tick a per-agent seconds countdown that gates an action"
+    },
+    {
       "id": "cosmetics",
       "packages": [
         "@jgengine/core"

@@ -22,8 +22,16 @@ export interface RefillSlots {
   ready(now: number): string[];
   /** Mark a slot as holding its thing. */
   fill(slot: string): void;
-  /** The slot's thing is gone: it is ready again after a refill wait from `now`. */
-  empty(slot: string, now: number): void;
+  /** The slot's thing is gone: it is ready again after a refill wait from `now`, or after `seconds` exactly when given (no rng draw). */
+  empty(slot: string, now: number, seconds?: number): void;
+  /** Seconds from `now` until an empty slot is ready; 0 when it is ready or filled. */
+  remaining(slot: string, now: number): number;
+  /** Push an empty slot's ready time later by `seconds`, e.g. while something holds the spot. */
+  postpone(slot: string, seconds: number): void;
+  /** Add a new empty slot, ready at time 0. A name already present is left as it is. */
+  add(slot: string): void;
+  /** Drop a slot and its state. */
+  remove(slot: string): void;
   isFilled(slot: string): boolean;
   /** Set when an empty slot is ready, e.g. to spread a world's first fills. */
   readyAt(slot: string, at: number): void;
@@ -67,10 +75,27 @@ export function createRefillSlots(config: RefillSlotsConfig, rng: () => number):
     fill(slot) {
       named(slot).filled = true;
     },
-    empty(slot, now) {
+    empty(slot, now, seconds) {
       const state = named(slot);
       state.filled = false;
-      state.readyAt = now + range[0] + rng() * (range[1] - range[0]);
+      state.readyAt = now + (seconds !== undefined ? Math.max(0, seconds) : range[0] + rng() * (range[1] - range[0]));
+    },
+    remaining(slot, now) {
+      const state = named(slot);
+      return state.filled ? 0 : Math.max(0, state.readyAt - now);
+    },
+    postpone(slot, seconds) {
+      const state = named(slot);
+      if (!state.filled) state.readyAt += Math.max(0, seconds);
+    },
+    add(slot) {
+      if (slots.has(slot)) return;
+      order.push(slot);
+      slots.set(slot, { filled: false, readyAt: 0 });
+    },
+    remove(slot) {
+      if (!slots.delete(slot)) return;
+      order.splice(order.indexOf(slot), 1);
     },
     isFilled: (slot) => slots.get(slot)?.filled ?? false,
     readyAt(slot, at) {

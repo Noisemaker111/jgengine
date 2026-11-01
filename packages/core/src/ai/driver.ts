@@ -1,6 +1,7 @@
 import type { AxisInput } from "../input/axisInput";
 import { executionError, type DifficultyProfile } from "./difficulty";
 import { clamp01 } from "../math/scalar";
+import { tickCooldown } from "../time/cooldown";
 
 /**
  * A difficulty-aware driver brain: pose + goal in, the shared {@link AxisInput}
@@ -188,7 +189,7 @@ export function driveStep(
 
   // Delay-line target: resample the live goal every reactionSeconds, so the steering target is
   // the goal as of up to that long ago and a moving goal is chased where it *was*.
-  state.sampleCooldown -= dt;
+  state.sampleCooldown = tickCooldown(state.sampleCooldown, dt);
   if (state.sampleCooldown <= 0) {
     state.targetX = goal.x;
     state.targetZ = goal.z;
@@ -208,7 +209,7 @@ export function driveStep(
   const headingError = wrapAngle(Math.atan2(dx, dz) - pose.heading);
 
   // Steering wobble: resample on an interval so it reads as a loose wheel, not per-frame noise.
-  state.jitterCooldown -= dt;
+  state.jitterCooldown = tickCooldown(state.jitterCooldown, dt);
   if (state.jitterCooldown <= 0) {
     state.jitter = executionError(profile, rng, tuning.jitterScaleRadians ?? 0.35);
     state.jitterCooldown = tuning.jitterIntervalSeconds ?? 0.35;
