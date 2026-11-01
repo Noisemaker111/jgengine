@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 
-import { resolveGrassObject } from "@jgengine/core/grass/grassKind";
+import { resolveGrassObject, type ResolvedGrass } from "@jgengine/core/grass/grassKind";
+import { resolveGroundCoverObject } from "@jgengine/core/plants/groundCover/groundCoverField";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import { clearanceMasksFrom, DEFAULT_CLEARANCE_KINDS } from "@jgengine/core/scatter/scatterRegion";
@@ -49,8 +50,8 @@ function sampleHeight(field: TerrainField, x: number, z: number): number {
  * live-sync document context object is recreated per render) rebuilds the blade stream and
  * shader material from scratch, which shows up as recurring render hitches.
  */
-function OneGrass({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
-  const resolved = useMemo(() => resolveGrassObject(object), [object]);
+function OneGrass({ object, context, resolve }: { object: SceneKindObject; context: SceneKindRenderContext; resolve: (object: SceneKindObject) => ResolvedGrass | null }) {
+  const resolved = useMemo(() => resolve(object), [object, resolve]);
   const heightAt = useCallback((x: number, z: number) => resolved === null ? 0 :
     sampleHeight(context.field, x + resolved.center[0], z + resolved.center[2]) - resolved.center[1], [context.field, resolved]);
   const area = useMemo<[number, number] | null>(
@@ -105,12 +106,19 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
   );
 }
 
-/** Registers the `grass_field` volume renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */
+/** Registers the `grass_field` and `ground_cover` volume renderers. Called by `registerBuiltinSceneKindRenderers`. @internal */
 export function registerGrassFieldRenderer(): void {
   registerSceneKindRenderer("grass_field", ({ objects, context }) => (
     <>
       {objects.map((object) => (
-        <OneGrass key={object.id} object={object} context={context} />
+        <OneGrass key={object.id} object={object} context={context} resolve={resolveGrassObject} />
+      ))}
+    </>
+  ));
+  registerSceneKindRenderer("ground_cover", ({ objects, context }) => (
+    <>
+      {objects.map((object) => (
+        <OneGrass key={object.id} object={object} context={context} resolve={resolveGroundCoverObject} />
       ))}
     </>
   ));
