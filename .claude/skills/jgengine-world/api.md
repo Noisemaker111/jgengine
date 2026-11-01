@@ -3633,6 +3633,7 @@
 
 - `VehicleBackendLink` (interface): interface VehicleBackendLink — A vehicle sim's presence in a physics backend: a kinematic chassis that shoves props, and a wall-aware move clamp.
 - `VehicleBackendLinkOptions` (interface): interface VehicleBackendLinkOptions — Options for {@link createVehicleBackendLink}.
+- `VehicleBackendLinkState` (interface): interface VehicleBackendLinkState — A link's serializable state: the pose its chassis last synced to. Wheel states are re-probed, not stored.
 - `VehicleLinkHit` (interface): interface VehicleLinkHit — A wall the last clamped move ran into.
 - `VehicleLinkPose` (interface): interface VehicleLinkPose — The pose fields {@link VehicleBackendLink.sync} reads; a `VehicleDynamicsStep` fits.
 - `createVehicleBackendLink` (function): function createVehicleBackendLink(backend: PhysicsBackend, options: VehicleBackendLinkOptions): VehicleBackendLink — Puts a vehicle sim (`createVehicleDynamics`) into a {@link PhysicsBackend} world without handing its handling to the rigid-body solver: the sim still owns grip and balance, while a kinematic chassis box follows it so Rapier or `PhysicsWorld` props get shoved, and `clampMove` sweeps that box so walls and parked cars stop it and it slides along them.
