@@ -2003,7 +2003,7 @@
 - `LockCellKind` (type): type LockCellKind = "open" | "gate" | "seat" | "trap" — What a revealed cell renders as: a plain open notch, an exact tumbler gate, the bolt seat (win condition), or a ward-trap that looks open but jams on contact.
 - `LockSpec` (interface): interface LockSpec — A generated lock board. `open[col]` holds every enterable row in that column.
 - `LockStepResult` (type): type LockStepResult = "advanced" | "slip" | "bind" | "trap" | "success" — Outcome of one {@link stepLock} call: `advanced`/`success` move the pick, `slip`/`bind`/`trap` do not and should cost a life.
-- `LockTierSpec` (interface): interface LockTierSpec — Difficulty dials for one lock: board size, forgiveness band, gates, fog window, traps.
+- `LockTierSpec` (interface): interface LockTierSpec extends ThresholdBoundary — Difficulty dials for one lock, a Ladder step (`at` is its place in the difficulty order): board size, forgiveness band, gates, fog window, traps.
 - `generateLock` (function): function generateLock(seed: string | number, tier: LockTierSpec): LockSpec — Generate a solvable depth-puzzle lock: a "Tumbler's Path" board with a guaranteed solution path carved first, an open-row forgiveness band wrapped around it, tumbler gate columns that pinch to a single exact row, and optional ward-traps that look open but jam on contact. Deterministic: the same (seed, tier) always yields the same board.
 - `solveLock` (function): function solveLock(spec: LockSpec): boolean — Whether the board has a path from the start row to the bolt seat at all.
 - `solveLockPath` (function): function solveLockPath(spec: LockSpec): number[] | null — Return a concrete row-per-column solution, or null if the board is unsolvable.
@@ -5125,7 +5125,7 @@
 
 ## @jgengine/core/time/beatClock
 
-- `BeatAccuracyTier` (interface): interface BeatAccuracyTier { id: string; windowSec: number } — ⚠ undocumented
+- `BeatAccuracyTier` (interface): interface BeatAccuracyTier extends ThresholdBoundary — A judgement window, a Ladder step read descending: `at` is the maximum absolute delta (game-seconds) from the beat that still earns this tier.
 - `BeatBufferedAction` (interface): interface BeatBufferedAction<T> — An action queued on a beat buffer, with when it was pressed and the beat it fires on.
 - `BeatClock` (interface): interface BeatClock { advance(gameDt: number): BeatSnapshot; snapshot(): BeatSnapshot; now(): number; beatDurationSec(): number; bpm(): number } — ⚠ undocumented
 - `BeatClockConfig` (interface): interface BeatClockConfig { bpm: number; beatsPerBar?: number } — ⚠ undocumented
@@ -5829,7 +5829,7 @@
 - `LockCell` (interface): interface LockCell — One cell inside the fogged {@link visibleCells} window: its board position and kind.
 - `LockSpec` (interface): interface LockSpec — A generated lock board. `open[col]` holds every enterable row in that column.
 - `LockStepResult` (type): type LockStepResult = "advanced" | "slip" | "bind" | "trap" | "success" — Outcome of one {@link stepLock} call: `advanced`/`success` move the pick, `slip`/`bind`/`trap` do not and should cost a life.
-- `LockTierSpec` (interface): interface LockTierSpec — Difficulty dials for one lock: board size, forgiveness band, gates, fog window, traps.
+- `LockTierSpec` (interface): interface LockTierSpec extends ThresholdBoundary — Difficulty dials for one lock, a Ladder step (`at` is its place in the difficulty order): board size, forgiveness band, gates, fog window, traps.
 - `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly backpedalSpeedMultiplier: 0.65; readonly groundAcceleration: 26; readonly airAcceleration: 12; … — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
 - `MagnitudeOf` (type): type MagnitudeOf<P> = (membership: AreaMembership<P>) => number — Read a comparable magnitude from a membership (e.g. buff strength, damage per tick).
 - `MapCellStates` (interface): interface MapCellStates — Sparse per-cell tones drawn on the map over a grid.
