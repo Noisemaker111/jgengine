@@ -25,6 +25,10 @@ const TYPES: Readonly<Record<string, string>> = {
   ".ogg": "audio/ogg",
   ".wav": "audio/wav",
   ".hdr": "application/octet-stream",
+  ".cube": "text/plain; charset=utf-8",
+  ".woff2": "font/woff2",
+  ".woff": "font/woff",
+  ".ttf": "font/ttf",
 };
 
 /** The folder under the runner's base that serves one game's own `public/` files: `games/<id>/`. */
