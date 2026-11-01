@@ -210,6 +210,11 @@ export function installAgentBridge(options: {
         }
         return { ok: true, snapshot: { ...lean, player: playerPoseReport(ctx) } };
       }
+      case "scene_counts": {
+        const ctx = getContext();
+        if (ctx === null) return { ok: false, error: "no game context yet" };
+        return { ok: true, entities: ctx.scene.entity.ids().length, objects: ctx.scene.object.ids().length };
+      }
       case "player_pose": {
         const pose = playerPoseReport(getContext());
         return pose === null ? { ok: false, error: "no local player entity yet" } : { ok: true, ...pose };
