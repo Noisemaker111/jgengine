@@ -141,7 +141,8 @@ describe("applyMaterialOverride", () => {
   test("writes the iridescence thickness range through the minimum and maximum", () => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhysicalMaterial());
     applyMaterialOverride(mesh, { iridescence: 1, iridescenceThicknessRange: [150, 520] });
-    const applied = mesh.material as THREE.MeshPhysicalMaterial;
+    const applied = mesh.material;
+    if (!(applied instanceof THREE.MeshPhysicalMaterial)) throw new Error("expected a physical material");
     expect([applied.iridescenceThicknessMinimum, applied.iridescenceThicknessMaximum]).toEqual([150, 520]);
   });
 
