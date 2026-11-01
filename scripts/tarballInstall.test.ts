@@ -218,7 +218,8 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
   }, 120_000);
 
   test("@jgengine/rapier resolves its public entry, wildcard rejects unknown subpaths", () => {
-    const { consumer } = installTarballs(["rapier"]);
+    // rapier declares @jgengine/core as a dependency and imports its shape helpers at runtime.
+    const { consumer } = installTarballs(["core", "rapier"]);
     try {
       const script = [
         "const module = await import('@jgengine/rapier');",
