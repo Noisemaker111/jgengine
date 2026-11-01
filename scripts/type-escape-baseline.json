@@ -270,7 +270,6 @@
   "games/ember-command/src/game/heroPicks.ts": {"cast":1},
   "games/ember-command/src/game/hudStore.ts": {"nonNull":10},
   "games/ember-command/src/game/menuSave.ts": {"cast":2},
-  "games/ember-command/src/game/models.ts": {"cast":1},
   "games/ember-command/src/game/preferences.test.ts": {"nonNull":1},
   "games/ember-command/src/game/systems.ts": {"nonNull":1},
   "games/ember-command/src/game/ui/CommandMenu.tsx": {"cast":3,"nonNull":1},
