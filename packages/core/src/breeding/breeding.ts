@@ -339,7 +339,6 @@ export function createBreedingField<P>(options: BreedingOptions<P>): BreedingFie
         rest(carried.mother, def, rng);
       }
       for (const young of [...offspring.values()]) {
-        const def = speciesOf(young.species);
         const grew = dt * speeds.grow;
         young.grown += grew;
         young.growth.tick(grew);
