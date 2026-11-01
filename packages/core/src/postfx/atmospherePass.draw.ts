@@ -3,6 +3,7 @@ import { FullScreenQuad, Pass } from "three-stdlib";
 
 import type { AtmosphereConfig } from "@jgengine/core/render/postProcessing";
 
+import { windClock, windDirection, windGust } from "@jgengine/core/model/modelWind.draw";
 import { findKeyLight, towardLight } from "./contactShadowPass.draw";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
@@ -19,7 +20,7 @@ const vertexShader = /* glsl */ `
  * rgb and the haze cover in alpha, so one blended draw composites it over the frame.
  * @internal
  */
-export function atmosphereFragment(steps: number): string {
+export function atmosphereFragment(steps: number, variationTaps = 0): string {
   return /* glsl */ `
   uniform sampler2D tDepth;
   uniform mat4 uProjectionInverse;
@@ -44,7 +45,33 @@ export function atmosphereFragment(steps: number): string {
   uniform vec2 uLampShape[${MAX_HAZE_LAMPS}];
   uniform float uLampStrength;
   uniform float uBeams;
+  uniform float uVariation;
+  uniform float uPatch;
+  uniform vec2 uDrift;
   varying vec2 vUv;
+
+  float bankNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = fract(sin(dot(i, vec2(127.1, 311.7))) * 43758.5453);
+    float b = fract(sin(dot(i + vec2(1.0, 0.0), vec2(127.1, 311.7))) * 43758.5453);
+    float c = fract(sin(dot(i + vec2(0.0, 1.0), vec2(127.1, 311.7))) * 43758.5453);
+    float d = fract(sin(dot(i + vec2(1.0, 1.0), vec2(127.1, 311.7))) * 43758.5453);
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+  }
+
+  // Mean bank thickness along the first 300 units of the view ray, 0..2 around 1, riding the wind.
+  float bankDensity(vec3 origin, vec3 dir, float dist) {
+    ${variationTaps <= 0 ? "return 1.0;" : `float reach = min(dist, 300.0);
+    float sum = 0.0;
+    for (int k = 0; k < ${variationTaps}; k++) {
+      vec3 at = origin + dir * reach * ((float(k) + 0.5) / ${variationTaps.toFixed(1)});
+      vec2 q = (at.xz - uDrift) * uPatch;
+      sum += bankNoise(q) * 0.65 + bankNoise(q * 2.7 + 13.1) * 0.35;
+    }
+    return mix(1.0, 2.0 * sum / ${variationTaps.toFixed(1)}, uVariation);`}
+  }
 
   vec3 viewPosition(vec2 uv, float depth) {
     vec4 clip = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
@@ -93,6 +120,7 @@ export function atmosphereFragment(steps: number): string {
       float start = uFogDensity * exp(-uFogFalloff * (uCameraPosition.y - uFogHeight));
       float rise = uFogFalloff * dir.y * dist;
       float amount = abs(rise) > 1e-4 ? start * dist * (1.0 - exp(-rise)) / rise : start * dist;
+      amount *= bankDensity(uCameraPosition, dir, dist);
       cover = min(1.0 - exp(-max(amount, 0.0)), uFogMax);
     }
     float towardSun = max(dot(dir, uSunDirection), 0.0);
@@ -225,6 +253,9 @@ export class AtmospherePass extends Pass {
   private frame = 0;
   private aspect = 1;
   private readonly indoor: boolean;
+  private readonly tint: THREE.Color | null;
+  private readonly drift: number;
+  private driftClock = Number.NaN;
 
   constructor(
     private readonly scene: THREE.Scene,
@@ -232,10 +263,13 @@ export class AtmospherePass extends Pass {
     depth: THREE.DepthTexture,
     settings: Required<AtmosphereConfig>,
     steps: number,
+    variationTaps = 0,
   ) {
     super();
     this.needsSwap = false;
     this.indoor = settings.indoor;
+    this.tint = settings.color === "" ? null : new THREE.Color(settings.color);
+    this.drift = settings.drift;
     this.target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
     this.material = new THREE.ShaderMaterial({
       uniforms: {
@@ -262,9 +296,12 @@ export class AtmospherePass extends Pass {
         uLampShape: { value: Array.from({ length: MAX_HAZE_LAMPS }, () => new THREE.Vector2()) },
         uLampStrength: { value: settings.lamps },
         uBeams: { value: Math.min(1, Math.max(0, settings.beams)) },
+        uVariation: { value: Math.min(1, Math.max(0, settings.variation)) },
+        uPatch: { value: 1 / Math.max(1, settings.patchSize) },
+        uDrift: { value: new THREE.Vector2() },
       },
       vertexShader,
-      fragmentShader: atmosphereFragment(Math.max(1, steps)),
+      fragmentShader: atmosphereFragment(Math.max(1, steps), settings.variation > 0 ? variationTaps : 0),
       depthTest: false,
       depthWrite: false,
     });
@@ -315,8 +352,9 @@ export class AtmospherePass extends Pass {
     const fog = this.scene.fog;
     const background = this.scene.background;
     (uniforms["uFogColor"]!.value as THREE.Color).copy(
-      fog !== null ? fog.color : background instanceof THREE.Color ? background : FALLBACK_FOG,
+      this.tint ?? (fog !== null ? fog.color : background instanceof THREE.Color ? background : FALLBACK_FOG),
     );
+    this.advanceDrift(uniforms["uDrift"]!.value as THREE.Vector2);
     (uniforms["uProjectionInverse"]!.value as THREE.Matrix4).copy(this.camera.projectionMatrixInverse);
     (uniforms["uCameraWorld"]!.value as THREE.Matrix4).copy(this.camera.matrixWorld);
     const cameraPosition = (uniforms["uCameraPosition"]!.value as THREE.Vector3).setFromMatrixPosition(this.camera.matrixWorld);
@@ -340,6 +378,19 @@ export class AtmospherePass extends Pass {
     renderer.setRenderTarget(readBuffer);
     this.applyQuad.render(renderer);
     renderer.autoClear = autoClear;
+  }
+
+  /** Move the haze banks downwind by the time the shared wind clock moved, scaled by the gust. */
+  private advanceDrift(offset: THREE.Vector2): void {
+    const now = windClock.value;
+    const step = Number.isNaN(this.driftClock) ? 0 : Math.min(0.25, Math.max(0, now - this.driftClock));
+    this.driftClock = now;
+    if (this.drift === 0 || step === 0) return;
+    const travel = this.drift * windGust.value * step;
+    offset.x += windDirection.x * travel;
+    offset.y += windDirection.y * travel;
+    // Kept small so the noise lattice keeps its float precision over a long session.
+    if (Math.abs(offset.x) > 1e5 || Math.abs(offset.y) > 1e5) offset.set(offset.x % 1e4, offset.y % 1e4);
   }
 
   private writeLamps(eye: THREE.Vector3): void {
