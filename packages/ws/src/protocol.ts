@@ -10,7 +10,15 @@ import { MAX_SESSION_ID_LENGTH } from "@jgengine/core/runtime/hostPolicy";
 import type { SessionAttributes } from "@jgengine/core/runtime/hostPersistence";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 
+import { WIRE_DESYNC, createWireEncoder, decodeWireValue, encodeWireValue, type WireDecoder, type WireEncoder } from "./binaryWire";
+
 export const WS_PROTOCOL_VERSION = 1;
+
+/** One transport frame: JSON text, or a binary frame from {@link encodeWsFrame}. */
+export type WsFrame = string | Uint8Array<ArrayBuffer>;
+
+/** Wire codec a client asks for in `hello`: `binary` (default for {@link createWsBackend}) or `json` for debugging. */
+export type WsCodecName = "json" | "binary";
 
 /** Max length of a `runCommand` command name, in UTF-16 code units. */
 export const MAX_COMMAND_LENGTH = 4_096;
@@ -47,7 +55,7 @@ export type WsVoiceParticipant = {
 
 export type WsClientMessage =
   | { v: 1; t: "ping"; id: number; at: number }
-  | { v: 1; t: "hello"; id: number; userId: string; token?: string | undefined }
+  | { v: 1; t: "hello"; id: number; userId: string; token?: string | undefined; codec?: WsCodecName | undefined }
   | {
       v: 1;
       t: "join";
@@ -97,6 +105,24 @@ export function encodeWsMessage(message: WsClientMessage | WsServerMessage): str
   return JSON.stringify(message);
 }
 
+/**
+ * Encode a message as JSON text, or as a binary frame when `encoder` is given. A server passes the
+ * encoder it keeps for that connection so world frames go out as deltas; a client's encoder-less
+ * binary frames are stateless.
+ * @internal
+ */
+export function encodeWsFrame(
+  message: WsClientMessage | WsServerMessage,
+  codec: WsCodecName,
+  encoder?: WireEncoder,
+): WsFrame {
+  if (codec === "json") return JSON.stringify(message);
+  return encoder === undefined ? encodeWireValue(message) : encoder.encode(message);
+}
+
+/** A fresh stateful encoder for one connection's outgoing binary frames. @internal */
+export const createWsWireEncoder = createWireEncoder;
+
 function isOptionalSessionId(value: unknown): boolean {
   return value === undefined || (typeof value === "string" && value.length > 0 && value.length <= MAX_SESSION_ID_LENGTH);
 }
@@ -105,12 +131,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function parseVersioned(raw: unknown): Record<string, unknown> | null {
-  if (typeof raw !== "string") return null;
+function parseVersioned(raw: unknown, binary?: WireDecoder): Record<string, unknown> | null {
   let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
+  if (typeof raw === "string") {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  } else if (raw instanceof Uint8Array) {
+    parsed = binary === undefined ? decodeWireValue(raw) : binary.decode(raw);
+  } else {
     return null;
   }
   if (!isRecord(parsed)) return null;
@@ -169,12 +200,18 @@ export type WsDecodeFailure = {
 
 /** @internal */
 export function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure {
-  if (typeof raw !== "string") return { reason: "Invalid message framing" };
   let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return { reason: "Invalid JSON" };
+  if (raw instanceof Uint8Array) {
+    parsed = decodeWireValue(raw);
+    if (parsed === null) return { reason: "Invalid binary frame" };
+  } else if (typeof raw !== "string") {
+    return { reason: "Invalid message framing" };
+  } else {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return { reason: "Invalid JSON" };
+    }
   }
   if (!isRecord(parsed)) return { reason: "Invalid message" };
   const id = typeof parsed["id"] === "number" ? parsed["id"] : undefined;
@@ -216,7 +253,8 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
     case "hello":
       return typeof message["id"] === "number" &&
         typeof message["userId"] === "string" &&
-        (message["token"] === undefined || typeof message["token"] === "string")
+        (message["token"] === undefined || typeof message["token"] === "string") &&
+        (message["codec"] === undefined || message["codec"] === "json" || message["codec"] === "binary")
         ? (message as WsClientMessage)
         : null;
     case "join":
@@ -303,9 +341,28 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
 }
 
 /** @internal */
-export function decodeWsServerMessage(raw: unknown): WsServerMessage | null {
-  const message = parseVersioned(raw);
-  if (message === null) return null;
+export function decodeWsServerMessage(raw: unknown, decoder?: WireDecoder): WsServerMessage | null {
+  const decoded = decodeWsServerFrame(raw, decoder);
+  return decoded === WIRE_DESYNC ? null : decoded;
+}
+
+/**
+ * Decode a server frame. `"desync"` means a binary world delta did not follow the last frame this
+ * decoder saw; the client must resubscribe to get a fresh baseline.
+ * @internal
+ */
+export function decodeWsServerFrame(raw: unknown, decoder?: WireDecoder): WsServerMessage | typeof WIRE_DESYNC | null {
+  if (decoder !== undefined && raw instanceof Uint8Array) {
+    const decoded = decoder.decode(raw);
+    if (decoded === WIRE_DESYNC) return WIRE_DESYNC;
+    return validateServerMessage(decoded);
+  }
+  return validateServerMessage(parseVersioned(raw));
+}
+
+function validateServerMessage(parsed: unknown): WsServerMessage | null {
+  if (!isRecord(parsed) || parsed["v"] !== WS_PROTOCOL_VERSION || typeof parsed["t"] !== "string") return null;
+  const message = parsed;
 
   switch (message["t"]) {
     case "pong":

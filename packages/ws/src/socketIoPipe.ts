@@ -3,9 +3,9 @@ import type { TransportPipeFactory } from "./pipe";
 
 export type SocketIoLikeSocket = {
   connected: boolean;
-  on: (event: string, listener: (payload: string) => void) => unknown;
-  off: (event: string, listener: (payload: string) => void) => unknown;
-  send: (data: string) => unknown;
+  on: (event: string, listener: (payload: string | Uint8Array) => void) => unknown;
+  off: (event: string, listener: (payload: string | Uint8Array) => void) => unknown;
+  send: (data: string | Uint8Array<ArrayBuffer>) => unknown;
   disconnect: () => unknown;
 };
 
@@ -17,9 +17,9 @@ export function socketIoPipe(socket: SocketIoLikeSocket): TransportPipeFactory {
       if (closed) return;
       handlers.onOpen();
     };
-    const onMessage = (payload: string) => {
+    const onMessage = (payload: string | Uint8Array) => {
       if (closed) return;
-      handlers.onMessage(typeof payload === "string" ? payload : String(payload));
+      handlers.onMessage(typeof payload === "string" || payload instanceof Uint8Array ? payload : String(payload));
     };
     const onDisconnect = () => {
       if (closed) return;

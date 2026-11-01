@@ -25,15 +25,19 @@ import {
 import { DEFAULT_COMMAND_LIMITS } from "./commandMiddleware";
 import type { GameServerHost, HostChangeEvent } from "./host";
 import type { TransportPipeFactory } from "./pipe";
+import type { WirePrecision, WireEncoder } from "./binaryWire";
 import {
   decodeWsClientMessage,
-  encodeWsMessage,
+  encodeWsFrame,
+  createWsWireEncoder,
   inspectWsDecodeFailure,
   subscriptionKey,
   type WsAppearance,
   type WsChannel,
   type WsChatMessage,
   type WsClientMessage,
+  type WsCodecName,
+  type WsFrame,
   type WsPose,
   type WsPresenceRow,
   type WsServerMessage,
@@ -55,6 +59,8 @@ export type HostRouterOptions = {
   chatRateLimit?: ChatRateLimit;
   chatHistoryLimit?: number;
   chatMaxBodyLength?: number;
+  /** Quantisation of replicated entity poses for clients on the binary codec; defaults to 2 decimals for positions and 3 for angles. */
+  precision?: WirePrecision;
   /** Per-op rate limits for pose/runCommand/join/browse/voice. Defaults to {@link DEFAULT_COMMAND_LIMITS}. */
   limits?: CommandLimits;
   /** Per-command authorization hook; defaults to allow-all. */
@@ -74,7 +80,7 @@ function realTimer(run: () => void, ms: number): () => void {
 }
 
 export type HostRouterTransport = {
-  send: (data: string) => void;
+  send: (data: WsFrame) => void;
   close: () => void;
 };
 
@@ -109,6 +115,8 @@ export const DEFAULT_GRACE_MS = 15_000;
 type Connection = {
   closed: boolean;
   transport: HostRouterTransport;
+  codec: WsCodecName;
+  encoder: WireEncoder | undefined;
   userId: string | null;
   subscriptions: Set<string>;
   joinedServers: Set<string>;
@@ -291,7 +299,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const send = (connection: Connection, message: WsServerMessage) => {
     if (closed || connection.closed) return;
-    connection.transport.send(encodeWsMessage(message));
+    connection.transport.send(encodeWsFrame(message, connection.codec, connection.encoder));
   };
 
   const reply = (connection: Connection, id: number, result: unknown) => {
@@ -660,6 +668,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         sessionsByUserId.set(userId, connection);
       }
       connection.userId = userId;
+      if (message.codec === "binary") {
+        connection.codec = "binary";
+        connection.encoder = createWsWireEncoder(options.precision);
+      }
       if (resumeToken !== undefined && message.token === resumeToken) {
         for (const key of [...pendingLeaves.keys()]) {
           if (key.startsWith(`${userId}|`)) {
@@ -873,6 +885,8 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       const connection: Connection = {
         closed: false,
         transport,
+        codec: "json",
+        encoder: undefined,
         userId: null,
         subscriptions: new Set(),
         joinedServers: new Set(),
@@ -888,7 +902,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       return {
         handleRaw: (raw) => {
           if (closed || connection.closed) return;
-          const text = typeof raw === "string" ? raw : String(raw);
+          const text = raw instanceof Uint8Array || typeof raw === "string" ? raw : String(raw);
           const message = decodeWsClientMessage(text);
           if (message === null) {
             const failure = inspectWsDecodeFailure(text);

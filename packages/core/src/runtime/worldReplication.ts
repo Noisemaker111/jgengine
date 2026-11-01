@@ -34,6 +34,13 @@ const CORE_KEYS = new Set(["entities", "stats", "store"]);
 interface Tracked {
   json: string;
   revision: number;
+  /** Parsed once and shared by every client's diff; callers treat diff values as read-only. */
+  value?: unknown;
+}
+
+function parsedValue(tracked: Tracked): unknown {
+  if (tracked.value === undefined) tracked.value = JSON.parse(tracked.json);
+  return tracked.value;
 }
 
 /**
@@ -54,6 +61,7 @@ export interface WorldReplicatorOptions {
  * then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same
  * shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per
  * commit unless {@link WorldReplicatorOptions.worldVersion} lets an unchanged tick short-circuit before it.
+ * Values in a returned diff are shared between callers: treat them as read-only.
   * @internal
   */
 export function createWorldReplicator(
@@ -136,19 +144,19 @@ export function createWorldReplicator(
   function diff(sinceRevision: number): WorldDiff {
     const changedEntities: SceneEntity[] = [];
     for (const [, tracked] of entities) {
-      if (tracked.revision > sinceRevision) changedEntities.push(JSON.parse(tracked.json) as SceneEntity);
+      if (tracked.revision > sinceRevision) changedEntities.push(parsedValue(tracked) as SceneEntity);
     }
     const changedStats: Record<string, StatValueMap> = {};
     for (const [id, tracked] of stats) {
-      if (tracked.revision > sinceRevision) changedStats[id] = JSON.parse(tracked.json) as StatValueMap;
+      if (tracked.revision > sinceRevision) changedStats[id] = parsedValue(tracked) as StatValueMap;
     }
     const changedStore: (readonly [string, unknown])[] = [];
     for (const [key, tracked] of store) {
-      if (tracked.revision > sinceRevision) changedStore.push([key, JSON.parse(tracked.json) as unknown]);
+      if (tracked.revision > sinceRevision) changedStore.push([key, parsedValue(tracked)]);
     }
     const changedModules: WorldSnapshot = {};
     for (const [key, tracked] of modules) {
-      if (tracked.revision > sinceRevision) changedModules[key] = JSON.parse(tracked.json) as unknown;
+      if (tracked.revision > sinceRevision) changedModules[key] = parsedValue(tracked);
     }
     return {
       revision,

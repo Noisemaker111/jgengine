@@ -12,17 +12,19 @@ import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/mat
 import type { ChatSendOutcome, ChatSync } from "@jgengine/core/chat/chatContract";
 import type { VoiceTransport } from "@jgengine/core/multiplayer/voiceContract";
 import {
-  decodeWsServerMessage,
-  encodeWsMessage,
+  decodeWsServerFrame,
+  encodeWsFrame,
   inspectWsDecodeFailure,
   subscriptionKey,
   type WsChannel,
   type WsChatMessage,
   type WsClientMessage,
+  type WsCodecName,
   type WsPose,
   type WsPresenceRow,
   type WsVoiceParticipant,
 } from "./protocol";
+import { WIRE_DESYNC, createWireDecoder, type WireDecoder } from "./binaryWire";
 import { webSocketPipe, type TransportPipe, type TransportPipeFactory } from "./pipe";
 
 export type WsBackendOptions = {
@@ -30,6 +32,8 @@ export type WsBackendOptions = {
   pipe?: TransportPipeFactory;
   userId: string;
   token?: string | undefined;
+  /** Wire codec: `binary` (default, per-entity deltas with quantised poses) or `json` text frames for debugging. */
+  codec?: WsCodecName;
   webSocketFactory?: (url: string) => WebSocket;
   reconnectDelayMs?: number;
   maxReconnectDelayMs?: number;
@@ -138,6 +142,8 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       return webSocketPipe(url, options.webSocketFactory);
     })();
 
+  const codec: WsCodecName = options.codec ?? "binary";
+  let decoder: WireDecoder = createWireDecoder();
   let pipe: TransportPipe | null = null;
   let open = false;
   let ready: Promise<void> | null = null;
@@ -192,7 +198,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
 
   const rawSend = (message: WsClientMessage) => {
     if (pipe === null || !open) return;
-    pipe.send(encodeWsMessage(message));
+    pipe.send(encodeWsFrame(message, codec));
   };
 
   const resendPendingRpcs = () => {
@@ -234,8 +240,15 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
   };
   const helloToken = () => resumeTickets.values().next().value?.token ?? options.token;
 
-  const handleMessage = (raw: string) => {
-    const message = decodeWsServerMessage(raw);
+  const handleMessage = (raw: string | Uint8Array) => {
+    const message = decodeWsServerFrame(raw, decoder);
+    if (message === WIRE_DESYNC) {
+      for (const subscription of subscriptions.values()) {
+        if (subscription.channel !== "server") continue;
+        rawSend({ v: 1, t: "subscribe", id: nextId++, channel: "server", serverId: subscription.serverId });
+      }
+      return;
+    }
     if (message === null) {
       const failure = inspectWsDecodeFailure(raw);
       if (failure.id !== undefined) {
@@ -309,6 +322,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     if (ready !== null) return ready;
 
     clearReconnectTimer();
+    decoder = createWireDecoder();
     ready = new Promise<void>((resolve, reject) => {
       let settled = false;
       const settleReject = (error: Error) => {
@@ -333,6 +347,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
             id: requestId,
             userId: options.userId,
             token: helloToken(),
+            ...(codec === "binary" ? { codec } : {}),
           });
           pending.set(id, {
             id,

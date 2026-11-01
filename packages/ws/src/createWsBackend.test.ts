@@ -2,11 +2,12 @@ import { expect, test } from "bun:test";
 
 import { createWsBackend } from "./createWsBackend";
 import type { TransportPipeFactory, TransportPipeHandlers } from "./pipe";
+import { decodeWireValue } from "./binaryWire";
 import { encodeWsMessage, type WsClientMessage, type WsServerMessage } from "./protocol";
 
 type FakeSocket = {
   handlers: TransportPipeHandlers;
-  sent: string[];
+  sent: (string | Uint8Array)[];
   close: () => void;
 };
 
@@ -57,7 +58,7 @@ function createControllablePipe(): {
       if (socket === undefined) throw new Error("no socket");
       const raw = socket.sent[socket.sent.length - 1];
       if (raw === undefined) throw new Error("no message");
-      return JSON.parse(raw) as WsClientMessage;
+      return (typeof raw === "string" ? JSON.parse(raw) : decodeWireValue(raw)) as WsClientMessage;
     },
   };
 }
@@ -144,7 +145,7 @@ test("reconnect uses exponential backoff and is not subscription-gated", async (
   await Promise.resolve();
 
   const joinMsg = pipe.sockets[1]?.sent
-    .map((raw) => JSON.parse(raw) as WsClientMessage)
+    .map((raw) => (typeof raw === "string" ? JSON.parse(raw) : decodeWireValue(raw)) as WsClientMessage)
     .find((message) => message.t === "join");
   expect(joinMsg?.t).toBe("join");
   if (joinMsg && joinMsg.t === "join") {
@@ -190,7 +191,7 @@ test("runCommand keeps the same op ID across a reconnect resend after a lost rep
   await Promise.resolve();
 
   const join = pipe.sockets[0]?.sent
-    .map((raw) => JSON.parse(raw) as WsClientMessage)
+    .map((raw) => (typeof raw === "string" ? JSON.parse(raw) : decodeWireValue(raw)) as WsClientMessage)
     .find((message) => message.t === "join") as { id: number } | undefined;
   expect(join).toBeDefined();
   pipe.replyLatest({ v: 1, t: "reply", id: join!.id, ok: true, result: { serverId: "srv-1", isNew: false } });
@@ -201,7 +202,7 @@ test("runCommand keeps the same op ID across a reconnect resend after a lost rep
 
   type RunCommandWire = { t: "runCommand"; id: number; input: Record<string, unknown> };
   const firstSend = pipe.sockets[0]?.sent
-    .map((raw) => JSON.parse(raw) as WsClientMessage)
+    .map((raw) => (typeof raw === "string" ? JSON.parse(raw) : decodeWireValue(raw)) as WsClientMessage)
     .find((message) => message.t === "runCommand") as RunCommandWire | undefined;
   expect(firstSend).toBeDefined();
   const opId = firstSend!.input.__jgWsOpId;
@@ -218,7 +219,7 @@ test("runCommand keeps the same op ID across a reconnect resend after a lost rep
   await Promise.resolve();
 
   const resend = pipe.sockets[1]?.sent
-    .map((raw) => JSON.parse(raw) as WsClientMessage)
+    .map((raw) => (typeof raw === "string" ? JSON.parse(raw) : decodeWireValue(raw)) as WsClientMessage)
     .find((message) => message.t === "runCommand") as RunCommandWire | undefined;
   expect(resend).toBeDefined();
   expect(resend!.id).not.toBe(firstSend!.id);
@@ -246,7 +247,7 @@ test("client rejects pending request when a malformed reply carries its id", asy
   await Promise.resolve();
 
   const join = pipe.sockets[0]?.sent
-    .map((raw) => JSON.parse(raw) as WsClientMessage)
+    .map((raw) => (typeof raw === "string" ? JSON.parse(raw) : decodeWireValue(raw)) as WsClientMessage)
     .find((message) => message.t === "join") as { id: number } | undefined;
   expect(join).toBeDefined();
   pipe.sockets[0]?.handlers.onMessage(JSON.stringify({ v: 2, t: "reply", id: join?.id, ok: true }));
