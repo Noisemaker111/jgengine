@@ -115,3 +115,17 @@ test("a skittish grazer runs from a survivor who comes close, and its den round-
   driver.restore(saved);
   expect(driver.state("ph")!.home).toEqual([40, 0, 0]);
 });
+
+test("a hunter that has just bitten cannot bite again until its interval has run out", () => {
+  const ctx = world();
+  ctx.scene.entity.spawn("raptor", { id: "r1", position: [1, 0, 0], role: "npc" });
+  const driver = createCreatureDriver();
+  driver.add("r1", [1, 0, 0]);
+  const aggressive = { kind: "wild" as const, temperament: { kind: "predator" as const, attackRange: 2, breakAt: 0 } };
+  const struck: number[] = [];
+  for (let step = 0; step < 20; step += 1) {
+    if (driver.step(ctx, "r1", aggressive, HUNTER, 0.1).struck) struck.push(step);
+  }
+  expect(struck.length).toBeGreaterThanOrEqual(2);
+  for (let i = 1; i < struck.length; i += 1) expect(struck[i]! - struck[i - 1]!).toBeGreaterThanOrEqual(8);
+});
