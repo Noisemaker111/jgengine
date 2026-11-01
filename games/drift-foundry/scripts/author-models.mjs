@@ -1,5 +1,6 @@
 // Original Drift Foundry geometry. Regenerate with node scripts/author-models.mjs.
 // Flat-shaded steel, exposed running gear and a welded asymmetrical salvage silhouette.
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { BoxGeometry, CylinderGeometry, TorusGeometry, Vector3, Quaternion, Matrix4, Color } from 'three';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +17,12 @@ function author(name, build) {
     groups[color].normals.push(...triangles.attributes.normal.array);
     geo.dispose(); if (triangles !== geo) triangles.dispose();
   };
-  const box = (size, pos, color, rot) => add(new BoxGeometry(...size), color, pos, rot);
+  // Every slab is bevelled: the edge radius follows the thinnest side so plates keep a crisp lip and blocks round off.
+  const box = (size, pos, color, rot) => {
+    const radius = Math.min(.05, Math.min(...size) * .3);
+    add(Math.min(...size) >= .12 ? new RoundedBoxGeometry(size[0], size[1], size[2], 1, radius) : new BoxGeometry(...size), color, pos, rot);
+  };
+  const panel = (size, pos, rot) => add(new BoxGeometry(...size), 5, pos, rot);
   const cylinder = (r, h, pos, color, rot = [0, 0, 0], top = r) => add(new CylinderGeometry(top, r, h, 12, 1), color, pos, rot);
   const tube = (a, b, r, color) => {
     const from = new Vector3(...a), to = new Vector3(...b), delta = to.clone().sub(from);
@@ -25,7 +31,7 @@ function author(name, build) {
     add(geo, color);
   };
   const ring = (r, thickness, pos, color, rot) => add(new TorusGeometry(r, thickness, 6, 18), color, pos, rot);
-  build({ box, cylinder, tube, ring });
+  build({ box, cylinder, tube, ring, panel });
   const buffers = [], views = [], accessors = [], primitives = [];
   let offset = 0;
   function attribute(values, bounds) {
@@ -56,7 +62,14 @@ function author(name, build) {
   console.log(`${name}: ${bin.length} geometry bytes, ${primitives.length} material groups`);
 }
 
-author('row-six-buggy', ({ box, cylinder, tube, ring }) => {
+/** Roof silhouettes that tell the yard karts apart at speed: a slab, a fin and a hoop. */
+const ROOFS = {
+  tally: ({ box, tube }) => { box([1.5, .07, 1.05], [0, 1.74, -.15], 3); for (const x of [-.7, .7]) tube([x, 1.6, -.4], [x, 1.74, -.4], .05, 2); },
+  moss: ({ box }) => { box([.07, .46, .95], [0, 1.9, -.12], 2, [-.12, 0, 0]); box([.7, .07, .2], [0, 1.66, -.62], 2); },
+  hobbs: ({ ring, tube }) => { ring(.52, .06, [0, 1.72, -.12], 6, [0, Math.PI / 2, 0]); tube([0, 1.2, -.12], [0, 1.64, -.12], .05, 3); },
+};
+
+function buggy({ box, cylinder, tube, ring, panel }, roof) {
   box([1.55, .22, 2.8], [0, .48, 0], 0);
   box([1.35, .24, 1.0], [0, .74, .94], 1, [-.13, 0, 0]);
   box([.18, .025, 1.05], [-.36, .89, .94], 2, [-.13, 0, 0]);
@@ -90,7 +103,16 @@ author('row-six-buggy', ({ box, cylinder, tube, ring }) => {
   tube([-.8, .45, 1.53], [.8, .45, 1.53], .08, 3);
   cylinder(.055, .9, [-.58, 1.85, -.64], 0);
   box([.34, .25, .04], [-.42, 2.13, -.64], 2);
-});
+  // Panel lines: hood seams, door seams and a bonnet louvre set, cut a hair proud of the paint.
+  for (const z of [.72, .96, 1.2]) panel([1.31, .012, .025], [0, .875 - (z - .94) * .13, z], [-.13, 0, 0]);
+  for (const x of [-.68, .68]) for (const z of [-.5, .3]) panel([.014, .36, .025], [x, .83, z]);
+  for (const x of [-.68, .68]) panel([.014, .02, .9], [x, .66, -.1]);
+  panel([.95, .012, .025], [0, .945, -1.02]);
+  if (roof !== undefined) ROOFS[roof]({ box, cylinder, tube, ring });
+}
+
+author('row-six-buggy', (b) => buggy(b, undefined));
+for (const rival of Object.keys(ROOFS)) author(`row-six-rival-${rival}`, (b) => buggy(b, rival));
 
 for (const [name, color] of [['engine', 1], ['front', 2], ['wheels', 6], ['frame', 3]]) author(`pickup-${name}`, ({ box, tube, cylinder, ring }) => {
   cylinder(1.05, .16, [0, .08, 0], 0); ring(.94, .06, [0, .2, 0], color, [Math.PI / 2, 0, 0]);

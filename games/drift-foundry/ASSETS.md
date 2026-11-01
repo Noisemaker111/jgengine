@@ -8,7 +8,7 @@ mount or the engine host.
 
 Existing yard props retain their catalog source credits: Kay Lousberg's
 [KayKit City Builder](https://kaylousberg.itch.io/kaykit-city-builder-bits) and
-[KayKit Dungeon](https://kaylousberg.itch.io/kaykit-dungeon), and the
+[KayKit Space Base](https://kaylousberg.itch.io/kaykit-space-base-bits), and the
 [ambientCG Ground025](https://ambientcg.com/view?id=Ground025) ground material.
 The in-game credits list those sources. Local `public/models/` and `public/materials/`
 are unchanged copies of the engine's licensed asset files, provisioned for standalone

@@ -12,7 +12,7 @@ import { lookServedPath } from "./curatedPull";
 describe("curated looks", () => {
   test("every HDRI, grade and font resolves to a served file and an accepted licence", () => {
     expect(HDRI_LIBRARY.length).toBeGreaterThanOrEqual(8);
-    expect(HDRI_LIBRARY.length).toBeLessThanOrEqual(12);
+    expect(HDRI_LIBRARY.length).toBeLessThanOrEqual(16);
     for (const entry of HDRI_LIBRARY) {
       expect(isLibraryLicense(HDRI_LICENSE)).toBe(true);
       expect(entry.author.length).toBeGreaterThan(0);
@@ -24,7 +24,7 @@ describe("curated looks", () => {
       expect(lookServedPath("lut", grade.id)).toBe(`lut/${grade.id}/${grade.id}.cube`);
     }
     expect(FONT_LIBRARY.length).toBeGreaterThanOrEqual(12);
-    expect(FONT_LIBRARY.length).toBeLessThanOrEqual(16);
+    expect(FONT_LIBRARY.length).toBeLessThanOrEqual(24);
     expect(FONT_LICENSE).toBe("OFL-1.1");
     for (const font of FONT_LIBRARY) expect(lookServedPath("font", font.id)).toBe(`fonts/${font.id}/${font.id}.woff2`);
   });

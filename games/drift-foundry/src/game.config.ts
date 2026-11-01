@@ -1,5 +1,7 @@
 import { defineGame } from "@jgengine/shell/defineGame";
 import { createElement } from "react";
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 import { editorLayers } from "./editorLayers";
 
@@ -7,7 +9,7 @@ import { DRIFT_SOUNDS } from "./game/audio";
 import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { DEFAULT_DRIVE_CODES } from "@jgengine/core/input/actionBindings";
-import { entityModels, objectModels } from "./game/models";
+import { entityModels, flockModels, objectModels } from "./game/models";
 import { GameUI } from "./game/ui/GameUI";
 import { driftTheme } from "./game/ui/theme";
 import { foundryKit } from "./game/ui/menu/foundryKit";
@@ -24,6 +26,8 @@ export const game = defineGame({
     entityModels,
     objectModels,
   },
+  // The authored gull habitats circle the dumps; the species name is the document's, the model is the game's.
+  sceneFlockModels: flockModels,
   physics,
   // The kart, rivals, compactor and run clock all integrate `dt` per tick; a fixed 60 Hz step keeps a
   // corridor run the same distance at 30 and 144 fps.
@@ -105,19 +109,25 @@ export const game = defineGame({
   audio: { sounds: DRIFT_SOUNDS },
   rendering: {
     shadows: true,
-    // Low warm key over the driver's right wall: the near row is short enough that its shadow stops
-  // mid-corridor, so the run is split lit/shadow lengthwise. The cool hemisphere and blue fill keep
-  // the shadow half readable instead of collapsing to black under a dusk key this low.
+    look: "cinematic",
+    // Late golden hour behind the compactor: the sun sits low in the west, warm key, dusty horizon.
+    mood: {
+      preset: "golden",
+      sun: { azimuth: 250, elevation: 14, color: "#ffb066" },
+      horizonColor: "#ff9d3d",
+      fog: { near: 60, far: 320 },
+    },
+    environmentSource: hdriEnvironment("industrial-sunset", { intensity: 0.9 }),
     lighting: {
-      // Warm, not cool: a neutral-grey fill made every wall shadow read as a sheet of standing water
-      // beside sunlit orange dirt. Shade here is a value step inside one hue family.
+      // Warm, not cool: shadows go brown, not blue, so shade stays a value step inside one hue family.
       ambient: { color: "#7a6455", intensity: 0.28 },
       hemisphere: { skyColor: "#a08a72", groundColor: "#6b4526", intensity: 0.68 },
       directional: [
         {
           color: "#ffb066",
           intensity: 2.6,
-          position: [110, 95, -46],
+          // Azimuth 250, elevation 14 at 150 m: the mood's sun, kept here so the cascades below tune its shadow.
+          position: [-137, 36, 50],
           castShadow: true,
           // A track runs up to 790 m, so a single ortho frustum drops contact shadows a few seconds in.
           cascades: 3,
@@ -134,12 +144,14 @@ export const game = defineGame({
       // Threshold under the hazard trim's luminance so compactor teeth, tail lights, and lamp heads
       // are what blooms — the accents the player has to read at speed.
       bloom: { strength: 0.34, radius: 0.6, threshold: 0.78 },
+      // The warm bleach-bypass grade stands in for the hand lift/gain: the numeric stage is neutral and the cube does the colour.
       grade: {
+        lut: lutGrade("bleach-bypass-warm"),
+        lift: [0, 0, 0],
+        gain: [1, 1, 1],
+        gamma: 1,
+        saturation: 1,
         vignette: 0.18,
-        saturation: 1.05,
-        gamma: 1.02,
-        lift: [0, 0.005, 0.016],
-        gain: [1.08, 0.99, 0.89],
         grain: 0.024,
         chromaticAberration: 0.0016,
       },
