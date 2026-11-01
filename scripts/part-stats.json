@@ -1,0 +1,58 @@
+{
+  "parts": [
+    {
+      "home": "stats/statPool",
+      "importers": 14
+    },
+    {
+      "home": "threshold/thresholds",
+      "importers": 25
+    },
+    {
+      "home": "time/stateSchedule",
+      "importers": 6
+    },
+    {
+      "home": "time/pacedSchedule",
+      "importers": 4
+    },
+    {
+      "home": "time/refillSlots",
+      "importers": 2
+    },
+    {
+      "home": "time/cooldown",
+      "importers": 3
+    },
+    {
+      "home": "world/spatialSample",
+      "importers": 4
+    },
+    {
+      "home": "game/spawnPoints",
+      "importers": 2
+    },
+    {
+      "home": "random/pick",
+      "importers": 28
+    },
+    {
+      "home": "rules/predicate",
+      "importers": 15
+    },
+    {
+      "home": "progression/statGraph",
+      "importers": 9
+    },
+    {
+      "home": "inheritance/inheritance",
+      "importers": 1
+    },
+    {
+      "home": "movement/motionTrack",
+      "importers": 1
+    }
+  ],
+  "creates": 536,
+  "folders": 114
+}

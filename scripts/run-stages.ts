@@ -254,6 +254,7 @@ export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "export-manifest", script: "scripts/gen-export-manifest.ts", after: ["barrels"], outputs: [/^scripts\/export-manifest\.json$/], reads: ["packages/"] },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"], outputs: [/^games\/capabilities\.json$/], reads: ["packages/"] },
   { name: "type-escapes", script: "scripts/type-escapes.ts", after: ["barrels"], outputs: [/^scripts\/type-escape-baseline\.json$/], reads: ["packages/", "games/", "apps/", "examples/"] },
+  { name: "part-stats", script: "scripts/part-stats.ts", after: ["barrels"], outputs: [/^scripts\/part-stats\.json$/], reads: ["packages/core/src/"] },
 ];
 
 export function genPlan(targets: readonly GenTarget[]): Stage[] {

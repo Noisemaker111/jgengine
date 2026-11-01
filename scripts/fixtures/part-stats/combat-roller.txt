@@ -1,0 +1,5 @@
+import { pick } from "../random/pick";
+
+export function createRoller() {
+  return { roll: () => pick([1, 2]) };
+}
