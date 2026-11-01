@@ -5047,13 +5047,13 @@
 ## @jgengine/core/scene/sceneCapture.draw
 
 - `CaptureRenderer` (interface): interface CaptureRenderer — The bit of a WebGL renderer scene capture needs — its backing `<canvas>`.
-- `SceneCapture` (type): type SceneCapture = () => string | null — Reads the current scene frame as an image data URL, or null when the frame cannot be read.
-- `SceneCaptureBinding` (function): function SceneCaptureBinding({ bind }: { bind?: (capture: () => string | null) => void }): null — In-`<Canvas>` binder that hands the scene-capture function out to HUD code living outside the reconciler (a photo-mode Capture button, a save slot's thumbnail). Mount it inside the game's `WorldOverlay`; the reader is registered for `requestSceneCapture`/`requestSceneThumbnail`, which wait for this mount and the first painted frame. `bind` is for code that wants the function directly and can be left out when a game only requests captures. Renders nothing.
+- `SceneCapture` (type): type SceneCapture = () => string | null | Promise<string | null> — Reads a scene frame as an image data URL, or null when the frame cannot be read.
+- `SceneCaptureBinding` (function): function SceneCaptureBinding(): null — In-`<Canvas>` binder that registers the live scene for `requestSceneCapture` and `requestSceneThumbnail` (a photo-mode Capture button, a save slot's thumbnail), which wait for this mount and the first painted frame. Mount it inside the game's `WorldOverlay`. Renders nothing.
 - `SceneCaptureFailure` (type): type SceneCaptureFailure = "no-binding" | "no-frame" | "undecodable" — Why a capture request produced no image.
 - `SceneCaptureRequestOptions` (interface): interface SceneCaptureRequestOptions — How a capture request waits and retries.
 - `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; capture: string } | { ok: false; reason: SceneCaptureFailure } — A captured frame, or the stated reason there is none.
 - `SceneThumbnailResult` (type): type SceneThumbnailResult = | { ok: true; thumbnail: string } | { ok: false; reason: SceneCaptureFailure } — A save-card thumbnail, or the stated reason there is none.
-- `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game canvas already is); returns null if the backing canvas can't be read.
+- `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the canvas to a PNG data URL. The game canvas keeps no copy of its last frame, so read in the task that rendered it (an R3F after-effect, as {@link SceneCaptureBinding} does) or right after a `gl.render` call; read any later and the frame is already gone. Returns null when the canvas can't be read.
 - `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
 - `registerSceneCapture` (function): function registerSceneCapture(capture: SceneCapture | null): () => void — Hand the capture path a reader for the live frame, or `null` to retire it. The returned function unbinds only that reader, so a canvas that remounts cannot be unbound by its predecessor.
 - `requestSceneCapture` (function): function requestSceneCapture(options: SceneCaptureRequestOptions = {}): Promise<SceneCaptureResult> — Request the current scene frame. Resolves once a binding exists and the canvas has painted, or with the reason no frame could be read; it never polls and never rejects.
@@ -5061,7 +5061,7 @@
 
 ## @jgengine/core/scene/sceneCaptureRequest.draw
 
-- `SceneCapture` (type): type SceneCapture = () => string | null — Reads the current scene frame as an image data URL, or null when the frame cannot be read.
+- `SceneCapture` (type): type SceneCapture = () => string | null | Promise<string | null> — Reads a scene frame as an image data URL, or null when the frame cannot be read.
 - `SceneCaptureFailure` (type): type SceneCaptureFailure = "no-binding" | "no-frame" | "undecodable" — Why a capture request produced no image.
 - `SceneCaptureRequestOptions` (interface): interface SceneCaptureRequestOptions — How a capture request waits and retries.
 - `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; capture: string } | { ok: false; reason: SceneCaptureFailure } — A captured frame, or the stated reason there is none.
@@ -5820,6 +5820,7 @@
 
 ## @jgengine/core/visibility/config
 
+- `HlodConfig` (interface): interface HlodConfig — Far static cells draw one merged proxy instead of their props. Every cell of batched static props switches to its proxy from `distance` metres (camera to the cell's bounds) plus half the `hysteresis` band, and back below `distance` minus half of it; `cluster` is the proxy's detail in metres: vertices closer than it merge.
 - `VisibilityConfig` (interface): interface VisibilityConfig — Per-game visibility configuration, surfaced on `PlayableGame.visibility`. Everything is optional: an existing game that sets nothing gets the conservative engine defaults automatically. This is the scene-level and per-kind override seam (requirement: per-object, per-layer, per-scene, and global controls).
 
 ## @jgengine/core/visibility/diagnostics

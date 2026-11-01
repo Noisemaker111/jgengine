@@ -126,7 +126,7 @@ function PooledObjectSource({ slot, source, members, objects }: {
   }, [scratch, source]);
   const ctx = useGameContext();
   const placedAt = useRef<{ slot: StaticDrawSlot; version: number } | null>(null);
-  const live = useMemo(() => [] as SceneObject[], []);
+  const live = useMemo((): SceneObject[] => [], []);
   useFrame(() => {
     const version = ctx.scene.object.version();
     if (placedAt.current?.slot !== slot || placedAt.current.version !== version) {

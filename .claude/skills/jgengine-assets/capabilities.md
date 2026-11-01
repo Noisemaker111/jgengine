@@ -279,6 +279,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## static-transforms — static-transforms
 
 - `freezeStaticTransforms` (function) · `import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`
+- `refreshStaticTransforms` (function) · `import { refreshStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`
 - `thawStaticTransforms` (function) · `import { thawStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`
 
 ## surface-material-generator — seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)

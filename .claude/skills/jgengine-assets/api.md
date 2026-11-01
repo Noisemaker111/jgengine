@@ -841,6 +841,7 @@
 ## @jgengine/core/model/staticTransforms.draw
 
 - `freezeStaticTransforms` (function): function freezeStaticTransforms(root: THREE.Object3D): void — Bake a subtree's world matrices from its current pose and take it out of three's per-frame `updateMatrixWorld` pass. Three recomposes every node that keeps `matrixAutoUpdate` and then forces its whole subtree to rebuild the world matrix, so authored scenery — terrain, batched props, scatter, instanced ground — pays that cost every frame for a pose it never changes (#2038).
+- `refreshStaticTransforms` (function): function refreshStaticTransforms(root: THREE.Object3D): void — Re-bake a frozen subtree's world matrices from its current position, rotation and scale, and its parent's world matrix: the one-off update for static content something moved (a door swung, a placement edited). Nodes added under it since it froze freeze with it.
 - `thawStaticTransforms` (function): function thawStaticTransforms(root: THREE.Object3D): void — Put a subtree back on the per-frame matrix pass after {@link freezeStaticTransforms} — for the authored seam that moves on an event rather than every frame.
 
 ## @jgengine/core/model/useModelInstance.draw

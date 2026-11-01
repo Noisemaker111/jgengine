@@ -499,7 +499,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `installCaptureCamera` (function) · `import { installCaptureCamera } from "@jgengine/core/world/captureCamera"`
 
-## capture-canvas — read the live R3F frame to a PNG data URL (needs preserveDrawingBuffer)
+## capture-canvas — read the frame an R3F canvas just rendered to a PNG data URL
 
 - `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/core/scene/sceneCapture.draw"`
 
@@ -1947,7 +1947,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `registerScatterSource` (function) · `import { registerScatterSource } from "@jgengine/core/scatter/scatterRegion"`
 
-## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
+## scene-capture-binding — expose the live scene to outside-Canvas HUD (photo mode, save thumbnails)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw"`
 
