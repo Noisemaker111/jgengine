@@ -190,4 +190,20 @@ describe("createResourceNodeField resolve", () => {
     expect(field.ids()).toEqual([]);
     expect(() => field.harvest("rock/1", {})).toThrow();
   });
+
+  test("a depleted node refills exactly its respawn seconds after the harvest and its timer survives a snapshot", () => {
+    const field = createResourceNodeField({ nodes: [rock()] });
+    field.tick(3);
+    field.harvest("rock", { power: 4 });
+    field.tick(4);
+    expect(field.state("rock").respawnTimer).toBeCloseTo(6, 9);
+
+    const resumed = createResourceNodeField({ nodes: [rock()] });
+    resumed.hydrate(field.snapshot());
+    resumed.tick(5.9);
+    expect(resumed.isDepleted("rock")).toBe(true);
+    resumed.tick(0.2);
+    expect(resumed.isDepleted("rock")).toBe(false);
+    expect(resumed.state("rock").budget).toBe(4);
+  });
 });
