@@ -75,7 +75,7 @@ export interface BoatTuning {
  * the hull's own yaw inertia and centre of gravity for the coupled sway–yaw equations.
  */
 export interface BoatAddedMass {
-  /** How much of the effect acts, `0` (off, the simple model's term) to `1` (as the reference measures it; default). */
+  /** Multiplier on the effect: `0` off (the simple model's term), `1` exactly as the reference measures it (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
   /** Surge added mass, kg (default Lamb's prolate spheroid of the hull's length and twice its volume). */
   surge?: number;
@@ -90,10 +90,16 @@ export interface BoatAddedMass {
 }
 
 /**
- * The physical effects a boat can use. Each is a separate term with its own parameters and its own `strength`, from `0`
- * (off: the simple model's term) to `1` (as the reference measures it), blending the two in between; so a game takes
- * only what it wants and as much of it as it wants (a real propeller on an arcade hull, a fifth of the drag, seakeeping
- * on a raft). `boatFromReference` gives a published hull's defaults with every effect at full strength.
+ * The physical effects a boat can use. Each is a separate term with its own parameters and its own `strength`, a
+ * multiplier from `0` (off: the simple model's term) where `1` is exactly what the reference measures; between them the
+ * two blend, and past `1` the dial keeps going. Each stays finite, bounded and monotone over `0..4`:
+ * - `addedMass`: past 1, more entrained water (slower to surge, sway and yaw).
+ * - `resistance`, `planing`: past 1, more drag (lower top speed, shorter coast); planing trim scales with it.
+ * - `propeller`: past 1, more thrust from the same engine and screw.
+ * - `manoeuvring`: past 1, the hull keeps its measured derivatives and the rudder gains authority (a quicker, tighter turn).
+ * - `seakeeping`: past 1, more added mass and radiation damping (a calmer ride in the same sea).
+ * So a game takes only what it wants and as much of it as it wants (a real propeller on an arcade hull, a fifth of the
+ * drag, seakeeping on a raft). `boatFromReference` gives a published hull's defaults with every effect at strength 1.
  */
 export interface BoatEffects {
   /** Added mass and yaw inertia. */
@@ -212,29 +218,35 @@ export function hullSurgeAddedMass(massKg: number, length: number, density = WAT
 }
 
 function strengthOf(effect: { strength?: number } | undefined): number {
-  return effect === undefined ? 0 : Math.max(0, Math.min(1, effect.strength ?? 1));
+  return effect === undefined ? 0 : Math.max(0, effect.strength ?? 1);
 }
 
 function on<T extends { strength?: number }>(effect: T | undefined): T | undefined {
   return strengthOf(effect) > 0 ? effect : undefined;
 }
 
+/** Up to strength 1 the simple term blends into the physical one; past 1 the physical term scales with the strength. */
 function mix(simple: number, physical: number, strength: number): number {
-  return strength >= 1 ? physical : strength <= 0 ? simple : simple + (physical - simple) * strength;
+  return strength >= 1 ? physical * strength : strength <= 0 ? simple : simple + (physical - simple) * strength;
+}
+
+/** A plain blend capped at the physical value, for positions, levers and shares that must not scale past it. */
+function blend(simple: number, physical: number, strength: number): number {
+  return mix(simple, physical, Math.min(1, strength));
 }
 
 /** Every effect's speed-independent numbers, worked out once per tuning (and per sea for seakeeping). */
 interface PreparedEffects {
   planar: boolean;
   density: number;
-  /** Each effect's strength, `0..1`. */
+  /** Each effect's strength, `0` upward. */
   strength: { addedMass: number; resistance: number; planing: number; propeller: number; manoeuvring: number; seakeeping: number };
   resistance: ((speed: number) => number) | undefined;
   planing: { bottom: PlaningBottom; floor: number; floorTrim: number; floorResistance: number } | undefined;
   propeller: { spec: BoatPropeller; curve: PreparedOpenWater } | undefined;
   manoeuvring: HullManoeuvring | undefined;
   inertia: { surge: number; sway: number; yaw: number; xG: number; iz: number };
-  seakeeping: { spec: HullSeakeeping; prepared: PreparedSeakeeping; excitation: SeakeepingExcitation | undefined; inverse: [number, number, number, number] } | undefined;
+  seakeeping: { spec: HullSeakeeping; prepared: PreparedSeakeeping; extra: number; excitation: SeakeepingExcitation | undefined; inverse: [number, number, number, number] } | undefined;
 }
 
 // Strip sections cost a few tens of milliseconds to solve; boats sharing a hull and sea frequency share them.
@@ -260,14 +272,14 @@ function prepareEffects(tuning: BoatTuning, sea: WaveField | undefined): Prepare
     seakeeping: strengthOf(seakeeping),
   };
   const sa = strength.addedMass;
-  const xG = sa * (added?.centreOfGravity ?? 0);
+  const xG = Math.min(1, sa) * (added?.centreOfGravity ?? 0);
   const yawRadius = added?.yawRadius ?? tuning.length / Math.sqrt(12);
   const inertia = {
     surge: added === undefined ? 0 : sa * (added.surge ?? hullSurgeAddedMass(m, tuning.length, density)),
     sway: sa * (added?.sway ?? 0),
     yaw: sa * (added?.yaw ?? 0),
     xG,
-    iz: Math.max(1, mix((m * tuning.length * tuning.length) / 12, m * yawRadius * yawRadius + xG * xG * m + (added?.yaw ?? 0), sa)),
+    iz: Math.max(1, blend((m * tuning.length * tuning.length) / 12, m * yawRadius * yawRadius + xG * xG * m, sa) + sa * (added?.yaw ?? 0)),
   };
   let planingPrepared: PreparedEffects["planing"];
   if (planing !== undefined) {
@@ -286,11 +298,13 @@ function prepareEffects(tuning: BoatTuning, sea: WaveField | undefined): Prepare
     }
     const prepared = cached.get(key) ?? prepareSeakeeping(seakeeping, tuning.length, tuning.beam, m, tuning.water, frequency);
     cached.set(key, prepared);
-    const m11 = prepared.inertia[0] + prepared.addedMass[0];
-    const m12 = prepared.addedMass[1];
-    const m22 = prepared.inertia[2] + prepared.addedMass[2];
+    // Past strength 1 the hull carries more water and sheds more wave energy: added mass and damping scale up, a calmer ride.
+    const extra = Math.max(1, strength.seakeeping);
+    const m11 = prepared.inertia[0] + extra * prepared.addedMass[0];
+    const m12 = extra * prepared.addedMass[1];
+    const m22 = prepared.inertia[2] + extra * prepared.addedMass[2];
     const det = m11 * m22 - m12 * m12;
-    seakeepingPrepared = { spec: seakeeping, prepared, excitation: sea === undefined ? undefined : seakeepingExcitation(prepared, sea), inverse: [m22 / det, -m12 / det, -m12 / det, m11 / det] };
+    seakeepingPrepared = { spec: seakeeping, prepared, extra, excitation: sea === undefined ? undefined : seakeepingExcitation(prepared, sea), inverse: [m22 / det, -m12 / det, -m12 / det, m11 / det] };
   }
   return {
     strength,
@@ -322,7 +336,7 @@ export function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {
   const state: BoatState = fresh(options.position ?? [0, 0, 0], options.heading ?? 0);
   let prepared = prepareEffects(tuning, sea);
   const level = () => sea?.level ?? options.waterLevel ?? spawnY;
-  state.y = mix(water(state.x, state.z, 0), level(), prepared.seakeeping === undefined ? 0 : prepared.strength.seakeeping);
+  state.y = blend(water(state.x, state.z, 0), level(), prepared.seakeeping === undefined ? 0 : prepared.strength.seakeeping);
   const telemetry = { planing: 0, engineLoad: 0, thrust: 0, resistance: 0, propRevs: 0 };
   const hull: ManoeuvringLoads = [0, 0, 0];
   const steerLoads: ManoeuvringLoads = [0, 0, 0];
@@ -495,8 +509,8 @@ export function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {
       openThrust = mix(openThrust, point.thrust, sp);
       netThrust = mix(netThrust, (1 - (spec.thrustDeduction ?? 0)) * point.thrust, sp);
       race = { inflow, thrustCoefficient: sp * kt, advance: point.advance, diameter: spec.diameter };
-      leverShare = mix(leverShare, spec.position ?? -0.48, sp);
-      telemetry.engineLoad = mix(telemetry.engineLoad, point.load, sp);
+      leverShare = blend(leverShare, spec.position ?? -0.48, sp);
+      telemetry.engineLoad = Math.min(1, blend(telemetry.engineLoad, point.load, sp));
       telemetry.propRevs = point.revs;
     }
 
@@ -536,7 +550,7 @@ export function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {
     const planing = fx0.planing;
     const spl = planing === undefined ? 0 : strength.planing;
     const simpleShare = t.planingSpeed === undefined ? 0 : Math.max(0, Math.min(1, (Math.abs(u) - t.planingSpeed * 0.8) / (t.planingSpeed * 0.4)));
-    const planingShare = planing === undefined ? simpleShare : mix(simpleShare, Math.max(0, Math.min(1, (Math.abs(u) / planing.floor - 1) / 1.5)), spl);
+    const planingShare = planing === undefined ? simpleShare : blend(simpleShare, Math.max(0, Math.min(1, (Math.abs(u) / planing.floor - 1) / 1.5)), spl);
     telemetry.planing = planingShare;
 
     let keelY = 0;
@@ -548,9 +562,10 @@ export function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {
     }
     if (manoeuvring !== undefined) {
       hullManoeuvringForces(manoeuvring, t.length, rho, u, v, r, hull);
-      X += sm * hull[0];
-      Y += mix(keelY, hull[1], sm);
-      N += mix(keelN, hull[2], sm);
+      // The hull stays at its measured derivatives past strength 1; the dial's extra goes to the rudder.
+      X += Math.min(1, sm) * hull[0];
+      Y += blend(keelY, hull[1], sm);
+      N += blend(keelN, hull[2], sm);
     } else {
       Y += keelY;
       N += keelN;
@@ -636,17 +651,18 @@ export function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {
     if (sea !== undefined && keeping.excitation !== undefined) seakeepingForces(keeping.prepared, keeping.excitation, sea, state.x, state.z, fx, fz, state.time, waveLoads);
     else seakeepingForcesFromHeight(keeping.prepared, (x, z) => water(x, z, state.time), still, state.x, state.z, fx, fz, waveLoads);
     const p = keeping.prepared;
-    const fHeave = waveLoads[0] - p.damping[0] * state.heaveRate - p.damping[1] * state.pitchRate - p.restoring[0] * state.heave - p.restoring[1] * state.pitch;
-    const fPitch = waveLoads[1] - p.damping[1] * state.heaveRate - p.damping[2] * state.pitchRate - p.restoring[1] * state.heave - p.restoring[2] * state.pitch;
+    const e = keeping.extra;
+    const fHeave = waveLoads[0] - e * (p.damping[0] * state.heaveRate + p.damping[1] * state.pitchRate) - p.restoring[0] * state.heave - p.restoring[1] * state.pitch;
+    const fPitch = waveLoads[1] - e * (p.damping[1] * state.heaveRate + p.damping[2] * state.pitchRate) - p.restoring[1] * state.heave - p.restoring[2] * state.pitch;
     const [i11, i12, i21, i22] = keeping.inverse;
     state.heaveRate += (i11 * fHeave + i12 * fPitch) * h;
     state.pitchRate += (i21 * fHeave + i22 * fPitch) * h;
     state.heave += state.heaveRate * h;
     state.pitch += state.pitchRate * h;
     const [rollInertia, rollDamping, rollStiffness] = p.roll;
-    state.rollRate += ((waveLoads[2] - rollDamping * state.rollRate - rollStiffness * state.roll) / Math.max(1e-9, rollInertia)) * h;
+    state.rollRate += ((waveLoads[2] - e * rollDamping * state.rollRate - rollStiffness * state.roll) / Math.max(1e-9, rollInertia)) * h;
     state.roll += state.rollRate * h;
-    state.y = mix(state.y, still + state.heave, prepared.strength.seakeeping);
+    state.y = blend(state.y, still + state.heave, prepared.strength.seakeeping);
   }
 
   return {
@@ -672,8 +688,8 @@ export function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {
         thrust: telemetry.thrust,
         resistance: telemetry.resistance,
         propRevs: telemetry.propRevs,
-        bodyPitch: state.bodyPitch + prepared.strength.seakeeping * state.pitch,
-        bodyRoll: state.bodyRoll + prepared.strength.seakeeping * state.roll,
+        bodyPitch: state.bodyPitch + Math.min(1, prepared.strength.seakeeping) * state.pitch,
+        bodyRoll: state.bodyRoll + Math.min(1, prepared.strength.seakeeping) * state.roll,
         airOffset: 0,
         airborne: false,
       };
@@ -695,7 +711,7 @@ export function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {
     },
     resetTo(position, heading) {
       Object.assign(state, fresh(position, heading));
-      state.y = mix(water(state.x, state.z, 0), level(), prepared.seakeeping === undefined ? 0 : prepared.strength.seakeeping);
+      state.y = blend(water(state.x, state.z, 0), level(), prepared.seakeeping === undefined ? 0 : prepared.strength.seakeeping);
     },
     setSea(next) {
       sea = next;

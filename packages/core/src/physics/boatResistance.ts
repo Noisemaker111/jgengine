@@ -32,7 +32,7 @@ export function frictionLineCoefficient(line: FrictionLine, reynolds: number): n
  * come from the boat's tuning; any coefficient left out is estimated from the hull.
  */
 export interface HullResistance {
-  /** How much of the effect acts, `0` (off, the simple model's term) to `1` (as the reference measures it; default). */
+  /** Multiplier on the effect: `0` off (the simple model's term), `1` exactly as the reference measures it (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
   /** Measured total resistance coefficient `R/(½ρ·L·T·U²)`; when set, every other term is skipped. */
   coefficient?: number;

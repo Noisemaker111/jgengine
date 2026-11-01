@@ -9,7 +9,7 @@ const DEG = Math.PI / 180;
  * scaled with speed squared and the trim eases to level at rest.
  */
 export interface PlaningBottom {
-  /** How much of the effect acts, `0` (off, the simple model's term) to `1` (as the reference measures it; default). */
+  /** Multiplier on the effect: `0` off (the simple model's term), `1` exactly as the reference measures it (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
   /** Deadrise, rad. */
   deadrise: number;

@@ -24,7 +24,7 @@ export interface HullOffsetTable {
  * forcing is per component; without one the hull samples `waterHeight` along its length (the long-wave limit).
  */
 export interface HullSeakeeping {
-  /** How much of the effect acts, `0` (off, the simple model's term) to `1` (as the reference measures it; default). */
+  /** Multiplier on the effect: `0` off (the simple model's term), `1` exactly as the reference measures it (default), past `1` stronger; sane over `0..4`. */
   strength?: number;
   /** Hull lines; default a Wigley hull (`C_B` 4/9) of the tuning's length, beam and mass. */
   offsets?: HullOffsetTable;
