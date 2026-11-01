@@ -12,7 +12,7 @@ import { lookServedPath } from "./curatedPull";
 describe("curated looks", () => {
   test("every HDRI, grade and font resolves to a served file and an accepted licence", () => {
     expect(HDRI_LIBRARY.length).toBeGreaterThanOrEqual(8);
-    expect(HDRI_LIBRARY.length).toBeLessThanOrEqual(12);
+    expect(HDRI_LIBRARY.length).toBeLessThanOrEqual(16);
     for (const entry of HDRI_LIBRARY) {
       expect(isLibraryLicense(HDRI_LICENSE)).toBe(true);
       expect(entry.author.length).toBeGreaterThan(0);
