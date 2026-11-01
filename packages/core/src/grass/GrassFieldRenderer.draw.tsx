@@ -5,6 +5,7 @@ import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import { clearanceMasksFrom, DEFAULT_CLEARANCE_KINDS } from "@jgengine/core/scatter/scatterRegion";
 import { masksInfluence, masksWithin } from "@jgengine/core/world/geometry";
+import { windField } from "@jgengine/core/world/wind";
 
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import type { GrassExclusion } from "@jgengine/core/grass/grassBake.draw";
@@ -82,6 +83,9 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [volumes, resolved],
   );
+  // The document's authored ambient wind is the one wind its grass, weather and boats read.
+  const windConfig = context.document.simulation?.weather?.wind;
+  const wind = useMemo(() => (windConfig === undefined ? undefined : { field: windField(windConfig) }), [windConfig]);
   if (resolved === null || area === null || exclude === null) return null;
   const { look, center } = resolved;
   return (
@@ -96,6 +100,7 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
       baseHeight={center[1]}
       edgeFeather={2.2}
       exclude={exclude}
+      wind={wind}
     />
   );
 }
