@@ -3,7 +3,7 @@ import type { BodySnapshot } from "@jgengine/core/scene/bodyBind";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { EditorDocument } from "@jgengine/core/editor/index";
 import { createTraffic, laneGraphFromDocument, type LaneGraph, type Traffic } from "@jgengine/core/world";
-import { cityRoadWidth, type CityLayout } from "@jgengine/core/city/cityLayout";
+import { cityRoadWidth, type CityLayout } from "../../engine-local/city/cityLayout";
 import { nearestOnPath } from "@jgengine/core/roads/roads";
 import { hashString } from "@jgengine/core/random/rng";
 
