@@ -1,3 +1,4 @@
+import { evaluatePredicate, predicateLeaves, type Predicate } from "../rules/predicate";
 import {
   createReputationLedger,
   type ReputationLedger,
@@ -41,13 +42,32 @@ export interface StandingChange {
   tier: string;
 }
 
-/** A threshold on one track, as an unlock or an upgrade reads it. */
-export interface StandingRequirement {
-  trackId: string;
-  /** Smallest standing that passes; omitted means no floor. */
-  min?: number;
-  /** Largest standing that passes; omitted means no ceiling. */
-  max?: number;
+/**
+ * Track ids a predicate reads through `standing.<trackId>` paths.
+ *
+ * @capability standing read per-track standing in gates, upgrades and other predicates
+ */
+export function standingTracksRead(predicate: Predicate | undefined): string[] {
+  const tracks: string[] = [];
+  for (const leaf of predicateLeaves(predicate)) {
+    if (leaf.path.startsWith("standing.")) tracks.push(leaf.path.slice("standing.".length));
+  }
+  return tracks;
+}
+
+/**
+ * Evaluate a predicate over `standing.<trackId>` facts read from `reader` for one actor; an unknown track throws.
+ *
+ * @capability standing read per-track standing in gates, upgrades and other predicates
+ */
+export function evaluateStandingPredicate(
+  predicate: Predicate | undefined,
+  reader: Pick<Standing, "standing">,
+  actorId: string,
+): boolean {
+  const standing: Record<string, number> = {};
+  for (const trackId of standingTracksRead(predicate)) standing[trackId] = reader.standing(actorId, trackId);
+  return evaluatePredicate(predicate, { standing });
 }
 
 /** Plain JSON state of a {@link Standing}; tracks left at their authored `initial` are absent. */
@@ -71,7 +91,8 @@ export interface Standing {
   apply(actorId: string, outcomeId: string): readonly StandingChange[];
   /** Move one track directly; returns the change. Throws on an unknown track id. */
   adjust(actorId: string, trackId: string, delta: number): StandingChange;
-  meets(actorId: string, requirement: StandingRequirement): boolean;
+  /** Whether a predicate over `standing.<trackId>` facts holds for the actor; throws on an unknown track. */
+  meets(actorId: string, requirement: Predicate): boolean;
   snapshot(): StandingState;
   restore(next: StandingState): void;
 }
@@ -199,10 +220,7 @@ export function createStanding(config: StandingConfig): Standing {
       const after = ledger.standing(actorId, trackId);
       return { trackId, before, after, delta: after - before, previousTier, tier: ledger.tier(actorId, trackId).id };
     },
-    meets(actorId, requirement) {
-      const value = ledgerFor(requirement.trackId).standing(actorId, requirement.trackId);
-      return (requirement.min === undefined || value >= requirement.min) && (requirement.max === undefined || value <= requirement.max);
-    },
+    meets: (actorId, requirement) => evaluateStandingPredicate(requirement, { standing: (id, trackId) => ledgerFor(trackId).standing(id, trackId) }, actorId),
     snapshot() {
       const records: Record<string, Record<string, number>> = {};
       for (const [trackId, ledger] of ledgers) {

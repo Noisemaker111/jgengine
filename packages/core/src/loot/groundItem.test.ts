@@ -215,7 +215,7 @@ describe("resolveWorldItemPresentation", () => {
   });
 
   test("a matching rule overrides only the fields it sets", () => {
-    const rules: LootFilterRule[] = [{ id: "hide-common", when: { rarity: "common" }, hide: true }];
+    const rules: LootFilterRule[] = [{ id: "hide-common", when: { eq: ["rarity", "common"] }, hide: true }];
     expect(resolveWorldItemPresentation({ rarity: "common", baseType: "resource" }, rarityStyle, rules)).toEqual({
       hidden: true,
       beam: false,

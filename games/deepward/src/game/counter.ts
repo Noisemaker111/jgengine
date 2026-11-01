@@ -1,6 +1,7 @@
+import { predicateFloor } from "@jgengine/core/rules/predicate";
 import { evalCurve, type Curve } from "@jgengine/core/progression/leveling";
 import { createCareerBank, type CareerBankState } from "@jgengine/core/progression/careerBank";
-import { createGateSet, gateFacts, type GateStatus } from "@jgengine/core/progression/gates";
+import { createGateSet, gateFacts, type GateDef, type GateStatus } from "@jgengine/core/progression/gates";
 import { createStanding, type StandingState } from "@jgengine/core/progression/standing";
 import { createItemLedger, salvageItem } from "@jgengine/core/loot/salvage";
 import { createTransactionLedger, type LedgerEntry, type LedgerState, type TransactionLedger } from "@jgengine/core/economy/transactionLedger";
@@ -101,11 +102,11 @@ export const SUPPLIES: readonly SupplyDef[] = [
 ];
 
 /** Which standing opens each supply; an id here that no supply carries fails at load. */
-const SUPPLY_GATES = [
-  { id: "supply_wire", unlock: "wire", label: "Copper spool", requires: { standing: { trackId: "marrow", min: 0 } } },
-  { id: "supply_polymer", unlock: "polymer", label: "Suit seals", requires: { standing: { trackId: "marrow", min: 15 } } },
-  { id: "supply_cells", unlock: "cells", label: "Power cells", requires: { standing: { trackId: "marrow", min: 40 } } },
-  { id: "supply_ink", unlock: "ink", label: "Printer ink", requires: { standing: { trackId: "marrow", min: 80 } } },
+const SUPPLY_GATES: readonly GateDef[] = [
+  { id: "supply_wire", unlock: "wire", label: "Copper spool", requires: { gte: ["standing.marrow", 0] } },
+  { id: "supply_polymer", unlock: "polymer", label: "Suit seals", requires: { gte: ["standing.marrow", 15] } },
+  { id: "supply_cells", unlock: "cells", label: "Power cells", requires: { gte: ["standing.marrow", 40] } },
+  { id: "supply_ink", unlock: "ink", label: "Printer ink", requires: { gte: ["standing.marrow", 80] } },
 ];
 
 /**
@@ -151,7 +152,7 @@ export function counterRows(home: Home): CounterRow[] {
       supply,
       price: priceOf(supply.kind, score),
       locked: status !== null && !status.open,
-      needs: gate?.requires?.standing?.min ?? null,
+      needs: predicateFloor(gate?.requires, "standing.marrow"),
       missing: status?.missing ?? [],
     };
   });

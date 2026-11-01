@@ -21,14 +21,14 @@ const STANDING = createStanding({
 });
 
 const GATES: readonly GateDef[] = [
-  { id: "gate_dropzone", unlock: "ride_dropzone", label: "Drop tower", requires: { standing: { trackId: "park", min: 20 } } },
-  { id: "gate_souvenir", unlock: "stall_souvenir", requires: { standing: { trackId: "park", min: 10 } } },
-  { id: "gate_garden", unlock: "deco_garden", requires: { balance: { currency: "cash", min: 500 } } },
+  { id: "gate_dropzone", unlock: "ride_dropzone", label: "Drop tower", requires: { gte: ["standing.park", 20] } },
+  { id: "gate_souvenir", unlock: "stall_souvenir", requires: { gte: ["standing.park", 10] } },
+  { id: "gate_garden", unlock: "deco_garden", requires: { gte: ["balance.cash", 500] } },
 ];
 
 const facts = (standing: number, cash = 0): GateFacts => ({
-  standing: () => standing,
-  balance: (currency) => (currency === "cash" ? cash : 0),
+  standing: { park: standing },
+  balance: { cash },
 });
 
 describe("gate set", () => {
@@ -36,7 +36,7 @@ describe("gate set", () => {
     const set = createGateSet({ gates: GATES, catalog: CATALOG, standing: STANDING });
     expect(set.isOpen("gate_dropzone", facts(19.99))).toBe(false);
     expect(set.isOpen("gate_dropzone", facts(20))).toBe(true);
-    expect(set.status(facts(19))[0]).toMatchObject({ open: false, missing: ["standing"] });
+    expect(set.status(facts(19))[0]).toMatchObject({ open: false, missing: [{ gte: ["standing.park", 20] }] });
     expect(set.status(facts(20))[0]).toMatchObject({ open: true, missing: [] });
   });
 
@@ -65,9 +65,7 @@ describe("gate set", () => {
     const standing = createStanding({ tracks: [{ id: "park", tiers: TRACK_TIERS }] });
     standing.adjust("jon", "park", 12);
     const read = gateFacts(standing, "jon", { cash: 700 });
-    expect(read.standing("park")).toBe(12);
-    expect(read.balance("cash")).toBe(700);
-    expect(read.balance("scrip")).toBe(0);
+    expect(read).toEqual({ standing: { park: 12 }, balance: { cash: 700 } });
   });
 
   test("a gate whose reward resolves to nothing fails at load", () => {
@@ -79,7 +77,7 @@ describe("gate set", () => {
   test("a gate reading an unauthored standing track fails at load", () => {
     expect(() =>
       createGateSet({
-        gates: [{ id: "gate_district", unlock: "deco_garden", requires: { standing: { trackId: "district" } } }],
+        gates: [{ id: "gate_district", unlock: "deco_garden", requires: { gte: ["standing.district", 0] } }],
         catalog: CATALOG,
         standing: STANDING,
       }),
@@ -92,17 +90,17 @@ describe("gate set", () => {
     ).toThrow(/declared twice/);
     expect(() =>
       createGateSet({
-        gates: [{ id: "a", unlock: "deco_garden", requires: { balance: { currency: "cash", min: Number.NaN } } }],
+        gates: [{ id: "a", unlock: "deco_garden", requires: { gte: ["balance.cash", Number.NaN] } }],
         catalog: CATALOG,
       }),
-    ).toThrow(/balance min must be finite/);
+    ).toThrow(/operand must be finite/);
     expect(() =>
       createGateSet({
-        gates: [{ id: "a", unlock: "deco_garden", requires: { standing: { trackId: "park", min: 5, max: 1 } } }],
+        gates: [{ id: "a", unlock: "deco_garden", requires: { gte: ["standing.park", Number.POSITIVE_INFINITY] } }],
         catalog: CATALOG,
         standing: STANDING,
       }),
-    ).toThrow(/min <= max/);
+    ).toThrow(/operand must be finite/);
   });
 
   test("a gate with no requirements is open from the start", () => {

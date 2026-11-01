@@ -95,3 +95,51 @@ export function evaluatePredicate(predicate: Predicate | undefined, facts: Predi
   const value = asNumber(readPath(facts, predicate.lte[0]));
   return value !== undefined && value <= predicate.lte[1];
 }
+
+/** One comparison in a predicate: its operator, the fact path it reads and its operand (absent for `has`). */
+export interface PredicateLeaf {
+  op: "eq" | "ne" | "gt" | "gte" | "lt" | "lte" | "in" | "includes" | "has";
+  path: PredicatePath;
+  operand?: PredicateValue | readonly PredicateValue[];
+}
+
+/**
+ * Every comparison in a predicate tree, in order — what a loader checks an authored condition
+ * against (does each path name a real fact, is each number finite) before play.
+ *
+ * @capability declarative-predicate serializable data-driven conditions with no callbacks in saved content
+ */
+export function predicateLeaves(predicate: Predicate | undefined): PredicateLeaf[] {
+  const out: PredicateLeaf[] = [];
+  const visit = (node: Predicate): void => {
+    if ("all" in node) node.all.forEach(visit);
+    else if ("any" in node) node.any.forEach(visit);
+    else if ("not" in node) visit(node.not);
+    else if ("has" in node) out.push({ op: "has", path: node.has });
+    else if ("eq" in node) out.push({ op: "eq", path: node.eq[0], operand: node.eq[1] });
+    else if ("ne" in node) out.push({ op: "ne", path: node.ne[0], operand: node.ne[1] });
+    else if ("in" in node) out.push({ op: "in", path: node.in[0], operand: node.in[1] });
+    else if ("includes" in node) out.push({ op: "includes", path: node.includes[0], operand: node.includes[1] });
+    else if ("gt" in node) out.push({ op: "gt", path: node.gt[0], operand: node.gt[1] });
+    else if ("gte" in node) out.push({ op: "gte", path: node.gte[0], operand: node.gte[1] });
+    else if ("lt" in node) out.push({ op: "lt", path: node.lt[0], operand: node.lt[1] });
+    else out.push({ op: "lte", path: node.lte[0], operand: node.lte[1] });
+  };
+  if (predicate !== undefined) visit(predicate);
+  return out;
+}
+
+/**
+ * The `gte` floor a predicate sets on one fact path (the largest, when several), or `null` when it sets none —
+ * what a "needs 20 standing" line reads off an authored condition.
+ *
+ * @capability declarative-predicate serializable data-driven conditions with no callbacks in saved content
+ */
+export function predicateFloor(predicate: Predicate | undefined, path: PredicatePath): number | null {
+  let floor: number | null = null;
+  for (const leaf of predicateLeaves(predicate)) {
+    if (leaf.op !== "gte" || leaf.path !== path || typeof leaf.operand !== "number") continue;
+    floor = floor === null ? leaf.operand : Math.max(floor, leaf.operand);
+  }
+  return floor;
+}

@@ -63,10 +63,10 @@ describe("standing", () => {
   test("meets reads floors and ceilings per track", () => {
     const standing = createStanding(CONFIG);
     standing.adjust("jon", "yard", 25);
-    expect(standing.meets("jon", { trackId: "yard", min: 25 })).toBe(true);
-    expect(standing.meets("jon", { trackId: "yard", min: 26 })).toBe(false);
-    expect(standing.meets("jon", { trackId: "yard", min: 10, max: 30 })).toBe(true);
-    expect(standing.meets("jon", { trackId: "yard", max: 20 })).toBe(false);
+    expect(standing.meets("jon", { gte: ["standing.yard", 25] })).toBe(true);
+    expect(standing.meets("jon", { gte: ["standing.yard", 26] })).toBe(false);
+    expect(standing.meets("jon", { all: [{ gte: ["standing.yard", 10] }, { lte: ["standing.yard", 30] }] })).toBe(true);
+    expect(standing.meets("jon", { lte: ["standing.yard", 20] })).toBe(false);
   });
 
   test("an unauthored outcome or track throws instead of moving nothing", () => {

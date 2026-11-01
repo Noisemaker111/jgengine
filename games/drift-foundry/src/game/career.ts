@@ -1,7 +1,8 @@
+import { predicateFloor } from "@jgengine/core/rules/predicate";
 import { isFiniteNumber, isRecord, typedRecord } from "@jgengine/core/data/untyped";
 import type { Curve } from "@jgengine/core/progression/leveling";
 import { createCareerBank, type CareerBankState } from "@jgengine/core/progression/careerBank";
-import { createGateSet, gateFacts } from "@jgengine/core/progression/gates";
+import { createGateSet, gateFacts, type GateDef } from "@jgengine/core/progression/gates";
 import { createStanding, type StandingState } from "@jgengine/core/progression/standing";
 import { createUpgradeTree, type UpgradeState } from "@jgengine/core/progression/upgrades";
 import { createMedalBoard, type MedalBoardState } from "@jgengine/core/progression/medalBoard";
@@ -47,11 +48,11 @@ export const YARD_STANDING = {
 };
 
 /** Parts the yard will not sell until the driver is known well enough. */
-const PART_GATES = [
-  { id: "part_plow", unlock: "plow_blade", requires: { standing: { trackId: "yard", min: 0 } } },
-  { id: "part_treads", unlock: "monster_treads", label: "Monster treads", requires: { standing: { trackId: "yard", min: 12 } } },
-  { id: "part_ev", unlock: "ev_conversion", label: "EV conversion", requires: { standing: { trackId: "yard", min: 25 } } },
-  { id: "part_armor", unlock: "armor_plating", label: "Armor plating", requires: { standing: { trackId: "yard", min: 40 } } },
+const PART_GATES: readonly GateDef[] = [
+  { id: "part_plow", unlock: "plow_blade", requires: { gte: ["standing.yard", 0] } },
+  { id: "part_treads", unlock: "monster_treads", label: "Monster treads", requires: { gte: ["standing.yard", 12] } },
+  { id: "part_ev", unlock: "ev_conversion", label: "EV conversion", requires: { gte: ["standing.yard", 25] } },
+  { id: "part_armor", unlock: "armor_plating", label: "Armor plating", requires: { gte: ["standing.yard", 40] } },
 ];
 
 /** The yard's locked shelf. Built at load, so a part id that does not exist throws here. */
@@ -240,7 +241,7 @@ export function garageRows(career: CareerSave): GarageRow[] {
       price: part === null ? null : ladders.costOf(slot, nextRank),
       owned: owned >= ladder.length,
       locked,
-      needs: gate?.requires?.standing?.min ?? null,
+      needs: predicateFloor(gate?.requires, "standing.yard"),
     };
   });
 }

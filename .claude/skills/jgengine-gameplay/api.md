@@ -1138,7 +1138,7 @@
 - `DEFAULT_RIDE_RATING_RANGE` (const): const DEFAULT_RIDE_RATING_RANGE: RideRatingRange — A 0–10 rating scale, the usual shape of a ride catalog. Override it when a park rates differently.
 - `DEFAULT_TOUCH_STYLE` (const): const DEFAULT_TOUCH_STYLE: TouchStyle — Skin used when neither the game nor the player picks one.
 - `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. The value half of a save — a tuned meter also needs its rate and rate modifiers, which `createNeedSet` (`sim/needs`) snapshots and restores.
-- `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
+- `DecayModifier` (type): type DecayModifier = StatRateModifier — Rate scaling for {@link decayMeters}: one multiplier for every meter (a member's metabolism, a game-mode harshness dial), a per-meter record (cold biome → warmth only), or named stat-op contributions that stack. `1` / omitted leaves the base rates unscaled.
 - `DefendMissionOptions` (interface): interface DefendMissionOptions extends ComposedMissionOptions — Options for {@link defendMission}: hold a position, scored by what is left standing.
 - `DeliveryEntry` (interface): interface DeliveryEntry { id: string; userId: string; inventoryId: string; items: readonly ItemStack[]; deliverAt: number } — ⚠ undocumented
 - `DeliveryQueue` (interface): interface DeliveryQueue { schedule(entry: ScheduledDelivery & {id?: string}): DeliveryEntry; due(now: number): readonly DeliveryEntry[]; claimDue(now: number): readonly DeliveryEntry[]; pending(userId?: string): readonly DeliveryEntry[]; cancel(id: string): boolea… — ⚠ undocumented
@@ -1272,7 +1272,7 @@
 - `LootComparison` (interface): interface LootComparison — How two items compare: every stat delta plus one weighted score for each.
 - `LootComparisonOptions` (interface): interface LootComparisonOptions — Caller policy for the comparison score.
 - `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
-- `LootFilterRule` (interface): interface LootFilterRule { id: string; when: LootFilterCondition; hide?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
+- `LootFilterRule` (interface): interface LootFilterRule { id: string; when?: Predicate; hide?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
 - `LootInstalledPart` (interface): interface LootInstalledPart — One part occupying one slot of a rolled item.
 - `LootIssueCode` (type): type LootIssueCode = | "invalid-level" | "unknown-base" | "level-gated-base" | "unknown-manufacturer" | "manufacturer-base" | "unknown-rarity" | "duplicate-slot" | "unknown-slot" | "missing-slot-part" | "unknown-part" | "part-category" | "unknown-affix" | "duplicate-affix" | "invalid-affix" | "non-f… — A defect found by {@link validateLootItem}.
 - `LootItem` (interface): interface LootItem — One rolled item: the base, maker, rarity, level, composed name, chosen parts, rolled affixes and resolved stats. Plain JSON, so a save stores it and the instance registry can key it.
@@ -1604,7 +1604,7 @@
 - `VitalFlag` (interface): interface VitalFlag — A named condition a vital raises from its value, with optional hysteresis.
 - `VitalFlagChange` (interface): interface VitalFlagChange — A flag that changed this tick.
 - `VitalLink` (interface): interface VitalLink — A per-second change one vital applies to another while a condition holds.
-- `VitalRateModifier` (type): type VitalRateModifier = number | Readonly<Record<string, number>> — Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast).
+- `VitalRateModifier` (type): type VitalRateModifier = StatRateModifier — Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast).
 - `Vitals` (interface): interface Vitals — One body's survival vitals over plain data; every write is bounded and every value retunable.
 - `VitalsState` (interface): interface VitalsState — Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns and raised flags.
 - `VitalsTickOptions` (interface): interface VitalsTickOptions — Options for {@link Vitals.tick}.
@@ -2275,10 +2275,9 @@
 
 ## @jgengine/core/loot/lootFilter
 
-- `LootFilterCondition` (interface): interface LootFilterCondition { rarity?: string | readonly string[]; baseType?: string | readonly string[]; minAffixTier?: number; maxAffixTier?: number } — ⚠ undocumented
 - `LootFilterItem` (interface): interface LootFilterItem { rarity: string; baseType: string; affixTier?: number } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
 - `LootFilterOverride` (interface): interface LootFilterOverride { hidden?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
-- `LootFilterRule` (interface): interface LootFilterRule { id: string; when: LootFilterCondition; hide?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
+- `LootFilterRule` (interface): interface LootFilterRule { id: string; when?: Predicate; hide?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
 
@@ -2620,15 +2619,13 @@
 ## @jgengine/core/progression/gates
 
 - `GateDef` (interface): interface GateDef — A milestone: content that opens exactly when its requirements hold and names the unlock it grants. `unlock` must resolve in the catalog the set is built with, or the set refuses to load.
-- `GateFacts` (interface): interface GateFacts — What a gate is evaluated against: standing by track and money by currency.
-- `GateMiss` (type): type GateMiss = "standing" | "balance" — Which named condition a closed gate still needs.
-- `GateRequirement` (interface): interface GateRequirement — Every condition a gate can require; all named conditions must hold.
+- `GateFacts` (type): type GateFacts = PredicateFacts — What a gate is evaluated against: `standing.<trackId>` and `balance.<currency>` numbers, plus any fact the game names.
 - `GateSet` (interface): interface GateSet — Evaluated gate content: the table, its status against facts, and the grants a caller applies.
 - `GateSetConfig` (interface): interface GateSetConfig — Content and the resolvers a {@link GateSet} is built from.
 - `GateStatus` (interface): interface GateStatus — One gate against live facts.
 - `assertGates` (function): function assertGates(config: GateSetConfig): void — Check an authored gate table against the content it grants; throws `RangeError` naming the gate.
 - `createGateSet` (function): function createGateSet(config: GateSetConfig): GateSet — Authored unlock gates: each one names the unlock it grants and the standing or balance it reads. Evaluated against caller-supplied facts, so one table serves a single-player save, a server actor or a probe. Load refuses a gate whose unlock id resolves to nothing (the D3.8 class), so a dead milestone fails at startup instead of in play. A gate with no requirements is open from the start.
-- `gateFacts` (function): function gateFacts(standing: Pick<Standing, "standing">, actorId: string, balances: Readonly<Record<string, number>> = {}): GateFacts — Read a {@link Standing} and a balance record as {@link GateFacts}.
+- `gateFacts` (function): function gateFacts(standing: Pick<Standing, "standings">, actorId: string, balances: Readonly<Record<string, number>> = {}): GateFacts — Read a {@link Standing} and a balance record as `standing.*` and `balance.*` {@link GateFacts}.
 
 ## @jgengine/core/progression/gearScore
 
@@ -2687,11 +2684,12 @@
 - `StandingChange` (interface): interface StandingChange — One track's movement, with the tier on both sides so a caller can announce a crossing.
 - `StandingConfig` (interface): interface StandingConfig — Authored standing content: the tracks an actor stands with, and the outcomes that move them.
 - `StandingOutcomeDef` (interface): interface StandingOutcomeDef — One outcome a game can report, and the standing it moves on each track.
-- `StandingRequirement` (interface): interface StandingRequirement — A threshold on one track, as an unlock or an upgrade reads it.
 - `StandingState` (interface): interface StandingState — Plain JSON state of a {@link Standing}; tracks left at their authored `initial` are absent.
 - `StandingTrackDef` (interface): interface StandingTrackDef — One standing track: a faction, a district, a licence board — whatever an authored outcome moves.
 - `assertStandingConfig` (function): function assertStandingConfig(config: StandingConfig): void — Check authored standing content before use; throws `RangeError` naming the offending field.
 - `createStanding` (function): function createStanding(config: StandingConfig): Standing — Per-faction or per-district standing that rises and falls from named outcomes, over authored tracks. Numbers live in the shared reputation ledger (`faction/reputation`); this adds the authored outcome table, tier-per-track and the one snapshot a save stores. An outcome id or track id that resolves to nothing throws at the call, so authored content fails loudly.
+- `evaluateStandingPredicate` (function): function evaluateStandingPredicate(predicate: Predicate | undefined, reader: Pick<Standing, "standing">, actorId: string): boolean — Evaluate a predicate over `standing.<trackId>` facts read from `reader` for one actor; an unknown track throws.
+- `standingTracksRead` (function): function standingTracksRead(predicate: Predicate | undefined): string[] — Track ids a predicate reads through `standing.<trackId>` paths.
 
 ## @jgengine/core/progression/statGraph
 
@@ -2706,9 +2704,11 @@
 - `StatInputDef` (interface): interface StatInputDef — A game-owned named input value. The engine ships no attribute vocabulary — ids, bounds, defaults, and metadata are entirely caller data, so the same graph can model STR/AGI/INT, SPECIAL scores, skills, difficulty knobs, or anything else.
 - `StatModEntry` (type): type StatModEntry = StatContribution | readonly StatContribution[] — A modifier entry targeting one stat: a single contribution or an ordered list.
 - `StatOp` (type): type StatOp = "add" | "mul" | "override" | "clampMin" | "clampMax" — How a single contribution folds into a running value.
+- `StatRateModifier` (type): type StatRateModifier = | number | readonly StatContribution[] | Readonly<Record<string, number | readonly StatContribution[]>> — A per-second rate scaling: one multiplier for every id, one ordered contribution stack for every id, or a record keyed by id (an id left out is unscaled). A stack is `mul`/`add`/clamp steps with their sources, so a cold biome and a metabolism stack as named contributions instead of a pre-multiplied number.
 - `StatSheet` (interface): interface StatSheet — A live per-entity instance of a {@link StatGraph}: mutable base values and modifier sources over a shared schema.
 - `StatSheetState` (interface): interface StatSheetState — Plain-data, JSON-safe sheet state: input base values plus registered modifier sources.
 - `applyStatOp` (function): function applyStatOp(value: number, op: StatOp, operand: number): number — Apply one {@link StatOp} to a running value — the engine's one definition of what add, multiply, override and clamp mean.
+- `applyStatRate` (function): function applyStatRate(rate: number, modifier: StatRateModifier | undefined, id: string): number — Scale one id's `rate` by a {@link StatRateModifier}; an omitted modifier leaves it unchanged.
 - `boundStatValue` (function): function boundStatValue(value: number, bounds: StatBounds): number — Clamp and round a value to {@link StatBounds} — the same bounds a stat input or derived node applies.
 - `createStatGraph` (function): function createStatGraph(def: StatGraphDef): StatGraph — A data-driven stat graph: game-owned named inputs feed caller-authored derived formulas, with contribution provenance, uncommitted previews, cycle detection, and selective recomputation. Formula semantics and numeric tables stay entirely game-defined.
 - `foldStatContributions` (function): function foldStatContributions(base: number, contributions: Iterable<StatContribution>): number — Fold contributions onto `base` in the order given, with no reordering — the stack a caller applies to one number (a damage roll, a move speed, a loot weight) without building a graph. A stat graph sorts its sources by op first; an ordered stack keeps the caller's sequence.
@@ -2851,9 +2851,12 @@
 
 - `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value; `in` asks whether a scalar fact is one of a listed set, and `includes` whether a list fact holds a named value.
 - `PredicateFacts` (type): type PredicateFacts = Record<string, unknown> — Plain, serializable bag of facts a predicate reads by dot path.
+- `PredicateLeaf` (interface): interface PredicateLeaf — One comparison in a predicate: its operator, the fact path it reads and its operand (absent for `has`).
 - `PredicatePath` (type): type PredicatePath = string — Dot path into a fact bag, e.g. `"hit.crit"` or `"attacker.team"`.
 - `PredicateValue` (type): type PredicateValue = string | number | boolean | null — A declarative, serializable predicate AST evaluated against a plain fact bag. Predicates carry no closures, so they survive save/load and stay deterministic — the reusable condition seam that event-conditioned rules, quests, perks, and reactive AI gate on instead of hand-rolled callbacks.
 - `evaluatePredicate` (function): function evaluatePredicate(predicate: Predicate | undefined, facts: PredicateFacts): boolean — Evaluate a predicate against a fact bag. An omitted predicate matches unconditionally, so callers can treat "no condition" and "always" identically. Pure and deterministic — no allocation beyond path splits and no reliance on evaluation order between sibling clauses.
+- `predicateFloor` (function): function predicateFloor(predicate: Predicate | undefined, path: PredicatePath): number | null — The `gte` floor a predicate sets on one fact path (the largest, when several), or `null` when it sets none — what a "needs 20 standing" line reads off an authored condition.
+- `predicateLeaves` (function): function predicateLeaves(predicate: Predicate | undefined): PredicateLeaf[] — Every comparison in a predicate tree, in order — what a loader checks an authored condition against (does each path name a real fact, is each number finite) before play.
 - `readPath` (function): function readPath(facts: PredicateFacts, path: PredicatePath): unknown — Read a dot path out of a fact bag, descending only through plain objects. Returns `undefined` when any segment is missing or non-traversable. Bounded by the path's segment count.
 
 ## @jgengine/core/rules/ruleEffects
@@ -3237,7 +3240,7 @@
 - `DecayMeterConfig` (interface): interface DecayMeterConfig { id: string; max: number; min?: number; start?: number; rate: number; thresholds?: readonly MeterThreshold[] } — ⚠ undocumented · used by `decayMeterMoodles`: Moodles for every crossed threshold, worst-first per meter in declared order.
 - `DecayMeterState` (interface): interface DecayMeterState { id: string; value: number; max: number; min: number; fraction: number } — ⚠ undocumented · used by `decayMeterSnapshot`: Numeric state for every meter, keyed by id — the pure counterpart to `NeedSet.states`.
 - `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. The value half of a save — a tuned meter also needs its rate and rate modifiers, which `createNeedSet` (`sim/needs`) snapshots and restores.
-- `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
+- `DecayModifier` (type): type DecayModifier = StatRateModifier — Rate scaling for {@link decayMeters}: one multiplier for every meter (a member's metabolism, a game-mode harshness dial), a per-meter record (cold biome → warmth only), or named stat-op contributions that stack. `1` / omitted leaves the base rates unscaled.
 - `MeterThreshold` (interface): interface MeterThreshold extends ThresholdBoundary — A Ladder step on the meter: `id` is the moodle raised while the meter is on the wrong side of `at`.
 - `decayMeterMoodles` (function): function decayMeterMoodles(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Moodle[] — Moodles for every crossed threshold, worst-first per meter in declared order.
 - `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to `NeedSet.states`.
@@ -3275,7 +3278,7 @@
 - `VitalFlag` (interface): interface VitalFlag — A named condition a vital raises from its value, with optional hysteresis.
 - `VitalFlagChange` (interface): interface VitalFlagChange — A flag that changed this tick.
 - `VitalLink` (interface): interface VitalLink — A per-second change one vital applies to another while a condition holds.
-- `VitalRateModifier` (type): type VitalRateModifier = number | Readonly<Record<string, number>> — Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast).
+- `VitalRateModifier` (type): type VitalRateModifier = StatRateModifier — Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast).
 - `Vitals` (interface): interface Vitals — One body's survival vitals over plain data; every write is bounded and every value retunable.
 - `VitalsState` (interface): interface VitalsState — Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns and raised flags.
 - `VitalsTickOptions` (interface): interface VitalsTickOptions — Options for {@link Vitals.tick}.

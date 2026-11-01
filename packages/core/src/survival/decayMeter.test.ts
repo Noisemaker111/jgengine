@@ -244,3 +244,12 @@ describe("need set save state", () => {
     expect(meters.value("oxygen")).toBe(99);
   });
 });
+
+describe("decayMeters rate stack", () => {
+  test("a named stat-op stack scales the base rate like a pre-multiplied number", () => {
+    const defs = [{ id: "food", max: 100, rate: 2 }];
+    const stacked = decayMeters({ food: 100 }, defs, 1, { food: [{ source: "cold", op: "mul", value: 1.5 }] });
+    expect(stacked.food).toBe(decayMeters({ food: 100 }, defs, 1, { food: 1.5 }).food);
+    expect(stacked.food).toBe(97);
+  });
+});

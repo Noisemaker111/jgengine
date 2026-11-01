@@ -1,3 +1,4 @@
+import { applyStatRate, type StatRateModifier } from "../progression/statGraph";
 import { changeStatPool, createStatPool, statPoolFraction, type StatPool } from "../stats/statPool";
 
 /** A per-second change one vital applies to another while a condition holds. */
@@ -52,7 +53,7 @@ export interface VitalsState {
 }
 
 /** Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast). */
-export type VitalRateModifier = number | Readonly<Record<string, number>>;
+export type VitalRateModifier = StatRateModifier;
 
 /** Options for {@link Vitals.tick}. */
 export interface VitalsTickOptions {
@@ -92,12 +93,6 @@ export interface Vitals {
   restore(state: VitalsState): void;
   /** Back to the definitions' starting values and maxes. */
   reset(): void;
-}
-
-function modifierOf(modifier: VitalRateModifier | undefined, id: string): number {
-  if (modifier === undefined) return 1;
-  if (typeof modifier === "number") return modifier;
-  return modifier[id] ?? 1;
 }
 
 /**
@@ -205,14 +200,14 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
         const id = entry.id;
         const rate = entry.rate ?? 0;
         if (rate < 0) {
-          write(id, valueOf(id) + rate * modifierOf(options.drain, id) * dt);
+          write(id, valueOf(id) + applyStatRate(rate, options.drain, id) * dt);
         } else if (rate > 0) {
           const wait = cooldowns.get(id) ?? 0;
           if (wait > 0) {
             cooldowns.set(id, Math.max(0, wait - dt));
             continue;
           }
-          let gain = Math.min(rate * modifierOf(options.regen, id) * dt, maxOf(id) - valueOf(id));
+          let gain = Math.min(applyStatRate(rate, options.regen, id) * dt, maxOf(id) - valueOf(id));
           if (gain <= 0) continue;
           for (const cost of entry.regenCost ?? []) {
             const available = valueOf(cost.vital) - minOf(cost.vital);

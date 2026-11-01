@@ -426,6 +426,33 @@ export function foldStatContributions(base: number, contributions: Iterable<Stat
   return value;
 }
 
+/**
+ * A per-second rate scaling: one multiplier for every id, one ordered contribution stack for every
+ * id, or a record keyed by id (an id left out is unscaled). A stack is `mul`/`add`/clamp steps with
+ * their sources, so a cold biome and a metabolism stack as named contributions instead of a
+ * pre-multiplied number.
+ */
+export type StatRateModifier =
+  | number
+  | readonly StatContribution[]
+  | Readonly<Record<string, number | readonly StatContribution[]>>;
+
+/**
+ * Scale one id's `rate` by a {@link StatRateModifier}; an omitted modifier leaves it unchanged.
+ *
+ * @capability stat-graph fold ordered add, multiply, override and clamp contributions onto one value
+ */
+export function applyStatRate(rate: number, modifier: StatRateModifier | undefined, id: string): number {
+  if (modifier === undefined) return rate;
+  const entry = typeof modifier === "number" || isContributionList(modifier) ? modifier : modifier[id];
+  if (entry === undefined) return rate;
+  return typeof entry === "number" ? rate * entry : foldStatContributions(rate, entry);
+}
+
+function isContributionList(value: StatRateModifier): value is readonly StatContribution[] {
+  return Array.isArray(value);
+}
+
 /** Bounds of a caller-owned value, applied in the order min, max, then rounding. */
 export interface StatBounds {
   min?: number;

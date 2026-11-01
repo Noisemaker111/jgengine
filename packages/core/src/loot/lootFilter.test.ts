@@ -2,10 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { evaluateLootFilter, lootFilter, type LootFilterRule } from "@jgengine/core/loot/lootFilter";
 
 const RULES: readonly LootFilterRule[] = lootFilter([
-  { id: "hide-common-ammo", when: { rarity: "common", baseType: "resource" }, hide: true },
-  { id: "rare-weapon", when: { rarity: "rare", baseType: "weapon" }, beam: true, color: "#60a5fa", label: "Rare" },
-  { id: "legendary", when: { rarity: "legendary" }, beam: true, color: "#f59e0b", label: "LEGENDARY" },
-  { id: "high-tier-affix", when: { baseType: "gear", minAffixTier: 3 }, beam: true, label: "Crafted" },
+  { id: "hide-common-ammo", when: { all: [{ eq: ["rarity", "common"] }, { eq: ["baseType", "resource"] }] }, hide: true },
+  { id: "rare-weapon", when: { all: [{ eq: ["rarity", "rare"] }, { eq: ["baseType", "weapon"] }] }, beam: true, color: "#60a5fa", label: "Rare" },
+  { id: "legendary", when: { eq: ["rarity", "legendary"] }, beam: true, color: "#f59e0b", label: "LEGENDARY" },
+  { id: "high-tier-affix", when: { all: [{ eq: ["baseType", "gear"] }, { gte: ["affixTier", 3] }] }, beam: true, label: "Crafted" },
 ]);
 
 describe("evaluateLootFilter", () => {
@@ -37,18 +37,24 @@ describe("evaluateLootFilter", () => {
 
   test("rarity/baseType conditions accept an array of alternatives", () => {
     const rules = lootFilter([
-      { id: "either", when: { rarity: ["rare", "legendary"] }, beam: true },
+      { id: "either", when: { in: ["rarity", ["rare", "legendary"]] }, beam: true },
     ]);
     expect(evaluateLootFilter(rules, { rarity: "rare", baseType: "weapon" })).toEqual({ beam: true });
     expect(evaluateLootFilter(rules, { rarity: "legendary", baseType: "weapon" })).toEqual({ beam: true });
     expect(evaluateLootFilter(rules, { rarity: "common", baseType: "weapon" })).toEqual({});
   });
 
+  test("an untiered item reads as tier 0 inside a tier range", () => {
+    const rules = lootFilter([{ id: "low", when: { all: [{ gte: ["affixTier", 0] }, { lte: ["affixTier", 1] }] }, hide: true }]);
+    expect(evaluateLootFilter(rules, { rarity: "common", baseType: "gear" })).toEqual({ hidden: true });
+    expect(evaluateLootFilter(rules, { rarity: "common", baseType: "gear", affixTier: 2 })).toEqual({});
+  });
+
   test("lootFilter rejects duplicate rule ids", () => {
     expect(() =>
       lootFilter([
-        { id: "dup", when: {} },
-        { id: "dup", when: {} },
+        { id: "dup", when: { all: [] } },
+        { id: "dup", when: { all: [] } },
       ]),
     ).toThrow(/duplicated/);
   });

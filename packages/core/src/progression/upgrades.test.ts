@@ -16,7 +16,7 @@ const STANDING = createStanding({
 const NODES: readonly UpgradeNodeDef[] = [
   { id: "engine", label: "Salvage V6", cost: { kind: "linear", base: 100, per: 50, round: "round" }, maxRank: 3 },
   { id: "frame", cost: { kind: "power", base: 80, exponent: 1.5, round: "ceil" }, requires: ["engine"] },
-  { id: "armor", cost: { kind: "const", value: 400 }, standing: { trackId: "yard", min: 20 } },
+  { id: "armor", cost: { kind: "const", value: 400 }, standing: { gte: ["standing.yard", 20] } },
 ];
 
 function wallet(start: number): { pay: (cost: number) => boolean; left: () => number } {
@@ -111,7 +111,7 @@ describe("upgrade tree", () => {
       /maxRank/,
     );
     expect(() =>
-      createUpgradeTree({ nodes: [{ id: "a", cost: { kind: "const", value: 1 }, standing: { trackId: "moon" } }], standing: STANDING }),
+      createUpgradeTree({ nodes: [{ id: "a", cost: { kind: "const", value: 1 }, standing: { gte: ["standing.moon", 0] } }], standing: STANDING }),
     ).toThrow(/unknown standing track "moon"/);
   });
 
