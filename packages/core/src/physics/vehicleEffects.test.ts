@@ -291,6 +291,42 @@ describe("vehicle effects: each is its own term", () => {
     expect(yaw(on({ differential: { kind: "locked" } }))).toBeLessThan(yaw(bare) * 0.95);
   });
 
+  test("differential clutch: its preload yaws against a slow turn, and a bigger ramp lock holds more on the exit", () => {
+    const transfer = on({ lateralLoadTransfer: {} });
+    const yaw = (tuning: VehicleDynamicsTuning) => Math.abs(steady(tuning, 8, 0.3).motion.yawRate);
+    const open = yaw(withVehicleEffects(transfer, { differential: { kind: "open" } }));
+    const clutch = yaw(withVehicleEffects(transfer, { differential: { kind: "clutch", preload: 150, powerLock: 0.3, coastLock: 0.5 } }));
+    const locked = yaw(withVehicleEffects(transfer, { differential: { kind: "locked" } }));
+    expect(clutch).toBeLessThan(open);
+    expect(clutch).toBeGreaterThan(locked);
+  });
+
+  test("rollingResistance speedTerms grow the coefficient with speed the Magic Formula way", () => {
+    const flat = on({ rollingResistance: { coefficient: 0.007 } });
+    const grows = on({ rollingResistance: { coefficient: 0.007, speedTerms: { linear: 0.0015, quartic: 8.5e-5, referenceSpeed: 16.7 } } });
+    expect(coastLoss(grows, 5) / coastLoss(flat, 5)).toBeLessThan(1.1);
+    expect(coastLoss(grows, 50) / coastLoss(flat, 50)).toBeGreaterThan(2);
+  });
+
+  test("torqueCurve: the clutch is open through a shift and the friction brakes harder at high rpm", () => {
+    const curve = [[900, 200], [4000, 300], [7000, 240]] as const;
+    const curved = on({ torqueCurve: { curve, shiftSeconds: 0.3 } }, bareGearbox);
+    const car = createVehicleDynamics(curved);
+    let shifted = false;
+    let zeroDriveWhileShifting = true;
+    let speed = 0;
+    for (let i = 0; i < 600; i += 1) {
+      const shifting = car.snapshot().drivetrain.shiftRemaining > DT;
+      const step = car.tick(DT, axis({ throttle: 1 }));
+      if (step.engine.gear > 1) shifted = true;
+      if (shifting && step.motion.forwardSpeed > speed) zeroDriveWhileShifting = false;
+      speed = step.motion.forwardSpeed;
+    }
+    expect(shifted).toBe(true);
+    expect(zeroDriveWhileShifting).toBe(true);
+    expect(coastLoss(curved, 30)).toBeGreaterThan(coastLoss(bareGearbox, 30));
+  });
+
   test("speedSensitiveSteering cuts full lock at speed", () => {
     const lock = (tuning: VehicleDynamicsTuning) => Math.abs(hold(rolling(tuning, 30), { steer: 1 }, 0.1).steering.roadWheelAngle);
     expect(lock(on({ speedSensitiveSteering: { angle: 0.1, at: 25 } }))).toBeCloseTo(0.1, 2);
