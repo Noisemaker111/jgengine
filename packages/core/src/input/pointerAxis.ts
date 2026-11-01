@@ -1,3 +1,5 @@
+import { clamp } from "../math/scalar";
+
 export interface PointerAxisState {
   /** Horizontal pointer position over the play surface in `[-1, 1]`: `-1` at the left edge, `+1` at the right. */
   x: number;
@@ -29,8 +31,8 @@ export function normalizePointerToAxis(clientX: number, clientY: number, rect: P
   const width = rect.width > 0 ? rect.width : 1;
   const height = rect.height > 0 ? rect.height : 1;
   return {
-    x: clampUnit(((clientX - rect.left) / width) * 2 - 1),
-    y: clampUnit(((clientY - rect.top) / height) * 2 - 1),
+    x: clamp(((clientX - rect.left) / width) * 2 - 1, -1, 1),
+    y: clamp(((clientY - rect.top) / height) * 2 - 1, -1, 1),
     active: true,
   };
 }
@@ -52,8 +54,4 @@ export function pointerAxisValue(
   const scaled = (magnitude - deadzone) / (1 - deadzone);
   const curved = Math.pow(Math.min(scaled, 1), binding.curve ?? 1);
   return Math.sign(value) * curved;
-}
-
-function clampUnit(value: number): number {
-  return value < -1 ? -1 : value > 1 ? 1 : value;
 }
