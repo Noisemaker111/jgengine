@@ -98,4 +98,14 @@ describe("tierAt", () => {
     expect(tierAt(BANDS, 35, { inclusive: false })).toBeNull();
     expect(tierAt(BANDS, 36, { inclusive: false })?.id).toBe("friends");
   });
+
+  test("descending picks the lowest boundary at or above the value", () => {
+    const windows: ThresholdBoundary[] = [
+      { id: "good", at: 0.14 },
+      { id: "perfect", at: 0.06 },
+    ];
+    const at = (value: number, inclusive = true) => tierAt(windows, value, { descending: true, inclusive })?.id ?? null;
+    expect([at(0), at(0.06), at(0.061), at(0.14), at(0.15)]).toEqual(["perfect", "perfect", "good", "good", null]);
+    expect(at(0.06, false)).toBe("good");
+  });
 });
