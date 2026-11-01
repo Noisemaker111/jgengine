@@ -1,4 +1,5 @@
 import {
+
   advanceSpawnDirector,
   advanceWave,
   createSpawnDirectorState,
@@ -8,6 +9,7 @@ import {
   type SpawnDirectorState,
   type SpawnRequest,
 } from "./spawnDirector";
+import { clamp01 } from "../math/scalar";
 
 /**
  * A callback the wave runner hands each {@link SpawnRequest} the underlying spawn
@@ -79,10 +81,6 @@ export interface WaveRunner {
 }
 
 const DEFAULT_CONTEXT: DirectorContext = { alive: 0 };
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
 
 /**
  * A thin, stateful, observable wrapper around the seeded {@link createSpawnDirectorState}

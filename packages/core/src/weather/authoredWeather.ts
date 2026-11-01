@@ -1,5 +1,6 @@
 import { createEnvironmentField, type EnvironmentField, type EnvironmentFieldConfig } from "@jgengine/core/world/envField";
 import { windField, type WindField, type WindFieldConfig, type WindVector } from "@jgengine/core/world/wind";
+import { clamp01 } from "../math/scalar";
 
 /** Wind is metres/second along world X,Z; world Y points up. Times are simulation seconds. */
 export type AuthoredWeatherMode = "clear" | "rain" | "snow" | "mixed" | "dust";
@@ -373,8 +374,6 @@ function exposureConfig(config: WeatherExposureConfig): Required<WeatherExposure
   for (const key of ["wettingRate", "dryingRate", "snowRate", "meltRate"] as const) finite(out[key], `weather exposure ${key}`, 0);
   return out;
 }
-
-const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
 /** Bounded surface accumulation shared by gameplay and material adapters, with injected persistence.
  * @capability weather-surface-accumulation Persist and retune bounded surface wetness, snow, temperature and exposure independently of rendering.

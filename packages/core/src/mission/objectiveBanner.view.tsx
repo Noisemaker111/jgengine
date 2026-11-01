@@ -5,6 +5,7 @@ import type {
   ObjectiveBannerPhase,
   ObjectiveBannerView,
 } from "@jgengine/core/mission/objectiveBanner";
+import { lerp } from "../math/scalar";
 
 /**
  * Subscribe to a banner controller, drive its clock on an animation frame (unless
@@ -65,10 +66,6 @@ function resolveTheme(theme: ObjectiveBannerTheme | undefined): Required<Objecti
     titleSize: theme?.titleSize ?? "clamp(2.5rem, 8vw, 6rem)",
     subtitleSize: theme?.subtitleSize ?? "clamp(1rem, 2.5vw, 1.5rem)",
   };
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
 }
 
 /** Ease-out cubic for the fly-in so it decelerates into place. */

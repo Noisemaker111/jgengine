@@ -11,6 +11,7 @@
 
 import { lerp } from "../anim/easing";
 import { mixHex } from "../render/color";
+import { clamp01 } from "../math/scalar";
 
 /** One day-night keyframe: at a normalized day position, the phase label and target colors the game styles. */
 export interface DayNightKeyframe {
@@ -106,11 +107,6 @@ export interface DayNightCycle {
   snapshot(): DayNightSnapshot;
   /** Restore position from a {@link DayNightSnapshot}. */
   restore(snapshot: DayNightSnapshot): void;
-}
-
-/** Clamp a number into [0,1]. */
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 /** Wrap a number into [0,1), so `-0.1` → `0.9` and `1.2` → `0.2`. */

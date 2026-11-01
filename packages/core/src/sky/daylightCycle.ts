@@ -9,6 +9,7 @@ import {
 } from "./physicalSky";
 import { lerp } from "../anim/easing";
 import { hexToRgb, mixHex, rgbToHex } from "../render/color";
+import { clamp01 } from "../math/scalar";
 
 export interface DaylightCycleConfig {
   horizonColor?: string;
@@ -123,10 +124,6 @@ export const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> =
   dusk: 0.75,
 };
 
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
-
 function buildKeyframes(config: DaylightCycleConfig): readonly DaylightKeyframe[] {
   const night: DaylightKeyframe = {
     t: 0,
@@ -237,7 +234,6 @@ export function daylightStateAt(dayFraction: number, config: DaylightCycleConfig
 function lowSunWeight(wrapped: number): number {
   return Math.min(1, Math.abs(wrapped - 0.5) / 0.25);
 }
-
 
 /**
  * Sun position for a wrapped day fraction. Without `sun`, the legacy arc: east at dawn, ~68 degrees

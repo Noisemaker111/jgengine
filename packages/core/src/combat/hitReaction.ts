@@ -1,4 +1,5 @@
 import type { EntityPosition } from "../scene/entityStore";
+import { clamp01 } from "../math/scalar";
 
 export interface CameraShake {
   amplitude: number;
@@ -58,10 +59,6 @@ export const impactPresets = {
 
 /** A named key into {@link impactPresets} (`"pickup" | "jumpLand" | "enemyKilled" | "playerHit" | "explosion"`). */
 export type ImpactPresetName = keyof typeof impactPresets;
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
 
 function configFromPreset(name: ImpactPresetName): HitReactionConfig {
   const preset: ImpactPreset = impactPresets[name];

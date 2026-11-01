@@ -11,14 +11,7 @@
  */
 import type { Vec2 } from "../world/geometry";
 import { buildPolylineIndex, type PolylineIndex } from "../world/polylineIndex";
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
+import { clamp01, lerp } from "../math/scalar";
 
 function smoothstep01(t: number): number {
   const clamped = clamp01(t);

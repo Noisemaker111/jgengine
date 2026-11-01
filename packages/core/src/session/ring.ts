@@ -1,3 +1,5 @@
+import { lerp } from "../math/scalar";
+
 export type RingPoint = [number, number];
 
 export interface RingPhase {
@@ -33,10 +35,6 @@ export interface Ring {
   isOutside(time: number, position: RingPoint): boolean;
   distanceOutside(time: number, position: RingPoint): number;
   damageOutside(time: number, dt: number, positions: Iterable<{ id: string; position: RingPoint }>): RingHit[];
-}
-
-function lerp(from: number, to: number, t: number): number {
-  return from + (to - from) * t;
 }
 
 function lerpPoint(from: RingPoint, to: RingPoint, t: number): RingPoint {

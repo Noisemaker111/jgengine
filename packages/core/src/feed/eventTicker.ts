@@ -1,4 +1,5 @@
 import { appendFeed, pruneFeed, type TimedFeedEntry } from "./feed";
+import { clamp01 } from "../math/scalar";
 
 /**
  * One event pushed onto the ticker. `kind` and `icon` are free strings the game owns
@@ -85,10 +86,6 @@ export interface EventTicker {
   snapshot(): EventTickerSnapshot;
   /** Restore from an {@link EventTickerSnapshot}, re-anchoring entry ages to the current clock. */
   restore(snapshot: EventTickerSnapshot): void;
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 /**

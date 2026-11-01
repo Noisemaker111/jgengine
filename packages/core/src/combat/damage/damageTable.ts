@@ -1,3 +1,5 @@
+import { clamp01 } from "../../math/scalar";
+
 /**
  * One damage type's row in a damage table: a caller-owned id (`"kinetic"`, `"fire"`) and how it
  * fares against each resistance class a target can present (`"flesh"`, `"shield"`, `"armor"`).
@@ -81,12 +83,6 @@ export class DuplicateDamageTypeError extends Error {
 export const DEFAULT_ARMOR_HALF_VALUE = 100;
 /** Default ceiling on armor mitigation, so armor never fully negates a hit. */
 export const DEFAULT_MAX_MITIGATION = 0.9;
-
-function clamp01(value: number): number {
-  if (value < 0) return 0;
-  if (value > 1) return 1;
-  return value;
-}
 
 /** Validate a table once at construction: duplicate ids and non-finite multipliers fail loudly.
  * @capability damage-table-validate reject a damage table with duplicate types or non-finite multipliers before combat runs

@@ -1,5 +1,6 @@
 // @skill jgengine-world
 import { uniformGravity, type GravityField } from "../physics/gravityField";
+import { clamp01 } from "../math/scalar";
 
 const DEFAULT_SUBSTEP = 1 / 240;
 const SEA_LEVEL_DENSITY = 1.225;
@@ -1096,10 +1097,6 @@ function peakOf(curve: readonly (readonly [number, number])[]): number {
 
 function clamp1(value: number): number {
   return Math.max(-1, Math.min(1, value));
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
 }
 
 /** Heading, nose-up pitch and right bank of a body orientation (three.js `YXZ` Euler with `x = -pitch`). */

@@ -5,6 +5,7 @@
  * species is deterministic, testable and cheap to bake into a handful of instanced variants.
  */
 import { hashString } from "../random/rng";
+import { clamp01 } from "../math/scalar";
 
 function pick<T>(values: readonly T[], index: number): T {
   const value = values[index];
@@ -60,10 +61,6 @@ export function hexRgb(hex: string): NatureRgb {
   const value = Number.parseInt(full, 16);
   if (full.length !== 6 || !Number.isFinite(value)) return [0.5, 0.5, 0.5];
   return [((value >> 16) & 255) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255];
-}
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 /** `color` scaled by `light` and nudged per channel by `tint` (each -1..1 times `amount`). @internal */

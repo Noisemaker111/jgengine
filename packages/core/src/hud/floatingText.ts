@@ -1,4 +1,5 @@
 import { hashString, randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
+import { clamp01 } from "../math/scalar";
 
 /** A world-space anchor `[x, y, z]` a floating-text entry rises from. */
 export type FloatingTextPosition = readonly [number, number, number];
@@ -106,10 +107,6 @@ export interface FloatingTextField {
 
 /** Columns per entry in the numeric SoA pool: id, ox, oy, oz, age, life, rise, drift, size. */
 const NUMERIC_STRIDE = 9;
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
 
 /**
  * A generic, allocation-aware field of world-anchored floating text: damage

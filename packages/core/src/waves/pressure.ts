@@ -5,6 +5,7 @@
  */
 
 import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
+import { clamp01 } from "../math/scalar";
 
 /** What the director reads about the player before it chooses a tier. */
 export interface PressureReading {
@@ -67,10 +68,6 @@ const RULE_DEFAULTS: ResolvedRule = {
   timeWindowSeconds: 300,
   maxTier: 2,
 };
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
 
 function resolveRule(rule: PressureRule): ResolvedRule {
   const maxTier = Math.max(0, Math.floor(rule.maxTier ?? RULE_DEFAULTS.maxTier));

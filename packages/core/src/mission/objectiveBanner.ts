@@ -1,3 +1,5 @@
+import { clamp01 } from "../math/scalar";
+
 /**
  * Which part of its life a banner is in: flying `"in"`, holding centered, or
  * fading `"out"`. Progress `0..1` (see {@link ObjectiveBannerView.progress})
@@ -120,10 +122,6 @@ interface QueuedBanner extends StoredObjectiveBanner {
   phase: ObjectiveBannerPhase;
   /** Cached progress `0..1` within {@link phase}. */
   progress: number;
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 /**

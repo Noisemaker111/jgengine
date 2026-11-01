@@ -1,7 +1,7 @@
 import type { Vec3 } from "../world/geometry";
 import { sampleForceField, validateForceField, type ForceFieldConfig } from "../physics/forceVolume";
 import { hashString, randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
-
+import { clamp01 } from "../math/scalar";
 
 /** A `[min, max]` range a spawned particle draws uniformly from. */
 export interface Range {
@@ -157,10 +157,6 @@ export interface ParticleSystem {
   subscribe(listener: () => void): () => void;
   snapshot(): ParticleSnapshot;
   restore(snapshot: ParticleSnapshot): void;
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 type ResolvedEmitterConfig = Required<Omit<EmitterConfig, "seed" | "forces" | "collision" | "spawnShape">> & {

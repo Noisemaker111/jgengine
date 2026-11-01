@@ -4,6 +4,7 @@ import { buildPolylineIndex, type PolylineIndex } from "../world/polylineIndex";
 import type { SceneDocumentLike, ScenePathLike } from "../world/sceneShapes";
 import type { TerrainPathProfile } from "./pathTerrain";
 import { fractalNoise, seedFrom, seedPhase } from "./terrain";
+import { clamp01 } from "../math/scalar";
 
 /** Scene kinds a surveyed landmass reads: shore outlines, summits, mountain chains, hills, cliffs, rivers and biome outlines. */
 export const SURVEY_KINDS = {
@@ -224,10 +225,6 @@ export function surveyFromDocument(doc: SceneDocumentLike): Survey {
         };
       }),
   };
-}
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 function smooth01(t: number): number {

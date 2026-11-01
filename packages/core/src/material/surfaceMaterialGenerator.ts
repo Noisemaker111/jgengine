@@ -14,6 +14,7 @@ import { parseParams, type ParamsOf } from "../generator/paramSchema";
 import { defineParamSchema } from "../generator/paramSchema";
 import { hashString } from "../random/rng";
 import { runToEnd, type SlicedJob } from "../run/slicedWork";
+import { clamp01, lerp } from "../math/scalar";
 
 /** The generator output family every surface material returns: {@link SurfaceMaterialMaps}. */
 export const SURFACE_MATERIAL_OUTPUT = "surface-material";
@@ -302,16 +303,8 @@ function crackLines(u: number, v: number, count: number, seed: number, width: nu
   return line * fade;
 }
 
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
-
 function smoothstep(edge0: number, edge1: number, x: number): number {
   return smooth(clamp01((x - edge0) / (edge1 - edge0)));
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
 }
 
 type Rgb = [number, number, number];

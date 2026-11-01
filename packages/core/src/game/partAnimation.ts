@@ -1,4 +1,5 @@
 import { hashString } from "../random/rng";
+import { clamp01 } from "../math/scalar";
 
 /**
  * Procedural animation for part-composed (rig-less) models — characters kit-bashed from
@@ -67,10 +68,6 @@ const DEFAULT_FLINCH_RAD = 0.35;
 const DEFAULT_TOPPLE_RAD = Math.PI / 2;
 const IDLE_BREATHE_HZ = 0.45;
 const TWO_PI = Math.PI * 2;
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
 
 function zeroPose(out: PartPose): PartPose {
   out.position[0] = 0;

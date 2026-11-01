@@ -1,5 +1,6 @@
 import { SECONDS_PER_GAME_DAY } from "../time/gameClock";
 import type { TerrainField } from "../terrain/terrain";
+import { clamp01 } from "../math/scalar";
 
 /** A sky-occluding footprint — a roof, dense canopy, a cave mouth. `shade` 0..1 = fraction of sky blocked. */
 export interface OccluderRect {
@@ -67,10 +68,6 @@ export interface EnvironmentField {
   ambientLight(x: number, z: number, time: number): number;
   /** Sun elevation -1..1 (1 = noon overhead, 0 = horizon, negative = night). */
   sunElevation(time: number): number;
-}
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 function resolveScalar(field: ScalarField, x: number, z: number, time: number): number {

@@ -1,3 +1,5 @@
+import { clamp01 } from "../math/scalar";
+
 /**
  * Per-stat growth definition for one species. `base` is the level-1 value of the stat; `growth`
  * is how much a single distributed point adds, expressed as a fraction of `base` — so a point on a
@@ -56,10 +58,6 @@ export interface SpendLevelOptions {
 export interface SpendLevelResult<TStat extends string> {
   instance: CreatureStatInstance<TStat>;
   spent: boolean;
-}
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 function normalizeLevel(level: number): number {

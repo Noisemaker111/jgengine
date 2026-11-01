@@ -1,4 +1,5 @@
 import { rgbToHex, hexToRgb } from "../render/color";
+import { clamp01 } from "../math/scalar";
 
 /**
  * Analytic atmosphere for the day/night sky: Rayleigh air mass, sunlight reddening, moonlight and
@@ -27,10 +28,6 @@ export const MOONLIGHT_COLOR = "#a9c3e8";
 export const NIGHT_FOG_COLOR = "#0a0e16";
 
 const DEG = Math.PI / 180;
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
 
 function smoothstep(edge0: number, edge1: number, value: number): number {
   const t = clamp01((value - edge0) / (edge1 - edge0));

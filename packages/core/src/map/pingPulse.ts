@@ -1,3 +1,5 @@
+import { clamp01 } from "../math/scalar";
+
 /** Inputs to {@link pingOpacity}. */
 export interface PingOpacityInput {
   /** Performance-clock ms when the ping first appeared. */
@@ -10,10 +12,6 @@ export interface PingOpacityInput {
   remainingMs?: number | undefined;
   /** Fade-out window (ms) before expiry. Default 600. */
   fadeOutMs?: number;
-}
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 /**

@@ -1,4 +1,5 @@
 import { hashString, randomSeedFrom, stepRandomSeed, type RandomSeed } from "../../random/rng";
+import { clamp01 } from "../../math/scalar";
 
 /** A per-frame camera shake offset: three positional axes plus three rotational axes (radians). */
 export interface CameraShakeOffset {
@@ -98,10 +99,6 @@ export interface CameraShakeController {
   snapshot(): CameraShakeSnapshot;
   /** Restore from a {@link CameraShakeSnapshot}. */
   restore(snapshot: CameraShakeSnapshot): void;
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 /** A stable pseudo-random value in `[-1, 1]` for integer lattice point `i` off a base seed. */

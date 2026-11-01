@@ -27,6 +27,7 @@ import type { Vec2 } from "../world/geometry";
 import { buildSpatialBuckets } from "../spatial/spatialBuckets";
 import { hashString } from "../random/rng";
 import type { TerraformSnapshot } from "./terraform";
+import { clamp01, lerp } from "../math/scalar";
 
 /** A surface normal vector at a terrain sample point. */
 export type TerrainNormal = readonly [number, number, number];
@@ -37,14 +38,6 @@ export interface TerrainField {
   sampleNormal(x: number, z: number): TerrainNormal;
   readonly bounds?: WorldBounds | undefined;
   readonly waterLevel?: number;
-}
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
 }
 
 function hash2(ix: number, iz: number, seed: number): number {

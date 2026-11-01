@@ -1,3 +1,5 @@
+import { clamp01 } from "../math/scalar";
+
 /** The local player's auto-attack state for one frame. `swingTimer` counts DOWN in seconds to 0 (= a swing lands). */
 export interface SwingPlayerInput {
   autoAttack: boolean;
@@ -34,10 +36,6 @@ export interface SwingTimerState {
 
 /** Threshold above which a timer jump is treated as a fresh swing (period reset). */
 export const SWING_EDGE_EPSILON = 1e-4;
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
 
 const HIDDEN: Omit<SwingTimerState, "nextPeriod" | "nextTimer"> = {
   visible: false,

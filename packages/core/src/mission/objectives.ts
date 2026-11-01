@@ -1,3 +1,5 @@
+import { clamp01 } from "../math/scalar";
+
 /** Whether a metric must reach up to a target or stay down under it. */
 export type ObjectiveDirection = "atLeast" | "atMost";
 
@@ -18,10 +20,6 @@ export interface ObjectiveStatus {
   met: boolean;
   /** Fraction toward the target, 0..1 (1 once met). */
   progress: number;
-}
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
 /**

@@ -1,3 +1,5 @@
+import { clamp01 } from "../math/scalar";
+
 /**
  * A serializable set of named countdown / countup timers evaluated against an
  * injected clock. One primitive covers round timers, respawn clocks, and ability
@@ -140,10 +142,6 @@ interface TimerRecord {
   anchor: number;
   /** Completed expiry cycles already reported (0 or 1 for non-loop; grows for loop). */
   reported: number;
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 function rawElapsed(rec: TimerRecord, t: number): number {

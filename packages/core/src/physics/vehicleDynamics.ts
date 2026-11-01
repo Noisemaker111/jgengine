@@ -2,6 +2,7 @@ import type { AxisInput } from "../input/axisInput";
 import type { CollisionObstacle } from "../movement/movementModel";
 import { createVehicleObstacleClamp, type VehicleImpact, type VehicleMoveClamp } from "./vehicleObstacles";
 import { sampleGripCurve, type GripCurve } from "./gripCurve";
+import { clamp01 } from "../math/scalar";
 
 /**
  * One axle's tire, in physical terms. Lateral force follows a simplified Pacejka curve
@@ -1639,10 +1640,6 @@ function peakAngle(shape: CurveShape): number {
 
 function forwardOf(heading: number): readonly [number, number] {
   return [Math.sin(heading), Math.cos(heading)];
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
 }
 
 function freshState(
