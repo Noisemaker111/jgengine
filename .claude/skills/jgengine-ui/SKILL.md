@@ -44,6 +44,10 @@ Existing React games keep their entity store and use the focused
 - Use `ScrollRail` for horizontal controls that can overflow: visible navigation and focus reveal keep every item reachable while the caller owns markup and selection. Keep item widths from shrinking when labels must stay readable.
 - SSR-visible output is hydration-stable; round computed SVG values at the boundary.
 
+## Runtime health
+
+`defineGame({ health })` is off unless set: `reporter` receives a scrubbed `CrashReport` (build, game, tier, last N events, no personal data), `telemetry.sink` receives batched events (session start, loads, tier changes, frame percentiles, crash ids), `autoQuality: { targetFrameMs }` moves the tier with hysteresis and cooldowns (the player's tier pick turns it off; their render scale and effect toggles are never overwritten), and `errorScreen` is the game's own recoverable screen for a failed HUD render or tick. No vendor SDK ships in the engine; wire your own reporter and sink. A game's per-bundle size budget is `bundleKb` in its `perf-budget.json`, enforced by `check-site-assets`.
+
 ## Shared-world interaction rules
 
 - **Refusals and notices are engine feedback, not per-game toasts.** Return `{ reason: "insufficient-gold", message: "Needs 40 more gold" }` from a command's `validate`: the shell shows `message` in the shared notice feed with the deny cue and stacks repeats. Push other player messages with `ctx.game.notices.push({ text, tone })` (info/success/warn/deny) from game logic instead of a hand-built toast list. The stack renders inside the HUD theme root, so it takes the game's `hudTheme` colours and font; a top or bottom stack moves clear of `HudCanvas` panels and touch controls in its column and sits above `ModalHost` (z 85). Tune or hide it with `notices: { placement, offset, avoidHud, zIndex, cues, hidden }` (`hidden` keeps cues and lets the game render `useNoticeList(ctx.game.notices)` itself); `push({ text, silent: true })` skips one notice's sound.
