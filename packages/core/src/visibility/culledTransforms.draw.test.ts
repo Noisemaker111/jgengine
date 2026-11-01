@@ -124,9 +124,9 @@ test("asking one node for its world position does not rebuild the rest of the sc
   const asked = marker(scene, 4);
   const other = marker(scene, 8);
   scene.updateMatrixWorld();
-  // three's getWorldPosition marks every ancestor up to the scene as needing a world update.
+  // Up to r185 three's getWorldPosition marked every ancestor up to the scene as needing a world update; from
+  // r187 it does not. Either way the next pass must not rebuild the untouched subtree.
   asked.mesh.getWorldPosition(new THREE.Vector3());
-  expect(scene.matrixWorldNeedsUpdate).toBe(true);
   let rebuilt = 0;
   const multiply = other.mesh.matrixWorld.multiplyMatrices.bind(other.mesh.matrixWorld);
   other.mesh.matrixWorld.multiplyMatrices = (a, b) => {
