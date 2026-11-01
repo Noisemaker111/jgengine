@@ -1,5 +1,5 @@
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
-import { createRemainsField, type RemainsField, type RemainsSnapshot, type RemainsStack } from "@jgengine/core/remains/remains";
+import { createRemainsField, type RemainsField, type RemainsSnapshot, type RemainsStack } from "../engine-local/remains/remains";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 

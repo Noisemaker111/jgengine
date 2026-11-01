@@ -1,6 +1,6 @@
 import type { PhaseLike } from "@jgengine/core/ai/phaseLadder";
 import type { Predicate } from "@jgengine/core/rules/predicate";
-import type { SummonTier } from "@jgengine/core/summonedEncounter/summonedEncounter";
+import type { SummonTier } from "../../engine-local/summonedEncounter/summonedEncounter";
 
 /** One of the Broodmother's difficulties: what summoning her costs, what she is, and what beating her gives. */
 export interface BroodTier extends SummonTier {

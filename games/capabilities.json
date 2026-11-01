@@ -862,16 +862,6 @@
       "intent": "run authoritative game servers with sessions, ticking and persistence behind any transport"
     },
     {
-      "id": "auto-rig",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/autoRig",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "turn a static animal model (any downloaded GLB) into an animated, skinned creature with idle, walk, run, attack and death"
-    },
-    {
       "id": "auto-scroll",
       "packages": [
         "@jgengine/react"
@@ -910,26 +900,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "trim flat ambient under IBL and add a key light to directionless lighting"
-    },
-    {
-      "id": "base-building",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/basebuilding/baseBuilding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "snap-together base pieces with tiers, health, support collapse, doors, overlap rejection and collision solids"
-    },
-    {
-      "id": "base-structures-draw",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/basebuilding/BaseStructures.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "render placed base pieces and the snap build ghost"
     },
     {
       "id": "behavior-actions",
@@ -1410,36 +1380,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "sagging cable curve between two anchors"
-    },
-    {
-      "id": "cave-draw",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/cave/Cave.draw",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "draw a cave's rock from its layout"
-    },
-    {
-      "id": "cave-layout",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/cave/caveLayout",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a walkable cave (tunnel and chamber) from a centreline: collision, spawn spots, inside test"
-    },
-    {
-      "id": "cave-mesh",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/cave/caveMesh",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "triangle meshes for a cave's inside and the hill around it, from its layout"
     },
     {
       "id": "cell-grid",
@@ -2052,26 +1992,6 @@
       "intent": "save and reopen named versioned player creations through injected durable storage"
     },
     {
-      "id": "creature-body",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/bodyPlan",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "give a creature an animated low-poly body from knobs (torso, legs, neck, head, tail, horns, frill, plates, wings...) without a model file"
-    },
-    {
-      "id": "creature-body-glb",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/bodyPlan",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a body plan as a raw node tree and clips, to edit or write out yourself before encoding"
-    },
-    {
       "id": "creature-driver",
       "packages": [
         "@jgengine/core"
@@ -2080,16 +2000,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "wild creatures that graze, flee, defend and hunt by temperament, and tamed ones that follow, stay and fight on order"
-    },
-    {
-      "id": "creature-gait",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/gait",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "idle, walk, run, attack and death clips for any limb-and-tail creature rig"
     },
     {
       "id": "creature-temperament",
@@ -4311,36 +4221,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing"
-    },
-    {
-      "id": "glb-data-url",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/glbWrite",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "load generated GLB bytes through the normal model loader with no file on disk"
-    },
-    {
-      "id": "glb-read",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/glbRead",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "take a static GLB apart into model-space triangles, materials and textures"
-    },
-    {
-      "id": "glb-write",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/creatureBody/glbWrite",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "write an animated binary glTF from meshes, nodes and clips made in code"
     },
     {
       "id": "glide",
@@ -8883,16 +8763,6 @@
       "intent": "familiarity and opinion between agents, with a bond that changes behaviour"
     },
     {
-      "id": "remains-field",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/remains/remains",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "leave what a fallen player carried where they fell, take it back stack by stack, lose it when the remains fall apart"
-    },
-    {
       "id": "render-fallback-diagnostics",
       "packages": [
         "@jgengine/core"
@@ -10572,26 +10442,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "cinematic lighting rig + backdrop + turntable for parametric studios"
-    },
-    {
-      "id": "subdual-feeding",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/subdual/subdualFeeding",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "win over a creature by keeping it subdued and feeding it, with its quality and doses"
-    },
-    {
-      "id": "summoned-encounter",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/summonedEncounter/summonedEncounter",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a fight started by meeting a cost at a place: a portal, party caps, win, wipe and the trip home"
     },
     {
       "id": "supply-demand-pricing",

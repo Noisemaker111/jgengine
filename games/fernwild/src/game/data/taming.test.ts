@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createSubdualFeeding, type FeedingSupply, type SubdualFeedingEvent } from "@jgengine/core/subdual/subdualFeeding";
+import { createSubdualFeeding, type FeedingSupply, type SubdualFeedingEvent } from "../../engine-local/subdual/subdualFeeding";
 
 import { speciesDef } from "./species";
 import { bonusLevels } from "./taming";

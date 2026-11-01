@@ -10,9 +10,9 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { autoRig } from "@jgengine/core/creatureBody/autoRig";
-import { readGlbModel } from "@jgengine/core/creatureBody/glbRead";
-import { encodeGlb } from "@jgengine/core/creatureBody/glbWrite";
+import { autoRig } from "../src/engine-local/creatureBody/autoRig";
+import { readGlbModel } from "../src/engine-local/creatureBody/glbRead";
+import { encodeGlb } from "../src/engine-local/creatureBody/glbWrite";
 
 import { readGlb, writeGlb } from "../../shared/compressTextures";
 import { CREATURE_MODEL_SOURCES, type CreatureModelSource } from "../src/game/data/creatureModels";

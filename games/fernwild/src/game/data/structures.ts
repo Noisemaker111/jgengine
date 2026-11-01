@@ -1,4 +1,4 @@
-import type { BaseBuildingConfig, StructureShapeDef } from "@jgengine/core/basebuilding/baseBuilding";
+import type { BaseBuildingConfig, StructureShapeDef } from "../../engine-local/basebuilding/baseBuilding";
 import type { SocketDef } from "@jgengine/core/placement/buildSockets";
 
 /**

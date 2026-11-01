@@ -41,14 +41,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAuctionBook` (function) · `import { createAuctionBook } from "@jgengine/core/gameplay"`
 
-## base-building — snap-together base pieces with tiers, health, support collapse, doors, overlap rejection and collision solids
-
-- `createBaseBuilding` (function) · `import { createBaseBuilding } from "@jgengine/core/basebuilding/baseBuilding"`
-
-## base-structures-draw — render placed base pieces and the snap build ghost
-
-- `BaseStructures` (function) · `import { BaseStructures } from "@jgengine/core/basebuilding/BaseStructures.draw"`
-
 ## best-record — persist personal-best times/scores with safe storage fallback
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
@@ -728,10 +720,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRelationshipBook` (function) · `import { createRelationshipBook } from "@jgengine/core/agents/relationships"`
 
-## remains-field — leave what a fallen player carried where they fell, take it back stack by stack, lose it when the remains fall apart
-
-- `createRemainsField` (function) · `import { createRemainsField } from "@jgengine/core/remains/remains"`
-
 ## resolve — the current tier/band label for a keyed or scalar value
 
 - `tierAt` (function) · `import { tierAt } from "@jgengine/core/gameplay"`
@@ -919,14 +907,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## stat-points — level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap
 
 - `createStatPoints` (function) · `import { createStatPoints } from "@jgengine/core/progression/statPoints"`
-
-## subdual-feeding — win over a creature by keeping it subdued and feeding it, with its quality and doses
-
-- `createSubdualFeeding` (function) · `import { createSubdualFeeding } from "@jgengine/core/subdual/subdualFeeding"`
-
-## summoned-encounter — a fight started by meeting a cost at a place: a portal, party caps, win, wipe and the trip home
-
-- `createSummonedEncounter` (function) · `import { createSummonedEncounter } from "@jgengine/core/summonedEncounter/summonedEncounter"`
 
 ## supply-demand-pricing — price goods from finite stock and live demand on a stated curve
 

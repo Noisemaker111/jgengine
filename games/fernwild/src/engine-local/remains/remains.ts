@@ -1,3 +1,4 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 // @skill jgengine-gameplay
 /** One stack held in remains: an item id and how many. */
 export interface RemainsStack {

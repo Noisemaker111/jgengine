@@ -372,18 +372,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/core/scene/sceneCapture.draw"`
 
-## cave-draw — draw a cave's rock from its layout
-
-- `Cave` (function) · `import { Cave } from "@jgengine/core/cave/Cave.draw"`
-
-## cave-layout — a walkable cave (tunnel and chamber) from a centreline: collision, spawn spots, inside test
-
-- `caveLayout` (function) · `import { caveLayout } from "@jgengine/core/cave/caveLayout"`
-
-## cave-mesh — triangle meshes for a cave's inside and the hill around it, from its layout
-
-- `caveMesh` (function) · `import { caveMesh } from "@jgengine/core/cave/caveMesh"`
-
 ## change-of-direction-505 — simulated 505 change-of-direction test time of a sprint profile
 
 - `test505Time` (function) · `import { test505Time } from "@jgengine/core/movement/reference/humanEnvelope"`

@@ -1,4 +1,4 @@
-import { createBaseBuilding, type BaseBuilding, type BaseBuildingState, type BaseVec3, type BasePiece, type StructurePlan } from "@jgengine/core/basebuilding/baseBuilding";
+import { createBaseBuilding, type BaseBuilding, type BaseBuildingState, type BaseVec3, type BasePiece, type StructurePlan } from "../engine-local/basebuilding/baseBuilding";
 import type { StationInstance } from "@jgengine/core/crafting/recipe";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";

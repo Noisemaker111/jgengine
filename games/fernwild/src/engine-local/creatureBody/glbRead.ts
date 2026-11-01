@@ -1,3 +1,4 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 /**
  * A small binary glTF reader for static models: every triangle mesh in the default scene, baked
  * into model space with its normals, texture coordinates, vertex colours and material. The inverse

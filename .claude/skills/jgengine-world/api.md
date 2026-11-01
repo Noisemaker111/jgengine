@@ -1116,24 +1116,6 @@
 
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeController> — Override which controller the rigs below apply; defaults to {@link defaultCameraShake}.
 
-## @jgengine/core/cave/Cave.draw
-
-- `Cave` (function): function Cave({ layout, ground, colors = DEFAULT_COLORS }: { layout: CaveLayout; ground: CaveGround; colors?: CaveColors }): ReactNode — Draw a cave laid out by `caveLayout`: the rock inside and the hill outside, both casting shadow so the tunnel and chamber are dark until the game lights them.
-- `CaveColors` (interface): interface CaveColors — Colours of a cave's rock: the inside you walk through, the hill outside and the floor underfoot.
-
-## @jgengine/core/cave/caveLayout
-
-- `CaveConfig` (interface): interface CaveConfig — A cave dug into the ground along a centreline: a tunnel from the mouth that opens into a chamber at its far end.
-- `CaveGround` (type): type CaveGround = (x: number, z: number) => number — Ground height under a point, so the cave's floor, walls and roof follow the terrain.
-- `CaveLayout` (interface): interface CaveLayout — Everything a game needs to place, draw and fill a cave.
-- `caveLayout` (function): function caveLayout(config: CaveConfig, ground: CaveGround): CaveLayout — Lay out a cave along an authored centreline: wall collision down both sides of the tunnel, a round chamber at the end walled all round except where the tunnel comes in, spots to put creatures and loot, and tests for whether a point is inside. Pair with `caveMesh` to draw it.
-
-## @jgengine/core/cave/caveMesh
-
-- `CaveMesh` (interface): interface CaveMesh — A cave's rock: the inside surface you walk through, the outside hill it sits in, and the floor laid over the ground.
-- `CaveMeshPart` (interface): interface CaveMeshPart — One triangle mesh: xyz per vertex and three vertex indices per triangle.
-- `caveMesh` (function): function caveMesh(layout: CaveLayout, ground: CaveGround): CaveMesh — The rock of a cave laid out by `caveLayout`: an arched tunnel swept down its centreline into a domed chamber, inside and out, with a rock face round the mouth, and a floor that follows the ground under both. Lumpy by the layout's seed.
-
 ## @jgengine/core/city/cityBlocks
 
 - `CityBlockKind` (type): type CityBlockKind = "buildable" | "park" | "plaza" | "field" | "buffer" — How a block (a face of the road graph) is used.
@@ -5616,7 +5598,7 @@
 
 - `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
 - `AUTO_TARGET_POLICIES` (const): const AUTO_TARGET_POLICIES: readonly AutoTargetPolicy[] — Every policy, in the order a "cycle targeting" button steps through them.
-- `Aabb` (interface): interface Aabb — ⚠ undocumented · used by `rectRegion`: An axis-aligned rectangle on the XZ plane.
+- `Aabb` (interface): interface Aabb { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `rectRegion`: An axis-aligned rectangle on the XZ plane.
 - `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
 - `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
 - `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.

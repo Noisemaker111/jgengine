@@ -1,6 +1,7 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 import { describe, expect, test } from "bun:test";
 
-import type { Predicate } from "../rules/predicate";
+import type { Predicate } from "@jgengine/core/rules/predicate";
 import {
   createSummonedEncounter,
   type SummonCandidate,

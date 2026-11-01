@@ -1,4 +1,5 @@
-import type { ModelConfig } from "../game/playableGame";
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
+import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { gaitClips, type GaitLimb } from "./gait";
 import { encodeGlb, glbDataUrl, type GlbModel, type GlbNode, type GlbPrimitive } from "./glbWrite";
 

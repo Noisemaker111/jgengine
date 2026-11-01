@@ -1,7 +1,8 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 // @skill jgengine-gameplay
-import { evaluatePredicate, type Predicate, type PredicateFacts } from "../rules/predicate";
-import type { ThresholdBoundary } from "../threshold/thresholds";
-import { createPacedSchedule, type PacedSchedule, type PacedScheduleState } from "../time/pacedSchedule";
+import { evaluatePredicate, type Predicate, type PredicateFacts } from "@jgengine/core/rules/predicate";
+import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
+import { createPacedSchedule, type PacedSchedule, type PacedScheduleState } from "@jgengine/core/time/pacedSchedule";
 
 /** One difficulty of a summoned fight, a Ladder step (`at` is its place in the difficulty order): what the summon spends and what else it asks. */
 export interface SummonTier extends ThresholdBoundary {

@@ -1,7 +1,8 @@
+// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 // @skill jgengine-gameplay
-import { evalCurve, type Curve } from "../progression/leveling";
-import { evaluatePredicate, type Predicate } from "../rules/predicate";
-import { changeMeter, createMeter, tickMeter, type MeterState } from "../stats/statPool";
+import { evalCurve, type Curve } from "@jgengine/core/progression/leveling";
+import { evaluatePredicate, type Predicate } from "@jgengine/core/rules/predicate";
+import { changeMeter, createMeter, tickMeter, type MeterState } from "@jgengine/core/stats/statPool";
 
 /**
  * One food a subdued creature will eat. The order foods are listed in is the order it prefers

@@ -94,32 +94,6 @@
 - `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
 - `createAgentSystem` (function): function createAgentSystem(config: AgentSystemConfig): AgentSystem — One call for a whole cast: a game hands over its needs, options, mood weights, schedules and one target selector, and gets back a running system with a single `tick(dt)` and a save blob that goes into the game's own save.
 
-## @jgengine/core/basebuilding/BaseStructures.draw
-
-- `BaseStructures` (function): function BaseStructures({ building, colorOf, ghost, validColor = "#34d399", invalidColor = "#f87171" }: BaseStructuresProps): React.JSX.Element — Draws a base-building model: every placed piece as its solid boxes, darkened as it loses health, plus the build ghost tinted valid or invalid. Re-renders only when the model's version moves or the ghost changes.
-- `BaseStructuresProps` (interface): interface BaseStructuresProps — Props for {@link BaseStructures}.
-
-## @jgengine/core/basebuilding/baseBuilding
-
-- `BaseBuilding` (interface): interface BaseBuilding — Handle returned by {@link createBaseBuilding}.
-- `BaseBuildingConfig` (interface): interface BaseBuildingConfig — Everything a base-building model is made from.
-- `BaseBuildingState` (interface): interface BaseBuildingState — Serializable contents of a {@link BaseBuilding}.
-- `BasePiece` (interface): interface BasePiece — A piece standing in the world. `rotationY` uses the engine's entity convention.
-- `BaseVec3` (type): type BaseVec3 = readonly [number, number, number] — A `[x, y, z]` triple in metres.
-- `StructureBox` (interface): interface StructureBox — One solid box of a piece, in the piece's local space (origin at the piece's snap origin).
-- `StructureDamage` (interface): interface StructureDamage extends StructureRemoval — Result of {@link BaseBuilding.damage}.
-- `StructureGroundRule` (interface): interface StructureGroundRule — Where a shape may stand without snapping to another piece.
-- `StructureHit` (interface): interface StructureHit — A piece hit by {@link BaseBuilding.raycast}.
-- `StructurePieceDef` (interface): interface StructurePieceDef — One buildable piece: a shape in a tier with its hit points.
-- `StructurePlan` (interface): interface StructurePlan — Where a piece would go for a cursor, and whether it may.
-- `StructurePlanBlock` (type): type StructurePlanBlock = "unknown-piece" | "overlap" | "no-support" | "too-steep" — Why a plan cannot be placed: an unknown piece, something in the way, nothing to stand on, or ground too steep.
-- `StructurePlanOptions` (interface): interface StructurePlanOptions — Options for {@link BaseBuilding.plan}.
-- `StructureRemoval` (interface): interface StructureRemoval — What a removal or a destroying blow took down: the piece itself first, then everything that lost support.
-- `StructureShapeDef` (interface): interface StructureShapeDef — A piece shape: its solid boxes (the same boxes collide, raycast and draw), its snap sockets and where it may stand. Socket positions are local; socket `yaw` follows `placement/buildSockets` (the angle `atan2(z, x)` of the socket's outward direction).
-- `StructureTierDef` (interface): interface StructureTierDef extends ThresholdBoundary — A material tier, a Ladder step (`at` is its place in the material order): how much of each damage class reaches its pieces.
-- `StructureWorldBox` (interface): interface StructureWorldBox — A world box of a placed or planned piece, ready for a mesh or a solid.
-- `createBaseBuilding` (function): function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding — Snap-together base building: pieces of a shape and a material tier, snapped socket to socket through `placement/buildSockets` or stood on terrain, refused when they overlap what stands, held up by a support graph that drops whatever loses its last path to the ground, damaged per tier and damage class, with doors that swing and solids that collide. Pure and serializable; the game owns items, costs and input, `BaseStructures.draw` draws it.
-
 ## @jgengine/core/behaviour/behaviour
 
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.
@@ -2838,16 +2812,6 @@
 - `setValue` (function): function setValue(record: Record<string, number>, key: string, value: number, bounds?: NumericBounds): number — Set `key` to `value` (clamped to `bounds`), writing the record in place. Returns the stored value.
 - `towardValue` (function): function towardValue(record: Record<string, number>, key: string, target: number, maxDelta: number, bounds?: NumericBounds): number — Step `key` toward `target` by at most `maxDelta` without overshooting, then clamp to `bounds`. Writes in place and returns the stored value.
 
-## @jgengine/core/remains/remains
-
-- `Remains` (interface): interface Remains<T = undefined> — A heap of stacks left at a place: what it holds, when it falls apart, and whatever was kept with it.
-- `RemainsField` (interface): interface RemainsField<T = undefined> — The remains lying in a world: left on death, taken back from, and gone when they fall apart.
-- `RemainsLeaveInput` (interface): interface RemainsLeaveInput<T = undefined> — What {@link RemainsField.leave} is given.
-- `RemainsOptions` (interface): interface RemainsOptions — {@link createRemainsField} knobs.
-- `RemainsSnapshot` (interface): interface RemainsSnapshot<T = undefined> — Everything a remains field holds, for a save.
-- `RemainsStack` (interface): interface RemainsStack — One stack held in remains: an item id and how many.
-- `createRemainsField` (function): function createRemainsField<T = undefined>(options: RemainsOptions): RemainsField<T> — Remains: a heap of stacks left at a place that can be taken from, and falls apart after a while (a body where someone died, a crate where it landed). The owner, or anyone the game allows, walks back and takes it; after `lastsSeconds` it falls apart and its contents are lost. Keep anything about it the game needs in its typed `data`. Pure state on the game's clock; saving is a snapshot.
-
 ## @jgengine/core/rules/predicate
 
 - `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value; `in` asks whether a scalar fact is one of a listed set, and `includes` whether a list fact holds a named value.
@@ -3198,34 +3162,6 @@
 
 - `StoreHandle` (interface): interface StoreHandle<T> — A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single type parameter is fixed at definition; `read`/`write`/`update` never widen to `unknown`, so no call site repeats `store.get(key) as T`. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `store.get`/`store.set` pair gives up the moment it forks run state into a module-level singleton.
 - `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a React selector, no allocation on a hot path). A value that carries functions (a closure-based run store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in place. Hold such objects with `perContext` when they need no store notifications.
-
-## @jgengine/core/subdual/subdualFeeding
-
-- `FeedingDose` (interface): interface FeedingDose — A dose that releases into the subdual meter over some seconds.
-- `FeedingFood` (interface): interface FeedingFood — One food a subdued creature will eat. The order foods are listed in is the order it prefers them; every number is the caller's.
-- `FeedingSupply` (interface): interface FeedingSupply — What a subdued creature holds, as the feeding loop reads and spends it.
-- `SubdualFeeding` (interface): interface SubdualFeeding — Winning over creatures by keeping them subdued and feeding them: hits and doses fill a subdual meter, the creature goes down once it reaches its capacity, it eats what it holds on its own clock (the first food in the caller's list it has), each meal fills the progress meter and costs quality, damage taken while down costs quality too, and it gets away — losing the progress — when the subdual meter empties. Levels scale the caller's tables, never a formula here.
-- `SubdualFeedingConfig` (interface): interface SubdualFeedingConfig — How one kind of creature goes down and is won over. Every rate, list and threshold is the caller's.
-- `SubdualFeedingEvent` (type): type SubdualFeedingEvent = | { type: "subdued" } | { type: "ate"; itemId: string } | { type: "released" } | { type: "won"; quality: number } — What changed this tick.
-- `SubdualFeedingState` (interface): interface SubdualFeedingState — One tracked creature's progress. Plain data, JSON round-trips.
-- `createSubdualFeeding` (function): function createSubdualFeeding(configs: Readonly<Record<string, SubdualFeedingConfig>>): SubdualFeeding — Track subdual, feeding and quality for every creature the caller names.
-
-## @jgengine/core/summonedEncounter/summonedEncounter
-
-- `CostSource` (interface): interface CostSource — What the summoner carries, for a cost: how many of an item, and taking them.
-- `RefusedCandidate` (interface): interface RefusedCandidate — A candidate the portal left behind, and why.
-- `SummonCandidate` (interface): interface SummonCandidate — Someone the portal could take in and where they stood to be sent back to.
-- `SummonCheck` (interface): interface SummonCheck — What a requirement check found: what the source is short of, and whether the rest of the requirement held.
-- `SummonResult` (type): type SummonResult = | { ok: true } | { ok: false; reason: "busy" | "unknown" | "requirement"; check?: SummonCheck } — What a summon did.
-- `SummonReturn` (interface): interface SummonReturn — Who goes back where, when a fight ends.
-- `SummonTier` (interface): interface SummonTier extends ThresholdBoundary — One difficulty of a summoned fight, a Ladder step (`at` is its place in the difficulty order): what the summon spends and what else it asks.
-- `SummonedEncounter` (interface): interface SummonedEncounter<C extends SummonCandidate> — A fight started by meeting a requirement at a place, with its own time limit, outcome and trip home.
-- `SummonedEncounterEvent` (type): type SummonedEncounterEvent<C extends SummonCandidate> = | { type: "entered"; tier: string; admitted: readonly C[]; refused: readonly RefusedCandidate[] } /** The portal closed with no lead kind in range: the cost is spent. */ | { type: "closed"; tier: string } | { type: "won"; tier: string; party: … — Things that happened on one step of the encounter clock.
-- `SummonedEncounterHooks` (interface): interface SummonedEncounterHooks<C extends SummonCandidate> — What the encounter clock asks the game each step.
-- `SummonedEncounterOptions` (interface): interface SummonedEncounterOptions — How a summoned fight runs: the tiers, the portal, who may come in, and how long the winners stay.
-- `SummonedEncounterPhase` (type): type SummonedEncounterPhase = "idle" | "portal" | "fight" | "victory" — Where a summoned encounter stands: nothing summoned, the portal counting down, the fight, or the winners' wait.
-- `SummonedEncounterState` (interface): interface SummonedEncounterState — Serializable encounter state.
-- `createSummonedEncounter` (function): function createSummonedEncounter<C extends SummonCandidate>(options: SummonedEncounterOptions): SummonedEncounter<C> — A fight a game starts by meeting a requirement at a place: the summoner pays a tier's cost and its extra condition, a portal counts down, then takes every candidate in range up to each kind's cap, each remembered where they stood. The fight is won when the target dies, after which the winners stay `victorySeconds` and are sent back; it is lost when no lead is left inside (or time runs out), and the party still inside is lost with it. The game owns the bodies, teleports and the target; this owns the rules and the clock. Deterministic in `now`; serializable.
 
 ## @jgengine/core/survival/bodyTemperature
 

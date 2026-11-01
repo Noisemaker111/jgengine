@@ -1,5 +1,5 @@
 import type { Curve } from "@jgengine/core/progression/leveling";
-import type { FeedingDose, FeedingFood, SubdualFeedingConfig } from "@jgengine/core/subdual/subdualFeeding";
+import type { FeedingDose, FeedingFood, SubdualFeedingConfig } from "../../engine-local/subdual/subdualFeeding";
 
 /** The levels ARK's taming tables are written at: a wild creature's first level and its last. */
 const LOW = 1;
