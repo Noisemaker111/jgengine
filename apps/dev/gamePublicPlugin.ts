@@ -29,6 +29,7 @@ const TYPES: Readonly<Record<string, string>> = {
   ".woff2": "font/woff2",
   ".woff": "font/woff",
   ".ttf": "font/ttf",
+  ".otf": "font/otf",
 };
 
 /** The folder under the runner's base that serves one game's own `public/` files: `games/<id>/`. */
