@@ -136,6 +136,7 @@ bun scripts/type-shard.ts    # what the CI `types` job runs: check-types two sta
 bun run verify:fast --full         # the whole local verdict in one run: build, then check-types and every test
 bun run build        # tsgo + import-extension rewrite, per package; only for pack/publish and the Node CLI
 bun run gen           # regenerate every committed derived artifact, in dependency order
+bun run part-stats    # files importing each part home (core and games), core create* count and folder count; --worklist names the private copies left
 bun run verify:fast   # seconds: the branch diff vs origin/beta mapped to the packages, tests and quick gates it reaches
 bun run lane:close    # verify:fast, land, one ci:status read, print the lane report
 bun run idea-clock <game>  # minutes from a game's first commit to its from-zero flow, and the flow result
