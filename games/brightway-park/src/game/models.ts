@@ -36,13 +36,13 @@ const CHARACTER_HEIGHT = 3.3;
 function person(model: string, height: number, paint: Readonly<Record<string, string>>): ModelConfig {
   const ref = assets.resolve(`${PACK}/${model}`);
   if (ref === null) throw new Error(`brightway-park: the asset library has no "${model}"`);
-  const slots = Object.keys(paint);
+  const slots = Object.entries(paint);
   return {
     url: ref.url,
     scale: height / CHARACTER_HEIGHT,
     anchor: "origin",
-    materialAssets: slots.map((slot) => ({ schemaVersion: 1, id: `${model}.${slot}`, name: slot, family: "standard", capabilities: ["pbr"], surface: { color: paint[slot]!, roughness: 0.85, metalness: 0 } })),
-    materialAssignments: slots.map((slot) => ({ materialId: `${model}.${slot}`, selector: { slot } })),
+    materialAssets: slots.map(([slot, color]) => ({ schemaVersion: 1, id: `${model}.${slot}`, name: slot, family: "standard", capabilities: ["pbr"], surface: { color, roughness: 0.85, metalness: 0 } })),
+    materialAssignments: slots.map(([slot]) => ({ materialId: `${model}.${slot}`, selector: { slot } })),
   };
 }
 
