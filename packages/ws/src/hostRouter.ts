@@ -25,15 +25,20 @@ import {
 import { DEFAULT_COMMAND_LIMITS } from "./commandMiddleware";
 import type { GameServerHost, HostChangeEvent } from "./host";
 import type { TransportPipeFactory } from "./pipe";
+import type { WirePrecision, WireEncoder } from "./binaryWire";
+import { createWorldViewState, type WorldViewState } from "@jgengine/core/runtime/worldReplication";
 import {
   decodeWsClientMessage,
-  encodeWsMessage,
+  encodeWsFrame,
+  createWsWireEncoder,
   inspectWsDecodeFailure,
   subscriptionKey,
   type WsAppearance,
   type WsChannel,
   type WsChatMessage,
   type WsClientMessage,
+  type WsCodecName,
+  type WsFrame,
   type WsPose,
   type WsPresenceRow,
   type WsServerMessage,
@@ -55,6 +60,8 @@ export type HostRouterOptions = {
   chatRateLimit?: ChatRateLimit;
   chatHistoryLimit?: number;
   chatMaxBodyLength?: number;
+  /** Quantisation of replicated entity poses for clients on the binary codec; defaults to 2 decimals for positions and 3 for angles. */
+  precision?: WirePrecision;
   /** Per-op rate limits for pose/runCommand/join/browse/voice. Defaults to {@link DEFAULT_COMMAND_LIMITS}. */
   limits?: CommandLimits;
   /** Per-command authorization hook; defaults to allow-all. */
@@ -74,7 +81,7 @@ function realTimer(run: () => void, ms: number): () => void {
 }
 
 export type HostRouterTransport = {
-  send: (data: string) => void;
+  send: (data: WsFrame) => void;
   close: () => void;
 };
 
@@ -109,6 +116,8 @@ export const DEFAULT_GRACE_MS = 15_000;
 type Connection = {
   closed: boolean;
   transport: HostRouterTransport;
+  codec: WsCodecName;
+  encoder: WireEncoder | undefined;
   userId: string | null;
   subscriptions: Set<string>;
   joinedServers: Set<string>;
@@ -117,6 +126,8 @@ type Connection = {
   queue: Promise<void>;
   queuedMessages: number;
   worldRevisions: Map<string, number | null>;
+  /** Per-server cursor of what this connection's mirror holds, for hosts that narrow frames to the viewer's interest. */
+  worldViews: Map<string, WorldViewState>;
   roles: Map<string, SnapshotViewer["role"]>;
   subscriptionPushes: Map<string, SubscriptionPush>;
   admission: { serverId?: string | undefined; result: Promise<JoinServerResult | null> } | null;
@@ -291,7 +302,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const send = (connection: Connection, message: WsServerMessage) => {
     if (closed || connection.closed) return;
-    connection.transport.send(encodeWsMessage(message));
+    connection.transport.send(encodeWsFrame(message, connection.codec, connection.encoder));
   };
 
   const reply = (connection: Connection, id: number, result: unknown) => {
@@ -480,10 +491,12 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     if (channel === "server") {
       if (host.pullWorld !== undefined) {
         const sinceRevision = connection.worldRevisions.get(serverId) ?? null;
-        const world = await host.pullWorld({ userId: connection.userId, serverId, sinceRevision, role: connection.roles.get(serverId) });
+        const view = connection.worldViews.get(serverId) ?? createWorldViewState();
+        connection.worldViews.set(serverId, view);
+        const world = await host.pullWorld({ userId: connection.userId, serverId, sinceRevision, role: connection.roles.get(serverId), view });
         if (!isCurrent()) return;
         if (world !== null) {
-          const data = await host.getServerView({ userId: connection.userId, serverId, role: connection.roles.get(serverId) });
+          const data = await host.getServerView({ userId: connection.userId, serverId, role: connection.roles.get(serverId), withState: false });
           if (data !== null && isCurrent()) {
             send(connection, { v: 1, t: "update", channel, serverId, data: { ...data, serverState: world } });
             connection.worldRevisions.set(serverId, world.revision);
@@ -660,6 +673,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         sessionsByUserId.set(userId, connection);
       }
       connection.userId = userId;
+      if (message.codec === "binary") {
+        connection.codec = "binary";
+        connection.encoder = createWsWireEncoder(options.precision);
+      }
       if (resumeToken !== undefined && message.token === resumeToken) {
         for (const key of [...pendingLeaves.keys()]) {
           if (key.startsWith(`${userId}|`)) {
@@ -836,7 +853,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             return;
           }
           if (closed || connection.closed) return;
-          if (message.channel === "server") connection.worldRevisions.set(message.serverId, null);
+          if (message.channel === "server") {
+            connection.worldRevisions.set(message.serverId, null);
+            connection.worldViews.set(message.serverId, createWorldViewState());
+          }
           addSubscription(connection, subscriptionKey(message.channel, message.serverId, message.action));
           reply(connection, message.id, null);
           void requestSubscriptionPush(connection, message.channel, message.serverId, message.action);
@@ -873,6 +893,8 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       const connection: Connection = {
         closed: false,
         transport,
+        codec: "json",
+        encoder: undefined,
         userId: null,
         subscriptions: new Set(),
         joinedServers: new Set(),
@@ -880,6 +902,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         queue: Promise.resolve(),
         queuedMessages: 0,
         worldRevisions: new Map(),
+        worldViews: new Map(),
         roles: new Map(),
         subscriptionPushes: new Map(),
         admission: null,
@@ -888,7 +911,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       return {
         handleRaw: (raw) => {
           if (closed || connection.closed) return;
-          const text = typeof raw === "string" ? raw : String(raw);
+          const text = raw instanceof Uint8Array || typeof raw === "string" ? raw : String(raw);
           const message = decodeWsClientMessage(text);
           if (message === null) {
             const failure = inspectWsDecodeFailure(text);

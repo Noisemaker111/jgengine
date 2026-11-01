@@ -170,7 +170,7 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
     async isMember({ userId, serverId }): Promise<boolean> {
       return !stopped && roles.get(serverId)?.has(userId) === true;
     },
-    async getServerView({ userId, serverId, role }): Promise<GameRuntimeServerView | null> {
+    async getServerView({ userId, serverId, role, withState }): Promise<GameRuntimeServerView | null> {
       const entry = live.get(serverId);
       if (stopped || entry === undefined || !roles.get(serverId)?.has(userId)) return null;
       return {
@@ -178,14 +178,19 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
         gameId: entry.gameId,
         revision: entry.session.revision(),
         memberUserIds: [...entry.session.members()],
-        serverState: entry.session.snapshotFor({ userId, role: role ?? roles.get(serverId)?.get(userId) ?? "player" }),
+        serverState: withState === false ? null : entry.session.snapshotFor({ userId, role: role ?? roles.get(serverId)?.get(userId) ?? "player" }),
         updatedAt: now(),
       };
     },
-    async pullWorld({ userId, serverId, sinceRevision, role }): Promise<WorldSyncFrame | null> {
+    async pullWorld({ userId, serverId, sinceRevision, role, view }): Promise<WorldSyncFrame | null> {
       const entry = live.get(serverId);
       if (stopped || entry === undefined || !roles.get(serverId)?.has(userId)) return null;
       if (entry.session.projectsViewers()) {
+        if (view !== undefined && entry.session.viewerDiffs()) {
+          const viewer = { userId, role: role ?? roles.get(serverId)?.get(userId) ?? "player" };
+          const sync = entry.session.pullFor(viewer, sinceRevision, view);
+          return sync.kind === "baseline" ? sync : { kind: "diff", revision: sync.diff.revision, diff: sync.diff };
+        }
         return {
           kind: "baseline",
           revision: entry.session.revision(),

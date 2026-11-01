@@ -1440,6 +1440,7 @@
   ],
   "@jgengine/ws": [
     ".",
+    "./binaryWire",
     "./commandMiddleware",
     "./createWsBackend",
     "./host",

@@ -18,7 +18,7 @@ await session.close();
 
 The resolver owns one tick timer, signaling, peers and persistence teardown.
 Ticks skip worlds with no active members; only the canonical game/server id is
-admitted. `tickMs` defaults to 1000 / 30. Automatic saves default to a 1000 ms interval (`saveIntervalMs`); commands and
+admitted. `tickMs` defaults to 50 (20 Hz, `DEFAULT_HOST_TICK_MS`). Automatic saves default to a 1000 ms interval (`saveIntervalMs`); commands and
 close retain their immediate save boundaries. `store` accepts an asynchronous
 `HostedWorldStore` for restart recovery; omitted storage is memory-only.
 `slotsPerServer` caps players inside the serialized world join queue; known live

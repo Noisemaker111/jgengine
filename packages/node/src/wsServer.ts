@@ -83,7 +83,7 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
       close: () => socket.close(),
     });
 
-    socket.on("message", (raw) => connection.handleRaw(raw.toString()));
+    socket.on("message", (raw, isBinary) => connection.handleRaw(isBinary && raw instanceof Uint8Array ? raw : raw.toString()));
     socket.on("close", () => connection.close());
   });
 

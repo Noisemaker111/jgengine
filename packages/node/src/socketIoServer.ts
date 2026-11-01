@@ -3,8 +3,8 @@ import { createHostRouter, type HostRouterOptions, type RewoundPosition } from "
 export type { RewoundPosition };
 
 export type SocketIoLikeServerSocket = {
-  on: (event: string, listener: (payload: string) => void) => unknown;
-  send: (data: string) => unknown;
+  on: (event: string, listener: (payload: string | Uint8Array) => void) => unknown;
+  send: (data: string | Uint8Array) => unknown;
   disconnect: (close?: boolean) => unknown;
 };
 

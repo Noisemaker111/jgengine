@@ -39,6 +39,14 @@ Use [capabilities.md](capabilities.md) for intent-to-import discovery, [api.md](
 - Persistence adapters accept structural interfaces and keep backend dependencies out of core.
 - Deterministic ids and commands make retries/reconnect safe.
 
+## Rates and wire defaults
+
+- Every host ticks at 20 Hz (`DEFAULT_HOST_TICK_MS`, 50 ms) unless the game passes `tickMs`; `resolveHostTickMs` rejects values above 1000 ms. The Convex hosted default (`JG_HOSTED_TICK_MS`) is the same constant, but a Convex world only advances as often as its cron fires.
+- `createWsBackend` speaks the binary delta codec by default: per-entity field deltas against the previous frame, quantised poses, varint entity ids. Pass `codec: "json"` for readable frames while debugging. Precision is the host's: `createHostRouter({ precision: { position: 2, angle: 3 } })` (decimal places, 0 to 6).
+- A viewer's interest is the game's `replication: { aoiRadius, aoiAlways }`. The host asks the scene spatial index for entities within `aoiRadius` of the viewer's own entity, adds `aoiAlways` ids (a list or a function), and sends each connection a diff of only what entered, changed or left its view. A viewer with no entity yet holds every entity.
+- A module that throttles itself with `priority` still gets a projected baseline each tick instead of diffs.
+- Measure with `bun scripts/multiplayer-load.ts` (bytes and host ms per tick for N clients and E entities) and `bun scripts/multiplayer-two-clients.ts` (a real game, two clients).
+
 ## Traps
 
 - Local loopback success does not prove authority or privacy.

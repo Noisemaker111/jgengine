@@ -30,11 +30,8 @@ import {
 import {
   policyProjectsViewers,
   projectByVisibleIds,
-  projectEntitiesForViewer,
   projectObjectsForViewer,
   projectPerUserForViewer,
-  viewerOrigin,
-  visibleEntityIds,
 } from "./worldProjection";
 import { createRuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } from "../save/snapshotSave";
 import { isOffline } from "./adapter";
@@ -429,23 +426,34 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     ): SnapshotModule["project"] =>
     (data, viewer, world) =>
       project(data as T, viewer, world);
+  const aoiAlways = replication?.aoiAlways;
+  const interestOf = (viewer: SnapshotViewer): readonly string[] | null => {
+    if (aoiRadius === undefined) return null;
+    const self = entities.get(viewer.userId);
+    if (self === undefined || self === null) return null;
+    const ids = new Set(spatial.inRadius(self.position, aoiRadius));
+    ids.add(viewer.userId);
+    if (aoiAlways !== undefined) for (const id of typeof aoiAlways === "function" ? aoiAlways() : aoiAlways) ids.add(id);
+    return [...ids];
+  };
   const projectorFor = (key: string): SnapshotModule["project"] | undefined => {
     if (aoiRadius !== undefined && key === "entities") {
-      return typedProject<readonly SceneEntity[]>((data, viewer) =>
-        projectEntitiesForViewer(data, viewer, aoiRadius),
-      );
+      return typedProject<readonly SceneEntity[]>((data, viewer) => {
+        const ids = interestOf(viewer);
+        if (ids === null) return data;
+        const keep = new Set(ids);
+        return data.filter((entity) => keep.has(entity.id));
+      });
     }
     if (aoiRadius !== undefined && key === "stats") {
-      return typedProject<Record<string, StatValueMap>>((data, viewer, world) =>
-        projectByVisibleIds(
-          data,
-          visibleEntityIds((world["entities"] ?? []) as readonly SceneEntity[], viewer, aoiRadius),
-        ),
-      );
+      return typedProject<Record<string, StatValueMap>>((data, viewer) => {
+        const ids = interestOf(viewer);
+        return ids === null ? data : projectByVisibleIds(data, new Set(ids));
+      });
     }
     if (aoiRadius !== undefined && key === "objects") {
-      return typedProject<readonly SceneObject[]>((data, viewer, world) =>
-        projectObjectsForViewer(data, viewerOrigin(world, viewer), aoiRadius),
+      return typedProject<readonly SceneObject[]>((data, viewer) =>
+        projectObjectsForViewer(data, entities.get(viewer.userId)?.position ?? undefined, aoiRadius),
       );
     }
     if (replication?.privatePerUser === true && key === "inventory") {
@@ -463,6 +471,12 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       ...(project === undefined ? {} : { project }),
     };
   });
+  const projectModule = (key: string, value: unknown, viewer: SnapshotViewer): unknown => {
+    const module = replicationModules.find((candidate) => candidate.key === key);
+    if (module?.project === undefined) return value;
+    const world = key === "objects" || key === "inventory" ? {} : composeWorldSnapshot(replicationModules);
+    return module.project(value, viewer, world);
+  };
   const replicationVersion = (): number =>
     replicationModules.reduce((sum, module) => sum + (module.version?.() ?? 0), 0);
 
@@ -712,6 +726,9 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
     replicationVersion,
     replicatesPerViewer: () => projectsViewers,
+    throttlesModules: () => replicationModules.some((module) => module.priority !== undefined),
+    interestOf,
+    projectModule,
   };
   ctxRef = ctx;
   ctx.sim.addStage({ id: "authored-environment", phase: "afterTick", run: (_dt, _tick, gameDt) => authoredEnvironment.step(gameDt) });

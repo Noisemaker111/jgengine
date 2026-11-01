@@ -3,7 +3,7 @@ import type { ModelAssetRef } from "../scene/assetCatalog";
 import type { GameContext, GameContextContent, GameContextModels } from "./gameContext";
 import type { GameDefinition, LoopPlayer } from "../game/defineGame";
 import { createHostedGameRunner, type HostedGameRunner, type InputFrame } from "./hostedGameRunner";
-import type { WorldDiff } from "./worldReplication";
+import type { WorldDiff, WorldViewState } from "./worldReplication";
 import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 import { applyWorldSnapshot, type SnapshotModule } from "./worldSnapshot";
 
@@ -75,6 +75,13 @@ export interface HostedWorldSession {
   pull(sinceRevision: number | null): HostedWorldSync;
   /** The full world baseline projected for one viewer (private/AOI). Identity when no replication policy is set. */
   snapshotFor(viewer: SnapshotViewer): WorldSnapshot;
+  /**
+   * Replication pull for one viewer: a projected baseline on first sync, or a diff limited to what the viewer's
+   * interest radius holds. `state` is that connection's cursor and is updated in place.
+   */
+  pullFor(viewer: SnapshotViewer, sinceRevision: number | null, state: WorldViewState): HostedWorldSync;
+  /** True when {@link pullFor} can serve diffs; false means a host must send a projected baseline every tick. */
+  viewerDiffs(): boolean;
   /** True when {@link snapshotFor} is viewer-dependent — a host must serve each connection its own projected frame instead of a shared diff. */
   projectsViewers(): boolean;
   revision(): number;
@@ -191,6 +198,17 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
     return { kind: "diff", diff: runner.diff(sinceRevision) };
   };
 
+  const pullFor = (viewer: SnapshotViewer, sinceRevision: number | null, state: WorldViewState): HostedWorldSync => {
+    if (state.sent === null || sinceRevision === null || sinceRevision <= (loaded?.revision ?? 0) || sinceRevision > runner.revision()) {
+      const snapshot = runner.snapshot(viewer);
+      const held = snapshot["entities"];
+      state.sent = new Set(Array.isArray(held) ? held.flatMap((entity: unknown) => typeof entity === "object" && entity !== null && "id" in entity && typeof entity.id === "string" ? [entity.id] : []) : []);
+      state.all = runner.context().interestOf(viewer) === null;
+      return { kind: "baseline", revision: runner.revision(), snapshot };
+    }
+    return { kind: "diff", diff: runner.diffFor(viewer, sinceRevision, state) };
+  };
+
   return {
     join(userId, isNew) {
       runner.join(userId, knownPlayers.has(userId) ? false : isNew);
@@ -249,6 +267,8 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
       return revision;
     },
     pull,
+    pullFor,
+    viewerDiffs: () => runner.viewerDiffs(),
     sync: pull,
     snapshotFor: (viewer) => runner.snapshot(viewer),
     projectsViewers: () => runner.projectsViewers(),

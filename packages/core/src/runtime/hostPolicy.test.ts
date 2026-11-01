@@ -246,3 +246,13 @@ test("shared membership validates larger finite capacities and checks counts wit
   expect(isServerFull(1000, 1000, true)).toBe(false);
   expect(isServerFull(999, 1000, false)).toBe(false);
 });
+
+describe("resolveHostTickMs", () => {
+  test("defaults to 20 Hz and keeps the 1000 ms ceiling", async () => {
+    const { DEFAULT_HOST_TICK_MS, MAX_HOST_TICK_MS, resolveHostTickMs } = await import("./hostPolicy");
+    expect(resolveHostTickMs(undefined)).toBe(50);
+    expect(DEFAULT_HOST_TICK_MS).toBe(50);
+    expect(resolveHostTickMs(MAX_HOST_TICK_MS)).toBe(1000);
+    for (const bad of [0, -1, 1001, Number.NaN, Infinity]) expect(() => resolveHostTickMs(bad)).toThrow("tickMs");
+  });
+});

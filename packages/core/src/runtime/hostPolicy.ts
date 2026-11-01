@@ -197,3 +197,18 @@ export function isAutoJoinCandidate(args: {
   if (args.memberUserIds.length >= args.slotsPerServer) return false;
   return isListablePublicly(args.visibility);
 }
+
+/** Authoritative host tick interval every host uses unless the game sets one: 20 Hz. */
+export const DEFAULT_HOST_TICK_MS = 50;
+
+/** Longest tick interval a host accepts; 1 Hz is the floor for a world that still feels live. */
+export const MAX_HOST_TICK_MS = 1_000;
+
+/** Validate a host tick interval in milliseconds (greater than zero, at most {@link MAX_HOST_TICK_MS}); `undefined` yields {@link DEFAULT_HOST_TICK_MS}. */
+export function resolveHostTickMs(tickMs: number | undefined): number {
+  const value = tickMs ?? DEFAULT_HOST_TICK_MS;
+  if (!Number.isFinite(value) || value <= 0 || value > MAX_HOST_TICK_MS) {
+    throw new Error(`tickMs must be greater than zero and at most ${MAX_HOST_TICK_MS}`);
+  }
+  return value;
+}

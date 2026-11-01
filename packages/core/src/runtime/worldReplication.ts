@@ -34,6 +34,37 @@ const CORE_KEYS = new Set(["entities", "stats", "store"]);
 interface Tracked {
   json: string;
   revision: number;
+  /** Parsed once and shared by every client's diff; callers treat diff values as read-only. */
+  value?: unknown;
+}
+
+function parsedValue(tracked: Tracked): unknown {
+  if (tracked.value === undefined) tracked.value = JSON.parse(tracked.json);
+  return tracked.value;
+}
+
+/**
+ * What one viewer has been sent, held by whoever serves that viewer (one per connection and world). `sent` is
+ * the entity ids the viewer's mirror holds; `null` means no baseline has been served yet. `all` marks a viewer
+ * that holds every entity (no interest radius applied to it), so narrowing later knows what to drop.
+ */
+export interface WorldViewState {
+  sent: Set<string> | null;
+  all: boolean;
+}
+
+/** A fresh {@link WorldViewState}: the next pull is a baseline. */
+export function createWorldViewState(): WorldViewState {
+  return { sent: null, all: false };
+}
+
+/** Narrows {@link WorldReplicator.diff} to one viewer's interest. */
+export interface ReplicatorView {
+  state: WorldViewState;
+  /** Entity ids the viewer should hold now, from the spatial index; `null` means every entity. */
+  wanted: readonly string[] | null;
+  /** Narrows or rewrites a changed whole-module snapshot for this viewer (private state, placed objects). */
+  projectModule?: (key: string, value: unknown) => unknown;
 }
 
 /**
@@ -54,6 +85,7 @@ export interface WorldReplicatorOptions {
  * then replays exactly the items stamped after that revision. Everything the tracker holds is JSON — the same
  * shape that rides the wire — so a diff is inherently serializable. Change-detection is a full re-serialize per
  * commit unless {@link WorldReplicatorOptions.worldVersion} lets an unchanged tick short-circuit before it.
+ * Values in a returned diff are shared between callers: treat them as read-only.
   * @internal
   */
 export function createWorldReplicator(
@@ -133,30 +165,80 @@ export function createWorldReplicator(
     return revision;
   }
 
-  function diff(sinceRevision: number): WorldDiff {
+  function diff(sinceRevision: number, view?: ReplicatorView): WorldDiff {
     const changedEntities: SceneEntity[] = [];
-    for (const [, tracked] of entities) {
-      if (tracked.revision > sinceRevision) changedEntities.push(JSON.parse(tracked.json) as SceneEntity);
-    }
     const changedStats: Record<string, StatValueMap> = {};
-    for (const [id, tracked] of stats) {
-      if (tracked.revision > sinceRevision) changedStats[id] = JSON.parse(tracked.json) as StatValueMap;
+    let removedEntityIds: string[];
+    let removedStatIds: string[];
+    const state = view?.state;
+    if (view === undefined || state === undefined || view.wanted === null) {
+      for (const [, tracked] of entities) {
+        if (tracked.revision > sinceRevision) changedEntities.push(parsedValue(tracked) as SceneEntity);
+      }
+      for (const [id, tracked] of stats) {
+        if (tracked.revision > sinceRevision) changedStats[id] = parsedValue(tracked) as StatValueMap;
+      }
+      removedEntityIds = keysAfter(removedEntities, sinceRevision);
+      removedStatIds = keysAfter(removedStats, sinceRevision);
+      if (state !== undefined) {
+        state.all = true;
+        state.sent = new Set();
+      }
+    } else {
+      const wanted = new Set(view.wanted);
+      const sent = state.sent ?? new Set<string>();
+      const wasAll = state.all;
+      removedEntityIds = [];
+      removedStatIds = [];
+      const nowSent = new Set<string>();
+      for (const id of wanted) {
+        const tracked = entities.get(id);
+        if (tracked === undefined) continue;
+        nowSent.add(id);
+        const known = wasAll || sent.has(id);
+        if (!known || tracked.revision > sinceRevision) changedEntities.push(parsedValue(tracked) as SceneEntity);
+        const trackedStats = stats.get(id);
+        if (trackedStats !== undefined && (!known || trackedStats.revision > sinceRevision)) {
+          changedStats[id] = parsedValue(trackedStats) as StatValueMap;
+        } else if (known && (removedStats.get(id) ?? 0) > sinceRevision) {
+          removedStatIds.push(id);
+        }
+      }
+      const held = wasAll ? entities.keys() : sent;
+      for (const id of held) {
+        if (nowSent.has(id)) continue;
+        removedEntityIds.push(id);
+        removedStatIds.push(id);
+      }
+      if (wasAll) {
+        for (const id of keysAfter(removedEntities, sinceRevision)) {
+          if (!nowSent.has(id)) {
+            removedEntityIds.push(id);
+            removedStatIds.push(id);
+          }
+        }
+      }
+      state.sent = nowSent;
+      state.all = false;
     }
     const changedStore: (readonly [string, unknown])[] = [];
     for (const [key, tracked] of store) {
-      if (tracked.revision > sinceRevision) changedStore.push([key, JSON.parse(tracked.json) as unknown]);
+      if (tracked.revision > sinceRevision) changedStore.push([key, parsedValue(tracked)]);
     }
     const changedModules: WorldSnapshot = {};
     for (const [key, tracked] of modules) {
-      if (tracked.revision > sinceRevision) changedModules[key] = JSON.parse(tracked.json) as unknown;
+      if (tracked.revision > sinceRevision) {
+        const value = parsedValue(tracked);
+        changedModules[key] = view?.projectModule === undefined ? value : view.projectModule(key, value);
+      }
     }
     return {
       revision,
       baseRevision: sinceRevision,
       entities: changedEntities,
-      removedEntities: keysAfter(removedEntities, sinceRevision),
+      removedEntities: removedEntityIds,
       stats: changedStats,
-      removedStats: keysAfter(removedStats, sinceRevision),
+      removedStats: removedStatIds,
       store: changedStore,
       removedStore: keysAfter(removedStore, sinceRevision),
       modules: changedModules,

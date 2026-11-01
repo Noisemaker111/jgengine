@@ -1,5 +1,6 @@
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
 import { adapterOf, isServerAuthoritative, type MultiplayerAdapterConfig } from "@jgengine/core/runtime/adapter";
+import { resolveHostTickMs } from "@jgengine/core/runtime/hostPolicy";
 import type { MultiplayerSession } from "@jgengine/core/runtime/transport";
 import { createHostedWorldSession, createHostedWorldSessionAsync, type HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
 import { createWorldGameHost } from "@jgengine/ws/worldHost";
@@ -109,7 +110,7 @@ export interface ResolvePeerShellMultiplayerArgs {
   playable?: PlayableGame;
   /** Maximum active players in the authoritative world, including the host player. */
   slotsPerServer?: number;
-  /** Authoritative tick interval in milliseconds; defaults to 1000 / 30. */
+  /** Authoritative tick interval in milliseconds; defaults to {@link DEFAULT_HOST_TICK_MS} (20 Hz). */
   tickMs?: number;
   /** Minimum automatic save interval; joins, commands and close still save immediately. Defaults to 1000 ms. */
   saveIntervalMs?: number;
@@ -133,8 +134,7 @@ export async function resolvePeerShellMultiplayer(
   if (args.playable !== undefined && !isServerAuthoritative(args.playable.game.multiplayer)) {
     throw new Error("playable peer worlds require authority: server");
   }
-  const tickMs = args.tickMs ?? 1000 / 30;
-  if (!Number.isFinite(tickMs) || tickMs <= 0 || tickMs > 1000) throw new Error("tickMs must be greater than zero and at most 1000");
+  const tickMs = resolveHostTickMs(args.tickMs);
   const saveIntervalMs = args.saveIntervalMs ?? 1000;
   if (!Number.isFinite(saveIntervalMs) || saveIntervalMs < 0) throw new Error("saveIntervalMs must be nonnegative and finite");
   const userId = args.userId ?? randomPlayerId();

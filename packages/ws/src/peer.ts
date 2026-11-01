@@ -64,7 +64,7 @@ function localDescriptionOrThrow(pc: RTCPeerConnection): RTCSessionDescription {
 
 function bindDataChannelPipe(
   channel: RTCDataChannel,
-  handlers: { onOpen: () => void; onMessage: (data: string) => void; onClose: () => void },
+  handlers: { onOpen: () => void; onMessage: (data: string | Uint8Array) => void; onClose: () => void },
 ) {
   if (channel.readyState === "open") {
     queueMicrotask(() => handlers.onOpen());
@@ -72,7 +72,13 @@ function bindDataChannelPipe(
     channel.onopen = () => handlers.onOpen();
   }
   channel.onmessage = (event) => {
-    handlers.onMessage(typeof event.data === "string" ? event.data : String(event.data));
+    handlers.onMessage(
+      typeof event.data === "string"
+        ? event.data
+        : event.data instanceof ArrayBuffer
+          ? new Uint8Array(event.data)
+          : String(event.data),
+    );
   };
   channel.onclose = () => handlers.onClose();
 }
@@ -89,7 +95,8 @@ function guestPipeFactory(channel: RTCDataChannel): TransportPipeFactory {
     return {
       send: (data) => {
         if (channel.readyState !== "open") return;
-        channel.send(data);
+        if (typeof data === "string") channel.send(data);
+        else channel.send(data);
       },
       close: () => channel.close(),
     };
@@ -149,15 +156,22 @@ export function createPeerHost(options: PeerHostOptions): PeerHost {
     peerConnections.add(pc);
     pc.ondatachannel = (event) => {
       const channel = event.channel;
+      channel.binaryType = "arraybuffer";
       const connection = router.connect({
         send: (data) => {
-          if (channel.readyState === "open") channel.send(data);
+          if (channel.readyState !== "open") return;
+          if (typeof data === "string") channel.send(data);
+          else channel.send(data);
         },
         close: () => channel.close(),
       });
       channel.onmessage = (messageEvent) => {
         connection.handleRaw(
-          typeof messageEvent.data === "string" ? messageEvent.data : String(messageEvent.data),
+          typeof messageEvent.data === "string"
+            ? messageEvent.data
+            : messageEvent.data instanceof ArrayBuffer
+              ? new Uint8Array(messageEvent.data)
+              : String(messageEvent.data),
         );
       };
       channel.onclose = () => connection.close();
@@ -211,6 +225,7 @@ export function createPeerGuest(options: PeerGuestOptions): PeerGuest {
 
   const pc = new RTCPeerConnection(configuration);
   const channel = pc.createDataChannel("jg");
+  channel.binaryType = "arraybuffer";
 
   const backend = createWsBackend({
     userId: options.userId,
