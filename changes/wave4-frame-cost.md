@@ -11,6 +11,10 @@ Engine seam: packages/core/src/input/pointerService.draw.ts, packages/core/src/i
 
 - Part of #2837
 
+### Migrate
+
+- `SceneCaptureBinding` takes no `bind` prop, and the game canvas keeps no copy of its last frame: ask for a frame with `requestSceneCapture` or `requestSceneThumbnail`, which read the next frame as it renders.
+
 ### Fixed
 
 - static content stops paying per-frame matrix and draw cost: static matrices, batched props, HLOD per cell, on-demand capture and precompile off the critical path
