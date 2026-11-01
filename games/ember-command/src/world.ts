@@ -27,11 +27,11 @@ export const world: EnvironmentWorldFeature = environment({
       macroScale: 26,
       roughness: 0.95,
       strength: 0.45,
-      // ambientCG scans: Grass004 meadow under the autumn tint, packed dirt for the war road, Rock022 on cliffs.
+      // ambientCG scans: Grass004 meadow under the autumn tint, Ground054 dirt road for the war road, Rock035 on cliffs.
       surfaces: {
         ground: libraryTerrainSurface("foliage/grass-dry", { tile: 4, tint: 0.55 }),
-        sand: libraryTerrainSurface("ground/packed-dirt", { tile: 3, tint: 0.6 }),
-        rock: libraryTerrainSurface("ground/rock", { tile: 6 }),
+        sand: libraryTerrainSurface("ground/dirt-road", { tile: 3, tint: 0.6 }),
+        rock: libraryTerrainSurface("ground/cliff", { tile: 6 }),
       },
     },
   }),
