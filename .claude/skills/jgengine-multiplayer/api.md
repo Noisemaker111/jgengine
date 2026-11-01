@@ -25,7 +25,7 @@
 - `JGDataModel` (type): type JGDataModel = DataModelFromSchemaDefinition<typeof schemaForTypes> — Data model of the {@link jgengineTables} schema — the shape a host's own Convex ctx must satisfy to call the exported persistence helpers.
 - `JGMutationCtx` (type): type JGMutationCtx = GenericMutationCtx<JGDataModel> — Mutation ctx accepted by {@link loadServerSnapshot} / {@link persistServerSnapshot}.
 - `JGQueryCtx` (type): type JGQueryCtx = GenericQueryCtx<JGDataModel> — Read-only context accepted by engine host queries.
-- `JG_HOSTED_TICK_MS` (const): const JG_HOSTED_TICK_MS: 1000 — Default minimum elapsed ms before `tickHostedWorlds` advances a world — override via the factory's `tickMs`.
+- `JG_HOSTED_TICK_MS` (const): const JG_HOSTED_TICK_MS: 50 — Default minimum elapsed ms before `tickHostedWorlds` advances a world — override via the factory's `tickMs`.
 - `JG_MAX_MEMBERS_PER_SERVER` (const): const JG_MAX_MEMBERS_PER_SERVER: 256 — Room-topology ceiling on `slotsPerServer`; shared membership uses indexed rows instead.
 - `JG_RUNTIME_TICK_MS` (const): const JG_RUNTIME_TICK_MS: 1000 — ⚠ undocumented
 - `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
@@ -110,7 +110,7 @@
 - `HostedGameConfig` (interface): interface HostedGameConfig — One game the hosted path can serve, bound per `gameId`: its definition plus content lookup.
 - `HostedWorldInvocation` (interface): interface HostedWorldInvocation<T> — Everything one stateless invocation reconstructs a hosted world from: the persisted record via `store`, plus the member roster and held inputs the snapshot doesn't carry, and the op to apply to the fresh session.
 - `HostedWorldOutcome` (interface): interface HostedWorldOutcome<T> — What one stateless invocation produced: the op's value, the resulting revision, whether the world changed (and was saved back), and the post-op roster.
-- `JG_HOSTED_TICK_MS` (const): const JG_HOSTED_TICK_MS: 1000 — Default minimum elapsed ms before `tickHostedWorlds` advances a world — override via the factory's `tickMs`.
+- `JG_HOSTED_TICK_MS` (const): const JG_HOSTED_TICK_MS: 50 — Default minimum elapsed ms before `tickHostedWorlds` advances a world — override via the factory's `tickMs`.
 
 ## @jgengine/convex/occ
 
@@ -378,7 +378,7 @@
 - `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `ShutdownHook` (interface): interface ShutdownHook — A live signal listener installed by {@link installShutdownHook}; call `remove()` to uninstall it (tests, embedders opting out).
 - `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
-- `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
+- `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string | Uint8Array) => void) => unknown; send: (data: string | Uint8Array) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
 - `WebHandler` (type): type WebHandler = (request: Request) => Promise<Response> — ⚠ undocumented
 - `WorldGameServer` (interface): interface WorldGameServer — A runnable ws host for GameContext worlds: {@link createWorldGameHost} + {@link createGameWsServer} + a tick loop, with a manual `tick(dt)` seam so a fake clock can drive it in tests.
 - `WorldGameServerOptions` (interface): interface WorldGameServerOptions extends Omit<GameWsServerOptions, "host"> — Config for {@link createWorldGameServer}: how to resolve a game by id, the tick cadence, and the underlying ws-server/router options (minus `host`, which the server builds).
@@ -449,7 +449,7 @@
 - `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
 - `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `SocketIoLikeServer` (type): type SocketIoLikeServer = { on: (event: "connection", listener: (socket: SocketIoLikeServerSocket) => void) => unknown; } — ⚠ undocumented
-- `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
+- `SocketIoLikeServerSocket` (type): type SocketIoLikeServerSocket = { on: (event: string, listener: (payload: string | Uint8Array) => void) => unknown; send: (data: string | Uint8Array) => unknown; disconnect: (close?: boolean) => unknown; } — ⚠ undocumented
 - `attachGameSocketIoServer` (function): function attachGameSocketIoServer(options: GameSocketIoServerOptions): GameSocketIoServer — ⚠ undocumented
 
 ## @jgengine/node/testFixtures
@@ -526,8 +526,8 @@
 - `HostRouter` (type): type HostRouter = { connect: (transport: HostRouterTransport) => HostRouterConnection; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; /** Wait for accepted message handlers and subscription reads to settle. Close first to prevent new work. */ drain: () =>… — ⚠ undocumented
 - `HostRouterAuthenticate` (type): type HostRouterAuthenticate = (args: { userId: string; token?: string | undefined; }) => Promise<string | null> | string | null — ⚠ undocumented
 - `HostRouterConnection` (type): type HostRouterConnection = { handleRaw: (raw: unknown) => void; close: () => void; } — ⚠ undocumented
-- `HostRouterOptions` (type): type HostRouterOptions = { host: GameServerHost; authenticate?: HostRouterAuthenticate; allowAnonymous?: boolean; singleSession?: boolean; poseRules?: PoseSyncRules; positionHistoryMs?: number; chatRateLimit?: ChatRateLimit; chatHistoryLimit?: number; chatMaxBodyLength?: number; /** Per-op rate limi… — ⚠ undocumented
-- `HostRouterTransport` (type): type HostRouterTransport = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
+- `HostRouterOptions` (type): type HostRouterOptions = { host: GameServerHost; authenticate?: HostRouterAuthenticate; allowAnonymous?: boolean; singleSession?: boolean; poseRules?: PoseSyncRules; positionHistoryMs?: number; chatRateLimit?: ChatRateLimit; chatHistoryLimit?: number; chatMaxBodyLength?: number; /** Quantisation of … — ⚠ undocumented
+- `HostRouterTransport` (type): type HostRouterTransport = { send: (data: WsFrame) => void; close: () => void; } — ⚠ undocumented
 - `HttpReads` (type): type HttpReads = { getTop: (args: { stat: string; scope: LeaderboardScope; serverId?: string; limit?: number; }) => Promise<LeaderboardEntry[]>; getLeaderboardProfile: (userId: string) => Promise<Record<string, number>>; getPlayerProfile: (userId: string) => Promise<GameRuntimePlayerView | null>; li… — ⚠ undocumented
 - `HttpReadsOptions` (type): type HttpReadsOptions = { baseUrl: string; gameId: string; fetchImpl?: typeof fetch; } — ⚠ undocumented
 - `MAX_APPEARANCE_ENTRIES` (const): const MAX_APPEARANCE_ENTRIES: 32 — Max number of keys in a pose `appearance` tag map.
@@ -550,10 +550,11 @@
 - `ReadsPersistence` (type): type ReadsPersistence = Pick< HostPersistence, "listServers" | "loadProfile" | "getLeaderboardTop" | "getLeaderboardProfile" > — ⚠ undocumented
 - `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `SocketIoBackendOptions` (type): type SocketIoBackendOptions = Omit<WsBackendOptions, "url" | "pipe" | "webSocketFactory"> & { socket: SocketIoLikeSocket; } — ⚠ undocumented
-- `SocketIoLikeSocket` (type): type SocketIoLikeSocket = { connected: boolean; on: (event: string, listener: (payload: string) => void) => unknown; off: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: () => unknown; } — ⚠ undocumented
-- `TransportPipe` (type): type TransportPipe = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
+- `SocketIoLikeSocket` (type): type SocketIoLikeSocket = { connected: boolean; on: (event: string, listener: (payload: string | Uint8Array) => void) => unknown; off: (event: string, listener: (payload: string | Uint8Array) => void) => unknown; send: (data: string | Uint8Array<ArrayBuffer>) => unknown; disconnect: () => unknown; } — ⚠ undocumented
+- `TransportData` (type): type TransportData = string | Uint8Array<ArrayBuffer> — One transport message: JSON text, or bytes from the binary codec.
+- `TransportPipe` (type): type TransportPipe = { send: (data: TransportData) => void; close: () => void; } — ⚠ undocumented
 - `TransportPipeFactory` (type): type TransportPipeFactory = (handlers: TransportPipeHandlers) => TransportPipe — ⚠ undocumented
-- `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string) => void; onClose: () => void; } — ⚠ undocumented
+- `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string | Uint8Array) => void; onClose: () => void; } — ⚠ undocumented
 - `VoiceChannelDef` (interface): interface VoiceChannelDef { id: VoiceChannelId; positional: boolean; falloff?: AudioFalloffConfig; gain?: number } — ⚠ undocumented
 - `VoiceChannelId` (type): type VoiceChannelId = string — ⚠ undocumented
 - `VoiceChannelRouter` (interface): interface VoiceChannelRouter { registerChannel(def: VoiceChannelDef): void; join(userId: VoiceMemberId, channelId: VoiceChannelId): void; leave(userId: VoiceMemberId, channelId: VoiceChannelId): void; leaveAll(userId: VoiceMemberId): void; updatePosition(userId: VoiceM… — ⚠ undocumented
@@ -564,13 +565,15 @@
 - `WorldGameHostOptions` (interface): interface WorldGameHostOptions — Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server.
 - `WsAppearance` (type): type WsAppearance = Record<string, string | number | boolean> — Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only.
 - `WsBackend` (type): type WsBackend = GameBackend & { rtt: { sampleMs: number; smoothedMs: number }; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { ga… — ⚠ undocumented
-- `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string | undefined; webSocketFactory?: (url: string) => WebSocket; reconnectDelayMs?: number; maxReconnectDelayMs?: number; rpcTimeoutMs?: number; poseTuning?: PoseSyncTuning; now?: () => number; setTimeoutF… — ⚠ undocumented
+- `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string | undefined; /** Wire codec: `binary` (default, per-entity deltas with quantised poses) or `json` text frames for debugging. */ codec?: WsCodecName; webSocketFactory?: (url: string) => WebSocket; reco… — ⚠ undocumented
 - `WsBrowseResult` (type): type WsBrowseResult = SessionListing[] — ⚠ undocumented
 - `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
 - `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
 - `WsChatSync` (type): type WsChatSync = { subscribe: ( serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void, ) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
-- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "ping"; id: number; at: number } | { v: 1; t: "hello"; id: number; userId: string; token?: string | undefined } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string | undefined; attributes?: SessionAttributes | undefined; code?: string | undefined; r… — ⚠ undocumented
+- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "ping"; id: number; at: number } | { v: 1; t: "hello"; id: number; userId: string; token?: string | undefined; codec?: WsCodecName | undefined } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string | undefined; attributes?: SessionAttributes | undefi… — ⚠ undocumented
+- `WsCodecName` (type): type WsCodecName = "json" | "binary" — Wire codec a client asks for in `hello`: `binary` (default for {@link createWsBackend}) or `json` for debugging.
 - `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number | undefined; } — ⚠ undocumented
+- `WsFrame` (type): type WsFrame = string | Uint8Array<ArrayBuffer> — One transport frame: JSON text, or a binary frame from {@link encodeWsFrame}.
 - `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
 - `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented
 - `WsPose` (type): type WsPose = PlayerPose & { appearance?: WsAppearance | undefined } — ⚠ undocumented
@@ -605,6 +608,15 @@
 - `validateCommandInput` (function): function validateCommandInput(catalog: CommandCatalog | undefined, command: string, input: unknown): CommandRejection | null — Validates a `runCommand` input against a declared catalog. `undefined` catalog means "no declarations" — everything passes through unchanged.
 - `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target)): TransportPipeFactory — ⚠ undocumented
 
+## @jgengine/ws/binaryWire
+
+- `DEFAULT_WIRE_PRECISION` (const): const DEFAULT_WIRE_PRECISION: { readonly position: 2; readonly angle: 3; } — Default {@link WirePrecision}.
+- `WIRE_DESYNC` (const): const WIRE_DESYNC: "desync" — Marks a binary frame the decoder could not apply to its state.
+- `WIRE_MAGIC` (const): const WIRE_MAGIC: 177 — Binary wire format for the ws protocol. Every message is a JSON-shaped value, so one tagged value codec carries all of them; world frames add an entity-delta section that sends only the fields that changed against the last frame on that connection, with quantised poses and varint entity ids.
+- `WireDecoder` (type): type WireDecoder = { /** The decoded message, `null` for a malformed frame, or `"desync"` when a world delta does not follow the last frame it saw (the receiver must resubscribe for a baseline). */ decode(frame: Uint8Array): unknown; } — Stateful binary decoder for one connection's incoming messages.
+- `WireEncoder` (type): type WireEncoder = { encode(message: unknown): Uint8Array<ArrayBuffer> } — Stateful binary encoder for one connection's outgoing messages.
+- `WirePrecision` (type): type WirePrecision = { /** Decimal places kept for positions and velocities. Default 2 (centimetres). */ position?: number | undefined; /** Decimal places kept for rotations. Default 3 (about a milliradian). */ angle?: number | undefined; } — Quantisation applied to replicated poses on the binary wire, in decimal places.
+
 ## @jgengine/ws/commandMiddleware
 
 - `CommandAuthorize` (type): type CommandAuthorize = (args: { userId: string; op: HostCommandOp; serverId?: string | undefined; command?: string | undefined; }) => boolean | Promise<boolean> — Per-command authorization hook: return `false` to reject. Defaults to allow-all when omitted.
@@ -626,7 +638,7 @@
 ## @jgengine/ws/createWsBackend
 
 - `WsBackend` (type): type WsBackend = GameBackend & { rtt: { sampleMs: number; smoothedMs: number }; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { ga… — ⚠ undocumented
-- `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string | undefined; webSocketFactory?: (url: string) => WebSocket; reconnectDelayMs?: number; maxReconnectDelayMs?: number; rpcTimeoutMs?: number; poseTuning?: PoseSyncTuning; now?: () => number; setTimeoutF… — ⚠ undocumented
+- `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string | undefined; /** Wire codec: `binary` (default, per-entity deltas with quantised poses) or `json` text frames for debugging. */ codec?: WsCodecName; webSocketFactory?: (url: string) => WebSocket; reco… — ⚠ undocumented
 - `WsChatSync` (type): type WsChatSync = { subscribe: ( serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void, ) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
 - `WsPresenceSync` (type): type WsPresenceSync = { subscribe: (serverId: string, onChange: (rows: WsPresenceRow[]) => void) => () => void; /** `pose.appearance`, when provided, is forwarded to the host as-is and surfaces on every subscriber's presence row for that user. */ syncPose: (serverId: string, pose: WsPose) => void; } — ⚠ undocumented
 - `WsVoiceSync` (type): type WsVoiceSync = { subscribe: ( serverId: string, channelId: string, onChange: (participants: WsVoiceParticipant[]) => void, ) => () => void; join: (serverId: string, channelId: string, streamId?: string) => Promise<void>; leave: (serverId: string, channelId: string) => Promise<void>; publish: (se… — ⚠ undocumented
@@ -648,8 +660,8 @@
 - `HostRouter` (type): type HostRouter = { connect: (transport: HostRouterTransport) => HostRouterConnection; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; /** Wait for accepted message handlers and subscription reads to settle. Close first to prevent new work. */ drain: () =>… — ⚠ undocumented
 - `HostRouterAuthenticate` (type): type HostRouterAuthenticate = (args: { userId: string; token?: string | undefined; }) => Promise<string | null> | string | null — ⚠ undocumented
 - `HostRouterConnection` (type): type HostRouterConnection = { handleRaw: (raw: unknown) => void; close: () => void; } — ⚠ undocumented
-- `HostRouterOptions` (type): type HostRouterOptions = { host: GameServerHost; authenticate?: HostRouterAuthenticate; allowAnonymous?: boolean; singleSession?: boolean; poseRules?: PoseSyncRules; positionHistoryMs?: number; chatRateLimit?: ChatRateLimit; chatHistoryLimit?: number; chatMaxBodyLength?: number; /** Per-op rate limi… — ⚠ undocumented
-- `HostRouterTransport` (type): type HostRouterTransport = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
+- `HostRouterOptions` (type): type HostRouterOptions = { host: GameServerHost; authenticate?: HostRouterAuthenticate; allowAnonymous?: boolean; singleSession?: boolean; poseRules?: PoseSyncRules; positionHistoryMs?: number; chatRateLimit?: ChatRateLimit; chatHistoryLimit?: number; chatMaxBodyLength?: number; /** Quantisation of … — ⚠ undocumented
+- `HostRouterTransport` (type): type HostRouterTransport = { send: (data: WsFrame) => void; close: () => void; } — ⚠ undocumented
 - `MAX_QUEUED_MESSAGES` (const): const MAX_QUEUED_MESSAGES: 64 — Cap on frames queued behind a connection's in-flight message; beyond this a flood gets rejected instead of piling up unbounded promises.
 - `RewoundPosition` (type): type RewoundPosition = { userId: string; x: number; y: number; z: number; } — A player's interpolated position sampled from history at a past timestamp.
 - `createHostRouter` (function): function createHostRouter(options: HostRouterOptions): HostRouter — ⚠ undocumented
@@ -680,9 +692,10 @@
 
 ## @jgengine/ws/pipe
 
-- `TransportPipe` (type): type TransportPipe = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
+- `TransportData` (type): type TransportData = string | Uint8Array<ArrayBuffer> — One transport message: JSON text, or bytes from the binary codec.
+- `TransportPipe` (type): type TransportPipe = { send: (data: TransportData) => void; close: () => void; } — ⚠ undocumented
 - `TransportPipeFactory` (type): type TransportPipeFactory = (handlers: TransportPipeHandlers) => TransportPipe — ⚠ undocumented
-- `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string) => void; onClose: () => void; } — ⚠ undocumented
+- `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string | Uint8Array) => void; onClose: () => void; } — ⚠ undocumented
 - `webSocketPipe` (function): function webSocketPipe(url: string, webSocketFactory: (url: string) => WebSocket = (target) => new WebSocket(target)): TransportPipeFactory — ⚠ undocumented
 
 ## @jgengine/ws/protocol
@@ -697,8 +710,10 @@
 - `WsBrowseResult` (type): type WsBrowseResult = SessionListing[] — ⚠ undocumented
 - `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
 - `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
-- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "ping"; id: number; at: number } | { v: 1; t: "hello"; id: number; userId: string; token?: string | undefined } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string | undefined; attributes?: SessionAttributes | undefined; code?: string | undefined; r… — ⚠ undocumented
+- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "ping"; id: number; at: number } | { v: 1; t: "hello"; id: number; userId: string; token?: string | undefined; codec?: WsCodecName | undefined } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string | undefined; attributes?: SessionAttributes | undefi… — ⚠ undocumented
+- `WsCodecName` (type): type WsCodecName = "json" | "binary" — Wire codec a client asks for in `hello`: `binary` (default for {@link createWsBackend}) or `json` for debugging.
 - `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number | undefined; } — ⚠ undocumented
+- `WsFrame` (type): type WsFrame = string | Uint8Array<ArrayBuffer> — One transport frame: JSON text, or a binary frame from {@link encodeWsFrame}.
 - `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
 - `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented
 - `WsPose` (type): type WsPose = PlayerPose & { appearance?: WsAppearance | undefined } — ⚠ undocumented
@@ -719,7 +734,7 @@
 ## @jgengine/ws/socketIoPipe
 
 - `SocketIoBackendOptions` (type): type SocketIoBackendOptions = Omit<WsBackendOptions, "url" | "pipe" | "webSocketFactory"> & { socket: SocketIoLikeSocket; } — ⚠ undocumented
-- `SocketIoLikeSocket` (type): type SocketIoLikeSocket = { connected: boolean; on: (event: string, listener: (payload: string) => void) => unknown; off: (event: string, listener: (payload: string) => void) => unknown; send: (data: string) => unknown; disconnect: () => unknown; } — ⚠ undocumented
+- `SocketIoLikeSocket` (type): type SocketIoLikeSocket = { connected: boolean; on: (event: string, listener: (payload: string | Uint8Array) => void) => unknown; off: (event: string, listener: (payload: string | Uint8Array) => void) => unknown; send: (data: string | Uint8Array<ArrayBuffer>) => unknown; disconnect: () => unknown; } — ⚠ undocumented
 - `createSocketIoBackend` (function): function createSocketIoBackend(options: SocketIoBackendOptions): WsBackend — ⚠ undocumented
 - `socketIoPipe` (function): function socketIoPipe(socket: SocketIoLikeSocket): TransportPipeFactory — ⚠ undocumented
 

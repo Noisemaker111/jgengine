@@ -21,6 +21,7 @@ const DT = 0.05;
 
 function flag(name: string, fallback: string): string {
   const at = process.argv.indexOf(`--${name}`);
+  // type-escape: test and probe code reads untyped frames
   return at >= 0 && process.argv[at + 1] !== undefined ? process.argv[at + 1]! : fallback;
 }
 
@@ -56,6 +57,7 @@ async function run(clients: number, entities: number, ticks: number, codec: stri
     ...(radius === undefined ? {} : { replication: { aoiRadius: radius } }),
     loop: {
       onNewPlayer(ctx: GameContext, player) {
+        // type-escape: test and probe code reads untyped frames
         ctx.scene.entity.spawn("hero", { id: player!.userId, position: [random() * WORLD, 0, random() * WORLD] });
       },
       onTick(ctx: GameContext, dt) {
@@ -91,6 +93,7 @@ async function run(clients: number, entities: number, ticks: number, codec: stri
             handlers.onMessage(data);
             return;
           }
+          // type-escape: test and probe code reads untyped frames
           bytes += typeof data === "string" ? new TextEncoder().encode(data).length : (data as Uint8Array).byteLength;
         },
       });
@@ -99,9 +102,11 @@ async function run(clients: number, entities: number, ticks: number, codec: stri
   if (codec !== "default") options["codec"] = codec;
   const backends = [];
   for (let i = 0; i < clients; i += 1) {
+    // type-escape: test and probe code reads untyped frames
     const backend = createWsBackend({ userId: `u${i}`, pipe: countingPipe(), ...options } as never);
     const joined = await backend.transport.joinServer({ gameId: "shared" });
     if (!joined.ok) throw new Error("join failed");
+    // type-escape: test and probe code reads untyped frames
     backend.feeds!.subscribeServer("shared", () => {});
     backends.push(backend);
   }

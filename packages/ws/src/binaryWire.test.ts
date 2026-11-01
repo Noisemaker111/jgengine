@@ -40,6 +40,7 @@ const SERVER_MESSAGES: WsServerMessage[] = [
   { v: 1, t: "update", channel: "server", serverId: "s", data: null },
   { v: 1, t: "update", channel: "player", serverId: "s", data: { userId: "a", gameId: "g", playerState: { hp: 3 }, updatedAt: 1 } },
   { v: 1, t: "update", channel: "feed", serverId: "s", action: "kills", data: [{ a: 1 }, { a: 2 }] },
+  // type-escape: test and probe code reads untyped frames
   { v: 1, t: "update", channel: "presence", serverId: "s", data: [{ userId: "a", x: 1, y: 2, z: 3, rotationY: 0.5, rotationPitch: 0, appearance: { s: "x" } }] as never },
   { v: 1, t: "update", channel: "chat", serverId: "s", action: "general", data: [{ id: "m1", channelId: "general", fromUserId: "a", body: "hi", at: 4 }] },
   { v: 1, t: "update", channel: "voice", serverId: "s", action: "v", data: [{ userId: "a", streamId: "x" }, { userId: "b" }] },
@@ -68,6 +69,7 @@ function baseline(revision: number, entities: unknown[]): WsServerMessage {
     t: "update",
     channel: "server",
     serverId: "s",
+    // type-escape: test and probe code reads untyped frames
     data: { ...view, serverState: { kind: "baseline", revision, snapshot: { entities, stats: { a: { hp: 1 } }, store: [["k", 1]] } } as never },
   };
 }
@@ -80,6 +82,7 @@ function diff(revision: number, base: number, entities: unknown[], removedEntiti
     serverId: "s",
     data: {
       ...view,
+      // type-escape: test and probe code reads untyped frames
       serverState: {
         kind: "diff",
         revision,
@@ -90,6 +93,7 @@ function diff(revision: number, base: number, entities: unknown[], removedEntiti
 }
 
 function entitiesOf(message: unknown): unknown[] {
+  // type-escape: test and probe code reads untyped frames
   const m = message as { data: { serverState: { snapshot?: { entities: unknown[] }; diff?: { entities: unknown[] } } } };
   return m.data.serverState.snapshot?.entities ?? m.data.serverState.diff?.entities ?? [];
 }
@@ -99,7 +103,9 @@ describe("binary wire: every protocol message", () => {
     for (const message of CLIENT_MESSAGES) {
       const frame = encodeWsFrame(message, "binary");
       expect(frame).toBeInstanceOf(Uint8Array);
+      // type-escape: test and probe code reads untyped frames
       expect(decodeWsClientMessage(frame)).toEqual(jsonShape(message) as WsClientMessage);
+      // type-escape: test and probe code reads untyped frames
       expect(decodeWsClientMessage(encodeWsFrame(message, "json"))).toEqual(jsonShape(message) as WsClientMessage);
     }
   });
@@ -109,6 +115,7 @@ describe("binary wire: every protocol message", () => {
     const decoder = createWireDecoder();
     for (const message of SERVER_MESSAGES) {
       const frame = encoder.encode(message);
+      // type-escape: test and probe code reads untyped frames
       expect(decodeWsServerFrame(frame, decoder)).toEqual(jsonShape(message) as WsServerMessage);
       expect(frame.byteLength).toBeLessThan(JSON.stringify(message).length);
     }
@@ -143,6 +150,7 @@ describe("binary wire: entity deltas", () => {
     const third = diff(3, 2, [entity("c", 9, { hidden: true })], ["b"]);
     const decodedThird = decodeWsServerFrame(encoder.encode(third), decoder);
     expect(entitiesOf(decodedThird)).toEqual([entity("c", 9, { hidden: true })]);
+    // type-escape: test and probe code reads untyped frames
     expect((decodedThird as unknown as { data: { serverState: { diff: { removedEntities: string[] } } } }).data.serverState.diff.removedEntities).toEqual(["b"]);
 
     const fourth = diff(4, 3, [entity("c", 9)]);
@@ -209,12 +217,14 @@ describe("binary wire: entity deltas", () => {
     const encoder = createWireEncoder();
     const decoder = createWireDecoder();
     const odd = baseline(1, [{ id: "x", position: "far" }]);
+    // type-escape: test and probe code reads untyped frames
     expect(decodeWsServerFrame(encoder.encode(odd), decoder)).toEqual(jsonShape(odd) as WsServerMessage);
   });
 
   test("streams for different servers stay independent", () => {
     const encoder = createWireEncoder();
     const decoder = createWireDecoder();
+    // type-escape: test and probe code reads untyped frames
     const other = (message: WsServerMessage): WsServerMessage => ({ ...message, serverId: "t" } as WsServerMessage);
     decodeWsServerFrame(encoder.encode(baseline(1, [entity("a", 1)])), decoder);
     decodeWsServerFrame(encoder.encode(other(baseline(1, [entity("a", 7)]))), decoder);

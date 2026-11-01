@@ -19,6 +19,7 @@ function session(replication: { aoiRadius?: number; aoiAlways?: readonly string[
     replication,
     loop: {
       onNewPlayer(ctx: GameContext, player) {
+        // type-escape: test and probe code reads untyped frames
         ctx.scene.entity.spawn("hero", { id: player!.userId, position: [0, 0, 0] });
       },
     },
@@ -40,12 +41,15 @@ function follow(world: ReturnType<typeof session>, viewer: Viewer) {
       else mirror = applyWorldDiff(mirror, sync.diff);
       revision = sync.kind === "baseline" ? sync.revision : sync.diff.revision;
     },
+    // type-escape: test and probe code reads untyped frames
     ids: () => ((mirror["entities"] ?? []) as SceneEntity[]).map((e) => e.id).sort(),
+    // type-escape: test and probe code reads untyped frames
     entities: () => (mirror["entities"] ?? []) as SceneEntity[],
   };
 }
 
 function expectedIds(world: ReturnType<typeof session>, viewer: Viewer): string[] {
+  // type-escape: test and probe code reads untyped frames
   return ((world.snapshotFor(viewer)["entities"] ?? []) as SceneEntity[]).map((e) => e.id).sort();
 }
 

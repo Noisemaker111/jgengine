@@ -13,6 +13,7 @@ import { createWorldGameHost } from "../packages/ws/src/worldHost";
 
 function flag(name: string, fallback: string): string {
   const at = process.argv.indexOf(`--${name}`);
+  // type-escape: test and probe code reads untyped frames
   return at >= 0 && process.argv[at + 1] !== undefined ? process.argv[at + 1]! : fallback;
 }
 
@@ -37,7 +38,9 @@ const clients = ["alice", "bob"].map((userId) => {
 for (const client of clients) {
   const joined = await client.backend.transport.joinServer({ gameId: "shared" });
   if (!joined.ok) throw new Error(`${client.userId} failed to join`);
+  // type-escape: test and probe code reads untyped frames
   client.backend.feeds!.subscribeServer("shared", (view) => {
+    // type-escape: test and probe code reads untyped frames
     const frame = (view as { serverState?: { kind?: string; snapshot?: { entities?: { id: string }[] }; diff?: { entities?: { id: string }[] } } } | null)?.serverState;
     if (frame?.kind === "baseline") client.seen.baselines += 1;
     if (frame?.kind === "diff") client.seen.diffs += 1;

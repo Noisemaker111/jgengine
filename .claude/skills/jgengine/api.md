@@ -602,9 +602,11 @@
 
 ## @jgengine/core/runtime/hostPolicy
 
+- `DEFAULT_HOST_TICK_MS` (const): const DEFAULT_HOST_TICK_MS: 50 — Authoritative host tick interval every host uses unless the game sets one: 20 Hz.
 - `JG_MAX_MEMBERS_PER_SERVER` (const): const JG_MAX_MEMBERS_PER_SERVER: 256 — Room-topology ceiling on `slotsPerServer`; shared membership uses indexed rows instead.
 - `JoinCandidate` (type): type JoinCandidate = { memberUserIds: readonly string[]; slotsPerServer: number; visibility?: SessionVisibility | undefined; createdAt: number; } — A row `selectJoinTarget` can choose between — the matchmaking-relevant fields of a server record.
 - `JoinTarget` (type): type JoinTarget<T extends JoinCandidate> = | { kind: "join"; row: T } | { kind: "create" } | { kind: "refuse"; reason: string } — What a join should do with the candidate rows it found.
+- `MAX_HOST_TICK_MS` (const): const MAX_HOST_TICK_MS: 1000 — Longest tick interval a host accepts; 1 Hz is the floor for a world that still feels live.
 - `MAX_SESSION_ID_LENGTH` (const): const MAX_SESSION_ID_LENGTH: 128 — Longest accepted client join/leave `sessionId`, in UTF-16 code units.
 - `MatchmakingMode` (type): type MatchmakingMode = "auto" | "singleton" — How auto-match behaves when no `serverId` is supplied.
 - `canJoinPrivateServer` (function): function canJoinPrivateServer(args: { isMember: boolean; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Private-server join-code gate. Existing members always pass; non-members must present a matching `joinCode` (loose-normalized via {@link normalizeJoinCode}). Callers still decide whether the server is private — this only answers the code/membership half.
@@ -613,6 +615,7 @@
 - `isPrivateJoinBlocked` (function): function isPrivateJoinBlocked(args: { visibility: SessionVisibility | undefined; memberUserIds: readonly string[]; userId: string; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Whether a private-visibility server blocks this join (non-member without a matching code). Public / undefined visibility never blocks.
 - `isServerFull` (function): function isServerFull(memberCount: number, slotsPerServer: number, isMember: boolean): boolean — True when the server has no free slots for a non-member. Existing members never count as "full" so rejoin/leave cycles keep working.
 - `isServerMember` (function): function isServerMember(memberUserIds: readonly string[], userId: string): boolean — Whether `userId` is already on the server's member roster.
+- `resolveHostTickMs` (function): function resolveHostTickMs(tickMs: number | undefined): number — Validate a host tick interval in milliseconds (greater than zero, at most {@link MAX_HOST_TICK_MS}); `undefined` yields {@link DEFAULT_HOST_TICK_MS}.
 - `selectJoinTarget` (function): function selectJoinTarget<T extends JoinCandidate>(rows: readonly T[], args: { userId: string; mode?: MatchmakingMode; /** Capacity to judge rows against — the host's current option, when it supersedes the stored value. */ slotsPerServer?: number; }): JoinTarget<T> — Resolve an auto-match join against the game's joinable rows under a {@link MatchmakingMode}. Reach for it instead of hand-rolling the "find a room with space, else make one" scan, which is where a singleton world silently shards into per-player copies.
 - `statusAfterLeave` (function): function statusAfterLeave(remainingMemberCount: number, currentStatus: GameServerStatus): GameServerStatus — Status after a leave: empty rooms reopen; non-empty rooms keep their current status.
 - `validateSlotsPerServer` (function): function validateSlotsPerServer(slotsPerServer: number, topology: "rooms" | "shared" = "rooms"): { ok: true } | { ok: false; reason: string } — Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold.
@@ -799,9 +802,12 @@
 
 ## @jgengine/core/runtime/worldReplication
 
+- `ReplicatorView` (interface): interface ReplicatorView — Narrows {@link WorldReplicator.diff} to one viewer's interest.
 - `WorldDiff` (interface): interface WorldDiff — A revision-stamped delta over a {@link WorldSnapshot}. The host sends one per tick to each client, carrying only what changed since that client's last acknowledged revision — entity/stat/store deltas plus whole snapshots of any other opted-in module (feed, leaderboard, chat, …) that changed. Fold it onto a prior baseline with {@link applyWorldDiff}.
 - `WorldReplicator` (type): type WorldReplicator = ReturnType<typeof createWorldReplicator> — The stateful diff tracker returned by {@link createWorldReplicator}: `commit()`, `diff(sinceRevision)`, `revision()`.
 - `WorldReplicatorOptions` (interface): interface WorldReplicatorOptions — Optional acceleration for {@link createWorldReplicator}: a monotone world-dirty counter (aggregated from each {@link SnapshotModule.version}). When it hasn't advanced since the last commit nothing mutated, so the replicator skips re-reading and re-serializing the whole world — the change-detection short-circuit item #28 asks for. Omit it (or pass a snapshot-only source) to keep the original full-re-serialize-per-commit behavior.
+- `WorldViewState` (interface): interface WorldViewState — What one viewer has been sent, held by whoever serves that viewer (one per connection and world). `sent` is the entity ids the viewer's mirror holds; `null` means no baseline has been served yet. `all` marks a viewer that holds every entity (no interest radius applied to it), so narrowing later knows what to drop.
+- `createWorldViewState` (function): function createWorldViewState(): WorldViewState — A fresh {@link WorldViewState}: the next pull is a baseline.
 
 ## @jgengine/core/runtime/worldSnapshot
 

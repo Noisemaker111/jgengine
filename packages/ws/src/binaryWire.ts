@@ -434,6 +434,7 @@ export const WIRE_DESYNC = "desync" as const;
 /**
  * Encoder for one connection. World frames (`update` on the `server` channel) go out as per-entity field
  * deltas against the previous world frame sent on that connection; everything else is a tagged value.
+ * @internal
  */
 export function createWireEncoder(precision: WirePrecision = {}): WireEncoder {
   const position = resolveDecimals(precision.position, DEFAULT_WIRE_PRECISION.position, "position");
@@ -539,7 +540,7 @@ export function createWireEncoder(precision: WirePrecision = {}): WireEncoder {
   };
 }
 
-/** Decoder for one connection; mirrors {@link createWireEncoder}'s per-stream state. */
+/** Decoder for one connection; mirrors {@link createWireEncoder}'s per-stream state. @internal */
 export function createWireDecoder(): WireDecoder {
   const streams = new Map<string, ServerStream & { ids: Map<number, string> }>();
 
@@ -658,7 +659,7 @@ function fillEnvelope(
   return envelope;
 }
 
-/** Encode one message as a stateless tagged-value frame; used for client messages and any consumer that does not track world state. */
+/** Encode one message as a stateless tagged-value frame; used for client messages and any consumer that does not track world state. @internal */
 export function encodeWireValue(message: unknown): Uint8Array<ArrayBuffer> {
   const out = new Writer();
   out.byte(WIRE_MAGIC);
@@ -667,7 +668,7 @@ export function encodeWireValue(message: unknown): Uint8Array<ArrayBuffer> {
   return out.finish();
 }
 
-/** Decode a stateless tagged-value frame; `null` for anything else (world frames need a {@link WireDecoder}). */
+/** Decode a stateless tagged-value frame; `null` for anything else (world frames need a {@link WireDecoder}). @internal */
 export function decodeWireValue(frame: Uint8Array): unknown {
   try {
     const input = new Reader(frame);

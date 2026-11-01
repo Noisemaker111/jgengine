@@ -1429,7 +1429,7 @@
   "packages/core/src/runtime/descriptors/features.ts": {"cast":14},
   "packages/core/src/runtime/gameContext.spatial.test.ts": {"nonNull":2},
   "packages/core/src/runtime/gameContext.test.ts": {"cast":2,"nonNull":115},
-  "packages/core/src/runtime/gameContext.ts": {"cast":8,"nonNull":1},
+  "packages/core/src/runtime/gameContext.ts": {"cast":7,"nonNull":1},
   "packages/core/src/runtime/gameContextSave.test.ts": {"nonNull":55,"cast":1},
   "packages/core/src/runtime/headlessRunner.test.ts": {"nonNull":21,"cast":1},
   "packages/core/src/runtime/headlessRunner.ts": {"cast":2},
