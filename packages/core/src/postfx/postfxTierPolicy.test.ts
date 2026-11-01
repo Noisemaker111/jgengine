@@ -10,7 +10,7 @@ import { POSTFX_TIER_POLICY, postfxTierPolicy } from "./postfxTierPolicy";
 const TIERS: readonly GraphicsQuality[] = ["low", "medium", "high", "ultra"];
 
 /** Every stage a chain can build, so a plan's cost is its stage list plus its resolution. */
-const ALL_STAGES: readonly PostfxStage[] = ["ao", "contactShadows", "atmosphere", "bloom", "dof", "smaa", "taa", "exposure", "stylize", "grade"];
+const ALL_STAGES: readonly PostfxStage[] = ["ao", "contactShadows", "ssr", "atmosphere", "bloom", "dof", "motionBlur", "smaa", "taa", "exposure", "stylize", "grade"];
 
 /** The stages `plan` builds, in the order the composer adds them. */
 function plannedStages(plan: PostfxStagePlan): PostfxStage[] {
@@ -19,6 +19,8 @@ function plannedStages(plan: PostfxStagePlan): PostfxStage[] {
     if (stage === "contactShadows") return plan.contactShadows !== null;
     if (stage === "taa") return plan.taa;
     if (stage === "atmosphere") return plan.atmosphere !== null;
+    if (stage === "ssr") return plan.ssr !== null;
+    if (stage === "motionBlur") return plan.motionBlur !== null;
     if (stage === "bloom") return plan.bloom !== null;
     if (stage === "dof") return plan.dof !== null;
     if (stage === "smaa") return plan.smaa;
@@ -33,6 +35,8 @@ const full: PostProcessingConfig = {
   ao: undefined,
   bloom: {},
   dof: { focus: 12 },
+  ssr: {},
+  motionBlur: {},
   stylize: { bands: 4 },
   grade: {},
 };
@@ -82,7 +86,18 @@ describe("the tier's default stage set is the one the graphics profile names", (
     for (const quality of TIERS) {
       const authored = DEFAULT_GRAPHICS_PROFILES[quality].postStages;
       const plan = planPostStages(full, quality, undefined);
-      expect({ ao: plan.ao !== null, bloom: plan.bloom !== null, dof: plan.dof !== null, smaa: plan.smaa || plan.taa }, quality).toEqual(authored);
+      expect(
+        {
+          ao: plan.ao !== null,
+          bloom: plan.bloom !== null,
+          dof: plan.dof !== null,
+          smaa: plan.smaa || plan.taa,
+          ssr: plan.ssr !== null,
+          fog: plan.atmosphere !== null,
+          motionBlur: plan.motionBlur !== null,
+        },
+        quality,
+      ).toEqual(authored);
     }
   });
 

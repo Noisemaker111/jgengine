@@ -13,13 +13,17 @@ import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 import {
   DEFAULT_AO,
   DEFAULT_ATMOSPHERE,
+  DEFAULT_MOTION_BLUR,
+  DEFAULT_SSR,
   type AoConfig,
   type AtmosphereConfig,
   type BloomConfig,
   type ContactShadowConfig,
   type DofConfig,
   type GradeConfig,
+  type MotionBlurConfig,
   type PostProcessingConfig,
+  type SsrConfig,
   type StylizeConfig,
   type ToneMappingMode,
 } from "@jgengine/core/render/postProcessing";
@@ -30,6 +34,7 @@ import {
   keyLuminanceFromSamples,
   type AutoExposureConfig,
 } from "@jgengine/core/render/colorPipeline";
+import type { GraphicsPostStages } from "@jgengine/core/settings/graphicsProfile";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { measureComposerPasses } from "@jgengine/core/devtools/frameBreakdown.draw";
@@ -39,6 +44,8 @@ import { ExposureMeterPass } from "./autoExposure.draw";
 import { AtmospherePass } from "./atmospherePass.draw";
 import { ContactShadowPass } from "./contactShadowPass.draw";
 import { createGradePass } from "./gradeShader.draw";
+import { MotionBlurPass } from "./motionBlurPass.draw";
+import { SsrPass } from "./ssrPass.draw";
 import { postfxTierPolicy } from "./postfxTierPolicy";
 import { releasePostfxOverlayTracking } from "./postfxOverlay.draw";
 import { RevealFadePass, RevealSnapshotPass, stepRevealFade } from "./revealFade.draw";
@@ -149,7 +156,7 @@ const TONE_MAPPING: Record<ToneMappingMode, THREE.ToneMapping> = {
 };
 
 /** A post chain stage that costs its own draws; the plan names the ones a chain actually builds. @internal */
-export type PostfxStage = "ao" | "contactShadows" | "atmosphere" | "bloom" | "dof" | "smaa" | "taa" | "exposure" | "stylize" | "grade";
+export type PostfxStage = "ao" | "contactShadows" | "ssr" | "atmosphere" | "bloom" | "dof" | "motionBlur" | "smaa" | "taa" | "exposure" | "stylize" | "grade";
 
 /** What one chain will build, resolved from the game's config, the tier and the player's toggles. @internal */
 export interface PostfxStagePlan {
@@ -174,8 +181,16 @@ export interface PostfxStagePlan {
   /** Height haze and light shafts toward the key light, read from the beauty depth; null when off. */
   atmosphere: Required<AtmosphereConfig> | null;
   atmosphereSteps: number;
+  /** Haze-bank noise taps along each view ray; 0 keeps the haze even. */
+  fogVariationTaps: number;
+  /** Screen-space reflections, read from the beauty depth; null when off. */
+  ssr: Required<SsrConfig> | null;
+  ssrSteps: number;
   bloom: BloomConfig | null;
   dof: DofConfig | null;
+  /** Camera and per-object motion blur, read from the beauty depth; null when off. */
+  motionBlur: Required<MotionBlurConfig> | null;
+  motionBlurSamples: number;
   smaa: boolean;
   /** Temporal AA in place of SMAA; the beauty pass then renders jittered into a single-sampled target. */
   taa: boolean;
@@ -215,7 +230,7 @@ interface BuiltGraph {
  */
 export function showEffects(built: BuiltGraph, on: boolean): void {
   for (const pass of built.effects) {
-    if (on && !pass.enabled && pass instanceof TemporalAaPass) pass.reset();
+    if (on && !pass.enabled && (pass instanceof TemporalAaPass || pass instanceof MotionBlurPass)) pass.reset();
     pass.enabled = on;
   }
 }
@@ -307,23 +322,42 @@ export function resolveAtmosphereStage(config: PostProcessingConfig["atmosphere"
   return settings.fogDensity <= 0 && settings.shafts <= 0 ? null : settings;
 }
 
-/** The stages one chain asks for, before any pass is built. Pure data. @internal */
+/** Screen-space reflections the chain runs: only when authored, null when off or skipped by the tier. @internal */
+export function resolveSsrStage(config: PostProcessingConfig["ssr"], tierAllows: boolean): Required<SsrConfig> | null {
+  if (!tierAllows || config === undefined || config === false) return null;
+  const settings = { ...DEFAULT_SSR, ...definedOnly(config) };
+  return settings.intensity <= 0 ? null : settings;
+}
+
+/** Motion blur the chain runs: only when authored, null when off, both parts zero, or skipped by the tier. @internal */
+export function resolveMotionBlurStage(config: PostProcessingConfig["motionBlur"], tierAllows: boolean): Required<MotionBlurConfig> | null {
+  if (!tierAllows || config === undefined || config === false) return null;
+  const settings = { ...DEFAULT_MOTION_BLUR, ...definedOnly(config) };
+  return (settings.camera <= 0 && settings.objects <= 0) || settings.shutter <= 0 ? null : settings;
+}
+
+/**
+ * The stages one chain asks for, before any pass is built. `stages` are the player's toggles over
+ * the tier's; a field left out keeps the tier's choice. Pure data. @internal
+ */
 export function planPostStages(
   config: PostProcessingConfig,
   quality: GraphicsQuality = "high",
-  stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean },
+  stages?: Partial<GraphicsPostStages>,
 ): PostfxStagePlan {
   const policy = postfxTierPolicy(quality);
   const aa = config.aa === undefined ? (policy.temporalAa ? "taa" : "smaa") : config.aa;
-  const tierStages = stages ?? policy.stages;
+  const tierStages: GraphicsPostStages = { ...policy.stages, ...definedOnly(stages ?? {}) };
   const ao = resolveAoStage(config.ao, tierStages.ao);
   const authoredDof = tierStages.dof && config.dof !== undefined && config.dof !== false ? config.dof : null;
   const bloom = tierStages.bloom && config.bloom !== false ? (config.bloom ?? {}) : null;
   const taa = tierStages.smaa && aa === "taa";
   const smaa = tierStages.smaa && aa === "smaa";
   const contactShadows = resolveContactShadowStage(config.contactShadows, policy.contactShadowSteps > 0 && aa !== "msaa");
-  const atmosphere = resolveAtmosphereStage(config.atmosphere, policy.atmosphereSteps > 0 && aa !== "msaa");
-  const sampledDepth = smaa || taa || aa === false || contactShadows !== null || atmosphere !== null;
+  const atmosphere = resolveAtmosphereStage(config.atmosphere, tierStages.fog && policy.atmosphereSteps > 0 && aa !== "msaa");
+  const ssr = resolveSsrStage(config.ssr, tierStages.ssr && policy.ssrSteps > 0 && aa !== "msaa");
+  const motionBlur = resolveMotionBlurStage(config.motionBlur, tierStages.motionBlur && policy.motionBlurSamples > 0 && aa !== "msaa");
+  const sampledDepth = smaa || taa || aa === false || contactShadows !== null || atmosphere !== null || ssr !== null || motionBlur !== null;
   return {
     samples: aa === false || sampledDepth ? 0 : 2,
     ao,
@@ -333,8 +367,13 @@ export function planPostStages(
     contactShadowSteps: contactShadows === null ? 0 : policy.contactShadowSteps,
     atmosphere,
     atmosphereSteps: atmosphere === null ? 0 : policy.atmosphereSteps,
+    fogVariationTaps: atmosphere === null || atmosphere.variation <= 0 ? 0 : policy.fogVariationTaps,
+    ssr,
+    ssrSteps: ssr === null ? 0 : policy.ssrSteps,
     bloom,
     dof: authoredDof === null ? null : { ...authoredDof, aperture: authoredDof.aperture ?? (quality === "high" ? 0.00025 : 0.00012) },
+    motionBlur,
+    motionBlurSamples: motionBlur === null ? 0 : policy.motionBlurSamples,
     smaa,
     taa,
     autoExposure: config.autoExposure === false ? null : { ...DEFAULT_AUTO_EXPOSURE, ...(config.autoExposure ?? {}) },
@@ -346,7 +385,9 @@ export function planPostStages(
 }
 
 /** The stage toggles a settings surface may offer; each is a pass a chain can either build or skip. @internal */
-export type PostfxToggleStage = "ao" | "bloom" | "dof" | "smaa";
+export type PostfxToggleStage = keyof GraphicsPostStages;
+
+const EVERY_STAGE_ON: GraphicsPostStages = { ao: true, bloom: true, dof: true, smaa: true, ssr: true, fog: true, motionBlur: true };
 
 /**
  * The toggle stages a chain built from `config` can contain on its most permissive tier, with the
@@ -355,12 +396,15 @@ export type PostfxToggleStage = "ao" | "bloom" | "dof" | "smaa";
  * @internal
  */
 export function availablePostfxStages(config: PostProcessingConfig): readonly PostfxToggleStage[] {
-  const plan = planPostStages(config, "high", { ao: true, bloom: true, dof: true, smaa: true });
+  const plan = planPostStages(config, "high", EVERY_STAGE_ON);
   const stages: PostfxToggleStage[] = [];
   if (plan.ao !== null) stages.push("ao");
   if (plan.bloom !== null) stages.push("bloom");
   if (plan.dof !== null) stages.push("dof");
   if (plan.smaa || plan.taa) stages.push("smaa");
+  if (plan.ssr !== null) stages.push("ssr");
+  if (plan.atmosphere !== null) stages.push("fog");
+  if (plan.motionBlur !== null) stages.push("motionBlur");
   return stages;
 }
 
@@ -377,7 +421,8 @@ export function buildPostGraph(
   width: number,
   height: number,
 ): BuiltGraph {
-  const needsDepth = (plan.ao !== null && plan.aoGbuffer === "beauty") || plan.contactShadows !== null || plan.atmosphere !== null || plan.taa;
+  const needsDepth =
+    (plan.ao !== null && plan.aoGbuffer === "beauty") || plan.contactShadows !== null || plan.atmosphere !== null || plan.ssr !== null || plan.motionBlur !== null || plan.taa;
   const beautyDepth = needsDepth ? new THREE.DepthTexture(width, height) : null;
   const target = new THREE.WebGLRenderTarget(width, height, {
     type: THREE.HalfFloatType,
@@ -413,8 +458,12 @@ export function buildPostGraph(
     effect(new ContactShadowPass(scene, camera, beautyDepth, plan.contactShadows, plan.contactShadowSteps));
     built.push("contactShadows");
   }
+  if (plan.ssr !== null && beautyDepth !== null) {
+    effect(new SsrPass(scene, camera, beautyDepth, plan.ssr, plan.ssrSteps));
+    built.push("ssr");
+  }
   if (plan.atmosphere !== null && beautyDepth !== null) {
-    effect(new AtmospherePass(scene, camera, beautyDepth, plan.atmosphere, plan.atmosphereSteps));
+    effect(new AtmospherePass(scene, camera, beautyDepth, plan.atmosphere, plan.atmosphereSteps, plan.fogVariationTaps));
     built.push("atmosphere");
   }
 
@@ -438,6 +487,11 @@ export function buildPostGraph(
     });
     effect(dof);
     built.push("dof");
+  }
+
+  if (plan.motionBlur !== null && beautyDepth !== null) {
+    effect(new MotionBlurPass(camera, beautyDepth, plan.motionBlur, plan.motionBlurSamples));
+    built.push("motionBlur");
   }
 
   // SMAA must run before OutputPass (linear-sRGB). Default on for post chains.
@@ -504,7 +558,8 @@ export function buildPostGraph(
 /**
  * Mounts an `EffectComposer` inside the shell Canvas and takes over rendering
  * (priority-1 `useFrame`, which disables R3F auto-render) to run the configured
- * post chain: RenderPass → GTAO → UnrealBloom → SMAA → exposure meter → OutputPass → Stylize → Grade. Rendered only
+ * post chain: RenderPass → GTAO → contact shadows → SSR → atmosphere → UnrealBloom → DOF → motion
+ * blur → SMAA or TAA → exposure meter → OutputPass → Stylize → Grade. Rendered only
  * when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
  *
  * `stages` (resolved from the player's graphics profile) controls expensive passes
@@ -528,7 +583,7 @@ export function PostProcessing({
 }: {
   config: PostProcessingConfig;
   quality?: GraphicsQuality;
-  stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean };
+  stages?: Partial<GraphicsPostStages>;
   immediate?: boolean;
 }) {
   const gl = useThree((s) => s.gl);

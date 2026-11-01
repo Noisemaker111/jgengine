@@ -1,9 +1,9 @@
 import type { GLTF } from "@gltf-transform/core";
 import type { MaterialTextureMetadata, MaterialTextureRole } from "@jgengine/core/material/materialAsset";
 
-/** Native material/texture extensions implemented by Three.js GLTFLoader r182. Decoders are still required. */
-export const GLTF_MATERIAL_EXTENSIONS_R182: readonly string[] = [
-  "KHR_materials_anisotropy", "KHR_materials_clearcoat", "KHR_materials_dispersion",
+/** Native material/texture extensions the pinned Three.js GLTFLoader implements. Decoders are still required. */
+export const GLTF_MATERIAL_EXTENSIONS: readonly string[] = [
+  "KHR_materials_anisotropy", "KHR_materials_clearcoat", "KHR_materials_diffuse_roughness", "KHR_materials_dispersion",
   "KHR_materials_emissive_strength", "KHR_materials_ior", "KHR_materials_iridescence",
   "KHR_materials_sheen", "KHR_materials_specular", "KHR_materials_transmission",
   "KHR_materials_unlit", "KHR_materials_volume", "EXT_materials_bump",
@@ -157,7 +157,7 @@ export function inspectGltfMaterials(json: GLTF.IGLTF, assetId: string): GltfMat
   if (json?.asset?.version !== "2.0" || assetId.trim() === "") throw new Error("Material inspection requires glTF 2.0 and a nonempty asset id");
   const diagnostics: GltfMaterialDiagnostic[] = [];
   const diagnostic = (severity: GltfMaterialDiagnostic["severity"], code: GltfMaterialDiagnostic["code"], path: string, message: string) => diagnostics.push({ severity, code, path, message });
-  const supported = new Set([...GLTF_MATERIAL_EXTENSIONS_R182, "KHR_draco_mesh_compression", "EXT_meshopt_compression", "KHR_mesh_quantization", "KHR_lights_punctual"]);
+  const supported = new Set([...GLTF_MATERIAL_EXTENSIONS, "KHR_draco_mesh_compression", "EXT_meshopt_compression", "KHR_mesh_quantization", "KHR_lights_punctual"]);
   for (const name of new Set([...(json.extensionsUsed ?? []), ...(json.extensionsRequired ?? [])])) {
     if (!supported.has(name)) diagnostic(json.extensionsRequired?.includes(name) ? "error" : "warning", "unsupported-extension", "extensionsUsed", `${name} has no native Three.js r182 loader implementation; register a compatible loader plugin or retain the source asset outside this renderer`);
   }

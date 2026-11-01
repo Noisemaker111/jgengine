@@ -165,3 +165,8 @@ test("swapping a lamp pool rescans at once, so the new lamps glow on their first
   pass.dispose();
   frame.dispose();
 });
+
+test("haze banks cost no taps until a game asks for variation", () => {
+  expect(atmosphereFragment(16)).toContain("return 1.0;");
+  expect(atmosphereFragment(16, 4)).toContain("k < 4");
+});

@@ -169,6 +169,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef, TPro
     ambientLife,
     visibility,
     presentationEffects,
+    characterMotion,
   } = scene ?? {};
   const {
     look,
@@ -259,6 +260,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef, TPro
       ambientLife,
       visibility,
       presentationEffects,
+      characterMotion,
     },
     rendering: {
       lighting: resolvedLook.lighting,

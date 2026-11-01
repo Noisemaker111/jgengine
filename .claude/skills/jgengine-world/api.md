@@ -420,6 +420,20 @@
 - `GlanceTuning` (interface): interface GlanceTuning — Tuning for the default head turn a rigged character makes toward the local player. Angles are radians, distances metres.
 - `useCharacterGlance` (function): function useCharacterGlance(scene: THREE.Object3D, enabled: boolean, ctx: GameContext | null, instanceId: string | undefined, maxCameraDistance: number): void — Default glance for a rigged character: its head turns toward the local player when they come close, from any angle in front of it, and turns back when they leave. The local player's own model never glances. `maxCameraDistance` skips the work for characters too far away to read.
 
+## @jgengine/core/anim/characterMotion
+
+- `CHARACTER_MOTION_ON` (const): const CHARACTER_MOTION_ON: Readonly<CharacterMotionParts> — Every part on: what a rigged entity gets when nothing switches a part off.
+- `CharacterMotionConfig` (interface): interface CharacterMotionConfig — The engine's default character motion, one switch per part. Any part left unset stays on. `footIk` plants feet on slopes and steps, `glance` turns the head and eyes toward points of interest, `locomotion` drives idle, walk, run and turn-in-place from the entity's velocity (off, the rig holds its idle clip).
+- `CharacterMotionParts` (interface): interface CharacterMotionParts — {@link CharacterMotionConfig} with every part decided.
+- `CharacterMotionPlan` (interface): interface CharacterMotionPlan — What one model runs of the default character motion this frame.
+- `planCharacterMotion` (function): function planCharacterMotion(input: { live: boolean; lowTier: boolean; dead: boolean; ik: "auto" | "none" | ModelIkConfig | undefined; authoredAnimation: boolean; motion: CharacterMotionParts; }): CharacterMotionPlan — Decide the default motion for one model. A live rigged entity whose model leaves `ik` unset gets foot IK and the glance (not on the low tier, not after death); one that leaves `animation` unset gets the velocity-driven locomotion graph. Each part follows its `motion` switch; `ik: "none"` turns IK and glance off, and an authored `ik` or `animation` is played as authored.
+- `resolveCharacterMotion` (function): function resolveCharacterMotion(...layers: readonly (CharacterMotionConfig | false | undefined)[]): CharacterMotionParts — Resolve the parts from layers, most general first (game, then model, then entity): a later layer wins for each part it names, and `false` turns every part off at that layer.
+
+## @jgengine/core/anim/characterMotion.draw
+
+- `CharacterMotionContext` (const): const CharacterMotionContext: React.Context<false | CharacterMotionConfig | undefined> — The game's own character-motion layer (`scene.characterMotion`); the shell provides it.
+- `useCharacterMotion` (function): function useCharacterMotion(model: CharacterMotionConfig | false | undefined, ctx: GameContext | null, instanceId: string | undefined): CharacterMotionParts — The parts of the default character motion this entity runs: the game's layer, then its model's, then the entity's own `characterMotion`, which re-renders the model when it changes.
+
 ## @jgengine/core/anim/crowdRegistry.draw
 
 - `CharacterCrowdRegistry` (class): class CharacterCrowdRegistry — The characters the crowd layer is currently drawing, written by their entity markers each frame. It holds poses rather than React state: 71 pedestrians writing matrices must not re-render the world, and the crowd batch reads the same entries back to fill its instance buffers.
@@ -2447,6 +2461,16 @@
 - `FALLBACK_KEY_LIGHT` (const): const FALLBACK_KEY_LIGHT: Readonly<DirectionalLightingConfig> — Soft key added when authored lighting has no directional light: high, off to one side, shadowless.
 - `balanceLightingForIbl` (function): function balanceLightingForIbl(lighting: LightingConfig | undefined): LightingConfig | undefined — Rebalance authored lighting for a scene that also has image-based light: trim the flat ambient term by `iblAmbientScale` (default 0.5) and, when no directional light is authored, add {@link FALLBACK_KEY_LIGHT} tinted by the ambient colour so forms keep a lit and a shaded side. Returns the input unchanged when there is nothing to adjust.
 
+## @jgengine/core/lighting/softShadows
+
+- `DEFAULT_OCCLUDER_DISTANCE` (const): const DEFAULT_OCCLUDER_DISTANCE: 4 — Metres between a typical caster and the ground it shadows, used when a light leaves it unset.
+- `DEFAULT_SHADOW_RADIUS` (const): const DEFAULT_SHADOW_RADIUS: 1.25 — PCF radius, in texels, a directional light filters with when it sets no `shadowRadius`.
+- `SUN_ANGULAR_DIAMETER_DEG` (const): const SUN_ANGULAR_DIAMETER_DEG: 0.53 — The sun's angular diameter seen from the ground, in degrees: the reference `lightSize` for daylight.
+- `ShadowFilter` (interface): interface ShadowFilter — The filter one shadow map uses: PCF radius in texels and normal bias in world units.
+- `SoftShadowInput` (interface): interface SoftShadowInput — What a soft shadow needs to know about one shadow map.
+- `lightingHasSoftShadows` (function): function lightingHasSoftShadows(lighting: LightingConfig | undefined): boolean — True when a shadow-casting directional light in `lighting` sets `lightSize`, so the soft-shadows setting changes something.
+- `softShadowRadius` (function): function softShadowRadius(input: SoftShadowInput): number — PCF filter radius, in shadow-map texels, for a light of angular size `lightSize`: the penumbra a disc of that size throws across `occluderDistance` metres, measured in this map's texels. It never drops below `baseRadius` and never passes `maxRadius`, so a far cascade with coarse texels keeps its base filter and a near one widens to the physical penumbra. Finite and monotone in `lightSize`. three r187 filters with five Vogel-disk taps over a hardware-compare sampler, which has no blocker search, so the penumbra is sized for one caster distance rather than per pixel.
+
 ## @jgengine/core/lod/characterLod
 
 - `CharacterLodPolicy` (interface): interface CharacterLodPolicy — Distance policy a character model's {@link ModelLodConfig} resolves to; every distance is metres.
@@ -4432,7 +4456,7 @@
 
 ## @jgengine/core/postfx/PostProcessing.draw
 
-- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages, immediate = false, }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean }; immediate?: boolean; }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages, immediate = false, }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: Partial<GraphicsPostStages>; immediate?: boolean; }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → contact shadows → SSR → atmosphere → UnrealBloom → DOF → motion blur → SMAA or TAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
 
 ## @jgengine/core/postfx/ScreenEffectsOverlay.draw
 
@@ -4452,9 +4476,17 @@
 
 - `createGradePass` (function): function createGradePass(config: GradeConfig = {}): ShaderPass — Build the display-space colour-grade pass and load its optional LUT. Dispose the pass to release its LUT; advance `uniforms.uTime.value` each frame to animate grain.
 
+## @jgengine/core/postfx/motionBlurPass.draw
+
+- `registerMotionBlurBody` (function): function registerMotionBlurBody(root: THREE.Object3D): () => void — Let motion blur follow a moving body (a character, a car, a thrown crate) along its own screen motion. Every model entity registers itself; register anything else that moves. Returns the unregister call. Only registered bodies are walked each frame, never the whole scene.
+
 ## @jgengine/core/postfx/postfxOverlay.draw
 
 - `POSTFX_OVERLAY_USERDATA` (const): const POSTFX_OVERLAY_USERDATA: { readonly jgPostfxOverlay: true } — Spread onto a group's `userData` to mark its subtree as a screen/world overlay effect — additive glows, telegraphs, tracers, debug gizmos — that post-processing scene prepasses (GTAO's normal/depth render, DOF's depth render) must skip. Those prepasses render the scene with `overrideMaterial`, which turns transparent overlay quads into opaque stamps in the AO/DOF buffers (visible as black squares over hit sparks). The shell marks its own combat VFX and collision-debug mounts; games mark custom overlay effects the same way.
+
+## @jgengine/core/postfx/ssrPass.draw
+
+- `MAX_GLOSSY_SURFACES` (const): const MAX_GLOSSY_SURFACES: 256 — Most glossy surfaces one frame masks; the nearest scan order keeps the first ones found.
 
 ## @jgengine/core/procedural
 

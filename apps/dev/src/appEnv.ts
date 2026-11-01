@@ -50,6 +50,8 @@ export const SPAWN = urlParams.get("spawn");
  * the same scene can be compared across art styles without editing the game.
  */
 export const STYLE = urlParams.get("style");
+/** `?effects=ssr,-fog,motionBlur,softShadows:2` forces render effects on or off for a before/after shot. */
+export const EFFECTS = urlParams.get("effects");
 /** `?view=<name>` replays a framing the game declares in `capture.views`. */
 export const VIEW = urlParams.get("view");
 installSpawnOverride(parseSpawnOverride(SPAWN));

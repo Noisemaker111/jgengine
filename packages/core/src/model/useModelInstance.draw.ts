@@ -1,4 +1,5 @@
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { idleOnlyAnimation } from "@jgengine/core/game/clipRoles";
 import { useEffect, useMemo } from "react";
 import { Group, type Object3D, type SkinnedMesh } from "three";
 
@@ -25,6 +26,11 @@ export interface ModelInstanceOptions {
   instanceId?: string | undefined;
   /** Configure each new clone before placement measurement. Memoize this callback; changing it replaces the instance. Materials are isolated; geometry/textures stay borrowed. */
   configure?: (content: Object3D) => void;
+  /**
+   * Drive the default locomotion graph from the entity's velocity when the model leaves `animation`
+   * unset. `false` holds the idle clip instead. Default true.
+   */
+  locomotion?: boolean | undefined;
 }
 
 /** Render `scene` with `position` and uniform `scale`; animate or deform `content` inside that placement frame. */
@@ -76,7 +82,9 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
   }, [content, instanceId, lodKey]);
   const humanoid = typeof model.animation === "object" && model.animation.humanoidActions === true;
   const clips = useMemo(() => (humanoid ? withHumanoidActionClips(gltf.scene, gltf.animations) : gltf.animations), [gltf, humanoid]);
-  useModelAnimation(content, clips, model.animation ?? (instanceId === undefined ? undefined : "auto"), instanceId);
+  const locomotion = options.locomotion !== false;
+  const idleOnly = useMemo(() => (locomotion ? undefined : idleOnlyAnimation(clips.map(clip => clip.name))), [locomotion, clips]);
+  useModelAnimation(content, clips, model.animation ?? (instanceId === undefined ? undefined : locomotion ? "auto" : idleOnly ?? "auto"), instanceId);
   const firstPersonBody = useFirstPersonBody(instanceId);
   const head = useMemo(() => (firstPersonBody ? humanoidHead(content) : null), [content, firstPersonBody]);
   const arms = useMemo(() => (firstPersonBody ? firstPersonArms(content, gltf.scene, gltf.animations) : null), [content, gltf, firstPersonBody]);

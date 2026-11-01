@@ -1692,6 +1692,16 @@
       "intent": "draw animated or static characters as batched instanced draws instead of posing each skeleton"
     },
     {
+      "id": "character-motion",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/anim/characterMotion",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "switch foot IK, glance and locomotion per game, model or entity"
+    },
+    {
       "id": "character-paperdoll",
       "packages": [
         "@jgengine/core"
@@ -10216,6 +10226,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "wheels and feet rut granular soil by the material's published sinkage, with sinkage and recovery dials"
+    },
+    {
+      "id": "soft-shadow-radius",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/lighting/softShadows",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "size a shadow's penumbra from its light's angular size, per shadow map"
     },
     {
       "id": "soil-patch",

@@ -1,4 +1,5 @@
 import { createObservableKeyedStore } from "../store/observableKeyedStore";
+import type { CharacterMotionConfig } from "../anim/characterMotion";
 import { behaviorDataEqual, type BehaviorDescriptor } from "./behaviors";
 
 export type EntityRole = "player" | "npc" | "prop";
@@ -52,6 +53,11 @@ export interface SceneEntity<TMeta = unknown> {
    * @capability entity-look pick one of a model's alternative bodies per entity, for character creators and skins
    */
   look?: string;
+  /**
+   * This entity's own switches for the default character motion (foot IK, glance, locomotion), over
+   * its model's and the game's; `false` turns all three off. Render-only, like `look`.
+   */
+  characterMotion?: CharacterMotionConfig | false;
   /** Game-defined per-instance data set at `spawn`/`update` and carried to `renderEntity`/queries — narrow with {@link entityMetaOf} (or a type guard) on read (#286.1); never encode state in the id/name string. */
   meta: TMeta;
 }

@@ -100,6 +100,14 @@ describe("native glTF material inspection", () => {
     expect(result.diagnostics).toContainEqual(expect.objectContaining({ severity: "error", code: "missing-uv", path: "meshes[0].primitives[0]" }));
   });
 
+  test("accepts KHR_materials_diffuse_roughness as a native extension", () => {
+    const json = model();
+    json.extensionsUsed = [...(json.extensionsUsed ?? []), "KHR_materials_diffuse_roughness"];
+    json.extensionsRequired = ["KHR_materials_diffuse_roughness"];
+    const result = inspectGltfMaterials(json, "game/hero");
+    expect(result.diagnostics.filter((entry) => entry.code === "unsupported-extension")).toEqual([]);
+  });
+
   test("diagnoses incompatible unlit response and disconnected volume", () => {
     const json = model();
     json.materials![2]!.extensions!.KHR_materials_unlit = {};

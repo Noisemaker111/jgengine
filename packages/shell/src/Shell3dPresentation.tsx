@@ -1,4 +1,6 @@
 import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
+import { CharacterMotionContext } from "@jgengine/core/anim/characterMotion.draw";
+import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
 import { Canvas } from "@react-three/fiber";
 import {
   useMemo,
@@ -651,6 +653,7 @@ export function Shell3dPresentation({
           fovEnabled={fovControlEnabled}
           graphics={playable.rendering?.graphics}
           postProcessing={resolvedLook.postProcessing}
+          softShadows={lightingHasSoftShadows(resolvedLook.lighting)}
           hideBindings={settingsConfig.hideBindings ?? []}
           touchStyle={
             coarsePointer &&
@@ -772,6 +775,7 @@ export function Shell3dPresentation({
                   {effectiveSky === undefined ? <BackdropFog fog={backdrop?.fog} /> : null}
                   <GameProvider context={ctx}>
                     <TerrainQualityContext.Provider value={graphics.quality}>
+                    <CharacterMotionContext.Provider value={playable.scene?.characterMotion}>
                     <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.scene?.visibility} cullingDisabled={splitScreen}>
                     <CullingProvider config={playable.scene?.visibility} drawDistance={graphics.profile.drawDistance}>
                       <BootSuspenseGuard area="the world">
@@ -847,6 +851,7 @@ export function Shell3dPresentation({
                     />
                     <PointerProbe service={pointerService} {...(ctx.world.ground.bounds === undefined ? {} : { groundHeightAt: ctx.world.groundHeightAt })} />
                     </BuildingRenderBudget>
+                    </CharacterMotionContext.Provider>
                     </TerrainQualityContext.Provider>
                   </GameProvider>
                   <RemotePlayers rows={remotePlayers} />

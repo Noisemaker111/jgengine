@@ -9,7 +9,7 @@ description: Build composable, accessible HUDs, menus, feedback, and responsive 
 
 This skill owns player-facing presentation: HUDs, menus, overlays, layout, responsive behavior, accessibility, touch/controller presentation, feedback, previews, and UI chrome. World rendering belongs to `jgengine-world`; state ownership stays in gameplay/combat.
 
-Search [capabilities.md](capabilities.md) by intent and use [api.md](api.md) for signatures. [reference.md](reference.md) is the presentation quality guide (screen inventory, layout modes, main menu, settings, motion, mobile controls, rejection criteria, definition of done); [reference-primitives.md](reference-primitives.md) covers how the shipped blocks compose, rendering/post-processing, and the first-person viewmodel. Visual review uses the scorecard in [jgengine-verify](../jgengine-verify/references/visual-scorecard.md).
+Search [capabilities.md](capabilities.md) by intent and use [api.md](api.md) for signatures. [reference.md](reference.md) is the presentation quality guide (screen inventory, layout modes, main menu, settings, motion, mobile controls, rejection criteria, definition of done); [reference-primitives.md](reference-primitives.md) covers how the shipped blocks compose, rendering/post-processing (reflections, volumetric fog, motion blur and soft shadows each have their own config field, tier gate and Graphics row), and the first-person viewmodel. Visual review uses the scorecard in [jgengine-verify](../jgengine-verify/references/visual-scorecard.md).
 
 ## Canonical workflow
 
