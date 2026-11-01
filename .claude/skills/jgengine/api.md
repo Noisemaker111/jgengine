@@ -275,6 +275,7 @@
 
 - `FrameModule` (interface): interface FrameModule — Frame subsystem exposing the frame-timing, profiling, and render-sample facades.
 - `createFrameModule` (const): const createFrameModule: (deps: { readProbes: () => Record<string, unknown>; }) => FrameModule — Create the frame subsystem that records frame/sim/phase timings, computes stats, and captures long-frame events.
+- `percentile` (function): function percentile(sorted: readonly number[], fraction: number): number — Value at `fraction` (0-1) of an ascending-sorted list; 0 when empty.
 
 ## @jgengine/core/devtools/frameBreakdown
 
@@ -602,6 +603,7 @@
 
 ## @jgengine/core/runtime/hostPolicy
 
+- `DEFAULT_HOST_SAVE_INTERVAL_MS` (const): const DEFAULT_HOST_SAVE_INTERVAL_MS: 1000 — Milliseconds between auto-saves of a hosted world that changed; 0 saves after every changed tick.
 - `DEFAULT_HOST_TICK_MS` (const): const DEFAULT_HOST_TICK_MS: 50 — Authoritative host tick interval every host uses unless the game sets one: 20 Hz.
 - `JG_MAX_MEMBERS_PER_SERVER` (const): const JG_MAX_MEMBERS_PER_SERVER: 256 — Room-topology ceiling on `slotsPerServer`; shared membership uses indexed rows instead.
 - `JoinCandidate` (type): type JoinCandidate = { memberUserIds: readonly string[]; slotsPerServer: number; visibility?: SessionVisibility | undefined; createdAt: number; } — A row `selectJoinTarget` can choose between — the matchmaking-relevant fields of a server record.

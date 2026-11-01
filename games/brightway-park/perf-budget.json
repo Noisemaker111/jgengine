@@ -1,4 +1,5 @@
 {
   "drawsFrame": 666,
+  "bundleKb": 4133,
   "baseline": "2026-10-25 rebaseline when the games moved into this repo: the engine had gated games-repo commit 2884be1c, and the 93 games commits after it to f0715fc1 (new content) never ran this gate. drawsFrame is that run's whole-frame draw ceiling, printed beside each gate run as a reference, not gated; every game is judged on the shared 16.7 ms p95 frame."
 }

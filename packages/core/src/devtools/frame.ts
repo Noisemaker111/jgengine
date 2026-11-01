@@ -22,7 +22,8 @@ export function nowMs(): number {
   return perf !== undefined ? perf.now() : Date.now();
 }
 
-function percentile(sorted: readonly number[], fraction: number): number {
+/** Value at `fraction` (0-1) of an ascending-sorted list; 0 when empty. */
+export function percentile(sorted: readonly number[], fraction: number): number {
   if (sorted.length === 0) return 0;
   const index = Math.min(sorted.length - 1, Math.floor(sorted.length * fraction));
   return sorted[index]!;

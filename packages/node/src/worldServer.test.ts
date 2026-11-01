@@ -48,6 +48,7 @@ function server(now?: () => number, persistence?: WorldPersistence) {
   return createWorldGameServer({
     resolveGame: (gameId) => (gameId === "shared" ? { game: definition(), content: CONTENT } : null),
     allowAnonymous: true,
+    saveIntervalMs: 0,
     port: 0,
     ...(now === undefined ? {} : { now }),
     ...(persistence === undefined ? {} : { persistence }),

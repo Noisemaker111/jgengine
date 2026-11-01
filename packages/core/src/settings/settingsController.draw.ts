@@ -77,6 +77,8 @@ export interface SettingsControllerInput {
   postProcessing?: PostProcessingConfig | undefined;
   /** True when a light this game runs sets `lightSize`, so the soft-shadows row switches something. */
   softShadows?: boolean | undefined;
+  /** True when the game turns on auto quality, so Graphics shows the Auto quality row. */
+  autoQuality?: boolean | undefined;
   hideBindings: readonly string[];
   /** Show the touch-controls skin selector in Controls (touch device with a dock). */
   touchStyle: boolean;
@@ -155,7 +157,7 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
   ];
 
   const graphicsRows: SettingsRow[] = [
-    ...graphicsSettingRows(store, config.graphics, config.postProcessing, config.softShadows === true),
+    ...graphicsSettingRows(store, config.graphics, config.postProcessing, config.softShadows === true, config.autoQuality === true),
     ...extrasFor("graphics"),
   ];
 
@@ -273,8 +275,9 @@ export function graphicsSettingRows(
   overrides: GraphicsProfileOverrides | undefined,
   postProcessing: PostProcessingConfig | undefined,
   softShadows = false,
+  autoQuality = false,
 ): SettingsRow[] {
-  const graphics = readGraphicsSettings(store, overrides);
+  const graphics = readGraphicsSettings(store, overrides, autoQuality);
   const stages = postProcessing === undefined || postProcessing.enabled === false ? [] : availablePostfxStages(postProcessing);
   return [
     {
@@ -283,8 +286,21 @@ export function graphicsSettingRows(
       kind: "select",
       value: graphics.quality,
       options: GRAPHICS_QUALITY_OPTIONS,
-      set: (value) => applyGraphicsQuality(store, String(value) as GraphicsQuality, overrides),
+      set: (value) => {
+        // Picking a tier is the player's own choice: it ends auto quality until they turn it back on.
+        if (autoQuality) store.set(SETTING_IDS.graphicsAuto, false);
+        applyGraphicsQuality(store, String(value) as GraphicsQuality, overrides);
+      },
     },
+    ...(autoQuality
+      ? [{
+          id: SETTING_IDS.graphicsAuto,
+          label: "Auto quality",
+          kind: "toggle",
+          value: graphics.auto,
+          set: (value) => store.set(SETTING_IDS.graphicsAuto, Boolean(value)),
+        } satisfies SettingsRow]
+      : []),
     {
       id: SETTING_IDS.graphicsRenderScale,
       label: "Render scale",

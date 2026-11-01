@@ -201,6 +201,9 @@ export function isAutoJoinCandidate(args: {
 /** Authoritative host tick interval every host uses unless the game sets one: 20 Hz. */
 export const DEFAULT_HOST_TICK_MS = 50;
 
+/** Milliseconds between auto-saves of a hosted world that changed; 0 saves after every changed tick. */
+export const DEFAULT_HOST_SAVE_INTERVAL_MS = 1_000;
+
 /** Longest tick interval a host accepts; 1 Hz is the floor for a world that still feels live. */
 export const MAX_HOST_TICK_MS = 1_000;
 

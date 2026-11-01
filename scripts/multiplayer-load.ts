@@ -5,10 +5,14 @@
  *   bun scripts/multiplayer-load.ts [--clients 8,32,64] [--entities 500,2000] [--ticks 40]
  *     [--codec json|binary] [--radius <world units>] [--table]
  *
+ * With `BUN_JSC_useGC=false` the collector is off, so the resident-memory growth per measured tick is the bytes
+ * the host and the loopback clients allocate per tick (page granular; client decode is included).
+ *
  * Not a CI gate. `--codec` and `--radius` are ignored by builds that predate them.
  */
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+import { DEFAULT_HOST_SAVE_INTERVAL_MS } from "@jgengine/core/runtime/hostPolicy";
 import { createHostedWorldSession } from "@jgengine/core/runtime/hostedWorldSession";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import { createHostRouter, loopbackPipe } from "../packages/ws/src/hostRouter";
@@ -44,7 +48,7 @@ function rng(seed: number): () => number {
   };
 }
 
-type Result = { clients: number; entities: number; bytesPerTick: number; bytesPerClientTick: number; hostMsPerTick: number };
+type Result = { clients: number; entities: number; bytesPerTick: number; bytesPerClientTick: number; hostMsPerTick: number; allocBytesPerTick: number | null };
 
 async function run(clients: number, entities: number, ticks: number, codec: string, radius: number | undefined): Promise<Result> {
   const random = rng(clients * 100_003 + entities);
@@ -71,7 +75,7 @@ async function run(clients: number, entities: number, ticks: number, codec: stri
       },
     },
   });
-  const session = createHostedWorldSession({ definition, content: CONTENT });
+  const session = createHostedWorldSession({ definition, content: CONTENT, saveIntervalMs: DEFAULT_HOST_SAVE_INTERVAL_MS });
   const host = createWorldGameHost({ session: () => session });
   const router = createHostRouter({ host, allowAnonymous: true });
   const ctx = session.runner().context();
@@ -115,11 +119,14 @@ async function run(clients: number, entities: number, ticks: number, codec: stri
   await router.drain();
 
   let hostMs = 0;
+  let rssStart = 0;
+  const gcOff = process.env['BUN_JSC_useGC'] === 'false';
   for (let t = 0; t < ticks + 5; t += 1) {
     if (t === 5) {
       counting = true;
       bytes = 0;
       hostMs = 0;
+      rssStart = process.memoryUsage().rss;
     }
     const start = performance.now();
     host.tick(DT);
@@ -129,6 +136,7 @@ async function run(clients: number, entities: number, ticks: number, codec: stri
     await router.drain();
   }
   const measured = ticks;
+  const allocBytes = gcOff ? Math.round((process.memoryUsage().rss - rssStart) / measured) : null;
   for (const backend of backends) backend.close();
   router.close();
   await router.drain();
@@ -139,6 +147,7 @@ async function run(clients: number, entities: number, ticks: number, codec: stri
     bytesPerTick: Math.round(bytes / measured),
     bytesPerClientTick: Math.round(bytes / measured / clients),
     hostMsPerTick: Math.round((hostMs / measured) * 100) / 100,
+    allocBytesPerTick: allocBytes,
   };
 }
 
@@ -153,9 +162,9 @@ for (const entities of list("entities", "500,2000")) {
   }
 }
 console.log(`codec=${codec} radius=${radius ?? "off"} ticks=${ticks} dt=${DT}`);
-console.log("| clients | entities | bytes/tick (all clients) | bytes/tick/client | host ms/tick |");
-console.log("|---:|---:|---:|---:|---:|");
+console.log("| clients | entities | bytes/tick (all clients) | bytes/tick/client | host ms/tick | alloc bytes/tick |");
+console.log("|---:|---:|---:|---:|---:|---:|");
 for (const r of rows) {
-  console.log(`| ${r.clients} | ${r.entities} | ${r.bytesPerTick} | ${r.bytesPerClientTick} | ${r.hostMsPerTick} |`);
+  console.log(`| ${r.clients} | ${r.entities} | ${r.bytesPerTick} | ${r.bytesPerClientTick} | ${r.hostMsPerTick} | ${r.allocBytesPerTick ?? "n/a (set BUN_JSC_useGC=false)"} |`);
 }
 process.exit(0);

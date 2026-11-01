@@ -60,6 +60,7 @@ export function FrameDriver({
   onPosterSettled,
   authoritativeFrameRef,
   recorder,
+  onFrameMs,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
@@ -81,6 +82,8 @@ export function FrameDriver({
   authoritativeFrameRef: { current: AuthoritativeFrameHandler | null };
   /** Records each frame of play (time, held and pressed actions, look) for a deterministic replay. */
   recorder?: ReplayRecorder | undefined;
+  /** Each rendered frame's duration in ms, for runtime health (auto quality, frame percentiles). */
+  onFrameMs?: ((frameMs: number) => void) | undefined;
 }) {
   const posterElapsedRef = useRef(0);
   const posterDoneRef = useRef(false);
@@ -416,6 +419,7 @@ export function FrameDriver({
         return;
       }
     }
+    onFrameMs?.(rawDt * 1000);
     const simStart = performance.now();
     if (!simulate(rawDt)) return;
     devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });

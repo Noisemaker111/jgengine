@@ -318,6 +318,18 @@ function isVector3(value: unknown): value is readonly [number, number, number] {
   );
 }
 
+function quantise(v: number, scale: number): number {
+  const q = Math.round(v * scale);
+  return Math.abs(q) <= MAX_SAFE_INT ? q : 0;
+}
+
+/** Equality fingerprint for one field; only ever compared with another fingerprint, so primitives skip JSON. */
+function fingerprint(item: unknown): string {
+  if (typeof item === "string") return `s${item}`;
+  if (typeof item === "number" || typeof item === "boolean") return `p${item}`;
+  return JSON.stringify(item);
+}
+
 function readWireEntity(value: unknown, positionScale: number, angleScale: number): WireEntity | null {
   if (!isRecord(value)) return null;
   const id = value["id"];
@@ -330,23 +342,27 @@ function readWireEntity(value: unknown, positionScale: number, angleScale: numbe
   if (!isVector3(position) || !isVector3(velocity)) return null;
   if (typeof rotationY !== "number" || typeof rotationX !== "number" || typeof rotationZ !== "number") return null;
   if (![rotationY, rotationX, rotationZ].every(Number.isFinite)) return null;
-  const quantise = (v: number, scale: number) => {
-    const q = Math.round(v * scale);
-    return Math.abs(q) <= MAX_SAFE_INT ? q : 0;
-  };
+  const [px, py, pz] = position;
+  const [vx, vy, vz] = velocity;
   const numbers = [
-    ...position.map((v) => quantise(v, positionScale)),
+    quantise(px, positionScale),
+    quantise(py, positionScale),
+    quantise(pz, positionScale),
     quantise(rotationY, angleScale),
     quantise(rotationX, angleScale),
     quantise(rotationZ, angleScale),
-    ...velocity.map((v) => quantise(v, positionScale)),
+    quantise(vx, positionScale),
+    quantise(vy, positionScale),
+    quantise(vz, positionScale),
   ];
   const rest: Record<string, unknown> = {};
   const restJson = new Map<string, string>();
-  for (const [key, item] of Object.entries(value)) {
-    if (ENTITY_NUMERIC_KEYS.has(key) || item === undefined) continue;
+  for (const key in value) {
+    if (!Object.hasOwn(value, key) || ENTITY_NUMERIC_KEYS.has(key)) continue;
+    const item = value[key];
+    if (item === undefined) continue;
     rest[key] = item;
-    restJson.set(key, JSON.stringify(item));
+    restJson.set(key, fingerprint(item));
   }
   return { id, numbers, rest, restJson };
 }
