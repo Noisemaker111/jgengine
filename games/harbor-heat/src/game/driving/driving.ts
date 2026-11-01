@@ -18,7 +18,7 @@ import {
 import type { AxisInput } from "@jgengine/core/input/axisInput";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
-import { createVehicleSeats, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
+import { boardVehicle, createVehicleSeats, leaveVehicle, type VehicleSeats } from "@jgengine/core/scene/vehicleSeat";
 import { behaviorControl } from "@jgengine/core/scene/behaviorRuntime";
 import { streets } from "../../world";
 import { vehicleById, type VehicleDef } from "../entities/vehicles/catalog";
@@ -43,6 +43,9 @@ export interface VehicleTelemetry {
   stalled: boolean;
   vtol: boolean;
 }
+
+/** The dash with nobody driving. */
+const ON_FOOT: VehicleTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
 
 /** Road-grip sampler for the car sims: full bite on asphalt, a linear washout across the curb, less off-road. */
 const SURFACE_SAMPLER = roadSurfaceSampler(streets, { onRoad: 1, offRoad: 0.72, shoulder: 3 });
@@ -131,7 +134,7 @@ export function createDriving(): Driving {
   const vtolModes = new Map<string, boolean>();
   const vehicleSeats: VehicleSeats = createVehicleSeats();
   let driving: string | null = null;
-  let lastTelemetry: VehicleTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
+  let lastTelemetry: VehicleTelemetry = { ...ON_FOOT };
 
   /**
    * The solids a car should slide along this tick (#1051): nearby *solid* scene objects (buildings,
@@ -423,11 +426,13 @@ export function createDriving(): Driving {
     return step;
   }
 
-  /** Seated riders freeze their own movement AND stop rendering (#1299) — the character model
-   * otherwise pokes through the vehicle body it's posed inside every tick. */
-  function setRiderSeated(ctx: GameContext, riderId: string, seated: boolean): void {
-    const rider = ctx.scene.entity.get(riderId);
-    ctx.scene.entity.update(riderId, { movement: { ...(rider?.movement ?? {}), frozen: seated }, hidden: seated });
+  /** The player is out of the car: drop the handle, the engine note, the dash and the car's touch layout. */
+  function stopDriving(ctx: GameContext): void {
+    driving = null;
+    drivingAudio.stop(ctx);
+    lastTelemetry = { ...ON_FOOT };
+    drivingStore.write(ctx, null);
+    setTouchControlsMode(ctx, null);
   }
 
   function playerWorldPos(ctx: GameContext): readonly [number, number, number] | null {
@@ -446,7 +451,9 @@ export function createDriving(): Driving {
       if (!vehicleSeats.mounts.isRegistered(vehicleId)) {
         vehicleSeats.register({ id: vehicleId, kit: { kind: definition.dynamics.type === "aircraft" ? "flying" : "ground" } });
       }
-      const result = vehicleSeats.enter(ctx.player.userId, vehicleId);
+      const result = boardVehicle(ctx, vehicleSeats, ctx.player.userId, vehicleId, {
+        chase: LONG_BODY_CAMERA[definition.id] ?? DRIVE_CAMERA_TUNING,
+      });
       if (!result.ok) return;
       driving = vehicleId;
       if (definition.dynamics.type === "aircraft") {
@@ -456,9 +463,6 @@ export function createDriving(): Driving {
         behaviorControl(ctx).pause(vehicleId, "driven");
         carVehicleFor(ctx, vehicleId);
       }
-      ctx.camera.follow(result.cameraTarget);
-      ctx.camera.setChaseTuning(LONG_BODY_CAMERA[definition.id] ?? DRIVE_CAMERA_TUNING);
-      setRiderSeated(ctx, ctx.player.userId, result.riderMovementPatch.frozen);
       drivingStore.write(ctx, vehicleId);
       setTouchControlsMode(ctx, definition.dynamics.type === "aircraft" ? "aircraft" : "car");
     },
@@ -473,21 +477,10 @@ export function createDriving(): Driving {
           return;
         }
       }
-      const result = vehicleSeats.exit(ctx.player.userId, {
-        position: vehicle?.position ?? [0, 0, 0],
-        rotationY: vehicle?.rotationY ?? 0,
-      });
+      const left = leaveVehicle(ctx, vehicleSeats, ctx.player.userId);
+      if (!left.ok) ctx.camera.setChaseTuning(null);
       behaviorControl(ctx).resume(driving);
-      driving = null;
-      drivingAudio.stop(ctx);
-      lastTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
-      drivingStore.write(ctx, null);
-      setTouchControlsMode(ctx, null);
-      ctx.camera.setChaseTuning(null);
-      if (!result.ok) return;
-      ctx.camera.follow(result.cameraTarget);
-      setRiderSeated(ctx, result.cameraTarget, result.riderMovementPatch.frozen);
-      ctx.scene.entity.setPose(ctx.player.userId, { position: result.placement.position, rotationY: result.placement.rotationY });
+      stopDriving(ctx);
     },
     drivingVehicleId: () => driving,
     carSpeedKmh: () => lastTelemetry.speedMs * 3.6,
@@ -534,17 +527,10 @@ export function createDriving(): Driving {
       landBlast(ctx, { from: vehicleId, at, radius: 6, type: "blast", base: 55 });
       let wasDriven = false;
       if (driving === vehicleId) {
-        vehicleSeats.mounts.dismount(ctx.player.userId);
-        driving = null;
-        drivingAudio.stop(ctx);
-        lastTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
-        ctx.camera.follow(ctx.player.userId);
-        ctx.camera.setChaseTuning(null);
-        const rider = ctx.scene.entity.get(ctx.player.userId);
-        setRiderSeated(ctx, ctx.player.userId, false);
-        ctx.scene.entity.setPose(ctx.player.userId, { position: at, rotationY: rider?.rotationY ?? 0 });
-        drivingStore.write(ctx, null);
-        setTouchControlsMode(ctx, null);
+        // The blast throws the courier clear where the car stood, not out of its side door.
+        const facing = ctx.scene.entity.get(ctx.player.userId)?.rotationY ?? 0;
+        leaveVehicle(ctx, vehicleSeats, ctx.player.userId, { pose: { position: at, rotationY: facing }, distance: 0 });
+        stopDriving(ctx);
         wasDriven = true;
       }
       dropCarSim(vehicleId);
