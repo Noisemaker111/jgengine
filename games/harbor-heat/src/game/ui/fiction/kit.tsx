@@ -10,22 +10,6 @@ import { activeTouchControlsMode, setTouchControlsMode } from "@jgengine/core/in
  * Nothing here is a web card; each piece is something a courier in the harbor town holds or passes.
  */
 
-/** Mainsail at sundown: harbor-night teal, cream card stock, amber backlight, coral neon. */
-export const HH = {
-  night: "#071d25",
-  ink: "#0e2c38",
-  teal: "#155462",
-  mint: "#76d4c3",
-  cream: "#fff0d2",
-  amber: "#ffb020",
-  coral: "#ef5a3c",
-  lcdInk: "#2a1704",
-  sign: "#0f6a43",
-  hhpd: "#4f7de8",
-  siren: "#e8343b",
-  cash: "#8fe39a",
-} as const;
-
 /**
  * Menu-nav item props with the ref loosened: the engine package resolves its own copy of React's
  * types, so its ref type and the game's are nominally different even though they are the same ref.
