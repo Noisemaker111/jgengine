@@ -221,6 +221,8 @@ export const world: WorldFeature = environment({
     preset: "day",
     horizonColor: "#ff9d3d",
     zenithColor: "#8a5230",
+    sun: { azimuth: 250, elevation: 14 },
+    sunColor: "#ffb066",
     sunIntensity: 2.6,
     ambientIntensity: 0.95,
     // The dome tracks the camera in xz, so this only has to clear the visible terrain (±500m along
@@ -232,7 +234,7 @@ export const world: WorldFeature = environment({
     // zenith straight into an eye-level frame and the dusk reads as night.
     gradientExponent: 1.4,
     cloudiness: 0.55,
-    fog: { color: "#7a4a24", near: 55, far: 300 },
+    fog: { color: "#c98a52", near: 60, far: 320 },
   }),
   structures: ZONES.flatMap((zone) => [nearWall(zone), farWall(zone)]),
 });
