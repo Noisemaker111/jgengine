@@ -1,4 +1,5 @@
 import { mergeCredits } from "@jgengine/core/menu/credits";
+import { lookCredits } from "../art/look";
 
 /** Deepward ships original procedural geometry and synthesized cues; the engine supplies the rest. */
 export const DEEPWARD_CREDITS = mergeCredits({
@@ -13,6 +14,11 @@ export const DEEPWARD_CREDITS = mergeCredits({
         },
       ],
     },
+    {
+      heading: "Surfaces",
+      entries: [{ label: "ambientCG", detail: "CC0 PBR scans: PaintedMetal006, DiamondPlate005A, MetalPlates001, Rust007, Concrete025, Terrazzo005", href: "https://ambientcg.com" }],
+    },
+    ...lookCredits(),
     {
       heading: "Technology",
       entries: [

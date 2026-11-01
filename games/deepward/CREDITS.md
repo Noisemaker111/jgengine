@@ -1,8 +1,14 @@
 # Deepward credits
 
 Deepward's setting, terminology, characters, item fiction, procedural industrial
-meshes and interface are original content in this repository. No downloaded
-model pack or commissioned bitmap artwork is used in the current slice.
+meshes, modular architecture and fauna rigs, and interface are original content
+in this repository. No downloaded model pack is used.
+
+Third-party looks, all CC0 or OFL: ambientCG surface scans (PaintedMetal006,
+DiamondPlate005A, MetalPlates001, Rust007, Concrete025, Terrazzo005, and others
+listed in `src/game/interiorLook.ts`), the Poly Haven HDRI Industrial Pipe and Valve 01
+by Philip Modin (reflections only), the cold teal colour grade from the JGengine look
+library, and the Share Tech Mono and Rajdhani fonts (OFL 1.1, Fontsource).
 
 The terrain, room volumes and stable markers in `src/editor.scene.json` were
 authored through the published JGengine editor host using its decoded RPC

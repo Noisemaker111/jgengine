@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "author": "Deepward project contributors",
+  "license": "CC0-1.0",
+  "original": true,
+  "source": "scripts/build-fauna.ts",
+  "units": "metres",
+  "pivot": "floor centre [0,0,0]",
+  "facing": "+Z",
+  "up": "+Y",
+  "models": [
+    {
+      "id": "deepward/fauna/hand",
+      "file": "hand.glb",
+      "url": "/models/imported/deepward/fauna/hand.glb",
+      "sha256": "77aeca97155b0a23e5b8a0090d0763e6297846623ff54cf6769894536670a16c",
+      "bytes": 42584,
+      "clips": [
+        "idle",
+        "walk",
+        "windup"
+      ],
+      "bounds": {
+        "min": [
+          -0.2980085395656448,
+          0.047483339501604604,
+          -0.23
+        ],
+        "max": [
+          0.2980085395656448,
+          0.22,
+          0.54
+        ]
+      },
+      "dims": [
+        0.5960170791312897,
+        0.1725166604983954,
+        0.77
+      ]
+    },
+    {
+      "id": "deepward/fauna/courier",
+      "file": "courier.glb",
+      "url": "/models/imported/deepward/fauna/courier.glb",
+      "sha256": "7649e3c09d372567a988aca9948638b0b6dc250af6915f1811ae2b7513891d0d",
+      "bytes": 42380,
+      "clips": [
+        "idle",
+        "walk",
+        "windup"
+      ],
+      "bounds": {
+        "min": [
+          -0.557,
+          -0.015500000000000014,
+          -0.55
+        ],
+        "max": [
+          0.557,
+          1.02,
+          0.8560000000000001
+        ]
+      },
+      "dims": [
+        1.114,
+        1.0355,
+        1.4060000000000001
+      ]
+    },
+    {
+      "id": "deepward/fauna/tank-crawler",
+      "file": "tank-crawler.glb",
+      "url": "/models/imported/deepward/fauna/tank-crawler.glb",
+      "sha256": "a972549fd2241efcc21ef66c197f0d3c9d944305a40fee5bc05a150682cdd8e3",
+      "bytes": 62096,
+      "clips": [
+        "idle",
+        "walk",
+        "windup"
+      ],
+      "bounds": {
+        "min": [
+          -1.875,
+          -0.02250000000000002,
+          -1.8
+        ],
+        "max": [
+          1.875,
+          2.0599999999999996,
+          2.7560000000000002
+        ]
+      },
+      "dims": [
+        3.75,
+        2.0824999999999996,
+        4.556
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { customizeKit, type KitMenuProps, type KitPanelProps } from "@jgengine/core/ui/kit/uiKit.view";
 import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
-import { GAME_FONTS } from "../../../art/fonts/fonts";
+import { GAME_FONTS } from "../../../art/look";
 
 const FONTS = gameFontStacks(GAME_FONTS);
 const AMBER = "#e2bd6e";

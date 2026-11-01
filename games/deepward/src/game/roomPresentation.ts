@@ -5,6 +5,10 @@ export const ROOM_LIGHT_BUDGET = 7; // The eighth local light is the existing st
 export const ROOM_LIGHT_REACH = 12;
 export const ROOM_LIGHT_INTENSITY: Readonly<Record<Place, number>> = { home: 17, vault: 27, cold: 13, wells: 6, choir: 3 };
 const WALL_THICKNESS = 0.22, SLAB_THICKNESS = 0.14, LAMP_SPACING = 8;
+/** A wall at least this long is built from authored wall-bay models; shorter ones stay a plain slab. */
+export const WALL_BAY_WIDTH = 3;
+export const wallLength = (surface: RoomSurface): number => (surface.axis === "x" ? surface.size[0] : surface.size[2]);
+export const isBayWall = (surface: RoomSurface): boolean => surface.kind === "wall" && wallLength(surface) >= WALL_BAY_WIDTH;
 export interface RoomSurface { id: string; at: Triple; size: Triple; kind: "floor" | "ceiling" | "wall"; axis?: "x" | "z" }
 export interface RoomLamp { id: string; fixture: Triple; light: Triple; width: number; place: Place }
 export interface RoomPresentation { surfaces: RoomSurface[]; lamps: RoomLamp[]; floorY: number; ceilingY: number }
@@ -74,4 +78,17 @@ export function deriveRoomPresentation(place: Place, rooms: readonly Room[] = RO
     }
   }
   return { surfaces, lamps, floorY, ceilingY };
+}
+
+/**
+ * A failing lamp's brightness factor at `time`: steady most of the time, dipping toward `1 - depth` in short
+ * stutters whose timing is its own. Deterministic in (id, time); a depth of 0 never dips.
+ */
+export function lampFlicker(id: string, time: number, depth: number): number {
+  if (depth <= 0) return 1;
+  let seed = 0;
+  for (let i = 0; i < id.length; i++) seed = (seed * 31 + id.charCodeAt(i)) % 9973;
+  const wave = Math.sin(time * 2.3 + seed) * Math.sin(time * 7.1 + seed * 0.37) + Math.sin(time * 23 + seed * 1.7) * 0.35;
+  const dip = Math.min(1, Math.max(0, (wave - 0.55) / 0.5));
+  return 1 - Math.min(1, depth) * dip;
 }

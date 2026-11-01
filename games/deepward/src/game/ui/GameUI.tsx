@@ -25,7 +25,7 @@ import { marrowOf } from "../marrow";
 import { nextGoal, sealMark } from "../deep";
 import { crushDamage, STRATA } from "../strata";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
-import { GAME_FONTS } from "../../art/fonts/fonts";
+import { GAME_FONTS } from "../../art/look";
 
 function grab(): void {
   const canvas = document.querySelector("canvas");
