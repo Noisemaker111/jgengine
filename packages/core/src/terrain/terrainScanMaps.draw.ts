@@ -27,6 +27,7 @@ function srgbToLinear(value: number): number {
  * Pack a scan's maps into the surface-material layout the terrain shader reads: sRGB albedo with
  * height in alpha, and normal x/y, roughness and AO. Rows are flipped so row 0 is v = 0, matching
  * generated surfaces. A map the scan does not ship keeps a neutral value (flat normal, matte, unoccluded, mid height).
+ * @internal
  */
 export function packTerrainScan(pixels: TerrainScanPixels): SurfaceMaterialMaps {
   const { size } = pixels;
@@ -62,7 +63,10 @@ export function packTerrainScan(pixels: TerrainScanPixels): SurfaceMaterialMaps 
   return { kind: "soil", size, albedo, surface, meanLinear: [r / sampled, g / sampled, b / sampled] };
 }
 
-/** Stable key for one scan's URLs, so a layer and a role naming the same scan share one array layer. */
+/**
+ * Stable key for one scan's URLs, so a layer and a role naming the same scan share one array layer.
+ * @internal
+ */
 export function terrainScanKey(maps: TerrainMaterialMaps): string {
   return [maps.color, maps.normal, maps.roughness ?? "", maps.ao ?? "", maps.displacement ?? ""].join("|");
 }
@@ -84,6 +88,7 @@ async function decode(url: string, size: number): Promise<Uint8ClampedArray> {
 /**
  * Fetch and pack one scan at `size` square (a 1K scan on a low-quality tier asks for 512).
  * Rejects when a named map fails to load, so a bad URL is a visible error and not a grey ground.
+ * @internal
  */
 export async function loadTerrainScan(maps: TerrainMaterialMaps, size: number): Promise<SurfaceMaterialMaps> {
   const [color, normal, roughness, ao, displacement] = await Promise.all([
@@ -96,7 +101,10 @@ export async function loadTerrainScan(maps: TerrainMaterialMaps, size: number): 
   return packTerrainScan({ size, color, normal, roughness, ao, displacement });
 }
 
-/** Every distinct scan a terrain names, across its surface roles and paint layers. */
+/**
+ * Every distinct scan a terrain names, across its surface roles and paint layers.
+ * @internal
+ */
 export function terrainScanRequests(
   surfaces: ResolvedTerrainSurfaces | undefined,
   paintScans: readonly (TerrainMaterialMaps | undefined)[],

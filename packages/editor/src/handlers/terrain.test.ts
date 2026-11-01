@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
+import { editableTerrainFromSnapshot, type TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
 import { createEditorHost } from "../session";
 
 function host() {
@@ -46,23 +46,27 @@ describe("terrain RPC authoring recovery", () => {
     dispose();
   });
 
+  function layersOf(session: { getState(): { document: { terrain?: { layers?: readonly TerrainMaterialLayer[] } } } }): readonly TerrainMaterialLayer[] {
+    return session.getState().document.terrain?.layers ?? [];
+  }
+
   test("a layer material name resolves to its scanned color map and an unknown name is refused", () => {
     const { api, dispose } = host();
     const session = api.getSession();
     const resolved = api.handle({ method: "set_terrain_layers", layers: [{ id: "turf", surface: "grass", tiling: 6, material: "foliage/grass" }] });
     expect(resolved.ok).toBe(true);
-    const layer = session.getState().document.terrain!.layers![0]!;
-    expect(layer.material).toBe("foliage/grass");
-    expect(layer.materialMaps?.color).toContain("/materials/ambientcg-grass001/");
-    expect(layer.materialMaps?.normal).toContain("/materials/ambientcg-grass001/normal");
-    expect(layer.tiling).toBe(6);
+    const layer = layersOf(session)[0];
+    expect(layer?.material).toBe("foliage/grass");
+    expect(layer?.materialMaps?.color).toContain("/materials/ambientcg-grass001/");
+    expect(layer?.materialMaps?.normal).toContain("/materials/ambientcg-grass001/normal");
+    expect(layer?.tiling).toBe(6);
     const refused = api.handle({ method: "set_terrain_layers", layers: [{ id: "turf", surface: "grass", material: "not/a-material" }] });
     expect(refused.ok).toBe(false);
     expect(refused.error).toContain("not/a-material");
-    expect(session.getState().document.terrain!.layers![0]!.material).toBe("foliage/grass");
+    expect(layersOf(session)[0]?.material).toBe("foliage/grass");
     const cleared = api.handle({ method: "set_terrain_layers", layers: [{ id: "turf", surface: "grass" }] });
     expect(cleared.ok).toBe(true);
-    expect(session.getState().document.terrain!.layers![0]!.materialMaps).toBeUndefined();
+    expect(layersOf(session)[0]?.materialMaps).toBeUndefined();
     dispose();
   });
 
@@ -70,10 +74,10 @@ describe("terrain RPC authoring recovery", () => {
     const { api, dispose } = host();
     const session = api.getSession();
     expect(api.handle({ method: "set_terrain_layers", layers: [{ id: "beach", surface: "sand", material: "ground/beach" }, { id: "grass", surface: "grass" }] }).ok).toBe(true);
-    const layers = session.getState().document.terrain!.layers!;
-    expect(layers[0]!.tiling).toBeGreaterThan(0);
-    expect(layers[0]!.materialMaps?.color).toContain("ambientcg-ground033");
-    expect(layers[1]!.materialMaps).toBeUndefined();
+    const layers = layersOf(session);
+    expect(layers[0]?.tiling).toBeGreaterThan(0);
+    expect(layers[0]?.materialMaps?.color).toContain("ambientcg-ground033");
+    expect(layers[1]?.materialMaps).toBeUndefined();
     const reloaded = api.handle({ method: "import_document", json: session.exportJson() });
     expect(reloaded.ok).toBe(true);
     dispose();

@@ -14,6 +14,12 @@ function plane(size: number, rows: (y: number) => readonly [number, number, numb
   return out;
 }
 
+function paintWeights(editable: Parameters<typeof packTerrainPaintWeights>[0]): NonNullable<ReturnType<typeof packTerrainPaintWeights>> {
+  const weights = packTerrainPaintWeights(editable);
+  if (weights === undefined) throw new Error("terrain has no paint grid");
+  return weights;
+}
+
 const MAPS_A: TerrainMaterialMaps = { color: "/m/a/color.jpg", normal: "/m/a/normal.jpg", roughness: "/m/a/roughness.jpg", ao: "/m/a/ao.jpg", displacement: "/m/a/displacement.jpg" };
 const MAPS_B: TerrainMaterialMaps = { color: "/m/b/color.jpg", normal: "/m/b/normal.jpg" };
 
@@ -59,15 +65,17 @@ test("scanned roles and paint layers stack into one array and compile their proj
   expect(surfaces?.paintLayers).toEqual([undefined, 1, 0]);
   const editable = createEditableTerrain({ bounds: { minX: 0, minZ: 0, maxX: 8, maxZ: 8 }, cellSize: 2 });
   editable.setLayers([{ id: "a", surface: "grass", tiling: 6, materialMaps: MAPS_A }, { id: "b", surface: "dirt", triplanar: false, materialMaps: MAPS_B }]);
-  const paint = createTerrainPaintTextures(packTerrainPaintWeights(editable)!);
+  const paint = createTerrainPaintTextures(paintWeights(editable));
   expect(paint.slots[0]?.tileMetres).toBe(6);
   expect(paint.slots[1]?.triplanar).toBe(false);
   const { material } = createTerrainDetailMaterial(detail, undefined, { paint, ...(surfaces === undefined ? {} : { surfaces }) });
   expect(material.defines?.["JG_TERRAIN_GEN"]).toBe("");
-  const shader = { uniforms: {} as Record<string, { value: unknown }>, vertexShader: "", fragmentShader: "#include <common>" };
+  const uniforms: Record<string, { value: unknown }> = {};
+  const shader = { uniforms, vertexShader: "", fragmentShader: "#include <common>" };
   // type-escape: the fake shader stands in for three's program parameters, as in the tests above.
   material.onBeforeCompile?.(shader as never, undefined as never);
-  expect([...(shader.uniforms["uLayerScan"]?.value as Float32Array)].slice(0, 3)).toEqual([-1, 1, 0]);
+  const layerScan = uniforms["uLayerScan"]?.value;
+  expect(layerScan instanceof Float32Array ? [...layerScan].slice(0, 3) : null).toEqual([-1, 1, 0]);
   expect(shader.fragmentShader).toContain("jgGenProject(scanLayer");
   surfaces?.dispose();
 });
@@ -80,7 +88,7 @@ test("a scan that was never loaded is an error, not a grey ground", () => {
 test("the preset path compiles with no scan code and no array textures", () => {
   const editable = createEditableTerrain({ bounds: { minX: 0, minZ: 0, maxX: 8, maxZ: 8 }, cellSize: 2 });
   editable.setLayers([{ id: "a", surface: "grass" }]);
-  const paint = createTerrainPaintTextures(packTerrainPaintWeights(editable)!);
+  const paint = createTerrainPaintTextures(paintWeights(editable));
   const { material } = createTerrainDetailMaterial(resolveTerrainDetail({}), undefined, { paint });
   expect(material.defines?.["JG_TERRAIN_GEN"]).toBeUndefined();
   expect(paint.slots[0]?.scan).toBeUndefined();

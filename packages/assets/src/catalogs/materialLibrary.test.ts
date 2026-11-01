@@ -192,7 +192,7 @@ test("the ground scans the art-direction files name resolve to maps with a licen
     expect(surface.scan.color).toBe(`/materials/${source}/color.jpg`);
     expect(surface.scan.normal).toBe(`/materials/${source}/normal.jpg`);
     expect(surface.scan.roughness).toBeDefined();
-    expect(surface.tile).toBe(findLibraryMaterial(name)!.tileMetres);
+    expect(surface.tile).toBe(findLibraryMaterial(name)?.tileMetres);
     expect(sourceById.get(source)?.license).toBe("CC0-1.0");
     expect(libraryMaterialAsset(name).textures?.color?.provenance?.license).toBe("CC0-1.0");
   }
