@@ -337,3 +337,28 @@ test("a far block hides only its own props in a batch it shares with the near st
   expect([slot.mesh.getVisibleAt(0), slot.mesh.getVisibleAt(1)]).toEqual([true, false]);
   pool.dispose();
 });
+
+test("a far cell's proxy holds only the coarsest level; finer levels hide behind it and impostor models keep their own draw", async () => {
+  const scene = new THREE.Scene();
+  const pool = new StaticDrawPool(scene);
+  pool.configure({ distance: 50, hysteresis: 0, cluster: 0.25 });
+  const member = [{ instanceId: "tree", x: 0 }];
+  const fine = pool.acquire({ geometry: new THREE.SphereGeometry(1, 32, 16), material: palette() }, "0,0", 1, "hidden");
+  const coarse = pool.acquire({ geometry: box(), material: palette() }, "0,0", 1, "part");
+  const carded = pool.acquire({ geometry: cylinder(), material: palette("#406030") }, "0,0", 1, "own");
+  if (fine === null || coarse === null || carded === null) throw new Error("expected pooled slots");
+  for (const slot of [fine, coarse, carded]) slot.sync(member, () => 0, at);
+  pool.update(new THREE.Vector3(0, 0, 500));
+  await settled();
+  pool.update(new THREE.Vector3(0, 0, 500));
+  for (const slot of [fine, coarse, carded]) slot.sync(member, () => 0, at);
+  const proxy = scene.children.find((child): child is THREE.Mesh => child instanceof THREE.Mesh && child.userData[STATIC_POOL_PROXY_KEY] === true);
+  proxy?.geometry.computeBoundingBox();
+  // Only the unit box went in: the sphere (radius 1) and the cylinder (height 1, radius 1) would widen it.
+  expect(proxy?.geometry.boundingBox?.max.x).toBeCloseTo(0.5, 1);
+  expect(fine.mesh.getVisibleAt(0)).toBe(false);
+  expect(coarse.mesh.getVisibleAt(0)).toBe(false);
+  const cardedIndex = carded.mesh === coarse.mesh ? 2 : 0;
+  expect(carded.mesh.getVisibleAt(cardedIndex)).toBe(true);
+  pool.dispose();
+});
