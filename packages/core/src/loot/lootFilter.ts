@@ -1,19 +1,15 @@
+import { evaluatePredicate, type Predicate } from "../rules/predicate";
+
 export interface LootFilterItem {
   rarity: string;
   baseType: string;
   affixTier?: number;
 }
 
-export interface LootFilterCondition {
-  rarity?: string | readonly string[];
-  baseType?: string | readonly string[];
-  minAffixTier?: number;
-  maxAffixTier?: number;
-}
-
 export interface LootFilterRule {
   id: string;
-  when: LootFilterCondition;
+  /** Over the facts `rarity`, `baseType` and `affixTier` (0 when the item has none); omitted matches every item. */
+  when?: Predicate;
   hide?: boolean;
   color?: string;
   beam?: boolean;
@@ -27,19 +23,6 @@ export interface LootFilterOverride {
   label?: string;
 }
 
-function matchesOneOf(value: string, expected: string | readonly string[] | undefined): boolean {
-  if (expected === undefined) return true;
-  return typeof expected === "string" ? expected === value : expected.includes(value);
-}
-
-function matchesCondition(when: LootFilterCondition, item: LootFilterItem): boolean {
-  if (!matchesOneOf(item.rarity, when.rarity)) return false;
-  if (!matchesOneOf(item.baseType, when.baseType)) return false;
-  if (when.minAffixTier !== undefined && (item.affixTier ?? 0) < when.minAffixTier) return false;
-  if (when.maxAffixTier !== undefined && (item.affixTier ?? 0) > when.maxAffixTier) return false;
-  return true;
-}
-
 /**
  * First matching rule wins (PoE/Last Epoch block semantics) — later rules
  * never override an earlier match. Returns overrides only; fields the rule
@@ -51,8 +34,9 @@ export function evaluateLootFilter(
   rules: readonly LootFilterRule[],
   item: LootFilterItem,
 ): LootFilterOverride {
+  const facts = { rarity: item.rarity, baseType: item.baseType, affixTier: item.affixTier ?? 0 };
   for (const rule of rules) {
-    if (!matchesCondition(rule.when, item)) continue;
+    if (!evaluatePredicate(rule.when, facts)) continue;
     const override: LootFilterOverride = {};
     if (rule.hide !== undefined) override.hidden = rule.hide;
     if (rule.color !== undefined) override.color = rule.color;
