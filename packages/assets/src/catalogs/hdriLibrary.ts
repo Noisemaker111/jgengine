@@ -12,7 +12,7 @@ export interface HdriEntry {
   look: string;
 }
 
-/** The 10 shipped HDRIs, each one Poly Haven asset under a plain id. */
+/** The 11 shipped HDRIs, each one Poly Haven asset under a plain id. */
 export const HDRI_LIBRARY = [
   { id: "clear-noon", title: "Noon Grass", polyhaven: "noon_grass", author: "Greg Zaal", look: "Clear blue sky, high sun, open grass." },
   { id: "partly-cloudy", title: "Kloppenheim 06 (Pure Sky)", polyhaven: "kloppenheim_06_puresky", author: "Greg Zaal, Jarod Guest", look: "Soft clouds, low contrast daylight." },
@@ -23,6 +23,7 @@ export const HDRI_LIBRARY = [
   { id: "night-clear", title: "Satara Night", polyhaven: "satara_night", author: "Greg Zaal", look: "Open country under a clear night sky." },
   { id: "interior-industrial", title: "Industrial Workshop Foundry", polyhaven: "industrial_workshop_foundry", author: "Dimitrios Savva, Jarod Guest", look: "Large workshop with window light and dark corners." },
   { id: "forest-shade", title: "Forest Slope", polyhaven: "forest_slope", author: "Andreas Mischok", look: "Green dappled shade under trees." },
+  { id: "tropical-clouds", title: "Kloofendal 38d Partly Cloudy (Pure Sky)", polyhaven: "kloofendal_38d_partly_cloudy_puresky", author: "Greg Zaal, Jarod Guest", look: "Bright blue sky with scattered white clouds, high sun." },
   { id: "snow", title: "Snowy Park 01", polyhaven: "snowy_park_01", author: "Oliksiy Yakovlyev", look: "Bright snow under a pale overcast sky." },
 ] as const satisfies readonly HdriEntry[];
 
@@ -64,7 +65,7 @@ export function hdriOriginUrl(id: string): string {
  * A curated HDRI by id as the lighting source a scene takes: `environment: hdriEnvironment("golden-hour")`.
  * Pass `intensity` or `rotation` to retune it. Throws on an unknown id.
  *
- * @capability hdri-library pick one of 10 shipped CC0 HDRIs (noon, golden hour, overcast, dusk, night city, industrial interior, forest, snow) by id
+ * @capability hdri-library pick one of 11 shipped CC0 HDRIs (noon, golden hour, overcast, dusk, night city, industrial interior, forest, snow) by id
  */
 export function hdriEnvironment(id: HdriId, options: { intensity?: number; rotation?: number; baseUrl?: string } = {}): Extract<EnvironmentSource, { kind: "hdri" }> {
   const { baseUrl = `/${HDRI_DIR}`, ...rest } = options;

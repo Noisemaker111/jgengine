@@ -101,10 +101,10 @@ Material sources declare the map roles in their pinned archive through `AssetSou
 
 A game picks a sky, a grade, a surface and fonts by id, one line each. Naming the id in source is enough: `bun run games:provision` serves the file (packs-release mirror first, origin second).
 
-- Sky: `environment: hdriEnvironment("golden-hour")` (`@jgengine/assets/catalogs/hdriLibrary`; 10 CC0 Poly Haven 2K HDRIs, `HDRI_LIBRARY`), passed as `EnvironmentLighting`'s `source`.
-- Grade: `postProcessing: { grade: { lut: lutGrade("cold-teal") } }` (`catalogs/lutGrades`; 16 `.cube` 32³ grades baked by `packages/assets/scripts/gen-lut-grades.ts`). A game naming none keeps its look.
+- Sky: `environment: hdriEnvironment("golden-hour")` (`@jgengine/assets/catalogs/hdriLibrary`; 11 CC0 Poly Haven 2K HDRIs, `HDRI_LIBRARY`), passed as `EnvironmentLighting`'s `source`.
+- Grade: `postProcessing: { grade: { lut: lutGrade("cold-teal") } }` (`catalogs/lutGrades`; 17 `.cube` 32³ grades baked by `packages/assets/scripts/gen-lut-grades.ts`). A game naming none keeps its look.
 - Surface: `librarySurfaceScan("asphalt/dry")`, `libraryTerrainMaterial(name)` or `libraryBuildingSurface(name)` (`catalogs/materialLibrary`; 56 ambientCG surfaces, 1K colour, normal, roughness and AO where the scan has them).
-- Fonts: `const FONTS = libraryFontPairing("oswald", "barlow"); useGameFonts(FONTS); gameFontStacks(FONTS)` (`catalogs/fontLibrary`; 14 OFL families, display and body roles).
+- Fonts: `const FONTS = libraryFontPairing("oswald", "barlow"); useGameFonts(FONTS); gameFontStacks(FONTS)` (`catalogs/fontLibrary`; 15 OFL families, display and body roles).
 - Credits: `creditsForLooks({ hdri, lut, fonts })` next to `creditsForSourceIds`. CREDITS.md lists the sources.
 - A new curated id is one row in its catalog plus a mirror run (`scripts/mirror-assets.ts` uploads `look-<kind>-<id>.<ext>` to the `packs` release).
 
