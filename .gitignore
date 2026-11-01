@@ -66,6 +66,7 @@ apps/web/.wrangler/
 # Shared asset library pulls (assets pull <source>:<id>); bytes live in the shared asset store.
 **/public/sprites/gameicons-icons/
 **/public/hdri/
+**/public/fonts/
 **/public/models/sketchfab/
 **/public/materials/polyhaven-*/
 
