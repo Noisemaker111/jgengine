@@ -371,6 +371,16 @@ describe("resourceLedger policy pipeline", () => {
     expect(high.applied[0]!.amount).toBe(50);
   });
 
+  test("threshold bands: unsorted input, exact edge, none met keeps the amount", () => {
+    const bracket = thresholdScale("income", [
+      { min: 1000, factor: 0.5 },
+      { min: 100, factor: 0.9 },
+    ]);
+    const at = (income: number) =>
+      advanceLedger(incomeLedger(), 10, { policies: [bracket], vars: { income } }).applied[0]?.amount;
+    expect([at(50), at(100), at(999), at(1000)]).toEqual([100, 90, 90, 50]);
+  });
+
   test("curve scales by context value", () => {
     const scale = curveScale("pop", { kind: "linear", base: 0, per: 2 });
     const res = advanceLedger(incomeLedger(), 10, { policies: [scale], vars: { pop: 3 } });

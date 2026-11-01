@@ -1,4 +1,5 @@
 import { evalCurve, type Curve } from "../progression/leveling";
+import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 
 /**
  * How cycles that came due between two {@link advanceLedger} calls are settled:
@@ -103,7 +104,7 @@ export interface Precision {
   mode?: "floor" | "round" | "ceil";
 }
 
-/** A `{ min, factor }` band for {@link thresholdScale}; the highest band whose `min` is met wins. */
+/** A `{ min, factor }` step of the Ladder for {@link thresholdScale}; the highest `min` met wins. */
 export interface ThresholdBand {
   min: number;
   factor: number;
@@ -530,14 +531,9 @@ export function annotate(tag: string): ResourcePolicy {
  * @capability policy-threshold scale a transaction by a context threshold band
  */
 export function thresholdScale(read: PolicyRead, bands: readonly ThresholdBand[]): ResourcePolicy {
-  const sorted = [...bands].sort((a, b) => a.min - b.min);
+  const steps: ThresholdBoundary<ThresholdBand>[] = bands.map((band) => ({ id: band, at: band.min }));
   return (txn, ctx) => {
-    const value = readValue(read, ctx);
-    let factor = 1;
-    for (const band of sorted) {
-      if (value >= band.min) factor = band.factor;
-      else break;
-    }
+    const factor = tierAt(steps, readValue(read, ctx))?.id.factor ?? 1;
     return [{ ...txn, amount: txn.amount * factor, provenance: tagged(txn, `threshold:${factor}`) }];
   };
 }

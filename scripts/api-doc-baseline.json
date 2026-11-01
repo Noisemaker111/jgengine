@@ -1687,7 +1687,6 @@
   "@jgengine/core/stats/statModifiers#Stats",
   "@jgengine/core/survival/decayMeter#DecayMeterConfig",
   "@jgengine/core/survival/decayMeter#DecayMeterState",
-  "@jgengine/core/survival/decayMeter#MeterThreshold",
   "@jgengine/core/survival/moodle#MOODLE_SEVERITY_ORDER",
   "@jgengine/core/survival/moodle#MoodleSeverity",
   "@jgengine/core/survival/moodle#MoodleSource",
