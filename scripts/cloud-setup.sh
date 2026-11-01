@@ -12,3 +12,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 bun run agent:bootstrap
+
+# Packs a game's catalog names that the repo does not commit; games:provision links them from the shared store.
+for pack in quaternius-lowpoly-rpg-characters quaternius-lowpoly-medieval-village-pack quaternius-lowpoly-medieval-buildings quaternius-fantasy-props quaternius-lowpoly-crops-pack; do
+  bun run jgengine assets pull $pack
+done
