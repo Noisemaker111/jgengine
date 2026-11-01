@@ -6,9 +6,13 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import {
+  checkRuntimeAgainstReference,
   compareBikeTuning,
+  compareRuntimeBike,
+  compareRuntimeCar,
   compareVehicleTuning,
   formatHandlingComparison,
+  RUNTIME_TOLERANCE,
   measureReferenceCar,
   measureReferenceMotorcycle,
   validateReferenceCars,
@@ -23,7 +27,9 @@ import { vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleS
 
 const USAGE = `usage: bun run games:capabilities handling <module>#<export> ... [--car <id>] [--json]
        bun run games:capabilities handling --validate
+       bun run games:capabilities handling --runtime
   --validate         full validation: every real car's and motorcycle's reference model against its published tests (slow)
+  --runtime          carFromReference's runtime cars and bike (every effect at 1) against their reference sims, 5% per metric (slow)
   <module>#<export>  a file and the export holding a VehicleSpec, a VehicleDynamicsTuning, or arrays/records of them
   --car <id>         real car to compare with (default: the closest in mass): ${REAL_CARS.map((car) => car.id).join(", ")}
                      a tuning with a lean block is a bike: it is compared with ${REAL_MOTORCYCLES.map((bike) => bike.name).join(", ")}
@@ -98,8 +104,28 @@ function validate(): number {
   return failed === 0 ? 0 : 1;
 }
 
+function runtime(): number {
+  let failed = 0;
+  // The MX-5 and the GSX-R are the gated pair; the other real cars are built the same way and shown as predictions.
+  const report = (title: string, rows: Parameters<typeof checkRuntimeAgainstReference>[0], gated: boolean) => {
+    console.log(formatHandlingComparison(title, rows));
+    for (const check of checkRuntimeAgainstReference(rows)) {
+      const relative = check.allowed === RUNTIME_TOLERANCE.share;
+      const gap = relative ? `${(check.gap * 100).toFixed(1)}%` : check.gap.toFixed(2);
+      const allowed = relative ? `${check.allowed * 100}%` : `${check.allowed}`;
+      console.log(`  ${check.pass ? "ok  " : gated ? "FAIL" : "off "} ${check.label.padEnd(34)} gap ${gap} (allowed ${allowed})`);
+      if (!check.pass && gated) failed += 1;
+    }
+    console.log("");
+  };
+  for (const car of REAL_CARS) report(`carFromReference("${car.id}") vs its reference${car.id === "mazda-mx5-nd" ? "" : " (prediction, not gated)"}`, compareRuntimeCar(car).comparison.rows, car.id === "mazda-mx5-nd");
+  for (const bike of REAL_MOTORCYCLES) report(`carFromReference("suzuki-gsxr1000-k1") vs ${bike.name} reference`, compareRuntimeBike(bike).comparison.rows, true);
+  return failed === 0 ? 0 : 1;
+}
+
 async function main(argv: readonly string[]): Promise<number> {
   if (argv.includes("--validate")) return validate();
+  if (argv.includes("--runtime")) return runtime();
   if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) {
     console.log(USAGE);
     return argv.length === 0 ? 2 : 0;
