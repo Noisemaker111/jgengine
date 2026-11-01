@@ -1,5 +1,4 @@
 import {
-  IDENTITY_QUAT,
   isIdentityQuat,
   shapeHalfExtents,
   type BodyDesc,
@@ -14,13 +13,18 @@ import {
   type PhysicsBackendConfig,
   type PhysicsCapabilities,
   type PhysicsQuat,
-  type PhysicsVec3,
   type RayHit,
   type ShapeCastHit,
 } from "./physicsBackend";
 import { PhysicsWorld, type PhysicsBounds, type PhysicsPrecision } from "./physicsWorld";
 
 /** Exact touching is not overlap; account for the same few-ulp face rounding as shapecast. */
+function setVec(out: [number, number, number], x: number, y: number, z: number): void {
+  out[0] = x;
+  out[1] = y;
+  out[2] = z;
+}
+
 function axisOverlaps(center: number, bodyCenter: number, combinedHalf: number): boolean {
   const tolerance = Number.EPSILON * 8 * Math.max(1, Math.abs(center), Math.abs(bodyCenter - combinedHalf), Math.abs(bodyCenter + combinedHalf));
   return combinedHalf - Math.abs(bodyCenter - center) > tolerance;
@@ -308,19 +312,21 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
       const rec = records.get(handle);
       if (rec === undefined) return null;
       const i = rec.index;
-      const velocity: PhysicsVec3 =
-        rec.kind === "kinematic" ? rec.kinematicVelocity : [world.velX[i]!, world.velY[i]!, world.velZ[i]!];
       const state: BodyState = out ?? {
         position: [0, 0, 0],
-        rotation: IDENTITY_QUAT,
+        rotation: [0, 0, 0, 1],
         velocity: [0, 0, 0],
         angularVelocity: [0, 0, 0],
         sleeping: false,
       };
-      state.position = [world.posX[i]!, world.posY[i]!, world.posZ[i]!];
-      state.rotation = IDENTITY_QUAT;
-      state.velocity = velocity;
-      state.angularVelocity = [0, 0, 0];
+      setVec(state.position, world.posX[i]!, world.posY[i]!, world.posZ[i]!);
+      state.rotation[0] = 0;
+      state.rotation[1] = 0;
+      state.rotation[2] = 0;
+      state.rotation[3] = 1;
+      if (rec.kind === "kinematic") setVec(state.velocity, rec.kinematicVelocity[0], rec.kinematicVelocity[1], rec.kinematicVelocity[2]);
+      else setVec(state.velocity, world.velX[i]!, world.velY[i]!, world.velZ[i]!);
+      setVec(state.angularVelocity, 0, 0, 0);
       state.sleeping = world.isSleeping(i);
       return state;
     },
@@ -413,13 +419,18 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
       }
       world.step(dt);
     },
-    raycast(desc) {
+    raycast(desc, out) {
       const len = Math.hypot(desc.direction[0], desc.direction[1], desc.direction[2]);
       if (!(len > 0)) return null;
       const dx = desc.direction[0] / len;
       const dy = desc.direction[1] / len;
       const dz = desc.direction[2] / len;
-      let best: RayHit | null = null;
+      let found = false;
+      let bestBody = 0;
+      let bestT = Infinity;
+      let bnx = 0;
+      let bny = 0;
+      let bnz = 0;
       for (const [handle, rec] of records) {
         if (!bodyMatches(rec, desc.mask, desc.exclude, handle)) continue;
         const i = rec.index;
@@ -427,7 +438,9 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
         const py = world.posY[i]!;
         const pz = world.posZ[i]!;
         let t: number;
-        let normal: PhysicsVec3;
+        let nx: number;
+        let ny: number;
+        let nz: number;
         if (rec.shape.kind === "sphere") {
           const r = rec.shape.radius;
           const ox = desc.origin[0] - px;
@@ -442,7 +455,9 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
           const hx = ox + dx * t;
           const hy = oy + dy * t;
           const hz = oz + dz * t;
-          normal = [hx / r, hy / r, hz / r];
+          nx = hx / r;
+          ny = hy / r;
+          nz = hz / r;
         } else {
           const hit = slabRay(
             desc.origin[0],
@@ -460,25 +475,38 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
           );
           if (hit === null || hit.axis < 0) continue;
           t = hit.t;
-          normal = [hit.axis === 0 ? hit.sign : 0, hit.axis === 1 ? hit.sign : 0, hit.axis === 2 ? hit.sign : 0];
+          nx = hit.axis === 0 ? hit.sign : 0;
+          ny = hit.axis === 1 ? hit.sign : 0;
+          nz = hit.axis === 2 ? hit.sign : 0;
         }
         if (t > desc.maxDistance) continue;
-        if (best !== null && t >= best.distance) continue;
-        best = {
-          body: handle,
-          distance: t,
-          point: [desc.origin[0] + dx * t, desc.origin[1] + dy * t, desc.origin[2] + dz * t],
-          normal,
-        };
+        if (found && t >= bestT) continue;
+        found = true;
+        bestBody = handle;
+        bestT = t;
+        bnx = nx;
+        bny = ny;
+        bnz = nz;
       }
-      return best;
+      if (!found) return null;
+      const result: RayHit = out ?? { body: 0, distance: 0, point: [0, 0, 0], normal: [0, 0, 0] };
+      result.body = bestBody;
+      result.distance = bestT;
+      setVec(result.point, desc.origin[0] + dx * bestT, desc.origin[1] + dy * bestT, desc.origin[2] + dz * bestT);
+      setVec(result.normal, bnx, bny, bnz);
+      return result;
     },
-    shapecast(desc) {
+    shapecast(desc, out) {
       noteRotation(desc.rotation);
       const castHalf = shapeHalfExtents(desc.shape);
       const [mx, my, mz] = desc.motion;
       const motionLen = Math.hypot(mx, my, mz);
-      let best: ShapeCastHit | null = null;
+      let found = false;
+      let bestBody = 0;
+      let bestToi = Infinity;
+      let bnx = 0;
+      let bny = 0;
+      let bnz = 0;
       for (const [handle, rec] of records) {
         if (!bodyMatches(rec, desc.mask, desc.exclude, handle)) continue;
         const i = rec.index;
@@ -491,17 +519,17 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
         const [ox, oy, oz] = desc.position;
         const inside = ox > minX && ox < maxX && oy > minY && oy < maxY && oz > minZ && oz < maxZ;
         let toi: number;
-        let normal: PhysicsVec3;
+        let nx: number;
+        let ny: number;
+        let nz: number;
         if (inside) {
           const pens = [ox - minX, maxX - ox, oy - minY, maxY - oy, oz - minZ, maxZ - oz];
           let least = 0;
           for (let k = 1; k < 6; k += 1) if (pens[k]! < pens[least]!) least = k;
           toi = 0;
-          normal = [
-            least === 0 ? -1 : least === 1 ? 1 : 0,
-            least === 2 ? -1 : least === 3 ? 1 : 0,
-            least === 4 ? -1 : least === 5 ? 1 : 0,
-          ];
+          nx = least === 0 ? -1 : least === 1 ? 1 : 0;
+          ny = least === 2 ? -1 : least === 3 ? 1 : 0;
+          nz = least === 4 ? -1 : least === 5 ? 1 : 0;
           // Expanding an AABB by a capsule's half-height can round exact floor contact inside
           // by a few ulps. Keep entering contacts and real penetration, but allow departing or
           // tangent motion through this numerical touch so it cannot mask a later wall/ceiling.
@@ -511,28 +539,38 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
               ? Math.max(1, Math.abs(oy), Math.abs(minY), Math.abs(maxY))
               : Math.max(1, Math.abs(oz), Math.abs(minZ), Math.abs(maxZ));
           const touchTolerance = Number.EPSILON * 8 * faceScale;
-          if (motionLen > 0 && pens[least]! <= touchTolerance && mx * normal[0] + my * normal[1] + mz * normal[2] >= 0) continue;
+          if (motionLen > 0 && pens[least]! <= touchTolerance && mx * nx + my * ny + mz * nz >= 0) continue;
         } else {
           if (!(motionLen > 0)) continue;
           const hit = slabRay(ox, oy, oz, mx, my, mz, minX, minY, minZ, maxX, maxY, maxZ);
           if (hit === null || hit.axis < 0 || hit.t > 1) continue;
           toi = hit.t;
-          normal = [hit.axis === 0 ? hit.sign : 0, hit.axis === 1 ? hit.sign : 0, hit.axis === 2 ? hit.sign : 0];
+          nx = hit.axis === 0 ? hit.sign : 0;
+          ny = hit.axis === 1 ? hit.sign : 0;
+          nz = hit.axis === 2 ? hit.sign : 0;
         }
-        if (best !== null && toi >= best.toi) continue;
-        best = {
-          body: handle,
-          toi,
-          distance: toi * motionLen,
-          point: [ox + mx * toi - normal[0] * castHalf[0], oy + my * toi - normal[1] * castHalf[1], oz + mz * toi - normal[2] * castHalf[2]],
-          normal,
-        };
+        if (found && toi >= bestToi) continue;
+        found = true;
+        bestBody = handle;
+        bestToi = toi;
+        bnx = nx;
+        bny = ny;
+        bnz = nz;
       }
-      return best;
+      if (!found) return null;
+      const [ox, oy, oz] = desc.position;
+      const result: ShapeCastHit = out ?? { body: 0, toi: 0, distance: 0, point: [0, 0, 0], normal: [0, 0, 0] };
+      result.body = bestBody;
+      result.toi = bestToi;
+      result.distance = bestToi * motionLen;
+      setVec(result.point, ox + mx * bestToi - bnx * castHalf[0], oy + my * bestToi - bny * castHalf[1], oz + mz * bestToi - bnz * castHalf[2]);
+      setVec(result.normal, bnx, bny, bnz);
+      return result;
     },
-    overlap(desc) {
+    overlap(desc, into) {
       const half = shapeHalfExtents(desc.shape);
-      const out: BodyHandle[] = [];
+      const out: BodyHandle[] = into ?? [];
+      out.length = 0;
       for (const [handle, rec] of records) {
         if (!bodyMatches(rec, desc.mask, desc.exclude, handle)) continue;
         const i = rec.index;

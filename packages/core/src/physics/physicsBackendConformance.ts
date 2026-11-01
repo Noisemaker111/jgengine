@@ -1,4 +1,4 @@
-import type { PhysicsBackend } from "./physicsBackend";
+import type { PhysicsBackend, RayHit, ShapeCastHit } from "./physicsBackend";
 
 /** The slice of a test runner the conformance suite needs; `bun:test` satisfies it directly. */
 export interface ConformanceHarness {
@@ -136,6 +136,73 @@ export function runPhysicsBackendConformance(create: () => PhysicsBackend, harne
     });
     settle(backend, 2);
     expect(pairs).toContain([ground, crate].sort((x, y) => x - y).join(":"));
+  });
+
+  test("a landing contact points from a toward b and reports a closing speed", () => {
+    const backend = create();
+    const ground = floor(backend);
+    const crate = backend.addBody({ shape: { kind: "box", halfExtents: [0.5, 0.5, 0.5] }, position: [0, 3, 0] });
+    let upFromGround = 0;
+    let approach = 0;
+    backend.onContact((event) => {
+      if (!((event.a === ground && event.b === crate) || (event.a === crate && event.b === ground))) return;
+      upFromGround = event.normal[1] * (event.a === ground ? 1 : -1);
+      approach = Math.max(approach, event.approachSpeed);
+    });
+    settle(backend, 2);
+    expect(upFromGround).toBeGreaterThan(0.9);
+    expect(approach).toBeGreaterThan(1);
+  });
+
+  test("queries name the right body after other bodies are removed", () => {
+    const backend = create();
+    const ground = floor(backend);
+    const left = backend.addBody({ shape: { kind: "box", halfExtents: [0.5, 0.5, 0.5] }, position: [-3, 0.5, 0], kind: "static" });
+    const middle = backend.addBody({ shape: { kind: "box", halfExtents: [0.5, 0.5, 0.5] }, position: [0, 0.5, 0], kind: "static" });
+    const right = backend.addBody({ shape: { kind: "box", halfExtents: [0.5, 0.5, 0.5] }, position: [3, 0.5, 0], kind: "static" });
+    backend.step(1 / 60);
+    backend.removeBody(left);
+    const down = (x: number) => backend.raycast({ origin: [x, 5, 0], direction: [0, -1, 0], maxDistance: 10 })?.body;
+    expect(down(0)).toBe(middle);
+    expect(down(3)).toBe(right);
+    backend.step(1 / 60);
+    expect(down(-3)).toBe(ground);
+    expect(backend.overlap({ shape: { kind: "sphere", radius: 0.3 }, position: [3, 0.5, 0] })).toEqual([right]);
+  });
+
+  test("queries fill a caller's reused result objects", () => {
+    const backend = create();
+    const ground = floor(backend);
+    backend.step(1 / 60);
+    const ray: RayHit = { body: -1, distance: 0, point: [0, 0, 0], normal: [0, 0, 0] };
+    const hit = backend.raycast({ origin: [0, 2, 0], direction: [0, -1, 0], maxDistance: 5 }, ray);
+    expect(hit).toBe(ray);
+    expect(ray.body).toBe(ground);
+    expect(ray.distance).toBeCloseTo(2, 3);
+    const cast: ShapeCastHit = { body: -1, toi: 0, distance: 0, point: [0, 0, 0], normal: [0, 0, 0] };
+    expect(backend.shapecast({ shape: { kind: "sphere", radius: 0.5 }, position: [0, 3, 0], motion: [0, -5, 0] }, cast)).toBe(cast);
+    expect(cast.normal[1]).toBeCloseTo(1, 3);
+    const into = [99, 98];
+    expect(backend.overlap({ shape: { kind: "sphere", radius: 0.6 }, position: [0, 0, 0] }, into)).toBe(into);
+    expect(into).toEqual([ground]);
+  });
+
+  test("replaying the same inputs from a snapshot gives the same state", () => {
+    const backend = create();
+    floor(backend);
+    const crates = [0, 1, 2].map((i) => backend.addBody({ shape: { kind: "box", halfExtents: [0.4, 0.4, 0.4] }, position: [i * 0.5, 2 + i, 0], velocity: [1 - i, 0, 0.5] }));
+    settle(backend, 0.25);
+    const saved = backend.snapshot();
+    const run = () => {
+      for (let i = 0; i < 90; i += 1) {
+        for (const crate of crates) if (i % 3 === 0) backend.applyImpulse(crate, [0.2, 0, -0.1]);
+        backend.step(1 / 60);
+      }
+      return crates.map((c) => backend.body(c));
+    };
+    const first = run();
+    backend.restore(saved);
+    expect(run()).toEqual(first);
   });
 
   test("snapshot and restore round-trip state with stable handles", () => {
