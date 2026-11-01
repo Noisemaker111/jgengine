@@ -40,9 +40,9 @@ export const cityLayout = createCityLayout({
 
 /** Scanned asphalt, concrete paving and gutters; the sidewalk keeps its sand tone and takes the grain. */
 const STREET_SURFACES = {
-  road: librarySurfaceScan("asphalt/dry"),
-  sidewalk: librarySurfaceScan("concrete/smooth", { tint: 0 }),
-  curb: librarySurfaceScan("concrete/smooth", { tint: 0 }),
+  road: librarySurfaceScan("asphalt/boulevard"),
+  sidewalk: librarySurfaceScan("concrete/poured", { tint: 0 }),
+  curb: librarySurfaceScan("concrete/poured", { tint: 0 }),
 };
 
 /** The editor's road `level` meta picks the road class: avenues run north-south, streets cross them. */

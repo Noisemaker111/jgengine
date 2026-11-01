@@ -411,6 +411,9 @@ function dressPlaza(ctx: GameContext, layout: CityLayout, boxes: readonly Buildi
     }
   }
   spots.sort((a, b) => a.order - b.order);
+  const paving = ctx.scene.object.place("obj_plaza_paving", cx, ctx.world.groundHeightAt(cx, cz) - 0.03, cz, { visual: { scale: [PLAZA_REACH * 1.7, 0.08, PLAZA_REACH * 1.7] } });
+  ctx.scene.object.setColliders(paving, {});
+  ids.push(paving);
   const placed: { x: number; z: number; prop: string; spacing: number; footprint: number }[] = [];
   for (const piece of PLAZA_PIECES) {
     let left = piece.count;

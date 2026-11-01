@@ -14,16 +14,17 @@ const MODEL_SOURCES = ["quaternius-lowpoly-cars"] as const;
  * and shade — the isle is hand-tinted, so a stock albedo painting over it would flatten every
  * region to one tan.
  */
-const GROUND_MATERIAL = "ambientcg-ground025";
+const GROUND_MATERIAL = "ambientcg-ground055s";
 
 /**
- * The scans behind the library surfaces the streets and buildings name (`asphalt/dry`,
- * `concrete/smooth`, and the `facade/*` brick and glass walls), listed by source id so provisioning
+ * The scans behind the library surfaces the streets and buildings name (`asphalt/boulevard`,
+ * `concrete/poured`, `paving/stone`, and the `facade/*` brick and glass walls), listed by source id so provisioning
  * pulls them.
  */
 const SURFACE_MATERIALS = [
-  "ambientcg-asphalt003",
-  "ambientcg-concrete006",
+  "ambientcg-asphalt012",
+  "ambientcg-concrete013",
+  "ambientcg-pavingstones002",
   "ambientcg-facade018a",
   "ambientcg-facade019a",
   "ambientcg-facade020a",

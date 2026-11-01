@@ -77,6 +77,7 @@ const MATTE = { metalness: 0, roughness: 0.85 } as const;
 export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
   // Asphalt and road — wet asphalt is the same scan with a low roughness, not a second download.
   { name: "asphalt/wet", title: "Wet asphalt", group: "asphalt", source: "ambientcg-asphalt025c", surface: "opaque", tileMetres: 4, response: { metalness: 0, roughness: 0.34, color: "#8f9498" } },
+  { name: "asphalt/boulevard", title: "Boulevard asphalt", group: "asphalt", source: "ambientcg-asphalt012", surface: "opaque", tileMetres: 4, response: { metalness: 0, roughness: 0.8 } },
   { name: "asphalt/dry", title: "Dry asphalt", group: "asphalt", source: "ambientcg-asphalt003", surface: "opaque", tileMetres: 4, response: { metalness: 0, roughness: 0.82 } },
   { name: "asphalt/patch", title: "Patched asphalt", group: "asphalt", source: "ambientcg-asphalt021", surface: "opaque", tileMetres: 3.2, response: { metalness: 0, roughness: 0.74 } },
   { name: "road/tarmac", title: "Tarmac road", group: "asphalt", source: "ambientcg-road001", surface: "opaque", tileMetres: 6, response: { metalness: 0, roughness: 0.7 } },
@@ -84,6 +85,7 @@ export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
 
   // Concrete.
   { name: "concrete/smooth", title: "Smooth concrete", group: "concrete", source: "ambientcg-concrete006", surface: "opaque", tileMetres: 3, response: { metalness: 0, roughness: 0.78 } },
+  { name: "concrete/sidewalk", title: "Sidewalk concrete", group: "concrete", source: "ambientcg-concrete034", surface: "opaque", tileMetres: 3, response: { metalness: 0, roughness: 0.82 } },
   { name: "concrete/poured", title: "Poured concrete", group: "concrete", source: "ambientcg-concrete013", surface: "opaque", tileMetres: 3.5, response: { metalness: 0, roughness: 0.88 } },
   { name: "concrete/rough", title: "Rough concrete", group: "concrete", source: "ambientcg-concrete025", surface: "opaque", tileMetres: 2.6, response: { metalness: 0, roughness: 0.94 } },
 
@@ -100,6 +102,7 @@ export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
   // Tile, paving and roof.
   { name: "tile/ceramic", title: "Ceramic tile", group: "tile", source: "ambientcg-tiles007", surface: "opaque", tileMetres: 1.2, response: { metalness: 0, roughness: 0.32 } },
   { name: "paving/stone", title: "Stone paving", group: "tile", source: "ambientcg-pavingstones002", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.83 } },
+  { name: "paving/plaza", title: "Plaza paving", group: "tile", source: "ambientcg-pavingstones070", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.8 } },
   { name: "paving/sett", title: "Setts", group: "tile", source: "ambientcg-pavingstones020", surface: "opaque", tileMetres: 1.8, response: { metalness: 0, roughness: 0.8 } },
   { name: "roof/tiles", title: "Roof tiles", group: "tile", source: "ambientcg-roofingtiles006", surface: "opaque", tileMetres: 1.4, response: { metalness: 0, roughness: 0.78 } },
 
@@ -139,6 +142,7 @@ export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
   { name: "ground/dirt", title: "Forest floor", group: "ground", source: "ambientcg-ground037", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.9 } },
   { name: "ground/dirt-macro", title: "Forest floor (macro)", group: "ground", source: "ambientcg-ground037", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.9 }, terrain: { strength: 0.6, tint: 0.3 } },
   { name: "ground/sand", title: "Beach sand", group: "ground", source: "ambientcg-ground055s", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.88 } },
+  { name: "ground/beach", title: "Beach sand", group: "ground", source: "ambientcg-ground033", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.88 } },
   { name: "ground/sand-dark", title: "Dark sand", group: "ground", source: "ambientcg-ground080", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.86 } },
   { name: "ground/mud", title: "Wet mud", group: "ground", source: "ambientcg-ground095b", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.52 } },
   { name: "ground/gravel", title: "Gravel", group: "ground", source: "ambientcg-gravel002", surface: "opaque", tileMetres: 1.6, response: { metalness: 0, roughness: 0.88 } },

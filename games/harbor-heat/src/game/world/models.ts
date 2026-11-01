@@ -153,7 +153,13 @@ export const objectModels: Record<string, ModelConfig> = (() => {
     obj_driveway: {
       url: CITY_BLOCK_URL,
       anchor: "origin",
-      material: { color: "#c4beb2", scan: librarySurfaceScan("concrete/smooth", { tint: 0 }) },
+      material: { color: "#c4beb2", scan: librarySurfaceScan("concrete/poured", { tint: 0 }) },
+    },
+    // The plaza's paving is the same unit block flattened to a slab, laid in plaza stone.
+    obj_plaza_paving: {
+      url: CITY_BLOCK_URL,
+      anchor: "origin",
+      material: { color: "#e8cdb0", scan: librarySurfaceScan("paving/stone", { tint: 0.4 }), materials: ["facade", "roof"] },
     },
     obj_flametree: { url: PALM_URL, targetHeight: 6.8, anchor: "origin", variants: PALM_VARIANTS },
     obj_palm_planter: { url: PALM_URL, targetHeight: 5.8, anchor: "origin", variants: PALM_VARIANTS },
