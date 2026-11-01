@@ -1,14 +1,13 @@
 import { expect, test } from "bun:test";
 
-import type { PlayableGame } from "@jgengine/shell/registry";
 import { parseEffectsPreview, withEffectsPreview } from "./effectsPreview";
 
 const game = {
   rendering: {
-    postProcessing: { toneMapping: "aces", ssr: { intensity: 0.35 } },
-    lighting: { directional: [{ position: [10, 20, 5], castShadow: true, lightSize: 0.53 }] },
+    postProcessing: { toneMapping: "aces" as const, ssr: { intensity: 0.35 } },
+    lighting: { directional: [{ position: [10, 20, 5] as const, castShadow: true, lightSize: 0.53 }] },
   },
-} as unknown as PlayableGame; // type-escape: a minimal fixture, only `rendering` is read
+};
 
 test("names turn effects on, a dash turns them off, unknown names are reported", () => {
   expect(parseEffectsPreview("ssr,-fog,softShadows:2,bogus")).toEqual({

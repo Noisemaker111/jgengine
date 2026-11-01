@@ -40,7 +40,7 @@ export function parseEffectsPreview(raw: string | null): { toggles: EffectToggle
  * The game with each previewed effect forced on or off over its resolved look, for before/after
  * captures in the dev runner. A game with no post chain gets one only when an effect turns on.
  */
-export function withEffectsPreview(game: PlayableGame, toggles: readonly EffectToggle[]): PlayableGame {
+export function withEffectsPreview<T extends Pick<PlayableGame, "rendering">>(game: T, toggles: readonly EffectToggle[]): T {
   if (toggles.length === 0) return game;
   let post: PostProcessingConfig = {};
   let lightSize: number | false | undefined;

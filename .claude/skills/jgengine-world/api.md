@@ -422,17 +422,17 @@
 
 ## @jgengine/core/anim/characterMotion
 
-- `CHARACTER_MOTION_ON` (const): const CHARACTER_MOTION_ON: Readonly<CharacterMotion> — Every part on: what a rigged entity gets when nothing switches a part off.
-- `CharacterMotion` (interface): interface CharacterMotion — {@link CharacterMotionConfig} with every part decided.
+- `CHARACTER_MOTION_ON` (const): const CHARACTER_MOTION_ON: Readonly<CharacterMotionParts> — Every part on: what a rigged entity gets when nothing switches a part off.
 - `CharacterMotionConfig` (interface): interface CharacterMotionConfig — The engine's default character motion, one switch per part. Any part left unset stays on. `footIk` plants feet on slopes and steps, `glance` turns the head and eyes toward points of interest, `locomotion` drives idle, walk, run and turn-in-place from the entity's velocity (off, the rig holds its idle clip).
+- `CharacterMotionParts` (interface): interface CharacterMotionParts — {@link CharacterMotionConfig} with every part decided.
 - `CharacterMotionPlan` (interface): interface CharacterMotionPlan — What one model runs of the default character motion this frame.
-- `planCharacterMotion` (function): function planCharacterMotion(input: { live: boolean; lowTier: boolean; dead: boolean; ik: "auto" | "none" | ModelIkConfig | undefined; authoredAnimation: boolean; motion: CharacterMotion; }): CharacterMotionPlan — Decide the default motion for one model. A live rigged entity whose model leaves `ik` unset gets foot IK and the glance (not on the low tier, not after death); one that leaves `animation` unset gets the velocity-driven locomotion graph. Each part follows its `motion` switch; `ik: "none"` turns IK and glance off, and an authored `ik` or `animation` is played as authored.
-- `resolveCharacterMotion` (function): function resolveCharacterMotion(...layers: readonly (CharacterMotionConfig | false | undefined)[]): CharacterMotion — Resolve the parts from layers, most general first (game, then model, then entity): a later layer wins for each part it names, and `false` turns every part off at that layer.
+- `planCharacterMotion` (function): function planCharacterMotion(input: { live: boolean; lowTier: boolean; dead: boolean; ik: "auto" | "none" | ModelIkConfig | undefined; authoredAnimation: boolean; motion: CharacterMotionParts; }): CharacterMotionPlan — Decide the default motion for one model. A live rigged entity whose model leaves `ik` unset gets foot IK and the glance (not on the low tier, not after death); one that leaves `animation` unset gets the velocity-driven locomotion graph. Each part follows its `motion` switch; `ik: "none"` turns IK and glance off, and an authored `ik` or `animation` is played as authored.
+- `resolveCharacterMotion` (function): function resolveCharacterMotion(...layers: readonly (CharacterMotionConfig | false | undefined)[]): CharacterMotionParts — Resolve the parts from layers, most general first (game, then model, then entity): a later layer wins for each part it names, and `false` turns every part off at that layer.
 
 ## @jgengine/core/anim/characterMotion.draw
 
 - `CharacterMotionContext` (const): const CharacterMotionContext: React.Context<false | CharacterMotionConfig | undefined> — The game's own character-motion layer (`scene.characterMotion`); the shell provides it.
-- `useCharacterMotion` (function): function useCharacterMotion(model: CharacterMotionConfig | false | undefined, ctx: GameContext | null, instanceId: string | undefined): CharacterMotion — The parts of the default character motion this entity runs: the game's layer, then its model's, then the entity's own `characterMotion`, which re-renders the model when it changes.
+- `useCharacterMotion` (function): function useCharacterMotion(model: CharacterMotionConfig | false | undefined, ctx: GameContext | null, instanceId: string | undefined): CharacterMotionParts — The parts of the default character motion this entity runs: the game's layer, then its model's, then the entity's own `characterMotion`, which re-renders the model when it changes.
 
 ## @jgengine/core/anim/crowdRegistry.draw
 
@@ -2466,6 +2466,7 @@
 - `DEFAULT_OCCLUDER_DISTANCE` (const): const DEFAULT_OCCLUDER_DISTANCE: 4 — Metres between a typical caster and the ground it shadows, used when a light leaves it unset.
 - `DEFAULT_SHADOW_RADIUS` (const): const DEFAULT_SHADOW_RADIUS: 1.25 — PCF radius, in texels, a directional light filters with when it sets no `shadowRadius`.
 - `SUN_ANGULAR_DIAMETER_DEG` (const): const SUN_ANGULAR_DIAMETER_DEG: 0.53 — The sun's angular diameter seen from the ground, in degrees: the reference `lightSize` for daylight.
+- `ShadowFilter` (interface): interface ShadowFilter — The filter one shadow map uses: PCF radius in texels and normal bias in world units.
 - `SoftShadowInput` (interface): interface SoftShadowInput — What a soft shadow needs to know about one shadow map.
 - `lightingHasSoftShadows` (function): function lightingHasSoftShadows(lighting: LightingConfig | undefined): boolean — True when a shadow-casting directional light in `lighting` sets `lightSize`, so the soft-shadows setting changes something.
 - `softShadowRadius` (function): function softShadowRadius(input: SoftShadowInput): number — PCF filter radius, in shadow-map texels, for a light of angular size `lightSize`: the penumbra a disc of that size throws across `occluderDistance` metres, measured in this map's texels. It never drops below `baseRadius` and never passes `maxRadius`, so a far cascade with coarse texels keeps its base filter and a near one widens to the physical penumbra. Finite and monotone in `lightSize`. three r187 filters with five Vogel-disk taps over a hardware-compare sampler, which has no blocker search, so the penumbra is sized for one caster distance rather than per pixel.
