@@ -12,13 +12,13 @@ export type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" 
  * in 0..255. Kept as plain data so a scene document can author one and a test can assert on it.
  */
 export interface LutCube {
-  /** Edge length of the cube, 2..16. */
+  /** Edge length of the cube, 2..64 (a 32³ grade is 3 × 32 768 bytes). */
   size: number;
   /** `size³ × 3` bytes, red fastest, then green, then blue. */
   data: Uint8Array;
 }
 
-/** A grade's LUT: a strip PNG (one `size`-wide tile per blue slice) or a baked cube. */
+/** A grade's LUT: a strip PNG (one `size`-wide tile per blue slice), a `.cube` file URL or a baked cube. */
 export type GradeLut = { url: string; size?: number } | { cube: LutCube };
 
 /** UnrealBloom stage — soft HDR glow around bright pixels (sun, glints, emissive). */

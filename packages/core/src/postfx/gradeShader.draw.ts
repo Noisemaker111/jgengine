@@ -3,6 +3,7 @@ import { requireUniform } from "@jgengine/core/render/uniformMaterial.draw";
 import { ShaderPass } from "three-stdlib";
 
 import type { GradeConfig, LutCube } from "@jgengine/core/render/postProcessing";
+import { parseCubeLut } from "./cubeLut";
 
 const DEFAULT_LIFT: readonly [number, number, number] = [0.012, 0.01, 0.018];
 const DEFAULT_GAIN: readonly [number, number, number] = [1.05, 1.02, 0.98];
@@ -139,6 +140,21 @@ export function createGradePass(config: GradeConfig = {}): ShaderPass {
       lutTexture = lutStripTexture(lut.cube);
       requireUniform(pass.uniforms, "uLut").value = lutTexture;
       requireUniform(pass.uniforms, "uLutSize").value = lut.cube.size;
+      return pass;
+    }
+    if (/\.cube(\?.*)?$/i.test(lut.url)) {
+      void fetch(lut.url)
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return parseCubeLut(await response.text());
+        })
+        .then((cube) => {
+          if (disposed) return;
+          lutTexture = lutStripTexture(cube);
+          requireUniform(pass.uniforms, "uLut").value = lutTexture;
+          requireUniform(pass.uniforms, "uLutSize").value = cube.size;
+        })
+        .catch((error: unknown) => console.warn(`grade LUT ${lut.url} not applied:`, error));
       return pass;
     }
     void new THREE.TextureLoader().loadAsync(lut.url).then((texture) => {
