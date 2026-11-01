@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { DEFAULT_GRAPHICS_PROFILES } from "./graphicsProfile";
 import {
+  applyAutoGraphicsTier,
   applyGraphicsQuality,
   graphicsPostStageSettingId,
   readGraphicsQuality,
@@ -105,5 +106,37 @@ describe("withGraphicsQualityOverride", () => {
     expect(parseGraphicsQuality("low")).toBe("low");
     expect(parseGraphicsQuality("draft")).toBeNull();
     expect(parseGraphicsQuality(null)).toBeNull();
+  });
+});
+
+describe("auto quality tier moves", () => {
+  test("a move carries untouched fields to the new tier", () => {
+    const store = createSettingsStore(memStorage());
+    applyGraphicsQuality(store, "high");
+    applyAutoGraphicsTier(store, "low");
+    expect(readGraphicsQuality(store)).toBe("low");
+    expect(readGraphicsSettings(store).profile).toEqual(DEFAULT_GRAPHICS_PROFILES.low);
+  });
+
+  test("a render scale or effect toggle the player changed survives every move", () => {
+    const store = createSettingsStore(memStorage());
+    applyGraphicsQuality(store, "high");
+    store.set(SETTING_IDS.graphicsRenderScale, 1.25);
+    store.set(graphicsPostStageSettingId("bloom"), !DEFAULT_GRAPHICS_PROFILES.high.postStages.bloom);
+    applyAutoGraphicsTier(store, "medium");
+    applyAutoGraphicsTier(store, "low");
+    const state = readGraphicsSettings(store);
+    expect(state.quality).toBe("low");
+    expect(state.profile.renderScale).toBe(1.25);
+    expect(state.profile.postStages.bloom).toBe(!DEFAULT_GRAPHICS_PROFILES.high.postStages.bloom);
+    expect(state.profile.postStages.ao).toBe(DEFAULT_GRAPHICS_PROFILES.low.postStages.ao);
+  });
+
+  test("auto reads off unless the game turns it on, and a stored choice wins", () => {
+    const store = createSettingsStore(memStorage());
+    expect(readGraphicsSettings(store).auto).toBe(false);
+    expect(readGraphicsSettings(store, undefined, true).auto).toBe(true);
+    store.set(SETTING_IDS.graphicsAuto, false);
+    expect(readGraphicsSettings(store, undefined, true).auto).toBe(false);
   });
 });

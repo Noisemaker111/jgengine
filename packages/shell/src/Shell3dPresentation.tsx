@@ -217,6 +217,7 @@ export function Shell3dPresentation({
   devtoolsOpen,
   setDevtoolsOpen,
   reportRuntimeError,
+  onFrameMs,
   trackPointerAxis,
   deactivatePointerAxis,
   audioEngine,
@@ -259,6 +260,7 @@ export function Shell3dPresentation({
   devtoolsOpen: boolean;
   setDevtoolsOpen: Dispatch<SetStateAction<boolean>>;
   reportRuntimeError: (error: unknown, phase: string, componentStack?: string) => void;
+  onFrameMs?: ((frameMs: number) => void) | undefined;
   trackPointerAxis: (event: { clientX: number; clientY: number }) => void;
   deactivatePointerAxis: () => void;
   audioEngine: AudioEngine;
@@ -655,6 +657,7 @@ export function Shell3dPresentation({
           graphics={playable.rendering?.graphics}
           postProcessing={resolvedLook.postProcessing}
           softShadows={lightingHasSoftShadows(resolvedLook.lighting)}
+          autoQuality={playable.health?.autoQuality !== undefined}
           hideBindings={settingsConfig.hideBindings ?? []}
           touchStyle={
             coarsePointer &&
@@ -877,6 +880,7 @@ export function Shell3dPresentation({
                     onPosterSettled={onPosterSettled}
                     authoritativeFrameRef={authoritativeFrameRef}
                     recorder={poster ? undefined : recorder}
+                    onFrameMs={onFrameMs}
                   />
                   <GamepadSource
                     tracker={tracker}

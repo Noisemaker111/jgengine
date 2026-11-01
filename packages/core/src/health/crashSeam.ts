@@ -194,17 +194,21 @@ export function createCrashSeam(options: CrashSeamOptions): CrashSeam {
 
 /** The slice of `window` the global handlers need. */
 export interface CrashEventTarget {
-  addEventListener(type: "error" | "unhandledrejection", listener: (event: never) => void): void;
-  removeEventListener(type: "error" | "unhandledrejection", listener: (event: never) => void): void;
+  addEventListener(type: string, listener: (event: Event) => void): void;
+  removeEventListener(type: string, listener: (event: Event) => void): void;
+}
+
+function fieldOf(event: Event, key: "error" | "reason" | "message"): unknown {
+  return key in event ? (event as unknown as Record<string, unknown>)[key] : undefined; // type-escape: ErrorEvent and PromiseRejectionEvent are not in every lib
 }
 
 /** Route uncaught script errors and unhandled promise rejections into the seam; returns the uninstall function. */
 export function installCrashHandlers(seam: CrashSeam, target: CrashEventTarget): () => void {
-  const onError = (event: { error?: unknown; message?: string }) => {
-    seam.capture(event.error ?? event.message ?? "Script error", "window-error");
+  const onError = (event: Event) => {
+    seam.capture(fieldOf(event, "error") ?? fieldOf(event, "message") ?? "Script error", "window-error");
   };
-  const onRejection = (event: { reason?: unknown }) => {
-    seam.capture(event.reason ?? "Unhandled rejection", "unhandled-rejection");
+  const onRejection = (event: Event) => {
+    seam.capture(fieldOf(event, "reason") ?? "Unhandled rejection", "unhandled-rejection");
   };
   target.addEventListener("error", onError);
   target.addEventListener("unhandledrejection", onRejection);

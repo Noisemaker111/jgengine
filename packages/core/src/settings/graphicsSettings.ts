@@ -60,6 +60,8 @@ export type GraphicsProfileOverrides = Partial<Record<GraphicsQuality, Partial<G
 /** The resolved player graphics choice: the tier plus the profile after per-stage and render-scale overrides. */
 export interface GraphicsSettingsState {
   quality: GraphicsQuality;
+  /** Whether auto quality may move the tier; the stored player choice, default `autoDefault`. */
+  auto: boolean;
   profile: GraphicsProfile;
 }
 
@@ -82,6 +84,7 @@ export function readGraphicsQuality(store: Pick<SettingsStore, "get">): Graphics
 export function readGraphicsSettings(
   store: Pick<SettingsStore, "get">,
   overrides?: GraphicsProfileOverrides,
+  autoDefault = false,
 ): GraphicsSettingsState {
   const quality = readGraphicsQuality(store);
   const tier = resolveGraphicsProfile(quality, overrides?.[quality]);
@@ -91,6 +94,7 @@ export function readGraphicsSettings(
   }
   return {
     quality,
+    auto: store.get(SETTING_IDS.graphicsAuto, autoDefault),
     profile: {
       ...tier,
       renderScale: clamp(store.get(SETTING_IDS.graphicsRenderScale, tier.renderScale), RENDER_SCALE_MIN, RENDER_SCALE_MAX),
@@ -156,4 +160,29 @@ export function withGraphicsQualityOverride(
 /** Parse a `?quality=` value into a graphics tier, or null when absent or unknown. */
 export function parseGraphicsQuality(raw: string | null | undefined): GraphicsQuality | null {
   return isGraphicsQuality(raw) ? raw : null;
+}
+
+/**
+ * Move the tier for auto quality. Only fields still equal to the tier being left follow the move; a render scale,
+ * filter or effect toggle the player changed keeps its value, so auto never undoes a manual choice.
+ */
+export function applyAutoGraphicsTier(
+  store: Pick<SettingsStore, "get" | "set">,
+  to: GraphicsQuality,
+  overrides?: GraphicsProfileOverrides,
+): void {
+  const from = readGraphicsQuality(store);
+  if (from === to) return;
+  const before = resolveGraphicsProfile(from, overrides?.[from]);
+  const after = resolveGraphicsProfile(to, overrides?.[to]);
+  store.set(SETTING_IDS.graphicsQuality, to);
+  const follow = <T extends SettingValue>(id: string, was: T, next: T): void => {
+    if (store.get(id, was) === was) store.set(id, next);
+  };
+  follow(SETTING_IDS.graphicsRenderScale, before.renderScale, after.renderScale);
+  follow(SETTING_IDS.graphicsAnisotropy, String(before.anisotropy), String(after.anisotropy));
+  follow(SETTING_IDS.graphicsSoftShadows, before.softShadows, after.softShadows);
+  for (const stage of GRAPHICS_POST_STAGES) {
+    follow(graphicsPostStageSettingId(stage), before.postStages[stage], after.postStages[stage]);
+  }
 }

@@ -68,13 +68,13 @@ describe("crash seam", () => {
 
   test("global handlers route errors and rejections, and uninstall", () => {
     const { seam, reports } = rig();
-    const listeners = new Map<string, (event: never) => void>();
+    const listeners = new Map<string, (event: Event) => void>();
     const off = installCrashHandlers(seam, {
       addEventListener: (type, listener) => void listeners.set(type, listener),
       removeEventListener: (type) => void listeners.delete(type),
     });
-    listeners.get("error")?.({ error: new Error("e") } as never);
-    listeners.get("unhandledrejection")?.({ reason: new Error("r") } as never);
+    listeners.get("error")?.(Object.assign(new Event("error"), { error: new Error("e") }));
+    listeners.get("unhandledrejection")?.(Object.assign(new Event("unhandledrejection"), { reason: new Error("r") }));
     expect(reports.map((report) => report.phase)).toEqual(["window-error", "unhandled-rejection"]);
     off();
     expect(listeners.size).toBe(0);

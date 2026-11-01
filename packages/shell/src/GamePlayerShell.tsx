@@ -78,6 +78,8 @@ import { LazyShell3dPresentation } from "./lazyShell3dPresentation";
 import { BootLoading } from "@jgengine/core/boot/bootScreen.view";
 import { BootDirector } from "@jgengine/core/boot/BootDirector.draw";
 import { createPresentationDiagnosticOwnership, createPlaySurfaceFocusOwnership, PresentationRecovery, type PresentationRecoveryEvent } from "./presentationRecovery";
+import type { CrashReport } from "@jgengine/core/health/crashSeam";
+import { useRuntimeHealth } from "./useRuntimeHealth";
 import { installPlayFocusReclaim } from "@jgengine/core/input/surfaceFocus.view";
 
 const DEV_USER_ID = "dev-player";
@@ -233,6 +235,9 @@ export function GamePlayerShell({
     tracker.rebind(activeBindingMap);
   }
   const graphics = useGraphicsSettings(settingsStore, playable.rendering?.shadows ?? true, playable.rendering?.graphics);
+  const { health, onFrameMs } = useRuntimeHealth({ playable, settingsStore, quality: graphics.quality, overrides: playable.rendering?.graphics });
+  const [fatal, setFatal] = useState<{ report: CrashReport | null; phase: string } | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   useLayoutEffect(() => configureModelSurface(playable.rendering?.surfaceDetail !== false, graphics.profile.surfaceDetail), [playable.rendering?.surfaceDetail, graphics.profile.surfaceDetail]);
   useLayoutEffect(() => configureModelScan(graphics.profile.surfaceDetail === "full"), [graphics.profile.surfaceDetail]);
   const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
@@ -382,7 +387,21 @@ export function GamePlayerShell({
     const id = ++diagnosticSequence.current;
     presentationDiagnostics.current.register(error, id, phase);
     setDiagnostics((current) => [...current.slice(-4), { ...diagnostic, id }]);
+    const report = health?.crash.capture(error, phase, componentStack) ?? null;
+    if (playable.health?.errorScreen !== undefined && (phase === "ui-render" || phase === "tick")) setFatal({ report, phase });
   };
+  const retryAfterError = () => {
+    setFatal(null);
+    setDiagnostics([]);
+    setRetryKey((key) => key + 1);
+  };
+  const ErrorScreen = playable.health?.errorScreen;
+  const errorScreen =
+    fatal !== null && ErrorScreen !== undefined ? (
+      <div style={{ position: "fixed", inset: 0, zIndex: 1000 }}>
+        <ErrorScreen report={fatal.report} phase={fatal.phase} retry={retryAfterError} />
+      </div>
+    ) : null;
 
   const recoveryTrace = useRef<Array<Record<string, unknown>>>([]);
   const traceRecovery = (event: PresentationRecoveryEvent | { phase: string }) => {
@@ -512,7 +531,7 @@ export function GamePlayerShell({
   if (rigKind === "none" || playable.chrome?.presentation === "hud") {
     return (
       <ActionBindingsProvider bindings={effectiveInput}>
-      <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>
+      <PresentationRecovery key={retryKey} ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>
         <ShellHudPresentation
           {...shared}
           serverIdRef={serverIdRef}
@@ -527,16 +546,18 @@ export function GamePlayerShell({
         />
         {poster ? null : <BootDirector ctx={ctx} />}
       </PresentationRecovery>
+      {errorScreen}
       </ActionBindingsProvider>
     );
   }
 
   return (
     <ActionBindingsProvider bindings={effectiveInput}>
-    <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>
+    <PresentationRecovery key={retryKey} ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>
       <LazyShell3dPresentation
         {...shared}
         onPresentationReveal={revealRecoveredPresentation}
+        onFrameMs={onFrameMs}
         primaryClickRef={primaryClickRef}
         cameraDraggingRef={cameraDraggingRef}
         serverIdRef={serverIdRef}
@@ -559,6 +580,7 @@ export function GamePlayerShell({
         authoritativeFrameRef={authoritativeFrameRef}
       />
     </PresentationRecovery>
+    {errorScreen}
     </ActionBindingsProvider>
   );
 }

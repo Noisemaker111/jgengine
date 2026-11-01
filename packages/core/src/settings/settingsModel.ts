@@ -84,6 +84,7 @@ export const SETTINGS_STORAGE_PREFIX = "jgengine:setting:";
 export const SETTING_IDS = {
   masterVolume: "sound.master",
   graphicsQuality: "graphics.quality",
+  graphicsAuto: "graphics.auto",
   graphicsShadows: "graphics.shadows",
   graphicsSoftShadows: "graphics.softShadows",
   graphicsUiScale: "graphics.uiScale",
