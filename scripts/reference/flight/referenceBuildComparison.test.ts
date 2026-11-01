@@ -24,6 +24,6 @@ describe("compareReferenceBuilds", () => {
     expect(withTolerance({ game: Number.NaN, reference: 1 }, 0.1).pass).toBe(false);
     expect(withTolerance({ game: Number.NaN, reference: Number.NaN }, 0.1).pass).toBe(true);
     expect(withTolerance({ game: 2, reference: 1 }, undefined).pass).toBeUndefined();
-    expect(failingRows([{ aircraft: "jet", reference: "ref", rows: [{ label: "climb", unit: "m/s", game: 80, reference: 119, real: undefined, ...withTolerance({ game: 80, reference: 119 }, 0.1) }] }])).toEqual(["jet: climb"]);
+    expect(failingRows([{ aircraft: "jet", reference: "ref", rows: [withTolerance({ label: "climb", unit: "m/s", game: 80, reference: 119, real: undefined }, 0.1)] }])).toEqual(["jet: climb"]);
   });
 });
