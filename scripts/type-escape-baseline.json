@@ -74,7 +74,7 @@
   "apps/web/src/routes/games.$id.tsx": {"nonNull":2,"cast":1},
   "apps/web/src/routes/index.tsx": {"nonNull":1},
   "apps/web/src/routes/playground.tsx": {"nonNull":29,"cast":1},
-  "apps/web/src/routeTree.gen.ts": {"ignore":1,"cast":13,"any":13},
+  "apps/web/src/routeTree.gen.ts": {"ignore":1,"cast":14,"any":14},
   "apps/web/vite.config.ts": {"cast":3},
   "examples/convex-host/convex/hosted.ts": {"nonNull":1},
   "examples/express-host/src/server.ts": {"cast":2},
