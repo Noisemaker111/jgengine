@@ -46,6 +46,7 @@ import { setupHarbourLife, tickHarbourLife } from "./game/world/harbourLife";
 import { tickNightLook } from "./game/world/nightLook";
 import { disposeTraffic, setupTraffic, tickTraffic } from "./game/world/traffic";
 import { disposeResidents, setupResidents, tickResidents } from "./game/world/residents";
+import { disposeStreaming, restartStreaming, setupStreaming, tickStreaming } from "./game/world/streaming";
 import { courierLoop, courierStore, finishCourier, registerCourier, restoreCourier, setupCourierLandmarks, tickCourier } from "./game/jobs/courier";
 import { failGigs, tickGigs } from "./game/jobs/gigs";
 import { sessionStore, startedThisBoot, syncSession } from "./game/session";
@@ -242,6 +243,7 @@ export function normalizeAfterRestore(ctx: GameContext, alreadyLive = startedSto
   const courier = courierStore.read(ctx);
   if (courier.receipt != null) courierStore.write(ctx, { ...courier, receipt: null, phase: "idle" });
   setupCourierLandmarks(ctx);
+  restartStreaming(ctx);
   // Heat is not cleared here any more: the wanted section restored it and the HUD reads the primitive,
   // so a reload mid-pursuit keeps the tier and the search area (engine #2243).
   const player = ctx.scene.entity.get(ctx.player.userId);
@@ -303,6 +305,7 @@ function onInit(ctx: GameContext): void {
   setupHarbourLife(ctx);
   setupResidents(ctx, buildings);
   setupCourierLandmarks(ctx);
+  setupStreaming(ctx);
 }
 
 function onNewPlayer(ctx: GameContext): void {
@@ -335,6 +338,7 @@ function onTick(ctx: GameContext, dt: number): void {
     docClock.at = ctx.time.now();
     harborSave(ctx).touch();
   }
+  tickStreaming(ctx);
   streetPlayOf(ctx).tick(ctx, dt);
   tickTraffic(ctx, dt);
   tickNightLook(ctx);
@@ -357,6 +361,7 @@ function onDispose(ctx: GameContext): void {
   convoyFeedback(ctx).detach();
   disposeTraffic(ctx);
   disposeResidents(ctx);
+  disposeStreaming(ctx);
   disposeWorld(ctx);
 }
 

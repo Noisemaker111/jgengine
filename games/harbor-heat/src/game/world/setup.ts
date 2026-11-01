@@ -32,6 +32,7 @@ import {
   WORLD_W,
 } from "./districts";
 import { vehicleById } from "../entities/vehicles/catalog";
+import { relayStreamed } from "./streaming";
 
 function ground(ctx: GameContext, x: number, z: number): readonly [number, number, number] {
   return [x, ctx.world.groundHeightAt(x, z), z];
@@ -488,8 +489,10 @@ function setupCity(ctx: GameContext): readonly BuildingFootprintXZ[] {
   const relay = cityRelay(ctx);
   relay.stop?.();
   relay.stop = cityLayout.subscribe(() => {
-    for (const id of laid.ids) ctx.scene.object.remove(id);
-    laid = layCity(ctx, cityLayout.get());
+    relayStreamed(ctx, () => {
+      for (const id of laid.ids) ctx.scene.object.remove(id);
+      laid = layCity(ctx, cityLayout.get());
+    });
     for (const listener of relay.listeners) listener(laid.buildings);
   });
   return laid.buildings;
