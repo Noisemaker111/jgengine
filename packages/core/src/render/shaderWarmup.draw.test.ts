@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { BoxGeometry, DataTexture, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, Object3D, OrthographicCamera, PerspectiveCamera, PointLight, Scene, WebGLRenderTarget, type Material } from "three";
+import { BoxGeometry, DataTexture, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, Object3D, OrthographicCamera, PerspectiveCamera, PointLight, Scene, ShaderMaterial, WebGLRenderTarget, type Material } from "three";
 
 import {
   batchByProgram,
@@ -18,6 +18,7 @@ import {
   warmupDraws,
   warmupDrawsToTarget,
   warmupWaitsFor,
+  withoutSelfSampling,
   type HeldDraw,
   planFirstFrame,
   SHADER_WARMUP_DEFAULTS,
@@ -1203,6 +1204,35 @@ describe("linkDrawsOffFrame", () => {
     await linkDrawsOffFrame(rig.renderer, rig.scene, rig.chain, () => true);
     expect(rig.compiled).toHaveLength(0);
     expect(rig.drawn).toHaveLength(0);
+  });
+});
+
+describe("withoutSelfSampling", () => {
+  test("clears the uniforms holding the target's own textures for the draw only", () => {
+    const target = new WebGLRenderTarget(4, 4);
+    const other = new DataTexture(new Uint8Array(4), 1, 1);
+    const material = new ShaderMaterial({ uniforms: { tDiffuse: { value: target.texture }, tOther: { value: other }, strength: { value: 2 } } });
+    const seen: unknown[] = [];
+    withoutSelfSampling(material, target, () => seen.push(material.uniforms.tDiffuse?.value, material.uniforms.tOther?.value));
+    expect(seen).toEqual([null, other]);
+    expect(material.uniforms.tDiffuse?.value).toBe(target.texture);
+    expect(material.uniforms.strength?.value).toBe(2);
+  });
+
+  test("restores the uniforms when the draw throws, and ignores the canvas and plain materials", () => {
+    const target = new WebGLRenderTarget(4, 4);
+    const material = new ShaderMaterial({ uniforms: { tDiffuse: { value: target.texture } } });
+    expect(() =>
+      withoutSelfSampling(material, target, () => {
+        throw new Error("draw failed");
+      }),
+    ).toThrow("draw failed");
+    expect(material.uniforms.tDiffuse?.value).toBe(target.texture);
+    let ran = 0;
+    withoutSelfSampling(material, null, () => (ran += 1));
+    withoutSelfSampling(new MeshBasicMaterial(), target, () => (ran += 1));
+    expect(ran).toBe(2);
+    expect(material.uniforms.tDiffuse?.value).toBe(target.texture);
   });
 });
 
