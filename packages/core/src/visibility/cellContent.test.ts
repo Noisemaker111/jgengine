@@ -24,6 +24,10 @@ describe("createCellContent", () => {
     const cells = createCellContent({ rule: "despawn", adapter: sceneObjectCells(ctx.scene.object), restoresPerStep: 2 });
     expect(cells.unload("1,0", FAR)).toBe(5);
     expect(ctx.scene.object.ids()).toEqual([near]);
+    const release = ctx.scene.object.retain(() => cells.parkedRecords().map((record) => record.object));
+    expect(ctx.scene.object.snapshot().map((object) => object.instanceId).sort()).toEqual([near, ...far].sort());
+    release();
+    expect(ctx.scene.object.snapshot().length).toBe(1);
     cells.load("1,0");
     expect(cells.settled("1,0")).toBe(false);
     expect(cells.step()).toBe(2);

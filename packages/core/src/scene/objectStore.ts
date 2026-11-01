@@ -83,7 +83,14 @@ export interface ObjectStore {
   subscribe(listener: () => void): () => void;
   /** Notified only when the object set changes (place/remove), never on move/rotate/setVisual — markers read live poses imperatively. */
   subscribeMembership(listener: () => void): () => void;
+  /** The placed set, plus every object a {@link retain} source holds out of the scene. */
   snapshot(): readonly SceneObject[];
+  /**
+   * Keep objects that left the scene for a while (a streamed-out cell's props) in {@link snapshot}, so
+   * a save written while they are away still holds them; a placed object with the same id wins.
+   * Returns the release.
+   */
+  retain(source: () => readonly SceneObject[]): () => void;
   /** Replace the placed set with `objects` — the client half of `objects` replication; instances absent from the payload are removed. */
   hydrate(objects: readonly SceneObject[]): void;
 }
@@ -144,6 +151,7 @@ export function createObjectStore(): ObjectStore {
   const coarseIndex = new Map<number, Set<string>>();
   let nextCounter = 1;
   let revision = 0;
+  const retained = new Set<() => readonly SceneObject[]>();
 
   function generateId(): string {
     let id = `object-${nextCounter}`;
@@ -397,7 +405,15 @@ export function createObjectStore(): ObjectStore {
       return store.subscribeMembership(listener);
     },
     snapshot() {
-      return store.arraySnapshot();
+      const placed = store.arraySnapshot();
+      if (retained.size === 0) return placed;
+      const all = [...placed];
+      for (const source of retained) for (const object of source()) if (!store.has(object.instanceId)) all.push(object);
+      return all;
+    },
+    retain(source) {
+      retained.add(source);
+      return () => void retained.delete(source);
     },
     version() {
       return revision;

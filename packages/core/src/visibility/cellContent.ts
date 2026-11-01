@@ -66,6 +66,8 @@ export interface CellContent<TRecord, TFrozen = never> {
   /** Whether a loaded cell has all of its content back. */
   settled(cell: string): boolean;
   isFrozen(id: string): boolean;
+  /** Every saved record waiting in an unloaded cell, for a save that must still hold them. */
+  parkedRecords(): TRecord[];
   rule(): OffCellRule;
   /** Change the rule for cells that unload from now on; cells already unloaded keep how they left. */
   retune(patch: { rule?: OffCellRule; restoresPerStep?: number }): void;
@@ -149,6 +151,7 @@ export function createCellContent<TRecord, TFrozen = never>(options: CellContent
     },
     settled: (cell) => !queue.includes(cell) && !frozen.has(cell),
     isFrozen: (id) => frozenIds.has(id),
+    parkedRecords: () => [...parked.values()].flat(),
     rule: () => rule,
     retune(patch) {
       if (patch.rule !== undefined) rule = patch.rule;

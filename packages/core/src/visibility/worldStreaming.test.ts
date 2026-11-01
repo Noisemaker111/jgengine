@@ -106,6 +106,18 @@ describe("createWorldStreaming", () => {
     expect(streaming.state("2,0")).toBe("unloaded");
   });
 
+  test("stop brings every parked cell back so a rebuilt world can start streaming again", () => {
+    const { ctx, streaming, entities } = world();
+    streaming.start(at(50));
+    expect(ctx.scene.object.ids().length).toBe(10);
+    streaming.stop();
+    expect(ctx.scene.object.ids().length).toBe(50);
+    expect(entities.isFrozen("walker-5")).toBe(false);
+    streaming.start(at(950));
+    expect(ctx.scene.object.ids().length).toBe(10);
+    expect(streaming.state("9,0")).toBe("ready");
+  });
+
   test("snapshots residency as plain JSON", () => {
     const { streaming } = world();
     streaming.start(at(50));

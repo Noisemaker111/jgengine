@@ -77,6 +77,8 @@ export interface WorldStreaming {
   readonly cellSize: number;
   /** Park every cell out of reach of the first focus points at once, before the first frame draws them. */
   start(focus: StreamFocus | readonly StreamFocus[]): void;
+  /** Bring every parked cell's content back at once and forget residency, for a world about to be rebuilt or restored; `start` streams it again. */
+  stop(): void;
   /** Advance residency for this tick's focus points (every player's), within the load and unload budgets. */
   tick(focus: StreamFocus | readonly StreamFocus[]): void;
   state(cell: string): StreamedCellState;
@@ -193,6 +195,7 @@ export function createWorldStreaming(options: WorldStreamingOptions): WorldStrea
     cellSize: size,
     start(input) {
       const focus = focusList(input);
+      streamer.reset();
       const reach = streamer.tuning().loadRadius;
       for (const cell of cells) {
         const near = focus.some((point) => shardDistance(cell, point) <= reach);
@@ -207,6 +210,18 @@ export function createWorldStreaming(options: WorldStreamingOptions): WorldStrea
         streamer.markReady(id);
         setState(id, "ready");
       }
+    },
+    stop() {
+      for (const [cell, state] of states) if (state !== "ready") for (const kind of content) kind.load(cell);
+      let guard = 1e6;
+      while (content.some((kind) => kind.step() > 0) && guard-- > 0);
+      states.clear();
+      active.clear();
+      leavingSet.clear();
+      prepared.clear();
+      generation.clear();
+      warming = null;
+      streamer.reset();
     },
     tick(input) {
       const started = performance.now();
