@@ -7,7 +7,7 @@ import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
   sources: [
-    "quaternius-modular-scifi",
+    "quaternius-textured-cute-monster-pack",
     "quaternius-stylized-nature",
     "kaykit-furniture",
     "kaykit-space-base",
@@ -23,7 +23,7 @@ const GROUND_MATERIAL_SOURCE = "ambientcg-gravel002";
 
 /** Every pack this game pulls — the credits screen is generated from it, so it cannot drift. */
 export const ASSET_SOURCE_IDS: readonly string[] = [
-  "quaternius-modular-scifi",
+  "quaternius-textured-cute-monster-pack",
   "quaternius-stylized-nature",
   "kaykit-furniture",
   "kaykit-space-base",

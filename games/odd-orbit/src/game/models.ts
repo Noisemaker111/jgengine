@@ -2,27 +2,27 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
 import { assets } from "./assets";
+import type { CreatureBodyShape } from "./creatures/bodyPlan";
 import { DECOR, FURNITURE, STRUCTURE, type DecorDef, type FurnitureDef, type StructureDef } from "./objects/catalog";
 
-export const HAB_WALL_HEIGHT = 2.25;
 
-const SCIFI = "quaternius-modular-scifi";
+const MONSTERS = "quaternius-textured-cute-monster-pack";
 const NATURE = "quaternius-stylized-nature";
 const FURN = "kaykit-furniture";
 const SPACE = "kaykit-space-base";
 
-/** Art plan: preferred catalog ids. Soft-resolve; missing → shell primitives. */
+/** Art plan: KayKit rounded furniture, one proportion; a missing id is a provisioning bug, not a look. */
 const FURNITURE_PLAN: Record<string, ModelPick> = {
   nutrient_font: { model: `${FURN}/table_medium`, fallbackModel: `${FURN}/table_small` },
   sleep_pod: { model: `${FURN}/bed_double_A`, fallbackModel: `${FURN}/bed_single_A` },
   chat_ring: { model: `${FURN}/couch`, fallbackModel: `${FURN}/armchair` },
-  holo_arcade: { model: `${SCIFI}/Prop_AccessPoint`, fallbackModel: `${SCIFI}/Prop_Computer` },
+  holo_arcade: { model: `${FURN}/cabinet_medium_decorated`, fallbackModel: `${FURN}/cabinet_medium` },
   bloom_planter: { model: `${FURN}/cactus_medium_A`, fallbackModel: `${NATURE}/Plant_1` },
-  work_console: { model: `${SCIFI}/Prop_Computer`, fallbackModel: `${SCIFI}/Prop_ItemHolder` },
+  work_console: { model: `${FURN}/table_medium_long`, fallbackModel: `${FURN}/table_medium` },
 };
 
 const DECOR_PLAN: Record<string, ModelPick> = {
-  decor_spire: { model: `${SPACE}/windturbine_tall`, fallbackModel: `${SCIFI}/Column_Large_Straight` },
+  decor_spire: { model: `${SPACE}/windturbine_tall`, fallbackModel: `${SPACE}/structure_tall` },
   decor_boulder: { model: `${NATURE}/Rock_Medium_1`, fallbackModel: `${SPACE}/rock_A` },
   decor_frond: { model: `${NATURE}/Mushroom_Common`, fallbackModel: `${NATURE}/Plant_1` },
   decor_frond_tan: { model: `${NATURE}/Mushroom_Laetiporus`, fallbackModel: `${NATURE}/Fern_1` },
@@ -30,10 +30,18 @@ const DECOR_PLAN: Record<string, ModelPick> = {
 };
 
 const STRUCTURE_PLAN: Record<string, ModelPick> = {
-  hab_wall: { model: `${SCIFI}/WallAstra_Straight`, fallbackModel: `${SCIFI}/WallBand_Straight` },
-  hab_wall_window: { model: `${SCIFI}/WallAstra_Straight_Window`, fallbackModel: `${SCIFI}/WallWindow_Straight` },
-  hab_corner: { model: `${SCIFI}/WallAstra_Corner_Square_Outer`, fallbackModel: `${SCIFI}/WallBand_Corner_Square_Outer` },
-  hab_gate: { model: `${SCIFI}/Door_Metal`, fallbackModel: `${SCIFI}/Door_Frame_Square` },
+  hab_wall: { model: `${SPACE}/tunnel_straight_A`, fallbackModel: `${SPACE}/tunnel_straight_B` },
+  hab_wall_window: { model: `${SPACE}/tunnel_straight_B`, fallbackModel: `${SPACE}/tunnel_straight_A` },
+  hab_corner: { model: `${SPACE}/basemodule_A`, fallbackModel: `${SPACE}/basemodule_B` },
+  hab_gate: { model: `${SPACE}/basemodule_E`, fallbackModel: `${SPACE}/basemodule_garage` },
+};
+
+/** Uniform scale and pastel enamel per shell piece: tubes lengthen to the 3 m wall pitch, domes and the airlock stand a little taller than the tubes. */
+const STRUCTURE_LOOK: Record<StructureDef["kind"], { scale: number; color: string }> = {
+  wall: { scale: 1.5, color: "#fff0d6" },
+  wall_window: { scale: 1.5, color: "#ffd98a" },
+  corner: { scale: 1.45, color: "#f6a6cf" },
+  gate: { scale: 1.5, color: "#f6a6cf" },
 };
 
 function furniturePick(def: FurnitureDef): ModelPick | null {
@@ -63,12 +71,10 @@ function decorPick(def: DecorDef): ModelPick | null {
 function structurePick(def: StructureDef): ModelPick | null {
   const base = STRUCTURE_PLAN[def.id];
   if (base === undefined) return null;
+  const look = STRUCTURE_LOOK[def.kind];
   return {
     ...base,
-    style: {
-      targetHeight: def.kind === "gate" ? 3 : HAB_WALL_HEIGHT,
-      material: { color: "#b8c5c8", metalness: 0.15, roughness: 0.82 },
-    },
+    style: { scale: look.scale, material: { color: look.color, metalness: 0.05, roughness: 0.55 } },
   };
 }
 
@@ -91,22 +97,17 @@ function buildObjectModels(): Record<string, ModelConfig> {
 
 export const objectModels: Record<string, ModelConfig> = buildObjectModels();
 
-/** Preferred character meshes for aliens — first live id wins at runtime. */
-export const ALIEN_MESH_IDS: readonly string[] = [
-  `${SCIFI}/Alien_Cyclop`,
-  `${SCIFI}/Alien_Oculichrysalis`,
-  `${SCIFI}/Alien_Scolitex`,
-];
+/** One cute monster per body shape; each keeps its one odd feature (one eye, tall neck, claws, no legs). */
+const ALIEN_MESH_BY_SHAPE: Record<CreatureBodyShape, string> = {
+  tall: `${MONSTERS}/Alien_Tall`,
+  round: `${MONSTERS}/Cyclops`,
+  blob: `${MONSTERS}/Alien`,
+  insectoid: `${MONSTERS}/Crab`,
+};
 
-export function alienMeshUrl(id: string): string | null {
-  return assets.resolve(id)?.url ?? null;
-}
-
-export function resolveAlienMeshUrl(seed: number): string | null {
-  for (let i = 0; i < ALIEN_MESH_IDS.length; i++) {
-    const id = ALIEN_MESH_IDS[(seed + i) % ALIEN_MESH_IDS.length]!;
-    const url = alienMeshUrl(id);
-    if (url !== null) return url;
-  }
-  return null;
+export function resolveAlienMeshUrl(shape: CreatureBodyShape): string {
+  const id = ALIEN_MESH_BY_SHAPE[shape];
+  const url = assets.resolve(id)?.url;
+  if (url === undefined) throw new Error(`odd-orbit: ${id} is not in the asset catalog; run bun run games:provision odd-orbit`);
+  return url;
 }

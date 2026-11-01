@@ -78,7 +78,7 @@ function AlienModel({
   useEffect(() => {
     const tint = new THREE.Color(color);
     for (const [index, material] of materials.entries()) {
-      material.color.copy(nativeColors[index]!).lerp(tint, 0.22);
+      material.color.copy(nativeColors[index]!).lerp(tint, 0.4);
       material.emissive.set(emissive);
       material.emissiveIntensity = emissiveIntensity;
     }
@@ -98,7 +98,7 @@ export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
   const household = useStore(householdStore);
   const groupRef = useRef<THREE.Group>(null);
   const phase = useMemo(() => (hashString(entity.id) % 628) / 100, [entity.id]);
-  const meshUrl = useMemo(() => resolveAlienMeshUrl(hashString(entity.id)), [entity.id]);
+  
 
   const member = household.members[entity.id];
   const moving = member !== undefined && (member.action.kind === "seek" || member.action.kind === "wander");
@@ -112,45 +112,19 @@ export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
   });
 
   if (plan === null) return null;
+  const meshUrl = resolveAlienMeshUrl(plan.shape);
 
   const color = bodyColor(plan, 58);
   const emissive = (mood === null ? undefined : MOOD_COLORS[mood.tier]) ?? "#000000";
   const emissiveIntensity = mood !== null ? 0.025 + (mood.score / 100) * 0.06 : 0.025;
   const scale = bodyScale(plan);
-  const eyeHeight = ALIEN_HEIGHT * 0.92;
-  const eyeR = ALIEN_HEIGHT * 0.045;
-  const eyes = Array.from({ length: plan.eyeCount }, (_, i) => {
-    const spread = (i - (plan.eyeCount - 1) / 2) * eyeR * 3.4;
-    return (
-      <mesh key={i} position={[spread, eyeHeight, ALIEN_HEIGHT * 0.14]}>
-        <sphereGeometry args={[eyeR, 8, 8]} />
-        <meshStandardMaterial color="#10121f" emissive="#c8f5ff" emissiveIntensity={0.6} />
-      </mesh>
-    );
-  });
-
   return (
     <group ref={groupRef}>
-      {meshUrl !== null ? (
-        <ModelErrorBoundary>
-          <Suspense fallback={null}>
-            <AlienModel
-              meshUrl={meshUrl}
-              instanceId={entity.id}
-              scale={scale}
-              color={color}
-              emissive={emissive}
-              emissiveIntensity={emissiveIntensity}
-            />
-          </Suspense>
-        </ModelErrorBoundary>
-      ) : (
-        <mesh scale={scale} position={[0, ALIEN_HEIGHT * 0.5, 0]}>
-          <capsuleGeometry args={[0.28, ALIEN_HEIGHT * 0.55, 6, 10]} />
-          <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={emissiveIntensity} />
-        </mesh>
-      )}
-      {meshUrl === null ? eyes : null}
+      <ModelErrorBoundary>
+        <Suspense fallback={null}>
+          <AlienModel meshUrl={meshUrl} instanceId={entity.id} scale={scale} color={color} emissive={emissive} emissiveIntensity={emissiveIntensity} />
+        </Suspense>
+      </ModelErrorBoundary>
     </group>
   );
 }
