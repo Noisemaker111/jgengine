@@ -27,6 +27,7 @@ export const HDRI_LIBRARY = [
   { id: "forest-shade", title: "Forest Slope", polyhaven: "forest_slope", author: "Andreas Mischok", look: "Green dappled shade under trees." },
   { id: "tropical-clouds", title: "Kloofendal 38d Partly Cloudy (Pure Sky)", polyhaven: "kloofendal_38d_partly_cloudy_puresky", author: "Greg Zaal, Jarod Guest", look: "Bright blue sky with scattered white clouds, high sun." },
   { id: "industrial-sunset", title: "Industrial Sunset 02 (Pure Sky)", polyhaven: "industrial_sunset_02_puresky", author: "Greg Zaal, Jarod Guest", look: "Low orange sun over a hazy industrial horizon, no ground." },
+  { id: "lilac-dusk", title: "Kiara 9 Dusk", polyhaven: "kiara_9_dusk", author: "Greg Zaal", look: "Sun just down, soft peach horizon fading to lilac and violet." },
   { id: "snow", title: "Snowy Park 01", polyhaven: "snowy_park_01", author: "Oliksiy Yakovlyev", look: "Bright snow under a pale overcast sky." },
 ] as const satisfies readonly HdriEntry[];
 

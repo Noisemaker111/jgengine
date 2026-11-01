@@ -1,5 +1,7 @@
 import { defineGame } from "@jgengine/shell/defineGame";
 import { createElement } from "react";
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
 
 import { ORBIT_SOUNDS } from "./game/audio";
@@ -10,6 +12,7 @@ import { objectModels } from "./game/models";
 import { renderEntity } from "./game/render/renderEntity";
 import { GameUI } from "./game/ui/GameUI";
 import { orbitTheme } from "./game/ui/theme";
+import { orbitKit } from "./game/ui/orbitKit";
 import { loop } from "./loop";
 import { editorLayers } from "./editorLayers";
 import { householdStore } from "./game/session/store";
@@ -39,6 +42,7 @@ export const game = defineGame({
     renderEntity,
   },
   hudTheme: orbitTheme,
+  uiKit: orbitKit,
   chrome: {
     // Household journal lines are full sentences; give them time to read above the habitat tools.
     notices: { placement: "bottom", ttlMs: 8000 },
@@ -84,11 +88,21 @@ export const game = defineGame({
       // flattened into one pink wash and the cream living floor never read as cream.
       ambient: { color: "#9c8fbf", intensity: 0.32 },
       hemisphere: { skyColor: "#b9a2dc", groundColor: "#3a3150", intensity: 0.45 },
-      directional: [{ color: "#ffdca6", intensity: 2.3, position: [30, 48, 24], castShadow: true }],
+      // Azimuth 135, elevation 16 at 60 m: the mood's sun, kept here so it casts the shadows.
+      directional: [{ color: "#ffdca6", intensity: 2.3, position: [-42, 16.5, 42], castShadow: true }],
     },
     // Dusk-moon presentation: the world owns its sky, so "cinematic" only fills the unset post stack
   // (IBL + tone-map/bloom/AO/grade). Lighting above is authored explicitly and wins.
     look: "cinematic",
+    // Permanent pastel dusk: sun low and peach, lilac fill, a hazy lilac fog.
+    mood: {
+      preset: "dusk",
+      sun: { azimuth: 135, elevation: 16, color: "#ffdca6" },
+      skyColor: "#393850",
+      horizonColor: "#d8b8dd",
+      fog: { near: 160, far: 700 },
+    },
+    environmentSource: hdriEnvironment("lilac-dusk", { intensity: 0.6 }),
     postProcessing: {
       toneMapping: "aces",
       exposure: 0.9,
@@ -97,11 +111,13 @@ export const game = defineGame({
       bloom: { strength: 0.3, radius: 0.6, threshold: 0.92 },
       // Contact creases under furniture and beside the habitat walls, kept modest for the draw budget.
       ao: { radius: 1.2, intensity: 1.6, distanceFalloff: 2.6 },
+      // The pastel dusk cube does the colour; the numeric stage stays neutral.
       grade: {
-        lift: [0.02, 0.012, 0.03],
-        gain: [1.04, 1.0, 1.02],
-        gamma: 0.97,
-        saturation: 1.12,
+        lut: lutGrade("pastel-dusk"),
+        lift: [0, 0, 0],
+        gain: [1, 1, 1],
+        gamma: 1,
+        saturation: 1,
         vignette: 0.26,
         grain: 0.008,
       },

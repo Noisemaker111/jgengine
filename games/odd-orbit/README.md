@@ -5,7 +5,7 @@ A small alien household simulation about making room for different needs and rhy
 Run `bun run dev`, `bun run check-types` and `bun run test` here. Vite resolves `@jgengine/*` from engine source. On a clean checkout, provision the catalog's CC0 packs with the installed asset CLI before playing:
 
 ```sh
-bunx --no-install assets pull quaternius-modular-scifi --dir public
+bunx --no-install assets pull quaternius-textured-cute-monster-pack --dir public
 bunx --no-install assets pull quaternius-stylized-nature --dir public
 bunx --no-install assets pull kaykit-furniture --dir public
 bunx --no-install assets pull kaykit-space-base --dir public

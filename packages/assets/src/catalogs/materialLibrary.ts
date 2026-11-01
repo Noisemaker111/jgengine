@@ -149,7 +149,6 @@ export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
   { name: "ground/gravel", title: "Gravel", group: "ground", source: "ambientcg-gravel002", surface: "opaque", tileMetres: 1.6, response: { metalness: 0, roughness: 0.88 } },
   { name: "ground/rock", title: "Rock face", group: "ground", source: "ambientcg-rock022", surface: "opaque", tileMetres: 3, response: { metalness: 0, roughness: 0.86 } },
   { name: "foliage/meadow", title: "Meadow grass", group: "foliage", source: "ambientcg-grass005", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.9 } },
-  { name: "ground/beach", title: "Beach sand (fine)", group: "ground", source: "ambientcg-ground033", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.9 } },
   { name: "ground/jungle-floor", title: "Jungle floor", group: "ground", source: "ambientcg-ground020", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.9 } },
   { name: "ground/cliff", title: "Cliff rock", group: "ground", source: "ambientcg-rock035", surface: "opaque", tileMetres: 3, response: { metalness: 0, roughness: 0.9 } },
   { name: "ground/dirt-road", title: "Packed dirt road", group: "ground", source: "ambientcg-ground054", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.9 } },
