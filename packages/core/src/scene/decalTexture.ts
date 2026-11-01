@@ -55,7 +55,7 @@ const GLYPHS: Readonly<Record<string, string>> = {
 function stencilCoverage(text: string, u: number, v: number): number {
   const chars = [...text.toUpperCase()].filter((char) => char === " " || GLYPHS[char] !== undefined);
   if (chars.length === 0) return 0;
-  const cell = Math.min(0.9 / (chars.length * 6 - 1), 0.1);
+  const cell = Math.min(0.9 / (chars.length * 6 - 1), 0.16);
   const width = (chars.length * 6 - 1) * cell, height = 7 * cell;
   const x = (u - 0.5) / cell + (chars.length * 6 - 1) / 2, y = (v - 0.5) / cell + 3.5;
   if (x < 0 || y < 0 || x >= chars.length * 6 - 1 || y >= 7 || width <= 0 || height <= 0) return 0;
@@ -206,10 +206,10 @@ export function createDecalTexture(style: DecalStyle, seed: string, size = 128, 
         // Sprayed paint through a stencil: lettering or a band of arrowheads, flaked where it has worn.
         const wear = smoothstep(0.3, 0.55, fbm(u * 16 + 2.2, v * 16 - 6.1, seedNumber + 31));
         let coverage = 0;
-        if (style === "stencil") coverage = stencilCoverage(paint.text ?? "", x / size, y / size);
+        if (style === "stencil") coverage = stencilCoverage(paint.text || "00", x / size, y / size);
         else {
-          const across = Math.abs(u) < 0.42, row = (v + 0.5) * 4, local = row - Math.floor(row), arrow = Math.abs(u) * 1.1 + (1 - local) * 0.5;
-          coverage = across && arrow > 0.28 && arrow < 0.46 && Math.abs(u) < 0.4 ? 1 : 0;
+          const row = (v + 0.5) * 3, local = row - Math.floor(row), arrow = Math.abs(u) * 1.2 + (1 - local) * 0.5;
+          coverage = Math.abs(u) < 0.45 && arrow > 0.2 && arrow < 0.52 ? 1 : 0;
         }
         alpha = coverage * (0.45 + wear * 0.55);
         [red, green, blue] = rgb as [number, number, number];
