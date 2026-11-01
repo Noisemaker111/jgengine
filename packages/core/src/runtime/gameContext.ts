@@ -431,9 +431,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     if (aoiRadius === undefined) return null;
     const self = entities.get(viewer.userId);
     if (self === undefined || self === null) return null;
-    const ids = new Set(spatial.inRadius(self.position, aoiRadius));
-    ids.add(viewer.userId);
-    if (aoiAlways !== undefined) for (const id of typeof aoiAlways === "function" ? aoiAlways() : aoiAlways) ids.add(id);
+    const near = spatial.inRadius(self.position, aoiRadius);
+    if (!near.includes(viewer.userId)) near.push(viewer.userId);
+    if (aoiAlways === undefined) return near;
+    const ids = new Set(near);
+    for (const id of typeof aoiAlways === "function" ? aoiAlways() : aoiAlways) ids.add(id);
     return [...ids];
   };
   const projectorFor = (key: string): SnapshotModule["project"] | undefined => {
