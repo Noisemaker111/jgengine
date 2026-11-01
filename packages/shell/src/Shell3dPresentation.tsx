@@ -1,4 +1,5 @@
 import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
+import { lightingHasSoftShadows } from "@jgengine/core/lighting/softShadows";
 import { Canvas } from "@react-three/fiber";
 import {
   useMemo,
@@ -651,6 +652,7 @@ export function Shell3dPresentation({
           fovEnabled={fovControlEnabled}
           graphics={playable.rendering?.graphics}
           postProcessing={resolvedLook.postProcessing}
+          softShadows={lightingHasSoftShadows(resolvedLook.lighting)}
           hideBindings={settingsConfig.hideBindings ?? []}
           touchStyle={
             coarsePointer &&

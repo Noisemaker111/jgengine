@@ -40,6 +40,8 @@ export interface GraphicsProfile {
   postStages: GraphicsPostStages;
   /** Size shadow penumbrae from each light's `lightSize` instead of a fixed filter radius. */
   softShadows: boolean;
+  /** Widest penumbra a soft shadow may filter, in shadow-map texels. */
+  softShadowMaxRadius: number;
   /** Default painted-surface shader on loaded models. */
   surfaceDetail: SurfaceDetailLevel;
 }
@@ -56,6 +58,7 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     anisotropy: 2,
     postStages: { ao: false, bloom: true, dof: false, smaa: true, ssr: false, fog: false, motionBlur: false },
     softShadows: false,
+    softShadowMaxRadius: 0,
     surfaceDetail: "lite",
   },
   medium: {
@@ -68,6 +71,7 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     anisotropy: 4,
     postStages: { ao: true, bloom: true, dof: true, smaa: true, ssr: true, fog: true, motionBlur: true },
     softShadows: true,
+    softShadowMaxRadius: 4,
     surfaceDetail: "full",
   },
   high: {
@@ -80,6 +84,7 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     anisotropy: 8,
     postStages: { ao: true, bloom: true, dof: true, smaa: true, ssr: true, fog: true, motionBlur: true },
     softShadows: true,
+    softShadowMaxRadius: 6,
     surfaceDetail: "full",
   },
   ultra: {
@@ -92,6 +97,7 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     anisotropy: 16,
     postStages: { ao: true, bloom: true, dof: true, smaa: true, ssr: true, fog: true, motionBlur: true },
     softShadows: true,
+    softShadowMaxRadius: 8,
     surfaceDetail: "full",
   },
 };

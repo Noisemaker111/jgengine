@@ -525,6 +525,15 @@ export interface DirectionalLightingConfig {
   shadowNormalBias?: number;
   /** PCF penumbra width in shadow-map texels; 0 is a hard edge. Default 1.25. */
   shadowRadius?: number;
+  /**
+   * Angular diameter of the light in degrees, for soft shadows: the penumbra widens with it on every
+   * shadow map while the player's soft-shadows setting is on (`SUN_ANGULAR_DIAMETER_DEG`, 0.53, is the
+   * sun; larger reads as haze or an overcast sky). Never sharper than `shadowRadius`, never wider
+   * than the tier's `softShadowMaxRadius`. Omitted keeps the fixed `shadowRadius`.
+   */
+  lightSize?: number;
+  /** Metres from caster to ground the soft penumbra is sized for. Default 4. */
+  occluderDistance?: number;
 }
 
 export interface HemisphereLightingConfig {
