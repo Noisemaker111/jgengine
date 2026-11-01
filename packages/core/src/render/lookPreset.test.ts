@@ -1,3 +1,5 @@
+import type { DirectionalLightingConfig } from "@jgengine/core/game/playableGame";
+import { SUN_ANGULAR_DIAMETER_DEG } from "@jgengine/core/lighting/softShadows";
 import { describe, expect, it } from "bun:test";
 
 import { CINEMATIC_POST_PROCESSING, COMIC_POST_PROCESSING, RETRO_POST_PROCESSING, CINEMATIC_SKY, NEUTRAL_POST_PROCESSING, PHOTOREAL_POST_PROCESSING, TOON_POST_PROCESSING, mergePostProcessing, resolveGameLook, type GameLookInput } from "./lookPreset";
@@ -91,7 +93,9 @@ describe("resolveGameLook mood", () => {
   it("a styled look with no light rig is lit by the day mood", () => {
     const look = resolveGameLook({ look: "cinematic" });
     const day = resolveMood("day");
-    expect(look.lighting).toEqual(day.lighting);
+    const [key, ...rest] = day.lighting.directional ?? [];
+    if (key === undefined) throw new Error("the day mood has a key light");
+    expect(look.lighting).toEqual({ ...day.lighting, directional: [{ ...key, lightSize: SUN_ANGULAR_DIAMETER_DEG }, ...rest] });
     expect(keyOf(look)).toMatchObject({ castShadow: true, cascades: 3 });
     expect(look.backdrop?.fog).toEqual(day.fog);
     expect(look.backdrop?.sky).toEqual(day.sky);
@@ -146,8 +150,10 @@ describe("resolveGameLook mood", () => {
     const look = resolveGameLook({ look: "cinematic", mood: "night", lighting: { ambient, point } });
     expect(look.lighting?.ambient).toBe(ambient);
     expect(look.lighting?.point).toBe(point);
-    expect(look.lighting?.directional).toEqual(resolveMood("night").lighting.directional);
-    expect(resolveGameLook({ look: "cinematic", lighting: { point } }).lighting?.directional).toEqual(resolveMood("day").lighting.directional);
+    const sized = (directional: readonly DirectionalLightingConfig[] | undefined) =>
+      (directional ?? []).map((light, index) => (index === 0 && light.castShadow === true ? { ...light, lightSize: SUN_ANGULAR_DIAMETER_DEG } : light));
+    expect(look.lighting?.directional).toEqual(sized(resolveMood("night").lighting.directional));
+    expect(resolveGameLook({ look: "cinematic", lighting: { point } }).lighting?.directional).toEqual(sized(resolveMood("day").lighting.directional));
   });
 
   it("the style's grade values win over the mood tint, a mood token wins over the style", () => {
@@ -189,5 +195,28 @@ describe("mergePostProcessing", () => {
     const preset = { ao: { intensity: 1 } };
     mergePostProcessing(preset, { ao: { radius: 2 } });
     expect(preset).toEqual({ ao: { intensity: 1 } });
+  });
+});
+
+describe("soft shadows from the look", () => {
+  const keyOf = (look: ReturnType<typeof resolveGameLook>) => look.lighting?.directional?.[0];
+  it("cinematic and photoreal give a shadow-casting sun the sun's size; other looks and authored sizes are left alone", () => {
+    expect(keyOf(resolveGameLook({ look: "cinematic" }))?.lightSize).toBe(SUN_ANGULAR_DIAMETER_DEG);
+    expect(keyOf(resolveGameLook({ look: "photoreal" }))?.lightSize).toBe(SUN_ANGULAR_DIAMETER_DEG);
+    expect(keyOf(resolveGameLook({ look: "toon" }))?.lightSize).toBeUndefined();
+    expect(keyOf(resolveGameLook({ look: "comic" }))?.lightSize).toBeUndefined();
+    const authored = { position: [10, 20, 5] as const, castShadow: true, lightSize: 3 };
+    expect(keyOf(resolveGameLook({ look: "cinematic", lighting: { directional: [authored] } }))?.lightSize).toBe(3);
+  });
+
+  it("a game that lights its own rig keeps its fixed shadow filter", () => {
+    const own = { directional: [{ position: [10, 20, 5] as const, castShadow: true }] };
+    expect(keyOf(resolveGameLook({ lighting: own }))?.lightSize).toBeUndefined();
+  });
+
+  it("resolving twice gives the same lights", () => {
+    const once = resolveGameLook({ look: "cinematic" });
+    const twice = resolveGameLook({ look: "cinematic", mood: undefined, lighting: once.lighting, backdrop: once.backdrop, postProcessing: once.postProcessing });
+    expect(twice.lighting?.directional).toEqual(once.lighting?.directional);
   });
 });

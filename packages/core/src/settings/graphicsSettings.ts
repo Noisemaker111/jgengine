@@ -13,7 +13,7 @@ import {
 export type GraphicsPostStage = keyof GraphicsProfile["postStages"];
 
 /** Ordered stage list used to build settings rows. */
-export const GRAPHICS_POST_STAGES: readonly GraphicsPostStage[] = ["ao", "bloom", "dof", "smaa"];
+export const GRAPHICS_POST_STAGES: readonly GraphicsPostStage[] = ["ao", "bloom", "dof", "smaa", "ssr", "fog", "motionBlur"];
 
 /** Player-facing labels for each post stage. */
 export const GRAPHICS_POST_STAGE_LABELS: Record<GraphicsPostStage, string> = {
@@ -21,6 +21,9 @@ export const GRAPHICS_POST_STAGE_LABELS: Record<GraphicsPostStage, string> = {
   bloom: "Bloom",
   dof: "Depth of field",
   smaa: "Anti-aliasing",
+  ssr: "Screen-space reflections",
+  fog: "Volumetric fog",
+  motionBlur: "Motion blur",
 };
 
 /** Setting id that stores one stage toggle (`graphics.post.<stage>`). */
@@ -93,6 +96,7 @@ export function readGraphicsSettings(
       renderScale: clamp(store.get(SETTING_IDS.graphicsRenderScale, tier.renderScale), RENDER_SCALE_MIN, RENDER_SCALE_MAX),
       anisotropy: toAnisotropy(store.get(SETTING_IDS.graphicsAnisotropy, String(tier.anisotropy)), tier.anisotropy),
       postStages,
+      softShadows: store.get(SETTING_IDS.graphicsSoftShadows, tier.softShadows),
     },
   };
 }
@@ -110,6 +114,7 @@ export function applyGraphicsQuality(
   store.set(SETTING_IDS.graphicsQuality, quality);
   store.set(SETTING_IDS.graphicsRenderScale, tier.renderScale);
   store.set(SETTING_IDS.graphicsAnisotropy, String(tier.anisotropy));
+  store.set(SETTING_IDS.graphicsSoftShadows, tier.softShadows);
   for (const stage of GRAPHICS_POST_STAGES) {
     store.set(graphicsPostStageSettingId(stage), tier.postStages[stage]);
   }
@@ -132,6 +137,7 @@ export function withGraphicsQualityOverride(
     [SETTING_IDS.graphicsQuality, quality],
     [SETTING_IDS.graphicsRenderScale, tier.renderScale],
     [SETTING_IDS.graphicsAnisotropy, String(tier.anisotropy)],
+    [SETTING_IDS.graphicsSoftShadows, tier.softShadows],
     ...GRAPHICS_POST_STAGES.map((stage): [string, SettingValue] => [graphicsPostStageSettingId(stage), tier.postStages[stage]]),
   ]);
   return {

@@ -40,7 +40,7 @@ describe("graphicsSettings", () => {
     store.set(graphicsPostStageSettingId("ao"), false);
     store.set(SETTING_IDS.graphicsRenderScale, 0.75);
     const state = readGraphicsSettings(store);
-    expect(state.profile.postStages).toEqual({ ao: false, bloom: true, dof: true, smaa: true });
+    expect(state.profile.postStages).toEqual({ ao: false, bloom: true, dof: true, smaa: true, ssr: true, fog: true, motionBlur: true });
     expect(state.profile.renderScale).toBe(0.75);
     expect(state.profile.shadowMapSize).toBe(1024);
   });

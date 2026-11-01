@@ -39,8 +39,9 @@ test("a postfx stage row exists only for a stage the game's chain can build", ()
 
 test("every stage row follows that rule, not just depth of field", () => {
   expect(stageRows({ ao: {}, bloom: {}, dof: {}, aa: "msaa" })).toEqual(["graphics.post.ao", "graphics.post.bloom", "graphics.post.dof"]);
-  expect(stageRows({ aa: "smaa", bloom: false, ao: false })).toEqual(["graphics.post.smaa"]);
-  expect(stageRows({ aa: false, bloom: false, ao: false })).toEqual([]);
+  expect(stageRows({ aa: "smaa", bloom: false, ao: false })).toEqual(["graphics.post.smaa", "graphics.post.fog"]);
+  expect(stageRows({ aa: "smaa", bloom: false, ao: false, atmosphere: false, ssr: {}, motionBlur: {} })).toEqual(["graphics.post.smaa", "graphics.post.ssr", "graphics.post.motionBlur"]);
+  expect(stageRows({ aa: false, bloom: false, ao: false, atmosphere: false })).toEqual([]);
 });
 
 test("a game with no post chain gets no stage rows and keeps every other row", () => {

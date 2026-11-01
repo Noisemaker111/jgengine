@@ -7,11 +7,9 @@ import { CSM } from "three/examples/jsm/csm/CSM.js";
 import type { DirectionalLightingConfig } from "@jgengine/core/game/playableGame";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import { prepareBeforeWarmup } from "@jgengine/core/render/shaderWarmup.draw";
+import { DEFAULT_SHADOW_RADIUS, lightShadowFilter, type ShadowFilter } from "./softShadows";
 import { resolveCascadeCount, resolveShadowMapSize } from "./shadowTiers";
 import type { DaylightModulation } from "./SceneLighting.draw";
-
-/** @internal Default PCF penumbra in shadow-map texels for configured directional lights. */
-export const DEFAULT_SHADOW_RADIUS = 1.25;
 
 /** @internal Reach in metres used when neither the game nor a graphics profile sets one. */
 export const DEFAULT_SHADOW_DISTANCE = 200;
@@ -170,10 +168,12 @@ export function CascadedShadows({
   const csmRef = useRef<CSM | null>(null);
   const lightDirectionRef = useRef(new THREE.Vector3());
   const refreshRef = useRef<CascadeRefreshState>(createCascadeRefreshState());
+  const baseNormalBiasRef = useRef(0);
   const baseIntensity = entry.intensity ?? 1.3;
   const maxFar = resolveShadowDistance(profile, entry.shadowMaxFar);
   const shadowMapSize = resolveShadowMapSize(profile, entry.shadowMapSize);
   const cascades = Math.max(2, Math.min(4, Math.floor(resolveCascadeCount(profile, entry.cascades))));
+  const softShadows = entry.lightSize !== undefined && profile?.softShadows === true;
 
   useEffect(() => {
     const lightDirection = new THREE.Vector3(
@@ -203,6 +203,7 @@ export function CascadedShadows({
       light.castShadow = true;
       light.shadow.radius = entry.shadowRadius ?? DEFAULT_SHADOW_RADIUS;
     }
+    baseNormalBiasRef.current = csm.lights[0]?.shadow.normalBias ?? 0;
     const unbind = bindCsmMaterials(scene, csm);
     csmRef.current = csm;
     lightDirectionRef.current.copy(lightDirection);
@@ -241,9 +242,30 @@ export function CascadedShadows({
     csm.camera = camera;
     csm.update();
     refreshCascadesOnTexelStep(csm.lights, lightDirectionRef.current, refreshRef.current);
+    if (softShadows) {
+      for (const light of csm.lights) {
+        const filter = cascadeShadowFilter(entry, profile, light.shadow.camera, shadowMapSize, baseNormalBiasRef.current);
+        light.shadow.radius = filter.radius;
+        light.shadow.normalBias = filter.normalBias;
+      }
+    }
   });
 
   return null;
+}
+
+/**
+ * One cascade's filter: the light's soft penumbra in that cascade's own texels, so the near cascade
+ * widens to the physical penumbra and a coarse far one keeps its base filter. @internal
+ */
+export function cascadeShadowFilter(
+  entry: DirectionalLightingConfig,
+  profile: GraphicsProfile | undefined,
+  camera: Pick<THREE.OrthographicCamera, "left" | "right">,
+  mapSize: number,
+  baseNormalBias: number,
+): ShadowFilter {
+  return lightShadowFilter(entry, profile, Math.abs(camera.right - camera.left), mapSize, baseNormalBias);
 }
 
 /** Structural slice of CSM so the patcher is testable without a renderer. */

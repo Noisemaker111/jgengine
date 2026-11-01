@@ -12,6 +12,7 @@ export type ClipRole =
   | "run"
   | "strafe"
   | "backward"
+  | "turn"
   | "attack"
   | "hit"
   | "death"
@@ -42,6 +43,7 @@ const ROLE_PRIORITY: readonly ClipRole[] = [
   "cheer",
   "strafe",
   "backward",
+  "turn",
   "run",
   "walk",
   "idle",
@@ -55,6 +57,7 @@ export const DEFAULT_CLIP_ROLE_TABLE: ClipRoleTable = {
     run: ["run", "sprint", "jog"],
     strafe: ["strafe"],
     backward: ["backward", "backpedal"],
+    turn: ["turn", "pivot"],
     attack: ["attack", "punch", "slash", "shoot", "chop", "stab", "cast", "swing", "strike", "kick", "throw"],
     hit: ["hit", "receive", "impact", "hurt", "damage"],
     death: ["death", "die", "dead", "dying"],
@@ -181,6 +184,7 @@ export function defaultAnimationForClips(
       ...(strafeLeft === undefined ? {} : { strafeLeft }),
       ...(strafeRight === undefined ? {} : { strafeRight }),
       ...(roles.backward?.[0] === undefined ? {} : { backward: roles.backward[0] }),
+      ...(roles.turn?.[0] === undefined ? {} : { turn: roles.turn[0] }),
     },
     ...(Object.keys(oneShots).length === 0 ? {} : { oneShots }),
   };
@@ -205,4 +209,13 @@ export function resolveAnimationConfig(
   const defaults = defaultAnimationForClips(clips, table);
   if (defaults === undefined || animation === "auto") return defaults;
   return { ...defaults, ...animation };
+}
+
+/**
+ * The rig's idle clip alone, looping: what a rigged entity plays when its locomotion is switched off
+ * (`characterMotion.locomotion: false`). `undefined` when no clip reads as idle.
+ */
+export function idleOnlyAnimation(clips: readonly string[], table: ClipRoleTable = DEFAULT_CLIP_ROLE_TABLE): ModelAnimationConfig | undefined {
+  const idle = rolesFromClips(clips, table).idle?.[0];
+  return idle === undefined ? undefined : { clip: idle };
 }

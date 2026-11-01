@@ -75,6 +75,8 @@ export interface SettingsControllerInput {
   graphics?: GraphicsProfileOverrides | undefined;
   /** The post chain this game actually runs, so a stage row never outlives its pass. */
   postProcessing?: PostProcessingConfig | undefined;
+  /** True when a light this game runs sets `lightSize`, so the soft-shadows row switches something. */
+  softShadows?: boolean | undefined;
   hideBindings: readonly string[];
   /** Show the touch-controls skin selector in Controls (touch device with a dock). */
   touchStyle: boolean;
@@ -153,7 +155,7 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
   ];
 
   const graphicsRows: SettingsRow[] = [
-    ...graphicsSettingRows(store, config.graphics, config.postProcessing),
+    ...graphicsSettingRows(store, config.graphics, config.postProcessing, config.softShadows === true),
     ...extrasFor("graphics"),
   ];
 
@@ -262,14 +264,15 @@ export function keybindSettingRows(
 }
 
 /**
- * The built-in Graphics rows: tier, scale, filtering, shadows, one toggle per postfx stage this
- * game's chain can build, then UI scale and FPS.
+ * The built-in Graphics rows: tier, scale, filtering, shadows, soft shadows when a light sets
+ * `lightSize`, one toggle per postfx stage this game's chain can build, then UI scale and FPS.
  * @internal
  */
 export function graphicsSettingRows(
   store: SettingsStore,
   overrides: GraphicsProfileOverrides | undefined,
   postProcessing: PostProcessingConfig | undefined,
+  softShadows = false,
 ): SettingsRow[] {
   const graphics = readGraphicsSettings(store, overrides);
   const stages = postProcessing === undefined || postProcessing.enabled === false ? [] : availablePostfxStages(postProcessing);
@@ -316,6 +319,15 @@ export function graphicsSettingRows(
       value: store.get(SETTING_IDS.graphicsShadows, DEFAULT_GRAPHICS_SHADOWS),
       set: (value) => store.set(SETTING_IDS.graphicsShadows, value),
     },
+    ...(softShadows
+      ? [{
+          id: SETTING_IDS.graphicsSoftShadows,
+          label: "Soft shadows",
+          kind: "toggle",
+          value: graphics.profile.softShadows,
+          set: (value) => store.set(SETTING_IDS.graphicsSoftShadows, value),
+        } satisfies SettingsRow]
+      : []),
     ...stages.map(
       (stage): SettingsRow => ({
         id: graphicsPostStageSettingId(stage),

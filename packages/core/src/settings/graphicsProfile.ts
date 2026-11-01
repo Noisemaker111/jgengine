@@ -6,6 +6,20 @@ import type { GraphicsQuality } from "./settingsModel";
  */
 export type SurfaceDetailLevel = "off" | "lite" | "full";
 
+/** One switch per post stage a tier or the player can turn off. */
+export interface GraphicsPostStages {
+  ao: boolean;
+  bloom: boolean;
+  dof: boolean;
+  smaa: boolean;
+  /** Screen-space reflections. */
+  ssr: boolean;
+  /** Volumetric fog: height haze, sun shafts and lamp glow. */
+  fog: boolean;
+  /** Camera and per-object motion blur. */
+  motionBlur: boolean;
+}
+
 /** Serializable renderer budget selected by the player's graphics tier. */
 export interface GraphicsProfile {
   renderScale: number;
@@ -18,7 +32,16 @@ export interface GraphicsProfile {
   particleBudget: number;
   /** Anisotropic texture filtering samples; clamped to the GPU maximum. 1 is plain trilinear. */
   anisotropy: 1 | 2 | 4 | 8 | 16;
-  postStages: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean };
+  /**
+   * Post stages the tier lets run. `ao`, `bloom` and `smaa` run by default where on; `dof`, `ssr`
+   * and `motionBlur` run only when the game's post chain or look preset asks for them; `fog` gates
+   * the volumetric fog (height haze, sun shafts, lamp glow).
+   */
+  postStages: GraphicsPostStages;
+  /** Size shadow penumbrae from each light's `lightSize` instead of a fixed filter radius. */
+  softShadows: boolean;
+  /** Widest penumbra a soft shadow may filter, in shadow-map texels. */
+  softShadowMaxRadius: number;
   /** Default painted-surface shader on loaded models. */
   surfaceDetail: SurfaceDetailLevel;
 }
@@ -33,7 +56,9 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     particleCap: 128,
     particleBudget: 1024,
     anisotropy: 2,
-    postStages: { ao: false, bloom: true, dof: false, smaa: true },
+    postStages: { ao: false, bloom: true, dof: false, smaa: true, ssr: false, fog: false, motionBlur: false },
+    softShadows: false,
+    softShadowMaxRadius: 0,
     surfaceDetail: "lite",
   },
   medium: {
@@ -44,7 +69,9 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     particleCap: 256,
     particleBudget: 2048,
     anisotropy: 4,
-    postStages: { ao: true, bloom: true, dof: true, smaa: true },
+    postStages: { ao: true, bloom: true, dof: true, smaa: true, ssr: true, fog: true, motionBlur: true },
+    softShadows: true,
+    softShadowMaxRadius: 4,
     surfaceDetail: "full",
   },
   high: {
@@ -55,7 +82,9 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     particleCap: 512,
     particleBudget: 4096,
     anisotropy: 8,
-    postStages: { ao: true, bloom: true, dof: true, smaa: true },
+    postStages: { ao: true, bloom: true, dof: true, smaa: true, ssr: true, fog: true, motionBlur: true },
+    softShadows: true,
+    softShadowMaxRadius: 6,
     surfaceDetail: "full",
   },
   ultra: {
@@ -66,7 +95,9 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     particleCap: 1024,
     particleBudget: 8192,
     anisotropy: 16,
-    postStages: { ao: true, bloom: true, dof: true, smaa: true },
+    postStages: { ao: true, bloom: true, dof: true, smaa: true, ssr: true, fog: true, motionBlur: true },
+    softShadows: true,
+    softShadowMaxRadius: 8,
     surfaceDetail: "full",
   },
 };

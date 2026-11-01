@@ -1,6 +1,7 @@
 import type { BackdropConfig, LightingConfig } from "../game/playableGame";
 import type { SkyEnvironmentConfig } from "../world/features";
 import { moodForSkyPreset, resolveMood, type LookMood, type MoodConfig, type ResolvedMood } from "./lookMood";
+import { SUN_ANGULAR_DIAMETER_DEG } from "../lighting/softShadows";
 import type { PostProcessingConfig } from "./postProcessing";
 
 /**
@@ -8,7 +9,8 @@ import type { PostProcessingConfig } from "./postProcessing";
  * `"cinematic"` (the default when unset) draws a scene lit like a shipped game — a real day sky
  * with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting
  * environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/contact-shadow/vignette
- * post stack, antialiased temporally on high and ultra. `"neutral"` keeps presentation unstyled. `"comic"` adds ink outlines and cel bands over a saturated grade (Borderlands-style);
+ * post stack with screen-space reflections on glossy floors and a sun-sized soft shadow, antialiased
+ * temporally on high and ultra. `"neutral"` keeps presentation unstyled. `"comic"` adds ink outlines and cel bands over a saturated grade (Borderlands-style);
  * `"retro"` pixelates and posterizes the frame. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773).
  * The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface
  * detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
@@ -54,6 +56,7 @@ export const CINEMATIC_POST_PROCESSING: PostProcessingConfig = {
   toneMapping: "aces",
   bloom: { strength: 0.22, radius: 0.5, threshold: 0.95 },
   ao: { intensity: 1.4 },
+  ssr: { intensity: 0.35 },
   grade: {},
 };
 
@@ -78,8 +81,26 @@ export const PHOTOREAL_POST_PROCESSING: PostProcessingConfig = {
   toneMapping: "agx",
   bloom: { strength: 0.28, radius: 0.58, threshold: 0.9 },
   ao: { intensity: 1.25, radius: 1.6 },
+  ssr: { intensity: 0.5 },
   grade: { saturation: 1.04, vignette: 0.08, grain: 0.004 },
 };
+
+/**
+ * The key light's angular size each look gives a sun that leaves `lightSize` unset, so its shadows
+ * soften like daylight while the player's soft-shadows setting is on. Looks not named here keep the
+ * fixed filter.
+ */
+export const LOOK_SUN_SIZE: Readonly<Partial<Record<LookPreset, number>>> = {
+  cinematic: SUN_ANGULAR_DIAMETER_DEG,
+  photoreal: SUN_ANGULAR_DIAMETER_DEG,
+};
+
+function withSunSize(lighting: LightingConfig | undefined, look: LookPreset): LightingConfig | undefined {
+  const size = LOOK_SUN_SIZE[look];
+  const key = lighting?.directional?.[0];
+  if (size === undefined || lighting === undefined || key === undefined || key.castShadow !== true || key.lightSize !== undefined) return lighting;
+  return { ...lighting, directional: [{ ...key, lightSize: size }, ...(lighting.directional ?? []).slice(1)] };
+}
 
 /** Clean graphic presentation; toon materials remain game-owned while this sets the grade. */
 export const TOON_POST_PROCESSING: PostProcessingConfig = {
@@ -257,12 +278,13 @@ export function resolveGameLook(input: GameLookInput): ResolvedGameLook {
       ? input.backdrop
       : { ...input.backdrop, ...(sky === undefined ? {} : { sky }), ...(fog === undefined ? {} : { fog }) };
 
-  const lighting =
+  const moodLighting =
     mood === undefined
       ? input.lighting
       : input.lighting === undefined
         ? mood.lighting
         : { ...mood.lighting, ...definedFields(input.lighting) };
+  const lighting = ownRig ? moodLighting : withSunSize(moodLighting, look);
 
   if (look === "neutral" && mood === undefined) {
     return { lighting, backdrop, postProcessing: input.postProcessing ?? NEUTRAL_POST_PROCESSING };

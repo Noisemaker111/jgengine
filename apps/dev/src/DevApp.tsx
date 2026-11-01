@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { parseEffectsPreview, PREVIEW_EFFECTS, withEffectsPreview } from "./effectsPreview";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import { GameUiPreview, type UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
@@ -25,6 +26,7 @@ import {
   STAGE,
   STATE_PARAM,
   STYLE,
+  EFFECTS,
   WS_URL,
   applyCaptureView,
   resolvedRun,
@@ -147,7 +149,14 @@ export function DevApp({ gameId }: { gameId: string }) {
           return;
         }
         const styled = STYLE === null ? loaded : { ...loaded, look: STYLE as LookPreset, postProcessing: undefined };
-        setPlayable(withCameraPreset(styled, await loadLookMarkers(gameId)));
+        const effects = parseEffectsPreview(EFFECTS);
+        if (effects.unknown.length > 0) {
+          const message = `Unknown ?effects= entries "${effects.unknown.join(", ")}" — known: ${PREVIEW_EFFECTS.join(", ")}`;
+          setCaptureStatus("error", message);
+          setLoadError(message);
+          return;
+        }
+        setPlayable(withCameraPreset(withEffectsPreview(styled, effects.toggles), await loadLookMarkers(gameId)));
       })
       .catch((error: unknown) => {
         const message = formatLoadError(error);
