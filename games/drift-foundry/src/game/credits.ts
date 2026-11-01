@@ -1,3 +1,4 @@
+import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
@@ -22,4 +23,4 @@ export const FOUNDRY_CREDITS = mergeCredits({
     },
   ],
   notice: "Every pack above is used under the license it is listed with.",
-}, creditsForSourceIds(ASSET_SOURCE_IDS));
+}, creditsForSourceIds(ASSET_SOURCE_IDS), { title: "DRIFT FOUNDRY", sections: creditsForLooks({ hdri: ["industrial-sunset"], lut: ["bleach-bypass-warm"], fonts: ["saira-stencil-one", "barlow-condensed"] }) });
