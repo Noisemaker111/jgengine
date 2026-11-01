@@ -47,10 +47,11 @@ A sun-baked coastal city at golden hour sliding into neon night: pastel stucco, 
 - Post: ACES, bloom 0.3 / threshold 0.85 so neon blooms, screen-space reflections on wet roads at high tier, the LUT above.
 
 ## Pass list
-1. Remove every KayKit piece; swap in library signals, containers, authored neon signs and pulled aircraft.
-2. Dress the ground: Asphalt012 roads with lane paint, Concrete034 sidewalks, beach sand; no flat vertex-colour districts.
-3. Line boulevards with palms and streetlights; fill lots with library street props.
-4. Set the golden mood, the sunset HDRI and the neon sunset LUT.
-5. Make the night: sodium streetlights, neon signage, wet road shine.
-6. Vary the traffic with more library vehicles in the palette.
-7. Ambient life: pedestrians on sidewalks, gulls at the harbour, boats in the bay, a passing helicopter.
+1. Re-face the blank grey city blocks: facade scans, windows, awnings and roof clutter on every lot the camera sees.
+2. Remove every KayKit piece; swap in library signals, containers, authored neon signs and pulled aircraft.
+3. Dress the ground: Asphalt012 roads with lane paint, Concrete034 sidewalks, beach sand; no flat vertex-colour districts.
+4. Line boulevards with palms and streetlights; fill lots with library street props.
+5. Set the golden mood, the sunset HDRI and the neon sunset LUT.
+6. Make the night: sodium streetlights, neon signage, wet road shine.
+7. Vary the traffic with more library vehicles in the palette.
+8. Ambient life: pedestrians on sidewalks, gulls at the harbour, boats in the bay, a passing helicopter.
