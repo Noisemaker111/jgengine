@@ -87,7 +87,11 @@ export function rotorInflowLoads(
   const [d0, d1, d2] = effect.profileDrag ?? [0.0087, -0.0216, 0.4];
   const scale = Math.max(1, strength);
   const sigma = (blades * chord) / (Math.PI * radius);
-  const tipSpeed = Math.max(1e-3, Math.max(0, speedShare) * (effect.ratedSpeed ?? 44.5) * radius);
+  // Below a tenth of rated speed the blades barely lift: solve at a tenth and fade the loads with speed squared.
+  const share = Math.max(0, speedShare);
+  const floor = Math.max(0.1, share);
+  const fade = (share / floor) ** 2;
+  const tipSpeed = floor * (effect.ratedSpeed ?? 44.5) * radius;
   const theta = low + (high - low) * Math.max(0, Math.min(1, lever)) - zero;
   const mu = edgewise / tipSpeed;
   const lc = climb / tipSpeed;
@@ -104,30 +108,38 @@ export function rotorInflowLoads(
   const ctB = 0.5 * sigma * slope * inflowIntegral;
   const finite = Number.isFinite(height) && height > 0;
   let li = Number.isFinite(inflow) ? inflow : 0.05;
-  let ct = 0;
-  let ground = 1;
-  for (let k = 0; k < 40; k += 1) {
-    ground = finite ? Math.max(0.5, 1 - (radius / (4 * Math.max(height, 0.3 * radius))) ** 2 / (1 + (mu / Math.max(1e-3, Math.abs(li))) ** 2)) : 1;
-    ct = ctA - ctB * (lc + ground * li * scale);
-    const hover = Math.sqrt(Math.abs(ct) / 2);
-    let total = Math.max(1e-4, Math.hypot(mu, lc + li));
-    if (ct > 0 && hover > 1e-4) {
+  const groundAt = (induced: number): number =>
+    finite ? Math.max(0.5, 1 - (radius / (4 * Math.max(height, 0.3 * radius))) ** 2 / (1 + (mu / Math.max(1e-3, Math.abs(induced))) ** 2)) : 1;
+  // Momentum balance: the induced inflow the thrust it makes asks for, minus the inflow assumed.
+  const residual = (induced: number): number => {
+    const thrust = ctA - ctB * (lc + groundAt(induced) * induced * scale);
+    const hover = Math.sqrt(Math.abs(thrust) / 2);
+    let total = Math.max(1e-4, Math.hypot(mu, lc + induced));
+    if (thrust > 0 && hover > 1e-4) {
       const ratio = lc / hover;
       const clean = Math.max(0, 1 - (mu / hover) ** 2);
-      if (ratio < 0 && ratio > -2 && clean > 0) total += clean * (ct / (2 * hover * vortexRing(ratio)) - total);
+      if (ratio < 0 && ratio > -2 && clean > 0) total += clean * (thrust / (2 * hover * vortexRing(ratio)) - total);
     }
     total = Math.max(0.3 * hover, total, 1e-4);
-    const change = 0.5 * (ct / (2 * total) - li);
-    li += change;
-    if (Math.abs(change) < 1e-7) break;
+    return induced - thrust / (2 * total);
+  };
+  // Damped Newton from the last inflow: a step or two when it barely moved, never a jump past 0.02.
+  for (let k = 0; k < 30; k += 1) {
+    const f = residual(li);
+    const slope = (residual(li + 1e-6) - f) / 1e-6;
+    const step = slope > 0.1 ? -f / slope : -0.3 * f;
+    li += Math.max(-0.02, Math.min(0.02, step));
+    if (Math.abs(f) < 1e-9) break;
   }
+  const ground = groundAt(li);
+  let ct = 0;
   ct = ctA - ctB * (lc + ground * li * scale);
   const meanAlpha = (6 * ct) / (sigma * slope);
   const cd = d0 + d1 * meanAlpha + d2 * meanAlpha * meanAlpha;
   const cp = ct * (lc + kappa * ground * li * scale) + ((sigma * cd) / 8) * (1 + 4.65 * mu * mu);
   const dynamic = density * Math.PI * radius * radius * tipSpeed * tipSpeed;
-  out.thrust = ct * dynamic;
-  out.torque = cp * dynamic * radius;
+  out.thrust = ct * dynamic * fade;
+  out.torque = cp * dynamic * radius * fade;
   out.inflow = li;
   out.groundEffect = ground;
   return out;
