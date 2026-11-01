@@ -87,6 +87,8 @@ export interface VehicleMagicFormulaEffect {
    * more load sensitivity (the friction's fall with load scaled up); sane over `0..4`.
    */
   strength?: number;
+  /** Friction scale on both directions, multiplied onto the coefficients' `λμ` (default `1`; a drift game's slippery compound ~`0.4`). */
+  grip?: number;
   /** Coefficients (default {@link TNO_205_60R15_TIRE}); give a whole set or change a few. */
   coefficients?: Partial<MagicFormulaTireCoefficients>;
   /** Rear-axle coefficients when the rear tyre differs (default the front's). */
@@ -109,7 +111,9 @@ export interface MagicFormulaWheelCurve {
 
 /** The coefficients a {@link VehicleMagicFormulaEffect} runs on one axle. */
 export function magicFormulaCoefficients(effect: VehicleMagicFormulaEffect, axle: "front" | "rear"): MagicFormulaTireCoefficients {
-  return { ...TNO_205_60R15_TIRE, ...effect.coefficients, ...(axle === "rear" ? effect.rear : undefined) };
+  const p = { ...TNO_205_60R15_TIRE, ...effect.coefficients, ...(axle === "rear" ? effect.rear : undefined) };
+  const grip = Math.max(0, effect.grip ?? 1);
+  return grip === 1 ? p : { ...p, lmux: p.lmux * grip, lmuy: p.lmuy * grip };
 }
 
 /**

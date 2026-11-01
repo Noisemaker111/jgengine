@@ -5,6 +5,7 @@ import { sampleGripCurve, type GripCurve } from "./gripCurve";
 import { clamp, clamp01 } from "../math/scalar";
 import type { WindField } from "../world/wind";
 import { brakeFadeShare, brakeTemperatureStep, type VehicleBrakeFadeEffect } from "./brakeFade";
+import { crownBalanceLean, crownShownLean, type VehicleTireCrownEffect } from "./vehicleTireCrown";
 import { roadFrictionAt, type VehicleRoadFrictionEffect } from "./roadFriction";
 import { engineTorque, torqueCurveShiftSeconds, type VehicleTorqueCurveEffect } from "./engineTorqueCurve";
 import { aligningSteer, type VehicleAligningTorqueEffect } from "./vehicleAligningTorque";
@@ -314,6 +315,7 @@ export interface VehicleEffects {
   loadSensitivity?: VehicleLoadSensitivityEffect;
   tireRelaxation?: VehicleTireRelaxationEffect;
   camber?: VehicleCamberEffect;
+  tireCrown?: VehicleTireCrownEffect;
   complianceSteer?: VehicleComplianceSteerEffect;
   rollSteer?: VehicleRollSteerEffect;
   aligningTorque?: VehicleAligningTorqueEffect;
@@ -389,6 +391,10 @@ export interface VehicleLeanTuning {
   countersteer?: number;
   /** Below this speed the bar steers directly, like walking a bike (default `3` m/s). */
   directSteerBelow?: number;
+  /** How fast the rider's bar correction closes the gap to the lean's turn, 1/s (default `3`; a racer on a quick bike ~`10`). */
+  trimGain?: number;
+  /** Time constant the bike's lean follows the request with, s, before `leanRate` caps it (default `0`: the lean moves at `leanRate` until it arrives). */
+  leanLag?: number;
 }
 
 /** Jumps from the ground and in the air. */
@@ -996,7 +1002,7 @@ export function createVehicleDynamics(
       body: {
         bodyPitch: state.body.bodyPitch,
         bodyRoll: state.body.bodyRoll,
-        lean: tuning.lean === undefined ? 0 : balanceLean(state.body.lateralAccel),
+        lean: tuning.lean === undefined ? 0 : on(tuning.effects?.tireCrown) === undefined ? balanceLean(state.body.lateralAccel) : state.rider.lean,
       },
       air: {
         airOffset: tuning.suspension === undefined ? state.air.hopHeight : Math.max(0, baseHeight() - groundAt(state.motion.x, state.motion.z)),
@@ -1145,17 +1151,23 @@ export function createVehicleDynamics(
     const leanTuning = t.lean;
     if (leanTuning !== undefined) {
       // A rider cannot hold more lean than the tires can balance: tan(lean) is the lateral g it needs.
-      const gripLean = Math.atan(t.front.peakGrip * surface * (modifiers?.gripScale ?? 1));
+      const crownEffect = on(fx_.tireCrown);
+      const crownDial = strengthOf(crownEffect);
+      const gripBalance = Math.atan(t.front.peakGrip * surface * (modifiers?.gripScale ?? 1));
+      const gripLean = crownEffect === undefined ? gripBalance : crownShownLean(crownEffect, t.comHeight, gripBalance, crownDial);
       const wanted = steerInput * Math.min(leanTuning.maxLean, gripLean);
       const leanStep = Math.max(0, leanTuning.leanRate) * h;
-      const leanChange = Math.max(-leanStep, Math.min(leanStep, wanted - state.rider.lean));
+      const lag = leanTuning.leanLag ?? 0;
+      const gap = lag > 0 ? (wanted - state.rider.lean) * (1 - Math.exp(-h / lag)) : wanted - state.rider.lean;
+      const leanChange = Math.max(-leanStep, Math.min(leanStep, gap));
       state.rider.lean += leanChange;
       const speed = Math.abs(u);
       const direct = leanTuning.directSteerBelow ?? 3;
       // Balanced turn: the lean sets the yaw rate the bike should hold (g·tan(lean)/v). The bar is that turn's
       // geometric angle plus a trim the rider feeds back from the yaw error, which covers the tire slip.
-      const wantedYaw = (-GRAVITY * Math.tan(state.rider.lean)) / Math.max(speed, 1) * Math.sign(u || 1);
-      if (speed >= direct) state.rider.leanTrim += (wantedYaw - r) * 3 * h;
+      const balance = crownEffect === undefined ? state.rider.lean : crownBalanceLean(crownEffect, t.comHeight, state.rider.lean, crownDial);
+      const wantedYaw = (-GRAVITY * Math.tan(balance)) / Math.max(speed, 1) * Math.sign(u || 1);
+      if (speed >= direct) state.rider.leanTrim += (wantedYaw - r) * (leanTuning.trimGain ?? 3) * h;
       else state.rider.leanTrim = 0;
       const trimLimit = Math.min(steering.maxAngle, t.front.peakSlipAngle * 1.5);
       state.rider.leanTrim = Math.max(-trimLimit, Math.min(trimLimit, state.rider.leanTrim));

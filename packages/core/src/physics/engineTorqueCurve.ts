@@ -19,6 +19,8 @@ export interface VehicleTorqueCurveEffect {
   friction?: number;
   /** Seconds the clutch is open per shift, no drive at all (default the powertrain's `shiftSeconds`). */
   shiftSeconds?: number;
+  /** Multiplier on the whole full-throttle curve: an engine tune or a detuned fleet car (default `1`). */
+  scale?: number;
 }
 
 function tableAt(curve: readonly (readonly [number, number])[], rpm: number): number {
@@ -54,7 +56,8 @@ export function engineTorque(effect: VehicleTorqueCurveEffect, powertrain: Vehic
     effect.curve === undefined
       ? powertrain.peakTorque * sampleGripCurve(powertrain.torqueCurve, (rpm - powertrain.idleRpm) / Math.max(1, powertrain.redlineRpm - powertrain.idleRpm))
       : tableAt(effect.curve, rpm);
-  const shaped = strength === 1 ? full : Math.max(0.05 * peak, peak - strength * (peak - full));
+  const scale = Math.max(0, effect.scale ?? 1);
+  const shaped = (strength === 1 ? full : Math.max(0.05 * peak, peak - strength * (peak - full))) * scale;
   const friction = (effect.friction ?? 0.18 * peak) * strength * (1 / 3 + ((2 / 3) * Math.max(0, rpm)) / Math.max(1, powertrain.redlineRpm));
   return pedal * shaped - (1 - pedal) * friction;
 }
