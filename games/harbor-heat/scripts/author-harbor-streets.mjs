@@ -249,7 +249,7 @@ function buildSailboat() {
   const hull = named('boat hull', '#fff0d2', { roughness: 0.4 });
   const band = named('boat band', '#155462', { roughness: 0.45 });
   const deck = named('boat deck', '#c9a46a', { roughness: 0.8 });
-  const sail = named('boat sail', '#fffaf0', { roughness: 0.9, side: THREE.DoubleSide });
+  const sail = named('boat sail', '#e6dcc6', { roughness: 0.9, side: THREE.DoubleSide });
   const spar = named('boat spar', '#9aa3a8', { roughness: 0.4, metalness: 0.6 });
   const hullShape = (w, len, h) => {
     const g = new THREE.SphereGeometry(1, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2);

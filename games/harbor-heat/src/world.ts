@@ -156,7 +156,7 @@ export const world: EnvironmentWorldFeature = environment({
       bounds: { w: 470, d: 780 },
       position: [-430, 0],
       level: -0.4,
-      color: "#12b0cd",
+      color: "#1a7886",
       waveHeight: 0.55,
       waveScale: 26,
       waveSpeed: 0.5,
