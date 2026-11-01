@@ -1,8 +1,8 @@
 // @skill jgengine-world
 
 /**
- * The afterburner effect: throttle past the dry stop lights reheat, which adds thrust on top of full dry power after a
- * light-up delay.
+ * The afterburner effect: throttle past the dry stop lights reheat, which adds thrust on top of full dry power once the
+ * core has spooled up to full dry.
  */
 export interface AircraftAfterburner {
   /**
@@ -14,7 +14,7 @@ export interface AircraftAfterburner {
   thrustRatio?: number;
   /** Throttle position of full dry power; past it the afterburner lights (default `0.77`, the F-16's throttle gearing). */
   dryThrottle?: number;
-  /** How fast reheat builds and falls, share of full afterburner per second (default `1`). */
+  /** How fast reheat follows its command once the core is at full dry, 1/s first-order (default `5`, the F100 power lag). */
   rate?: number;
 }
 
