@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { clamp } from "@jgengine/core/math/scalar";
 import { synthesizeWaves, type GerstnerWave, type WaterSurfaceConfig } from "@jgengine/core/water/waterSurface";
 
 /** Waves the ocean shader draws; a longer {@link synthesizeWaves} set keeps its first six. */
@@ -153,10 +154,6 @@ export const DEFAULT_OCEAN_CONFIG: ResolvedOceanConfig = {
 
 function finiteOr(value: number | undefined, fallback: number): number {
   return value === undefined || !Number.isFinite(value) ? fallback : value;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
 
 /** @internal */
