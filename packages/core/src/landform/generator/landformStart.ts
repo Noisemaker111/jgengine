@@ -7,12 +7,12 @@
  *
  * @capability landform-start start a scene on a glacial valley, dunes or a coast grown by the landform generator from a seed
  */
-import type { EditorDocument } from "../editor/types";
-import { parseParams } from "../generator/paramSchema";
-import { LANDFORM_SCHEMA, landformRecipe, type LandformGeneratorParams } from "../landform/generator/landformGenerator";
-import { growLandform, landformTerrainSnapshot } from "../landform/generator/landformTerrain";
-import type { TerraformSnapshot } from "./terraform";
-import type { LandformStart } from "./terrainGenerator";
+import type { EditorDocument } from "../../editor/types";
+import { parseParams } from "../../generator/paramSchema";
+import { LANDFORM_SCHEMA, landformRecipe, type LandformGeneratorParams } from "./landformGenerator";
+import { growLandform, landformTerrainSnapshot } from "./landformTerrain";
+import type { TerraformSnapshot } from "../../terrain/terraform";
+import type { LandformStart } from "../../terrain/terrainGenerator";
 
 /**
  * Each start's generator params, about a 960 m map: a range cut by rivers then worked by ice above its snowline, a sand

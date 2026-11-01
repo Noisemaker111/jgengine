@@ -348,7 +348,7 @@ export const editorLayers: EditorDocument = normalizeEditorLayers(sceneJson as u
 `;
 
 const grownEditorLayersTs = `import { normalizeEditorLayers, type EditorDocument } from "@jgengine/core/editor/index";
-import { withGeneratedTerrain } from "@jgengine/core/terrain/landformStart";
+import { withGeneratedTerrain } from "@jgengine/core/landform/generator/landformStart";
 
 import sceneJson from "./editor.scene.json";
 

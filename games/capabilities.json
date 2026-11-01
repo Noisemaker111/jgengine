@@ -5768,7 +5768,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/terrain/landformStart",
+      "module": "@jgengine/core/terrain/terrainGenerator",
       "gameFacing": false,
       "probe": null,
       "intent": "start a scene on a glacial valley, dunes or a coast grown by the landform generator from a seed"

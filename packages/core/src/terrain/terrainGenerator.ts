@@ -1,6 +1,6 @@
 // @skill jgengine-world
 /**
- * The plain data a document stores to have its ground grown on first load; `terrain/landformStart` grows it.
+ * The plain data a document stores to have its ground grown on first load; `landform/generator/landformStart` grows it.
  *
  * @capability landform-start start a scene on a glacial valley, dunes or a coast grown by the landform generator from a seed
  */

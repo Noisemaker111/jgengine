@@ -29,6 +29,6 @@
 
 ## Landform start
 
-- `bun run jgengine create "<Name>" --landform glacial-valley|dunes|coast` writes `terrainGenerator: { kind: "landform", start, seed: <game id> }` into the scene, and `editorLayers.ts` grows it with `withGeneratedTerrain` (`@jgengine/core/terrain/landformStart`) on first load.
+- `bun run jgengine create "<Name>" --landform glacial-valley|dunes|coast` writes `terrainGenerator: { kind: "landform", start, seed: <game id> }` into the scene, and `editorLayers.ts` grows it with `withGeneratedTerrain` (`@jgengine/core/landform/generator/landformStart`) on first load.
 - The editor's first save keeps the grown terrain as the scene's sculpt; reshape it like any other. Without the flag a game starts on the starter hills (or flat with `--ground flat`).
 - Gaps: the coast has no water volume yet, and the glacial valley takes about 4 s to grow on first load.

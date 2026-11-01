@@ -1161,8 +1161,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## landform-start — start a scene on a glacial valley, dunes or a coast grown by the landform generator from a seed
 
 - `LANDFORM_STARTS` (const) · `import { LANDFORM_STARTS } from "@jgengine/core/terrain/terrainGenerator"`
-- `landformStartTerrain` (function) · `import { landformStartTerrain } from "@jgengine/core/terrain/landformStart"`
-- `withGeneratedTerrain` (function) · `import { withGeneratedTerrain } from "@jgengine/core/terrain/landformStart"`
+- `landformStartTerrain` (function) · `import { landformStartTerrain } from "@jgengine/core/landform/generator/landformStart"`
+- `withGeneratedTerrain` (function) · `import { withGeneratedTerrain } from "@jgengine/core/landform/generator/landformStart"`
 
 ## lane-graph — directed lane topology with junctions, signals and parking for vehicle traffic
 

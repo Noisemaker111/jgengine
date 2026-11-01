@@ -2150,6 +2150,12 @@
 - `landformKey` (function): function landformKey(recipe: LandformRecipe, seed: string): string — The cache key of a grown landform: model version, recipe and seed.
 - `landformRecipe` (function): function landformRecipe(params: LandformGeneratorParams, detail = 1): LandformRecipe — The recipe a generator's params and detail level grow: lower detail keeps the map size with fewer, larger cells.
 
+## @jgengine/core/landform/generator/landformStart
+
+- `LANDFORM_START_PARAMS` (const): const LANDFORM_START_PARAMS: Readonly<Record<LandformStart, Partial<LandformGeneratorParams>>> — Each start's generator params, about a 960 m map: a range cut by rivers then worked by ice above its snowline, a sand sea under one wind, and a river-cut range drowned to a coast. Simulated at full scale and shrunk to the map.
+- `landformStartTerrain` (function): function landformStartTerrain(start: LandformStart, seed: string): TerraformSnapshot — The terrain a start grows from a seed, origin at ground level 0. Deterministic and cached.
+- `withGeneratedTerrain` (function): function withGeneratedTerrain(doc: EditorDocument): EditorDocument — The document with its generated terrain grown in when it has a generator and no sculpt; otherwise unchanged.
+
 ## @jgengine/core/landform/generator/landformTerrain
 
 - `GLACIAL_PHASE_YEARS` (const): const GLACIAL_PHASE_YEARS: 20000 — Years glaciers work a range when a recipe has a `glacierEla`.
@@ -5048,12 +5054,6 @@
 - `HeightfieldRect` (interface): interface HeightfieldRect — XZ rectangle in world units — matches the shape of a terraform snapshot's `bounds`.
 - `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
 
-## @jgengine/core/terrain/landformStart
-
-- `LANDFORM_START_PARAMS` (const): const LANDFORM_START_PARAMS: Readonly<Record<LandformStart, Partial<LandformGeneratorParams>>> — Each start's generator params, about a 960 m map: a range cut by rivers then worked by ice above its snowline, a sand sea under one wind, and a river-cut range drowned to a coast. Simulated at full scale and shrunk to the map.
-- `landformStartTerrain` (function): function landformStartTerrain(start: LandformStart, seed: string): TerraformSnapshot — The terrain a start grows from a seed, origin at ground level 0. Deterministic and cached.
-- `withGeneratedTerrain` (function): function withGeneratedTerrain(doc: EditorDocument): EditorDocument — The document with its generated terrain grown in when it has a generator and no sculpt; otherwise unchanged.
-
 ## @jgengine/core/terrain/pathTerrain
 
 - `PathHeightPolicy` (type): type PathHeightPolicy = | { readonly kind: "sample" } | { readonly kind: "fixed"; readonly height: number } | { readonly kind: "grade"; readonly start: number; readonly end: number } — Where a path corridor drives its centerline height: - `sample` — follow the base terrain under the centerline, so the corridor drapes level across its width while still tracking the hills the path crosses (the natural policy for a road or trail). - `fixed` — hold one constant height for the whole corridor (a level causeway, runway, or dam crest). - `grade` — interpolate linearly from `start` to `end` height along the path's arc length, a constant-slope ramp between two anchors (a switchback, a graded rail bed, an accessibility ramp).
@@ -5174,7 +5174,7 @@
 ## @jgengine/core/terrain/terrainGenerator
 
 - `EditorTerrainGenerator` (interface): interface EditorTerrainGenerator — A document's terrain generator: what grows its ground when it has no sculpt yet.
-- `LANDFORM_STARTS` (const): const LANDFORM_STARTS: readonly ["glacial-valley", "dunes", "coast"] — The plain data a document stores to have its ground grown on first load; `terrain/landformStart` grows it.
+- `LANDFORM_STARTS` (const): const LANDFORM_STARTS: readonly ["glacial-valley", "dunes", "coast"] — The plain data a document stores to have its ground grown on first load; `landform/generator/landformStart` grows it.
 - `LandformStart` (type): type LandformStart = (typeof LANDFORM_STARTS)[number] — One named landform start.
 
 ## @jgengine/core/terrain/terrainGrade

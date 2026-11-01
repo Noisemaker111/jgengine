@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { normalizeEditorLayers } from "../editor/document";
+import { normalizeEditorLayers } from "../../editor/document";
 import { landformStartTerrain, withGeneratedTerrain } from "./landformStart";
 
 const doc = () => normalizeEditorLayers({ version: 1, markers: [], volumes: [], paths: [], annotations: [], prefabs: [], collections: [], catalogs: [], terrainGenerator: { kind: "landform", start: "dunes", seed: "sand-sea" } });
