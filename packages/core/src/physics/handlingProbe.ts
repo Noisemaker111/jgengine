@@ -3,7 +3,7 @@ import type { AircraftVector, RigidAircraft, RigidAircraftInput, RigidAircraftSt
 
 /** The slice of a vehicle sim {@link measureHandling} drives; `VehicleDynamics` fits. */
 export interface HandlingSubject {
-  tick(dt: number, input: AxisInput): { forwardSpeed: number; lateralSpeed: number; yawRate: number };
+  tick(dt: number, input: AxisInput): { motion: { forwardSpeed: number; lateralSpeed: number; yawRate: number } };
   velocity(): readonly [number, number];
 }
 
@@ -75,12 +75,12 @@ function speedOf(subject: HandlingSubject): number {
 function launchTo(subject: HandlingSubject, speed: number, dt: number): number {
   let last = 0;
   for (let i = 0; i < Math.ceil(60 / dt); i += 1) {
-    last = subject.tick(dt, input(1, 0, 0)).forwardSpeed;
+    last = subject.tick(dt, input(1, 0, 0)).motion.forwardSpeed;
     if (last >= speed) break;
   }
   for (let i = 0; i < Math.ceil(0.5 / dt); i += 1) {
     const hold = holdSpeed(speed, last);
-    last = subject.tick(dt, input(hold.throttle, hold.brake, 0)).forwardSpeed;
+    last = subject.tick(dt, input(hold.throttle, hold.brake, 0)).motion.forwardSpeed;
   }
   return last;
 }
@@ -104,8 +104,8 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
     const car = create();
     for (let i = 1; i <= Math.ceil(40 / dt); i += 1) {
       const step = car.tick(dt, input(1, 0, 0));
-      if (zeroTo100 === Number.POSITIVE_INFINITY && step.forwardSpeed >= KMH100) zeroTo100 = i * dt;
-      topSpeed = step.forwardSpeed;
+      if (zeroTo100 === Number.POSITIVE_INFINITY && step.motion.forwardSpeed >= KMH100) zeroTo100 = i * dt;
+      topSpeed = step.motion.forwardSpeed;
     }
   }
 
@@ -116,8 +116,8 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
       let distance = 0;
       for (let i = 0; i < Math.ceil(20 / dt); i += 1) {
         const step = car.tick(dt, input(0, 1, 0));
-        distance += Math.max(0, step.forwardSpeed) * dt;
-        if (step.forwardSpeed <= 0.3) {
+        distance += Math.max(0, step.motion.forwardSpeed) * dt;
+        if (step.motion.forwardSpeed <= 0.3) {
           brake100To0 = distance;
           break;
         }
@@ -135,7 +135,7 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
       const steer = Math.min(1, (i * dt) / 6);
       const hold = holdSpeed(20, speed);
       const step = car.tick(dt, input(hold.throttle, hold.brake, steer));
-      speed = step.forwardSpeed;
+      speed = step.motion.forwardSpeed;
       const velocity = car.velocity();
       const ax = (velocity[0] - previous[0]) / dt;
       const az = (velocity[1] - previous[1]) / dt;
@@ -143,7 +143,7 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
       const travel = Math.max(1e-6, Math.hypot(velocity[0], velocity[1]));
       const lateral = Math.abs(ax * velocity[1] - az * velocity[0]) / travel;
       filtered += (lateral - filtered) * 0.1;
-      if (sideslipOf(step) < 12 / RAD_TO_DEG) maxLateralG = Math.max(maxLateralG, filtered / 9.81);
+      if (sideslipOf(step.motion) < 12 / RAD_TO_DEG) maxLateralG = Math.max(maxLateralG, filtered / 9.81);
     }
   }
 
@@ -158,7 +158,7 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
     const yaw: number[] = [];
     let last = { forwardSpeed: entry, lateralSpeed: 0, yawRate: 0 };
     for (let i = 0; i < Math.ceil(3 / dt); i += 1) {
-      last = car.tick(dt, input(0.35, 0, stepSteer));
+      last = car.tick(dt, input(0.35, 0, stepSteer)).motion;
       yaw.push(Math.abs(last.yawRate));
       stepPeakSideslipDeg = Math.max(stepPeakSideslipDeg, sideslipOf(last) * RAD_TO_DEG);
     }
@@ -179,11 +179,11 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
     for (let i = 0; i < Math.ceil(2.5 / dt); i += 1) {
       const hold = holdSpeed(cornerSpeed, speed);
       const step = car.tick(dt, input(hold.throttle, hold.brake, liftOffSteer));
-      speed = step.forwardSpeed;
-      yawBefore = Math.abs(step.yawRate);
+      speed = step.motion.forwardSpeed;
+      yawBefore = Math.abs(step.motion.yawRate);
     }
     let yawAfter = yawBefore;
-    for (let i = 0; i < Math.ceil(0.5 / dt); i += 1) yawAfter = Math.abs(car.tick(dt, input(0, 0, liftOffSteer)).yawRate);
+    for (let i = 0; i < Math.ceil(0.5 / dt); i += 1) yawAfter = Math.abs(car.tick(dt, input(0, 0, liftOffSteer)).motion.yawRate);
     liftOffYawGain = yawBefore > 1e-3 ? yawAfter / yawBefore : 1;
   }
 
@@ -197,7 +197,7 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
     for (let i = 0; i < pullTicks + Math.ceil(3 / dt); i += 1) {
       const pulling = i < pullTicks;
       const step = car.tick(dt, input(0, 0, pulling ? 1 : 0, pulling ? 1 : 0));
-      const slip = sideslipOf(step) * RAD_TO_DEG;
+      const slip = sideslipOf(step.motion) * RAD_TO_DEG;
       if (i * dt < 1.5) handbrakePeakSideslipDeg = Math.max(handbrakePeakSideslipDeg, slip);
       if (pulling) continue;
       if (slip >= 5) settledSince = -1;
@@ -216,7 +216,7 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
     launchTo(car, 12, dt);
     let last = { forwardSpeed: 0, lateralSpeed: 0, yawRate: 0 };
     for (let i = 0; i < Math.ceil(2 / dt); i += 1) {
-      last = car.tick(dt, input(1, 0, 1));
+      last = car.tick(dt, input(1, 0, 1)).motion;
       powerSteerPeakSideslipDeg = Math.max(powerSteerPeakSideslipDeg, sideslipOf(last) * RAD_TO_DEG);
     }
     powerSteerSpun = sideslipOf(last) > 60 / RAD_TO_DEG || last.forwardSpeed < 0;
@@ -246,12 +246,9 @@ export interface RideSubject {
     dt: number,
     input: AxisInput,
   ): {
-    position: readonly [number, number, number];
-    forwardSpeed: number;
-    bodyPitch: number;
-    bodyRoll: number;
-    lateralAccel: number;
-    airborne: boolean;
+    motion: { position: readonly [number, number, number]; forwardSpeed: number; lateralAccel: number };
+    body: { bodyPitch: number; bodyRoll: number };
+    air: { airborne: boolean };
   };
   applyImpulse(dvx: number, dvz: number, dvy?: number): void;
 }
@@ -284,14 +281,14 @@ export function measureRide(create: () => RideSubject, options: { dt?: number } 
   let heaveOvershoot = 0;
   {
     const car = create();
-    const rest = car.tick(dt, neutral).position[1];
+    const rest = car.tick(dt, neutral).motion.position[1];
     car.applyImpulse(0, 0, 1);
     let lastOutside = 0;
     let rise = 0;
     let drop = 0;
     const ticks = Math.ceil(6 / dt);
     for (let i = 1; i <= ticks; i += 1) {
-      const offset = car.tick(dt, neutral).position[1] - rest;
+      const offset = car.tick(dt, neutral).motion.position[1] - rest;
       rise = Math.max(rise, offset);
       drop = Math.max(drop, -offset);
       if (Math.abs(offset) > 0.005) lastOutside = i;
@@ -304,22 +301,22 @@ export function measureRide(create: () => RideSubject, options: { dt?: number } 
   {
     const car = create();
     let speed = 0;
-    for (let i = 0; i < Math.ceil(30 / dt) && speed < 25; i += 1) speed = car.tick(dt, input(1, 0, 0)).forwardSpeed;
-    for (let i = 0; i < Math.ceil(1.5 / dt); i += 1) brakeDiveDeg = Math.max(brakeDiveDeg, car.tick(dt, input(0, 1, 0)).bodyPitch * RAD_TO_DEG);
+    for (let i = 0; i < Math.ceil(30 / dt) && speed < 25; i += 1) speed = car.tick(dt, input(1, 0, 0)).motion.forwardSpeed;
+    for (let i = 0; i < Math.ceil(1.5 / dt); i += 1) brakeDiveDeg = Math.max(brakeDiveDeg, car.tick(dt, input(0, 1, 0)).body.bodyPitch * RAD_TO_DEG);
   }
 
   let rollGradient = 0;
   {
     const car = create();
     let speed = 0;
-    for (let i = 0; i < Math.ceil(30 / dt) && speed < 20; i += 1) speed = car.tick(dt, input(1, 0, 0)).forwardSpeed;
+    for (let i = 0; i < Math.ceil(30 / dt) && speed < 20; i += 1) speed = car.tick(dt, input(1, 0, 0)).motion.forwardSpeed;
     let step = car.tick(dt, neutral);
     for (let i = 0; i < Math.ceil(2.5 / dt); i += 1) {
-      const hold = holdSpeed(20, step.forwardSpeed);
+      const hold = holdSpeed(20, step.motion.forwardSpeed);
       step = car.tick(dt, input(hold.throttle, hold.brake, 0.5));
     }
-    const g = Math.abs(step.lateralAccel) / 9.81;
-    rollGradient = g > 0.05 ? (Math.abs(step.bodyRoll) * RAD_TO_DEG) / g : 0;
+    const g = Math.abs(step.motion.lateralAccel) / 9.81;
+    rollGradient = g > 0.05 ? (Math.abs(step.body.bodyRoll) * RAD_TO_DEG) / g : 0;
   }
 
   let landingBounces = 0;
@@ -330,7 +327,7 @@ export function measureRide(create: () => RideSubject, options: { dt?: number } 
     let wasAirborne = false;
     let landed = false;
     for (let i = 0; i < Math.ceil(4 / dt); i += 1) {
-      const airborne = car.tick(dt, neutral).airborne;
+      const airborne = car.tick(dt, neutral).air.airborne;
       if (wasAirborne && !airborne) landed = true;
       else if (landed && !wasAirborne && airborne) landingBounces += 1;
       wasAirborne = airborne;
@@ -346,9 +343,9 @@ export interface AirSubject {
     dt: number,
     input: AxisInput,
     modifiers?: { air?: { pitch: number; yaw: number; roll: number } },
-  ): { position: readonly [number, number, number]; airborne: boolean };
+  ): { motion: { position: readonly [number, number, number] }; air: { airborne: boolean } };
   jump(): boolean;
-  snapshot(): { pitchRate: number; yawRate: number; rollRate: number };
+  snapshot(): { motion: { yawRate: number }; body: { pitchRate: number; rollRate: number } };
 }
 
 /** Deterministic jump and air-control metrics. */
@@ -376,14 +373,14 @@ export function measureAir(create: () => AirSubject, options: { dt?: number } = 
 
   const flight = (secondJumpAtApex: boolean) => {
     const car = create();
-    const rest = car.tick(dt, neutral).position[1];
+    const rest = car.tick(dt, neutral).motion.position[1];
     car.jump();
     let apex = 0;
     let apexTime = 0;
     let rising = true;
     let last = rest;
     for (let i = 1; i <= Math.ceil(4 / dt); i += 1) {
-      const y = car.tick(dt, neutral).position[1];
+      const y = car.tick(dt, neutral).motion.position[1];
       if (rising && y < last) {
         rising = false;
         if (secondJumpAtApex) car.jump();
@@ -404,7 +401,8 @@ export function measureAir(create: () => AirSubject, options: { dt?: number } = 
     car.tick(dt, neutral);
     car.jump();
     for (let i = 0; i < Math.ceil(0.4 / dt); i += 1) car.tick(dt, neutral, { air });
-    return Math.abs(car.snapshot()[key]);
+    const held = car.snapshot();
+    return Math.abs(key === "yawRate" ? held.motion.yawRate : held.body[key]);
   };
 
   return {
@@ -419,7 +417,10 @@ export function measureAir(create: () => AirSubject, options: { dt?: number } = 
 
 /** A vehicle sim {@link measureCourse} can drive along a line: a {@link HandlingSubject} that also reports its pose and front-wheel angle. */
 export interface CourseSubject {
-  tick(dt: number, input: AxisInput): { forwardSpeed: number; lateralSpeed: number; yawRate: number; steerAngle: number };
+  tick(
+    dt: number,
+    input: AxisInput,
+  ): { motion: { forwardSpeed: number; lateralSpeed: number; yawRate: number }; steering: { steerAngle: number } };
   velocity(): readonly [number, number];
   pose(): { position: readonly [number, number, number]; heading: number };
 }
@@ -482,11 +483,11 @@ export function measureCourse(create: () => CourseSubject, options: CourseProbeO
       const steer = Math.min(1, (i * dt) / 8) * 0.5;
       const hold = holdSpeed(20, speed);
       const step = car.tick(dt, input(hold.throttle, hold.brake, steer));
-      speed = step.forwardSpeed;
-      const lateralG = Math.abs(step.yawRate * speed) / 9.81;
-      if (lateralG < 0.1 || lateralG > 0.4 || speed < 5 || sideslipOf(step) > 4 / RAD_TO_DEG) continue;
-      const geometric = Math.atan((wheelbase * Math.abs(step.yawRate)) / speed);
-      sum += ((Math.abs(step.steerAngle) - geometric) * RAD_TO_DEG) / lateralG;
+      speed = step.motion.forwardSpeed;
+      const lateralG = Math.abs(step.motion.yawRate * speed) / 9.81;
+      if (lateralG < 0.1 || lateralG > 0.4 || speed < 5 || sideslipOf(step.motion) > 4 / RAD_TO_DEG) continue;
+      const geometric = Math.atan((wheelbase * Math.abs(step.motion.yawRate)) / speed);
+      sum += ((Math.abs(step.steering.steerAngle) - geometric) * RAD_TO_DEG) / lateralG;
       count += 1;
     }
     if (count > 0) understeerGradient = sum / count;
@@ -502,14 +503,14 @@ export function measureCourse(create: () => CourseSubject, options: CourseProbeO
       target += 0.25 * dt;
       const hold = holdSpeed(target, speed);
       const step = car.tick(dt, input(hold.throttle, hold.brake, steer));
-      speed = step.forwardSpeed;
+      speed = step.motion.forwardSpeed;
       const wanted = speed / radius;
-      const actual = -step.yawRate;
+      const actual = -step.motion.yawRate;
       steer = Math.max(0, Math.min(1, steer + 1.5 * (wanted - actual) * dt));
-      const holding = Math.abs(actual - wanted) < wanted * 0.03 && sideslipOf(step) < 12 / RAD_TO_DEG;
+      const holding = Math.abs(actual - wanted) < wanted * 0.03 && sideslipOf(step.motion) < 12 / RAD_TO_DEG;
       if (i * dt > 3 && holding) skidpadG = Math.max(skidpadG, (speed * speed) / radius / 9.81);
       if (steer >= 1 && actual < wanted * 0.9) break;
-      if (sideslipOf(step) > 45 / RAD_TO_DEG) break;
+      if (sideslipOf(step.motion) > 45 / RAD_TO_DEG) break;
     }
   }
 
@@ -537,8 +538,8 @@ export function measureCourse(create: () => CourseSubject, options: CourseProbeO
       const error = wrapAngle(bearing - pose.heading);
       const hold = holdSpeed(entry, speed);
       const step = car.tick(dt, input(hold.throttle, hold.brake, Math.max(-1, Math.min(1, -error * 3))));
-      speed = step.forwardSpeed;
-      if (sideslipOf(step) > 30 / RAD_TO_DEG) return false;
+      speed = step.motion.forwardSpeed;
+      if (sideslipOf(step.motion) > 30 / RAD_TO_DEG) return false;
     }
     return false;
   };
@@ -552,7 +553,7 @@ export function measureCourse(create: () => CourseSubject, options: CourseProbeO
 
 /** The slice of a single-track sim {@link measureLean} drives; a `VehicleDynamics` with a `lean` block fits. */
 export interface LeanSubject {
-  tick(dt: number, input: AxisInput): { forwardSpeed: number; lean: number };
+  tick(dt: number, input: AxisInput): { motion: { forwardSpeed: number }; body: { lean: number } };
 }
 
 /** Deterministic lean metrics for a motorcycle or bicycle. */
@@ -579,8 +580,8 @@ export function measureLean(create: () => LeanSubject, options: { dt?: number; s
   for (let i = 0; i < Math.ceil(2 / dt); i += 1) {
     const hold = holdSpeed(speed, current);
     const step = bike.tick(dt, input(hold.throttle, hold.brake, 1));
-    current = step.forwardSpeed;
-    leans.push(step.lean);
+    current = step.motion.forwardSpeed;
+    leans.push(step.body.lean);
   }
   const steady = leans[leans.length - 1] ?? 0;
   const index = leans.findIndex((lean) => Math.sign(lean) === Math.sign(steady) && Math.abs(lean) >= Math.abs(steady) * 0.9);

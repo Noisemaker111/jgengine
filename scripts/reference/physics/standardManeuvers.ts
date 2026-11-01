@@ -59,12 +59,12 @@ function holdSpeed(target: number, current: number): { throttle: number; brake: 
 function launchTo(subject: CourseSubject, speed: number, dt: number): number {
   let last = 0;
   for (let i = 0; i < Math.ceil(60 / dt); i += 1) {
-    last = subject.tick(dt, axis(1, 0, 0)).forwardSpeed;
+    last = subject.tick(dt, axis(1, 0, 0)).motion.forwardSpeed;
     if (last >= speed) break;
   }
   for (let i = 0; i < Math.ceil(1 / dt); i += 1) {
     const hold = holdSpeed(speed, last);
-    last = subject.tick(dt, axis(hold.throttle, hold.brake, 0)).forwardSpeed;
+    last = subject.tick(dt, axis(hold.throttle, hold.brake, 0)).motion.forwardSpeed;
   }
   return last;
 }
@@ -98,21 +98,21 @@ function steadyStateCircle(create: () => CourseSubject, wheelbase: number, radiu
     target += 0.2 * dt;
     const hold = holdSpeed(target, speed);
     const step = car.tick(dt, axis(hold.throttle, hold.brake, steer));
-    speed = step.forwardSpeed;
+    speed = step.motion.forwardSpeed;
     const wanted = speed / radius;
-    const actual = -step.yawRate;
+    const actual = -step.motion.yawRate;
     steer = clamp(steer + 1.5 * (wanted - actual) * dt, 0, 1);
-    const holding = i * dt > 3 && Math.abs(actual - wanted) < wanted * 0.03 && sideslip(step) < 12 / RAD_TO_DEG;
-    const g = (Math.abs(step.yawRate) * speed) / G;
+    const holding = i * dt > 3 && Math.abs(actual - wanted) < wanted * 0.03 && sideslip(step.motion) < 12 / RAD_TO_DEG;
+    const g = (Math.abs(step.motion.yawRate) * speed) / G;
     if (holding) {
       maxG = Math.max(maxG, (speed * speed) / radius / G);
       if (g >= 0.1 && g <= 0.4) {
         xs.push(g);
-        ys.push((Math.abs(step.steerAngle) - ackermann) * RAD_TO_DEG);
+        ys.push((Math.abs(step.steering.steerAngle) - ackermann) * RAD_TO_DEG);
       }
     }
     if (steer >= 1 && actual < wanted * 0.9) break;
-    if (sideslip(step) > 45 / RAD_TO_DEG || speed < 2) break;
+    if (sideslip(step.motion) > 45 / RAD_TO_DEG || speed < 2) break;
   }
   let understeer = Number.NaN;
   if (xs.length > 10) {
@@ -148,8 +148,8 @@ function stepSteer(create: () => CourseSubject, speed: number, accel: number, dt
     for (let i = 0; i < Math.ceil(8 / dt); i += 1) {
       const hold = holdSpeed(speed, current);
       const step = car.tick(dt, axis(hold.throttle, hold.brake, input));
-      current = step.forwardSpeed;
-      input = clamp(input + 1.5 * (wanted + step.yawRate) * dt, 0, 1);
+      current = step.motion.forwardSpeed;
+      input = clamp(input + 1.5 * (wanted + step.motion.yawRate) * dt, 0, 1);
       if (i * dt >= 6) {
         sum += input;
         count += 1;
@@ -165,14 +165,14 @@ function stepSteer(create: () => CourseSubject, speed: number, accel: number, dt
   for (let i = 0; i < Math.ceil(1 / dt); i += 1) {
     const hold = holdSpeed(speed, current);
     throttle = hold.throttle;
-    current = car.tick(dt, axis(hold.throttle, hold.brake, 0)).forwardSpeed;
+    current = car.tick(dt, axis(hold.throttle, hold.brake, 0)).motion.forwardSpeed;
   }
   const ramp = 0.15;
   const yaw: number[] = [];
   for (let i = 1; i <= Math.ceil(5 / dt); i += 1) {
     const t = i * dt;
     const steer = input * Math.min(1, t / ramp);
-    yaw.push(Math.abs(car.tick(dt, axis(throttle, 0, steer)).yawRate));
+    yaw.push(Math.abs(car.tick(dt, axis(throttle, 0, steer)).motion.yawRate));
   }
   const tail = yaw.slice(-Math.ceil(1 / dt));
   const steady = tail.reduce((total, value) => total + value, 0) / Math.max(1, tail.length);
@@ -270,9 +270,9 @@ function laneChangeClears(create: () => CourseSubject, entry: number, wheelbase:
     steer = clamp(steer + 40 * (wanted - steerAngle) * dt, -1, 1);
     const hold = holdSpeed(entry, speed);
     const step = car.tick(dt, axis(hold.throttle, hold.brake, steer));
-    speed = step.forwardSpeed;
-    steerAngle = step.steerAngle;
-    if (sideslip(step) > 30 / RAD_TO_DEG || speed < entry * 0.5) return false;
+    speed = step.motion.forwardSpeed;
+    steerAngle = step.steering.steerAngle;
+    if (sideslip(step.motion) > 30 / RAD_TO_DEG || speed < entry * 0.5) return false;
   }
   return false;
 }

@@ -39,7 +39,7 @@ describe("createVehicleBackendLink on Rapier", () => {
     const link = createVehicleBackendLink(backend, { halfExtents: [0.9, 0.7, 2.1], blockMask: 1 });
     const sim = createVehicleDynamics(car, { clampMove: link.clampMove });
     for (let i = 0; i < 420; i += 1) {
-      link.sync(sim.tick(DT, full));
+      link.sync(sim.tick(DT, full).motion);
       backend.step(DT);
     }
     const front = sim.pose().position[2] + 2.1;

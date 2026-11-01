@@ -475,8 +475,8 @@ export interface VehicleDynamicsOptions {
   groundHeight?: (x: number, z: number) => number;
 }
 
-/** Serializable integrator state: everything {@link VehicleDynamics.restore} needs to resume bit-for-bit. */
-export interface VehicleDynamicsState {
+/** Planar pose and velocity of a {@link VehicleDynamicsState}. */
+export interface VehicleMotionState {
   x: number;
   y: number;
   z: number;
@@ -485,10 +485,20 @@ export interface VehicleDynamicsState {
   vz: number;
   yawRate: number;
   steerAngle: number;
+}
+
+/** Gearbox, engine speed and brake-pressure state. */
+export interface VehicleDrivetrainState {
   gearIndex: number;
   reversing: boolean;
   shiftRemaining: number;
   rpm: number;
+  /** Brake pressure share following the pedal (`brakeLag`). */
+  brakeLevel: number;
+}
+
+/** Body acceleration, pitch/roll and spring state (`suspension`). */
+export interface VehicleBodyState {
   longitudinalAccel: number;
   lateralAccel: number;
   bodyPitch: number;
@@ -499,29 +509,49 @@ export interface VehicleDynamicsState {
   rollRate: number;
   /** Per-corner spring compression, m, in order front-left, front-right, rear-left, rear-right. */
   compression: [number, number, number, number];
+}
+
+/** Airborne and jump bookkeeping. */
+export interface VehicleAirState {
   airborne: boolean;
-  /** The lean the rider is asking for, rad, positive right; it sets the turn the bar steers for. */
-  lean: number;
-  /** The rider's bar correction on top of the balanced-turn angle, rad. */
-  leanTrim: number;
   /** Jumps used since last on the ground. */
   jumpsUsed: number;
   /** Seconds since leaving the ground (`0` while grounded). */
   airTime: number;
   /** Height above the ground from a hop without `suspension`, m. */
   hopHeight: number;
+}
+
+/** Rider lean (`lean`). */
+export interface VehicleLeanState {
+  /** The lean the rider is asking for, rad, positive right; it sets the turn the bar steers for. */
+  lean: number;
+  /** The rider's bar correction on top of the balanced-turn angle, rad. */
+  leanTrim: number;
+}
+
+/** Tire memory: relaxed slip (`tireRelaxation`) and last axle forces (compliance steer). */
+export interface VehicleTireState {
   /** Relaxed slip angles the tyres carry, rad (`tireRelaxation`). */
   slipFront: number;
   slipRear: number;
   /** Last substep's axle lateral forces, N, for compliance steer. */
   forceFront: number;
   forceRear: number;
-  /** Brake pressure share following the pedal (`brakeLag`). */
-  brakeLevel: number;
 }
 
-/** Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read. */
-export interface VehicleDynamicsStep {
+/** Serializable integrator state: everything {@link VehicleDynamics.restore} needs to resume bit-for-bit. */
+export interface VehicleDynamicsState {
+  motion: VehicleMotionState;
+  drivetrain: VehicleDrivetrainState;
+  body: VehicleBodyState;
+  air: VehicleAirState;
+  rider: VehicleLeanState;
+  tires: VehicleTireState;
+}
+
+/** Pose and planar motion of a {@link VehicleDynamicsStep}. */
+export interface VehicleStepMotion {
   position: readonly [number, number, number];
   heading: number;
   /** Signed speed along the heading, m/s. */
@@ -529,10 +559,21 @@ export interface VehicleDynamicsStep {
   /** Lateral speed, m/s, positive toward the car's right. */
   lateralSpeed: number;
   yawRate: number;
+  /** Lateral acceleration, m/s²; positive toward the car's right, the way `steer > 0` turns. */
+  lateralAccel: number;
+  longitudinalAccel: number;
+}
+
+/** Front-wheel angles of a {@link VehicleDynamicsStep}. */
+export interface VehicleStepSteering {
   /** Front-wheel angle the rack asks for, rad; positive steers the heading down, like `AxisInput.steer`. */
   steerAngle: number;
   /** Front-wheel angle the wheels reach after compliance and roll steer, rad, same sign. */
   roadWheelAngle: number;
+}
+
+/** Tire telemetry of a {@link VehicleDynamicsStep}: slip, saturation and slide state. */
+export interface VehicleStepTires {
   /** Body sideslip β, rad: angle between heading and velocity. */
   sideslip: number;
   slipAngleFront: number;
@@ -540,44 +581,73 @@ export interface VehicleDynamicsStep {
   /** Share of each axle's friction budget in use, `0..1+`; `≥1` means that axle is sliding. Squeal, rumble and HUD key off it. */
   frontSaturation: number;
   rearSaturation: number;
-  /** Lateral acceleration, m/s²; positive toward the car's right, the way `steer > 0` turns. */
-  lateralAccel: number;
-  longitudinalAccel: number;
-  frontLoad: number;
-  rearLoad: number;
   /** Surface multiplier sampled this tick. */
   surface: number;
+  wheelspin: boolean;
+  wheelLock: boolean;
+  /**
+   * How hard the tires are sliding, `0..1`: sideways slide (`1` at about 30° of sideslip), tires pushed past
+   * their peak (a plowing front), wheelspin and locked wheels. Squeal, tire smoke, skid marks and drift scoring key off it.
+   */
+  slip: number;
+}
+
+/** Axle and wheel loads of a {@link VehicleDynamicsStep}. */
+export interface VehicleStepLoads {
+  frontLoad: number;
+  rearLoad: number;
+  /** Per-corner tyre load, N (front-left, front-right, rear-left, rear-right): spring loads with `suspension`, else axle loads split by lateral transfer. */
+  wheelLoads: readonly [number, number, number, number];
+  /** Acceleration has taken all the load off the front axle. */
+  wheelie: boolean;
+  /** Braking has taken all the load off the rear axle. */
+  stoppie: boolean;
+}
+
+/** Engine telemetry of a {@link VehicleDynamicsStep}. */
+export interface VehicleStepEngine {
   /** One-based forward gear; `-1` in reverse. */
   gear: number;
   rpm: number;
   /** Throttle `0..1` actually applied after traction control and the rev limiter — engine audio load. */
   engineLoad: number;
-  wheelspin: boolean;
-  wheelLock: boolean;
+}
+
+/** Which driver aids intervened this tick. */
+export interface VehicleStepAids {
   absActive: boolean;
   tractionLimited: boolean;
   stabilityActive: boolean;
+}
+
+/** Body attitude of a {@link VehicleDynamicsStep}. */
+export interface VehicleStepBody {
   bodyPitch: number;
   bodyRoll: number;
+  /** Balance lean the bike actually shows, `atan(lateral g)`, rad, positive leaning right; `0` without a `lean` block. */
+  lean: number;
+}
+
+/** Airborne telemetry of a {@link VehicleDynamicsStep}. */
+export interface VehicleStepAir {
   /** Height of the car's base above the terrain under it, m; `0` on the ground and always `0` without `suspension`. */
   airOffset: number;
   /** No wheel touches the ground. */
   airborne: boolean;
   /** Vertical speed at the moment of touchdown this tick, m/s (`0` otherwise) — landing shake, thud, rumble. */
   landingSpeed: number;
-  /** Per-corner tyre load, N (front-left, front-right, rear-left, rear-right): spring loads with `suspension`, else axle loads split by lateral transfer. */
-  wheelLoads: readonly [number, number, number, number];
-  /** Balance lean the bike actually shows, `atan(lateral g)`, rad, positive leaning right; `0` without a `lean` block. */
-  lean: number;
-  /** Acceleration has taken all the load off the front axle. */
-  wheelie: boolean;
-  /** Braking has taken all the load off the rear axle. */
-  stoppie: boolean;
-  /**
-   * How hard the tires are sliding, `0..1`: sideways slide (`1` at about 30° of sideslip), tires pushed past
-   * their peak (a plowing front), wheelspin and locked wheels. Squeal, tire smoke, skid marks and drift scoring key off it.
-   */
-  slip: number;
+}
+
+/** Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read, grouped by the part that produced it. */
+export interface VehicleDynamicsStep {
+  motion: VehicleStepMotion;
+  steering: VehicleStepSteering;
+  tires: VehicleStepTires;
+  loads: VehicleStepLoads;
+  engine: VehicleStepEngine;
+  aids: VehicleStepAids;
+  body: VehicleStepBody;
+  air: VehicleStepAir;
   /** The hardest hit on an `obstacles` solid this tick, or `null`. */
   impact: VehicleImpact | null;
 }
@@ -702,25 +772,25 @@ export function createVehicleDynamics(
     const a = L * (1 - clamp01(tuning.frontWeight));
     const b = L - a;
     const half = Math.max(0.15, tuning.trackWidth / 2);
-    const [fx, fz] = forwardOf(state.heading);
-    const ground = (along: number, lat: number) => groundAt(state.x + fx * along - fz * lat, state.z + fz * along + fx * lat);
+    const [fx, fz] = forwardOf(state.motion.heading);
+    const ground = (along: number, lat: number) => groundAt(state.motion.x + fx * along - fz * lat, state.motion.z + fz * along + fx * lat);
     const fl = ground(a, -half);
     const fr = ground(a, half);
     const rl = ground(-b, -half);
     const rr = ground(-b, half);
     const front = (fl + fr) / 2;
     const rear = (rl + rr) / 2;
-    state.bodyPitch = -Math.atan2(front - rear, L);
-    state.bodyRoll = Math.atan2((fr + rr) / 2 - (fl + rl) / 2, 2 * half);
-    state.y = rear + (front - rear) * (b / L) + suspension.rideHeight;
-    state.vy = 0;
-    state.pitchRate = 0;
-    state.rollRate = 0;
-    state.compression = staticSags(tuning, suspension);
+    state.body.bodyPitch = -Math.atan2(front - rear, L);
+    state.body.bodyRoll = Math.atan2((fr + rr) / 2 - (fl + rl) / 2, 2 * half);
+    state.motion.y = rear + (front - rear) * (b / L) + suspension.rideHeight;
+    state.body.vy = 0;
+    state.body.pitchRate = 0;
+    state.body.rollRate = 0;
+    state.body.compression = staticSags(tuning, suspension);
   }
 
   function baseHeight(): number {
-    return tuning.suspension === undefined ? state.y : state.y - tuning.suspension.rideHeight;
+    return tuning.suspension === undefined ? state.motion.y : state.motion.y - tuning.suspension.rideHeight;
   }
 
   function tick(dt: number, input: AxisInput, modifiers?: VehicleDynamicsModifiers): VehicleDynamicsStep {
@@ -728,9 +798,9 @@ export function createVehicleDynamics(
     const steps = dt > 0 ? Math.max(1, Math.ceil(dt / maxSub - 1e-9)) : 0;
     const h = steps > 0 ? dt / steps : 0;
     const telemetry = emptyTelemetry();
-    const surface = surfaceFriction(state.x, state.z);
-    const drag = dragAt === undefined ? 0 : Math.max(0, dragAt(state.x, state.z));
-    telemetry.airborne = state.airborne;
+    const surface = surfaceFriction(state.motion.x, state.motion.z);
+    const drag = dragAt === undefined ? 0 : Math.max(0, dragAt(state.motion.x, state.motion.z));
+    telemetry.airborne = state.air.airborne;
     if (obstacleClamp !== null && options.obstacles !== undefined) {
       obstacleFrame.list = options.obstacles();
       obstacleFrame.dt = h;
@@ -742,12 +812,12 @@ export function createVehicleDynamics(
       if (hit !== null && (impact === null || hit.closingSpeed > impact.closingSpeed)) impact = hit;
     }
     if (steps === 0) substep(0, input, modifiers, surface, drag, telemetry);
-    const [fx, fz] = forwardOf(state.heading);
-    const forwardSpeed = state.vx * fx + state.vz * fz;
-    const lateralSpeed = -state.vx * fz + state.vz * fx;
+    const [fx, fz] = forwardOf(state.motion.heading);
+    const forwardSpeed = state.motion.vx * fx + state.motion.vz * fz;
+    const lateralSpeed = -state.motion.vx * fz + state.motion.vz * fx;
     const planar = Math.hypot(forwardSpeed, lateralSpeed);
     const slide = planar < 2 ? 0 : Math.abs(lateralSpeed) / planar;
-    const slip = state.airborne
+    const slip = state.air.airborne
       ? 0
       : clamp01(
           Math.max(
@@ -758,41 +828,50 @@ export function createVehicleDynamics(
           ),
         );
     return {
-      position: [state.x, baseHeight(), state.z],
-      heading: state.heading,
-      forwardSpeed,
-      lateralSpeed,
-      yawRate: state.yawRate,
-      steerAngle: -state.steerAngle,
-      roadWheelAngle: -telemetry.roadWheel,
-      sideslip: telemetry.sideslip,
-      slipAngleFront: telemetry.slipFront,
-      slipAngleRear: telemetry.slipRear,
-      frontSaturation: telemetry.satFront,
-      rearSaturation: telemetry.satRear,
-      lateralAccel: state.lateralAccel,
-      longitudinalAccel: state.longitudinalAccel,
-      frontLoad: telemetry.loadFront,
-      rearLoad: telemetry.loadRear,
-      surface,
-      gear: state.reversing ? -1 : state.gearIndex + 1,
-      rpm: state.rpm,
-      engineLoad: telemetry.engineLoad,
-      wheelspin: telemetry.wheelspin,
-      wheelLock: telemetry.wheelLock,
-      absActive: telemetry.abs,
-      tractionLimited: telemetry.traction,
-      stabilityActive: telemetry.stability,
-      bodyPitch: state.bodyPitch,
-      bodyRoll: state.bodyRoll,
-      airOffset: tuning.suspension === undefined ? state.hopHeight : Math.max(0, baseHeight() - groundAt(state.x, state.z)),
-      airborne: state.airborne,
-      landingSpeed: telemetry.landingSpeed,
-      wheelLoads: telemetry.wheelLoads,
-      lean: tuning.lean === undefined ? 0 : balanceLean(state.lateralAccel),
-      wheelie: telemetry.wheelie,
-      stoppie: telemetry.stoppie,
-      slip,
+      motion: {
+        position: [state.motion.x, baseHeight(), state.motion.z],
+        heading: state.motion.heading,
+        forwardSpeed,
+        lateralSpeed,
+        yawRate: state.motion.yawRate,
+        lateralAccel: state.body.lateralAccel,
+        longitudinalAccel: state.body.longitudinalAccel,
+      },
+      steering: { steerAngle: -state.motion.steerAngle, roadWheelAngle: -telemetry.roadWheel },
+      tires: {
+        sideslip: telemetry.sideslip,
+        slipAngleFront: telemetry.slipFront,
+        slipAngleRear: telemetry.slipRear,
+        frontSaturation: telemetry.satFront,
+        rearSaturation: telemetry.satRear,
+        surface,
+        wheelspin: telemetry.wheelspin,
+        wheelLock: telemetry.wheelLock,
+        slip,
+      },
+      loads: {
+        frontLoad: telemetry.loadFront,
+        rearLoad: telemetry.loadRear,
+        wheelLoads: telemetry.wheelLoads,
+        wheelie: telemetry.wheelie,
+        stoppie: telemetry.stoppie,
+      },
+      engine: {
+        gear: state.drivetrain.reversing ? -1 : state.drivetrain.gearIndex + 1,
+        rpm: state.drivetrain.rpm,
+        engineLoad: telemetry.engineLoad,
+      },
+      aids: { absActive: telemetry.abs, tractionLimited: telemetry.traction, stabilityActive: telemetry.stability },
+      body: {
+        bodyPitch: state.body.bodyPitch,
+        bodyRoll: state.body.bodyRoll,
+        lean: tuning.lean === undefined ? 0 : balanceLean(state.body.lateralAccel),
+      },
+      air: {
+        airOffset: tuning.suspension === undefined ? state.air.hopHeight : Math.max(0, baseHeight() - groundAt(state.motion.x, state.motion.z)),
+        airborne: state.air.airborne,
+        landingSpeed: telemetry.landingSpeed,
+      },
       impact,
     };
   }
@@ -859,12 +938,12 @@ export function createVehicleDynamics(
     const a = L * (1 - clamp01(t.frontWeight));
     const b = L - a;
     const iz = Math.max(1, (t.yawInertiaIndex ?? 1) * m * a * b);
-    const heading = state.heading;
+    const heading = state.motion.heading;
     const [fx, fz] = forwardOf(heading);
-    const u = state.vx * fx + state.vz * fz;
-    const v = -state.vx * fz + state.vz * fx;
-    const r = state.yawRate;
-    const speed = Math.hypot(state.vx, state.vz);
+    const u = state.motion.vx * fx + state.motion.vz * fz;
+    const v = -state.motion.vx * fz + state.motion.vz * fx;
+    const r = state.motion.yawRate;
+    const speed = Math.hypot(state.motion.vx, state.motion.vz);
 
     const throttle = clamp01(input.throttle);
     const brakePedal = clamp01(input.brake);
@@ -872,14 +951,14 @@ export function createVehicleDynamics(
     const steerInput = Math.max(-1, Math.min(1, input.steer)) * (modifiers?.steerScale ?? 1);
 
     if (t.reverseOnBrake ?? true) {
-      if (!state.reversing && brakePedal > 0.1 && throttle <= 0.05 && u < 0.5) state.reversing = true;
-      else if (state.reversing && (throttle > 0.1 || u > 0.5)) state.reversing = false;
+      if (!state.drivetrain.reversing && brakePedal > 0.1 && throttle <= 0.05 && u < 0.5) state.drivetrain.reversing = true;
+      else if (state.drivetrain.reversing && (throttle > 0.1 || u > 0.5)) state.drivetrain.reversing = false;
     }
-    const wantReverseDrive = state.reversing && brakePedal > 0;
+    const wantReverseDrive = state.drivetrain.reversing && brakePedal > 0;
     const brakeLag = fx_.brakeLag;
-    if (brakeLag === undefined || h <= 0) state.brakeLevel = brakePedal;
-    else state.brakeLevel += (brakePedal - state.brakeLevel) * (1 - Math.exp(-h / Math.max(1e-3, brakeLag.seconds)));
-    const brakeInput = brakeLag === undefined ? brakePedal : state.brakeLevel;
+    if (brakeLag === undefined || h <= 0) state.drivetrain.brakeLevel = brakePedal;
+    else state.drivetrain.brakeLevel += (brakePedal - state.drivetrain.brakeLevel) * (1 - Math.exp(-h / Math.max(1e-3, brakeLag.seconds)));
+    const brakeInput = brakeLag === undefined ? brakePedal : state.drivetrain.brakeLevel;
 
     // Rack: requested angle is in "heading-positive" sign, the opposite of AxisInput.steer.
     const steering = t.steering;
@@ -896,35 +975,35 @@ export function createVehicleDynamics(
       const gripLean = Math.atan(t.front.peakGrip * surface * (modifiers?.gripScale ?? 1));
       const wanted = steerInput * Math.min(leanTuning.maxLean, gripLean);
       const leanStep = Math.max(0, leanTuning.leanRate) * h;
-      const leanChange = Math.max(-leanStep, Math.min(leanStep, wanted - state.lean));
-      state.lean += leanChange;
+      const leanChange = Math.max(-leanStep, Math.min(leanStep, wanted - state.rider.lean));
+      state.rider.lean += leanChange;
       const speed = Math.abs(u);
       const direct = leanTuning.directSteerBelow ?? 3;
       // Balanced turn: the lean sets the yaw rate the bike should hold (g·tan(lean)/v). The bar is that turn's
       // geometric angle plus a trim the rider feeds back from the yaw error, which covers the tire slip.
-      const wantedYaw = (-GRAVITY * Math.tan(state.lean)) / Math.max(speed, 1) * Math.sign(u || 1);
-      if (speed >= direct) state.leanTrim += (wantedYaw - r) * 3 * h;
-      else state.leanTrim = 0;
+      const wantedYaw = (-GRAVITY * Math.tan(state.rider.lean)) / Math.max(speed, 1) * Math.sign(u || 1);
+      if (speed >= direct) state.rider.leanTrim += (wantedYaw - r) * 3 * h;
+      else state.rider.leanTrim = 0;
       const trimLimit = Math.min(steering.maxAngle, t.front.peakSlipAngle * 1.5);
-      state.leanTrim = Math.max(-trimLimit, Math.min(trimLimit, state.leanTrim));
+      state.rider.leanTrim = Math.max(-trimLimit, Math.min(trimLimit, state.rider.leanTrim));
       const geometric = Math.atan((L * wantedYaw) / Math.max(speed, 1));
       const counter = h > 0 ? ((leanTuning.countersteer ?? 0.012) * leanChange) / h : 0;
       const blend = Math.min(1, speed / Math.max(0.1, direct));
-      target = Math.max(-steering.maxAngle, Math.min(steering.maxAngle, (geometric + state.leanTrim + counter) * blend + -steerInput * steering.maxAngle * (1 - blend) + align));
+      target = Math.max(-steering.maxAngle, Math.min(steering.maxAngle, (geometric + state.rider.leanTrim + counter) * blend + -steerInput * steering.maxAngle * (1 - blend) + align));
     }
-    const toward = target - state.steerAngle;
-    const returning = Math.sign(toward) !== Math.sign(state.steerAngle) && state.steerAngle !== 0;
+    const toward = target - state.motion.steerAngle;
+    const returning = Math.sign(toward) !== Math.sign(state.motion.steerAngle) && state.motion.steerAngle !== 0;
     const rate = returning ? (steering.returnRate ?? steering.rate) : steering.rate;
     const maxMove = Math.max(0, rate) * h;
-    state.steerAngle += Math.max(-maxMove, Math.min(maxMove, toward));
+    state.motion.steerAngle += Math.max(-maxMove, Math.min(maxMove, toward));
     // Compliance and roll steer move the wheels away from the rack: each steers away from the axle's own force.
     const compliance = fx_.complianceSteer;
     const rollSteer = fx_.rollSteer;
-    const cornerSign = Math.sign(state.lateralAccel);
-    const rollMagnitude = Math.abs(state.bodyRoll);
-    const frontGive = (compliance?.front ?? 0) * state.forceFront + (rollSteer?.front ?? 0) * rollMagnitude * cornerSign;
-    const rearGive = (compliance?.rear ?? 0) * state.forceRear + (rollSteer?.rear ?? 0) * rollMagnitude * cornerSign;
-    const delta = state.steerAngle + frontGive;
+    const cornerSign = Math.sign(state.body.lateralAccel);
+    const rollMagnitude = Math.abs(state.body.bodyRoll);
+    const frontGive = (compliance?.front ?? 0) * state.tires.forceFront + (rollSteer?.front ?? 0) * rollMagnitude * cornerSign;
+    const rearGive = (compliance?.rear ?? 0) * state.tires.forceRear + (rollSteer?.rear ?? 0) * rollMagnitude * cornerSign;
+    const delta = state.motion.steerAngle + frontGive;
     const deltaRear = rearGive;
     out.roadWheel = delta;
 
@@ -945,36 +1024,36 @@ export function createVehicleDynamics(
     let slopeLong = 0;
     let slopeLat = 0;
     if (suspension === undefined) {
-      if (state.hopHeight > 0 || state.vy > 0) {
+      if (state.air.hopHeight > 0 || state.body.vy > 0) {
         // A hop without springs: a flat air layer over the ground, with no tire contact until it lands.
-        state.vy -= (t.jump?.gravity ?? GRAVITY) * h;
-        state.hopHeight += state.vy * h;
-        state.airTime += h;
-        if (state.hopHeight <= 0) {
-          out.landingSpeed = Math.max(out.landingSpeed, -state.vy);
-          state.hopHeight = 0;
-          state.vy = 0;
-          state.jumpsUsed = 0;
-          state.airTime = 0;
+        state.body.vy -= (t.jump?.gravity ?? GRAVITY) * h;
+        state.air.hopHeight += state.body.vy * h;
+        state.air.airTime += h;
+        if (state.air.hopHeight <= 0) {
+          out.landingSpeed = Math.max(out.landingSpeed, -state.body.vy);
+          state.air.hopHeight = 0;
+          state.body.vy = 0;
+          state.air.jumpsUsed = 0;
+          state.air.airTime = 0;
         }
       }
-      grounded = state.hopHeight <= 0;
-      state.airborne = !grounded;
-      const transferLong = longTransfer === undefined ? 0 : ((longTransfer.share ?? 1) * m * state.longitudinalAccel * t.comHeight) / L;
+      grounded = state.air.hopHeight <= 0;
+      state.air.airborne = !grounded;
+      const transferLong = longTransfer === undefined ? 0 : ((longTransfer.share ?? 1) * m * state.body.longitudinalAccel * t.comHeight) / L;
       const rawFront = weight * (b / L) - transferLong + downforce * downFront;
       const rawRear = weight * (a / L) + transferLong + downforce * (1 - downFront);
       // Pitch-over is geometry, not a tyre effect: report it even when the tyres ignore longitudinal transfer.
-      const pitchOver = (m * state.longitudinalAccel * t.comHeight) / L;
+      const pitchOver = (m * state.body.longitudinalAccel * t.comHeight) / L;
       if (weight * (b / L) - pitchOver + downforce * downFront <= 0) out.wheelie = true;
       if (weight * (a / L) + pitchOver + downforce * (1 - downFront) <= 0) out.stoppie = true;
       loadFront = grounded ? Math.max(0, rawFront) : 0;
       loadRear = grounded ? Math.max(0, rawRear) : 0;
       // A single-track vehicle leans instead of shifting load across an axle.
       const transferLat =
-        t.lean !== undefined || latTransfer === undefined ? 0 : (m * Math.abs(state.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
+        t.lean !== undefined || latTransfer === undefined ? 0 : (m * Math.abs(state.body.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
       transferFront = transferLat * rsf;
       transferRear = transferLat * (1 - rsf);
-      const side = state.lateralAccel >= 0 ? 1 : -1;
+      const side = state.body.lateralAccel >= 0 ? 1 : -1;
       out.wheelLoads = [
         Math.max(0, loadFront / 2 + side * transferFront),
         Math.max(0, loadFront / 2 - side * transferFront),
@@ -992,8 +1071,8 @@ export function createVehicleDynamics(
       if (grounded) {
         // Gravity along the terrain: the tires hold the car to the surface, so the downhill share acts in-plane.
         const e = 0.5;
-        const gx = (groundAt(state.x + e, state.z) - groundAt(state.x - e, state.z)) / (2 * e);
-        const gz = (groundAt(state.x, state.z + e) - groundAt(state.x, state.z - e)) / (2 * e);
+        const gx = (groundAt(state.motion.x + e, state.motion.z) - groundAt(state.motion.x - e, state.motion.z)) / (2 * e);
+        const gz = (groundAt(state.motion.x, state.motion.z + e) - groundAt(state.motion.x, state.motion.z - e)) / (2 * e);
         const norm = Math.sqrt(1 + gx * gx + gz * gz);
         const worldX = (-weight * gx) / norm;
         const worldZ = (-weight * gz) / norm;
@@ -1030,13 +1109,13 @@ export function createVehicleDynamics(
       const sigma = Math.max(0.01, relaxation.length);
       const travel = Math.max(SLIP_REFERENCE_SPEED, Math.abs(u)) * h;
       const follow = 1 - Math.exp(-travel / sigma);
-      state.slipFront += (steadyFront - state.slipFront) * follow;
-      state.slipRear += (steadyRear - state.slipRear) * follow;
-      slipFront = state.slipFront;
-      slipRear = state.slipRear;
+      state.tires.slipFront += (steadyFront - state.tires.slipFront) * follow;
+      state.tires.slipRear += (steadyRear - state.tires.slipRear) * follow;
+      slipFront = state.tires.slipFront;
+      slipRear = state.tires.slipRear;
     } else {
-      state.slipFront = steadyFront;
-      state.slipRear = steadyRear;
+      state.tires.slipFront = steadyFront;
+      state.tires.slipRear = steadyRear;
     }
 
     let drive = driveForce(throttle, wantReverseDrive ? brakeInput : 0, u, h, out) * (modifiers?.driveScale ?? 1);
@@ -1178,8 +1257,8 @@ export function createVehicleDynamics(
       if (Math.abs(fyFront) > maxFront) fyFront = Math.sign(fyFront) * maxFront;
       if (Math.abs(fyRear) > maxRear) fyRear = Math.sign(fyRear) * maxRear;
     }
-    state.forceFront = fyFront;
-    state.forceRear = fyRear;
+    state.tires.forceFront = fyFront;
+    state.tires.forceRear = fyRear;
 
     // Car-frame forces (x forward, y along the lateral axis used by `v`).
     const frontLat = fyFront * cosD - fxFront * sinD;
@@ -1261,45 +1340,45 @@ export function createVehicleDynamics(
     const reverseCap = t.reverseSpeed ?? 8;
     if (nu < -reverseCap) nu = -reverseCap;
 
-    state.heading = heading + nr * h;
-    const [nfx, nfz] = forwardOf(state.heading);
+    state.motion.heading = heading + nr * h;
+    const [nfx, nfz] = forwardOf(state.motion.heading);
     let nvx = nfx * nu - nfz * nv;
     let nvz = nfz * nu + nfx * nv;
-    const toX = state.x + nvx * h;
-    const toZ = state.z + nvz * h;
+    const toX = state.motion.x + nvx * h;
+    const toZ = state.motion.z + nvz * h;
     if (clampMove !== undefined && h > 0) {
-      const allowed = clampMove([state.x, state.z], [toX, toZ]);
+      const allowed = clampMove([state.motion.x, state.motion.z], [toX, toZ]);
       const wanted = Math.hypot(nvx, nvz);
-      nvx = (allowed.motion?.[0] ?? allowed[0] - state.x) / h;
-      nvz = (allowed.motion?.[1] ?? allowed[1] - state.z) / h;
+      nvx = (allowed.motion?.[0] ?? allowed[0] - state.motion.x) / h;
+      nvz = (allowed.motion?.[1] ?? allowed[1] - state.motion.z) / h;
       // A clamp that pushes the car back onto the road moves it, but never hands it speed it did not have.
       const kept = Math.hypot(nvx, nvz);
       if (kept > wanted && kept > 0) {
         nvx *= wanted / kept;
         nvz *= wanted / kept;
       }
-      state.x = allowed[0];
-      state.z = allowed[1];
+      state.motion.x = allowed[0];
+      state.motion.z = allowed[1];
     } else {
-      state.x = toX;
-      state.z = toZ;
+      state.motion.x = toX;
+      state.motion.z = toZ;
     }
-    state.vx = nvx;
-    state.vz = nvz;
-    state.yawRate = nr;
+    state.motion.vx = nvx;
+    state.motion.vz = nvz;
+    state.motion.yawRate = nr;
 
     const response = suspension === undefined ? 1 - Math.exp(-(t.suspensionResponse ?? 8) * h) : 1;
     const accelLong = h > 0 ? du + r * v : 0;
     const accelLat = h > 0 ? dv - r * u : 0;
-    state.longitudinalAccel += (accelLong - state.longitudinalAccel) * response;
+    state.body.longitudinalAccel += (accelLong - state.body.longitudinalAccel) * response;
     // The rider's lean is the displayed roll, so it keeps the roll lag springs would otherwise supply.
     const responseLat = t.lean !== undefined ? 1 - Math.exp(-(t.suspensionResponse ?? 8) * h) : response;
-    state.lateralAccel += (accelLat - state.lateralAccel) * responseLat;
+    state.body.lateralAccel += (accelLat - state.body.lateralAccel) * responseLat;
     if (suspension === undefined) {
       const rollK = t.rollStiffness ?? (m * GRAVITY * t.comHeight) / 0.05;
       const pitchK = t.pitchStiffness ?? (m * GRAVITY * t.comHeight) / 0.035;
-      state.bodyRoll = t.lean !== undefined ? -balanceLean(state.lateralAccel) : (m * state.lateralAccel * t.comHeight) / rollK;
-      state.bodyPitch = (-m * state.longitudinalAccel * t.comHeight) / pitchK;
+      state.body.bodyRoll = t.lean !== undefined ? -balanceLean(state.body.lateralAccel) : (m * state.body.lateralAccel * t.comHeight) / rollK;
+      state.body.bodyPitch = (-m * state.body.longitudinalAccel * t.comHeight) / pitchK;
     } else {
       if (!grounded && t.air !== undefined) steerInAir(t.air, input, modifiers?.air, h);
       integrateBody(suspension, a, b, h, downforce, grounded, out);
@@ -1319,8 +1398,8 @@ export function createVehicleDynamics(
     const radius = pt.kind === "gearbox" ? Math.max(0.05, pt.wheelRadius) : 0.33;
     let reflected = Math.max(0, inertia.wheels ?? 0);
     // The driver declutches on a hard stop, so the engine stops slowing with the wheels.
-    if (pt.kind === "gearbox" && state.shiftRemaining <= 0 && brakeInput < 0.5) {
-      const ratio = (state.reversing ? pt.reverseGear : (pt.gears[state.gearIndex] ?? 1)) * pt.finalDrive;
+    if (pt.kind === "gearbox" && state.drivetrain.shiftRemaining <= 0 && brakeInput < 0.5) {
+      const ratio = (state.drivetrain.reversing ? pt.reverseGear : (pt.gears[state.drivetrain.gearIndex] ?? 1)) * pt.finalDrive;
       reflected += Math.max(0, inertia.engine ?? 0) * ratio * ratio * (pt.efficiency ?? 0.85);
     }
     return reflected / (radius * radius);
@@ -1332,19 +1411,19 @@ export function createVehicleDynamics(
   function springForces(suspension: VehicleSuspensionTuning, a: number, b: number, h: number): Corners {
     const t = tuning;
     const half = Math.max(0.15, t.trackWidth / 2);
-    const [fx, fz] = forwardOf(state.heading);
+    const [fx, fz] = forwardOf(state.motion.heading);
     const sags = staticSags(t, suspension);
     // A leaning single-track vehicle rolls about its tire contacts, so its lean never compresses one side's springs.
-    const roll = t.lean !== undefined ? 0 : state.bodyRoll;
+    const roll = t.lean !== undefined ? 0 : state.body.bodyRoll;
     for (const i of CORNERS) {
       const along = i < 2 ? a : -b;
       const lat = i % 2 === 0 ? -half : half;
-      const px = state.x + fx * along - fz * lat;
-      const pz = state.z + fz * along + fx * lat;
-      const attach = state.y - Math.sin(state.bodyPitch) * along + Math.sin(roll) * lat;
+      const px = state.motion.x + fx * along - fz * lat;
+      const pz = state.motion.z + fz * along + fx * lat;
+      const attach = state.motion.y - Math.sin(state.body.bodyPitch) * along + Math.sin(roll) * lat;
       const c = groundAt(px, pz) + suspension.rideHeight + sags[i] - attach;
-      const rate = h > 0 ? (c - state.compression[i]) / h : 0;
-      state.compression[i] = c;
+      const rate = h > 0 ? (c - state.body.compression[i]) / h : 0;
+      state.body.compression[i] = c;
       let force = 0;
       if (c > 0) {
         const damping = rate >= 0 ? suspension.damperRate : (suspension.reboundRate ?? suspension.damperRate * 1.5);
@@ -1360,7 +1439,7 @@ export function createVehicleDynamics(
       for (const [left, right] of AXLES) {
         if (corner[left] <= 0 || corner[right] <= 0) continue;
         const share = left === 0 ? frontShare : 1 - frontShare;
-        const shift = (antiRoll * share * state.bodyRoll) / (2 * half);
+        const shift = (antiRoll * share * state.body.bodyRoll) / (2 * half);
         corner[left] = Math.max(0, corner[left] + shift);
         corner[right] = Math.max(0, corner[right] - shift);
       }
@@ -1374,9 +1453,9 @@ export function createVehicleDynamics(
     const roll = clampUnit(explicit?.roll ?? 0);
     const damping = air.damping ?? 1.5;
     const maxRate = air.maxRate ?? 5.5;
-    state.pitchRate = driveRate(state.pitchRate, pitch * air.pitchAccel, damping, maxRate, h);
-    state.yawRate = driveRate(state.yawRate, -yaw * air.yawAccel, damping, maxRate, h);
-    state.rollRate = driveRate(state.rollRate, roll * air.rollAccel, damping, maxRate, h);
+    state.body.pitchRate = driveRate(state.body.pitchRate, pitch * air.pitchAccel, damping, maxRate, h);
+    state.motion.yawRate = driveRate(state.motion.yawRate, -yaw * air.yawAccel, damping, maxRate, h);
+    state.body.rollRate = driveRate(state.body.rollRate, roll * air.rollAccel, damping, maxRate, h);
   }
 
   /** Heave, pitch and roll from the corner forces found this substep plus the tires' inertial moments. */
@@ -1405,28 +1484,28 @@ export function createVehicleDynamics(
     }
     if (grounded) {
       // The tyres' forces act at the ground, below the centre of mass: those moments are the load transfer.
-      if (effects.longitudinalLoadTransfer !== undefined) pitchMoment -= (effects.longitudinalLoadTransfer.share ?? 1) * m * state.longitudinalAccel * t.comHeight;
-      if (effects.lateralLoadTransfer !== undefined) rollMoment += m * state.lateralAccel * t.comHeight;
+      if (effects.longitudinalLoadTransfer !== undefined) pitchMoment -= (effects.longitudinalLoadTransfer.share ?? 1) * m * state.body.longitudinalAccel * t.comHeight;
+      if (effects.lateralLoadTransfer !== undefined) rollMoment += m * state.body.lateralAccel * t.comHeight;
     }
     const pitchInertia = Math.max(1, (suspension.pitchInertiaIndex ?? 0.9) * m * a * b);
     const rollInertia = Math.max(1, 0.6 * m * half * half);
-    state.vy += ((lift - downforce) / m - GRAVITY) * h;
-    state.y += state.vy * h;
-    state.pitchRate += (pitchMoment / pitchInertia) * h;
-    state.rollRate += (rollMoment / rollInertia) * h;
-    state.bodyPitch += state.pitchRate * h;
-    state.bodyRoll += state.rollRate * h;
+    state.body.vy += ((lift - downforce) / m - GRAVITY) * h;
+    state.motion.y += state.body.vy * h;
+    state.body.pitchRate += (pitchMoment / pitchInertia) * h;
+    state.body.rollRate += (rollMoment / rollInertia) * h;
+    state.body.bodyPitch += state.body.pitchRate * h;
+    state.body.bodyRoll += state.body.rollRate * h;
     if (t.lean !== undefined) {
-      state.bodyRoll = -balanceLean(state.lateralAccel);
-      state.rollRate = 0;
+      state.body.bodyRoll = -balanceLean(state.body.lateralAccel);
+      state.body.rollRate = 0;
     }
-    if (state.airborne && grounded) out.landingSpeed = Math.max(out.landingSpeed, -state.vy);
-    state.airborne = !grounded;
-    if (!grounded) state.airTime += h;
-    else if (state.vy <= 0.5) {
+    if (state.air.airborne && grounded) out.landingSpeed = Math.max(out.landingSpeed, -state.body.vy);
+    state.air.airborne = !grounded;
+    if (!grounded) state.air.airTime += h;
+    else if (state.body.vy <= 0.5) {
       // Still-compressed springs right after a jump read as ground contact; only a settled car has landed.
-      state.jumpsUsed = 0;
-      state.airTime = 0;
+      state.air.jumpsUsed = 0;
+      state.air.airTime = 0;
     }
   }
 
@@ -1439,9 +1518,9 @@ export function createVehicleDynamics(
       const powerLimited = pt.maxPower / Math.max(1, Math.abs(u));
       return throttle * Math.min(pt.maxForce, powerLimited);
     }
-    state.shiftRemaining = Math.max(0, state.shiftRemaining - h);
+    state.drivetrain.shiftRemaining = Math.max(0, state.drivetrain.shiftRemaining - h);
     const eff = pt.efficiency ?? 0.85;
-    const ratio = state.reversing ? pt.reverseGear : (pt.gears[state.gearIndex] ?? 1);
+    const ratio = state.drivetrain.reversing ? pt.reverseGear : (pt.gears[state.drivetrain.gearIndex] ?? 1);
     const wheelRpm = (Math.abs(u) / Math.max(0.05, pt.wheelRadius)) * (60 / (2 * Math.PI));
     const coupled = wheelRpm * ratio * pt.finalDrive;
     const pedal = Math.max(throttle, reverse);
@@ -1449,19 +1528,19 @@ export function createVehicleDynamics(
     const slipRpm = pt.idleRpm + (launch - pt.idleRpm) * pedal;
     const targetRpm = Math.min(pt.redlineRpm, Math.max(coupled, slipRpm, pt.idleRpm));
     const rpmResponse = 1 - Math.exp(-18 * h);
-    state.rpm += (targetRpm - state.rpm) * rpmResponse;
-    if (!state.reversing && state.shiftRemaining <= 0) {
-      if (coupled >= pt.shiftUpRpm && state.gearIndex < pt.gears.length - 1 && pedal > 0) {
-        state.gearIndex += 1;
-        state.shiftRemaining = pt.shiftSeconds;
-      } else if (coupled <= pt.shiftDownRpm && state.gearIndex > 0) {
-        state.gearIndex -= 1;
-        state.shiftRemaining = pt.shiftSeconds;
+    state.drivetrain.rpm += (targetRpm - state.drivetrain.rpm) * rpmResponse;
+    if (!state.drivetrain.reversing && state.drivetrain.shiftRemaining <= 0) {
+      if (coupled >= pt.shiftUpRpm && state.drivetrain.gearIndex < pt.gears.length - 1 && pedal > 0) {
+        state.drivetrain.gearIndex += 1;
+        state.drivetrain.shiftRemaining = pt.shiftSeconds;
+      } else if (coupled <= pt.shiftDownRpm && state.drivetrain.gearIndex > 0) {
+        state.drivetrain.gearIndex -= 1;
+        state.drivetrain.shiftRemaining = pt.shiftSeconds;
       }
     }
-    const normalized = (state.rpm - pt.idleRpm) / Math.max(1, pt.redlineRpm - pt.idleRpm);
+    const normalized = (state.drivetrain.rpm - pt.idleRpm) / Math.max(1, pt.redlineRpm - pt.idleRpm);
     const limiter = coupled >= pt.redlineRpm ? 0 : 1;
-    const shifting = state.shiftRemaining > 0 ? 0.2 : 1;
+    const shifting = state.drivetrain.shiftRemaining > 0 ? 0.2 : 1;
     const toWheel = (ratio * pt.finalDrive * eff) / Math.max(0.05, pt.wheelRadius);
     out.engineLoad = pedal * limiter * shifting;
     if (pedal > 0) {
@@ -1472,62 +1551,78 @@ export function createVehicleDynamics(
     return -Math.sign(u) * ((pt.engineBrakeTorque ?? pt.peakTorque * 0.12) * toWheel + (pt.coastForce ?? 0));
   }
 
+  function assignState(next: VehicleDynamicsState): void {
+    Object.assign(state.motion, next.motion);
+    Object.assign(state.drivetrain, next.drivetrain);
+    Object.assign(state.body, next.body, { compression: [...next.body.compression] });
+    Object.assign(state.air, next.air);
+    Object.assign(state.rider, next.rider);
+    Object.assign(state.tires, next.tires);
+  }
+
   return {
     tick,
-    pose: () => ({ position: [state.x, baseHeight(), state.z], heading: state.heading }),
-    velocity: () => [state.vx, state.vz],
+    pose: () => ({ position: [state.motion.x, baseHeight(), state.motion.z], heading: state.motion.heading }),
+    velocity: () => [state.motion.vx, state.motion.vz],
     scaleVelocity(factor) {
-      state.vx *= factor;
-      state.vz *= factor;
-      state.yawRate *= factor;
+      state.motion.vx *= factor;
+      state.motion.vz *= factor;
+      state.motion.yawRate *= factor;
     },
     jump(speed) {
       const jump = tuning.jump;
       if (jump === undefined) return false;
       const takeoff = speed ?? jump.speed;
       if (!(takeoff > 0)) return false;
-      if (!state.airborne && state.jumpsUsed === 0) {
-        state.vy = Math.max(state.vy, 0) + takeoff;
-        state.jumpsUsed = 1;
+      if (!state.air.airborne && state.air.jumpsUsed === 0) {
+        state.body.vy = Math.max(state.body.vy, 0) + takeoff;
+        state.air.jumpsUsed = 1;
         if (tuning.suspension === undefined) {
-          state.hopHeight = Math.max(state.hopHeight, 1e-6);
-          state.airborne = true;
+          state.air.hopHeight = Math.max(state.air.hopHeight, 1e-6);
+          state.air.airborne = true;
         }
         return true;
       }
       const count = jump.count ?? 1;
-      const inWindow = state.airTime <= (jump.window ?? Number.POSITIVE_INFINITY);
-      if (state.jumpsUsed >= count || !inWindow) return false;
+      const inWindow = state.air.airTime <= (jump.window ?? Number.POSITIVE_INFINITY);
+      if (state.air.jumpsUsed >= count || !inWindow) return false;
       // An air jump always takes off from a first jump (or a ledge) and counts as one used either way.
-      state.jumpsUsed = Math.max(state.jumpsUsed, 1) + 1;
-      state.vy = Math.max(state.vy, 0) + takeoff;
+      state.air.jumpsUsed = Math.max(state.air.jumpsUsed, 1) + 1;
+      state.body.vy = Math.max(state.body.vy, 0) + takeoff;
       return true;
     },
     applyAngularImpulse(pitch, yaw, roll) {
-      state.pitchRate += pitch;
-      state.yawRate += yaw;
-      state.rollRate += roll;
+      state.body.pitchRate += pitch;
+      state.motion.yawRate += yaw;
+      state.body.rollRate += roll;
     },
     applyImpulse(dvx, dvz, dvy = 0) {
-      state.vx += dvx;
-      state.vz += dvz;
-      if (tuning.suspension !== undefined) state.vy += dvy;
+      state.motion.vx += dvx;
+      state.motion.vz += dvz;
+      if (tuning.suspension !== undefined) state.body.vy += dvy;
     },
     retune(next) {
       tuning = next;
       frontShape = tireShape(next.front);
       rearShape = tireShape(next.rear ?? next.front);
       if (next.powertrain.kind === "gearbox") {
-        state.gearIndex = Math.min(state.gearIndex, next.powertrain.gears.length - 1);
+        state.drivetrain.gearIndex = Math.min(state.drivetrain.gearIndex, next.powertrain.gears.length - 1);
       }
     },
     tuning: () => tuning,
-    snapshot: () => ({ ...state, compression: [...state.compression] }),
+    snapshot: () => ({
+      motion: { ...state.motion },
+      drivetrain: { ...state.drivetrain },
+      body: { ...state.body, compression: [...state.body.compression] },
+      air: { ...state.air },
+      rider: { ...state.rider },
+      tires: { ...state.tires },
+    }),
     restore(next) {
-      Object.assign(state, next, { compression: [...next.compression] });
+      assignState(next);
     },
     resetTo(position, heading) {
-      Object.assign(state, freshState(tuning, position, heading));
+      assignState(freshState(tuning, position, heading));
       settleOnGround();
     },
   };
@@ -1648,37 +1743,18 @@ function freshState(
   heading: number,
 ): VehicleDynamicsState {
   return {
-    x: position[0],
-    y: position[1],
-    z: position[2],
-    heading,
-    vx: 0,
-    vz: 0,
-    yawRate: 0,
-    steerAngle: 0,
-    gearIndex: 0,
-    reversing: false,
-    shiftRemaining: 0,
-    rpm: tuning.powertrain.kind === "gearbox" ? tuning.powertrain.idleRpm : 0,
-    longitudinalAccel: 0,
-    lateralAccel: 0,
-    bodyPitch: 0,
-    bodyRoll: 0,
-    vy: 0,
-    pitchRate: 0,
-    rollRate: 0,
-    compression: [0, 0, 0, 0],
-    airborne: false,
-    lean: 0,
-    leanTrim: 0,
-    jumpsUsed: 0,
-    airTime: 0,
-    hopHeight: 0,
-    slipFront: 0,
-    slipRear: 0,
-    forceFront: 0,
-    forceRear: 0,
-    brakeLevel: 0,
+    motion: { x: position[0], y: position[1], z: position[2], heading, vx: 0, vz: 0, yawRate: 0, steerAngle: 0 },
+    drivetrain: {
+      gearIndex: 0,
+      reversing: false,
+      shiftRemaining: 0,
+      rpm: tuning.powertrain.kind === "gearbox" ? tuning.powertrain.idleRpm : 0,
+      brakeLevel: 0,
+    },
+    body: { longitudinalAccel: 0, lateralAccel: 0, bodyPitch: 0, bodyRoll: 0, vy: 0, pitchRate: 0, rollRate: 0, compression: [0, 0, 0, 0] },
+    air: { airborne: false, jumpsUsed: 0, airTime: 0, hopHeight: 0 },
+    rider: { lean: 0, leanTrim: 0 },
+    tires: { slipFront: 0, slipRear: 0, forceFront: 0, forceRear: 0 },
   };
 }
 

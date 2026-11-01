@@ -18,7 +18,7 @@ const CAR: VehicleSpec = {
 function speedAfter(spec: VehicleSpec, seconds: number, options = {}, modifiers = {}): number {
   const car = createVehicleDynamics(vehicleTuning(spec), options);
   let speed = 0;
-  for (let i = 0; i < Math.round(seconds / DT); i += 1) speed = car.tick(DT, axis({ throttle: 1 }), modifiers).forwardSpeed;
+  for (let i = 0; i < Math.round(seconds / DT); i += 1) speed = car.tick(DT, axis({ throttle: 1 }), modifiers).motion.forwardSpeed;
   return speed;
 }
 
@@ -35,9 +35,9 @@ describe("vehicleTuning", () => {
     let speed = 0;
     for (let i = 0; i < 40 / DT; i += 1) {
       const step = car.tick(DT, axis({ throttle: 1 }));
-      gear = Math.max(gear, step.gear);
-      speed = step.forwardSpeed;
-      expect(step.rpm).toBeGreaterThan(0);
+      gear = Math.max(gear, step.engine.gear);
+      speed = step.motion.forwardSpeed;
+      expect(step.engine.rpm).toBeGreaterThan(0);
     }
     expect(gear).toBeGreaterThanOrEqual(4);
     expect(speed).toBeGreaterThan(28);
@@ -97,8 +97,8 @@ describe("vehicleDynamics knobs", () => {
     let landed = false;
     for (let i = 0; i < 60; i += 1) {
       const step = car.tick(DT, axis({ throttle: 1 }));
-      peak = Math.max(peak, step.airOffset);
-      if (i > 2 && !step.airborne) landed = true;
+      peak = Math.max(peak, step.air.airOffset);
+      if (i > 2 && !step.air.airborne) landed = true;
     }
     // v²/2g = 0.4 m.
     expect(peak).toBeGreaterThan(0.3);
@@ -119,7 +119,7 @@ describe("vehicleDynamics knobs", () => {
     let z = 0;
     for (let i = 0; i < 300; i += 1) {
       const step = car.tick(DT, axis({ throttle: 1 }));
-      z = step.position[2];
+      z = step.motion.position[2];
       if (step.impact !== null) {
         hits += 1;
         hardest = Math.max(hardest, step.impact.closingSpeed);
@@ -135,9 +135,9 @@ describe("vehicleDynamics knobs", () => {
     const car = createVehicleDynamics(vehicleTuning(CAR));
     let step = car.tick(DT, axis({ throttle: 1 }));
     for (let i = 0; i < 120; i += 1) step = car.tick(DT, axis({ throttle: 0.6 }));
-    expect(step.slip).toBeLessThan(0.1);
+    expect(step.tires.slip).toBeLessThan(0.1);
     let peak = 0;
-    for (let i = 0; i < 40; i += 1) peak = Math.max(peak, car.tick(DT, axis({ steer: 1, handbrake: 1 })).slip);
+    for (let i = 0; i < 40; i += 1) peak = Math.max(peak, car.tick(DT, axis({ steer: 1, handbrake: 1 })).tires.slip);
     expect(peak).toBeGreaterThan(0.6);
   });
 });

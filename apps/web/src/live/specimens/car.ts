@@ -189,7 +189,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
       ? { throttle: on("KeyW", "ArrowUp"), brake: on("KeyS", "ArrowDown"), steer: on("KeyD", "ArrowRight") - on("KeyA", "ArrowLeft"), handbrake: on("Space") }
       : autopilot(px, pz, before.heading, speedNow);
     const step = car.tick(dt, axis);
-    const [x, , z] = step.position;
+    const [x, , z] = step.motion.position;
 
     const throttle = (axis.throttle ?? 0) > 0, brake = (axis.brake ?? 0) > 0, handbrake = (axis.handbrake ?? 0) > 0;
     const steer = axis.steer ?? 0;
@@ -197,7 +197,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
     if (brake) trace.hit("brake");
     if (Math.abs(steer) > 0.15) trace.hit("steer");
     if (handbrake) trace.hit("handbrake");
-    const sliding = step.rearSaturation >= 1 && Math.abs(step.forwardSpeed) > 3;
+    const sliding = step.tires.rearSaturation >= 1 && Math.abs(step.motion.forwardSpeed) > 3;
     if (sliding) trace.hit("slide");
     trace.hit("move");
 
@@ -259,7 +259,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
 
     ctx.save();
     ctx.translate(sx(x), sy(z));
-    ctx.rotate(-step.heading);
+    ctx.rotate(-step.motion.heading);
     const w = Math.max(7, 1.9 * scale * 1.6), l = Math.max(14, 4.3 * scale * 1.6);
     ctx.fillStyle = sliding ? "#ff5a3c" : "#f2f4f7";
     ctx.beginPath();
@@ -277,7 +277,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
     ctx.font = "11px ui-monospace, monospace";
     ctx.fillStyle = "rgba(255,255,255,0.8)";
     ctx.textAlign = "right";
-    ctx.fillText(`${Math.round(Math.abs(step.forwardSpeed) * 3.6)} km/h`, width - 12, 24);
+    ctx.fillText(`${Math.round(Math.abs(step.motion.forwardSpeed) * 3.6)} km/h`, width - 12, 24);
     ctx.fillText(`lap ${((now - lapStart) / 1000).toFixed(1)} s`, width - 12, 40);
     if (bestLap !== null) ctx.fillText(`best ${bestLap.toFixed(1)} s`, width - 12, 56);
     ctx.fillStyle = sliding ? "#ff8a70" : "rgba(255,255,255,0.55)";

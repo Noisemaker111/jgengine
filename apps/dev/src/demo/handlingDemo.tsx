@@ -210,28 +210,28 @@ function onTick(ctx: GameContext, dt: number): void {
 
   const step = drive.step;
   const at = drive.pose.position;
-  const moving = Math.min(1, Math.abs(step.forwardSpeed) / 4);
+  const moving = Math.min(1, Math.abs(step.motion.forwardSpeed) / 4);
   const out = state.feedback.update(dt, {
-    rpm: step.rpm,
-    load: step.engineLoad,
-    scrub: Math.max(step.frontSaturation, step.rearSaturation) * moving,
-    slip: Math.abs(step.sideslip),
-    front: step.frontSaturation,
-    rear: step.rearSaturation,
-    landing: step.landingSpeed,
+    rpm: step.engine.rpm,
+    load: step.engine.engineLoad,
+    scrub: Math.max(step.tires.frontSaturation, step.tires.rearSaturation) * moving,
+    slip: Math.abs(step.tires.sideslip),
+    front: step.tires.frontSaturation,
+    rear: step.tires.rearSaturation,
+    landing: step.air.landingSpeed,
   });
   ctx.game.audio.loop("tires", "tires", { at });
-  state.engine.update(dt, { rpm: step.rpm, load: step.engineLoad });
+  state.engine.update(dt, { rpm: step.engine.rpm, load: step.engine.engineLoad });
   state.engine.play(ctx.game.audio, { at, velocity: ctx.scene.entity.get(id)?.velocity, gain: out.engineGain, lowpass: out.engineLowpass });
   ctx.game.audio.setLoop("tires", { rate: out.tireRate, gain: out.tireGain, at });
   if (state.feedback.fired("landing")) {
-    ctx.input.haptics(id).pulse("impact", { strong: Math.min(1, step.landingSpeed / 8), weak: 0.3, ms: 240 }, 1);
+    ctx.input.haptics(id).pulse("impact", { strong: Math.min(1, step.air.landingSpeed / 8), weak: 0.3, ms: 240 }, 1);
     ctx.game.audio.play("thud", at);
-    ctx.camera.kickFov(-Math.min(8, step.landingSpeed));
+    ctx.camera.kickFov(-Math.min(8, step.air.landingSpeed));
   }
 
   const haptics = ctx.input.haptics(id);
-  haptics.set("engine", { strong: 0, weak: 0.1 * step.engineLoad * Math.min(1, step.rpm / 6000) });
+  haptics.set("engine", { strong: 0, weak: 0.1 * step.engine.engineLoad * Math.min(1, step.engine.rpm / 6000) });
   haptics.set("road", { strong: out.rumbleStrong, weak: out.rumbleWeak });
 }
 
@@ -242,13 +242,13 @@ function CarBody({ entity }: { entity: SceneEntity }) {
   useFrame(() => {
     const step = run?.last;
     if (step === null || step === undefined) return;
-    const steer = -step.steerAngle;
+    const steer = -step.steering.steerAngle;
     if (frontLeft.current !== null) frontLeft.current.rotation.y = steer;
     if (frontRight.current !== null) frontRight.current.rotation.y = steer;
     if (body.current !== null) {
       // +x is the car's left, and a positive roll means a right-hand turn, so the body leans outward by rolling -z.
-      body.current.rotation.z = -step.bodyRoll;
-      body.current.rotation.x = step.bodyPitch;
+      body.current.rotation.z = -step.body.bodyRoll;
+      body.current.rotation.x = step.body.bodyPitch;
     }
   });
   const wheel = (
@@ -287,11 +287,11 @@ function BikeBody({ entity }: { entity: SceneEntity }) {
   useFrame(() => {
     const step = run?.last;
     if (step === null || step === undefined) return;
-    if (fork.current !== null) fork.current.rotation.y = -step.steerAngle;
+    if (fork.current !== null) fork.current.rotation.y = -step.steering.steerAngle;
     if (body.current !== null) {
       // Lean rolls the whole bike about its contact line; a positive lean drops the right (-x) side.
-      body.current.rotation.z = step.lean;
-      body.current.rotation.x = step.bodyPitch;
+      body.current.rotation.z = step.body.lean;
+      body.current.rotation.x = step.body.bodyPitch;
     }
   });
   const wheel = (
@@ -361,8 +361,8 @@ function Telemetry() {
   useGameStore((ctx) => ctx.version());
   const step = run?.last ?? null;
   if (step === null) return null;
-  const kmh = Math.abs(step.forwardSpeed) * 3.6;
-  const gear = step.gear === -1 ? "R" : String(step.gear);
+  const kmh = Math.abs(step.motion.forwardSpeed) * 3.6;
+  const gear = step.engine.gear === -1 ? "R" : String(step.engine.gear);
   const bar = (value: number) => (
     <div className="h-1.5 w-24 overflow-hidden rounded bg-white/15">
       <div className={value >= 1 ? "h-full bg-red-400" : "h-full bg-emerald-400"} style={{ width: `${Math.min(100, value * 100)}%` }} />
@@ -371,10 +371,10 @@ function Telemetry() {
   return (
     <div className="pointer-events-none absolute right-3 top-3 rounded bg-slate-950/70 px-3 py-2 font-mono text-xs text-slate-100">
       <div className="text-2xl font-bold tabular-nums">{kmh.toFixed(0)} <span className="text-sm font-normal text-slate-300">km/h</span></div>
-      <div className="tabular-nums">gear {gear} · {Math.round(step.rpm)} rpm</div>
-      <div className="tabular-nums">lat {(step.lateralAccel / 9.81).toFixed(2)} g · slip {((step.sideslip * 180) / Math.PI).toFixed(0)}°{vehicle.kind === "bike" ? ` · lean ${Math.abs((step.lean * 180) / Math.PI).toFixed(0)}°` : ""}</div>
-      <div className="mt-1 flex items-center gap-2">front {bar(step.frontSaturation)}</div>
-      <div className="flex items-center gap-2">rear&nbsp; {bar(step.rearSaturation)}</div>
+      <div className="tabular-nums">gear {gear} · {Math.round(step.engine.rpm)} rpm</div>
+      <div className="tabular-nums">lat {(step.motion.lateralAccel / 9.81).toFixed(2)} g · slip {((step.tires.sideslip * 180) / Math.PI).toFixed(0)}°{vehicle.kind === "bike" ? ` · lean ${Math.abs((step.body.lean * 180) / Math.PI).toFixed(0)}°` : ""}</div>
+      <div className="mt-1 flex items-center gap-2">front {bar(step.tires.frontSaturation)}</div>
+      <div className="flex items-center gap-2">rear&nbsp; {bar(step.tires.rearSaturation)}</div>
       <div className="mt-1 text-[10px] text-slate-400">W/S throttle·brake · A/D steer · Space handbrake · J jump · C look back · V view · F park</div>
     </div>
   );
@@ -452,25 +452,25 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
         const step = run?.last;
         if (step === null || step === undefined) return {};
         return {
-          x: step.position[0],
-          z: step.position[2],
-          y: step.position[1],
-          airborne: step.airborne ? 1 : 0,
-          speed: step.forwardSpeed,
-          heading: step.heading,
-          yawRate: step.yawRate,
-          steerDeg: (step.steerAngle * 180) / Math.PI,
-          leanDeg: (step.lean * 180) / Math.PI,
+          x: step.motion.position[0],
+          z: step.motion.position[2],
+          y: step.motion.position[1],
+          airborne: step.air.airborne ? 1 : 0,
+          speed: step.motion.forwardSpeed,
+          heading: step.motion.heading,
+          yawRate: step.motion.yawRate,
+          steerDeg: (step.steering.steerAngle * 180) / Math.PI,
+          leanDeg: (step.body.lean * 180) / Math.PI,
           engineLowpass: run?.feedback.value().engineLowpass ?? 0,
           engineOnHigh: run?.engine.mix()[1]?.gain ?? 0,
           engineOffLow: run?.engine.mix()[2]?.gain ?? 0,
           tireGain: run?.feedback.value().tireGain ?? 0,
-          lateralG: step.lateralAccel / 9.81,
-          sideslipDeg: (step.sideslip * 180) / Math.PI,
-          gear: step.gear,
-          rpm: step.rpm,
-          frontSaturation: step.frontSaturation,
-          rearSaturation: step.rearSaturation,
+          lateralG: step.motion.lateralAccel / 9.81,
+          sideslipDeg: (step.tires.sideslip * 180) / Math.PI,
+          gear: step.engine.gear,
+          rpm: step.engine.rpm,
+          frontSaturation: step.tires.frontSaturation,
+          rearSaturation: step.tires.rearSaturation,
         };
       },
     },

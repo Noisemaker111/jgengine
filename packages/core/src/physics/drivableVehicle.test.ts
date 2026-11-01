@@ -23,7 +23,7 @@ describe("tickDrivableVehicle", () => {
     for (let i = 0; i < 10; i += 1) result = tickDrivableVehicle(vehicle, DT, { ...NEUTRAL_AXIS, throttle: 1 });
     expect(result.pose.dt).toBeCloseTo(DT);
     expect(result.pose.position[2]).toBeGreaterThan(0);
-    expect(result.step.forwardSpeed).toBeGreaterThan(0);
+    expect(result.step.motion.forwardSpeed).toBeGreaterThan(0);
   });
 
   test("ground snaps the resulting pose when groundHeight is given", () => {

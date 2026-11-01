@@ -52,7 +52,8 @@ const on = (effects: VehicleEffects, base: VehicleDynamicsTuning = bare): Vehicl
 
 function rolling(tuning: VehicleDynamicsTuning, speed: number, options: VehicleDynamicsOptions = {}): VehicleDynamics {
   const car = createVehicleDynamics(tuning, options);
-  car.restore({ ...car.snapshot(), vz: speed });
+  const held = car.snapshot();
+  car.restore({ ...held, motion: { ...held.motion, vz: speed } });
   return car;
 }
 
@@ -65,15 +66,15 @@ function hold(car: VehicleDynamics, input: Partial<AxisInput>, seconds: number):
 function coastLoss(tuning: VehicleDynamicsTuning, speed: number): number {
   const car = rolling(tuning, speed);
   hold(car, {}, 0.1);
-  const start = hold(car, {}, DT).forwardSpeed;
-  return start - hold(car, {}, 1).forwardSpeed;
+  const start = hold(car, {}, DT).motion.forwardSpeed;
+  return start - hold(car, {}, 1).motion.forwardSpeed;
 }
 
 function stoppingDistance(tuning: VehicleDynamicsTuning, speed: number): number {
   const car = rolling(tuning, speed);
   let step = car.tick(DT, axis({ brake: 1 }));
-  for (let i = 0; i < 1200 && step.forwardSpeed > 0.3; i += 1) step = car.tick(DT, axis({ brake: 1 }));
-  return step.position[2];
+  for (let i = 0; i < 1200 && step.motion.forwardSpeed > 0.3; i += 1) step = car.tick(DT, axis({ brake: 1 }));
+  return step.motion.position[2];
 }
 
 /** Settles a held steer at a speed held by a throttle loop, then returns the last step. */
@@ -81,13 +82,13 @@ function steady(tuning: VehicleDynamicsTuning, speed: number, steer: number, opt
   const car = rolling(tuning, speed, options);
   let step = car.tick(DT, axis({ steer }));
   for (let i = 0; i < 300; i += 1) {
-    const throttle = Math.max(0, Math.min(1, (speed - step.forwardSpeed) * 0.8 + 0.15));
+    const throttle = Math.max(0, Math.min(1, (speed - step.motion.forwardSpeed) * 0.8 + 0.15));
     step = car.tick(DT, axis({ steer, throttle }));
   }
   return step;
 }
 
-const totalLoad = (step: VehicleDynamicsStep) => step.wheelLoads.reduce((sum, load) => sum + load, 0);
+const totalLoad = (step: VehicleDynamicsStep) => step.loads.wheelLoads.reduce((sum, load) => sum + load, 0);
 
 describe("vehicle effects: each is its own term", () => {
   test("a car with no effects coasts without losing speed", () => {
@@ -119,7 +120,7 @@ describe("vehicle effects: each is its own term", () => {
   test("downforce presses the tyres harder with speed", () => {
     const weight = bare.massKg * G;
     const down = hold(rolling(on({ downforce: { area: 1.5 } }), 40), { throttle: 0.6 }, 0.3);
-    expect(totalLoad(down) - weight).toBeCloseTo(0.5 * 1.225 * 1.5 * down.forwardSpeed ** 2, -2);
+    expect(totalLoad(down) - weight).toBeCloseTo(0.5 * 1.225 * 1.5 * down.motion.forwardSpeed ** 2, -2);
     expect(totalLoad(hold(rolling(bare, 40), { throttle: 0.6 }, 0.3))).toBeCloseTo(weight, -1);
   });
 
@@ -127,7 +128,7 @@ describe("vehicle effects: each is its own term", () => {
     const staticFront = bare.massKg * G * bare.frontWeight;
     const braking = (tuning: VehicleDynamicsTuning) => {
       const step = hold(rolling(tuning, 25), { brake: 0.5 }, 0.3);
-      return step.wheelLoads[0] + step.wheelLoads[1];
+      return step.loads.wheelLoads[0] + step.loads.wheelLoads[1];
     };
     expect(braking(on({ longitudinalLoadTransfer: {} }))).toBeGreaterThan(staticFront * 1.15);
     expect(braking(bare)).toBeCloseTo(staticFront, -1);
@@ -136,7 +137,7 @@ describe("vehicle effects: each is its own term", () => {
   test("lateralLoadTransfer loads the outside wheels in a corner", () => {
     const split = (tuning: VehicleDynamicsTuning) => {
       const step = steady(tuning, 15, 0.15);
-      return Math.abs(step.wheelLoads[0] - step.wheelLoads[1]);
+      return Math.abs(step.loads.wheelLoads[0] - step.loads.wheelLoads[1]);
     };
     expect(split(on({ lateralLoadTransfer: {} }))).toBeGreaterThan(1000);
     expect(split(bare)).toBeLessThan(1);
@@ -153,7 +154,7 @@ describe("vehicle effects: each is its own term", () => {
     const lateralWhileBraking = (tuning: VehicleDynamicsTuning) => {
       const car = rolling(tuning, 20);
       hold(car, { steer: 0.25 }, 1.5);
-      return Math.abs(hold(car, { steer: 0.25, brake: 0.6 }, 0.25).lateralAccel);
+      return Math.abs(hold(car, { steer: 0.25, brake: 0.6 }, 0.25).motion.lateralAccel);
     };
     expect(lateralWhileBraking(on({ combinedSlip: {} }))).toBeLessThan(lateralWhileBraking(bare) * 0.9);
   });
@@ -171,8 +172,8 @@ describe("vehicle effects: each is its own term", () => {
       let active = false;
       for (let i = 0; i < 60; i += 1) {
         const step = car.tick(DT, axis({ brake: 1 }));
-        locked ||= step.wheelLock;
-        active ||= step.absActive;
+        locked ||= step.tires.wheelLock;
+        active ||= step.aids.absActive;
       }
       return { locked, active };
     };
@@ -186,9 +187,9 @@ describe("vehicle effects: each is its own term", () => {
     const engineBraking: VehicleDynamicsTuning = { ...bare, powertrain: { ...gearbox, engineBrakeTorque: 200 } };
     const locked = (tuning: VehicleDynamicsTuning) => {
       const car = createVehicleDynamics(tuning);
-      for (let i = 0; i < 1200; i += 1) if (car.tick(DT, axis({ throttle: 1 })).forwardSpeed > 20) break;
+      for (let i = 0; i < 1200; i += 1) if (car.tick(DT, axis({ throttle: 1 })).motion.forwardSpeed > 20) break;
       let lock = false;
-      for (let i = 0; i < 60; i += 1) lock ||= car.tick(DT, axis({ brake: 1 })).wheelLock;
+      for (let i = 0; i < 60; i += 1) lock ||= car.tick(DT, axis({ brake: 1 })).tires.wheelLock;
       return lock;
     };
     expect(locked(on({ wheelSlide: {}, abs: { holds: 0.97 } }, engineBraking))).toBe(false);
@@ -196,7 +197,7 @@ describe("vehicle effects: each is its own term", () => {
   });
 
   test("brakeLag lets the pressure build over its time constant", () => {
-    const firstDecel = (tuning: VehicleDynamicsTuning) => -hold(rolling(tuning, 20), { brake: 0.4 }, 2 * DT).longitudinalAccel;
+    const firstDecel = (tuning: VehicleDynamicsTuning) => -hold(rolling(tuning, 20), { brake: 0.4 }, 2 * DT).motion.longitudinalAccel;
     expect(firstDecel(on({ brakeLag: { seconds: 0.1 } }))).toBeLessThan(firstDecel(bare) * 0.5);
   });
 
@@ -204,7 +205,7 @@ describe("vehicle effects: each is its own term", () => {
     const spins = (tuning: VehicleDynamicsTuning) => {
       const car = createVehicleDynamics(tuning, { surfaceFriction: () => 0.3 });
       let spin = false;
-      for (let i = 0; i < 60; i += 1) spin ||= car.tick(DT, axis({ throttle: 1 })).wheelspin;
+      for (let i = 0; i < 60; i += 1) spin ||= car.tick(DT, axis({ throttle: 1 })).tires.wheelspin;
       return spin;
     };
     expect(spins(bare)).toBe(true);
@@ -214,7 +215,7 @@ describe("vehicle effects: each is its own term", () => {
   test("rotatingInertia makes a car launch slower, most in low gears", () => {
     const toSpeed = (tuning: VehicleDynamicsTuning) => {
       const car = createVehicleDynamics(tuning);
-      for (let i = 1; i < 1200; i += 1) if (car.tick(DT, axis({ throttle: 1 })).forwardSpeed > 14) return i * DT;
+      for (let i = 1; i < 1200; i += 1) if (car.tick(DT, axis({ throttle: 1 })).motion.forwardSpeed > 14) return i * DT;
       return Number.POSITIVE_INFINITY;
     };
     const plain = toSpeed(bareGearbox);
@@ -225,11 +226,11 @@ describe("vehicle effects: each is its own term", () => {
   test("rotatingInertia: a hard stop declutches the engine, but the wheels still have to be slowed", () => {
     const stop = (tuning: VehicleDynamicsTuning) => {
       const car = createVehicleDynamics(tuning);
-      for (let i = 0; i < 1200; i += 1) if (car.tick(DT, axis({ throttle: 1 })).forwardSpeed > 20) break;
+      for (let i = 0; i < 1200; i += 1) if (car.tick(DT, axis({ throttle: 1 })).motion.forwardSpeed > 20) break;
       const start = car.pose().position[2];
       let step = car.tick(DT, axis({ brake: 1 }));
-      for (let i = 0; i < 600 && step.forwardSpeed > 0.3; i += 1) step = car.tick(DT, axis({ brake: 1 }));
-      return step.position[2] - start;
+      for (let i = 0; i < 600 && step.motion.forwardSpeed > 0.3; i += 1) step = car.tick(DT, axis({ brake: 1 }));
+      return step.motion.position[2] - start;
     };
     const plain = stop(bareGearbox);
     expect(stop(on({ rotatingInertia: { engine: 0.5 } }, bareGearbox))).toBeCloseTo(plain, 0);
@@ -241,7 +242,7 @@ describe("vehicle effects: each is its own term", () => {
       ...bare,
       front: corneringStiffness === undefined ? bare.front : { ...bare.front, corneringStiffness },
     });
-    const slip = (tuning: VehicleDynamicsTuning) => Math.abs(steady(tuning, 15, 0.06).slipAngleRear);
+    const slip = (tuning: VehicleDynamicsTuning) => Math.abs(steady(tuning, 15, 0.06).tires.slipAngleRear);
     // The shape alone gives about 20 per rad here; 10 needs about twice the slip for the same light corner.
     expect(slip(tyre(10))).toBeGreaterThan(slip(tyre()) * 1.6);
     expect(slip(tyre(20))).toBeCloseTo(slip(tyre()), 2);
@@ -251,19 +252,19 @@ describe("vehicle effects: each is its own term", () => {
 
   test("tireRelaxation delays the lateral force after a steer step", () => {
     // Lag time is length / speed: 2 m at 20 m/s is 0.1 s.
-    const early = (tuning: VehicleDynamicsTuning) => Math.abs(hold(rolling(tuning, 20), { steer: 0.2 }, 0.05).lateralAccel);
+    const early = (tuning: VehicleDynamicsTuning) => Math.abs(hold(rolling(tuning, 20), { steer: 0.2 }, 0.05).motion.lateralAccel);
     expect(early(on({ tireRelaxation: { length: 2 } }))).toBeLessThan(early(bare) * 0.7);
   });
 
   test("complianceSteer front gives way under cornering force: more understeer at the same steer", () => {
-    const yaw = (tuning: VehicleDynamicsTuning) => Math.abs(steady(tuning, 20, 0.08).yawRate);
+    const yaw = (tuning: VehicleDynamicsTuning) => Math.abs(steady(tuning, 20, 0.08).motion.yawRate);
     expect(yaw(on({ complianceSteer: { front: 1e-5 } }))).toBeLessThan(yaw(bare) * 0.9);
     expect(yaw(on({ complianceSteer: { rear: 1e-5 } }))).toBeGreaterThan(yaw(bare) * 1.05);
   });
 
   test("rollSteer steers with body roll", () => {
     const rolls = on({ lateralLoadTransfer: {} });
-    const yaw = (tuning: VehicleDynamicsTuning) => Math.abs(steady(tuning, 20, 0.08).yawRate);
+    const yaw = (tuning: VehicleDynamicsTuning) => Math.abs(steady(tuning, 20, 0.08).motion.yawRate);
     expect(yaw(withVehicleEffects(rolls, { rollSteer: { front: 0.5 } }))).toBeLessThan(yaw(rolls) * 0.95);
   });
 
@@ -281,17 +282,17 @@ describe("vehicle effects: each is its own term", () => {
     const exitAccel = (tuning: VehicleDynamicsTuning) => {
       const car = rolling(tuning, 10);
       hold(car, { steer: 0.5 }, 1.5);
-      return hold(car, { steer: 0.5, throttle: 1 }, 0.3).longitudinalAccel;
+      return hold(car, { steer: 0.5, throttle: 1 }, 0.3).motion.longitudinalAccel;
     };
     const open = exitAccel(withVehicleEffects(transfer, { differential: { kind: "open" } }));
     const lsd = exitAccel(withVehicleEffects(transfer, { differential: { kind: "limitedSlip", bias: 3 } }));
     expect(lsd).toBeGreaterThan(open + 0.2);
-    const yaw = (tuning: VehicleDynamicsTuning) => Math.abs(steady(tuning, 8, 0.3).yawRate);
+    const yaw = (tuning: VehicleDynamicsTuning) => Math.abs(steady(tuning, 8, 0.3).motion.yawRate);
     expect(yaw(on({ differential: { kind: "locked" } }))).toBeLessThan(yaw(bare) * 0.95);
   });
 
   test("speedSensitiveSteering cuts full lock at speed", () => {
-    const lock = (tuning: VehicleDynamicsTuning) => Math.abs(hold(rolling(tuning, 30), { steer: 1 }, 0.1).roadWheelAngle);
+    const lock = (tuning: VehicleDynamicsTuning) => Math.abs(hold(rolling(tuning, 30), { steer: 1 }, 0.1).steering.roadWheelAngle);
     expect(lock(on({ speedSensitiveSteering: { angle: 0.1, at: 25 } }))).toBeCloseTo(0.1, 2);
     expect(lock(bare)).toBeGreaterThan(0.5);
   });
@@ -300,7 +301,7 @@ describe("vehicle effects: each is its own term", () => {
     const intoSlide = (tuning: VehicleDynamicsTuning) => {
       const car = rolling(tuning, 18);
       hold(car, { steer: 1, handbrake: 1 }, 0.5);
-      return Math.abs(hold(car, {}, 0.1).roadWheelAngle);
+      return Math.abs(hold(car, {}, 0.1).steering.roadWheelAngle);
     };
     expect(intoSlide(on({ selfAlign: { strength: 0.8 } }))).toBeGreaterThan(0.05);
     expect(intoSlide(bare)).toBeLessThan(0.01);

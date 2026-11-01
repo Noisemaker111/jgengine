@@ -1,4 +1,5 @@
 import type { AxisInput } from "../input/axisInput";
+import type { VehicleStepAir, VehicleStepBody, VehicleStepEngine, VehicleStepMotion, VehicleStepSteering } from "./vehicleDynamics";
 
 const GRAVITY = 9.81;
 const WATER_DENSITY = 1025;
@@ -84,24 +85,20 @@ export interface BoatState {
   bodyRoll: number;
 }
 
-/** One boat tick: pose plus the telemetry wake, spray and engine sound read. */
+/** One boat tick: pose plus the telemetry wake, spray and engine sound read, grouped like `VehicleDynamicsStep`. */
 export interface BoatStep {
-  position: readonly [number, number, number];
-  heading: number;
-  forwardSpeed: number;
-  lateralSpeed: number;
-  yawRate: number;
+  motion: Pick<VehicleStepMotion, "position" | "heading" | "forwardSpeed" | "lateralSpeed" | "yawRate">;
   /** Rudder or outboard angle, rad, positive steers like `steer > 0`. */
-  steerAngle: number;
-  /** `0` displacement … `1` fully planing. */
-  planing: number;
+  steering: Pick<VehicleStepSteering, "steerAngle">;
+  hull: {
+    /** `0` displacement … `1` fully planing. */
+    planing: number;
+  };
   /** Thrust in use as a share of `maxThrust`, `0..1` — engine load. */
-  engineLoad: number;
-  bodyPitch: number;
-  bodyRoll: number;
-  /** Always `0`: the hull rides the water surface. Present so `tickDrivableVehicle` can drive it. */
-  airOffset: number;
-  airborne: boolean;
+  engine: Pick<VehicleStepEngine, "engineLoad">;
+  body: Pick<VehicleStepBody, "bodyPitch" | "bodyRoll">;
+  /** `airOffset` is always `0`: the hull rides the water surface. Present so `tickDrivableVehicle` can drive it. */
+  air: Pick<VehicleStepAir, "airOffset" | "airborne">;
 }
 
 /** A force-based powered hull on the same tick/snapshot/retune contract as `VehicleDynamics`. */
@@ -249,18 +246,18 @@ export function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {
       for (let i = 0; i < steps; i += 1) substep(h, input);
       const [fx, fz] = forwardOf(state.heading);
       return {
-        position: [state.x, state.y, state.z],
-        heading: state.heading,
-        forwardSpeed: state.vx * fx + state.vz * fz,
-        lateralSpeed: -state.vx * fz + state.vz * fx,
-        yawRate: state.yawRate,
-        steerAngle: -state.steerAngle,
-        planing: telemetry.planing,
-        engineLoad: telemetry.engineLoad,
-        bodyPitch: state.bodyPitch,
-        bodyRoll: state.bodyRoll,
-        airOffset: 0,
-        airborne: false,
+        motion: {
+          position: [state.x, state.y, state.z],
+          heading: state.heading,
+          forwardSpeed: state.vx * fx + state.vz * fz,
+          lateralSpeed: -state.vx * fz + state.vz * fx,
+          yawRate: state.yawRate,
+        },
+        steering: { steerAngle: -state.steerAngle },
+        hull: { planing: telemetry.planing },
+        engine: { engineLoad: telemetry.engineLoad },
+        body: { bodyPitch: state.bodyPitch, bodyRoll: state.bodyRoll },
+        air: { airOffset: 0, airborne: false },
       };
     },
     pose: () => ({ position: [state.x, state.y, state.z], heading: state.heading }),

@@ -16,17 +16,17 @@ describe("reference car against published test numbers", () => {
       const full = { throttle: 1, brake: 0, steer: 0, handbrake: 0 };
       let time = 0;
       let step = reference.tick(DT, full);
-      while (step.forwardSpeed < KMH_100 && time < 20) {
+      while (step.motion.forwardSpeed < KMH_100 && time < 20) {
         time += DT;
         step = reference.tick(DT, full);
       }
       const zeroTo100 = time + DT;
       // Braking starts one tick past 100 km/h; v² scaling gives the distance from exactly 100.
-      const start = step.forwardSpeed;
+      const start = step.motion.forwardSpeed;
       let distance = 0;
-      while (step.forwardSpeed > 0.3 && distance < 100) {
+      while (step.motion.forwardSpeed > 0.3 && distance < 100) {
         step = reference.tick(DT, { throttle: 0, brake: 1, steer: 0, handbrake: 0 });
-        distance += Math.max(0, step.forwardSpeed) * DT;
+        distance += Math.max(0, step.motion.forwardSpeed) * DT;
       }
       const brake100To0 = distance * (KMH_100 / start) ** 2;
       expect(Math.abs(zeroTo100 - car.tested.zeroTo100) / car.tested.zeroTo100).toBeLessThan(PUBLISHED_TOLERANCES.zeroTo100);

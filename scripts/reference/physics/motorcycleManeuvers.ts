@@ -2,7 +2,10 @@ import type { AxisInput } from "@jgengine/core/input/axisInput";
 
 /** The slice of a single-track sim the bike scenarios drive: a `VehicleDynamics` with a `lean` block or a {@link RiddenMotorcycle}. */
 export interface BikeCourseSubject {
-  tick(dt: number, input: AxisInput): { forwardSpeed: number; lateralSpeed: number; yawRate: number; lean: number; steerAngle: number };
+  tick(
+    dt: number,
+    input: AxisInput,
+  ): { motion: { forwardSpeed: number; lateralSpeed: number; yawRate: number }; body: { lean: number }; steering: { steerAngle: number } };
   velocity(): readonly [number, number];
   pose(): { position: readonly [number, number, number]; heading: number };
 }
@@ -64,11 +67,11 @@ function holdSpeed(target: number, current: number): { throttle: number; brake: 
 }
 
 function launchTo(subject: BikeCourseSubject, speed: number, dt: number): number {
-  let last = subject.tick(dt, axis(0, 0, 0)).forwardSpeed;
-  for (let i = 0; i < Math.ceil(60 / dt) && last < speed; i += 1) last = subject.tick(dt, axis(1, 0, 0)).forwardSpeed;
+  let last = subject.tick(dt, axis(0, 0, 0)).motion.forwardSpeed;
+  for (let i = 0; i < Math.ceil(60 / dt) && last < speed; i += 1) last = subject.tick(dt, axis(1, 0, 0)).motion.forwardSpeed;
   for (let i = 0; i < Math.ceil(0.5 / dt); i += 1) {
     const hold = holdSpeed(speed, last);
-    last = subject.tick(dt, axis(hold.throttle, hold.brake, 0)).forwardSpeed;
+    last = subject.tick(dt, axis(hold.throttle, hold.brake, 0)).motion.forwardSpeed;
   }
   return last;
 }
@@ -110,8 +113,8 @@ function followPath(
     const lean = -Math.atan((Math.max(speed, 1) ** 2 * curvature) / G);
     const hold = holdSpeed(entry, speed);
     const step = bike.tick(dt, axis(hold.throttle, hold.brake, clamp(lean / maxLean, -1, 1)));
-    speed = step.forwardSpeed;
-    if (Math.abs(step.lean) > 1.3 || speed < entry * 0.5) return false;
+    speed = step.motion.forwardSpeed;
+    if (Math.abs(step.body.lean) > 1.3 || speed < entry * 0.5) return false;
   }
   return false;
 }
@@ -218,9 +221,9 @@ export function measureBikeHandling(create: (speed: number) => BikeCourseSubject
     for (let i = 1; i <= Math.ceil(25 / dt); i += 1) {
       const step = bike.tick(dt, axis(1, 0, 0));
       // Timing starts at first motion, as a test's light barrier does.
-      if (moving < 0 && step.forwardSpeed > 0.3) moving = (i - 1) * dt;
-      if (zeroTo100 === Number.POSITIVE_INFINITY && step.forwardSpeed >= 100 / 3.6) zeroTo100 = i * dt - Math.max(0, moving);
-      if (step.forwardSpeed >= 200 / 3.6) {
+      if (moving < 0 && step.motion.forwardSpeed > 0.3) moving = (i - 1) * dt;
+      if (zeroTo100 === Number.POSITIVE_INFINITY && step.motion.forwardSpeed >= 100 / 3.6) zeroTo100 = i * dt - Math.max(0, moving);
+      if (step.motion.forwardSpeed >= 200 / 3.6) {
         zeroTo200 = i * dt - Math.max(0, moving);
         break;
       }
@@ -233,7 +236,7 @@ export function measureBikeHandling(create: (speed: number) => BikeCourseSubject
     const start = bike.pose().position;
     for (let i = 0; i < Math.ceil(20 / dt); i += 1) {
       const step = bike.tick(dt, axis(0, 1, 0));
-      if (step.forwardSpeed < 0.3) {
+      if (step.motion.forwardSpeed < 0.3) {
         const end = bike.pose().position;
         // Scale to exactly 100 km/h entry.
         brake100To0 = Math.hypot(end[0] - start[0], end[2] - start[2]) * (100 / 3.6 / Math.max(speed, 1)) ** 2;
@@ -253,13 +256,13 @@ export function measureBikeHandling(create: (speed: number) => BikeCourseSubject
     for (let i = 0; i < Math.ceil(2 / dt); i += 1) {
       const hold = holdSpeed(full.leanSpeed, current);
       const step = bike.tick(dt, axis(hold.throttle, hold.brake, 1));
-      current = step.forwardSpeed;
+      current = step.motion.forwardSpeed;
       if (i >= tail) {
-        lateral += Math.abs(step.yawRate * step.forwardSpeed);
+        lateral += Math.abs(step.motion.yawRate * step.motion.forwardSpeed);
         samples += 1;
       }
-      leans.push(step.lean);
-      steers.push(step.steerAngle);
+      leans.push(step.body.lean);
+      steers.push(step.steering.steerAngle);
     }
     const steady = leans[leans.length - 1] ?? 0;
     const index = leans.findIndex((value) => Math.sign(value) === Math.sign(steady) && Math.abs(value) >= Math.abs(steady) * 0.9);

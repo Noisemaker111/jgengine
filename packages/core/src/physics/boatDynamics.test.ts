@@ -24,29 +24,29 @@ describe("createBoatDynamics", () => {
   test("a planing hull climbs onto the plane and runs well past hull speed", () => {
     const boat = createBoatDynamics(speedboat);
     const step = run(boat, 20, axis({ throttle: 1 }));
-    expect(step.planing).toBe(1);
-    expect(step.forwardSpeed).toBeGreaterThan(1.34 * Math.sqrt(9.81 * speedboat.length) * 2);
+    expect(step.hull.planing).toBe(1);
+    expect(step.motion.forwardSpeed).toBeGreaterThan(1.34 * Math.sqrt(9.81 * speedboat.length) * 2);
   });
 
   test("a displacement hull stalls near hull speed and never planes", () => {
     const boat = createBoatDynamics({ ...tug, propSpeed: 30 });
     const step = run(boat, 60, axis({ throttle: 1 }));
-    expect(step.planing).toBe(0);
-    expect(step.forwardSpeed).toBeLessThan(1.34 * Math.sqrt(9.81 * tug.length) * 1.25);
+    expect(step.hull.planing).toBe(0);
+    expect(step.motion.forwardSpeed).toBeLessThan(1.34 * Math.sqrt(9.81 * tug.length) * 1.25);
   });
 
   test("a rudder needs flow: no turn at rest, a slow turn once the prop washes over it", () => {
     const still = run(createBoatDynamics(tug), 2, axis({ steer: 1 }));
-    expect(still.yawRate).toBe(0);
+    expect(still.motion.yawRate).toBe(0);
     const washed = run(createBoatDynamics(tug), 2, axis({ steer: 1, throttle: 0.5 }));
-    expect(washed.yawRate).toBeLessThan(-0.01);
+    expect(washed.motion.yawRate).toBeLessThan(-0.01);
   });
 
   test("an outboard swings its thrust, so it turns hard at low speed", () => {
     const boat = run(createBoatDynamics(speedboat), 2, axis({ steer: 1, throttle: 0.5 }));
     const rudder = run(createBoatDynamics(tug), 2, axis({ steer: 1, throttle: 0.5 }));
-    expect(boat.yawRate).toBeLessThan(rudder.yawRate * 3);
-    expect(boat.steerAngle).toBeGreaterThan(0);
+    expect(boat.motion.yawRate).toBeLessThan(rudder.motion.yawRate * 3);
+    expect(boat.steering.steerAngle).toBeGreaterThan(0);
   });
 
   test("measureHandling reads a boat like any drivable sim", () => {
@@ -60,7 +60,7 @@ describe("createBoatDynamics", () => {
     const boat = createBoatDynamics(speedboat, { position: [0, 2, 0] });
     const drive = tickDrivableVehicle(boat, DT, axis({ throttle: 1 }));
     expect(drive.pose.position[1]).toBe(2);
-    expect(drive.step.engineLoad).toBeGreaterThan(0.9);
+    expect(drive.step.engine.engineLoad).toBeGreaterThan(0.9);
   });
 
   test("snapshot and restore replay bit-exactly", () => {
@@ -77,7 +77,7 @@ describe("createBoatDynamics", () => {
   test("the hull rides the water surface", () => {
     const boat = createBoatDynamics(speedboat, { waterHeight: (_x, _z, t) => 0.5 * Math.sin(t * 2) });
     const heights: number[] = [];
-    for (let i = 0; i < 240; i += 1) heights.push(boat.tick(DT, axis({})).position[1]);
+    for (let i = 0; i < 240; i += 1) heights.push(boat.tick(DT, axis({})).motion.position[1]);
     expect(Math.max(...heights)).toBeGreaterThan(0.45);
     expect(Math.min(...heights)).toBeLessThan(-0.45);
   });
@@ -91,16 +91,16 @@ describe("createBoatDynamics", () => {
 
   test("retune takes effect on the next tick", () => {
     const boat = createBoatDynamics(speedboat);
-    const slow = run(boat, 10, axis({ throttle: 1 })).forwardSpeed;
+    const slow = run(boat, 10, axis({ throttle: 1 })).motion.forwardSpeed;
     boat.retune({ ...speedboat, maxThrust: 14000, propSpeed: 45 });
-    const fast = run(boat, 10, axis({ throttle: 1 })).forwardSpeed;
+    const fast = run(boat, 10, axis({ throttle: 1 })).motion.forwardSpeed;
     expect(fast).toBeGreaterThan(slow + 3);
     expect(boat.tuning().maxThrust).toBe(14000);
   });
 
   test("reverse thrust backs the boat up and resetTo clears motion", () => {
     const boat = createBoatDynamics(speedboat);
-    expect(run(boat, 3, axis({ brake: 1 })).forwardSpeed).toBeLessThan(-0.5);
+    expect(run(boat, 3, axis({ brake: 1 })).motion.forwardSpeed).toBeLessThan(-0.5);
     boat.resetTo([5, 0, 5], 1);
     expect(boat.velocity()).toEqual([0, 0]);
     expect(boat.pose().heading).toBe(1);

@@ -70,13 +70,13 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
       const vehicle = simOf(car.dynamics.tuning);
       for (let i = 0; i < 3000; i += 1) {
         const step = vehicle.tick(dt, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
-        if (Math.abs(step.forwardSpeed) * 3.6 >= 30) break;
+        if (Math.abs(step.motion.forwardSpeed) * 3.6 >= 30) break;
       }
       let coastMs = 0;
       let kmh = 30;
       for (let i = 0; i < 4 * 60; i += 1) {
         const step = vehicle.tick(dt, { throttle: 0, brake: 0, steer: 0, handbrake: 0 });
-        kmh = Math.abs(step.forwardSpeed) * 3.6;
+        kmh = Math.abs(step.motion.forwardSpeed) * 3.6;
         coastMs += dt;
         if (kmh <= 10) break;
       }
@@ -101,8 +101,8 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
       const vehicle = simOf(def.dynamics.tuning);
       let step = vehicle.tick(dt, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
       for (let i = 1; i < 120; i += 1) step = vehicle.tick(dt, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
-      expect(step.forwardSpeed, `${id} 2s launch ${step.forwardSpeed.toFixed(2)} m/s`).toBeGreaterThanOrEqual(band.min);
-      expect(step.forwardSpeed, `${id} 2s launch ${step.forwardSpeed.toFixed(2)} m/s`).toBeLessThanOrEqual(band.max);
+      expect(step.motion.forwardSpeed, `${id} 2s launch ${step.motion.forwardSpeed.toFixed(2)} m/s`).toBeGreaterThanOrEqual(band.min);
+      expect(step.motion.forwardSpeed, `${id} 2s launch ${step.motion.forwardSpeed.toFixed(2)} m/s`).toBeLessThanOrEqual(band.max);
     }
   });
 
@@ -115,9 +115,9 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
       for (let i = 1; i < 120; i += 1) step = vehicle.tick(dt, { throttle: 0, brake: 1, steer: 0, handbrake: 0 });
       // Bus is intentionally sluggish; everything else should reverse with intent by 2 s.
       const minReverse = car.id === "car_bus" ? -1.5 : -3;
-      expect(step.forwardSpeed, `${car.id} reverse`).toBeLessThan(minReverse);
+      expect(step.motion.forwardSpeed, `${car.id} reverse`).toBeLessThan(minReverse);
       // Cap near reverseSpeed (~0.18× top) — never rocket reverse.
-      expect(step.forwardSpeed, `${car.id} reverse`).toBeGreaterThan(-(car.dynamics.tuning.engine.reverseSpeed! + 0.6));
+      expect(step.motion.forwardSpeed, `${car.id} reverse`).toBeGreaterThan(-(car.dynamics.tuning.engine.reverseSpeed! + 0.6));
     }
   });
 

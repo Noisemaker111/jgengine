@@ -90,8 +90,8 @@ describe("vehicle parts change the numbers and the feel", () => {
     let stockSpeed = 0;
     let builtSpeed = 0;
     for (let i = 0; i < 240; i += 1) {
-      stockSpeed = stock.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 }).forwardSpeed;
-      builtSpeed = built.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 }).forwardSpeed;
+      stockSpeed = stock.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 }).motion.forwardSpeed;
+      builtSpeed = built.tick(DT, { ...NEUTRAL_AXIS, throttle: 1 }).motion.forwardSpeed;
     }
     expect(builtSpeed).toBeGreaterThan(stockSpeed);
   });
@@ -107,8 +107,8 @@ describe("vehicle parts change the numbers and the feel", () => {
     let slickSlip = 0;
     const axis = { ...NEUTRAL_AXIS, throttle: 1, steer: 1 };
     for (let i = 0; i < 60; i += 1) {
-      stockSlip = Math.max(stockSlip, stock.tick(DT, axis).slip);
-      slickSlip = Math.max(slickSlip, slick.tick(DT, axis).slip);
+      stockSlip = Math.max(stockSlip, stock.tick(DT, axis).tires.slip);
+      slickSlip = Math.max(slickSlip, slick.tick(DT, axis).tires.slip);
     }
     expect(slickSlip).toBeGreaterThan(stockSlip);
   });

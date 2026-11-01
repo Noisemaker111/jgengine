@@ -65,12 +65,12 @@ function scriptedLap(vehicle: VehicleDynamics, modifiers?: Parameters<VehicleDyn
   for (const [ticks, input] of phases) {
     for (let i = 0; i < ticks; i += 1) {
       const step = vehicle.tick(DT, input, modifiers);
-      distance += Math.hypot(step.position[0] - previous.position[0], step.position[2] - previous.position[2]);
-      headingTurned += Math.abs(step.heading - previous.heading);
-      previous = { position: step.position, heading: step.heading };
-      peakSlip = Math.max(peakSlip, step.slip);
-      peakLateral = Math.max(peakLateral, Math.abs(step.lateralSpeed));
-      topSpeed = Math.max(topSpeed, step.forwardSpeed);
+      distance += Math.hypot(step.motion.position[0] - previous.position[0], step.motion.position[2] - previous.position[2]);
+      headingTurned += Math.abs(step.motion.heading - previous.heading);
+      previous = { position: step.motion.position, heading: step.motion.heading };
+      peakSlip = Math.max(peakSlip, step.tires.slip);
+      peakLateral = Math.max(peakLateral, Math.abs(step.motion.lateralSpeed));
+      topSpeed = Math.max(topSpeed, step.motion.forwardSpeed);
     }
   }
   return { distance, headingTurned, peakSlip, peakLateral, topSpeed };
@@ -79,7 +79,7 @@ function scriptedLap(vehicle: VehicleDynamics, modifiers?: Parameters<VehicleDyn
 describe("the quality floor every setup keeps", () => {
   for (const [name, style] of Object.entries(SETUPS)) {
     test(`${name}: launches, grips, slides on the handbrake, and never spins on a held keyboard corner`, () => {
-      const spec: VehicleSpec = { ...style, engine: { topSpeed: 40, accel: 8 }, brakes: { brake: 11 }, steering: { turnRate: 1.8 } };
+      const spec: VehicleSpec = { ...style, engine: { topSpeed: 40, accel: 8 }, brakes: { ...style.brakes, brake: 11 }, steering: { ...style.steering, turnRate: 1.8 } };
       const report = measureHandling(() => createVehicleDynamics(vehicleTuning(spec)));
       expect(report.zeroTo100).toBeLessThan(6);
       expect(report.topSpeed).toBeGreaterThan(38);
@@ -125,13 +125,13 @@ describe("weight transfer", () => {
     for (let i = 0; i < 120; i += 1) step = car.tick(DT, axis({ throttle: 1 }));
     const accelerating = step;
     for (let i = 0; i < 20; i += 1) step = car.tick(DT, axis({ brake: 1 }));
-    expect(step.frontLoad).toBeGreaterThan(accelerating.frontLoad);
-    expect(step.rearLoad).toBeLessThan(accelerating.rearLoad);
+    expect(step.loads.frontLoad).toBeGreaterThan(accelerating.loads.frontLoad);
+    expect(step.loads.rearLoad).toBeLessThan(accelerating.loads.rearLoad);
   });
 
   test("a heavier body rolls more in the same corner when the spec says soft", () => {
-    const stiff = createVehicleDynamics(vehicleTuning({ ...CAR, chassis: { bodyRoll: 0 } }));
-    const soft = createVehicleDynamics(vehicleTuning({ ...CAR, chassis: { bodyRoll: 1 } }));
+    const stiff = createVehicleDynamics(vehicleTuning({ ...CAR, chassis: { ...CAR.chassis, bodyRoll: 0 } }));
+    const soft = createVehicleDynamics(vehicleTuning({ ...CAR, chassis: { ...CAR.chassis, bodyRoll: 1 } }));
     let stiffRoll = 0;
     let softRoll = 0;
     for (let i = 0; i < 150; i += 1) {
@@ -139,8 +139,8 @@ describe("weight transfer", () => {
       soft.tick(DT, axis({ throttle: 1 }));
     }
     for (let i = 0; i < 60; i += 1) {
-      stiffRoll = Math.max(stiffRoll, Math.abs(stiff.tick(DT, axis({ throttle: 0.5, steer: 0.6 })).bodyRoll));
-      softRoll = Math.max(softRoll, Math.abs(soft.tick(DT, axis({ throttle: 0.5, steer: 0.6 })).bodyRoll));
+      stiffRoll = Math.max(stiffRoll, Math.abs(stiff.tick(DT, axis({ throttle: 0.5, steer: 0.6 })).body.bodyRoll));
+      softRoll = Math.max(softRoll, Math.abs(soft.tick(DT, axis({ throttle: 0.5, steer: 0.6 })).body.bodyRoll));
     }
     expect(softRoll).toBeGreaterThan(stiffRoll * 2);
   });
@@ -156,16 +156,16 @@ describe("handbrake drift", () => {
     let driftSlip = 0;
     let gripSlip = 0;
     for (let i = 0; i < 40; i += 1) {
-      driftSlip = Math.max(driftSlip, drifting.tick(DT, axis({ throttle: 0.5, steer: 1, handbrake: 1 })).slip);
-      gripSlip = Math.max(gripSlip, gripping.tick(DT, axis({ throttle: 0.5, steer: 1 })).slip);
+      driftSlip = Math.max(driftSlip, drifting.tick(DT, axis({ throttle: 0.5, steer: 1, handbrake: 1 })).tires.slip);
+      gripSlip = Math.max(gripSlip, gripping.tick(DT, axis({ throttle: 0.5, steer: 1 })).tires.slip);
     }
     expect(driftSlip).toBeGreaterThan(gripSlip * 1.5);
 
     // Release: the slide is caught, not a spin — slip decays while the car keeps moving forward.
     let recovered = driftSlip;
-    for (let i = 0; i < 120; i += 1) recovered = drifting.tick(DT, axis({ throttle: 1 })).slip;
+    for (let i = 0; i < 120; i += 1) recovered = drifting.tick(DT, axis({ throttle: 1 })).tires.slip;
     expect(recovered).toBeLessThan(driftSlip * 0.5);
-    expect(drifting.tick(DT, axis({ throttle: 1 })).forwardSpeed).toBeGreaterThan(1);
+    expect(drifting.tick(DT, axis({ throttle: 1 })).motion.forwardSpeed).toBeGreaterThan(1);
   });
 });
 

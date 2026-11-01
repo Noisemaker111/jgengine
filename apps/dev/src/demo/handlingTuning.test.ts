@@ -33,16 +33,16 @@ describe("handling demo car", () => {
     let airborne = 0;
     let landing = 0;
     let step = car.tick(1 / 60, input);
-    for (let i = 0; i < 900 && step.position[2] < 300; i += 1) {
+    for (let i = 0; i < 900 && step.motion.position[2] < 300; i += 1) {
       step = car.tick(1 / 60, input);
-      if (step.airborne) airborne += 1 / 60;
-      landing = Math.max(landing, step.landingSpeed);
+      if (step.air.airborne) airborne += 1 / 60;
+      landing = Math.max(landing, step.air.landingSpeed);
     }
     expect(airborne).toBeGreaterThan(0.4);
     expect(landing).toBeGreaterThan(2);
-    expect(step.airborne).toBe(false);
-    expect(Math.abs(step.heading)).toBeLessThan(0.05);
-    expect(Math.abs(step.position[0])).toBeLessThan(0.5);
+    expect(step.air.airborne).toBe(false);
+    expect(Math.abs(step.motion.heading)).toBeLessThan(0.05);
+    expect(Math.abs(step.motion.position[0])).toBeLessThan(0.5);
   });
 
   test("hops about a metre and a half and the air nudges it rather than flipping it", () => {
