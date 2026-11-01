@@ -14,7 +14,7 @@
     "catalog": {
       "@convex-dev/better-auth": "^0.10.9",
       "@react-three/drei": "^10.7.9",
-      "@react-three/fiber": "^9.8.2",
+      "@react-three/fiber": "~9.7.0",
       "@tailwindcss/vite": "^4.3.3",
       "@types/react": "^19",
       "@types/react-dom": "^19",
