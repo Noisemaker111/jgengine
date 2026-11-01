@@ -72,6 +72,8 @@ import { PostProcessing } from "@jgengine/core/postfx/PostProcessing.draw";
 import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
 import { worldProbeForQuality } from "@jgengine/core/lighting/reflectionProbe.draw";
 import { LivingWorld } from "@jgengine/core/weather/LivingWorldLayer.draw";
+import { AmbientFauna } from "@jgengine/core/ambientFauna/AmbientFauna.draw";
+import { faunaGroupsFromVolumes } from "@jgengine/core/ambientFauna/ambientFaunaKind";
 import { CollisionDebugWorld } from "@jgengine/core/devtools/CollisionDebugWorld.draw";
 import { DevtoolsRendererProbe } from "@jgengine/core/devtools/DevtoolsOverlay.draw";
 import { FrameTelemetry } from "@jgengine/core/devtools/FrameTelemetry.draw";
@@ -269,6 +271,7 @@ export function Shell3dPresentation({
   // F3: the performance overlay, in every game and every phase.
   const [perfOpen, setPerfOpen] = useState(false);
   const perfSample = useMemo(() => createPerfOverlaySample(), []);
+  const faunaZones = useMemo(() => faunaGroupsFromVolumes(playable.scene?.editorLayers?.volumes ?? []), [playable]);
   // Every session's input is recorded against the world seed; F2+R saves it as a replay.
   const recorder = useMemo(() => createReplayRecorder({ game: playable.game.name }), [ctx, playable]);
   const saveReplay = () => {
@@ -736,6 +739,9 @@ export function Shell3dPresentation({
                     </BootSuspenseGuard>
                   ) : null}
                   <LivingWorld ambientLife={playable.scene?.ambientLife} lowTier={graphics.quality === "low"} outdoor={effectiveSky !== undefined} />
+                  {playable.scene?.ambientLife !== false && playable.scene?.ambientLife?.fauna !== undefined ? (
+                    <AmbientFauna config={playable.scene.ambientLife.fauna} zones={faunaZones} assets={playable.game.assets} groundAt={ctx.world.groundHeightAt} lowTier={graphics.quality === "low"} />
+                  ) : null}
                   {sceneLighting !== undefined ? (
                     <ConfiguredLighting
                       lighting={sceneLighting}
