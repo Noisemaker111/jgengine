@@ -480,6 +480,9 @@ export function stepPlayerMovement(
 
   const held = new Set(input.held);
   const isDown = (action: string): boolean => held.has(action);
+  const pressedThisStep = (action: string): boolean =>
+    (input.presses?.some((press) => press.action === action) ?? false) ||
+    (userId === ctx.player.userId && ctx.input.justPressed(action));
 
   let nextHeading = state.heading;
   if (heading !== undefined) {
@@ -501,7 +504,8 @@ export function stepPlayerMovement(
   try {
     flightTuning = withPoseRollback(ctx.player.movement, playerId, () => {
       keys.shift = isDown("sprint") && (tuning.movement?.canSprint?.(ctx) ?? true);
-      keys.space = isDown("jump");
+      // A tap shorter than one fixed step is never held on a step; its press still jumps.
+      keys.space = isDown("jump") || pressedThisStep("jump");
       keys.c = isDown("crouch") && ctx.player.movement.setPose(playerId, "crouch") === null;
       if (!keys.c && tuning.controller === undefined) {
         const currentPose = ctx.player.movement.getPose(playerId);

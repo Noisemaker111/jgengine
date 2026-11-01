@@ -9,6 +9,8 @@ import type { GameContext } from "../runtime/gameContext";
 import type { SnapshotModule } from "../runtime/worldSnapshot";
 
 const MAX_FIXED_SUBSTEPS = 8;
+/** A rate fed exact multiples of its step (six 1/60 s steps for a 10 Hz group) runs on time despite float drift. */
+const DUE = 1 - 1e-9;
 
 /** @internal */
 export interface SystemModuleRegistration {
@@ -105,14 +107,15 @@ export function installSystems(
 
     for (const group of schedule.fixed) {
       const step = 1 / group.rate;
+      const due = step * DUE;
       let acc = (fixedAcc.get(group.rate) ?? 0) + dt;
       let substeps = 0;
-      while (acc >= step && substeps < MAX_FIXED_SUBSTEPS) {
+      while (acc >= due && substeps < MAX_FIXED_SUBSTEPS) {
         runIds(ctx, group.order, step);
-        acc -= step;
+        acc = Math.max(0, acc - step);
         substeps += 1;
       }
-      if (acc >= step) acc %= step;
+      if (acc >= due) acc %= step;
       fixedAcc.set(group.rate, acc);
     }
 
@@ -121,9 +124,9 @@ export function installSystems(
     for (const interval of schedule.intervals) {
       const every = interval.every ?? 1;
       let acc = (intervalAcc.get(interval.id) ?? 0) + dt;
-      while (acc >= every) {
+      while (acc >= every * DUE) {
         schedule.systemsById.get(interval.id)?.update?.(ctx, every);
-        acc -= every;
+        acc = Math.max(0, acc - every);
       }
       intervalAcc.set(interval.id, acc);
     }

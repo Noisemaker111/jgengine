@@ -11,6 +11,7 @@ import {
   type WeaponPresentationTuning,
 } from "@jgengine/core/combat/weaponPresentation";
 import { useGameContext } from "@jgengine/react/provider";
+import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { usePlayer } from "@jgengine/react/hooks";
 import { useEntityRenderCues } from "@jgengine/core/anim/useEntityRenderCues.draw";
 import { clearCameraBoom, sceneCameraQuery } from "./cameraCollision";
@@ -18,6 +19,8 @@ import { usePlayerFov } from "./PlayerFov.draw";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { readRegisteredFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle.draw";
+
+const eyePose: RenderPose = [0, 0, 0, 0];
 
 const DEFAULT_SENSITIVITY = 0.0025;
 const DEFAULT_MAX_PITCH = 1.45;
@@ -128,10 +131,12 @@ export function GameFirstPersonCamera({
     const yaw = yawRef.current - (pose?.lookYaw ?? 0);
     const pitch = Math.max(-maxPitch, Math.min(maxPitch, pitchRef.current + (pose?.lookPitch ?? 0)));
     const cosPitch = Math.cos(pitch);
+    // The eye rides the drawn (interpolated) body so a fixed-step sim stays smooth on a fast display.
+    const body = ctx.sim.renderPose(followId, eyePose) ? eyePose : entity.position;
     const eye = {
-      x: entity.position[0],
-      y: entity.position[1] + eyeHeight,
-      z: entity.position[2],
+      x: body[0],
+      y: body[1] + eyeHeight,
+      z: body[2],
     };
     const look = {
       x: eye.x + Math.sin(yaw) * cosPitch,

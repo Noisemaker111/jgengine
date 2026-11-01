@@ -83,7 +83,7 @@ describe("hosted world session", () => {
     expect(createHostedWorldSession({
       definition: defineGameDefinition({ name: "Clock", assets: createAssetCatalog(), multiplayer: "off" }),
       content: {}, store,
-    }).runner().context().time.now()).toBe(2);
+    }).runner().context().time.now()).toBeCloseTo(2, 9);
   });
 
   test("restart sends a baseline to stale cursors because removal history is not persisted", () => {

@@ -5,6 +5,7 @@ import { MOUSE, PerspectiveCamera, Raycaster, type Camera, Vector3 } from "three
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { isCameraOccluderTransparent } from "./cameraCollision";
 import { useGameContext } from "@jgengine/react/provider";
+import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { usePlayer } from "@jgengine/react/hooks";
 import {
   cameraLookPitch,
@@ -22,6 +23,15 @@ import {
 import { usePlayerFov } from "./PlayerFov.draw";
 import type { Xyz } from "@jgengine/core/math/xyz";
 import type { CameraFollowState } from "@jgengine/core/camera/cameraConfig";
+
+const drawnPose: RenderPose = [0, 0, 0, 0];
+const drawnPosition: [number, number, number] = [0, 0, 0];
+function fillDrawn(pose: RenderPose): readonly [number, number, number] {
+  drawnPosition[0] = pose[0];
+  drawnPosition[1] = pose[1];
+  drawnPosition[2] = pose[2];
+  return drawnPosition;
+}
 
 type OrbitControlsImpl = NonNullable<ComponentRef<typeof OrbitControls>>;
 
@@ -105,7 +115,8 @@ export function GameOrbitCamera({
     }
     const runtime = runtimeRef.current;
     const previousTarget = runtime.target;
-    const desiredTarget = resolveFollowTarget?.(entity) ?? resolveFollowTargetFromPosition(entity.position, config);
+    const drawn = ctx.sim.renderPose(followId, drawnPose) ? fillDrawn(drawnPose) : entity.position;
+    const desiredTarget = resolveFollowTarget?.(entity) ?? resolveFollowTargetFromPosition(drawn, config);
     const stepped = orbitFollowStep({
       state: runtime,
       desiredTarget,
@@ -169,7 +180,7 @@ export function GameOrbitCamera({
       lockedDistance: draggingRef.current ? controls.getDistance() : stepped.lockedDistance,
     };
 
-    const [px, , pz] = entity.position;
+    const [px, , pz] = drawn;
     yawRef.current = orbitYawFromCamera(camera.position.x, camera.position.z, px, pz);
     if (pitchRef !== undefined) {
       pitchRef.current = cameraLookPitch(

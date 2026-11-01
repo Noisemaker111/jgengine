@@ -28,7 +28,7 @@ export interface InputSnapshot {
    * and the shell mixes them by priority onto that user's pad. Local only — never in a snapshot or on the wire.
    */
   haptics(userId: string): HapticChannels;
-  /** Replaces held state without notifying subscribers. Supplying `edges` buffers short presses until `beginStep`; `reset` discards the current owner's pending edges. Without `edges`, legacy publication-based edge detection is preserved. */
+  /** Replaces held state without notifying subscribers. Supplying `edges` buffers short presses until `beginStep`, and an action held and released between two steps is the next step's press; `reset` discards the current owner's pending edges. Without `edges`, legacy publication-based edge detection is preserved. */
   publish(held: readonly string[], edges?: { pressed?: readonly string[]; reset?: boolean }): void;
   /** Sample buffered input once before a simulation step. Zero-step render frames retain presses; subsequent steps retire the sampled edges. */
   beginStep(): void;
@@ -71,6 +71,8 @@ export function createInputSnapshot(): InputSnapshot {
   let buffered = false;
   let stepHeld = new Set<string>();
   const pendingPressed = new Set<string>();
+  // Actions that went down after the last step, so a hold released before the next step is still that step's press.
+  const tapped = new Set<string>();
   let stepPressed = new Set<string>();
   let stepReleased = new Set<string>();
   const haptics = new Map<string, HapticChannels>();
@@ -99,11 +101,13 @@ export function createInputSnapshot(): InputSnapshot {
         buffered = true;
         if (edges.reset) {
           pendingPressed.clear();
+          tapped.clear();
           stepPressed.clear();
           stepReleased.clear();
           stepHeld = new Set(held);
         } else {
           for (const action of edges.pressed ?? []) pendingPressed.add(action);
+          for (const action of heldSet) if (!previousHeldSet.has(action) && !stepHeld.has(action)) tapped.add(action);
         }
       }
     },
@@ -111,6 +115,8 @@ export function createInputSnapshot(): InputSnapshot {
       buffered = true;
       stepPressed = new Set(pendingPressed);
       pendingPressed.clear();
+      for (const action of tapped) stepPressed.add(action);
+      tapped.clear();
       for (const action of heldSet) if (!stepHeld.has(action)) stepPressed.add(action);
       stepReleased = new Set([...stepHeld].filter(action => !heldSet.has(action)));
       stepHeld = new Set(heldSet);

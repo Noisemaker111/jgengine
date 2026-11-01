@@ -77,7 +77,7 @@ describe("createSimClock — local accepted progress", () => {
 
   test("a variable simulation records its supplied accepted step and skips prediction-only advances", () => {
     const time = createSimClock({ config: { scale: 2 } });
-    const sim = createSimContext({ entities: createEntityStore(), time });
+    const sim = createSimContext({ config: { hz: "variable" }, entities: createEntityStore(), time });
     const calendarSteps: number[] = [];
     sim.advance(0.05, (_dt, _tick, gameDt) => calendarSteps.push(gameDt));
     time.setSpeed(4);
@@ -88,7 +88,7 @@ describe("createSimClock — local accepted progress", () => {
     expect(time.advancedSeconds()).toBe(0.25);
     expect(time.now()).toBe(0.5);
     const local = createSimClock();
-    const prediction = createSimContext({ entities: createEntityStore(), time: local });
+    const prediction = createSimContext({ config: { hz: "variable" }, entities: createEntityStore(), time: local });
     prediction.advance(0.2, () => {}, { advanceTime: false });
     local.hydrate({ ...time.snapshot(), now: 12000 });
     prediction.advance(0.2, () => {}, { advanceTime: false });

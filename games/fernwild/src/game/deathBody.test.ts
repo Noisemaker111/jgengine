@@ -14,6 +14,8 @@ function runner(): HeadlessRunner {
   const definition = defineGameDefinition({
     name: "Fernwild (death test)",
     multiplayer: "off",
+    // The hour this test skips is stepped as whole frames, not 60 Hz steps.
+    simulation: { hz: "variable" },
     world,
     inventories: { [BAG]: { slots: BAG_SLOTS, traits: itemTraits }, [HOTBAR]: { slots: HOTBAR_SLOTS, traits: itemTraits } },
     systems,

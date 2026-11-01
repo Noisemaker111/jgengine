@@ -177,7 +177,7 @@ describe("createHeadlessRunner", () => {
 
   test("a long step advances all of its time in frames no longer than maxStepSeconds", () => {
     const frames: number[] = [];
-    const game = defineGameDefinition({ name: "Long step" });
+    const game = defineGameDefinition({ name: "Long step", simulation: { hz: "variable" } });
     const runner = createHeadlessRunner({ definition: game, loop: { onTick(_ctx, dt) { frames.push(dt); } } });
     expect(runner.step(10, { held: [] })).toBeCloseTo(10, 9);
     expect(runner.ctx.time.now()).toBeCloseTo(10, 9);
