@@ -130,32 +130,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     ...(occluder !== undefined ? { occluder } : {}),
     ...(options.models !== undefined ? { models: options.models } : {}),
   });
-  const {
-    entities,
-    objects,
-    statsByInstance,
-    entityStats,
-    ensureInstanceStats,
-    catalogEntry,
-    spatial,
-    combatSpatial,
-    sceneRaycast,
-    targeting,
-    entityColliders,
-    entityCollidersOf,
-    objectCollidersOf,
-    reportEntityBounds,
-    reportEntityCollisionMesh,
-    entityVisualScaleOf,
-    forms,
-    paintLayer,
-    spawnEntity,
-    despawnEntity,
-    moveEntityTowardCommit,
-    resetAllToSpawn,
-    bind,
-    sceneObjects,
-  } = scene;
+  const { entities, objects, forms, paintLayer } = scene.stores;
+  const { statsByInstance, entityStats, ensureInstanceStats } = scene.stats;
+  const { catalogEntry, entityVisualScaleOf } = scene.catalog;
+  const { spatial, combatSpatial, sceneRaycast, targeting } = scene.queries;
+  const { entityColliders, entityCollidersOf, objectCollidersOf, reportEntityBounds, reportEntityCollisionMesh } = scene.colliders;
+  const { spawnEntity, despawnEntity, moveEntityTowardCommit, resetAllToSpawn } = scene.lifecycle;
+  const { bind, sceneObjects } = scene.bindings;
 
   // --- Shared game services (weapon, feed, features bag, commands, item use) ---
   const weapon = createWeaponStats((itemId) => content.itemById?.(itemId));
@@ -248,8 +229,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     loadouts,
     seedUserPool,
   } = playerSys;
-  scene.setOnAfterDespawn((instanceId) => pose.clear(instanceId));
-  scene.setInventoryAccess({
+  scene.lifecycle.setOnAfterDespawn((instanceId) => pose.clear(instanceId));
+  scene.bindings.setInventoryAccess({
     traits: playerSys.itemTraits,
     hasInventory: (inventoryId) => layouts[inventoryId] !== undefined,
     inventoryFor,
@@ -361,7 +342,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     rng,
     ...(definition.physics !== undefined ? { physics: definition.physics } : {}),
   });
-  scene.setOnAfterSpawn((instanceId) => combat.death.revive(instanceId));
+  scene.lifecycle.setOnAfterSpawn((instanceId) => combat.death.revive(instanceId));
   const { projectiles, combatFx, vfxInstances, effects } = combat;
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
@@ -534,8 +515,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         list: entities.list,
         ids: entities.ids,
         subscribeMembership: entities.subscribeMembership,
-        selection: scene.entitySelection,
-        controlGroups: scene.entityControlGroups,
+        selection: scene.selection.entitySelection,
+        controlGroups: scene.selection.entityControlGroups,
         subscribeBehaviors: entities.subscribeBehaviors,
         spawnPoseOf: entities.spawnPoseOf,
         setSpawnPose: entities.setSpawnPose,

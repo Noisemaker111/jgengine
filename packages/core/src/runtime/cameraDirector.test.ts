@@ -67,8 +67,8 @@ describe("nextChaseView", () => {
 test("rig overrides own their data, notify consumers and reset independently of chase tuning", () => {
   const director = createCameraDirector(); let changes = 0; director.subscribe(() => changes++);
   const config: CameraRigConfig = { rigs: { chase: { distance: 10, collision: false } } };
-  director.setRig("chase", config); config.rigs?.chase!.distance = 99;
-  expect(director.rig()).toEqual({ kind: "chase", config: { chase: { distance: 10, collision: false } } });
+  director.setRig("chase", config); config.rigs!.chase!.distance = 99;
+  expect(director.rig()).toEqual({ kind: "chase", config: { rigs: { chase: { distance: 10, collision: false } } } });
   director.setChaseTuning({ height: 3 }); director.setRig(null);
   expect(director.rig()).toBeNull(); expect(director.chaseTuning()).toEqual({ height: 3 }); expect(changes).toBe(3);
   director.follow("rider"); director.kickFov(9); director.reset();
@@ -85,7 +85,7 @@ test("camera JSON roundtrip restores rig/follow/tuning atomically and excludes t
   source.setChaseTuning({ view: "hood", distance: 8 }); source.kickFov(4);
   const saved = JSON.parse(JSON.stringify(source.snapshot())); target.restore(saved);
   expect(target.snapshot()).toEqual(source.snapshot()); expect(target.takeFovKick()).toBe(0);
-  saved.rig.config.observer.distance = 99; expect(target.rig()?.config.rigs?.observer?.distance).toBe(12);
+  saved.rig.config.rigs.observer.distance = 99; expect(target.rig()?.config.rigs?.observer?.distance).toBe(12);
   const before = target.snapshot(); let changes = 0; target.subscribe(() => changes++);
   for (const bad of [null, {}, { ...before, followEntityId: 7 }, { ...before, rig: { kind: "chase" } },
     { ...before, rig: { kind: "unknown", config: {} } }, { ...before, rig: { kind: "chase", config: { chase: { distance: "bad" } } } },

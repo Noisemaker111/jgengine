@@ -76,32 +76,56 @@ export interface SceneSubsystemDeps {
   models?: GameContextModels;
 }
 
-/** @internal Always-on scene surface: entities, objects, colliders, spatial, raycast, targeting. */
-export interface SceneSubsystem {
+/** @internal The live entity, object, form and paint stores. */
+export interface SceneStores {
   entities: EntityStore;
+  objects: ObjectStore;
+  forms: Forms;
+  paintLayer: PaintLayer;
+}
+
+/** @internal The player's entity selection and saved sets. */
+export interface SceneSelection {
   /** The player's selected entities, exposed as `ctx.scene.entity.selection`. */
   entitySelection: SelectionSet;
   /** Saved entity sets (RTS control groups), exposed as `ctx.scene.entity.controlGroups`. */
   entityControlGroups: SelectionBookmarks;
-  objects: ObjectStore;
+}
+
+/** @internal Per-instance stats. */
+export interface SceneStats {
   statsByInstance: Map<string, StatValueMap>;
   entityStats: EntityStatsApi;
   ensureInstanceStats: (instanceId: string) => StatValueMap;
+}
+
+/** @internal Catalog lookups for live instances. */
+export interface SceneCatalogLookup {
   catalogEntry: (instanceId: string) => GameContextEntityEntry | null | undefined;
   catalogObject: (instanceId: string) => GameContextObjectEntry | null | undefined;
+  entityVisualScaleOf: (instanceId: string) => number;
+}
+
+/** @internal Spatial, raycast and targeting queries. */
+export interface SceneQueries {
   spatial: SpatialApi;
   combatSpatial: CombatSpatialDeps;
   sceneRaycast: SceneRaycastApi;
   targeting: Targeting;
+}
+
+/** @internal Collider sets and measured bounds. */
+export interface SceneColliders {
   entityColliders: Map<string, EntityColliderSet>;
   objectColliders: Map<string, EntityColliderSet>;
   entityCollidersOf: (instanceId: string) => EntityColliderSet | null;
   objectCollidersOf: (instanceId: string) => EntityColliderSet | null;
   reportEntityBounds: (kind: string, bounds: MeasuredBounds | null) => boolean;
   reportEntityCollisionMesh: (kind: string, mesh: CollisionMeshSource | null) => boolean;
-  entityVisualScaleOf: (instanceId: string) => number;
-  forms: Forms;
-  paintLayer: PaintLayer;
+}
+
+/** @internal Spawn, despawn and movement of entities. */
+export interface SceneLifecycle {
   spawnEntity: (name: string, spawnOptions?: SpawnOptions) => string;
   despawnEntity: (instanceId: string) => boolean;
   moveEntityTowardCommit: (
@@ -110,14 +134,30 @@ export interface SceneSubsystem {
     options: MoveTowardCommitOptions,
   ) => EntityPosition | null;
   resetAllToSpawn: (filter?: (entity: SceneEntity) => boolean) => number;
-  bind: (key: string) => BodyBind;
-  sceneObjects: SceneObjectContext;
   /** Install post-spawn side effects (death.revive) after combat is constructed. */
   setOnAfterSpawn: (fn: (instanceId: string) => void) => void;
   /** Install post-despawn side effects (pose.clear) after player is constructed. */
   setOnAfterDespawn: (fn: (instanceId: string) => void) => void;
+}
+
+/** @internal Body binds and the placed-object surface. */
+export interface SceneBindings {
+  bind: (key: string) => BodyBind;
+  sceneObjects: SceneObjectContext;
   /** Hand the player subsystem's inventories to `sceneObjects.slots`, which is built before they exist. */
   setInventoryAccess: (access: ObjectSlotInventoryAccess) => void;
+}
+
+/** @internal Always-on scene surface: entities, objects, colliders, spatial, raycast, targeting. */
+export interface SceneSubsystem {
+  stores: SceneStores;
+  selection: SceneSelection;
+  stats: SceneStats;
+  catalog: SceneCatalogLookup;
+  queries: SceneQueries;
+  colliders: SceneColliders;
+  lifecycle: SceneLifecycle;
+  bindings: SceneBindings;
 }
 
 /** @internal What `sceneObjects.slots` needs from the player subsystem to move items between a player and an object. */
@@ -510,42 +550,30 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
   };
 
   return {
-    entities,
-    entitySelection,
-    entityControlGroups,
-    objects,
-    statsByInstance,
-    entityStats,
-    ensureInstanceStats,
-    catalogEntry,
-    catalogObject,
-    spatial,
-    combatSpatial,
-    sceneRaycast,
-    targeting,
-    entityColliders,
-    objectColliders,
-    entityCollidersOf,
-    objectCollidersOf,
-    reportEntityBounds,
-    reportEntityCollisionMesh,
-    entityVisualScaleOf,
-    forms,
-    paintLayer,
-    spawnEntity,
-    despawnEntity,
-    moveEntityTowardCommit,
-    resetAllToSpawn,
-    bind,
-    sceneObjects,
-    setOnAfterSpawn(fn) {
-      onAfterSpawn = fn;
+    stores: { entities, objects, forms, paintLayer },
+    selection: { entitySelection, entityControlGroups },
+    stats: { statsByInstance, entityStats, ensureInstanceStats },
+    catalog: { catalogEntry, catalogObject, entityVisualScaleOf },
+    queries: { spatial, combatSpatial, sceneRaycast, targeting },
+    colliders: { entityColliders, objectColliders, entityCollidersOf, objectCollidersOf, reportEntityBounds, reportEntityCollisionMesh },
+    lifecycle: {
+      spawnEntity,
+      despawnEntity,
+      moveEntityTowardCommit,
+      resetAllToSpawn,
+      setOnAfterSpawn(fn) {
+        onAfterSpawn = fn;
+      },
+      setOnAfterDespawn(fn) {
+        onAfterDespawn = fn;
+      },
     },
-    setOnAfterDespawn(fn) {
-      onAfterDespawn = fn;
-    },
-    setInventoryAccess(access) {
-      inventoryAccess = access;
+    bindings: {
+      bind,
+      sceneObjects,
+      setInventoryAccess(access) {
+        inventoryAccess = access;
+      },
     },
   };
 }
