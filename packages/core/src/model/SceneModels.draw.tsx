@@ -27,7 +27,7 @@ import { resolveRigNode } from "./rigNode.draw";
 import { PartMotionRig } from "@jgengine/core/anim/PartMotion.draw";
 import { useCharacterGlance } from "@jgengine/core/anim/characterGlance.draw";
 import { useCharacterMotion } from "@jgengine/core/anim/characterMotion.draw";
-import { planCharacterMotion, type CharacterMotion, type CharacterMotionPlan } from "@jgengine/core/anim/characterMotion";
+import { planCharacterMotion, type CharacterMotionParts, type CharacterMotionPlan } from "@jgengine/core/anim/characterMotion";
 import { registerMotionBlurBody } from "@jgengine/core/postfx/motionBlurPass.draw";
 import { useEntityMuzzle } from "@jgengine/core/anim/entityMuzzle.draw";
 import { registerEntityBody } from "@jgengine/core/anim/CorpseRagdolls.draw";
@@ -546,7 +546,7 @@ const ENGINE_IK_OPTIONS = { quiet: true, maxCameraDistance: ENGINE_MOTION_CAMERA
  * unset, off on the `low` graphics tier and once the entity has died (its death clip and any
  * ragdoll own the pose from then on). `ik: "none"` turns it off.
  */
-function useCharacterMotionPlan(model: ModelConfig, ctx: GameContext | null, instanceId: string | undefined, motion: CharacterMotion): CharacterMotionPlan {
+function useCharacterMotionPlan(model: ModelConfig, ctx: GameContext | null, instanceId: string | undefined, motion: CharacterMotionParts): CharacterMotionPlan {
   const quality = useTerrainQuality();
   const [dead, setDead] = useState(false);
   useEffect(() => {

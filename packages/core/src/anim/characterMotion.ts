@@ -13,22 +13,22 @@ export interface CharacterMotionConfig {
 }
 
 /** {@link CharacterMotionConfig} with every part decided. */
-export interface CharacterMotion {
+export interface CharacterMotionParts {
   footIk: boolean;
   glance: boolean;
   locomotion: boolean;
 }
 
 /** Every part on: what a rigged entity gets when nothing switches a part off. */
-export const CHARACTER_MOTION_ON: Readonly<CharacterMotion> = { footIk: true, glance: true, locomotion: true };
+export const CHARACTER_MOTION_ON: Readonly<CharacterMotionParts> = { footIk: true, glance: true, locomotion: true };
 
 /**
  * Resolve the parts from layers, most general first (game, then model, then entity): a later layer
  * wins for each part it names, and `false` turns every part off at that layer.
  * @capability character-motion switch foot IK, glance and locomotion per game, model or entity
  */
-export function resolveCharacterMotion(...layers: readonly (CharacterMotionConfig | false | undefined)[]): CharacterMotion {
-  const motion: CharacterMotion = { ...CHARACTER_MOTION_ON };
+export function resolveCharacterMotion(...layers: readonly (CharacterMotionConfig | false | undefined)[]): CharacterMotionParts {
+  const motion: CharacterMotionParts = { ...CHARACTER_MOTION_ON };
   for (const layer of layers) {
     if (layer === undefined) continue;
     if (layer === false) {
@@ -88,7 +88,7 @@ export function planCharacterMotion(input: {
   dead: boolean;
   ik: "auto" | "none" | ModelIkConfig | undefined;
   authoredAnimation: boolean;
-  motion: CharacterMotion;
+  motion: CharacterMotionParts;
 }): CharacterMotionPlan {
   const engine = input.live && !input.lowTier && !input.dead && input.ik === undefined;
   const footIk = !input.motion.footIk ? undefined : engine ? "auto" : input.ik === "none" ? undefined : input.ik;
