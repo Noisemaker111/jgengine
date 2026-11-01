@@ -29,7 +29,7 @@ export const LOAD_USAGE = {
     { flag: "<game|all>", detail: "one games/<id>, a comma list, or all of them" },
     { flag: "--runs n", detail: "cold runs per game; the median is reported (default 1)" },
     { flag: "--no-build", detail: "reuse the last production build in apps/web/dist" },
-    { flag: "--headless", detail: "headless Chrome instead of an off-screen window (still the real GPU)" },
+    { flag: "--headless", detail: "headless Chrome instead of an off-screen window (still the real GPU); with no display (a cloud container) it is always headless" },
     { flag: "--trace", detail: "save a Chrome performance trace per game next to the results" },
     { flag: "--compare <json>", detail: "a previous results file; the table shows before -> after" },
     { flag: "--timeout s", detail: "give up on a game after this many seconds (default 90)" },
