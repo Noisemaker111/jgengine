@@ -173,6 +173,12 @@ export interface SessionSnapshot {
   calendar: { points: number; maxPoints: number; tiers: readonly CalendarTier[] };
 }
 
+type CareerView = {
+  career: Omit<SessionSnapshot["career"], "saved">;
+  event: SessionSnapshot["event"];
+  calendar: SessionSnapshot["calendar"];
+};
+
 export interface RunSession {
   snapshot(): SessionSnapshot;
   start(): void;
@@ -608,8 +614,38 @@ export function createRunSession(
     saveParkedRun(null, storage);
   }
 
+  /** The career-derived part of a snapshot: rebuilt only when the career or the picked event changes, not every tick. */
+  let careerView: { career: CareerSave; event: typeof event; track: Track; value: CareerView } | null = null;
+  function viewOfCareer(): CareerView {
+    if (careerView !== null && careerView.career === career && careerView.event === event && careerView.track === track) return careerView.value;
+    const value: CareerView = {
+      career: {
+        credits: bankOf(career).banked(),
+        standing: standingOf(career).standing(DRIVER, "yard"),
+        tier: standingOf(career).tier(DRIVER, "yard").id,
+        garage: garageRows(career),
+      },
+      event: {
+        id: event.id,
+        label: event.label,
+        blurb: event.blurb,
+        garage: event.garage,
+        track: track.id,
+        trackLabel: track.label,
+        trackBlurb: track.def.blurb,
+        trackLength: track.exitAt,
+        medal: medalsOf(career).medalOf(event.id) as MedalId | null,
+        next: nextOf(medalsOf(career), event.id),
+      },
+      calendar: calendar(),
+    };
+    careerView = { career, event, track, value };
+    return value;
+  }
+
   return {
     snapshot() {
+      const view = viewOfCareer();
       return {
         paused: paused || suspended,
         records,
@@ -647,26 +683,9 @@ export function createRunSession(
         runSaved,
         race: standings.snapshot(),
         rivals: opponents.bodies(),
-        career: {
-          credits: bankOf(career).banked(),
-          standing: standingOf(career).standing(DRIVER, "yard"),
-          tier: standingOf(career).tier(DRIVER, "yard").id,
-          garage: garageRows(career),
-          saved: careerSaved,
-        },
-        event: {
-          id: event.id,
-          label: event.label,
-          blurb: event.blurb,
-          garage: event.garage,
-          track: track.id,
-          trackLabel: track.label,
-          trackBlurb: track.def.blurb,
-          trackLength: track.exitAt,
-          medal: medalsOf(career).medalOf(event.id) as MedalId | null,
-          next: nextOf(medalsOf(career), event.id),
-        },
-        calendar: calendar(),
+        career: { ...view.career, saved: careerSaved },
+        event: view.event,
+        calendar: view.calendar,
         ghost: ghostNow(),
       };
     },
