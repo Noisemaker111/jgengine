@@ -7316,6 +7316,16 @@
       "intent": "Point Draco and KTX2 decoding at self-hosted decoder files"
     },
     {
+      "id": "model-lod-build",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/modelLodBuild",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "write simplified mesh levels and a baked impostor atlas beside a model file"
+    },
+    {
       "id": "model-node-visibility",
       "packages": [
         "@jgengine/core"
