@@ -401,18 +401,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/polygon"`
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`
 
-## city-layout-sliders — live dev-runner sliders for every city layout number
-
-- `tuneCityLayout` (function) · `import { tuneCityLayout } from "@jgengine/core/city/cityLayout"`
-
-## city-layout-store — a city layout a game sets once and sliders change live
-
-- `createCityLayout` (function) · `import { createCityLayout } from "@jgengine/core/city/cityLayout"`
-
-## city-lots — lay zoned building lots, corners and driveways from one city layout
-
-- `cityLots` (function) · `import { cityLots } from "@jgengine/core/city/cityLayout"`
-
 ## cma-es — derivative-free ask/tell minimiser for tuning controllers and fitting models
 
 - `createCmaEvolutionStrategy` (function) · `import { createCmaEvolutionStrategy } from "@jgengine/core/math/cmaEvolutionStrategy"`

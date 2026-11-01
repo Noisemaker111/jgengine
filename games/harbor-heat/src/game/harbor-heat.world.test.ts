@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
-import { cityLots } from "@jgengine/core/city/cityLayout";
+import { cityLots } from "../engine-local/city/cityLayout";
 import { rectClearsPolyline } from "@jgengine/core/world/polygon";
 import { isOnRoad } from "@jgengine/core/roads/roads";
 import { streets, world } from "../world";

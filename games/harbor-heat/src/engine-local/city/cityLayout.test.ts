@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { devtools } from "../devtools/devtools";
-import { deriveBuildingLots } from "../buildings/buildingLots";
-import { rectClearsPolyline, rectsSeparated } from "../world/polygon";
+import { devtools } from "@jgengine/core/devtools/devtools";
+import { deriveBuildingLots } from "@jgengine/core/buildings/buildingLots";
+import { rectClearsPolyline, rectsSeparated } from "@jgengine/core/world/polygon";
 import {
   US_CITY_LAYOUT,
   cityLaneOffsets,
@@ -15,7 +15,7 @@ import {
   tuneCityLayout,
   type CityLotRoad,
 } from "./cityLayout";
-import type { Vec2 } from "../world/geometry";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 
 const GRID: CityLotRoad[] = [
   { path: [[0, -120], [0, 120]], roadClass: "avenue" },

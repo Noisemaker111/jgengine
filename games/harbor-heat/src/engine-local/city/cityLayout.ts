@@ -1,3 +1,4 @@
+// framework-ok: only Harbor Heat uses the city layout; the second adopter extracts it (#2837)
 /**
  * One street-and-lot layout for a city: lane width and count, parking lanes, sidewalk width, kerb
  * height, and per-zone setback, lot frontage, depth, spacing, driveways and building heights. Defaults
@@ -8,12 +9,12 @@
  *
  * @capability city-layout one street, sidewalk, kerb and lot layout with real-world defaults and live sliders
  */
-import { tunable } from "../devtools/devtools";
-import { seededStreams } from "../random/rng";
-import { deriveBuildingLots, type LotArea, type PlacedBuildingLot, type RoadFrontage } from "../buildings/buildingLots";
-import { rectsSeparated, type OrientedRect } from "../world/polygon";
-import { road, type LiveRoadSource, type RoadEnvironmentConfig, type RoadEnvironmentDescriptor } from "../world/features";
-import type { Vec2 } from "../world/geometry";
+import { tunable } from "@jgengine/core/devtools/devtools";
+import { seededStreams } from "@jgengine/core/random/rng";
+import { deriveBuildingLots, type LotArea, type PlacedBuildingLot, type RoadFrontage } from "@jgengine/core/buildings/buildingLots";
+import { rectsSeparated, type OrientedRect } from "@jgengine/core/world/polygon";
+import { road, type LiveRoadSource, type RoadEnvironmentConfig, type RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 
 /** Street class: an avenue carries `avenueLanes`, a street `streetLanes`. */
 export type CityRoadClass = "avenue" | "street";

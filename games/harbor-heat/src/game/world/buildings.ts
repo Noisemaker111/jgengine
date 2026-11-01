@@ -1,4 +1,4 @@
-import type { CityZone } from "@jgengine/core/city/cityLayout";
+import type { CityZone } from "../../engine-local/city/cityLayout";
 
 /**
  * One cast of Harbor Heat's buildings. Every building is the same 1 m unit block
