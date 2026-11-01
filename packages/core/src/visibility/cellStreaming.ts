@@ -9,7 +9,7 @@ import {
   type StreamFocus,
   type WorldStreamerState,
   type WorldStreamerTuning,
-} from "./worldStreamer";
+} from "./streamer";
 
 /** One kind of content that follows its cells; every {@link CellContent} is one. */
 export interface CellFollower {
@@ -27,14 +27,14 @@ export interface CellFollower {
  */
 export type StreamedCellState = "unloaded" | "loading" | "ready" | "leaving" | "warming";
 
-/** Play-time tuning of a {@link WorldStreaming}. */
-export interface WorldStreamingTuning extends WorldStreamerTuning {
+/** Play-time tuning of a {@link CellStreaming}. */
+export interface CellStreamingTuning extends WorldStreamerTuning {
   /** Cells this close to a focus whose far proxy was never built are placed one at a time, hidden, so the renderer can build it. 0 turns warming off. Default 0. */
   warmRadius?: number;
 }
 
-/** Options for {@link createWorldStreaming}. */
-export interface WorldStreamingOptions extends WorldStreamingTuning {
+/** Options for {@link createCellStreaming}. */
+export interface CellStreamingOptions extends CellStreamingTuning {
   /** The world area cells cover. */
   area: CellBounds;
   /** Cell edge in metres. With far proxies on, a multiple of the proxy cell (128 m). */
@@ -43,21 +43,21 @@ export interface WorldStreamingOptions extends WorldStreamingTuning {
   content: readonly CellFollower[];
 }
 
-/** What a renderer attaching to {@link WorldStreaming} supplies. */
-export interface WorldStreamingRenderer {
+/** What a renderer attaching to {@link CellStreaming} supplies. */
+export interface CellStreamingRenderer {
   /** Fetch what a cell's content needs to draw (model files) before it is placed back. */
   prepare?(cell: string): Promise<void>;
 }
 
-/** Plain JSON state of a {@link WorldStreaming}; each content kind snapshots its own parked records. */
-export interface WorldStreamingState {
+/** Plain JSON state of a {@link CellStreaming}; each content kind snapshots its own parked records. */
+export interface CellStreamingState {
   streamer: WorldStreamerState;
   cells: [cell: string, state: StreamedCellState][];
   proxied: string[];
 }
 
 /** Gauges for the perf overlay and probes. */
-export interface WorldStreamingStats {
+export interface CellStreamingStats {
   cells: number;
   ready: number;
   loading: number;
@@ -73,7 +73,7 @@ export interface WorldStreamingStats {
 }
 
 /** Cells of a world streaming in and out around focus points, with their content following by rule. */
-export interface WorldStreaming {
+export interface CellStreaming {
   readonly cellSize: number;
   /** Park every cell out of reach of the first focus points at once, before the first frame draws them. */
   start(focus: StreamFocus | readonly StreamFocus[]): void;
@@ -91,11 +91,11 @@ export interface WorldStreaming {
   /** The renderer finished a leaving cell's proxy: park its content now. */
   proxyReady(cell: string): void;
   /** A renderer draws this world: leaving cells now wait for its proxies. Returns the detach. */
-  attachRenderer(renderer: WorldStreamingRenderer): () => void;
-  retune(patch: Partial<WorldStreamingTuning>): void;
-  stats(): WorldStreamingStats;
-  snapshot(): WorldStreamingState;
-  restore(state: WorldStreamingState): void;
+  attachRenderer(renderer: CellStreamingRenderer): () => void;
+  retune(patch: Partial<CellStreamingTuning>): void;
+  stats(): CellStreamingStats;
+  snapshot(): CellStreamingState;
+  restore(state: CellStreamingState): void;
 }
 
 function focusList(focus: StreamFocus | readonly StreamFocus[]): readonly StreamFocus[] {
@@ -111,10 +111,10 @@ function focusList(focus: StreamFocus | readonly StreamFocus[]): readonly Stream
  * Bodies and entities follow by the rule each content kind was made with.
  * @capability world-streaming-cells stream a world's cells around every player with budgets, async loads and far proxies
  */
-export function createWorldStreaming(options: WorldStreamingOptions): WorldStreaming {
+export function createCellStreaming(options: CellStreamingOptions): CellStreaming {
   const size = options.cellSize;
   const cells = gridShards({ min: options.area.min, max: options.area.max, cellSize: size });
-  const bounds = new Map(cells.map((cell) => [cell.id, cell.bounds!]));
+  const bounds = new Map(cells.map((cell) => [cell.id, cell.bounds]));
   const streamer = createWorldStreamer({ ...options, shards: cells, awaitReady: true });
   const content = options.content;
   let warmRadius = Math.max(0, options.warmRadius ?? 0);
@@ -132,7 +132,7 @@ export function createWorldStreaming(options: WorldStreamingOptions): WorldStrea
   const prepared = new Set<string>();
   const proxied = new Set<string>();
   const generation = new Map<string, number>();
-  let renderer: WorldStreamingRenderer | null = null;
+  let renderer: CellStreamingRenderer | null = null;
   let warming: string | null = null;
   let pending = 0;
   let restored = 0;
@@ -320,14 +320,14 @@ export function createWorldStreaming(options: WorldStreamingOptions): WorldStrea
   };
 }
 
-const bound = perContext((): { streaming: WorldStreaming | null } => ({ streaming: null }));
+const bound = perContext((): { streaming: CellStreaming | null } => ({ streaming: null }));
 
 /** Hand a game's streaming to the renderer, which draws far proxies for the cells it holds. Pass null to detach. */
-export function bindWorldStreaming(ctx: GameContext, streaming: WorldStreaming | null): void {
+export function bindCellStreaming(ctx: GameContext, streaming: CellStreaming | null): void {
   bound(ctx).streaming = streaming;
 }
 
 /** The streaming a game bound to this context, if any. */
-export function boundWorldStreaming(ctx: GameContext): WorldStreaming | null {
+export function boundCellStreaming(ctx: GameContext): CellStreaming | null {
   return bound(ctx).streaming;
 }

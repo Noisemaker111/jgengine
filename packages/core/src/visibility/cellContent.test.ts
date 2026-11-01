@@ -3,7 +3,7 @@ import { defineGameDefinition } from "../game/defineGame";
 import { createGameContext } from "../runtime/gameContext";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createCellContent, sceneEntityCells, sceneObjectCells } from "./cellContent";
-import { createWorldStreamer, gridShards } from "./worldStreamer";
+import { createWorldStreamer, gridShards } from "./streamer";
 
 function makeContext() {
   return createGameContext({
@@ -20,7 +20,8 @@ describe("createCellContent", () => {
     const ctx = makeContext();
     const near = ctx.scene.object.place("crate", 10, 0, 10);
     const far = Array.from({ length: 5 }, (_, i) => ctx.scene.object.place("crate", 120 + i * 10, 0, 50, { rotation: 0.5, state: { open: i } }));
-    ctx.scene.object.setColliders(far[0]!, { body: { name: "body", purpose: "physical", shape: { kind: "aabb", halfExtents: [1, 1, 1] }, blocks: true } });
+    const [first = "", , , fourth = ""] = far;
+    ctx.scene.object.setColliders(first, { body: { name: "body", purpose: "physical", shape: { kind: "aabb", halfExtents: [1, 1, 1] }, blocks: true } });
     const cells = createCellContent({ rule: "despawn", adapter: sceneObjectCells(ctx.scene.object), restoresPerStep: 2 });
     expect(cells.unload("1,0", FAR)).toBe(5);
     expect(ctx.scene.object.ids()).toEqual([near]);
@@ -34,9 +35,9 @@ describe("createCellContent", () => {
     expect(cells.step()).toBe(2);
     expect(cells.step()).toBe(1);
     expect(cells.settled("1,0")).toBe(true);
-    expect(ctx.scene.object.get(far[3]!)?.state).toEqual({ open: 3 });
-    expect(ctx.scene.object.get(far[3]!)?.rotationY).toBe(0.5);
-    expect(ctx.scene.object.collidersOf(far[0]!)?.["body"]?.blocks).toBe(true);
+    expect(ctx.scene.object.get(fourth)?.state).toEqual({ open: 3 });
+    expect(ctx.scene.object.get(fourth)?.rotationY).toBe(0.5);
+    expect(ctx.scene.object.collidersOf(first)?.["body"]?.blocks).toBe(true);
   });
 
   test("freeze keeps an entity in the store, stopped and hidden, and thaws it as it was", () => {
@@ -88,13 +89,13 @@ describe("createCellContent", () => {
     for (let i = 0; i < 4; i += 1) ctx.scene.object.place("crate", 10 + i, 0, 10);
     for (let i = 0; i < 4; i += 1) ctx.scene.object.place("crate", 410 + i, 0, 10);
     const grid = gridShards({ min: [0, 0], max: [500, 100], cellSize: 100 });
-    const bounds = new Map(grid.map((cell) => [cell.id, cell.bounds!]));
+    const bounds = new Map(grid.map((cell) => [cell.id, cell.bounds]));
     const streamer = createWorldStreamer({ shards: grid, loadRadius: 50, keepRadius: 120, awaitReady: true });
     const cells = createCellContent({ rule: "despawn", adapter: sceneObjectCells(ctx.scene.object) });
-    for (const cell of grid) cells.unload(cell.id, cell.bounds!);
+    for (const cell of grid) cells.unload(cell.id, cell.bounds);
     const tick = (x: number) => {
       const update = streamer.update({ x, z: 50 });
-      for (const id of update.unload) cells.unload(id, bounds.get(id)!);
+      for (const id of update.unload) cells.unload(id, bounds.get(id) ?? FAR);
       for (const id of update.load) cells.load(id);
       cells.step();
       for (const id of streamer.resident()) if (streamer.state(id) === "loading" && cells.settled(id)) streamer.markReady(id);

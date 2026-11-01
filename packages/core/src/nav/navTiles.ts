@@ -1,4 +1,4 @@
-import { createWorldStreamer, gridCellId, gridShards, type StreamFocus, type WorldStreamer, type WorldStreamerState, type WorldStreamerTuning } from "../visibility/worldStreamer";
+import { createWorldStreamer, gridCellId, gridShards, type StreamFocus, type WorldStreamer, type WorldStreamerState, type WorldStreamerTuning } from "../visibility/streamer";
 import type { NavMeshData } from "./navMesh";
 import { createNavRuntime, type NavRegion, type NavRuntime, type NavRuntimeOptions } from "./navRuntime";
 
@@ -84,7 +84,7 @@ export interface NavTiles {
 }
 
 function tileBounds(id: string, size: number): NavTileBounds {
-  const [col, row] = id.split(",").map(Number) as [number, number];
+  const [col = 0, row = 0] = id.split(",").map(Number);
   return { min: [col * size, row * size], max: [(col + 1) * size, (row + 1) * size] };
 }
 
@@ -130,9 +130,9 @@ export function composeNavTiles(tiles: readonly NavMeshData[], tileSize: number,
   };
   for (const tile of tiles) {
     const local: number[] = [];
-    for (let i = 0; i + 2 < tile.verts.length; i += 3) local.push(vertexOf(tile.verts[i]!, tile.verts[i + 1]!, tile.verts[i + 2]!));
+    for (let i = 0; i + 2 < tile.verts.length; i += 3) local.push(vertexOf(tile.verts[i] ?? 0, tile.verts[i + 1] ?? 0, tile.verts[i + 2] ?? 0));
     tile.polys.forEach((ring, p) => {
-      polys.push(ring.map((v) => local[v]!));
+      polys.push(ring.map((v) => local[v] ?? 0));
       areas.push(tile.areas?.[p] ?? 0);
     });
   }
@@ -140,10 +140,10 @@ export function composeNavTiles(tiles: readonly NavMeshData[], tileSize: number,
   const split = (ring: number[]): number[] => {
     const out: number[] = [];
     for (let i = 0; i < ring.length; i += 1) {
-      const a = ring[i]!;
-      const b = ring[(i + 1) % ring.length]!;
+      const a = ring[i] ?? 0;
+      const b = ring[(i + 1) % ring.length] ?? 0;
       out.push(a);
-      const ax = verts[a * 3]!, az = verts[a * 3 + 2]!, bx = verts[b * 3]!, bz = verts[b * 3 + 2]!;
+      const ax = verts[a * 3] ?? 0, az = verts[a * 3 + 2] ?? 0, bx = verts[b * 3] ?? 0, bz = verts[b * 3 + 2] ?? 0;
       const kx = onLine(ax) !== null && onLine(ax) === onLine(bx) && Math.abs(ax - bx) <= weld ? onLine(ax) : null;
       const kz = kx === null && onLine(az) !== null && onLine(az) === onLine(bz) && Math.abs(az - bz) <= weld ? onLine(az) : null;
       const line = kx !== null ? borderLines.get(`x${kx}`) : kz !== null ? borderLines.get(`z${kz}`) : undefined;
@@ -303,7 +303,7 @@ export function navTileFromGrid(options: NavGridTileOptions): NavMeshData {
   for (let row = 0; row < rows; row += 1) {
     for (let col = 0; col < cols; col += 1) {
       const at = row * cols + col;
-      const value = area[at]!;
+      const value = area[at] ?? -1;
       if (value < 0 || used[at] === 1) continue;
       let c1 = col;
       while (c1 + 1 < cols && area[row * cols + c1 + 1] === value && used[row * cols + c1 + 1] === 0) c1 += 1;

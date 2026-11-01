@@ -1,21 +1,23 @@
 import { describe, expect, it } from "bun:test";
-import { createWorldStreamer, gridCellId, gridShards, shardDistance, type StreamerShard } from "./worldStreamer";
+import { createWorldStreamer, gridCellId, gridShards, shardDistance, type StreamerShard } from "./streamer";
 
+const terrain: StreamerShard = { id: "terrain", residency: "always" };
+const cell00: StreamerShard = { id: "cell_0_0", bounds: { min: [0, 0], max: [256, 256] } };
 const shards: StreamerShard[] = [
-  { id: "terrain", residency: "always" },
-  { id: "cell_0_0", bounds: { min: [0, 0], max: [256, 256] } },
+  terrain,
+  cell00,
   { id: "cell_1_0", bounds: { min: [256, 0], max: [512, 256] } },
   { id: "cell_9_9", bounds: { min: [2304, 2304], max: [2560, 2560] } },
 ];
 
 describe("shardDistance", () => {
   it("is 0 inside the footprint and inside always-resident shards", () => {
-    expect(shardDistance(shards[1]!, { x: 100, z: 100 })).toBe(0);
-    expect(shardDistance(shards[0]!, { x: 99999, z: 99999 })).toBe(0);
+    expect(shardDistance(cell00, { x: 100, z: 100 })).toBe(0);
+    expect(shardDistance(terrain, { x: 99999, z: 99999 })).toBe(0);
   });
 
   it("is the closest-point distance outside the footprint", () => {
-    expect(shardDistance(shards[1]!, { x: 300, z: 100 })).toBeCloseTo(44, 0); // 300 - 256
+    expect(shardDistance(cell00, { x: 300, z: 100 })).toBeCloseTo(44, 0); // 300 - 256
   });
 });
 

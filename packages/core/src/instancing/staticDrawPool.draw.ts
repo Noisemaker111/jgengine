@@ -303,7 +303,7 @@ export class StaticDrawPool {
 
   private held(cell: ProxyCell): boolean {
     if (this.hold === null) return false;
-    const [cx, cz] = cell.key.split(",").map(Number) as [number, number];
+    const [cx = 0, cz = 0] = cell.key.split(",").map(Number);
     return this.hold((cx + 0.5) * STATIC_PROXY_CELL, (cz + 0.5) * STATIC_PROXY_CELL);
   }
 

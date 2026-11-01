@@ -43,16 +43,16 @@ describe("createNavTiles", () => {
     const right = navTileFromGrid({ bounds: { min: [8, 0], max: [16, 8] }, cellSize: 2, areaAt: (_x, z) => (z < 2 ? 1 : z < 6 ? 0 : 2) });
     const mesh = composeNavTiles([left, right], 8);
     const adjacency = buildNavAdjacency(mesh);
-    expect(adjacency[0]!.neighbors.length).toBe(right.polys.length);
+    expect(adjacency[0]?.neighbors.length).toBe(right.polys.length);
   });
 
   test("routes around a wall and prices the road band by area cost", () => {
     const built: string[] = [];
     const tiles = createNavTiles({ tileSize: 32, build: builder(areaAt({ x0: 40, x1: 44, z1: 24 }), built), areaCosts: { 1: 50 } });
     tiles.load(["0,0", "1,0"]);
-    const path = tiles.runtime.plan([36, 0, 4], [48, 0, 4])!;
-    expect(path.partial).toBeUndefined();
-    expect(Math.max(...path.points.map((point) => point[2]))).toBeGreaterThanOrEqual(24);
+    const path = tiles.runtime.plan([36, 0, 4], [48, 0, 4]);
+    expect(path?.partial).toBeUndefined();
+    expect(Math.max(...(path?.points ?? []).map((point) => point[2]))).toBeGreaterThanOrEqual(24);
   });
 
   test("rebuilds only the tiles a changed region touches, keeping the others' polygons", () => {

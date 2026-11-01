@@ -7,7 +7,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { staticDrawPoolFor } from "@jgengine/core/instancing/staticDrawPool.draw";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { useGameContext } from "@jgengine/react/provider";
-import { boundWorldStreaming, type WorldStreaming } from "./worldStreaming";
+import { boundCellStreaming, type CellStreaming } from "./cellStreaming";
 
 const fetched = new Map<string, Promise<void>>();
 
@@ -29,11 +29,11 @@ function fetchModel(url: string): Promise<void> {
  * content is placed back. Mounted by the world scene; does nothing until a game binds its streaming.
  * @internal
  */
-export function WorldStreamingDriver({ modelUrls }: { modelUrls: () => readonly string[] }) {
+export function CellStreamingDriver({ modelUrls }: { modelUrls: () => readonly string[] }) {
   const ctx = useGameContext();
   const scene = useThree((state) => state.scene);
   const pool = staticDrawPoolFor(scene);
-  const attached = useRef<{ streaming: WorldStreaming; detach: () => void } | null>(null);
+  const attached = useRef<{ streaming: CellStreaming; detach: () => void } | null>(null);
   const urls = useRef(modelUrls);
   urls.current = modelUrls;
   useEffect(
@@ -47,16 +47,16 @@ export function WorldStreamingDriver({ modelUrls }: { modelUrls: () => readonly 
   useEffect(
     () =>
       devtools.probes.registerSystem("render/streaming", {
-        counters: () => ({ ...(boundWorldStreaming(ctx)?.stats() ?? {}) }),
+        counters: () => ({ ...(boundCellStreaming(ctx)?.stats() ?? {}) }),
         state: () => {
-          const stats = boundWorldStreaming(ctx)?.stats();
+          const stats = boundCellStreaming(ctx)?.stats();
           return stats === undefined ? "off" : `${stats.ready}/${stats.cells} cells ready · ${stats.loading} loading · ${stats.leaving} leaving · ${stats.warming} warming · ${stats.lastTickMs.toFixed(2)} ms tick`;
         },
       }),
     [ctx],
   );
   useFrame(() => {
-    const streaming = boundWorldStreaming(ctx);
+    const streaming = boundCellStreaming(ctx);
     if (attached.current?.streaming !== streaming) {
       attached.current?.detach();
       attached.current = null;

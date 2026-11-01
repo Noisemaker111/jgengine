@@ -103,6 +103,11 @@ export function shardDistance(shard: StreamerShard, center: StreamFocus): number
   return Math.hypot(center.x - qx, center.z - qz);
 }
 
+/** One square grid cell: a shard that always has bounds. */
+export interface StreamCell extends StreamerShard {
+  bounds: { min: readonly [number, number]; max: readonly [number, number] };
+}
+
 /** Options for {@link gridShards}. */
 export interface GridShardsOptions {
   /** World XZ corner the grid starts from. */
@@ -123,14 +128,14 @@ export function gridCellId(x: number, z: number, cellSize: number): string {
  * in every game system (streaming, nav tiles, batching). Ids come from {@link gridCellId}.
  * @capability world-streaming-cells split a world area into streamable grid cells
  */
-export function gridShards(options: GridShardsOptions): StreamerShard[] {
+export function gridShards(options: GridShardsOptions): StreamCell[] {
   const size = options.cellSize;
   if (!(size > 0) || !Number.isFinite(size)) throw new RangeError("gridShards: cellSize must be positive and finite");
   const c0 = Math.floor(options.min[0] / size);
   const r0 = Math.floor(options.min[1] / size);
   const c1 = Math.ceil(options.max[0] / size) - 1;
   const r1 = Math.ceil(options.max[1] / size) - 1;
-  const shards: StreamerShard[] = [];
+  const shards: StreamCell[] = [];
   for (let row = r0; row <= r1; row += 1) {
     for (let col = c0; col <= c1; col += 1) {
       shards.push({ id: `${col},${row}`, bounds: { min: [col * size, row * size], max: [(col + 1) * size, (row + 1) * size] } });
@@ -238,13 +243,11 @@ export function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer 
       unloadOrder.sort((a, b) => b.distance - a.distance || (a.id < b.id ? -1 : 1));
       const loads = Math.min(loadOrder.length, tuning.loadsPerUpdate);
       const unloads = Math.min(unloadOrder.length, tuning.unloadsPerUpdate);
-      for (let i = 0; i < unloads; i += 1) {
-        const id = unloadOrder[i]!.id;
+      for (const { id } of unloadOrder.slice(0, unloads)) {
         resident.delete(id);
         unload.push(id);
       }
-      for (let i = 0; i < loads; i += 1) {
-        const id = loadOrder[i]!.id;
+      for (const { id } of loadOrder.slice(0, loads)) {
         resident.set(id, awaitReady ? "loading" : "ready");
         load.push(id);
       }

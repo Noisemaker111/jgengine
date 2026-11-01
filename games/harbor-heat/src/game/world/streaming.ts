@@ -1,8 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { createCellContent, sceneEntityCells, sceneObjectCells, type CellContent, type CellEntityRecord, type CellObjectRecord, type FrozenEntity } from "@jgengine/core/visibility/cellContent";
-import { bindWorldStreaming, createWorldStreaming, type WorldStreaming } from "@jgengine/core/visibility/worldStreaming";
-import type { StreamFocus } from "@jgengine/core/visibility/worldStreamer";
+import { bindCellStreaming, createCellStreaming, type CellStreaming } from "@jgengine/core/visibility/cellStreaming";
+import type { StreamFocus } from "@jgengine/core/visibility/streamer";
 
 import { AUTHORED_VEHICLE_SPAWNS, PLAYER_SPAWN, WORLD_D, WORLD_W } from "./districts";
 
@@ -26,7 +26,7 @@ const FROZEN_CAST = new Set<string>([
 ]);
 
 interface HarborStreaming {
-  streaming: WorldStreaming;
+  streaming: CellStreaming;
   objects: CellContent<CellObjectRecord>;
   cast: CellContent<CellEntityRecord, FrozenEntity>;
   release: () => void;
@@ -54,7 +54,7 @@ export function setupStreaming(ctx: GameContext): void {
       keep: (entity) => !FROZEN_CAST.has(entity.id) || ctx.player.possession.active(ctx.player.userId) === entity.id,
     }),
   });
-  const streaming = createWorldStreaming({
+  const streaming = createCellStreaming({
     ...STREAMING,
     area: { min: [-WORLD_W / 2, -WORLD_D / 2], max: [WORLD_W / 2, WORLD_D / 2] },
     cellSize: CELL,
@@ -62,7 +62,7 @@ export function setupStreaming(ctx: GameContext): void {
   });
   const release = ctx.scene.object.retain(() => objects.parkedRecords().map((record) => record.object));
   streaming.start(focus(ctx));
-  bindWorldStreaming(ctx, streaming);
+  bindCellStreaming(ctx, streaming);
   streamingOf(ctx).value = { streaming, objects, cast, release };
 }
 
@@ -106,6 +106,6 @@ export function disposeStreaming(ctx: GameContext): void {
   const live = streamingOf(ctx).value;
   if (live === null) return;
   live.release();
-  bindWorldStreaming(ctx, null);
+  bindCellStreaming(ctx, null);
   streamingOf(ctx).value = null;
 }

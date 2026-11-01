@@ -3,7 +3,7 @@ import { defineGameDefinition } from "../game/defineGame";
 import { createGameContext } from "../runtime/gameContext";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createCellContent, sceneEntityCells, sceneObjectCells } from "./cellContent";
-import { createWorldStreaming } from "./worldStreaming";
+import { createCellStreaming } from "./cellStreaming";
 
 function world() {
   const ctx = createGameContext({
@@ -18,7 +18,7 @@ function world() {
   }
   const objects = createCellContent({ rule: "despawn", adapter: sceneObjectCells(ctx.scene.object), restoresPerStep: 3 });
   const entities = createCellContent({ rule: "freeze", adapter: sceneEntityCells(ctx.scene.entity) });
-  const streaming = createWorldStreaming({
+  const streaming = createCellStreaming({
     area: { min: [0, 0], max: [1000, 100] },
     cellSize: 100,
     loadRadius: 60,
@@ -32,7 +32,7 @@ function world() {
 
 const at = (x: number) => ({ x, z: 50 });
 
-describe("createWorldStreaming", () => {
+describe("createCellStreaming", () => {
   test("start parks every cell out of reach before anything draws it", () => {
     const { ctx, streaming, entities } = world();
     streaming.start(at(50));

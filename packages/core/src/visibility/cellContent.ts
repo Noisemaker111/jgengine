@@ -134,11 +134,14 @@ export function createCellContent<TRecord, TFrozen = never>(options: CellContent
     },
     step() {
       let left = perStep;
-      while (left > 0 && queue.length > 0) {
-        const cell = queue[0]!;
+      while (left > 0) {
+        const cell = queue[0];
+        if (cell === undefined) break;
         const records = parked.get(cell) ?? [];
-        while (left > 0 && records.length > 0) {
-          adapter.restore(records.shift()!);
+        while (left > 0) {
+          const record = records.shift();
+          if (record === undefined) break;
+          adapter.restore(record);
           left -= 1;
         }
         if (records.length === 0) {
