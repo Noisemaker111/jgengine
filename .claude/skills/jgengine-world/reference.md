@@ -76,6 +76,16 @@ collision. A terrain without `detail` still renders this way; `detail.surfaceStr
 flat painted colour, and `detail: false` opts out to the old flat vertex-colour ground. The
 `low` graphics tier draws one cheap mottle per surface and skips micro-normals.
 
+Scanned ground is opt-in per layer or role; presets stay the default and render as before. A layer's
+`material` (a library name such as `ground/beach`, set by the editor's Scan picker or
+`set_terrain_layers`) resolves into `materialMaps` and `tiling` (the scan's metres). A terrain role
+takes `detail.surfaces.ground|sand|rock: libraryTerrainSurface(name)` (`@jgengine/assets/catalogs/materialLibrary`).
+Both sample colour, normal, roughness, AO and height from one array texture, up to eight layers plus
+the roles. Scans tile from above and switch to side projections past `detail.scanTriplanarAngle`
+degrees (default 45; a layer's `triplanar: false` keeps it top-down), and a scan's height decides
+which layer breaks through at a blend edge. The scans decode at 1K (512 on `low`) before the terrain
+bakes; until they answer, and for any that fail, the layer draws procedurally. Pull the packs first (`assets pull`).
+
 Paths and roads share those surface functions. An authored path (`<AuthoredPaths>`) shades by
 `meta.surface`, else its kind (`road` paves), else dirt: soft ground gets wheel ruts and a
 noise-warped edge that fades into the terrain around the authored width; pavement keeps a crisp

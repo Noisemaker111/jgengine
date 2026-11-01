@@ -1,5 +1,6 @@
 import { environmentContentFromDocument } from "@jgengine/core/editor/environment";
 import { surveyFromDocument, surveyTerrain } from "@jgengine/core/terrain/surveyTerrain";
+import { libraryTerrainSurface } from "@jgengine/assets/catalogs/materialLibrary";
 import { environment, ocean, sky, terrain } from "@jgengine/core/world/features";
 
 import { editorLayers } from "./editorLayers";
@@ -37,11 +38,11 @@ export const world = environment({
       waterLevel: 1.6,
       snowHeight: 10_000,
       sandColor: "#d8c58f",
-      // Generated PBR ground: pale beach sand with grain and pebbles, soil-and-grass inland, cliff rock on steep slopes.
+      // ambientCG scans: Ground033 beaches, Grass005 meadows under the biome tints, Rock035 cliffs on steep slopes.
       surfaces: {
-        ground: { preset: "grass", seed: "the-island-ground", tile: 5, tint: 0.9 },
-        sand: { preset: "beach-sand", seed: "the-island-beach", tile: 3.5, tint: 0.5 },
-        rock: { preset: "cliff", seed: "the-island-cliff", tile: 9 },
+        ground: libraryTerrainSurface("foliage/meadow", { tile: 5, tint: 0.55 }),
+        sand: libraryTerrainSurface("ground/beach", { tile: 3.5, tint: 0.35 }),
+        rock: libraryTerrainSurface("ground/cliff", { tile: 9 }),
       },
     },
   }),

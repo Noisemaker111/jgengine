@@ -1,4 +1,5 @@
 import type { Aabb, Vec2 } from "../world/geometry";
+import type { TerrainMaterialMaps } from "../world/features";
 import { fractalNoise, FLAT_FIELD, withNormal, type FractalNoiseConfig, type TerrainField, type TerrainNormal } from "./terrain";
 
 /** A sculpt operation kind: heightfield brushes plus the surface-paint brush. */
@@ -64,13 +65,13 @@ export interface TerrainMaterialLayer {
   /** Layer master opacity 0..1 — scales this layer's blend weight everywhere. */
   opacity?: number;
   /**
-   * Material library name (e.g. `"foliage/grass"`) whose scanned PBR color map paints this layer,
-   * as authored. The editor resolves it into {@link TerrainMaterialLayer.materialUrl} so the runtime
+   * Material library name (e.g. `"foliage/grass"`) whose scanned PBR maps paint this layer,
+   * as authored. The editor resolves it into {@link TerrainMaterialLayer.materialMaps} so the runtime
    * needs no asset-library lookup.
    */
   material?: string;
-  /** Resolved URL of the layer's scanned color map, written by the editor from {@link TerrainMaterialLayer.material}. */
-  materialUrl?: string | undefined;
+  /** Resolved scanned PBR map URLs (colour, normal, roughness, AO, height), written by the editor from {@link TerrainMaterialLayer.material}. */
+  materialMaps?: TerrainMaterialMaps | undefined;
 }
 
 /** Plain JSON of a sculpted terrain: grid size, per-cell height offsets, painted surfaces and material layers. Saved in scene documents. */

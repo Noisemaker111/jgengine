@@ -145,6 +145,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `libraryTerrainMaterial` (function) · `import { libraryTerrainMaterial } from "@jgengine/assets/catalogs/materialLibrary"`
 
+## library-terrain-surface — scanned library ground for a terrain's ground, sand or rock role, with slope projection and height blending
+
+- `libraryTerrainSurface` (function) · `import { libraryTerrainSurface } from "@jgengine/assets/catalogs/materialLibrary"`
+
 ## library-validate — check every library entry has an allowed licence and full credit fields
 
 - `validateLibrary` (function) · `import { validateLibrary } from "@jgengine/assets/library/assetLibrary"`

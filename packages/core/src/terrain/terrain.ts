@@ -661,6 +661,7 @@ export interface ResolvedTerrainDetailMaterial {
 /** One generated terrain surface with its tile metres and tint resolved. */
 export interface ResolvedTerrainSurfaceLayer {
   spec: SurfaceMaterialSpec;
+  scan?: TerrainMaterialMaps;
   tile: number;
   tint: number;
 }
@@ -682,10 +683,11 @@ function resolveTerrainSurfaces(config: TerrainSurfacesConfig): ResolvedTerrainS
   for (const role of ["ground", "sand", "rock"] as const) {
     const layer = config[role];
     if (layer === undefined) continue;
-    const { tile, tint, ...spec } = layer;
+    const { tile, tint, scan, ...spec } = layer;
     const defaults = SURFACE_ROLE_DEFAULTS[role];
     resolved[role] = {
       spec,
+      ...(scan === undefined ? {} : { scan }),
       tile: tile !== undefined && Number.isFinite(tile) && tile > 0 ? tile : defaults.tile,
       tint: clamp01(tint ?? defaults.tint),
     };
@@ -712,6 +714,7 @@ const DEFAULT_TERRAIN_DETAIL: Omit<ResolvedTerrainDetail, "waterLevel"> = {
   roughness: 0.9,
   strength: 1,
   surfaceStrength: 1,
+  scanTriplanarAngle: 45,
   sweeps: { dry: [1.14, 1.05, 0.76], wet: [0.78, 1.0, 0.86] },
 };
 
@@ -747,6 +750,7 @@ export function resolveTerrainDetail(config: TerrainDetailConfig | undefined, te
     roughness: config.roughness ?? DEFAULT_TERRAIN_DETAIL.roughness,
     strength: clamp01(config.strength ?? DEFAULT_TERRAIN_DETAIL.strength),
     surfaceStrength: clamp01(config.surfaceStrength ?? DEFAULT_TERRAIN_DETAIL.surfaceStrength),
+    scanTriplanarAngle: Math.min(85, Math.max(5, config.scanTriplanarAngle ?? DEFAULT_TERRAIN_DETAIL.scanTriplanarAngle)),
     sweeps: {
       dry: config.sweeps?.dry ?? DEFAULT_TERRAIN_DETAIL.sweeps.dry,
       wet: config.sweeps?.wet ?? DEFAULT_TERRAIN_DETAIL.sweeps.wet,

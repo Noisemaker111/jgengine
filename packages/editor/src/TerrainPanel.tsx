@@ -12,6 +12,8 @@ import {
 
 import type { EditorHostApi, EditorSession } from "./session";
 import { TERRAIN_PAINT_PRESETS } from "@jgengine/core/terrain/terrainPaint";
+import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
+import { MATERIAL_LIBRARY } from "@jgengine/assets/catalogs/materialLibrary";
 import { type EditorUiStore, type TerrainBrushKind } from "./uiStore";
 import { SliderRow } from "./chromeFields";
 import { useStoreVersion } from "./useStoreSelector";
@@ -98,9 +100,22 @@ function SculptControls({ ui }: { ui: EditorUiStore }) {
   );
 }
 
-function PaintControls({ session, ui }: { session: EditorSession; ui: EditorUiStore }) {
+const SCAN_CHOICES = MATERIAL_LIBRARY.filter((entry) => entry.source !== undefined && entry.surface === "opaque" && (entry.group === "ground" || entry.group === "foliage"));
+
+function PaintControls({ session, ui, api }: { session: EditorSession; ui: EditorUiStore; api: EditorHostApi }) {
   const paint = ui.getState().paint;
   const document = session.getState().document;
+  const [scanError, setScanError] = useState<string | null>(null);
+  const layers: readonly TerrainMaterialLayer[] = document.terrain?.layers ?? [];
+  const activeLayer = layers.find((layer) => layer.surface === paint.material);
+
+  const pickScan = (name: string) => {
+    const { materialMaps: _maps, material: _name, ...rest } = activeLayer ?? { id: paint.material, surface: paint.material };
+    const next: TerrainMaterialLayer = name === "" ? rest : { ...rest, material: name };
+    const stack = activeLayer === undefined ? [...layers, next] : layers.map((layer) => (layer === activeLayer ? next : layer));
+    const response = api.handle({ method: "set_terrain_layers", layers: stack });
+    setScanError(response.ok ? null : (response.error ?? "could not set the scan"));
+  };
 
   const paintDelta = (build: (terrain: EditableTerrain) => SurfaceDelta) => {
     if (document.terrain === undefined) return;
@@ -123,6 +138,16 @@ function PaintControls({ session, ui }: { session: EditorSession; ui: EditorUiSt
           </button>
         ))}
       </div>
+      <label className="flex items-center justify-between gap-2">
+        <span className={MICRO_LABEL}>scan</span>
+        <select className={`h-7 min-w-0 flex-1 px-1.5 ${INPUT_CLS}`} value={activeLayer?.material ?? ""} onChange={(event) => pickScan(event.target.value)}>
+          <option value="">Procedural</option>
+          {SCAN_CHOICES.map((entry) => (
+            <option key={entry.name} value={entry.name}>{entry.title}</option>
+          ))}
+        </select>
+      </label>
+      {scanError === null ? null : <div className="text-[10px] text-red-400">{scanError}</div>}
       <div className="text-[10px] text-neutral-500">Click/drag to paint · Alt-click to sample.</div>
       <SliderRow label="radius" value={paint.radius} min={1} max={60} step={0.5} onChange={(value) => ui.patchPaint({ radius: value })} format={(v) => `${v.toFixed(1)}m`} />
       <div className="flex items-center gap-2">
@@ -186,7 +211,7 @@ export function TerrainPanel({ session, ui, api }: { session: EditorSession; ui:
               <button key={mode} type="button" className={`flex-1 rounded-[5px] px-2 py-1 text-[11px] capitalize transition-colors ${FOCUS_RING} ${uiState.terrainMode === mode ? CONTROL_ACTIVE : "text-neutral-400 hover:bg-white/[0.06] hover:text-neutral-200"}`} onClick={() => ui.setTerrainMode(mode)}>{mode}</button>
             ))}
           </div>
-          {uiState.terrainMode === "paint" ? <PaintControls session={session} ui={ui} /> : <SculptControls ui={ui} />}
+          {uiState.terrainMode === "paint" ? <PaintControls session={session} ui={ui} api={api} /> : <SculptControls ui={ui} />}
           <div className={`flex items-center justify-between gap-2 border-t ${BORDER} pt-2`}>
             <button type="button" className={BTN} onClick={() => session.dispatch({ type: "undo" })} disabled={!session.canUndo()}>Undo</button>
             <button type="button" className={`rounded-[5px] border border-rose-400/25 bg-rose-500/15 px-2 py-1 text-[11px] text-rose-200 transition-colors hover:bg-rose-500/25 ${FOCUS_RING}`} onClick={() => session.dispatch({ type: "clearTerrain" })}>Clear terrain</button>

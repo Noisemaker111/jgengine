@@ -5397,15 +5397,14 @@
 ## @jgengine/core/terrain/terrainDetailMaterial.draw
 
 - `ALL_TERRAIN_SURFACE_CLASSES` (const): const ALL_TERRAIN_SURFACE_CLASSES: 511 — Compile every surface response, for an editor viewport whose paint can change to any surface.
-- `MAX_TERRAIN_LAYER_MAPS` (const): const MAX_TERRAIN_LAYER_MAPS: 4 — At most this many painted layers sample their own scanned map; extra layers keep procedural shading.
 - `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
 - `TerrainDetailMaterialOptions` (interface): interface TerrainDetailMaterialOptions — Surface-pass inputs beyond the resolved detail config.
 - `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
-- `TerrainLayerMap` (interface): interface TerrainLayerMap — One painted layer's scanned color map plus the world metres one tile covers.
+- `TerrainScanLibrary` (type): type TerrainScanLibrary = ReadonlyMap<string, SurfaceMaterialMaps> — Scans already decoded and packed, by {@link terrainScanKey}.
 - `TerrainSurfaceSlot` (interface): interface TerrainSurfaceSlot — One terrain role's generated surface: its array layer, tile metres and tint.
 - `TerrainSurfaceTextures` (interface): interface TerrainSurfaceTextures — Generated terrain surfaces baked into array textures, ready for {@link createTerrainDetailMaterial}.
-- `createTerrainSurfaceTextures` (function): function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): TerrainSurfaceTextures | undefined — Bake a terrain's generated surfaces (shared per spec) and stack them into array textures. `detail` 1 bakes each map at its own resolution, 0.5 at half; layers are rebaked at the smallest size any role asks for so they stack. Undefined when the terrain names no surfaces.
-- `createTerrainSurfaceTexturesJob` (function): function createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): SlicedJob<TerrainSurfaceTextures | undefined> — {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze.
+- `createTerrainSurfaceTextures` (function): function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1, paintScans: readonly (TerrainMaterialMaps | undefined)[] = [], scans: TerrainScanLibrary = new Map()): TerrainSurfaceTextures | undefined — Bake a terrain's surfaces (shared per spec) and stack them into array textures: the ground, sand and rock roles first (generated or scanned), then one layer per distinct paint-layer scan. `detail` 1 bakes each map at its own resolution, 0.5 at half; generated layers are rebaked at the size the scans were packed at, or the smallest size any role asks for, so they stack. Undefined when nothing names a surface.
+- `createTerrainSurfaceTexturesJob` (function): function createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1, paintScans: readonly (TerrainMaterialMaps | undefined)[] = [], scans: TerrainScanLibrary = new Map()): SlicedJob<TerrainSurfaceTextures | undefined> — {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze.
 
 ## @jgengine/core/terrain/terrainGenerator
 
@@ -5467,6 +5466,11 @@
 - `TerrainQualityContext` (const): const TerrainQualityContext: React.Context<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
 - `useTerrainQuality` (function): function useTerrainQuality(): GraphicsQuality — Graphics tier for terrain surface shading (`low` takes the cheap path).
 
+## @jgengine/core/terrain/terrainScanMaps.draw
+
+- `TERRAIN_SCAN_SIZE` (const): const TERRAIN_SCAN_SIZE: 1024 — Largest edge a scan is packed at; ambientCG 1K archives are 1024 square.
+- `TerrainScanPixels` (interface): interface TerrainScanPixels — Decoded RGBA bytes of each map of one scan, all `size` square with row 0 at the top (image order).
+
 ## @jgengine/core/terrain/terrainSeed
 
 - `TerrainSeed` (type): type TerrainSeed = number | string — A terrain seed: a number, or a string hashed to one.
@@ -5490,6 +5494,10 @@
 - `terrainSurfaceClass` (function): function terrainSurfaceClass(surface: string): TerrainSurfaceClass — Classifies a painted surface id (e.g. `"grass"`, `"dry-grass"`, `"cobble-stone"`) into the procedural ground response the terrain shader draws for it; unknown ids get the generic `"ground"` response.
 - `terrainSurfaceClassIndex` (function): function terrainSurfaceClassIndex(cls: TerrainSurfaceClass): number — Shader index of a surface class (`jgSurface`'s `cls`); bit `1 << index` in a class mask.
 - `terrainSurfaceRoughness` (function): function terrainSurfaceRoughness(cls: TerrainSurfaceClass): number — Default roughness the terrain shades a surface class with.
+
+## @jgengine/core/terrain/useTerrainSurfaces.draw
+
+- `useTerrainSurfaces` (function): function useTerrainSurfaces(detailSurfaces: ResolvedTerrainSurfaces | undefined, paintSlots: readonly TerrainPaintSlot[] | undefined, quality: GraphicsQuality): { surfaces: TerrainSurfaceTextures | undefined; pending: boolean } — The terrain's baked surface array: generated roles, scanned roles and the scans its paint layers name, stacked once. Scans decode first (counted as scene loading); until they answer the terrain draws the layers procedurally, and a scan that fails to load is logged and stays procedural.
 
 ## @jgengine/core/time/accrueSince
 
@@ -7152,7 +7160,7 @@
 - `TerrainPolylineRegion` (interface): interface TerrainPolylineRegion extends TerrainRegionStyle — A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles.
 - `TerrainRectRegion` (interface): interface TerrainRectRegion extends TerrainRegionStyle — A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts.
 - `TerrainRegionStyle` (interface): interface TerrainRegionStyle — Palette and blend fields shared by every `TerrainMaterialRegion` shape.
-- `TerrainSurfaceLayer` (interface): interface TerrainSurfaceLayer extends SurfaceMaterialSpec — One generated terrain surface: a material spec plus how it tiles and tints.
+- `TerrainSurfaceLayer` (interface): interface TerrainSurfaceLayer extends SurfaceMaterialSpec — One terrain surface: a generated material spec or a scanned `scan`, plus how it tiles and tints.
 - `TerrainSurfacesConfig` (interface): interface TerrainSurfacesConfig — Which generated surface draws each terrain role.
 - `TilemapWorldConfig` (interface): interface TilemapWorldConfig extends WorldGridConfig { map: string; tileSet?: {atlas: SpriteAtlas; tiles: Record<string, string>}; sortingLayer?: string } — ⚠ undocumented · used by `tilemap`: Declares a 2D tilemap world from a map string.
 - `VegetationEnvironmentDescriptor` (type): type VegetationEnvironmentDescriptor = GrassEnvironmentDescriptor — ⚠ undocumented

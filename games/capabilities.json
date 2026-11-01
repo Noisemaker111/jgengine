@@ -6254,6 +6254,16 @@
       "intent": "put a named library material on terrain without faking optional maps"
     },
     {
+      "id": "library-terrain-surface",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/catalogs/materialLibrary",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "scanned library ground for a terrain's ground, sand or rock role, with slope projection and height blending"
+    },
+    {
       "id": "library-validate",
       "packages": [
         "@jgengine/assets"
