@@ -7,9 +7,9 @@ import { createAffixRoller, type ItemBaseDef } from "@jgengine/core/item/affix";
 // drop re-rolls identically on the host, its replicas and a reload.
 const roller = createAffixRoller({
   rarities: [
-    { id: "common", weight: 70, affixCount: 0 },
-    { id: "rare", weight: 25, affixCount: 1, statScale: 1.15, namePart: "Rare" },
-    { id: "legendary", weight: 5, affixCount: [2, 3], statScale: 1.4, namePart: "Legendary" },
+    { id: "common", at: 0, weight: 70, affixCount: 0 },
+    { id: "rare", at: 1, weight: 25, affixCount: 1, statScale: 1.15, namePart: "Rare" },
+    { id: "legendary", at: 2, weight: 5, affixCount: [2, 3], statScale: 1.4, namePart: "Legendary" },
   ],
   pools: [
     {

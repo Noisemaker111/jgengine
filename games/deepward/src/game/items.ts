@@ -25,11 +25,11 @@ export function kindOf(item: Pick<LootItem, "baseId">): ItemKind {
 
 /** The five-tier ladder from the design; rarity owns how many affixes a roll carries. */
 export const RARITIES: readonly RarityTier[] = [
-  { id: "common", weight: 46, affixCount: 0 },
-  { id: "uncommon", weight: 30, affixCount: 1, statScale: 1.08, namePart: "Tuned" },
-  { id: "rare", weight: 16, affixCount: 2, statScale: 1.18, namePart: "Custom" },
-  { id: "epic", weight: 6, affixCount: 3, statScale: 1.3, namePart: "Prototype" },
-  { id: "legendary", weight: 2, affixCount: 4, statScale: 1.45, namePart: "Prime" },
+  { id: "common", at: 0, weight: 46, affixCount: 0 },
+  { id: "uncommon", at: 1, weight: 30, affixCount: 1, statScale: 1.08, namePart: "Tuned" },
+  { id: "rare", at: 2, weight: 16, affixCount: 2, statScale: 1.18, namePart: "Custom" },
+  { id: "epic", at: 3, weight: 6, affixCount: 3, statScale: 1.3, namePart: "Prototype" },
+  { id: "legendary", at: 4, weight: 2, affixCount: 4, statScale: 1.45, namePart: "Prime" },
 ];
 
 /**
