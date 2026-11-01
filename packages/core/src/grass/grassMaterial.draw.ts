@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import type { GrassLook } from "@jgengine/core/grass/grassKind";
+import type { GrassWindLook } from "./grassWind";
 
 /** Uniforms the grass shader reads; the stream rewrites the `uLod` row per camera. */
 export interface GrassShaderUniforms {
@@ -187,6 +188,17 @@ float jgTipMask = smoothstep(0.55, 1.0, vGrassT) * step(vGrassKind, 1.5);
 float jgLit = clamp(dot(reflectedLight.directDiffuse, vec3(0.3333)) * 1.6, 0.0, 1.0);
 reflectedLight.directDiffuse += vec3(0.34, 0.28, 0.12) * jgTipMask * jgLit * uLight.x * (1.0 - vGrassFade * 0.7);
 `;
+
+/**
+ * Write a look's wind numbers into the material's wind uniforms (each frame, for a patch in a shared wind).
+ * @internal
+ */
+export function setGrassWindUniforms(uniforms: Pick<GrassShaderUniforms, "uWind" | "uWindDirection">, look: GrassWindLook & Pick<GrassLook, "stiffness">): void {
+  const heading = (look.windDirection * Math.PI) / 180;
+  const softness = 1.25 - look.stiffness;
+  uniforms.uWind.value.set(look.windStrength * 0.6 * softness, look.windSpeed, 0.04 + (1 - look.windGust) * 0.02 + look.windGust * 0.5, look.windStrength * 0.18 * softness);
+  uniforms.uWindDirection.value.set(Math.cos(heading), Math.sin(heading));
+}
 
 /** Build the one grass material for a look; `groundColor` is the terrain the roots blend into. */
 export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRepresentation): GrassMaterialHandle {

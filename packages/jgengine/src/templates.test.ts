@@ -19,7 +19,7 @@ import {
 
 function render(
   variant: "standalone" | "in-repo",
-  options?: Partial<Pick<TemplateOptions, "world" | "editor" | "player" | "ground" | "sceneMode" | "scene" | "dimension">>,
+  options?: Partial<Pick<TemplateOptions, "world" | "editor" | "player" | "ground" | "sceneMode" | "scene" | "dimension" | "landform">>,
 ): TemplateFile[] {
   return gameTemplate({ id: "probe-game", name: "Probe Game", variant, engineVersion: "0.8.0", ...options });
 }
@@ -383,6 +383,15 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     expect(terrain.offsets[centre]).toBe(0);
     expect(terrain.offsets[0]).toBe(0);
     expect(fileOf(render("standalone"), "src/editor.scene.json")).toBe(fileOf(render("standalone"), "src/editor.scene.json"));
+  });
+
+  test("a landform start writes a terrain generator seeded by the game id and grows it in editorLayers", () => {
+    const files = render("standalone", { landform: "dunes" });
+    const scene: unknown = JSON.parse(fileOf(files, "src/editor.scene.json"));
+    expect(scene).not.toHaveProperty("terrain");
+    expect(scene).toHaveProperty("terrainGenerator", { kind: "landform", start: "dunes", seed: "probe-game" });
+    expect(fileOf(files, "src/editorLayers.ts")).toContain("withGeneratedTerrain(normalizeEditorLayers(");
+    expect(JSON.parse(fileOf(render("standalone"), "src/editor.scene.json"))).not.toHaveProperty("terrainGenerator");
   });
 
   test("flat ground and promoted scenes get no seeded sculpt", () => {

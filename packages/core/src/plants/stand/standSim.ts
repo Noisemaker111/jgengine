@@ -27,6 +27,12 @@ export interface StandOptions {
   maxTrees?: number;
   /** Reference curves by species id; defaults to the imported table. */
   references?: Readonly<Record<string, SpeciesReference>>;
+  /**
+   * Strength of self-thinning, the suppression mortality that thins a crowded stand along Reineke's line: `0` no tree
+   * dies of shade, `1` as measured (Kobe et al. 1995), past `1` a stand thins harder. A tree's yearly risk is
+   * 1 − (1 − p)^strength, so it stays a probability and is monotone over the sane range `0..4`. Default 1.
+   */
+  selfThinning?: number;
 }
 
 /** One tree to plant: species index, position on the plot and its age in years (0 for a seedling at breast height). */
@@ -176,6 +182,8 @@ function lightResponse(model: SpeciesModel, light: number): number {
  */
 export function createStand(options: StandOptions): Stand {
   const references = options.references ?? SPECIES_REFERENCE;
+  const selfThinning = options.selfThinning ?? 1;
+  if (!Number.isFinite(selfThinning) || selfThinning < 0) throw new Error(`stand selfThinning must be finite and >= 0 (got ${selfThinning})`);
   const models = options.species.map((species) => speciesModel(species, references));
   const speciesCount = models.length;
   const size = options.sizeM;
@@ -353,7 +361,8 @@ export function createStand(options: StandOptions): Stand {
       const model = models[tSpecies[i] ?? 0];
       const response = model === undefined ? 0 : lightResponse(model, tLight[i] ?? 0);
       // Suppressed trees die as their growth stalls (Kobe et al. 1995, growth-dependent mortality).
-      const suppression = 0.3 * plantExp(-response / 0.12);
+      const shade = 0.3 * plantExp(-response / 0.12);
+      const suppression = selfThinning === 1 ? shade : 1 - (1 - shade) ** selfThinning;
       const age = (tAge[i] ?? 0) / (model?.species.limits.maxAgeYears ?? 100);
       const senescence = age > 1 ? 0.1 * (age - 1) : 0;
       const p = (model?.backgroundMortality ?? 0) + suppression + senescence;

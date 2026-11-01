@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { EditorVolume } from "@jgengine/core/editor/types";
 import type { AuthoredWeatherSample } from "@jgengine/core/weather/authoredWeather";
+import type { WindField } from "@jgengine/core/world/wind";
 
 import { DustField, type DustFieldProps } from "./DustField.draw";
 import { RainField, type RainFieldProps } from "./RainField.draw";
@@ -32,6 +33,8 @@ export interface WeatherLayerProps {
   impacts?: RainImpactFieldProps | false;
   enabled?: boolean;
   children?: ReactNode;
+  /** The shared wind rain, snow and dust drift with when no `wind` vector or authored `sample` is given. */
+  windField?: WindField | undefined;
 }
 
 function clearMetrics(metrics: WeatherParticleMetrics, layer: "rain" | "snow" | "dust" | "impacts"): void {
@@ -62,6 +65,7 @@ export function WeatherLayer({
   impacts,
   enabled = true,
   children,
+  windField,
 }: WeatherLayerProps) {
   if (!enabled) {
     if (metrics !== undefined) for (const layer of ["rain", "snow", "dust", "impacts"] as const) clearMetrics(metrics, layer);
@@ -83,7 +87,7 @@ export function WeatherLayer({
   }
 
   return (
-    <WeatherUniformProvider wind={wind} lightning={lightning} timeScale={timeScale} timeSeconds={timeSeconds} sample={sample} shelters={shelters} metrics={metrics}>
+    <WeatherUniformProvider wind={wind} windField={windField} lightning={lightning} timeScale={timeScale} timeSeconds={timeSeconds} sample={sample} shelters={shelters} metrics={metrics}>
       {showRain ? (
         <RainField {...rainProps} density={resolveLayerDensity(rainProps.density, 0.45, intensity)} />
       ) : null}

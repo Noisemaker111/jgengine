@@ -1583,6 +1583,16 @@
 - `createGranularTerrain` (function): function createGranularTerrain(terrain: EditableTerrain, options: GranularTerrainOptions): GranularTerrain — Bind a granular layer to a terrain's vertex grid.
 - `landformLooseCover` (function): function landformLooseCover(surface: LandformSurface, placement: LandformCoverPlacement): Pick<GranularTerrainOptions, "looseDepth" | "materialAt"> — Loose depth and material callbacks for {@link createGranularTerrain} from a landform simulation's cover: depth is the cover thickness, material the heaviest-weighted loose kind the placement maps.
 
+## @jgengine/core/granular/softGround
+
+- `SoftGround` (interface): interface SoftGround — Soft ground bound to a terrain.
+- `SoftGroundOptions` (interface): interface SoftGroundOptions — Options for {@link createSoftGround}.
+- `SoftGroundSnapshot` (interface): interface SoftGroundSnapshot — Plain JSON of a {@link SoftGround}: the soil, where it started, each wheel's last contact and the dials.
+- `SoftGroundWheel` (interface): interface SoftGroundWheel — One wheel's contact this tick: where it is, the load it carries and its size.
+- `SoftSurfaceClass` (interface): interface SoftSurfaceClass — A painted terrain surface that is soft: the material it is made of and how deep it lies over firm ground, m.
+- `createSoftGround` (function): function createSoftGround(terrain: EditableTerrain, options: SoftGroundOptions): SoftGround — Lay soft ground over a terrain's vertex grid.
+- `softSurfaceSoil` (function): function softSurfaceSoil(terrain: Pick<EditableTerrain, "surfaceAt">, classes: Readonly<Record<string, SoftSurfaceClass>>): GranularTerrainOptions — The soil for {@link createSoftGround} from the terrain's paint: each surface id listed is that material that deep, and every other surface stays hard ground, as it is with no soft ground at all.
+
 ## @jgengine/core/grass/GrassCover.draw
 
 - `GrassCover` (function): function GrassCover({ area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, stripeAt, position, }: GrassCoverProps): React.JSX.Element | null — The turf surface under one authored `grass_field` patch: a ground-draped, edge-feathered mat that turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
@@ -1590,7 +1600,7 @@
 
 ## @jgengine/core/grass/GrassPatch.draw
 
-- `GrassPatch` (function): function GrassPatch({ look, area, seed, edgeFeather, exclude, heightAt, coverageAt, baseHeight, groundColor, castShadow = false, receiveShadow = true, frustumCulled = true, ...groupProps }: GrassPatchProps): React.JSX.Element — The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance where a blade would be under a pixel — so a patch of any size costs what the view shows.
+- `GrassPatch` (function): function GrassPatch({ look, area, seed, edgeFeather, exclude, heightAt, coverageAt, baseHeight, groundColor, castShadow = false, receiveShadow = true, frustumCulled = true, wind, ...groupProps }: GrassPatchProps): React.JSX.Element — The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance where a blade would be under a pixel — so a patch of any size costs what the view shows.
 - `GrassPatchProps` (interface): interface GrassPatchProps extends Omit<ThreeElements["group"], "children"> — Props for {@link GrassPatch}.
 
 ## @jgengine/core/grass/grassBake.draw
@@ -1647,6 +1657,16 @@
 - `GrassStream` (class): class GrassStream — Camera-streamed grass for one patch. A quadtree over the patch's base cells splits near the camera and stays coarse far away; each leaf node bakes only the share of tufts its distance needs, so resident and drawn work follow what the camera sees rather than the patch area. Leaves are three meshes under {@link GrassStream.group}; three frustum-culls them per camera, and each draw trims its instance count and segment detail to that camera's distance.
 - `GrassStreamOptions` (interface): interface GrassStreamOptions — Options for {@link GrassStream}.
 - `GrassStreamStats` (interface): interface GrassStreamStats — Per-frame bookkeeping the stream reports, for tests and devtools.
+
+## @jgengine/core/grass/grassWind
+
+- `GRASS_WIND_REFERENCE_SPEED` (const): const GRASS_WIND_REFERENCE_SPEED: 5 — Wind speed, m/s, a grass kind's `windStrength` was tuned to: a gentle-to-moderate breeze (Beaufort 3–4).
+- `GRASS_WIND_SAMPLE_HEIGHT` (const): const GRASS_WIND_SAMPLE_HEIGHT: 1 — Height, m, grass samples the field at; the log-law profile holds speed constant below its minimum height.
+- `GrassWind` (interface): interface GrassWind — A shared wind for a grass patch. `response` is the patch's dial: `0` blades stand still, `1` the kind's own `windStrength` at {@link GRASS_WIND_REFERENCE_SPEED}, past `1` softer grass; sway stays below one blade-bend and is monotone over the sane range `0..4`.
+- `GrassWindLook` (type): type GrassWindLook = Pick<GrassLook, "windStrength" | "windSpeed" | "windGust" | "windDirection"> — The wind numbers a grass look animates with.
+- `grassSwayAmplitude` (function): function grassSwayAmplitude(look: Pick<GrassLook, "windStrength" | "stiffness">): number — Largest sideways blade-tip travel, m, a look's wind numbers give a blade of `stiffness` (the shader's sway and flutter).
+- `grassWindAt` (function): function grassWindAt(wind: GrassWind, x: number, z: number, time: number): WindVector — Sample a shared wind at a grass patch's world centre.
+- `grassWindLook` (function): function grassWindLook(look: GrassWindLook, wind: WindVector, response = 1): GrassWindLook — The look's wind numbers under a wind vector: sway saturates with the drag (∝ U²), animation speeds up with √U.
 
 ## @jgengine/core/haptics/haptics
 
@@ -2131,8 +2151,15 @@
 - `landformKey` (function): function landformKey(recipe: LandformRecipe, seed: string): string — The cache key of a grown landform: model version, recipe and seed.
 - `landformRecipe` (function): function landformRecipe(params: LandformGeneratorParams, detail = 1): LandformRecipe — The recipe a generator's params and detail level grow: lower detail keeps the map size with fewer, larger cells.
 
+## @jgengine/core/landform/generator/landformStart
+
+- `LANDFORM_START_PARAMS` (const): const LANDFORM_START_PARAMS: Readonly<Record<LandformStart, Partial<LandformGeneratorParams>>> — Each start's generator params, about a 960 m map: a range cut by rivers then worked by ice above its snowline, a sand sea under one wind, and a river-cut range drowned to a coast. Simulated at full scale and shrunk to the map.
+- `landformStartTerrain` (function): function landformStartTerrain(start: LandformStart, seed: string): TerraformSnapshot — The terrain a start grows from a seed, origin at ground level 0. Deterministic and cached.
+- `withGeneratedTerrain` (function): function withGeneratedTerrain(doc: EditorDocument): EditorDocument — The document with its generated terrain grown in when it has a generator and no sculpt; otherwise unchanged.
+
 ## @jgengine/core/landform/generator/landformTerrain
 
+- `GLACIAL_PHASE_YEARS` (const): const GLACIAL_PHASE_YEARS: 20000 — Years glaciers work a range when a recipe has a `glacierEla`.
 - `LANDFORM_TERRAIN_MAX_SIDE` (const): const LANDFORM_TERRAIN_MAX_SIDE: 256 — Largest landform side `growLandform` accepts, so one job's work stays bounded.
 - `LANDFORM_TERRAIN_SURFACES` (const): const LANDFORM_TERRAIN_SURFACES: Readonly<Record<LandformSurfaceKind, string>> — The terrain paint palette id each landform surface kind paints by default.
 - `LandformRecipe` (interface): interface LandformRecipe — What a landform is grown from: plain data, so it crosses to a worker unchanged.
@@ -3220,6 +3247,12 @@
 - `sectionRadiation` (function): function sectionRadiation(section: HalfSection, frequency: number, density = 1025, gravity = 9.81, panels = 6): SectionRadiation — Heave added mass and radiation damping of a symmetric section by Frank's close-fit source method: pulsating sources of constant strength on straight panels mirrored to port, the deep-water free-surface Green's function, the body condition at panel midpoints. The section runs keel to waterline as `[half-breadth, depth ≤ 0]` points.
 - `wigleyOffsets` (function): function wigleyOffsets(length: number, beam: number, draft: number, stations = 11, waterlines = 6): HullOffsetTable — A Wigley hull `y = (B/2)·(1 − ξ²)·(1 − ζ²)` as a table of offsets, stations clustered toward the ends.
 
+## @jgengine/core/physics/boatWindage
+
+- `AIR_DENSITY` (const): const AIR_DENSITY: 1.225 — Sea-level air density, kg/m³ (ISA).
+- `BoatWind` (interface): interface BoatWind — A boat in a {@link WindField}. `strength` `0` is no windage, `1` the drag the coefficients give, past `1` more; the force is linear in it, so it stays finite and monotone over the sane range `0..4`.
+- `boatWindageForce` (function): function boatWindageForce(wind: BoatWind, hull: { length: number; beam: number }, x: number, z: number, heading: number, vx: number, vz: number, time: number): [number, number] — Windage force, N, in world x/z on a hull at `x, z` heading `heading` moving at `vx, vz`.
+
 ## @jgengine/core/physics/buoyancy
 
 - `BuoyantBody` (class): class BuoyantBody — Floats a {@link PhysicsWorld} body on a CPU {@link WaterSurface}: each hull sample point pushes the body up by its submerged depth (Archimedes, coarse), with vertical and horizontal water drag so the hull settles at the waterline and rides the Gerstner waves. Passing an {@link AxisInput} drives it as a boat — throttle thrusts along the heading, steer yaws, a keel bleeds sideways slip. Call `update(dt, time, input?)` before the shared `world.step(dt)`.
@@ -3243,6 +3276,7 @@
 
 ## @jgengine/core/physics/drivableVehicle
 
+- `DrivableSoil` (interface): interface DrivableSoil — Soft ground a car's wheels rut, and the wheel size they press with.
 - `DrivableTireEffects` (interface): interface DrivableTireEffects — Where a car's sliding tires leave their trace: skid marks on the ground and smoke in the air.
 - `DrivableVehicleOptions` (interface): interface DrivableVehicleOptions — Options for {@link tickDrivableVehicle} — ground snapping, per-tick modifiers and tire effects.
 - `DrivableVehiclePose` (interface): interface DrivableVehiclePose — A `setPose`-ready patch — spread straight into `entities.setPose(vehicleId, drive.pose)`.
@@ -3642,6 +3676,14 @@
 - `decodePlantStructure` (function): function decodePlantStructure(bytes: Uint8Array): { structure: PlantStructure; hash: string } — The structure and hash {@link encodePlantStructure} wrote.
 - `encodePlantMesh` (function): function encodePlantMesh(mesh: PlantMesh): Uint8Array — A styled plant mesh as bytes for a {@link PlantCacheStorage}.
 - `encodePlantStructure` (function): function encodePlantStructure(structure: PlantStructure, hash: string): Uint8Array — A grown plant's structure as bytes, with its hash, for a {@link PlantCacheStorage}.
+
+## @jgengine/core/plants/groundCover/groundCoverField
+
+- `GROUND_COVER_FIELD_KIND` (const): const GROUND_COVER_FIELD_KIND: "ground_cover" — The editor volume kind a ground-cover field is placed as.
+- `GROUND_COVER_SCHEMA` (const): const GROUND_COVER_SCHEMA: ParamSchema<readonly [{ readonly type: "weightedList"; readonly key: "species"; readonly label: "sown (share)"; readonly itemLabel: "ground-cover species id"; readonly default: readonly [{ readonly item: "lolium-perenne"; readonly weight: 2; }, { readonly item: "trifolium-… — The `ground_cover` params.
+- `GroundCoverParams` (type): type GroundCoverParams = ParamsOf<typeof GROUND_COVER_SCHEMA> — Parsed `ground_cover` params.
+- `growGroundCoverLook` (function): function growGroundCoverLook(params: GroundCoverParams): GrassLook — Grow the sward for the params, a week at a time under its care, and return the look it renders with. Cached and deterministic.
+- `resolveGroundCoverObject` (function): function resolveGroundCoverObject(object: SceneKindObject): ResolvedGrass | null — A ground-cover volume's footprint and grown look, the same shape a `grass_field` resolves to.
 
 ## @jgengine/core/plants/groundCover/groundCoverSpecies
 
@@ -4047,6 +4089,18 @@
 - `PLANT_SOURCES` (const): const PLANT_SOURCES: { readonly "carmean-1989": "Carmean, Hahn & Jacobs 1989, Site index curves for forest tree species in the eastern United States, USDA Forest Service GTR NC-128 (US public domain)"; readonly fvs: "USDA Forest Service, Forest Vegetation Simulator, Lake States variant htcalc.f (US … — Every source a plant species value or growth rule comes from; each one is credited in CREDITS.md.
 - `PlantSourceId` (type): type PlantSourceId = keyof typeof PLANT_SOURCES — Id of a credited plant data or model source.
 
+## @jgengine/core/plants/stand/forestStand
+
+- `FOREST_STAND_KIND` (const): const FOREST_STAND_KIND: "forest_stand" — The editor path kind a forest stand is drawn as.
+- `FOREST_STAND_SCHEMA` (const): const FOREST_STAND_SCHEMA: ParamSchema<readonly [{ readonly type: "weightedList"; readonly key: "species"; readonly label: "species (planting share)"; readonly itemLabel: "species id"; readonly default: readonly [{ readonly item: "pinus-resinosa"; readonly weight: 1; }]; }, { readonly type: "range";… — The `forest_stand` params.
+- `FOREST_STAND_TREE_BUDGET` (const): const FOREST_STAND_TREE_BUDGET: 20000 — Most trees one stand places, so a huge polygon stays bounded work.
+- `ForestStandParams` (type): type ForestStandParams = ParamsOf<typeof FOREST_STAND_SCHEMA> — Parsed `forest_stand` params.
+- `ForestStandPlot` (interface): interface ForestStandPlot — A grown plot tile and its stand statistics.
+- `ForestStandTree` (interface): interface ForestStandTree — One grown tree on the plot tile, plot-local metres.
+- `growForestStandPlot` (function): function growForestStandPlot(params: ForestStandParams): ForestStandPlot — Grow one plot tile for the params: plant `plantedPerHa` stems of the species mix at their planting shares, then step the stand `ageYears`. Deterministic per params and cached, so a document loads to the same trees every time.
+- `readForestStandParams` (function): function readForestStandParams(object: Pick<SceneKindObject, "meta">): ForestStandParams — Read a path's forest params.
+- `resolveForestStand` (function): function resolveForestStand(path: ScenePathLike, terrain?: ScatterTerrain, masks?: AvoidMasks): ScatterInstance[] — The trees of one drawn stand: the plot tiled over the polygon, kept inside it and out of clearance masks, grounded on `terrain`. Same path, same trees.
+
 ## @jgengine/core/plants/stand/standSim
 
 - `Stand` (interface): interface Stand — A stateful forest plot: step it, read its trees, snapshot and restore it.
@@ -4342,11 +4396,13 @@
 - `ScatterPaletteEntry` (interface): interface ScatterPaletteEntry — One species/prop in a scatter region's palette, with a relative spawn weight.
 - `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint plus its fill rules.
 - `ScatterRegionRules` (interface): interface ScatterRegionRules — How a scatter region fills its polygon: density, spacing, variation, and masking rules.
+- `ScatterSource` (type): type ScatterSource = (path: ScenePathLike, terrain: ScatterTerrain | undefined, masks: AvoidMasks) => readonly ScatterInstance[] — Fills one authored path of a kind other than `scatter` with placements (a forest stand from its growth model). It receives the clearance masks the region would honor; placements join the document's scatter, so rendering, solids, harvest and navigation read them like any other.
 - `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
 - `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
 - `isScatterPath` (function): function isScatterPath(path: ScenePathLike): boolean — True when an editor path is a foliage/scatter region.
 - `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
 - `readScatterRules` (function): function readScatterRules(path: ScenePathLike): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.
+- `registerScatterSource` (function): function registerScatterSource(kind: string, source: ScatterSource): void — Register the {@link ScatterSource} for a path kind; idempotent, last registration wins.
 - `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): readonly ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
 - `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
 - `scatterRegionEstimate` (function): function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
@@ -5116,6 +5172,12 @@
 - `createTerrainSurfaceTextures` (function): function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): TerrainSurfaceTextures | undefined — Bake a terrain's generated surfaces (shared per spec) and stack them into array textures. `detail` 1 bakes each map at its own resolution, 0.5 at half; layers are rebaked at the smallest size any role asks for so they stack. Undefined when the terrain names no surfaces.
 - `createTerrainSurfaceTexturesJob` (function): function createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): SlicedJob<TerrainSurfaceTextures | undefined> — {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze.
 
+## @jgengine/core/terrain/terrainGenerator
+
+- `EditorTerrainGenerator` (interface): interface EditorTerrainGenerator — A document's terrain generator: what grows its ground when it has no sculpt yet.
+- `LANDFORM_STARTS` (const): const LANDFORM_STARTS: readonly ["glacial-valley", "dunes", "coast"] — The plain data a document stores to have its ground grown on first load; `landform/generator/landformStart` grows it.
+- `LandformStart` (type): type LandformStart = (typeof LANDFORM_STARTS)[number] — One named landform start.
+
 ## @jgengine/core/terrain/terrainGrade
 
 - `resolveTerrainGradeStep` (function): function resolveTerrainGradeStep(sampler: { sampleHeight(x: number, z: number): number } | ((x: number, z: number) => number), position: readonly [number, number, number], stepX: number, stepZ: number, maxClimbGrade: number): { stepX: number; stepZ: number } — Constrain an uphill heightfield step by its sampled rise/run grade. Try the full step, then X-only, then Z-only, preserving downhill travel and sliding along a traversable axis. The sampler can represent a game's terrain policy independently of the ground used for feet. This endpoint test also applies while jumping; it is not continuous terrain collision.
@@ -5605,7 +5667,7 @@
 
 ## @jgengine/core/weather/WeatherLayer.draw
 
-- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, timeSeconds, sample, shelters, metrics, rain, snow, dust, dustAlways = false, impacts, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — Draw one weather mode (rain, snow, mixed or dust) with shared wind and clock uniforms.
+- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, timeSeconds, sample, shelters, metrics, rain, snow, dust, dustAlways = false, impacts, enabled = true, children, windField, }: WeatherLayerProps): React.JSX.Element | null — Draw one weather mode (rain, snow, mixed or dust) with shared wind and clock uniforms.
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust" — `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`.
 - `WeatherLayerProps` (interface): interface WeatherLayerProps — Props for {@link WeatherLayer}: weather mode, intensity, wind, lightning and clock.
 
@@ -5662,6 +5724,7 @@
 
 ## @jgengine/core/weather/weatherUniforms.draw
 
+- `WEATHER_WIND_SAMPLE_HEIGHT` (const): const WEATHER_WIND_SAMPLE_HEIGHT: 10 — Height, m, precipitation reads the shared wind at: the meteorological 10 m.
 - `WeatherParticleMetrics` (interface): interface WeatherParticleMetrics — Actual procedural weather submissions and per-frame impact query work.
 - `WeatherUniformOptions` (interface): interface WeatherUniformOptions — Options for the shared weather uniforms: wind, lightning, time scale or an authoritative clock, and an authored weather sampler.
 - `WeatherUniformSet` (interface): interface WeatherUniformSet extends WeatherShelterUniforms — Uniforms every weather field shares: time, wind, lightning flash, rain, snow and dust amounts, and roof shelters.
@@ -6309,7 +6372,7 @@
 - `WedgeFormationOptions` (interface): interface WedgeFormationOptions — Options for {@link wedgeFormation}.
 - `WeightedParamEntry` (interface): interface WeightedParamEntry — The typed parameter schema every generator and studio shares: an ordered list of fields (sliders, toggles, colours, enums, seeds, weighted lists, curves, gradients) in optionally nested groups, plus presets. One schema drives the editor inspector, `meta` parsing and validation, randomize and reset, and the seeded variant grid, so a new generator writes no UI or parsing code of its own. Declare a schema with {@link defineParamSchema} and {@link ParamsOf} gives the parsed params' type.
 - `WeightedRegionEntry` (interface): interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> — A weighted member of a {@link weightedRegion} composite.
-- `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number } — ⚠ undocumented
+- `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number; atHeight(x: number, z: number, heightM:… — ⚠ undocumented
 - `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/placement/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
 - `WorldGridCell` (interface): interface WorldGridCell { x: number; z: number; height?: number; color?: string } — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
@@ -7177,10 +7240,29 @@
 
 ## @jgengine/core/world/wind
 
-- `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number } — ⚠ undocumented
-- `WindFieldConfig` (interface): interface WindFieldConfig { direction?: WindVector; speed?: number; gust?: number; gustFrequency?: number; turbulence?: number; seed?: string | number } — ⚠ undocumented
-- `WindVector` (type): type WindVector = readonly [number, number] — ⚠ undocumented
+- `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number; atHeight(x: number, z: number, heightM:… — ⚠ undocumented
+- `WindFieldConfig` (interface): interface WindFieldConfig { direction?: WindVector; speed?: number; gust?: number; gustFrequency?: number; turbulence?: number; seed?: string | number; effects?: WindEffects } — ⚠ undocumented
+- `WindVector` (type): type WindVector = readonly [number, number] — ⚠ undocumented · used by `grassWindAt` (@jgengine/core/grass/grassWind): Sample a shared wind at a grass patch's world centre.
 - `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
+
+## @jgengine/core/world/windEffects
+
+- `PreparedWindEffects` (interface): interface PreparedWindEffects — The prepared effects a field samples each call.
+- `WIND_SURFACE_ROUGHNESS` (const): const WIND_SURFACE_ROUGHNESS: Readonly<Record<WindSurfaceClass, WindSurfaceRoughness>> — EN 1991-1-4 Table 4.1: z₀ and z_min per terrain category.
+- `WindEffects` (interface): interface WindEffects — The physical effects a wind field carries; one optional field on `WindFieldConfig`. Plain data.
+- `WindGustEffect` (interface): interface WindGustEffect — The `gusts` effect: along-wind gusts whose variance is (strength · I_v · U)² and whose spectrum is the EN 1991-1-4 Annex B form S_L(f_L) = 6.8 f_L / (1 + 10.2 f_L)^(5/3), carried downwind at the mean speed (Taylor's frozen turbulence). `strength` `0` is no gusts, `1` the published intensity, past `1` gustier; the standard deviation is linear in it, so it stays finite and monotone over the sane range `0..4`.
+- `WindGustSynthesis` (interface): interface WindGustSynthesis — A resolved gust synthesis: normalized frequencies f_L, amplitudes (σ = 1) and phases.
+- `WindProfileEffect` (interface): interface WindProfileEffect — The `profile` effect: mean speed scales with height as ln(z/z₀)/ln(z_ref/z₀), so `speed` is the mean at the reference height. `strength` is an exponent on that ratio: `0` the same speed at every height, `1` the log law, past `1` a steeper shear; finite, bounded and monotone over the sane range `0..4`.
+- `WindSurfaceClass` (type): type WindSurfaceClass = "openWater" | "grass" | "forest" | "city" — The ground a wind blows over, by EN 1991-1-4 Table 4.1 terrain category: sea (0), open grass (II), forest (III), city (IV).
+- `WindSurfaceRoughness` (interface): interface WindSurfaceRoughness — Roughness of one surface class: roughness length z₀ and the height below which the profile stops falling, both metres.
+- `validateWindEffects` (function): function validateWindEffects(value: WindEffects): void — Throw on effects an authored document must not persist: unknown keys or surface, a negative or non-finite number.
+- `windGustSpectrum` (function): function windGustSpectrum(fL: number): number — The non-dimensional along-wind spectrum S_L(f_L) = n S(n)/σ² = 6.8 f_L / (1 + 10.2 f_L)^(5/3) (EN 1991-1-4 eq. B.2).
+- `windGustSynthesis` (function): function windGustSynthesis(components: number, seed: string): WindGustSynthesis — Split the spectrum into `components` log-spaced bands covering 0.2%..98.5% of its variance, one cosine per band at the band's geometric centre with the band's variance, renormalized so the sum has unit variance.
+- `windGustVarianceBelow` (function): function windGustVarianceBelow(fL: number): number — Share of the gust variance below f_L: the closed-form integral of {@link windGustSpectrum}, 1 − (1 + 10.2 f_L)^(−2/3).
+- `windProfileFactor` (function): function windProfileFactor(heightM: number, roughness: WindSurfaceRoughness, referenceHeightM = 10, strength = 1): number — Mean speed at `heightM` over the mean speed at the reference height, raised to the profile strength.
+- `windRoughness` (function): function windRoughness(effects: Pick<WindEffects, "surface" | "roughnessLengthM" | "minHeightM">): WindSurfaceRoughness — The roughness a set of effects resolves to.
+- `windTurbulenceIntensity` (function): function windTurbulenceIntensity(heightM: number, roughness: WindSurfaceRoughness): number — Turbulence intensity I_v(z) = 1 / ln(z/z₀) (EN 1991-1-4 eq. 4.7 with k_I = c₀ = 1).
+- `windTurbulenceScale` (function): function windTurbulenceScale(heightM: number, roughness: WindSurfaceRoughness): number — Turbulence length scale L(z) = 300 (z/200)^α, α = 0.67 + 0.05 ln z₀ (EN 1991-1-4 eq. B.1), metres.
 
 ## @jgengine/core/world/windZones
 

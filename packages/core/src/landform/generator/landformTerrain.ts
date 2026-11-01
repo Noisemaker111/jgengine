@@ -48,6 +48,11 @@ export interface LandformRecipe {
    * kilometre-scale rivers can be shrunk to a game-sized map. Default 1.
    */
   scale?: number;
+  /**
+   * After the rivers cut the range, glaciers grow above this equilibrium line altitude (simulated m) for
+   * {@link GLACIAL_PHASE_YEARS}, flow down and carve U-shaped valleys; omit for no ice.
+   */
+  glacierEla?: number | null;
 }
 
 /** A grown landform in world metres (after {@link LandformRecipe.scale}). Heights are cell centres, row-major, row 0 at the north edge. */
@@ -66,6 +71,10 @@ export interface LandformTerrain {
   /** Dune sand thickness per cell in metres. */
   dunes: Float32Array;
 }
+
+/** Years glaciers work a range when a recipe has a `glacierEla`. */
+export const GLACIAL_PHASE_YEARS = 20000;
+const GLACIAL_STEP_YEARS = 2000;
 
 /** Largest landform side `growLandform` accepts, so one job's work stays bounded. */
 export const LANDFORM_TERRAIN_MAX_SIDE = 256;
@@ -99,8 +108,15 @@ export function growLandform(recipe: LandformRecipe, seed: string): LandformTerr
     ...(recipe.seaLevel === null ? {} : { seaLevel: recipe.seaLevel }),
     ...(strata === undefined ? {} : { strata: { layers: strata, top: recipe.caprock } }),
   };
-  const model = createLandscapeEvolution({ grid: { cols: side, rows: side, cellSize: recipe.cellSize }, seed, params });
+  const grid = { cols: side, rows: side, cellSize: recipe.cellSize };
+  let model = createLandscapeEvolution({ grid, seed, params });
   for (let k = 0; k < steps; k += 1) model.step();
+  if (recipe.glacierEla !== undefined && recipe.glacierEla !== null) {
+    // Ice turns are short, so glaciers work a river-cut range for one glacial stage rather than the whole run.
+    const heights = Array.from(model.fields().height);
+    model = createLandscapeEvolution({ grid, seed: `${seed}/ice`, initial: { heights, roughness: 0 }, params: { ...params, timeStep: GLACIAL_STEP_YEARS, glacial: { ela: recipe.glacierEla, model: "shallow-ice" } } });
+    for (let k = 0; k < GLACIAL_PHASE_YEARS / GLACIAL_STEP_YEARS; k += 1) model.step();
+  }
   const surface = landformSurface(model);
   const cells = side * side;
   const heights = new Float32Array(cells);

@@ -19,6 +19,8 @@ import { registerNatureGenerators } from "../nature/natureGenerators";
 import { registerPlantGenerators } from "../plants/grown/plantGrown";
 import { registerSurfaceMaterialGenerator } from "../material/surfaceMaterialGenerator";
 import { registerCityKind } from "../city/cityKind";
+import { registerForestStandKind } from "../plants/stand/forestStand";
+import { registerGroundCoverKind } from "../plants/groundCover/groundCoverField";
 import { describeScatterCoverage, densityCoverage } from "../scatter/scatterCoverage";
 import { registerSceneKind } from "./sceneKinds";
 import { type ParamSchema } from "../generator/paramSchema";
@@ -89,6 +91,8 @@ export function registerBuiltinSceneKinds(): void {
   registerGrassKind();
   registerSoilKind();
   registerCityKind();
+  registerForestStandKind();
+  registerGroundCoverKind();
   registerPoleLineKind();
   registerDecalKind();
   registerBuildingGenerator();

@@ -1072,6 +1072,16 @@
       "intent": "2-D heave added mass and radiation damping of a hull section (Frank close-fit)"
     },
     {
+      "id": "boat-windage",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatWindage",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "push a hull with the shared wind field on its above-water areas, its own 0-upward strength dial"
+    },
+    {
       "id": "body-bind",
       "packages": [
         "@jgengine/core"
@@ -3959,6 +3969,16 @@
       "intent": "reject invalid localized force authoring before simulation"
     },
     {
+      "id": "forest-stand",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/stand/forestStand",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "fill a drawn polygon with a believable forest grown by the stand model, with a self-thinning dial"
+    },
+    {
       "id": "formation-assignment",
       "packages": [
         "@jgengine/core"
@@ -4343,6 +4363,16 @@
       "intent": "editor-authorable GPU grass patch"
     },
     {
+      "id": "grass-wind",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/grass/grassWind",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "sway grass in the shared wind field with a per-kind response dial"
+    },
+    {
       "id": "gravity-field",
       "packages": [
         "@jgengine/core"
@@ -4351,6 +4381,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "sample configurable uniform, radial, or combined gravity"
+    },
+    {
+      "id": "ground-cover-field",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/groundCover/groundCoverField",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "place a lawn, meadow or path the tiller model grows into the grass renderer's look"
     },
     {
       "id": "ground-edge-fade",
@@ -5722,6 +5762,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation"
+    },
+    {
+      "id": "landform-start",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/terrain/terrainGenerator",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "start a scene on a glacial valley, dunes or a coast grown by the landform generator from a seed"
     },
     {
       "id": "lane-graph",
@@ -9343,6 +9393,16 @@
       "intent": "scattered rocks and props block the player, NPCs and physics like any wall"
     },
     {
+      "id": "scatter-source",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scatter/scatterRegion",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "fill a non-scatter path kind with placements that join the document's scatter"
+    },
+    {
       "id": "scene-capture-binding",
       "packages": [
         "@jgengine/core"
@@ -9806,6 +9866,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "emotes and social interactions between nearby players"
+    },
+    {
+      "id": "soft-ground",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/granular/softGround",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "wheels and feet rut granular soil by the material's published sinkage, with sinkage and recovery dials"
     },
     {
       "id": "soil-patch",
@@ -12018,6 +12088,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "pick one item from a set with an injected random source"
+    },
+    {
+      "id": "wind-effects",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/world/windEffects",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "log-law wind profile and spectral gusts over a surface class, each a 0-upward strength dial"
     },
     {
       "id": "window",

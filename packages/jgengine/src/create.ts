@@ -6,7 +6,7 @@ import { cliVersion, findWorkspaceRoot, flag, hasFlag, isEngineMonorepo, pickPac
 import { GAME_TEMPLATES, type GameTemplate, PROJECT_CONFIG_FILE, renderProjectConfig, starterCredits } from "./projectConfig";
 import { installSkills } from "./skills";
 import { applySync, planSync, syncContext } from "./sync";
-import { type EditorSceneDoc, gameTemplate, parseCreateName, type TemplateVariant } from "./templates";
+import { type EditorSceneDoc, gameTemplate, LANDFORM_START_NAMES, type LandformStartName, parseCreateName, type TemplateVariant } from "./templates";
 import { ASSETS_PULL_HINT } from "./templates/gameFiles";
 
 /** @internal */
@@ -25,6 +25,7 @@ export function writeGame(
     sceneMode?: "empty" | "starter";
     dimension?: "2d" | "3d";
     brief?: string | undefined;
+    landform?: LandformStartName | undefined;
   },
 ): void {
   for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), cliVersion: cliVersion(), ...(scene === undefined ? {} : { scene }), ...options })) {
@@ -77,7 +78,7 @@ export function readPromotedScene(pathArg: string): EditorSceneDoc {
   return { version: 1, ...scene, markers };
 }
 
-const VALUE_FLAGS = new Set(["--pm", "--template", "--from-scene", "--player", "--ground", "--scene", "--brief"]);
+const VALUE_FLAGS = new Set(["--pm", "--template", "--from-scene", "--player", "--ground", "--scene", "--brief", "--landform"]);
 const BOOLEAN_FLAGS = new Set([
   "--no-editor",
   "--in-repo",
@@ -96,6 +97,8 @@ const CREATE_USAGE = `usage: jgengine create "<Game Name>" [flags]
   --brief "<words>"          the user's words for the game, written into PLAN.md and README.md
   --player <model>           player model: a library human or a catalog id (default human/man-casual)
   --ground terrain|flat      starter ground (default terrain)
+  --landform glacial-valley|dunes|coast
+                             grow the ground from geology, ice and wind on first load (seeded by the game id)
   --scene starter|empty      starter props and a goal to walk to, or just ground and the player (default starter)
   --from-scene <folder>      promote an authored editor.scene.json into the game
   --no-editor                drop the editor scene files
@@ -217,9 +220,15 @@ export async function runCreate(argv: string[]): Promise<number> {
     const sceneMode = flag(argv, "scene") ?? "starter";
     if (ground !== "flat" && ground !== "terrain") throw new Error(`--ground must be flat or terrain (got ${ground})`);
     if (sceneMode !== "empty" && sceneMode !== "starter") throw new Error(`--scene must be empty or starter (got ${sceneMode})`);
+    const landformArg = flag(argv, "landform");
+    const landform = landformArg === undefined ? undefined : LANDFORM_START_NAMES.find((name) => name === landformArg);
+    if (landformArg !== undefined && landform === undefined) throw new Error(`--landform must be one of ${LANDFORM_START_NAMES.join(", ")} (got ${landformArg})`);
+    if (landform !== undefined && (ground === "flat" || sceneArg !== undefined || hasFlag(argv, "no-editor"))) {
+      throw new Error("--landform grows the scene's terrain; drop --ground flat, --from-scene and --no-editor");
+    }
     const dimension = template === "2d" ? "2d" : "3d";
     if (dimension === "2d") {
-      const threeDOnly = ["player", "ground", "scene", "from-scene"].filter((name) => flag(argv, name) !== undefined);
+      const threeDOnly = ["player", "ground", "scene", "from-scene", "landform"].filter((name) => flag(argv, name) !== undefined);
       const clash = [...threeDOnly, ...(hasFlag(argv, "no-editor") ? ["no-editor"] : [])];
       if (clash.length > 0) throw new Error(`--template 2d has no 3D scene; drop ${clash.map((name) => `--${name}`).join(", ")}`);
     }
@@ -274,7 +283,7 @@ export async function runCreate(argv: string[]): Promise<number> {
 
     const engineVersion = sdkVersion();
     const brief = flag(argv, "brief");
-    writeGame(targetDir, id, displayName, variant, scene, { world, editor, player, ground, sceneMode, shape, dimension, brief });
+    writeGame(targetDir, id, displayName, variant, scene, { world, editor, player, ground, sceneMode, shape, dimension, brief, landform });
     writeProjectConfig(targetDir, { id, name: displayName, template, editor });
     applySync(targetDir, planSync(targetDir, syncContext(targetDir)));
     console.log(`created ${displayName} (${template}, ${variant}) → ${targetDir}`);
