@@ -3,7 +3,18 @@ import { describe, expect, test } from "bun:test";
 import { aircraftAttitudeQuaternion, createRigidAircraft } from "@jgengine/core/flight/aircraftDynamics";
 import { measureFlight } from "@jgengine/core/physics/handlingProbe";
 
-import { flightDemoBooster, flightDemoHelicopter, flightDemoHelicopterAssists, flightDemoHover, flightDemoPlaneAssists, flightDemoPlane, flightDemoSpawn, flightDemoUpperStage } from "./flightTuning";
+import {
+  flightDemoBooster,
+  flightDemoHelicopter,
+  flightDemoHelicopterAssists,
+  flightDemoHover,
+  flightDemoPlaneAssists,
+  flightDemoPlane,
+  flightDemoSpawn,
+  flightDemoTrainer,
+  flightDemoTrainerSpawn,
+  flightDemoUpperStage,
+} from "./flightTuning";
 
 const DT = 1 / 60;
 
@@ -115,5 +126,20 @@ describe("flight demo feel targets", () => {
     const held = measureFlight((spawn) => createRigidAircraft({ ...flightDemoHelicopter, assists: flightDemoHelicopterAssists }, spawn), { hoverCollective: flightDemoHover.collective });
     expect(loose.hoverDriftMeters).toBeGreaterThan(8);
     expect(held.hoverDriftMeters).toBeLessThan(5);
+  });
+});
+
+describe("flight demo trainer", () => {
+  test("the G swap is a real Cessna 172N that flies hands-off at 70% throttle without stalling", () => {
+    const plane = createRigidAircraft(flightDemoTrainer, flightDemoTrainerSpawn);
+    let lowest = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < 60 * 30; i += 1) {
+      const step = plane.tick(DT, { throttle: 0.7, pitch: 0, roll: 0, yaw: 0 });
+      expect(step.stalled).toBe(false);
+      lowest = Math.min(lowest, step.position[1]);
+    }
+    expect(lowest).toBeGreaterThan(150);
+    expect(flightDemoTrainer.effects?.propeller).toBeDefined();
+    expect(flightDemoTrainer.effects?.polar?.area).toBeCloseTo(16.165, 2);
   });
 });

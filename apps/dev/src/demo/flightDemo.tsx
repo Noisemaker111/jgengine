@@ -27,6 +27,8 @@ import {
   flightDemoPlane,
   flightDemoPlaneAssists,
   flightDemoSpawn,
+  flightDemoTrainer,
+  flightDemoTrainerSpawn,
   flightDemoUpperStage,
 } from "./flightTuning";
 
@@ -69,6 +71,9 @@ const PLANE_CRAFT: Craft = {
   assists: flightDemoPlaneAssists,
   input: (stick, lever) => ({ throttle: lever, pitch: stick.pitch, roll: stick.roll, yaw: stick.yaw }),
 };
+
+// G swaps the arcade monoplane for a real Cessna 172N: the same keys, every flight effect at full strength.
+const TRAINER_CRAFT: Craft = { ...PLANE_CRAFT, tuning: flightDemoTrainer, spawn: flightDemoTrainerSpawn, lever: 0.7 };
 
 // Keyboard pedals are all-or-nothing, so a held key asks for 60% pedal: about twice the hover trim, so it can stop a swing.
 const HELICOPTER_CRAFT: Craft = {
@@ -144,6 +149,14 @@ function onTick(ctx: GameContext, dt: number): void {
   const id = ctx.player.userId;
   if (ctx.scene.entity.get(id) === null) return;
   const state = ensureRun();
+  if (craft.kind === "plane" && ctx.input.justPressed("realism")) {
+    const position = state.last?.position ?? craft.spawn.position;
+    craft = craft === TRAINER_CRAFT ? PLANE_CRAFT : TRAINER_CRAFT;
+    resetRun();
+    ensureRun().plane.resetTo(position);
+    ensureRun().plane.restore({ ...ensureRun().plane.snapshot(), vz: craft.spawn.velocity?.[2] ?? 0 });
+    return;
+  }
   const axis = ctx.input.axis(bindings);
   if (craft.assists !== undefined && ctx.input.justPressed("assist")) {
     state.assisted = !state.assisted;
@@ -378,7 +391,8 @@ function Telemetry() {
       <div className="tabular-nums">pitch {deg(step.pitch)}° · bank {deg(step.bank)}°</div>
       {craft.assists === undefined ? null : <div className="tabular-nums">assists {run?.assisted === true ? "ON" : "off"}{step.limited ? " · LIMIT" : ""}</div>}
       <div className="tabular-nums">AoA {deg(step.angleOfAttack)}° · {step.gLoad.toFixed(1)} g{step.stalled && step.rotor === undefined ? " · STALL" : ""}</div>
-      <div className="mt-1 text-[10px] text-slate-400">{craft.kind === "helicopter" ? "W/S A/D cyclic · Q/E pedals · R/F collective · T assists" : craft.kind === "rocket" ? "W/S A/D gimbal · R ignite" : "W/S pitch · A/D roll · Q/E yaw · R/F throttle · T assists"}</div>
+      {craft.kind === "plane" ? <div className="tabular-nums">{craft === TRAINER_CRAFT ? "real Cessna 172N" : "arcade monoplane"} · Mach {step.mach.toFixed(2)}</div> : null}
+      <div className="mt-1 text-[10px] text-slate-400">{craft.kind === "helicopter" ? "W/S A/D cyclic · Q/E pedals · R/F collective · T assists" : craft.kind === "rocket" ? "W/S A/D gimbal · R ignite" : "W/S pitch · A/D roll · Q/E yaw · R/F throttle · T assists · G real Cessna"}</div>
     </div>
   );
 }
@@ -404,6 +418,7 @@ function makeGame(name: string, choice: Craft): PlayableGame {
       throttleUp: ["KeyR"],
       throttleDown: ["KeyF"],
       assist: ["KeyT"],
+      realism: ["KeyG"],
     },
     loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: resetRun },
     camera: {
