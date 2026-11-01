@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { inheritValues } from "../inheritance/inheritance";
-import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
+import { createPhaseSchedule } from "../time/stateSchedule";
 
 function rngOf(seed: number): () => number {
   let state = seed;
@@ -11,6 +11,8 @@ function rngOf(seed: number): () => number {
   };
 }
 
+const DAY = 86_400;
+
 describe("simple dog breeding", () => {
   test("two parents pass their values on, and a puppy becomes an adult by its age", () => {
     const sire = { size: 60, speed: 40, coat: 10 };
@@ -18,15 +20,19 @@ describe("simple dog breeding", () => {
     const puppy = inheritValues(sire, dam, rngOf(29), { defaultRule: { pick: "either", higherChance: 0.55 } });
     expect([sire.size, dam.size]).toContain(puppy.values.size);
     expect([sire.speed, dam.speed]).toContain(puppy.values.speed);
+    expect(puppy.values.coat).toBe(10);
     expect(puppy.mutations).toEqual([]);
-    // A two-step stage list is all the growing needs.
-    const stages: ThresholdBoundary[] = [
-      { id: "puppy", at: 0 },
-      { id: "adult", at: 1 },
-    ];
-    const stageAt = (months: number) => tierAt(stages, months / 12)?.id ?? "";
-    expect(stageAt(0)).toBe("puppy");
-    expect(stageAt(11.9)).toBe("puppy");
-    expect(stageAt(12)).toBe("adult");
+
+    const growth = createPhaseSchedule({
+      phases: [
+        { state: "puppy", durationSeconds: 90 * DAY },
+        { state: "adult", durationSeconds: 1 },
+      ],
+    });
+    expect(growth.state()).toBe("puppy");
+    growth.tick(89 * DAY);
+    expect(growth.state()).toBe("puppy");
+    growth.tick(1 * DAY);
+    expect(growth.state()).toBe("adult");
   });
 });

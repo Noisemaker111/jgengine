@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { ThresholdBoundary } from "../threshold/thresholds";
-import { createBreedingField, type BreedingSpecies, type MateCandidate } from "./breeding";
+import { createBreedingField, type BreedingSpecies, type GrowthStage, type MateCandidate } from "./breeding";
 
 function rngOf(seed: number): () => number {
   let state = seed;
@@ -11,13 +10,13 @@ function rngOf(seed: number): () => number {
   };
 }
 
-const BUG: BreedingSpecies = { mateSeconds: 10, mateRange: 4, carrySeconds: 100, egg: { band: [20, 30], healthSeconds: 50 }, maturationSeconds: 1000, cooldownSeconds: [100, 200] };
+const BUG: BreedingSpecies = { mateSeconds: 10, mateRange: 4, carrySeconds: 100, egg: { incubation: { all: [{ gte: ["temperature", 20] }, { lte: ["temperature", 30] }] }, healthSeconds: 50 }, maturationSeconds: 1000, cooldownSeconds: [100, 200] };
 const BEAST: BreedingSpecies = { mateSeconds: 10, mateRange: 5, carrySeconds: 200, egg: null, maturationSeconds: 2000, cooldownSeconds: [100, 200] };
 
 /** A made-up two-stage list: the engine never names a stage. */
-const STAGES: readonly ThresholdBoundary[] = [
-  { id: "small", at: 0 },
-  { id: "large", at: 0.5 },
+const STAGES: readonly GrowthStage[] = [
+  { id: "small", share: 0.5 },
+  { id: "large", share: 0.5 },
 ];
 
 const field = () =>
@@ -51,8 +50,8 @@ describe("breeding", () => {
     expect(events.map((event) => event.type)).toEqual(["conceived", "laid"]);
     expect(breeding.eggs()).toHaveLength(1);
     expect(breeding.eggs()[0]?.offspring).toEqual({ from: "her+him" });
-    expect(breeding.cooldown("her", 17)).toBeGreaterThanOrEqual(100);
-    expect(breeding.cooldown("her", 17)).toBeLessThanOrEqual(200);
+    expect(breeding.cooldown("her")).toBeGreaterThanOrEqual(100);
+    expect(breeding.cooldown("her")).toBeLessThanOrEqual(200);
     expect(breeding.mate(pair(3), 20, 20, rng)).toEqual([]);
   });
 
@@ -71,6 +70,7 @@ describe("breeding", () => {
     expect(hatched.map((event) => event.type)).toEqual(["hatched"]);
     expect(breeding.eggs()).toHaveLength(0);
     // A second egg left out of its band is lost after its health runs out.
+    breeding.tick(1000, 875, () => 0, rng);
     breeding.mate(pair(2), 1000, 10, rng);
     const lost = breeding.tick(1050, 50, () => -10, rng);
     expect(lost.map((event) => event.type)).toEqual(["eggLost"]);
@@ -88,7 +88,7 @@ describe("breeding", () => {
     const born = breeding.tick(200, 100, () => 0, rng);
     expect(born).toEqual([{ type: "born", mother: "her", species: "beast", offspring: { from: "her+him" } }]);
     expect(breeding.pregnancy("her")).toBeNull();
-    expect(breeding.cooldown("her", 200)).toBeGreaterThan(0);
+    expect(breeding.cooldown("her")).toBeGreaterThan(0);
   });
 
   test("the young grow through the game's stages, ask for care every interval, and answering every request bonds them", () => {
@@ -122,7 +122,7 @@ describe("breeding", () => {
     const rng = rngOf(13);
     breeding.setSpeeds({ carry: 10, grow: 10, bond: 10, pair: 10 });
     breeding.mate(pair(2), 0, 10, rng);
-    expect(breeding.cooldown("her", 0)).toBeLessThanOrEqual(20);
+    expect(breeding.cooldown("her")).toBeLessThanOrEqual(20);
     expect(breeding.tick(9, 9, () => 25, rng)).toEqual([]);
     expect(breeding.tick(10, 1, () => 25, rng).map((event) => event.type)).toEqual(["hatched"]);
     breeding.raise("kid", "bug", 10);
@@ -155,6 +155,7 @@ describe("breeding", () => {
     const rng = rngOf(17);
     const sizes: number[] = [];
     for (let n = 0; n < 3; n += 1) {
+      breeding.tick(n * 1e6, 1e6, () => 0, rng);
       const events = breeding.mate(pair(2), n * 1e6, 10, rng);
       const conceived = events.find((event) => event.type === "conceived");
       const count = conceived?.type === "conceived" ? conceived.count : 0;
