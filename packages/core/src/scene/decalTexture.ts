@@ -33,6 +33,38 @@ function fbm(x: number, y: number, seed: number): number {
   return noise(x, y, seed) * 0.62 + noise(x * 2.1 + 7.3, y * 2.1 - 3.1, seed + 11) * 0.26 + noise(x * 4.3 - 1.7, y * 4.3 + 5.9, seed + 23) * 0.12;
 }
 
+
+/** 5x7 stencil glyphs, one string of seven 5-bit rows per character. */
+const GLYPHS: Readonly<Record<string, string>> = {
+  "0": "01110100011001110101100111000101110", "1": "00100011000010000100001000010001110", "2": "01110100010000100010001000100011111",
+  "3": "11110000010000101110000010000111110", "4": "00010001100101010010111110001000010", "5": "11111100001111000001000011000101110",
+  "6": "00110010001000011110100011000101110", "7": "11111000010001000100010000100001000", "8": "01110100011000101110100011000101110",
+  "9": "01110100011000101111000010001001100", A: "01110100011000111111100011000110001", B: "11110100011000111110100011000111110",
+  C: "01110100011000010000100001000101110", D: "11110100011000110001100011000111110", E: "11111100001000011110100001000011111",
+  F: "11111100001000011110100001000010000", G: "01110100011000010111100011000101111", H: "10001100011000111111100011000110001",
+  I: "01110001000010000100001000010001110", J: "00111000100001000010000101001001100", K: "10001100101010011000101001001010001",
+  L: "10000100001000010000100001000011111", M: "10001110111010110101100011000110001", N: "10001110011010110011100011000110001",
+  O: "01110100011000110001100011000101110", P: "11110100011000111110100001000010000", Q: "01110100011000110001101011001001101",
+  R: "11110100011000111110101001001010001", S: "01111100000100000110000010000111110", T: "11111001000010000100001000010000100",
+  U: "10001100011000110001100011000101110", V: "10001100011000110001100010101000100", W: "10001100011000110101101011101110001",
+  X: "10001100010101000100010101000110001", Y: "10001100010101000100001000010000100", Z: "11111000010001000100010001000011111",
+  "-": "00000000000000011111000000000000000", "/": "00001000010001000100010001000010000", ".": "00000000000000000000000000110001100",
+};
+
+/** Paint coverage of the stencil text at (u, v) in `0..1` texture space; 0 outside the lettering. */
+function stencilCoverage(text: string, u: number, v: number): number {
+  const chars = [...text.toUpperCase()].filter((char) => char === " " || GLYPHS[char] !== undefined);
+  if (chars.length === 0) return 0;
+  const cell = Math.min(0.9 / (chars.length * 6 - 1), 0.1);
+  const width = (chars.length * 6 - 1) * cell, height = 7 * cell;
+  const x = (u - 0.5) / cell + (chars.length * 6 - 1) / 2, y = (v - 0.5) / cell + 3.5;
+  if (x < 0 || y < 0 || x >= chars.length * 6 - 1 || y >= 7 || width <= 0 || height <= 0) return 0;
+  const index = Math.floor(x / 6), column = Math.floor(x - index * 6), row = Math.floor(y);
+  if (column > 4) return 0;
+  const glyph = GLYPHS[chars[index]!];
+  return glyph !== undefined && glyph[row * 5 + column] === "1" ? 1 : 0;
+}
+
 function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0 || 1e-6)));
   return t * t * (3 - 2 * t);
@@ -44,7 +76,8 @@ function smoothstep(edge0: number, edge1: number, x: number): number {
  * ships stain art it cannot inspect. Alpha is the coverage; colour is the stain itself.
  * @internal
  */
-export function createDecalTexture(style: DecalStyle, seed: string, size = 128): DecalTextureData {
+export function createDecalTexture(style: DecalStyle, seed: string, size = 128, paint: { text?: string; color?: string } = {}): DecalTextureData {
+  const rgb = /^#[0-9a-f]{6}$/i.test(paint.color ?? "") ? [1, 3, 5].map((i) => parseInt(paint.color!.slice(i, i + 2), 16) / 255) : [0.88, 0.69, 0.25];
   const seedNumber = hashString(seed.length > 0 ? seed : style);
   const data = new Uint8Array(size * size * 4);
   for (let y = 0; y < size; y += 1) {
@@ -169,6 +202,17 @@ export function createDecalTexture(style: DecalStyle, seed: string, size = 128):
         red = 0.03 + (1 - core) * 0.12;
         green = 0.025 + (1 - core) * 0.07;
         blue = 0.02 + (1 - core) * 0.03;
+      } else if (style === "stencil" || style === "chevrons") {
+        // Sprayed paint through a stencil: lettering or a band of arrowheads, flaked where it has worn.
+        const wear = smoothstep(0.3, 0.55, fbm(u * 16 + 2.2, v * 16 - 6.1, seedNumber + 31));
+        let coverage = 0;
+        if (style === "stencil") coverage = stencilCoverage(paint.text ?? "", x / size, y / size);
+        else {
+          const across = Math.abs(u) < 0.42, row = (v + 0.5) * 4, local = row - Math.floor(row), arrow = Math.abs(u) * 1.1 + (1 - local) * 0.5;
+          coverage = across && arrow > 0.28 && arrow < 0.46 && Math.abs(u) < 0.4 ? 1 : 0;
+        }
+        alpha = coverage * (0.45 + wear * 0.55);
+        [red, green, blue] = rgb as [number, number, number];
       } else if (style === "hazard") {
         // A painted border of diagonal yellow-and-black bands, scuffed through where boots wear it.
         const edge = Math.max(Math.abs(u), Math.abs(v));

@@ -9673,6 +9673,2491 @@
         ]
       },
       "catalogId": "deepward/architecture/pipe-stand"
+    },
+    {
+      "id": "vent-home-drip-1",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 4.5,
+        "y": 1.1624999999999999,
+        "z": 7.32
+      },
+      "label": "drip",
+      "meta": {
+        "place": "home",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-home-steam-2",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -5.05,
+        "y": 3.6999999999999997,
+        "z": 7.38
+      },
+      "label": "steam",
+      "meta": {
+        "place": "home",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-home-drip-3",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 5.05,
+        "y": 3.3874999999999997,
+        "z": 7.38
+      },
+      "label": "drip",
+      "meta": {
+        "place": "home",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-drip-4",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 4.5,
+        "y": 1.1624999999999999,
+        "z": -8.72
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-steam-5",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -6.15,
+        "y": 3.6999999999999997,
+        "z": -8.66
+      },
+      "label": "steam",
+      "meta": {
+        "place": "vault",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-drip-6",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 3.6899999999999995,
+        "y": 3.3874999999999997,
+        "z": -8.66
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-steam-7",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -1.95,
+        "y": 3.6,
+        "z": -29.1
+      },
+      "label": "steam",
+      "meta": {
+        "place": "vault",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-drip-8",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -1.95,
+        "y": 3.2375000000000003,
+        "z": -25.7
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-drip-9",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 1.95,
+        "y": 3.2375000000000003,
+        "z": -39.3
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-steam-10",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 1.95,
+        "y": 3.6,
+        "z": -32.5
+      },
+      "label": "steam",
+      "meta": {
+        "place": "vault",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-drip-11",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 1.95,
+        "y": 3.2375000000000003,
+        "z": -18.9
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-steam-12",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 6.6,
+        "y": 2.5,
+        "z": -30.4
+      },
+      "label": "steam",
+      "meta": {
+        "place": "vault",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-drip-13",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 6.6,
+        "y": 2.25,
+        "z": -28
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-drip-14",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.82,
+        "y": 1.0925,
+        "z": -35.823076923076925
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-steam-15",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.82,
+        "y": 1.3299999999999998,
+        "z": -33.08461538461539
+      },
+      "label": "steam",
+      "meta": {
+        "place": "vault",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-drip-16",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.82,
+        "y": 1.0925,
+        "z": -27.607692307692307
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-steam-17",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.82,
+        "y": 1.3299999999999998,
+        "z": -20.76153846153846
+      },
+      "label": "steam",
+      "meta": {
+        "place": "vault",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-drip-18",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.82,
+        "y": 1.0925,
+        "z": -19.392307692307693
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-drip-19",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.82,
+        "y": 1.0925,
+        "z": -11.176923076923078
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-steam-20",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.82,
+        "y": 1.3299999999999998,
+        "z": -8.438461538461542
+      },
+      "label": "steam",
+      "meta": {
+        "place": "vault",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-drip-21",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.82,
+        "y": 1.0925,
+        "z": -39.93076923076923
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-steam-22",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.82,
+        "y": 1.3299999999999998,
+        "z": -33.08461538461539
+      },
+      "label": "steam",
+      "meta": {
+        "place": "vault",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-drip-23",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.82,
+        "y": 1.0925,
+        "z": -31.715384615384615
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-drip-24",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.82,
+        "y": 1.0925,
+        "z": -23.5
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-steam-25",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.82,
+        "y": 1.3299999999999998,
+        "z": -20.76153846153846
+      },
+      "label": "steam",
+      "meta": {
+        "place": "vault",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-drip-26",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.82,
+        "y": 1.0925,
+        "z": -15.284615384615385
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-vault-steam-27",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.82,
+        "y": 1.3299999999999998,
+        "z": -8.438461538461542
+      },
+      "label": "steam",
+      "meta": {
+        "place": "vault",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-drip-28",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.82,
+        "y": 1.0925,
+        "z": -7.069230769230767
+      },
+      "label": "drip",
+      "meta": {
+        "place": "vault",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-cold-drip-29",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -4,
+        "y": 3.825,
+        "z": -7.175
+      },
+      "label": "drip",
+      "meta": {
+        "place": "cold",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-cold-steam-30",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -4,
+        "y": 4.15,
+        "z": -2
+      },
+      "label": "steam",
+      "meta": {
+        "place": "cold",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-cold-drip-31",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -4,
+        "y": 3.825,
+        "z": 8.35
+      },
+      "label": "drip",
+      "meta": {
+        "place": "cold",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-cold-steam-32",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 4,
+        "y": 4.15,
+        "z": -2
+      },
+      "label": "steam",
+      "meta": {
+        "place": "cold",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-cold-drip-33",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 4,
+        "y": 3.825,
+        "z": 0.5875000000000004
+      },
+      "label": "drip",
+      "meta": {
+        "place": "cold",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-cold-drip-34",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 0,
+        "y": 3.8499999999999996,
+        "z": 8.6
+      },
+      "label": "drip",
+      "meta": {
+        "place": "cold",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-cold-steam-35",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 6.1000000000000005,
+        "y": 4.2,
+        "z": 8.6
+      },
+      "label": "steam",
+      "meta": {
+        "place": "cold",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-wells-drip-36",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2,
+        "y": 3.4,
+        "z": 4.5
+      },
+      "label": "drip",
+      "meta": {
+        "place": "wells",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-wells-steam-37",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2,
+        "y": 3.75,
+        "z": 9.4
+      },
+      "label": "steam",
+      "meta": {
+        "place": "wells",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-wells-drip-38",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 3.2,
+        "y": 3.4,
+        "z": -11.76
+      },
+      "label": "drip",
+      "meta": {
+        "place": "wells",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-choir-drip-39",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -4,
+        "y": 5.15,
+        "z": -4.357142857142857
+      },
+      "label": "drip",
+      "meta": {
+        "place": "choir",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-choir-steam-40",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -4,
+        "y": 5.550000000000001,
+        "z": 2.7857142857142865
+      },
+      "label": "steam",
+      "meta": {
+        "place": "choir",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-choir-drip-41",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 4,
+        "y": 5.15,
+        "z": -11.5
+      },
+      "label": "drip",
+      "meta": {
+        "place": "choir",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-choir-steam-42",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 4,
+        "y": 5.550000000000001,
+        "z": 6.357142857142858
+      },
+      "label": "steam",
+      "meta": {
+        "place": "choir",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-choir-drip-43",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 4,
+        "y": 5.15,
+        "z": 9.92857142857143
+      },
+      "label": "drip",
+      "meta": {
+        "place": "choir",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-choir-drip-44",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.6,
+        "y": 1.5749999999999997,
+        "z": -17
+      },
+      "label": "drip",
+      "meta": {
+        "place": "choir",
+        "effect": "drip"
+      }
+    },
+    {
+      "id": "vent-choir-steam-45",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.6,
+        "y": 1.9499999999999997,
+        "z": -17
+      },
+      "label": "steam",
+      "meta": {
+        "place": "choir",
+        "effect": "steam"
+      }
+    },
+    {
+      "id": "vent-vault-spark-46",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.86,
+        "y": 1.83,
+        "z": -6
+      },
+      "label": "spark",
+      "meta": {
+        "place": "vault",
+        "effect": "spark"
+      }
+    },
+    {
+      "id": "vent-vault-spark-47",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.86,
+        "y": 1.83,
+        "z": -12
+      },
+      "label": "spark",
+      "meta": {
+        "place": "vault",
+        "effect": "spark"
+      }
+    },
+    {
+      "id": "vent-vault-spark-48",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.86,
+        "y": 1.83,
+        "z": -24
+      },
+      "label": "spark",
+      "meta": {
+        "place": "vault",
+        "effect": "spark"
+      }
+    },
+    {
+      "id": "vent-vault-spark-49",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 2.86,
+        "y": 1.83,
+        "z": -30
+      },
+      "label": "spark",
+      "meta": {
+        "place": "vault",
+        "effect": "spark"
+      }
+    },
+    {
+      "id": "vent-vault-spark-50",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -2.86,
+        "y": 1.83,
+        "z": -42
+      },
+      "label": "spark",
+      "meta": {
+        "place": "vault",
+        "effect": "spark"
+      }
+    },
+    {
+      "id": "vent-vault-spark-51",
+      "kind": "deepward-vent",
+      "position": {
+        "x": -4.9,
+        "y": 2.31,
+        "z": -5.7
+      },
+      "label": "spark",
+      "meta": {
+        "place": "vault",
+        "effect": "spark"
+      }
+    },
+    {
+      "id": "vent-vault-spark-52",
+      "kind": "deepward-vent",
+      "position": {
+        "x": 4.9,
+        "y": 2.27,
+        "z": -5.9
+      },
+      "label": "spark",
+      "meta": {
+        "place": "vault",
+        "effect": "spark"
+      }
+    },
+    {
+      "id": "decal-home-1",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": 13
+      },
+      "rotationY": 0,
+      "label": "L06-01",
+      "meta": {
+        "place": "home",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L06-01",
+        "color": "#84e8d0",
+        "seed": "home0"
+      }
+    },
+    {
+      "id": "decal-home-2",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -6.95,
+        "y": 2.13,
+        "z": 11.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-02",
+      "meta": {
+        "place": "home",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-02",
+        "color": "#cca46c",
+        "seed": "homeb1"
+      }
+    },
+    {
+      "id": "decal-home-3",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -2.75,
+        "y": 2.13,
+        "z": 7.05
+      },
+      "rotationY": 0,
+      "label": "B-06",
+      "meta": {
+        "place": "home",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-06",
+        "color": "#cca46c",
+        "seed": "homeb5"
+      }
+    },
+    {
+      "id": "decal-home-4",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 6.95,
+        "y": 2.13,
+        "z": 8.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-10",
+      "meta": {
+        "place": "home",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-10",
+        "color": "#cca46c",
+        "seed": "homeb9"
+      }
+    },
+    {
+      "id": "decal-home-5",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -5.5,
+        "y": 2.13,
+        "z": 18.95
+      },
+      "rotationY": 3.141592653589793,
+      "label": "B-14",
+      "meta": {
+        "place": "home",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-14",
+        "color": "#cca46c",
+        "seed": "homeb13"
+      }
+    },
+    {
+      "id": "decal-home-6",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 5.5,
+        "y": 2.13,
+        "z": 18.95
+      },
+      "rotationY": 3.141592653589793,
+      "label": "B-18",
+      "meta": {
+        "place": "home",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-18",
+        "color": "#cca46c",
+        "seed": "homeb17"
+      }
+    },
+    {
+      "id": "decal-vault-7",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -3
+      },
+      "rotationY": 0,
+      "label": "L06-01",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L06-01",
+        "color": "#84e8d0",
+        "seed": "vault0"
+      }
+    },
+    {
+      "id": "decal-vault-8",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -23
+      },
+      "rotationY": 0,
+      "label": "L06-02",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 4.800000000000001,
+        "tilt": 0,
+        "text": "L06-02",
+        "color": "#84e8d0",
+        "seed": "vault1"
+      }
+    },
+    {
+      "id": "decal-vault-9",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -5,
+        "y": 0.03,
+        "z": -17
+      },
+      "rotationY": 0,
+      "label": "L06-03",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 4.800000000000001,
+        "tilt": 0,
+        "text": "L06-03",
+        "color": "#84e8d0",
+        "seed": "vault2"
+      }
+    },
+    {
+      "id": "decal-vault-10",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -28
+      },
+      "rotationY": 0,
+      "label": "L06-04",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L06-04",
+        "color": "#84e8d0",
+        "seed": "vault3"
+      }
+    },
+    {
+      "id": "decal-vault-11",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -39
+      },
+      "rotationY": 0,
+      "label": "L06-05",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L06-05",
+        "color": "#84e8d0",
+        "seed": "vault4"
+      }
+    },
+    {
+      "id": "decal-vault-12",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -7.949999999999999,
+        "y": 2.13,
+        "z": -40.166666666666664
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-02",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-02",
+        "color": "#cca46c",
+        "seed": "vaultb1"
+      }
+    },
+    {
+      "id": "decal-vault-13",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -4.5,
+        "y": 2.13,
+        "z": -43.95
+      },
+      "rotationY": 0,
+      "label": "B-06",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-06",
+        "color": "#cca46c",
+        "seed": "vaultb5"
+      }
+    },
+    {
+      "id": "decal-vault-14",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 1.5,
+        "y": 2.13,
+        "z": -43.95
+      },
+      "rotationY": 0,
+      "label": "B-10",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-10",
+        "color": "#cca46c",
+        "seed": "vaultb9"
+      }
+    },
+    {
+      "id": "decal-vault-15",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": -40.166666666666664
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-14",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-14",
+        "color": "#cca46c",
+        "seed": "vaultb13"
+      }
+    },
+    {
+      "id": "decal-vault-16",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 6.5,
+        "y": 2.13,
+        "z": -34.05
+      },
+      "rotationY": 3.141592653589793,
+      "label": "B-18",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-18",
+        "color": "#cca46c",
+        "seed": "vaultb17"
+      }
+    },
+    {
+      "id": "decal-vault-17",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -7.949999999999999,
+        "y": 2.13,
+        "z": -24.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-22",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-22",
+        "color": "#cca46c",
+        "seed": "vaultb21"
+      }
+    },
+    {
+      "id": "decal-vault-18",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -4.5,
+        "y": 2.13,
+        "z": -23.05
+      },
+      "rotationY": 3.141592653589793,
+      "label": "B-26",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-26",
+        "color": "#cca46c",
+        "seed": "vaultb25"
+      }
+    },
+    {
+      "id": "decal-vault-19",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": -29.166666666666668
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-30",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-30",
+        "color": "#cca46c",
+        "seed": "vaultb29"
+      }
+    },
+    {
+      "id": "decal-vault-20",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 6.5,
+        "y": 2.13,
+        "z": -23.05
+      },
+      "rotationY": 3.141592653589793,
+      "label": "B-34",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-34",
+        "color": "#cca46c",
+        "seed": "vaultb33"
+      }
+    },
+    {
+      "id": "decal-vault-21",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -7.949999999999999,
+        "y": 2.13,
+        "z": -13.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-38",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-38",
+        "color": "#cca46c",
+        "seed": "vaultb37"
+      }
+    },
+    {
+      "id": "decal-vault-22",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -4.5,
+        "y": 2.13,
+        "z": -12.05
+      },
+      "rotationY": 3.141592653589793,
+      "label": "B-42",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-42",
+        "color": "#cca46c",
+        "seed": "vaultb41"
+      }
+    },
+    {
+      "id": "decal-vault-23",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 2.95,
+        "y": 2.13,
+        "z": -13.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-46",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-46",
+        "color": "#cca46c",
+        "seed": "vaultb45"
+      }
+    },
+    {
+      "id": "decal-vault-24",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -7.949999999999999,
+        "y": 2.13,
+        "z": -5.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-50",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-50",
+        "color": "#cca46c",
+        "seed": "vaultb49"
+      }
+    },
+    {
+      "id": "decal-vault-25",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 4.5,
+        "y": 2.13,
+        "z": -8.95
+      },
+      "rotationY": 0,
+      "label": "B-54",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-54",
+        "color": "#cca46c",
+        "seed": "vaultb53"
+      }
+    },
+    {
+      "id": "decal-vault-26",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": -3.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-58",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-58",
+        "color": "#cca46c",
+        "seed": "vaultb57"
+      }
+    },
+    {
+      "id": "decal-vault-27",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -4.5,
+        "y": 2.13,
+        "z": 2.95
+      },
+      "rotationY": 3.141592653589793,
+      "label": "B-62",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-62",
+        "color": "#cca46c",
+        "seed": "vaultb61"
+      }
+    },
+    {
+      "id": "decal-vault-28",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": 1.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-66",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-66",
+        "color": "#cca46c",
+        "seed": "vaultb65"
+      }
+    },
+    {
+      "id": "decal-cold-29",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": 14.5
+      },
+      "rotationY": 0,
+      "label": "L07-01",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L07-01",
+        "color": "#eab379",
+        "seed": "cold0"
+      }
+    },
+    {
+      "id": "decal-cold-30",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -2
+      },
+      "rotationY": 0,
+      "label": "L07-02",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L07-02",
+        "color": "#eab379",
+        "seed": "cold1"
+      }
+    },
+    {
+      "id": "decal-cold-31",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -20
+      },
+      "rotationY": 0,
+      "label": "L07-03",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L07-03",
+        "color": "#eab379",
+        "seed": "cold2"
+      }
+    },
+    {
+      "id": "decal-cold-32",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -4.95,
+        "y": 2.13,
+        "z": -21.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-02",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-02",
+        "color": "#cca46c",
+        "seed": "coldb1"
+      }
+    },
+    {
+      "id": "decal-cold-33",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 2.13,
+        "z": -25.95
+      },
+      "rotationY": 0,
+      "label": "B-06",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-06",
+        "color": "#cca46c",
+        "seed": "coldb5"
+      }
+    },
+    {
+      "id": "decal-cold-34",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 4.95,
+        "y": 2.13,
+        "z": -18.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-10",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-10",
+        "color": "#cca46c",
+        "seed": "coldb9"
+      }
+    },
+    {
+      "id": "decal-cold-35",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -7.949999999999999,
+        "y": 2.13,
+        "z": -6.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-14",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-14",
+        "color": "#cca46c",
+        "seed": "coldb13"
+      }
+    },
+    {
+      "id": "decal-cold-36",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -7.949999999999999,
+        "y": 2.13,
+        "z": 5.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-18",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-18",
+        "color": "#cca46c",
+        "seed": "coldb17"
+      }
+    },
+    {
+      "id": "decal-cold-37",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 6.5,
+        "y": 2.13,
+        "z": -13.95
+      },
+      "rotationY": 0,
+      "label": "B-22",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-22",
+        "color": "#cca46c",
+        "seed": "coldb21"
+      }
+    },
+    {
+      "id": "decal-cold-38",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": -3.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-26",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-26",
+        "color": "#cca46c",
+        "seed": "coldb25"
+      }
+    },
+    {
+      "id": "decal-cold-39",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": 8.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-30",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-30",
+        "color": "#cca46c",
+        "seed": "coldb29"
+      }
+    },
+    {
+      "id": "decal-cold-40",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -3.95,
+        "y": 2.13,
+        "z": 17.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-34",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-34",
+        "color": "#cca46c",
+        "seed": "coldb33"
+      }
+    },
+    {
+      "id": "decal-cold-41",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -2.5,
+        "y": 2.13,
+        "z": 18.95
+      },
+      "rotationY": 3.141592653589793,
+      "label": "B-38",
+      "meta": {
+        "place": "cold",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-38",
+        "color": "#cca46c",
+        "seed": "coldb37"
+      }
+    },
+    {
+      "id": "decal-wells-42",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -5,
+        "y": 0.03,
+        "z": 15
+      },
+      "rotationY": 0,
+      "label": "L08-01",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L08-01",
+        "color": "#eab379",
+        "seed": "wells0"
+      }
+    },
+    {
+      "id": "decal-wells-43",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -2,
+        "y": 0.03,
+        "z": 4.5
+      },
+      "rotationY": 0,
+      "label": "L08-02",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.9200000000000004,
+        "tilt": 0,
+        "text": "L08-02",
+        "color": "#eab379",
+        "seed": "wells1"
+      }
+    },
+    {
+      "id": "decal-wells-44",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -0.5,
+        "y": 0.03,
+        "z": -3.2
+      },
+      "rotationY": 0,
+      "label": "L08-03",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.9200000000000004,
+        "tilt": 0,
+        "text": "L08-03",
+        "color": "#eab379",
+        "seed": "wells2"
+      }
+    },
+    {
+      "id": "decal-wells-45",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 6.8,
+        "y": 0.03,
+        "z": 3
+      },
+      "rotationY": 0,
+      "label": "L08-04",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.9200000000000004,
+        "tilt": 0,
+        "text": "L08-04",
+        "color": "#eab379",
+        "seed": "wells3"
+      }
+    },
+    {
+      "id": "decal-wells-46",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 6,
+        "y": 0.03,
+        "z": 11
+      },
+      "rotationY": 0,
+      "label": "L08-05",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 4.800000000000001,
+        "tilt": 0,
+        "text": "L08-05",
+        "color": "#eab379",
+        "seed": "wells4"
+      }
+    },
+    {
+      "id": "decal-wells-47",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 3.2,
+        "y": 0.03,
+        "z": -13.2
+      },
+      "rotationY": 0,
+      "label": "L08-06",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.9200000000000004,
+        "tilt": 0,
+        "text": "L08-06",
+        "color": "#eab379",
+        "seed": "wells5"
+      }
+    },
+    {
+      "id": "decal-wells-48",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -29
+      },
+      "rotationY": 0,
+      "label": "L08-07",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L08-07",
+        "color": "#eab379",
+        "seed": "wells6"
+      }
+    },
+    {
+      "id": "decal-wells-49",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -6.8,
+        "y": 0.03,
+        "z": -17
+      },
+      "rotationY": 0,
+      "label": "L08-08",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.9200000000000004,
+        "tilt": 0,
+        "text": "L08-08",
+        "color": "#eab379",
+        "seed": "wells7"
+      }
+    },
+    {
+      "id": "decal-wells-50",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -7.949999999999999,
+        "y": 2.13,
+        "z": -31.75
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-02",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-02",
+        "color": "#cca46c",
+        "seed": "wellsb1"
+      }
+    },
+    {
+      "id": "decal-wells-51",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": -34.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-06",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-06",
+        "color": "#cca46c",
+        "seed": "wellsb5"
+      }
+    },
+    {
+      "id": "decal-wells-52",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": -23.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-10",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-10",
+        "color": "#cca46c",
+        "seed": "wellsb9"
+      }
+    },
+    {
+      "id": "decal-wells-53",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -7.949999999999999,
+        "y": 2.13,
+        "z": -13.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-14",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-14",
+        "color": "#cca46c",
+        "seed": "wellsb13"
+      }
+    },
+    {
+      "id": "decal-wells-54",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -5.6499999999999995,
+        "y": 2.13,
+        "z": -13.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-18",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-18",
+        "color": "#cca46c",
+        "seed": "wellsb17"
+      }
+    },
+    {
+      "id": "decal-wells-55",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 2.05,
+        "y": 2.13,
+        "z": -13.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-22",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-22",
+        "color": "#cca46c",
+        "seed": "wellsb21"
+      }
+    },
+    {
+      "id": "decal-wells-56",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 4.3500000000000005,
+        "y": 2.13,
+        "z": -13.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-26",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-26",
+        "color": "#cca46c",
+        "seed": "wellsb25"
+      }
+    },
+    {
+      "id": "decal-wells-57",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 4.3500000000000005,
+        "y": 2.13,
+        "z": -10.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-30",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-30",
+        "color": "#cca46c",
+        "seed": "wellsb29"
+      }
+    },
+    {
+      "id": "decal-wells-58",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -3.1500000000000004,
+        "y": 2.13,
+        "z": 1.8333333333333335
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-34",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-34",
+        "color": "#cca46c",
+        "seed": "wellsb33"
+      }
+    },
+    {
+      "id": "decal-wells-59",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -0.8499999999999999,
+        "y": 2.13,
+        "z": 1.8333333333333335
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-38",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-38",
+        "color": "#cca46c",
+        "seed": "wellsb37"
+      }
+    },
+    {
+      "id": "decal-wells-60",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 5.6499999999999995,
+        "y": 2.13,
+        "z": 1.8333333333333335
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-42",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-42",
+        "color": "#cca46c",
+        "seed": "wellsb41"
+      }
+    },
+    {
+      "id": "decal-wells-61",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": 1.8333333333333335
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-46",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-46",
+        "color": "#cca46c",
+        "seed": "wellsb45"
+      }
+    },
+    {
+      "id": "decal-wells-62",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -0.8499999999999999,
+        "y": 2.13,
+        "z": 9.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-50",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-50",
+        "color": "#cca46c",
+        "seed": "wellsb49"
+      }
+    },
+    {
+      "id": "decal-wells-63",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -1.05,
+        "y": 2.13,
+        "z": 12.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-54",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-54",
+        "color": "#cca46c",
+        "seed": "wellsb53"
+      }
+    },
+    {
+      "id": "decal-wells-64",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -8.95,
+        "y": 2.13,
+        "z": 17.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-58",
+      "meta": {
+        "place": "wells",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-58",
+        "color": "#cca46c",
+        "seed": "wellsb57"
+      }
+    },
+    {
+      "id": "decal-choir-65",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": 1
+      },
+      "rotationY": 0,
+      "label": "L09-01",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L09-01",
+        "color": "#eab379",
+        "seed": "choir0"
+      }
+    },
+    {
+      "id": "decal-choir-66",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -19
+      },
+      "rotationY": 0,
+      "label": "L09-02",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 6,
+        "tilt": 0,
+        "text": "L09-02",
+        "color": "#eab379",
+        "seed": "choir1"
+      }
+    },
+    {
+      "id": "decal-choir-67",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -3.95,
+        "y": 2.13,
+        "z": -20.166666666666668
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-02",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-02",
+        "color": "#cca46c",
+        "seed": "choirb1"
+      }
+    },
+    {
+      "id": "decal-choir-68",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 2.13,
+        "z": -23.95
+      },
+      "rotationY": 0,
+      "label": "B-06",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-06",
+        "color": "#cca46c",
+        "seed": "choirb5"
+      }
+    },
+    {
+      "id": "decal-choir-69",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 3.95,
+        "y": 2.13,
+        "z": -17.833333333333332
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-10",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-10",
+        "color": "#cca46c",
+        "seed": "choirb9"
+      }
+    },
+    {
+      "id": "decal-choir-70",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -7.949999999999999,
+        "y": 2.13,
+        "z": -6.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-14",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-14",
+        "color": "#cca46c",
+        "seed": "choirb13"
+      }
+    },
+    {
+      "id": "decal-choir-71",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -7.949999999999999,
+        "y": 2.13,
+        "z": 5.5
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "B-18",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-18",
+        "color": "#cca46c",
+        "seed": "choirb17"
+      }
+    },
+    {
+      "id": "decal-choir-72",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -6.5,
+        "y": 2.13,
+        "z": -13.95
+      },
+      "rotationY": 0,
+      "label": "B-22",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-22",
+        "color": "#cca46c",
+        "seed": "choirb21"
+      }
+    },
+    {
+      "id": "decal-choir-73",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -2.5,
+        "y": 2.13,
+        "z": 15.95
+      },
+      "rotationY": 3.141592653589793,
+      "label": "B-26",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-26",
+        "color": "#cca46c",
+        "seed": "choirb25"
+      }
+    },
+    {
+      "id": "decal-choir-74",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 6.5,
+        "y": 2.13,
+        "z": -13.95
+      },
+      "rotationY": 0,
+      "label": "B-30",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-30",
+        "color": "#cca46c",
+        "seed": "choirb29"
+      }
+    },
+    {
+      "id": "decal-choir-75",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": -3.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-34",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-34",
+        "color": "#cca46c",
+        "seed": "choirb33"
+      }
+    },
+    {
+      "id": "decal-choir-76",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 7.949999999999999,
+        "y": 2.13,
+        "z": 8.5
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "B-38",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-38",
+        "color": "#cca46c",
+        "seed": "choirb37"
+      }
+    },
+    {
+      "id": "decal-choir-77",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 6.5,
+        "y": 2.13,
+        "z": 15.95
+      },
+      "rotationY": 3.141592653589793,
+      "label": "B-42",
+      "meta": {
+        "place": "choir",
+        "opacity": 0.85,
+        "style": "stencil",
+        "size": 1.7,
+        "tilt": 90,
+        "text": "B-42",
+        "color": "#cca46c",
+        "seed": "choirb41"
+      }
+    },
+    {
+      "id": "decal-vault-78",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -39
+      },
+      "rotationY": 3.141592653589793,
+      "label": "chevrons",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "chevrons",
+        "size": 3.4,
+        "tilt": 0,
+        "color": "#eab379",
+        "seed": "chev-39"
+      }
+    },
+    {
+      "id": "decal-vault-79",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -32
+      },
+      "rotationY": 3.141592653589793,
+      "label": "chevrons",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "chevrons",
+        "size": 3.4,
+        "tilt": 0,
+        "color": "#eab379",
+        "seed": "chev-32"
+      }
+    },
+    {
+      "id": "decal-vault-80",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -25
+      },
+      "rotationY": 3.141592653589793,
+      "label": "chevrons",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "chevrons",
+        "size": 3.4,
+        "tilt": 0,
+        "color": "#eab379",
+        "seed": "chev-25"
+      }
+    },
+    {
+      "id": "decal-vault-81",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -18
+      },
+      "rotationY": 3.141592653589793,
+      "label": "chevrons",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "chevrons",
+        "size": 3.4,
+        "tilt": 0,
+        "color": "#eab379",
+        "seed": "chev-18"
+      }
+    },
+    {
+      "id": "decal-vault-82",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 0,
+        "y": 0.03,
+        "z": -11
+      },
+      "rotationY": 3.141592653589793,
+      "label": "chevrons",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "chevrons",
+        "size": 3.4,
+        "tilt": 0,
+        "color": "#eab379",
+        "seed": "chev-11"
+      }
+    },
+    {
+      "id": "decal-vault-83",
+      "kind": "deepward-decal",
+      "position": {
+        "x": -2.6,
+        "y": 0.03,
+        "z": -3
+      },
+      "rotationY": 0,
+      "label": "chevrons",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "chevrons",
+        "size": 3,
+        "tilt": 0,
+        "color": "#eab379",
+        "seed": "rc-1"
+      }
+    },
+    {
+      "id": "decal-vault-84",
+      "kind": "deepward-decal",
+      "position": {
+        "x": 2.6,
+        "y": 0.03,
+        "z": -3
+      },
+      "rotationY": 0,
+      "label": "chevrons",
+      "meta": {
+        "place": "vault",
+        "opacity": 0.85,
+        "style": "chevrons",
+        "size": 3,
+        "tilt": 0,
+        "color": "#eab379",
+        "seed": "rc1"
+      }
     }
   ],
   "volumes": [

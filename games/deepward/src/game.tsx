@@ -18,7 +18,7 @@ import { PALETTE as C, signTexture, IndustrialBox, SALVAGE_PLACARD, type Triple 
 import { surfaceMaterial, type IndustrialSurface } from "./game/industrialMaterials";
 import { FitterModel } from "./game/fitterArt";
 import { ServiceWeapon, serviceWeaponPose } from "./game/weaponArt";
-import { activeRoomLamps, deriveRoomPresentation, isBayWall, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
+import { activeRoomLamps, deriveRoomPresentation, isBayWall, lampFlicker, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
 import { captureProbe, initialize, keybinds, seatPlayer, setAim, tickControls, viewStore } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
@@ -26,6 +26,8 @@ import { registerSceneCapture } from "@jgengine/core/scene/sceneCaptureRequest.d
 import { ITEMS } from "./game/state";
 import { StationStructure, StationBatch } from "./game/stationArt";
 import { ModularArchitecture } from "./game/modularArt";
+import { StencilDecals } from "./game/stencilDecals";
+import { DamagedMachinery } from "./game/damagedMachinery";
 import { InteriorArt } from "./game/interiorArt";
 import { ShiftLocker } from "./game/fixtureArt";
 import { GameUI } from "./game/ui/GameUI";
@@ -114,11 +116,12 @@ function RoomLights() {
     light.target.position.set(0, -4, 0);
     return light;
   }), [place]);
-  useFrame(({ camera }) => {
+  const flicker = place === "home" ? 0 : STRATA[place].lamp.flicker;
+  useFrame(({ camera, clock }) => {
     const closest = activeRoomLamps(lamps, [camera.position.x, camera.position.y, camera.position.z]);
     lights.forEach((light, i) => {
       const candidate = closest[i];
-      light.intensity = candidate ? ROOM_LIGHT_INTENSITY[place] * ROOM_SPOT_GAIN : 0;
+      light.intensity = candidate ? ROOM_LIGHT_INTENSITY[place] * ROOM_SPOT_GAIN * lampFlicker(candidate.id, clock.elapsedTime, flicker) : 0;
       if (candidate) light.position.set(...candidate.light);
     });
   });
@@ -190,7 +193,7 @@ function WorldOverlay() {
     <SceneCaptureBinding bind={registerSceneCapture} />
     <StratumAtmosphere place={place} /><Headlamp on={dive?.lamp === true} />
     {place === "home" ? <><Architecture place={place} /><StationStructure place={place} /></> : <><InteriorArt stratum={place} /><Architecture place={place} shell={false} /></>}
-    <RoomLights /><StationModels place={place} assets={stationAssets} /><ModularArchitecture place={place} />
+    <RoomLights /><StationModels place={place} assets={stationAssets} /><ModularArchitecture place={place} /><DamagedMachinery place={place} /><StencilDecals place={place} />
     {dive === null && <MarrowBays world={base} />}
     {dive !== null && <StratumDressing dive={dive} deep={view.deep} world={base} />}
     {editorLayers.markers.filter(m => m.kind === "deepward-station-sign" && m.meta?.["place"] === place).map(m => <Sign key={m.id} at={[m.position.x,m.position.y,m.position.z]} title={m.label ?? m.id} sub={String(m.meta?.["subtitle"] ?? "")} width={Number(m.meta?.["width"] ?? 2.6)} turn={m.rotationY ?? 0} color={C.amber} />)}
