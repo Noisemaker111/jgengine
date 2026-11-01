@@ -9,8 +9,8 @@ const DEG = Math.PI / 180;
  * scaled with speed squared and the trim eases to level at rest.
  */
 export interface PlaningBottom {
-  /** `false` turns the effect off while keeping its numbers (default `true`). */
-  enabled?: boolean;
+  /** How much of the effect acts, `0` (off, the simple model's term) to `1` (as the reference measures it; default). */
+  strength?: number;
   /** Deadrise, rad. */
   deadrise: number;
   /** Centre of gravity forward of the transom, m. */

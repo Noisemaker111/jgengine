@@ -125,10 +125,10 @@ describe("createBoatDynamics effects", () => {
     expect(step.thrust).toBeCloseTo(step.resistance, -1);
   });
 
-  test("an effect switched off with `enabled: false` is the simple model's term again", () => {
+  test("an effect at strength 0 is the simple model's term again", () => {
     const base = boatFromReference("speedboat-6m");
     const effects = base.effects ?? {};
-    const offEverywhere: BoatTuning = { ...base, effects: Object.fromEntries(Object.entries(effects).map(([name, effect]) => [name, { ...effect, enabled: false }])) };
+    const offEverywhere: BoatTuning = { ...base, effects: Object.fromEntries(Object.entries(effects).map(([name, effect]) => [name, { ...effect, strength: 0 }])) };
     const simple: BoatTuning = { ...base, effects: {} };
     const a = run(createBoatDynamics(offEverywhere), 5, axis({ throttle: 1, steer: 0.3 }));
     const b = run(createBoatDynamics(simple), 5, axis({ throttle: 1, steer: 0.3 }));

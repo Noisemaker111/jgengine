@@ -1,4 +1,4 @@
-import type { BoatTuning } from "./boatDynamics";
+import type { BoatEffects, BoatTuning } from "./boatDynamics";
 import { frictionLineCoefficient } from "./boatResistance";
 
 const DEG = Math.PI / 180;
@@ -157,20 +157,38 @@ function kvlcc2(): BoatTuning {
   };
 }
 
+/** Changes to a class's defaults: any top-level number, and per effect the parameters or `strength` to change. */
+export type BoatOverrides = Partial<Omit<BoatTuning, "effects">> & { effects?: { [K in keyof BoatEffects]?: Partial<NonNullable<BoatEffects[K]>> } };
+
+function merged<T extends object>(base: T | undefined, change: Partial<T> | undefined): T | undefined {
+  return base === undefined || change === undefined ? base : { ...base, ...change };
+}
+
 /**
- * The full tuning of a published hull with every effect it has data for switched on (added mass, resistance or planing,
- * propeller and engine, MMG manoeuvring where published, seakeeping on a Wigley hull of its proportions), so a game
- * gets a real boat in one line and tunes from there: `createBoatDynamics(boatFromReference("speedboat-6m"))`.
- * `bun run perf boat` checks each against its reference sim.
- * @capability boat-dynamics a published hull (6 m speedboat, KVLCC2 tanker model, Holtrop–Mennen ship) with every effect on
+ * The full tuning of a published hull class with every effect it has data for at full strength (added mass, resistance
+ * or planing, propeller and engine, MMG manoeuvring where published, seakeeping on a Wigley hull of its proportions),
+ * so a game gets a real boat in one line and tunes from there: `createBoatDynamics(boatFromReference("speedboat-6m"))`.
+ * `overrides` change the class's numbers and each effect's parameters or `strength` (`0` off … `1` as measured), so a
+ * fleet is data: one record per boat from a class plus a few overrides. An override retunes an effect the class has;
+ * add a new effect on the result. `bun run perf boat` checks each class against its reference sim.
+ * @capability boat-dynamics a published hull class (6 m speedboat, KVLCC2 tanker model, Holtrop–Mennen ship) with every effect at full strength, plus per-boat overrides
  */
-export function boatFromReference(id: BoatReferenceId): BoatTuning {
-  switch (id) {
-    case "holtrop-mennen-1982":
-      return holtropExample();
-    case "speedboat-6m":
-      return speedboat();
-    case "kvlcc2-l7":
-      return kvlcc2();
-  }
+export function boatFromReference(id: BoatReferenceId, overrides: BoatOverrides = {}): BoatTuning {
+  const base = id === "holtrop-mennen-1982" ? holtropExample() : id === "speedboat-6m" ? speedboat() : kvlcc2();
+  const { effects: changes, ...numbers } = overrides;
+  const effects = base.effects ?? {};
+  const out: BoatEffects = {};
+  const addedMass = merged(effects.addedMass, changes?.addedMass);
+  const resistance = merged(effects.resistance, changes?.resistance);
+  const planing = merged(effects.planing, changes?.planing);
+  const propeller = merged(effects.propeller, changes?.propeller);
+  const manoeuvring = merged(effects.manoeuvring, changes?.manoeuvring);
+  const seakeeping = merged(effects.seakeeping, changes?.seakeeping);
+  if (addedMass !== undefined) out.addedMass = addedMass;
+  if (resistance !== undefined) out.resistance = resistance;
+  if (planing !== undefined) out.planing = planing;
+  if (propeller !== undefined) out.propeller = propeller;
+  if (manoeuvring !== undefined) out.manoeuvring = manoeuvring;
+  if (seakeeping !== undefined) out.seakeeping = seakeeping;
+  return { ...base, ...numbers, effects: out };
 }

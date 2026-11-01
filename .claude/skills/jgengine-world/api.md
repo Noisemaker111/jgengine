@@ -3153,7 +3153,7 @@
 
 - `BoatAddedMass` (interface): interface BoatAddedMass — Hydrodynamic inertia, the `addedMass` effect: the water the hull carries along when it surges, sways and yaws, plus the hull's own yaw inertia and centre of gravity for the coupled sway–yaw equations.
 - `BoatDynamics` (interface): interface BoatDynamics — A force-based powered hull on the same tick/snapshot/retune contract as `VehicleDynamics`.
-- `BoatEffects` (interface): interface BoatEffects — The physical effects a boat can switch on. Each is a separate term with its own parameters and `enabled` toggle, so a game takes only what it wants (a real propeller on an arcade hull, seakeeping on a raft); `boatFromReference` turns them all on for a published hull.
+- `BoatEffects` (interface): interface BoatEffects — The physical effects a boat can use. Each is a separate term with its own parameters and its own `strength`, from `0` (off: the simple model's term) to `1` (as the reference measures it), blending the two in between; so a game takes only what it wants and as much of it as it wants (a real propeller on an arcade hull, a fifth of the drag, seakeeping on a raft). `boatFromReference` gives a published hull's defaults with every effect at full strength.
 - `BoatOptions` (interface): interface BoatOptions — World hooks for a boat instance.
 - `BoatState` (interface): interface BoatState — Serializable boat state.
 - `BoatSteering` (type): type BoatSteering = | { kind: "rudder"; /** Rudder area, m². */ area: number; /** Largest rudder angle, rad (default `0.6`). */ maxAngle?: number; /** Share of prop thrust that washes over the rudder as flow, `0..1` (default `0.5`) — steering at low speed. */ propWash?: number; } | { kind: "outboard… — How the boat turns: a rudder needs water flowing past it; an outboard swings its own thrust.
@@ -3192,8 +3192,9 @@
 ## @jgengine/core/physics/boatReferences
 
 - `BOAT_REFERENCE_IDS` (const): const BOAT_REFERENCE_IDS: readonly BoatReferenceId[] — Every id {@link boatFromReference} accepts.
+- `BoatOverrides` (type): type BoatOverrides = Partial<Omit<BoatTuning, "effects">> & { effects?: { [K in keyof BoatEffects]?: Partial<NonNullable<BoatEffects[K]>> } } — Changes to a class's defaults: any top-level number, and per effect the parameters or `strength` to change.
 - `BoatReferenceId` (type): type BoatReferenceId = "holtrop-mennen-1982" | "speedboat-6m" | "kvlcc2-l7" — The published hulls {@link boatFromReference} knows.
-- `boatFromReference` (function): function boatFromReference(id: BoatReferenceId): BoatTuning — The full tuning of a published hull with every effect it has data for switched on (added mass, resistance or planing, propeller and engine, MMG manoeuvring where published, seakeeping on a Wigley hull of its proportions), so a game gets a real boat in one line and tunes from there: `createBoatDynamics(boatFromReference("speedboat-6m"))`. `bun run perf boat` checks each against its reference sim.
+- `boatFromReference` (function): function boatFromReference(id: BoatReferenceId, overrides: BoatOverrides = {}): BoatTuning — The full tuning of a published hull class with every effect it has data for at full strength (added mass, resistance or planing, propeller and engine, MMG manoeuvring where published, seakeeping on a Wigley hull of its proportions), so a game gets a real boat in one line and tunes from there: `createBoatDynamics(boatFromReference("speedboat-6m"))`. `overrides` change the class's numbers and each effect's parameters or `strength` (`0` off … `1` as measured), so a fleet is data: one record per boat from a class plus a few overrides. An override retunes an effect the class has; add a new effect on the result. `bun run perf boat` checks each class against its reference sim.
 
 ## @jgengine/core/physics/boatResistance
 

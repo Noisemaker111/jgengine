@@ -61,8 +61,8 @@ export interface BoatEngine {
  * law.
  */
 export interface BoatPropeller {
-  /** `false` turns the effect off while keeping its numbers (default `true`). */
-  enabled?: boolean;
+  /** How much of the effect acts, `0` (off, the simple model's term) to `1` (as the reference measures it; default). */
+  strength?: number;
   /** Diameter, m. */
   diameter: number;
   openWater: PropellerOpenWater;

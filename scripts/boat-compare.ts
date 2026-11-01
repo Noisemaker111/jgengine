@@ -63,7 +63,7 @@ for (const file of sourceFiles(games)) {
 if (boats.length === 0) console.log(`no game boats built on createBoatDynamics found${games.length > 0 ? ` in ${games.join(", ")}` : ""}; showing boatFromReference's hulls\n`);
 const tables = [
   ...boats.map((boat) => compareBoat(referenceSubjectFor(boat.name, boat.tuning), boat.name)),
-  ...referenceBoatSubjects().map((subject) => compareBoat(subject, `${subject.name} (boatFromReference, every effect on)`)),
+  ...referenceBoatSubjects().map((subject) => compareBoat(subject, `${subject.name} (boatFromReference, every effect at strength 1)`)),
 ];
 console.log(formatFlightComparison(tables));
 // A game's own boat is a design choice and only reported; boatFromReference's hulls must hold their tolerances.

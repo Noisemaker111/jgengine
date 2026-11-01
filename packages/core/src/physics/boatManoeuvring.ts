@@ -53,8 +53,8 @@ export interface ManoeuvringRudder {
  * `steering` acts as usual (an outboard swings its thrust at the propeller position).
  */
 export interface HullManoeuvring {
-  /** `false` turns the effect off while keeping its numbers (default `true`). */
-  enabled?: boolean;
+  /** How much of the effect acts, `0` (off, the simple model's term) to `1` (as the reference measures it; default). */
+  strength?: number;
   /** Mean draught `d`, m, for the non-dimensional scale. */
   draft: number;
   derivatives: ManoeuvringDerivatives;

@@ -63,7 +63,7 @@ export type PropulsionLaw = (speed: number, throttle: number) => number;
  */
 function gamePropulsion(tuning: BoatTuning): PropulsionLaw {
   const propeller = tuning.effects?.propeller;
-  if (propeller !== undefined && propeller.enabled !== false) {
+  if (propeller !== undefined && (propeller.strength ?? 1) >= 1) {
     const curve = prepareOpenWater(propeller.openWater, propeller.diameter);
     const density = tuning.water?.density ?? RHO;
     return (u, throttle) => (1 - (propeller.thrustDeduction ?? 0)) * propellerPoint(propeller, curve, Math.max(0, u * (1 - (propeller.wake ?? 0))), throttle, 0, density).thrust;
