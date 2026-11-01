@@ -1,3 +1,4 @@
+import { clamp } from "../math/scalar";
 import type { WeaponHandlingFrame } from "./weaponHandling";
 
 /** Camera-space position `[x, y, z]` in metres: `+x` right, `+y` up, `-z` forward. */
@@ -112,10 +113,6 @@ function lerp(hip: number, aimed: number, ads: number): number {
   return hip * (1 - ads) + aimed * ads;
 }
 
-function clamp(value: number, limit: number): number {
-  return Math.max(-limit, Math.min(limit, value));
-}
-
 /**
  * Creates a {@link WeaponPresentation}: per-weapon viewmodel offset, ADS pose and viewmodel FOV, sway
  * and inertia from look speed, bob from the movement probe, and a recoil kick, all driven by the same
@@ -149,8 +146,8 @@ export function createWeaponPresentation(initial: WeaponPresentationTuning = {})
       const swayMax = sway?.max ?? 0.08;
       const swayScale = lerp(1, sway?.adsScale ?? 0.3, ads);
       const per = sway?.perRadPerSec ?? 0.02;
-      const targetYaw = clamp(-input.lookYawRate * per, swayMax) * swayScale;
-      const targetPitch = clamp(-input.lookPitchRate * per, swayMax) * swayScale;
+      const targetYaw = clamp(-input.lookYawRate * per, -swayMax, swayMax) * swayScale;
+      const targetPitch = clamp(-input.lookPitchRate * per, -swayMax, swayMax) * swayScale;
       const follow = 1 - Math.exp(-(sway?.response ?? 12) * step);
       state.swayYaw += (targetYaw - state.swayYaw) * follow;
       state.swayPitch += (targetPitch - state.swayPitch) * follow;
