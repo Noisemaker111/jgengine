@@ -139,7 +139,7 @@ export const game = defineGame({
     environmentSource: hdriEnvironment("dusk", { intensity: 0.7 }),
     postProcessing: {
       toneMapping: "aces",
-      exposure: 1.0,
+      exposure: 0.68,
       aa: "smaa",
       bloom: { strength: 0.22, radius: 0.5, threshold: 0.92 },
       ao: { intensity: 1.2 },
