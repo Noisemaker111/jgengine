@@ -207,7 +207,10 @@ const TRIM_PEDAL = (10000 * HOVER_COLLECTIVE) / (2500 * 7.5);
 
 function spunUp(tuning: RigidAircraftTuning, position: readonly [number, number, number], velocity: readonly [number, number, number] = [0, 0, 0]): RigidAircraft {
   const aircraft = createRigidAircraft(tuning, { position, velocity });
-  aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 });
+  {
+    const held = aircraft.snapshot();
+    aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } });
+  }
   return aircraft;
 }
 
@@ -277,7 +280,7 @@ describe("createRigidAircraft rotor", () => {
     const aircraft = createRigidAircraft(helicopter, { position: [0, 1, 0] });
     fly(aircraft, 1.5, hover());
     const saved = aircraft.snapshot();
-    expect(saved.rotorSpeed).toBeGreaterThan(0.4);
+    expect(saved.powerplant.rotorSpeed).toBeGreaterThan(0.4);
     const a = fly(aircraft, 2, hover({ collective: 0.8, roll: 0.3 }));
     aircraft.restore(saved);
     const b = fly(aircraft, 2, hover({ collective: 0.8, roll: 0.3 }));
@@ -357,7 +360,10 @@ describe("createRigidAircraft motor", () => {
   test("gimbal turns the rocket, and it turns faster once lighter", () => {
     const pitchAccel = (fuel: number) => {
       const aircraft = createRigidAircraft(rocket, { position: [0, 1000, 0], orientation: upright, airDensity: vacuum });
-      aircraft.restore({ ...aircraft.snapshot(), propellantKg: fuel });
+      {
+        const held = aircraft.snapshot();
+        aircraft.restore({ ...held, powerplant: { ...held.powerplant, propellantKg: fuel } });
+      }
       fly(aircraft, 0.3, burn({ pitch: 1 }));
       const before = aircraft.tick(DT, burn({ pitch: 1 })).pitchRate;
       return (aircraft.tick(DT, burn({ pitch: 1 })).pitchRate - before) / DT;
@@ -379,7 +385,7 @@ describe("createRigidAircraft motor", () => {
     expect(staged.motor!.thrust).toBeCloseTo(1200, 5);
     expect(staged.velocity[1]).toBeGreaterThan(burnout.velocity[1]);
     aircraft.retune(upper);
-    expect(aircraft.snapshot().burnTime).toBeGreaterThan(0);
+    expect(aircraft.snapshot().powerplant.burnTime).toBeGreaterThan(0);
   });
 
   test("burn state is part of the snapshot and replays bit-for-bit", () => {

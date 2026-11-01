@@ -253,8 +253,8 @@ export interface RigidAircraftOptions {
   airDensity?: (altitude: number) => number;
 }
 
-/** Serializable integrator state: everything `restore` needs to resume bit-for-bit. */
-export interface RigidAircraftState {
+/** Rigid-body pose and motion: position, velocity, orientation quaternion and body-frame angular velocity. */
+export interface RigidAircraftBody {
   x: number;
   y: number;
   z: number;
@@ -269,9 +269,17 @@ export interface RigidAircraftState {
   wx: number;
   wy: number;
   wz: number;
+}
+
+/** Control-surface deflections after rate limiting, rad. */
+export interface RigidAircraftSurfaces {
   pitchDeflection: number;
   rollDeflection: number;
   yawDeflection: number;
+}
+
+/** Engine, rotor and motor state. */
+export interface RigidAircraftPowerplant {
   /** Engine output as a share of `maxThrust`, `0..1`. */
   spool: number;
   /** Rotor speed as a share of its rated speed, `0..1`. */
@@ -280,6 +288,10 @@ export interface RigidAircraftState {
   burnTime: number;
   /** Propellant left, kg. */
   propellantKg: number;
+}
+
+/** Stability-assist memory: attitude hold, learned trim and hover drift. */
+export interface RigidAircraftAssist {
   /** SAS hold per axis: body-angle change since that axis went hands-off, rad. */
   holdPitch: number;
   holdRoll: number;
@@ -291,6 +303,14 @@ export interface RigidAircraftState {
   /** Hover hold: world drift since the cyclic went hands-off, m. */
   driftX: number;
   driftZ: number;
+}
+
+/** Serializable integrator state: everything `restore` needs to resume bit-for-bit. */
+export interface RigidAircraftState {
+  body: RigidAircraftBody;
+  surfaces: RigidAircraftSurfaces;
+  powerplant: RigidAircraftPowerplant;
+  assist: RigidAircraftAssist;
   time: number;
 }
 
@@ -485,7 +505,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
   const gravityField = options.gravityField ?? uniformGravity([0, -9.81, 0]);
   const densityAt = options.airDensity ?? (() => SEA_LEVEL_DENSITY);
   const state: RigidAircraftState = fresh(options.position ?? [0, 0, 0], options.orientation ?? aircraftHeadingQuaternion(options.heading ?? 0));
-  if (options.velocity !== undefined) [state.vx, state.vy, state.vz] = options.velocity;
+  if (options.velocity !== undefined) [state.body.vx, state.body.vy, state.body.vz] = options.velocity;
   const telemetry = { airspeed: 0, alpha: 0, sideslip: 0, gLoad: 1, stallFraction: 0, stalled: false, thrust: 0, grounded: false };
   const rotorTelemetry = { thrust: 0, torque: 0, groundEffect: 1, translationalLift: 1 };
   const motorTelemetry = { thrust: 0 };
@@ -502,42 +522,26 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     const [qx, qy, qz, qw] = orientation;
     const n = Math.hypot(qx, qy, qz, qw) || 1;
     return {
-      x: position[0],
-      y: position[1],
-      z: position[2],
-      vx: 0,
-      vy: 0,
-      vz: 0,
-      qx: qx / n,
-      qy: qy / n,
-      qz: qz / n,
-      qw: qw / n,
-      wx: 0,
-      wy: 0,
-      wz: 0,
-      pitchDeflection: 0,
-      rollDeflection: 0,
-      yawDeflection: 0,
-      spool: 0,
-      rotorSpeed: 0,
-      burnTime: 0,
-      propellantKg: tuning.motor?.propellantKg ?? 0,
-      holdPitch: 0,
-      holdRoll: 0,
-      holdYaw: 0,
-      trimPitch: 0,
-      trimRoll: 0,
-      trimYaw: 0,
-      driftX: 0,
-      driftZ: 0,
+      body: { x: position[0], y: position[1], z: position[2], vx: 0, vy: 0, vz: 0, qx: qx / n, qy: qy / n, qz: qz / n, qw: qw / n, wx: 0, wy: 0, wz: 0 },
+      surfaces: { pitchDeflection: 0, rollDeflection: 0, yawDeflection: 0 },
+      powerplant: { spool: 0, rotorSpeed: 0, burnTime: 0, propellantKg: tuning.motor?.propellantKg ?? 0 },
+      assist: { holdPitch: 0, holdRoll: 0, holdYaw: 0, trimPitch: 0, trimRoll: 0, trimYaw: 0, driftX: 0, driftZ: 0 },
       time: 0,
     };
+  }
+
+  function assignState(next: RigidAircraftState): void {
+    Object.assign(state.body, next.body);
+    Object.assign(state.surfaces, next.surfaces);
+    Object.assign(state.powerplant, next.powerplant);
+    Object.assign(state.assist, next.assist);
+    state.time = next.time;
   }
 
   // Scratch for rotating vectors without allocating in the substep.
   const out = [0, 0, 0];
   function toWorld(x: number, y: number, z: number): void {
-    const { qx, qy, qz, qw } = state;
+    const { qx, qy, qz, qw } = state.body;
     const tx = 2 * (qy * z - qz * y);
     const ty = 2 * (qz * x - qx * z);
     const tz = 2 * (qx * y - qy * x);
@@ -546,7 +550,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     out[2] = z + qw * tz + (qx * ty - qy * tx);
   }
   function toBody(x: number, y: number, z: number): void {
-    const { qx, qy, qz, qw } = state;
+    const { qx, qy, qz, qw } = state.body;
     const tx = 2 * (-qy * z + qz * y);
     const ty = 2 * (-qz * x + qx * z);
     const tz = 2 * (-qx * y + qy * x);
@@ -562,20 +566,20 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
 
   function substep(h: number, input: RigidAircraftInput, modifiers: RigidAircraftModifiers | undefined): void {
     const t = tuning;
-    const m = t.massKg + (t.motor === undefined ? 0 : state.propellantKg);
+    const m = t.massKg + (t.motor === undefined ? 0 : state.powerplant.propellantKg);
     const controls = t.controls;
     const pitchCh = controls?.pitch;
     const rollCh = controls?.roll;
     const yawCh = controls?.yaw;
     const engine = t.engine;
     const throttle = Math.max(0, Math.min(1, input.throttle));
-    state.spool += (throttle - state.spool) * (1 - Math.exp(-(engine?.spoolRate ?? 1.5) * h));
+    state.powerplant.spool += (throttle - state.powerplant.spool) * (1 - Math.exp(-(engine?.spoolRate ?? 1.5) * h));
 
-    let wvx = state.vx;
-    let wvy = state.vy;
-    let wvz = state.vz;
+    let wvx = state.body.vx;
+    let wvy = state.body.vy;
+    let wvz = state.body.vz;
     if (windAt !== undefined) {
-      const wind = windAt([state.x, state.y, state.z]);
+      const wind = windAt([state.body.x, state.body.y, state.body.z]);
       wvx -= wind[0];
       wvy -= wind[1];
       wvz -= wind[2];
@@ -588,11 +592,11 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     lastCommand.pitch = command.pitch;
     lastCommand.roll = command.roll;
     lastCommand.yaw = command.yaw;
-    state.pitchDeflection = slew(state.pitchDeflection, command.pitch * (pitchCh?.maxDeflection ?? 0.35), pitchCh?.rate ?? 2, h);
-    state.rollDeflection = slew(state.rollDeflection, command.roll * (rollCh?.maxDeflection ?? 0.35), rollCh?.rate ?? 2, h);
-    state.yawDeflection = slew(state.yawDeflection, command.yaw * (yawCh?.maxDeflection ?? 0.35), yawCh?.rate ?? 2, h);
-    const rho = densityAt(state.y);
-    const { wx, wy, wz } = state;
+    state.surfaces.pitchDeflection = slew(state.surfaces.pitchDeflection, command.pitch * (pitchCh?.maxDeflection ?? 0.35), pitchCh?.rate ?? 2, h);
+    state.surfaces.rollDeflection = slew(state.surfaces.rollDeflection, command.roll * (rollCh?.maxDeflection ?? 0.35), rollCh?.rate ?? 2, h);
+    state.surfaces.yawDeflection = slew(state.surfaces.yawDeflection, command.yaw * (yawCh?.maxDeflection ?? 0.35), yawCh?.rate ?? 2, h);
+    const rho = densityAt(state.body.y);
+    const { wx, wy, wz } = state.body;
     const liftScale = modifiers?.liftScale ?? 1;
     const dragScale = modifiers?.dragScale ?? 1;
 
@@ -617,7 +621,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       const speed2 = un * un + uf * uf;
       if (speed2 < 1e-8) continue;
       const alpha = wrapAngle(
-        Math.atan2(-un, uf) + s.incidence + s.kPitch * state.pitchDeflection + s.kRoll * state.rollDeflection + s.kYaw * state.yawDeflection,
+        Math.atan2(-un, uf) + s.incidence + s.kPitch * state.surfaces.pitchDeflection + s.kRoll * state.surfaces.rollDeflection + s.kYaw * state.surfaces.yawDeflection,
       );
       const { cl, stalled } = liftCoefficient(alpha, s.slope, s.stall, s.postStall);
       // Below ~1 m/s of local flow the angle of attack is noise, not a stall.
@@ -658,7 +662,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
 
     let thrust = 0;
     if (engine !== undefined) {
-      thrust = engine.maxThrust * state.spool * (modifiers?.thrustScale ?? 1);
+      thrust = engine.maxThrust * state.powerplant.spool * (modifiers?.thrustScale ?? 1);
       const [tdx, tdy, tdz] = engine.direction ?? [0, 0, 1];
       const tl = Math.hypot(tdx, tdy, tdz) || 1;
       const tx = (thrust * tdx) / tl;
@@ -680,22 +684,22 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       const curve = motor.thrustCurve;
       const lastTime = curve.length === 0 ? 0 : curve[curve.length - 1]![0];
       let motorThrust = 0;
-      if (throttle > 0 && state.propellantKg > 0 && state.burnTime < lastTime) {
-        const rated = sampleCurve(curve, state.burnTime) * throttle;
+      if (throttle > 0 && state.powerplant.propellantKg > 0 && state.powerplant.burnTime < lastTime) {
+        const rated = sampleCurve(curve, state.powerplant.burnTime) * throttle;
         const flow = (motor.massFlow * rated) / Math.max(1e-9, peakOf(curve));
-        const burned = Math.min(state.propellantKg, flow * h);
+        const burned = Math.min(state.powerplant.propellantKg, flow * h);
         // The last sliver of propellant only delivers its share of the substep.
         motorThrust = rated * (flow > 0 ? burned / (flow * h) : 1) * (modifiers?.thrustScale ?? 1);
-        state.propellantKg -= burned;
-        if (state.propellantKg < 1e-9) state.propellantKg = 0;
-        state.burnTime += h;
+        state.powerplant.propellantKg -= burned;
+        if (state.powerplant.propellantKg < 1e-9) state.powerplant.propellantKg = 0;
+        state.powerplant.burnTime += h;
       }
       const [nx, ny, nz] = motor.at ?? [0, 0, -1];
       const gimbal = motor.gimbal ?? 0;
       // A nozzle behind the centre of mass swings its thrust the opposite way to the turn it makes.
       const lever = nz <= 0 ? 1 : -1;
-      const gp = (state.pitchDeflection / (pitchCh?.maxDeflection ?? 0.35)) * gimbal;
-      const gy = (state.yawDeflection / (yawCh?.maxDeflection ?? 0.35)) * gimbal;
+      const gp = (state.surfaces.pitchDeflection / (pitchCh?.maxDeflection ?? 0.35)) * gimbal;
+      const gy = (state.surfaces.yawDeflection / (yawCh?.maxDeflection ?? 0.35)) * gimbal;
       const tx = motorThrust * lever * Math.sin(gy);
       const ty = -motorThrust * lever * Math.sin(gp);
       const tz = motorThrust * Math.sqrt(Math.max(0, 1 - Math.sin(gy) ** 2 - Math.sin(gp) ** 2));
@@ -711,17 +715,17 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
 
     const rotor = t.rotor;
     if (rotor !== undefined) {
-      state.rotorSpeed += (throttle - state.rotorSpeed) * (1 - Math.exp(-(rotor.spoolRate ?? 0.5) * h));
+      state.powerplant.rotorSpeed += (throttle - state.powerplant.rotorSpeed) * (1 - Math.exp(-(rotor.spoolRate ?? 0.5) * h));
       const [hx, hy, hz] = rotor.at ?? [0, 1.5, 0];
       const cyclic = rotor.cyclic ?? 0.15;
-      const tiltPitch = (state.pitchDeflection / (pitchCh?.maxDeflection ?? 0.35)) * cyclic;
-      const tiltRoll = (state.rollDeflection / (rollCh?.maxDeflection ?? 0.35)) * cyclic;
+      const tiltPitch = (state.surfaces.pitchDeflection / (pitchCh?.maxDeflection ?? 0.35)) * cyclic;
+      const tiltRoll = (state.surfaces.rollDeflection / (rollCh?.maxDeflection ?? 0.35)) * cyclic;
       // Nose-up cyclic tilts the disc back (−forward), right cyclic tilts it right (−left).
       let dx = -Math.sin(tiltRoll);
       let dz = -Math.sin(tiltPitch);
       let dy = Math.sqrt(Math.max(0, 1 - dx * dx - dz * dz));
       const collective = clamp01(input.collective ?? 0);
-      const rpm2 = state.rotorSpeed * state.rotorSpeed;
+      const rpm2 = state.powerplant.rotorSpeed * state.powerplant.rotorSpeed;
       const nominal = rotor.maxThrust * collective * rpm2;
       const disc = Math.PI * rotor.radius * rotor.radius;
       // Momentum theory: hover induced velocity v_i = √(T / 2ρA). Clean air arriving at about v_i adds translational
@@ -734,7 +738,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       const translational = 1 + (rotor.translationalLift ?? 0.2) * (1 - Math.exp(-((edgewise / induced) ** 2)));
       const inflow = Math.max(0.2, Math.min(1.5, 1 - hubVy / (2 * induced)));
       toWorld(hx, hy, hz);
-      const clearance = Math.max(rotor.radius / 2, state.y + out[1]! - groundAt(state.x, state.z));
+      const clearance = Math.max(rotor.radius / 2, state.body.y + out[1]! - groundAt(state.body.x, state.body.z));
       // Cheeseman–Bennett: T_IGE / T_OGE = 1 / (1 − (R / 4z)²).
       const groundEffect = 1 / (1 - (rotor.radius / (4 * clearance)) ** 2);
       const rotorThrust = nominal * translational * inflow * groundEffect;
@@ -756,8 +760,8 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
         const [, ty, tz] = rotor.tail.at;
         const side = bx + (wy * tz - wz * ty);
         const tailThrust =
-          rotor.tail.maxThrust * rpm2 * (state.yawDeflection / (yawCh?.maxDeflection ?? 0.35)) -
-          (rotor.tail.sideDamping ?? rotor.tail.maxThrust / 10) * state.rotorSpeed * side;
+          rotor.tail.maxThrust * rpm2 * (state.surfaces.yawDeflection / (yawCh?.maxDeflection ?? 0.35)) -
+          (rotor.tail.sideDamping ?? rotor.tail.maxThrust / 10) * state.powerplant.rotorSpeed * side;
         fx += tailThrust;
         // A sideways force along +left at the tail: moment = at × (F, 0, 0).
         my += tz * tailThrust;
@@ -778,11 +782,11 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       ay += modifiers.force[1] / m;
       az += modifiers.force[2] / m;
     }
-    const gravity = gravityField.sample([state.x, state.y, state.z]);
+    const gravity = gravityField.sample([state.body.x, state.body.y, state.body.z]);
 
     const gear = t.gear;
-    const floor = gear === undefined ? Number.NEGATIVE_INFINITY : groundAt(state.x, state.z) + gear.height;
-    let grounded = gear !== undefined && state.y <= floor + 1e-4;
+    const floor = gear === undefined ? Number.NEGATIVE_INFINITY : groundAt(state.body.x, state.body.z) + gear.height;
+    let grounded = gear !== undefined && state.body.y <= floor + 1e-4;
     let supportY = 0;
     if (grounded && gear !== undefined) {
       const netY = ay + gravity[1];
@@ -794,8 +798,8 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
         const hl = Math.hypot(out[0]!, out[2]!) || 1;
         const hx = out[0]! / hl;
         const hz = out[2]! / hl;
-        const along = state.vx * hx + state.vz * hz;
-        const across = -state.vx * hz + state.vz * hx;
+        const along = state.body.vx * hx + state.body.vz * hz;
+        const across = -state.body.vx * hz + state.body.vz * hx;
         const roll = (gear.rollingResistance ?? 0.02) * load + clamp01(input.brake ?? 0) * (gear.brakeDecel ?? 4);
         const alongDv = Math.min(Math.abs(along), roll * h) * Math.sign(along);
         const acrossDv = Math.min(Math.abs(across), (gear.sideGrip ?? 0.8) * load * h) * Math.sign(across);
@@ -806,12 +810,12 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       }
     }
 
-    state.vx += (ax + gravity[0]) * h;
-    state.vy += (ay + gravity[1] + supportY) * h;
-    state.vz += (az + gravity[2]) * h;
-    state.x += state.vx * h;
-    state.y += state.vy * h;
-    state.z += state.vz * h;
+    state.body.vx += (ax + gravity[0]) * h;
+    state.body.vy += (ay + gravity[1] + supportY) * h;
+    state.body.vz += (az + gravity[2]) * h;
+    state.body.x += state.body.vx * h;
+    state.body.y += state.body.vy * h;
+    state.body.z += state.body.vz * h;
 
     const inertiaScale = m / t.massKg;
     const ip = t.inertia.pitch * inertiaScale;
@@ -821,16 +825,16 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     const gx = wy * (ir * wz) - wz * (iy * wy);
     const gy = wz * (ip * wx) - wx * (ir * wz);
     const gz = wx * (iy * wy) - wy * (ip * wx);
-    state.wx += ((mx - gx) / ip) * h;
-    state.wy += ((my - gy) / iy) * h;
-    state.wz += ((mz - gz) / ir) * h;
+    state.body.wx += ((mx - gx) / ip) * h;
+    state.body.wy += ((my - gy) / iy) * h;
+    state.body.wz += ((mz - gz) / ir) * h;
     integrateOrientation(h);
 
     if (gear !== undefined) {
-      const ground = groundAt(state.x, state.z) + gear.height;
-      if (state.y < ground) {
-        state.y = ground;
-        if (state.vy < 0) state.vy = 0;
+      const ground = groundAt(state.body.x, state.body.z) + gear.height;
+      if (state.body.y < ground) {
+        state.body.y = ground;
+        if (state.body.vy < 0) state.body.vy = 0;
         grounded = true;
       }
       if (grounded) settleOnGear(gear.maxPitch ?? 0.25);
@@ -857,10 +861,10 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
 
   function assist(a: AircraftAssistTuning, input: RigidAircraftInput, h: number, bx: number, by: number, bz: number): AircraftAssistCommand {
     const pilot = pilotCommand(input);
-    const attitude = attitudeOf(state);
-    const q = -state.wx;
-    const r = -state.wy;
-    const p = state.wz;
+    const attitude = attitudeOf(state.body);
+    const q = -state.body.wx;
+    const r = -state.body.wy;
+    const p = state.body.wz;
     const airspeed = Math.hypot(bx, by, bz);
     const alpha = airspeed > 1 ? Math.atan2(-by, bz) : 0;
     const g0 = 9.81;
@@ -882,15 +886,15 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
         const nextTrim = active || !holds || k === 0 ? trim : trim + nextHold * 0.5 * h;
         return { hold: nextHold, trim: nextTrim, command: -(k * handsFree * (rate + nextHold + nextTrim)) / full };
       };
-      const pitchAxis = axis(sas.pitch, pilot.pitch, hands.pitch, q, state.holdPitch, state.trimPitch, holdsAttitude);
-      const rollAxis = axis(sas.roll, pilot.roll, hands.roll, p, state.holdRoll, state.trimRoll, holdsAttitude);
-      const yawAxis = axis(sas.yaw, pilot.yaw, hands.yaw, r, state.holdYaw, state.trimYaw, true);
-      state.holdPitch = pitchAxis.hold;
-      state.trimPitch = pitchAxis.trim;
-      state.holdRoll = rollAxis.hold;
-      state.trimRoll = rollAxis.trim;
-      state.holdYaw = yawAxis.hold;
-      state.trimYaw = yawAxis.trim;
+      const pitchAxis = axis(sas.pitch, pilot.pitch, hands.pitch, q, state.assist.holdPitch, state.assist.trimPitch, holdsAttitude);
+      const rollAxis = axis(sas.roll, pilot.roll, hands.roll, p, state.assist.holdRoll, state.assist.trimRoll, holdsAttitude);
+      const yawAxis = axis(sas.yaw, pilot.yaw, hands.yaw, r, state.assist.holdYaw, state.assist.trimYaw, true);
+      state.assist.holdPitch = pitchAxis.hold;
+      state.assist.trimPitch = pitchAxis.trim;
+      state.assist.holdRoll = rollAxis.hold;
+      state.assist.trimRoll = rollAxis.trim;
+      state.assist.holdYaw = yawAxis.hold;
+      state.assist.trimYaw = yawAxis.trim;
       command.pitch += pitchAxis.command;
       command.roll += rollAxis.command;
       command.yaw += yawAxis.command;
@@ -903,14 +907,14 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
 
     const hfx = Math.sin(attitude.heading);
     const hfz = Math.cos(attitude.heading);
-    const forward = state.vx * hfx + state.vz * hfz;
-    const right = -state.vx * hfz + state.vz * hfx;
+    const forward = state.body.vx * hfx + state.body.vz * hfz;
+    const right = -state.body.vx * hfz + state.body.vz * hfx;
     if (hover > 0) {
       const cyclicFree = Math.abs(pilot.pitch) <= 0.05 && Math.abs(pilot.roll) <= 0.05;
-      state.driftX = cyclicFree ? state.driftX + state.vx * h : 0;
-      state.driftZ = cyclicFree ? state.driftZ + state.vz * h : 0;
-      const driftForward = state.driftX * hfx + state.driftZ * hfz;
-      const driftRight = -state.driftX * hfz + state.driftZ * hfx;
+      state.assist.driftX = cyclicFree ? state.assist.driftX + state.body.vx * h : 0;
+      state.assist.driftZ = cyclicFree ? state.assist.driftZ + state.body.vz * h : 0;
+      const driftForward = state.assist.driftX * hfx + state.assist.driftZ * hfz;
+      const driftRight = -state.assist.driftX * hfz + state.assist.driftZ * hfx;
       // Position → velocity → attitude → rate: tilt against drift plus distance moved, capped at 0.25 rad.
       const pitchTarget = Math.max(-0.25, Math.min(0.25, 0.05 * (forward + 0.3 * driftForward)));
       const bankTarget = Math.max(-0.25, Math.min(0.25, -0.05 * (right + 0.3 * driftRight)));
@@ -947,11 +951,11 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
           pitchRate: q,
           yawRate: r,
           rollRate: p,
-          velocity: [state.vx, state.vy, state.vz],
+          velocity: [state.body.vx, state.body.vy, state.body.vz],
           forward,
           right,
           gLoad,
-          heightAboveGround: state.y - groundAt(state.x, state.z),
+          heightAboveGround: state.body.y - groundAt(state.body.x, state.body.z),
           pilot: input,
         },
         command,
@@ -967,44 +971,44 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
   }
 
   function integrateOrientation(h: number): void {
-    const { qx, qy, qz, qw, wx, wy, wz } = state;
+    const { qx, qy, qz, qw, wx, wy, wz } = state.body;
     // q̇ = ½ q ⊗ (ω, 0) with ω in the body frame.
     const nx = qx + 0.5 * h * (qw * wx + qy * wz - qz * wy);
     const ny = qy + 0.5 * h * (qw * wy + qz * wx - qx * wz);
     const nz = qz + 0.5 * h * (qw * wz + qx * wy - qy * wx);
     const nw = qw - 0.5 * h * (qx * wx + qy * wy + qz * wz);
     const n = Math.hypot(nx, ny, nz, nw) || 1;
-    state.qx = nx / n;
-    state.qy = ny / n;
-    state.qz = nz / n;
-    state.qw = nw / n;
+    state.body.qx = nx / n;
+    state.body.qy = ny / n;
+    state.body.qz = nz / n;
+    state.body.qw = nw / n;
   }
 
   function settleOnGear(maxPitch: number): void {
-    const attitude = attitudeOf(state);
+    const attitude = attitudeOf(state.body);
     const pitch = Math.max(0, Math.min(maxPitch, attitude.pitch));
     if (pitch === attitude.pitch && attitude.bank === 0) return;
     const [qx, qy, qz, qw] = aircraftAttitudeQuaternion(attitude.heading, pitch, 0);
-    state.qx = qx;
-    state.qy = qy;
-    state.qz = qz;
-    state.qw = qw;
-    state.wz = 0;
-    if (pitch !== attitude.pitch) state.wx = 0;
+    state.body.qx = qx;
+    state.body.qy = qy;
+    state.body.qz = qz;
+    state.body.qw = qw;
+    state.body.wz = 0;
+    if (pitch !== attitude.pitch) state.body.wx = 0;
   }
 
   function stepOf(): RigidAircraftStep {
-    const attitude = attitudeOf(state);
+    const attitude = attitudeOf(state.body);
     return {
-      position: [state.x, state.y, state.z],
-      velocity: [state.vx, state.vy, state.vz],
-      orientation: [state.qx, state.qy, state.qz, state.qw],
+      position: [state.body.x, state.body.y, state.body.z],
+      velocity: [state.body.vx, state.body.vy, state.body.vz],
+      orientation: [state.body.qx, state.body.qy, state.body.qz, state.body.qw],
       heading: attitude.heading,
       pitch: attitude.pitch,
       bank: attitude.bank,
-      pitchRate: -state.wx,
-      yawRate: -state.wy,
-      rollRate: state.wz,
+      pitchRate: -state.body.wx,
+      yawRate: -state.body.wy,
+      rollRate: state.body.wz,
       airspeed: telemetry.airspeed,
       angleOfAttack: telemetry.alpha,
       sideslip: telemetry.sideslip,
@@ -1012,9 +1016,9 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       stalled: telemetry.stalled,
       stallFraction: telemetry.stallFraction,
       thrust: telemetry.thrust,
-      deflection: { pitch: state.pitchDeflection, roll: state.rollDeflection, yaw: state.yawDeflection },
+      deflection: { pitch: state.surfaces.pitchDeflection, roll: state.surfaces.rollDeflection, yaw: state.surfaces.yawDeflection },
       grounded: telemetry.grounded,
-      massKg: tuning.massKg + (tuning.motor === undefined ? 0 : state.propellantKg),
+      massKg: tuning.massKg + (tuning.motor === undefined ? 0 : state.powerplant.propellantKg),
       command: { ...lastCommand },
       limited,
       ...(tuning.motor === undefined
@@ -1022,16 +1026,16 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
         : {
             motor: {
               thrust: motorTelemetry.thrust,
-              burnTime: state.burnTime,
-              propellantKg: state.propellantKg,
-              burnedOut: state.propellantKg <= 0 || state.burnTime >= (tuning.motor.thrustCurve.at(-1)?.[0] ?? 0),
+              burnTime: state.powerplant.burnTime,
+              propellantKg: state.powerplant.propellantKg,
+              burnedOut: state.powerplant.propellantKg <= 0 || state.powerplant.burnTime >= (tuning.motor.thrustCurve.at(-1)?.[0] ?? 0),
             },
           }),
       ...(tuning.rotor === undefined
         ? {}
         : {
             rotor: {
-              speed: state.rotorSpeed,
+              speed: state.powerplant.rotorSpeed,
               thrust: rotorTelemetry.thrust,
               torque: rotorTelemetry.torque,
               groundEffect: rotorTelemetry.groundEffect,
@@ -1049,29 +1053,35 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       for (let i = 0; i < steps; i += 1) substep(h, input, modifiers);
       return stepOf();
     },
-    pose: () => ({ position: [state.x, state.y, state.z], orientation: [state.qx, state.qy, state.qz, state.qw] }),
-    velocity: () => [state.vx, state.vy, state.vz],
+    pose: () => ({ position: [state.body.x, state.body.y, state.body.z], orientation: [state.body.qx, state.body.qy, state.body.qz, state.body.qw] }),
+    velocity: () => [state.body.vx, state.body.vy, state.body.vz],
     applyImpulse(dv) {
-      state.vx += dv[0];
-      state.vy += dv[1];
-      state.vz += dv[2];
+      state.body.vx += dv[0];
+      state.body.vy += dv[1];
+      state.body.vz += dv[2];
     },
     retune(next) {
       if (next.motor !== tuning.motor) {
-        state.burnTime = 0;
-        state.propellantKg = next.motor?.propellantKg ?? 0;
+        state.powerplant.burnTime = 0;
+        state.powerplant.propellantKg = next.motor?.propellantKg ?? 0;
       }
       tuning = next;
       surfaces = next.surfaces.map(prepareSurface);
       largest = largestSurface(surfaces);
     },
     tuning: () => tuning,
-    snapshot: () => ({ ...state }),
+    snapshot: () => ({
+      body: { ...state.body },
+      surfaces: { ...state.surfaces },
+      powerplant: { ...state.powerplant },
+      assist: { ...state.assist },
+      time: state.time,
+    }),
     restore(next) {
-      Object.assign(state, next);
+      assignState(next);
     },
     resetTo(position, orientation) {
-      Object.assign(state, fresh(position, orientation ?? aircraftHeadingQuaternion(attitudeOf(state).heading)));
+      assignState(fresh(position, orientation ?? aircraftHeadingQuaternion(attitudeOf(state.body).heading)));
     },
   };
 }

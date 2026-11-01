@@ -79,7 +79,10 @@ const HELICOPTER_CRAFT: Craft = {
   leverRate: 0.4,
   assists: flightDemoHelicopterAssists,
   input: (stick, lever) => ({ throttle: 1, collective: lever, pitch: stick.pitch * 0.5, roll: stick.roll * 0.5, yaw: stick.yaw * 0.6 }),
-  onSpawn: (aircraft) => aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 }),
+  onSpawn: (aircraft) => {
+    const held = aircraft.snapshot();
+    aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } });
+  },
 };
 
 // Upper stage centre of mass sits this far ahead of the stack's; staging moves the pose there so nothing jumps.
@@ -100,9 +103,12 @@ const ROCKET_CRAFT: Craft = {
     const snap = state.plane.snapshot();
     state.plane.restore({
       ...snap,
-      x: snap.x + forward[0]! * UPPER_STAGE_OFFSET,
-      y: snap.y + forward[1]! * UPPER_STAGE_OFFSET,
-      z: snap.z + forward[2]! * UPPER_STAGE_OFFSET,
+      body: {
+        ...snap.body,
+        x: snap.body.x + forward[0]! * UPPER_STAGE_OFFSET,
+        y: snap.body.y + forward[1]! * UPPER_STAGE_OFFSET,
+        z: snap.body.z + forward[2]! * UPPER_STAGE_OFFSET,
+      },
     });
     state.plane.retune(flightDemoUpperStage);
     state.stage = 2;

@@ -44,7 +44,7 @@ function gameRotor(tuning: RigidAircraftTuning, velocity: readonly [number, numb
   if (rotor === undefined) return { thrust: Number.NaN, torque: Number.NaN };
   const hubAbove = rotor.at?.[1] ?? 1.5;
   const aircraft = createRigidAircraft(tuning, { position: [0, hubHeight - hubAbove, 0], velocity: [velocity[0], velocity[1], velocity[2]], airDensity: () => DENSITY });
-  aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 });
+  { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
   const collective = (tuning.massKg * GRAVITY) / rotor.maxThrust;
   const step = aircraft.tick(1e-3, { throttle: 1, pitch: 0, roll: 0, yaw: 0, collective });
   return { thrust: step.rotor?.thrust ?? Number.NaN, torque: step.rotor?.torque ?? Number.NaN };
@@ -52,7 +52,7 @@ function gameRotor(tuning: RigidAircraftTuning, velocity: readonly [number, numb
 
 function gameEngineCut(tuning: RigidAircraftTuning): number {
   const aircraft = createRigidAircraft(tuning, { position: [0, 1000, 0], velocity: [0, 0, 35], airDensity: () => DENSITY });
-  aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 });
+  { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
   const collective = tuning.rotor === undefined ? 0 : (tuning.massKg * GRAVITY) / tuning.rotor.maxThrust;
   let speed = Number.NaN;
   for (let time = 0; time < ENGINE_CUT_SECONDS; time += 0.02) speed = aircraft.tick(0.02, { throttle: 0, pitch: 0, roll: 0, yaw: 0, collective }).rotor?.speed ?? Number.NaN;

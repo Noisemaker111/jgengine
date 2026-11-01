@@ -678,7 +678,7 @@ export function measureFlight(create: (spawn: FlightSpawn) => RigidAircraft, opt
     const collective = options.hoverCollective ?? Math.min(1, (tuning.massKg * 9.81) / rotor.maxThrust);
     const hovering = () => {
       const aircraft = create({ position: [0, altitude, 0], velocity: [0, 0, 0] });
-      aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 });
+      { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 1 } }); }
       return aircraft;
     };
 
@@ -701,7 +701,7 @@ export function measureFlight(create: (spawn: FlightSpawn) => RigidAircraft, opt
     }
     const response = throttleStep(() => {
       const aircraft = create({ position: [0, altitude, 0], velocity: [0, 0, 0] });
-      aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 0 });
+      { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, rotorSpeed: 0 } }); }
       return aircraft;
     }, (step) => (step.rotor?.speed ?? 0) ** 2, collective, dt);
     return {
@@ -783,7 +783,7 @@ export function measureFlight(create: (spawn: FlightSpawn) => RigidAircraft, opt
       ? Number.NaN
       : throttleStep(() => {
           const aircraft = cruising();
-          aircraft.restore({ ...aircraft.snapshot(), spool: 0 });
+          { const held = aircraft.snapshot(); aircraft.restore({ ...held, powerplant: { ...held.powerplant, spool: 0 } }); }
           return aircraft;
         }, (step) => step.thrust, 0, dt);
 
