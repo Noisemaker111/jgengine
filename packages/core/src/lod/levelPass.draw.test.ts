@@ -47,7 +47,7 @@ function driveFrame(options: {
 describe("variant level edge margin", () => {
   test("measures to the level's own edge plus hysteresis, and to the level below's edge minus it", () => {
     const variantSwitch = variantSwitchOf(PALM);
-    expect(variantSwitch).toEqual({ boundaries: [60], hysteresis: 6 });
+    expect(variantSwitch).toEqual({ boundaries: [60], hysteresis: 6, ratio: 0, scaleWithInstance: false });
     expect(levelEdgeMargin(20, 0, variantSwitch)).toBe(46);
     expect(levelEdgeMargin(66, 0, variantSwitch)).toBe(0);
     expect(levelEdgeMargin(200, 1, variantSwitch)).toBe(146);
