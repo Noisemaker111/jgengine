@@ -105,7 +105,7 @@ export class WorldReflectionProbe {
   private readonly cubeTarget: THREE.WebGLCubeRenderTarget;
   private readonly cubeCamera: THREE.CubeCamera;
   private readonly pmrem: THREE.PMREMGenerator;
-  private envTarget: THREE.WebGLRenderTarget | null = null;
+  private envTarget: THREE.WebGLCubeRenderTarget | null = null;
   private face = -1;
   private lastPosition: THREE.Vector3 | null = null;
   private sinceCapture = 0;

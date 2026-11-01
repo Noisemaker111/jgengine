@@ -14,8 +14,8 @@ function sourceFiles(dir: string): string[] {
   return out;
 }
 
-// three r182's deprecated PCFSoftShadowMap check falls through to BasicShadowMap, so a
-// `<Canvas shadows>` / `shadows={true}` / `shadows="soft"` silently renders hard, unfiltered shadows.
+// three r187 removed PCFSoftShadowMap and logs a warning on it, so a `<Canvas shadows>` /
+// `shadows={true}` / `shadows="soft"` asks for a type that no longer exists; use "percentage".
 /** A bare `shadows` JSX attribute, or `shadows={true}` / `shadows="soft"`. */
 const BAD_SHADOWS = /(?:^|[\s<])shadows(?:\s*=\s*(?:\{\s*true\s*\}|"soft"|\{\s*"soft"\s*\})|(?=\s*\/?>|\s*$|\s+[a-z][A-Za-z]*(?:=|\s|\/?>|$)))/;
 
