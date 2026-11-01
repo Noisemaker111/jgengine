@@ -1,4 +1,5 @@
 import type { OceanEnvironmentDescriptor } from "../world/features";
+import type { WaveField } from "./seaState";
 
 export type WaterNormal = readonly [number, number, number];
 
@@ -8,6 +9,8 @@ export interface GerstnerWave {
   amplitude: number;
   steepness: number;
   speed: number;
+  /** Phase offset, rad, added to the wave's travelling phase (default `0`). */
+  phase?: number;
 }
 
 export interface WaterSurfaceConfig {
@@ -23,6 +26,12 @@ export interface WaterSurfaceConfig {
   direction?: number;
   /** Crest sharpness as a fraction (0..1) of the steepest no-loop Gerstner crest. Default 0.4. */
   steepness?: number;
+  /**
+   * A sea state (`createWaveField`) to draw and query instead of the synthesized waves: its components become the wave
+   * set, largest first, with flat crests so the surface is exactly the field's, the one a `boatDynamics` hull given the
+   * same field rides. `level` defaults to the field's.
+   */
+  field?: WaveField;
 }
 
 export interface WaterSurface {
@@ -44,9 +53,9 @@ const AMPLITUDE_FALLOFF = 0.65;
 const WAVELENGTH_FALLOFF = 0.65;
 const DIRECTION_SPREAD = 0.62;
 
-function resolveConfig(config: WaterSurfaceConfig): Required<Omit<WaterSurfaceConfig, "levelAt">> {
+function resolveConfig(config: WaterSurfaceConfig): Required<Omit<WaterSurfaceConfig, "levelAt" | "field">> {
   return {
-    level: config.level ?? 0,
+    level: config.level ?? config.field?.level ?? 0,
     waveHeight: config.waveHeight ?? 1.2,
     waveScale: config.waveScale ?? 18,
     waveSpeed: config.waveSpeed ?? 0.55,
@@ -59,6 +68,13 @@ function resolveConfig(config: WaterSurfaceConfig): Required<Omit<WaterSurfaceCo
 
 /** The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list. */
 export function synthesizeWaves(config: WaterSurfaceConfig = {}): GerstnerWave[] {
+  const field = config.field;
+  if (field !== undefined) {
+    // The field is a cosine sum; a Gerstner wave is a sine, so a quarter turn lines the two up.
+    return [...field.components]
+      .sort((a, b) => b.amplitude - a.amplitude)
+      .map((c) => ({ direction: [Math.cos(c.direction), Math.sin(c.direction)] as const, wavelength: TWO_PI / c.wavenumber, amplitude: c.amplitude, steepness: 0, speed: c.frequency / c.wavenumber, phase: c.phase + Math.PI / 2 }));
+  }
   const resolved = resolveConfig(config);
   const count = Math.max(0, Math.floor(resolved.waves));
   if (count === 0 || resolved.waveHeight <= 0) {
@@ -104,7 +120,7 @@ export function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface {
     for (const wave of waves) {
       const k = TWO_PI / wave.wavelength;
       const omega = wave.speed * k;
-      const phase = k * (wave.direction[0] * x + wave.direction[1] * z) - omega * time;
+      const phase = k * (wave.direction[0] * x + wave.direction[1] * z) - omega * time + (wave.phase ?? 0);
       y += wave.amplitude * Math.sin(phase);
     }
     return y;
@@ -117,7 +133,7 @@ export function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface {
     for (const wave of waves) {
       const k = TWO_PI / wave.wavelength;
       const omega = wave.speed * k;
-      const phase = k * (wave.direction[0] * x + wave.direction[1] * z) - omega * time;
+      const phase = k * (wave.direction[0] * x + wave.direction[1] * z) - omega * time + (wave.phase ?? 0);
       const cosPhase = Math.cos(phase);
       const q = wave.steepness;
       dx += q * wave.amplitude * choppiness * wave.direction[0] * cosPhase;
@@ -137,7 +153,7 @@ export function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface {
     for (const wave of waves) {
       const k = TWO_PI / wave.wavelength;
       const omega = wave.speed * k;
-      const phase = k * (wave.direction[0] * x + wave.direction[1] * z) - omega * time;
+      const phase = k * (wave.direction[0] * x + wave.direction[1] * z) - omega * time + (wave.phase ?? 0);
       const cosPhase = Math.cos(phase);
       const sinPhase = Math.sin(phase);
       const wa = k * wave.amplitude;
