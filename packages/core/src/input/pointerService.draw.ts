@@ -135,10 +135,12 @@ export function createPointerService(): PointerService {
       if (!mesh.isMesh) continue;
       const point: PointerVec3 = [hit.point.x, hit.point.y, hit.point.z];
       let normal: PointerVec3 = [0, 1, 0];
+      // A batched draw names its instance `batchId`; both index the draw's per-instance identities.
+      const instance = hit.instanceId ?? hit.batchId;
       if (hit.face !== null && hit.face !== undefined) {
         hitMatrix.copy(hit.object.matrixWorld);
-        if ((mesh as THREE.InstancedMesh).isInstancedMesh && hit.instanceId !== undefined) {
-          (mesh as THREE.InstancedMesh).getMatrixAt(hit.instanceId, instanceMatrix);
+        if (instance !== undefined && (mesh instanceof THREE.InstancedMesh || mesh instanceof THREE.BatchedMesh)) {
+          mesh.getMatrixAt(instance, instanceMatrix);
           hitMatrix.multiply(instanceMatrix);
         }
         normalMatrix.getNormalMatrix(hitMatrix);
@@ -149,13 +151,13 @@ export function createPointerService(): PointerService {
       return {
         point,
         normal,
-        entity: hit.instanceId === undefined ? tagOf(hit.object, POINTER_ENTITY_KEY) :
-          (hit.object.userData[POINTER_ENTITY_INSTANCES_KEY] as readonly string[] | undefined)?.[hit.instanceId] ?? tagOf(hit.object, POINTER_ENTITY_KEY),
-        object: hit.instanceId === undefined ? tagOf(hit.object, POINTER_OBJECT_KEY) :
-          (hit.object.userData[POINTER_OBJECT_INSTANCES_KEY] as readonly string[] | undefined)?.[hit.instanceId] ?? tagOf(hit.object, POINTER_OBJECT_KEY),
+        entity: instance === undefined ? tagOf(hit.object, POINTER_ENTITY_KEY) :
+          (hit.object.userData[POINTER_ENTITY_INSTANCES_KEY] as readonly string[] | undefined)?.[instance] ?? tagOf(hit.object, POINTER_ENTITY_KEY),
+        object: instance === undefined ? tagOf(hit.object, POINTER_OBJECT_KEY) :
+          (hit.object.userData[POINTER_OBJECT_INSTANCES_KEY] as readonly string[] | undefined)?.[instance] ?? tagOf(hit.object, POINTER_OBJECT_KEY),
         ...(uv !== undefined ? { uv } : {}),
         material: standardMaterialSample(mesh.material),
-        ...(hit.instanceId !== undefined ? { instanceId: hit.instanceId } : {}),
+        ...(instance !== undefined ? { instanceId: instance } : {}),
       };
     }
     if (ground !== null) return { point: [ground.x, ground.y, ground.z], normal: [0, 1, 0], entity: null, object: null };
