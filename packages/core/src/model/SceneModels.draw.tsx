@@ -26,6 +26,8 @@ import type { WornLayer } from "@jgengine/core/anim/wearable/wornRegion";
 import { resolveRigNode } from "./rigNode.draw";
 import { PartMotionRig } from "@jgengine/core/anim/PartMotion.draw";
 import { useCharacterGlance } from "@jgengine/core/anim/characterGlance.draw";
+import { useCharacterMotion } from "@jgengine/core/anim/characterMotion.draw";
+import { planCharacterMotion, type CharacterMotion, type CharacterMotionPlan } from "@jgengine/core/anim/characterMotion";
 import { registerMotionBlurBody } from "@jgengine/core/postfx/motionBlurPass.draw";
 import { useEntityMuzzle } from "@jgengine/core/anim/entityMuzzle.draw";
 import { registerEntityBody } from "@jgengine/core/anim/CorpseRagdolls.draw";
@@ -359,7 +361,8 @@ export function EntityModel({
     if (material !== undefined) applyMaterialOverride(content, material, { clone: false, textures: materialTextures.global, ownMaterial: replacement => ownModelMaterial(content, replacement) });
     if (materialAssignments !== undefined) applyMaterialAssignments(content, materialAssets ?? [], materialAssignments, materialTextures.assets, { unmatched });
   }, [material, materialTextures, materialAssets, materialAssignments, unmatched]);
-  const { scene, scale, position } = useModelInstance(model, { instanceId, configure });
+  const motion = useCharacterMotion(model.characterMotion, ctx, instanceId);
+  const { scene, scale, position } = useModelInstance(model, { instanceId, configure, locomotion: motion.locomotion });
 
   // A model without index-measured dims can't drive the fitted-collider path, so report the live
   // measurement (the primitive mounts with only this uniform scale + position) instead of letting
@@ -393,9 +396,9 @@ export function EntityModel({
     );
   }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey, model.url, model.hiddenNodes]);
 
-  const engineMotion = useEngineCharacterMotion(model, ctx, instanceId);
-  useFootIk(scene, engineMotion ? "auto" : model.ik === "none" ? undefined : model.ik, ctx, instanceId, baseY, engineMotion ? ENGINE_IK_OPTIONS : undefined);
-  useCharacterGlance(scene, engineMotion, ctx, instanceId, ENGINE_MOTION_CAMERA_DISTANCE);
+  const plan = useCharacterMotionPlan(model, ctx, instanceId, motion);
+  useFootIk(scene, plan.footIk, ctx, instanceId, baseY, plan.footIk === "auto" && model.ik === undefined ? ENGINE_IK_OPTIONS : undefined);
+  useCharacterGlance(scene, plan.glance, ctx, instanceId, ENGINE_MOTION_CAMERA_DISTANCE);
   const muzzleFacing = useCallback(() => (instanceId === undefined ? undefined : ctx?.scene.entity.get(instanceId)?.rotationY) ?? 0, [ctx, instanceId]);
   useEntityMuzzle(scene, instanceId, muzzleFacing);
   useLayoutEffect(() => (instanceId === undefined ? undefined : registerEntityBody(instanceId, scene)), [instanceId, scene]);
@@ -538,11 +541,12 @@ const ENGINE_IK_OPTIONS = { quiet: true, maxCameraDistance: ENGINE_MOTION_CAMERA
 
 /**
  * Whether the engine's default character motion runs on this model: foot IK on whatever legs the
- * rig has and a head turn toward the local player. On for a live entity whose model leaves `ik`
+ * rig has and a head turn toward the local player, each also switchable with `characterMotion` on the
+ * game, the model or the entity. On for a live entity whose model leaves `ik`
  * unset, off on the `low` graphics tier and once the entity has died (its death clip and any
  * ragdoll own the pose from then on). `ik: "none"` turns it off.
  */
-function useEngineCharacterMotion(model: ModelConfig, ctx: GameContext | null, instanceId: string | undefined): boolean {
+function useCharacterMotionPlan(model: ModelConfig, ctx: GameContext | null, instanceId: string | undefined, motion: CharacterMotion): CharacterMotionPlan {
   const quality = useTerrainQuality();
   const [dead, setDead] = useState(false);
   useEffect(() => {
@@ -552,5 +556,12 @@ function useEngineCharacterMotion(model: ModelConfig, ctx: GameContext | null, i
       if (event.instanceId === instanceId && deathRemovesEntity(event)) setDead(true);
     });
   }, [ctx, instanceId]);
-  return model.ik === undefined && instanceId !== undefined && ctx !== null && quality !== "low" && !dead;
+  return planCharacterMotion({
+    live: instanceId !== undefined && ctx !== null,
+    lowTier: quality === "low",
+    dead,
+    ik: model.ik,
+    authoredAnimation: model.animation !== undefined,
+    motion,
+  });
 }

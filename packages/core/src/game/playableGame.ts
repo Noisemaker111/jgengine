@@ -1,6 +1,7 @@
 import type { ControlGroupOptions } from "../input/controlGroups";
 import type { AnimGraph } from "../anim/animGraph";
 import type { WornLayer } from "../anim/wearable/wornRegion";
+import type { CharacterMotionConfig } from "../anim/characterMotion";
 import type { AmbienceZoneDef } from "../audio/ambience";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { AudioOcclusionConfig } from "../audio/occlusion";
@@ -381,6 +382,12 @@ export interface ModelConfig {  url: string;
    * entity dies. `"none"` turns all of it off.
    */
   ik?: "auto" | "none" | ModelIkConfig;
+  /**
+   * This model's switches for the default character motion (foot IK, glance, locomotion), over the
+   * game's `scene.characterMotion`; an entity's own `characterMotion` wins over both. `false` turns
+   * all three off.
+   */
+  characterMotion?: CharacterMotionConfig | false;
   /** Props/weapons parented to named bones on this model's rig; each follows its bone through animation. */
   attachments?: readonly ModelAttachment[];
   /**
@@ -901,6 +908,13 @@ export interface GameSceneConfig<TWorldOverlay = unknown, TRenderEntity = never,
    * on so games can disable a single expensive channel, e.g. `{ tracers: false }`).
    */
   presentationEffects?: boolean | PresentationEffectsConfig | undefined;
+  /**
+   * The default motion every rigged live entity gets: foot IK on uneven ground, a locomotion graph
+   * (idle, walk, run, turn in place) driven by its velocity, and a head and eye glance toward points
+   * of interest. All on when unset; name a part `false` to switch it off for the whole game, or
+   * `false` for all three. A model's or an entity's own `characterMotion` wins over this.
+   */
+  characterMotion?: CharacterMotionConfig | false | undefined;
 }
 
 /** Look, lighting and renderer budgets. */
