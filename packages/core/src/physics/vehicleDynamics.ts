@@ -78,6 +78,8 @@ export interface VehicleSteeringTuning {
 
 /** Friction ellipse: drive and brake force use up the same tyre's cornering grip. Omit for tyres that corner at full grip whatever the pedals do. */
 export interface VehicleCombinedSlipEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /**
    * Exponent of the friction limit `|Fx/Fx,max|^n + |Fy/Fy,max|^n ≤ 1` (default `2`, the ellipse). Higher keeps
    * more cornering grip under light pedal, lower trades it away sooner.
@@ -87,18 +89,24 @@ export interface VehicleCombinedSlipEffect {
 
 /** A wheel that locks under braking or spins under drive slides, and a sliding tyre grips less than its peak. */
 export interface VehicleWheelSlideEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Longitudinal force left at a full lock or spin as a share of peak (default the tyre's `slideGrip`). */
   slideGrip?: number;
 }
 
 /** Load moves forward under braking and back under drive, by `m·a·comHeight / wheelbase`. */
 export interface VehicleLongitudinalLoadTransferEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Share of the rigid-body transfer that reaches the tyres, `0..1` (default `1`; anti-dive/anti-squat geometry lowers it). */
   share?: number;
 }
 
 /** Load moves to the outside wheels in a corner, by `m·a·comHeight / trackWidth`. */
 export interface VehicleLateralLoadTransferEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /**
    * Share of the transfer taken by the front axle, `0..1` (default `0.5`). The classic balance knob: more front →
    * the front saturates first (understeer), less → the rear does (oversteer). Needs `loadSensitivity` to change grip.
@@ -111,6 +119,8 @@ export interface VehicleLateralLoadTransferEffect {
  * across it holds less in total. Each wheel is evaluated at its own load.
  */
 export interface VehicleLoadSensitivityEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Peak-grip loss per unit of load above nominal: `μ = peakGrip·(1 − grip·(Fz/Fz₀ − 1))` (default `0.05`; a road tyre ~`0.08`). */
   grip?: number;
   /** Cornering-stiffness loss per unit of load above nominal (default `0`; a road tyre ~`0.3`). Moves the peak to larger slip on the loaded wheel. */
@@ -125,12 +135,16 @@ export interface VehicleLoadSensitivityEffect {
 
 /** Tyre relaxation: the carcass has to roll a distance before the slip angle builds, so lateral force lags steering. */
 export interface VehicleTireRelaxationEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Relaxation length, m (0.3 typical road tyre, 0.15 stiff race tyre). */
   length: number;
 }
 
 /** Camber thrust: a tyre leaning into the turn pushes harder, one leaning out pushes less. */
 export interface VehicleCamberEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Static camber, rad; negative tops the wheel inboard, which helps the loaded outside wheel (default `0`). */
   static?: number;
   /** Share of body roll the wheels lean with, `0..1` (default `0.7`; `1` a beam axle rolling with the body, `0` wheels that stay upright). */
@@ -141,6 +155,8 @@ export interface VehicleCamberEffect {
 
 /** Steer from bushing and steering-system compliance: the wheels give way under cornering force. */
 export interface VehicleComplianceSteerEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Front steer per newton of front-axle lateral force, rad/N; positive steers away from the force (understeer). */
   front?: number;
   /** Rear steer per newton of rear-axle lateral force, rad/N; positive steers away (oversteer), negative toward (stable). */
@@ -149,6 +165,8 @@ export interface VehicleComplianceSteerEffect {
 
 /** Steer from suspension geometry as the body rolls. */
 export interface VehicleRollSteerEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Front steer per rad of body roll; positive steers out of the turn (understeer). */
   front?: number;
   /** Rear steer per rad of body roll; positive steers out of the turn (oversteer), negative into it (stable). */
@@ -157,12 +175,16 @@ export interface VehicleRollSteerEffect {
 
 /** Aerodynamic drag `½·ρ·CdA·v²`, air density 1.225 kg/m³. */
 export interface VehicleAeroDragEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Drag coefficient × frontal area, m² (0.6 sports car … 1.0 SUV). */
   area: number;
 }
 
 /** Aerodynamic downforce `½·ρ·ClA·v²`, pressing the tyres harder as speed rises. */
 export interface VehicleDownforceEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Lift coefficient × area producing downforce, m² (0 road car … 3 race car). */
   area: number;
   /** Share on the front axle, `0..1` (default `0.45`). */
@@ -171,12 +193,16 @@ export interface VehicleDownforceEffect {
 
 /** Tyre rolling resistance, `Crr · load`. */
 export interface VehicleRollingResistanceEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Rolling-resistance coefficient (default `0.015`; a modern road tyre ~`0.01`). */
   coefficient?: number;
 }
 
 /** Spinning parts take part of every speed change: the car behaves heavier than its mass, most in low gears. */
 export interface VehicleRotatingInertiaEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Engine, flywheel and clutch at the crank, kg·m² (0.1–0.2 for a road car); reflected through the gear in use. Gearbox only. */
   engine?: number;
   /** All wheels, tyres, hubs and brake rotors together, kg·m² (about 4 for a road car). Unlike the engine, they stay coupled under hard braking. */
@@ -197,6 +223,8 @@ export type VehicleDifferentialEffect =
 
 /** Brake hydraulics: pressure follows the pedal with a lag. */
 export interface VehicleBrakeLagEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Time constant, s (0.03 road car). */
   seconds: number;
 }
@@ -692,6 +720,31 @@ const SLIP_REFERENCE_SPEED = 2;
 const DEFAULT_SUBSTEP = 1 / 240;
 const NO_EFFECTS: VehicleEffects = {};
 
+/** An effect's dial: `0` when it is absent or switched off, else its `strength` (default `1`). */
+function strengthOf(effect: { strength?: number } | undefined): number {
+  return effect === undefined ? 0 : Math.max(0, effect.strength ?? 1);
+}
+
+/** The effect when its dial is above `0`, else `undefined`, so a term at strength `0` runs exactly like an absent one. */
+function on<T extends { strength?: number }>(effect: T | undefined): T | undefined {
+  return strengthOf(effect) > 0 ? effect : undefined;
+}
+
+/** A share of force a tyre keeps (`0..1`) with its loss scaled by `strength`; exact at `1`. */
+function scaledShare(share: number, strength: number, floor: number): number {
+  return strength === 1 ? share : Math.max(floor, Math.min(1, 1 - strength * (1 - share)));
+}
+
+/**
+ * Cornering room the friction ellipse leaves at a longitudinal use `used`: below strength `1` it blends from no
+ * penalty to the ellipse, past `1` the exponent falls toward `1` (grip traded away sooner). Exact at `1`.
+ */
+function ellipseRoom(used: number, exponent: number, strength: number): number {
+  const n = strength > 1 ? Math.max(1, exponent / strength) : exponent;
+  const room = Math.pow(Math.max(0, 1 - Math.pow(used, n)), 1 / n);
+  return strength >= 1 ? room : 1 + (room - 1) * strength;
+}
+
 /** Simplified Pacejka `sin(C·atan(Bα − E·(Bα − atan Bα)))`; `peakX` is `Bα` at the peak. */
 interface CurveShape {
   b: number;
@@ -895,8 +948,9 @@ export function createVehicleDynamics(
       return { capY: muY * load, capX: muX * load, capOuter: muY * outer, capInner: muY * inner, bOuter: shape.b, bInner: shape.b, capXInner: muX * inner, capXOuter: muX * outer };
     }
     const nominal = Math.max(1, sensitivity.nominalLoad ?? half);
-    const gripLoss = sensitivity.grip ?? 0.05;
-    const stiffLoss = sensitivity.stiffness ?? 0;
+    const dial = strengthOf(sensitivity);
+    const gripLoss = (sensitivity.grip ?? 0.05) * dial;
+    const stiffLoss = (sensitivity.stiffness ?? 0) * dial;
     const gripAt = (fz: number) => Math.max(0.3, 1 - gripLoss * (fz / nominal - 1));
     const stiffAt = (fz: number) => Math.max(0.2, 1 - stiffLoss * (fz / nominal - 1));
     const gOuter = gripAt(outer);
@@ -955,9 +1009,9 @@ export function createVehicleDynamics(
       else if (state.drivetrain.reversing && (throttle > 0.1 || u > 0.5)) state.drivetrain.reversing = false;
     }
     const wantReverseDrive = state.drivetrain.reversing && brakePedal > 0;
-    const brakeLag = fx_.brakeLag;
+    const brakeLag = on(fx_.brakeLag);
     if (brakeLag === undefined || h <= 0) state.drivetrain.brakeLevel = brakePedal;
-    else state.drivetrain.brakeLevel += (brakePedal - state.drivetrain.brakeLevel) * (1 - Math.exp(-h / Math.max(1e-3, brakeLag.seconds)));
+    else state.drivetrain.brakeLevel += (brakePedal - state.drivetrain.brakeLevel) * (1 - Math.exp(-h / Math.max(1e-3, brakeLag.seconds * strengthOf(brakeLag))));
     const brakeInput = brakeLag === undefined ? brakePedal : state.drivetrain.brakeLevel;
 
     // Rack: requested angle is in "heading-positive" sign, the opposite of AxisInput.steer.
@@ -997,23 +1051,25 @@ export function createVehicleDynamics(
     const maxMove = Math.max(0, rate) * h;
     state.motion.steerAngle += Math.max(-maxMove, Math.min(maxMove, toward));
     // Compliance and roll steer move the wheels away from the rack: each steers away from the axle's own force.
-    const compliance = fx_.complianceSteer;
-    const rollSteer = fx_.rollSteer;
+    const compliance = on(fx_.complianceSteer);
+    const rollSteer = on(fx_.rollSteer);
+    const complianceDial = strengthOf(compliance);
+    const rollSteerDial = strengthOf(rollSteer);
     const cornerSign = Math.sign(state.body.lateralAccel);
     const rollMagnitude = Math.abs(state.body.bodyRoll);
-    const frontGive = (compliance?.front ?? 0) * state.tires.forceFront + (rollSteer?.front ?? 0) * rollMagnitude * cornerSign;
-    const rearGive = (compliance?.rear ?? 0) * state.tires.forceRear + (rollSteer?.rear ?? 0) * rollMagnitude * cornerSign;
+    const frontGive = (compliance?.front ?? 0) * complianceDial * state.tires.forceFront + (rollSteer?.front ?? 0) * rollSteerDial * rollMagnitude * cornerSign;
+    const rearGive = (compliance?.rear ?? 0) * complianceDial * state.tires.forceRear + (rollSteer?.rear ?? 0) * rollSteerDial * rollMagnitude * cornerSign;
     const delta = state.motion.steerAngle + frontGive;
     const deltaRear = rearGive;
     out.roadWheel = delta;
 
-    const downforceEffect = fx_.downforce;
+    const downforceEffect = on(fx_.downforce);
     const q = 0.5 * AIR_DENSITY * u * u;
-    const downforce = q * (downforceEffect?.area ?? 0);
+    const downforce = q * (downforceEffect?.area ?? 0) * strengthOf(downforceEffect);
     const downFront = downforceEffect?.frontShare ?? 0.45;
     const weight = m * GRAVITY;
-    const longTransfer = fx_.longitudinalLoadTransfer;
-    const latTransfer = fx_.lateralLoadTransfer;
+    const longTransfer = on(fx_.longitudinalLoadTransfer);
+    const latTransfer = on(fx_.lateralLoadTransfer);
     const rsf = latTransfer?.frontShare ?? 0.5;
     const suspension = t.suspension;
     let loadFront: number;
@@ -1039,7 +1095,7 @@ export function createVehicleDynamics(
       }
       grounded = state.air.hopHeight <= 0;
       state.air.airborne = !grounded;
-      const transferLong = longTransfer === undefined ? 0 : ((longTransfer.share ?? 1) * m * state.body.longitudinalAccel * t.comHeight) / L;
+      const transferLong = longTransfer === undefined ? 0 : ((longTransfer.share ?? 1) * strengthOf(longTransfer) * m * state.body.longitudinalAccel * t.comHeight) / L;
       const rawFront = weight * (b / L) - transferLong + downforce * downFront;
       const rawRear = weight * (a / L) + transferLong + downforce * (1 - downFront);
       // Pitch-over is geometry, not a tyre effect: report it even when the tyres ignore longitudinal transfer.
@@ -1050,7 +1106,7 @@ export function createVehicleDynamics(
       loadRear = grounded ? Math.max(0, rawRear) : 0;
       // A single-track vehicle leans instead of shifting load across an axle.
       const transferLat =
-        t.lean !== undefined || latTransfer === undefined ? 0 : (m * Math.abs(state.body.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
+        t.lean !== undefined || latTransfer === undefined ? 0 : (strengthOf(latTransfer) * m * Math.abs(state.body.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
       transferFront = transferLat * rsf;
       transferRear = transferLat * (1 - rsf);
       const side = state.body.lateralAccel >= 0 ? 1 : -1;
@@ -1082,7 +1138,7 @@ export function createVehicleDynamics(
     }
     const gripScale = surface * (modifiers?.gripScale ?? 1);
     const rearTire = t.rear ?? t.front;
-    const sensitivity = fx_.loadSensitivity;
+    const sensitivity = on(fx_.loadSensitivity);
     const gripFront = axleGrip(t.front, frontShape, loadFront, transferFront, gripScale, sensitivity);
     const gripRear = axleGrip(rearTire, rearShape, loadRear, transferRear, gripScale, sensitivity);
     const hbGrip = 1 - handbrake * (1 - (t.handbrakeGrip ?? 0.35));
@@ -1101,12 +1157,12 @@ export function createVehicleDynamics(
     const rearLat = u * sinR + vR * cosR;
     const steadyFront = Math.atan2(wheelLat, Math.max(SLIP_REFERENCE_SPEED, Math.abs(wheelLong)));
     const steadyRear = Math.atan2(rearLat, Math.max(SLIP_REFERENCE_SPEED, Math.abs(rearLong)));
-    const relaxation = fx_.tireRelaxation;
+    const relaxation = on(fx_.tireRelaxation);
     let slipFront = steadyFront;
     let slipRear = steadyRear;
     if (relaxation !== undefined && h > 0) {
       // The contact patch catches up with the wheel over the relaxation length: a first-order lag in distance.
-      const sigma = Math.max(0.01, relaxation.length);
+      const sigma = Math.max(0.01, relaxation.length * strengthOf(relaxation));
       const travel = Math.max(SLIP_REFERENCE_SPEED, Math.abs(u)) * h;
       const follow = 1 - Math.exp(-travel / sigma);
       state.tires.slipFront += (steadyFront - state.tires.slipFront) * follow;
@@ -1133,11 +1189,12 @@ export function createVehicleDynamics(
     let brakeR = brakeTotal * (1 - brakeFrontShare);
     // ABS, TC and the differential act on combined slip like the real systems: the longitudinal limit is what the
     // friction ellipse leaves after the cornering force the axle is already asking for.
-    const combined = fx_.combinedSlip;
+    const combined = on(fx_.combinedSlip);
     const exponent = Math.max(1, combined?.exponent ?? 2);
+    const combinedDial = strengthOf(combined);
     const frontLatUse = Math.min(1, Math.abs(axleCurve(gripFront, frontShape, slipFront)));
     const rearLatUse = Math.min(1, Math.abs(axleCurve(gripRear, rearShape, slipRear)) * hbGrip);
-    const room = (latUse: number) => (combined === undefined ? 1 : Math.pow(Math.max(0, 1 - Math.pow(latUse, exponent)), 1 / exponent));
+    const room = (latUse: number) => (combined === undefined ? 1 : ellipseRoom(latUse, exponent, combinedDial));
     const longRoomFront = gripFront.capX * room(frontLatUse);
     const longRoomRear = gripRear.capX * room(rearLatUse);
     const abs = fx_.abs;
@@ -1227,18 +1284,19 @@ export function createVehicleDynamics(
     let fxFront = longFront - direction * brakeF;
     let fxRear = longRear - direction * (brakeR + hbDrag);
 
-    const slideEffect = fx_.wheelSlide;
-    const front = combine(fxFront, gripFront, frontShape, slipFront, 1, combined, exponent, slideEffect?.slideGrip ?? t.front.slideGrip, slideEffect !== undefined, out, "front", Math.abs(longFront) > 0, axleCurve);
-    const rear = combine(fxRear, gripRear, rearShape, slipRear, hbGrip, combined, exponent, slideEffect?.slideGrip ?? rearTire.slideGrip, slideEffect !== undefined, out, "rear", Math.abs(longRear) > 0, axleCurve);
+    const slideEffect = on(fx_.wheelSlide);
+    const slideDial = strengthOf(slideEffect);
+    const front = combine(fxFront, gripFront, frontShape, slipFront, 1, combined, exponent, combinedDial, scaledShare(slideEffect?.slideGrip ?? t.front.slideGrip, slideDial, 0.05), slideEffect !== undefined, out, "front", Math.abs(longFront) > 0, axleCurve);
+    const rear = combine(fxRear, gripRear, rearShape, slipRear, hbGrip, combined, exponent, combinedDial, scaledShare(slideEffect?.slideGrip ?? rearTire.slideGrip, slideDial, 0.05), slideEffect !== undefined, out, "rear", Math.abs(longRear) > 0, axleCurve);
     fxFront = front.fx;
     fxRear = rear.fx;
     let fyFront = front.fy;
     let fyRear = rear.fy;
 
-    const camber = fx_.camber;
+    const camber = on(fx_.camber);
     if (camber !== undefined && t.lean === undefined) {
       // Outside wheel: static negative camber leans it into the turn; roll leans both wheels out of it.
-      const thrust = camber.thrust ?? 0.8;
+      const thrust = (camber.thrust ?? 0.8) * strengthOf(camber);
       const lean = (camber.rollFollow ?? 0.7) * rollMagnitude;
       const stat = -(camber.static ?? 0);
       const toward = Math.sign(fyFront || fyRear);
@@ -1265,9 +1323,11 @@ export function createVehicleDynamics(
     const rearLatForce = fyRear * cosR - fxRear * sinR;
     let forceLong = fxFront * cosD + fyFront * sinD + fxRear * cosR + fyRear * sinR + (modifiers?.thrust ?? 0) + slopeLong;
     const forceLat = frontLat + rearLatForce + slopeLat;
-    const drag = q * (fx_.aeroDrag?.area ?? 0) * Math.sign(u);
+    const aeroDrag = on(fx_.aeroDrag);
+    const drag = q * (aeroDrag?.area ?? 0) * strengthOf(aeroDrag) * Math.sign(u);
     const rollingLoad = suspension === undefined ? (grounded ? weight : 0) : loadFront + loadRear;
-    const rollingCoefficient = fx_.rollingResistance === undefined ? 0 : (fx_.rollingResistance.coefficient ?? 0.015);
+    const rollingEffect = on(fx_.rollingResistance);
+    const rollingCoefficient = rollingEffect === undefined ? 0 : (rollingEffect.coefficient ?? 0.015) * strengthOf(rollingEffect);
     const rolling = rollingCoefficient * rollingLoad * Math.sign(u) * Math.min(1, Math.abs(u) / 0.5);
     forceLong -= drag + rolling;
     // Lateral force ahead of the CG yaws the heading negative in this frame, force behind it positive.
@@ -1298,7 +1358,7 @@ export function createVehicleDynamics(
       }
     }
 
-    const longMass = m + reflectedMass(fx_.rotatingInertia, grounded, brakeInput);
+    const longMass = m + reflectedMass(on(fx_.rotatingInertia), grounded, brakeInput);
     let du = forceLong / longMass - r * v;
     const dv = forceLat / m + r * u;
     // Brakes and rolling resistance cannot reverse the car inside one substep (a slope can).
@@ -1402,7 +1462,7 @@ export function createVehicleDynamics(
       const ratio = (state.drivetrain.reversing ? pt.reverseGear : (pt.gears[state.drivetrain.gearIndex] ?? 1)) * pt.finalDrive;
       reflected += Math.max(0, inertia.engine ?? 0) * ratio * ratio * (pt.efficiency ?? 0.85);
     }
-    return reflected / (radius * radius);
+    return (reflected * strengthOf(inertia)) / (radius * radius);
   }
 
   const corner: Corners = [0, 0, 0, 0];
@@ -1484,8 +1544,10 @@ export function createVehicleDynamics(
     }
     if (grounded) {
       // The tyres' forces act at the ground, below the centre of mass: those moments are the load transfer.
-      if (effects.longitudinalLoadTransfer !== undefined) pitchMoment -= (effects.longitudinalLoadTransfer.share ?? 1) * m * state.body.longitudinalAccel * t.comHeight;
-      if (effects.lateralLoadTransfer !== undefined) rollMoment += m * state.body.lateralAccel * t.comHeight;
+      const longTransfer = on(effects.longitudinalLoadTransfer);
+      const latTransfer = on(effects.lateralLoadTransfer);
+      if (longTransfer !== undefined) pitchMoment -= (longTransfer.share ?? 1) * strengthOf(longTransfer) * m * state.body.longitudinalAccel * t.comHeight;
+      if (latTransfer !== undefined) rollMoment += strengthOf(latTransfer) * m * state.body.lateralAccel * t.comHeight;
     }
     const pitchInertia = Math.max(1, (suspension.pitchInertiaIndex ?? 0.9) * m * a * b);
     const rollInertia = Math.max(1, 0.6 * m * half * half);
@@ -1702,6 +1764,7 @@ function combine(
   lateralScale: number,
   combined: VehicleCombinedSlipEffect | undefined,
   exponent: number,
+  combinedDial: number,
   slideShare: number,
   slides: boolean,
   out: Telemetry,
@@ -1721,7 +1784,7 @@ function combine(
     else out.wheelLock = true;
   }
   const used = capX > 0 ? Math.min(1, Math.abs(fx) / capX) : 1;
-  const remaining = combined === undefined ? 1 : saturated ? 0 : Math.pow(Math.max(0, 1 - Math.pow(used, exponent)), 1 / exponent);
+  const remaining = combined === undefined ? 1 : saturated ? (combinedDial >= 1 ? 0 : 1 - combinedDial) : ellipseRoom(used, exponent, combinedDial);
   const fy = -capY * lateralScale * remaining * curve(grip, shape, slip);
   const saturation = Math.max(Math.hypot(fx / Math.max(capX, 1e-6), fy / Math.max(capY, 1e-6)), Math.abs(slip) / peakAngle(shape));
   if (axle === "front") out.satFront = Math.max(out.satFront, saturation);
