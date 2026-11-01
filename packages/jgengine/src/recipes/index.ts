@@ -533,7 +533,13 @@ import { vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import type { GameContext } from "@jgengine/shell/gameKit";
 
-const TUNING = vehicleTuning({ topSpeed: 28, accel: 9, brake: 14, turnRate: 2.2, grip: 1.5, abs: 1, stability: 1 });
+const TUNING = vehicleTuning({
+  engine: { topSpeed: 28, accel: 9 },
+  brakes: { brake: 14, abs: 1 },
+  steering: { turnRate: 2.2 },
+  tires: { grip: 1.5 },
+  aids: { stability: 1 },
+});
 const DRIVE = {
   throttle: { positive: ["moveForward"] }, brake: { positive: ["moveBack"] },
   steer: { positive: ["moveRight"], negative: ["moveLeft"] }, handbrake: { positive: ["jump"] },

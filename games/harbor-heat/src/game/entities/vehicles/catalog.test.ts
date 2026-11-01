@@ -28,8 +28,8 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
     expect(groundCars.length).toBeGreaterThanOrEqual(6);
     for (const car of groundCars) {
       if (car.dynamics.type !== "ground") continue;
-      expect(car.dynamics.tuning.weight, `${car.id} weight`).toBeGreaterThan(0);
-      expect(car.dynamics.tuning.gearbox?.gears.length, `${car.id} gears`).toBeGreaterThan(3);
+      expect(car.dynamics.tuning.chassis?.weight, `${car.id} weight`).toBeGreaterThan(0);
+      expect(car.dynamics.tuning.engine.gearbox?.gears.length, `${car.id} gears`).toBeGreaterThan(3);
       expect(car.collisionRadius).toBeGreaterThan(0);
     }
   });
@@ -42,7 +42,7 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
 
   test("mass orders bus > suv > cop > muscle > sport > compact", () => {
     const order = ["car_bus", "car_suv", "car_cop", "car_muscle", "car_sport", "car_compact"];
-    const masses = order.map((id) => specOf(id).weight!);
+    const masses = order.map((id) => (specOf(id).chassis?.weight ?? 0));
     for (let i = 0; i < masses.length - 1; i += 1) {
       expect(masses[i]!, `${order[i]} heavier than ${order[i + 1]}`).toBeGreaterThan(masses[i + 1]!);
     }
@@ -51,7 +51,7 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
   test("service-brake deceleration stays in a plausible 0.35–1.3 g band", () => {
     for (const car of groundCars) {
       if (car.dynamics.type !== "ground") continue;
-      const brakeG = car.dynamics.tuning.brake / GRAVITY;
+      const brakeG = car.dynamics.tuning.brakes.brake / GRAVITY;
       expect(brakeG, `${car.id} brake g`).toBeGreaterThanOrEqual(0.35);
       expect(brakeG, `${car.id} brake g`).toBeLessThanOrEqual(1.3);
     }
@@ -117,7 +117,7 @@ describe("harbor-heat vehicle catalog (#1051)", () => {
       const minReverse = car.id === "car_bus" ? -1.5 : -3;
       expect(step.forwardSpeed, `${car.id} reverse`).toBeLessThan(minReverse);
       // Cap near reverseSpeed (~0.18× top) — never rocket reverse.
-      expect(step.forwardSpeed, `${car.id} reverse`).toBeGreaterThan(-(car.dynamics.tuning.reverseSpeed! + 0.6));
+      expect(step.forwardSpeed, `${car.id} reverse`).toBeGreaterThan(-(car.dynamics.tuning.engine.reverseSpeed! + 0.6));
     }
   });
 

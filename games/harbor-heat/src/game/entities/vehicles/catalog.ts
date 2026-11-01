@@ -84,38 +84,47 @@ const TURN_SPEED = 7;
 function car(spec: CarSpec): VehicleSpec {
   const maxAngle = spec.maxAngle ?? 0.58;
   return {
-    // Street cars on real tyre μ, a little looser than arcade so launch bite and handbrake slides read
+    tires: {
+      // Street cars on real tyre μ, a little looser than arcade so launch bite and handbrake slides read
     // as player skill, not ESC.
-    drift: 0.3,
-    bodyRoll: 0.4,
-    abs: 0.55,
-    tractionControl: 0.32725,
-    stability: 0.73,
-    selfAlign: 0.5175,
-    steerRate: 3.5,
-    topSpeed: spec.topSpeed,
-    accel: spec.engineForce / spec.massKg,
-    brake: spec.brakeForce / spec.massKg,
-    // Reverse top is a hard, low ceiling (~10–16 mph): useful for three-points, never scaled up for sports cars.
-    reverseSpeed: Math.min(7, Math.max(4.5, Math.round(spec.topSpeed * 0.16 * 10) / 10)),
-    turnRate: (Math.tan(maxAngle) * TURN_SPEED) / spec.wheelbase,
-    turnSpeed: TURN_SPEED,
-    grip: spec.tireGrip,
-    handbrakeGrip: spec.handbrakeGrip,
-    // Lifting off scrubs speed like a real car rolling on its tyres, on top of engine braking.
-    coast: 1.2,
-    weight: spec.massKg,
-    comHeight: spec.comHeight,
-    trackWidth: spec.trackWidth,
-    wheelbase: spec.wheelbase,
-    downforce: spec.downforce ?? 0.3,
-    gearbox: {
-      gears: spec.gears ?? GEARS_DEFAULT,
-      idleRpm: 850,
-      redlineRpm: spec.redlineRpm ?? 7600,
-      shiftSeconds: 0.12,
-      wheelRadius: 0.34,
-      torqueCurve: spec.torqueCurve ?? TORQUE_DEFAULT,
+      drift: 0.3,
+      grip: spec.tireGrip,
+    },
+    chassis: {
+      bodyRoll: 0.4,
+      weight: spec.massKg,
+      comHeight: spec.comHeight,
+      trackWidth: spec.trackWidth,
+      wheelbase: spec.wheelbase,
+      downforce: spec.downforce ?? 0.3,
+    },
+    brakes: {
+      abs: 0.55,
+      brake: spec.brakeForce / spec.massKg,
+      handbrakeGrip: spec.handbrakeGrip,
+    },
+    aids: { tractionControl: 0.32725, stability: 0.73 },
+    steering: {
+      selfAlign: 0.5175,
+      steerRate: 3.5,
+      turnRate: (Math.tan(maxAngle) * TURN_SPEED) / spec.wheelbase,
+      turnSpeed: TURN_SPEED,
+    },
+    engine: {
+      topSpeed: spec.topSpeed,
+      accel: spec.engineForce / spec.massKg,
+      // Reverse top is a hard, low ceiling (~10–16 mph): useful for three-points, never scaled up for sports cars.
+      reverseSpeed: Math.min(7, Math.max(4.5, Math.round(spec.topSpeed * 0.16 * 10) / 10)),
+      // Lifting off scrubs speed like a real car rolling on its tyres, on top of engine braking.
+      coast: 1.2,
+      gearbox: {
+        gears: spec.gears ?? GEARS_DEFAULT,
+        idleRpm: 850,
+        redlineRpm: spec.redlineRpm ?? 7600,
+        shiftSeconds: 0.12,
+        wheelRadius: 0.34,
+        torqueCurve: spec.torqueCurve ?? TORQUE_DEFAULT,
+      },
     },
   };
 }

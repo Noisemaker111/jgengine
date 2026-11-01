@@ -6,7 +6,14 @@ import { vehicleTuning, type VehicleSpec } from "./vehicleSpec";
 
 const DT = 1 / 60;
 const axis = (partial: Partial<AxisInput>): AxisInput => ({ ...NEUTRAL_AXIS, ...partial });
-const CAR: VehicleSpec = { grip: 1.5, drift: 0.15, abs: 1, stability: 1, bodyRoll: 0.4, topSpeed: 30, accel: 8, brake: 12, turnRate: 1.8 };
+const CAR: VehicleSpec = {
+  tires: { grip: 1.5, drift: 0.15 },
+  brakes: { abs: 1, brake: 12 },
+  aids: { stability: 1 },
+  chassis: { bodyRoll: 0.4 },
+  engine: { topSpeed: 30, accel: 8 },
+  steering: { turnRate: 1.8 },
+};
 
 function speedAfter(spec: VehicleSpec, seconds: number, options = {}, modifiers = {}): number {
   const car = createVehicleDynamics(vehicleTuning(spec), options);
@@ -18,12 +25,12 @@ function speedAfter(spec: VehicleSpec, seconds: number, options = {}, modifiers 
 describe("vehicleTuning", () => {
   test("top speed and launch follow the spec", () => {
     expect(speedAfter(CAR, 30)).toBeCloseTo(30, 0);
-    expect(speedAfter({ ...CAR, topSpeed: 20 }, 30)).toBeCloseTo(20, 0);
-    expect(speedAfter({ ...CAR, accel: 12 }, 1)).toBeGreaterThan(speedAfter(CAR, 1));
+    expect(speedAfter({ ...CAR, engine: { ...CAR.engine, topSpeed: 20 } }, 30)).toBeCloseTo(20, 0);
+    expect(speedAfter({ ...CAR, engine: { ...CAR.engine, accel: 12 } }, 1)).toBeGreaterThan(speedAfter(CAR, 1));
   });
 
   test("a gearbox reports gears and rpm and still reaches top speed", () => {
-    const car = createVehicleDynamics(vehicleTuning({ ...CAR, gearbox: { gears: [3.2, 2.1, 1.5, 1.15, 0.95] } }));
+    const car = createVehicleDynamics(vehicleTuning({ ...CAR, engine: { ...CAR.engine, gearbox: { gears: [3.2, 2.1, 1.5, 1.15, 0.95] } } }));
     let gear = 0;
     let speed = 0;
     for (let i = 0; i < 40 / DT; i += 1) {
@@ -38,26 +45,26 @@ describe("vehicleTuning", () => {
 
   test("suspension rides the terrain and can be left off", () => {
     expect(vehicleTuning(CAR).suspension).toBeUndefined();
-    const sprung = vehicleTuning({ ...CAR, suspension: 0.5 });
+    const sprung = vehicleTuning({ ...CAR, chassis: { ...CAR.chassis, suspension: 0.5 } });
     expect(sprung.suspension?.springRate).toBeGreaterThan(0);
-    const softer = vehicleTuning({ ...CAR, suspension: 1 });
+    const softer = vehicleTuning({ ...CAR, chassis: { ...CAR.chassis, suspension: 1 } });
     expect(softer.suspension!.springRate).toBeLessThan(sprung.suspension!.springRate);
   });
 
   test("drift loosens the rear and lets the slide run further before stability steps in", () => {
-    const planted = vehicleTuning({ ...CAR, drift: 0 });
-    const loose = vehicleTuning({ ...CAR, drift: 1 });
+    const planted = vehicleTuning({ ...CAR, tires: { ...CAR.tires, drift: 0 } });
+    const loose = vehicleTuning({ ...CAR, tires: { ...CAR.tires, drift: 1 } });
     expect(loose.rear!.peakGrip).toBeLessThan(planted.rear!.peakGrip);
     expect(loose.effects?.stability?.maxSideslip ?? 0).toBeGreaterThan(planted.effects?.stability?.maxSideslip ?? 0);
     expect(loose.handbrakeGrip ?? 0).toBeLessThan(planted.handbrakeGrip ?? 0);
   });
 
   test("each aid is its own number and 0 leaves it out", () => {
-    const raw = vehicleTuning({ ...CAR, abs: 0, tractionControl: 0, selfAlign: 0 });
+    const raw = vehicleTuning({ ...CAR, brakes: { ...CAR.brakes, abs: 0 }, aids: { ...CAR.aids, tractionControl: 0 }, steering: { ...CAR.steering, selfAlign: 0 } });
     expect(raw.effects?.abs).toBeUndefined();
     expect(raw.effects?.tractionControl).toBeUndefined();
     expect(raw.effects?.selfAlign).toBeUndefined();
-    const full = vehicleTuning({ ...CAR, abs: 1, tractionControl: 0.4 });
+    const full = vehicleTuning({ ...CAR, brakes: { ...CAR.brakes, abs: 1 }, aids: { ...CAR.aids, tractionControl: 0.4 } });
     expect(full.effects?.abs?.strength).toBe(1);
     expect(full.effects?.tractionControl?.strength).toBe(0.4);
   });

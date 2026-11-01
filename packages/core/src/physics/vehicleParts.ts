@@ -54,14 +54,14 @@ export interface VehicleFeel {
 
 /** Read the handling numbers out of any spec — base or parts-composed. */
 export function feelOf(spec: VehicleSpec): VehicleFeel {
-  const curve = gripCurvePeak(spec.gripCurve ?? DEFAULT_GRIP_CURVE);
+  const curve = gripCurvePeak(spec.tires.gripCurve ?? DEFAULT_GRIP_CURVE);
   return {
-    topSpeed: spec.topSpeed,
-    accel: spec.accel,
-    brake: spec.brake,
-    turnRate: spec.turnRate,
-    handbrakeGrip: spec.handbrakeGrip ?? 0.5 - 0.1 * (spec.drift ?? 0.2),
-    peakGrip: spec.grip * curve.peakGrip,
+    topSpeed: spec.engine.topSpeed,
+    accel: spec.engine.accel,
+    brake: spec.brakes.brake,
+    turnRate: spec.steering.turnRate,
+    handbrakeGrip: spec.brakes.handbrakeGrip ?? 0.5 - 0.1 * (spec.tires.drift ?? 0.2),
+    peakGrip: spec.tires.grip * curve.peakGrip,
     peakSlip: curve.peakSlip,
     slideGrip: curve.peakGrip > 0 ? curve.slideGrip / curve.peakGrip : 0,
   };
@@ -76,16 +76,29 @@ export interface VehicleSetup {
 }
 
 const STAT_DEFAULTS: Record<VehicleStat, (spec: VehicleSpec) => number> = {
-  topSpeed: (spec) => spec.topSpeed,
-  accel: (spec) => spec.accel,
-  brake: (spec) => spec.brake,
-  reverseSpeed: (spec) => spec.reverseSpeed ?? Math.min(9, spec.topSpeed * 0.3),
-  turnRate: (spec) => spec.turnRate,
-  grip: (spec) => spec.grip,
-  drift: (spec) => spec.drift ?? 0.2,
-  handbrakeGrip: (spec) => spec.handbrakeGrip ?? 0.5 - 0.1 * (spec.drift ?? 0.2),
-  coast: (spec) => spec.coast ?? 1,
-  weight: (spec) => spec.weight ?? 1300,
+  topSpeed: (spec) => spec.engine.topSpeed,
+  accel: (spec) => spec.engine.accel,
+  brake: (spec) => spec.brakes.brake,
+  reverseSpeed: (spec) => spec.engine.reverseSpeed ?? Math.min(9, spec.engine.topSpeed * 0.3),
+  turnRate: (spec) => spec.steering.turnRate,
+  grip: (spec) => spec.tires.grip,
+  drift: (spec) => spec.tires.drift ?? 0.2,
+  handbrakeGrip: (spec) => spec.brakes.handbrakeGrip ?? 0.5 - 0.1 * (spec.tires.drift ?? 0.2),
+  coast: (spec) => spec.engine.coast ?? 1,
+  weight: (spec) => spec.chassis?.weight ?? 1300,
+};
+
+const STAT_SETTERS: Record<VehicleStat, (spec: VehicleSpec, value: number) => void> = {
+  topSpeed: (spec, value) => void (spec.engine.topSpeed = value),
+  accel: (spec, value) => void (spec.engine.accel = value),
+  brake: (spec, value) => void (spec.brakes.brake = value),
+  reverseSpeed: (spec, value) => void (spec.engine.reverseSpeed = value),
+  turnRate: (spec, value) => void (spec.steering.turnRate = value),
+  grip: (spec, value) => void (spec.tires.grip = value),
+  drift: (spec, value) => void (spec.tires.drift = value),
+  handbrakeGrip: (spec, value) => void (spec.brakes.handbrakeGrip = value),
+  coast: (spec, value) => void (spec.engine.coast = value),
+  weight: (spec, value) => void ((spec.chassis ??= {}).weight = value),
 };
 
 /**
@@ -96,16 +109,23 @@ const STAT_DEFAULTS: Record<VehicleStat, (spec: VehicleSpec) => number> = {
  * @capability vehicle-parts compose data-driven tuning parts (tires, engine, brakes) onto a vehicle spec and read the resulting feel
  */
 export function applyVehicleParts(base: VehicleSpec, parts: readonly VehiclePart[]): VehicleSetup {
-  const spec: VehicleSpec = { ...base };
+  const spec: VehicleSpec = {
+    ...base,
+    engine: { ...base.engine },
+    brakes: { ...base.brakes },
+    steering: { ...base.steering },
+    tires: { ...base.tires },
+    ...(base.chassis === undefined ? {} : { chassis: { ...base.chassis } }),
+  };
   const ids: string[] = [];
   for (const part of parts) {
     ids.push(part.id);
-    if (part.gripCurve !== undefined) spec.gripCurve = part.gripCurve;
+    if (part.gripCurve !== undefined) spec.tires.gripCurve = part.gripCurve;
     if (part.effects === undefined) continue;
     for (const stat of Object.keys(part.effects) as VehicleStat[]) {
       const effect = part.effects[stat];
       if (effect === undefined) continue;
-      spec[stat] = STAT_DEFAULTS[stat](spec) * (effect.scale ?? 1) + (effect.add ?? 0);
+      STAT_SETTERS[stat](spec, STAT_DEFAULTS[stat](spec) * (effect.scale ?? 1) + (effect.add ?? 0));
     }
   }
   return { spec, feel: feelOf(spec), parts: ids };

@@ -6,7 +6,14 @@ import { createTireMarks } from "./tireMarks";
 import { createVehicleDynamics } from "./vehicleDynamics";
 import { vehicleTuning } from "./vehicleSpec";
 
-const TUNING = vehicleTuning({ grip: 1.5, drift: 0.15, abs: 1, stability: 1, bodyRoll: 0.4, topSpeed: 28, accel: 9, brake: 12, turnRate: 2 });
+const TUNING = vehicleTuning({
+  tires: { grip: 1.5, drift: 0.15 },
+  brakes: { abs: 1, brake: 12 },
+  aids: { stability: 1 },
+  chassis: { bodyRoll: 0.4 },
+  engine: { topSpeed: 28, accel: 9 },
+  steering: { turnRate: 2 },
+});
 const DT = 1 / 60;
 
 describe("tickDrivableVehicle", () => {

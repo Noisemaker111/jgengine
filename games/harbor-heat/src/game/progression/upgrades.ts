@@ -64,11 +64,14 @@ export function moddedTuning(ctx: GameContext, base: VehicleSpec): VehicleSpec {
   if (engine === 1 && brakes === 1 && grip === 1) return base;
   return {
     ...base,
-    accel: base.accel * engine,
-    brake: base.brake * brakes,
-    topSpeed: base.topSpeed * (1 + (engine - 1) / 2),
-    grip: base.grip * grip,
-    turnRate: base.turnRate * (1 + (grip - 1) / 2),
+    engine: {
+      ...base.engine,
+      accel: base.engine.accel * engine,
+      topSpeed: base.engine.topSpeed * (1 + (engine - 1) / 2),
+    },
+    brakes: { ...base.brakes, brake: base.brakes.brake * brakes },
+    tires: { ...base.tires, grip: base.tires.grip * grip },
+    steering: { ...base.steering, turnRate: base.steering.turnRate * (1 + (grip - 1) / 2) },
   };
 }
 

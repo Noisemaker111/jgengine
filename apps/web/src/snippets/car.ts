@@ -7,14 +7,14 @@ import { DEFAULT_DRIVE_CODES, defineGame, defineSystem } from "@jgengine/shell/g
 // you care about; any effect can be switched off or retuned.
 const car = createVehicleDynamics(
   vehicleTuning({
-    topSpeed: 34,
-    accel: 10,
-    brake: 16,
-    turnRate: 2.4,
-    grip: 1.1,
-    drift: 0.85,
-    // Each aid is its own number: abs, tractionControl, stability, selfAlign.
-    stability: 0.73,
+    engine: { topSpeed: 34, accel: 10 },
+    brakes: { brake: 16 },
+    steering: { turnRate: 2.4 },
+    tires: { grip: 1.1, drift: 0.85 },
+    aids: {
+      // Each aid is its own number: abs, tractionControl, stability, selfAlign.
+      stability: 0.73,
+    },
   }),
 );
 

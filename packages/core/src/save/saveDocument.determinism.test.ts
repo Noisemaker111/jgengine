@@ -137,7 +137,12 @@ const SKILL_TREE: SkillTreeConfig = {
   ],
 };
 
-const VEHICLE_SPEC: VehicleSpec = { topSpeed: 30, accel: 8, brake: 11, turnRate: 2, grip: 1.3, handbrakeGrip: 0.25 };
+const VEHICLE_SPEC: VehicleSpec = {
+  engine: { topSpeed: 30, accel: 8 },
+  brakes: { brake: 11, handbrakeGrip: 0.25 },
+  steering: { turnRate: 2 },
+  tires: { grip: 1.3 },
+};
 
 const DAMAGE_TABLE = {
   types: [

@@ -10,12 +10,35 @@ const DT = 1 / 60;
 
 // Three deliberately different setups of grip, balance and aids: test fixtures that span the range, not presets.
 const SETUPS = {
-  forgiving: { grip: 1.5, drift: 0.15, abs: 1, stability: 1, tractionControl: 0.6475, selfAlign: 0.6375, steerRate: 4.4, bodyRoll: 0.4 },
-  raw: { grip: 1.05, drift: 0.25, abs: 0.25, stability: 0.55, tractionControl: 0.153125, selfAlign: 0.4, steerRate: 2.9, bodyRoll: 0.6 },
-  loose: { grip: 1.1, drift: 0.85, abs: 0.55, stability: 0.73, tractionControl: 0.221375, selfAlign: 0.655, steerRate: 3.5, bodyRoll: 0.6 },
-} as const satisfies Record<string, Partial<VehicleSpec>>;
+  forgiving: {
+    tires: { grip: 1.5, drift: 0.15 },
+    brakes: { abs: 1 },
+    aids: { stability: 1, tractionControl: 0.6475 },
+    steering: { selfAlign: 0.6375, steerRate: 4.4 },
+    chassis: { bodyRoll: 0.4 },
+  },
+  raw: {
+    tires: { grip: 1.05, drift: 0.25 },
+    brakes: { abs: 0.25 },
+    aids: { stability: 0.55, tractionControl: 0.153125 },
+    steering: { selfAlign: 0.4, steerRate: 2.9 },
+    chassis: { bodyRoll: 0.6 },
+  },
+  loose: {
+    tires: { grip: 1.1, drift: 0.85 },
+    brakes: { abs: 0.55 },
+    aids: { stability: 0.73, tractionControl: 0.221375 },
+    steering: { selfAlign: 0.655, steerRate: 3.5 },
+    chassis: { bodyRoll: 0.6 },
+  },
+} as const satisfies Record<string, Pick<VehicleSpec, "tires" | "aids" | "chassis"> & { brakes: Pick<VehicleSpec["brakes"], "abs">; steering: Pick<VehicleSpec["steering"], "selfAlign" | "steerRate"> }>;
 
-const CAR: VehicleSpec = { ...SETUPS.forgiving, topSpeed: 34, accel: 10, brake: 14, turnRate: 2.1, turnSpeed: 9, handbrakeGrip: 0.22 };
+const CAR: VehicleSpec = {
+  ...SETUPS.forgiving,
+  engine: { topSpeed: 34, accel: 10 },
+  brakes: { ...SETUPS.forgiving.brakes, brake: 14, handbrakeGrip: 0.22 },
+  steering: { ...SETUPS.forgiving.steering, turnRate: 2.1, turnSpeed: 9 },
+};
 
 const axis = (partial: Partial<AxisInput>): AxisInput => ({ ...NEUTRAL_AXIS, ...partial });
 
@@ -56,7 +79,7 @@ function scriptedLap(vehicle: VehicleDynamics, modifiers?: Parameters<VehicleDyn
 describe("the quality floor every setup keeps", () => {
   for (const [name, style] of Object.entries(SETUPS)) {
     test(`${name}: launches, grips, slides on the handbrake, and never spins on a held keyboard corner`, () => {
-      const spec: VehicleSpec = { ...style, topSpeed: 40, accel: 8, brake: 11, turnRate: 1.8 };
+      const spec: VehicleSpec = { ...style, engine: { topSpeed: 40, accel: 8 }, brakes: { brake: 11 }, steering: { turnRate: 1.8 } };
       const report = measureHandling(() => createVehicleDynamics(vehicleTuning(spec)));
       expect(report.zeroTo100).toBeLessThan(6);
       expect(report.topSpeed).toBeGreaterThan(38);
@@ -70,10 +93,15 @@ describe("the quality floor every setup keeps", () => {
   }
 
   test("the setups feel different: the forgiving one grips hardest, the loose one holds the biggest handbrake slide", () => {
-    const base = { topSpeed: 40, accel: 8, brake: 11, turnRate: 1.8 };
-    const arcade = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...SETUPS.forgiving, ...base })));
-    const sim = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...SETUPS.raw, ...base })));
-    const drift = measureHandling(() => createVehicleDynamics(vehicleTuning({ ...SETUPS.loose, ...base })));
+    const withBase = (setup: (typeof SETUPS)[keyof typeof SETUPS]): VehicleSpec => ({
+      ...setup,
+      engine: { topSpeed: 40, accel: 8 },
+      brakes: { ...setup.brakes, brake: 11 },
+      steering: { ...setup.steering, turnRate: 1.8 },
+    });
+    const arcade = measureHandling(() => createVehicleDynamics(vehicleTuning(withBase(SETUPS.forgiving))));
+    const sim = measureHandling(() => createVehicleDynamics(vehicleTuning(withBase(SETUPS.raw))));
+    const drift = measureHandling(() => createVehicleDynamics(vehicleTuning(withBase(SETUPS.loose))));
     expect(arcade.maxLateralG).toBeGreaterThan(sim.maxLateralG);
     expect(drift.handbrakePeakSideslipDeg).toBeGreaterThan(arcade.handbrakePeakSideslipDeg);
     expect(drift.powerSteerPeakSideslipDeg).toBeGreaterThan(arcade.powerSteerPeakSideslipDeg);
@@ -102,8 +130,8 @@ describe("weight transfer", () => {
   });
 
   test("a heavier body rolls more in the same corner when the spec says soft", () => {
-    const stiff = createVehicleDynamics(vehicleTuning({ ...CAR, bodyRoll: 0 }));
-    const soft = createVehicleDynamics(vehicleTuning({ ...CAR, bodyRoll: 1 }));
+    const stiff = createVehicleDynamics(vehicleTuning({ ...CAR, chassis: { bodyRoll: 0 } }));
+    const soft = createVehicleDynamics(vehicleTuning({ ...CAR, chassis: { bodyRoll: 1 } }));
     let stiffRoll = 0;
     let softRoll = 0;
     for (let i = 0; i < 150; i += 1) {

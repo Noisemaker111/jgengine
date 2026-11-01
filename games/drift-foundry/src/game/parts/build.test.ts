@@ -7,9 +7,9 @@ import { partById, PARTS } from "./catalog";
 describe("drift-foundry modular kart handling", () => {
   test("bare chassis is the authored base handling and has no route capabilities", () => {
     const tuning = tuningFrom([]);
-    expect(tuning.topSpeed).toBeCloseTo(BASE_HANDLING.topSpeed, 5);
-    expect(tuning.accel).toBeCloseTo(BASE_HANDLING.accel, 5);
-    expect(tuning.turnRate).toBeCloseTo(BASE_HANDLING.turnRate, 5);
+    expect(tuning.topSpeed).toBeCloseTo(BASE_HANDLING.engine.topSpeed, 5);
+    expect(tuning.accel).toBeCloseTo(BASE_HANDLING.engine.accel, 5);
+    expect(tuning.turnRate).toBeCloseTo(BASE_HANDLING.steering.turnRate, 5);
     expect(tuning.hasPlow).toBe(false);
     expect(tuning.jumpPower).toBe(0);
     expect(tuning.armorCharges).toBe(0);
@@ -95,8 +95,8 @@ describe("drift-foundry modular kart handling", () => {
 
   test("brakes and reverse follow the composed engine rather than the bare chassis", () => {
     const truck = tuningFrom(swapPart([], partById("truck_engine")!).installed);
-    expect(truck.handling.brake).toBeCloseTo(truck.accel * 1.3, 5);
-    expect(truck.handling.reverseSpeed).toBeCloseTo(truck.topSpeed * 0.35, 5);
+    expect(truck.handling.brakes.brake).toBeCloseTo(truck.accel * 1.3, 5);
+    expect(truck.handling.engine.reverseSpeed).toBeCloseTo(truck.topSpeed * 0.35, 5);
   });
 
   test("composed numbers are additive across installed parts and match their flat claims", () => {
@@ -104,7 +104,7 @@ describe("drift-foundry modular kart handling", () => {
     const armor = partById("armor_plating")!;
     const installed = swapPart(swapPart([], engine).installed, armor).installed;
     const tuning = tuningFrom(installed);
-    expect(tuning.topSpeed).toBeCloseTo(BASE_HANDLING.topSpeed + claimedChange(engine, "topSpeed") + claimedChange(armor, "topSpeed"), 5);
+    expect(tuning.topSpeed).toBeCloseTo(BASE_HANDLING.engine.topSpeed + claimedChange(engine, "topSpeed") + claimedChange(armor, "topSpeed"), 5);
     expect(tuning.armorCharges).toBe(1);
   });
 
@@ -112,7 +112,7 @@ describe("drift-foundry modular kart handling", () => {
     const clean = tuningFrom([]);
     const bent = tuningFrom([], { gripScale: 1, engineScale: 1, brakeScale: 1, topSpeedScale: 0.95, steerPull: 0.035, drag: 0 });
     expect(bent.topSpeed).toBeLessThan(clean.topSpeed);
-    expect(bent.handling.brake).toBeCloseTo(bent.accel * 1.3, 5);
+    expect(bent.handling.brakes.brake).toBeCloseTo(bent.accel * 1.3, 5);
   });
 
   test("every part id resolves through the catalog", () => {

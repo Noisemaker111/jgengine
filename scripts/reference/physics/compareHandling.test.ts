@@ -33,7 +33,14 @@ describe("compareHandlingMetrics", () => {
 
 describe("compareVehicleTuning", () => {
   test("scores a game tuning against the reference car per metric", () => {
-    const tuning = vehicleTuning({ drift: 0.15, abs: 1, stability: 1, topSpeed: 40, accel: 9, brake: 14, turnRate: 1.4, grip: 1.6, weight: 1150 });
+    const tuning = vehicleTuning({
+      tires: { drift: 0.15, grip: 1.6 },
+      brakes: { abs: 1, brake: 14 },
+      aids: { stability: 1 },
+      engine: { topSpeed: 40, accel: 9 },
+      steering: { turnRate: 1.4 },
+      chassis: { weight: 1150 },
+    });
     // A measured reference is passed in, as the CLI does across many game cars; `--validate` measures the real one.
     const result = compareVehicleTuning(tuning, MAZDA_MX5_ND, BASE);
     expect(result.rows).toHaveLength(9);

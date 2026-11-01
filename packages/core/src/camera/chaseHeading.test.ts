@@ -86,7 +86,12 @@ describe("chase heading ownership", () => {
   });
 
   test("the default and explicit body source still follow a turning vehicle and return its chase aim", () => {
-    const car = createVehicleDynamics(vehicleTuning({ topSpeed: 20, accel: 9, brake: 12, turnRate: 2, grip: 1.3, handbrakeGrip: 0.4 }));
+    const car = createVehicleDynamics(vehicleTuning({
+      engine: { topSpeed: 20, accel: 9 },
+      brakes: { brake: 12, handbrakeGrip: 0.4 },
+      steering: { turnRate: 2 },
+      tires: { grip: 1.3 },
+    }));
     const camera = createChaseRigState();
     const resolved = resolveChase({ yawResponse: 5 });
     let inputYaw = -2;

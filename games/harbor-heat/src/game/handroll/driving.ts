@@ -319,7 +319,7 @@ export function createDriving(): Driving {
       }
     }
 
-    const gearbox = def?.dynamics.type === "ground" ? def.dynamics.tuning.gearbox : undefined;
+    const gearbox = def?.dynamics.type === "ground" ? def.dynamics.tuning.engine.gearbox : undefined;
     const idle = gearbox?.idleRpm ?? 850;
     const redline = gearbox?.redlineRpm ?? 7600;
     drivingAudio.tick(ctx, {

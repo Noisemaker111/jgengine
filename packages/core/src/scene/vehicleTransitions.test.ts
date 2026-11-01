@@ -43,7 +43,12 @@ for (const kind of ["ground", "boat"] as const) {
     const frozen = ctx.scene.entity.get("local")!.position;
     stepPlayerMovement(ctx, "local", { held: ["moveForward"], pointer: null }, 0.25, movement);
     expect(ctx.scene.entity.get("local")!.position).toEqual(frozen);
-    const sim = kind === "ground" ? createVehicleDynamics(vehicleTuning({ topSpeed: 15, accel: 8, brake: 10, reverseSpeed: 3, turnRate: 1, grip: 1, handbrakeGrip: 1 })) : createBoatDynamics({
+    const sim = kind === "ground" ? createVehicleDynamics(vehicleTuning({
+      engine: { topSpeed: 15, accel: 8, reverseSpeed: 3 },
+      brakes: { brake: 10, handbrakeGrip: 1 },
+      steering: { turnRate: 1 },
+      tires: { grip: 1 },
+    })) : createBoatDynamics({
       massKg: 5000, length: 9, beam: 3, maxThrust: 20000, propSpeed: 8, steering: { kind: "rudder", area: 1 },
     });
     ctx.input.publish(["moveForward"]);

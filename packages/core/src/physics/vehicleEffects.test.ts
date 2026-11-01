@@ -97,7 +97,12 @@ describe("vehicle effects: each is its own term", () => {
   test("aeroDrag slows a coasting car by ½ρCdA·v²/m, and a spec car can switch it off", () => {
     const expected = (0.5 * 1.225 * 0.7 * 30 * 30) / bare.massKg;
     expect(coastLoss(on({ aeroDrag: { area: 0.7 } }), 30)).toBeCloseTo(expected, 1);
-    const spec = vehicleTuning({ topSpeed: 40, accel: 8, brake: 12, turnRate: 1.6, grip: 1.1 });
+    const spec = vehicleTuning({
+      engine: { topSpeed: 40, accel: 8 },
+      brakes: { brake: 12 },
+      steering: { turnRate: 1.6 },
+      tires: { grip: 1.1 },
+    });
     const withDrag = coastLoss(spec, 30);
     const noDrag = coastLoss(withVehicleEffects(spec, { aeroDrag: false }), 30);
     expect(withDrag - noDrag).toBeGreaterThan(0.2);
