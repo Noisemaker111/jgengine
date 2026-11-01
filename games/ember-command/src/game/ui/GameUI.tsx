@@ -4,7 +4,7 @@ import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { KIT_MATERIALS } from "@jgengine/core/ui/kit/kitFrame.view";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { GAME_FONTS } from "../../art/fonts/fonts";
+import { GAME_FONTS } from "./gameFonts";
 import { hudStore } from "../hudStore";
 import { preferences } from "../preferences";
 import { CommandMenu } from "./CommandMenu";

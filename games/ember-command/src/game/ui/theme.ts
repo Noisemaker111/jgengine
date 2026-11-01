@@ -1,7 +1,7 @@
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { hudTheme } from "@jgengine/core/hud/hudTheme.view";
 
-import { GAME_FONTS } from "../../art/fonts/fonts";
+import { GAME_FONTS } from "./gameFonts";
 
 /** The bundled faces: IM Fell English SC for the hand that writes orders, Alegreya for the body. */
 export const EMBER_FONTS = gameFontStacks(GAME_FONTS);

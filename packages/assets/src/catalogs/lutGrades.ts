@@ -57,6 +57,7 @@ export const LUT_GRADES = [
   { id: "cool-overcast", title: "Cool overcast", look: "Flat blue-grey daylight, calm and muted.", recipe: { contrast: 0.95, saturation: 0.8, gain: [0.96, 1.0, 1.05], fade: 0.02 } },
   { id: "tropical-lush", title: "Tropical lush", look: "Teal-green shadows, warm leafy mid tones, cream highlights, a touch more colour.", recipe: { contrast: 1.06, saturation: 1.14, gain: [0.98, 1.0, 0.97], shadowTint: [-0.012, 0.018, 0.012], highlightTint: [0.008, 0.006, 0.0] } },
   { id: "bleach-bypass-warm", title: "Bleach bypass, warm", look: "Bleached amber midtones, teal-black shadows, cream highlights.", recipe: { contrast: 1.22, saturation: 0.88, bleach: 0.4, gain: [1.08, 1.0, 0.88], shadowTint: [-0.02, 0.006, 0.012], highlightTint: [0.04, 0.012, -0.04] } },
+  { id: "autumn-painterly", title: "Autumn painterly", look: "Golden late-afternoon midtones, cool blue-grey shadows, cream highlights, richer colour.", recipe: { contrast: 1.08, saturation: 1.15, gain: [1.06, 1.0, 0.86], shadowTint: [-0.012, 0.0, 0.03], highlightTint: [0.04, 0.02, -0.035] } },
   { id: "vivid-pop", title: "Vivid pop", look: "Punchy saturated cartoon colour.", recipe: { contrast: 1.14, saturation: 1.45, gamma: [0.97, 0.97, 0.97] } },
 ] as const satisfies readonly LutGrade[];
 
