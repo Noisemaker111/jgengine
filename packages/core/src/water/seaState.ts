@@ -134,7 +134,10 @@ export function waveFieldHeight(field: WaveField, x: number, z: number, time: nu
   return eta;
 }
 
-/** Significant wave height of a field, m: `4·√(Σa²/2)`. */
+/**
+ * Significant wave height of a field, m: `4·√(Σa²/2)`.
+ * @capability sea-state significant wave height of a wave field
+ */
 export function waveFieldSignificantHeight(field: WaveField): number {
   let variance = 0;
   for (const c of field.components) variance += 0.5 * c.amplitude * c.amplitude;
