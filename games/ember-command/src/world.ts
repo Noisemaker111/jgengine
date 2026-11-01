@@ -1,3 +1,4 @@
+import { libraryTerrainSurface } from "@jgengine/assets/catalogs/materialLibrary";
 import { clearanceZonesFrom } from "@jgengine/core/scatter/scatterRegion";
 import { editorLayers } from "./editorLayers";
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
@@ -15,7 +16,7 @@ export const world: EnvironmentWorldFeature = environment({
     seed: "ember-command-vale",
     segments: 240,
     material: "highland",
-    colors: { low: "#4c6a31", high: "#728b40", waterline: "#3d5a4a" },
+    colors: { low: "#6f7a3a", high: "#8a8a42", waterline: "#3d5a4a" },
     // Push snow off-world so the detail shader reads as pure grass → rock relief.
     detail: {
       rockColor: "#6b6157",
@@ -26,6 +27,12 @@ export const world: EnvironmentWorldFeature = environment({
       macroScale: 26,
       roughness: 0.95,
       strength: 0.45,
+      // ambientCG scans: Grass004 meadow under the autumn tint, packed dirt for the war road, Rock022 on cliffs.
+      surfaces: {
+        ground: libraryTerrainSurface("foliage/grass-dry", { tile: 4, tint: 0.55 }),
+        sand: libraryTerrainSurface("ground/packed-dirt", { tile: 3, tint: 0.6 }),
+        rock: libraryTerrainSurface("ground/rock", { tile: 6 }),
+      },
     },
   }),
   // Colours, sun and haze come from the game's `mood`.

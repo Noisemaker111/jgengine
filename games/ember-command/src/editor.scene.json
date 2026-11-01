@@ -1,5 +1,200 @@
 {
   "version": 1,
+  "simulation": {
+    "emitters": [
+      {
+        "id": "horizon-smoke-1",
+        "position": {
+          "x": 0,
+          "y": 0.5,
+          "z": -42
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "horizon-smoke-2",
+        "position": {
+          "x": -44,
+          "y": 0.5,
+          "z": -58
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "horizon-smoke-3",
+        "position": {
+          "x": 46,
+          "y": 0.5,
+          "z": -52
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "horizon-smoke-4",
+        "position": {
+          "x": -50,
+          "y": 0.5,
+          "z": -20
+        },
+        "effect": "smoke/plume"
+      },
+      {
+        "id": "fire-torch_p1",
+        "position": {
+          "x": -5,
+          "y": 1.7,
+          "z": 32
+        },
+        "effect": "fire/torch"
+      },
+      {
+        "id": "fire-torch_p2",
+        "position": {
+          "x": 5,
+          "y": 1.7,
+          "z": 32
+        },
+        "effect": "fire/torch"
+      },
+      {
+        "id": "fire-torch_e1",
+        "position": {
+          "x": -5,
+          "y": 1.7,
+          "z": -32
+        },
+        "effect": "fire/torch"
+      },
+      {
+        "id": "fire-torch_e2",
+        "position": {
+          "x": 5,
+          "y": 1.7,
+          "z": -32
+        },
+        "effect": "fire/torch"
+      },
+      {
+        "id": "fire-torch_e3",
+        "position": {
+          "x": -8,
+          "y": 1.7,
+          "z": -33
+        },
+        "effect": "fire/torch"
+      },
+      {
+        "id": "fire-torch_e4",
+        "position": {
+          "x": 8,
+          "y": 1.7,
+          "z": -33
+        },
+        "effect": "fire/torch"
+      },
+      {
+        "id": "leaves-1",
+        "position": {
+          "x": -38,
+          "y": 7,
+          "z": 10
+        },
+        "effect": "weather/leaves"
+      },
+      {
+        "id": "leaves-2",
+        "position": {
+          "x": 38,
+          "y": 7,
+          "z": -8
+        },
+        "effect": "weather/leaves"
+      },
+      {
+        "id": "leaves-3",
+        "position": {
+          "x": -38,
+          "y": 7,
+          "z": -30
+        },
+        "effect": "weather/leaves"
+      },
+      {
+        "id": "leaves-4",
+        "position": {
+          "x": 38,
+          "y": 7,
+          "z": 30
+        },
+        "effect": "weather/leaves"
+      }
+    ],
+    "habitats": [
+      {
+        "id": "crows-1",
+        "species": "crow",
+        "position": {
+          "x": -40,
+          "y": 16,
+          "z": 8
+        },
+        "radius": 16,
+        "count": 5,
+        "seed": "crows-1",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 5,
+          "separationRadius": 2,
+          "neighborRadius": 10,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 28
+        }
+      },
+      {
+        "id": "crows-2",
+        "species": "crow",
+        "position": {
+          "x": 40,
+          "y": 16,
+          "z": -12
+        },
+        "radius": 16,
+        "count": 5,
+        "seed": "crows-2",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 5,
+          "separationRadius": 2,
+          "neighborRadius": 10,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 28
+        }
+      },
+      {
+        "id": "crows-3",
+        "species": "crow",
+        "position": {
+          "x": -40,
+          "y": 16,
+          "z": -34
+        },
+        "radius": 16,
+        "count": 5,
+        "seed": "crows-3",
+        "role": "cosmetic",
+        "steering": {
+          "maxSpeed": 5,
+          "separationRadius": 2,
+          "neighborRadius": 10,
+          "cohesionWeight": 0.8,
+          "alignmentWeight": 1,
+          "stragglerRadius": 28
+        }
+      }
+    ]
+  },
   "markers": [
     {
       "id": "keep_player",
@@ -378,8 +573,8 @@
         "z": 18
       },
       "rotationY": 1.571,
-      "catalogId": "banner_blue",
       "label": "The Ember Gate",
+      "catalogId": "banner_blue",
       "meta": {
         "catalogId": "banner_blue"
       }
@@ -505,8 +700,8 @@
         "z": 1.4
       },
       "rotationY": 1.8,
-      "catalogId": "barrel",
       "label": "Waystone of the Vale",
+      "catalogId": "barrel",
       "meta": {
         "catalogId": "barrel"
       }
@@ -520,8 +715,8 @@
         "z": -22
       },
       "rotationY": 1.571,
-      "catalogId": "banner_red",
       "label": "Marauder muster",
+      "catalogId": "banner_red",
       "meta": {
         "catalogId": "banner_red"
       }
@@ -1404,7 +1599,6 @@
     {
       "id": "outer-ring-west",
       "kind": "scatter",
-      "label": "Vale ring (west)",
       "points": [
         {
           "x": -92,
@@ -1427,6 +1621,7 @@
           "z": 92
         }
       ],
+      "label": "Vale ring (west)",
       "meta": {
         "density": 0.06,
         "minSpacing": 4.2,
@@ -1455,7 +1650,6 @@
     {
       "id": "outer-ring-east",
       "kind": "scatter",
-      "label": "Vale ring (east)",
       "points": [
         {
           "x": 56,
@@ -1478,6 +1672,7 @@
           "z": 92
         }
       ],
+      "label": "Vale ring (east)",
       "meta": {
         "density": 0.06,
         "minSpacing": 4.2,
@@ -1506,7 +1701,6 @@
     {
       "id": "outer-ring-north",
       "kind": "scatter",
-      "label": "Vale ring (north)",
       "points": [
         {
           "x": -56,
@@ -1529,6 +1723,7 @@
           "z": -56
         }
       ],
+      "label": "Vale ring (north)",
       "meta": {
         "density": 0.06,
         "minSpacing": 4.2,
@@ -1557,7 +1752,6 @@
     {
       "id": "outer-ring-south",
       "kind": "scatter",
-      "label": "Vale ring (south)",
       "points": [
         {
           "x": -56,
@@ -1580,6 +1774,7 @@
           "z": 92
         }
       ],
+      "label": "Vale ring (south)",
       "meta": {
         "density": 0.06,
         "minSpacing": 4.2,
@@ -1601,6 +1796,186 @@
           {
             "item": "bush",
             "weight": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "leaf-litter-west",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -31,
+          "y": 0,
+          "z": -44
+        },
+        {
+          "x": -27,
+          "y": 0,
+          "z": -44
+        },
+        {
+          "x": -27,
+          "y": 0,
+          "z": 44
+        },
+        {
+          "x": -31,
+          "y": 0,
+          "z": 44
+        }
+      ],
+      "label": "Leaf litter, west woods edge",
+      "meta": {
+        "density": 0.5,
+        "minSpacing": 1.2,
+        "seed": "leaf-litter-west",
+        "maxSlope": 28,
+        "edgeFalloff": 2,
+        "minScale": 0.8,
+        "maxScale": 1.3,
+        "jitter": 1,
+        "palette": [
+          {
+            "item": "leaf",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "leaf-litter-east",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 27,
+          "y": 0,
+          "z": -44
+        },
+        {
+          "x": 31,
+          "y": 0,
+          "z": -44
+        },
+        {
+          "x": 31,
+          "y": 0,
+          "z": 44
+        },
+        {
+          "x": 27,
+          "y": 0,
+          "z": 44
+        }
+      ],
+      "label": "Leaf litter, east woods edge",
+      "meta": {
+        "density": 0.5,
+        "minSpacing": 1.2,
+        "seed": "leaf-litter-east",
+        "maxSlope": 28,
+        "edgeFalloff": 2,
+        "minScale": 0.8,
+        "maxScale": 1.3,
+        "jitter": 1,
+        "palette": [
+          {
+            "item": "leaf",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "field-home-wheat",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -26,
+          "y": 0,
+          "z": 40
+        },
+        {
+          "x": -12,
+          "y": 0,
+          "z": 40
+        },
+        {
+          "x": -12,
+          "y": 0,
+          "z": 48
+        },
+        {
+          "x": -26,
+          "y": 0,
+          "z": 48
+        }
+      ],
+      "label": "Wheat field by the Vanguard keep",
+      "meta": {
+        "density": 0.9,
+        "minSpacing": 1.4,
+        "seed": "field-home-wheat",
+        "maxSlope": 28,
+        "edgeFalloff": 0.5,
+        "minScale": 0.8,
+        "maxScale": 1.3,
+        "jitter": 1,
+        "palette": [
+          {
+            "item": "wheat",
+            "weight": 4
+          },
+          {
+            "item": "pumpkin",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "field-mid-wheat",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": 10,
+          "y": 0,
+          "z": -4
+        },
+        {
+          "x": 20,
+          "y": 0,
+          "z": -4
+        },
+        {
+          "x": 20,
+          "y": 0,
+          "z": 8
+        },
+        {
+          "x": 10,
+          "y": 0,
+          "z": 8
+        }
+      ],
+      "label": "Harvest field by the mid mine",
+      "meta": {
+        "density": 0.9,
+        "minSpacing": 1.4,
+        "seed": "field-mid-wheat",
+        "maxSlope": 28,
+        "edgeFalloff": 0.5,
+        "minScale": 0.8,
+        "maxScale": 1.3,
+        "jitter": 1,
+        "palette": [
+          {
+            "item": "wheat",
+            "weight": 3
+          },
+          {
+            "item": "pumpkin",
+            "weight": 1
           }
         ]
       }
@@ -1721,6 +2096,16 @@
             "maxHealth": 1300,
             "walkSpeed": 0,
             "scale": 1
+          }
+        },
+        {
+          "id": "warcamp",
+          "label": "Forward Camp",
+          "meta": {
+            "role": "enemy",
+            "maxHealth": 620,
+            "walkSpeed": 0,
+            "scale": 0.85
           }
         }
       ]
@@ -7257,34 +7642,42 @@
       {
         "id": "grass",
         "surface": "grass",
-        "tint": "#586942",
+        "material": "foliage/grass-dry",
+        "tint": "#62802f",
         "tiling": 3,
         "roughness": 0.96,
-        "triplanar": true
+        "triplanar": true,
+        "materialUrl": "/materials/ambientcg-grass004/color.jpg"
       },
       {
         "id": "dirt",
         "surface": "dirt",
-        "tint": "#937451",
+        "material": "ground/packed-dirt",
+        "tint": "#8f6a3e",
         "tiling": 2,
         "roughness": 0.96,
-        "triplanar": true
+        "triplanar": true,
+        "materialUrl": "/materials/ambientcg-ground025/color.jpg"
       },
       {
         "id": "gravel",
         "surface": "gravel",
-        "tint": "#a7a087",
+        "material": "ground/dirt",
+        "tint": "#94743f",
         "tiling": 3,
         "roughness": 0.96,
-        "triplanar": true
+        "triplanar": true,
+        "materialUrl": "/materials/ambientcg-ground037/color.jpg"
       },
       {
         "id": "rock",
         "surface": "rock",
-        "tint": "#72756a",
+        "material": "ground/rock",
+        "tint": "#8a8172",
         "tiling": 4,
         "roughness": 0.96,
-        "triplanar": true
+        "triplanar": true,
+        "materialUrl": "/materials/ambientcg-rock022/color.jpg"
       }
     ]
   }

@@ -1,14 +1,17 @@
 import { defineGame } from "@jgengine/shell/defineGame";
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 
 import { editorCatalogs } from "./editorCatalogs";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { EMBER_SOUNDS } from "./game/audio";
 import { content } from "./game/content";
-import { entityModels } from "./game/models";
+import { entityModels, flockModels, scatterModels } from "./game/models";
 import { isPlayerSelectable } from "./game/session";
 import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
+import { emberKit } from "./game/ui/emberKit";
 import { emberTheme } from "./game/ui/theme";
 import { EmberCommandWorldOverlay } from "./game/ui/WorldOverlay";
 import { onInit, onNewPlayer, onTick } from "./loop";
@@ -57,6 +60,8 @@ export const game = defineGame({
   loop: { onInit, onNewPlayer, onTick },
   GameUI,
   hudTheme: emberTheme,
+  // The parchment kit with wax red as its accent, so toasts, prompts and menu panes match the war-table CSS.
+  uiKit: emberKit,
   controls: {
     // The command board, the formation tabs and the army call already carry every bound action as a
   // pressable token, so the derived touch buttons would only repeat them over the field.
@@ -121,32 +126,33 @@ export const game = defineGame({
       },
     },
   },
+  sceneScatterModels: scatterModels,
+  sceneFlockModels: flockModels,
   scenePlacement: false,
   rendering: {
     // Soft shadows read well but are the dominant cost under software WebGL; a single 1024 map keeps
   // the look affordable. Real-GPU play is nowhere near this budget.
     shadows: true,
-    // Shipped-game presentation: a real day sky + IBL fill the empty horizon, and the post grade is
-  // tuned to the valley's warm ember banners against earthy greens. AO stays off to keep the
-  // populated-wave frame cost affordable under software WebGL.
-    look: "cinematic",
+    // Late autumn afternoon: the dusk sky at 0.7 for fill, the warm south-west key, a parchment-haze map edge,
+    // and the autumn painterly cube standing in for the hand lift and gain.
+    mood: { preset: "golden", sun: { azimuth: 225, elevation: 30, color: "#ffc98a" }, horizonColor: "#d8c9a8", fog: { near: 90, far: 220 } },
+    environmentSource: hdriEnvironment("dusk", { intensity: 0.7 }),
     postProcessing: {
       toneMapping: "aces",
-      exposure: 1.0,
+      exposure: 0.68,
       aa: "smaa",
       bloom: { strength: 0.22, radius: 0.5, threshold: 0.92 },
-      ao: false,
+      ao: { intensity: 1.2 },
       grade: {
-        lift: [0.02, 0.014, 0.012],
-        gain: [1.06, 1.02, 0.96],
-        gamma: 0.97,
-        saturation: 1.1,
-        vignette: 0.22,
+        lut: lutGrade("autumn-painterly"),
+        lift: [0, 0, 0],
+        gain: [1, 1, 1],
+        gamma: 1,
+        saturation: 1,
+        vignette: 0.2,
         grain: 0.01,
       },
     },
-    // Clear afternoon over the keeps; the sun stands where the hand-built key did (south-west, 47 degrees).
-    mood: { preset: "day", sun: { azimuth: 234, elevation: 47, color: "#ffe1ad" }, fog: { near: 70, far: 190 } },
   },
   camera: {
     rig: "rts",

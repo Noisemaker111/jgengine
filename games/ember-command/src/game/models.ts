@@ -1,27 +1,96 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { authoredModels } from "./authoredModels";
+import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
-// Ember Command's own stone-and-copper miniature set; bundled through Vite so both
-// the standalone game and consuming engine hosts load the same reviewed models.
-const heights: Record<keyof typeof authoredModels, number> = {
-  peasant: 2, footman: 2.3, rifleman: 2.2, hero: 2.65,
-  grunt: 2.3, reaver: 2.65, keep_player: 7, keep_enemy: 7, warcamp: 5.5,
-  barracks: 5, farm: 3.6, guard_tower: 6.5,
-  banner_blue: 2.6, banner_red: 2.6, torch: 1.8, barrel: 1.2,
-  goldmine: 2.6, woods: 4.6,
-};
-const warriors = new Set(["peasant", "footman", "rifleman", "hero", "grunt", "reaver"]);
+import { assets } from "./assets";
+
+const CHARACTERS = "quaternius-lowpoly-rpg-characters";
+const VILLAGE = "quaternius-lowpoly-medieval-village-pack";
+const BUILDINGS = "quaternius-lowpoly-medieval-buildings";
+const PROPS = "quaternius-fantasy-props";
+const NATURE = "quaternius-stylized-nature";
+const CROPS = "quaternius-lowpoly-crops-pack";
+
+const VANGUARD = "#3a78c4";
+const MARAUDER = "#c93a2a";
+const VANGUARD_ROOF = "#2d5b8c";
+const MARAUDER_ROOF = "#a3291c";
+
 // Rank-and-file troops share one model per kind and play only idle/walk, so a batch reproduces them
 // at any distance: a full battle draws a handful of instanced batches instead of ~17 draws a unit.
-// The hero keeps its own rig - one unique character is not worth a batch. The engine's default
-// capacity (128 a kind) keeps any overflow on its own rig rather than dropping it.
+// The hero keeps its own rig. The engine's default capacity (128 a kind) keeps overflow on its own rig.
 const BATCHED_TROOPS = new Set(["peasant", "footman", "rifleman", "grunt", "reaver"]);
+const TROOP_ANIMATION = {
+  states: { idle: "CharacterArmature|Idle", walk: "CharacterArmature|Walk", walkSpeed: 0.1 },
+  clock: "game",
+} as const;
+
+function troop(model: string, height: number, tint: string): ModelPick {
+  return { model: `${CHARACTERS}/${model}`, style: { targetHeight: height, material: { emissive: tint, emissiveIntensity: 0.12, rim: { color: tint, strength: 0.9, power: 2.5 } }, animation: TROOP_ANIMATION } };
+}
+
+function building(model: string, height: number, roof: string, roofMaterial = "RoofTiles"): ModelPick {
+  return { model, style: { targetHeight: height, material: { color: roof, materials: [roofMaterial] } } };
+}
+
+const plan: Record<string, ModelPick> = {
+  peasant: troop("Monk", 2, VANGUARD),
+  footman: troop("Warrior", 2.3, VANGUARD),
+  rifleman: troop("Ranger", 2.2, VANGUARD),
+  hero: troop("Cleric", 2.65, VANGUARD),
+  grunt: troop("Rogue", 2.3, MARAUDER),
+  reaver: troop("Warrior", 2.65, MARAUDER),
+  keep_player: { model: `${BUILDINGS}/LargeSquareTowerBricks`, style: { targetHeight: 7, material: { color: "#8ea3c8" } } },
+  keep_enemy: { model: `${BUILDINGS}/LargeTower`, style: { targetHeight: 7, material: { color: "#e8b3a6" } } },
+  warcamp: building(`${VILLAGE}/Stable`, 4.4, MARAUDER_ROOF),
+  barracks: building(`${VILLAGE}/Stable`, 4.6, VANGUARD_ROOF),
+  farm: building(`${VILLAGE}/Mill`, 4.4, VANGUARD_ROOF),
+  guard_tower: { model: `${BUILDINGS}/WatchTowerWRoof`, style: { targetHeight: 6.5 } },
+  banner_blue: { model: `${PROPS}/Banner_1`, style: { targetHeight: 2.6, material: { emissive: VANGUARD_ROOF, emissiveIntensity: 0.7, materials: ["MI_Banner"] }, wind: { strength: 0.18, speed: 1.2 } } },
+  banner_red: { model: `${PROPS}/Banner_2`, style: { targetHeight: 2.6, material: { emissive: MARAUDER_ROOF, emissiveIntensity: 0.7, materials: ["MI_Banner"] }, wind: { strength: 0.18, speed: 1.2 } } },
+  torch: { model: `${PROPS}/Torch_Metal`, style: { targetHeight: 1.8 } },
+  barrel: { model: `${PROPS}/Barrel`, style: { targetHeight: 1.2 } },
+  goldmine: {
+    model: `${NATURE}/Rock_Medium_1`,
+    style: {
+      targetHeight: 2.6,
+      parts: [{ model: `${PROPS}/Coin_Pile`, position: [0.5, 0, 0.9], scale: 2.4 }],
+      material: { color: "#d9a441" },
+    },
+  },
+  woods: { model: `${VILLAGE}/Sawmill`, style: { targetHeight: 3.6 } },
+};
+
+const resolved = resolveModelPlan(assets, plan);
+
 export const entityModels: Record<string, ModelConfig> = Object.fromEntries(
-  Object.entries(authoredModels).map(([id, url]) => [id, {
-    url, targetHeight: heights[id as keyof typeof heights],
-    ...(warriors.has(id) ? { animation: { states: { idle: "Idle", walk: "Walking_A", walkSpeed: .1 }, clock: "game" } } : {}),
-    ...(BATCHED_TROOPS.has(id) ? { lod: { crowdDistance: 0 } } : {}),
-  }]),
+  Object.entries(resolved).map(([id, model]) => [
+    id,
+    BATCHED_TROOPS.has(id) ? { ...model, lod: { crowdDistance: 0 } } : model,
+  ]),
 );
-// The authored forest ring uses the SDK's instanced vegetation meshes.
-export const scatterModels: Record<string, string> = {};
+
+const RUST = "#e0883c";
+const GOLD = "#f0c85a";
+const OLIVE = "#c8b060";
+
+function canopy(model: string, tint: string, material: string, scale = 1): ModelPick {
+  return { model: `${NATURE}/${model}`, style: { scale, material: { color: tint, materials: [material] }, wind: { strength: 0.25, speed: 0.8 } } };
+}
+
+/** Scatter palette items in editor.scene.json → the autumn Quaternius set: rust and gold broadleaf, olive pines. */
+export const scatterModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
+  pine: canopy("Pine_2", OLIVE, "Leaves_Pine", 0.5),
+  tree: canopy("CommonTree_2", RUST, "Leaves_NormalTree", 0.5),
+  oak: canopy("CommonTree_4", GOLD, "Leaves_NormalTree", 0.5),
+  bush: canopy("Plant_1_Big", GOLD, "Leaves", 0.7),
+  rock: { model: `${NATURE}/Rock_Medium_1`, style: { scale: 0.5 } },
+  stone: { model: `${NATURE}/Rock_Medium_3`, style: { scale: 0.35 } },
+  leaf: { model: `${NATURE}/Petal_2`, style: { scale: 0.5, material: { color: RUST } } },
+  wheat: { model: `${CROPS}/Wheat_Crop`, style: { scale: 1 } },
+  pumpkin: { model: `${CROPS}/Pumpkin_Crop`, style: { scale: 1 } },
+});
+
+/** Crows over the woods: the authored habitats' species, near black so they read against the dusk sky. */
+export const flockModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
+  crow: { model: "quaternius-5-low-poly-animals/bird", style: { targetHeight: 0.9, material: { color: "#2a2623", roughness: 0.8 } } },
+});

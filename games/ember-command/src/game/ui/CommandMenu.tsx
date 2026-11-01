@@ -10,7 +10,9 @@ import { relativeSavedAt, useSaveSlots } from "@jgengine/core/save/saveSlots.vie
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import { slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
+import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
+import { ASSET_SOURCE_IDS } from "../assets";
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { campaignOrdinal, markStoresRestored, type CampaignReadout } from "../campaign";
@@ -26,12 +28,14 @@ export const menuFocus: { id: string | null } = { id: null };
 
 const credits = mergeCredits({ title: "The makers of the vale", sections: [
   { heading: "Ember Command", entries: [
-    { label: "Original miniatures & art direction", detail: "Bastions, warriors, pennants and resource props authored for this game." },
+    { label: "Art direction", detail: "An autumn vale painted for the war table." },
     { label: "JGengine", detail: "Published engine packages", href: "https://jgengine.com" },
   ] },
   { heading: "Icons", entries: [{ label: "game-icons.net contributors", detail: "CC BY 3.0; individual credits in iconData.ts", href: "https://game-icons.net" }] },
-  { heading: "Type", entries: [{ label: "IM Fell English SC and Alegreya", detail: "SIL Open Font License 1.1" }] },
-] }, creditsForSourceIds(["kaykit-city-builder", "quaternius-stylized-nature", "kaykit-dungeon"]));
+] }, creditsForSourceIds(ASSET_SOURCE_IDS), {
+  title: "Sky, grade and type",
+  sections: creditsForLooks({ hdri: ["dusk"], lut: ["autumn-painterly"], fonts: ["im-fell-english-sc", "alegreya"] }),
+});
 
 export function battleTime(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;

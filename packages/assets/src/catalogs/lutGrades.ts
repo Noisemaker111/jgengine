@@ -60,6 +60,7 @@ export const LUT_GRADES = [
   { id: "pastel-dusk", title: "Pastel dusk", look: "Plum-violet shadows, rose midtones, cream highlights, soft saturated colour.", recipe: { contrast: 1.02, saturation: 1.05, gain: [1.02, 0.97, 1.03], shadowTint: [0.014, 0.002, 0.034], highlightTint: [0.03, 0.012, -0.004], fade: 0.02 } },
   { id: "sunny-postcard", title: "Sunny postcard", look: "Teal-blue shadows, cream midtones, paper-white highlights, a little more colour.", recipe: { contrast: 1.04, saturation: 1.12, gain: [1.02, 1.0, 0.96], shadowTint: [-0.04, 0.0, 0.03], highlightTint: [0.012, 0.01, 0.0] } },
   { id: "vivid-pop", title: "Vivid pop", look: "Punchy saturated cartoon colour.", recipe: { contrast: 1.14, saturation: 1.45, gamma: [0.97, 0.97, 0.97] } },
+  { id: "autumn-painterly", title: "Autumn painterly", look: "Golden late-afternoon midtones, cool blue-grey shadows, cream highlights, richer colour.", recipe: { contrast: 1.08, saturation: 1.15, gain: [1.06, 1.0, 0.86], shadowTint: [-0.012, 0.0, 0.03], highlightTint: [0.04, 0.02, -0.035] } },
 ] as const satisfies readonly LutGrade[];
 
 /** The id of one grade in {@link LUT_GRADES}. */

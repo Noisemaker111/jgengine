@@ -5,7 +5,6 @@ import { basename, extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { assetStoreRoot, dirHasEntries, provisionJobs, type ProvisionResult, type PullJob } from "../../packages/assets/src/assetStore";
-import { MATERIAL_LIBRARY } from "../../packages/assets/src/catalogs/materialLibrary";
 import { compressedVariant, textureVariantDir } from "./textureVariants";
 
 const assetsDir = fileURLToPath(new URL("../../packages/assets", import.meta.url));
@@ -20,6 +19,8 @@ export interface AssetCatalogs {
   aliases?: readonly { key: string; target: string }[];
   /** Shared-library keys (`gameicons:lorc/wheat`, `polyhaven:ArmChair_01`): what to pull and where it is served. */
   libraryPull?: (key: string) => LibraryPullJob | undefined;
+  /** Library surfaces (`foliage/grass-dry`) and the material pack each is scanned from, so naming one serves its maps. Loaded lazily: the library imports `@jgengine/core`, which the vite config must not pull in. */
+  materials?: readonly { name: string; source?: string | undefined }[];
   /** Curated HDRIs, colour grades and fonts a game's source names by id (`hdriEnvironment("golden-hour")`). */
   lookJobs?: (text: string) => readonly { target: string; dir: string }[];
 }
@@ -51,7 +52,7 @@ export function missingPulls(text: string, publicDir: string, catalogs: AssetCat
   const quoted = (id: string): boolean => text.includes(`"${id}"`) || text.includes(`'${id}'`);
   const aliased = new Set((catalogs.aliases ?? []).filter((alias) => quoted(alias.key)).map((alias) => alias.target.split("/")[0]!));
   const jobs: PullJob[] = [];
-  const named = new Set(MATERIAL_LIBRARY.filter((entry) => entry.source !== undefined && quoted(entry.name)).map((entry) => entry.source));
+  const named = new Set((catalogs.materials ?? []).filter((entry) => entry.source !== undefined && quoted(entry.name)).map((entry) => entry.source));
   for (const source of catalogs.sources) {
     if (!quoted(source.id) && !aliased.has(source.id) && !named.has(source.id)) continue;
     const subdir = source.kind === "material" ? "materials" : source.kind === "sprite" ? "sprites" : "models";
@@ -112,6 +113,7 @@ export async function loadCatalogs(): Promise<AssetCatalogs> {
     MODEL_LIBRARY?: AssetCatalogs["library"];
     aliases?: AssetCatalogs["aliases"];
   };
+  const materialLibrary: { MATERIAL_LIBRARY: NonNullable<AssetCatalogs["materials"]> } = await import(join(assetsDir, "src/catalogs/materialLibrary.ts"));
   const index: typeof import("../../packages/assets/src/library/libraryIndex") = await import(join(assetsDir, "src/library/libraryIndex.ts"));
   const served: typeof import("../../packages/assets/src/library/libraryServed") = await import(join(assetsDir, "src/library/libraryServed.ts"));
   const byKey = new Map(index.assetLibrary().map((entry) => [entry.key, entry]));
@@ -122,7 +124,7 @@ export async function loadCatalogs(): Promise<AssetCatalogs> {
     return { target: entry.pack ?? entry.key, dir: join(...path.dir.split("/")), url: path.url };
   };
   const curated: typeof import("../../packages/assets/src/catalogs/curatedPull") = await import(join(assetsDir, "src/catalogs/curatedPull.ts"));
-  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [], libraryPull, lookJobs: curated.curatedJobsIn };
+  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [], materials: materialLibrary.MATERIAL_LIBRARY, libraryPull, lookJobs: curated.curatedJobsIn };
 }
 
 function runPull(cwd: string, target: string, outRoot: string): Promise<boolean> {

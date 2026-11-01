@@ -17,3 +17,10 @@ bun run jgengine assets pull quaternius-animated-characters-pack
 bun run jgengine assets pull quaternius-lowpoly-modular-street-pack
 bun run jgengine assets pull quaternius-low-poly-food-pack
 bun run jgengine assets pull quaternius-lowpoly-buildings-pack
+
+# Ember Command's Quaternius packs: not committed, pulled into the shared asset store on a fresh session.
+bun run jgengine assets pull quaternius-lowpoly-rpg-characters
+bun run jgengine assets pull quaternius-lowpoly-medieval-village-pack
+bun run jgengine assets pull quaternius-lowpoly-medieval-buildings
+bun run jgengine assets pull quaternius-fantasy-props
+bun run jgengine assets pull quaternius-lowpoly-crops-pack
