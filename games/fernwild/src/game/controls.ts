@@ -1,5 +1,9 @@
 import { libraryModelCredits } from "@jgengine/assets/catalogs/modelLibrary";
 
+import type { CreditsDocument, CreditsEntry } from "@jgengine/core/menu/credits";
+import { mergeCredits } from "@jgengine/core/menu/credits";
+
+import { lookCredits } from "../art/look";
 import { CREATURE_MODEL_SOURCES, type CreatureModelSource } from "./data/creatureModels";
 import { SURVIVOR_MODELS } from "./models";
 import { itemIconCredits } from "./ui/itemIcons";
@@ -41,12 +45,17 @@ export const BRIEFING: readonly string[] = [
   "Eat and drink before hunger and thirst take your health.",
 ];
 
-export const CREDITS: readonly string[] = [
-  "Fernwild — made with JGengine.",
-  "A love letter to ARK: Survival Evolved's systems. Not affiliated with Studio Wildcard.",
-  "Nature models: Quaternius (Stylized Nature MegaKit), CC0.",
-  "Cloth texture: ambientCG (Fabric 007), CC0.",
-  ...creatureCredits(),
-  ...libraryModelCredits(SURVIVOR_MODELS),
-  ...itemIconCredits(),
-];
+const creditLines = (): CreditsEntry[] =>
+  [
+    "A love letter to ARK: Survival Evolved's systems. Not affiliated with Studio Wildcard.",
+    "Nature models: Quaternius (Stylized Nature MegaKit), CC0.",
+    "Cloth texture: ambientCG (Fabric 007), CC0.",
+    ...creatureCredits(),
+    ...libraryModelCredits(SURVIVOR_MODELS),
+    ...itemIconCredits(),
+  ].map((label) => ({ label }));
+
+export const CREDITS: CreditsDocument = mergeCredits(
+  { sections: [{ heading: "Fernwild", entries: [{ label: "Fernwild — made with JGengine." }] }, { heading: "Models and icons", entries: creditLines() }] },
+  { sections: lookCredits() },
+);

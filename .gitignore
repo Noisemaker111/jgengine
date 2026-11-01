@@ -71,3 +71,6 @@ apps/web/.wrangler/
 
 # Colour grades are baked by games:provision from packages/assets (lutGrades.ts)
 **/public/lut/
+
+# Curated fonts are linked by games:provision from the shared asset store
+**/public/fonts/

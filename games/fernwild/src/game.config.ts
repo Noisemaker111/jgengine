@@ -1,8 +1,11 @@
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
 import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
 import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";
 import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
+import { fernwildKit } from "./art/look";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { baseGhost, basePrompts, baseView, piecesBuilt, stations } from "./game/base";
@@ -37,11 +40,17 @@ export const game = defineGame({
   simulation: { hz: 60 },
   rendering: {
     look: "cinematic",
-    mood: "day",
-    // The open sky and the sea carry the frame; a dark vignette only muddies their corners.
-    postProcessing: { grade: { vignette: 0.04 } },
+    mood: { preset: "day", sun: { elevation: 58, color: "#fff0d0" }, horizonColor: "#b8dcd8", fog: { near: 180, far: 900 } },
+    environmentSource: hdriEnvironment("tropical-clouds", { intensity: 0.9 }),
+    postProcessing: {
+      toneMapping: "aces",
+      bloom: { strength: 0.25, radius: 0.6, threshold: 0.9 },
+      ao: { radius: 1.1, intensity: 1.2, distanceFalloff: 3, blend: 1 },
+      grade: { vignette: 0.12, lut: lutGrade("tropical-lush") },
+    },
   },
   assets,
+  uiKit: fernwildKit,
   world,
   time,
   content,

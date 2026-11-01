@@ -37,7 +37,7 @@ export interface LutGrade {
 const clamp = (value: number): number => Math.min(1, Math.max(0, value));
 const luma = (r: number, g: number, b: number): number => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
-/** The 16 shipped colour grades, each a recipe baked into a 32³ cube. */
+/** The 17 shipped colour grades, each a recipe baked into a 32³ cube. */
 export const LUT_GRADES = [
   { id: "warm-filmic", title: "Warm filmic", look: "Gentle S-curve, amber highlights, soft cool shadows.", recipe: { contrast: 1.08, saturation: 1.04, gain: [1.04, 1.0, 0.94], shadowTint: [-0.005, 0.0, 0.02], highlightTint: [0.03, 0.012, -0.015], fade: 0.012 } },
   { id: "cold-teal", title: "Cold teal", look: "Blue-green cast, held highlights, crisp shadows.", recipe: { contrast: 1.06, saturation: 0.92, gain: [0.93, 1.0, 1.06], shadowTint: [-0.015, 0.012, 0.025], highlightTint: [-0.01, 0.01, 0.025] } },
@@ -54,6 +54,7 @@ export const LUT_GRADES = [
   { id: "desert-dust", title: "Desert dust", look: "Bleached sand tones and hazy highlights.", recipe: { contrast: 0.98, saturation: 0.84, gain: [1.07, 1.02, 0.88], fade: 0.035, highlightTint: [0.025, 0.015, -0.01] } },
   { id: "sepia", title: "Sepia", look: "Brown monochrome.", recipe: { contrast: 1.04, sepia: 1 } },
   { id: "cool-overcast", title: "Cool overcast", look: "Flat blue-grey daylight, calm and muted.", recipe: { contrast: 0.95, saturation: 0.8, gain: [0.96, 1.0, 1.05], fade: 0.02 } },
+  { id: "tropical-lush", title: "Tropical lush", look: "Teal-green shadows, warm leafy mid tones, cream highlights, a touch more colour.", recipe: { contrast: 1.06, saturation: 1.14, gain: [0.98, 1.0, 0.97], shadowTint: [-0.012, 0.018, 0.012], highlightTint: [0.008, 0.006, 0.0] } },
   { id: "vivid-pop", title: "Vivid pop", look: "Punchy saturated cartoon colour.", recipe: { contrast: 1.14, saturation: 1.45, gamma: [0.97, 0.97, 0.97] } },
 ] as const satisfies readonly LutGrade[];
 
@@ -154,7 +155,7 @@ export function lutGradeFileName(id: string): string {
  * Throws on an id that is not in {@link LUT_GRADES}. The file is served from `/lut/<id>/<id>.cube`,
  * which `bun run games:provision` serves to a game that names the id.
  *
- * @capability lut-grade-library pick one of 16 shipped colour grades by id for a game's post-processing
+ * @capability lut-grade-library pick one of 17 shipped colour grades by id for a game's post-processing
  */
 export function lutGrade(id: LutGradeId, baseUrl = `/${LUT_GRADE_DIR}`): GradeLut {
   return { url: `${baseUrl}/${lutGradeFileName(id)}`, size: LUT_GRADE_SIZE };
