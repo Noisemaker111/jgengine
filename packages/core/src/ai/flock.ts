@@ -238,9 +238,21 @@ export interface FlockBuffers {
   velocity: Float32Array;
 }
 
+/** Sizing of a {@link FlockStepper}. */
+export interface FlockStepperState {
+  capacity: number;
+  maxNeighbors: number;
+}
+
 /** Allocation-free flock stepping over typed arrays, sized once for `capacity` agents. */
 export interface FlockStepper {
   readonly capacity: number;
+  /** Its sizing. The grid and steering scratch hold nothing between steps, so this is all there is to save. */
+  snapshot(): FlockStepperState;
+  /** Accepts only a snapshot of the same sizing; throws otherwise. */
+  restore(state: FlockStepperState): void;
+  /** Clear the scratch; the next step rebuilds it from the agents. */
+  reset(): void;
   /**
    * Steer and integrate the first `count` agents by `dt`; same seek + separation + cohesion + alignment
    * terms as {@link flockSteer}. `targets` (x,y,z per agent) gives each agent its own seek point and
@@ -362,5 +374,16 @@ export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NE
     }
   }
 
-  return { capacity: size, step };
+  return {
+    capacity: size,
+    step,
+    snapshot: () => ({ capacity: size, maxNeighbors }),
+    restore(state) {
+      if (state.capacity !== size || state.maxNeighbors !== maxNeighbors) throw new Error("flock stepper snapshot has a different sizing");
+    },
+    reset() {
+      head.fill(-1);
+      steer.fill(0);
+    },
+  };
 }

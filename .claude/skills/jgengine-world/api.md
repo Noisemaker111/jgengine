@@ -156,6 +156,7 @@
 - `FlockConfig` (interface): interface FlockConfig { maxSpeed: number; accel?: number; separationRadius: number; separationWeight?: number; neighborRadius: number; cohesionWeight?: number; alignmentWeight?: number; seekWeight?: number; stragglerRadius?: number; stragglerBoost?: number } — ⚠ undocumented
 - `FlockStepAgent` (interface): interface FlockStepAgent { position: FlockVec3; velocity: FlockVec3 } — ⚠ undocumented
 - `FlockStepper` (interface): interface FlockStepper — Allocation-free flock stepping over typed arrays, sized once for `capacity` agents.
+- `FlockStepperState` (interface): interface FlockStepperState — Sizing of a {@link FlockStepper}.
 - `FlockVec3` (type): type FlockVec3 = readonly [number, number, number] — ⚠ undocumented
 
 ## @jgengine/core/ai/groupAssist
@@ -319,20 +320,20 @@
 
 ## @jgengine/core/ambientFauna/ambientFauna
 
-- `AmbientFauna` (interface): interface AmbientFauna — Ambient groups moving by their motion kind, all state in preallocated typed arrays.
 - `AmbientFaunaOptions` (interface): interface AmbientFaunaOptions — Limits and rates of one {@link createAmbientFauna}.
 - `AmbientFaunaState` (interface): interface AmbientFaunaState — Plain-JSON state of every group.
 - `FAUNA_GLOBAL_CAP` (const): const FAUNA_GLOBAL_CAP: 2000 — Default of {@link AmbientFaunaOptions.globalCap}.
 - `FAUNA_GROUP_LIMIT` (const): const FAUNA_GROUP_LIMIT: 4096 — Hard bound on one group's agents.
 - `FaunaArea` (type): type FaunaArea = | { shape: "disc"; x: number; z: number; radius: number } | { shape: "box"; x: number; z: number; halfX: number; halfZ: number } — Ground footprint of a group on X and Z, in metres.
-- `FaunaFrame` (interface): interface FaunaFrame — What {@link AmbientFauna.update} reads each frame; the caller reuses one object.
+- `FaunaFrame` (interface): interface FaunaFrame — What {@link FaunaSimulation.update} reads each frame; the caller reuses one object.
 - `FaunaGroup` (interface): interface FaunaGroup — One ambient group as data; the game supplies every species and number.
 - `FaunaGroupState` (interface): interface FaunaGroupState — The live state of one group; the arrays are read by the renderer.
 - `FaunaMotion` (type): type FaunaMotion = "school" | "swarm" | "drift" | "soar" — How a group moves: `school` in water below its surface, `swarm` and `drift` around plants, `soar` on a loop over its area.
+- `FaunaSimulation` (interface): interface FaunaSimulation — Ambient groups moving by their motion kind, all state in preallocated typed arrays.
 - `FaunaWindow` (interface): interface FaunaWindow — When a group is out. The sun height is -1 (deep night) to 1 (noon); the group fades in over `fade` above `sunMin` and out over `fade` below `sunMax`. No sun in the scene leaves the group out.
 - `FaunaWorld` (interface): interface FaunaWorld — What the world gives fauna to read. Everything is optional; groups degrade to their own numbers.
 - `ResolvedFaunaGroup` (interface): interface ResolvedFaunaGroup extends Required<Pick<FaunaGroup, "id" | "species" | "motion" | "area" | "wander">> — A group with every default filled in and its footprint measured.
-- `createAmbientFauna` (function): function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWorld = {}, options: AmbientFaunaOptions = {}): AmbientFauna — Build ambient groups: fish schools below the water surface, swarms and drifting motes near plants, and flyers soaring on the wind. Schools and swarms steer with the flock stepper, soarers ride a motion track, every spawn point is a seeded spatial sample. Species, counts and areas are the caller's data.
+- `createAmbientFauna` (function): function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWorld = {}, options: AmbientFaunaOptions = {}): FaunaSimulation — Build ambient groups: fish schools below the water surface, swarms and drifting motes near plants, and flyers soaring on the wind. Schools and swarms steer with the flock stepper, soarers ride a motion track, every spawn point is a seeded spatial sample. Species, counts and areas are the caller's data.
 
 ## @jgengine/core/ambientFauna/ambientFaunaConfig
 

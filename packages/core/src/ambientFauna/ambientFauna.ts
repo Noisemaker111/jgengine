@@ -123,7 +123,7 @@ export interface AmbientFaunaState {
   groups: { id: string; position: number[]; velocity: number[] }[];
 }
 
-/** What {@link AmbientFauna.update} reads each frame; the caller reuses one object. */
+/** What {@link FaunaSimulation.update} reads each frame; the caller reuses one object. */
 export interface FaunaFrame {
   dt: number;
   /** Seconds on a clock that only grows. */
@@ -135,7 +135,7 @@ export interface FaunaFrame {
 }
 
 /** Ambient groups moving by their motion kind, all state in preallocated typed arrays. */
-export interface AmbientFauna {
+export interface FaunaSimulation {
   readonly groups: readonly FaunaGroupState[];
   /** Agents owned by every group. */
   total(): number;
@@ -441,7 +441,7 @@ function stepSoar(g: GroupRuntime, world: FaunaWorld, time: number, dt: number):
  *
  * @capability ambient-fauna groups of fish, insects, motes and soaring flyers that stay in an area, below the water surface or near plants, out in a time-of-day window, with a global agent cap
  */
-export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWorld = {}, options: AmbientFaunaOptions = {}): AmbientFauna {
+export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWorld = {}, options: AmbientFaunaOptions = {}): FaunaSimulation {
   const cap = Math.max(0, Math.floor(options.globalCap ?? FAUNA_GLOBAL_CAP));
   const range = options.simulateRange ?? 400;
   const runtimes: GroupRuntime[] = [];

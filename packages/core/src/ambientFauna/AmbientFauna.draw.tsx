@@ -10,7 +10,7 @@ import { buildScatterModelSources, disposeScatterModelSources, type ScatterModel
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { livingWorld } from "@jgengine/core/weather/livingWorld.draw";
 
-import { createAmbientFauna, FAUNA_GLOBAL_CAP, type AmbientFauna, type FaunaFrame, type FaunaGroup, type FaunaGroupState } from "./ambientFauna";
+import { createAmbientFauna, FAUNA_GLOBAL_CAP, type FaunaSimulation, type FaunaFrame, type FaunaGroup, type FaunaGroupState } from "./ambientFauna";
 import type { AmbientFaunaConfig, FaunaSpecies } from "./ambientFaunaConfig";
 import { createFaunaView, selectVisible, writeFaunaView, type FaunaSelection, type FaunaView } from "./faunaCull";
 
@@ -31,7 +31,7 @@ export interface AmbientFaunaProps {
 }
 
 interface Shared {
-  fauna: AmbientFauna;
+  fauna: FaunaSimulation;
   view: FaunaView;
   budget: { remaining: number };
 }
