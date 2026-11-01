@@ -14,6 +14,14 @@ import { GameProvider } from "@jgengine/react/provider";
 import { defineGame } from "@jgengine/shell/defineGame";
 import { AuthoredObjects } from "./AuthoredScene.draw";
 import { resolveObjectModel } from "@jgengine/core/model/resolveModel";
+import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
+import type { ComponentType } from "react";
+
+function overlayOf(playable: ReturnType<typeof defineGame>): ComponentType<WorldOverlayProps> {
+  const overlay = playable.scene?.WorldOverlay;
+  if (overlay === undefined) throw new Error("defineGame mounted no WorldOverlay for the authored scene");
+  return overlay;
+}
 
 function fixture() {
   const document = createEmptyEditorDocument();
@@ -48,7 +56,7 @@ test("defineGame excludes a player-spawn catalog marker from static placement wh
   ctx.scene.entity.spawn("knight", { id: "player", position: authoredSpawnPosition(document)! });
   const root = await renderer();
   try {
-    await act(async () => root.render(createElement(GameProvider, { context: ctx }, createElement(playable.scene!.WorldOverlay!, { ctx }))));
+    await act(async () => root.render(createElement(GameProvider, { context: ctx }, createElement(overlayOf(playable), { ctx }))));
     expect(ctx.scene.object.ids()).toEqual(["crate"]);
     expect(ctx.scene.object.get("crate")!.position).toEqual([2, 1.25, -3]);
     expect(ctx.scene.entity.ids()).toEqual(["player"]);
@@ -71,7 +79,7 @@ test("default scene placement keeps its existing mob/boss exclusions", async () 
   const ctx = createGameContext({ definition: playable.game, content: playable.content, player: { userId: "player", isNew: true } });
   const root = await renderer();
   try {
-    await act(async () => root.render(createElement(GameProvider, { context: ctx }, createElement(playable.scene!.WorldOverlay!, { ctx }))));
+    await act(async () => root.render(createElement(GameProvider, { context: ctx }, createElement(overlayOf(playable), { ctx }))));
     expect(ctx.scene.object.ids()).toEqual(["spawn:player", "crate"]);
   } finally {
     await act(async () => root.unmount());

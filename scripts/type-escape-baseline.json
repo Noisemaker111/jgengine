@@ -1487,7 +1487,7 @@
   "packages/core/src/scene/assetDiagnostics.ts": {"nonNull":2},
   "packages/core/src/scene/assetGenerator.test.ts": {"cast":1,"nonNull":9},
   "packages/core/src/scene/AuthoredScene.draw.tsx": {"cast":1},
-  "packages/core/src/scene/AuthoredScenePlacement.draw.test.ts": {"cast":8,"nonNull":16},
+  "packages/core/src/scene/AuthoredScenePlacement.draw.test.ts": {"cast":8,"nonNull":14},
   "packages/core/src/scene/authoredTriggers.test.ts": {"cast":1},
   "packages/core/src/scene/authoredTriggers.ts": {"cast":4,"nonNull":5},
   "packages/core/src/scene/autoTarget.ts": {"nonNull":2},
