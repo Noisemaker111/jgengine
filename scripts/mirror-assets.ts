@@ -1,7 +1,10 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { lookMirrorName, lookServedPath, pullCuratedLook } from "../packages/assets/src/catalogs/curatedPull";
+import { FONT_LIBRARY } from "../packages/assets/src/catalogs/fontLibrary";
+import { HDRI_LIBRARY } from "../packages/assets/src/catalogs/hdriLibrary";
 import { MODEL_LIBRARY, libraryModelDir } from "../packages/assets/src/catalogs/modelLibrary";
 import { resolveArchiveUrl, downloadArchive } from "../packages/assets/src/download";
 import { pullLibraryModel } from "../packages/assets/src/modelLibraryPull";
@@ -116,6 +119,32 @@ for (const entry of MODEL_LIBRARY) {
     rmSync(scratch, { recursive: true, force: true });
   }
 }
+// Curated HDRIs and fonts (`catalogs/hdriLibrary.ts`, `fontLibrary.ts`) are single files named `look-<kind>-<id>.<ext>`.
+const lookFailures: string[] = [];
+for (const [kind, ids] of [["hdri", HDRI_LIBRARY.map((entry) => entry.id)], ["font", FONT_LIBRARY.map((entry) => entry.id)]] as const) {
+  for (const id of ids) {
+    const assetName = lookMirrorName(kind, id);
+    if (have.has(assetName)) continue;
+    const scratch = mkdtempSync(join(tmpdir(), "jg-mirror-"));
+    try {
+      await pullCuratedLook(kind, id, { outRoot: scratch, mirrorBase: "http://127.0.0.1:9/none" });
+      const file = readFileSync(join(scratch, ...lookServedPath(kind, id).split("/")));
+      const response = await fetch(
+        `https://uploads.github.com/repos/${repo}/releases/${release.id}/assets?name=${encodeURIComponent(assetName)}`,
+        { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/octet-stream" }, body: new Uint8Array(file) },
+      );
+      if (!response.ok) throw new Error(`upload HTTP ${response.status} ${await response.text()}`);
+      uploaded += 1;
+      console.log(`mirrored ${assetName} (${(file.byteLength / 1_048_576).toFixed(1)} MB)`);
+    } catch (error) {
+      lookFailures.push(`${assetName}: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  }
+}
+for (const failure of lookFailures) console.error(`  - ${failure}`);
+hardFailures.push(...lookFailures);
 for (const failure of modelFailures) console.error(`  - ${failure}`);
 hardFailures.push(...modelFailures);
 

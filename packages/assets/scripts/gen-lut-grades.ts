@@ -4,7 +4,7 @@
  *   bun packages/assets/scripts/gen-lut-grades.ts <outDir>
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { LUT_GRADES, lutGradeFile, lutGradeFileName } from "../src/catalogs/lutGrades";
 
@@ -13,6 +13,9 @@ if (out === undefined) {
   console.error("usage: gen-lut-grades.ts <outDir>");
   process.exit(1);
 }
-mkdirSync(out, { recursive: true });
-for (const grade of LUT_GRADES) writeFileSync(join(out, lutGradeFileName(grade.id)), lutGradeFile(grade.id));
+for (const grade of LUT_GRADES) {
+  const file = join(out, lutGradeFileName(grade.id));
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, lutGradeFile(grade.id));
+}
 console.log(`wrote ${LUT_GRADES.length} grades to ${out}`);

@@ -137,15 +137,16 @@ export function lutGradeFile(id: string): string {
   return formatCubeLut(bakeLutGrade(id), lutGradeOf(id).title);
 }
 
-/** File name a game serves a grade as, e.g. `cold-teal.cube`. */
+/** Path of a grade under {@link LUT_GRADE_DIR}, one folder per id: `cold-teal/cold-teal.cube`. */
 export function lutGradeFileName(id: string): string {
-  return `${lutGradeOf(id).id}.cube`;
+  const { id: known } = lutGradeOf(id);
+  return `${known}/${known}.cube`;
 }
 
 /**
  * A shipped colour grade by id, ready for the postfx grade stage: `grade: { lut: lutGrade("cold-teal") }`.
- * Throws on an id that is not in {@link LUT_GRADES}. The file is served from `/lut/<id>.cube`,
- * which `bun run games:provision` writes into a game that names the id.
+ * Throws on an id that is not in {@link LUT_GRADES}. The file is served from `/lut/<id>/<id>.cube`,
+ * which `bun run games:provision` serves to a game that names the id.
  *
  * @capability lut-grade-library pick one of 16 shipped colour grades by id for a game's post-processing
  */

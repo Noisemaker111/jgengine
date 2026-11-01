@@ -36,7 +36,7 @@ describe("lut grades", () => {
     try {
       const loaded = createGradePass({ lut: lutGrade("night-blue") });
       await new Promise((done) => setTimeout(done, 5)); // wait-ok: lets the fetch microtasks settle
-      expect(fetched).toEqual(["/lut/night-blue.cube"]);
+      expect(fetched).toEqual(["/lut/night-blue/night-blue.cube"]);
       expect(loaded.uniforms.uLutSize.value).toBe(32);
       loaded.dispose();
     } finally {
