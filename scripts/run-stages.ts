@@ -255,7 +255,7 @@ export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"], outputs: [/^games\/capabilities\.json$/], reads: ["packages/"] },
   { name: "type-escapes", script: "scripts/type-escapes.ts", after: ["barrels"], outputs: [/^scripts\/type-escape-baseline\.json$/], reads: ["packages/", "games/", "apps/", "examples/"] },
   { name: "part-stats", script: "scripts/part-stats.ts", after: ["barrels"], outputs: [/^scripts\/part-stats\.json$/], reads: ["packages/core/src/"] },
-  { name: "recipes", script: "scripts/gen-cookbook.ts", outputs: [/^\.claude\/skills\/jgengine\/recipes\/cookbook\.md$/], reads: ["packages/core/src/recipes/"] },
+  { name: "recipes", script: "scripts/gen-cookbook.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/jgengine\/recipes\/cookbook\.md$/], reads: ["packages/core/src/recipes/"] },
 ];
 
 export function genPlan(targets: readonly GenTarget[]): Stage[] {
