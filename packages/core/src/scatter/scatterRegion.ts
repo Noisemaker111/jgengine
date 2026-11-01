@@ -425,6 +425,20 @@ export function resolveScatter(
   return resolved;
 }
 
+/**
+ * Fills one authored path of a kind other than `scatter` with placements (a forest stand from its growth model). It
+ * receives the clearance masks the region would honor; placements join the document's scatter, so rendering, solids,
+ * harvest and navigation read them like any other.
+ */
+export type ScatterSource = (path: ScenePathLike, terrain: ScatterTerrain | undefined, masks: AvoidMasks) => readonly ScatterInstance[];
+
+const scatterSources = new Map<string, ScatterSource>();
+
+/** Register the {@link ScatterSource} for a path kind; idempotent, last registration wins. */
+export function registerScatterSource(kind: string, source: ScatterSource): void {
+  scatterSources.set(kind, source);
+}
+
 const NO_TERRAIN = {};
 const resolvedScatter = new WeakMap<object, WeakMap<object, readonly ScatterInstance[]>>();
 
@@ -466,6 +480,13 @@ function resolveScatterUncached(
       continue;
     }
     out.push(...resolveOne(region, clearDiscs.length === 0 ? [] : discsNear(clearDiscs, ringBounds(region.polygon))));
+  }
+  if (scatterSources.size > 0) {
+    const sourceMasks: AvoidMasks = options.autoAvoid === false ? { discs: baseDiscs, corridors: [] } : { discs: [...baseDiscs, ...auto.discs, ...clearDiscs], corridors: auto.corridors };
+    for (const path of doc.paths) {
+      const source = scatterSources.get(path.kind);
+      if (source !== undefined) out.push(...source(path, terrain, sourceMasks));
+    }
   }
   return out;
 }
