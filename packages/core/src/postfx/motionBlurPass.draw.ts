@@ -125,6 +125,7 @@ interface VelocityProxy {
   source: THREE.Mesh;
   mesh: THREE.Mesh;
   material: THREE.ShaderMaterial;
+  previousModel: THREE.Matrix4;
   previous: THREE.Matrix4;
   seen: number;
 }
@@ -137,6 +138,20 @@ interface VelocityProxy {
 export class MotionBlurPass extends Pass {
   readonly material: THREE.ShaderMaterial;
   readonly velocity: THREE.WebGLRenderTarget;
+  private readonly uniforms: {
+    tDiffuse: THREE.IUniform<THREE.Texture | null>;
+    tDepth: THREE.IUniform<THREE.DepthTexture>;
+    tVelocity: THREE.IUniform<THREE.Texture>;
+    uProjectionInverse: THREE.IUniform<THREE.Matrix4>;
+    uCameraWorld: THREE.IUniform<THREE.Matrix4>;
+    uPrevViewProjection: THREE.IUniform<THREE.Matrix4>;
+    uCamera: THREE.IUniform<number>;
+    uObjects: THREE.IUniform<number>;
+    uScale: THREE.IUniform<number>;
+    uMaxBlur: THREE.IUniform<number>;
+    uAspect: THREE.IUniform<number>;
+    uFrame: THREE.IUniform<number>;
+  };
   private readonly quad: FullScreenQuad;
   private readonly velocityScene = new THREE.Scene();
   private readonly proxies = new WeakMap<THREE.Mesh, VelocityProxy>();
@@ -158,21 +173,22 @@ export class MotionBlurPass extends Pass {
     super();
     this.settings = settings;
     this.velocity = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: true });
+    this.uniforms = {
+      tDiffuse: { value: null },
+      tDepth: { value: depth },
+      tVelocity: { value: this.velocity.texture },
+      uProjectionInverse: { value: new THREE.Matrix4() },
+      uCameraWorld: { value: new THREE.Matrix4() },
+      uPrevViewProjection: { value: this.previousViewProjection },
+      uCamera: { value: Math.max(0, settings.camera) },
+      uObjects: { value: Math.max(0, settings.objects) },
+      uScale: { value: 0 },
+      uMaxBlur: { value: Math.max(0, settings.maxBlur) },
+      uAspect: { value: 1 },
+      uFrame: { value: 0 },
+    };
     this.material = new THREE.ShaderMaterial({
-      uniforms: {
-        tDiffuse: { value: null },
-        tDepth: { value: depth },
-        tVelocity: { value: this.velocity.texture },
-        uProjectionInverse: { value: new THREE.Matrix4() },
-        uCameraWorld: { value: new THREE.Matrix4() },
-        uPrevViewProjection: { value: this.previousViewProjection },
-        uCamera: { value: Math.max(0, settings.camera) },
-        uObjects: { value: Math.max(0, settings.objects) },
-        uScale: { value: 0 },
-        uMaxBlur: { value: Math.max(0, settings.maxBlur) },
-        uAspect: { value: 1 },
-        uFrame: { value: 0 },
-      },
+      uniforms: this.uniforms,
       vertexShader: fullScreenVertex,
       fragmentShader: motionBlurFragment(Math.max(2, Math.floor(samples))),
       depthTest: false,
@@ -183,29 +199,33 @@ export class MotionBlurPass extends Pass {
 
   override setSize(width: number, height: number): void {
     this.velocity.setSize(width, height);
-    this.material.uniforms["uAspect"]!.value = width / Math.max(1, height);
+    this.uniforms.uAspect.value = width / Math.max(1, height);
     this.resolution.set(width, height);
   }
 
   private proxyFor(mesh: THREE.Mesh): VelocityProxy {
     let proxy = this.proxies.get(mesh);
     if (proxy !== undefined) return proxy;
+    const previousModel = new THREE.Matrix4();
     const material = new THREE.ShaderMaterial({
       uniforms: {
         tDepth: { value: this.depth },
         uResolution: { value: this.resolution },
-        uPrevModel: { value: new THREE.Matrix4() },
+        uPrevModel: { value: previousModel },
         uPrevViewProjection: { value: this.previousViewProjection },
       },
       vertexShader: velocityVertex,
       fragmentShader: velocityFragment,
     });
-    const skinned = mesh as THREE.SkinnedMesh;
-    const copy = skinned.isSkinnedMesh === true ? new THREE.SkinnedMesh(mesh.geometry, material) : new THREE.Mesh(mesh.geometry, material);
-    if (skinned.isSkinnedMesh === true) (copy as THREE.SkinnedMesh).bind(skinned.skeleton, skinned.bindMatrix);
+    let copy: THREE.Mesh;
+    if (mesh instanceof THREE.SkinnedMesh) {
+      const skinnedCopy = new THREE.SkinnedMesh(mesh.geometry, material);
+      skinnedCopy.bind(mesh.skeleton, mesh.bindMatrix);
+      copy = skinnedCopy;
+    } else copy = new THREE.Mesh(mesh.geometry, material);
     copy.matrixAutoUpdate = false;
     copy.matrixWorldAutoUpdate = false;
-    proxy = { source: mesh, mesh: copy, material, previous: mesh.matrixWorld.clone(), seen: -1 };
+    proxy = { source: mesh, mesh: copy, material, previousModel, previous: mesh.matrixWorld.clone(), seen: -1 };
     this.proxies.set(mesh, proxy);
     this.every.add(proxy);
     return proxy;
@@ -230,15 +250,15 @@ export class MotionBlurPass extends Pass {
     for (const root of bodies) {
       if (root.parent === null || !root.visible) continue;
       root.traverseVisible((node) => {
-        const mesh = node as THREE.Mesh;
-        if (mesh.isMesh !== true || (mesh as THREE.InstancedMesh).isInstancedMesh === true) return;
+        if (!(node instanceof THREE.Mesh) || node instanceof THREE.InstancedMesh) return;
+        const mesh = node;
         const proxy = this.proxyFor(mesh);
         const fresh = proxy.seen !== this.frame - 1;
         proxy.seen = this.frame;
-        (proxy.material.uniforms["uPrevModel"]!.value as THREE.Matrix4).copy(fresh ? mesh.matrixWorld : proxy.previous);
+        proxy.previousModel.copy(fresh ? mesh.matrixWorld : proxy.previous);
         proxy.previous.copy(mesh.matrixWorld);
         proxy.mesh.matrixWorld.copy(mesh.matrixWorld);
-        if (proxy.mesh instanceof THREE.SkinnedMesh) proxy.mesh.bindMatrixInverse.copy((mesh as THREE.SkinnedMesh).bindMatrixInverse);
+        if (proxy.mesh instanceof THREE.SkinnedMesh && mesh instanceof THREE.SkinnedMesh) proxy.mesh.bindMatrixInverse.copy(mesh.bindMatrixInverse);
         this.velocityScene.add(proxy.mesh);
         this.active.push(proxy);
       });
@@ -265,12 +285,12 @@ export class MotionBlurPass extends Pass {
     }
     renderer.setClearColor(clearColor, clearAlpha);
 
-    const uniforms = this.material.uniforms;
-    uniforms["tDiffuse"]!.value = readBuffer.texture;
-    (uniforms["uProjectionInverse"]!.value as THREE.Matrix4).copy(this.camera.projectionMatrixInverse);
-    (uniforms["uCameraWorld"]!.value as THREE.Matrix4).copy(this.camera.matrixWorld);
-    uniforms["uScale"]!.value = motionBlurScale(this.settings.shutter, deltaTime ?? 1 / 60);
-    uniforms["uFrame"]!.value = this.frame % 64;
+    const uniforms = this.uniforms;
+    uniforms.tDiffuse.value = readBuffer.texture;
+    uniforms.uProjectionInverse.value.copy(this.camera.projectionMatrixInverse);
+    uniforms.uCameraWorld.value.copy(this.camera.matrixWorld);
+    uniforms.uScale.value = motionBlurScale(this.settings.shutter, deltaTime ?? 1 / 60);
+    uniforms.uFrame.value = this.frame % 64;
     renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
     this.quad.render(renderer);
 

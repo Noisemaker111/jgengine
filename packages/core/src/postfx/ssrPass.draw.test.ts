@@ -12,9 +12,9 @@ test("the reflection march takes as many steps as the tier pays for", () => {
 test("authored values reach the shader clamped to their sane ranges", () => {
   const pass = new SsrPass(new THREE.Scene(), new THREE.PerspectiveCamera(), new THREE.DepthTexture(4, 4), { ...DEFAULT_SSR, reflectance: 3, maxDistance: -5, thickness: 0 }, 8);
   try {
-    expect(pass.material.uniforms["uReflectance"]!.value).toBe(1);
-    expect(pass.material.uniforms["uMaxDistance"]!.value).toBeGreaterThan(0);
-    expect(pass.material.uniforms["uThickness"]!.value).toBeGreaterThan(0);
+    expect(pass.uniforms.uReflectance.value).toBe(1);
+    expect(pass.uniforms.uMaxDistance.value).toBeGreaterThan(0);
+    expect(pass.uniforms.uThickness.value).toBeGreaterThan(0);
   } finally {
     pass.dispose();
   }

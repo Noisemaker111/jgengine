@@ -143,9 +143,8 @@ export function surfaceGloss(mesh: THREE.Mesh, maxRoughness: number): number {
   if (authored === false) return 0;
   if (authored === true) return 1;
   if (typeof authored === "number") return Math.min(1, Math.max(0, authored));
-  const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-  const standard = material as THREE.MeshStandardMaterial | undefined;
-  if (standard?.isMeshStandardMaterial !== true || standard.transparent || standard.alphaTest > 0 || standard.roughnessMap !== null) return 0;
+  const standard = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+  if (!(standard instanceof THREE.MeshStandardMaterial) || standard.transparent || standard.alphaTest > 0 || standard.roughnessMap !== null) return 0;
   if (maxRoughness <= 0 || standard.roughness >= maxRoughness) return 0;
   return 1 - standard.roughness / maxRoughness;
 }
@@ -155,8 +154,8 @@ export function findGlossySurfaces(scene: THREE.Object3D, maxRoughness: number):
   const found: { mesh: THREE.Mesh; gloss: number }[] = [];
   visitVisible(scene, (node) => {
     if (found.length >= MAX_GLOSSY_SURFACES) return;
-    const mesh = node as THREE.Mesh;
-    if (mesh.isMesh !== true || (mesh as THREE.SkinnedMesh).isSkinnedMesh === true || (mesh as THREE.InstancedMesh).isInstancedMesh === true) return;
+    if (!(node instanceof THREE.Mesh) || node instanceof THREE.SkinnedMesh || node instanceof THREE.InstancedMesh) return;
+    const mesh = node;
     const gloss = surfaceGloss(mesh, maxRoughness);
     if (gloss > 0) found.push({ mesh, gloss });
   });
@@ -170,9 +169,26 @@ export function findGlossySurfaces(scene: THREE.Object3D, maxRoughness: number):
 export class SsrPass extends Pass {
   readonly material: THREE.ShaderMaterial;
   readonly mask: THREE.WebGLRenderTarget;
+  /** The shader's uniforms, typed. */
+  readonly uniforms: {
+    tDiffuse: THREE.IUniform<THREE.Texture | null>;
+    tDepth: THREE.IUniform<THREE.DepthTexture>;
+    tMask: THREE.IUniform<THREE.Texture>;
+    uProjection: THREE.IUniform<THREE.Matrix4>;
+    uProjectionInverse: THREE.IUniform<THREE.Matrix4>;
+    uCameraWorld: THREE.IUniform<THREE.Matrix4>;
+    uTexel: THREE.IUniform<THREE.Vector2>;
+    uIntensity: THREE.IUniform<number>;
+    uReflectance: THREE.IUniform<number>;
+    uMaxDistance: THREE.IUniform<number>;
+    uThickness: THREE.IUniform<number>;
+    uMinUp: THREE.IUniform<number>;
+    uFadeDistance: THREE.IUniform<number>;
+    uFrame: THREE.IUniform<number>;
+  };
   private readonly quad: FullScreenQuad;
   private readonly maskScene = new THREE.Scene();
-  private readonly proxies = new WeakMap<THREE.Mesh, { mesh: THREE.Mesh; material: THREE.ShaderMaterial }>();
+  private readonly proxies = new WeakMap<THREE.Mesh, { mesh: THREE.Mesh; material: THREE.ShaderMaterial; gloss: THREE.IUniform<number> }>();
   private readonly materials = new Set<THREE.ShaderMaterial>();
   private readonly resolution = new THREE.Vector2(1, 1);
   private surfaces: { mesh: THREE.Mesh; gloss: number }[] = [];
@@ -190,23 +206,24 @@ export class SsrPass extends Pass {
     super();
     this.maxRoughness = settings.maxRoughness;
     this.mask = new THREE.WebGLRenderTarget(1, 1, { type: THREE.UnsignedByteType, depthBuffer: true });
+    this.uniforms = {
+      tDiffuse: { value: null },
+      tDepth: { value: depth },
+      tMask: { value: this.mask.texture },
+      uProjection: { value: new THREE.Matrix4() },
+      uProjectionInverse: { value: new THREE.Matrix4() },
+      uCameraWorld: { value: new THREE.Matrix4() },
+      uTexel: { value: new THREE.Vector2(1, 1) },
+      uIntensity: { value: settings.intensity },
+      uReflectance: { value: Math.min(1, Math.max(0, settings.reflectance)) },
+      uMaxDistance: { value: Math.max(0.1, settings.maxDistance) },
+      uThickness: { value: Math.max(0.01, settings.thickness) },
+      uMinUp: { value: settings.minUp },
+      uFadeDistance: { value: Math.max(1, settings.fadeDistance) },
+      uFrame: { value: 0 },
+    };
     this.material = new THREE.ShaderMaterial({
-      uniforms: {
-        tDiffuse: { value: null },
-        tDepth: { value: depth },
-        tMask: { value: this.mask.texture },
-        uProjection: { value: new THREE.Matrix4() },
-        uProjectionInverse: { value: new THREE.Matrix4() },
-        uCameraWorld: { value: new THREE.Matrix4() },
-        uTexel: { value: new THREE.Vector2(1, 1) },
-        uIntensity: { value: settings.intensity },
-        uReflectance: { value: Math.min(1, Math.max(0, settings.reflectance)) },
-        uMaxDistance: { value: Math.max(0.1, settings.maxDistance) },
-        uThickness: { value: Math.max(0.01, settings.thickness) },
-        uMinUp: { value: settings.minUp },
-        uFadeDistance: { value: Math.max(1, settings.fadeDistance) },
-        uFrame: { value: 0 },
-      },
+      uniforms: this.uniforms,
       vertexShader,
       fragmentShader: ssrFragment(Math.max(1, Math.floor(steps))),
       depthTest: false,
@@ -216,23 +233,24 @@ export class SsrPass extends Pass {
   }
 
   override setSize(width: number, height: number): void {
-    (this.material.uniforms["uTexel"]!.value as THREE.Vector2).set(1 / Math.max(1, width), 1 / Math.max(1, height));
+    this.uniforms.uTexel.value.set(1 / Math.max(1, width), 1 / Math.max(1, height));
     this.mask.setSize(width, height);
     this.resolution.set(width, height);
   }
 
-  private proxyFor(mesh: THREE.Mesh): { mesh: THREE.Mesh; material: THREE.ShaderMaterial } {
+  private proxyFor(mesh: THREE.Mesh): { mesh: THREE.Mesh; material: THREE.ShaderMaterial; gloss: THREE.IUniform<number> } {
     let proxy = this.proxies.get(mesh);
     if (proxy !== undefined) return proxy;
+    const gloss = { value: 0 };
     const material = new THREE.ShaderMaterial({
-      uniforms: { tDepth: { value: this.depth }, uResolution: { value: this.resolution }, uGloss: { value: 0 } },
+      uniforms: { tDepth: { value: this.depth }, uResolution: { value: this.resolution }, uGloss: gloss },
       vertexShader: maskVertex,
       fragmentShader: maskFragment,
     });
     const copy = new THREE.Mesh(mesh.geometry, material);
     copy.matrixAutoUpdate = false;
     copy.matrixWorldAutoUpdate = false;
-    proxy = { mesh: copy, material };
+    proxy = { mesh: copy, material, gloss };
     this.proxies.set(mesh, proxy);
     this.materials.add(material);
     return proxy;
@@ -249,7 +267,7 @@ export class SsrPass extends Pass {
     for (const { mesh, gloss } of this.surfaces) {
       if (mesh.parent === null || !mesh.visible) continue;
       const proxy = this.proxyFor(mesh);
-      proxy.material.uniforms["uGloss"]!.value = gloss;
+      proxy.gloss.value = gloss;
       proxy.mesh.geometry = mesh.geometry;
       proxy.mesh.matrixWorld.copy(mesh.matrixWorld);
       this.maskScene.add(proxy.mesh);
@@ -278,13 +296,13 @@ export class SsrPass extends Pass {
       return;
     }
     this.needsSwap = true;
-    const uniforms = this.material.uniforms;
-    uniforms["tDiffuse"]!.value = readBuffer.texture;
-    (uniforms["uProjection"]!.value as THREE.Matrix4).copy(this.camera.projectionMatrix);
-    (uniforms["uProjectionInverse"]!.value as THREE.Matrix4).copy(this.camera.projectionMatrixInverse);
-    (uniforms["uCameraWorld"]!.value as THREE.Matrix4).copy(this.camera.matrixWorld);
+    const uniforms = this.uniforms;
+    uniforms.tDiffuse.value = readBuffer.texture;
+    uniforms.uProjection.value.copy(this.camera.projectionMatrix);
+    uniforms.uProjectionInverse.value.copy(this.camera.projectionMatrixInverse);
+    uniforms.uCameraWorld.value.copy(this.camera.matrixWorld);
     this.frame = (this.frame + 1) % 64;
-    uniforms["uFrame"]!.value = this.frame;
+    uniforms.uFrame.value = this.frame;
     renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
     this.quad.render(renderer);
   }
