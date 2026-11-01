@@ -3390,11 +3390,27 @@
 - `BoatWind` (interface): interface BoatWind — A boat in a {@link WindField}. `strength` `0` is no windage, `1` the drag the coefficients give, past `1` more; the force is linear in it, so it stays finite and monotone over the sane range `0..4`.
 - `boatWindageForce` (function): function boatWindageForce(wind: BoatWind, hull: { length: number; beam: number }, x: number, z: number, heading: number, vx: number, vz: number, time: number): [number, number] — Windage force, N, in world x/z on a hull at `x, z` heading `heading` moving at `vx, vz`.
 
+## @jgengine/core/physics/brakeFade
+
+- `VehicleBrakeFadeEffect` (interface): interface VehicleBrakeFadeEffect — Brake fade: the brakes turn the car's kinetic energy into disc heat, the discs shed it to the air faster the faster the car goes, and the pad's friction falls once the disc is hot, so a heavy car braking hard again and again stops longer each time. One lumped disc temperature for the car (Limpert, *Brake Design and Safety*, 3rd ed., 2011, §3: single-stop rise `ΔT = E/(m·c)`, convective cooling `h·A·(T − T∞)` rising with speed).
+- `brakeFadeShare` (function): function brakeFadeShare(effect: VehicleBrakeFadeEffect, temperature: number, strength: number): number — The share of cold brake force the pads give at disc temperature `temperature` °C, with the fade scaled by `strength`.
+
 ## @jgengine/core/physics/buoyancy
 
 - `BuoyantBody` (class): class BuoyantBody — Floats a {@link PhysicsWorld} body on a CPU {@link WaterSurface}: each hull sample point pushes the body up by its submerged depth (Archimedes, coarse), with vertical and horizontal water drag so the hull settles at the waterline and rides the Gerstner waves. Passing an {@link AxisInput} drives it as a boat — throttle thrusts along the heading, steer yaws, a keel bleeds sideways slip. Call `update(dt, time, input?)` before the shared `world.step(dt)`.
 - `BuoyantBodyConfig` (interface): interface BuoyantBodyConfig { body: number; water: WaterSurface; heading?: number; hullPoints?: readonly (readonly [number, number])[]; hullDepth?: number; buoyancy?: number; verticalDrag?: number; linearDrag?: number; engineAccel?: number; reverseAccel?: number; topS… — ⚠ undocumented
 - `createBuoyantBody` (function): function createBuoyantBody(world: PhysicsWorld, config: BuoyantBodyConfig): BuoyantBody — ⚠ undocumented
+
+## @jgengine/core/physics/carReferences
+
+- `CAR_CLASS_IDS` (const): const CAR_CLASS_IDS: readonly CarClassId[] — The vehicle classes.
+- `CAR_REFERENCE_IDS` (const): const CAR_REFERENCE_IDS: readonly CarReferenceId[] — Every id {@link carFromReference} accepts: the published vehicles, then the classes.
+- `CAR_REFERENCE_VEHICLE_IDS` (const): const CAR_REFERENCE_VEHICLE_IDS: readonly CarReferenceVehicleId[] — The published vehicles, each checked against its reference sim by `scripts/reference/physics/compareHandling.ts`.
+- `CarClassId` (type): type CarClassId = "sports-car" | "hatchback" | "truck" | "kart" | "motorcycle" — Vehicle classes: a published vehicle's measured effects carried to the class's typical size and drivetrain.
+- `CarOverrides` (type): type CarOverrides = Partial<Omit<VehicleDynamicsTuning, "effects">> & { effects?: { [Name in VehicleEffectName]?: Partial<NonNullable<VehicleEffects[Name]>> | false }; } — Changes to a vehicle's defaults: any top-level number, and per effect the parameters or `strength` to change (`false` removes it).
+- `CarReferenceId` (type): type CarReferenceId = CarReferenceVehicleId | CarClassId — Every id {@link carFromReference} accepts.
+- `CarReferenceVehicleId` (type): type CarReferenceVehicleId = "mazda-mx5-nd" | "scion-frs-2013" | "suzuki-gsxr1000-k1" — The published vehicles {@link carFromReference} knows: each has a multibody reference sim and published tests.
+- `carFromReference` (function): function carFromReference(id: CarReferenceId, overrides: CarOverrides = {}): VehicleDynamicsTuning — The full tuning of a published vehicle or a class with every effect it has data for at strength 1 (the Magic Formula tyre at each wheel's load, weight transfer through roll centres, aligning torque, aero with a crosswind side area, Magic Formula rolling resistance, the published torque curve and gearing, the differential, brake fade, road friction and the aids), so a game gets a real car in one line and tunes from there: `createVehicleDynamics(carFromReference("mazda-mx5-nd"))`. `overrides` change the vehicle's numbers and each effect's parameters or `strength` (`0` off … `1` as measured … `4` the top of the sane range), so a fleet is data: one record per car from a class plus a few overrides. An override retunes an effect the vehicle has; add a new one with `withVehicleEffects` on the result. `scripts/reference/physics/compareHandling.ts` checks each published vehicle against its reference sim.
 
 ## @jgengine/core/physics/carryable
 
@@ -3420,6 +3436,11 @@
 - `DrivableVehiclePosition` (type): type DrivableVehiclePosition = readonly [number, number, number] — World-space `[x, y, z]` for a drivable vehicle's resolved pose.
 - `DrivableVehicleStep` (interface): interface DrivableVehicleStep — {@link tickDrivableVehicle}'s result — the ready-to-apply pose patch plus the raw sim step for HUD/telemetry reads.
 - `tickDrivableVehicle` (function): function tickDrivableVehicle(vehicle: VehicleDynamics, dt: number, axis: AxisInput, options: DrivableVehicleOptions = {}): DrivableVehicleStep — Connects an `AxisInput` sample straight through a `VehicleDynamics` car to a scene entity's pose for one tick — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle game needs. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not just flat racetracks), and with `tires` lays skid marks and plays tire smoke while the car slides. Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera points.
+
+## @jgengine/core/physics/engineTorqueCurve
+
+- `VehicleTorqueCurveEffect` (interface): interface VehicleTorqueCurveEffect — The engine as a published torque curve: full-throttle crank torque by rpm, closed-throttle friction that rises with rpm, part throttle between the two, and shifts that open the clutch for their whole duration. Runs on a `gearbox` powertrain; without it the powertrain's own normalised curve, constant engine braking and part-drive shifts apply.
+- `engineTorque` (function): function engineTorque(effect: VehicleTorqueCurveEffect, powertrain: VehicleGearboxTuning, rpm: number, pedal: number, strength: number): number — Crank torque at `rpm` and pedal `pedal` (`0..1`), N·m: `pedal·T(rpm) − (1 − pedal)·friction(rpm)`, with the curve's dips and the friction scaled by `strength`.
 
 ## @jgengine/core/physics/flowTube
 
@@ -3562,6 +3583,11 @@
 - `RagdollLinkSpec` (interface): interface RagdollLinkSpec { a: string; b: string; kind?: "hinge" | "distance"; anchor?: readonly [number, number, number] } — ⚠ undocumented
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
 
+## @jgengine/core/physics/roadFriction
+
+- `VehicleRoadFrictionEffect` (interface): interface VehicleRoadFrictionEffect — Road friction: how much grip the surface under the car allows next to the dry test track the tyres were fitted on, one number for the whole road (`0.6` a wet road) and one per named surface the `surfaceAt` option reports (`{ asphalt: 1, gravel: 0.6, ice: 0.1 }`). It scales every tyre's friction coefficient, so the tyres still slide the way their curves say, only sooner.
+- `roadFrictionAt` (function): function roadFrictionAt(effect: VehicleRoadFrictionEffect, surface: string | undefined, strength: number): number — The tyre-friction multiplier the road gives on surface `surface`, with its distance from the test track scaled by `strength`.
+
 ## @jgengine/core/physics/structure
 
 - `CollapseEvent` (interface): interface CollapseEvent { fell: readonly string[]; collapsed: boolean } — ⚠ undocumented
@@ -3572,12 +3598,27 @@
 - `StructureMaterialTable` (type): type StructureMaterialTable = Readonly<Record<string, StructureMaterial>> — ⚠ undocumented
 - `StructureNodeSpec` (interface): interface StructureNodeSpec { id: string; position: readonly [number, number, number]; halfExtents: readonly [number, number, number]; mass?: number; integrity?: number; material?: string; anchor?: boolean } — ⚠ undocumented
 
+## @jgengine/core/physics/tireMagicFormula
+
+- `MagicFormulaTireCoefficients` (interface): interface MagicFormulaTireCoefficients — The Magic Formula 6.1 pure-slip coefficients the runtime tyre reads, named after the keys of a TNO `.tir` file in camelCase (`PDY1` → `pdy1`), at nominal inflation. Horizontal and vertical shifts (conicity, ply steer) and turn slip are left out: they are a few percent of a road tyre's force and cancel across an axle.
+- `MagicFormulaWheelCurve` (interface): interface MagicFormulaWheelCurve — One wheel's Magic Formula lateral curve at its load: `Fy = mu·Fz·sin(c·atan(Bα − e(Bα − atan Bα)))`, `B = stiffness/(c·mu·Fz)`.
+- `TNO_205_60R15_TIRE` (const): const TNO_205_60R15_TIRE: Readonly<MagicFormulaTireCoefficients> — The TNO 205/60 R15 passenger-car tyre (`TNO_car205_60R15.tir`, the set in Pacejka, *Tire and Vehicle Dynamics*, 3rd ed., 2012, Appendix 3), dry asphalt, 4000 N nominal load: μx ≈ 1.04, μy ≈ 0.88, about 53 kN/rad of cornering stiffness at nominal load. The reference cars run it scaled by `λμ = 1.04` for a dry test track.
+- `VehicleMagicFormulaEffect` (interface): interface VehicleMagicFormulaEffect — The Magic Formula tyre as a car effect: each wheel's lateral and longitudinal grip, cornering stiffness and curve shape come from its own load through the Magic Formula, so an axle with load moved across it holds less in total (load sensitivity) and a loaded wheel peaks at a larger slip. Replaces the axle tyre curves and `loadSensitivity`.
+- `magicFormulaTrail` (function): function magicFormulaTrail(p: Readonly<MagicFormulaTireCoefficients>, fz: number, alpha: number): number — Pneumatic trail at load `fz` and slip `alpha`, m: how far behind the contact centre the lateral force acts (Magic Formula 6.1 `t`).
+- `magicFormulaWheel` (function): function magicFormulaWheel(p: Readonly<MagicFormulaTireCoefficients>, fz: number, gamma = 0, loadSensitivity = 1, pivot = p.fnomin): MagicFormulaWheelCurve — One wheel's pure-slip Magic Formula at load `fz` and inclination `gamma`. `loadSensitivity` scales how far the friction coefficients and the curvature move with load about `pivot` (`1` as fitted), so the dial past `1` keeps the curve at the pivot load and only steepens its fall with load.
+
 ## @jgengine/core/physics/tireMarks
 
 - `TireMark` (interface): interface TireMark — One laid stretch of rubber: a dark strip from `a` to `b` on the ground at height `y`.
 - `TireMarks` (interface): interface TireMarks — Skid marks for every car in a game: wheels press rubber onto the ground while they slide, and old marks fade and recycle from a fixed pool, so a long drift session never grows memory. Cars feed it through `tickDrivableVehicle`'s `tires` option; the shell draws whatever is in `ctx.tireMarks`.
 - `TireMarksState` (interface): interface TireMarksState — Serializable {@link TireMarks} contents.
 - `createTireMarks` (function): function createTireMarks(options: { capacity?: number; lifetime?: number } = {}): TireMarks — Creates a {@link TireMarks} pool.
+
+## @jgengine/core/physics/vehicleAligningTorque
+
+- `ROAD_CAR_STEERING_COMPLIANCE` (const): const ROAD_CAR_STEERING_COMPLIANCE: number — Steering-system compliance of a road car's rack and column, road-wheel rad per N·m.
+- `VehicleAligningTorqueEffect` (interface): interface VehicleAligningTorqueEffect — Self-aligning torque through the steering: each front tyre's lateral force acts a pneumatic trail behind its contact centre plus the caster trail, so the summed kingpin torque turns the road wheels against the steering system's compliance toward the way the car is travelling. On a road car that is understeer and steering feel; in a slide it steers the front into the slide (counter-steer), which is the effect a drift game dials up.
+- `aligningSteer` (function): function aligningSteer(effect: VehicleAligningTorqueEffect, tire: Readonly<MagicFormulaTireCoefficients> | undefined, outerLoad: number, innerLoad: number, slip: number, axleForce: number, strength: number): number — Road-wheel steer, rad, the front axle's self-aligning torque produces: compliance × Σ(pneumatic + caster trail) × lateral force, with the axle's force `axleForce` shared between its wheels by their loads. Signed like the force, so a caller adds it the way compliance steer moves the wheels away from the force.
 
 ## @jgengine/core/physics/vehicleBackendLink
 
@@ -3616,7 +3657,7 @@
 - `VehicleCamberEffect` (interface): interface VehicleCamberEffect — Camber thrust: a tyre leaning into the turn pushes harder, one leaning out pushes less.
 - `VehicleCombinedSlipEffect` (interface): interface VehicleCombinedSlipEffect — Friction ellipse: drive and brake force use up the same tyre's cornering grip. Omit for tyres that corner at full grip whatever the pedals do.
 - `VehicleComplianceSteerEffect` (interface): interface VehicleComplianceSteerEffect — Steer from bushing and steering-system compliance: the wheels give way under cornering force.
-- `VehicleDifferentialEffect` (type): type VehicleDifferentialEffect = | { kind: "open" } /** Torque may differ by up to `bias` times between sides (Torsen, clutch LSD). */ | { kind: "limitedSlip"; bias: number } /** * Both wheels turn together: every bit of grip drives, but the axle fights the car's yaw (spool understeer). * `slipStiff… — The driven axle's differential: how drive is shared between its left and right wheels.
+- `VehicleDifferentialEffect` (type): type VehicleDifferentialEffect = ( /** Equal torque both sides: the unloaded inside wheel spins first and caps the axle at twice its grip. */ | { kind: "open" } /** Torque may differ by up to `bias` times between sides (Torsen, clutch LSD). */ | { kind: "limitedSlip"; bias: number } /** * Plate-type… — The driven axle's differential: how drive is shared between its left and right wheels.
 - `VehicleDirectDriveTuning` (interface): interface VehicleDirectDriveTuning — Single-speed drive (electric, kart, arcade ball-car): force capped by power, so top speed comes out of drag.
 - `VehicleDownforceEffect` (interface): interface VehicleDownforceEffect — Aerodynamic downforce `½·ρ·ClA·v²`, pressing the tyres harder as speed rises.
 - `VehicleDrivetrainState` (interface): interface VehicleDrivetrainState — Gearbox, engine speed and brake-pressure state.
@@ -3646,6 +3687,7 @@
 - `VehicleStepAids` (interface): interface VehicleStepAids — Which driver aids intervened this tick.
 - `VehicleStepAir` (interface): interface VehicleStepAir — Airborne telemetry of a {@link VehicleDynamicsStep}.
 - `VehicleStepBody` (interface): interface VehicleStepBody — Body attitude of a {@link VehicleDynamicsStep}.
+- `VehicleStepBrakes` (interface): interface VehicleStepBrakes — Brake telemetry of a {@link VehicleDynamicsStep}.
 - `VehicleStepEngine` (interface): interface VehicleStepEngine — Engine telemetry of a {@link VehicleDynamicsStep}.
 - `VehicleStepLoads` (interface): interface VehicleStepLoads — Axle and wheel loads of a {@link VehicleDynamicsStep}.
 - `VehicleStepMotion` (interface): interface VehicleStepMotion — Pose and planar motion of a {@link VehicleDynamicsStep}.
@@ -3689,6 +3731,17 @@
 - `VehicleSpecSteering` (interface): interface VehicleSpecSteering — Steering: lock, rack speed and self-alignment.
 - `VehicleSpecTires` (interface): interface VehicleSpecTires — Tires: peak grip, compound and rear balance.
 - `vehicleTuning` (function): function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning — Build the physical tuning for a {@link VehicleSpec}. Pure and deterministic, so a parts change or a dent re-derives the tuning and `retune` swaps it in without costing the car its momentum.
+
+## @jgengine/core/physics/vehicleSuspensionKinematics
+
+- `SuspensionKinematicsLoads` (interface): interface SuspensionKinematicsLoads — What {@link suspensionKinematics} works out for one lateral acceleration.
+- `VehicleSuspensionKinematicsEffect` (interface): interface VehicleSuspensionKinematicsEffect — Suspension kinematics as a car effect: roll-centre heights split each axle's lateral load transfer into the part the links carry (through the roll centre, at once) and the part the springs carry (by each axle's share of roll stiffness), body roll acts about the roll axis instead of the ground, and the wheels lean with the body by each axle's camber gain. Numbers come from a linkage solve (`scripts/reference/physics/suspensionKinematics.ts`).
+- `suspensionKinematics` (function): function suspensionKinematics(effect: VehicleSuspensionKinematicsEffect, car: { massKg: number; comHeight: number; frontWeight: number; trackWidth: number }, ay: number, simple: { frontShare: number; rollFollow: number }, strength: number): SuspensionKinematicsLoads — Lateral load transfer, roll lever and camber gain for one lateral acceleration `ay` (m/s², either sign), blended from the simple split by `strength`.
+
+## @jgengine/core/physics/vehicleTireCrown
+
+- `VehicleTireCrownEffect` (interface): interface VehicleTireCrownEffect — A single-track vehicle's round tyre crowns: as the bike leans the contact rolls round the crown toward the inside of the turn, so the bike has to lean further than the balance lean `atan(ay/g)` of a knife-edge wheel, by `asin(r·sin φ' / (h − r))` (Cossalter, *Motorcycle Dynamics*, 2nd ed., 2006, §1.2). With it the lean shown is the bike's roll, which leads the turn instead of following the lateral acceleration.
+- `crownBalanceLean` (function): function crownBalanceLean(effect: VehicleTireCrownEffect, comHeight: number, lean: number, strength: number): number — The balance lean, rad, that a bike rolled to `lean` runs at: the inverse of {@link crownShownLean}.
 
 ## @jgengine/core/physics/worldColliders
 

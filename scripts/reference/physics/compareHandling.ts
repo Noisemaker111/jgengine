@@ -1,3 +1,4 @@
+import { CAR_REFERENCE_VEHICLE_IDS, carFromReference } from "@jgengine/core/physics/carReferences";
 import { measureCourse, measureHandling, type CourseSubject } from "@jgengine/core/physics/handlingProbe";
 import { createVehicleDynamics, type VehicleDynamicsTuning } from "@jgengine/core/physics/vehicleDynamics";
 import { REAL_CARS, type RealCar, type RealCarTestData } from "./realCars";
@@ -319,4 +320,56 @@ export function validateReferenceMotorcycles(
     const metrics = measureReferenceMotorcycle(bike);
     return { bike, metrics, checks: checkReferenceMotorcycle(bike, metrics) };
   });
+}
+
+/**
+ * How close the runtime car from `carFromReference` must land to its reference sim on every compared metric: 5%, or
+ * an absolute `0.25` in the metric's unit where the reference measures exactly zero (a bike that never leans the wrong way).
+ */
+export const RUNTIME_TOLERANCE = { share: 0.05, nearZero: 0.25 } as const;
+
+/** One metric of the runtime car checked against its reference sim by {@link checkRuntimeAgainstReference}. */
+export interface RuntimeCheck {
+  metric: string;
+  label: string;
+  game: number;
+  reference: number;
+  /** Relative gap, or the absolute gap where the reference is zero. */
+  gap: number;
+  allowed: number;
+  pass: boolean;
+}
+
+/**
+ * Check comparison rows (game = the runtime car with every effect at 1) against {@link RUNTIME_TOLERANCE}.
+ * @capability reference-validation check the runtime car from carFromReference against its reference sim on every metric
+ */
+export function checkRuntimeAgainstReference(rows: readonly HandlingComparisonRow<string>[]): RuntimeCheck[] {
+  return rows.map((row) => {
+    const absolute = Math.abs(row.reference) < 1e-9;
+    const gap = absolute ? row.game - row.reference : row.deltaShare;
+    const allowed = absolute ? RUNTIME_TOLERANCE.nearZero : RUNTIME_TOLERANCE.share;
+    return { metric: row.metric, label: row.label, game: row.game, reference: row.reference, gap, allowed, pass: Number.isFinite(gap) && Math.abs(gap) <= allowed };
+  });
+}
+
+/**
+ * Run `carFromReference(id)` (every effect at 1) and the reference sim of the same real car through every comparison
+ * scenario and check each metric: the proof that the runtime car reproduces the reference.
+ * @capability handling-compare score the runtime car from carFromReference against its multibody reference, per metric, with tolerances
+ */
+export function compareRuntimeCar(car: RealCar, reference?: ComparableHandlingMetrics): { comparison: VehicleHandlingComparison; checks: RuntimeCheck[] } {
+  const id = CAR_REFERENCE_VEHICLE_IDS.find((known) => known === car.id);
+  if (id === undefined) throw new Error(`compareRuntimeCar: carFromReference has no ${car.id}`);
+  const comparison = compareVehicleTuning(carFromReference(id), car, reference);
+  return { comparison, checks: checkRuntimeAgainstReference(comparison.rows) };
+}
+
+/**
+ * The runtime GSX-R1000 from `carFromReference` against the multibody reference motorcycle and its rider.
+ * @capability handling-compare score the runtime bike from carFromReference against the multibody reference motorcycle, per metric, with tolerances
+ */
+export function compareRuntimeBike(bike: RealMotorcycle, reference?: BikeHandlingMetrics): { comparison: BikeHandlingComparison; checks: RuntimeCheck[] } {
+  const comparison = compareBikeTuning(carFromReference("suzuki-gsxr1000-k1"), bike, reference);
+  return { comparison, checks: checkRuntimeAgainstReference(comparison.rows) };
 }

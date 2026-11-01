@@ -3,6 +3,14 @@ import type { CollisionObstacle } from "../movement/movementModel";
 import { createVehicleObstacleClamp, type VehicleImpact, type VehicleMoveClamp } from "./vehicleObstacles";
 import { sampleGripCurve, type GripCurve } from "./gripCurve";
 import { clamp, clamp01 } from "../math/scalar";
+import type { WindField } from "../world/wind";
+import { brakeFadeShare, brakeTemperatureStep, type VehicleBrakeFadeEffect } from "./brakeFade";
+import { crownBalanceLean, crownShownLean, type VehicleTireCrownEffect } from "./vehicleTireCrown";
+import { roadFrictionAt, type VehicleRoadFrictionEffect } from "./roadFriction";
+import { engineTorque, torqueCurveShiftSeconds, type VehicleTorqueCurveEffect } from "./engineTorqueCurve";
+import { aligningSteer, type VehicleAligningTorqueEffect } from "./vehicleAligningTorque";
+import { suspensionKinematics, type VehicleSuspensionKinematicsEffect } from "./vehicleSuspensionKinematics";
+import { magicFormulaCoefficients, magicFormulaWheel, type MagicFormulaTireCoefficients, type VehicleMagicFormulaEffect } from "./tireMagicFormula";
 
 /**
  * One axle's tire, in physical terms. Lateral force follows a simplified Pacejka curve
@@ -78,6 +86,8 @@ export interface VehicleSteeringTuning {
 
 /** Friction ellipse: drive and brake force use up the same tyre's cornering grip. Omit for tyres that corner at full grip whatever the pedals do. */
 export interface VehicleCombinedSlipEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /**
    * Exponent of the friction limit `|Fx/Fx,max|^n + |Fy/Fy,max|^n ≤ 1` (default `2`, the ellipse). Higher keeps
    * more cornering grip under light pedal, lower trades it away sooner.
@@ -87,18 +97,24 @@ export interface VehicleCombinedSlipEffect {
 
 /** A wheel that locks under braking or spins under drive slides, and a sliding tyre grips less than its peak. */
 export interface VehicleWheelSlideEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Longitudinal force left at a full lock or spin as a share of peak (default the tyre's `slideGrip`). */
   slideGrip?: number;
 }
 
 /** Load moves forward under braking and back under drive, by `m·a·comHeight / wheelbase`. */
 export interface VehicleLongitudinalLoadTransferEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Share of the rigid-body transfer that reaches the tyres, `0..1` (default `1`; anti-dive/anti-squat geometry lowers it). */
   share?: number;
 }
 
 /** Load moves to the outside wheels in a corner, by `m·a·comHeight / trackWidth`. */
 export interface VehicleLateralLoadTransferEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /**
    * Share of the transfer taken by the front axle, `0..1` (default `0.5`). The classic balance knob: more front →
    * the front saturates first (understeer), less → the rear does (oversteer). Needs `loadSensitivity` to change grip.
@@ -111,6 +127,8 @@ export interface VehicleLateralLoadTransferEffect {
  * across it holds less in total. Each wheel is evaluated at its own load.
  */
 export interface VehicleLoadSensitivityEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Peak-grip loss per unit of load above nominal: `μ = peakGrip·(1 − grip·(Fz/Fz₀ − 1))` (default `0.05`; a road tyre ~`0.08`). */
   grip?: number;
   /** Cornering-stiffness loss per unit of load above nominal (default `0`; a road tyre ~`0.3`). Moves the peak to larger slip on the loaded wheel. */
@@ -125,12 +143,16 @@ export interface VehicleLoadSensitivityEffect {
 
 /** Tyre relaxation: the carcass has to roll a distance before the slip angle builds, so lateral force lags steering. */
 export interface VehicleTireRelaxationEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Relaxation length, m (0.3 typical road tyre, 0.15 stiff race tyre). */
   length: number;
 }
 
 /** Camber thrust: a tyre leaning into the turn pushes harder, one leaning out pushes less. */
 export interface VehicleCamberEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Static camber, rad; negative tops the wheel inboard, which helps the loaded outside wheel (default `0`). */
   static?: number;
   /** Share of body roll the wheels lean with, `0..1` (default `0.7`; `1` a beam axle rolling with the body, `0` wheels that stay upright). */
@@ -141,6 +163,8 @@ export interface VehicleCamberEffect {
 
 /** Steer from bushing and steering-system compliance: the wheels give way under cornering force. */
 export interface VehicleComplianceSteerEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Front steer per newton of front-axle lateral force, rad/N; positive steers away from the force (understeer). */
   front?: number;
   /** Rear steer per newton of rear-axle lateral force, rad/N; positive steers away (oversteer), negative toward (stable). */
@@ -149,6 +173,8 @@ export interface VehicleComplianceSteerEffect {
 
 /** Steer from suspension geometry as the body rolls. */
 export interface VehicleRollSteerEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Front steer per rad of body roll; positive steers out of the turn (understeer). */
   front?: number;
   /** Rear steer per rad of body roll; positive steers out of the turn (oversteer), negative into it (stable). */
@@ -157,12 +183,18 @@ export interface VehicleRollSteerEffect {
 
 /** Aerodynamic drag `½·ρ·CdA·v²`, air density 1.225 kg/m³. */
 export interface VehicleAeroDragEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Drag coefficient × frontal area, m² (0.6 sports car … 1.0 SUV). */
   area: number;
+  /** Side-force coefficient × side area, m²: how hard a crosswind pushes the car sideways (default `0`; ~`2` a hatchback, ~`8` a high-sided truck). Needs the `wind` option. */
+  sideArea?: number;
 }
 
 /** Aerodynamic downforce `½·ρ·ClA·v²`, pressing the tyres harder as speed rises. */
 export interface VehicleDownforceEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Lift coefficient × area producing downforce, m² (0 road car … 3 race car). */
   area: number;
   /** Share on the front axle, `0..1` (default `0.45`). */
@@ -171,12 +203,21 @@ export interface VehicleDownforceEffect {
 
 /** Tyre rolling resistance, `Crr · load`. */
 export interface VehicleRollingResistanceEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Rolling-resistance coefficient (default `0.015`; a modern road tyre ~`0.01`). */
   coefficient?: number;
+  /**
+   * The Magic Formula's growth with speed, `C·(1 + …)`: `coefficient + linear·(v/referenceSpeed) + quartic·(v/referenceSpeed)⁴`
+   * (TNO 205/60 R15: `0.001515`, `8.514e-5` at `16.7` m/s). Omit for a coefficient that holds at every speed.
+   */
+  speedTerms?: { linear: number; quartic: number; referenceSpeed: number };
 }
 
 /** Spinning parts take part of every speed change: the car behaves heavier than its mass, most in low gears. */
 export interface VehicleRotatingInertiaEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Engine, flywheel and clutch at the crank, kg·m² (0.1–0.2 for a road car); reflected through the gear in use. Gearbox only. */
   engine?: number;
   /** All wheels, tyres, hubs and brake rotors together, kg·m² (about 4 for a road car). Unlike the engine, they stay coupled under hard braking. */
@@ -184,19 +225,32 @@ export interface VehicleRotatingInertiaEffect {
 }
 
 /** The driven axle's differential: how drive is shared between its left and right wheels. */
-export type VehicleDifferentialEffect =
+export type VehicleDifferentialEffect = (
   /** Equal torque both sides: the unloaded inside wheel spins first and caps the axle at twice its grip. */
   | { kind: "open" }
   /** Torque may differ by up to `bias` times between sides (Torsen, clutch LSD). */
   | { kind: "limitedSlip"; bias: number }
   /**
+   * Plate-type limited slip: the wheels' torques may differ by up to `preload + lock·|axle torque|` N·m (`powerLock` under
+   * drive, `coastLock` off the throttle), so in a corner the slower inside wheel is pushed harder than the outside one
+   * and the axle resists the car's yaw (understeer at low lateral g, a steadier power-on exit). `slipStiffness` is as for
+   * `locked`.
+   */
+  | { kind: "clutch"; preload: number; powerLock: number; coastLock: number; slipStiffness?: number }
+  /**
    * Both wheels turn together: every bit of grip drives, but the axle fights the car's yaw (spool understeer).
    * `slipStiffness` is each tyre's longitudinal force per unit slip as a multiple of its load (default `20`).
    */
-  | { kind: "locked"; slipStiffness?: number };
+  | { kind: "locked"; slipStiffness?: number }
+) & {
+  /** Multiplier on the locking (bias above `1`, clutch capacity, spool stiffness): `0` off, `1` as given (default), past `1` tighter; sane over `0..4`. */
+  strength?: number;
+};
 
 /** Brake hydraulics: pressure follows the pedal with a lag. */
 export interface VehicleBrakeLagEffect {
+  /** Multiplier on the effect: `0` off, `1` as tuned (default), past `1` stronger; sane over `0..4`. */
+  strength?: number;
   /** Time constant, s (0.03 road car). */
   seconds: number;
 }
@@ -209,6 +263,8 @@ export interface VehicleSelfAlignEffect {
 
 /** Speed-sensitive lock: full lock is cut back as speed rises so a full input at speed stays near the grip limit. */
 export interface VehicleSpeedSensitiveSteeringEffect {
+  /** Multiplier on the lock cut: `0` off, `1` as given (default), past `1` cut further (never below a tenth of full lock); sane over `0..4`. */
+  strength?: number;
   /** Lock at and above `at`, rad. */
   angle: number;
   /** Speed where lock reaches `angle`, m/s. */
@@ -227,6 +283,8 @@ export interface VehicleAbsEffect {
 export interface VehicleTractionControlEffect {
   /** `0..1` (default `1`). */
   strength?: number;
+  /** Share of the driven axle's remaining grip drive is held to (default `1 − 0.35·strength`; a launch held at peak slip ~`0.98`). */
+  holds?: number;
 }
 
 /** Stability (yaw) control: a corrective yaw torque once sideslip passes `maxSideslip`. */
@@ -255,6 +313,7 @@ export interface VehicleAntiStoppieEffect {
  * kart can ignore `aeroDrag`, and a sim car can add `tireRelaxation` and `complianceSteer`.
  */
 export interface VehicleEffects {
+  magicFormula?: VehicleMagicFormulaEffect;
   combinedSlip?: VehicleCombinedSlipEffect;
   wheelSlide?: VehicleWheelSlideEffect;
   longitudinalLoadTransfer?: VehicleLongitudinalLoadTransferEffect;
@@ -262,14 +321,20 @@ export interface VehicleEffects {
   loadSensitivity?: VehicleLoadSensitivityEffect;
   tireRelaxation?: VehicleTireRelaxationEffect;
   camber?: VehicleCamberEffect;
+  tireCrown?: VehicleTireCrownEffect;
   complianceSteer?: VehicleComplianceSteerEffect;
   rollSteer?: VehicleRollSteerEffect;
+  aligningTorque?: VehicleAligningTorqueEffect;
+  suspensionKinematics?: VehicleSuspensionKinematicsEffect;
   aeroDrag?: VehicleAeroDragEffect;
   downforce?: VehicleDownforceEffect;
   rollingResistance?: VehicleRollingResistanceEffect;
   rotatingInertia?: VehicleRotatingInertiaEffect;
+  torqueCurve?: VehicleTorqueCurveEffect;
   differential?: VehicleDifferentialEffect;
   brakeLag?: VehicleBrakeLagEffect;
+  brakeFade?: VehicleBrakeFadeEffect;
+  roadFriction?: VehicleRoadFrictionEffect;
   selfAlign?: VehicleSelfAlignEffect;
   speedSensitiveSteering?: VehicleSpeedSensitiveSteeringEffect;
   abs?: VehicleAbsEffect;
@@ -332,6 +397,10 @@ export interface VehicleLeanTuning {
   countersteer?: number;
   /** Below this speed the bar steers directly, like walking a bike (default `3` m/s). */
   directSteerBelow?: number;
+  /** How fast the rider's bar correction closes the gap to the lean's turn, 1/s (default `3`; a racer on a quick bike ~`10`). */
+  trimGain?: number;
+  /** Time constant the bike's lean follows the request with, s, before `leanRate` caps it (default `0`: the lean moves at `leanRate` until it arrives). */
+  leanLag?: number;
 }
 
 /** Jumps from the ground and in the air. */
@@ -459,6 +528,13 @@ export interface VehicleDynamicsOptions {
   heading?: number;
   /** Grip multiplier by world position (gravel, ice, wet paint); default `1`. */
   surfaceFriction?: (x: number, z: number) => number;
+  /** Name of the surface under a point, read by the `roadFriction` effect's `surfaces` table (`"asphalt"`, `"gravel"`). */
+  surfaceAt?: (x: number, z: number) => string;
+  /**
+   * The wind, sampled at the car's centre height each substep (`windField(...)` from `world/wind`): drag and the
+   * `aeroDrag` side force act on the air speed relative to it. Omit for still air.
+   */
+  wind?: Pick<WindField, "atHeight">;
   /** Clamp a planar move; optional result `motion` separates permitted displacement from position recovery. Called once per physics substep. */
   clampMove?: VehicleMoveClamp;
   /**
@@ -485,6 +561,8 @@ export interface VehicleMotionState {
   vz: number;
   yawRate: number;
   steerAngle: number;
+  /** Seconds simulated since spawn: the clock the `wind` field is read at. */
+  time: number;
 }
 
 /** Gearbox, engine speed and brake-pressure state. */
@@ -495,6 +573,8 @@ export interface VehicleDrivetrainState {
   rpm: number;
   /** Brake pressure share following the pedal (`brakeLag`). */
   brakeLevel: number;
+  /** Lumped brake-disc temperature, °C (`brakeFade`). */
+  brakeTemperature: number;
 }
 
 /** Body acceleration, pitch/roll and spring state (`suspension`). */
@@ -538,6 +618,9 @@ export interface VehicleTireState {
   /** Last substep's axle lateral forces, N, for compliance steer. */
   forceFront: number;
   forceRear: number;
+  /** Last substep's outside and inside front wheel loads, N, for the self-aligning torque. */
+  frontOuterLoad: number;
+  frontInnerLoad: number;
 }
 
 /** Serializable integrator state: everything {@link VehicleDynamics.restore} needs to resume bit-for-bit. */
@@ -628,6 +711,14 @@ export interface VehicleStepBody {
   lean: number;
 }
 
+/** Brake telemetry of a {@link VehicleDynamicsStep}. */
+export interface VehicleStepBrakes {
+  /** Lumped disc temperature, °C (`brakeFade`; ambient without it). */
+  temperature: number;
+  /** Share of cold brake force the hot pads still give, `0..1` (`1` without `brakeFade`). */
+  fade: number;
+}
+
 /** Airborne telemetry of a {@link VehicleDynamicsStep}. */
 export interface VehicleStepAir {
   /** Height of the car's base above the terrain under it, m; `0` on the ground and always `0` without `suspension`. */
@@ -647,6 +738,7 @@ export interface VehicleDynamicsStep {
   engine: VehicleStepEngine;
   aids: VehicleStepAids;
   body: VehicleStepBody;
+  brakes: VehicleStepBrakes;
   air: VehicleStepAir;
   /** The hardest hit on an `obstacles` solid this tick, or `null`. */
   impact: VehicleImpact | null;
@@ -692,6 +784,31 @@ const SLIP_REFERENCE_SPEED = 2;
 const DEFAULT_SUBSTEP = 1 / 240;
 const NO_EFFECTS: VehicleEffects = {};
 
+/** An effect's dial: `0` when it is absent or switched off, else its `strength` (default `1`). */
+function strengthOf(effect: { strength?: number } | undefined): number {
+  return effect === undefined ? 0 : Math.max(0, effect.strength ?? 1);
+}
+
+/** The effect when its dial is above `0`, else `undefined`, so a term at strength `0` runs exactly like an absent one. */
+function on<T extends { strength?: number }>(effect: T | undefined): T | undefined {
+  return strengthOf(effect) > 0 ? effect : undefined;
+}
+
+/** A share of force a tyre keeps (`0..1`) with its loss scaled by `strength`; exact at `1`. */
+function scaledShare(share: number, strength: number, floor: number): number {
+  return strength === 1 ? share : Math.max(floor, Math.min(1, 1 - strength * (1 - share)));
+}
+
+/**
+ * Cornering room the friction ellipse leaves at a longitudinal use `used`: below strength `1` it blends from no
+ * penalty to the ellipse, past `1` the exponent falls toward `1` (grip traded away sooner). Exact at `1`.
+ */
+function ellipseRoom(used: number, exponent: number, strength: number): number {
+  const n = strength > 1 ? Math.max(1, exponent / strength) : exponent;
+  const room = Math.pow(Math.max(0, 1 - Math.pow(used, n)), 1 / n);
+  return strength >= 1 ? room : 1 + (room - 1) * strength;
+}
+
 /** Simplified Pacejka `sin(C·atan(Bα − E·(Bα − atan Bα)))`; `peakX` is `Bα` at the peak. */
 interface CurveShape {
   b: number;
@@ -713,9 +830,9 @@ function tireShape(tire: VehicleTireTuning): CurveShape {
   return { b, c, e, peakX };
 }
 
-function lateralCurve(b: number, shape: CurveShape, alpha: number): number {
+function lateralCurve(b: number, c: number, e: number, alpha: number): number {
   const x = b * alpha;
-  return Math.sin(shape.c * Math.atan(x - shape.e * (x - Math.atan(x))));
+  return Math.sin(c * Math.atan(x - e * (x - Math.atan(x))));
 }
 
 /** One axle's two tyres at their own loads, after load sensitivity: their summed grip and the curve each runs. */
@@ -731,6 +848,11 @@ interface AxleGrip {
   /** Longitudinal capacity of the inside wheel, N (open and limited-slip differentials). */
   capXInner: number;
   capXOuter: number;
+  /** Per-wheel curve shape `C` and curvature `E` (the axle's own unless the Magic Formula sets each wheel's). */
+  cOuter: number;
+  cInner: number;
+  eOuter: number;
+  eInner: number;
 }
 
 /**
@@ -744,6 +866,24 @@ export function createVehicleDynamics(
   let tuning = initialTuning;
   let frontShape = tireShape(tuning.front);
   let rearShape = tireShape(tuning.rear ?? tuning.front);
+  // Coefficient sets resolved once per effect object, so the hot path does not rebuild them every substep.
+  let formulaSource: VehicleMagicFormulaEffect | undefined;
+  let formulaFront: MagicFormulaTireCoefficients | undefined;
+  let formulaRear: MagicFormulaTireCoefficients | undefined;
+  function resolveFormula(effect: VehicleMagicFormulaEffect): void {
+    if (formulaSource === effect && formulaFront !== undefined && formulaRear !== undefined) return;
+    formulaSource = effect;
+    formulaFront = magicFormulaCoefficients(effect, "front");
+    formulaRear = magicFormulaCoefficients(effect, "rear");
+  }
+  function frontFormula(effect: VehicleMagicFormulaEffect): MagicFormulaTireCoefficients {
+    resolveFormula(effect);
+    return formulaFront ?? magicFormulaCoefficients(effect, "front");
+  }
+  function rearFormula(effect: VehicleMagicFormulaEffect): MagicFormulaTireCoefficients {
+    resolveFormula(effect);
+    return formulaRear ?? magicFormulaCoefficients(effect, "rear");
+  }
   const surfaceFriction = options.surfaceFriction ?? (() => 1);
   const obstacleFrame = { list: [] as readonly CollisionObstacle[], dt: 0 };
   const obstacleClamp =
@@ -798,7 +938,9 @@ export function createVehicleDynamics(
     const steps = dt > 0 ? Math.max(1, Math.ceil(dt / maxSub - 1e-9)) : 0;
     const h = steps > 0 ? dt / steps : 0;
     const telemetry = emptyTelemetry();
-    const surface = surfaceFriction(state.motion.x, state.motion.z);
+    const road = on(tuning.effects?.roadFriction);
+    const roadGrip = road === undefined ? 1 : roadFrictionAt(road, options.surfaceAt?.(state.motion.x, state.motion.z), strengthOf(road));
+    const surface = road === undefined ? surfaceFriction(state.motion.x, state.motion.z) : surfaceFriction(state.motion.x, state.motion.z) * roadGrip;
     const drag = dragAt === undefined ? 0 : Math.max(0, dragAt(state.motion.x, state.motion.z));
     telemetry.airborne = state.air.airborne;
     if (obstacleClamp !== null && options.obstacles !== undefined) {
@@ -862,10 +1004,11 @@ export function createVehicleDynamics(
         engineLoad: telemetry.engineLoad,
       },
       aids: { absActive: telemetry.abs, tractionLimited: telemetry.traction, stabilityActive: telemetry.stability },
+      brakes: { temperature: state.drivetrain.brakeTemperature, fade: telemetry.brakeFade },
       body: {
         bodyPitch: state.body.bodyPitch,
         bodyRoll: state.body.bodyRoll,
-        lean: tuning.lean === undefined ? 0 : balanceLean(state.body.lateralAccel),
+        lean: tuning.lean === undefined ? 0 : on(tuning.effects?.tireCrown) === undefined ? balanceLean(state.body.lateralAccel) : state.rider.lean,
       },
       air: {
         airOffset: tuning.suspension === undefined ? state.air.hopHeight : Math.max(0, baseHeight() - groundAt(state.motion.x, state.motion.z)),
@@ -876,7 +1019,7 @@ export function createVehicleDynamics(
     };
   }
 
-  /** Both tyres of one axle at their own loads, after load sensitivity. */
+  /** Both tyres of one axle at their own loads, after load sensitivity or the Magic Formula. */
   function axleGrip(
     tire: VehicleTireTuning,
     shape: CurveShape,
@@ -884,6 +1027,8 @@ export function createVehicleDynamics(
     transfer: number,
     gripScale: number,
     sensitivity: VehicleLoadSensitivityEffect | undefined,
+    formula: Readonly<MagicFormulaTireCoefficients> | undefined,
+    formulaDial: number,
   ): AxleGrip {
     const half = load / 2;
     const shift = Math.min(half, Math.max(0, transfer));
@@ -891,36 +1036,76 @@ export function createVehicleDynamics(
     const inner = half - shift;
     const muY = tire.peakGrip * gripScale;
     const muX = (tire.longitudinalGrip ?? tire.peakGrip) * gripScale;
+    let grip: AxleGrip;
     if (sensitivity === undefined) {
-      return { capY: muY * load, capX: muX * load, capOuter: muY * outer, capInner: muY * inner, bOuter: shape.b, bInner: shape.b, capXInner: muX * inner, capXOuter: muX * outer };
+      grip = { capY: muY * load, capX: muX * load, capOuter: muY * outer, capInner: muY * inner, bOuter: shape.b, bInner: shape.b, capXInner: muX * inner, capXOuter: muX * outer, cOuter: shape.c, cInner: shape.c, eOuter: shape.e, eInner: shape.e };
+    } else {
+      const nominal = Math.max(1, sensitivity.nominalLoad ?? half);
+      const dial = strengthOf(sensitivity);
+      const gripLoss = (sensitivity.grip ?? 0.05) * dial;
+      const stiffLoss = (sensitivity.stiffness ?? 0) * dial;
+      const gripAt = (fz: number) => Math.max(0.3, 1 - gripLoss * (fz / nominal - 1));
+      const stiffAt = (fz: number) => Math.max(0.2, 1 - stiffLoss * (fz / nominal - 1));
+      const gOuter = gripAt(outer);
+      const gInner = gripAt(inner);
+      const capOuter = muY * gOuter * outer;
+      const capInner = muY * gInner * inner;
+      const capXOuter = muX * gOuter * outer;
+      const capXInner = muX * gInner * inner;
+      grip = {
+        capY: capOuter + capInner,
+        capX: capXOuter + capXInner,
+        capOuter,
+        capInner,
+        bOuter: shape.b * stiffAt(outer),
+        bInner: shape.b * stiffAt(inner),
+        capXInner,
+        capXOuter,
+        cOuter: shape.c,
+        cInner: shape.c,
+        eOuter: shape.e,
+        eInner: shape.e,
+      };
     }
-    const nominal = Math.max(1, sensitivity.nominalLoad ?? half);
-    const gripLoss = sensitivity.grip ?? 0.05;
-    const stiffLoss = sensitivity.stiffness ?? 0;
-    const gripAt = (fz: number) => Math.max(0.3, 1 - gripLoss * (fz / nominal - 1));
-    const stiffAt = (fz: number) => Math.max(0.2, 1 - stiffLoss * (fz / nominal - 1));
-    const gOuter = gripAt(outer);
-    const gInner = gripAt(inner);
-    const capOuter = muY * gOuter * outer;
-    const capInner = muY * gInner * inner;
-    const capXOuter = muX * gOuter * outer;
-    const capXInner = muX * gInner * inner;
+    if (formula === undefined || formulaDial <= 0) return grip;
+    // Each wheel on its own Magic Formula curve; below strength 1 the curve parameters blend from the axle's.
+    const blendTo = Math.min(1, formulaDial);
+    const spread = Math.max(1, formulaDial);
+    const wheel = (fz: number, cap: number, capX: number, b: number, c: number, e: number) => {
+      const mf = magicFormulaWheel(formula, fz, 0, spread, half);
+      const simpleMu = fz > 0 ? cap / fz : muY;
+      const simpleMuX = fz > 0 ? capX / fz : muX;
+      const mu = simpleMu + (mf.muY * gripScale - simpleMu) * blendTo;
+      const mux = simpleMuX + (mf.muX * gripScale - simpleMuX) * blendTo;
+      const simpleStiffness = b * c * cap;
+      const stiffness = simpleStiffness + (mf.stiffness - simpleStiffness) * blendTo;
+      const cc = c + (mf.c - c) * blendTo;
+      const ee = e + (mf.e - e) * blendTo;
+      const capY = mu * fz;
+      return { capY, capX: mux * fz, b: capY > 0 ? stiffness / (cc * capY) : b, c: cc, e: ee };
+    };
+    const o = wheel(outer, grip.capOuter, grip.capXOuter, grip.bOuter, grip.cOuter, grip.eOuter);
+    const n = wheel(inner, grip.capInner, grip.capXInner, grip.bInner, grip.cInner, grip.eInner);
     return {
-      capY: capOuter + capInner,
-      capX: capXOuter + capXInner,
-      capOuter,
-      capInner,
-      bOuter: shape.b * stiffAt(outer),
-      bInner: shape.b * stiffAt(inner),
-      capXInner,
-      capXOuter,
+      capY: o.capY + n.capY,
+      capX: o.capX + n.capX,
+      capOuter: o.capY,
+      capInner: n.capY,
+      bOuter: o.b,
+      bInner: n.b,
+      capXOuter: o.capX,
+      capXInner: n.capX,
+      cOuter: o.c,
+      cInner: n.c,
+      eOuter: o.e,
+      eInner: n.e,
     };
   }
 
   /** Lateral force of an axle's two tyres at slip `alpha`, as a share of the axle's lateral capacity (signed like the curve). */
-  function axleCurve(grip: AxleGrip, shape: CurveShape, alpha: number): number {
+  function axleCurve(grip: AxleGrip, alpha: number): number {
     if (grip.capY <= 0) return 0;
-    return (grip.capOuter * lateralCurve(grip.bOuter, shape, alpha) + grip.capInner * lateralCurve(grip.bInner, shape, alpha)) / grip.capY;
+    return (grip.capOuter * lateralCurve(grip.bOuter, grip.cOuter, grip.eOuter, alpha) + grip.capInner * lateralCurve(grip.bInner, grip.cInner, grip.eInner, alpha)) / grip.capY;
   }
 
   function substep(
@@ -955,34 +1140,42 @@ export function createVehicleDynamics(
       else if (state.drivetrain.reversing && (throttle > 0.1 || u > 0.5)) state.drivetrain.reversing = false;
     }
     const wantReverseDrive = state.drivetrain.reversing && brakePedal > 0;
-    const brakeLag = fx_.brakeLag;
+    const brakeLag = on(fx_.brakeLag);
     if (brakeLag === undefined || h <= 0) state.drivetrain.brakeLevel = brakePedal;
-    else state.drivetrain.brakeLevel += (brakePedal - state.drivetrain.brakeLevel) * (1 - Math.exp(-h / Math.max(1e-3, brakeLag.seconds)));
+    else state.drivetrain.brakeLevel += (brakePedal - state.drivetrain.brakeLevel) * (1 - Math.exp(-h / Math.max(1e-3, brakeLag.seconds * strengthOf(brakeLag))));
     const brakeInput = brakeLag === undefined ? brakePedal : state.drivetrain.brakeLevel;
 
     // Rack: requested angle is in "heading-positive" sign, the opposite of AxisInput.steer.
     const steering = t.steering;
-    const speedLock = fx_.speedSensitiveSteering;
+    const speedLock = on(fx_.speedSensitiveSteering);
     const lockBlend = speedLock === undefined ? 0 : Math.min(1, Math.abs(u) / Math.max(0.1, speedLock.at));
-    const lock = speedLock === undefined ? steering.maxAngle : steering.maxAngle + (speedLock.angle - steering.maxAngle) * lockBlend;
+    const lockDial = strengthOf(speedLock);
+    const lockCut = speedLock === undefined ? 0 : (speedLock.angle - steering.maxAngle) * lockBlend;
+    const lock = speedLock === undefined ? steering.maxAngle : lockDial === 1 ? steering.maxAngle + lockCut : Math.max(0.1 * steering.maxAngle, steering.maxAngle + lockCut * lockDial);
     const sideslipNow = Math.abs(u) > 1 ? Math.atan2(v, Math.abs(u)) : 0;
     // Caster: the wheels trail the velocity, so at `selfAlign` they steer into a slide by that share of β.
-    const align = (fx_.selfAlign?.strength ?? 0) * -sideslipNow * Math.sign(u || 1);
+    const align = (on(fx_.selfAlign)?.strength ?? 0) * -sideslipNow * Math.sign(u || 1);
     let target = Math.max(-steering.maxAngle, Math.min(steering.maxAngle, -steerInput * lock + align));
     const leanTuning = t.lean;
     if (leanTuning !== undefined) {
       // A rider cannot hold more lean than the tires can balance: tan(lean) is the lateral g it needs.
-      const gripLean = Math.atan(t.front.peakGrip * surface * (modifiers?.gripScale ?? 1));
+      const crownEffect = on(fx_.tireCrown);
+      const crownDial = strengthOf(crownEffect);
+      const gripBalance = Math.atan(t.front.peakGrip * surface * (modifiers?.gripScale ?? 1));
+      const gripLean = crownEffect === undefined ? gripBalance : crownShownLean(crownEffect, t.comHeight, gripBalance, crownDial);
       const wanted = steerInput * Math.min(leanTuning.maxLean, gripLean);
       const leanStep = Math.max(0, leanTuning.leanRate) * h;
-      const leanChange = Math.max(-leanStep, Math.min(leanStep, wanted - state.rider.lean));
+      const lag = leanTuning.leanLag ?? 0;
+      const gap = lag > 0 ? (wanted - state.rider.lean) * (1 - Math.exp(-h / lag)) : wanted - state.rider.lean;
+      const leanChange = Math.max(-leanStep, Math.min(leanStep, gap));
       state.rider.lean += leanChange;
       const speed = Math.abs(u);
       const direct = leanTuning.directSteerBelow ?? 3;
       // Balanced turn: the lean sets the yaw rate the bike should hold (g·tan(lean)/v). The bar is that turn's
       // geometric angle plus a trim the rider feeds back from the yaw error, which covers the tire slip.
-      const wantedYaw = (-GRAVITY * Math.tan(state.rider.lean)) / Math.max(speed, 1) * Math.sign(u || 1);
-      if (speed >= direct) state.rider.leanTrim += (wantedYaw - r) * 3 * h;
+      const balance = crownEffect === undefined ? state.rider.lean : crownBalanceLean(crownEffect, t.comHeight, state.rider.lean, crownDial);
+      const wantedYaw = (-GRAVITY * Math.tan(balance)) / Math.max(speed, 1) * Math.sign(u || 1);
+      if (speed >= direct) state.rider.leanTrim += (wantedYaw - r) * (leanTuning.trimGain ?? 3) * h;
       else state.rider.leanTrim = 0;
       const trimLimit = Math.min(steering.maxAngle, t.front.peakSlipAngle * 1.5);
       state.rider.leanTrim = Math.max(-trimLimit, Math.min(trimLimit, state.rider.leanTrim));
@@ -997,24 +1190,33 @@ export function createVehicleDynamics(
     const maxMove = Math.max(0, rate) * h;
     state.motion.steerAngle += Math.max(-maxMove, Math.min(maxMove, toward));
     // Compliance and roll steer move the wheels away from the rack: each steers away from the axle's own force.
-    const compliance = fx_.complianceSteer;
-    const rollSteer = fx_.rollSteer;
+    const compliance = on(fx_.complianceSteer);
+    const rollSteer = on(fx_.rollSteer);
+    const complianceDial = strengthOf(compliance);
+    const rollSteerDial = strengthOf(rollSteer);
     const cornerSign = Math.sign(state.body.lateralAccel);
     const rollMagnitude = Math.abs(state.body.bodyRoll);
-    const frontGive = (compliance?.front ?? 0) * state.tires.forceFront + (rollSteer?.front ?? 0) * rollMagnitude * cornerSign;
-    const rearGive = (compliance?.rear ?? 0) * state.tires.forceRear + (rollSteer?.rear ?? 0) * rollMagnitude * cornerSign;
+    const aligning = on(fx_.aligningTorque);
+    const formulaEffect = on(fx_.magicFormula);
+    const alignGive =
+      aligning === undefined
+        ? 0
+        : aligningSteer(aligning, formulaEffect === undefined ? undefined : frontFormula(formulaEffect), state.tires.frontOuterLoad, state.tires.frontInnerLoad, state.tires.slipFront, state.tires.forceFront, strengthOf(aligning));
+    const frontGive = (compliance?.front ?? 0) * complianceDial * state.tires.forceFront + (rollSteer?.front ?? 0) * rollSteerDial * rollMagnitude * cornerSign + alignGive;
+    const rearGive = (compliance?.rear ?? 0) * complianceDial * state.tires.forceRear + (rollSteer?.rear ?? 0) * rollSteerDial * rollMagnitude * cornerSign;
     const delta = state.motion.steerAngle + frontGive;
     const deltaRear = rearGive;
     out.roadWheel = delta;
 
-    const downforceEffect = fx_.downforce;
+    const downforceEffect = on(fx_.downforce);
     const q = 0.5 * AIR_DENSITY * u * u;
-    const downforce = q * (downforceEffect?.area ?? 0);
+    const downforce = q * (downforceEffect?.area ?? 0) * strengthOf(downforceEffect);
     const downFront = downforceEffect?.frontShare ?? 0.45;
     const weight = m * GRAVITY;
-    const longTransfer = fx_.longitudinalLoadTransfer;
-    const latTransfer = fx_.lateralLoadTransfer;
+    const longTransfer = on(fx_.longitudinalLoadTransfer);
+    const latTransfer = on(fx_.lateralLoadTransfer);
     const rsf = latTransfer?.frontShare ?? 0.5;
+    const kinematics = on(fx_.suspensionKinematics);
     const suspension = t.suspension;
     let loadFront: number;
     let loadRear: number;
@@ -1039,7 +1241,7 @@ export function createVehicleDynamics(
       }
       grounded = state.air.hopHeight <= 0;
       state.air.airborne = !grounded;
-      const transferLong = longTransfer === undefined ? 0 : ((longTransfer.share ?? 1) * m * state.body.longitudinalAccel * t.comHeight) / L;
+      const transferLong = longTransfer === undefined ? 0 : ((longTransfer.share ?? 1) * strengthOf(longTransfer) * m * state.body.longitudinalAccel * t.comHeight) / L;
       const rawFront = weight * (b / L) - transferLong + downforce * downFront;
       const rawRear = weight * (a / L) + transferLong + downforce * (1 - downFront);
       // Pitch-over is geometry, not a tyre effect: report it even when the tyres ignore longitudinal transfer.
@@ -1050,9 +1252,15 @@ export function createVehicleDynamics(
       loadRear = grounded ? Math.max(0, rawRear) : 0;
       // A single-track vehicle leans instead of shifting load across an axle.
       const transferLat =
-        t.lean !== undefined || latTransfer === undefined ? 0 : (m * Math.abs(state.body.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
+        t.lean !== undefined || latTransfer === undefined ? 0 : (strengthOf(latTransfer) * m * Math.abs(state.body.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
       transferFront = transferLat * rsf;
       transferRear = transferLat * (1 - rsf);
+      if (kinematics !== undefined && transferLat > 0) {
+        const split = suspensionKinematics(kinematics, t, state.body.lateralAccel, { frontShare: rsf, rollFollow: 0.7 }, strengthOf(kinematics));
+        const dial = strengthOf(latTransfer);
+        transferFront = split.transferFront * dial;
+        transferRear = split.transferRear * dial;
+      }
       const side = state.body.lateralAccel >= 0 ? 1 : -1;
       out.wheelLoads = [
         Math.max(0, loadFront / 2 + side * transferFront),
@@ -1082,10 +1290,15 @@ export function createVehicleDynamics(
     }
     const gripScale = surface * (modifiers?.gripScale ?? 1);
     const rearTire = t.rear ?? t.front;
-    const sensitivity = fx_.loadSensitivity;
-    const gripFront = axleGrip(t.front, frontShape, loadFront, transferFront, gripScale, sensitivity);
-    const gripRear = axleGrip(rearTire, rearShape, loadRear, transferRear, gripScale, sensitivity);
+    const sensitivity = on(fx_.loadSensitivity);
+    const formula = on(fx_.magicFormula);
+    const formulaDial = strengthOf(formula);
+    const gripFront = axleGrip(t.front, frontShape, loadFront, transferFront, gripScale, sensitivity, formula === undefined ? undefined : frontFormula(formula), formulaDial);
+    const gripRear = axleGrip(rearTire, rearShape, loadRear, transferRear, gripScale, sensitivity, formula === undefined ? undefined : rearFormula(formula), formulaDial);
     const hbGrip = 1 - handbrake * (1 - (t.handbrakeGrip ?? 0.35));
+    const frontShift = Math.min(loadFront / 2, Math.max(0, transferFront));
+    state.tires.frontOuterLoad = loadFront / 2 + frontShift;
+    state.tires.frontInnerLoad = loadFront / 2 - frontShift;
 
     // Axle-point velocities in the car frame: front sits `a` ahead, rear `b` behind.
     const uF = u;
@@ -1101,12 +1314,12 @@ export function createVehicleDynamics(
     const rearLat = u * sinR + vR * cosR;
     const steadyFront = Math.atan2(wheelLat, Math.max(SLIP_REFERENCE_SPEED, Math.abs(wheelLong)));
     const steadyRear = Math.atan2(rearLat, Math.max(SLIP_REFERENCE_SPEED, Math.abs(rearLong)));
-    const relaxation = fx_.tireRelaxation;
+    const relaxation = on(fx_.tireRelaxation);
     let slipFront = steadyFront;
     let slipRear = steadyRear;
     if (relaxation !== undefined && h > 0) {
       // The contact patch catches up with the wheel over the relaxation length: a first-order lag in distance.
-      const sigma = Math.max(0.01, relaxation.length);
+      const sigma = Math.max(0.01, relaxation.length * strengthOf(relaxation));
       const travel = Math.max(SLIP_REFERENCE_SPEED, Math.abs(u)) * h;
       const follow = 1 - Math.exp(-travel / sigma);
       state.tires.slipFront += (steadyFront - state.tires.slipFront) * follow;
@@ -1124,6 +1337,12 @@ export function createVehicleDynamics(
     if (t.speedLimit !== undefined && drive > 0) drive *= clamp01((t.speedLimit * (modifiers?.speedLimitScale ?? 1) - u) / 0.5);
     let brakeTotal = 0;
     if (!wantReverseDrive && brakeInput > 0 && Math.abs(u) > 0.05) brakeTotal = brakeInput * t.brakeForce * (modifiers?.brakeScale ?? 1);
+    const fade = on(fx_.brakeFade);
+    if (fade !== undefined) {
+      const share = brakeFadeShare(fade, state.drivetrain.brakeTemperature, strengthOf(fade));
+      brakeTotal *= share;
+      out.brakeFade = Math.min(out.brakeFade, share);
+    }
     const brakeFrontShare = t.brakeFront ?? 0.65;
     const driveFrontShare = clamp01(t.driveFront);
 
@@ -1133,14 +1352,15 @@ export function createVehicleDynamics(
     let brakeR = brakeTotal * (1 - brakeFrontShare);
     // ABS, TC and the differential act on combined slip like the real systems: the longitudinal limit is what the
     // friction ellipse leaves after the cornering force the axle is already asking for.
-    const combined = fx_.combinedSlip;
+    const combined = on(fx_.combinedSlip);
     const exponent = Math.max(1, combined?.exponent ?? 2);
-    const frontLatUse = Math.min(1, Math.abs(axleCurve(gripFront, frontShape, slipFront)));
-    const rearLatUse = Math.min(1, Math.abs(axleCurve(gripRear, rearShape, slipRear)) * hbGrip);
-    const room = (latUse: number) => (combined === undefined ? 1 : Math.pow(Math.max(0, 1 - Math.pow(latUse, exponent)), 1 / exponent));
+    const combinedDial = strengthOf(combined);
+    const frontLatUse = Math.min(1, Math.abs(axleCurve(gripFront, slipFront)));
+    const rearLatUse = Math.min(1, Math.abs(axleCurve(gripRear, slipRear)) * hbGrip);
+    const room = (latUse: number) => (combined === undefined ? 1 : ellipseRoom(latUse, exponent, combinedDial));
     const longRoomFront = gripFront.capX * room(frontLatUse);
     const longRoomRear = gripRear.capX * room(rearLatUse);
-    const abs = fx_.abs;
+    const abs = on(fx_.abs);
     if (abs !== undefined) {
       const strength = abs.strength ?? 1;
       const holds = abs.holds ?? 1 - 0.2 * strength;
@@ -1163,12 +1383,13 @@ export function createVehicleDynamics(
       if (dragFront > roomFront) longFront = -moving * (roomFront + (dragFront - roomFront) * (1 - strength));
       if (dragRear > roomRear) longRear = -moving * (roomRear + (dragRear - roomRear) * (1 - strength));
     }
-    const differential = fx_.differential;
+    const differential = lockScaled(on(fx_.differential));
     if (differential !== undefined && differential.kind !== "locked") {
       // The inside wheel's grip caps what the axle can put down once it starts to spin.
-      const bias = differential.kind === "open" ? 1 : Math.max(1, differential.bias);
-      const capFrontDiff = gripFront.capXInner * room(frontLatUse) * (1 + bias);
-      const capRearDiff = gripRear.capXInner * room(rearLatUse) * (1 + bias);
+      const bias = differential.kind === "open" ? 1 : differential.kind === "clutch" ? 1 : Math.max(1, differential.bias);
+      const lockForce = (axleDrive: number) => (differential.kind === "clutch" ? clutchCapacity(differential, axleDrive * wheelRadius()) / wheelRadius() : 0);
+      const capFrontDiff = gripFront.capXInner * room(frontLatUse) * (1 + bias) + lockForce(longFront);
+      const capRearDiff = gripRear.capXInner * room(rearLatUse) * (1 + bias) + lockForce(longRear);
       if (longFront > capFrontDiff && longFront > 0) {
         longFront = Math.min(longFront, capFrontDiff);
         out.wheelspin = true;
@@ -1178,11 +1399,12 @@ export function createVehicleDynamics(
         out.wheelspin = true;
       }
     }
-    const tc = fx_.tractionControl;
+    const tc = on(fx_.tractionControl);
     if (tc !== undefined) {
       const strength = tc.strength ?? 1;
-      const limitFront = longRoomFront * (1 - 0.35 * strength);
-      const limitRear = longRoomRear * (1 - 0.35 * strength);
+      const holds = tc.holds ?? 1 - 0.35 * strength;
+      const limitFront = longRoomFront * holds;
+      const limitRear = longRoomRear * holds;
       if (Math.abs(longFront) > limitFront) {
         longFront = Math.sign(longFront) * (limitFront + (Math.abs(longFront) - limitFront) * (1 - strength));
         out.traction = true;
@@ -1195,7 +1417,7 @@ export function createVehicleDynamics(
     // Pitch-over limits: the front lifts once m·ax·h exceeds its static moment (weight·b plus aero), the rear
     // under braking once it exceeds weight·a. Springs overshoot that static limit as the body pitches, so a
     // sprung vehicle also backs off in proportion to how light the axle already is.
-    const antiWheelie = fx_.antiWheelie;
+    const antiWheelie = on(fx_.antiWheelie);
     const driveSum = longFront + longRear;
     if (antiWheelie !== undefined && driveSum > 0 && u >= 0) {
       const strength = antiWheelie.strength ?? 1;
@@ -1208,7 +1430,7 @@ export function createVehicleDynamics(
         out.traction = true;
       }
     }
-    const antiStoppie = fx_.antiStoppie;
+    const antiStoppie = on(fx_.antiStoppie);
     const brakeSum = brakeF + brakeR;
     if (antiStoppie !== undefined && brakeSum > 0) {
       const strength = antiStoppie.strength ?? 1;
@@ -1226,24 +1448,49 @@ export function createVehicleDynamics(
     const hbDrag = handbrake * gripRear.capX * rearTire.slideGrip * 0.9;
     let fxFront = longFront - direction * brakeF;
     let fxRear = longRear - direction * (brakeR + hbDrag);
+    if (fade !== undefined && h > 0) state.drivetrain.brakeTemperature = brakeTemperatureStep(fade, state.drivetrain.brakeTemperature, (brakeF + brakeR) * Math.abs(u), Math.abs(u), h);
 
-    const slideEffect = fx_.wheelSlide;
-    const front = combine(fxFront, gripFront, frontShape, slipFront, 1, combined, exponent, slideEffect?.slideGrip ?? t.front.slideGrip, slideEffect !== undefined, out, "front", Math.abs(longFront) > 0, axleCurve);
-    const rear = combine(fxRear, gripRear, rearShape, slipRear, hbGrip, combined, exponent, slideEffect?.slideGrip ?? rearTire.slideGrip, slideEffect !== undefined, out, "rear", Math.abs(longRear) > 0, axleCurve);
+    // A locked or clutch differential splits torque across the axle: the force difference yaws against the turn, and
+    // both wheels then spend friction on it, so the axle corners on what their ellipses leave.
+    const spoolHalf = Math.max(0.15, t.trackWidth / 2);
+    const splitOf = (axleLoad: number, capX: number, share: number, axleDrive: number) => {
+      if ((differential?.kind !== "locked" && differential?.kind !== "clutch") || !grounded || Math.abs(u) <= 1 || share <= 0) return 0;
+      let split = 2 * Math.min(capX / 2, (differential.slipStiffness ?? 20) * (axleLoad / 2) * ((spoolHalf * Math.abs(r)) / Math.abs(u)));
+      if (differential.kind === "clutch") split = Math.min(split, clutchCapacity(differential, axleDrive * wheelRadius()) / wheelRadius());
+      return split;
+    };
+    const splitFront = splitOf(loadFront, gripFront.capX, driveFrontShare, fxFront);
+    const splitRear = splitOf(loadRear, gripRear.capX, 1 - driveFrontShare, fxRear);
+    const splitRoom = (grip: AxleGrip, axleFx: number, split: number) => {
+      if (split <= 0 || combined === undefined || grip.capY <= 0 || differential?.kind !== "clutch") return 1;
+      const inner = Math.min(1, Math.abs(axleFx / 2 + split / 2) / Math.max(1e-6, grip.capXInner));
+      const outer = Math.min(1, Math.abs(axleFx / 2 - split / 2) / Math.max(1e-6, grip.capXOuter));
+      const even = Math.min(1, Math.abs(axleFx) / Math.max(1e-6, grip.capX));
+      const base = ellipseRoom(even, exponent, combinedDial);
+      const each = (grip.capInner * ellipseRoom(inner, exponent, combinedDial) + grip.capOuter * ellipseRoom(outer, exponent, combinedDial)) / grip.capY;
+      return base > 0 ? Math.min(1, each / base) : 1;
+    };
+    const slideEffect = on(fx_.wheelSlide);
+    const slideDial = strengthOf(slideEffect);
+    const front = combine(fxFront, gripFront, frontShape, slipFront, splitRoom(gripFront, fxFront, splitFront), combined, exponent, combinedDial, scaledShare(slideEffect?.slideGrip ?? t.front.slideGrip, slideDial, 0.05), slideEffect !== undefined, out, "front", Math.abs(longFront) > 0, axleCurve);
+    const rear = combine(fxRear, gripRear, rearShape, slipRear, hbGrip * splitRoom(gripRear, fxRear, splitRear), combined, exponent, combinedDial, scaledShare(slideEffect?.slideGrip ?? rearTire.slideGrip, slideDial, 0.05), slideEffect !== undefined, out, "rear", Math.abs(longRear) > 0, axleCurve);
     fxFront = front.fx;
     fxRear = rear.fx;
     let fyFront = front.fy;
     let fyRear = rear.fy;
 
-    const camber = fx_.camber;
+    const camber = on(fx_.camber);
     if (camber !== undefined && t.lean === undefined) {
       // Outside wheel: static negative camber leans it into the turn; roll leans both wheels out of it.
-      const thrust = camber.thrust ?? 0.8;
-      const lean = (camber.rollFollow ?? 0.7) * rollMagnitude;
+      const thrust = (camber.thrust ?? 0.8) * strengthOf(camber);
+      const follow = camber.rollFollow ?? 0.7;
+      const geometry = kinematics === undefined ? undefined : suspensionKinematics(kinematics, t, state.body.lateralAccel, { frontShare: rsf, rollFollow: follow }, strengthOf(kinematics));
+      const leanFront = (geometry?.rollFollowFront ?? follow) * rollMagnitude;
+      const leanRear = (geometry?.rollFollowRear ?? follow) * rollMagnitude;
       const stat = -(camber.static ?? 0);
       const toward = Math.sign(fyFront || fyRear);
-      const camberFront = thrust * (gripFront.capOuter / Math.max(1e-6, t.front.peakGrip * gripScale) * (stat - lean) + gripFront.capInner / Math.max(1e-6, t.front.peakGrip * gripScale) * (-stat - lean));
-      const camberRear = thrust * (gripRear.capOuter / Math.max(1e-6, rearTire.peakGrip * gripScale) * (stat - lean) + gripRear.capInner / Math.max(1e-6, rearTire.peakGrip * gripScale) * (-stat - lean));
+      const camberFront = thrust * (gripFront.capOuter / Math.max(1e-6, t.front.peakGrip * gripScale) * (stat - leanFront) + gripFront.capInner / Math.max(1e-6, t.front.peakGrip * gripScale) * (-stat - leanFront));
+      const camberRear = thrust * (gripRear.capOuter / Math.max(1e-6, rearTire.peakGrip * gripScale) * (stat - leanRear) + gripRear.capInner / Math.max(1e-6, rearTire.peakGrip * gripScale) * (-stat - leanRear));
       fyFront += toward * camberFront * (1 - Math.min(1, Math.abs(fxFront) / Math.max(1, gripFront.capX)));
       fyRear += toward * camberRear * (1 - Math.min(1, Math.abs(fxRear) / Math.max(1, gripRear.capX)));
     }
@@ -1264,29 +1511,38 @@ export function createVehicleDynamics(
     const frontLat = fyFront * cosD - fxFront * sinD;
     const rearLatForce = fyRear * cosR - fxRear * sinR;
     let forceLong = fxFront * cosD + fyFront * sinD + fxRear * cosR + fyRear * sinR + (modifiers?.thrust ?? 0) + slopeLong;
-    const forceLat = frontLat + rearLatForce + slopeLat;
-    const drag = q * (fx_.aeroDrag?.area ?? 0) * Math.sign(u);
+    let forceLat = frontLat + rearLatForce + slopeLat;
+    const aeroDrag = on(fx_.aeroDrag);
+    let drag = q * (aeroDrag?.area ?? 0) * strengthOf(aeroDrag) * Math.sign(u);
+    let sideDrag = 0;
+    const wind = options.wind;
+    if (wind !== undefined && aeroDrag !== undefined) {
+      // Drag on the air speed relative to the wind; a crosswind also pushes on the side area.
+      const [wx, wz] = wind.atHeight(state.motion.x, state.motion.z, t.comHeight, state.motion.time);
+      const airLong = u - (wx * fx + wz * fz);
+      const airLat = v - (-wx * fz + wz * fx);
+      const air = Math.hypot(airLong, airLat);
+      const dial = strengthOf(aeroDrag);
+      drag = 0.5 * AIR_DENSITY * aeroDrag.area * dial * air * airLong;
+      sideDrag = 0.5 * AIR_DENSITY * (aeroDrag.sideArea ?? 0) * dial * air * airLat;
+    }
     const rollingLoad = suspension === undefined ? (grounded ? weight : 0) : loadFront + loadRear;
-    const rollingCoefficient = fx_.rollingResistance === undefined ? 0 : (fx_.rollingResistance.coefficient ?? 0.015);
+    const rollingEffect = on(fx_.rollingResistance);
+    const speedTerms = rollingEffect?.speedTerms;
+    const relative = speedTerms === undefined ? 0 : Math.abs(u) / Math.max(0.1, speedTerms.referenceSpeed);
+    const speedRolling = speedTerms === undefined ? 0 : speedTerms.linear * relative + speedTerms.quartic * relative ** 4;
+    const rollingCoefficient = rollingEffect === undefined ? 0 : ((rollingEffect.coefficient ?? 0.015) + speedRolling) * strengthOf(rollingEffect);
     const rolling = rollingCoefficient * rollingLoad * Math.sign(u) * Math.min(1, Math.abs(u) / 0.5);
     forceLong -= drag + rolling;
+    forceLat -= sideDrag;
     // Lateral force ahead of the CG yaws the heading negative in this frame, force behind it positive.
     let yawMoment = -a * frontLat + b * rearLatForce;
 
-    if (differential?.kind === "locked" && grounded && Math.abs(u) > 1) {
-      // A spool drags the inside and outside wheels at one speed: their slip difference is a yaw-resisting moment.
-      const stiffness = differential.slipStiffness ?? 20;
-      const half = Math.max(0.15, t.trackWidth / 2);
-      const spool = (axleLoad: number, capX: number, share: number) => {
-        if (share <= 0) return 0;
-        const force = Math.min(capX / 2, stiffness * (axleLoad / 2) * ((half * Math.abs(r)) / Math.abs(u)));
-        return force * 2 * half;
-      };
-      const moment = spool(loadFront, gripFront.capX, driveFrontShare) + spool(loadRear, gripRear.capX, 1 - driveFrontShare);
-      yawMoment -= Math.sign(r) * moment;
-    }
+    // A spool drags the inside and outside wheels at one speed: their slip difference is a yaw-resisting moment. A
+    // clutch differential carries the same torque split up to its locking capacity.
+    if (splitFront > 0 || splitRear > 0) yawMoment -= Math.sign(r) * (splitFront + splitRear) * spoolHalf;
 
-    const stabilityEffect = fx_.stability;
+    const stabilityEffect = on(fx_.stability);
     if (stabilityEffect !== undefined && grounded && Math.abs(u) > 3) {
       const stab = stabilityEffect.strength ?? 1;
       const allowed = stabilityEffect.maxSideslip ?? 0.2;
@@ -1298,7 +1554,7 @@ export function createVehicleDynamics(
       }
     }
 
-    const longMass = m + reflectedMass(fx_.rotatingInertia, grounded, brakeInput);
+    const longMass = m + reflectedMass(on(fx_.rotatingInertia), grounded, brakeInput);
     let du = forceLong / longMass - r * v;
     const dv = forceLat / m + r * u;
     // Brakes and rolling resistance cannot reverse the car inside one substep (a slope can).
@@ -1366,6 +1622,7 @@ export function createVehicleDynamics(
     state.motion.vx = nvx;
     state.motion.vz = nvz;
     state.motion.yawRate = nr;
+    state.motion.time += h;
 
     const response = suspension === undefined ? 1 - Math.exp(-(t.suspensionResponse ?? 8) * h) : 1;
     const accelLong = h > 0 ? du + r * v : 0;
@@ -1377,7 +1634,8 @@ export function createVehicleDynamics(
     if (suspension === undefined) {
       const rollK = t.rollStiffness ?? (m * GRAVITY * t.comHeight) / 0.05;
       const pitchK = t.pitchStiffness ?? (m * GRAVITY * t.comHeight) / 0.035;
-      state.body.bodyRoll = t.lean !== undefined ? -balanceLean(state.body.lateralAccel) : (m * state.body.lateralAccel * t.comHeight) / rollK;
+      const rollArm = kinematics === undefined ? t.comHeight : suspensionKinematics(kinematics, t, state.body.lateralAccel, { frontShare: rsf, rollFollow: 0.7 }, strengthOf(kinematics)).rollArm;
+      state.body.bodyRoll = t.lean !== undefined ? -balanceLean(state.body.lateralAccel) : (m * state.body.lateralAccel * rollArm) / rollK;
       state.body.bodyPitch = (-m * state.body.longitudinalAccel * t.comHeight) / pitchK;
     } else {
       if (!grounded && t.air !== undefined) steerInAir(t.air, input, modifiers?.air, h);
@@ -1391,6 +1649,11 @@ export function createVehicleDynamics(
     out.loadRear = loadRear;
   }
 
+  function wheelRadius(): number {
+    const pt = tuning.powertrain;
+    return pt.kind === "gearbox" ? Math.max(0.05, pt.wheelRadius) : 0.33;
+  }
+
   /** Mass the spinning parts add to a speed change: `(I_wheels + I_engine·G²·η) / r²`, the engine only while coupled. */
   function reflectedMass(inertia: VehicleRotatingInertiaEffect | undefined, grounded: boolean, brakeInput: number): number {
     if (inertia === undefined || !grounded) return 0;
@@ -1402,7 +1665,7 @@ export function createVehicleDynamics(
       const ratio = (state.drivetrain.reversing ? pt.reverseGear : (pt.gears[state.drivetrain.gearIndex] ?? 1)) * pt.finalDrive;
       reflected += Math.max(0, inertia.engine ?? 0) * ratio * ratio * (pt.efficiency ?? 0.85);
     }
-    return reflected / (radius * radius);
+    return (reflected * strengthOf(inertia)) / (radius * radius);
   }
 
   const corner: Corners = [0, 0, 0, 0];
@@ -1484,8 +1747,12 @@ export function createVehicleDynamics(
     }
     if (grounded) {
       // The tyres' forces act at the ground, below the centre of mass: those moments are the load transfer.
-      if (effects.longitudinalLoadTransfer !== undefined) pitchMoment -= (effects.longitudinalLoadTransfer.share ?? 1) * m * state.body.longitudinalAccel * t.comHeight;
-      if (effects.lateralLoadTransfer !== undefined) rollMoment += m * state.body.lateralAccel * t.comHeight;
+      const longTransfer = on(effects.longitudinalLoadTransfer);
+      const latTransfer = on(effects.lateralLoadTransfer);
+      if (longTransfer !== undefined) pitchMoment -= (longTransfer.share ?? 1) * strengthOf(longTransfer) * m * state.body.longitudinalAccel * t.comHeight;
+      const kinematics = on(effects.suspensionKinematics);
+      const arm = kinematics === undefined ? t.comHeight : suspensionKinematics(kinematics, t, state.body.lateralAccel, { frontShare: 0.5, rollFollow: 0.7 }, strengthOf(kinematics)).rollArm;
+      if (latTransfer !== undefined) rollMoment += strengthOf(latTransfer) * m * state.body.lateralAccel * arm;
     }
     const pitchInertia = Math.max(1, (suspension.pitchInertiaIndex ?? 0.9) * m * a * b);
     const rollInertia = Math.max(1, 0.6 * m * half * half);
@@ -1519,6 +1786,8 @@ export function createVehicleDynamics(
       return throttle * Math.min(pt.maxForce, powerLimited);
     }
     state.drivetrain.shiftRemaining = Math.max(0, state.drivetrain.shiftRemaining - h);
+    const curveEffect = on(tuning.effects?.torqueCurve);
+    const curveDial = strengthOf(curveEffect);
     const eff = pt.efficiency ?? 0.85;
     const ratio = state.drivetrain.reversing ? pt.reverseGear : (pt.gears[state.drivetrain.gearIndex] ?? 1);
     const wheelRpm = (Math.abs(u) / Math.max(0.05, pt.wheelRadius)) * (60 / (2 * Math.PI));
@@ -1530,12 +1799,14 @@ export function createVehicleDynamics(
     const rpmResponse = 1 - Math.exp(-18 * h);
     state.drivetrain.rpm += (targetRpm - state.drivetrain.rpm) * rpmResponse;
     if (!state.drivetrain.reversing && state.drivetrain.shiftRemaining <= 0) {
+      const curveShift = curveEffect === undefined ? pt.shiftSeconds : torqueCurveShiftSeconds(curveEffect, pt, Math.max(1, curveDial));
+      const shiftSeconds = curveDial >= 1 ? curveShift : pt.shiftSeconds + (curveShift - pt.shiftSeconds) * curveDial;
       if (coupled >= pt.shiftUpRpm && state.drivetrain.gearIndex < pt.gears.length - 1 && pedal > 0) {
         state.drivetrain.gearIndex += 1;
-        state.drivetrain.shiftRemaining = pt.shiftSeconds;
+        state.drivetrain.shiftRemaining = shiftSeconds;
       } else if (coupled <= pt.shiftDownRpm && state.drivetrain.gearIndex > 0) {
         state.drivetrain.gearIndex -= 1;
-        state.drivetrain.shiftRemaining = pt.shiftSeconds;
+        state.drivetrain.shiftRemaining = shiftSeconds;
       }
     }
     const normalized = (state.drivetrain.rpm - pt.idleRpm) / Math.max(1, pt.redlineRpm - pt.idleRpm);
@@ -1543,12 +1814,24 @@ export function createVehicleDynamics(
     const shifting = state.drivetrain.shiftRemaining > 0 ? 0.2 : 1;
     const toWheel = (ratio * pt.finalDrive * eff) / Math.max(0.05, pt.wheelRadius);
     out.engineLoad = pedal * limiter * shifting;
-    if (pedal > 0) {
-      const torque = pt.peakTorque * sampleGripCurve(pt.torqueCurve, normalized) * pedal * limiter * shifting;
-      return (reverse > 0 ? -1 : 1) * torque * toWheel;
+    const simple = (): number => {
+      if (pedal > 0) {
+        const torque = pt.peakTorque * sampleGripCurve(pt.torqueCurve, normalized) * pedal * limiter * shifting;
+        return (reverse > 0 ? -1 : 1) * torque * toWheel;
+      }
+      if (Math.abs(u) < 0.5) return 0;
+      return -Math.sign(u) * ((pt.engineBrakeTorque ?? pt.peakTorque * 0.12) * toWheel + (pt.coastForce ?? 0));
+    };
+    if (curveEffect === undefined) return simple();
+    // The published engine: part throttle between the curve and the friction, the clutch fully open through a shift.
+    // Below strength 1 the drive blends from the powertrain's own curve; past 1 the curve's dips deepen.
+    let published = 0;
+    if (state.drivetrain.shiftRemaining <= 0 && !(pedal <= 0 && Math.abs(u) < 0.5)) {
+      const crank = engineTorque(curveEffect, pt, state.drivetrain.rpm, pedal * limiter, Math.max(1, curveDial));
+      const signed = pedal > 0 ? (reverse > 0 ? -1 : 1) * crank : Math.sign(u) * crank;
+      published = signed * toWheel - (pedal > 0 ? 0 : Math.sign(u) * (pt.coastForce ?? 0));
     }
-    if (Math.abs(u) < 0.5) return 0;
-    return -Math.sign(u) * ((pt.engineBrakeTorque ?? pt.peakTorque * 0.12) * toWheel + (pt.coastForce ?? 0));
+    return curveDial >= 1 ? published : simple() + (published - simple()) * curveDial;
   }
 
   function assignState(next: VehicleDynamicsState): void {
@@ -1648,6 +1931,7 @@ interface Telemetry {
   wheelie: boolean;
   stoppie: boolean;
   roadWheel: number;
+  brakeFade: number;
 }
 
 function emptyTelemetry(): Telemetry {
@@ -1671,6 +1955,7 @@ function emptyTelemetry(): Telemetry {
     wheelie: false,
     stoppie: false,
     roadWheel: 0,
+    brakeFade: 1,
   };
 }
 
@@ -1702,12 +1987,13 @@ function combine(
   lateralScale: number,
   combined: VehicleCombinedSlipEffect | undefined,
   exponent: number,
+  combinedDial: number,
   slideShare: number,
   slides: boolean,
   out: Telemetry,
   axle: "front" | "rear",
   driven: boolean,
-  curve: (grip: AxleGrip, shape: CurveShape, alpha: number) => number,
+  curve: (grip: AxleGrip, alpha: number) => number,
 ): { fx: number; fy: number } {
   const capX = grip.capX;
   const capY = grip.capY;
@@ -1721,12 +2007,33 @@ function combine(
     else out.wheelLock = true;
   }
   const used = capX > 0 ? Math.min(1, Math.abs(fx) / capX) : 1;
-  const remaining = combined === undefined ? 1 : saturated ? 0 : Math.pow(Math.max(0, 1 - Math.pow(used, exponent)), 1 / exponent);
-  const fy = -capY * lateralScale * remaining * curve(grip, shape, slip);
+  const remaining = combined === undefined ? 1 : saturated ? (combinedDial >= 1 ? 0 : 1 - combinedDial) : ellipseRoom(used, exponent, combinedDial);
+  const fy = -capY * lateralScale * remaining * curve(grip, slip);
   const saturation = Math.max(Math.hypot(fx / Math.max(capX, 1e-6), fy / Math.max(capY, 1e-6)), Math.abs(slip) / peakAngle(shape));
   if (axle === "front") out.satFront = Math.max(out.satFront, saturation);
   else out.satRear = Math.max(out.satRear, saturation);
   return { fx, fy };
+}
+
+/** The differential with its locking scaled by `strength` (the same object at `1`). */
+function lockScaled(diff: VehicleDifferentialEffect | undefined): VehicleDifferentialEffect | undefined {
+  const dial = strengthOf(diff);
+  if (diff === undefined || dial === 1) return diff;
+  switch (diff.kind) {
+    case "open":
+      return diff;
+    case "limitedSlip":
+      return { ...diff, bias: 1 + (Math.max(1, diff.bias) - 1) * dial };
+    case "clutch":
+      return { ...diff, preload: diff.preload * dial, powerLock: diff.powerLock * dial, coastLock: diff.coastLock * dial };
+    case "locked":
+      return { ...diff, slipStiffness: (diff.slipStiffness ?? 20) * dial };
+  }
+}
+
+/** Torque a clutch differential can hold between its wheels at axle torque `axleTorque`, N·m. */
+function clutchCapacity(diff: { preload: number; powerLock: number; coastLock: number }, axleTorque: number): number {
+  return Math.max(0, diff.preload) + Math.max(0, axleTorque >= 0 ? diff.powerLock : diff.coastLock) * Math.abs(axleTorque);
 }
 
 function peakAngle(shape: CurveShape): number {
@@ -1743,18 +2050,19 @@ function freshState(
   heading: number,
 ): VehicleDynamicsState {
   return {
-    motion: { x: position[0], y: position[1], z: position[2], heading, vx: 0, vz: 0, yawRate: 0, steerAngle: 0 },
+    motion: { x: position[0], y: position[1], z: position[2], heading, vx: 0, vz: 0, yawRate: 0, steerAngle: 0, time: 0 },
     drivetrain: {
       gearIndex: 0,
       reversing: false,
       shiftRemaining: 0,
       rpm: tuning.powertrain.kind === "gearbox" ? tuning.powertrain.idleRpm : 0,
       brakeLevel: 0,
+      brakeTemperature: tuning.effects?.brakeFade?.ambient ?? 20,
     },
     body: { longitudinalAccel: 0, lateralAccel: 0, bodyPitch: 0, bodyRoll: 0, vy: 0, pitchRate: 0, rollRate: 0, compression: [0, 0, 0, 0] },
     air: { airborne: false, jumpsUsed: 0, airTime: 0, hopHeight: 0 },
     rider: { lean: 0, leanTrim: 0 },
-    tires: { slipFront: 0, slipRear: 0, forceFront: 0, forceRear: 0 },
+    tires: { slipFront: 0, slipRear: 0, forceFront: 0, forceRear: 0, frontOuterLoad: 0, frontInnerLoad: 0 },
   };
 }
 

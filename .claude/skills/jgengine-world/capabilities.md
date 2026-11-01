@@ -422,6 +422,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAudioEngine` (function) · `import { createAudioEngine } from "@jgengine/core/audio/audioEngine.view"`
 
+## brake-fade — brake force that fades as the discs heat up under repeated hard stops and recovers as they cool
+
+- `brakeFadeShare` (function) · `import { brakeFadeShare } from "@jgengine/core/physics/brakeFade"`
+
 ## build-footprint-cells — grid cells a snapped build piece footprint covers (footprintGrid occupancy bridge)
 
 - `footprintCells` (function) · `import { footprintCells } from "@jgengine/core/placement/buildSockets"`
@@ -645,6 +649,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## engine-layers — layered engine audio: rpm-keyed samples crossfaded, with on-load and off-load sets picked by engine load
 
 - `createEngineLayers` (function) · `import { createEngineLayers } from "@jgengine/core/audio/engineLayers"`
+
+## engine-torque-curve — an engine's published torque curve, rpm-rising friction and part throttle, with a strength dial from flat torque up
+
+- `engineTorque` (function) · `import { engineTorque } from "@jgengine/core/physics/engineTorqueCurve"`
 
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
@@ -1829,6 +1837,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ringWallSolids` (function) · `import { ringWallSolids } from "@jgengine/core/world/worldSolids"`
 
+## road-friction — road surface friction as one number per road and per named surface, scaling every tyre's grip
+
+- `roadFrictionAt` (function) · `import { roadFrictionAt } from "@jgengine/core/physics/roadFriction"`
+
 ## road-ribbons — draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
 
 - `RoadRibbons` (function) · `import { RoadRibbons } from "@jgengine/core/roads/RoadRibbons.draw"`
@@ -2249,6 +2261,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useTweenedValue` (function) · `import { useTweenedValue } from "@jgengine/core/anim/tweenNumber.view"`
 
+## tyre-pneumatic-trail — the Magic Formula pneumatic trail at a load and slip, the lever of a tyre's self-aligning torque
+
+- `magicFormulaTrail` (function) · `import { magicFormulaTrail } from "@jgengine/core/physics/tireMagicFormula"`
+
 ## uphill-grade-step — constrain sampled heightfield ascent with axis sliding and a configurable terrain-policy sampler
 
 - `resolveTerrainGradeStep` (function) · `import { resolveTerrainGradeStep } from "@jgengine/core/terrain/terrainGrade"`
@@ -2285,6 +2301,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createUtilityBrain` (function) · `import { createUtilityBrain } from "@jgengine/core/world"`
 
+## vehicle-aligning-torque — the front tyres' self-aligning torque steering the road wheels through the steering compliance — understeer on the road, counter-steer in a slide
+
+- `aligningSteer` (function) · `import { aligningSteer } from "@jgengine/core/physics/vehicleAligningTorque"`
+
 ## vehicle-backend-link — collide a vehicle sim with a physics backend — shove props, stop at walls, slide along them
 
 - `createVehicleBackendLink` (function) · `import { createVehicleBackendLink } from "@jgengine/core/physics/vehicleBackendLink"`
@@ -2301,9 +2321,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `withVehicleEffects` (function) · `import { withVehicleEffects } from "@jgengine/core/physics/vehicleDynamics"`
 
+## vehicle-magic-formula — one wheel's Magic Formula 6.1 grip, cornering stiffness and curve shape at its own load
+
+- `magicFormulaWheel` (function) · `import { magicFormulaWheel } from "@jgengine/core/physics/tireMagicFormula"`
+
 ## vehicle-parts — compose data-driven tuning parts (tires, engine, brakes) onto a vehicle spec and read the resulting feel
 
 - `applyVehicleParts` (function) · `import { applyVehicleParts } from "@jgengine/core/world"`
+
+## vehicle-references — a published car or bike (MX-5, FR-S, GSX-R1000) or a class (sports car, hatchback, truck, kart, motorcycle) with every effect at full strength, plus per-car overrides
+
+- `carFromReference` (function) · `import { carFromReference } from "@jgengine/core/physics/carReferences"`
 
 ## vehicle-seats — enter, exit and swap seats in a car or mount (GTA-style boarding) with driver and passenger slots
 
@@ -2312,6 +2340,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## vehicle-spec — describe a car by feel (top speed, accel, grip, turn rate, balance, each aid) and get force-based handling built from separate effects
 
 - `vehicleTuning` (function) · `import { vehicleTuning } from "@jgengine/core/world"`
+
+## vehicle-suspension-kinematics — roll centres, roll-stiffness distribution and camber gain splitting a car's lateral load transfer
+
+- `suspensionKinematics` (function) · `import { suspensionKinematics } from "@jgengine/core/physics/vehicleSuspensionKinematics"`
+
+## vehicle-tire-crown — round motorcycle tyre crowns: the extra lean past balance a wide tyre needs, and a lean that leads the turn
+
+- `crownBalanceLean` (function) · `import { crownBalanceLean } from "@jgengine/core/physics/vehicleTireCrown"`
 
 ## visibility-field — per-viewer-group observed/remembered/hidden fog-of-war knowledge with terrain memory and authoritative entity disclosure
 
