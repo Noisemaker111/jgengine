@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { DEFAULT_GRAPHICS_PROFILES } from "@jgengine/core/settings/graphicsProfile";
-import { DEFAULT_SHADOW_RADIUS, lightShadowRadius, softShadowRadius, SUN_ANGULAR_DIAMETER_DEG } from "./softShadows";
+import { DEFAULT_SHADOW_RADIUS, lightShadowFilter, softShadowRadius, SUN_ANGULAR_DIAMETER_DEG } from "./softShadows";
 
 const map = { frustumWidth: 20, mapSize: 2048, baseRadius: 1.25, maxRadius: 6 };
 
@@ -44,9 +44,16 @@ test("a tier that pays for no softening keeps the base filter", () => {
 test("a light's radius widens only when it sets a size and the player's soft shadows are on", () => {
   const high = DEFAULT_GRAPHICS_PROFILES.high;
   const sun = { position: [10, 20, 5] as const, castShadow: true, lightSize: 2 };
-  expect(lightShadowRadius({ position: [10, 20, 5] }, high, 20, 2048)).toBe(DEFAULT_SHADOW_RADIUS);
-  expect(lightShadowRadius(sun, high, 20, 2048)).toBeGreaterThan(DEFAULT_SHADOW_RADIUS);
-  expect(lightShadowRadius(sun, { ...high, softShadows: false }, 20, 2048)).toBe(DEFAULT_SHADOW_RADIUS);
-  expect(lightShadowRadius(sun, DEFAULT_GRAPHICS_PROFILES.low, 20, 2048)).toBe(DEFAULT_SHADOW_RADIUS);
-  expect(lightShadowRadius(sun, undefined, 20, 2048)).toBe(DEFAULT_SHADOW_RADIUS);
+  const unchanged = { radius: DEFAULT_SHADOW_RADIUS, normalBias: 0.02 };
+  expect(lightShadowFilter({ position: [10, 20, 5] }, high, 20, 2048, 0.02)).toEqual(unchanged);
+  expect(lightShadowFilter(sun, high, 20, 2048, 0.02).radius).toBeGreaterThan(DEFAULT_SHADOW_RADIUS);
+  expect(lightShadowFilter(sun, { ...high, softShadows: false }, 20, 2048, 0.02)).toEqual(unchanged);
+  expect(lightShadowFilter(sun, DEFAULT_GRAPHICS_PROFILES.low, 20, 2048, 0.02)).toEqual(unchanged);
+  expect(lightShadowFilter(sun, undefined, 20, 2048, 0.02)).toEqual(unchanged);
+});
+
+test("a wider filter pushes the receiver out by the extra width, so lit slopes do not shadow themselves", () => {
+  const sun = { position: [10, 20, 5] as const, castShadow: true, lightSize: 2 };
+  const filter = lightShadowFilter(sun, DEFAULT_GRAPHICS_PROFILES.high, 20, 2048, 0.02);
+  expect(filter.normalBias).toBeCloseTo(0.02 + (filter.radius - DEFAULT_SHADOW_RADIUS) * (20 / 2048), 9);
 });

@@ -46,14 +46,30 @@ export function softShadowRadius(input: SoftShadowInput): number {
   return Math.min(cap, Math.max(base, penumbra / texel));
 }
 
+/** The filter one shadow map uses: PCF radius in texels and normal bias in world units. */
+export interface ShadowFilter {
+  radius: number;
+  normalBias: number;
+}
+
 /**
- * The PCF radius one shadow map of `entry` filters with: its fixed `shadowRadius`, widened to the
- * penumbra its `lightSize` throws while the profile's soft shadows are on. @internal
+ * The filter one shadow map of `entry` uses: its fixed `shadowRadius`, widened to the penumbra its
+ * `lightSize` throws while the profile's soft shadows are on. A wider PCF disc reaches texels whose
+ * depth the receiver's own slope puts in front of it, so the normal bias grows by the extra filter
+ * width in world units; without it a sloped lit surface shadows itself. @internal
  */
-export function lightShadowRadius(entry: DirectionalLightingConfig, profile: GraphicsProfile | undefined, frustumWidth: number, mapSize: number): number {
+export function lightShadowFilter(
+  entry: DirectionalLightingConfig,
+  profile: GraphicsProfile | undefined,
+  frustumWidth: number,
+  mapSize: number,
+  baseNormalBias: number,
+): ShadowFilter {
   const base = entry.shadowRadius ?? DEFAULT_SHADOW_RADIUS;
-  if (entry.lightSize === undefined || profile === undefined || !profile.softShadows) return base;
-  return softShadowRadius({
+  if (entry.lightSize === undefined || profile === undefined || !profile.softShadows || !(frustumWidth > 0) || !(mapSize > 0)) {
+    return { radius: base, normalBias: baseNormalBias };
+  }
+  const radius = softShadowRadius({
     lightSize: entry.lightSize,
     occluderDistance: entry.occluderDistance,
     frustumWidth,
@@ -61,6 +77,7 @@ export function lightShadowRadius(entry: DirectionalLightingConfig, profile: Gra
     baseRadius: base,
     maxRadius: profile.softShadowMaxRadius,
   });
+  return { radius, normalBias: baseNormalBias + Math.max(0, radius - base) * (frustumWidth / mapSize) };
 }
 
 /** True when a shadow-casting directional light in `lighting` sets `lightSize`, so the soft-shadows setting changes something. */

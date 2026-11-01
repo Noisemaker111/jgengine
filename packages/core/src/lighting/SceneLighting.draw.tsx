@@ -14,7 +14,7 @@ import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import { devtools } from "@jgengine/core/devtools/devtools";
 
 import { CascadedShadows } from "./CascadedShadows.draw";
-import { lightShadowRadius } from "./softShadows";
+import { lightShadowFilter } from "./softShadows";
 import { cullSmallShadowCasters, MIN_SHADOW_CASTER_RADIUS, type ShadowCasterCull } from "./shadowCasters.draw";
 import { minShadowCasterRadius, resolveCascadeCount, resolveShadowMapSize, SHADOW_CASTER_RADIUS_REFERENCE_MAP } from "./shadowTiers";
 
@@ -89,6 +89,7 @@ function SingleShadowLight({ entry, profile, modulation }: { entry: DirectionalL
   const far = Math.max(200, size * 6);
   const mapSize = entry.shadowMapSize ?? 1024;
   const baseIntensity = entry.intensity ?? 1.3;
+  const filter = lightShadowFilter(entry, profile, size * 2, mapSize, entry.shadowNormalBias ?? 0.02);
   useFrame(() => {
     const light = lightRef.current;
     if (light === null || modulation === undefined) return;
@@ -120,8 +121,8 @@ function SingleShadowLight({ entry, profile, modulation }: { entry: DirectionalL
       shadow-camera-near={0.5}
       shadow-camera-far={far}
       shadow-bias={entry.shadowBias ?? -0.0004}
-      shadow-normalBias={entry.shadowNormalBias ?? 0.02}
-      shadow-radius={lightShadowRadius(entry, profile, size * 2, mapSize)}
+      shadow-normalBias={filter.normalBias}
+      shadow-radius={filter.radius}
     />
   );
 }
