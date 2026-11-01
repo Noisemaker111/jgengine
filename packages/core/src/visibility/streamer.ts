@@ -118,7 +118,10 @@ export interface GridShardsOptions {
   cellSize: number;
 }
 
-/** The id of the grid cell a world point falls in: `"col,row"` counted from world origin. */
+/**
+ * The id of the grid cell a world point falls in: `"col,row"` counted from world origin.
+ * @capability world-streaming-cell-id name the streamed grid cell a world point falls in
+ */
 export function gridCellId(x: number, z: number, cellSize: number): string {
   return `${Math.floor(x / cellSize)},${Math.floor(z / cellSize)}`;
 }

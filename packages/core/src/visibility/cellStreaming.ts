@@ -327,7 +327,7 @@ export function bindCellStreaming(ctx: GameContext, streaming: CellStreaming | n
   bound(ctx).streaming = streaming;
 }
 
-/** The streaming a game bound to this context, if any. */
+/** The streaming a game bound to this context, if any. @internal */
 export function boundCellStreaming(ctx: GameContext): CellStreaming | null {
   return bound(ctx).streaming;
 }

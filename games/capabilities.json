@@ -1652,6 +1652,16 @@
       "intent": "sagging cable curve between two anchors"
     },
     {
+      "id": "cell-content",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/visibility/cellContent",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "entities and bodies in an unloaded cell keep simulating, freeze, or despawn with saved state"
+    },
+    {
       "id": "cell-grid",
       "packages": [
         "@jgengine/core"
@@ -7625,6 +7635,26 @@
       "intent": "route, snap, and raycast on a polygon navmesh with retunable area costs and a bounded search"
     },
     {
+      "id": "navmesh-tile-from-grid",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/nav/navTiles",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "build a nav tile from a walkable-area rule sampled on a grid"
+    },
+    {
+      "id": "navmesh-tiles",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/nav/navTiles",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "build, store, rebuild and stream a nav mesh one tile at a time and route across tile borders"
+    },
+    {
       "id": "near-agents",
       "packages": [
         "@jgengine/core"
@@ -12824,10 +12854,30 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/editor/streamer",
+      "module": "@jgengine/core/visibility/streamer",
       "gameFacing": false,
       "probe": null,
       "intent": "distance from a camera to a shard footprint"
+    },
+    {
+      "id": "world-streaming-cell-id",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/visibility/streamer",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "name the streamed grid cell a world point falls in"
+    },
+    {
+      "id": "world-streaming-cells",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/visibility/streamer",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "split a world area into streamable grid cells"
     },
     {
       "id": "worn-layers",

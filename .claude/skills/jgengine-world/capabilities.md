@@ -503,6 +503,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `captureCanvas` (function) · `import { captureCanvas } from "@jgengine/core/scene/sceneCapture.draw"`
 
+## cell-content — entities and bodies in an unloaded cell keep simulating, freeze, or despawn with saved state
+
+- `createCellContent` (function) · `import { createCellContent } from "@jgengine/core/visibility/cellContent"`
+
 ## change-of-direction-505 — simulated 505 change-of-direction test time of a sprint profile
 
 - `test505Time` (function) · `import { test505Time } from "@jgengine/core/movement/reference/humanEnvelope"`
@@ -1479,6 +1483,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## navmesh-query — route, snap, and raycast on a polygon navmesh with retunable area costs and a bounded search
 
 - `createNavMeshQuery` (function) · `import { createNavMeshQuery } from "@jgengine/core/world"`
+
+## navmesh-tile-from-grid — build a nav tile from a walkable-area rule sampled on a grid
+
+- `navTileFromGrid` (function) · `import { navTileFromGrid } from "@jgengine/core/world"`
+
+## navmesh-tiles — build, store, rebuild and stream a nav mesh one tile at a time and route across tile borders
+
+- `createNavTiles` (function) · `import { createNavTiles } from "@jgengine/core/world"`
 
 ## needs — decaying needs an agent reads by index to decide what it wants next
 
@@ -2484,6 +2496,20 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `buildingSolids` (function) · `import { buildingSolids } from "@jgengine/core/world/worldSolids"`
 - `structureSolids` (function) · `import { structureSolids } from "@jgengine/core/world/worldSolids"`
 - `wallSolids` (function) · `import { wallSolids } from "@jgengine/core/world/worldSolids"`
+
+## world-streaming — schedule shard load/unload by camera proximity
+
+- `createWorldStreamer` (function) · `import { createWorldStreamer } from "@jgengine/core/visibility/streamer"`
+- `shardDistance` (function) · `import { shardDistance } from "@jgengine/core/visibility/streamer"`
+
+## world-streaming-cell-id — name the streamed grid cell a world point falls in
+
+- `gridCellId` (function) · `import { gridCellId } from "@jgengine/core/visibility/streamer"`
+
+## world-streaming-cells — stream a world's cells around every player with budgets, async loads and far proxies
+
+- `createCellStreaming` (function) · `import { createCellStreaming } from "@jgengine/core/visibility/cellStreaming"`
+- `gridShards` (function) · `import { gridShards } from "@jgengine/core/visibility/streamer"`
 
 ## worn-layers — draw clothing on a rigged human by body area, skinned to its skeleton
 
