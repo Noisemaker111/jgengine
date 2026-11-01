@@ -27,6 +27,24 @@ const DECOR_PLAN: Record<string, ModelPick> = {
   decor_frond: { model: `${NATURE}/Mushroom_Common`, fallbackModel: `${NATURE}/Plant_1` },
   decor_frond_tan: { model: `${NATURE}/Mushroom_Laetiporus`, fallbackModel: `${NATURE}/Fern_1` },
   decor_crystal: { model: `${NATURE}/Rock_Medium_2`, fallbackModel: `${SPACE}/rock_B` },
+  decor_mushroom_pink: { model: `${NATURE}/Mushroom_Common`, fallbackModel: `${NATURE}/Mushroom_Laetiporus` },
+  decor_mushroom_mint: { model: `${NATURE}/Mushroom_Laetiporus`, fallbackModel: `${NATURE}/Mushroom_Common` },
+  decor_bush_mint: { model: `${NATURE}/Bush_Common`, fallbackModel: `${NATURE}/Plant_1_Big` },
+  decor_bloom_pink: { model: `${NATURE}/Flower_4_Group`, fallbackModel: `${NATURE}/Flower_3_Group` },
+  decor_tuft_mint: { model: `${NATURE}/Grass_Wispy_Tall`, fallbackModel: `${NATURE}/Clover_1` },
+  decor_pebble_lilac: { model: `${NATURE}/Pebble_Round_3`, fallbackModel: `${NATURE}/Pebble_Round_1` },
+  decor_rug_butter: { model: `${FURN}/rug_rectangle_A`, fallbackModel: `${FURN}/rug_rectangle_B` },
+  decor_rug_pink: { model: `${FURN}/rug_oval_A`, fallbackModel: `${FURN}/rug_oval_B` },
+  decor_rug_mint: { model: `${FURN}/rug_oval_B`, fallbackModel: `${FURN}/rug_oval_A` },
+  decor_lamp: { model: `${FURN}/lamp_standing`, fallbackModel: `${FURN}/lamp_table` },
+  decor_lamp_table: { model: `${FURN}/lamp_table`, fallbackModel: `${FURN}/lamp_standing` },
+  decor_shelf: { model: `${FURN}/shelf_B_large_decorated`, fallbackModel: `${FURN}/shelf_A_big` },
+  decor_cabinet: { model: `${FURN}/cabinet_small_decorated`, fallbackModel: `${FURN}/cabinet_small` },
+  decor_armchair: { model: `${FURN}/armchair_pillows`, fallbackModel: `${FURN}/armchair` },
+  decor_picture: { model: `${FURN}/pictureframe_standing_A`, fallbackModel: `${FURN}/pictureframe_standing_B` },
+  decor_cactus: { model: `${FURN}/cactus_small_A`, fallbackModel: `${FURN}/cactus_small_B` },
+  decor_stool: { model: `${FURN}/chair_stool`, fallbackModel: `${FURN}/chair_stool_wood` },
+  decor_books: { model: `${FURN}/book_set`, fallbackModel: `${FURN}/book_single` },
 };
 
 const STRUCTURE_PLAN: Record<string, ModelPick> = {
@@ -39,9 +57,19 @@ const STRUCTURE_PLAN: Record<string, ModelPick> = {
 /** Uniform scale and pastel enamel per shell piece: tubes lengthen to the 3 m wall pitch, domes and the airlock stand a little taller than the tubes. */
 const STRUCTURE_LOOK: Record<StructureDef["kind"], { scale: number; color: string }> = {
   wall: { scale: 1.5, color: "#fff0d6" },
-  wall_window: { scale: 1.5, color: "#ffd98a" },
-  corner: { scale: 1.45, color: "#f6a6cf" },
-  gate: { scale: 1.5, color: "#f6a6cf" },
+  wall_window: { scale: 1.5, color: "#ffeab0" },
+  corner: { scale: 1.45, color: "#ffd0e6" },
+  gate: { scale: 1.5, color: "#ffd0e6" },
+};
+
+/** Enamel-pale tints on the KayKit textures, so each station reads in the palette instead of multiplying into saturated orange or blue. */
+const FURNITURE_TINT: Record<string, string> = {
+  nutrient_font: "#ffeab0",
+  sleep_pod: "#ffd0e6",
+  chat_ring: "#cff3e2",
+  holo_arcade: "#e3d6ff",
+  bloom_planter: "#cff3e2",
+  work_console: "#fff0d6",
 };
 
 function furniturePick(def: FurnitureDef): ModelPick | null {
@@ -51,7 +79,7 @@ function furniturePick(def: FurnitureDef): ModelPick | null {
     ...base,
     style: {
       targetHeight: def.height,
-      material: { color: def.color, metalness: 0.12, roughness: 0.8, emissive: def.color, emissiveIntensity: 0.04 },
+      material: { color: FURNITURE_TINT[def.id] ?? "#fff0d6", metalness: 0.05, roughness: 0.75 },
     },
   };
 }
@@ -59,11 +87,12 @@ function furniturePick(def: FurnitureDef): ModelPick | null {
 function decorPick(def: DecorDef): ModelPick | null {
   const base = DECOR_PLAN[def.id];
   if (base === undefined) return null;
+  const glow = def.glow ?? 0.02;
   return {
     ...base,
     style: {
-      targetHeight: def.height,
-      material: { color: def.color, roughness: 0.9, emissive: def.color, emissiveIntensity: def.id === "decor_crystal" ? 0.16 : 0.02 },
+      ...(def.scale === undefined ? { targetHeight: def.height } : { scale: def.scale }),
+      material: { color: def.color, roughness: 0.85, emissive: def.color, emissiveIntensity: glow },
     },
   };
 }

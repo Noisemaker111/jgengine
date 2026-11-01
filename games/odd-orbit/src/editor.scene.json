@@ -1219,6 +1219,1026 @@
         "object": "decor_spire",
         "group": "decor"
       }
+    },
+    {
+      "id": "w3:decor_rug_butter:0",
+      "kind": "prop",
+      "position": {
+        "x": -6.5,
+        "y": 0,
+        "z": -4.6
+      },
+      "rotationY": 0,
+      "label": "decor_rug_butter",
+      "meta": {
+        "object": "decor_rug_butter",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_rug_pink:1",
+      "kind": "prop",
+      "position": {
+        "x": 7,
+        "y": 0,
+        "z": -4.6
+      },
+      "rotationY": 0,
+      "label": "decor_rug_pink",
+      "meta": {
+        "object": "decor_rug_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_rug_mint:2",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 5.6
+      },
+      "rotationY": 0,
+      "label": "decor_rug_mint",
+      "meta": {
+        "object": "decor_rug_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_rug_butter:3",
+      "kind": "prop",
+      "position": {
+        "x": 8,
+        "y": 0,
+        "z": 3.4
+      },
+      "rotationY": 0,
+      "label": "decor_rug_butter",
+      "meta": {
+        "object": "decor_rug_butter",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_rug_pink:4",
+      "kind": "prop",
+      "position": {
+        "x": -8,
+        "y": 0,
+        "z": 2.6
+      },
+      "rotationY": 0,
+      "label": "decor_rug_pink",
+      "meta": {
+        "object": "decor_rug_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_lamp:5",
+      "kind": "prop",
+      "position": {
+        "x": -10.6,
+        "y": 0,
+        "z": -7.6
+      },
+      "rotationY": 0,
+      "label": "decor_lamp",
+      "meta": {
+        "object": "decor_lamp",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_lamp:6",
+      "kind": "prop",
+      "position": {
+        "x": 10.6,
+        "y": 0,
+        "z": -7.6
+      },
+      "rotationY": 0,
+      "label": "decor_lamp",
+      "meta": {
+        "object": "decor_lamp",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_lamp:7",
+      "kind": "prop",
+      "position": {
+        "x": -10.6,
+        "y": 0,
+        "z": 7.4
+      },
+      "rotationY": 0,
+      "label": "decor_lamp",
+      "meta": {
+        "object": "decor_lamp",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_lamp_table:8",
+      "kind": "prop",
+      "position": {
+        "x": 3,
+        "y": 0,
+        "z": 5
+      },
+      "rotationY": 0,
+      "label": "decor_lamp_table",
+      "meta": {
+        "object": "decor_lamp_table",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_lamp_table:9",
+      "kind": "prop",
+      "position": {
+        "x": -3,
+        "y": 0,
+        "z": 7.6
+      },
+      "rotationY": 0,
+      "label": "decor_lamp_table",
+      "meta": {
+        "object": "decor_lamp_table",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_shelf:10",
+      "kind": "prop",
+      "position": {
+        "x": -11,
+        "y": 0,
+        "z": -5.2
+      },
+      "rotationY": 3.141592653589793,
+      "label": "decor_shelf",
+      "meta": {
+        "object": "decor_shelf",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_shelf:11",
+      "kind": "prop",
+      "position": {
+        "x": -11,
+        "y": 0,
+        "z": -1.6
+      },
+      "rotationY": 3.141592653589793,
+      "label": "decor_shelf",
+      "meta": {
+        "object": "decor_shelf",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_cabinet:12",
+      "kind": "prop",
+      "position": {
+        "x": -3.6,
+        "y": 0,
+        "z": -8
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "decor_cabinet",
+      "meta": {
+        "object": "decor_cabinet",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_cabinet:13",
+      "kind": "prop",
+      "position": {
+        "x": 3.6,
+        "y": 0,
+        "z": -8
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "decor_cabinet",
+      "meta": {
+        "object": "decor_cabinet",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_picture:14",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -8
+      },
+      "rotationY": 1.5707963267948966,
+      "label": "decor_picture",
+      "meta": {
+        "object": "decor_picture",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_armchair:15",
+      "kind": "prop",
+      "position": {
+        "x": -3.4,
+        "y": 0,
+        "z": 3.6
+      },
+      "rotationY": 0.7853981633974483,
+      "label": "decor_armchair",
+      "meta": {
+        "object": "decor_armchair",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_armchair:16",
+      "kind": "prop",
+      "position": {
+        "x": 4.4,
+        "y": 0,
+        "z": 7.4
+      },
+      "rotationY": -0.9424777960769379,
+      "label": "decor_armchair",
+      "meta": {
+        "object": "decor_armchair",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_stool:17",
+      "kind": "prop",
+      "position": {
+        "x": -9.6,
+        "y": 0,
+        "z": 5.6
+      },
+      "rotationY": 0,
+      "label": "decor_stool",
+      "meta": {
+        "object": "decor_stool",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_books:18",
+      "kind": "prop",
+      "position": {
+        "x": -10.6,
+        "y": 0,
+        "z": 0.8
+      },
+      "rotationY": 0,
+      "label": "decor_books",
+      "meta": {
+        "object": "decor_books",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_cactus:19",
+      "kind": "prop",
+      "position": {
+        "x": 10.6,
+        "y": 0,
+        "z": -1.2
+      },
+      "rotationY": 0,
+      "label": "decor_cactus",
+      "meta": {
+        "object": "decor_cactus",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_cactus:20",
+      "kind": "prop",
+      "position": {
+        "x": -10.6,
+        "y": 0,
+        "z": 6.6
+      },
+      "rotationY": 0,
+      "label": "decor_cactus",
+      "meta": {
+        "object": "decor_cactus",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_mint:21",
+      "kind": "prop",
+      "position": {
+        "x": 26,
+        "y": 0,
+        "z": 6.6
+      },
+      "rotationY": 5.63,
+      "label": "decor_mushroom_mint",
+      "meta": {
+        "object": "decor_mushroom_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_bush_mint:22",
+      "kind": "prop",
+      "position": {
+        "x": 23.9,
+        "y": 0,
+        "z": 6.6
+      },
+      "rotationY": 4.59,
+      "label": "decor_bush_mint",
+      "meta": {
+        "object": "decor_bush_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_tuft_mint:23",
+      "kind": "prop",
+      "position": {
+        "x": 20.7,
+        "y": 0,
+        "z": 5.8
+      },
+      "rotationY": 6.27,
+      "label": "decor_tuft_mint",
+      "meta": {
+        "object": "decor_tuft_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:24",
+      "kind": "prop",
+      "position": {
+        "x": 23.2,
+        "y": 0,
+        "z": 5.2
+      },
+      "rotationY": 0.94,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_bush_mint:25",
+      "kind": "prop",
+      "position": {
+        "x": 18.8,
+        "y": 0,
+        "z": 24.6
+      },
+      "rotationY": 0.37,
+      "label": "decor_bush_mint",
+      "meta": {
+        "object": "decor_bush_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_boulder:26",
+      "kind": "prop",
+      "position": {
+        "x": 18.4,
+        "y": 0,
+        "z": 23.5
+      },
+      "rotationY": 1.77,
+      "label": "decor_boulder",
+      "meta": {
+        "object": "decor_boulder",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_pebble_lilac:27",
+      "kind": "prop",
+      "position": {
+        "x": 16.2,
+        "y": 0,
+        "z": 25.3
+      },
+      "rotationY": 4.6,
+      "label": "decor_pebble_lilac",
+      "meta": {
+        "object": "decor_pebble_lilac",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_mint:28",
+      "kind": "prop",
+      "position": {
+        "x": 18.2,
+        "y": 0,
+        "z": 21
+      },
+      "rotationY": 0.62,
+      "label": "decor_mushroom_mint",
+      "meta": {
+        "object": "decor_mushroom_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:29",
+      "kind": "prop",
+      "position": {
+        "x": -1.1,
+        "y": 0,
+        "z": 19.5
+      },
+      "rotationY": 0.16,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_tuft_mint:30",
+      "kind": "prop",
+      "position": {
+        "x": -1.6,
+        "y": 0,
+        "z": 23.5
+      },
+      "rotationY": 5.32,
+      "label": "decor_tuft_mint",
+      "meta": {
+        "object": "decor_tuft_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_bush_mint:31",
+      "kind": "prop",
+      "position": {
+        "x": -0.3,
+        "y": 0,
+        "z": 18.8
+      },
+      "rotationY": 0.59,
+      "label": "decor_bush_mint",
+      "meta": {
+        "object": "decor_bush_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:32",
+      "kind": "prop",
+      "position": {
+        "x": 1.3,
+        "y": 0,
+        "z": 21.1
+      },
+      "rotationY": 2.48,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:33",
+      "kind": "prop",
+      "position": {
+        "x": -11.4,
+        "y": 0,
+        "z": 17.2
+      },
+      "rotationY": 2.67,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_pebble_lilac:34",
+      "kind": "prop",
+      "position": {
+        "x": -12.5,
+        "y": 0,
+        "z": 13
+      },
+      "rotationY": 0.09,
+      "label": "decor_pebble_lilac",
+      "meta": {
+        "object": "decor_pebble_lilac",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_bloom_pink:35",
+      "kind": "prop",
+      "position": {
+        "x": -12.2,
+        "y": 0,
+        "z": 13.6
+      },
+      "rotationY": 0.41,
+      "label": "decor_bloom_pink",
+      "meta": {
+        "object": "decor_bloom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:36",
+      "kind": "prop",
+      "position": {
+        "x": -9.8,
+        "y": 0,
+        "z": 16.9
+      },
+      "rotationY": 5.35,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_pebble_lilac:37",
+      "kind": "prop",
+      "position": {
+        "x": -32.1,
+        "y": 0,
+        "z": 12.5
+      },
+      "rotationY": 4.12,
+      "label": "decor_pebble_lilac",
+      "meta": {
+        "object": "decor_pebble_lilac",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_pebble_lilac:38",
+      "kind": "prop",
+      "position": {
+        "x": -32.4,
+        "y": 0,
+        "z": 10.4
+      },
+      "rotationY": 3.78,
+      "label": "decor_pebble_lilac",
+      "meta": {
+        "object": "decor_pebble_lilac",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:39",
+      "kind": "prop",
+      "position": {
+        "x": -27.1,
+        "y": 0,
+        "z": 8.6
+      },
+      "rotationY": 2.75,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_pebble_lilac:40",
+      "kind": "prop",
+      "position": {
+        "x": -30.1,
+        "y": 0,
+        "z": 11.5
+      },
+      "rotationY": 4.95,
+      "label": "decor_pebble_lilac",
+      "meta": {
+        "object": "decor_pebble_lilac",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:41",
+      "kind": "prop",
+      "position": {
+        "x": -27.1,
+        "y": 0,
+        "z": 8.8
+      },
+      "rotationY": 1.33,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_pebble_lilac:42",
+      "kind": "prop",
+      "position": {
+        "x": -31.4,
+        "y": 0,
+        "z": 9.4
+      },
+      "rotationY": 4.42,
+      "label": "decor_pebble_lilac",
+      "meta": {
+        "object": "decor_pebble_lilac",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_bloom_pink:43",
+      "kind": "prop",
+      "position": {
+        "x": -28,
+        "y": 0,
+        "z": -10.4
+      },
+      "rotationY": 2.77,
+      "label": "decor_bloom_pink",
+      "meta": {
+        "object": "decor_bloom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:44",
+      "kind": "prop",
+      "position": {
+        "x": -31.4,
+        "y": 0,
+        "z": -11.2
+      },
+      "rotationY": 0.19,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_mint:45",
+      "kind": "prop",
+      "position": {
+        "x": -29.9,
+        "y": 0,
+        "z": -10.8
+      },
+      "rotationY": 6.2,
+      "label": "decor_mushroom_mint",
+      "meta": {
+        "object": "decor_mushroom_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_tuft_mint:46",
+      "kind": "prop",
+      "position": {
+        "x": -29.3,
+        "y": 0,
+        "z": -11.3
+      },
+      "rotationY": 2.07,
+      "label": "decor_tuft_mint",
+      "meta": {
+        "object": "decor_tuft_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_mint:47",
+      "kind": "prop",
+      "position": {
+        "x": -30.4,
+        "y": 0,
+        "z": -7.9
+      },
+      "rotationY": 5.17,
+      "label": "decor_mushroom_mint",
+      "meta": {
+        "object": "decor_mushroom_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_bloom_pink:48",
+      "kind": "prop",
+      "position": {
+        "x": -29.1,
+        "y": 0,
+        "z": -7.9
+      },
+      "rotationY": 3.47,
+      "label": "decor_bloom_pink",
+      "meta": {
+        "object": "decor_bloom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_bush_mint:49",
+      "kind": "prop",
+      "position": {
+        "x": -13.9,
+        "y": 0,
+        "z": -24
+      },
+      "rotationY": 3.7,
+      "label": "decor_bush_mint",
+      "meta": {
+        "object": "decor_bush_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_mint:50",
+      "kind": "prop",
+      "position": {
+        "x": -15,
+        "y": 0,
+        "z": -21.1
+      },
+      "rotationY": 4.08,
+      "label": "decor_mushroom_mint",
+      "meta": {
+        "object": "decor_mushroom_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_mint:51",
+      "kind": "prop",
+      "position": {
+        "x": -16.4,
+        "y": 0,
+        "z": -18.4
+      },
+      "rotationY": 6.04,
+      "label": "decor_mushroom_mint",
+      "meta": {
+        "object": "decor_mushroom_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:52",
+      "kind": "prop",
+      "position": {
+        "x": -15.8,
+        "y": 0,
+        "z": -20.6
+      },
+      "rotationY": 2.21,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_pebble_lilac:53",
+      "kind": "prop",
+      "position": {
+        "x": -16.5,
+        "y": 0,
+        "z": -18.6
+      },
+      "rotationY": 6,
+      "label": "decor_pebble_lilac",
+      "meta": {
+        "object": "decor_pebble_lilac",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_boulder:54",
+      "kind": "prop",
+      "position": {
+        "x": -1.1,
+        "y": 0,
+        "z": -24.9
+      },
+      "rotationY": 0.77,
+      "label": "decor_boulder",
+      "meta": {
+        "object": "decor_boulder",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_pebble_lilac:55",
+      "kind": "prop",
+      "position": {
+        "x": -1.7,
+        "y": 0,
+        "z": -22.7
+      },
+      "rotationY": 1.9,
+      "label": "decor_pebble_lilac",
+      "meta": {
+        "object": "decor_pebble_lilac",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_boulder:56",
+      "kind": "prop",
+      "position": {
+        "x": -0.4,
+        "y": 0,
+        "z": -21.2
+      },
+      "rotationY": 0.61,
+      "label": "decor_boulder",
+      "meta": {
+        "object": "decor_boulder",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_bloom_pink:57",
+      "kind": "prop",
+      "position": {
+        "x": 0.2,
+        "y": 0,
+        "z": -24.9
+      },
+      "rotationY": 1.15,
+      "label": "decor_bloom_pink",
+      "meta": {
+        "object": "decor_bloom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_bloom_pink:58",
+      "kind": "prop",
+      "position": {
+        "x": -1.6,
+        "y": 0,
+        "z": -24.8
+      },
+      "rotationY": 2.96,
+      "label": "decor_bloom_pink",
+      "meta": {
+        "object": "decor_bloom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:59",
+      "kind": "prop",
+      "position": {
+        "x": 16.5,
+        "y": 0,
+        "z": -19.5
+      },
+      "rotationY": 5.13,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_tuft_mint:60",
+      "kind": "prop",
+      "position": {
+        "x": 13,
+        "y": 0,
+        "z": -20.9
+      },
+      "rotationY": 1.23,
+      "label": "decor_tuft_mint",
+      "meta": {
+        "object": "decor_tuft_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_boulder:61",
+      "kind": "prop",
+      "position": {
+        "x": 15.9,
+        "y": 0,
+        "z": -20
+      },
+      "rotationY": 3.64,
+      "label": "decor_boulder",
+      "meta": {
+        "object": "decor_boulder",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_bloom_pink:62",
+      "kind": "prop",
+      "position": {
+        "x": 18.1,
+        "y": 0,
+        "z": -24.2
+      },
+      "rotationY": 5.48,
+      "label": "decor_bloom_pink",
+      "meta": {
+        "object": "decor_bloom_pink",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_tuft_mint:63",
+      "kind": "prop",
+      "position": {
+        "x": 15.3,
+        "y": 0,
+        "z": -25.3
+      },
+      "rotationY": 3.71,
+      "label": "decor_tuft_mint",
+      "meta": {
+        "object": "decor_tuft_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_boulder:64",
+      "kind": "prop",
+      "position": {
+        "x": 25.4,
+        "y": 0,
+        "z": -7.2
+      },
+      "rotationY": 3.5,
+      "label": "decor_boulder",
+      "meta": {
+        "object": "decor_boulder",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_tuft_mint:65",
+      "kind": "prop",
+      "position": {
+        "x": 24.7,
+        "y": 0,
+        "z": -8.6
+      },
+      "rotationY": 1.17,
+      "label": "decor_tuft_mint",
+      "meta": {
+        "object": "decor_tuft_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_tuft_mint:66",
+      "kind": "prop",
+      "position": {
+        "x": 22.3,
+        "y": 0,
+        "z": -7.9
+      },
+      "rotationY": 1.16,
+      "label": "decor_tuft_mint",
+      "meta": {
+        "object": "decor_tuft_mint",
+        "group": "decor"
+      }
+    },
+    {
+      "id": "w3:decor_mushroom_pink:67",
+      "kind": "prop",
+      "position": {
+        "x": 23.7,
+        "y": 0,
+        "z": -6.6
+      },
+      "rotationY": 1.19,
+      "label": "decor_mushroom_pink",
+      "meta": {
+        "object": "decor_mushroom_pink",
+        "group": "decor"
+      }
     }
   ],
   "volumes": [],
