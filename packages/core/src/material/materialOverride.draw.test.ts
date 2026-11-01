@@ -138,6 +138,13 @@ describe("applyMaterialOverride", () => {
     expect(applied.displacementMap).toBe(textures.height);
   });
 
+  test("writes the iridescence thickness range through the minimum and maximum", () => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhysicalMaterial());
+    applyMaterialOverride(mesh, { iridescence: 1, iridescenceThicknessRange: [150, 520] });
+    const applied = mesh.material as THREE.MeshPhysicalMaterial;
+    expect([applied.iridescenceThicknessMinimum, applied.iridescenceThicknessMaximum]).toEqual([150, 520]);
+  });
+
   test("applies material overrides to physical materials", () => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhysicalMaterial());
     const original = mesh.material;

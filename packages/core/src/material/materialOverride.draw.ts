@@ -101,7 +101,7 @@ export function applyMaterialOverrideToMaterial(
     const physical = target as THREE.MeshPhysicalMaterial;
     for (const key of physicalNumbers) if (override[key] !== undefined) physical[key] = override[key]!;
     for (const key of physicalColors) if (override[key] !== undefined) physical[key].set(override[key]!);
-    if (override.iridescenceThicknessRange !== undefined) physical.iridescenceThicknessRange = [...override.iridescenceThicknessRange];
+    if (override.iridescenceThicknessRange !== undefined) [physical.iridescenceThicknessMinimum, physical.iridescenceThicknessMaximum] = override.iridescenceThicknessRange;
     if (override.alphaMode !== undefined) {
       target.transparent = override.alphaMode === "blend";
       target.alphaTest = override.alphaMode === "mask" ? override.alphaCutoff ?? 0.5 : 0;
