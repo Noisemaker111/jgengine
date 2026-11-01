@@ -13,6 +13,7 @@ import {
   type VehicleGearboxTuning,
 } from "./vehicleDynamics";
 import { vehicleTuning } from "./vehicleSpec";
+import { windField } from "../world/wind";
 
 // Each effect against a car that runs none: turning the effect on moves the number it owns, and leaving it out
 // removes it. A fixture, not a preset.
@@ -325,6 +326,19 @@ describe("vehicle effects: each is its own term", () => {
     expect(shifted).toBe(true);
     expect(zeroDriveWhileShifting).toBe(true);
     expect(coastLoss(curved, 30)).toBeGreaterThan(coastLoss(bareGearbox, 30));
+  });
+
+  test("wind: aeroDrag acts on the air speed, so a headwind slows the car and a crosswind pushes on its side area", () => {
+    const dragged = on({ aeroDrag: { area: 0.7, sideArea: 3 } });
+    const cruise = (options: VehicleDynamicsOptions) => hold(rolling(dragged, 25, options), {}, 2).motion.forwardSpeed;
+    const still = cruise({});
+    const head = cruise({ wind: windField({ direction: [0, -1], speed: 15 }) });
+    const tail = cruise({ wind: windField({ direction: [0, 1], speed: 15 }) });
+    expect(head).toBeLessThan(still);
+    expect(tail).toBeGreaterThan(still);
+    expect(cruise({ wind: windField({ direction: [0, 1], speed: 0 }) })).toBeCloseTo(still, 9);
+    const drift = hold(rolling(dragged, 25, { wind: windField({ direction: [1, 0], speed: 15 }) }), {}, 1);
+    expect(drift.motion.position[0]).toBeGreaterThan(0.05);
   });
 
   test("speedSensitiveSteering cuts full lock at speed", () => {

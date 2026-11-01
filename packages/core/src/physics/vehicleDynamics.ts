@@ -3,6 +3,9 @@ import type { CollisionObstacle } from "../movement/movementModel";
 import { createVehicleObstacleClamp, type VehicleImpact, type VehicleMoveClamp } from "./vehicleObstacles";
 import { sampleGripCurve, type GripCurve } from "./gripCurve";
 import { clamp, clamp01 } from "../math/scalar";
+import type { WindField } from "../world/wind";
+import { brakeFadeShare, brakeTemperatureStep, type VehicleBrakeFadeEffect } from "./brakeFade";
+import { roadFrictionAt, type VehicleRoadFrictionEffect } from "./roadFriction";
 import { engineTorque, torqueCurveShiftSeconds, type VehicleTorqueCurveEffect } from "./engineTorqueCurve";
 import { aligningSteer, type VehicleAligningTorqueEffect } from "./vehicleAligningTorque";
 import { suspensionKinematics, type VehicleSuspensionKinematicsEffect } from "./vehicleSuspensionKinematics";
@@ -183,6 +186,8 @@ export interface VehicleAeroDragEffect {
   strength?: number;
   /** Drag coefficient × frontal area, m² (0.6 sports car … 1.0 SUV). */
   area: number;
+  /** Side-force coefficient × side area, m²: how hard a crosswind pushes the car sideways (default `0`; ~`2` a hatchback, ~`8` a high-sided truck). Needs the `wind` option. */
+  sideArea?: number;
 }
 
 /** Aerodynamic downforce `½·ρ·ClA·v²`, pressing the tyres harder as speed rises. */
@@ -320,6 +325,8 @@ export interface VehicleEffects {
   torqueCurve?: VehicleTorqueCurveEffect;
   differential?: VehicleDifferentialEffect;
   brakeLag?: VehicleBrakeLagEffect;
+  brakeFade?: VehicleBrakeFadeEffect;
+  roadFriction?: VehicleRoadFrictionEffect;
   selfAlign?: VehicleSelfAlignEffect;
   speedSensitiveSteering?: VehicleSpeedSensitiveSteeringEffect;
   abs?: VehicleAbsEffect;
@@ -509,6 +516,13 @@ export interface VehicleDynamicsOptions {
   heading?: number;
   /** Grip multiplier by world position (gravel, ice, wet paint); default `1`. */
   surfaceFriction?: (x: number, z: number) => number;
+  /** Name of the surface under a point, read by the `roadFriction` effect's `surfaces` table (`"asphalt"`, `"gravel"`). */
+  surfaceAt?: (x: number, z: number) => string;
+  /**
+   * The wind, sampled at the car's centre height each substep (`windField(...)` from `world/wind`): drag and the
+   * `aeroDrag` side force act on the air speed relative to it. Omit for still air.
+   */
+  wind?: Pick<WindField, "atHeight">;
   /** Clamp a planar move; optional result `motion` separates permitted displacement from position recovery. Called once per physics substep. */
   clampMove?: VehicleMoveClamp;
   /**
@@ -535,6 +549,8 @@ export interface VehicleMotionState {
   vz: number;
   yawRate: number;
   steerAngle: number;
+  /** Seconds simulated since spawn: the clock the `wind` field is read at. */
+  time: number;
 }
 
 /** Gearbox, engine speed and brake-pressure state. */
@@ -545,6 +561,8 @@ export interface VehicleDrivetrainState {
   rpm: number;
   /** Brake pressure share following the pedal (`brakeLag`). */
   brakeLevel: number;
+  /** Lumped brake-disc temperature, °C (`brakeFade`). */
+  brakeTemperature: number;
 }
 
 /** Body acceleration, pitch/roll and spring state (`suspension`). */
@@ -681,6 +699,14 @@ export interface VehicleStepBody {
   lean: number;
 }
 
+/** Brake telemetry of a {@link VehicleDynamicsStep}. */
+export interface VehicleStepBrakes {
+  /** Lumped disc temperature, °C (`brakeFade`; ambient without it). */
+  temperature: number;
+  /** Share of cold brake force the hot pads still give, `0..1` (`1` without `brakeFade`). */
+  fade: number;
+}
+
 /** Airborne telemetry of a {@link VehicleDynamicsStep}. */
 export interface VehicleStepAir {
   /** Height of the car's base above the terrain under it, m; `0` on the ground and always `0` without `suspension`. */
@@ -700,6 +726,7 @@ export interface VehicleDynamicsStep {
   engine: VehicleStepEngine;
   aids: VehicleStepAids;
   body: VehicleStepBody;
+  brakes: VehicleStepBrakes;
   air: VehicleStepAir;
   /** The hardest hit on an `obstacles` solid this tick, or `null`. */
   impact: VehicleImpact | null;
@@ -899,7 +926,9 @@ export function createVehicleDynamics(
     const steps = dt > 0 ? Math.max(1, Math.ceil(dt / maxSub - 1e-9)) : 0;
     const h = steps > 0 ? dt / steps : 0;
     const telemetry = emptyTelemetry();
-    const surface = surfaceFriction(state.motion.x, state.motion.z);
+    const road = on(tuning.effects?.roadFriction);
+    const roadGrip = road === undefined ? 1 : roadFrictionAt(road, options.surfaceAt?.(state.motion.x, state.motion.z), strengthOf(road));
+    const surface = road === undefined ? surfaceFriction(state.motion.x, state.motion.z) : surfaceFriction(state.motion.x, state.motion.z) * roadGrip;
     const drag = dragAt === undefined ? 0 : Math.max(0, dragAt(state.motion.x, state.motion.z));
     telemetry.airborne = state.air.airborne;
     if (obstacleClamp !== null && options.obstacles !== undefined) {
@@ -963,6 +992,7 @@ export function createVehicleDynamics(
         engineLoad: telemetry.engineLoad,
       },
       aids: { absActive: telemetry.abs, tractionLimited: telemetry.traction, stabilityActive: telemetry.stability },
+      brakes: { temperature: state.drivetrain.brakeTemperature, fade: telemetry.brakeFade },
       body: {
         bodyPitch: state.body.bodyPitch,
         bodyRoll: state.body.bodyRoll,
@@ -1287,6 +1317,12 @@ export function createVehicleDynamics(
     if (t.speedLimit !== undefined && drive > 0) drive *= clamp01((t.speedLimit * (modifiers?.speedLimitScale ?? 1) - u) / 0.5);
     let brakeTotal = 0;
     if (!wantReverseDrive && brakeInput > 0 && Math.abs(u) > 0.05) brakeTotal = brakeInput * t.brakeForce * (modifiers?.brakeScale ?? 1);
+    const fade = on(fx_.brakeFade);
+    if (fade !== undefined) {
+      const share = brakeFadeShare(fade, state.drivetrain.brakeTemperature, strengthOf(fade));
+      brakeTotal *= share;
+      out.brakeFade = Math.min(out.brakeFade, share);
+    }
     const brakeFrontShare = t.brakeFront ?? 0.65;
     const driveFrontShare = clamp01(t.driveFront);
 
@@ -1392,6 +1428,7 @@ export function createVehicleDynamics(
     const hbDrag = handbrake * gripRear.capX * rearTire.slideGrip * 0.9;
     let fxFront = longFront - direction * brakeF;
     let fxRear = longRear - direction * (brakeR + hbDrag);
+    if (fade !== undefined && h > 0) state.drivetrain.brakeTemperature = brakeTemperatureStep(fade, state.drivetrain.brakeTemperature, (brakeF + brakeR) * Math.abs(u), Math.abs(u), h);
 
     // A locked or clutch differential splits torque across the axle: the force difference yaws against the turn, and
     // both wheels then spend friction on it, so the axle corners on what their ellipses leave.
@@ -1454,9 +1491,21 @@ export function createVehicleDynamics(
     const frontLat = fyFront * cosD - fxFront * sinD;
     const rearLatForce = fyRear * cosR - fxRear * sinR;
     let forceLong = fxFront * cosD + fyFront * sinD + fxRear * cosR + fyRear * sinR + (modifiers?.thrust ?? 0) + slopeLong;
-    const forceLat = frontLat + rearLatForce + slopeLat;
+    let forceLat = frontLat + rearLatForce + slopeLat;
     const aeroDrag = on(fx_.aeroDrag);
-    const drag = q * (aeroDrag?.area ?? 0) * strengthOf(aeroDrag) * Math.sign(u);
+    let drag = q * (aeroDrag?.area ?? 0) * strengthOf(aeroDrag) * Math.sign(u);
+    let sideDrag = 0;
+    const wind = options.wind;
+    if (wind !== undefined && aeroDrag !== undefined) {
+      // Drag on the air speed relative to the wind; a crosswind also pushes on the side area.
+      const [wx, wz] = wind.atHeight(state.motion.x, state.motion.z, t.comHeight, state.motion.time);
+      const airLong = u - (wx * fx + wz * fz);
+      const airLat = v - (-wx * fz + wz * fx);
+      const air = Math.hypot(airLong, airLat);
+      const dial = strengthOf(aeroDrag);
+      drag = 0.5 * AIR_DENSITY * aeroDrag.area * dial * air * airLong;
+      sideDrag = 0.5 * AIR_DENSITY * (aeroDrag.sideArea ?? 0) * dial * air * airLat;
+    }
     const rollingLoad = suspension === undefined ? (grounded ? weight : 0) : loadFront + loadRear;
     const rollingEffect = on(fx_.rollingResistance);
     const speedTerms = rollingEffect?.speedTerms;
@@ -1465,6 +1514,7 @@ export function createVehicleDynamics(
     const rollingCoefficient = rollingEffect === undefined ? 0 : ((rollingEffect.coefficient ?? 0.015) + speedRolling) * strengthOf(rollingEffect);
     const rolling = rollingCoefficient * rollingLoad * Math.sign(u) * Math.min(1, Math.abs(u) / 0.5);
     forceLong -= drag + rolling;
+    forceLat -= sideDrag;
     // Lateral force ahead of the CG yaws the heading negative in this frame, force behind it positive.
     let yawMoment = -a * frontLat + b * rearLatForce;
 
@@ -1552,6 +1602,7 @@ export function createVehicleDynamics(
     state.motion.vx = nvx;
     state.motion.vz = nvz;
     state.motion.yawRate = nr;
+    state.motion.time += h;
 
     const response = suspension === undefined ? 1 - Math.exp(-(t.suspensionResponse ?? 8) * h) : 1;
     const accelLong = h > 0 ? du + r * v : 0;
@@ -1855,6 +1906,7 @@ interface Telemetry {
   wheelie: boolean;
   stoppie: boolean;
   roadWheel: number;
+  brakeFade: number;
 }
 
 function emptyTelemetry(): Telemetry {
@@ -1878,6 +1930,7 @@ function emptyTelemetry(): Telemetry {
     wheelie: false,
     stoppie: false,
     roadWheel: 0,
+    brakeFade: 1,
   };
 }
 
@@ -1956,13 +2009,14 @@ function freshState(
   heading: number,
 ): VehicleDynamicsState {
   return {
-    motion: { x: position[0], y: position[1], z: position[2], heading, vx: 0, vz: 0, yawRate: 0, steerAngle: 0 },
+    motion: { x: position[0], y: position[1], z: position[2], heading, vx: 0, vz: 0, yawRate: 0, steerAngle: 0, time: 0 },
     drivetrain: {
       gearIndex: 0,
       reversing: false,
       shiftRemaining: 0,
       rpm: tuning.powertrain.kind === "gearbox" ? tuning.powertrain.idleRpm : 0,
       brakeLevel: 0,
+      brakeTemperature: tuning.effects?.brakeFade?.ambient ?? 20,
     },
     body: { longitudinalAccel: 0, lateralAccel: 0, bodyPitch: 0, bodyRoll: 0, vy: 0, pitchRate: 0, rollRate: 0, compression: [0, 0, 0, 0] },
     air: { airborne: false, jumpsUsed: 0, airTime: 0, hopHeight: 0 },
