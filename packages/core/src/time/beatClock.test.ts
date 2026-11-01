@@ -125,8 +125,13 @@ describe("classifyBeatAccuracy — default tiers", () => {
     expect(classifyBeatAccuracy(1.3, 1.0).tier).toBe("miss");
   });
 
+  test("windows given loosest-first still judge by the tightest that holds the press", () => {
+    const tiers = [{ id: "good", at: 0.5 }, { id: "perfect", at: 0.25 }];
+    expect([0.25, 0.375, 0.5, 0.625].map((delta) => classifyBeatAccuracy(1 + delta, 1.0, tiers).tier)).toEqual(["perfect", "good", "good", "miss"]);
+  });
+
   test("custom tiers override the default windows", () => {
-    const aceOnly = [{ id: "ace", windowSec: 0.02 }];
+    const aceOnly = [{ id: "ace", at: 0.02 }];
     expect(classifyBeatAccuracy(1.05, 1.0, aceOnly).tier).toBe("miss");
     expect(classifyBeatAccuracy(1.01, 1.0, aceOnly).tier).toBe("ace");
   });

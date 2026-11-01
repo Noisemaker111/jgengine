@@ -8,20 +8,20 @@ import {
 } from "./tribe";
 
 const RANKS: readonly TribeRankDef[] = [
-  { id: "recruit", name: "Recruit", level: 0, permissions: ["use"] },
+  { id: "recruit", name: "Recruit", at: 0, permissions: ["use"] },
   {
     id: "member",
     name: "Member",
-    level: 1,
+    at: 1,
     permissions: ["build", "use", "inventory"],
   },
   {
     id: "officer",
     name: "Officer",
-    level: 2,
+    at: 2,
     permissions: ["build", "demolish", "invite", "kick", "manage-ranks", "use", "inventory", "command"],
   },
-  { id: "leader", name: "Leader", level: 3, bypass: true },
+  { id: "leader", name: "Leader", at: 3, bypass: true },
 ];
 
 let clock = 0;

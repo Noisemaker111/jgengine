@@ -11,8 +11,8 @@ const levelAtLeast = (level: number): Predicate => ({ gte: ["level", level] });
 
 const OPTIONS: SummonedEncounterOptions = {
   tiers: [
-    { id: "gamma", cost: { clever: 1, hunter: 1 }, requirement: levelAtLeast(30) },
-    { id: "beta", cost: { clever: 1, hunter: 1, talon: 5 }, requirement: levelAtLeast(50) },
+    { id: "gamma", at: 0, cost: { clever: 1, hunter: 1 }, requirement: levelAtLeast(30) },
+    { id: "beta", at: 1, cost: { clever: 1, hunter: 1, talon: 5 }, requirement: levelAtLeast(50) },
   ],
   portalSeconds: 25,
   partyCaps: { survivor: 2, companion: 2 },

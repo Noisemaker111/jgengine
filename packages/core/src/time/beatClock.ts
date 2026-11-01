@@ -1,3 +1,4 @@
+import { tierAt, type ThresholdBoundary } from "../threshold/thresholds";
 export interface BeatClockConfig {
   bpm: number;
   /** Beats per bar/measure, for bar-relative UI (rhythm-game combo windows). Default 4. */
@@ -75,11 +76,8 @@ export function nearestBeatDelta(nowSec: number, beatDurationSec: number): numbe
   return nowSec - beatIndex * beatDurationSec;
 }
 
-export interface BeatAccuracyTier {
-  id: string;
-  /** Maximum absolute delta (game-seconds) from the beat that still earns this tier. */
-  windowSec: number;
-}
+/** A judgement window, a Ladder step read descending: `at` is the maximum absolute delta (game-seconds) from the beat that still earns this tier. */
+export interface BeatAccuracyTier extends ThresholdBoundary {}
 
 export interface BeatJudgement {
   /** The matched tier id, or `"miss"` beyond every tier. */
@@ -89,11 +87,11 @@ export interface BeatJudgement {
 }
 
 export const DEFAULT_BEAT_TIERS: readonly BeatAccuracyTier[] = [
-  { id: "perfect", windowSec: 0.06 },
-  { id: "good", windowSec: 0.14 },
+  { id: "perfect", at: 0.06 },
+  { id: "good", at: 0.14 },
 ];
 
-/** Classify a press against the nearest beat into tiered judgements (perfect/good/miss by default). Tiers must be ordered tightest-first.
+/** Classify a press against the nearest beat into tiered judgements (perfect/good/miss by default). Tiers need not be ordered.
  * @internal
  */
 export function classifyBeatAccuracy(
@@ -102,11 +100,8 @@ export function classifyBeatAccuracy(
   tiers: readonly BeatAccuracyTier[] = DEFAULT_BEAT_TIERS,
 ): BeatJudgement {
   const deltaSec = nearestBeatDelta(nowSec, beatDurationSec);
-  const magnitude = Math.abs(deltaSec);
-  for (const tier of tiers) {
-    if (magnitude <= tier.windowSec) return { tier: tier.id, deltaSec };
-  }
-  return { tier: "miss", deltaSec };
+  const tier = tierAt(tiers, Math.abs(deltaSec), { descending: true });
+  return { tier: tier?.id ?? "miss", deltaSec };
 }
 
 /** Whether a snapshot sits inside a bar-relative open window `[fromBeat, toBeat)` — e.g. "act on beats 2-4 of every bar" (#286.12).
