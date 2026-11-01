@@ -18,6 +18,7 @@ function sourceOf(roads: readonly RoadEnvironmentDescriptor[]): LiveRoadSource &
 }
 
 describe("withSwappableRoadSurface", () => {
+  // type-escape: a road descriptor needs only its materials for this proof
   const roads = [{ kind: "road", materials: { road: scan("dry"), sidewalk: scan("walk") } }] as unknown as readonly RoadEnvironmentDescriptor[];
 
   test("passes the base roads through until a surface is set, replacing only the named layer", () => {

@@ -1024,6 +1024,7 @@
     "./replay/useSessionRecorder.draw",
     "./roads/RoadJunctions.draw",
     "./roads/RoadRibbons.draw",
+    "./roads/liveRoadSurface",
     "./roads/pathRoads",
     "./roads/raceCircuit",
     "./roads/roads",

@@ -1292,6 +1292,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `solveLinearSystem` (function) · `import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra"`
 
+## live-road-surface — swap a road source's asphalt, sidewalk or kerb scan at runtime (wet at night, snow in winter)
+
+- `withSwappableRoadSurface` (function) · `import { withSwappableRoadSurface } from "@jgengine/core/roads/liveRoadSurface"`
+
 ## local-avoidance — bounded deterministic local collision avoidance for moving agents
 
 - `resolveLocalAvoidance` (function) · `import { resolveLocalAvoidance } from "@jgengine/core/world"`

@@ -590,7 +590,7 @@ export function setupWorld(ctx: GameContext): readonly BuildingFootprintXZ[] {
   ];
   const cargoKinds = ["obj_cargo", "obj_cargo_teal", "obj_cargo_amber"] as const;
   cargoSpots.forEach(([x, , z], i) => {
-    ctx.scene.object.place(cargoKinds[i % cargoKinds.length]!, Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
+    ctx.scene.object.place(cargoKinds[i % cargoKinds.length] ?? "obj_cargo", Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
       rotation: i % 2 === 0 ? 0 : Math.PI / 2,
     });
   });

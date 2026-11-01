@@ -6,7 +6,13 @@ import { editorLayers } from "../../editorLayers";
 /** Level of the bay's surface the hulls float on: the ocean's `level`, plus the draught the models carry. */
 const WATER_LEVEL = -0.4;
 
-type Vec2 = readonly [number, number];
+/** One straight leg of a circuit and the distance run when it begins. */
+interface Leg {
+  from: readonly [number, number];
+  to: readonly [number, number];
+  start: number;
+  length: number;
+}
 
 /** One authored `boat_route` or `air_route` path as a closed circuit a vessel runs at its own speed. */
 interface Circuit {
@@ -15,9 +21,9 @@ interface Circuit {
   speed: number;
   /** Metres above the route's ground (air routes) or the water (boat routes). */
   altitude: number;
-  points: readonly Vec2[];
-  /** Cumulative length at each point, last entry the whole loop. */
-  lengths: readonly number[];
+  legs: readonly Leg[];
+  /** The whole loop's length, metres. */
+  total: number;
 }
 
 function circuitOf(path: { id: string; points: readonly { x: number; z: number }[]; meta?: Record<string, unknown> }): Circuit | null {
@@ -25,15 +31,16 @@ function circuitOf(path: { id: string; points: readonly { x: number; z: number }
   const vessel = meta["vessel"];
   const speed = meta["speed"];
   if (typeof vessel !== "string" || typeof speed !== "number" || path.points.length < 3) return null;
-  const points = path.points.map((point): Vec2 => [point.x, point.z]);
-  const lengths = [0];
-  for (let i = 0; i < points.length; i += 1) {
-    const [ax, az] = points[i]!;
-    const [bx, bz] = points[(i + 1) % points.length]!;
-    lengths.push(lengths[i]! + Math.hypot(bx - ax, bz - az));
-  }
+  const legs: Leg[] = [];
+  let total = 0;
+  path.points.forEach((point, index) => {
+    const next = path.points[(index + 1) % path.points.length] ?? point;
+    const length = Math.hypot(next.x - point.x, next.z - point.z);
+    legs.push({ from: [point.x, point.z], to: [next.x, next.z], start: total, length });
+    total += length;
+  });
   const altitude = typeof meta["altitude"] === "number" ? meta["altitude"] : 0;
-  return { id: path.id, vessel, speed, altitude, points, lengths };
+  return { id: path.id, vessel, speed, altitude, legs, total };
 }
 
 /** Every ambient circuit the scene document authors: boats in the bay, a helicopter over the city. */
@@ -44,14 +51,12 @@ export const CIRCUITS: readonly Circuit[] = editorLayers.paths
 
 /** Where a vessel is after running `distance` metres of a circuit, and the heading it holds there. */
 export function circuitPose(circuit: Circuit, distance: number): { x: number; z: number; heading: number } {
-  const total = circuit.lengths[circuit.lengths.length - 1]!;
-  const along = ((distance % total) + total) % total;
-  let leg = 0;
-  while (leg < circuit.points.length - 1 && circuit.lengths[leg + 1]! <= along) leg += 1;
-  const [ax, az] = circuit.points[leg]!;
-  const [bx, bz] = circuit.points[(leg + 1) % circuit.points.length]!;
-  const span = circuit.lengths[leg + 1]! - circuit.lengths[leg]!;
-  const t = span <= 0 ? 0 : (along - circuit.lengths[leg]!) / span;
+  const along = ((distance % circuit.total) + circuit.total) % circuit.total;
+  const leg = circuit.legs.find((candidate) => along < candidate.start + candidate.length) ?? circuit.legs[circuit.legs.length - 1];
+  if (leg === undefined) return { x: 0, z: 0, heading: 0 };
+  const t = leg.length <= 0 ? 0 : (along - leg.start) / leg.length;
+  const [ax, az] = leg.from;
+  const [bx, bz] = leg.to;
   return { x: ax + (bx - ax) * t, z: az + (bz - az) * t, heading: Math.atan2(bx - ax, bz - az) };
 }
 
@@ -67,8 +72,7 @@ function poseOf(ctx: GameContext, circuit: Circuit, distance: number): { positio
 export function setupHarbourLife(ctx: GameContext): void {
   const life = lifeStore(ctx);
   CIRCUITS.forEach((circuit, index) => {
-    const total = circuit.lengths[circuit.lengths.length - 1]!;
-    const distance = ((index * 0.37) % 1) * total;
+    const distance = ((index * 0.37) % 1) * circuit.total;
     life.run.set(circuit.id, distance);
     life.ids.set(circuit.id, ctx.scene.entity.spawn(circuit.vessel, { id: `ambient_${circuit.id}`, ...poseOf(ctx, circuit, distance), role: "prop" }));
   });

@@ -12,7 +12,13 @@ export function isNightHour(hour: number): boolean {
   return hour >= LAMPS_ON || hour < LAMPS_OFF;
 }
 
-const nightStore = perContext(() => ({ lamps: [] as (readonly [number, number])[], pools: [] as string[], lit: false }));
+interface NightState {
+  lamps: (readonly [number, number])[];
+  pools: string[];
+  lit: boolean;
+}
+
+const nightStore = perContext((): NightState => ({ lamps: [], pools: [], lit: false }));
 
 function clearPools(ctx: GameContext): void {
   const night = nightStore(ctx);
