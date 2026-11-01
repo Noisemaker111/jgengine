@@ -206,7 +206,7 @@ export function createDecalTexture(style: DecalStyle, seed: string, size = 128, 
         // Sprayed paint through a stencil: lettering or a band of arrowheads, flaked where it has worn.
         const wear = smoothstep(0.3, 0.55, fbm(u * 16 + 2.2, v * 16 - 6.1, seedNumber + 31));
         let coverage = 0;
-        if (style === "stencil") coverage = stencilCoverage(paint.text || "00", x / size, y / size);
+        if (style === "stencil") coverage = stencilCoverage(paint.text || "00", x / size, 1 - (y + 0.5) / size);
         else {
           const row = (v + 0.5) * 3, local = row - Math.floor(row), arrow = Math.abs(u) * 1.2 + (1 - local) * 0.5;
           coverage = Math.abs(u) < 0.45 && arrow > 0.2 && arrow < 0.52 ? 1 : 0;
