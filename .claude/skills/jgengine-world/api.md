@@ -1355,6 +1355,25 @@
 - `twentyFootWind` (function): function twentyFootWind(tenMetreWind: number): number — 20-ft wind from a 10-m wind: divide by 1.15 (Turner & Lawson 1978, as in BehavePlus).
 - `windAdjustmentFactor` (function): function windAdjustmentFactor(fuelbedDepthM: number, canopy?: CanopyShelter): number — Wind adjustment factor from the 20-ft (6.1 m) open wind to midflame wind (Albini & Baughman 1979; Baughman & Albini 1980; Andrews 2012). Unsheltered fuel uses the fuel bed depth; fuel under a canopy that fills at least 5 % of the crown space and stands 6 ft or taller is sheltered.
 
+## @jgengine/core/flight/aeroTable
+
+- `AeroFactor` (type): type AeroFactor = "one" | "alpha" | "beta" | "signBeta" | "mach" | "pHat" | "qHat" | "rHat" | "alphaDotHat" | "pitch" | "roll" | "yaw" — What a coefficient term multiplies: `pHat`, `qHat` and `rHat` are the body rates made dimensionless (`p·b/2V`, `q·c̄/2V`, `r·b/2V`), `alphaDotHat` is `α̇·c̄/2V`, `pitch`, `roll` and `yaw` are the surface deflections, rad, and `signBeta` is the sign of the sideslip (for data tabled against `|β|`).
+- `AeroInput` (type): type AeroInput = "alpha" | "beta" | "absBeta" | "mach" | "pitch" | "roll" | "yaw" — What an {@link AeroTable} is looked up by. Angles and control-surface deflections are rad.
+- `AeroState` (interface): interface AeroState — The air data and controls the coefficient terms read.
+- `AeroSurfaceTravel` (interface): interface AeroSurfaceTravel — Where full pilot input puts a control surface, rad, at full positive (nose up, right roll, nose right) and full negative input.
+- `AeroTable` (interface): interface AeroTable — A gridded coefficient table: one breakpoint list per input (strictly increasing), values row-major with the last input varying fastest, multilinear between, held flat past the ends unless `extrapolate` is `"linear"`.
+- `AeroTerm` (interface): interface AeroTerm — One term of a coefficient build-up: a constant or a table, times a factor (default `"one"`).
+- `aeroTermValue` (function): function aeroTermValue(term: AeroTerm, state: AeroState): number — One term's contribution: its constant or table value times its factor.
+- `sampleAeroTable` (function): function sampleAeroTable(table: AeroTable, state: AeroState): number — Samples an {@link AeroTable} at the current air data, multilinear across its inputs; allocates nothing.
+- `sumAeroTerms` (function): function sumAeroTerms(terms: readonly AeroTerm[] | undefined, state: AeroState): number — Sums a coefficient build-up: each term's constant or table value times its factor.
+- `surfaceAngle` (function): function surfaceAngle(travel: AeroSurfaceTravel | undefined, share: number): number — The surface angle, rad, an actuator at `share` of its travel (`-1..1`) puts a surface at.
+
+## @jgengine/core/flight/afterburner
+
+- `AircraftAfterburner` (interface): interface AircraftAfterburner — The afterburner effect: throttle past the dry stop lights reheat, which adds thrust on top of full dry power once the core has spooled up to full dry.
+- `afterburnerCommand` (function): function afterburnerCommand(effect: AircraftAfterburner, strength: number, throttle: number): { dry: number; reheat: number } — Splits a throttle position into dry and afterburner commands, `0..1` each, at a strength: the dry stop moves from full throttle to `dryThrottle` up to strength 1.
+- `afterburnerRatio` (function): function afterburnerRatio(effect: AircraftAfterburner, strength: number): number — The thrust ratio at full afterburner over full dry, at a strength.
+
 ## @jgengine/core/flight/aircraftDynamics
 
 - `AircraftAssistCommand` (interface): interface AircraftAssistCommand — Control commands, `-1..1`, that drive the actuators after the assists.
@@ -1379,6 +1398,46 @@
 - `aircraftHeadingQuaternion` (function): function aircraftHeadingQuaternion(heading: number): AircraftQuaternion — Quaternion for a heading about world up, forward `[sin h, 0, cos h]`.
 - `createRigidAircraft` (function): function createRigidAircraft(initial: RigidAircraftTuning, options: RigidAircraftOptions = {}): RigidAircraft — Creates a {@link RigidAircraft}: a quaternion rigid body with a diagonal inertia tensor, pushed by lifting surfaces, fuselage drag, an engine and gravity. Controls deflect surfaces through rate-limited actuators; nothing commands a rotation rate, so a jet loops when its tail can push the nose around and a glider stalls when it runs out of speed. Fixed internal substeps make it deterministic for a given `dt` sequence.
 
+## @jgengine/core/flight/aircraftEffects
+
+- `AircraftEffects` (interface): interface AircraftEffects — The physical effects an aircraft can use. Each is a separate term with its own parameters and its own `strength`, a multiplier from `0` (off: the simple model's term) upward, where `1` is exactly what the reference measures and the dial keeps going past it; each file documents what the dial scales past `1` and its sane range. Between `0` and `1` a term blends from the simple model's value to the reference's. An effect left out keeps the simple model's term, so an arcade jet is a plain throttle and stick and a real one is `aircraftFromReference("f-16")`.
+- `effectStrength` (function): function effectStrength(effect: { strength?: number } | undefined): number — An effect's strength: `0` when absent, else its `strength` (default `1`), never below `0`.
+- `mixEffect` (function): function mixEffect(simple: number, physical: number, strength: number): number — Blends a simple term into the physical one up to strength 1, then scales the physical term with the strength.
+
+## @jgengine/core/flight/aircraftReferences
+
+- `AIRCRAFT_REFERENCE_IDS` (const): const AIRCRAFT_REFERENCE_IDS: readonly AircraftReferenceId[] — Every id {@link aircraftFromReference} accepts.
+- `AircraftOverrides` (type): type AircraftOverrides = Partial<Omit<RigidAircraftTuning, "effects">> & { effects?: { [K in keyof AircraftEffects]?: Partial<NonNullable<AircraftEffects[K]>> } } — Changes to a reference's defaults: any top-level field, and per effect the parameters or `strength` to change.
+- `AircraftReferenceId` (type): type AircraftReferenceId = "cessna-172" | "f-16" | "bo-105" | "saturn-v" | "trainer" | "jet" | "light-helicopter" | "rocket" — The published airframes {@link aircraftFromReference} knows, and the class names that start from them.
+- `aircraftFromReference` (function): function aircraftFromReference(id: AircraftReferenceId, overrides: AircraftOverrides = {}): RigidAircraftTuning — The full tuning of a published aircraft with every effect it has data for at full strength, so a game gets a real aircraft in one line and tunes from there: `createRigidAircraft(aircraftFromReference("cessna-172"))`. The class names start from the matching airframe: `trainer` the Cessna 172N, `jet` the F-16, `light-helicopter` the Bo-105, `rocket` the Saturn V S-IC. `overrides` change any top-level number and each effect's parameters or `strength` (`0` off … `1` as measured … past `1` stronger), so a fleet is data: one record per aircraft from a class plus a few overrides. An override retunes an effect the airframe has; add a new effect on the result. `bun run perf flight` checks each airframe against its reference sim.
+
+## @jgengine/core/flight/atmosphere
+
+- `AirSample` (interface): interface AirSample — Air state at one altitude.
+- `AircraftAtmosphere` (interface): interface AircraftAtmosphere — The standard atmosphere effect: air density, pressure and the speed of sound fall with altitude as the U.S. Standard Atmosphere 1976 gives them, so wings, rotors and engines lose their grip on the air as the aircraft climbs.
+- `SEA_LEVEL_AIR` (const): const SEA_LEVEL_AIR: Readonly<AirSample> — Sea-level standard air, SI units.
+- `atmosphereAt` (function): function atmosphereAt(effect: AircraftAtmosphere, strength: number, y: number, out: AirSample): AirSample — The air an aircraft at world height `y` flies in under an {@link AircraftAtmosphere} effect at its strength: each of density, pressure and speed of sound is its sea-level value times its standard-atmosphere ratio raised to the strength, so `0` is sea-level air and `1` the standard atmosphere.
+- `standardAir` (function): function standardAir(altitude: number, temperatureOffset = 0, out: AirSample = { density: 0, pressure: 0, temperature: 0, speedOfSound: 0 }): AirSample — The U.S. Standard Atmosphere 1976 (NOAA-S/T 76-1562) at a geometric altitude above mean sea level, m, from −5 km to 86 km: geopotential layers with their temperature gradients and hydrostatic pressure. `temperatureOffset`, K, shifts the whole temperature profile (a hot or cold day) at the standard pressures.
+
+## @jgengine/core/flight/autorotation
+
+- `AircraftAutorotation` (interface): interface AircraftAutorotation — The autorotation effect: rotor speed is a spinning inertia driven by the engine through a speed governor and slowed by the rotor's aerodynamic torque, so when the engine stops the rotor keeps turning on its stored energy, and air coming up through a descending disc drives it back toward flight speed. The airframe feels the engine's torque, not the rotor's, so a dead engine stops the yaw kick.
+- `AutorotationRates` (interface): interface AutorotationRates — One substep of rotor speed dynamics.
+- `autorotationRates` (function): function autorotationRates(effect: AircraftAutorotation, strength: number, speedShare: number, governor: number, throttle: number, rotorTorque: number, densityRatio: number, out: AutorotationRates): AutorotationRates — Rotor speed and governor rates for a speed share, governor integral, throttle (engine power share) and aerodynamic rotor torque, N·m, in air of `densityRatio` to sea level.
+- `settledGovernor` (function): function settledGovernor(effect: AircraftAutorotation, strength: number, rotorTorque: number): number — The governor integral that holds rated speed against a steady rotor torque, for a clean start.
+
+## @jgengine/core/flight/derivatives
+
+- `AircraftDerivatives` (interface): interface AircraftDerivatives extends AircraftAeroGeometry — The stability and control derivatives effect: whole-aircraft rolling, pitching and yawing moment coefficients from published data, so static stability, control power and the damping of each rate come out as measured. Roll rate under full aileron is set by aileron power against roll damping (`Clδa` against `Clp`), the short period by `Cmα`, `Cmq` and `Cmα̇`. At strength 1 these replace the lifting surfaces' moments.
+- `DerivativeMoments` (interface): interface DerivativeMoments — Moment coefficients split into static-and-control and damping parts.
+- `derivativeMoments` (function): function derivativeMoments(effect: AircraftDerivatives, state: AeroState, out: DerivativeMoments): DerivativeMoments — Sums the moment coefficients at an air state, keeping the damping part apart so the strength can scale it alone.
+
+## @jgengine/core/flight/engineSpool
+
+- `AircraftEngineSpool` (interface): interface AircraftEngineSpool — The engine spool effect: a turbine takes seconds to wind up, slowest from idle, so thrust follows the throttle through a lag whose time constant grows with the size of the step (the shape of Stevens and Lewis's F100 power lag, from NASA TP-1538), and a running engine at closed throttle still gives its idle thrust.
+- `spoolRate` (function): function spoolRate(effect: AircraftEngineSpool, strength: number, simpleRate: number, step: number): number — The spool's response rate, 1/s, for a step of `step` (share of the dry range) toward its target, at a strength: blends from the simple `spoolRate` up to strength 1, then divides by the strength.
+- `spoolThrust` (function): function spoolThrust(effect: AircraftEngineSpool, strength: number, spool: number): number — Thrust share of full dry thrust at a spool position `0..1`, with idle thrust blended in up to strength 1.
+
 ## @jgengine/core/flight/freeFlight
 
 - `CREATIVE_FLIGHT_TUNING` (const): const CREATIVE_FLIGHT_TUNING: FreeFlightTuning — Preset for Minecraft-like creative flight — weightless, collides, yaw-relative strafe.
@@ -1398,6 +1457,64 @@
 - `resolveFlightStep` (function): function resolveFlightStep(position: readonly [number, number, number], stepX: number, stepY: number, stepZ: number, obstacles: readonly CollisionObstacle[], radius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS): { stepX: number; stepY: number; stepZ: number } — Resolve a flight step against world solids (XZ slide + Y clamp).
 - `resolveFreeFlightIntent` (function): function resolveFreeFlightIntent(keys: MovementKeysState, analog: AnalogMoveIntent | null | undefined): FreeFlightIntent — Translate held keys + analog into a free-flight intent. Vertical is `space - (control|c)` so jump ascends and crouch descends — the same keys that walk/jump/crouch use, re-mapped for flight without re-binding.
 - `resolveFreeFlightIntentFromInput` (function): function resolveFreeFlightIntentFromInput(isDown: (action: string) => boolean, value: (action: string) => number, pointer: PointerAxisState | null, bindings?: FreeFlightBindings): FreeFlightIntent — Translate live input (held actions + analog + pointer) into a flight intent using per-profile axis bindings. Unlisted bindings fall back to the defaults above so existing games keep WASD/Space/Ctrl/Shift without declaring anything.
+
+## @jgengine/core/flight/machDrag
+
+- `AircraftMachDrag` (interface): interface AircraftMachDrag — The Mach drag effect: a body's drag coefficient by Mach number, so drag rises through the transonic hump the way a rocket's axial-force coefficient or an airliner's drag-divergence curve does. It replaces the tuning's constant `dragArea`.
+- `machDragArea` (function): function machDragArea(effect: AircraftMachDrag, mach: number): number — Drag area, m², at a Mach number before the strength: the tabled coefficient times the reference area.
+
+## @jgengine/core/flight/mainGear
+
+- `AircraftMainGear` (interface): interface AircraftMainGear — The main gear effect: on the ground the runway pushes up through the main wheels, behind the centre of mass, so the weight on the wheels holds the nose down and the elevator has to beat that moment before the nose lifts. That is what makes a heavy jet rotate late and a light aircraft rotate early.
+- `mainGearMoment` (function): function mainGearMoment(effect: AircraftMainGear, strength: number, load: number): number — Nose-down pitching moment, N·m, from a ground reaction `load`, N, at the main wheels.
+
+## @jgengine/core/flight/nozzle
+
+- `AircraftNozzle` (interface): interface AircraftNozzle — The nozzle pressure effect of a rocket motor: the motor's thrust curve is its vacuum thrust, and the air pressing on the nozzle exit takes back `p∞·Aₑ`, so a first stage gains about a sixth of its thrust as it climbs out of the air. Mass flow stays tied to the vacuum thrust (constant vacuum specific impulse).
+- `nozzleThrust` (function): function nozzleThrust(effect: AircraftNozzle, strength: number, vacuumThrust: number, peakThrust: number, ambientPressure: number): number — Delivered thrust, N, for the curve's vacuum thrust, its peak and the ambient pressure, Pa.
+
+## @jgengine/core/flight/polar
+
+- `AircraftAeroGeometry` (interface): interface AircraftAeroGeometry — Reference geometry and conventions for whole-aircraft coefficient data (the `polar` and `derivatives` effects): forces are `q̄·S·C`, rolling and yawing moments `q̄·S·b·C`, pitching moments `q̄·S·c̄·C`.
+- `AircraftPolar` (interface): interface AircraftPolar extends AircraftAeroGeometry — The lift and drag polar effect: whole-aircraft lift, drag and side-force coefficients from published data (tables by angle of attack, sideslip and deflection, plus rate and control terms), with induced drag in the drag polar and the stall in the lift curve. Lift acts across the relative wind in the plane of symmetry, drag along it, side force along the body's right; at strength 1 they replace the lifting surfaces' forces (the surfaces still give the moments unless the `derivatives` effect is on).
+- `PolarCoefficients` (interface): interface PolarCoefficients — Whole-aircraft force coefficients at one air state.
+- `polarCoefficients` (function): function polarCoefficients(effect: AircraftPolar, state: AeroState, out: PolarCoefficients): PolarCoefficients — Sums the polar's lift, drag and side-force coefficients at an air state.
+
+## @jgengine/core/flight/propeller
+
+- `AircraftPropeller` (interface): interface AircraftPropeller — The propeller effect: a piston engine turns a fixed-pitch propeller whose thrust and power coefficients follow the advance ratio `J = V/nD` and tip Mach number, so static thrust is high and falls off with airspeed, and the shaft speed settles where engine torque meets propeller torque. Engine torque lapses with air density (Gagg–Ferrar); the shaft's torque reaction rolls the airframe and its spin adds gyroscopic moments.
+- `C172_PROPELLER_POWER` (const): const C172_PROPELLER_POWER: readonly number[] — McCauley 1C160/DTM7553 power coefficients, same grid.
+- `C172_PROPELLER_THRUST` (const): const C172_PROPELLER_THRUST: readonly number[] — McCauley 1C160/DTM7553 thrust coefficients from the reference blade-element solver, by advance ratio then tip Mach.
+- `PropellerLoads` (interface): interface PropellerLoads — What the propeller does at one shaft speed.
+- `propellerLoads` (function): function propellerLoads(effect: AircraftPropeller, omega: number, axial: number, throttle: number, density: number, speedOfSound: number, out: PropellerLoads): PropellerLoads — Propeller thrust and torque and engine torque at a shaft speed, rad/s, axial airspeed, m/s, throttle `0..1` and air.
+- `propellerThrust` (function): function propellerThrust(simple: number, physical: number, strength: number): number — Delivered thrust at a strength: a blend from the simple thrust to the propeller's up to strength 1, then the propeller's thrust times its ratio to the simple thrust raised to the extra strength.
+- `settledShaftSpeed` (function): function settledShaftSpeed(effect: AircraftPropeller, axial: number, throttle: number, density: number, speedOfSound: number): number — The shaft speed, rad/s, where engine torque meets propeller torque at a throttle, axial airspeed and air.
+
+## @jgengine/core/flight/rotatingEarth
+
+- `AircraftRotatingEarth` (interface): interface AircraftRotatingEarth — The rotating Earth effect: the world is a patch of a spinning sphere, origin on its surface. Gravity points at the centre and falls with the inverse square of distance, so a fast flight downrange curves over the horizon and feels lighter, and the frame's spin adds Coriolis and centrifugal accelerations. Velocities stay Earth-relative; the space-fixed velocity (what an orbit needs) comes from {@link rotatingEarthFrame}.
+- `RotatingEarthFrame` (interface): interface RotatingEarthFrame — Where a world point sits on the rotating planet.
+- `rotatingEarthAcceleration` (function): function rotatingEarthAcceleration(effect: AircraftRotatingEarth, strength: number, position: AircraftVector, velocity: AircraftVector, simple: AircraftVector, out: [number, number, number]): [number, number, number] — Acceleration, m/s² world axes, at a position and Earth-relative velocity: gravity toward the centre blended from the flat field (`simple`) up to strength 1, plus Coriolis and centrifugal terms for the frame's spin.
+- `rotatingEarthFrame` (function): function rotatingEarthFrame(effect: AircraftRotatingEarth, strength: number, position: AircraftVector, velocity: AircraftVector): RotatingEarthFrame — Altitude, local vertical, space-fixed velocity and surface range of a world point and Earth-relative velocity.
+
+## @jgengine/core/flight/rotorInflow
+
+- `AircraftRotorInflow` (interface): interface AircraftRotorInflow — The rotor inflow effect: blade-element thrust and torque over the disc with momentum inflow, so thrust at a fixed collective falls in a climb, rises in a descent (through the vortex ring state on Leishman's empirical curve), rises with forward speed as the induced flow is blown away (translational lift), and rises near the ground (Cheeseman–Bennett, fading with forward speed). Torque is induced and climb power plus Bailey's profile drag. The collective lever `0..1` sets blade pitch through `collective`.
+- `RotorInflowLoads` (interface): interface RotorInflowLoads — What the rotor does at one condition.
+- `rotorInflowLoads` (function): function rotorInflowLoads(effect: AircraftRotorInflow, strength: number, radius: number, lever: number, speedShare: number, climb: number, edgewise: number, density: number, height: number, inflow: number, out: RotorInflowLoads): RotorInflowLoads — Rotor thrust and torque at a collective lever `0..1`, rotor speed (share of rated), axial velocity through the disc (m/s, positive climbing), edgewise speed (m/s), air density and hub height above the ground (m). `inflow` is the previous induced inflow ratio; the solve relaxes from it until it settles, so calling every substep costs a step or two.
+
+## @jgengine/core/flight/thrustLapse
+
+- `AircraftThrustLapse` (interface): interface AircraftThrustLapse — The thrust lapse effect of a jet engine: thrust at full dry (and full afterburner) power changes with altitude and Mach number, the way a real engine loses most of its thrust in thin air and regains some from ram pressure. Ratios are to sea-level static thrust; between breakpoints they are bilinear, past the ends held flat.
+- `F100_DRY_LAPSE` (const): const F100_DRY_LAPSE: readonly number[] — F100-PW-220 installed thrust lapse from the reference engine cycle (`scripts/reference/flight/gasTurbine.ts`, sized to the published ratings and fitted to NASA TP-1538's F-16 thrust tables): full dry thrust over sea-level static.
+- `F100_WET_LAPSE` (const): const F100_WET_LAPSE: readonly number[] — F100-PW-220 full afterburner thrust lapse from the same cycle, over its sea-level static value.
+- `lapseRatio` (function): function lapseRatio(effect: AircraftThrustLapse, altitude: number, mach: number, afterburner: boolean): number — The tabled thrust ratio at an altitude above mean sea level, m, and Mach, before the strength.
+- `thrustLapse` (function): function thrustLapse(effect: AircraftThrustLapse, strength: number, y: number, mach: number, afterburner: boolean): number — The thrust multiplier the lapse effect applies at a strength: a blend from `1` (no lapse) to the tabled ratio up to strength 1, then the ratio raised to the strength.
+
+## @jgengine/core/flight/wingGroundEffect
+
+- `AircraftWingGroundEffect` (interface): interface AircraftWingGroundEffect — The wing ground effect: near the ground the wingtip vortices are squashed and induced drag falls, which shortens the take-off roll and lets an aircraft float in the flare. McCormick's factor `φ = (16h/b)² / (1 + (16h/b)²)` scales the induced drag at wing height `h` over span `b`.
+- `inducedDragFactor` (function): function inducedDragFactor(effect: AircraftWingGroundEffect, strength: number, heightAboveGround: number): number — Share of free-air induced drag left at a centre-of-gravity height above the ground, `0..1`, at a strength.
 
 ## @jgengine/core/fracture/convexCell
 

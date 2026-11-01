@@ -937,7 +937,7 @@
   "packages/core/src/feed/feed.test.ts": {"cast":1},
   "packages/core/src/feed/feed.ts": {"cast":2},
   "packages/core/src/flight/aircraftDynamics.test.ts": {"nonNull":29},
-  "packages/core/src/flight/aircraftDynamics.ts": {"nonNull":20},
+  "packages/core/src/flight/aircraftDynamics.ts": {"nonNull":19},
   "packages/core/src/flight/freeFlight.ts": {"nonNull":2},
   "packages/core/src/game/clipRoles.test.ts": {"nonNull":2,"cast":1},
   "packages/core/src/game/connectedPlayers.test.ts": {"cast":3},
