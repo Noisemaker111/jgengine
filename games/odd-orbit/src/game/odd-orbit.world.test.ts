@@ -50,7 +50,10 @@ describe("odd-orbit world", () => {
     expect(world.sculpt).toBe(editorLayers.terrain);
     const paint = editableTerrainFromSnapshot(world.sculpt);
     expect(paint.surfaceAt(0, -2)).toBe("grass");
-    expect(paint.surfaceAt(8, 4)).toBe("sand");
+    expect(paint.surfaceAt(0, 6)).toBe("sand");
+    expect(paint.surfaceAt(-6, -4.5)).toBe("tile");
+    expect(paint.surfaceAt(6.5, -4.5)).toBe("wood");
+    expect(paint.surfaceAt(8, 4)).toBe("plastic");
     expect(paint.surfaceAt(26, 20)).toBe("rock");
     expect(world.sculpt.offsets.every(offset => offset === 0)).toBe(true);
     expect(world.sky?.timeOfDay).toBe(false);
