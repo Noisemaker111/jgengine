@@ -1,6 +1,5 @@
-import type { BreedingSpecies } from "@jgengine/core/breeding/breeding";
+import type { BreedingSpecies, GrowthStage } from "@jgengine/core/breeding/breeding";
 import { pickWeighted } from "@jgengine/core/random/pick";
-import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 
 import type { TameStat } from "./species";
 
@@ -77,13 +76,18 @@ const ROWS: Readonly<Record<string, Row>> = {
   iguanodon: [[24, 28], "1:25", "1d 22:17"],
 };
 
+/** The °C range an egg of this species incubates in, or null when she carries her young instead. */
+export function incubationBand(species: string): readonly [number, number] | null {
+  return ROWS[species]?.[0] ?? null;
+}
+
 /** How a species breeds, or null for one that cannot. A pair must stand within two body widths and a bit (approximate). */
 export function breedingOf(species: string, radius: number): BreedingSpecies | null {
   const row = ROWS[species];
   if (row === undefined) return null;
   const [incubation, carry, maturation] = row;
   return {
-    egg: incubation === null ? null : { band: incubation, healthSeconds: EGG_HEALTH_SECONDS },
+    egg: incubation === null ? null : { incubation: { all: [{ gte: ["temperature", incubation[0]] }, { lte: ["temperature", incubation[1]] }] }, healthSeconds: EGG_HEALTH_SECONDS },
     carrySeconds: time(carry),
     maturationSeconds: time(maturation),
     mateSeconds: MATE_SECONDS,
@@ -92,12 +96,11 @@ export function breedingOf(species: string, radius: number): BreedingSpecies | n
   };
 }
 
-/** ARK's baby stages: a baby to 10% grown, a juvenile to 50%, then an adolescent until it is grown. */
-export const BREEDING_STAGES: readonly ThresholdBoundary[] = [
-  { id: "baby", at: 0 },
-  { id: "juvenile", at: 0.1 },
-  { id: "adolescent", at: 0.5 },
-  { id: "adult", at: 1 },
+/** ARK's baby stages as shares of the maturation time: a baby for 10%, a juvenile for 40%, an adolescent for the last 50%. */
+export const BREEDING_STAGES: readonly GrowthStage[] = [
+  { id: "baby", share: 0.1 },
+  { id: "juvenile", share: 0.4 },
+  { id: "adolescent", share: 0.5 },
 ];
 
 /** Chance of twins and of triplets when a pair conceives (ARK). */

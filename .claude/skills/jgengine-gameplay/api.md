@@ -141,7 +141,7 @@
 ## @jgengine/core/breeding/breeding
 
 - `BreedingEgg` (interface): interface BreedingEgg<P> — A fertilized egg lying where it was laid, carrying its young one's genes `P`; it progresses only inside its incubation band.
-- `BreedingEggSpec` (interface): interface BreedingEggSpec — An egg's temperature band in °C, inclusive, and the seconds it survives out of that band before it is lost.
+- `BreedingEggSpec` (interface): interface BreedingEggSpec — An egg's incubation condition and the seconds it survives while the condition fails before it is lost.
 - `BreedingEvent` (type): type BreedingEvent<P> = | { type: "conceived"; mother: string; father: string; species: string; count: number } | { type: "laid"; egg: BreedingEgg<P> } | { type: "hatched"; egg: BreedingEgg<P> } | { type: "eggLost"; egg: BreedingEgg<P> } | { type: "born"; mother: string; species: string; offspring: … — What happened this tick.
 - `BreedingField` (interface): interface BreedingField<P> — The breeding of a world's creatures, made by {@link createBreedingField}.
 - `BreedingOffspring` (interface): interface BreedingOffspring — A young one growing up: its stage, how far it has grown (0-1), its bond (0-1), the care it wants now and when it next asks.
@@ -150,6 +150,7 @@
 - `BreedingSnapshot` (interface): interface BreedingSnapshot<P> — Everything a breeding field holds, for a save: mating progress, cooldowns, pregnancies, eggs, the growing young and speeds.
 - `BreedingSpecies` (interface): interface BreedingSpecies — How one species breeds.
 - `BreedingSpeeds` (interface): interface BreedingSpeeds — How much faster each part of breeding runs than its times say. All start at 1.
+- `GrowthStage` (interface): interface GrowthStage — One growth stage: its name and the share of a species' maturation time it lasts. Shares add up to 1.
 - `MateCandidate` (interface): interface MateCandidate — A creature offered for mating this tick.
 - `createBreedingField` (function): function createBreedingField<P>(options: BreedingOptions<P>): BreedingField<P> — Pairs left together mate, a mother lays an egg that hatches only in its temperature band or carries her young to birth, then waits a while before mating again. The young, rolled at conception, grow at the species' pace through the game's stage list and ask for care on an interval; each answered request adds its share of the bond. Species times, care kinds, stages, the size of a litter and what a young one is all come from the game.
 
