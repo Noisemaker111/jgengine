@@ -8,6 +8,7 @@ const VILLAGE = "quaternius-lowpoly-medieval-village-pack";
 const BUILDINGS = "quaternius-lowpoly-medieval-buildings";
 const PROPS = "quaternius-fantasy-props";
 const NATURE = "quaternius-stylized-nature";
+const CROPS = "quaternius-lowpoly-crops-pack";
 
 const VANGUARD = "#3a78c4";
 const MARAUDER = "#c93a2a";
@@ -38,7 +39,7 @@ const plan: Record<string, ModelPick> = {
   hero: troop("Cleric", 2.65, VANGUARD),
   grunt: troop("Rogue", 2.3, MARAUDER),
   reaver: troop("Warrior", 2.65, MARAUDER),
-  keep_player: { model: `${BUILDINGS}/LargeSquareTowerBricks`, style: { targetHeight: 7, material: { color: "#9fb6dc" } } },
+  keep_player: { model: `${BUILDINGS}/LargeSquareTowerBricks`, style: { targetHeight: 7, material: { color: "#aebdd8" } } },
   keep_enemy: { model: `${BUILDINGS}/LargeTower`, style: { targetHeight: 7, material: { color: "#e8b3a6" } } },
   warcamp: building(`${VILLAGE}/Stable`, 4.4, MARAUDER_ROOF),
   barracks: building(`${VILLAGE}/Stable`, 4.6, VANGUARD_ROOF),
@@ -67,3 +68,24 @@ export const entityModels: Record<string, ModelConfig> = Object.fromEntries(
     BATCHED_TROOPS.has(id) ? { ...model, lod: { crowdDistance: 0 } } : model,
   ]),
 );
+
+const RUST = "#e0883c";
+const GOLD = "#f0c85a";
+const OLIVE = "#c8b060";
+
+function canopy(model: string, tint: string, material: string, scale = 1): ModelPick {
+  return { model: `${NATURE}/${model}`, style: { scale, material: { color: tint, materials: [material] }, wind: { strength: 0.25, speed: 0.8 } } };
+}
+
+/** Scatter palette items in editor.scene.json → the autumn Quaternius set: rust and gold broadleaf, olive pines. */
+export const scatterModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
+  pine: canopy("Pine_2", OLIVE, "Leaves_Pine", 0.5),
+  tree: canopy("CommonTree_2", RUST, "Leaves_NormalTree", 0.5),
+  oak: canopy("CommonTree_4", GOLD, "Leaves_NormalTree", 0.5),
+  bush: canopy("Bush_Common", "#e8b04a", "Leaves_TwistedTree", 0.5),
+  rock: { model: `${NATURE}/Rock_Medium_1`, style: { scale: 0.5 } },
+  stone: { model: `${NATURE}/Rock_Medium_3`, style: { scale: 0.35 } },
+  leaf: { model: `${NATURE}/Petal_2`, style: { scale: 0.5, material: { color: RUST } } },
+  wheat: { model: `${CROPS}/Wheat_Crop`, style: { scale: 1 } },
+  pumpkin: { model: `${CROPS}/Pumpkin_Crop`, style: { scale: 1 } },
+});

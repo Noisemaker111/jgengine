@@ -41,6 +41,19 @@ describe("dev provisions what a game references", () => {
   });
 });
 
+describe("a library surface name pulls its material pack", () => {
+  test("a scene layer naming foliage/grass-dry provisions ambientcg-grass004 once", () => {
+    const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));
+    try {
+      const materials = [{ name: "foliage/grass-dry", source: "ambientcg-grass004" }, { name: "ground/rock", source: "ambientcg-rock022" }];
+      const text = `{ "material": "foliage/grass-dry" } librarySurfaceScan("foliage/grass-dry")`;
+      expect(missingPulls(text, publicDir, { ...catalogs, materials }).map((job) => job.target)).toEqual(["ambientcg-grass004"]);
+    } finally {
+      rmSync(publicDir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("an alias pulls the pack it resolves into", () => {
   test("asset:prop_crate in a game's source provisions the pack behind it", () => {
     const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));

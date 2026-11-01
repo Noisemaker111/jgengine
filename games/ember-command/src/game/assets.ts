@@ -10,5 +10,6 @@ export const assets: AssetCatalog = buildCatalog({
     "quaternius-lowpoly-medieval-buildings",
     "quaternius-fantasy-props",
     "quaternius-stylized-nature",
+    "quaternius-lowpoly-crops-pack",
   ],
 });

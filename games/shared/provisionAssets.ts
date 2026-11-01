@@ -20,6 +20,8 @@ export interface AssetCatalogs {
   aliases?: readonly { key: string; target: string }[];
   /** Shared-library keys (`gameicons:lorc/wheat`, `polyhaven:ArmChair_01`): what to pull and where it is served. */
   libraryPull?: (key: string) => LibraryPullJob | undefined;
+  /** Library surfaces (`foliage/grass-dry`) and the material pack each is scanned from, so naming one in source or in a scene layer serves its maps. */
+  materials?: readonly { name: string; source?: string | undefined }[];
   /** Curated HDRIs, colour grades and fonts a game's source names by id (`hdriEnvironment("golden-hour")`). */
   lookJobs?: (text: string) => readonly { target: string; dir: string }[];
 }
@@ -62,6 +64,11 @@ export function missingPulls(text: string, publicDir: string, catalogs: AssetCat
     if (entry.origin.provider === "generated" || !text.includes(`"${entry.name}"`)) continue;
     const dir = join("models", "library", ...entry.name.split("/"));
     if (!dirHasEntries(join(publicDir, dir))) jobs.push({ target: `model:${entry.name}`, dir });
+  }
+  for (const material of catalogs.materials ?? []) {
+    if (material.source === undefined || !quoted(material.name)) continue;
+    const dir = join("materials", material.source);
+    if (!dirHasEntries(join(publicDir, dir)) && !jobs.some((other) => other.dir === dir)) jobs.push({ target: material.source, dir });
   }
   for (const look of catalogs.lookJobs?.(text) ?? []) {
     if (!dirHasEntries(join(publicDir, look.dir))) jobs.push({ target: look.target, dir: look.dir });
@@ -111,6 +118,7 @@ export async function loadCatalogs(): Promise<AssetCatalogs> {
     sources: AssetCatalogs["sources"];
     MODEL_LIBRARY?: AssetCatalogs["library"];
     aliases?: AssetCatalogs["aliases"];
+    MATERIAL_LIBRARY?: AssetCatalogs["materials"];
   };
   const index: typeof import("../../packages/assets/src/library/libraryIndex") = await import(join(assetsDir, "src/library/libraryIndex.ts"));
   const served: typeof import("../../packages/assets/src/library/libraryServed") = await import(join(assetsDir, "src/library/libraryServed.ts"));
@@ -122,7 +130,7 @@ export async function loadCatalogs(): Promise<AssetCatalogs> {
     return { target: entry.pack ?? entry.key, dir: join(...path.dir.split("/")), url: path.url };
   };
   const curated: typeof import("../../packages/assets/src/catalogs/curatedPull") = await import(join(assetsDir, "src/catalogs/curatedPull.ts"));
-  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [], libraryPull, lookJobs: curated.curatedJobsIn };
+  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [], materials: module.MATERIAL_LIBRARY ?? [], libraryPull, lookJobs: curated.curatedJobsIn };
 }
 
 function runPull(cwd: string, target: string, outRoot: string): Promise<boolean> {
@@ -147,7 +155,7 @@ export async function provisionGame(
   gameDir: string,
   options: { log?: (line: string) => void; download?: boolean; env?: Readonly<Record<string, string | undefined>> } = {},
 ): Promise<ProvisionResult> {
-  const jobs = missingPulls(referencedAssetText(gameDir), join(gameDir, "public"), await loadCatalogs());
+  const jobs = missingPulls(gameAssetText(gameDir), join(gameDir, "public"), await loadCatalogs());
   return provisionJobs(gameDir, jobs, { pull: (target, outRoot) => runPull(gameDir, target, outRoot), log: options.log, download: options.download, env: options.env });
 }
 

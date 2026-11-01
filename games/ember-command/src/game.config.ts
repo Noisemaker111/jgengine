@@ -5,7 +5,7 @@ import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { EMBER_SOUNDS } from "./game/audio";
 import { content } from "./game/content";
-import { entityModels } from "./game/models";
+import { entityModels, scatterModels } from "./game/models";
 import { isPlayerSelectable } from "./game/session";
 import { systems } from "./game/systems";
 import { GameUI } from "./game/ui/GameUI";
@@ -121,6 +121,7 @@ export const game = defineGame({
       },
     },
   },
+  sceneScatterModels: scatterModels,
   scenePlacement: false,
   rendering: {
     // Soft shadows read well but are the dominant cost under software WebGL; a single 1024 map keeps
