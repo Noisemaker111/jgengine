@@ -25,6 +25,8 @@ export const game = defineGame({
     WorldOverlay: () => createElement(SceneCaptureBinding, {}),
     entityModels,
     objectModels,
+    // The corridor's far stretch draws as one merged proxy per cell.
+    visibility: { hlod: { distance: 300, hysteresis: 30, cluster: 1 } },
   },
   // The authored gull habitats circle the dumps; the species name is the document's, the model is the game's.
   sceneFlockModels: flockModels,

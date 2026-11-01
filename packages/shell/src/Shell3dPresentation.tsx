@@ -69,6 +69,7 @@ import {
 } from "@jgengine/core/input/selectionGesture";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "@jgengine/core/audio/AudioComponents.draw";
 import { skipCulledMatrices } from "@jgengine/core/visibility/culledTransforms.draw";
+import { StaticDrawPoolDriver } from "@jgengine/core/instancing/StaticObjectModels.draw";
 import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
 import { PostProcessing } from "@jgengine/core/postfx/PostProcessing.draw";
 import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
@@ -778,6 +779,7 @@ export function Shell3dPresentation({
                     <CharacterMotionContext.Provider value={playable.scene?.characterMotion}>
                     <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.scene?.visibility} cullingDisabled={splitScreen}>
                     <CullingProvider config={playable.scene?.visibility} drawDistance={graphics.profile.drawDistance}>
+                      <StaticDrawPoolDriver hlod={playable.scene?.visibility?.hlod} />
                       <BootSuspenseGuard area="the world">
                       <FirstPersonBodyContext.Provider value={firstPersonBody}>
                       <WorldView

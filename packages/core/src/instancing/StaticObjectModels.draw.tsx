@@ -22,6 +22,7 @@ import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, typ
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import { staticDrawPoolFor, type StaticDrawSlot } from "./staticDrawPool.draw";
+import type { HlodConfig } from "@jgengine/core/visibility/config";
 import { canInstanceStaticScene, countStaticBatchDraws, staticBatchCell, gatherStaticMembers, harvestStaticPieces, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, staticModelPieces, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
 
 /**
@@ -123,7 +124,22 @@ function PooledObjectSource({ slot, source, members, objects }: {
     scratch.updateMatrix();
     return out.multiplyMatrices(scratch.matrix, source.localMatrix);
   }, [scratch, source]);
-  useFrame(() => slot.sync(members.current, slotOf, matrixOf), CAMERA_POST_FRAME_PRIORITY + 0.2);
+  const ctx = useGameContext();
+  const placedAt = useRef<{ slot: StaticDrawSlot; version: number } | null>(null);
+  const live = useMemo(() => [] as SceneObject[], []);
+  useFrame(() => {
+    const version = ctx.scene.object.version();
+    if (placedAt.current?.slot !== slot || placedAt.current.version !== version) {
+      placedAt.current = { slot, version };
+      live.length = 0;
+      for (const object of objects) {
+        const current = ctx.scene.object.get(object.instanceId);
+        if (current !== null) live.push(current);
+      }
+      slot.place(live, slotOf, matrixOf);
+    }
+    slot.sync(members.current, slotOf, matrixOf);
+  }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   return null;
 }
 
@@ -389,6 +405,28 @@ export function VariantStaticObjects({ batch, single }: { batch: StaticObjectBat
     ))}
     {excluded.map((id) => { const live = ctx.scene.object.get(id); return live === null ? null : single(live); })}
   </>;
+}
+
+/**
+ * Keeps the scene's static draw pool on the game's far-cell proxy settings and switches each cell
+ * between its batches and its proxy as the camera moves.
+ * @internal
+ */
+export function StaticDrawPoolDriver({ hlod }: { hlod: HlodConfig | undefined }) {
+  const scene = useThree((state) => state.scene);
+  const pool = staticDrawPoolFor(scene);
+  const distance = hlod?.distance;
+  const hysteresis = hlod?.hysteresis;
+  const cluster = hlod?.cluster;
+  useEffect(() => {
+    pool.configure(distance === undefined || hysteresis === undefined || cluster === undefined ? null : { distance, hysteresis, cluster });
+    return () => pool.configure(null);
+  }, [pool, distance, hysteresis, cluster]);
+  const eye = useMemo(() => new THREE.Vector3(), []);
+  useFrame((state) => {
+    if (distance !== undefined) pool.update(state.camera.getWorldPosition(eye));
+  }, CAMERA_POST_FRAME_PRIORITY + 0.18);
+  return null;
 }
 
 /** Render compatible authored or `scenery` props as shared model draws, preserving unsupported models. @internal */

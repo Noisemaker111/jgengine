@@ -3,6 +3,9 @@ import * as THREE from "three";
 import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { batchHookSignature, compilesBatched, isHookUserData, isLayerDefine, isLayerUserData, ownCacheKey, withoutCompileLayers } from "@jgengine/core/material/compileLayers.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
+import { runSliced, type SlicedRun } from "@jgengine/core/run/slicedWork";
+import type { HlodConfig } from "@jgengine/core/visibility/config";
+import { cellProxyJob, type ProxyPart } from "./cellProxy.draw";
 import { showCulled } from "@jgengine/core/visibility/culledTransforms.draw";
 
 /** Marks the `BatchedMesh` draws a {@link StaticDrawPool} owns. @internal */
@@ -21,9 +24,39 @@ export interface PooledPlacement {
   readonly instanceId: string;
 }
 
+/** Marks the merged far proxies a {@link StaticDrawPool} draws. @internal */
+export const STATIC_POOL_PROXY_KEY = "jgStaticDrawProxy";
+
+/**
+ * Edge in metres of the cells far proxies stand in for. Finer than a batch's cell: a block of a city
+ * goes far while the batch it shares with the street the camera stands on stays near, its props hidden
+ * one instance at a time.
+ * @internal
+ */
+export const STATIC_PROXY_CELL = 128;
+
+interface ProxyCell {
+  readonly key: string;
+  /** Each member is one slot instance placed inside the cell. */
+  readonly members: Set<ProxyMember>;
+  readonly sphere: THREE.Sphere;
+  boundsDirty: boolean;
+  far: boolean;
+  /** Bumped whenever a placement in the cell is added, moved or removed. */
+  version: number;
+  proxy: THREE.Mesh | null;
+  proxyVersion: number;
+}
+
+interface ProxyMember {
+  readonly slot: StaticDrawSlot;
+  readonly index: number;
+}
+
 interface PoolGroup {
   readonly key: string;
   readonly mesh: THREE.BatchedMesh;
+  readonly slots: Set<StaticDrawSlot>;
   readonly material: THREE.Material;
   /** Placement id per batch instance, read by picking. */
   readonly ids: string[];
@@ -216,13 +249,56 @@ export function shownPooledIds(mesh: THREE.BatchedMesh, into: Set<string>): void
  * material draws once instead of once per model and material. Culling stays per instance (a prop the
  * visibility pass culls is hidden in its batch, and three culls the rest per instance against every
  * camera, shadow cascades included), and the cell keeps each batch's bounds small enough for three's
- * own frustum test to drop the whole batch.
+ * own frustum test to drop the whole batch. With {@link HlodConfig} set, each {@link STATIC_PROXY_CELL}
+ * far enough away draws one merged proxy and hides its props in their batches.
  * @internal
  */
 export class StaticDrawPool {
   private readonly groups = new Map<string, PoolGroup>();
+  private readonly cells = new Map<string, ProxyCell>();
+  private hlod: HlodConfig | null = null;
+  private building: { cell: ProxyCell; run: SlicedRun<THREE.BufferGeometry> } | null = null;
+  private proxyMaterial: THREE.MeshStandardMaterial | null = null;
 
   constructor(private readonly parent: THREE.Object3D) {}
+
+  /** Turn far-cell proxies on with a game's distances, or off with null (every prop draws in its batch). */
+  configure(hlod: HlodConfig | null): void {
+    if (hlod !== null && !(hlod.distance > 0 && hlod.hysteresis >= 0 && hlod.cluster > 0)) {
+      throw new Error("hlod needs a positive distance and cluster size and a non-negative hysteresis");
+    }
+    const cluster = this.hlod?.cluster;
+    this.hlod = hlod;
+    for (const cell of this.cells.values()) {
+      if (hlod === null || hlod.cluster !== cluster) this.dropProxy(cell);
+      if (hlod === null) this.switchCell(cell, false);
+    }
+  }
+
+  /**
+   * Switch each proxy cell between its props and its proxy for a camera at `eye`, and build at most one
+   * stale proxy at a time in small slices. Bounded per frame: one distance test per cell. Run it before
+   * the slots sync, so a cell's props and its proxy change over in the same frame.
+   */
+  update(eye: THREE.Vector3): void {
+    const hlod = this.hlod;
+    if (hlod === null) return;
+    for (const cell of this.cells.values()) {
+      if (cell.boundsDirty) refreshCellBounds(cell);
+      if (cell.sphere.isEmpty()) continue;
+      const distance = Math.max(0, cell.sphere.distanceToPoint(eye));
+      const far = cell.far ? distance > hlod.distance - hlod.hysteresis / 2 : distance > hlod.distance + hlod.hysteresis / 2;
+      if (far && (cell.proxy === null || cell.proxyVersion !== cell.version)) this.buildProxy(cell, hlod);
+      if (far !== cell.far) this.switchCell(cell, far);
+    }
+  }
+
+  /** Cells drawing their proxy right now. */
+  proxiesShown(): number {
+    let shown = 0;
+    for (const cell of this.cells.values()) if (cell.proxy?.visible === true) shown += 1;
+    return shown;
+  }
 
   /** Batches the pool holds. */
   batches(): number {
@@ -270,17 +346,118 @@ export class StaticDrawPool {
       instances.push(id);
     }
     group.instances += capacity;
-    return new StaticDrawSlot(this, group, batchableGeometry(source.geometry), instances);
+    const slot = new StaticDrawSlot(this, group, batchableGeometry(source.geometry), instances);
+    group.slots.add(slot);
+    return slot;
   }
 
-  /** Remove every batch from the scene and free its buffers. */
+  /** Remove every batch and proxy from the scene and free their buffers. */
   dispose(): void {
+    this.building?.run.cancel();
+    this.building = null;
     for (const group of this.groups.values()) disposeGroup(group);
+    for (const cell of this.cells.values()) this.dropProxy(cell);
     this.groups.clear();
+    this.cells.clear();
+    this.proxyMaterial?.dispose();
+    this.proxyMaterial = null;
+  }
+
+  /** Whether a member's props give way to its cell's proxy. @internal */
+  proxied(cell: ProxyCell | null): boolean {
+    return cell !== null && cell.far && cell.proxy !== null;
+  }
+
+  /** File a placed instance under the proxy cell its position falls in. @internal */
+  file(member: ProxyMember, from: ProxyCell | null, x: number, z: number): ProxyCell {
+    const key = `${Math.floor(x / STATIC_PROXY_CELL)},${Math.floor(z / STATIC_PROXY_CELL)}`;
+    let cell = this.cells.get(key);
+    if (cell === undefined) {
+      cell = { key, members: new Set(), sphere: new THREE.Sphere(), boundsDirty: true, far: false, version: 0, proxy: null, proxyVersion: -1 };
+      this.cells.set(key, cell);
+    }
+    if (from !== null && from !== cell) this.unfile(member, from);
+    cell.members.add(member);
+    cell.version += 1;
+    cell.boundsDirty = true;
+    return cell;
   }
 
   /** @internal */
-  release(group: PoolGroup, geometry: THREE.BufferGeometry, instances: readonly number[], shown: number): void {
+  unfile(member: ProxyMember, cell: ProxyCell): void {
+    cell.members.delete(member);
+    cell.version += 1;
+    cell.boundsDirty = true;
+    if (cell.members.size > 0) return;
+    this.dropProxy(cell);
+    this.cells.delete(cell.key);
+  }
+
+  private switchCell(cell: ProxyCell, far: boolean): void {
+    cell.far = far;
+    if (cell.proxy !== null) showCulled(cell.proxy, far);
+    for (const member of cell.members) member.slot.refresh(member.index);
+  }
+
+  private buildProxy(cell: ProxyCell, hlod: HlodConfig): void {
+    if (this.building !== null) return;
+    const version = cell.version;
+    const parts: ProxyPart[] = [];
+    for (const member of cell.members) {
+      const part = member.slot.partAt(member.index);
+      if (part !== null) parts.push(part);
+    }
+    if (parts.length === 0) return;
+    const run = runSliced(cellProxyJob(parts, hlod.cluster), { budgetMs: 2 });
+    this.building = { cell, run };
+    run.done.then(
+      (geometry) => {
+        if (this.building?.run === run) this.building = null;
+        if (this.cells.get(cell.key) !== cell || this.hlod === null) {
+          geometry.dispose();
+          return;
+        }
+        this.placeProxy(cell, geometry, version);
+      },
+      () => {
+        if (this.building?.run === run) this.building = null;
+      },
+    );
+  }
+
+  private placeProxy(cell: ProxyCell, geometry: THREE.BufferGeometry, version: number): void {
+    const first = cell.proxy === null;
+    if (cell.proxy === null) {
+      this.proxyMaterial ??= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0 });
+      const proxy = new THREE.Mesh(geometry, this.proxyMaterial);
+      proxy.userData[STATIC_POOL_PROXY_KEY] = true;
+      this.parent.add(proxy);
+      freezeStaticTransforms(proxy);
+      cell.proxy = proxy;
+    } else {
+      cell.proxy.geometry.dispose();
+      cell.proxy.geometry = geometry;
+    }
+    cell.proxyVersion = version;
+    if (first) this.switchCell(cell, cell.far);
+  }
+
+  private dropProxy(cell: ProxyCell): void {
+    if (this.building?.cell === cell) {
+      this.building.run.cancel();
+      this.building = null;
+    }
+    if (cell.proxy === null) return;
+    cell.proxy.removeFromParent();
+    cell.proxy.geometry.dispose();
+    cell.proxy = null;
+    cell.proxyVersion = -1;
+    for (const member of cell.members) member.slot.refresh(member.index);
+  }
+
+  /** @internal */
+  release(slot: StaticDrawSlot, group: PoolGroup, geometry: THREE.BufferGeometry, instances: readonly number[], shown: number): void {
+    group.slots.delete(slot);
     for (const id of instances) {
       group.mesh.deleteInstance(id);
       group.ids[id] = "";
@@ -316,7 +493,7 @@ export class StaticDrawPool {
     this.parent.add(mesh);
     freezeStaticTransforms(mesh);
     showCulled(mesh, false);
-    return { key, mesh, material: owned, ids, geometries: new Map(), vertexCapacity, indexCapacity, instances: 0, shown: 0, boundsDirty: true };
+    return { key, mesh, slots: new Set(), material: owned, ids, geometries: new Map(), vertexCapacity, indexCapacity, instances: 0, shown: 0, boundsDirty: true };
   }
 
   private addGeometry(group: PoolGroup, geometry: THREE.BufferGeometry): number {
@@ -344,11 +521,23 @@ export class StaticDrawPool {
 }
 
 function settleGroup(group: PoolGroup): void {
-  if (group.boundsDirty && group.shown > 0) {
+  if (group.boundsDirty && group.instances > 0) {
     group.boundsDirty = false;
-    group.mesh.computeBoundingSphere();
+    const sphere = (group.mesh.boundingSphere ??= new THREE.Sphere());
+    sphere.makeEmpty();
+    for (const slot of group.slots) slot.unionBounds(sphere);
   }
   showCulled(group.mesh, group.shown > 0);
+}
+
+const instanceSphere = new THREE.Sphere();
+
+function refreshCellBounds(cell: ProxyCell): void {
+  cell.boundsDirty = false;
+  cell.sphere.makeEmpty();
+  for (const member of cell.members) {
+    if (member.slot.sphereAt(member.index, instanceSphere)) cell.sphere.union(instanceSphere);
+  }
 }
 
 function disposeGroup(group: PoolGroup): void {
@@ -365,8 +554,11 @@ function disposeGroup(group: PoolGroup): void {
  */
 export class StaticDrawSlot {
   private readonly placed: (PooledPlacement | null)[];
+  private readonly wanted: boolean[];
   private readonly shownAt: boolean[];
   private readonly stamp: number[];
+  private readonly cells: (ProxyCell | null)[];
+  private readonly members: ProxyMember[];
   private shown = 0;
   private frame = 0;
   private released = false;
@@ -378,8 +570,11 @@ export class StaticDrawSlot {
     private readonly instances: readonly number[],
   ) {
     this.placed = instances.map(() => null);
+    this.wanted = instances.map(() => false);
     this.shownAt = instances.map(() => false);
     this.stamp = instances.map(() => -1);
+    this.cells = instances.map(() => null);
+    this.members = instances.map((_, index) => ({ slot: this, index }));
   }
 
   /** The batch this slot draws into. */
@@ -390,7 +585,7 @@ export class StaticDrawSlot {
   /**
    * Show this frame's placements: `slotOf` names each one's instance (its index in the model batch),
    * and `matrixOf` writes its world matrix whenever the placement record changed. Every other instance
-   * of the slot is hidden.
+   * of the slot is hidden, and so is one whose cell draws its far proxy.
    */
   sync<T extends PooledPlacement>(
     members: readonly T[],
@@ -398,42 +593,101 @@ export class StaticDrawSlot {
     matrixOf: (member: T, out: THREE.Matrix4) => THREE.Matrix4,
   ): void {
     if (this.released) return;
-    const group = this.group;
-    const mesh = group.mesh;
     const frame = ++this.frame;
     for (const member of members) {
       const index = slotOf(member);
       const instance = index === undefined ? undefined : this.instances[index];
       if (index === undefined || instance === undefined) continue;
       this.stamp[index] = frame;
-      if (this.placed[index] !== member) {
-        this.placed[index] = member;
-        mesh.setMatrixAt(instance, matrixOf(member, scratchMatrix));
-        group.ids[instance] = member.instanceId;
-        group.boundsDirty = true;
-      }
-      this.show(index, instance, true);
+      this.write(index, instance, member, matrixOf);
+      this.wanted[index] = true;
+      this.refresh(index);
     }
     for (let index = 0; index < this.instances.length; index += 1) {
-      const instance = this.instances[index];
-      if (this.stamp[index] !== frame && instance !== undefined) this.show(index, instance, false);
+      if (this.stamp[index] === frame) continue;
+      this.wanted[index] = false;
+      this.refresh(index);
     }
-    settleGroup(group);
+    settleGroup(this.group);
   }
 
-  /** Give the instances back; the batch goes when its last slot does. */
-  release(): void {
+  /**
+   * Write every placement's matrix whether or not it is shown this frame, so the batch's bounds and
+   * its cell's far proxy hold props the camera has not looked at yet. Call when placements change.
+   */
+  place<T extends PooledPlacement>(
+    members: readonly T[],
+    slotOf: (member: T) => number | undefined,
+    matrixOf: (member: T, out: THREE.Matrix4) => THREE.Matrix4,
+  ): void {
     if (this.released) return;
-    this.released = true;
-    this.pool.release(this.group, this.geometry, this.instances, this.shown);
+    for (const member of members) {
+      const index = slotOf(member);
+      const instance = index === undefined ? undefined : this.instances[index];
+      if (index !== undefined && instance !== undefined) this.write(index, instance, member, matrixOf);
+    }
+    settleGroup(this.group);
   }
 
-  private show(index: number, instance: number, shown: boolean): void {
+  /** Show or hide one instance from what culling wants and whether its cell draws a proxy. @internal */
+  refresh(index: number): void {
+    const instance = this.instances[index];
+    if (instance === undefined) return;
+    const shown = this.wanted[index] === true && !this.pool.proxied(this.cells[index] ?? null);
     if (this.shownAt[index] === shown) return;
     this.shownAt[index] = shown;
     this.group.mesh.setVisibleAt(instance, shown);
     const delta = shown ? 1 : -1;
     this.shown += delta;
     this.group.shown += delta;
+    showCulled(this.group.mesh, this.group.shown > 0);
+  }
+
+  /** Grow `sphere` by every placed instance of this slot; an instance not yet placed has no bounds. @internal */
+  unionBounds(sphere: THREE.Sphere): void {
+    this.instances.forEach((_, index) => {
+      if (this.sphereAt(index, instanceSphere)) sphere.union(instanceSphere);
+    });
+  }
+
+  /** The world bounds of one placed instance into `target`; false when it is not placed. @internal */
+  sphereAt(index: number, target: THREE.Sphere): boolean {
+    const instance = this.instances[index];
+    const geometry = this.group.geometries.get(this.geometry);
+    if (instance === undefined || geometry === undefined || this.placed[index] === null) return false;
+    const mesh = this.group.mesh;
+    mesh.getBoundingSphereAt(geometry.id, target);
+    target.applyMatrix4(mesh.getMatrixAt(instance, scratchMatrix));
+    return true;
+  }
+
+  /** One placed instance as a proxy part, or null when it is not placed. @internal */
+  partAt(index: number): ProxyPart | null {
+    const instance = this.instances[index];
+    if (instance === undefined || this.placed[index] === null) return null;
+    return { geometry: this.geometry, matrix: this.group.mesh.getMatrixAt(instance, new THREE.Matrix4()), material: this.group.material };
+  }
+
+  /** Give the instances back; the batch goes when its last slot does. */
+  release(): void {
+    if (this.released) return;
+    this.released = true;
+    this.cells.forEach((cell, index) => {
+      const member = this.members[index];
+      if (cell !== null && member !== undefined) this.pool.unfile(member, cell);
+    });
+    this.pool.release(this, this.group, this.geometry, this.instances, this.shown);
+  }
+
+  private write<T extends PooledPlacement>(index: number, instance: number, member: T, matrixOf: (member: T, out: THREE.Matrix4) => THREE.Matrix4): void {
+    if (this.placed[index] === member) return;
+    const group = this.group;
+    this.placed[index] = member;
+    const matrix = matrixOf(member, scratchMatrix);
+    group.mesh.setMatrixAt(instance, matrix);
+    group.ids[instance] = member.instanceId;
+    group.boundsDirty = true;
+    const filed = this.members[index];
+    if (filed !== undefined) this.cells[index] = this.pool.file(filed, this.cells[index] ?? null, matrix.elements[12] ?? 0, matrix.elements[14] ?? 0);
   }
 }

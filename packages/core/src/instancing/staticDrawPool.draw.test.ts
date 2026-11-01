@@ -6,7 +6,7 @@ import { recordCompileLayer } from "@jgengine/core/material/compileLayers.draw";
 import { applyWetness } from "@jgengine/core/material/wetSurfaces.draw";
 import { applyModelSurface } from "@jgengine/core/model/modelSurface.draw";
 import { applyModelWind, resolveModelWind } from "@jgengine/core/model/modelWind.draw";
-import { batchableGeometry, geometryLayout, materialSignature, STATIC_POOL_MESH_KEY, StaticDrawPool } from "./staticDrawPool.draw";
+import { batchableGeometry, geometryLayout, materialSignature, STATIC_POOL_MESH_KEY, STATIC_POOL_PROXY_KEY, STATIC_PROXY_CELL, StaticDrawPool } from "./staticDrawPool.draw";
 
 function palette(color = "#c0a080"): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
@@ -239,4 +239,101 @@ test("swaying foliage batches with foliage that sways alike, never with still or
   expect(materialSignature(a)).toBe(materialSignature(b));
   expect(materialSignature(stronger)).not.toBe(materialSignature(a));
   expect(materialSignature(leaves())).not.toBe(materialSignature(a));
+});
+
+async function settled(): Promise<void> {
+  for (let tick = 0; tick < 20; tick += 1) await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+test("a far cell draws its proxy instead of its batches, with a hysteresis band either way", async () => {
+  const scene = new THREE.Scene();
+  const pool = new StaticDrawPool(scene);
+  pool.configure({ distance: 100, hysteresis: 20, cluster: 0.25 });
+  const members = placements(3);
+  const indexOf = new Map(members.map((member, index) => [member.instanceId, index]));
+  const slot = pool.acquire({ geometry: box(), material: palette() }, "0,0", members.length);
+  if (slot === null) throw new Error("expected a pooled slot");
+  slot.sync(members, (member) => indexOf.get(member.instanceId), at);
+  const proxy = () => scene.children.find((child) => child.userData[STATIC_POOL_PROXY_KEY] === true);
+
+  pool.update(new THREE.Vector3(0, 0, 105));
+  expect(slot.mesh.visible).toBe(true);
+  expect(proxy()).toBeUndefined();
+
+  pool.update(new THREE.Vector3(0, 0, 120));
+  await settled();
+  expect(proxy()?.visible).toBe(true);
+  expect(slot.mesh.visible).toBe(false);
+  expect(pool.proxiesShown()).toBe(1);
+
+  pool.update(new THREE.Vector3(0, 0, 95));
+  expect(proxy()?.visible).toBe(true);
+  pool.update(new THREE.Vector3(0, 0, 80));
+  expect(proxy()?.visible).toBe(false);
+  expect(slot.mesh.visible).toBe(true);
+
+  pool.configure(null);
+  expect(proxy()).toBeUndefined();
+  pool.dispose();
+});
+
+test("a far cell rebuilds its proxy once a placement in it moves", async () => {
+  const scene = new THREE.Scene();
+  const pool = new StaticDrawPool(scene);
+  pool.configure({ distance: 50, hysteresis: 0, cluster: 0.25 });
+  const slot = pool.acquire({ geometry: box(), material: palette() }, "0,0", 1);
+  if (slot === null) throw new Error("expected a pooled slot");
+  slot.sync([{ instanceId: "crate", x: 0 }], () => 0, at);
+  const eye = new THREE.Vector3(0, 0, 500);
+  pool.update(eye);
+  await settled();
+  const proxyBox = () => {
+    const proxy = scene.children.find((child): child is THREE.Mesh => child instanceof THREE.Mesh && child.userData[STATIC_POOL_PROXY_KEY] === true);
+    proxy?.geometry.computeBoundingBox();
+    return proxy?.geometry.boundingBox?.max.x;
+  };
+  expect(proxyBox()).toBeCloseTo(0.5, 1);
+  slot.sync([{ instanceId: "crate", x: 30 }], () => 0, at);
+  pool.update(eye);
+  await settled();
+  expect(proxyBox()).toBeCloseTo(30.5, 1);
+  pool.dispose();
+});
+
+test("props the camera never looked at still stand in their cell's proxy", async () => {
+  const scene = new THREE.Scene();
+  const pool = new StaticDrawPool(scene);
+  pool.configure({ distance: 50, hysteresis: 0, cluster: 0.25 });
+  const members = placements(2);
+  const indexOf = new Map(members.map((member, index) => [member.instanceId, index]));
+  const slot = pool.acquire({ geometry: box(), material: palette() }, "0,0", members.length);
+  if (slot === null) throw new Error("expected a pooled slot");
+  slot.place(members, (member) => indexOf.get(member.instanceId), at);
+  slot.sync([], (member) => indexOf.get(member.instanceId), at);
+  pool.update(new THREE.Vector3(0, 0, 500));
+  await settled();
+  const proxy = scene.children.find((child): child is THREE.Mesh => child instanceof THREE.Mesh && child.userData[STATIC_POOL_PROXY_KEY] === true);
+  expect(proxy?.geometry.index?.count ?? 0).toBeGreaterThan(0);
+  pool.dispose();
+});
+
+test("a far block hides only its own props in a batch it shares with the near street", async () => {
+  const scene = new THREE.Scene();
+  const pool = new StaticDrawPool(scene);
+  pool.configure({ distance: 100, hysteresis: 10, cluster: 0.25 });
+  const near = { instanceId: "near", x: 10 };
+  const far = { instanceId: "far", x: 10 + STATIC_PROXY_CELL * 3 };
+  const indexOf = new Map([["near", 0], ["far", 1]]);
+  const slot = pool.acquire({ geometry: box(), material: palette() }, "0,0", 2);
+  if (slot === null) throw new Error("expected a pooled slot");
+  const slotOf = (member: { instanceId: string }) => indexOf.get(member.instanceId);
+  slot.sync([near, far], slotOf, at);
+  pool.update(new THREE.Vector3(0, 0, 0));
+  await settled();
+  pool.update(new THREE.Vector3(0, 0, 0));
+  slot.sync([near, far], slotOf, at);
+  expect(pool.proxiesShown()).toBe(1);
+  expect(slot.mesh.visible).toBe(true);
+  expect([slot.mesh.getVisibleAt(0), slot.mesh.getVisibleAt(1)]).toEqual([true, false]);
+  pool.dispose();
 });

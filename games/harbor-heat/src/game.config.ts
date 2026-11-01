@@ -40,6 +40,8 @@ export const game = defineGame({
     WorldOverlay: () => createElement(SceneCaptureBinding, { bind: bindHarborCapture }),
     entityModels,
     objectModels,
+    // Blocks past 350 m read as massing: their props draw as one merged proxy per cell.
+    visibility: { hlod: { distance: 350, hysteresis: 40, cluster: 1.5 } },
     worldHealthBars: { roles: ["enemy", "hostile"] },
     // Direct-fire weapons want the muzzle→impact tracer; ballistic/exploding shots skip it
   // automatically so a lobbed round never draws a straight fake beam.
