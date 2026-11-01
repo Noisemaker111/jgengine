@@ -47,7 +47,8 @@ export function interpolate(template: string, params?: TParams, locale?: Locale)
   });
 }
 
-/** The plural category `count` falls in for `locale`, from `Intl.PluralRules`. */
+/** The plural category `count` falls in for `locale`, from `Intl.PluralRules`. * @internal
+ */
 export function pluralCategory(locale: Locale, count: number, type: "cardinal" | "ordinal" = "cardinal"): PluralCategory {
   try {
     return new Intl.PluralRules(locale, { type }).select(count);

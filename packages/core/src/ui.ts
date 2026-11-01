@@ -50,6 +50,7 @@ export {
 export {
   createI18n,
   interpolate,
+  selectPlural,
   type Catalog,
   type I18n,
   type I18nOptions,
@@ -59,12 +60,15 @@ export {
   type PluralCategory,
   type PluralMessage,
   type TParams,
-  pluralCategory,
-  selectPlural,
 } from "./i18n/i18n";
-export * from "./i18n/localeFormat";
+export {
+  LOCALE_SETTING_ID,
+  localeSettingDef,
+  matchLocale,
+  readLocale,
+  withLocaleSetting,
+} from "./i18n/localeSetting";
 export { localeDirection, type TextDirection } from "./i18n/textDirection";
-export { LOCALE_SETTING_ID, browserLocales, localeOptions, localeSettingDef, matchLocale, readLocale, withLocaleSetting } from "./i18n/localeSetting";
 export {
   MENU_KEY_INTENTS,
   menuIntentForKey,

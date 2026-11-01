@@ -53,6 +53,7 @@ const DURATION_UNITS = [
   { unit: "second", seconds: 1 },
 ] as const;
 
+/** Bounds and style of {@link formatDuration}. */
 export interface DurationFormatOptions {
   /** Smallest unit shown. Default `second`. */
   smallest?: (typeof DURATION_UNITS)[number]["unit"];
@@ -64,6 +65,8 @@ export interface DurationFormatOptions {
 /**
  * A span in seconds as words in the locale: `3725` is `1h 2m 5s` in English. Zero parts are
  * dropped; zero seconds is `0s`.
+ *
+ * @capability format-duration a span of seconds as locale words (1h 2m 5s)
  */
 export function formatDuration(locale: Locale, totalSeconds: number, options: DurationFormatOptions = {}): string {
   const { smallest = "second", largest = "day", unitDisplay = "narrow" } = options;

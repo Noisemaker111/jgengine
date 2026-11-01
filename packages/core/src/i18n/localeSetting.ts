@@ -5,7 +5,8 @@ import type { I18n, Locale } from "./i18n";
 /** The persisted settings id of the player's locale. */
 export const LOCALE_SETTING_ID = "language.locale";
 
-/** The browser's preferred locales, most wanted first; empty outside a browser. */
+/** The browser's preferred locales, most wanted first; empty outside a browser. * @internal
+ */
 export function browserLocales(): readonly string[] {
   if (typeof navigator === "undefined") return [];
   const languages: readonly string[] | undefined = navigator.languages;
@@ -16,6 +17,8 @@ export function browserLocales(): readonly string[] {
 /**
  * The supported locale that best matches the requested tags: an exact tag, else the same language
  * (`"pt-BR"` asks for `"pt"`), else `base`.
+ *
+ * @capability match-locale pick the supported locale that best matches requested tags
  */
 export function matchLocale(requested: readonly string[], supported: readonly Locale[], base: Locale): Locale {
   for (const tag of requested) {
@@ -36,7 +39,8 @@ export function readLocale(store: SettingsStore, supported: readonly Locale[], b
   return matchLocale(requested, supported, base);
 }
 
-/** Each locale labelled in its own language ("Deutsch", "日本語"). */
+/** Each locale labelled in its own language ("Deutsch", "日本語"). * @internal
+ */
 export function localeOptions(supported: readonly Locale[]): SettingOption[] {
   return supported.map((value) => {
     let label = value;
@@ -52,6 +56,8 @@ export function localeOptions(supported: readonly Locale[]): SettingOption[] {
 /**
  * The language row for `defineGame({ chrome: { settings: { extra } } })`; the shell adds it by itself
  * for a game that sets `i18n`. Defaults to the browser's best match.
+ *
+ * @capability locale-setting a Language settings row defaulting from the browser and saved in the settings store
  */
 export function localeSettingDef(i18n: I18n, requested: readonly string[] = browserLocales()): GameSettingDef {
   const supported = i18n.locales();

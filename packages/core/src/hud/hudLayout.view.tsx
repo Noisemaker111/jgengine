@@ -1306,12 +1306,14 @@ const MIRRORED_SLOT: Record<HudSlot, HudSlot> = {
   bottomRight: "bottomLeft",
 };
 
-/** The edge a slot sits at for a reading direction: a right-to-left HUD swaps left and right, so `topLeft` (the start corner) lands top right. */
+/** The edge a slot sits at for a reading direction: a right-to-left HUD swaps left and right, so `topLeft` (the start corner) lands top right. * @internal
+ */
 export function hudSlotEdge(slot: HudSlot, direction: TextDirection): HudSlot {
   return direction === "rtl" ? MIRRORED_SLOT[slot] : slot;
 }
 
-/** The anchor and inset a slot's panels take for a reading direction. */
+/** The anchor and inset a slot's panels take for a reading direction. * @internal
+ */
 export function hudSlotPlacement(slot: HudSlot, direction: TextDirection): { anchor: HudAnchor; inset: { x: number; y: number } } {
   return HUD_SLOT_ANCHORS[hudSlotEdge(slot, direction)];
 }
