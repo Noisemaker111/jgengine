@@ -1,3 +1,5 @@
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { defineGame } from "@jgengine/shell/defineGame";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
@@ -6,7 +8,7 @@ import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { DEFAULT_WALK_CODES, hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
 import { prompts } from "./game/prompts";
-import { entityModels, objectModels } from "./game/world/models";
+import { entityModels, flockModels, objectModels } from "./game/world/models";
 import { GameUI } from "./game/ui/GameUI";
 import { bindHarborCapture } from "./game/menuProfile";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
@@ -51,6 +53,7 @@ export const game = defineGame({
       },
     },
   },
+  sceneFlockModels: flockModels,
   scenePlacement: false,
   scenePathKinds: [],
   physics,
@@ -156,6 +159,8 @@ export const game = defineGame({
       "drive-cop": ["game.start", { name: "drive.stage", input: { vehicle: "car_cop" } }],
       "drive-bus": ["game.start", { name: "drive.stage", input: { vehicle: "car_bus" } }],
       "fly-heli": ["game.start", { name: "drive.stage", input: { vehicle: "air_helicopter" } }],
+      noon: ["game.start", { name: "time.stage", input: { at: 360 } }],
+      night: ["game.start", { name: "time.stage", input: { at: 700 } }],
       shop: ["game.start", "shop.open"],
       garage: ["game.start", "garage.open"],
       dialogue: ["game.start", { name: "dialogue.open", input: { id: "person:marco" } }],
@@ -208,10 +213,17 @@ export const game = defineGame({
     },
   },
   rendering: {
-    // Mid-afternoon Gulf sun under a clear tropical sky. The scene document places the sun low in
-  // the east-southeast so palms and blocks throw long shadows; the mood owns the rig, haze and grade.
+    // Golden hour is the hero time and the cycle runs on into a neon night. The mood owns the sun,
+    // sky fill and haze; the sunset HDRI lights the surfaces and the neon sunset grade ties them.
     look: "cinematic",
-    mood: "day",
+    mood: { preset: "golden", sun: { azimuth: 260, elevation: 12, color: "#ffb27a" }, horizonColor: "#f0b8a0", fog: { near: 150, far: 700 } },
+    environmentSource: hdriEnvironment("harbour-sunset", { intensity: 1 }),
+    postProcessing: {
+      toneMapping: "aces",
+      exposure: 0.85,
+      bloom: { strength: 0.3, threshold: 0.85 },
+      grade: { lut: lutGrade("neon-sunset") },
+    },
     shadows: true,
   },
   camera: {
@@ -232,9 +244,9 @@ export const game = defineGame({
     shake: { maxOffset: 0.24, maxRoll: 0.045, decayPerSecond: 2.8, exponent: 2, frequency: 21 },
     lens: { frustum: { far: 900 } },
   },
-  // Starts at the day curve's noon keyframe, where the mood's sky colours reach the dome unblended
-  // with the engine's dawn and dusk presets.
-  time: { dayLength: 720, start: 360 },
+  // The city opens at golden hour, the art direction's hero time; the day curve runs on into night
+  // and round through a bright noon (the `noon` capture state jumps there).
+  time: { dayLength: 720, start: 500 },
 });
 
 

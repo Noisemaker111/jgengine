@@ -1,5 +1,5 @@
 /**
- * Writes the 17 shipped colour grades as 32³ `.cube` files.
+ * Writes the shipped colour grades as 32³ `.cube` files.
  *
  *   bun packages/assets/scripts/gen-lut-grades.ts <outDir>
  */

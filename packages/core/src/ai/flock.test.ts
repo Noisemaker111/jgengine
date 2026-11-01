@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { gateTimingMs } from "../../../../scripts/timing-budget";
 import {
+  createFlockStepper,
   flockSteer,
   stepFlock,
   type FlockAgent,
@@ -234,4 +235,34 @@ test("external acceleration composes before velocity clamp and rejects malformed
   const saved = structuredClone(agents);
   expect(() => step(agents, config, 0.1, undefined, () => [NaN, 0, 0])).toThrow();
   expect(agents).toEqual(saved);
+});
+
+describe("createFlockStepper", () => {
+  const config = { maxSpeed: 4, separationRadius: 1.5, neighborRadius: 6, accel: 8 };
+  const seed = () => {
+    const position = new Float32Array(30), velocity = new Float32Array(30);
+    for (let i = 0; i < 10; i += 1) { position[i * 3] = (i % 5) * 1.3; position[i * 3 + 1] = i * 0.2; position[i * 3 + 2] = Math.floor(i / 5) * 1.7; velocity[i * 3] = 0.5; }
+    return { position, velocity };
+  };
+
+  test("steers like flockSteer on the same agents", () => {
+    const buffers = seed();
+    const agents = Array.from({ length: 10 }, (_, i) => ({
+      position: [(buffers.position[i * 3] ?? 0), (buffers.position[i * 3 + 1] ?? 0), (buffers.position[i * 3 + 2] ?? 0)] as const,
+      velocity: [(buffers.velocity[i * 3] ?? 0), (buffers.velocity[i * 3 + 1] ?? 0), (buffers.velocity[i * 3 + 2] ?? 0)] as const,
+    }));
+    stepFlock(agents, config, 0.1, [10, 0, 0]);
+    createFlockStepper(10).step(buffers, 10, config, 0.1, [10, 0, 0]);
+    for (let i = 0; i < 10; i += 1) for (let axis = 0; axis < 3; axis += 1) expect(buffers.position[i * 3 + axis]).toBeCloseTo(agents[i]?.position[axis] ?? Number.NaN, 4);
+  });
+
+  test("seeks per-agent targets and stays finite over a long run", () => {
+    const buffers = seed();
+    const targets = new Float32Array(30);
+    for (let i = 0; i < 10; i += 1) targets[i * 3] = 50;
+    const stepper = createFlockStepper(10);
+    for (let k = 0; k < 2000; k += 1) stepper.step(buffers, 10, config, 0.05, null, targets);
+    for (const value of buffers.position) expect(Number.isFinite(value)).toBe(true);
+    expect(buffers.position[0]).toBeGreaterThan(20);
+  });
 });

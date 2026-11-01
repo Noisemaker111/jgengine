@@ -5,6 +5,9 @@ import type { ResolvedTerrainDetail, ResolvedTerrainSurfaces, TerrainSurfaceRole
 import { bakeSurfaceMaterialSharedJob, surfaceMaterialArrayTextures, type SurfaceMaterialArrayTextures } from "@jgengine/core/material/surfaceMaterialTextures.draw";
 import { runToEnd, type SlicedJob } from "@jgengine/core/run/slicedWork";
 import type { SurfaceMaterialMaps } from "@jgengine/core/material/surfaceMaterialGenerator";
+import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
+import { MAX_TERRAIN_PAINT_LAYERS } from "./terrainSurfaces.draw";
+import { terrainScanKey } from "./terrainScanMaps.draw";
 
 import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "./terrainSurfaceShader.draw";
 import type { TerrainPaintTextures } from "./terrainSurfaces.draw";
@@ -41,11 +44,6 @@ export interface TerrainDetailMaterialOptions {
   classMask?: number;
   /** Initial editor relief-contour strength. Default 0. */
   contour?: number;
-  /**
-   * Per-painted-slot scanned color maps (slot 1 first), each with its own world tile metres. Layers
-   * without a map (or beyond {@link MAX_TERRAIN_LAYER_MAPS}) keep the procedural surface response.
-   */
-  layerMaps?: readonly (TerrainLayerMap | undefined)[];
   /** Generated surfaces for the ground, sand band and slope rock, from {@link createTerrainSurfaceTextures}. */
   surfaces?: TerrainSurfaceTextures | undefined;
 }
@@ -61,85 +59,86 @@ export interface TerrainSurfaceSlot {
 export interface TerrainSurfaceTextures {
   textures: SurfaceMaterialArrayTextures;
   roles: Partial<Record<TerrainSurfaceRole, TerrainSurfaceSlot>>;
+  /** Array layer of each paint slot's scan (index 0 is paint slot 1); undefined where the slot has none. */
+  paintLayers: readonly (number | undefined)[];
   dispose(): void;
 }
 
+/** Scans already decoded and packed, by {@link terrainScanKey}. */
+export type TerrainScanLibrary = ReadonlyMap<string, SurfaceMaterialMaps>;
+
 /**
- * Bake a terrain's generated surfaces (shared per spec) and stack them into array textures. `detail`
- * 1 bakes each map at its own resolution, 0.5 at half; layers are rebaked at the smallest size any
- * role asks for so they stack. Undefined when the terrain names no surfaces.
+ * Bake a terrain's surfaces (shared per spec) and stack them into array textures: the ground, sand
+ * and rock roles first (generated or scanned), then one layer per distinct paint-layer scan. `detail`
+ * 1 bakes each map at its own resolution, 0.5 at half; generated layers are rebaked at the size the
+ * scans were packed at, or the smallest size any role asks for, so they stack. Undefined when
+ * nothing names a surface.
  */
-export function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): TerrainSurfaceTextures | undefined {
-  return runToEnd(createTerrainSurfaceTexturesJob(surfaces, detail));
+export function createTerrainSurfaceTextures(
+  surfaces: ResolvedTerrainSurfaces | undefined,
+  detail = 1,
+  paintScans: readonly (TerrainMaterialMaps | undefined)[] = [],
+  scans: TerrainScanLibrary = new Map(),
+): TerrainSurfaceTextures | undefined {
+  return runToEnd(createTerrainSurfaceTexturesJob(surfaces, detail, paintScans, scans));
 }
 
 /** {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze. */
-export function* createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): SlicedJob<TerrainSurfaceTextures | undefined> {
-  if (surfaces === undefined) return undefined;
+export function* createTerrainSurfaceTexturesJob(
+  surfaces: ResolvedTerrainSurfaces | undefined,
+  detail = 1,
+  paintScans: readonly (TerrainMaterialMaps | undefined)[] = [],
+  scans: TerrainScanLibrary = new Map(),
+): SlicedJob<TerrainSurfaceTextures | undefined> {
   const roles: Partial<Record<TerrainSurfaceRole, TerrainSurfaceSlot>> = {};
-  const specs: ResolvedTerrainSurfaces[TerrainSurfaceRole][] = [];
+  const specs: (ResolvedTerrainSurfaces[TerrainSurfaceRole] | undefined)[] = [];
   const baked: SurfaceMaterialMaps[] = [];
+  const scanLayers = new Map<string, number>();
+  let scanSize = 0;
+  const scanned = (maps: TerrainMaterialMaps): SurfaceMaterialMaps => {
+    const found = scans.get(terrainScanKey(maps));
+    if (found === undefined) throw new Error(`Terrain scan "${maps.color}" was not loaded before baking`);
+    scanSize = found.size;
+    return found;
+  };
+  const stackScan = (maps: TerrainMaterialMaps): number => {
+    const key = terrainScanKey(maps);
+    const known = scanLayers.get(key);
+    if (known !== undefined) return known;
+    scanLayers.set(key, baked.length);
+    specs.push(undefined);
+    baked.push(scanned(maps));
+    return baked.length - 1;
+  };
   for (const role of ["ground", "sand", "rock"] as const) {
-    const layer = surfaces[role];
+    const layer = surfaces?.[role];
     if (layer === undefined) continue;
+    if (layer.scan !== undefined) {
+      roles[role] = { layer: stackScan(layer.scan), tile: layer.tile, tint: layer.tint };
+      continue;
+    }
     roles[role] = { layer: baked.length, tile: layer.tile, tint: layer.tint };
     specs.push(layer);
     baked.push(yield* bakeSurfaceMaterialSharedJob(layer.spec, detail));
   }
+  const paintLayers = paintScans.slice(0, MAX_TERRAIN_PAINT_LAYERS).map((maps) => (maps === undefined ? undefined : stackScan(maps)));
   if (baked.length === 0) return undefined;
-  const size = Math.min(...baked.map((maps) => maps.size));
+  const size = scanSize > 0 ? scanSize : Math.min(...baked.map((maps) => maps.size));
   const stacked: SurfaceMaterialMaps[] = [];
   for (const [index, maps] of baked.entries()) {
     const spec = specs[index]?.spec;
     stacked.push(maps.size === size || spec === undefined ? maps : yield* bakeSurfaceMaterialSharedJob({ ...spec, params: { ...spec.params, resolution: String(size) } }, 1));
   }
   const textures = surfaceMaterialArrayTextures(stacked);
-  return { textures, roles, dispose: () => textures.dispose() };
-}
-
-
-let placeholder: THREE.DataTexture | undefined;
-
-function placeholderTexture(): THREE.Texture {
-  if (placeholder !== undefined) return placeholder;
-  placeholder = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1, THREE.RGBAFormat);
-  placeholder.needsUpdate = true;
-  return placeholder;
+  return { textures, roles, paintLayers, dispose: () => textures.dispose() };
 }
 
 const ROCK_CLASS_BIT = 1 << 4;
 /** Compile every surface response, for an editor viewport whose paint can change to any surface. */
 export const ALL_TERRAIN_SURFACE_CLASSES = 0x1ff;
 
-/** One painted layer's scanned color map plus the world metres one tile covers. */
-export interface TerrainLayerMap {
-  color: THREE.Texture;
-  tileMetres: number;
-}
-
-/** At most this many painted layers sample their own scanned map; extra layers keep procedural shading. */
-export const MAX_TERRAIN_LAYER_MAPS = 4;
-
 // Slot 0 is the unpainted base, 1–8 the paint layers, 9 slope rock.
 const SLOT_GLSL = /* glsl */ `
-#ifdef JG_TERRAIN_LAYER_MAPS
-uniform sampler2D uLayerMap1;
-uniform sampler2D uLayerMap2;
-uniform sampler2D uLayerMap3;
-uniform sampler2D uLayerMap4;
-uniform float uLayerTile1;
-uniform float uLayerTile2;
-uniform float uLayerTile3;
-uniform float uLayerTile4;
-vec3 jgLayerMap(int slot, vec3 wp, out bool has) {
-  has = false;
-  if (slot == 1) { if (uLayerTile1 > 0.0) { has = true; return texture2D(uLayerMap1, wp.xz / uLayerTile1).rgb; } }
-  else if (slot == 2) { if (uLayerTile2 > 0.0) { has = true; return texture2D(uLayerMap2, wp.xz / uLayerTile2).rgb; } }
-  else if (slot == 3) { if (uLayerTile3 > 0.0) { has = true; return texture2D(uLayerMap3, wp.xz / uLayerTile3).rgb; } }
-  else if (slot == 4) { if (uLayerTile4 > 0.0) { has = true; return texture2D(uLayerMap4, wp.xz / uLayerTile4).rgb; } }
-  return vec3(0.0);
-}
-#endif
 vec3 jgSlotTilt;
 float jgSlotAo;
 #ifdef JG_TERRAIN_GEN
@@ -150,6 +149,8 @@ uniform vec3 uGenTint;
 uniform vec3 uGenMean0;
 uniform vec3 uGenMean1;
 uniform vec3 uGenMean2;
+uniform vec2 uScanTri;
+uniform float uLayerScan[8];
 struct JgGen { vec3 albedo; float height; vec2 tilt; float rough; float ao; };
 JgGen jgGenRead(float layer, vec2 uv){
   vec4 a = texture(uGenAlbedo, vec3(uv, layer));
@@ -179,9 +180,9 @@ JgGen jgGenSample(float layer, vec2 p, float tile){
 vec3 jgGenTilt;
 // Flat ground takes the map from above; slopes take it on their own face as well, so a hillside
 // never smears one texel down its length. The world-space tilt lands in jgGenTilt.
-JgGen jgGenProject(float layer, vec3 wp, float tile, bool antiTile){
+JgGen jgGenProject(float layer, vec3 wp, float tile, bool antiTile, bool tri){
   vec3 an = abs(normalize(vJgWorldNormal));
-  float topW = smoothstep(0.55, 0.85, an.y);
+  float topW = tri ? smoothstep(uScanTri.x, uScanTri.y, an.y) : 1.0;
   JgGen g = JgGen(vec3(0.0), 0.0, vec2(0.0), 1.0, 1.0);
   jgGenTilt = vec3(0.0);
   if (topW > 0.0) {
@@ -212,7 +213,7 @@ JgSurf jgSlot(int slot, vec3 baseTone, vec3 wp){
   jgSlotAo = 1.0;
 #ifdef JG_GEN_GROUND
   if (slot == 0) {
-    JgGen g = jgGenProject(JG_GEN_GROUND, wp, uGenTile.x, true);
+    JgGen g = jgGenProject(JG_GEN_GROUND, wp, uGenTile.x, true, true);
     JgSurf gs;
     gs.albedo = mix(g.albedo, g.albedo * baseTone / max(uGenMean0, vec3(1e-3)), uGenTint.x);
     // The map's height spans 0..1; the procedural surfaces sit near 0.2..0.6, so it is rescaled to
@@ -225,13 +226,28 @@ JgSurf jgSlot(int slot, vec3 baseTone, vec3 wp){
 #endif
 #ifdef JG_GEN_ROCK
   if (slot == 9) {
-    JgGen g = jgGenProject(JG_GEN_ROCK, wp, uGenTile.z, false);
+    JgGen g = jgGenProject(JG_GEN_ROCK, wp, uGenTile.z, false, true);
     JgSurf rs;
     rs.albedo = mix(g.albedo, g.albedo * uRockColor / max(uGenMean2, vec3(1e-3)), uGenTint.z);
     rs.height = 0.2 + g.height * 0.4; rs.rough = g.rough; rs.bump = 0.0;
     jgSlotTilt = jgGenTilt;
     jgSlotAo = g.ao;
     return rs;
+  }
+#endif
+#if defined(JG_TERRAIN_GEN) && defined(JG_TERRAIN_PAINT)
+  if (slot > 0 && slot < 9) {
+    int si = slot - 1;
+    float scanLayer = uLayerScan[si];
+    if (scanLayer >= 0.0 && uLayerTile[si] > 0.0) {
+      JgGen g = jgGenProject(scanLayer, wp, uLayerTile[si], true, uLayerTri[si] > 0.5);
+      JgSurf ls;
+      ls.albedo = g.albedo;
+      ls.height = 0.2 + g.height * 0.4; ls.rough = g.rough; ls.bump = 0.0;
+      jgSlotTilt = jgGenTilt;
+      jgSlotAo = g.ao;
+      return ls;
+    }
   }
 #endif
   // One jgSurface call site: shader compilers inline every call, so picking the arguments first
@@ -254,15 +270,6 @@ JgSurf jgSlot(int slot, vec3 baseTone, vec3 wp){
   }
 #endif
   JgSurf s = jgSurface(cls, jgFlatC, rough, scale, wp);
-#ifdef JG_TERRAIN_LAYER_MAPS
-  if (slot > 0 && slot <= 4) {
-    bool jgHasMap;
-    vec3 jgMapped = jgLayerMap(slot, wp, jgHasMap);
-    // The layer owns its own scan: grain, colour and all, tiled at its authored metres, and the
-    // mask weights decide how much of it shows against the neighbour layer.
-    if (jgHasMap) s.albedo = mix(s.albedo, jgMapped, 0.92);
-  }
-#endif
   s.albedo = mix(jgFlatC, s.albedo, uSurface);
   s.height *= uSurface;
   s.bump *= uSurface;
@@ -294,20 +301,6 @@ export function createTerrainDetailMaterial(
   const strength = detail.material?.strength ?? 1;
   const tint = detail.material?.tint ?? 1;
   const paint = options.paint;
-  const layerMaps = (options.layerMaps ?? []).slice(0, MAX_TERRAIN_LAYER_MAPS);
-  const hasLayerMaps = layerMaps.some((entry) => entry !== undefined);
-  const layerMapUniforms = hasLayerMaps
-    ? {
-        uLayerMap1: { value: layerMaps[0]?.color ?? placeholderTexture() },
-        uLayerMap2: { value: layerMaps[1]?.color ?? placeholderTexture() },
-        uLayerMap3: { value: layerMaps[2]?.color ?? placeholderTexture() },
-        uLayerMap4: { value: layerMaps[3]?.color ?? placeholderTexture() },
-        uLayerTile1: { value: layerMaps[0]?.tileMetres ?? 0 },
-        uLayerTile2: { value: layerMaps[1]?.tileMetres ?? 0 },
-        uLayerTile3: { value: layerMaps[2]?.tileMetres ?? 0 },
-        uLayerTile4: { value: layerMaps[3]?.tileMetres ?? 0 },
-      }
-    : {};
   const low = options.quality === "low";
   const contour = { value: options.contour ?? 0 };
   // Rock is always compiled for slope rock; each extra class costs shader time even where unused on
@@ -317,6 +310,11 @@ export function createTerrainDetailMaterial(
   const surfaces = options.surfaces;
   const surfaceRoles = surfaces?.roles ?? {};
   const grey = (): THREE.Color => new THREE.Color(0.5, 0.5, 0.5);
+  const layerScan = new Float32Array(MAX_TERRAIN_PAINT_LAYERS).fill(-1);
+  surfaces?.paintLayers.forEach((layer, index) => {
+    if (layer !== undefined) layerScan[index] = layer;
+  });
+  const triCos = Math.cos((detail.scanTriplanarAngle * Math.PI) / 180);
   const surfaceUniforms = surfaces === undefined
     ? undefined
     : {
@@ -327,6 +325,8 @@ export function createTerrainDetailMaterial(
         uGenMean0: { value: surfaces.textures.means[surfaceRoles.ground?.layer ?? 0] ?? grey() },
         uGenMean1: { value: surfaces.textures.means[surfaceRoles.sand?.layer ?? 0] ?? grey() },
         uGenMean2: { value: surfaces.textures.means[surfaceRoles.rock?.layer ?? 0] ?? grey() },
+        uScanTri: { value: new THREE.Vector2(Math.max(0, triCos - 0.15), Math.min(1, triCos + 0.15)) },
+        uLayerScan: { value: layerScan },
       };
   const surfaceDefines: Record<string, string> = surfaces === undefined ? {} : { JG_TERRAIN_GEN: "" };
   if (surfaceRoles.ground !== undefined) surfaceDefines["JG_GEN_GROUND"] = `${surfaceRoles.ground.layer}.0`;
@@ -350,7 +350,6 @@ export function createTerrainDetailMaterial(
     ...surfaceNoiseUniforms(),
     uContour: contour,
     ...(paint === undefined ? {} : paint.uniforms),
-    ...layerMapUniforms,
     ...(surfaceUniforms ?? {}),
     ...(hasTexture
       ? {
@@ -373,7 +372,6 @@ export function createTerrainDetailMaterial(
   });
   material.defines = {
     ...(paint === undefined ? {} : { JG_TERRAIN_PAINT: "" }),
-    ...(hasLayerMaps ? { JG_TERRAIN_LAYER_MAPS: "" } : {}),
     ...(low ? { JG_SURFACE_LOW: "" } : {}),
     JG_SURFACE_CLASSES: String(classMask),
     ...surfaceDefines,
@@ -618,6 +616,6 @@ reflectedLight.indirectDiffuse *= jgGenAoSum;
   };
 
   material.customProgramCacheKey = () =>
-    `jgengine-terrain-detail-${hasTexture ? "tex" : "flat"}-${hasTexture && textures.roughness !== undefined ? "rough" : "scalar"}-${hasTexture && textures.ao !== undefined ? "ao" : "unoccluded"}-${paint === undefined ? "bare" : "paint"}-${hasLayerMaps ? "layers" : "procedural"}-${low ? "low" : "full"}-${classMask}-${surfaceKey}`;
+    `jgengine-terrain-detail-${hasTexture ? "tex" : "flat"}-${hasTexture && textures.roughness !== undefined ? "rough" : "scalar"}-${hasTexture && textures.ao !== undefined ? "ao" : "unoccluded"}-${paint === undefined ? "bare" : "paint"}-${low ? "low" : "full"}-${classMask}-${surfaceKey}`;
   return { material, contour };
 }

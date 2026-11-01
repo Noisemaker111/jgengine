@@ -28,7 +28,7 @@ import {
   STASH_SPOTS,
   HHPD_POS,
 } from "./world/districts";
-import { cityLayout, LOT_ROADS, roadSource, SEAFRONT_BUILD_LINE, zoneAt } from "./world/cityLayout";
+import { cityLayout, initialRoads, LOT_ROADS, roadSource, SEAFRONT_BUILD_LINE, zoneAt } from "./world/cityLayout";
 import { curbPoseNear } from "./world/setup";
 
 describe("harbor-heat authored scene parity", () => {
@@ -207,7 +207,7 @@ describe("harbor-heat world", () => {
     } finally {
       cityLayout.restore(saved);
     }
-    expect(roadSource.current()[0]!.width).toBeCloseTo(roadSource.initial[0]!.width);
+    expect(roadSource.current()[0]!.width).toBeCloseTo(initialRoads[0]!.width);
     // Contexts other suites booted are still subscribed and re-lay their whole city on each change.
   }, 30_000);
 

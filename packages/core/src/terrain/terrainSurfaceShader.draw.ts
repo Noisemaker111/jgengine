@@ -277,6 +277,8 @@ uniform vec3 uLayerColor[8];
 uniform float uLayerClass[8];
 uniform float uLayerRough[8];
 uniform float uLayerScale[8];
+uniform float uLayerTile[8];
+uniform float uLayerTri[8];
 float jgWarpNoise(vec2 p){ return (jgVNoise(p) * 0.65 + jgVNoise(p * 2.7 + 13.1) * 0.35) - 0.5; }
 vec2 jgPaintUv(vec2 wp){
   vec2 cell = (wp - uPaintMin) / uPaintCell;

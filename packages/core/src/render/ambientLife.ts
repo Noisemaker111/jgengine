@@ -1,3 +1,5 @@
+import type { AmbientFaunaConfig } from "../ambientFauna/ambientFaunaConfig";
+
 /** A point that breathes steam: a manhole, a vent, a hot spring, a kettle on a stall. */
 export interface SteamVent {
   /** World position of the vent's mouth. */
@@ -20,6 +22,8 @@ export interface AmbientLifeConfig {
   litter?: boolean | { count?: number; groundY?: number };
   /** Steam vents. None by default. */
   steam?: readonly SteamVent[];
+  /** Fish schools, insect swarms, motes and soaring flyers; off unless given. Instanced and capped. */
+  fauna?: AmbientFaunaConfig;
 }
 
 /** Ambient life with every default filled in. @internal */

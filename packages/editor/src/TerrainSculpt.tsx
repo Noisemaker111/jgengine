@@ -26,6 +26,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { displaceHeightfieldGeometry } from "@jgengine/core/terrain/heightfieldGeometry.draw";
 import { normalizeHeightBlend } from "@jgengine/core/terrain/terrainMath.draw";
 import { ALL_TERRAIN_SURFACE_CLASSES, createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
+import { useTerrainSurfaces } from "@jgengine/core/terrain/useTerrainSurfaces.draw";
 import { createTerrainPaintColorSampler, type TerrainPaintColorSampler } from "@jgengine/core/terrain/terrainPaintColor.draw";
 import {
   createTerrainPaintTextures,
@@ -251,9 +252,11 @@ const SculptMesh = memo(function SculptMesh({
     return weights === undefined ? null : { paint: createTerrainPaintTextures(weights), weights };
   }, [detail, terrain]);
   useEffect(() => () => surface?.paint.dispose(), [surface]);
+  const { surfaces } = useTerrainSurfaces(detail?.surfaces, surface?.paint.slots, quality);
+  useEffect(() => () => surfaces?.dispose(), [surfaces]);
   const surfaceMaterial = useMemo(
-    () => (detail === null || surface === null ? null : createTerrainDetailMaterial(detail, undefined, { paint: surface.paint, quality, classMask: ALL_TERRAIN_SURFACE_CLASSES })),
-    [detail, surface, quality],
+    () => (detail === null || surface === null ? null : createTerrainDetailMaterial(detail, undefined, { paint: surface.paint, quality, classMask: ALL_TERRAIN_SURFACE_CLASSES, surfaces })),
+    [detail, surface, quality, surfaces],
   );
   useEffect(() => () => surfaceMaterial?.material.dispose(), [surfaceMaterial]);
   useEffect(() => {

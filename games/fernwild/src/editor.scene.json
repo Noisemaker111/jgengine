@@ -15729,6 +15729,917 @@
         "growAbove": 2.4,
         "seed": "grass_redwood_floor"
       }
+    },
+    {
+      "id": "fauna_shoal_player_spawn",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 223,
+        "y": 0,
+        "z": 1384
+      },
+      "radius": 40,
+      "label": "Shallows shoal",
+      "meta": {
+        "species": "minnow",
+        "motion": "school",
+        "count": 80,
+        "window": "day",
+        "bandMin": 0.45,
+        "bandMax": 2.5,
+        "speed": 2.2,
+        "seed": "shoal-player_spawn"
+      }
+    },
+    {
+      "id": "fauna_shoal_spawn_south_1",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": -301,
+        "y": 0,
+        "z": 885
+      },
+      "radius": 40,
+      "label": "Shallows shoal",
+      "meta": {
+        "species": "minnow",
+        "motion": "school",
+        "count": 80,
+        "window": "day",
+        "bandMin": 0.45,
+        "bandMax": 2.5,
+        "speed": 2.2,
+        "seed": "shoal-spawn_south_1"
+      }
+    },
+    {
+      "id": "fauna_shoal_spawn_south_3",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 726,
+        "y": 0,
+        "z": 1018
+      },
+      "radius": 40,
+      "label": "Shallows shoal",
+      "meta": {
+        "species": "minnow",
+        "motion": "school",
+        "count": 80,
+        "window": "day",
+        "bandMin": 0.45,
+        "bandMax": 2.5,
+        "speed": 2.2,
+        "seed": "shoal-spawn_south_3"
+      }
+    },
+    {
+      "id": "fauna_shoal_spawn_east_1",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 1308,
+        "y": 0,
+        "z": 338
+      },
+      "radius": 40,
+      "label": "Shallows shoal",
+      "meta": {
+        "species": "minnow",
+        "motion": "school",
+        "count": 80,
+        "window": "day",
+        "bandMin": 0.45,
+        "bandMax": 2.5,
+        "speed": 2.2,
+        "seed": "shoal-spawn_east_1"
+      }
+    },
+    {
+      "id": "fauna_shoal_spawn_east_2",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 1366,
+        "y": 0,
+        "z": 20
+      },
+      "radius": 40,
+      "label": "Shallows shoal",
+      "meta": {
+        "species": "minnow",
+        "motion": "school",
+        "count": 80,
+        "window": "day",
+        "bandMin": 0.45,
+        "bandMax": 2.5,
+        "speed": 2.2,
+        "seed": "shoal-spawn_east_2"
+      }
+    },
+    {
+      "id": "fauna_shoal_spawn_north_1",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 458,
+        "y": 0,
+        "z": -1198
+      },
+      "radius": 40,
+      "label": "Shallows shoal",
+      "meta": {
+        "species": "minnow",
+        "motion": "school",
+        "count": 80,
+        "window": "day",
+        "bandMin": 0.45,
+        "bandMax": 2.5,
+        "speed": 2.2,
+        "seed": "shoal-spawn_north_1"
+      }
+    },
+    {
+      "id": "fauna_shoal_spawn_north_2",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": -236,
+        "y": 0,
+        "z": -1210
+      },
+      "radius": 40,
+      "label": "Shallows shoal",
+      "meta": {
+        "species": "minnow",
+        "motion": "school",
+        "count": 80,
+        "window": "day",
+        "bandMin": 0.45,
+        "bandMax": 2.5,
+        "speed": 2.2,
+        "seed": "shoal-spawn_north_2"
+      }
+    },
+    {
+      "id": "fauna_reef_start",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 290,
+        "y": 0,
+        "z": 1425
+      },
+      "radius": 70,
+      "label": "Reef fish",
+      "meta": {
+        "species": "reefFish",
+        "motion": "school",
+        "count": 24,
+        "window": "day",
+        "bandMin": 1.0,
+        "bandMax": 4,
+        "speed": 1.8,
+        "seed": "reef-start"
+      }
+    },
+    {
+      "id": "fauna_pollen_south_jungle_floor",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 280,
+        "y": 0,
+        "z": 1278
+      },
+      "halfExtents": {
+        "x": 190,
+        "y": 0.01,
+        "z": 58
+      },
+      "label": "Pollen",
+      "meta": {
+        "species": "pollen",
+        "motion": "drift",
+        "density": 3.84,
+        "window": "day",
+        "bandMin": 0.6,
+        "bandMax": 4,
+        "speed": 0.5,
+        "wander": 2.5,
+        "volumeId": "grass_south_jungle_floor",
+        "seed": "pollen-south_jungle_floor"
+      }
+    },
+    {
+      "id": "fauna_fireflies_south_jungle_floor",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 280,
+        "y": 0,
+        "z": 1278
+      },
+      "halfExtents": {
+        "x": 190,
+        "y": 0.01,
+        "z": 58
+      },
+      "label": "Fireflies",
+      "meta": {
+        "species": "firefly",
+        "motion": "swarm",
+        "density": 2.88,
+        "window": "night",
+        "bandMin": 0.6,
+        "bandMax": 3.2,
+        "speed": 0.9,
+        "wander": 3,
+        "volumeId": "grass_south_jungle_floor",
+        "seed": "fireflies-south_jungle_floor"
+      }
+    },
+    {
+      "id": "fauna_dragonflies_south_jungle_floor",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 280,
+        "y": 0,
+        "z": 1278
+      },
+      "halfExtents": {
+        "x": 190,
+        "y": 0.01,
+        "z": 58
+      },
+      "label": "Dragonflies",
+      "meta": {
+        "species": "dragonfly",
+        "motion": "swarm",
+        "density": 0.6,
+        "window": "day",
+        "bandMin": 0.8,
+        "bandMax": 2.6,
+        "speed": 2.4,
+        "wander": 5,
+        "volumeId": "grass_south_jungle_floor",
+        "seed": "dragonflies-south_jungle_floor"
+      }
+    },
+    {
+      "id": "fauna_pollen_south_inland",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 240,
+        "y": 0,
+        "z": 1120
+      },
+      "halfExtents": {
+        "x": 330,
+        "y": 0.01,
+        "z": 100
+      },
+      "label": "Pollen",
+      "meta": {
+        "species": "pollen",
+        "motion": "drift",
+        "density": 2.2399999999999998,
+        "window": "day",
+        "bandMin": 0.6,
+        "bandMax": 4,
+        "speed": 0.5,
+        "wander": 2.5,
+        "volumeId": "grass_south_inland",
+        "seed": "pollen-south_inland"
+      }
+    },
+    {
+      "id": "fauna_fireflies_south_inland",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 240,
+        "y": 0,
+        "z": 1120
+      },
+      "halfExtents": {
+        "x": 330,
+        "y": 0.01,
+        "z": 100
+      },
+      "label": "Fireflies",
+      "meta": {
+        "species": "firefly",
+        "motion": "swarm",
+        "density": 1.68,
+        "window": "night",
+        "bandMin": 0.6,
+        "bandMax": 3.2,
+        "speed": 0.9,
+        "wander": 3,
+        "volumeId": "grass_south_inland",
+        "seed": "fireflies-south_inland"
+      }
+    },
+    {
+      "id": "fauna_dragonflies_south_inland",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 240,
+        "y": 0,
+        "z": 1120
+      },
+      "halfExtents": {
+        "x": 330,
+        "y": 0.01,
+        "z": 100
+      },
+      "label": "Dragonflies",
+      "meta": {
+        "species": "dragonfly",
+        "motion": "swarm",
+        "density": 0.35,
+        "window": "day",
+        "bandMin": 0.8,
+        "bandMax": 2.6,
+        "speed": 2.4,
+        "wander": 5,
+        "volumeId": "grass_south_inland",
+        "seed": "dragonflies-south_inland"
+      }
+    },
+    {
+      "id": "fauna_pollen_southern_jungle",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 300,
+        "y": 0,
+        "z": 600
+      },
+      "halfExtents": {
+        "x": 330,
+        "y": 0.01,
+        "z": 260
+      },
+      "label": "Pollen",
+      "meta": {
+        "species": "pollen",
+        "motion": "drift",
+        "density": 0.8,
+        "window": "day",
+        "bandMin": 0.6,
+        "bandMax": 4,
+        "speed": 0.5,
+        "wander": 2.5,
+        "volumeId": "grass_southern_jungle",
+        "seed": "pollen-southern_jungle"
+      }
+    },
+    {
+      "id": "fauna_fireflies_southern_jungle",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 300,
+        "y": 0,
+        "z": 600
+      },
+      "halfExtents": {
+        "x": 330,
+        "y": 0.01,
+        "z": 260
+      },
+      "label": "Fireflies",
+      "meta": {
+        "species": "firefly",
+        "motion": "swarm",
+        "density": 0.6,
+        "window": "night",
+        "bandMin": 0.6,
+        "bandMax": 3.2,
+        "speed": 0.9,
+        "wander": 3,
+        "volumeId": "grass_southern_jungle",
+        "seed": "fireflies-southern_jungle"
+      }
+    },
+    {
+      "id": "fauna_dragonflies_southern_jungle",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 300,
+        "y": 0,
+        "z": 600
+      },
+      "halfExtents": {
+        "x": 330,
+        "y": 0.01,
+        "z": 260
+      },
+      "label": "Dragonflies",
+      "meta": {
+        "species": "dragonfly",
+        "motion": "swarm",
+        "density": 0.125,
+        "window": "day",
+        "bandMin": 0.8,
+        "bandMax": 2.6,
+        "speed": 2.4,
+        "wander": 5,
+        "volumeId": "grass_southern_jungle",
+        "seed": "dragonflies-southern_jungle"
+      }
+    },
+    {
+      "id": "fauna_pollen_central_jungle",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 60,
+        "y": 0,
+        "z": 150
+      },
+      "halfExtents": {
+        "x": 300,
+        "y": 0.01,
+        "z": 220
+      },
+      "label": "Pollen",
+      "meta": {
+        "species": "pollen",
+        "motion": "drift",
+        "density": 0.8,
+        "window": "day",
+        "bandMin": 0.6,
+        "bandMax": 4,
+        "speed": 0.5,
+        "wander": 2.5,
+        "volumeId": "grass_central_jungle",
+        "seed": "pollen-central_jungle"
+      }
+    },
+    {
+      "id": "fauna_fireflies_central_jungle",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 60,
+        "y": 0,
+        "z": 150
+      },
+      "halfExtents": {
+        "x": 300,
+        "y": 0.01,
+        "z": 220
+      },
+      "label": "Fireflies",
+      "meta": {
+        "species": "firefly",
+        "motion": "swarm",
+        "density": 0.6,
+        "window": "night",
+        "bandMin": 0.6,
+        "bandMax": 3.2,
+        "speed": 0.9,
+        "wander": 3,
+        "volumeId": "grass_central_jungle",
+        "seed": "fireflies-central_jungle"
+      }
+    },
+    {
+      "id": "fauna_dragonflies_central_jungle",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 60,
+        "y": 0,
+        "z": 150
+      },
+      "halfExtents": {
+        "x": 300,
+        "y": 0.01,
+        "z": 220
+      },
+      "label": "Dragonflies",
+      "meta": {
+        "species": "dragonfly",
+        "motion": "swarm",
+        "density": 0.125,
+        "window": "day",
+        "bandMin": 0.8,
+        "bandMax": 2.6,
+        "speed": 2.4,
+        "wander": 5,
+        "volumeId": "grass_central_jungle",
+        "seed": "dragonflies-central_jungle"
+      }
+    },
+    {
+      "id": "fauna_pollen_south_plains",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": -180,
+        "y": 0,
+        "z": 800
+      },
+      "halfExtents": {
+        "x": 420,
+        "y": 0.01,
+        "z": 190
+      },
+      "label": "Pollen",
+      "meta": {
+        "species": "pollen",
+        "motion": "drift",
+        "density": 2.2399999999999998,
+        "window": "day",
+        "bandMin": 0.6,
+        "bandMax": 4,
+        "speed": 0.5,
+        "wander": 2.5,
+        "volumeId": "grass_south_plains",
+        "seed": "pollen-south_plains"
+      }
+    },
+    {
+      "id": "fauna_fireflies_south_plains",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": -180,
+        "y": 0,
+        "z": 800
+      },
+      "halfExtents": {
+        "x": 420,
+        "y": 0.01,
+        "z": 190
+      },
+      "label": "Fireflies",
+      "meta": {
+        "species": "firefly",
+        "motion": "swarm",
+        "density": 1.68,
+        "window": "night",
+        "bandMin": 0.6,
+        "bandMax": 3.2,
+        "speed": 0.9,
+        "wander": 3,
+        "volumeId": "grass_south_plains",
+        "seed": "fireflies-south_plains"
+      }
+    },
+    {
+      "id": "fauna_dragonflies_south_plains",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": -180,
+        "y": 0,
+        "z": 800
+      },
+      "halfExtents": {
+        "x": 420,
+        "y": 0.01,
+        "z": 190
+      },
+      "label": "Dragonflies",
+      "meta": {
+        "species": "dragonfly",
+        "motion": "swarm",
+        "density": 0.35,
+        "window": "day",
+        "bandMin": 0.8,
+        "bandMax": 2.6,
+        "speed": 2.4,
+        "wander": 5,
+        "volumeId": "grass_south_plains",
+        "seed": "dragonflies-south_plains"
+      }
+    },
+    {
+      "id": "fauna_pollen_west_downs",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": -900,
+        "y": 0,
+        "z": 330
+      },
+      "halfExtents": {
+        "x": 260,
+        "y": 0.01,
+        "z": 330
+      },
+      "label": "Pollen",
+      "meta": {
+        "species": "pollen",
+        "motion": "drift",
+        "density": 0.8,
+        "window": "day",
+        "bandMin": 0.6,
+        "bandMax": 4,
+        "speed": 0.5,
+        "wander": 2.5,
+        "volumeId": "grass_west_downs",
+        "seed": "pollen-west_downs"
+      }
+    },
+    {
+      "id": "fauna_fireflies_west_downs",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": -900,
+        "y": 0,
+        "z": 330
+      },
+      "halfExtents": {
+        "x": 260,
+        "y": 0.01,
+        "z": 330
+      },
+      "label": "Fireflies",
+      "meta": {
+        "species": "firefly",
+        "motion": "swarm",
+        "density": 0.6,
+        "window": "night",
+        "bandMin": 0.6,
+        "bandMax": 3.2,
+        "speed": 0.9,
+        "wander": 3,
+        "volumeId": "grass_west_downs",
+        "seed": "fireflies-west_downs"
+      }
+    },
+    {
+      "id": "fauna_dragonflies_west_downs",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": -900,
+        "y": 0,
+        "z": 330
+      },
+      "halfExtents": {
+        "x": 260,
+        "y": 0.01,
+        "z": 330
+      },
+      "label": "Dragonflies",
+      "meta": {
+        "species": "dragonfly",
+        "motion": "swarm",
+        "density": 0.125,
+        "window": "day",
+        "bandMin": 0.8,
+        "bandMax": 2.6,
+        "speed": 2.4,
+        "wander": 5,
+        "volumeId": "grass_west_downs",
+        "seed": "dragonflies-west_downs"
+      }
+    },
+    {
+      "id": "fauna_pollen_eastern_forest",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 1010,
+        "y": 0,
+        "z": 280
+      },
+      "halfExtents": {
+        "x": 210,
+        "y": 0.01,
+        "z": 380
+      },
+      "label": "Pollen",
+      "meta": {
+        "species": "pollen",
+        "motion": "drift",
+        "density": 0.8,
+        "window": "day",
+        "bandMin": 0.6,
+        "bandMax": 4,
+        "speed": 0.5,
+        "wander": 2.5,
+        "volumeId": "grass_eastern_forest",
+        "seed": "pollen-eastern_forest"
+      }
+    },
+    {
+      "id": "fauna_fireflies_eastern_forest",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 1010,
+        "y": 0,
+        "z": 280
+      },
+      "halfExtents": {
+        "x": 210,
+        "y": 0.01,
+        "z": 380
+      },
+      "label": "Fireflies",
+      "meta": {
+        "species": "firefly",
+        "motion": "swarm",
+        "density": 0.6,
+        "window": "night",
+        "bandMin": 0.6,
+        "bandMax": 3.2,
+        "speed": 0.9,
+        "wander": 3,
+        "volumeId": "grass_eastern_forest",
+        "seed": "fireflies-eastern_forest"
+      }
+    },
+    {
+      "id": "fauna_dragonflies_eastern_forest",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 1010,
+        "y": 0,
+        "z": 280
+      },
+      "halfExtents": {
+        "x": 210,
+        "y": 0.01,
+        "z": 380
+      },
+      "label": "Dragonflies",
+      "meta": {
+        "species": "dragonfly",
+        "motion": "swarm",
+        "density": 0.125,
+        "window": "day",
+        "bandMin": 0.8,
+        "bandMax": 2.6,
+        "speed": 2.4,
+        "wander": 5,
+        "volumeId": "grass_eastern_forest",
+        "seed": "dragonflies-eastern_forest"
+      }
+    },
+    {
+      "id": "fauna_pollen_redwood_floor",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 620,
+        "y": 0,
+        "z": -250
+      },
+      "halfExtents": {
+        "x": 260,
+        "y": 0.01,
+        "z": 240
+      },
+      "label": "Pollen",
+      "meta": {
+        "species": "pollen",
+        "motion": "drift",
+        "density": 0.8,
+        "window": "day",
+        "bandMin": 0.6,
+        "bandMax": 4,
+        "speed": 0.5,
+        "wander": 2.5,
+        "volumeId": "grass_redwood_floor",
+        "seed": "pollen-redwood_floor"
+      }
+    },
+    {
+      "id": "fauna_fireflies_redwood_floor",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 620,
+        "y": 0,
+        "z": -250
+      },
+      "halfExtents": {
+        "x": 260,
+        "y": 0.01,
+        "z": 240
+      },
+      "label": "Fireflies",
+      "meta": {
+        "species": "firefly",
+        "motion": "swarm",
+        "density": 0.6,
+        "window": "night",
+        "bandMin": 0.6,
+        "bandMax": 3.2,
+        "speed": 0.9,
+        "wander": 3,
+        "volumeId": "grass_redwood_floor",
+        "seed": "fireflies-redwood_floor"
+      }
+    },
+    {
+      "id": "fauna_dragonflies_redwood_floor",
+      "kind": "ambient_fauna",
+      "shape": "box",
+      "center": {
+        "x": 620,
+        "y": 0,
+        "z": -250
+      },
+      "halfExtents": {
+        "x": 260,
+        "y": 0.01,
+        "z": 240
+      },
+      "label": "Dragonflies",
+      "meta": {
+        "species": "dragonfly",
+        "motion": "swarm",
+        "density": 0.125,
+        "window": "day",
+        "bandMin": 0.8,
+        "bandMax": 2.6,
+        "speed": 2.4,
+        "wander": 5,
+        "volumeId": "grass_redwood_floor",
+        "seed": "dragonflies-redwood_floor"
+      }
+    },
+    {
+      "id": "fauna_soar_start",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 223,
+        "y": 0,
+        "z": 1250
+      },
+      "radius": 170,
+      "label": "Pteranodons",
+      "meta": {
+        "species": "pteranodon",
+        "motion": "soar",
+        "count": 5,
+        "bandMin": 55,
+        "bandMax": 95,
+        "speed": 9,
+        "seed": "soar-start"
+      }
+    },
+    {
+      "id": "fauna_soar_central",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 150,
+        "y": 0,
+        "z": 300
+      },
+      "radius": 220,
+      "label": "Pteranodons",
+      "meta": {
+        "species": "pteranodon",
+        "motion": "soar",
+        "count": 4,
+        "bandMin": 55,
+        "bandMax": 95,
+        "speed": 9,
+        "seed": "soar-central"
+      }
+    },
+    {
+      "id": "fauna_soar_east",
+      "kind": "ambient_fauna",
+      "shape": "sphere",
+      "center": {
+        "x": 1100,
+        "y": 0,
+        "z": 300
+      },
+      "radius": 220,
+      "label": "Pteranodons",
+      "meta": {
+        "species": "pteranodon",
+        "motion": "soar",
+        "count": 4,
+        "bandMin": 55,
+        "bandMax": 95,
+        "speed": 9,
+        "seed": "soar-east"
+      }
     }
   ],
   "paths": [

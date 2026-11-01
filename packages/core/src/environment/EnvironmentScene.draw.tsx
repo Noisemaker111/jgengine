@@ -43,9 +43,9 @@ import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import { CarvedTerrain, type CarvedTerrainProps } from "@jgengine/core/terrain/CarvedTerrain.draw";
 import { ImageTextureLoader } from "@jgengine/core/material/imageTexture.draw";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
-import { createTerrainDetailMaterial, createTerrainSurfaceTexturesJob, type TerrainSurfaceTextures } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
-import { useSlicedValue } from "@jgengine/core/render/useSlicedValue.draw";
-import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
+import { createTerrainDetailMaterial, type TerrainSurfaceTextures } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
+import { useTerrainSurfaces } from "@jgengine/core/terrain/useTerrainSurfaces.draw";
+import { type TerrainDetailMaterialTextures } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "@jgengine/core/terrain/terrainSurfaces.draw";
 import { Ocean } from "@jgengine/core/water/Ocean.draw";
@@ -72,12 +72,10 @@ interface TerrainGroundLayout {
 function TexturedTerrainGround({
   detail,
   layout,
-  layerMaps,
   surfaces,
 }: {
   detail: ResolvedTerrainDetail;
   layout: TerrainGroundLayout;
-  layerMaps?: readonly (TerrainLayerMap | undefined)[];
   surfaces?: TerrainSurfaceTextures | undefined;
 }) {
   const maps = detail.material!.maps;
@@ -97,8 +95,8 @@ function TexturedTerrainGround({
   }, [textures]);
   const quality = useTerrainQuality();
   const material = useDisposable(
-    () => createTerrainDetailMaterial(detail, textures, { paint: layout.paint, quality, surfaces, ...(layerMaps === undefined ? {} : { layerMaps }) }).material,
-    [detail, textures, layout.paint, quality, layerMaps, surfaces],
+    () => createTerrainDetailMaterial(detail, textures, { paint: layout.paint, quality, surfaces }).material,
+    [detail, textures, layout.paint, quality, surfaces],
   );
   return (
     <>
@@ -117,9 +115,6 @@ function TexturedTerrainGround({
     </>
   );
 }
-
-/** 1×1 white PNG: binds a valid sampler for a painted layer that has no scanned map. */
-const NO_LAYER_MAP = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
 /** The map roles a detail material samples, in the order the loader starts them. */
 function scanRoles(maps: TerrainMaterialMaps): readonly (readonly [keyof TerrainDetailMaterialTextures, string])[] {
@@ -140,7 +135,6 @@ function scanRoles(maps: TerrainMaterialMaps): readonly (readonly [keyof Terrain
 function useTolerantDetailMaterial(
   detail: ResolvedTerrainDetail | undefined,
   paint: TerrainPaintTextures | undefined,
-  layerMaps: readonly (TerrainLayerMap | undefined)[] | undefined,
   surfaces: TerrainSurfaceTextures | undefined,
 ): THREE.Material | undefined {
   const maps = detail?.material?.maps;
@@ -187,49 +181,13 @@ function useTolerantDetailMaterial(
     () =>
       detail === undefined || loaded.key !== key || loaded.textures === undefined
         ? undefined
-        : createTerrainDetailMaterial(detail, loaded.textures, { paint, quality, surfaces, ...(layerMaps === undefined ? {} : { layerMaps }) }).material,
-    [detail, loaded, key, paint, quality, layerMaps, surfaces],
+        : createTerrainDetailMaterial(detail, loaded.textures, { paint, quality, surfaces }).material,
+    [detail, loaded, key, paint, quality, surfaces],
   );
   useEffect(() => () => material?.dispose(), [material]);
   return material;
 }
 
-
-/**
- * Scanned color maps for up to {@link MAX_TERRAIN_LAYER_MAPS} painted terrain layers, loaded through
- * the shared recoverable texture path and tiled at each layer's own authored metres. The URL is
- * authored data (`TerrainMaterialLayer.materialUrl`), resolved by the editor from a library name, so
- * the renderer never reaches into the asset pipeline.
- */
-function useTerrainLayerMaps(paint: TerrainPaintTextures | undefined): readonly (TerrainLayerMap | undefined)[] | undefined {
-  const urls = useMemo(
-    () =>
-      Array.from({ length: MAX_TERRAIN_LAYER_MAPS }, (_, index) => {
-        const url = paint?.slots[index + 1]?.materialUrl;
-        return url === undefined || url.length === 0 ? NO_LAYER_MAP : url;
-      }),
-    [paint],
-  );
-  const textures = useRecoverableTexture({ layer1: urls[0]!, layer2: urls[1]!, layer3: urls[2]!, layer4: urls[3]! });
-  useEffect(() => {
-    for (const texture of Object.values(textures)) {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.needsUpdate = true;
-    }
-  }, [textures]);
-  const slots = paint?.slots;
-  return useMemo(() => {
-    if (slots === undefined) return undefined;
-    return Array.from({ length: MAX_TERRAIN_LAYER_MAPS }, (_, index) => {
-      const slot = slots[index + 1];
-      if (slot?.materialUrl === undefined) return undefined;
-      const texture = textures[`layer${index + 1}` as keyof typeof textures];
-      return texture === undefined ? undefined : { color: texture, tileMetres: slot.tileMetres };
-    });
-  }, [slots, textures]);
-}
 
 function TerrainGround({
   terrain,
@@ -281,22 +239,15 @@ function TerrainGround({
     [terrain.detail, terrain.waterLevel],
   );
   const quality = useTerrainQuality();
-  const layerMaps = useTerrainLayerMaps(paint);
   // Baked in slices behind the loading cover, once per surface spec (shared across remounts).
-  const baked = useSlicedValue(
-    "terrain-surfaces",
-    () => createTerrainSurfaceTexturesJob(resolvedDetail?.surfaces, quality === "low" ? 0.5 : 1),
-    [resolvedDetail?.surfaces, quality],
-  );
-  const surfaces = baked ?? undefined;
-  const surfacesPending = resolvedDetail?.surfaces !== undefined && baked === null;
+  const { surfaces, pending: surfacesPending } = useTerrainSurfaces(resolvedDetail?.surfaces, paint?.slots, quality);
   useEffect(() => () => surfaces?.dispose(), [surfaces]);
   const proceduralMaterial = useMemo(
     () =>
       resolvedDetail === undefined || surfacesPending || (resolvedDetail.material !== undefined && resolvedDetail.material.missing === "fail")
         ? undefined
-        : createTerrainDetailMaterial(resolvedDetail, undefined, { paint, quality, surfaces, ...(layerMaps === undefined ? {} : { layerMaps }) }).material,
-    [resolvedDetail, surfacesPending, paint, quality, layerMaps, surfaces],
+        : createTerrainDetailMaterial(resolvedDetail, undefined, { paint, quality, surfaces }).material,
+    [resolvedDetail, surfacesPending, paint, quality, surfaces],
   );
   useEffect(() => () => proceduralMaterial?.dispose(), [proceduralMaterial]);
 
@@ -304,7 +255,6 @@ function TerrainGround({
   const tolerantMaterial = useTolerantDetailMaterial(
     resolvedDetail?.material !== undefined && resolvedDetail.material.missing !== "fail" ? resolvedDetail : undefined,
     paint,
-    layerMaps,
     surfaces,
   );
   const proceduralGround = (
@@ -328,7 +278,6 @@ function TerrainGround({
         <TexturedTerrainGround
           detail={resolvedDetail}
           layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
-          {...(layerMaps === undefined ? {} : { layerMaps })}
           surfaces={surfaces}
         />
       </PresentationAssetBoundary>

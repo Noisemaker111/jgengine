@@ -150,9 +150,13 @@
 
 ## @jgengine/core/ai/flock
 
+- `FLOCK_MAX_NEIGHBORS` (const): const FLOCK_MAX_NEIGHBORS: 12 — Flockmates one agent considers per step in {@link createFlockStepper} unless `maxNeighbors` says otherwise.
 - `FlockAgent` (interface): interface FlockAgent { position: FlockVec3; velocity: FlockVec3 } — ⚠ undocumented
+- `FlockBuffers` (interface): interface FlockBuffers — Typed-array agents for {@link createFlockStepper}: `position` and `velocity` hold x,y,z per agent.
 - `FlockConfig` (interface): interface FlockConfig { maxSpeed: number; accel?: number; separationRadius: number; separationWeight?: number; neighborRadius: number; cohesionWeight?: number; alignmentWeight?: number; seekWeight?: number; stragglerRadius?: number; stragglerBoost?: number } — ⚠ undocumented
 - `FlockStepAgent` (interface): interface FlockStepAgent { position: FlockVec3; velocity: FlockVec3 } — ⚠ undocumented
+- `FlockStepper` (interface): interface FlockStepper — Allocation-free flock stepping over typed arrays, sized once for `capacity` agents.
+- `FlockStepperState` (interface): interface FlockStepperState — Sizing of a {@link FlockStepper}.
 - `FlockVec3` (type): type FlockVec3 = readonly [number, number, number] — ⚠ undocumented
 
 ## @jgengine/core/ai/groupAssist
@@ -308,6 +312,44 @@
 - `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
 - `createUtilityBrain` (function): function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain — Create a utility brain over an existing {@link NeedSet}. The need set is injected, not owned, so the game shows the same hunger the brain scores and persists one copy.
 - `sampleResponseCurve` (function): function sampleResponseCurve(curve: ResponseCurve, satisfaction: number): number — Sample a response curve at a `0..1` satisfaction. Deterministic, allocation-free.
+
+## @jgengine/core/ambientFauna/AmbientFauna.draw
+
+- `AmbientFauna` (function): function AmbientFauna({ config, zones, assets, groundAt, lowTier = false }: AmbientFaunaProps): ReactElement | null — Ambient fauna: fish schools, insect swarms, drifting motes and soaring flyers, one instanced draw per species part. Agents within a group's `lod.near` draw the species model, the rest to `lod.far` a sprite; off-screen agents are skipped, each group draws at most its `budget`, all groups at most `config.drawCap`. Groups come from `config.groups` and the `ambient_fauna` zones in the editor scene.
+- `AmbientFaunaProps` (interface): interface AmbientFaunaProps — Props of {@link AmbientFauna}.
+
+## @jgengine/core/ambientFauna/ambientFauna
+
+- `AmbientFaunaOptions` (interface): interface AmbientFaunaOptions — Limits and rates of one {@link createAmbientFauna}.
+- `AmbientFaunaState` (interface): interface AmbientFaunaState — Plain-JSON state of every group.
+- `FAUNA_GLOBAL_CAP` (const): const FAUNA_GLOBAL_CAP: 2000 — Default of {@link AmbientFaunaOptions.globalCap}.
+- `FAUNA_GROUP_LIMIT` (const): const FAUNA_GROUP_LIMIT: 4096 — Hard bound on one group's agents.
+- `FaunaArea` (type): type FaunaArea = | { shape: "disc"; x: number; z: number; radius: number } | { shape: "box"; x: number; z: number; halfX: number; halfZ: number } — Ground footprint of a group on X and Z, in metres.
+- `FaunaFrame` (interface): interface FaunaFrame — What {@link FaunaSimulation.update} reads each frame; the caller reuses one object.
+- `FaunaGroup` (interface): interface FaunaGroup — One ambient group as data; the game supplies every species and number.
+- `FaunaGroupState` (interface): interface FaunaGroupState — The live state of one group; the arrays are read by the renderer.
+- `FaunaMotion` (type): type FaunaMotion = "school" | "swarm" | "drift" | "soar" — How a group moves: `school` in water below its surface, `swarm` and `drift` around plants, `soar` on a loop over its area.
+- `FaunaSimulation` (interface): interface FaunaSimulation — Ambient groups moving by their motion kind, all state in preallocated typed arrays.
+- `FaunaWindow` (interface): interface FaunaWindow — When a group is out. The sun height is -1 (deep night) to 1 (noon); the group fades in over `fade` above `sunMin` and out over `fade` below `sunMax`. No sun in the scene leaves the group out.
+- `FaunaWorld` (interface): interface FaunaWorld — What the world gives fauna to read. Everything is optional; groups degrade to their own numbers.
+- `ResolvedFaunaGroup` (interface): interface ResolvedFaunaGroup extends Required<Pick<FaunaGroup, "id" | "species" | "motion" | "area" | "wander">> — A group with every default filled in and its footprint measured.
+- `createAmbientFauna` (function): function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWorld = {}, options: AmbientFaunaOptions = {}): FaunaSimulation — Build ambient groups: fish schools below the water surface, swarms and drifting motes near plants, and flyers soaring on the wind. Schools and swarms steer with the flock stepper, soarers ride a motion track, every spawn point is a seeded spatial sample. Species, counts and areas are the caller's data.
+
+## @jgengine/core/ambientFauna/ambientFaunaConfig
+
+- `AmbientFaunaConfig` (interface): interface AmbientFaunaConfig — Turn ambient fauna on: the species table plus how groups see the world.
+- `FaunaSpecies` (interface): interface FaunaSpecies — How one species looks: a model up close, a sprite far off, or the sprite alone.
+
+## @jgengine/core/ambientFauna/ambientFaunaKind
+
+- `AMBIENT_FAUNA_KIND` (const): const AMBIENT_FAUNA_KIND: "ambient_fauna" — The editor volume kind that places an ambient group: its footprint is the area, or it borrows the footprint of another volume (a water volume for a school, a grass field for a swarm).
+- `AMBIENT_FAUNA_SCHEMA` (const): const AMBIENT_FAUNA_SCHEMA: ParamSchema — The ambient group zone's parameters.
+- `faunaGroupsFromVolumes` (function): function faunaGroupsFromVolumes(volumes: readonly Pick<EditorVolume, "id" | "kind" | "shape" | "center" | "radius" | "halfExtents" | "meta">[]): FaunaGroup[] — The ambient groups an editor document places: one per `ambient_fauna` volume. A volume with no `species` is skipped; `volumeId` borrows another volume's footprint and, for a water volume, its top face as the school's surface.
+
+## @jgengine/core/ambientFauna/faunaCull
+
+- `FaunaSelection` (interface): interface FaunaSelection — How many agents {@link selectVisible} put in each LOD list.
+- `FaunaView` (interface): interface FaunaView — The camera as the cull reads it: six frustum planes (nx,ny,nz,d each, normalised) and the eye.
 
 ## @jgengine/core/anim/CharacterCrowd.draw
 
@@ -4432,6 +4474,11 @@
 - `RoadRibbons` (function): function RoadRibbons({ road, field, paths, }: { road: RoadEnvironmentDescriptor; field: TerrainField; paths: readonly (readonly RoadPoint[])[]; }): React.JSX.Element | null — Renders one `road()` descriptor from its trimmed centerline sub-paths (cut back at every junction by {@link buildAuthoredRoadNetwork}): an asphalt ribbon, a curb/edge strip along each border, an optional dashed centerline, and optional sidewalks. Because the sub-paths already stop at the junction boundary, every layer naturally ends there — no ribbon ploughs through the crossing and the dashed line no longer needs exclusion circles to skip intersections. The carriageway, curbs and sidewalks shade with the terrain's procedural surfaces (`road.surface`, default asphalt with tyre wear); `surface: false` keeps them flat.
 - `Roads` (function): function Roads({ roads, field }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): React.JSX.Element — The engine's one road renderer: `road()` descriptors from an environment and authored editor paths (streets, race tracks, trails, routes) all draw here. Each road is rounded at sharp bends, closed loops rejoin cleanly, crossings of the same surface weld into one junction (paved crossings get stop lines and crosswalks), and each road layers asphalt (scanned by default), gutters, lane paint, kerbs and sidewalks as its descriptor asks; unpaved ground fades into the terrain with soft edges.
 
+## @jgengine/core/roads/liveRoadSurface
+
+- `SurfaceSwappableRoadSource` (interface): interface SurfaceSwappableRoadSource extends LiveRoadSource — A {@link LiveRoadSource} whose carriageway surface can be swapped at runtime.
+- `withSwappableRoadSurface` (function): function withSwappableRoadSurface(base: LiveRoadSource): SurfaceSwappableRoadSource — Wrap a road source so a game can change what its streets are made of while it runs: wet asphalt after dusk, snow over winter, a painted event route. The base source stays the authority on the roads' shape; only the named scan layers are replaced, and a layer left out keeps its own.
+
 ## @jgengine/core/roads/pathRoads
 
 - `PAVED_PATH_KINDS` (const): const PAVED_PATH_KINDS: ReadonlySet<string> — Editor path kinds that pave: they default to asphalt (with the scanned carriageway), a road-grey colour and gutters. Every other drawn path kind (`trail`, `route`, `promenade`, …) is unpaved ground named by its `meta.surface` or its kind, with soft edges and no kerb.
@@ -5392,15 +5439,14 @@
 ## @jgengine/core/terrain/terrainDetailMaterial.draw
 
 - `ALL_TERRAIN_SURFACE_CLASSES` (const): const ALL_TERRAIN_SURFACE_CLASSES: 511 — Compile every surface response, for an editor viewport whose paint can change to any surface.
-- `MAX_TERRAIN_LAYER_MAPS` (const): const MAX_TERRAIN_LAYER_MAPS: 4 — At most this many painted layers sample their own scanned map; extra layers keep procedural shading.
 - `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
 - `TerrainDetailMaterialOptions` (interface): interface TerrainDetailMaterialOptions — Surface-pass inputs beyond the resolved detail config.
 - `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
-- `TerrainLayerMap` (interface): interface TerrainLayerMap — One painted layer's scanned color map plus the world metres one tile covers.
+- `TerrainScanLibrary` (type): type TerrainScanLibrary = ReadonlyMap<string, SurfaceMaterialMaps> — Scans already decoded and packed, by {@link terrainScanKey}.
 - `TerrainSurfaceSlot` (interface): interface TerrainSurfaceSlot — One terrain role's generated surface: its array layer, tile metres and tint.
 - `TerrainSurfaceTextures` (interface): interface TerrainSurfaceTextures — Generated terrain surfaces baked into array textures, ready for {@link createTerrainDetailMaterial}.
-- `createTerrainSurfaceTextures` (function): function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): TerrainSurfaceTextures | undefined — Bake a terrain's generated surfaces (shared per spec) and stack them into array textures. `detail` 1 bakes each map at its own resolution, 0.5 at half; layers are rebaked at the smallest size any role asks for so they stack. Undefined when the terrain names no surfaces.
-- `createTerrainSurfaceTexturesJob` (function): function createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): SlicedJob<TerrainSurfaceTextures | undefined> — {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze.
+- `createTerrainSurfaceTextures` (function): function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1, paintScans: readonly (TerrainMaterialMaps | undefined)[] = [], scans: TerrainScanLibrary = new Map()): TerrainSurfaceTextures | undefined — Bake a terrain's surfaces (shared per spec) and stack them into array textures: the ground, sand and rock roles first (generated or scanned), then one layer per distinct paint-layer scan. `detail` 1 bakes each map at its own resolution, 0.5 at half; generated layers are rebaked at the size the scans were packed at, or the smallest size any role asks for, so they stack. Undefined when nothing names a surface.
+- `createTerrainSurfaceTexturesJob` (function): function createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1, paintScans: readonly (TerrainMaterialMaps | undefined)[] = [], scans: TerrainScanLibrary = new Map()): SlicedJob<TerrainSurfaceTextures | undefined> — {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze.
 
 ## @jgengine/core/terrain/terrainGenerator
 
@@ -5462,6 +5508,11 @@
 - `TerrainQualityContext` (const): const TerrainQualityContext: React.Context<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
 - `useTerrainQuality` (function): function useTerrainQuality(): GraphicsQuality — Graphics tier for terrain surface shading (`low` takes the cheap path).
 
+## @jgengine/core/terrain/terrainScanMaps.draw
+
+- `TERRAIN_SCAN_SIZE` (const): const TERRAIN_SCAN_SIZE: 1024 — Largest edge a scan is packed at; ambientCG 1K archives are 1024 square.
+- `TerrainScanPixels` (interface): interface TerrainScanPixels — Decoded RGBA bytes of each map of one scan, all `size` square with row 0 at the top (image order).
+
 ## @jgengine/core/terrain/terrainSeed
 
 - `TerrainSeed` (type): type TerrainSeed = number | string — A terrain seed: a number, or a string hashed to one.
@@ -5485,6 +5536,10 @@
 - `terrainSurfaceClass` (function): function terrainSurfaceClass(surface: string): TerrainSurfaceClass — Classifies a painted surface id (e.g. `"grass"`, `"dry-grass"`, `"cobble-stone"`) into the procedural ground response the terrain shader draws for it; unknown ids get the generic `"ground"` response.
 - `terrainSurfaceClassIndex` (function): function terrainSurfaceClassIndex(cls: TerrainSurfaceClass): number — Shader index of a surface class (`jgSurface`'s `cls`); bit `1 << index` in a class mask.
 - `terrainSurfaceRoughness` (function): function terrainSurfaceRoughness(cls: TerrainSurfaceClass): number — Default roughness the terrain shades a surface class with.
+
+## @jgengine/core/terrain/useTerrainSurfaces.draw
+
+- `useTerrainSurfaces` (function): function useTerrainSurfaces(detailSurfaces: ResolvedTerrainSurfaces | undefined, paintSlots: readonly TerrainPaintSlot[] | undefined, quality: GraphicsQuality): { surfaces: TerrainSurfaceTextures | undefined; pending: boolean } — The terrain's baked surface array: generated roles, scanned roles and the scans its paint layers name, stacked once. Scans decode first (counted as scene loading); until they answer the terrain draws the layers procedurally, and a scan that fails to load is logged and stays procedural.
 
 ## @jgengine/core/time/accrueSince
 
@@ -7147,7 +7202,7 @@
 - `TerrainPolylineRegion` (interface): interface TerrainPolylineRegion extends TerrainRegionStyle — A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles.
 - `TerrainRectRegion` (interface): interface TerrainRectRegion extends TerrainRegionStyle — A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts.
 - `TerrainRegionStyle` (interface): interface TerrainRegionStyle — Palette and blend fields shared by every `TerrainMaterialRegion` shape.
-- `TerrainSurfaceLayer` (interface): interface TerrainSurfaceLayer extends SurfaceMaterialSpec — One generated terrain surface: a material spec plus how it tiles and tints.
+- `TerrainSurfaceLayer` (interface): interface TerrainSurfaceLayer extends SurfaceMaterialSpec — One terrain surface: a generated material spec or a scanned `scan`, plus how it tiles and tints.
 - `TerrainSurfacesConfig` (interface): interface TerrainSurfacesConfig — Which generated surface draws each terrain role.
 - `TilemapWorldConfig` (interface): interface TilemapWorldConfig extends WorldGridConfig { map: string; tileSet?: {atlas: SpriteAtlas; tiles: Record<string, string>}; sortingLayer?: string } — ⚠ undocumented · used by `tilemap`: Declares a 2D tilemap world from a map string.
 - `VegetationEnvironmentDescriptor` (type): type VegetationEnvironmentDescriptor = GrassEnvironmentDescriptor — ⚠ undocumented

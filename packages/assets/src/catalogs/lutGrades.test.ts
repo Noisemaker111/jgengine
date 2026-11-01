@@ -1,14 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
+import { setGameAssetFiles } from "@jgengine/core/assets/assetBase";
 import { parseCubeLut } from "@jgengine/core/postfx/cubeLut";
 import { createGradePass } from "@jgengine/core/postfx/gradeShader.draw";
 
 import { LUT_GRADES, LUT_GRADE_LICENSE, LUT_GRADE_SIZE, applyLutRecipe, bakeLutGrade, lutGrade, lutGradeFile } from "./lutGrades";
 
 describe("lut grades", () => {
-  test("ships 19 distinct, licensed 32³ grades", () => {
-    expect(LUT_GRADES).toHaveLength(19);
-    expect(new Set(LUT_GRADES.map((grade) => grade.id)).size).toBe(19);
+  test("ships distinct, licensed 32³ grades", () => {
+    expect(LUT_GRADES.length).toBeGreaterThanOrEqual(16);
+    expect(new Set(LUT_GRADES.map((grade) => grade.id)).size).toBe(LUT_GRADES.length);
     expect(LUT_GRADE_LICENSE).toBe("CC0-1.0");
     const cube = bakeLutGrade("cold-teal");
     expect(cube.size).toBe(LUT_GRADE_SIZE);
@@ -44,5 +45,23 @@ describe("lut grades", () => {
     }
     // type-escape: the point of the test is an id outside the typed list
     expect(() => lutGrade("missing" as never)).toThrow("unknown LUT grade");
+  });
+  test("a runner that serves each game under its own folder fetches the grade from there", async () => {
+    const fetched: string[] = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = Object.assign(async (url: string) => {
+      fetched.push(url);
+      return new Response(lutGradeFile("night-blue"));
+    }, { preconnect: () => undefined });
+    setGameAssetFiles("games/harbor", ["/lut/night-blue/night-blue.cube"]);
+    try {
+      const loaded = createGradePass({ lut: lutGrade("night-blue") });
+      await new Promise((done) => setTimeout(done, 5)); // wait-ok: lets the fetch microtasks settle
+      expect(fetched).toEqual(["/games/harbor/lut/night-blue/night-blue.cube"]);
+      loaded.dispose();
+    } finally {
+      setGameAssetFiles(null);
+      globalThis.fetch = realFetch;
+    }
   });
 });

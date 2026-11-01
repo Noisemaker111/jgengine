@@ -4,6 +4,7 @@
     "achievements": "jgengine-gameplay",
     "agents": "jgengine-gameplay",
     "ai": "jgengine-world",
+    "ambientFauna": "jgengine-world",
     "anim": "jgengine-world",
     "area": "jgengine-world",
     "audio": "jgengine-world",
