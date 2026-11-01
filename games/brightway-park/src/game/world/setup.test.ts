@@ -10,6 +10,8 @@ const ANCHORS: readonly SeedPlacement[] = [
   { catalogId: "stall_food", x: 12, z: 28 },
 ];
 const TRACK_PIECES = 14;
+/** Scenery markers are drawn, not built, so the seed never reads them. */
+const PARK_MARKERS = editorLayers.markers.filter((marker) => marker.kind !== "scenery");
 
 describe("brightway-park starter park (authored scene)", () => {
   test("the document seeds rides first, then track, then the rest", () => {
@@ -18,7 +20,7 @@ describe("brightway-park starter park (authored scene)", () => {
     const track = placements.slice(ANCHORS.length, ANCHORS.length + TRACK_PIECES);
     for (const piece of track) expect(piece.catalogId).toBe("track_piece");
     const rest = placements.slice(ANCHORS.length + TRACK_PIECES);
-    expect(rest.length).toBe(editorLayers.markers.length - ANCHORS.length);
+    expect(rest.length).toBe(PARK_MARKERS.length - ANCHORS.length);
     for (const piece of rest) expect(piece.catalogId).not.toBe("track_piece");
   });
 
@@ -32,7 +34,7 @@ describe("brightway-park starter park (authored scene)", () => {
   });
 
   test("the authored document carries the seed content the runtime reads", () => {
-    expect(editorLayers.markers).toHaveLength(seedPlacements().length - TRACK_PIECES);
+    expect(PARK_MARKERS).toHaveLength(seedPlacements().length - TRACK_PIECES);
     const track = editorLayers.paths.find((path) => path.id === "coaster-track");
     expect(track?.kind).toBe("route");
     expect(track?.points).toHaveLength(TRACK_PIECES);

@@ -11,6 +11,7 @@ import * as W from './models/water.mjs';
 import * as R from './models/transport.mjs';
 import * as C from './models/coasters.mjs';
 import * as S from './models/shops.mjs';
+import * as Gate from './models/gate.mjs';
 
 // GLTFExporter uses this browser interface to package buffers, without images.
 globalThis.FileReader = class {
@@ -50,7 +51,7 @@ add('stall_pizza', S.stallPizza(), 4); add('stall_icecream', S.stallIcecream(), 
 add('fac_toilet', S.facToilet(), 4); add('fac_info', S.facInfo(), 4); add('fac_firstaid', S.facFirstaid(), 4);
 // scenery
 add('deco_fountain', L.fountain(), 8); add('deco_topiary', L.topiary(), 4); add('deco_tree', L.treeModel(), 4); add('deco_flowerbed', L.flowers(), 4); add('deco_lamp', L.lamp(), 4);
-add('deco_statue', S.statue(), 4); add('deco_hedge', S.hedge(), 4); add('deco_arch', S.arch(), 4); add('deco_flagpole', S.flagpole(), 4);
+add('deco_gate', Gate.gate(), 16); add('deco_statue', S.statue(), 4); add('deco_hedge', S.hedge(), 4); add('deco_arch', S.arch(), 4); add('deco_flagpole', S.flagpole(), 4);
 // paths
 add('path_walk', L.path(), 4); add('path_queue', S.pathQueue(), 4); add('ride_entrance', S.rideEntrance(), 4); add('ride_exit', S.rideExit(), 4);
 // people

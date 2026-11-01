@@ -573,6 +573,786 @@
       "meta": {
         "catalogId": "deco_lamp"
       }
+    },
+    {
+      "id": "town-north-0",
+      "kind": "scenery",
+      "position": {
+        "x": -35,
+        "y": 0,
+        "z": -92
+      },
+      "rotationY": 0,
+      "label": "town-north-0",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/2Story_Wide",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-north-1",
+      "kind": "scenery",
+      "position": {
+        "x": -25,
+        "y": 0,
+        "z": -92
+      },
+      "rotationY": 0,
+      "label": "town-north-1",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/1Story_GableRoof",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-north-2",
+      "kind": "scenery",
+      "position": {
+        "x": -15,
+        "y": 0,
+        "z": -92
+      },
+      "rotationY": 0,
+      "label": "town-north-2",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/3Story_Small",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-north-3",
+      "kind": "scenery",
+      "position": {
+        "x": -5,
+        "y": 0,
+        "z": -92
+      },
+      "rotationY": 0,
+      "label": "town-north-3",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/2Story_Balcony",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-north-4",
+      "kind": "scenery",
+      "position": {
+        "x": 5,
+        "y": 0,
+        "z": -92
+      },
+      "rotationY": 0,
+      "label": "town-north-4",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/1Story_Sign",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-north-5",
+      "kind": "scenery",
+      "position": {
+        "x": 15,
+        "y": 0,
+        "z": -92
+      },
+      "rotationY": 0,
+      "label": "town-north-5",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/2Story_GableRoof",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-north-6",
+      "kind": "scenery",
+      "position": {
+        "x": 25,
+        "y": 0,
+        "z": -92
+      },
+      "rotationY": 0,
+      "label": "town-north-6",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/4Story",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-north-7",
+      "kind": "scenery",
+      "position": {
+        "x": 35,
+        "y": 0,
+        "z": -92
+      },
+      "rotationY": 0,
+      "label": "town-north-7",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/2Story_Sidehouse",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-west-0",
+      "kind": "scenery",
+      "position": {
+        "x": -84,
+        "y": 0,
+        "z": -50
+      },
+      "rotationY": 1.5708,
+      "label": "town-west-0",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/2Story_Center",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-west-1",
+      "kind": "scenery",
+      "position": {
+        "x": -84,
+        "y": 0,
+        "z": -39
+      },
+      "rotationY": 1.5708,
+      "label": "town-west-1",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/1Story_RoundRoof",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-west-2",
+      "kind": "scenery",
+      "position": {
+        "x": -84,
+        "y": 0,
+        "z": -28
+      },
+      "rotationY": 1.5708,
+      "label": "town-west-2",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/2Story_Columns",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-west-3",
+      "kind": "scenery",
+      "position": {
+        "x": -84,
+        "y": 0,
+        "z": -17
+      },
+      "rotationY": 1.5708,
+      "label": "town-west-3",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/3Story_Slim",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-east-0",
+      "kind": "scenery",
+      "position": {
+        "x": 84,
+        "y": 0,
+        "z": -50
+      },
+      "rotationY": -1.5708,
+      "label": "town-east-0",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/2Story_Double",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-east-1",
+      "kind": "scenery",
+      "position": {
+        "x": 84,
+        "y": 0,
+        "z": -39
+      },
+      "rotationY": -1.5708,
+      "label": "town-east-1",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/2Story_Sign",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-east-2",
+      "kind": "scenery",
+      "position": {
+        "x": 84,
+        "y": 0,
+        "z": -28
+      },
+      "rotationY": -1.5708,
+      "label": "town-east-2",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/1Story",
+        "scale": 4
+      }
+    },
+    {
+      "id": "town-east-3",
+      "kind": "scenery",
+      "position": {
+        "x": 84,
+        "y": 0,
+        "z": -17
+      },
+      "rotationY": -1.5708,
+      "label": "town-east-3",
+      "meta": {
+        "assetId": "quaternius-lowpoly-buildings-pack/2Story_RoundRoof",
+        "scale": 4
+      }
+    },
+    {
+      "id": "hedge-w-0",
+      "kind": "scenery",
+      "position": {
+        "x": -3.8,
+        "y": 0,
+        "z": 14
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-w-0",
+      "kind": "scenery",
+      "position": {
+        "x": -5.51,
+        "y": 0,
+        "z": 14
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-e-0",
+      "kind": "scenery",
+      "position": {
+        "x": 3.8,
+        "y": 0,
+        "z": 14
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-e-0",
+      "kind": "scenery",
+      "position": {
+        "x": 5.51,
+        "y": 0,
+        "z": 14
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-w-1",
+      "kind": "scenery",
+      "position": {
+        "x": -3.8,
+        "y": 0,
+        "z": 18
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-w-1",
+      "kind": "scenery",
+      "position": {
+        "x": -5.51,
+        "y": 0,
+        "z": 18
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-e-1",
+      "kind": "scenery",
+      "position": {
+        "x": 3.8,
+        "y": 0,
+        "z": 18
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-e-1",
+      "kind": "scenery",
+      "position": {
+        "x": 5.51,
+        "y": 0,
+        "z": 18
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-w-2",
+      "kind": "scenery",
+      "position": {
+        "x": -3.8,
+        "y": 0,
+        "z": 22
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-w-2",
+      "kind": "scenery",
+      "position": {
+        "x": -5.51,
+        "y": 0,
+        "z": 22
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-e-2",
+      "kind": "scenery",
+      "position": {
+        "x": 3.8,
+        "y": 0,
+        "z": 22
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-e-2",
+      "kind": "scenery",
+      "position": {
+        "x": 5.51,
+        "y": 0,
+        "z": 22
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-w-3",
+      "kind": "scenery",
+      "position": {
+        "x": -3.8,
+        "y": 0,
+        "z": 26
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-w-3",
+      "kind": "scenery",
+      "position": {
+        "x": -5.51,
+        "y": 0,
+        "z": 26
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-e-3",
+      "kind": "scenery",
+      "position": {
+        "x": 3.8,
+        "y": 0,
+        "z": 26
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-e-3",
+      "kind": "scenery",
+      "position": {
+        "x": 5.51,
+        "y": 0,
+        "z": 26
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-w-4",
+      "kind": "scenery",
+      "position": {
+        "x": -3.8,
+        "y": 0,
+        "z": 30
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-w-4",
+      "kind": "scenery",
+      "position": {
+        "x": -5.51,
+        "y": 0,
+        "z": 30
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-e-4",
+      "kind": "scenery",
+      "position": {
+        "x": 3.8,
+        "y": 0,
+        "z": 30
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-e-4",
+      "kind": "scenery",
+      "position": {
+        "x": 5.51,
+        "y": 0,
+        "z": 30
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-w-5",
+      "kind": "scenery",
+      "position": {
+        "x": -3.8,
+        "y": 0,
+        "z": 34
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-w-5",
+      "kind": "scenery",
+      "position": {
+        "x": -5.51,
+        "y": 0,
+        "z": 34
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-e-5",
+      "kind": "scenery",
+      "position": {
+        "x": 3.8,
+        "y": 0,
+        "z": 34
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-e-5",
+      "kind": "scenery",
+      "position": {
+        "x": 5.51,
+        "y": 0,
+        "z": 34
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-w-6",
+      "kind": "scenery",
+      "position": {
+        "x": -3.8,
+        "y": 0,
+        "z": 38
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-w-6",
+      "kind": "scenery",
+      "position": {
+        "x": -5.51,
+        "y": 0,
+        "z": 38
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-e-6",
+      "kind": "scenery",
+      "position": {
+        "x": 3.8,
+        "y": 0,
+        "z": 38
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-e-6",
+      "kind": "scenery",
+      "position": {
+        "x": 5.51,
+        "y": 0,
+        "z": 38
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-w-7",
+      "kind": "scenery",
+      "position": {
+        "x": -3.8,
+        "y": 0,
+        "z": 42
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-w-7",
+      "kind": "scenery",
+      "position": {
+        "x": -5.51,
+        "y": 0,
+        "z": 42
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-e-7",
+      "kind": "scenery",
+      "position": {
+        "x": 3.8,
+        "y": 0,
+        "z": 42
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-e-7",
+      "kind": "scenery",
+      "position": {
+        "x": 5.51,
+        "y": 0,
+        "z": 42
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_3_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-w-8",
+      "kind": "scenery",
+      "position": {
+        "x": -3.8,
+        "y": 0,
+        "z": 46
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-w-8",
+      "kind": "scenery",
+      "position": {
+        "x": -5.51,
+        "y": 0,
+        "z": 46
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "hedge-e-8",
+      "kind": "scenery",
+      "position": {
+        "x": 3.8,
+        "y": 0,
+        "z": 46
+      },
+      "rotationY": 0,
+      "label": "Hedge",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Bush_Common_Flowers",
+        "scale": 1.5
+      }
+    },
+    {
+      "id": "bed-e-8",
+      "kind": "scenery",
+      "position": {
+        "x": 5.51,
+        "y": 0,
+        "z": 46
+      },
+      "rotationY": 0,
+      "label": "Flowerbed",
+      "meta": {
+        "assetId": "quaternius-stylized-nature/Flower_4_Group",
+        "scale": 1.1
+      }
     }
   ],
   "volumes": [
