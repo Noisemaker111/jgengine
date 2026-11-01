@@ -52,6 +52,6 @@
     "access": "public"
   },
   "peerDependencies": {
-    "three": ">=0.170.0"
+    "three": ">=0.187.0"
   }
 }

@@ -716,6 +716,41 @@ function withRenderTarget(renderer: ShaderWarmupRenderer, target: unknown, work:
   }
 }
 
+function isUniformMap(value: unknown): value is Record<string, { value: unknown } | undefined> {
+  return typeof value === "object" && value !== null;
+}
+
+function boundTextures(target: unknown): unknown[] {
+  if (typeof target !== "object" || target === null) return [];
+  const textures: unknown[] = [];
+  if ("texture" in target) textures.push(target.texture);
+  if ("depthTexture" in target && target.depthTexture !== null) textures.push(target.depthTexture);
+  return textures;
+}
+
+/**
+ * Run `work` with the material's uniforms that hold `target`'s own textures cleared. A replayed pass
+ * writes the target it reads once the post chain's ping-pong has moved on, and drawing that is a
+ * feedback loop the driver rejects; a uniform's value never decides the program, so the link is the same. @internal
+ */
+export function withoutSelfSampling(material: unknown, target: unknown, work: () => void): void {
+  const own = boundTextures(target);
+  const cleared: { uniform: { value: unknown }; value: unknown }[] = [];
+  const uniforms = typeof material === "object" && material !== null && "uniforms" in material ? material.uniforms : null;
+  if (own.length > 0 && isUniformMap(uniforms)) {
+    for (const uniform of Object.values(uniforms)) {
+      if (uniform === undefined || uniform === null || !own.includes(uniform.value)) continue;
+      cleared.push({ uniform, value: uniform.value });
+      uniform.value = null;
+    }
+  }
+  try {
+    work();
+  } finally {
+    for (const { uniform, value } of cleared) uniform.value = value;
+  }
+}
+
 /** What decides the programs a held draw runs: its object, the material it held, the override and canvas or target. */
 function heldDrawKey(draw: HeldDraw): string {
   const override = draw.override as { uuid?: string; version?: number } | null;
@@ -757,7 +792,7 @@ function drawHeldDraw(renderer: ShaderWarmupRenderer, scene: Object3D, objects: 
     const quad = standIn(draw.object, draw.material);
     quad.onBeforeRender = () => {};
     quad.onAfterRender = () => {};
-    withRenderTarget(renderer, target, () => renderer.render?.(quad, draw.camera));
+    withoutSelfSampling(draw.material, target, () => withRenderTarget(renderer, target, () => renderer.render?.(quad, draw.camera)));
   }
 }
 

@@ -82,7 +82,7 @@ ${SURFACE_BUMP_NORMAL_GLSL}
 const OCCLUSION_MAIN = /* glsl */ `
 #include <aomap_fragment>
 {
-  float jgUp = inverseTransformDirection(normal, viewMatrix).y * 0.5 + 0.5;
+  float jgUp = transformNormalByInverseViewMatrix(normal, viewMatrix).y * 0.5 + 0.5;
   float jgCavity = mix(1.0, mix(0.7, 1.0, jgUp) * (0.88 + 0.12 * jgBroad), jgSurfStrength);
   reflectedLight.indirectDiffuse *= jgCavity;
   reflectedLight.indirectSpecular *= jgCavity;

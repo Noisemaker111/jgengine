@@ -71,7 +71,7 @@ function neutral(input: Rgb): Rgb {
 }
 
 /**
- * three.js r182's tone-mapping curve for `mode`, applied to a linear scene color at `exposure`.
+ * three.js r187's tone-mapping curve (the chunk is unchanged since r182) for `mode`, applied to a linear scene color at `exposure`.
  * Mirrors `tonemapping_pars_fragment`; `NoToneMapping` and custom curves pass through.
  * @internal
  */

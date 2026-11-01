@@ -14,7 +14,7 @@ import {
 } from "@llmville/game/simulation/interaction";
 import { Canvas } from "@react-three/fiber";
 import { useMemo } from "react";
-import { ACESFilmicToneMapping, PCFSoftShadowMap } from "three";
+import { ACESFilmicToneMapping, PCFShadowMap } from "three";
 
 import type { DatacenterClaim, PlacementCellPolicy } from "@llmville/game/datacenter/claims";
 import { PlayerMovementController } from "@/movement/PlayerMovementController";
@@ -92,11 +92,11 @@ export default function GameScene(props: GameSceneProps) {
     <div className="absolute inset-0">
       <Canvas
         camera={{ position: [0, 1.7, 0], fov: 75, near: 0.1, far: WORLD_CAMERA_FAR }}
-        shadows="soft"
+        shadows="percentage"
         gl={{ antialias: true, stencil: false, depth: true }}
         onCreated={({ gl }) => {
           gl.shadowMap.enabled = true;
-          gl.shadowMap.type = PCFSoftShadowMap;
+          gl.shadowMap.type = PCFShadowMap;
           gl.toneMapping = ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.25;
           (gl.domElement as HTMLCanvasElement).tabIndex = -1;

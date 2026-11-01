@@ -71,7 +71,7 @@
     "@react-three/fiber": "^9.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "three": ">=0.170.0",
+    "three": ">=0.187.0",
     "three-stdlib": "^2.0.0"
   },
   "peerDependenciesMeta": {

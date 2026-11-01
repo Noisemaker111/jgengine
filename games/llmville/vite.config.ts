@@ -24,30 +24,26 @@ export default defineConfig({
     dedupe: engine.dedupe,
     alias: [
       ...engine.alias,
-      { find: /^@\//, replacement: `${path.resolve(__dirname, "./src")}/` },
+      { find: /^@\//, replacement: `${path.resolve(import.meta.dirname, "./src")}/` },
       // Resolve the workspace package straight to its source. Bypasses
       // node_modules linking, which breaks on Windows junctions (convex/esbuild)
       // and needs this when packages/game has no "exports" field.
-      { find: /^@llmville\/game/, replacement: path.resolve(__dirname, "./packages/game/src") },
+      { find: /^@llmville\/game/, replacement: path.resolve(import.meta.dirname, "./packages/game/src") },
     ],
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         // Split heavy, stable vendors into their own chunks. three.js / R3F only
         // load with the lazy game-session chunk (never on the landing page), and
         // pinning them to a stable hash lets the browser cache them across app
         // deploys and lets us preload them independently during the auth wait.
-        manualChunks(id) {
-          if (!id.includes("node_modules")) return undefined;
-          if (id.includes("/three/") || id.includes("/three-stdlib/") || id.includes("@react-three/")) {
-            return "three-vendor";
-          }
-          if (id.includes("/react/") || id.includes("/react-dom/") || id.includes("/scheduler/")) {
-            return "react-vendor";
-          }
-          if (id.includes("@tanstack/")) return "router-vendor";
-          return undefined;
+        codeSplitting: {
+          groups: [
+            { name: "three-vendor", test: /node_modules[\\/](three|three-stdlib|@react-three)[\\/]/ },
+            { name: "react-vendor", test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 2 },
+            { name: "router-vendor", test: /node_modules[\\/]@tanstack[\\/]/, priority: 2 },
+          ],
         },
       },
     },
