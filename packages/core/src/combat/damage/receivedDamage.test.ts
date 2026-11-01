@@ -93,4 +93,20 @@ describe("resolveReceivedDamage", () => {
     const b = resolveReceivedDamage({ amount: 50, context: ctx, modifiers: clone });
     expect(b).toEqual(a);
   });
+
+  it("folds scale, flat, cap and floor in order, clamping scale and flat at zero", () => {
+    const result = resolveReceivedDamage({
+      amount: 100,
+      context: { channel: "fire", target: "t" },
+      modifiers: [
+        { id: "amp", policy: { kind: "scale", factor: 1.5 } },
+        { id: "armor", policy: { kind: "flat", delta: -20 } },
+        { id: "cap", policy: { kind: "cap", max: 90 } },
+        { id: "floor", policy: { kind: "floor", min: 95 } },
+        { id: "wipe", policy: { kind: "flat", delta: -500 } },
+      ],
+    });
+    expect(result.steps.map((step) => step.after)).toEqual([150, 130, 90, 95, 0]);
+    expect(result.amount).toBe(0);
+  });
 });

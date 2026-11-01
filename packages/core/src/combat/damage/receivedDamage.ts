@@ -1,3 +1,4 @@
+import { applyStatOp, boundStatValue, type StatContribution } from "../../progression/statGraph";
 import type { DamageChannelId } from "./damageMatchup";
 
 /**
@@ -116,6 +117,21 @@ function matches(predicate: DamagePredicate | undefined, ctx: DamageContext): bo
   return true;
 }
 
+function statContribution(policy: ReceivedPolicy, source: string): StatContribution | null {
+  switch (policy.kind) {
+    case "scale":
+      return { source, op: "mul", value: policy.factor };
+    case "flat":
+      return { source, op: "add", value: policy.delta };
+    case "cap":
+      return { source, op: "clampMax", value: policy.max };
+    case "floor":
+      return { source, op: "clampMin", value: policy.min };
+    default:
+      return null;
+  }
+}
+
 /**
  * Run receiver-side modifiers over an incoming hit, in ascending `order`, recording every step.
  * Amplification, reduction, caps, conversion, redirection, and immunity are all data — the engine
@@ -142,23 +158,14 @@ export function resolveReceivedDamage(input: ReceivedDamageInput): ReceivedDamag
     const policy = modifier.policy;
     const before = amount;
     const id = modifier.id ?? null;
+    const stat = statContribution(policy, id ?? policy.kind);
+    if (stat !== null) {
+      const folded = applyStatOp(amount, stat.op, stat.value);
+      amount = stat.op === "mul" || stat.op === "add" ? boundStatValue(folded, { min: 0 }) : folded;
+      steps.push({ modifierId: id, kind: policy.kind, before, after: amount });
+      continue;
+    }
     switch (policy.kind) {
-      case "scale":
-        amount = Math.max(0, amount * policy.factor);
-        steps.push({ modifierId: id, kind: "scale", before, after: amount });
-        break;
-      case "flat":
-        amount = Math.max(0, amount + policy.delta);
-        steps.push({ modifierId: id, kind: "flat", before, after: amount });
-        break;
-      case "cap":
-        amount = Math.min(amount, policy.max);
-        steps.push({ modifierId: id, kind: "cap", before, after: amount });
-        break;
-      case "floor":
-        amount = Math.max(amount, policy.min);
-        steps.push({ modifierId: id, kind: "floor", before, after: amount });
-        break;
       case "convert": {
         const portion = policy.portion ?? 1;
         const moved = amount * Math.max(0, Math.min(1, portion));
