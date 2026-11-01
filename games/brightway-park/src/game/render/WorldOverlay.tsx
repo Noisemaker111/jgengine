@@ -20,6 +20,7 @@ import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 import { bindParkCapture } from "../parkProfile";
 import { tileAt, cellCentre, groundAt, isLandTool, LEVEL_HEIGHT, lineCells, raisedCells, rectCells } from "../build/terrain";
 import { landCheck, LINE_KINDS } from "../build/commands";
+import { StallWares } from "./StallWares";
 import { AuthoredScenery } from "./AuthoredScenery";
 import { currentHint } from "../onboarding";
 
@@ -241,6 +242,7 @@ function OverlayBodies() {
   const obj=parkObject(ctx,selection);
   return <group><Fence/><AuthoredScenery/><Land/><Blueprint/>
     {objects.filter(o=>MOTION[o.kind]).map(o=><Suspense key={o.id} fallback={null}><RideMotion object={o}/></Suspense>)}
+    {objects.filter(o=>o.kind.startsWith("stall_")).map(o=><StallWares key={o.id} object={o}/>)}
     {objects.filter(o=>o.kind==="ride_coaster").map(o=><CoasterTrain key={o.id} object={o} circuit={circuit}/>)}
     {obj?.def.staff&&<PatrolRing x={obj.x} z={obj.z} radius={patrolRadius(park.of(ctx),obj.id)}/>}
     {obj&&<mesh position={[obj.x,.23,obj.z]} rotation={[-Math.PI/2,0,0]} raycast={()=>{}}><ringGeometry args={[Math.max(2,obj.def.footprint*.65),Math.max(2,obj.def.footprint*.65)+.18,48]}/><meshBasicMaterial color="#edbc5c"/></mesh>}
