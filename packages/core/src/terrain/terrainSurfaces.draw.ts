@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { TERRAIN_PAINT_COLORS } from "@jgengine/core/terrain/terrainPaint";
 import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
+import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 
 import type { TerrainPaintSource } from "./terrainPaintColor.draw";
 
@@ -63,10 +64,12 @@ export interface TerrainPaintSlot {
   roughness: number;
   /** Pattern frequency multiplier from the layer's authored `tiling`. */
   scale: number;
-  /** World metres per texture repeat for this layer's scanned color map; 0 when the layer has no map. */
+  /** World metres per texture repeat for this layer's scan; 0 when the layer has none. */
   tileMetres: number;
-  /** Resolved color-map URL the slot's scanned texture comes from, if any. */
-  materialUrl?: string;
+  /** Scanned PBR maps the slot draws from, if any. */
+  scan?: TerrainMaterialMaps;
+  /** True when the scan switches to side projections on slopes (default); false keeps it top-down. */
+  triplanar: boolean;
 }
 
 /** Per-cell paint coverage packed for the shader: two RGBA8 planes holding up to eight layer weights. */
@@ -88,8 +91,9 @@ function slotFor(surface: string, layer: TerrainMaterialLayer | undefined): Terr
     classIndex: CLASS_INDEX[surfaceClass],
     roughness: layer?.roughness ?? CLASS_ROUGHNESS[surfaceClass],
     scale: tiling === undefined || tiling <= 0 ? 1 : Math.min(2, Math.max(0.5, CLASS_TILING[surfaceClass] / tiling)),
-    tileMetres: layer?.materialUrl === undefined ? 0 : tiling !== undefined && tiling > 0 ? tiling : 6,
-    ...(layer?.materialUrl === undefined ? {} : { materialUrl: layer.materialUrl }),
+    tileMetres: layer?.materialMaps === undefined ? 0 : tiling !== undefined && tiling > 0 ? tiling : 6,
+    triplanar: layer?.triplanar !== false,
+    ...(layer?.materialMaps === undefined ? {} : { scan: layer.materialMaps }),
   };
 }
 
@@ -195,6 +199,7 @@ export function createTerrainPaintTextures(weights: TerrainPaintWeights): Terrai
   const roughness = new Float32Array(MAX_TERRAIN_PAINT_LAYERS);
   const scales = new Float32Array(MAX_TERRAIN_PAINT_LAYERS);
   const tiles = new Float32Array(MAX_TERRAIN_PAINT_LAYERS);
+  const tri = new Float32Array(MAX_TERRAIN_PAINT_LAYERS);
   const uniforms = {
     uPaintA: { value: coverageTexture(weights.planes[0], weights.cols, weights.rows) },
     uPaintB: { value: coverageTexture(weights.planes[1], weights.cols, weights.rows) },
@@ -207,6 +212,7 @@ export function createTerrainPaintTextures(weights: TerrainPaintWeights): Terrai
     uLayerRough: { value: roughness },
     uLayerScale: { value: scales },
     uLayerTile: { value: tiles },
+    uLayerTri: { value: tri },
   };
   let classMask = 0;
   let slots: readonly TerrainPaintSlot[] = weights.slots;
@@ -234,6 +240,7 @@ export function createTerrainPaintTextures(weights: TerrainPaintWeights): Terrai
       roughness[i] = slot?.roughness ?? 0.9;
       scales[i] = slot?.scale ?? 1;
       tiles[i] = slot?.tileMetres ?? 0;
+      tri[i] = slot?.triplanar === false ? 0 : 1;
     }
   };
   update(weights);

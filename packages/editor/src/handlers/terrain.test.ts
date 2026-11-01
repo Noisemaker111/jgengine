@@ -53,14 +53,29 @@ describe("terrain RPC authoring recovery", () => {
     expect(resolved.ok).toBe(true);
     const layer = session.getState().document.terrain!.layers![0]!;
     expect(layer.material).toBe("foliage/grass");
-    expect(layer.materialUrl).toContain("/materials/ambientcg-grass001/");
+    expect(layer.materialMaps?.color).toContain("/materials/ambientcg-grass001/");
+    expect(layer.materialMaps?.normal).toContain("/materials/ambientcg-grass001/normal");
+    expect(layer.tiling).toBe(6);
     const refused = api.handle({ method: "set_terrain_layers", layers: [{ id: "turf", surface: "grass", material: "not/a-material" }] });
     expect(refused.ok).toBe(false);
     expect(refused.error).toContain("not/a-material");
     expect(session.getState().document.terrain!.layers![0]!.material).toBe("foliage/grass");
     const cleared = api.handle({ method: "set_terrain_layers", layers: [{ id: "turf", surface: "grass" }] });
     expect(cleared.ok).toBe(true);
-    expect(session.getState().document.terrain!.layers![0]!.materialUrl).toBeUndefined();
+    expect(session.getState().document.terrain!.layers![0]!.materialMaps).toBeUndefined();
+    dispose();
+  });
+
+  test("a layer without tiling takes the scan's authored metres, and a scene with presets only still loads", () => {
+    const { api, dispose } = host();
+    const session = api.getSession();
+    expect(api.handle({ method: "set_terrain_layers", layers: [{ id: "beach", surface: "sand", material: "ground/beach" }, { id: "grass", surface: "grass" }] }).ok).toBe(true);
+    const layers = session.getState().document.terrain!.layers!;
+    expect(layers[0]!.tiling).toBeGreaterThan(0);
+    expect(layers[0]!.materialMaps?.color).toContain("ambientcg-ground033");
+    expect(layers[1]!.materialMaps).toBeUndefined();
+    const reloaded = api.handle({ method: "import_document", json: session.exportJson() });
+    expect(reloaded.ok).toBe(true);
     dispose();
   });
 

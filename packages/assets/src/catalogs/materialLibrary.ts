@@ -368,6 +368,29 @@ export function librarySurfaceScan(name: string, options: LibraryTerrainOptions 
   };
 }
 
+/** Options for {@link libraryTerrainSurface}. */
+export interface LibraryTerrainSurfaceOptions {
+  /** URL prefix `assets pull` writes under; defaults to `/materials`. */
+  basePath?: string;
+  /** World metres one tile covers; defaults to the entry's authored `tileMetres`. */
+  tile?: number;
+  /** 0..1 how much the terrain's own colour recolours the scan; the core role default when omitted. */
+  tint?: number;
+}
+
+/**
+ * A library name as a terrain surface role: `terrain({ detail: { surfaces: { ground: libraryTerrainSurface("foliage/meadow") } } })`.
+ * The terrain shader samples its colour, normal, roughness, AO and height maps, projected from above and
+ * on their own face on slopes, and uses the height to decide which layer breaks through at a blend edge.
+ * An unknown name throws.
+ * @capability library-terrain-surface scanned library ground for a terrain's ground, sand or rock role, with slope projection and height blending
+ */
+export function libraryTerrainSurface(name: string, options: LibraryTerrainSurfaceOptions = {}): { scan: TerrainMaterialMaps; tile: number; tint?: number } {
+  const entry = requireLibraryMaterial(name);
+  const scan = librarySurfaceScan(name, options.basePath === undefined ? {} : { basePath: options.basePath });
+  return { scan: scan.maps, tile: options.tile ?? entry.tileMetres, ...(options.tint === undefined ? {} : { tint: options.tint }) };
+}
+
 /** Options for {@link libraryBuildingSurface}. */
 export interface LibraryBuildingSurfaceOptions {
   /** URL prefix `assets pull` writes under; defaults to `/materials`. */

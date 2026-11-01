@@ -14,6 +14,7 @@ import {
   librarySurfaceParameters,
   librarySurfaceScan,
   libraryTerrainMaterial,
+  libraryTerrainSurface,
 } from "./materialLibrary";
 import { sourceById } from "../sources";
 
@@ -183,4 +184,18 @@ describe("shared material library", () => {
 
 test("the engine's default road scan is the library's dry asphalt", () => {
   expect(DEFAULT_ROAD_SCAN).toEqual(librarySurfaceScan("asphalt/dry"));
+});
+
+test("the ground scans the art-direction files name resolve to maps with a licence", () => {
+  for (const [name, source] of [["ground/beach", "ambientcg-ground033"], ["foliage/meadow", "ambientcg-grass005"], ["ground/jungle-floor", "ambientcg-ground020"], ["ground/cliff", "ambientcg-rock035"]] as const) {
+    const surface = libraryTerrainSurface(name);
+    expect(surface.scan.color).toBe(`/materials/${source}/color.jpg`);
+    expect(surface.scan.normal).toBe(`/materials/${source}/normal.jpg`);
+    expect(surface.scan.roughness).toBeDefined();
+    expect(surface.tile).toBe(findLibraryMaterial(name)!.tileMetres);
+    expect(sourceById.get(source)?.license).toBe("CC0-1.0");
+    expect(libraryMaterialAsset(name).textures?.color?.provenance?.license).toBe("CC0-1.0");
+  }
+  expect(libraryTerrainSurface("ground/beach", { tile: 9, tint: 0.2 })).toMatchObject({ tile: 9, tint: 0.2 });
+  expect(() => libraryTerrainSurface("ground/not-a-scan")).toThrow(/Unknown library material/);
 });
