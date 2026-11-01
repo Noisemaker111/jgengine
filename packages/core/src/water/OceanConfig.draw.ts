@@ -207,21 +207,25 @@ export function createOceanConfig(patch: OceanConfig = {}): ResolvedOceanConfig 
 export function buildOceanWaveUniforms(config: ResolvedOceanConfig): {
   directions: THREE.Vector2[];
   params: THREE.Vector4[];
+  phases: number[];
 } {
   const directions: THREE.Vector2[] = [];
   const params: THREE.Vector4[] = [];
+  const phases: number[] = [];
   for (let index = 0; index < MAX_OCEAN_WAVES; index += 1) {
     const wave = config.waves[index];
     if (wave === undefined) {
       directions.push(new THREE.Vector2(1, 0));
       params.push(new THREE.Vector4(1, 0, 0, 0));
+      phases.push(0);
       continue;
     }
     const waveNumber = (Math.PI * 2) / wave.wavelength;
     directions.push(new THREE.Vector2(wave.direction[0], wave.direction[1]));
     params.push(new THREE.Vector4(waveNumber, wave.amplitude, wave.steepness, wave.speed * waveNumber));
+    phases.push(wave.phase ?? 0);
   }
-  return { directions, params };
+  return { directions, params, phases };
 }
 
 /** Bed-map texels per side for a bed spanning `span` metres: the authored count, else about one per two metres, 16..256. @internal */

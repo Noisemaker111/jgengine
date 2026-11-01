@@ -10,7 +10,7 @@ import { printHelpIfAsked } from "./script-help";
 
 if (
   printHelpIfAsked("boat-compare", {
-    summary: "run every game boat built on createBoatDynamics and its reference hull (Holtrop–Mennen or Savitsky) through the same straight-line tests, beside the reference boats' published figures",
+    summary: "run every game boat built on createBoatDynamics, and boatFromReference's hulls with every effect on, against their reference sims (Holtrop–Mennen, Savitsky, B-series, MMG, strip theory) beside published figures, with each toleranced metric's pass or fail",
     usage: "bun run perf boat [game...]",
     flags: [],
     example: "bun run perf boat",
@@ -60,6 +60,18 @@ for (const file of sourceFiles(games)) {
   const loaded: unknown = await import(pathToFileURL(resolve(root, file)).href);
   if (isRecord(loaded)) boats.push(...boatsIn(loaded, file));
 }
-if (boats.length === 0) console.log(`no game boats built on createBoatDynamics found${games.length > 0 ? ` in ${games.join(", ")}` : ""}; showing the reference boats' game builds\n`);
-const tables = [...boats.map((boat) => compareBoat(referenceSubjectFor(boat.name, boat.tuning), boat.name)), ...referenceBoatSubjects().map((subject) => compareBoat(subject))];
+if (boats.length === 0) console.log(`no game boats built on createBoatDynamics found${games.length > 0 ? ` in ${games.join(", ")}` : ""}; showing boatFromReference's hulls\n`);
+const tables = [
+  ...boats.map((boat) => compareBoat(referenceSubjectFor(boat.name, boat.tuning), boat.name)),
+  ...referenceBoatSubjects().map((subject) => compareBoat(subject, `${subject.name} (boatFromReference, every effect at strength 1)`)),
+];
 console.log(formatFlightComparison(tables));
+// A game's own boat is a design choice and only reported; boatFromReference's hulls must hold their tolerances.
+let failed = 0;
+for (const [index, table] of tables.entries()) {
+  const misses = table.checks.filter((check) => !check.pass);
+  if (index >= boats.length) failed += misses.length;
+  console.log(`${table.aircraft}: ${table.checks.length - misses.length}/${table.checks.length} metrics within tolerance`);
+  for (const miss of misses) console.log(`  ✗ ${miss.label}: ${(100 * miss.gap).toFixed(1)}% (allowed ±${(100 * miss.allowed).toFixed(0)}%)`);
+}
+if (failed > 0) process.exitCode = 1;

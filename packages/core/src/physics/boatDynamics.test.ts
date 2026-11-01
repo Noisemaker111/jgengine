@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
 import type { AxisInput } from "../input/axisInput";
+import { createWaveField, regularWaveField } from "../water/seaState";
 import { createBoatDynamics, type BoatTuning } from "./boatDynamics";
+import { BOAT_REFERENCE_IDS, boatFromReference } from "./boatReferences";
 import { tickDrivableVehicle } from "./drivableVehicle";
 import { measureHandling } from "./handlingProbe";
 
@@ -104,5 +106,114 @@ describe("createBoatDynamics", () => {
     boat.resetTo([5, 0, 5], 1);
     expect(boat.velocity()).toEqual([0, 0]);
     expect(boat.pose().heading).toBe(1);
+  });
+});
+
+describe("createBoatDynamics effects", () => {
+  const idle = axis({});
+
+  test("boatFromReference's speedboat climbs onto the plane on its outboard, trims to Savitsky's angle and holds its revs limit", () => {
+    const tuning = boatFromReference("speedboat-6m");
+    const step = run(createBoatDynamics(tuning), 30, axis({ throttle: 1 }));
+    expect(step.forwardSpeed / 0.5144444).toBeGreaterThan(33);
+    expect(step.forwardSpeed / 0.5144444).toBeLessThan(39);
+    expect(step.planing).toBe(1);
+    expect(step.propRevs).toBeGreaterThan(40);
+    expect(step.propRevs).toBeLessThanOrEqual(46.7 + 1e-9);
+    expect(-step.bodyPitch / (Math.PI / 180)).toBeGreaterThan(1);
+    expect(-step.bodyPitch / (Math.PI / 180)).toBeLessThan(3);
+    expect(step.thrust).toBeCloseTo(step.resistance, -1);
+  });
+
+  test("an effect at strength 0 is the simple model's term again", () => {
+    const base = boatFromReference("speedboat-6m");
+    const effects = base.effects ?? {};
+    const offEverywhere: BoatTuning = { ...base, effects: Object.fromEntries(Object.entries(effects).map(([name, effect]) => [name, { ...effect, strength: 0 }])) };
+    const simple: BoatTuning = { ...base, effects: {} };
+    const a = run(createBoatDynamics(offEverywhere), 5, axis({ throttle: 1, steer: 0.3 }));
+    const b = run(createBoatDynamics(simple), 5, axis({ throttle: 1, steer: 0.3 }));
+    const c = run(createBoatDynamics({ massKg: 900, length: 6, beam: 2.3, maxThrust: 7000, propSpeed: 30, planingSpeed: 8, steering: { kind: "outboard" } }), 5, axis({ throttle: 1, steer: 0.3 }));
+    expect(a.position).toEqual(b.position);
+    expect(b.position).toEqual(c.position);
+  });
+
+  test("a resistance effect alone on an arcade hull gives it Holtrop–Mennen drag and nothing else changes", () => {
+    const tug: BoatTuning = { massKg: 30000, length: 18, beam: 6, maxThrust: 90000, propSpeed: 9, steering: { kind: "rudder", area: 2.5 } };
+    const withDrag: BoatTuning = { ...tug, effects: { resistance: { draft: 1.6, midshipCoefficient: 0.85, waterplaneCoefficient: 0.8 } } };
+    const plain = run(createBoatDynamics(tug), 60, axis({ throttle: 1 }));
+    const real = run(createBoatDynamics(withDrag), 60, axis({ throttle: 1 }));
+    expect(real.resistance).toBeGreaterThan(0);
+    expect(real.forwardSpeed).not.toBeCloseTo(plain.forwardSpeed, 2);
+    expect(real.propRevs).toBe(0);
+  });
+
+  test("seakeeping heaves and pitches a hull on the sea it is given, rolls it in beam seas, and settles when the sea goes calm", () => {
+    const tuning = boatFromReference("speedboat-6m");
+    const period = 2 * Math.PI / Math.sqrt((2 * Math.PI * 9.81) / 12);
+    const head = createBoatDynamics(tuning, { sea: regularWaveField(0.1, period, -Math.PI / 2) });
+    let heave = 0;
+    let pitch = 0;
+    for (let i = 0; i < 1200; i += 1) {
+      const step = head.tick(DT, idle);
+      if (i > 900) {
+        heave = Math.max(heave, Math.abs(step.position[1]));
+        pitch = Math.max(pitch, Math.abs(step.bodyPitch));
+      }
+    }
+    expect(heave / 0.1).toBeGreaterThan(0.6);
+    expect(heave / 0.1).toBeLessThan(0.95);
+    expect(pitch).toBeGreaterThan(0.01);
+    const beam = createBoatDynamics(tuning, { sea: regularWaveField(0.1, period, 0) });
+    let roll = 0;
+    for (let i = 0; i < 900; i += 1) roll = Math.max(roll, Math.abs(beam.tick(DT, idle).bodyRoll));
+    expect(roll).toBeGreaterThan(0.01);
+    head.setSea(undefined);
+    let still = 1;
+    for (let i = 0; i < 1200; i += 1) still = Math.abs(head.tick(DT, idle).position[1]);
+    expect(still).toBeLessThan(0.01);
+  });
+
+  test("seakeeping without a sea reads waterHeight along the hull", () => {
+    const tuning: BoatTuning = { ...speedboat, effects: { seakeeping: {} } };
+    const boat = createBoatDynamics(tuning, { waterHeight: () => 0.2 });
+    const step = run(boat, 20, idle);
+    expect(step.position[1]).toBeCloseTo(0.2, 2);
+  });
+
+  test("snapshot and restore carry every effect's state, so a replay matches", () => {
+    const tuning = boatFromReference("kvlcc2-l7");
+    const sea = createWaveField({ significantHeight: 0.05, peakPeriod: 2 }, { seed: 7, components: 12 });
+    const boat = createBoatDynamics(tuning, { sea });
+    run(boat, 4, axis({ throttle: 1, steer: 0.5 }));
+    const saved = boat.snapshot();
+    const first = run(boat, 3, axis({ throttle: 1, steer: -0.5 }));
+    boat.restore(saved);
+    const second = run(boat, 3, axis({ throttle: 1, steer: -0.5 }));
+    expect(second.position).toEqual(first.position);
+    expect(second.bodyPitch).toBe(first.bodyPitch);
+  });
+
+  test("retune swaps an effect's numbers mid-run", () => {
+    const tuning = boatFromReference("kvlcc2-l7");
+    const resistance = tuning.effects?.resistance;
+    if (resistance === undefined) throw new Error("kvlcc2 build lost its resistance");
+    const cruising = () => {
+      const boat = createBoatDynamics(tuning);
+      boat.restore({ ...boat.snapshot(), vz: 1.18 });
+      return boat;
+    };
+    const kept = run(cruising(), 100, axis({ throttle: 1 })).forwardSpeed;
+    const fouled = cruising();
+    fouled.retune({ ...tuning, effects: { ...tuning.effects, resistance: { ...resistance, coefficient: 3 * (resistance.coefficient ?? 0) } } });
+    expect(kept).toBeGreaterThan(1.1);
+    expect(run(fouled, 100, axis({ throttle: 1 })).forwardSpeed).toBeLessThan(0.8 * kept);
+  });
+
+  test("every reference hull builds and runs", () => {
+    for (const id of BOAT_REFERENCE_IDS) {
+      const step = run(createBoatDynamics(boatFromReference(id)), 2, axis({ throttle: 1 }));
+      expect(Number.isFinite(step.forwardSpeed)).toBe(true);
+      expect(step.forwardSpeed).toBeGreaterThan(0);
+    }
   });
 });

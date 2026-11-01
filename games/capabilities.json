@@ -1019,7 +1019,57 @@
       "module": "@jgengine/core/physics/boatDynamics",
       "gameFacing": false,
       "probe": null,
-      "intent": "force-based powered hull — hull-speed drag hump, planing, keel, rudder that needs flow or outboard thrust"
+      "intent": "surge added mass of a hull from Lamb's prolate-spheroid coefficient"
+    },
+    {
+      "id": "boat-manoeuvring",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatManoeuvring",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "MMG hull manoeuvring forces from hull derivatives"
+    },
+    {
+      "id": "boat-planing",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatPlaning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Savitsky planing lift, friction, resistance and trimming moment at a trim"
+    },
+    {
+      "id": "boat-propeller",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatPropeller",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Wageningen B-series and polynomial open-water curves (K_T, K_Q against advance ratio)"
+    },
+    {
+      "id": "boat-resistance",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatResistance",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "ITTC-1957 and Schoenherr friction lines"
+    },
+    {
+      "id": "boat-seakeeping",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/boatSeakeeping",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "2-D heave added mass and radiation damping of a hull section (Frank close-fit)"
     },
     {
       "id": "body-bind",
@@ -9361,6 +9411,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "reachable horizontal controls with visible overflow navigation and keyboard focus reveal"
+    },
+    {
+      "id": "sea-state",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/water/seaState",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Pierson–Moskowitz and JONSWAP wave spectra"
     },
     {
       "id": "search-beat",

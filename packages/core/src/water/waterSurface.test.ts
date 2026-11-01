@@ -6,6 +6,7 @@ import {
   waterSurfaceFromDescriptor,
   type GerstnerWave,
 } from "./waterSurface";
+import { createWaveField, waveFieldHeight } from "./seaState";
 
 function amplitudeTotal(waves: readonly GerstnerWave[]): number {
   return waves.reduce((sum, wave) => sum + wave.amplitude, 0);
@@ -181,5 +182,21 @@ describe("wave knobs", () => {
     const sharp = synthesizeWaves({ steepness: 0.15 });
     expect(sharp[0]!.steepness).toBeCloseTo(soft[0]!.steepness * 3, 6);
     expect(synthesizeWaves({ steepness: 5 })[0]!.steepness).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("waterSurface with a wave field", () => {
+  test("the surface is the field's, so a hull given the same field rides the water that is drawn", () => {
+    const field = createWaveField({ significantHeight: 1.5, peakPeriod: 7, peakEnhancement: 3.3 }, { seed: "gale", components: 6, level: 2 });
+    const surface = waterSurface({ field });
+    expect(surface.level).toBe(2);
+    expect(surface.waves).toHaveLength(6);
+    for (const [x, z, t] of [[0, 0, 0], [13.2, -40, 7.5], [-90, 21, 33]] as const) {
+      expect(surface.height(x, z, t)).toBeCloseTo(waveFieldHeight(field, x, z, t), 9);
+    }
+  });
+
+  test("without a field the waves keep no phase offset, as before", () => {
+    expect(synthesizeWaves().every((wave) => wave.phase === undefined)).toBe(true);
   });
 });

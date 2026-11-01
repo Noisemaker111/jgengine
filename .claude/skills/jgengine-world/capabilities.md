@@ -291,9 +291,40 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `boardVehicle` (function) · `import { boardVehicle } from "@jgengine/core/world"`
 
-## boat-dynamics — force-based powered hull — hull-speed drag hump, planing, keel, rudder that needs flow or outboard thrust
+## boat-dynamics — a published hull class (6 m speedboat, KVLCC2 tanker model, Holtrop–Mennen ship) with every effect at full strength, plus per-boat overrides
 
+- `boatFromReference` (function) · `import { boatFromReference } from "@jgengine/core/physics/boatReferences"`
 - `createBoatDynamics` (function) · `import { createBoatDynamics } from "@jgengine/core/physics/boatDynamics"`
+- `hullSurgeAddedMass` (function) · `import { hullSurgeAddedMass } from "@jgengine/core/physics/boatDynamics"`
+
+## boat-manoeuvring — MMG hull manoeuvring forces from hull derivatives
+
+- `hullManoeuvringForces` (function) · `import { hullManoeuvringForces } from "@jgengine/core/physics/boatManoeuvring"`
+- `rudderForces` (function) · `import { rudderForces } from "@jgengine/core/physics/boatManoeuvring"`
+
+## boat-planing — Savitsky planing lift, friction, resistance and trimming moment at a trim
+
+- `planingForces` (function) · `import { planingForces } from "@jgengine/core/physics/boatPlaning"`
+- `planingTrim` (function) · `import { planingTrim } from "@jgengine/core/physics/boatPlaning"`
+
+## boat-propeller — Wageningen B-series and polynomial open-water curves (K_T, K_Q against advance ratio)
+
+- `prepareOpenWater` (function) · `import { prepareOpenWater } from "@jgengine/core/physics/boatPropeller"`
+- `propellerPoint` (function) · `import { propellerPoint } from "@jgengine/core/physics/boatPropeller"`
+
+## boat-resistance — ITTC-1957 and Schoenherr friction lines
+
+- `frictionLineCoefficient` (function) · `import { frictionLineCoefficient } from "@jgengine/core/physics/boatResistance"`
+- `prepareHullResistance` (function) · `import { prepareHullResistance } from "@jgengine/core/physics/boatResistance"`
+
+## boat-seakeeping — strip-theory heave, pitch and roll coefficients of a hull
+
+- `prepareSeakeeping` (function) · `import { prepareSeakeeping } from "@jgengine/core/physics/boatSeakeeping"`
+- `seakeepingExcitation` (function) · `import { seakeepingExcitation } from "@jgengine/core/physics/boatSeakeeping"`
+- `seakeepingForces` (function) · `import { seakeepingForces } from "@jgengine/core/physics/boatSeakeeping"`
+- `seakeepingForcesFromHeight` (function) · `import { seakeepingForcesFromHeight } from "@jgengine/core/physics/boatSeakeeping"`
+- `sectionRadiation` (function) · `import { sectionRadiation } from "@jgengine/core/physics/boatSeakeeping"`
+- `wigleyOffsets` (function) · `import { wigleyOffsets } from "@jgengine/core/physics/boatSeakeeping"`
 
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
@@ -1781,6 +1812,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
 
 - `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/core/postfx/ScreenEffectsOverlay.draw"`
+
+## sea-state — seeded wave field from a Pierson–Moskowitz or JONSWAP spectrum, shared by boats and the drawn ocean
+
+- `createWaveField` (function) · `import { createWaveField } from "@jgengine/core/water/seaState"`
+- `regularWaveField` (function) · `import { regularWaveField } from "@jgengine/core/water/seaState"`
+- `seaSpectrumDensity` (function) · `import { seaSpectrumDensity } from "@jgengine/core/water/seaState"`
+- `waveFieldHeight` (function) · `import { waveFieldHeight } from "@jgengine/core/water/seaState"`
+- `waveFieldSignificantHeight` (function) · `import { waveFieldSignificantHeight } from "@jgengine/core/water/seaState"`
 
 ## search-beat — walk waypoints around a search circle so searchers sweep it instead of standing on its centre
 
