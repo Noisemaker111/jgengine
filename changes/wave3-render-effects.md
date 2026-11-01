@@ -21,3 +21,7 @@ screen-space reflections, soft shadows, volumetric fog and motion blur, each beh
 ### Removed
 
 - `@jgengine/assets/gltfMaterials` no longer exports `GLTF_MATERIAL_EXTENSIONS_R182`.
+
+### Migrate
+
+- Import `GLTF_MATERIAL_EXTENSIONS` in place of `GLTF_MATERIAL_EXTENSIONS_R182`; it also lists `KHR_materials_diffuse_roughness`.
