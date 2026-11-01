@@ -4,7 +4,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { patrol } from "@jgengine/core/scene/behaviors";
 import type { Waypoint } from "@jgengine/core/nav/pathFollow";
 import type { EntityColliderSet } from "@jgengine/core/scene/colliders";
-import { cityLots, cityRoadWidth, tuneCityLayout, type CityLayout } from "../../engine-local/city/cityLayout";
+import { cityLots, cityRoadWidth, tuneCityLayout, type CityLayout, type CityZone } from "../../engine-local/city/cityLayout";
 import { placeAuthoredObjectsFromDocument } from "@jgengine/core/world/authoredObjects";
 import { nearestOnPath } from "@jgengine/core/roads/roads";
 import { furnitureSpots, parkingSpots, sidewalkPoint } from "@jgengine/core/roads/streets";
@@ -183,6 +183,42 @@ function pickFor<T>(list: readonly T[], x: number, z: number): T | undefined {
   return list[hash % list.length];
 }
 
+/** Roof pieces a building may carry, one pick per lot by position. */
+const ROOF_PIECES = ["obj_roof_a", "obj_roof_b", "obj_roof_c", "obj_roof_a"] as const;
+/** Zones whose ground floor is shopfronts, so they take awnings. */
+const SHOP_ZONES: readonly CityZone[] = ["core", "commercial"];
+
+/**
+ * Shop awnings over a street-facing ground floor and a rooftop piece on the lot's roof, so a block is
+ * a building with a shopfront and a roof line, not a bare box. Both stay clear of the lot's collider.
+ */
+function dressBuilding(
+  ctx: GameContext,
+  zone: CityZone,
+  lot: { x: number; z: number; rotationY: number; w: number; d: number; floor: number; height: number },
+  ids: string[],
+): void {
+  const sin = Math.sin(lot.rotationY);
+  const cos = Math.cos(lot.rotationY);
+  const at = (local: number, depth: number): readonly [number, number] => [lot.x + cos * local + sin * depth, lot.z - sin * local + cos * depth];
+  if (SHOP_ZONES.includes(zone)) {
+    const bays = Math.min(3, Math.floor(lot.w / 6));
+    for (let bay = 0; bay < bays; bay += 1) {
+      const [ax, az] = at(((bay + 0.5) / bays - 0.5) * (lot.w - 2), lot.d / 2);
+      const awning = ctx.scene.object.place("obj_awning", ax, lot.floor + 3.1, az, { rotation: lot.rotationY });
+      ctx.scene.object.setColliders(awning, {});
+      ids.push(awning);
+    }
+  }
+  const piece = pickFor(ROOF_PIECES, lot.x + 11, lot.z - 7);
+  if (piece !== undefined && lot.w >= 8 && lot.d >= 8) {
+    const [rx, rz] = at(((Math.abs(Math.round(lot.x)) % 5) - 2) * (lot.w / 10), -lot.d * 0.15);
+    const roof = ctx.scene.object.place(piece, rx, lot.floor + lot.height, rz, { rotation: lot.rotationY + (Math.abs(Math.round(lot.z)) % 4) * (Math.PI / 2) });
+    ctx.scene.object.setColliders(roof, {});
+    ids.push(roof);
+  }
+}
+
 /**
  * Line every street with buildings from the city layout (`cityLots`): each zone's frontage, depth,
  * setback past the sidewalk, spacing and floor range, corner clearance off crossing streets, and a
@@ -210,6 +246,7 @@ function placeBuildings(ctx: GameContext, layout: CityLayout, ids: string[]): Bu
     ctx.scene.object.setColliders(id, blockColliders(size));
     ids.push(id);
     placed.push({ x, z, rotationY: lot.rotationY, halfW: w / 2, halfD: d / 2 });
+    dressBuilding(ctx, lot.zone, { x, z, rotationY: lot.rotationY, w, d, floor: y + 0.1, height: lot.height }, ids);
     if (lot.driveway !== undefined) {
       const [dx, dz] = lot.driveway.center;
       const drive = ctx.scene.object.place("obj_driveway", dx, ctx.world.groundHeightAt(dx, dz) - 0.02, dz, {
@@ -529,8 +566,9 @@ export function setupWorld(ctx: GameContext): readonly BuildingFootprintXZ[] {
     [DOCK_FIGHT_CENTER[0] + 40, 0, DOCK_FIGHT_CENTER[2] - 2],
     [DOCK_FIGHT_CENTER[0] + 6, 0, DOCK_FIGHT_CENTER[2] + 28],
   ];
+  const cargoKinds = ["obj_cargo", "obj_cargo_teal", "obj_cargo_amber"] as const;
   cargoSpots.forEach(([x, , z], i) => {
-    ctx.scene.object.place("obj_cargo", Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
+    ctx.scene.object.place(cargoKinds[i % cargoKinds.length]!, Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
       rotation: i % 2 === 0 ? 0 : Math.PI / 2,
     });
   });

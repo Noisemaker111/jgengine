@@ -42,6 +42,12 @@ export const OBJECTS: readonly ObjectDef[] = [
   { id: "obj_barrel", label: "Steel Drum", color: "#4a5560", footprint: { w: 1, h: 1, d: 1 }, solid: true },
   { id: "obj_driveway", label: "Driveway", color: "#b9b4aa", footprint: { w: 1, h: 1, d: 1 }, solid: false },
   { id: "obj_cargo", label: "Cargo Container", color: "#c08a3c", footprint: { w: 3, h: 2, d: 2 }, solid: true },
+  { id: "obj_cargo_teal", label: "Cargo Container", color: "#2c8c97", footprint: { w: 3, h: 2, d: 2 }, solid: true },
+  { id: "obj_cargo_amber", label: "Cargo Container", color: "#e0a53c", footprint: { w: 3, h: 2, d: 2 }, solid: true },
+  { id: "obj_awning", label: "Awning", color: "#7fd1c4", footprint: { w: 4, h: 1, d: 1.5 }, solid: false },
+  { id: "obj_roof_a", label: "Roof air-handlers", color: "#d9d2c4", footprint: { w: 3, h: 1, d: 3 }, solid: false },
+  { id: "obj_roof_b", label: "Roof water tank", color: "#8a5a3c", footprint: { w: 3, h: 5, d: 3 }, solid: false },
+  { id: "obj_roof_c", label: "Roof antenna", color: "#9aa3a8", footprint: { w: 3, h: 7, d: 3 }, solid: false },
   { id: "obj_cactus", label: "Cactus", color: "#5f8a4f", footprint: { w: 1, h: 2, d: 1 }, solid: false },
   ...BUILDING_OBJECTS,
 ];
