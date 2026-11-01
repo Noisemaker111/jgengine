@@ -10271,7 +10271,7 @@
       "module": "@jgengine/core/progression/standing",
       "gameFacing": false,
       "probe": null,
-      "intent": "per-track standing moved by authored outcomes, with tiers and one snapshot"
+      "intent": "read per-track standing in gates, upgrades and other predicates"
     },
     {
       "id": "standing-on-objects",

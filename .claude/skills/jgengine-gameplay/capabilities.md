@@ -169,6 +169,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## declarative-predicate — serializable data-driven conditions with no callbacks in saved content
 
 - `evaluatePredicate` (function) · `import { evaluatePredicate } from "@jgengine/core/gameplay"`
+- `predicateFloor` (function) · `import { predicateFloor } from "@jgengine/core/rules/predicate"`
+- `predicateLeaves` (function) · `import { predicateLeaves } from "@jgengine/core/rules/predicate"`
 - `readPath` (function) · `import { readPath } from "@jgengine/core/gameplay"`
 
 ## define-system — composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })`
@@ -895,10 +897,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## standing — per-track standing moved by authored outcomes, with tiers and one snapshot
 
 - `createStanding` (function) · `import { createStanding } from "@jgengine/core/progression/standing"`
+- `evaluateStandingPredicate` (function) · `import { evaluateStandingPredicate } from "@jgengine/core/progression/standing"`
+- `standingTracksRead` (function) · `import { standingTracksRead } from "@jgengine/core/progression/standing"`
 
 ## stat-graph — fold ordered add, multiply, override and clamp contributions onto one value
 
 - `applyStatOp` (function) · `import { applyStatOp } from "@jgengine/core/progression/statGraph"`
+- `applyStatRate` (function) · `import { applyStatRate } from "@jgengine/core/progression/statGraph"`
 - `boundStatValue` (function) · `import { boundStatValue } from "@jgengine/core/progression/statGraph"`
 - `createStatGraph` (function) · `import { createStatGraph } from "@jgengine/core/gameplay"`
 - `foldStatContributions` (function) · `import { foldStatContributions } from "@jgengine/core/progression/statGraph"`

@@ -1030,7 +1030,6 @@
   "@jgengine/core/loot/groundItem#WorldItemSpawnInput",
   "@jgengine/core/loot/groundItem#WorldItemStore",
   "@jgengine/core/loot/groundItem#WorldItemStoreDeps",
-  "@jgengine/core/loot/lootFilter#LootFilterCondition",
   "@jgengine/core/loot/lootFilter#LootFilterItem",
   "@jgengine/core/loot/lootFilter#LootFilterOverride",
   "@jgengine/core/loot/lootFilter#LootFilterRule",

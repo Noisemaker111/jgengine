@@ -42,7 +42,11 @@ export interface StandingChange {
   tier: string;
 }
 
-/** Track ids a predicate reads through `standing.<trackId>` paths. */
+/**
+ * Track ids a predicate reads through `standing.<trackId>` paths.
+ *
+ * @capability standing read per-track standing in gates, upgrades and other predicates
+ */
 export function standingTracksRead(predicate: Predicate | undefined): string[] {
   const tracks: string[] = [];
   for (const leaf of predicateLeaves(predicate)) {
@@ -51,7 +55,11 @@ export function standingTracksRead(predicate: Predicate | undefined): string[] {
   return tracks;
 }
 
-/** Evaluate a predicate over `standing.<trackId>` facts read from `reader` for one actor; an unknown track throws. */
+/**
+ * Evaluate a predicate over `standing.<trackId>` facts read from `reader` for one actor; an unknown track throws.
+ *
+ * @capability standing read per-track standing in gates, upgrades and other predicates
+ */
 export function evaluateStandingPredicate(
   predicate: Predicate | undefined,
   reader: Pick<Standing, "standing">,
