@@ -285,6 +285,176 @@
       "intent": "measure a vehicle's jumps and air control — apex height and time, double jump, air rotation rates"
     },
     {
+      "id": "aircraft-aero-table",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/aeroTable",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "sample a gridded aerodynamic coefficient table by angle of attack, sideslip, Mach or deflection"
+    },
+    {
+      "id": "aircraft-afterburner",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/afterburner",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "split a throttle into dry power and afterburner commands"
+    },
+    {
+      "id": "aircraft-atmosphere",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/atmosphere",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "standard atmosphere density, pressure, temperature and speed of sound by altitude"
+    },
+    {
+      "id": "aircraft-autorotation",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/autorotation",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "rotor speed inertia with an engine governor, so a dead engine autorotates"
+    },
+    {
+      "id": "aircraft-derivatives",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/derivatives",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "whole-aircraft moment coefficients from stability, damping and control derivatives"
+    },
+    {
+      "id": "aircraft-effects",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/aircraftEffects",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the strength an aircraft effect runs at"
+    },
+    {
+      "id": "aircraft-engine-spool",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/engineSpool",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "jet engine spool response rate by step size under a strength dial"
+    },
+    {
+      "id": "aircraft-mach-drag",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/machDrag",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "body drag coefficient by Mach number"
+    },
+    {
+      "id": "aircraft-main-gear",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/mainGear",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "weight-on-wheels pitching moment about the centre of mass"
+    },
+    {
+      "id": "aircraft-nozzle",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/nozzle",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "rocket thrust lost to ambient pressure on the nozzle exit"
+    },
+    {
+      "id": "aircraft-polar",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/polar",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "whole-aircraft lift, drag and side force from published coefficient data"
+    },
+    {
+      "id": "aircraft-propeller",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/propeller",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "fixed-pitch propeller thrust from advance ratio and piston engine torque with altitude lapse"
+    },
+    {
+      "id": "aircraft-references",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/aircraftReferences",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a real aircraft in one line: Cessna 172N, F-16, Bo-105 or Saturn V with every effect at full strength, plus overrides"
+    },
+    {
+      "id": "aircraft-rotating-earth",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/rotatingEarth",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "spherical inverse-square gravity, Coriolis and centrifugal acceleration"
+    },
+    {
+      "id": "aircraft-rotor-inflow",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/rotorInflow",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "blade-element rotor thrust and torque with momentum inflow, vortex ring and ground effect"
+    },
+    {
+      "id": "aircraft-thrust-lapse",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/thrustLapse",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "jet thrust over sea-level static by altitude and Mach"
+    },
+    {
+      "id": "aircraft-wing-ground-effect",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/wingGroundEffect",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "induced drag relief near the ground"
+    },
+    {
       "id": "alert-level",
       "packages": [
         "@jgengine/core"

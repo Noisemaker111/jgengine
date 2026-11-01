@@ -36,6 +36,86 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureAir` (function) · `import { measureAir } from "@jgengine/core/physics/handlingProbe"`
 
+## aircraft-aero-table — evaluate one coefficient term
+
+- `aeroTermValue` (function) · `import { aeroTermValue } from "@jgengine/core/flight/aeroTable"`
+- `sampleAeroTable` (function) · `import { sampleAeroTable } from "@jgengine/core/flight/aeroTable"`
+- `sumAeroTerms` (function) · `import { sumAeroTerms } from "@jgengine/core/flight/aeroTable"`
+- `surfaceAngle` (function) · `import { surfaceAngle } from "@jgengine/core/flight/aeroTable"`
+
+## aircraft-afterburner — split a throttle into dry power and afterburner commands
+
+- `afterburnerCommand` (function) · `import { afterburnerCommand } from "@jgengine/core/flight/afterburner"`
+- `afterburnerRatio` (function) · `import { afterburnerRatio } from "@jgengine/core/flight/afterburner"`
+
+## aircraft-atmosphere — the air at an aircraft's height under the atmosphere effect's strength
+
+- `atmosphereAt` (function) · `import { atmosphereAt } from "@jgengine/core/flight/atmosphere"`
+- `standardAir` (function) · `import { standardAir } from "@jgengine/core/flight/atmosphere"`
+
+## aircraft-autorotation — rotor speed inertia with an engine governor, so a dead engine autorotates
+
+- `autorotationRates` (function) · `import { autorotationRates } from "@jgengine/core/flight/autorotation"`
+- `settledGovernor` (function) · `import { settledGovernor } from "@jgengine/core/flight/autorotation"`
+
+## aircraft-derivatives — whole-aircraft moment coefficients from stability, damping and control derivatives
+
+- `derivativeMoments` (function) · `import { derivativeMoments } from "@jgengine/core/flight/derivatives"`
+
+## aircraft-effects — the strength an aircraft effect runs at
+
+- `effectStrength` (function) · `import { effectStrength } from "@jgengine/core/flight/aircraftEffects"`
+- `mixEffect` (function) · `import { mixEffect } from "@jgengine/core/flight/aircraftEffects"`
+
+## aircraft-engine-spool — jet engine spool response rate by step size under a strength dial
+
+- `spoolRate` (function) · `import { spoolRate } from "@jgengine/core/flight/engineSpool"`
+- `spoolThrust` (function) · `import { spoolThrust } from "@jgengine/core/flight/engineSpool"`
+
+## aircraft-mach-drag — body drag coefficient by Mach number
+
+- `machDragArea` (function) · `import { machDragArea } from "@jgengine/core/flight/machDrag"`
+
+## aircraft-main-gear — weight-on-wheels pitching moment about the centre of mass
+
+- `mainGearMoment` (function) · `import { mainGearMoment } from "@jgengine/core/flight/mainGear"`
+
+## aircraft-nozzle — rocket thrust lost to ambient pressure on the nozzle exit
+
+- `nozzleThrust` (function) · `import { nozzleThrust } from "@jgengine/core/flight/nozzle"`
+
+## aircraft-polar — whole-aircraft lift, drag and side force from published coefficient data
+
+- `polarCoefficients` (function) · `import { polarCoefficients } from "@jgengine/core/flight/polar"`
+
+## aircraft-propeller — fixed-pitch propeller thrust from advance ratio and piston engine torque with altitude lapse
+
+- `propellerLoads` (function) · `import { propellerLoads } from "@jgengine/core/flight/propeller"`
+- `propellerThrust` (function) · `import { propellerThrust } from "@jgengine/core/flight/propeller"`
+- `settledShaftSpeed` (function) · `import { settledShaftSpeed } from "@jgengine/core/flight/propeller"`
+
+## aircraft-references — a real aircraft in one line: Cessna 172N, F-16, Bo-105 or Saturn V with every effect at full strength, plus overrides
+
+- `aircraftFromReference` (function) · `import { aircraftFromReference } from "@jgengine/core/flight/aircraftReferences"`
+
+## aircraft-rotating-earth — spherical inverse-square gravity, Coriolis and centrifugal acceleration
+
+- `rotatingEarthAcceleration` (function) · `import { rotatingEarthAcceleration } from "@jgengine/core/flight/rotatingEarth"`
+- `rotatingEarthFrame` (function) · `import { rotatingEarthFrame } from "@jgengine/core/flight/rotatingEarth"`
+
+## aircraft-rotor-inflow — blade-element rotor thrust and torque with momentum inflow, vortex ring and ground effect
+
+- `rotorInflowLoads` (function) · `import { rotorInflowLoads } from "@jgengine/core/flight/rotorInflow"`
+
+## aircraft-thrust-lapse — jet thrust over sea-level static by altitude and Mach
+
+- `lapseRatio` (function) · `import { lapseRatio } from "@jgengine/core/flight/thrustLapse"`
+- `thrustLapse` (function) · `import { thrustLapse } from "@jgengine/core/flight/thrustLapse"`
+
+## aircraft-wing-ground-effect — induced drag relief near the ground
+
+- `inducedDragFactor` (function) · `import { inducedDragFactor } from "@jgengine/core/flight/wingGroundEffect"`
+
 ## alert-level — witness-gated alert value, labelled cut points and a stand-down beat
 
 - `createAlertLevel` (function) · `import { createAlertLevel } from "@jgengine/core/world"`

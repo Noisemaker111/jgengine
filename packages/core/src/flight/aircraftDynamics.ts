@@ -1,6 +1,22 @@
 // @skill jgengine-world
 import { uniformGravity, type GravityField } from "../physics/gravityField";
 import { clamp, clamp01 } from "../math/scalar";
+import { surfaceAngle, type AeroState } from "./aeroTable";
+import { afterburnerCommand, afterburnerRatio } from "./afterburner";
+import { effectStrength, mixEffect, type AircraftEffects } from "./aircraftEffects";
+import { atmosphereAt, SEA_LEVEL_AIR, type AirSample } from "./atmosphere";
+import { autorotationRates, type AutorotationRates } from "./autorotation";
+import { derivativeMoments, type DerivativeMoments } from "./derivatives";
+import { spoolRate, spoolThrust } from "./engineSpool";
+import { machDragArea } from "./machDrag";
+import { mainGearMoment } from "./mainGear";
+import { nozzleThrust } from "./nozzle";
+import { polarCoefficients, type PolarCoefficients } from "./polar";
+import { propellerLoads, propellerThrust, settledShaftSpeed, type PropellerLoads } from "./propeller";
+import { rotatingEarthAcceleration, rotatingEarthFrame, type RotatingEarthFrame } from "./rotatingEarth";
+import { rotorInflowLoads, type RotorInflowLoads } from "./rotorInflow";
+import { thrustLapse } from "./thrustLapse";
+import { inducedDragFactor } from "./wingGroundEffect";
 
 const DEFAULT_SUBSTEP = 1 / 240;
 const SEA_LEVEL_DENSITY = 1.225;
@@ -207,6 +223,8 @@ export interface RigidAircraftTuning {
   gear?: AircraftGearTuning;
   /** Integration substep, s (default `1/240`). */
   maxSubstep?: number;
+  /** Physical effects, each its own term with its own strength; an effect left out keeps the simple model's term. */
+  effects?: AircraftEffects;
 }
 
 /** Pilot input for one tick. */
@@ -243,8 +261,11 @@ export interface RigidAircraftOptions {
   /** Spawn heading, rad, with forward `[sin h, 0, cos h]`; ignored when `orientation` is set. */
   heading?: number;
   orientation?: AircraftQuaternion;
-  /** Wind velocity at a point, m/s. */
-  wind?: (position: AircraftVector) => AircraftVector;
+  /**
+   * Wind velocity at a point, m/s: a function of position, or a horizontal wind field such as `windField` from
+   * `world/wind` (its `atPoint(x, z, time)` read at the aircraft's position and clock).
+   */
+  wind?: ((position: AircraftVector) => AircraftVector) | { atPoint(x: number, z: number, time: number): readonly [number, number] };
   /** Terrain height under a point; the gear rests on it. Default `0`. */
   groundHeight?: (x: number, z: number) => number;
   /** Default uniform `9.81` m/s² down. */
@@ -292,6 +313,16 @@ export interface RigidAircraftState {
   driftX: number;
   driftZ: number;
   time: number;
+  /** Afterburner share, `0..1` (the `afterburner` effect). */
+  afterburner: number;
+  /** Propeller shaft speed, rad/s (the `propeller` effect). */
+  shaftSpeed: number;
+  /** Rotor induced inflow ratio (the `rotorInflow` effect). */
+  rotorInflow: number;
+  /** Rotor speed governor integral, rad (the `autorotation` effect). */
+  governor: number;
+  /** Angle of attack at the last substep, rad, for the `α̇` derivatives. */
+  previousAlpha: number;
 }
 
 /** One aircraft tick: pose plus the telemetry HUDs, camera, sound and probes read. */
@@ -332,6 +363,12 @@ export interface RigidAircraftStep {
   command: AircraftAssistCommand;
   /** The AoA or g limiter cut the pitch command this tick. */
   limited: boolean;
+  /** Mach number, airspeed over the local speed of sound. */
+  mach: number;
+  /** Air density at the aircraft, kg/m³. */
+  airDensity: number;
+  /** Where the aircraft is on the planet; present with the `rotatingEarth` effect. */
+  planet?: RotatingEarthFrame;
   /** Motor telemetry; absent without a `motor` block. */
   motor?: {
     /** Motor thrust this tick, N. */
@@ -349,6 +386,8 @@ export interface RigidAircraftStep {
     thrust: number;
     /** Drag torque on the body, N·m, positive nose left. */
     torque: number;
+    /** Torque the air takes from the rotor, N·m; with `autorotation` the body feels the engine's torque instead. */
+    aerodynamicTorque: number;
     /** Thrust multiplier from ground effect, `≥ 1`. */
     groundEffect: number;
     /** Thrust multiplier from translational lift, `≥ 1`. */
@@ -480,17 +519,34 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
   let tuning = initial;
   let surfaces = initial.surfaces.map(prepareSurface);
   let largest = largestSurface(surfaces);
-  const windAt = options.wind;
+  const windOption = options.wind;
+  const windAt: ((position: AircraftVector) => AircraftVector) | undefined =
+    windOption === undefined
+      ? undefined
+      : typeof windOption === "function"
+        ? windOption
+        : (position) => {
+            const [wx, wz] = windOption.atPoint(position[0], position[2], state.time);
+            return [wx, 0, wz];
+          };
   const groundAt = options.groundHeight ?? (() => 0);
   const gravityField = options.gravityField ?? uniformGravity([0, -9.81, 0]);
   const densityAt = options.airDensity ?? (() => SEA_LEVEL_DENSITY);
   const state: RigidAircraftState = fresh(options.position ?? [0, 0, 0], options.orientation ?? aircraftHeadingQuaternion(options.heading ?? 0));
   if (options.velocity !== undefined) [state.vx, state.vy, state.vz] = options.velocity;
-  const telemetry = { airspeed: 0, alpha: 0, sideslip: 0, gLoad: 1, stallFraction: 0, stalled: false, thrust: 0, grounded: false };
-  const rotorTelemetry = { thrust: 0, torque: 0, groundEffect: 1, translationalLift: 1 };
+  const telemetry = { airspeed: 0, alpha: 0, sideslip: 0, gLoad: 1, stallFraction: 0, stalled: false, thrust: 0, grounded: false, mach: 0, density: SEA_LEVEL_AIR.density };
+  const rotorTelemetry = { thrust: 0, torque: 0, aerodynamicTorque: 0, groundEffect: 1, translationalLift: 1 };
   const motorTelemetry = { thrust: 0 };
   const lastCommand: AircraftAssistCommand = { pitch: 0, roll: 0, yaw: 0 };
   let limited = false;
+  const air: AirSample = { density: SEA_LEVEL_AIR.density, pressure: SEA_LEVEL_AIR.pressure, temperature: SEA_LEVEL_AIR.temperature, speedOfSound: SEA_LEVEL_AIR.speedOfSound };
+  const aero: AeroState = { alpha: 0, beta: 0, mach: 0, pHat: 0, qHat: 0, rHat: 0, alphaDotHat: 0, pitch: 0, roll: 0, yaw: 0 };
+  const polarOut: PolarCoefficients = { lift: 0, drag: 0, side: 0 };
+  const momentOut: DerivativeMoments = { roll: 0, pitch: 0, yaw: 0, rollDamping: 0, pitchDamping: 0, yawDamping: 0 };
+  const propellerOut: PropellerLoads = { thrust: 0, torque: 0, engineTorque: 0 };
+  const rotorOut: RotorInflowLoads = { thrust: 0, torque: 0, inflow: 0, groundEffect: 1 };
+  const autorotationOut: AutorotationRates = { speedRate: 0, governorRate: 0, engineTorque: 0 };
+  const gravityOut: [number, number, number] = [0, 0, 0];
 
   function largestSurface(list: readonly PreparedSurface[]): number {
     let best = -1;
@@ -531,7 +587,32 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       driftX: 0,
       driftZ: 0,
       time: 0,
+      afterburner: 0,
+      shaftSpeed: 0,
+      rotorInflow: 0.05,
+      governor: 0,
+      previousAlpha: 0,
     };
+  }
+
+  /** Puts effect states at rest for a closed throttle: the propeller idling at the current airspeed. */
+  function settleEffects(): void {
+    const propeller = tuning.effects?.propeller;
+    if (propeller !== undefined) {
+      readAir();
+      toBody(state.vx, state.vy, state.vz);
+      state.shaftSpeed = settledShaftSpeed(propeller, out[2] ?? 0, 0, air.density, air.speedOfSound);
+    }
+  }
+
+  function readAir(): void {
+    const atmosphere = tuning.effects?.atmosphere;
+    if (atmosphere !== undefined) atmosphereAt(atmosphere, effectStrength(atmosphere), state.y, air);
+    else {
+      air.density = densityAt(state.y);
+      air.pressure = SEA_LEVEL_AIR.pressure;
+      air.speedOfSound = SEA_LEVEL_AIR.speedOfSound;
+    }
   }
 
   // Scratch for rotating vectors without allocating in the substep.
@@ -568,8 +649,19 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     const rollCh = controls?.roll;
     const yawCh = controls?.yaw;
     const engine = t.engine;
+    const effects = t.effects;
     const throttle = Math.max(0, Math.min(1, input.throttle));
-    state.spool += (throttle - state.spool) * (1 - Math.exp(-(engine?.spoolRate ?? 1.5) * h));
+    const afterburner = effects?.afterburner;
+    const split = afterburner === undefined ? undefined : afterburnerCommand(afterburner, effectStrength(afterburner), throttle);
+    const spoolEffect = effects?.spool;
+    const dryCommand = split?.dry ?? throttle;
+    const rate = spoolEffect === undefined ? (engine?.spoolRate ?? 1.5) : spoolRate(spoolEffect, effectStrength(spoolEffect), engine?.spoolRate ?? 1.5, dryCommand - state.spool);
+    state.spool += (dryCommand - state.spool) * (1 - Math.exp(-rate * h));
+    if (afterburner !== undefined && split !== undefined) {
+      // Reheat lights only once the core is at full dry.
+      const reheat = state.spool >= 0.95 ? split.reheat : 0;
+      state.afterburner += (reheat - state.afterburner) * (1 - Math.exp(-(afterburner.rate ?? 5) * h));
+    }
 
     let wvx = state.vx;
     let wvy = state.vy;
@@ -591,7 +683,8 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     state.pitchDeflection = slew(state.pitchDeflection, command.pitch * (pitchCh?.maxDeflection ?? 0.35), pitchCh?.rate ?? 2, h);
     state.rollDeflection = slew(state.rollDeflection, command.roll * (rollCh?.maxDeflection ?? 0.35), rollCh?.rate ?? 2, h);
     state.yawDeflection = slew(state.yawDeflection, command.yaw * (yawCh?.maxDeflection ?? 0.35), yawCh?.rate ?? 2, h);
-    const rho = densityAt(state.y);
+    readAir();
+    const rho = air.density;
     const { wx, wy, wz } = state;
     const liftScale = modifiers?.liftScale ?? 1;
     const dragScale = modifiers?.dragScale ?? 1;
@@ -605,6 +698,14 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     let stalledArea = 0;
     let totalArea = 0;
     let largestStalled = false;
+    const groundEffect = effects?.wingGroundEffect;
+    const induced = groundEffect === undefined ? 1 : inducedDragFactor(groundEffect, effectStrength(groundEffect), state.y - groundAt(state.x, state.z));
+    let sfxTotal = 0;
+    let sfyTotal = 0;
+    let sfzTotal = 0;
+    let smx = 0;
+    let smy = 0;
+    let smz = 0;
     for (let i = 0; i < surfaces.length; i += 1) {
       const s = surfaces[i]!;
       totalArea += s.area;
@@ -625,7 +726,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
         stalledArea += s.area;
         if (i === largest) largestStalled = true;
       }
-      const cd = s.cd0 + s.k * cl * cl + 1.28 * Math.sin(alpha) ** 2 * stalled;
+      const cd = s.cd0 + s.k * cl * cl * induced + 1.28 * Math.sin(alpha) ** 2 * stalled;
       const speed = Math.sqrt(speed2);
       // d: direction the air moves past the surface; lift is perpendicular to it, in the plane across the span.
       const dx = -(un * s.nx) / speed;
@@ -640,17 +741,99 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       const sfx = lift * lx + drag * dx;
       const sfy = lift * ly + drag * dy;
       const sfz = lift * lz + drag * dz;
-      fx += sfx;
-      fy += sfy;
-      fz += sfz;
-      mx += s.ay * sfz - s.az * sfy;
-      my += s.az * sfx - s.ax * sfz;
-      mz += s.ax * sfy - s.ay * sfx;
+      sfxTotal += sfx;
+      sfyTotal += sfy;
+      sfzTotal += sfz;
+      smx += s.ay * sfz - s.az * sfy;
+      smy += s.az * sfx - s.ax * sfz;
+      smz += s.ax * sfy - s.ay * sfx;
     }
 
     const airspeed = Math.hypot(bx, by, bz);
-    if (t.dragArea !== undefined && airspeed > 0) {
-      const k = -0.5 * rho * t.dragArea * airspeed * dragScale;
+    const mach = airspeed / air.speedOfSound;
+    const polar = effects?.polar;
+    const derivatives = effects?.derivatives;
+    const geometry = polar ?? derivatives;
+    if (geometry !== undefined && airspeed > 1e-3) {
+      // Whole-aircraft coefficients in the data's axes: x forward, y right, z down; p right roll, q nose up, r nose right.
+      const v = Math.max(1, airspeed);
+      const alpha = Math.atan2(-by, bz);
+      const ca = Math.cos(alpha);
+      const sa = Math.sin(alpha);
+      const p = wz;
+      const q = -wx;
+      const r = -wy;
+      const stability = geometry.axes === "stability";
+      const range = geometry.alphaRange;
+      aero.alpha = range === undefined ? alpha : Math.max(range[0], Math.min(range[1], alpha));
+      const beta = Math.asin(Math.max(-1, Math.min(1, -bx / Math.max(1e-6, airspeed))));
+      const betaLimit = geometry.sideslipRange;
+      aero.beta = betaLimit === undefined ? beta : Math.max(-betaLimit, Math.min(betaLimit, beta));
+      aero.mach = mach;
+      aero.pHat = ((stability ? p * ca + r * sa : p) * geometry.span) / (2 * v);
+      aero.qHat = (q * geometry.chord) / (2 * v);
+      aero.rHat = ((stability ? r * ca - p * sa : r) * geometry.span) / (2 * v);
+      const change = alpha - state.previousAlpha;
+      aero.alphaDotHat = Math.abs(change) < 0.05 && h > 0 ? ((change / h) * geometry.chord) / (2 * v) : 0;
+      state.previousAlpha = alpha;
+      const travel = geometry.travel;
+      aero.pitch = surfaceAngle(travel?.pitch, state.pitchDeflection / (pitchCh?.maxDeflection ?? 0.35));
+      aero.roll = surfaceAngle(travel?.roll, state.rollDeflection / (rollCh?.maxDeflection ?? 0.35));
+      aero.yaw = surfaceAngle(travel?.yaw, state.yawDeflection / (yawCh?.maxDeflection ?? 0.35));
+      const qbar = 0.5 * rho * airspeed * airspeed;
+      if (polar !== undefined) {
+        const sp = effectStrength(polar);
+        polarCoefficients(polar, aero, polarOut);
+        // Past the data's angle-of-attack range, blend into a flat plate.
+        const outside = range === undefined ? 0 : Math.min(1, Math.max(range[0] - alpha, alpha - range[1], 0) / 0.2);
+        const plateLift = 1.1 * Math.sin(2 * alpha);
+        const plateDrag = 0.05 + 1.8 * sa * sa;
+        const lift = (polarOut.lift + (plateLift - polarOut.lift) * outside) * liftScale;
+        const cleanDrag = polarOut.drag - (polar.inducedDrag ?? 0) * polarOut.lift * polarOut.lift * (1 - induced);
+        const drag = (cleanDrag + (plateDrag - cleanDrag) * outside) * Math.max(1, sp) * dragScale;
+        const qs = qbar * polar.area;
+        const px = qs * (-drag * ca + lift * sa);
+        const pz = qs * (-drag * sa - lift * ca);
+        const py = qs * polarOut.side;
+        const b = Math.min(1, sp);
+        sfxTotal += (-py - sfxTotal) * b;
+        sfyTotal += (-pz - sfyTotal) * b;
+        sfzTotal += (px - sfzTotal) * b;
+        if (polar.stallAngle !== undefined && sp >= 0.5) {
+          largestStalled = alpha > polar.stallAngle;
+          stalledArea = largestStalled ? totalArea : 0;
+        }
+      }
+      if (derivatives !== undefined) {
+        const sd = effectStrength(derivatives);
+        derivativeMoments(derivatives, aero, momentOut);
+        const damping = Math.max(1, sd);
+        let roll = momentOut.roll + momentOut.rollDamping * damping;
+        const pitch = momentOut.pitch + momentOut.pitchDamping * damping;
+        let yaw = momentOut.yaw + momentOut.yawDamping * damping;
+        if (stability) {
+          const bodyRoll = roll * ca - yaw * sa;
+          yaw = roll * sa + yaw * ca;
+          roll = bodyRoll;
+        }
+        const qs = qbar * derivatives.area;
+        const b = Math.min(1, sd);
+        smx += (-qs * derivatives.chord * pitch - smx) * b;
+        smy += (-qs * derivatives.span * yaw - smy) * b;
+        smz += (qs * derivatives.span * roll - smz) * b;
+      }
+    }
+    fx += sfxTotal;
+    fy += sfyTotal;
+    fz += sfzTotal;
+    mx += smx;
+    my += smy;
+    mz += smz;
+
+    const machDrag = effects?.machDrag;
+    const dragArea = machDrag === undefined ? t.dragArea : mixEffect(t.dragArea ?? 0, machDragArea(machDrag, mach), effectStrength(machDrag));
+    if (dragArea !== undefined && airspeed > 0) {
+      const k = -0.5 * rho * dragArea * airspeed * dragScale;
       fx += k * bx;
       fy += k * by;
       fz += k * bz;
@@ -658,7 +841,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
 
     let thrust = 0;
     if (engine !== undefined) {
-      thrust = engine.maxThrust * state.spool * (modifiers?.thrustScale ?? 1);
+      thrust = engineThrust(engine, effects, throttle, bz, rho, mach, h) * (modifiers?.thrustScale ?? 1);
       const [tdx, tdy, tdz] = engine.direction ?? [0, 0, 1];
       const tl = Math.hypot(tdx, tdy, tdz) || 1;
       const tx = (thrust * tdx) / tl;
@@ -673,6 +856,9 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
         my += az * tx - ax * tz;
         mz += ax * ty - ay * tx;
       }
+      const propeller = effects?.propeller;
+      // The engine twists the airframe against the propeller's turn.
+      if (propeller !== undefined) mz -= (propeller.rotation ?? 1) * propellerOut.engineTorque * Math.min(1, effectStrength(propeller));
     }
 
     const motor = t.motor;
@@ -685,7 +871,9 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
         const flow = (motor.massFlow * rated) / Math.max(1e-9, peakOf(curve));
         const burned = Math.min(state.propellantKg, flow * h);
         // The last sliver of propellant only delivers its share of the substep.
-        motorThrust = rated * (flow > 0 ? burned / (flow * h) : 1) * (modifiers?.thrustScale ?? 1);
+        const nozzle = effects?.nozzle;
+        const delivered = nozzle === undefined ? rated : nozzleThrust(nozzle, effectStrength(nozzle), rated, peakOf(curve), air.pressure);
+        motorThrust = delivered * (flow > 0 ? burned / (flow * h) : 1) * (modifiers?.thrustScale ?? 1);
         state.propellantKg -= burned;
         if (state.propellantKg < 1e-9) state.propellantKg = 0;
         state.burnTime += h;
@@ -711,7 +899,9 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
 
     const rotor = t.rotor;
     if (rotor !== undefined) {
-      state.rotorSpeed += (throttle - state.rotorSpeed) * (1 - Math.exp(-(rotor.spoolRate ?? 0.5) * h));
+      const autorotation = effects?.autorotation;
+      const simpleSpeedStep = (throttle - state.rotorSpeed) * (1 - Math.exp(-(rotor.spoolRate ?? 0.5) * h));
+      if (autorotation === undefined) state.rotorSpeed += simpleSpeedStep;
       const [hx, hy, hz] = rotor.at ?? [0, 1.5, 0];
       const cyclic = rotor.cyclic ?? 0.15;
       const tiltPitch = (state.pitchDeflection / (pitchCh?.maxDeflection ?? 0.35)) * cyclic;
@@ -726,18 +916,40 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       const disc = Math.PI * rotor.radius * rotor.radius;
       // Momentum theory: hover induced velocity v_i = √(T / 2ρA). Clean air arriving at about v_i adds translational
       // lift; climbing through the disc at w cuts thrust by roughly w / 2v_i, which damps vertical motion.
-      const induced = Math.sqrt(Math.max(nominal, rotor.maxThrust * 0.05) / (2 * rho * disc));
+      const inducedVelocity = Math.sqrt(Math.max(nominal, rotor.maxThrust * 0.05) / (2 * rho * disc));
       const hubVx = bx + (wy * hz - wz * hy);
       const hubVy = by + (wz * hx - wx * hz);
       const hubVz = bz + (wx * hy - wy * hx);
       const edgewise = Math.hypot(hubVx, hubVz);
-      const translational = 1 + (rotor.translationalLift ?? 0.2) * (1 - Math.exp(-((edgewise / induced) ** 2)));
-      const inflow = Math.max(0.2, Math.min(1.5, 1 - hubVy / (2 * induced)));
+      let translational = 1 + (rotor.translationalLift ?? 0.2) * (1 - Math.exp(-((edgewise / inducedVelocity) ** 2)));
+      const inflow = Math.max(0.2, Math.min(1.5, 1 - hubVy / (2 * inducedVelocity)));
       toWorld(hx, hy, hz);
-      const clearance = Math.max(rotor.radius / 2, state.y + out[1]! - groundAt(state.x, state.z));
+      const clearance = Math.max(rotor.radius / 2, state.y + (out[1] ?? 0) - groundAt(state.x, state.z));
       // Cheeseman–Bennett: T_IGE / T_OGE = 1 / (1 − (R / 4z)²).
-      const groundEffect = 1 / (1 - (rotor.radius / (4 * clearance)) ** 2);
-      const rotorThrust = nominal * translational * inflow * groundEffect;
+      let rotorGround = 1 / (1 - (rotor.radius / (4 * clearance)) ** 2);
+      let rotorThrust = nominal * translational * inflow * rotorGround;
+      const sign = rotor.torque < 0 ? -1 : 1;
+      let aeroTorque = Math.abs(rotor.torque * collective * rpm2);
+      const inflowEffect = effects?.rotorInflow;
+      if (inflowEffect !== undefined) {
+        const si = effectStrength(inflowEffect);
+        rotorInflowLoads(inflowEffect, si, rotor.radius, collective, state.rotorSpeed, hubVy, edgewise, rho, clearance, state.rotorInflow, rotorOut);
+        state.rotorInflow = rotorOut.inflow;
+        const b = Math.min(1, si);
+        rotorThrust += (rotorOut.thrust - rotorThrust) * b;
+        aeroTorque += (rotorOut.torque - aeroTorque) * b;
+        rotorGround += (1 / Math.max(0.5, rotorOut.groundEffect) - rotorGround) * b;
+        translational += (1 - translational) * b;
+      }
+      let torque = sign * aeroTorque;
+      if (autorotation !== undefined) {
+        const sa = effectStrength(autorotation);
+        autorotationRates(autorotation, sa, state.rotorSpeed, state.governor, throttle, aeroTorque, rho / SEA_LEVEL_AIR.density, autorotationOut);
+        const b = Math.min(1, sa);
+        state.rotorSpeed = Math.max(0, state.rotorSpeed + simpleSpeedStep + (autorotationOut.speedRate * h - simpleSpeedStep) * b);
+        state.governor += autorotationOut.governorRate * h * b;
+        torque += (sign * autorotationOut.engineTorque - torque) * b;
+      }
       dx *= rotorThrust;
       dy *= rotorThrust;
       dz *= rotorThrust;
@@ -747,7 +959,6 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       mx += hy * dz - hz * dy;
       my += hz * dx - hx * dz;
       mz += hx * dy - hy * dx;
-      const torque = rotor.torque * collective * rpm2;
       my += torque;
       const damping = rotor.damping ?? 0;
       mx -= damping * wx;
@@ -765,7 +976,8 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       }
       rotorTelemetry.thrust = rotorThrust;
       rotorTelemetry.torque = torque;
-      rotorTelemetry.groundEffect = groundEffect;
+      rotorTelemetry.aerodynamicTorque = aeroTorque;
+      rotorTelemetry.groundEffect = rotorGround;
       rotorTelemetry.translationalLift = translational;
     }
 
@@ -778,7 +990,9 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       ay += modifiers.force[1] / m;
       az += modifiers.force[2] / m;
     }
-    const gravity = gravityField.sample([state.x, state.y, state.z]);
+    const flatGravity = gravityField.sample([state.x, state.y, state.z]);
+    const planet = effects?.rotatingEarth;
+    const gravity = planet === undefined ? flatGravity : rotatingEarthAcceleration(planet, effectStrength(planet), [state.x, state.y, state.z], [state.vx, state.vy, state.vz], flatGravity, gravityOut);
 
     const gear = t.gear;
     const floor = gear === undefined ? Number.NEGATIVE_INFINITY : groundAt(state.x, state.z) + gear.height;
@@ -789,6 +1003,8 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       if (netY <= 0) {
         supportY = -netY;
         const load = supportY;
+        const wheels = effects?.mainGear;
+        if (wheels !== undefined) mx += mainGearMoment(wheels, effectStrength(wheels), supportY * m);
         // Heading-aligned tyre frame on flat ground: rolling resistance and brakes along, grip across.
         toWorld(0, 0, 1);
         const hl = Math.hypot(out[0]!, out[2]!) || 1;
@@ -818,8 +1034,11 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     const iy = t.inertia.yaw * inertiaScale;
     const ir = t.inertia.roll * inertiaScale;
     // Euler's rotation equation, body frame: I·ω̇ = M − ω × (I·ω).
-    const gx = wy * (ir * wz) - wz * (iy * wy);
-    const gy = wz * (ip * wx) - wx * (ir * wz);
+    const propeller = effects?.propeller;
+    // A spinning propeller adds its angular momentum along the shaft: ω × h.
+    const spin = propeller === undefined ? 0 : (propeller.rotation ?? 1) * (propeller.inertia ?? 1.9) * state.shaftSpeed * Math.min(1, effectStrength(propeller));
+    const gx = wy * (ir * wz + spin) - wz * (iy * wy);
+    const gy = wz * (ip * wx) - wx * (ir * wz + spin);
     const gz = wx * (iy * wy) - wy * (ip * wx);
     state.wx += ((mx - gx) / ip) * h;
     state.wy += ((my - gy) / iy) * h;
@@ -847,7 +1066,33 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     telemetry.stalled = largestStalled;
     telemetry.thrust = thrust;
     telemetry.grounded = grounded;
+    telemetry.mach = mach;
+    telemetry.density = rho;
     state.time += h;
+  }
+
+  function engineThrust(engine: AircraftEngineTuning, effects: AircraftEffects | undefined, throttle: number, axial: number, rho: number, mach: number, h: number): number {
+    const lapse = effects?.thrustLapse;
+    const spool = effects?.spool;
+    const afterburner = effects?.afterburner;
+    const propeller = effects?.propeller;
+    if (lapse === undefined && spool === undefined && afterburner === undefined && propeller === undefined) return engine.maxThrust * state.spool;
+    const sl = effectStrength(lapse);
+    const share = spool === undefined ? state.spool : spoolThrust(spool, effectStrength(spool), state.spool);
+    const dryLapse = lapse === undefined ? 1 : thrustLapse(lapse, sl, state.y, mach, false);
+    let thrust = engine.maxThrust * share * dryLapse;
+    if (afterburner !== undefined) {
+      const wetLapse = lapse === undefined ? 1 : thrustLapse(lapse, sl, state.y, mach, true);
+      const full = engine.maxThrust * afterburnerRatio(afterburner, effectStrength(afterburner)) * wetLapse;
+      thrust += state.afterburner * Math.max(0, full - engine.maxThrust * dryLapse);
+    }
+    if (propeller !== undefined) {
+      propellerLoads(propeller, state.shaftSpeed, axial, throttle, rho, air.speedOfSound, propellerOut);
+      const net = propellerOut.engineTorque - propellerOut.torque;
+      state.shaftSpeed = state.shaftSpeed < 10 && net < 0 ? state.shaftSpeed : Math.max(0, state.shaftSpeed + (net / (propeller.inertia ?? 1.9)) * h);
+      thrust = propellerThrust(thrust, propellerOut.thrust, effectStrength(propeller));
+    }
+    return thrust;
   }
 
   function pilotCommand(input: RigidAircraftInput): AircraftAssistCommand {
@@ -1017,6 +1262,11 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       massKg: tuning.massKg + (tuning.motor === undefined ? 0 : state.propellantKg),
       command: { ...lastCommand },
       limited,
+      mach: telemetry.mach,
+      airDensity: telemetry.density,
+      ...(tuning.effects?.rotatingEarth === undefined
+        ? {}
+        : { planet: rotatingEarthFrame(tuning.effects.rotatingEarth, effectStrength(tuning.effects.rotatingEarth), [state.x, state.y, state.z], [state.vx, state.vy, state.vz]) }),
       ...(tuning.motor === undefined
         ? {}
         : {
@@ -1034,12 +1284,15 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
               speed: state.rotorSpeed,
               thrust: rotorTelemetry.thrust,
               torque: rotorTelemetry.torque,
+              aerodynamicTorque: rotorTelemetry.aerodynamicTorque,
               groundEffect: rotorTelemetry.groundEffect,
               translationalLift: rotorTelemetry.translationalLift,
             },
           }),
     };
   }
+
+  settleEffects();
 
   return {
     tick(dt, input, modifiers) {
