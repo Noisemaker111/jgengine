@@ -26,6 +26,7 @@ import { DEFAULT_COMMAND_LIMITS } from "./commandMiddleware";
 import type { GameServerHost, HostChangeEvent } from "./host";
 import type { TransportPipeFactory } from "./pipe";
 import type { WirePrecision, WireEncoder } from "./binaryWire";
+import { createWorldViewState, type WorldViewState } from "@jgengine/core/runtime/worldReplication";
 import {
   decodeWsClientMessage,
   encodeWsFrame,
@@ -125,6 +126,8 @@ type Connection = {
   queue: Promise<void>;
   queuedMessages: number;
   worldRevisions: Map<string, number | null>;
+  /** Per-server cursor of what this connection's mirror holds, for hosts that narrow frames to the viewer's interest. */
+  worldViews: Map<string, WorldViewState>;
   roles: Map<string, SnapshotViewer["role"]>;
   subscriptionPushes: Map<string, SubscriptionPush>;
   admission: { serverId?: string | undefined; result: Promise<JoinServerResult | null> } | null;
@@ -488,10 +491,12 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     if (channel === "server") {
       if (host.pullWorld !== undefined) {
         const sinceRevision = connection.worldRevisions.get(serverId) ?? null;
-        const world = await host.pullWorld({ userId: connection.userId, serverId, sinceRevision, role: connection.roles.get(serverId) });
+        const view = connection.worldViews.get(serverId) ?? createWorldViewState();
+        connection.worldViews.set(serverId, view);
+        const world = await host.pullWorld({ userId: connection.userId, serverId, sinceRevision, role: connection.roles.get(serverId), view });
         if (!isCurrent()) return;
         if (world !== null) {
-          const data = await host.getServerView({ userId: connection.userId, serverId, role: connection.roles.get(serverId) });
+          const data = await host.getServerView({ userId: connection.userId, serverId, role: connection.roles.get(serverId), withState: false });
           if (data !== null && isCurrent()) {
             send(connection, { v: 1, t: "update", channel, serverId, data: { ...data, serverState: world } });
             connection.worldRevisions.set(serverId, world.revision);
@@ -848,7 +853,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             return;
           }
           if (closed || connection.closed) return;
-          if (message.channel === "server") connection.worldRevisions.set(message.serverId, null);
+          if (message.channel === "server") {
+            connection.worldRevisions.set(message.serverId, null);
+            connection.worldViews.set(message.serverId, createWorldViewState());
+          }
           addSubscription(connection, subscriptionKey(message.channel, message.serverId, message.action));
           reply(connection, message.id, null);
           void requestSubscriptionPush(connection, message.channel, message.serverId, message.action);
@@ -894,6 +902,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         queue: Promise.resolve(),
         queuedMessages: 0,
         worldRevisions: new Map(),
+        worldViews: new Map(),
         roles: new Map(),
         subscriptionPushes: new Map(),
         admission: null,

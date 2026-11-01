@@ -8,7 +8,7 @@ import { type InputFrame } from "./inputSnapshot";
 import { serverStep } from "../movement/serverStep";
 import { resolvePlayerMovementTuning } from "../movement/playerMovement";
 import { createInputRecorder, type InputRecorder, type InputRecorderState } from "./inputRecorder";
-import { createWorldReplicator, type WorldDiff } from "./worldReplication";
+import { createWorldReplicator, type WorldDiff, type WorldViewState } from "./worldReplication";
 import type { SnapshotModule, SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 
 export type { InputFrame };
@@ -62,6 +62,8 @@ export interface HostedGameRunner {
   command(userId: string, name: string, input: unknown): CommandResult<GameContext>;
   tick(dt: number): number;
   diff(sinceRevision: number): WorldDiff;
+  /** The diff narrowed to what `viewer` holds under the replication policy's interest radius; `state` is that viewer's connection-owned cursor. */
+  diffFor(viewer: SnapshotViewer, sinceRevision: number, state: WorldViewState): WorldDiff;
   revision(): number;
   /** The full world baseline — projected to only what `viewer` may see when the context carries a replication policy, else the whole world. */
   snapshot(viewer?: SnapshotViewer): WorldSnapshot;
@@ -71,6 +73,8 @@ export interface HostedGameRunner {
   commit(): number;
   /** True when {@link snapshot} is viewer-dependent (a replication policy projects private/AOI state); a host must then serve each viewer its own frame. */
   projectsViewers(): boolean;
+  /** True when each viewer can be served diffs of its own view; false when a throttled module needs a fresh projected baseline per tick. */
+  viewerDiffs(): boolean;
   members(): readonly string[];
   context(): GameContext;
 }
@@ -292,11 +296,20 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
       return replicator.commit();
     },
     diff: (sinceRevision) => replicator.diff(sinceRevision),
+    diffFor: (viewer, sinceRevision, state) => {
+      const seen = { ...viewer, tick: hostTick };
+      return replicator.diff(sinceRevision, {
+        state,
+        wanted: ctx.interestOf(seen),
+        projectModule: (key, value) => ctx.projectModule(key, value, seen),
+      });
+    },
     revision: () => replicator.revision(),
     snapshot: (viewer) => ctx.snapshot(viewer === undefined ? undefined : { ...viewer, tick: hostTick }),
     state: ctx.state,
     commit: () => replicator.commit(),
     projectsViewers: () => ctx.replicatesPerViewer(),
+    viewerDiffs: () => !ctx.throttlesModules(),
     members: () => Array.from(members.keys()),
     context: () => ctx,
   };

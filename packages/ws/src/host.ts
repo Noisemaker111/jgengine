@@ -48,6 +48,7 @@ import type {
   WorldSyncFrame,
 } from "@jgengine/core/runtime/transport";
 import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
+import type { WorldViewState } from "@jgengine/core/runtime/worldReplication";
 import { unwrapOpEnvelope } from "@jgengine/core/runtime/hostedWorldSession";
 
 /** A change notification emitted by a `GameServerHost` for a server, player, or feed mutation. */
@@ -97,12 +98,20 @@ export type GameServerHost = {
     trusted?: boolean;
   }) => Promise<TransportRunCommandResult>;
   isMember: (args: { userId: string; serverId: string }) => Promise<boolean>;
-  getServerView: (args: { userId: string; serverId: string; role?: SnapshotViewer["role"] }) => Promise<GameRuntimeServerView | null>;
+  getServerView: (args: {
+    userId: string;
+    serverId: string;
+    role?: SnapshotViewer["role"];
+    /** Set `false` when the caller supplies the world state itself (a pulled frame); the host then skips building it. Default true. */
+    withState?: boolean | undefined;
+  }) => Promise<GameRuntimeServerView | null>;
   pullWorld?: (args: {
     userId: string;
     serverId: string;
     sinceRevision: number | null;
     role?: SnapshotViewer["role"];
+    /** This connection's view cursor; a host that narrows frames to the viewer's interest updates it in place. */
+    view?: WorldViewState | undefined;
   }) => Promise<WorldSyncFrame | null>;
   getPlayerView: (args: { userId: string; serverId: string }) => Promise<GameRuntimePlayerView | null>;
   getFeed: (args: { userId: string; serverId: string; action: string }) => Promise<unknown[]>;

@@ -22,6 +22,11 @@ export interface ReplicationPolicy {
    * always receives its own entity. Omit for no distance culling — every entity to every viewer.
    */
   aoiRadius?: number;
+  /**
+   * Entity ids every viewer receives whatever the distance (a boss, an objective, a flag carrier), as a list or
+   * a function the host reads once per viewer per tick. Only read when {@link aoiRadius} is set.
+   */
+  aoiAlways?: readonly string[] | (() => Iterable<string>);
 }
 
 /** True when at least one field of the policy would change the wire payload. A no-op policy needs no projection.

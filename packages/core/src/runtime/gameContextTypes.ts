@@ -712,4 +712,10 @@ export interface GameContext {
   replicationVersion(): number;
   /** True when a {@link GameContextOptions.replication} policy makes {@link snapshot} viewer-dependent (private/AOI projection is active). @internal */
   replicatesPerViewer(): boolean;
+  /** True when a replicated module throttles itself per viewer through `priority`. @internal */
+  throttlesModules(): boolean;
+  /** Entity ids `viewer` holds under the replication policy's interest radius (spatial index plus always-relevant ids), or `null` for every entity. @internal */
+  interestOf(viewer: SnapshotViewer): readonly string[] | null;
+  /** One changed replicated module narrowed for `viewer`; the value unchanged when the module has no projector. @internal */
+  projectModule(key: string, value: unknown, viewer: SnapshotViewer): unknown;
 }
