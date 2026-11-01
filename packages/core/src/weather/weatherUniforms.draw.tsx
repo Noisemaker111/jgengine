@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { reportWind } from "./livingWorld.draw";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { EditorVolume } from "@jgengine/core/editor/types";
@@ -94,9 +95,13 @@ export function updateWeatherUniformSet(uniforms: WeatherUniformSet, options: We
 }
 
 function useUniformTicker(uniforms: WeatherUniformSet, options: WeatherUniformOptions, enabled = true) {
+  // A shared wind field reaches foliage even with no precipitation drawn: trees sway with the same wind.
+  const fieldWind = enabled && options.windField !== undefined && options.wind === undefined && options.sample === undefined;
+  useEffect(() => (fieldWind ? () => reportWind(uniforms, null) : undefined), [uniforms, fieldWind]);
   useFrame((state, delta) => {
     if (!enabled) return;
     updateWeatherUniformSet(uniforms, options, delta, state.camera.position.x, state.camera.position.z, state.camera.position.y);
+    if (fieldWind) reportWind(uniforms, [uniforms.wind.value.x, uniforms.wind.value.z]);
   }, -1);
 }
 
