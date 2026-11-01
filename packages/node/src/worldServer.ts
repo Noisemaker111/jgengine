@@ -1,5 +1,6 @@
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContextContent, GameContextModels } from "@jgengine/core/runtime/gameContext";
+import { DEFAULT_HOST_SAVE_INTERVAL_MS } from "@jgengine/core/runtime/hostPolicy";
 import { createHostedWorldSessionAsync } from "@jgengine/core/runtime/hostedWorldSession";
 import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import { createWorldGameHost, type WorldGameHost } from "@jgengine/ws/worldHost";
@@ -20,6 +21,8 @@ export interface WorldGameServerOptions extends Omit<GameWsServerOptions, "host"
   resolveGame(gameId: string): HostedGameDefinition | null;
   /** Ticks per second for the real-clock loop {@link WorldGameServer.start} drives; default 30. Tests call {@link WorldGameServer.tick} manually instead. */
   tickHz?: number;
+  /** Minimum ms between automatic saves of a changed world; default 1000. `0` saves after every changed tick. */
+  saveIntervalMs?: number;
   /** Where each hosted world's authoritative state persists; defaults to an isolated in-memory store per world (lost on exit). Inject a file/SQL/Convex-backed {@link WorldPersistence} to survive a redeploy or crash. */
   persistence?: WorldPersistence;
 }
@@ -49,6 +52,7 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
   const {
     resolveGame,
     tickHz = DEFAULT_TICK_HZ,
+    saveIntervalMs = DEFAULT_HOST_SAVE_INTERVAL_MS,
     persistence = memoryWorldPersistence(),
     ...serverOptions
   } = options;
@@ -63,6 +67,7 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
         definition: resolved.game,
         content: resolved.content,
         now: clock,
+        saveIntervalMs,
         store: persistence.store({ gameId, serverId }),
         ...(resolved.models === undefined ? {} : { models: resolved.models }),
       });

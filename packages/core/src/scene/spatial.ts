@@ -281,22 +281,15 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
     const czMin = cellCoord(centerZ - radius, size);
     const czMax = cellCoord(centerZ + radius, size);
     out.length = 0;
-    const seen = collectNearSeen;
-    seen.clear();
     for (let cz = czMin; cz <= czMax; cz += 1) {
       for (let cx = cxMin; cx <= cxMax; cx += 1) {
         const bucket = index.cells.get(packCell(cx, cz));
         if (bucket === undefined) continue;
-        for (const id of bucket) {
-          if (seen.has(id)) continue;
-          seen.add(id);
-          out.push(id);
-        }
+        for (let i = 0; i < bucket.length; i += 1) out.push(bucket[i]!);
       }
     }
   }
 
-  const collectNearSeen = new Set<string>();
   const nearScratch: string[] = [];
   const resultScratch: string[] = [];
 

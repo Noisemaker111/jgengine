@@ -27,8 +27,9 @@ export function memoryWorldStore(seed?: HostedWorldRecord): SyncHostedWorldStore
   let record: HostedWorldRecord | null = seed === undefined ? null : structuredClone(seed);
   return {
     load: () => record === null ? null : structuredClone(record),
+    // The session hands over a snapshot it just built, so the store takes it without a second copy.
     save(next) {
-      record = structuredClone(next);
+      record = next;
     },
   };
 }

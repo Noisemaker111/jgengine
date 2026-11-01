@@ -1,6 +1,6 @@
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
 import { adapterOf, isServerAuthoritative, type MultiplayerAdapterConfig } from "@jgengine/core/runtime/adapter";
-import { resolveHostTickMs } from "@jgengine/core/runtime/hostPolicy";
+import { DEFAULT_HOST_SAVE_INTERVAL_MS, resolveHostTickMs } from "@jgengine/core/runtime/hostPolicy";
 import type { MultiplayerSession } from "@jgengine/core/runtime/transport";
 import { createHostedWorldSession, createHostedWorldSessionAsync, type HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
 import { createWorldGameHost } from "@jgengine/ws/worldHost";
@@ -135,7 +135,7 @@ export async function resolvePeerShellMultiplayer(
     throw new Error("playable peer worlds require authority: server");
   }
   const tickMs = resolveHostTickMs(args.tickMs);
-  const saveIntervalMs = args.saveIntervalMs ?? 1000;
+  const saveIntervalMs = args.saveIntervalMs ?? DEFAULT_HOST_SAVE_INTERVAL_MS;
   if (!Number.isFinite(saveIntervalMs) || saveIntervalMs < 0) throw new Error("saveIntervalMs must be nonnegative and finite");
   const userId = args.userId ?? randomPlayerId();
   const feedActions = args.feedActions ?? DEFAULT_FEED_ACTIONS;
