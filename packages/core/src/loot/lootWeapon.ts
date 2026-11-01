@@ -1,3 +1,4 @@
+import { clamp } from "../math/scalar";
 import {
   MAX_WEAPON_PELLETS_PER_SHOT,
   type WeaponDefinition,
@@ -37,10 +38,6 @@ function statOf(item: LootItem, statId: string | undefined): number | undefined 
   if (value === undefined) throw new RangeError(`Loot weapon projection names stat "${statId}" but the item does not roll it`);
   if (!Number.isFinite(value)) throw new RangeError(`Loot weapon projection stat "${statId}" is ${String(value)}`);
   return value;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
 
 /**
