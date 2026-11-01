@@ -1,18 +1,38 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
-import { createAlertLevel, type AlertLevel, type AlertLevelState, type AlertStep, type AlertTuning } from "@jgengine/core/ai/alertLevel";
+import { alertSearchArea, createAlertLevel, type AlertLevel, type AlertLevelState, type AlertSearchArea, type AlertSearchTuning, type AlertTuning } from "@jgengine/core/ai/alertLevel";
 import { createPacedSchedule, type PacedSchedule, type PacedScheduleState } from "@jgengine/core/time/pacedSchedule";
 import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 import { annulusRegion, sampleBatch } from "@jgengine/core/world/spatialSample";
-import { createPerception, type PerceptionCandidate, type PerceptionService } from "@jgengine/core/sensor/perception";
+import { createPerception, observeNearby, type PerceptionService } from "@jgengine/core/sensor/perception";
+import { createSearchBeat, searchBeatStep, type SearchBeatState, type SearchBeatTuning } from "@jgengine/core/ai/searchBeat";
 import { advancePursuit, armPursuit, createPursuitState, type PursuitState } from "@jgengine/core/ai/pursuit";
 import type { DifficultyProfile } from "@jgengine/core/ai/difficulty";
-import { createDriverState, driveStep, type DriverGoal, type DriverState, type DriverTuning, type PaceBand } from "@jgengine/core/ai/driver";
+import { createDriverState, driveStep, tailGoal, type DriverGoal, type DriverState, type DriverTuning, type TailTuning } from "@jgengine/core/ai/driver";
 import { seededRng } from "@jgengine/core/random/rng";
 import { vehicleById } from "../entities/vehicles/catalog";
-import type { Driving } from "./driving";
+import type { Driving } from "../driving/driving";
 import { landHit } from "../combat/hitModel";
-import { MAX_STARS, PURSUIT_STARS, wantedStore, type SearchAreaSnapshot, type WantedSnapshot } from "./shared";
+
+
+export interface WantedSnapshot {
+  heat: number;
+  /** Escalation tier, 0 (clean) to {@link MAX_STARS}. */
+  stars: number;
+  peakStars: number;
+  /** What HHPD is doing about it right now. */
+  response: "patrol" | "investigate" | "pursue" | "roadblock";
+  /** Where the search is, from the last sighting; null while clean. */
+  search: AlertSearchArea | null;
+}
+
+export const MAX_STARS = 5;
+/** Heat at the top tier; the HUD bar is a fraction of this. */
+export const MAX_HEAT = MAX_STARS * 100;
+export const PURSUIT_STARS = 3;
+
+export const wantedStore = defineStore<WantedSnapshot | undefined>("harbor.wanted", undefined);
+import { defineStore } from "@jgengine/core/store/defineStore";
 
 /** Cruiser driving skill by wanted stars: 3★ rookies drive sloppy, 5★ interceptors drive sharp. */
 const CRUISER_SKILL: readonly DifficultyProfile[] = [
@@ -56,33 +76,14 @@ const CRUISER_TUNING: DriverTuning = (() => {
 const CRUISER_CRUISE = 0.8;
 
 /**
- * The interceptors' chase band: hold a tail six metres off the player's bumper, so a cruiser that
- * falls behind opens up and one that closes backs off instead of driving through the car. Unlike the
- * race band this one is aimed at a moving target rather than a field position, and its push is what
- * lets a cruiser cruise below top speed and still reel a fast player in.
+ * The interceptors' tail: hold six metres off the player's bumper, so a cruiser that falls behind
+ * opens up and one that closes backs off instead of driving through the car. The cruise is capped at
+ * `CRUISER_CRUISE` of the car's top speed so the band's push is what reels a fast player in.
  */
-const CRUISER_PACE: PaceBand = { margin: -6, tolerance: 0.5, easeAt: 3, ease: 0.9, pushAt: 25, push: 0.7 };
-
-/**
- * The goal a cruiser hands the shared driver this step: aim at the player, pace it with
- * {@link CRUISER_PACE} and cap the cruise at `CRUISER_CRUISE` of the car's top speed so the band's
- * push has somewhere to go. The gap is measured along the cruiser's own nose, so a car that has run
- * past the player counts as ahead and eases instead of turning to ram from behind.
- */
-export function cruiserGoal(
-  pose: { readonly position: readonly [number, number, number]; readonly heading: number },
-  target: readonly [number, number, number],
-): DriverGoal {
-  const ahead =
-    (target[0] - pose.position[0]) * Math.sin(pose.heading) + (target[2] - pose.position[2]) * Math.cos(pose.heading);
-  return {
-    x: target[0],
-    z: target[2],
-    speedLimit: CRUISER_TUNING.maxSpeed * CRUISER_CRUISE,
-    paceGap: -ahead,
-    paceBand: CRUISER_PACE,
-  };
-}
+export const CRUISER_TAIL: TailTuning = {
+  speedLimit: CRUISER_TUNING.maxSpeed * CRUISER_CRUISE,
+  band: { margin: -6, tolerance: 0.5, easeAt: 3, ease: 0.9, pushAt: 25, push: 0.7 },
+};
 
 /** One step on HHPD's wanted ladder: the stars it shows, what HHPD is doing, and what it puts on the street. */
 export interface WantedTier {
@@ -118,9 +119,11 @@ const HUNT: AlertTuning<WantedTier> = {
   hiddenRate: 3,
 };
 
-/** Where the search stops growing, and how fast it grows while the trail stays cold. */
-const SEARCH_RADIUS_MAX = 90;
-const SEARCH_GROWTH_PER_SECOND = 1.4;
+/** Each step's own search radius, widening while the trail stays cold, up to 90 m. */
+const SEARCH: AlertSearchTuning<WantedTier> = { radius: (tier) => tier.searchRadius, growPerSecond: 1.4, maxRadius: 90 };
+
+/** An officer's beat: waypoints two thirds out from the sighting, turning 108-252 degrees on each. */
+const BEAT: SearchBeatTuning = { reach: 0.65, arriveRadius: 1.6, turnMin: Math.PI * 0.6, turnSpread: Math.PI * 0.8 };
 
 /** Where a new unit arrives: from the next block, never on top of the player. */
 const SPAWN_RING: readonly [number, number] = [44, 62];
@@ -227,7 +230,7 @@ export function createPursuit(driving: Driving): Pursuit {
   let alert = freshAlert();
   let peakStars = 0;
   let lastNoticeTier = 0;
-  let lastArea: SearchAreaSnapshot | null = null;
+  let lastArea: AlertSearchArea | null = null;
   const rng = seededRng("harbor-heat-cops");
   /** The arrival ring keeps its own stream so a reload repeats where units came from. */
   const ringRng = seededRng(RING_SEED);
@@ -243,7 +246,7 @@ export function createPursuit(driving: Driving): Pursuit {
   /** Per-cop attack-cooldown state, owned by the pursuit primitive instead of stashed on `entity.meta`. */
   const copPursuit = new Map<string, PursuitState>();
   /** Per-cop search beat: the little arc it walks inside the search area while the trail is cold. */
-  const copSearchAngle = new Map<string, number>();
+  const copSearchAngle = new Map<string, SearchBeatState>();
   /** Per-cruiser AI-driver state — steering quality scales with the wanted level. */
   const cruiserDrivers = new Map<string, DriverState>();
 
@@ -260,18 +263,6 @@ export function createPursuit(driving: Driving): Pursuit {
       response: alert.current().tier?.response ?? PATROL.response,
       search: lastArea,
     } satisfies WantedSnapshot);
-  }
-
-  /** The circle HHPD works: the tier's own radius, grown while the trail stays cold. */
-  function searchAreaOf(step: AlertStep<WantedTier>): SearchAreaSnapshot | null {
-    const tier = step.tier;
-    const anchor = step.anchor;
-    if (tier === null || anchor === null) return null;
-    return {
-      center: [anchor.at[0], anchor.at[1]],
-      radius: Math.min(SEARCH_RADIUS_MAX, tier.searchRadius + step.outOfSightSeconds * SEARCH_GROWTH_PER_SECOND),
-      lastSeenAt: anchor.lastSeenAt,
-    };
   }
 
   /** Heat at the first step of a star count, for pricing a pay-off down to it. */
@@ -295,18 +286,15 @@ export function createPursuit(driving: Driving): Pursuit {
       witnessRoster = [];
       return;
     }
-    const candidate: PerceptionCandidate = { id: "sighting-player", position: player.position };
     const near = ctx.scene.entity
       .list()
       .filter((entity) => isWitnessName(entity.name))
-      .filter((entity) => Math.hypot(entity.position[0] - player.position[0], entity.position[2] - player.position[2]) <= WITNESS_RADIUS)
       .filter((entity) => isCopName(entity.name) || quiet === null || !quiet(ctx, entity))
-      .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-      .slice(0, MAX_WITNESSES);
-    witnessRoster = near.map((entity) => entity.id);
-    for (const witness of near) {
-      perception.observe({ id: witness.id, position: witness.position, yaw: witness.rotationY }, [candidate], nowMs);
-    }
+      .map((entity) => ({ id: entity.id, position: entity.position, yaw: entity.rotationY }));
+    witnessRoster = observeNearby(perception, near, { id: "sighting-player", position: player.position }, nowMs, {
+      radius: WITNESS_RADIUS,
+      max: MAX_WITNESSES,
+    });
   }
 
   function tickWanted(ctx: GameContext, dt: number): void {
@@ -320,7 +308,7 @@ export function createPursuit(driving: Driving): Pursuit {
     const tier = step.tier;
     const stars = starsOf(tier);
     peakStars = Math.max(peakStars, stars);
-    lastArea = searchAreaOf(step);
+    lastArea = alertSearchArea(step, SEARCH);
     publishWanted(ctx);
 
     announceTier(ctx, stars);
@@ -415,7 +403,7 @@ export function createPursuit(driving: Driving): Pursuit {
           });
         }
       } else if (area !== null) {
-        searchStep(ctx, cop.id, area.center[0], area.center[1], area.radius, dt, cop.name === "cop_swat" ? 4.2 : 3.6);
+        searchStep(ctx, cop.id, area, dt, cop.name === "cop_swat" ? 4.2 : 3.6);
       }
 
       // The pursuit primitive owns the wall-clock attack cadence: fire only with a clear line, on a
@@ -441,30 +429,16 @@ export function createPursuit(driving: Driving): Pursuit {
   }
 
   /** Walk a beat inside the last-sighting circle instead of standing on its centre. */
-  function searchStep(
-    ctx: GameContext,
-    copId: string,
-    cx: number,
-    cz: number,
-    radius: number,
-    dt: number,
-    speed: number,
-  ): void {
-    let angle = copSearchAngle.get(copId);
-    if (angle === undefined) {
-      angle = rng() * Math.PI * 2;
-      copSearchAngle.set(copId, angle);
-    }
-    const reach = radius * 0.65;
-    const x = cx + Math.sin(angle) * reach;
-    const z = cz + Math.cos(angle) * reach;
+  function searchStep(ctx: GameContext, copId: string, area: AlertSearchArea, dt: number, speed: number): void {
     const cop = ctx.scene.entity.get(copId);
     if (cop === null) return;
-    if (Math.hypot(cop.position[0] - x, cop.position[2] - z) < 1.6) {
-      copSearchAngle.set(copId, angle + Math.PI * (0.6 + rng() * 0.8));
-      return;
+    let beat = copSearchAngle.get(copId);
+    if (beat === undefined) {
+      beat = createSearchBeat();
+      copSearchAngle.set(copId, beat);
     }
-    ctx.scene.entity.moveToward(copId, [x, cop.position[1], z], { speed, dt });
+    const waypoint = searchBeatStep(beat, [cop.position[0], cop.position[2]], area, BEAT, rng);
+    if (waypoint !== null) ctx.scene.entity.moveToward(copId, [waypoint[0], cop.position[1], waypoint[1]], { speed, dt });
   }
 
   function tickCruisers(ctx: GameContext, dt: number): void {
@@ -525,7 +499,9 @@ export function createPursuit(driving: Driving): Pursuit {
       }
       const [vx, vz] = vehicle.velocity();
       const forwardSpeed = vx * Math.sin(pose.heading) + vz * Math.cos(pose.heading);
-      const goal: DriverGoal = chasing ? cruiserGoal(pose, playerPos) : { x: target[0], z: target[1] };
+      const goal: DriverGoal = chasing
+        ? tailGoal({ x: pose.position[0], z: pose.position[2], heading: pose.heading }, { x: playerPos[0], z: playerPos[2] }, CRUISER_TAIL)
+        : { x: target[0], z: target[1] };
       const drive = driveStep(
         driver,
         dt,

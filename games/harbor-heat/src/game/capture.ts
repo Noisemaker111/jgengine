@@ -6,7 +6,7 @@ import { focusHarborVerb } from "./ui/menu/menuFocus";
 import { harborSave, saveHarborState } from "./save";
 import { startedStore } from "./commands";
 import { sessionStore } from "./session";
-import { handrollOf } from "./handroll";
+import { streetPlayOf } from "./streetPlay";
 import { courierStore } from "./jobs/courier";
 
 /** What a staged chase should look like when the capture takes it. */
@@ -25,7 +25,7 @@ const CHASE_HEAT = 380;
  */
 export function stageChase(ctx: GameContext, mode: StageMode = "chase", seconds = 10): void {
   void mode;
-  const handroll = handrollOf(ctx);
+  const streetPlay = streetPlayOf(ctx);
   // Heat is witness-gated, so the scene includes a bystander: the response system only accepts the
   // heat it is fed while somebody can see the player commit the crime.
   const player = ctx.scene.entity.get(ctx.player.userId);
@@ -37,27 +37,27 @@ export function stageChase(ctx: GameContext, mode: StageMode = "chase", seconds 
       role: "npc",
     });
   }
-  tick(ctx, handroll, STEP * 4);
-  handroll.addHeat(ctx, CHASE_HEAT);
+  tick(ctx, streetPlay, STEP * 4);
+  streetPlay.addHeat(ctx, CHASE_HEAT);
   // One more beat so the response takes the sighting and locks a search area on the player.
-  tick(ctx, handroll, STEP * 6);
-  if (handroll.drivingVehicleId() === null) {
+  tick(ctx, streetPlay, STEP * 6);
+  if (streetPlay.drivingVehicleId() === null) {
     const from = ctx.scene.entity.get(ctx.player.userId);
     const car = ctx.scene.entity.list()
       .filter((entity) => vehicleById(entity.name) !== undefined && !entity.id.startsWith("cruiser_"))
       .sort((a, b) => (from === null ? 0 : distance(a.position, from.position) - distance(b.position, from.position)))[0];
-    if (car !== undefined) handroll.enterVehicle(ctx, car.id);
+    if (car !== undefined) streetPlay.enterVehicle(ctx, car.id);
   }
-  tick(ctx, handroll, seconds);
+  tick(ctx, streetPlay, seconds);
 }
 
 /** The bystander whose sighting lets a staged crime raise heat at all. */
 export const WITNESS_ID = "ped_witness_0";
 
-function tick(ctx: GameContext, handroll: ReturnType<typeof handrollOf>, seconds: number): void {
+function tick(ctx: GameContext, streetPlay: ReturnType<typeof streetPlayOf>, seconds: number): void {
   for (let elapsed = 0; elapsed < seconds; elapsed += STEP) {
     ctx.time.advance(STEP);
-    handroll.tick(ctx, STEP);
+    streetPlay.tick(ctx, STEP);
   }
 }
 
@@ -66,12 +66,12 @@ function distance(a: readonly number[], b: readonly number[]): number {
 }
 
 export function stageReadout(ctx: GameContext): { stars: number; heat: number; cruisers: number; driving: boolean } {
-  const wanted = handrollOf(ctx).wanted();
+  const wanted = streetPlayOf(ctx).wanted();
   return {
     stars: wanted.stars,
     heat: Math.round(wanted.heat),
     cruisers: ctx.scene.entity.list().filter((entity) => entity.id.startsWith("cruiser_")).length,
-    driving: handrollOf(ctx).drivingVehicleId() !== null,
+    driving: streetPlayOf(ctx).drivingVehicleId() !== null,
   };
 }
 
@@ -90,13 +90,13 @@ export function registerCaptureCommands(ctx: GameContext): void {
   // The courier behind the wheel of a fresh car on the boulevard, so a capture sees the dash.
   ctx.game.commands.define<{ vehicle?: string }>("drive.stage", {
     apply(state, input) {
-      const handroll = handrollOf(state);
+      const streetPlay = streetPlayOf(state);
       const player = state.scene.entity.get(state.player.userId);
-      if (player === null || handroll.drivingVehicleId() !== null) return state;
+      if (player === null || streetPlay.drivingVehicleId() !== null) return state;
       const kind = vehicleById(input?.vehicle ?? "") === undefined ? "car_sport" : input!.vehicle!;
       const [x, , z] = player.position;
       const id = state.scene.entity.spawn(kind, { position: [x, state.world.groundHeightAt(x, z), z], rotationY: player.rotationY ?? 0, role: "prop" });
-      handroll.enterVehicle(state, id);
+      streetPlay.enterVehicle(state, id);
       return state;
     },
   });

@@ -3,8 +3,24 @@ import { advancePathFollow, createPathFollow, type PathFollowConfig, type PathFo
 import { createRaceState, firstPastPost, raceTrack, type RaceState } from "@jgengine/core/game/race";
 import { RACE_ROUTES, type RaceRoute } from "../world/districts";
 import { vehicleById } from "../entities/vehicles/catalog";
-import type { Driving } from "./driving";
-import { RIVAL_RACER_ID, raceStore, type RaceSnapshot } from "./shared";
+import type { Driving } from "../driving/driving";
+import { defineStore } from "@jgengine/core/store/defineStore";
+
+export const RIVAL_RACER_ID = "race_rival";
+
+export interface RaceSnapshot {
+  routeId: string;
+  label: string;
+  active: boolean;
+  checkpoint: number;
+  total: number;
+  position: number;
+  timeSec: number;
+  finished: boolean;
+  won: boolean;
+}
+
+export const raceStore = defineStore<RaceSnapshot | undefined>("harbor.race", undefined);
 
 /**
  * The race slice: authored street-race circuits and their scripted rival racer. Every `route` path in

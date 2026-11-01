@@ -265,6 +265,16 @@
       "intent": "fresh serializable state for one difficulty-aware AI driver"
     },
     {
+      "id": "ai-driver-tail",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ai/driver",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "tail a moving target with a pace band measured along the chaser's nose"
+    },
+    {
       "id": "air-metrics",
       "packages": [
         "@jgengine/core"
@@ -285,6 +295,18 @@
         "kind": "devtools"
       },
       "intent": "witness-gated alert value, labelled cut points and a stand-down beat"
+    },
+    {
+      "id": "alert-search-area",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ai/alertLevel",
+      "gameFacing": true,
+      "probe": {
+        "kind": "devtools"
+      },
+      "intent": "last-sighting search circle that widens while the trail is cold"
     },
     {
       "id": "ambience-zones",
@@ -7837,6 +7859,18 @@
       "intent": "pause a queued or active job in place, retaining its progress"
     },
     {
+      "id": "perception-nearby-roster",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/sensor/perception",
+      "gameFacing": true,
+      "probe": {
+        "kind": "devtools"
+      },
+      "intent": "observe one target from a capped, deterministic roster of nearby observers"
+    },
+    {
       "id": "perception-service",
       "packages": [
         "@jgengine/core"
@@ -9257,6 +9291,18 @@
       "intent": "reciprocal collision avoidance between many steering agents"
     },
     {
+      "id": "save-envelope-upgrade",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/save/saveDocument",
+      "gameFacing": true,
+      "probe": {
+        "kind": "devtools"
+      },
+      "intent": "lift an older or pre-versioned save payload into the current document envelope"
+    },
+    {
       "id": "save-slot-card",
       "packages": [
         "@jgengine/core"
@@ -9445,6 +9491,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "reachable horizontal controls with visible overflow navigation and keyboard focus reveal"
+    },
+    {
+      "id": "search-beat",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ai/searchBeat",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "walk waypoints around a search circle so searchers sweep it instead of standing on its centre"
     },
     {
       "id": "seed-sweep",

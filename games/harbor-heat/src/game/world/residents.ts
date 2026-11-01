@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
+import { tickCooldown } from "@jgengine/core/time/cooldown";
 import {
   createOffScreenWorld,
   resolveRoutine,
@@ -469,7 +470,7 @@ function applyDecisions(residents: CityResidents, now: number, dt: number, fear:
 }
 
 function publishBoard(ctx: GameContext, residents: CityResidents, dt: number): void {
-  residents.boardTimer -= dt;
+  residents.boardTimer = tickCooldown(residents.boardTimer, dt);
   if (residents.boardTimer > 0) return;
   residents.boardTimer = BOARD_INTERVAL;
   const cards = residents.world

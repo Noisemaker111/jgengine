@@ -3,7 +3,7 @@ import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { game } from "../game.config";
 import { loop } from "../loop";
 import { content } from "./content";
-import { handrollOf, type Handroll } from "./handroll";
+import { streetPlayOf, type StreetPlay } from "./streetPlay";
 import { courierRuntime, courierStore, DISPATCH, tickCourier } from "./jobs/courier";
 
 const STEP = 1 / 60;
@@ -11,13 +11,13 @@ const STEP = 1 / 60;
 type Booted = ReturnType<typeof boot>;
 
 /** One simulation step: witness memory and the search clock run on the world clock. */
-function step(ctx: Booted, handroll: Handroll): void {
+function step(ctx: Booted, streetPlay: StreetPlay): void {
   ctx.time.advance(STEP);
-  handroll.tick(ctx, STEP);
+  streetPlay.tick(ctx, STEP);
 }
 
-function run(ctx: Booted, handroll: Handroll, seconds: number): void {
-  for (let t = 0; t < seconds; t += STEP) step(ctx, handroll);
+function run(ctx: Booted, streetPlay: StreetPlay, seconds: number): void {
+  for (let t = 0; t < seconds; t += STEP) step(ctx, streetPlay);
 }
 
 /** A watched player: a bystander stands on the player's east side, facing west. */
@@ -61,31 +61,31 @@ function playerAt(ctx: Booted): readonly [number, number, number] {
 describe("HHPD heat is witness-gated", () => {
   test("a crime nobody sees raises no heat; the same crime in front of a witness does", () => {
     const ctx = boot();
-    const handroll = handrollOf(ctx);
+    const streetPlay = streetPlayOf(ctx);
     unwatch(ctx);
 
-    handroll.addHeat(ctx, 150);
-    step(ctx, handroll);
-    expect(handroll.wanted().heat).toBe(0);
-    expect(handroll.wanted().stars).toBe(0);
+    streetPlay.addHeat(ctx, 150);
+    step(ctx, streetPlay);
+    expect(streetPlay.wanted().heat).toBe(0);
+    expect(streetPlay.wanted().stars).toBe(0);
 
     watch(ctx);
-    step(ctx, handroll);
-    handroll.addHeat(ctx, 150);
-    step(ctx, handroll);
-    expect(handroll.wanted().heat).toBeCloseTo(150, 5);
-    expect(handroll.wanted().stars).toBe(2);
+    step(ctx, streetPlay);
+    streetPlay.addHeat(ctx, 150);
+    step(ctx, streetPlay);
+    expect(streetPlay.wanted().heat).toBeCloseTo(150, 5);
+    expect(streetPlay.wanted().stars).toBe(2);
   });
 
   test("the search area sits at the last sighting, not on the moving player", () => {
     const ctx = boot();
-    const handroll = handrollOf(ctx);
+    const streetPlay = streetPlayOf(ctx);
     unwatch(ctx);
     watch(ctx);
-    step(ctx, handroll);
-    handroll.addHeat(ctx, 180);
-    step(ctx, handroll);
-    const seen = handroll.wanted().search;
+    step(ctx, streetPlay);
+    streetPlay.addHeat(ctx, 180);
+    step(ctx, streetPlay);
+    const seen = streetPlay.wanted().search;
     expect(seen).not.toBeNull();
     const sighting = ctx.scene.entity.get(ctx.player.userId)!.position;
     expect(seen!.center[0]).toBeCloseTo(sighting[0], 5);
@@ -97,8 +97,8 @@ describe("HHPD heat is witness-gated", () => {
     ctx.scene.entity.setPose(ctx.player.userId, {
       position: [sighting[0] + 200, ctx.world.groundHeightAt(sighting[0] + 200, sighting[2]), sighting[2]],
     });
-    run(ctx, handroll, 1 + STEP);
-    const search = handroll.wanted().search!;
+    run(ctx, streetPlay, 1 + STEP);
+    const search = streetPlay.wanted().search!;
     expect(search.center[0]).toBeCloseTo(sighting[0], 3);
     expect(search.center[1]).toBeCloseTo(sighting[2], 3);
     expect(search.radius).toBeGreaterThanOrEqual(seen!.radius);
@@ -106,13 +106,13 @@ describe("HHPD heat is witness-gated", () => {
 
   test("heat decays once nobody is looking, and pursuit stands down", () => {
     const ctx = boot();
-    const handroll = handrollOf(ctx);
+    const streetPlay = streetPlayOf(ctx);
     unwatch(ctx);
     watch(ctx);
-    step(ctx, handroll);
-    handroll.addHeat(ctx, 220);
-    step(ctx, handroll);
-    expect(handroll.wanted().stars).toBeGreaterThan(0);
+    step(ctx, streetPlay);
+    streetPlay.addHeat(ctx, 220);
+    step(ctx, streetPlay);
+    expect(streetPlay.wanted().stars).toBeGreaterThan(0);
 
     // Break away: nobody can see the player, and the search stays on the last sighting behind them.
     unwatch(ctx);
@@ -120,24 +120,24 @@ describe("HHPD heat is witness-gated", () => {
     ctx.scene.entity.setPose(ctx.player.userId, {
       position: [at[0] + 120, ctx.world.groundHeightAt(at[0] + 120, at[2]), at[2]],
     });
-    run(ctx, handroll, 4);
-    const midHeat = handroll.wanted().heat;
+    run(ctx, streetPlay, 4);
+    const midHeat = streetPlay.wanted().heat;
     expect(midHeat).toBeGreaterThan(0);
-    run(ctx, handroll, 40);
-    expect(handroll.wanted().heat).toBeLessThan(midHeat);
-    expect(handroll.wanted().stars).toBe(0);
+    run(ctx, streetPlay, 40);
+    expect(streetPlay.wanted().heat).toBeLessThan(midHeat);
+    expect(streetPlay.wanted().stars).toBe(0);
     expect(ctx.scene.entity.list().filter((e) => e.name.startsWith("cop_") || e.id.startsWith("cruiser_"))).toHaveLength(0);
   });
 
   test("the search area grows while the trail is cold and never passes its cap", () => {
     const ctx = boot();
-    const handroll = handrollOf(ctx);
+    const streetPlay = streetPlayOf(ctx);
     unwatch(ctx);
     watch(ctx);
-    step(ctx, handroll);
-    handroll.addHeat(ctx, 500);
-    step(ctx, handroll);
-    const fresh = handroll.wanted().search;
+    step(ctx, streetPlay);
+    streetPlay.addHeat(ctx, 500);
+    step(ctx, streetPlay);
+    const fresh = streetPlay.wanted().search;
     if (fresh === null) throw new Error("HHPD should be searching the last sighting");
     expect(fresh.radius).toBe(46);
 
@@ -147,33 +147,33 @@ describe("HHPD heat is witness-gated", () => {
     ctx.scene.entity.setPose(ctx.player.userId, {
       position: [at[0] + 200, ctx.world.groundHeightAt(at[0] + 200, at[2]), at[2]],
     });
-    run(ctx, handroll, 4);
-    expect(handroll.wanted().search?.radius).toBeCloseTo(46 + 4 * 1.4, 0);
+    run(ctx, streetPlay, 4);
+    expect(streetPlay.wanted().search?.radius).toBeCloseTo(46 + 4 * 1.4, 0);
 
     for (let second = 0; second < 60; second += 1) {
-      run(ctx, handroll, 1);
-      const search = handroll.wanted().search;
+      run(ctx, streetPlay, 1);
+      const search = streetPlay.wanted().search;
       if (search !== null) expect(search.radius).toBeLessThanOrEqual(90);
     }
   });
 
   test("officer waves arrive on the star count's own pace", () => {
     const ctx = boot();
-    const handroll = handrollOf(ctx);
+    const streetPlay = streetPlayOf(ctx);
     const officers = (): number =>
       ctx.scene.entity.list().filter((e) => e.name === "cop_patrol" || e.name === "cop_swat").length;
     unwatch(ctx);
     watch(ctx);
-    step(ctx, handroll);
+    step(ctx, streetPlay);
     // Two stars want two officers, and the wave pace there is 5.6 seconds.
-    handroll.addHeat(ctx, 130);
-    step(ctx, handroll);
-    expect(handroll.wanted().stars).toBe(2);
+    streetPlay.addHeat(ctx, 130);
+    step(ctx, streetPlay);
+    expect(streetPlay.wanted().stars).toBe(2);
     expect(officers()).toBe(1);
 
-    run(ctx, handroll, 5);
+    run(ctx, streetPlay, 5);
     expect(officers()).toBe(1);
-    run(ctx, handroll, 1);
+    run(ctx, streetPlay, 1);
     expect(officers()).toBe(2);
   });
 });
@@ -181,16 +181,16 @@ describe("HHPD heat is witness-gated", () => {
 describe("heat sweeps a live courier run", () => {
   test("officers working the block fail the parcel with its own reason", () => {
     const ctx = boot();
-    const handroll = handrollOf(ctx);
+    const streetPlay = streetPlayOf(ctx);
     unwatch(ctx);
     ctx.game.commands.run("courier.accept", {});
     expect(courierStore.read(ctx).phase).toBe("running");
 
     watch(ctx);
-    step(ctx, handroll);
-    handroll.addHeat(ctx, 130);
-    step(ctx, handroll);
-    expect(handroll.wanted().stars).toBeGreaterThanOrEqual(2);
+    step(ctx, streetPlay);
+    streetPlay.addHeat(ctx, 130);
+    step(ctx, streetPlay);
+    expect(streetPlay.wanted().stars).toBeGreaterThanOrEqual(2);
 
     tickCourier(ctx, STEP);
     expect(courierStore.read(ctx).phase).toBe("lost");
@@ -199,10 +199,10 @@ describe("heat sweeps a live courier run", () => {
 
   test("a cool run is not swept", () => {
     const ctx = boot();
-    const handroll = handrollOf(ctx);
+    const streetPlay = streetPlayOf(ctx);
     unwatch(ctx);
     ctx.game.commands.run("courier.accept", {});
-    step(ctx, handroll);
+    step(ctx, streetPlay);
     tickCourier(ctx, STEP);
     expect(courierStore.read(ctx).phase).toBe("running");
     expect(courierRuntime(ctx).state()?.outcome).not.toBe("heat_sweep");

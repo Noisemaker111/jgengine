@@ -27,25 +27,25 @@
   background: radial-gradient(130% 100% at 40% 20%, #0f3d44 0%, #082a30 60%, #041a1e 100%);
 }
 .hh-radio-lcd.hh-lcd[data-alarm] {
-  --lcd-fg: var(--hh-cream);
+  --lcd-fg: var(--kit-surface);
   text-shadow: 0 0 6px rgba(239, 90, 60, 0.9);
   background: radial-gradient(130% 100% at 40% 20%, #b8452c 0%, #7c2616 70%, #4d150b 100%);
 }
 .hh-radio-top { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; overflow: hidden; }
-.hh-radio-top b { font: 400 19px/1 var(--hh-display); letter-spacing: 0.06em; }
-.hh-radio-top span { font: 700 10px/1 var(--hh-body); letter-spacing: 0.14em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; }
-.hh-radio-title { font: 700 12px/1.15 var(--hh-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hh-radio-top b { font: 400 19px/1 var(--kit-font-display); letter-spacing: 0.06em; }
+.hh-radio-top span { font: 700 10px/1 var(--kit-font-body); letter-spacing: 0.14em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; }
+.hh-radio-title { font: 700 12px/1.15 var(--kit-font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hh-radio-line {
   min-height: 2.3em;
-  font: italic 600 11px/1.15 var(--hh-body);
+  font: italic 600 11px/1.15 var(--kit-font-body);
   opacity: 0.9;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.hh-radio-tune { display: grid; justify-items: center; align-content: center; gap: 5px; padding: 0 4px; color: var(--hh-amber); }
-.hh-radio-tune small { font: 400 12px/1 var(--hh-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.hh-radio-tune { display: grid; justify-items: center; align-content: center; gap: 5px; padding: 0 4px; color: var(--kit-accent); }
+.hh-radio-tune small { font: 400 12px/1 var(--kit-font-display); letter-spacing: 0.08em; text-transform: uppercase; }
 
 .hh-hud-compact .hh-radio { grid-template-columns: 188px auto; padding: 5px; }
 .hh-hud-compact .hh-radio-top b { font-size: 16px; }

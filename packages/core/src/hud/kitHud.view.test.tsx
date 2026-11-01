@@ -75,4 +75,17 @@ describe("HudSlots", () => {
     const html = renderToStaticMarkup(<HudSlots storageKey="test" slots={{ topLeft: <span>corner</span> }} showDuring={undefined} />);
     expect(html).toContain("data-hud-canvas");
   });
+
+  test("several panels share a slot, and the canvas takes the game's class in every phase", () => {
+    const html = renderToStaticMarkup(
+      <HudSlots
+        storageKey="test"
+        showDuring={null}
+        className="my-hud"
+        panels={{ topRight: [{ id: "keys", content: <span>keys</span>, order: -1 }, { id: "cash", content: <span>cash</span>, interactive: false }] }}
+      />,
+    );
+    expect(html).toContain("data-hud-canvas");
+    expect(html).toContain("my-hud");
+  });
 });

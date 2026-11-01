@@ -4,7 +4,7 @@ import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 import { game } from "../../game.config";
 import { content } from "../content";
 import { registerCommands } from "../commands";
-import { handrollOf } from "../handroll";
+import { streetPlayOf } from "../streetPlay";
 import { PLAYER_SPAWN } from "../world/districts";
 import { FARE_ID, FLORIST, GIG_KINDS, GIG_SPOTS, gigBoard, gigSave, gigStore, restoreGigs, tickGigs } from "./gigs";
 
@@ -14,7 +14,7 @@ function boot() {
   registerCommands(ctx);
   ctx.game.commands.run("game.start", {});
   ctx.scene.entity.spawn("car_compact", { id: "gig_cab", position: [PLAYER_SPAWN[0] + 2, 0, PLAYER_SPAWN[2]], role: "prop" });
-  handrollOf(ctx).enterVehicle(ctx, "gig_cab");
+  streetPlayOf(ctx).enterVehicle(ctx, "gig_cab");
   return ctx;
 }
 
@@ -71,7 +71,7 @@ describe("Harbor Heat gigs", () => {
     // Three stars for 3 s costs 36 points of mood; one crash costs 20.
     expect(rule({ dt: 3, speed: 20, facts: { stars: 3 } })).toBe(36);
     expect(rule({ dt: 0.1, speed: 20, facts: { crash: true } })).toBe(20);
-    handrollOf(ctx).exitVehicle(ctx, true);
+    streetPlayOf(ctx).exitVehicle(ctx, true);
     tickGigs(ctx, 0.1);
     expect(gigStore.read(ctx).receipt).toMatchObject({ outcome: "failed", reason: "left-car", total: 0 });
   });

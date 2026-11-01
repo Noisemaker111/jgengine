@@ -20,8 +20,8 @@
 .hh-board {
   pointer-events: auto;
   width: min(620px, 100%);
-  color: var(--hh-cream);
-  font-family: var(--hh-body);
+  color: var(--kit-surface);
+  font-family: var(--kit-font-body);
   transform: rotate(-0.6deg);
 }
 .hh-board > [data-jg-frame-face] {
@@ -37,7 +37,7 @@
   text-align: center;
 }
 .hh-board-kicker {
-  font: 700 11px/1 var(--hh-body);
+  font: 700 11px/1 var(--kit-font-body);
   letter-spacing: 0.32em;
   text-transform: uppercase;
   color: #f4d9a6;
@@ -45,12 +45,12 @@
 }
 .hh-board-title {
   margin: 0;
-  font: 400 44px/0.95 var(--hh-display);
+  font: 400 44px/0.95 var(--kit-font-display);
   letter-spacing: 0.06em;
-  color: var(--hh-cream);
-  text-shadow: 3px 3px 0 var(--hh-coral), 6px 6px 0 rgba(7, 29, 37, 0.85);
+  color: var(--kit-surface);
+  text-shadow: 3px 3px 0 var(--kit-bad), 6px 6px 0 rgba(7, 29, 37, 0.85);
 }
-.hh-board-sub { font: 600 13px/1.2 var(--hh-body); letter-spacing: 0.08em; color: #f4d9a6; }
+.hh-board-sub { font: 600 13px/1.2 var(--kit-font-body); letter-spacing: 0.08em; color: #f4d9a6; }
 
 /* The felt: a dark grooved letter board, the kind every pawn counter and taco stand hangs. */
 .hh-board-felt {
@@ -83,13 +83,13 @@
   align-items: baseline;
   gap: 10px;
   margin: 8px 0 4px -12px;
-  font: 400 19px/1 var(--hh-display);
+  font: 400 19px/1 var(--kit-font-display);
   letter-spacing: 0.1em;
-  color: var(--hh-amber);
+  color: var(--kit-accent);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
 }
 .hh-board-rack small {
-  font: 600 11px/1 var(--hh-body);
+  font: 600 11px/1 var(--kit-font-body);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(244, 217, 166, 0.7);
@@ -118,23 +118,23 @@
 .hh-board-row[aria-current="true"] { background: rgba(255, 176, 32, 0.12); box-shadow: inset 0 0 0 1px rgba(255, 176, 32, 0.45); }
 .hh-board-name { display: inline-flex; align-items: baseline; gap: 7px; min-width: 0; }
 .hh-board-name b {
-  font: 400 21px/1.05 var(--hh-display);
+  font: 400 21px/1.05 var(--kit-font-display);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
 }
 .hh-board-tag {
-  font: 700 10px/1 var(--hh-body);
+  font: 700 10px/1 var(--kit-font-body);
   font-style: normal;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   padding: 3px 5px 2px;
   border-radius: 2px;
-  color: var(--hh-ink);
-  background: var(--hh-mint);
+  color: var(--kit-ink);
+  background: var(--kit-mint);
   transform: translateY(-2px);
 }
-.hh-board-count { font: 700 13px/1 var(--hh-body); font-style: normal; color: var(--hh-mint); }
+.hh-board-count { font: 700 13px/1 var(--kit-font-body); font-style: normal; color: var(--kit-mint); }
 .hh-board-dots {
   align-self: end;
   height: 4px;
@@ -142,7 +142,7 @@
   background: radial-gradient(circle, rgba(246, 241, 228, 0.5) 1.2px, transparent 1.6px) 0 0 / 8px 4px repeat-x;
 }
 .hh-board-price {
-  font: 400 23px/1 var(--hh-display);
+  font: 400 23px/1 var(--kit-font-display);
   letter-spacing: 0.05em;
   color: #fff;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55);
@@ -150,7 +150,7 @@
 .hh-board-line {
   grid-column: 1 / -1;
   margin-top: 1px;
-  font: 500 12.5px/1.25 var(--hh-body);
+  font: 500 12.5px/1.25 var(--kit-font-body);
   letter-spacing: 0.03em;
   color: rgba(246, 241, 228, 0.72);
 }
@@ -164,10 +164,10 @@
   right: 2px;
   top: 6px;
   padding: 4px 10px 3px;
-  font: 400 15px/1 var(--hh-display);
+  font: 400 15px/1 var(--kit-font-display);
   font-style: normal;
   letter-spacing: 0.1em;
-  color: var(--hh-cream);
+  color: var(--kit-surface);
   background: repeating-linear-gradient(135deg, #c2361f 0 10px, #d9462c 10px 20px);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
   transform: rotate(-4deg);
@@ -177,7 +177,7 @@
   right: 8px;
   top: 4px;
   padding: 3px 8px 1px;
-  font: 400 17px/1 var(--hh-display);
+  font: 400 17px/1 var(--kit-font-display);
   font-style: normal;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -195,23 +195,23 @@
   gap: 8px 14px;
   padding: 12px 16px 10px;
 }
-.hh-board-aside { grid-column: 1 / -1; grid-row: 2; font: 600 12px/1.2 var(--hh-body); letter-spacing: 0.08em; color: #f4d9a6; }
+.hh-board-aside { grid-column: 1 / -1; grid-row: 2; font: 600 12px/1.2 var(--kit-font-body); letter-spacing: 0.08em; color: #f4d9a6; }
 /* The courier's cash on a torn pocket stub. */
 .hh-stub {
   display: grid;
   gap: 1px;
   padding: 6px 12px 6px;
-  color: var(--hh-ink);
+  color: var(--kit-ink);
   background: #fbf1da;
   clip-path: polygon(0 0, 100% 0, 100% 100%, 94% 92%, 86% 100%, 76% 93%, 66% 100%, 55% 92%, 44% 100%, 33% 93%, 22% 100%, 11% 92%, 0 100%);
   transform: rotate(-2deg);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
 }
-.hh-stub small { font: 700 9px/1 var(--hh-body); letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.7; }
-.hh-stub b { font: 400 26px/1 var(--hh-display); letter-spacing: 0.04em; color: #1d7a4a; }
-.hh-stub span { font: 700 10px/1 var(--hh-body); letter-spacing: 0.12em; text-transform: uppercase; }
-.hh-board-why { font: 600 13.5px/1.3 var(--hh-body); color: #f8e7c4; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6); }
-.hh-board-leave { font: 400 19px/1 var(--hh-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--hh-cream); }
+.hh-stub small { font: 700 9px/1 var(--kit-font-body); letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.7; }
+.hh-stub b { font: 400 26px/1 var(--kit-font-display); letter-spacing: 0.04em; color: #1d7a4a; }
+.hh-stub span { font: 700 10px/1 var(--kit-font-body); letter-spacing: 0.12em; text-transform: uppercase; }
+.hh-board-why { font: 600 13.5px/1.3 var(--kit-font-body); color: #f8e7c4; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6); }
+.hh-board-leave { font: 400 19px/1 var(--kit-font-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--kit-surface); }
 .hh-board-keys { padding: 0 16px 12px; }
 
 .hh-counter.compact { padding: 8px; place-items: stretch center; }
@@ -239,7 +239,7 @@
   grid-template-columns: auto minmax(0, 1fr);
   align-items: end;
   gap: 18px;
-  font-family: var(--hh-body);
+  font-family: var(--kit-font-body);
 }
 .hh-talk-who { display: grid; justify-items: center; gap: 0; transform: rotate(-2deg); }
 /* A dog-eared snapshot, taped to the edge of the moment. */
@@ -266,20 +266,20 @@
 }
 .hh-mug-window, .hh-mug-initials { position: relative; width: 134px; height: 138px; display: block; overflow: hidden; background: #d9c7a2; }
 .hh-mug-canvas { position: absolute !important; inset: 0; }
-.hh-mug-initials { display: grid; place-items: center; font: 400 58px/1 var(--hh-display); color: var(--hh-ink); }
-.hh-plate { position: relative; margin-top: -20px; color: var(--hh-cream); text-align: center; min-width: 150px; }
+.hh-mug-initials { display: grid; place-items: center; font: 400 58px/1 var(--kit-font-display); color: var(--kit-ink); }
+.hh-plate { position: relative; margin-top: -20px; color: var(--kit-surface); text-align: center; min-width: 150px; }
 .hh-plate-text { display: grid; justify-items: center; gap: 2px; }
-.hh-plate b { font: 400 21px/1 var(--hh-display); letter-spacing: 0.08em; text-transform: uppercase; }
-.hh-plate small { font: 700 10px/1.2 var(--hh-body); letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.82; }
+.hh-plate b { font: 400 21px/1 var(--kit-font-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.hh-plate small { font: 700 10px/1.2 var(--kit-font-body); letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.82; }
 .hh-talk-say { display: grid; gap: 12px; justify-items: start; }
 /* The comic balloon: cream card, ink outline, a tail pointing back at the speaker. */
 .hh-balloon {
   position: relative;
   max-width: 100%;
   padding: 14px 20px 12px;
-  color: var(--hh-ink);
+  color: var(--kit-ink);
   background: #fffaf0;
-  border: 3px solid var(--hh-ink);
+  border: 3px solid var(--kit-ink);
   border-radius: 26px 26px 26px 6px;
   box-shadow: 5px 5px 0 rgba(7, 29, 37, 0.85);
 }
@@ -290,9 +290,9 @@
   bottom: 18px;
   border-style: solid;
 }
-.hh-balloon::before { border-width: 12px 24px 12px 0; border-color: transparent var(--hh-ink) transparent transparent; }
+.hh-balloon::before { border-width: 12px 24px 12px 0; border-color: transparent var(--kit-ink) transparent transparent; }
 .hh-balloon::after { left: -15px; bottom: 21px; border-width: 9px 18px 9px 0; border-color: transparent #fffaf0 transparent transparent; }
-.hh-balloon p { margin: 0; font: 600 18px/1.35 var(--hh-body); letter-spacing: 0.01em; }
+.hh-balloon p { margin: 0; font: 600 18px/1.35 var(--kit-font-body); letter-spacing: 0.01em; }
 .hh-balloon p + p { margin-top: 8px; font-weight: 500; font-size: 16px; color: #24495a; }
 .hh-replies { position: relative; display: grid; gap: 6px; padding-left: 22px; justify-items: start; }
 .hh-reply {
@@ -302,11 +302,11 @@
   padding: 6px 14px 5px 6px;
   border: 0;
   border-radius: 3px;
-  color: var(--hh-cream);
+  color: var(--kit-surface);
   background: rgba(7, 29, 37, 0.84);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
   cursor: pointer;
-  font: 600 16px/1.15 var(--hh-body);
+  font: 600 16px/1.15 var(--kit-font-body);
   text-align: left;
 }
 .hh-reply:focus-visible { outline: none; }
@@ -315,15 +315,15 @@
   place-items: center;
   width: 22px;
   height: 22px;
-  font: 400 15px/1 var(--hh-display);
+  font: 400 15px/1 var(--kit-font-display);
   font-style: normal;
-  color: var(--hh-ink);
-  background: var(--hh-cream);
+  color: var(--kit-ink);
+  background: var(--kit-surface);
   border-radius: 50%;
 }
-.hh-reply[data-job] { background: var(--hh-amber); color: var(--hh-ink); }
-.hh-reply[data-job] i { background: var(--hh-ink); color: var(--hh-amber); }
-.hh-reply[aria-current="true"] { box-shadow: 0 0 0 2px var(--hh-cream), 0 2px 0 rgba(0, 0, 0, 0.5); }
+.hh-reply[data-job] { background: var(--kit-accent); color: var(--kit-ink); }
+.hh-reply[data-job] i { background: var(--kit-ink); color: var(--kit-accent); }
+.hh-reply[aria-current="true"] { box-shadow: 0 0 0 2px var(--kit-surface), 0 2px 0 rgba(0, 0, 0, 0.5); }
 .hh-talk.compact { bottom: 8px; gap: 10px; grid-template-columns: auto minmax(0, 1fr); width: calc(100vw - 16px); }
 .hh-talk.compact .hh-mug { width: 92px; height: 108px; padding: 5px 5px 16px; }
 .hh-talk.compact .hh-mug-window, .hh-talk.compact .hh-mug-initials { width: 82px; height: 86px; }
@@ -347,7 +347,7 @@
   gap: 18px;
   padding: 16px;
   box-sizing: border-box;
-  font-family: var(--hh-body);
+  font-family: var(--kit-font-body);
   animation: hh-slip-in calc(320ms * var(--jg-motion-scale, 1)) cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
 }
 .hh-slip-scrim { position: absolute; inset: 0; z-index: -1; background: radial-gradient(110% 90% at 50% 45%, rgba(7, 29, 37, 0.35) 0%, rgba(7, 29, 37, 0.8) 100%); }
@@ -367,7 +367,7 @@
   transform: rotate(1.2deg);
 }
 .hh-receipt header { display: grid; justify-items: center; gap: 4px; padding-bottom: 10px; border-bottom: 2px dashed #8b857a; text-align: center; }
-.hh-receipt header b { font: 400 26px/1 var(--hh-display); letter-spacing: 0.12em; text-transform: uppercase; color: #1d3a44; }
+.hh-receipt header b { font: 400 26px/1 var(--kit-font-display); letter-spacing: 0.12em; text-transform: uppercase; color: #1d3a44; }
 .hh-receipt header span { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #5f5a50; }
 .hh-receipt h2 { margin: 14px 0 6px; font: 700 19px/1.15 inherit; letter-spacing: 0.02em; text-transform: uppercase; }
 .hh-receipt p { margin: 0 0 12px; font-size: 13.5px; line-height: 1.4; }
@@ -387,7 +387,7 @@
   left: 30px;
   bottom: 44px;
   padding: 6px 14px 3px;
-  font: 400 38px/1 var(--hh-display);
+  font: 400 38px/1 var(--kit-font-display);
   font-style: normal;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -406,20 +406,20 @@
 .hh-tabloid { width: min(520px, 100%); color: #1b1a17; transform: rotate(-1.4deg); }
 .hh-tabloid > [data-jg-frame-face] { display: grid !important; gap: 6px; padding: 16px 22px 28px; }
 .hh-tabloid header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 10px; padding-bottom: 6px; border-bottom: 4px double #1b1a17; }
-.hh-tabloid header span { font: 700 10px/1.1 var(--hh-body); letter-spacing: 0.12em; text-transform: uppercase; }
+.hh-tabloid header span { font: 700 10px/1.1 var(--kit-font-body); letter-spacing: 0.12em; text-transform: uppercase; }
 .hh-tabloid header span:last-child { text-align: right; }
 .hh-tabloid header b { font: 900 34px/1 Georgia, "Times New Roman", serif; letter-spacing: 0.02em; font-style: italic; }
 .hh-tabloid-kicker {
   justify-self: start;
   padding: 3px 10px 2px;
-  font: 400 16px/1 var(--hh-display);
+  font: 400 16px/1 var(--kit-font-display);
   font-style: normal;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #fff;
   background: #c2361f;
 }
-.hh-tabloid h2 { margin: 2px 0 0; font: 400 58px/0.92 var(--hh-display); letter-spacing: 0.02em; text-transform: uppercase; }
+.hh-tabloid h2 { margin: 2px 0 0; font: 400 58px/0.92 var(--kit-font-display); letter-spacing: 0.02em; text-transform: uppercase; }
 .hh-tabloid p { margin: 0; font: 500 15px/1.4 Georgia, "Times New Roman", serif; columns: 2; column-gap: 18px; }
 .hh-tabloid-photo {
   display: block;
@@ -429,12 +429,12 @@
   opacity: 0.55;
 }
 .hh-tabloid-lines { display: grid; gap: 3px; margin: 6px 0 0; padding-top: 6px; border-top: 1px solid #1b1a17; }
-.hh-tabloid-lines div { display: flex; justify-content: space-between; gap: 12px; font: 700 13px/1.3 var(--hh-body); text-transform: uppercase; letter-spacing: 0.06em; }
+.hh-tabloid-lines div { display: flex; justify-content: space-between; gap: 12px; font: 700 13px/1.3 var(--kit-font-body); text-transform: uppercase; letter-spacing: 0.06em; }
 .hh-tabloid-lines dt { margin: 0; }
 .hh-tabloid-lines dd { margin: 0; font-weight: 800; }
 .hh-slip-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 16px; }
-.hh-slip-btn { min-width: 150px; font: 400 21px/1 var(--hh-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--hh-cream); }
-.hh-slip-btn[data-primary] { color: var(--hh-ink); }
+.hh-slip-btn { min-width: 150px; font: 400 21px/1 var(--kit-font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--kit-surface); }
+.hh-slip-btn[data-primary] { color: var(--kit-ink); }
 .hh-slip-screen.compact { gap: 10px; }
 .hh-slip-screen.compact .hh-slip-actions { display: grid; width: min(360px, 100%); gap: 8px; }
 .hh-slip-screen.compact .hh-slip-btn { min-width: 0; font-size: 18px; }

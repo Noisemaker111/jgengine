@@ -30,6 +30,7 @@
     "./ai/populationDirector",
     "./ai/pursuit",
     "./ai/rvo",
+    "./ai/searchBeat",
     "./ai/tacticalQueries",
     "./ai/targetAcquisition",
     "./ai/temperament",

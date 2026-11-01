@@ -5,7 +5,7 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { MinimapChrome, type MinimapChromeMarker } from "@jgengine/core/map/map.view";
 import { cityOf } from "../../cityRuntime";
 import { safehouseStore } from "../../commands";
-import { drivingStore, raceStore, wantedStore } from "../../handroll";
+import { drivingStore, raceStore, wantedStore } from "../../streetPlay";
 import { bountyStore } from "../../jobs/bounties";
 import { courierStore, DELIVERY_ROUTES, DISPATCH } from "../../jobs/courier";
 import { stashStore } from "../../jobs/stashes";

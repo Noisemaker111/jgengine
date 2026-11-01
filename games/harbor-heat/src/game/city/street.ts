@@ -8,7 +8,7 @@ import { spend } from "../cash";
 import { GANGS, TURF, type GangId } from "../city";
 import { landHit } from "../combat/hitModel";
 import { cityEvent, cityOf } from "../cityRuntime";
-import { handrollOf } from "../handroll";
+import { streetPlayOf } from "../streetPlay";
 import { frontIn } from "./fronts";
 
 /**
@@ -259,7 +259,7 @@ function copWithin(ctx: GameContext, at: readonly [number, number, number], metr
 
 /** The cover the player is in right now, or null. */
 export function coverAt(ctx: GameContext, safehouseOwned: boolean): Hideout | null {
-  const body = ctx.scene.entity.get(handrollOf(ctx).drivingVehicleId() ?? ctx.player.userId);
+  const body = ctx.scene.entity.get(streetPlayOf(ctx).drivingVehicleId() ?? ctx.player.userId);
   if (body === null) return null;
   for (const hideout of HIDEOUTS) {
     if (Math.hypot(hideout.at[0] - body.position[0], hideout.at[1] - body.position[2]) > hideout.radius) continue;
@@ -272,11 +272,11 @@ export function coverAt(ctx: GameContext, safehouseOwned: boolean): Hideout | nu
 
 /** Tell the pursuit whether the player is in cover this tick; it cools the trail faster and ignores sightings. */
 export function tickCover(ctx: GameContext, safehouseOwned: boolean): void {
-  const handroll = handrollOf(ctx);
-  const cover = handroll.wanted().stars > 0 ? coverAt(ctx, safehouseOwned) : null;
+  const streetPlay = streetPlayOf(ctx);
+  const cover = streetPlay.wanted().stars > 0 ? coverAt(ctx, safehouseOwned) : null;
   const hidden = cover !== null;
-  if (hidden === handroll.hidden()) return;
-  handroll.setHidden(hidden);
+  if (hidden === streetPlay.hidden()) return;
+  streetPlay.setHidden(hidden);
   if (hidden) ctx.game.notices.push({ text: `Laying low at ${cover.label}. HHPD can't see you here.`, tone: "info" });
 }
 
@@ -286,12 +286,12 @@ export const resprayCost = (stars: number) => stars * RESPRAY_PER_STAR;
 export const payoffCost = (stars: number) => stars * PAYOFF_PER_STAR;
 
 export function registerStreet(ctx: GameContext): void {
-  handrollOf(ctx).setWitnessFilter(quietOnYourBlock);
+  streetPlayOf(ctx).setWitnessFilter(quietOnYourBlock);
 
   ctx.game.commands.define<Record<string, never>>("city.respray", {
     validate(state) {
-      const stars = handrollOf(state).wanted().stars;
-      const vehicle = handrollOf(state).drivingVehicleId();
+      const stars = streetPlayOf(state).wanted().stars;
+      const vehicle = streetPlayOf(state).drivingVehicleId();
       if (vehicle === null) return { reason: "no-car", message: "Bring a car into the bay." };
       if (stars === 0) return { reason: "clean", message: "Nobody's looking for this car." };
       const at = state.scene.entity.get(vehicle)?.position;
@@ -300,10 +300,10 @@ export function registerStreet(ctx: GameContext): void {
       return null;
     },
     apply(state) {
-      const handroll = handrollOf(state);
-      const cost = resprayCost(handroll.wanted().stars);
+      const streetPlay = streetPlayOf(state);
+      const cost = resprayCost(streetPlay.wanted().stars);
       if (!spend(state, cost, "respray")) return;
-      handroll.forgiveHeat(state, Number.MAX_SAFE_INTEGER);
+      streetPlay.forgiveHeat(state, Number.MAX_SAFE_INTEGER);
       state.game.notices.push({ text: `New paint, new plates. HHPD lost you. -$${cost}`, tone: "success" });
       state.game.feedback.cue("objective", "Resprayed");
     },
@@ -312,7 +312,7 @@ export function registerStreet(ctx: GameContext): void {
   ctx.game.commands.define<Record<string, never>>("city.payoff", {
     validate(state) {
       const world = cityOf(state);
-      const stars = handrollOf(state).wanted().stars;
+      const stars = streetPlayOf(state).wanted().stars;
       if (world.fact("dee.known") !== true) return { reason: "unknown", message: "You don't know a cop who'd take it." };
       if (world.num("dee.trust") <= -20) return { reason: "burned", message: "Dee won't pick up." };
       if (stars === 0) return { reason: "clean", message: "There's nothing to lose." };
@@ -320,12 +320,12 @@ export function registerStreet(ctx: GameContext): void {
       return null;
     },
     apply(state) {
-      const handroll = handrollOf(state);
-      const wanted = handroll.wanted();
+      const streetPlay = streetPlayOf(state);
+      const wanted = streetPlay.wanted();
       const cost = payoffCost(wanted.stars);
       if (!spend(state, cost, "payoff")) return;
-      const floor = handroll.heatForStars(wanted.stars - 1);
-      const left = handroll.forgiveHeat(state, Math.max(1, wanted.heat - floor + 1));
+      const floor = streetPlay.heatForStars(wanted.stars - 1);
+      const left = streetPlay.forgiveHeat(state, Math.max(1, wanted.heat - floor + 1));
       cityOf(state).change({ "dee.trust": -3 });
       state.game.notices.push({ text: `Dee lost a report. ${left === 0 ? "You're clean." : `Down to ${left} star${left === 1 ? "" : "s"}.`} -$${cost}`, tone: "success" });
     },
@@ -335,7 +335,7 @@ export function registerStreet(ctx: GameContext): void {
 /** The respray prompt, shown to a driver in Sunset Motors' bay with heat on them. */
 export function streetPrompts(ctx: GameContext): PositionedPrompt[] {
   const bay = motors();
-  if (bay === null || handrollOf(ctx).drivingVehicleId() === null || handrollOf(ctx).wanted().stars === 0) return [];
+  if (bay === null || streetPlayOf(ctx).drivingVehicleId() === null || streetPlayOf(ctx).wanted().stars === 0) return [];
   return [{
     id: "street:respray",
     position: { x: bay.at[0], z: bay.at[1] },
@@ -345,7 +345,7 @@ export function streetPrompts(ctx: GameContext): PositionedPrompt[] {
 }
 
 export function streetPromptLabel(ctx: GameContext, id: string): string | null {
-  if (id === "street:respray") return `Respray · $${resprayCost(handrollOf(ctx).wanted().stars)}`;
+  if (id === "street:respray") return `Respray · $${resprayCost(streetPlayOf(ctx).wanted().stars)}`;
   return null;
 }
 
@@ -377,10 +377,10 @@ const onFoot = (name: string) => name.startsWith("ped_") || name.startsWith("res
  * reckless driving (a little fear, a little heat if anyone reports it) at most every few seconds.
  */
 export function tickReckless(ctx: GameContext): void {
-  const handroll = handrollOf(ctx);
-  const id = handroll.drivingVehicleId();
-  if (id === null || handroll.raceActive()) return;
-  const speed = handroll.telemetry().speedMs;
+  const streetPlay = streetPlayOf(ctx);
+  const id = streetPlay.drivingVehicleId();
+  if (id === null || streetPlay.raceActive()) return;
+  const speed = streetPlay.telemetry().speedMs;
   if (speed < RECKLESS_SPEED) return;
   const car = ctx.scene.entity.get(id);
   if (car === null) return;

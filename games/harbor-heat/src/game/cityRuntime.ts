@@ -12,7 +12,7 @@ import { raidLost, raidStarted, registerFronts, startRaidOnFirstFront, tickFront
 import { crewPush, GANG_LABEL, gangClash, gangOf, registerStreet, tickClashes, tickCover, tickReckless, tickStreetCrews } from "./city/street";
 import { registerGarage } from "./city/garage";
 import { safehouseStore } from "./commands";
-import { handrollOf, raceStore } from "./handroll";
+import { streetPlayOf, raceStore } from "./streetPlay";
 import { CRED_BY_JOB, grantCred } from "./progression/cred";
 import { convoyRunners } from "./runState";
 import { CICADA_STAGE_POS, KINGPIN_POS } from "./world/districts";
@@ -51,7 +51,7 @@ function liveFacts(ctx: GameContext) {
   const facts = worldStore.peek(ctx)?.facts;
   let held = 0;
   for (const id of TURF) if ((facts?.[`${id}.owner`] ?? city.places?.[id]?.owner) === "player") held += 1;
-  return { "clock.hour": hour, "clock.night": isNight(hour), "police.stars": handrollOf(ctx).wanted().stars, "turf.held": held };
+  return { "clock.hour": hour, "clock.night": isNight(hour), "police.stars": streetPlayOf(ctx).wanted().stars, "turf.held": held };
 }
 
 function groundedMarkers(ctx: GameContext) {
@@ -73,7 +73,7 @@ const runtimes = perContext((ctx: GameContext): CityRuntime => ({
         },
       }),
     onOutput: (name, amount) => {
-      if (name === "heat") handrollOf(ctx).addHeat(ctx, amount);
+      if (name === "heat") streetPlayOf(ctx).addHeat(ctx, amount);
     },
     live: () => liveFacts(ctx),
     hooks: {
@@ -101,7 +101,7 @@ export function cityEvent(ctx: GameContext, event: WorldEvent): void {
 }
 
 function playerPosition(ctx: GameContext): readonly [number, number, number] | null {
-  return ctx.scene.entity.get(handrollOf(ctx).drivingVehicleId() ?? ctx.player.userId)?.position ?? null;
+  return ctx.scene.entity.get(streetPlayOf(ctx).drivingVehicleId() ?? ctx.player.userId)?.position ?? null;
 }
 
 /** Fear where a point stands, 0 when it is in no declared place. */
@@ -166,7 +166,7 @@ function registerCityDev(ctx: GameContext): void {
   if (!import.meta.env.DEV) return;
   ctx.game.commands.define<{ x: number; z: number }>("city.dev.warp", {
     apply(state, input) {
-      handrollOf(state).exitVehicle(state, true);
+      streetPlayOf(state).exitVehicle(state, true);
       state.scene.entity.setPose(state.player.userId, { position: [input.x, state.world.groundHeightAt(input.x, input.z), input.z] });
     },
   });
@@ -235,9 +235,9 @@ function registerCityDev(ctx: GameContext): void {
         log: world.log().map((entry) => entry.text),
         place: player === null ? null : world.placeAt(player[0], player[2]),
         panicking: runtimes(ctx).panicking,
-        stars: handrollOf(ctx).wanted().stars,
-        hidden: handrollOf(ctx).hidden(),
-        heat: Math.round(handrollOf(ctx).wanted().heat),
+        stars: streetPlayOf(ctx).wanted().stars,
+        hidden: streetPlayOf(ctx).hidden(),
+        heat: Math.round(streetPlayOf(ctx).wanted().heat),
         clock: { hour: world.fact("clock.hour"), night: world.fact("clock.night") },
         turf: Object.fromEntries(TURF.map((id) => [id, { owner: world.fact(`${id}.owner`), grip: Math.round(world.num(`${id}.grip`)), attacker: world.fact(`${id}.attacker`) }])),
         war: { on: world.fact("war.on"), tension: Math.round(world.num("war.tension")) },
@@ -337,14 +337,14 @@ export function tickCity(ctx: GameContext, dt: number): void {
   const model = runtime.model;
   const position = playerPosition(ctx);
   const race = raceStore.peek(ctx);
-  const drivingId = handrollOf(ctx).drivingVehicleId();
+  const drivingId = streetPlayOf(ctx).drivingVehicleId();
   const events = runtime.pending;
   runtime.pending = [];
   const result = model.tick(dt, {
     actors: { [CITY_PLAYER]: position === null ? {} : { position: { x: position[0], y: position[1], z: position[2] } } },
     events,
     facts: {
-      police_tier: handrollOf(ctx).wanted().stars,
+      police_tier: streetPlayOf(ctx).wanted().stars,
       race_won: race !== undefined && race.finished && race.won ? race.routeId : "",
       driving: drivingId === null ? "" : (ctx.scene.entity.get(drivingId)?.name ?? ""),
       cicada_wrecked: runtime.cicadaWrecked,
@@ -358,7 +358,7 @@ export function tickCity(ctx: GameContext, dt: number): void {
       const cred = CRED_BY_JOB[event.jobId];
       if (cred !== undefined) grantCred(ctx, cred);
       ctx.game.notices.push({ text: `${city.jobs?.[event.jobId]?.title ?? event.jobId} complete.`, tone: "success" });
-      if (event.jobId === "hot_wheels" && handrollOf(ctx).drivingVehicleId() !== null) handrollOf(ctx).exitVehicle(ctx);
+      if (event.jobId === "hot_wheels" && streetPlayOf(ctx).drivingVehicleId() !== null) streetPlayOf(ctx).exitVehicle(ctx);
       void ctx.game.save?.checkpoint();
     } else if (event.kind === "job-failed") {
       ctx.game.notices.push({ text: `Job failed: ${event.reason} See the giver to retry.`, tone: "warn" });

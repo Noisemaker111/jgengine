@@ -4,7 +4,8 @@ import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
-import { HH, KeyLegend, money, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
+import { KeyLegend, money, navItem, useMenuSound, useMoveTick, useScreenTouch } from "./kit";
+import { HH } from "../theme";
 
 /**
  * One thing on the board: a gun, a box of shells, a car, an engine upgrade. `owned` and `gate` are

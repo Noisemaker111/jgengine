@@ -789,6 +789,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRuntimeSave` (function) · `import { createRuntimeSave } from "@jgengine/core/save/snapshotSave"`
 
+## save-envelope-upgrade — lift an older or pre-versioned save payload into the current document envelope
+
+- `upgradeSaveEnvelope` (function) · `import { upgradeSaveEnvelope } from "@jgengine/core/save/saveDocument"`
+
 ## save-slot-index — refresh a save-select index from the game's save documents
 
 - `refreshSaveSlots` (function) · `import { refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex"`

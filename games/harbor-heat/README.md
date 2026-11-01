@@ -14,7 +14,7 @@ The dispatch booth, three parcel towers, coconut palm, Islander bus, HHPD light 
 
 ## Design checklist
 
-Read from `src/game/city.ts` (the world: people, places, factions, jobs, reactions), `src/game/{jobs,progression,entities,handroll}`. Numbers are what the build does now.
+Read from `src/game/city.ts` (the world: people, places, factions, jobs, reactions), `src/game/{jobs,progression,entities,driving,hhpd,race}`. Numbers are what the build does now.
 
 - **Core loop.** On foot or in a vehicle, take work in Mainsail: the eight-job story from "Welcome to the Isle" through Front Money and Protection to Sal (offered in person or on the phone, `T`), side jobs (The Ledger, the Ocean Loop, Take the Marina) and Dee Kalani's repeatable job, courier runs from the teal dispatch booth, taxi fares with the taxi light on (`Y` in any car), flower runs from Boardwalk Blooms (`E` at the counter), street races for a $200 stake (phone `T` → Side work, or paged after 20:00), bounties after Dock Sweep, four race circuits and the hidden stashes. Cash pays for weapons, gear and the garage; cred levels gate the good stock.
 - **Progression — three systems.**
