@@ -3,7 +3,7 @@ the runtime hull reproduces the reference: resistance, planing trim, propeller t
 ### Added
 
 - the runtime hull reproduces the reference: resistance, planing trim, propeller thrust, MMG manoeuvring and seakeeping on a shared sea state, each a named effect a game can switch on; boatFromReference gives a real boat in one line
-- each boat effect has a strength from 0 (the simple model's term) to 1 (as the reference measures it), and boatFromReference takes per-boat overrides so a fleet is data
+- each boat effect has a strength, a multiplier from 0 (the simple model's term) where 1 is exactly the reference measurement and the dial keeps going past it, finite and monotone over 0 to 4; boatFromReference takes per-boat overrides so a fleet is data
 - `hullSurgeAddedMass` (`@jgengine/core/physics/boatDynamics`): Surge added mass of a hull as half a prolate spheroid of its length and twice its volume (the double-body image across the still surface): Lamb's `k₁ = α₀/(2 − α₀)` times the displaced mass. Also `BoatAddedMass`, `BoatEffects`.
 - `hullManoeuvringForces` (`@jgengine/core/physics/boatManoeuvring`): Hull forces from drift and yaw rate at midship (the MMG `X_H` without straight-running resistance, `Y_H`, `N_H`). Also `HullManoeuvring`, `ManoeuvringDerivatives`, `ManoeuvringLoads`, `ManoeuvringRudder`, `RudderInflow`, `rudderForces`.
 - `planingForces` (`@jgengine/core/physics/boatPlaning`): Savitsky's (1964) planing forces at a trim: the mean wetted length that carries the weight, the mean bottom velocity, Schoenherr friction, the centre of pressure `l_p/(λb) = 0.75 − 1/(5.21·C_V²/λ² + 2.39)`, and the trimming moment about G with the thrust line. Also `PlaningBottom`, `PlaningForces`, `planingTrim`.
