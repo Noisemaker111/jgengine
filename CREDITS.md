@@ -22,18 +22,18 @@ the names only, and `assets pull` fetches the bytes from Poly Haven's own API an
 
 ## Curated HDRIs, grades and fonts
 
-`@jgengine/assets/catalogs/hdriLibrary` names 10 CC0 HDRIs from [Poly Haven](https://polyhaven.com/hdris), pulled at 2K:
-Noon Grass, Kloppenheim 06 and Qwantani Dusk 2 (Greg Zaal, Jarod Guest), Venice Sunset, Shanghai Bund and Satara Night
+`@jgengine/assets/catalogs/hdriLibrary` names CC0 HDRIs from [Poly Haven](https://polyhaven.com/hdris), pulled at 2K:
+Noon Grass, Kloppenheim 06 and Qwantani Dusk 2 (Greg Zaal, Jarod Guest), Venice Sunset, Small Harbour Sunset, Shanghai Bund and Satara Night
 (Greg Zaal), Overcast Soil (Jarod Guest, Sergej Majboroda), Industrial Workshop Foundry (Dimitrios Savva, Jarod Guest),
 Forest Slope (Andreas Mischok) and Snowy Park 01 (Oliksiy Yakovlyev).
 
-The 16 colour grades (`catalogs/lutGrades`) are written for JGengine and released as CC0.
+The colour grades (`catalogs/lutGrades`) are written for JGengine and released as CC0.
 
-`catalogs/fontLibrary` names 14 SIL Open Font License 1.1 families from [Google Fonts](https://fonts.google.com), taken as
+`catalogs/fontLibrary` names SIL Open Font License 1.1 families from [Google Fonts](https://fonts.google.com), taken as
 [Fontsource](https://fontsource.org) woff2 files: Cinzel (Natanael Gama), Crimson Pro (Jacques Le Bailly), Orbitron (Matt McInerney),
 Rajdhani (Indian Type Foundry), Oswald and Stardos Stencil (Vernon Adams), Barlow (Jeremy Tribby), Fredoka (Milena Brandão),
 Nunito (Vernon Adams, Jacques Le Bailly), Bebas Neue (Ryoichi Tsunekawa), Roboto (Christian Robertson),
-Share Tech Mono (Carrois Apostrophe), Russo One (Jovanny Lemonad) and Inter (Rasmus Andersson).
+Bangers (Vernon Adams), Share Tech Mono (Carrois Apostrophe), Russo One (Jovanny Lemonad) and Inter (Rasmus Andersson).
 `creditsForLooks` writes these lines from the ids a game ships.
 
 ## Microsoft Rocketbox

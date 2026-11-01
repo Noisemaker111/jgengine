@@ -1,3 +1,4 @@
+import { withSwappableRoadSurface } from "@jgengine/core/roads/liveRoadSurface";
 import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 import {
   cityRoadSource,
@@ -40,7 +41,7 @@ export const cityLayout = createCityLayout({
 
 /** Scanned asphalt, concrete paving and gutters; the sidewalk keeps its sand tone and takes the grain. */
 const STREET_SURFACES = {
-  road: librarySurfaceScan("asphalt/dry"),
+  road: librarySurfaceScan("asphalt/dark-cracked"),
   sidewalk: librarySurfaceScan("concrete/smooth", { tint: 0 }),
   curb: librarySurfaceScan("concrete/smooth", { tint: 0 }),
 };
@@ -58,7 +59,14 @@ const ROAD_SPECS: readonly CityRoadSpec[] = ROADS.map((segment) => ({
 }));
 
 /** The streets as the layout draws them right now; the shell re-renders them when a slider moves. */
-export const roadSource = cityRoadSource(cityLayout, ROAD_SPECS);
+const layoutRoads = cityRoadSource(cityLayout, ROAD_SPECS);
+export const roadSource = withSwappableRoadSurface(layoutRoads);
+
+/** The streets at boot, for `environment({ roads })`. */
+export const initialRoads = layoutRoads.initial;
+
+/** The carriageway after dark: the same streets on the wet-asphalt scan, so lamps and neon pool on it. */
+export const WET_ROAD = { road: librarySurfaceScan("asphalt/wet") };
 
 /** Lot roads for `cityLots`: the same centrelines, with their class. */
 export const LOT_ROADS: readonly CityLotRoad[] = ROAD_SPECS.map((spec) => ({

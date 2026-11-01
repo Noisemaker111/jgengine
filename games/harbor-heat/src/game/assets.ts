@@ -3,10 +3,10 @@ import { buildMaterialCatalog } from "@jgengine/assets/materials";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 /**
- * Kit packs still cast where the realistic library has nothing yet: KayKit cars, people, aircraft,
- * signs and cargo. Buildings and street furniture come from the realistic library (see `props.ts`).
+ * Quaternius' CC0 low-poly cars give traffic its bodies beyond the library's one sports car: real
+ * 4 m sedans, a taxi and a coupe, resprayed into the city's palette (see `world/models.ts`).
  */
-const MODEL_SOURCES = ["kaykit-city-builder", "kaykit-space-base", "kaykit-dungeon"] as const;
+const MODEL_SOURCES = ["quaternius-lowpoly-cars"] as const;
 
 /**
  * Ground grain under the isle's authored sand/scrub palette. Blended at a low `tint` so the beach,
@@ -14,16 +14,17 @@ const MODEL_SOURCES = ["kaykit-city-builder", "kaykit-space-base", "kaykit-dunge
  * and shade — the isle is hand-tinted, so a stock albedo painting over it would flatten every
  * region to one tan.
  */
-const GROUND_MATERIAL = "ambientcg-ground025";
+const GROUND_MATERIAL = "ambientcg-ground055s";
 
 /**
- * The scans behind the library surfaces the streets and buildings name (`asphalt/dry`,
- * `concrete/smooth`, and the `facade/*` brick and glass walls), listed by source id so provisioning
+ * The scans behind the library surfaces the streets and buildings name (`asphalt/dark-cracked`,
+ * `concrete/smooth`, `paving/stone`, and the `facade/*` brick and glass walls), listed by source id so provisioning
  * pulls them.
  */
 const SURFACE_MATERIALS = [
-  "ambientcg-asphalt003",
+  "ambientcg-asphalt012",
   "ambientcg-concrete006",
+  "ambientcg-pavingstones002",
   "ambientcg-facade018a",
   "ambientcg-facade019a",
   "ambientcg-facade020a",

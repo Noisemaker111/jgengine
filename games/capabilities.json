@@ -4146,7 +4146,7 @@
       "module": "@jgengine/assets/catalogs/fontLibrary",
       "gameFacing": false,
       "probe": null,
-      "intent": "pick a display and a body font from 17 shipped OFL families by id"
+      "intent": "pick a display and a body font from the shipped OFL families by id"
     },
     {
       "id": "foot-ground-contact",
@@ -4690,7 +4690,7 @@
       "module": "@jgengine/assets/catalogs/hdriLibrary",
       "gameFacing": false,
       "probe": null,
-      "intent": "pick one of 12 shipped CC0 HDRIs (noon, golden hour, overcast, dusk, night city, industrial interior, forest, snow) by id"
+      "intent": "pick a shipped CC0 HDRI (noon, golden hour, harbour sunset, industrial sunset, overcast, dusk, night city, industrial interior, forest, snow) by id"
     },
     {
       "id": "headless-flow",
@@ -6344,6 +6344,16 @@
       "intent": "a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval"
     },
     {
+      "id": "live-road-surface",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/liveRoadSurface",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "swap a road source's asphalt, sidewalk or kerb scan at runtime (wet at night, snow in winter)"
+    },
+    {
       "id": "loading-screen",
       "packages": [
         "@jgengine/core"
@@ -6645,7 +6655,7 @@
       "module": "@jgengine/assets/catalogs/lutGrades",
       "gameFacing": false,
       "probe": null,
-      "intent": "pick one of 18 shipped colour grades by id for a game's post-processing"
+      "intent": "pick a shipped colour grade by id for a game's post-processing"
     },
     {
       "id": "magazine",

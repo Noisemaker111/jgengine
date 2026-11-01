@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { HudSlots } from "@jgengine/core/hud/hudLayout.view";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
+import { HARBOR_FONTS } from "./theme";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
 import { ITEM_LABELS } from "../content";
@@ -17,7 +18,6 @@ import { StatusPanel } from "./components/StatusPanel";
 import { WantedStars } from "./components/WantedStars";
 import { useRoom } from "./fiction/kit";
 import { HarborMenu, useGameStarted } from "./menu/HarborMenu";
-import { GAME_FONTS } from "../../art/fonts/fonts";
 
 /** Pickups speak through the kit's toasts, like every other notice. */
 function useLootNotices() {
@@ -29,7 +29,7 @@ function useLootNotices() {
 }
 
 export function GameUI() {
-  useGameFonts(GAME_FONTS);
+  useGameFonts(HARBOR_FONTS);
   const started = useGameStarted();
   const compact = useRoom() !== "wide";
   const paused = useStore(sessionStore, (session) => session.paused);

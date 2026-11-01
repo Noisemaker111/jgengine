@@ -1,11 +1,12 @@
+import { libraryFontPairing } from "@jgengine/assets/catalogs/fontLibrary";
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { hudTheme } from "@jgengine/core/hud/hudTheme.view";
 import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
 import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
-import { GAME_FONTS } from "../../art/fonts/fonts";
 
-/** Bangers on every sign and number, Barlow for reading: the boulevard's two faces. */
-const FONTS = gameFontStacks(GAME_FONTS);
+/** Bangers on every sign and number, Barlow for reading: the boulevard's two faces, both from the shared font library. */
+export const HARBOR_FONTS = libraryFontPairing("bangers", "barlow");
+const FONTS = gameFontStacks(HARBOR_FONTS);
 
 /**
  * Mainsail at sundown: harbor-night teal, cream card stock, amber backlight, coral neon. The one

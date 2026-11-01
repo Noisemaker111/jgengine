@@ -1,3 +1,4 @@
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
 import { useThree, useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
@@ -119,7 +120,7 @@ export function EnvironmentLighting({
     try {
       if (source?.kind === "hdri") {
         const Loader = /\.exr(?:$|\?)/i.test(source.url) ? EXRLoader : RGBELoader;
-        warmupWaitsFor(scene, new Loader().loadAsync(source.url).then((texture) => {
+        warmupWaitsFor(scene, new Loader().loadAsync(resolveAssetBaseUrl(source.url)).then((texture) => {
           if (cancelled) { texture.dispose(); return; }
           loadedTexture = texture;
           texture.mapping = THREE.EquirectangularReflectionMapping;
@@ -133,7 +134,7 @@ export function EnvironmentLighting({
           console.warn(`[jgengine] environment illumination failed: ${source.url}`, error);
         }));
       } else if (source?.kind === "cube") {
-        warmupWaitsFor(scene, new THREE.CubeTextureLoader().loadAsync(source.urls).then((texture) => {
+        warmupWaitsFor(scene, new THREE.CubeTextureLoader().loadAsync(source.urls.map(resolveAssetBaseUrl)).then((texture) => {
           if (cancelled) { texture.dispose(); return; }
           loadedTexture = texture;
           const face = (texture.image as { width?: number; image?: { width?: number } }[] | undefined)?.[0];

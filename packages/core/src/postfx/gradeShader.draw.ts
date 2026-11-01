@@ -158,7 +158,7 @@ export function createGradePass(config: GradeConfig = {}): ShaderPass {
         .catch((error: unknown) => console.warn(`grade LUT ${lut.url} not applied:`, error));
       return pass;
     }
-    void new THREE.TextureLoader().loadAsync(lut.url).then((texture) => {
+    void new THREE.TextureLoader().loadAsync(resolveAssetBaseUrl(lut.url)).then((texture) => {
       if (disposed) {
         texture.dispose();
         return;
