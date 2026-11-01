@@ -8,6 +8,7 @@ export const ASSET_SOURCE_IDS = [
   "quaternius-fantasy-props",
   "quaternius-stylized-nature",
   "quaternius-lowpoly-crops-pack",
+  "quaternius-5-low-poly-animals",
 ] as const;
 
 /** One studio, one proportion: Quaternius characters, village, buildings, props and stylized nature. */

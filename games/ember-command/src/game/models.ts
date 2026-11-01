@@ -45,8 +45,8 @@ const plan: Record<string, ModelPick> = {
   barracks: building(`${VILLAGE}/Stable`, 4.6, VANGUARD_ROOF),
   farm: building(`${VILLAGE}/Mill`, 4.4, VANGUARD_ROOF),
   guard_tower: { model: `${BUILDINGS}/WatchTowerWRoof`, style: { targetHeight: 6.5 } },
-  banner_blue: { model: `${PROPS}/Banner_1`, style: { targetHeight: 2.6, material: { color: VANGUARD_ROOF, materials: ["MI_Banner"] } } },
-  banner_red: { model: `${PROPS}/Banner_2`, style: { targetHeight: 2.6, material: { color: MARAUDER_ROOF, materials: ["MI_Banner"] } } },
+  banner_blue: { model: `${PROPS}/Banner_1`, style: { targetHeight: 2.6, material: { color: VANGUARD_ROOF, materials: ["MI_Banner"] }, wind: { strength: 0.18, speed: 1.2 } } },
+  banner_red: { model: `${PROPS}/Banner_2`, style: { targetHeight: 2.6, material: { color: MARAUDER_ROOF, materials: ["MI_Banner"] }, wind: { strength: 0.18, speed: 1.2 } } },
   torch: { model: `${PROPS}/Torch_Metal`, style: { targetHeight: 1.8 } },
   barrel: { model: `${PROPS}/Barrel`, style: { targetHeight: 1.2 } },
   goldmine: {
@@ -88,4 +88,9 @@ export const scatterModels: Record<string, ModelConfig> = resolveModelPlan(asset
   leaf: { model: `${NATURE}/Petal_2`, style: { scale: 0.5, material: { color: RUST } } },
   wheat: { model: `${CROPS}/Wheat_Crop`, style: { scale: 1 } },
   pumpkin: { model: `${CROPS}/Pumpkin_Crop`, style: { scale: 1 } },
+});
+
+/** Crows over the woods: the authored habitats' species, near black so they read against the dusk sky. */
+export const flockModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
+  crow: { model: "quaternius-5-low-poly-animals/bird", style: { targetHeight: 0.9, material: { color: "#2a2623", roughness: 0.8 } } },
 });
