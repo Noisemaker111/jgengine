@@ -127,5 +127,6 @@ test("a hunter that has just bitten cannot bite again until its interval has run
     if (driver.step(ctx, "r1", aggressive, HUNTER, 0.1).struck) struck.push(step);
   }
   expect(struck.length).toBeGreaterThanOrEqual(2);
-  for (let i = 1; i < struck.length; i += 1) expect(struck[i]! - struck[i - 1]!).toBeGreaterThanOrEqual(8);
+  const gaps = struck.slice(1).map((step, i) => step - (struck[i] ?? 0));
+  for (const gap of gaps) expect(gap).toBeGreaterThanOrEqual(8);
 });
