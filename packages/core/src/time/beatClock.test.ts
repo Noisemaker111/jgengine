@@ -127,7 +127,7 @@ describe("classifyBeatAccuracy — default tiers", () => {
 
   test("windows given loosest-first still judge by the tightest that holds the press", () => {
     const tiers = [{ id: "good", at: 0.5 }, { id: "perfect", at: 0.25 }];
-    expect([0.25, 0.375, 0.5, 0.625].map((delta) => classifyBeatAccuracy(1 + delta, 1.0, tiers).tier)).toEqual(["perfect", "good", "good", "miss"]);
+    expect([0.25, 0.375, 0.5, 0.625].map((delta) => classifyBeatAccuracy(10 + delta, 10, tiers).tier)).toEqual(["perfect", "good", "good", "miss"]);
   });
 
   test("custom tiers override the default windows", () => {
