@@ -1,5 +1,6 @@
 import {
   createContext,
+  Fragment,
   useCallback,
   useContext,
   useEffect,
@@ -1295,16 +1296,37 @@ const HUD_SLOT_ORDER = Object.keys(HUD_SLOT_ANCHORS) as HudSlot[];
 /** The widest a corner card draws, at the 1600x900 design size the HUD scales from. */
 export const HUD_CORNER_WIDTH = 248;
 
+/**
+ * A panel inside a {@link HudSlots} slot, for a slot that holds more than one or needs panel options.
+ * `id` is the key the player's moved position is remembered under.
+ */
+export interface HudSlotPanel {
+  id: string;
+  content: ReactNode;
+  /** Stacking within the slot, ascending outward from the edge. */
+  order?: number;
+  /** Which panels fold into a toggle first on a small screen. */
+  priority?: HudPriority;
+  /** `false` lets clicks pass through to the world. */
+  interactive?: boolean;
+  /** Label of the toggle this panel folds into on a small screen. */
+  chip?: string;
+}
+
 /** Props for {@link HudSlots}. */
 export interface HudSlotsProps {
   /** Remembers the player's moved panels under this key (the game's id). */
   storageKey: string;
   /** What sits at each edge; unset or `null` slots draw nothing. */
-  slots: Partial<Record<HudSlot, ReactNode>>;
+  slots?: Partial<Record<HudSlot, ReactNode>>;
+  /** Several panels at one edge, each with its own id and options; drawn after that edge's `slots` entry. */
+  panels?: Partial<Record<HudSlot, readonly HudSlotPanel[]>>;
   /** Drawn over the slots (an end card, a centred moment). */
   overlay?: ReactNode;
-  /** Phases the HUD shows in. Default playing and ended. */
-  showDuring?: readonly GamePhase[];
+  /** Phases the HUD shows in. Default playing and ended; `null` shows it in every phase. */
+  showDuring?: readonly GamePhase[] | null;
+  /** Class on the HUD root, for the game's own skin. */
+  className?: string;
 }
 
 const DEFAULT_SLOT_PHASES: readonly GamePhase[] = ["playing", "ended"];
@@ -1320,17 +1342,37 @@ const DEFAULT_SLOT_PHASES: readonly GamePhase[] = ["playing", "ended"];
  *
  * @capability hud-slots a play HUD of edge-pinned, player-movable panels in one component
  */
-export function HudSlots({ storageKey, slots, overlay, showDuring = DEFAULT_SLOT_PHASES }: HudSlotsProps): ReactNode {
+export function HudSlots({ storageKey, slots = {}, panels = {}, overlay, showDuring = DEFAULT_SLOT_PHASES, className }: HudSlotsProps): ReactNode {
   const layout = useHudLayout({ storageKey });
   return (
-    <HudCanvas layout={layout} showDuring={showDuring}>
-      {HUD_SLOT_ORDER.map((slot) =>
-        slots[slot] === undefined || slots[slot] === null ? null : (
-          <HudPanel key={slot} id={slot} anchor={HUD_SLOT_ANCHORS[slot].anchor} inset={HUD_SLOT_ANCHORS[slot].inset}>
-            {slots[slot]}
-          </HudPanel>
-        ),
-      )}
+    <HudCanvas layout={layout} {...(showDuring === null ? {} : { showDuring })} {...(className === undefined ? {} : { className })}>
+      {HUD_SLOT_ORDER.map((slot) => {
+        const place = HUD_SLOT_ANCHORS[slot];
+        const single = slots[slot];
+        return (
+          <Fragment key={slot}>
+            {single === undefined || single === null ? null : (
+              <HudPanel id={slot} anchor={place.anchor} inset={place.inset}>
+                {single}
+              </HudPanel>
+            )}
+            {(panels[slot] ?? []).map((panel) => (
+              <HudPanel
+                key={panel.id}
+                id={panel.id}
+                anchor={place.anchor}
+                inset={place.inset}
+                {...(panel.order === undefined ? {} : { order: panel.order })}
+                {...(panel.priority === undefined ? {} : { priority: panel.priority })}
+                {...(panel.interactive === undefined ? {} : { interactive: panel.interactive })}
+                {...(panel.chip === undefined ? {} : { chip: panel.chip })}
+              >
+                {panel.content}
+              </HudPanel>
+            ))}
+          </Fragment>
+        );
+      })}
       {overlay}
     </HudCanvas>
   );
