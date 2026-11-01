@@ -231,3 +231,135 @@ export function stepFlock(
     ];
   }
 }
+
+/** Typed-array agents for {@link createFlockStepper}: `position` and `velocity` hold x,y,z per agent. */
+export interface FlockBuffers {
+  position: Float32Array;
+  velocity: Float32Array;
+}
+
+/** Allocation-free flock stepping over typed arrays, sized once for `capacity` agents. */
+export interface FlockStepper {
+  readonly capacity: number;
+  /**
+   * Steer and integrate the first `count` agents by `dt`; same seek + separation + cohesion + alignment
+   * terms as {@link flockSteer}. `targets` (x,y,z per agent) gives each agent its own seek point and
+   * overrides `target` (one shared point). Visits at most `maxNeighbors` flockmates per agent. Allocates nothing.
+   */
+  step(buffers: FlockBuffers, count: number, config: FlockConfig, dt: number, target?: FlockVec3 | null, targets?: Float32Array | null): void;
+}
+
+/** Flockmates one agent considers per step in {@link createFlockStepper} unless `maxNeighbors` says otherwise. */
+export const FLOCK_MAX_NEIGHBORS = 12;
+
+/**
+ * Build a {@link FlockStepper}: the hot-path form of {@link stepFlock} for hundreds to thousands of
+ * agents. The grid is a fixed hash table over `neighborRadius` cells, so a step touches only
+ * nearby agents and creates no objects.
+ */
+export function createFlockStepper(capacity: number, maxNeighbors = FLOCK_MAX_NEIGHBORS): FlockStepper {
+  const size = Math.max(1, Math.floor(capacity));
+  let table = 64;
+  while (table < size * 2) table *= 2;
+  const mask = table - 1;
+  const head = new Int32Array(table);
+  const next = new Int32Array(size);
+  const cell = new Int32Array(size);
+  const steer = new Float32Array(size * 3);
+
+  function slot(cx: number, cz: number): number {
+    return (Math.imul(cx, 73856093) ^ Math.imul(cz, 19349663)) & mask;
+  }
+
+  function step(buffers: FlockBuffers, count: number, config: FlockConfig, dt: number, target?: FlockVec3 | null, targets?: Float32Array | null): void {
+    const n = Math.min(size, count);
+    if (n === 0) return;
+    const { position: pos, velocity: vel } = buffers;
+    const radius = config.neighborRadius > 1e-6 ? config.neighborRadius : 1;
+    const inv = 1 / radius;
+    const separationRadius = config.separationRadius;
+    const separationWeight = config.separationWeight ?? 1.5;
+    const cohesionWeight = config.cohesionWeight ?? 1;
+    const alignmentWeight = config.alignmentWeight ?? 1;
+    const seekWeight = config.seekWeight ?? 1;
+    const accel = config.accel ?? config.maxSpeed * 2;
+    const straggler = config.stragglerRadius;
+    const stragglerBoost = config.stragglerBoost ?? 3;
+
+    head.fill(-1);
+    for (let i = 0; i < n; i += 1) {
+      const c = slot(Math.floor(pos[i * 3]! * inv), Math.floor(pos[i * 3 + 2]! * inv));
+      cell[i] = c;
+      next[i] = head[c]!;
+      head[c] = i;
+    }
+
+    for (let i = 0; i < n; i += 1) {
+      const b = i * 3;
+      const px = pos[b]!;
+      const py = pos[b + 1]!;
+      const pz = pos[b + 2]!;
+      const cx = Math.floor(px * inv);
+      const cz = Math.floor(pz * inv);
+      let sepX = 0, sepY = 0, sepZ = 0, cohX = 0, cohY = 0, cohZ = 0, alX = 0, alY = 0, alZ = 0;
+      let mates = 0;
+      let seen = 0;
+      scan: for (let dz = -1; dz <= 1; dz += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          for (let j = head[slot(cx + dx, cz + dz)]!; j >= 0; j = next[j]!) {
+            if (j === i) continue;
+            if (seen >= maxNeighbors) break scan;
+            const o = j * 3;
+            const ox = pos[o]! - px;
+            const oy = pos[o + 1]! - py;
+            const oz = pos[o + 2]! - pz;
+            const distance = Math.hypot(ox, oy, oz);
+            if (distance > config.neighborRadius) continue;
+            seen += 1;
+            mates += 1;
+            cohX += pos[o]!; cohY += pos[o + 1]!; cohZ += pos[o + 2]!;
+            alX += vel[o]!; alY += vel[o + 1]!; alZ += vel[o + 2]!;
+            if (distance < separationRadius && distance > 1e-9) {
+              const push = (separationRadius - distance) / separationRadius / distance;
+              sepX -= ox * push; sepY -= oy * push; sepZ -= oz * push;
+            }
+          }
+        }
+      }
+      let sx = sepX * separationWeight, sy = sepY * separationWeight, sz = sepZ * separationWeight;
+      if (mates > 0) {
+        const tx = cohX / mates - px, ty = cohY / mates - py, tz = cohZ / mates - pz;
+        const centroid = Math.hypot(tx, ty, tz);
+        const cohesion = cohesionWeight * (straggler !== undefined && centroid > straggler ? stragglerBoost : 1);
+        if (centroid > 1e-9) { sx += (tx / centroid) * cohesion; sy += (ty / centroid) * cohesion; sz += (tz / centroid) * cohesion; }
+        const align = Math.hypot(alX, alY, alZ);
+        if (align > 1e-9) { sx += (alX / align) * alignmentWeight; sy += (alY / align) * alignmentWeight; sz += (alZ / align) * alignmentWeight; }
+      }
+      let gx: number, gy: number, gz: number, seeking = true;
+      if (targets != null) { gx = targets[b]!; gy = targets[b + 1]!; gz = targets[b + 2]!; }
+      else if (target != null) { gx = target[0]; gy = target[1]; gz = target[2]; }
+      else { gx = gy = gz = 0; seeking = false; }
+      if (seeking) {
+        const tx = gx - px, ty = gy - py, tz = gz - pz;
+        const distance = Math.hypot(tx, ty, tz);
+        if (distance > 1e-9) { sx += (tx / distance) * seekWeight; sy += (ty / distance) * seekWeight; sz += (tz / distance) * seekWeight; }
+      }
+      const magnitude = Math.hypot(sx, sy, sz);
+      const scale = magnitude <= 1e-9 ? 0 : accel / magnitude;
+      steer[b] = sx * scale; steer[b + 1] = sy * scale; steer[b + 2] = sz * scale;
+    }
+
+    for (let i = 0; i < n; i += 1) {
+      const b = i * 3;
+      let vx = vel[b]! + steer[b]! * dt;
+      let vy = vel[b + 1]! + steer[b + 1]! * dt;
+      let vz = vel[b + 2]! + steer[b + 2]! * dt;
+      const speed = Math.hypot(vx, vy, vz);
+      if (speed > config.maxSpeed) { const clamp = config.maxSpeed / speed; vx *= clamp; vy *= clamp; vz *= clamp; }
+      vel[b] = vx; vel[b + 1] = vy; vel[b + 2] = vz;
+      pos[b] = pos[b]! + vx * dt; pos[b + 1] = pos[b + 1]! + vy * dt; pos[b + 2] = pos[b + 2]! + vz * dt;
+    }
+  }
+
+  return { capacity: size, step };
+}
