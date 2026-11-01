@@ -7647,17 +7647,29 @@
         "tiling": 3,
         "roughness": 0.96,
         "triplanar": true,
-        "materialUrl": "/materials/ambientcg-grass004/color.jpg"
+        "materialMaps": {
+          "color": "/materials/ambientcg-grass004/color.jpg",
+          "normal": "/materials/ambientcg-grass004/normal.jpg",
+          "roughness": "/materials/ambientcg-grass004/roughness.jpg",
+          "ao": "/materials/ambientcg-grass004/ao.jpg",
+          "displacement": "/materials/ambientcg-grass004/displacement.jpg"
+        }
       },
       {
         "id": "dirt",
         "surface": "dirt",
-        "material": "ground/packed-dirt",
+        "material": "ground/dirt-road",
         "tint": "#8f6a3e",
         "tiling": 2,
         "roughness": 0.96,
         "triplanar": true,
-        "materialUrl": "/materials/ambientcg-ground025/color.jpg"
+        "materialMaps": {
+          "color": "/materials/ambientcg-ground054/color.jpg",
+          "normal": "/materials/ambientcg-ground054/normal.jpg",
+          "roughness": "/materials/ambientcg-ground054/roughness.jpg",
+          "ao": "/materials/ambientcg-ground054/ao.jpg",
+          "displacement": "/materials/ambientcg-ground054/displacement.jpg"
+        }
       },
       {
         "id": "gravel",
@@ -7667,17 +7679,29 @@
         "tiling": 3,
         "roughness": 0.96,
         "triplanar": true,
-        "materialUrl": "/materials/ambientcg-ground037/color.jpg"
+        "materialMaps": {
+          "color": "/materials/ambientcg-ground037/color.jpg",
+          "normal": "/materials/ambientcg-ground037/normal.jpg",
+          "roughness": "/materials/ambientcg-ground037/roughness.jpg",
+          "ao": "/materials/ambientcg-ground037/ao.jpg",
+          "displacement": "/materials/ambientcg-ground037/displacement.jpg"
+        }
       },
       {
         "id": "rock",
         "surface": "rock",
-        "material": "ground/rock",
+        "material": "ground/cliff",
         "tint": "#8a8172",
         "tiling": 4,
         "roughness": 0.96,
         "triplanar": true,
-        "materialUrl": "/materials/ambientcg-rock022/color.jpg"
+        "materialMaps": {
+          "color": "/materials/ambientcg-rock035/color.jpg",
+          "normal": "/materials/ambientcg-rock035/normal.jpg",
+          "roughness": "/materials/ambientcg-rock035/roughness.jpg",
+          "ao": "/materials/ambientcg-rock035/ao.jpg",
+          "displacement": "/materials/ambientcg-rock035/displacement.jpg"
+        }
       }
     ]
   }

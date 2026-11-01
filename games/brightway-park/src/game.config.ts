@@ -1,3 +1,4 @@
+import { ambientFauna } from "./game/ambientFauna";
 import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
 import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { defineGame } from "@jgengine/shell/defineGame";
@@ -48,6 +49,7 @@ export const game = defineGame({
     objectModels,
     WorldOverlay: BrightwayParkWorldOverlay,
     worldHealthBars: false,
+    ambientLife: { fauna: ambientFauna },
   },
   // A refused build is a deny notice; its cue is the park's own "denied" chime.
   audio: { sounds: BRIGHTWAY_SOUNDS, uiCues: { deny: BRIGHTWAY_SOUNDS.denied } },
