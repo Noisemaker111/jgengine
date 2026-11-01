@@ -208,7 +208,6 @@
   "games/drift-foundry/src/editorLayers.ts": {"cast":2},
   "games/drift-foundry/src/game/art/trackModels.ts": {"nonNull":7,"cast":1},
   "games/drift-foundry/src/game/art/upgrades.test.ts": {"nonNull":3},
-  "games/drift-foundry/src/game/assets.ts": {"nonNull":1},
   "games/drift-foundry/src/game/career.test.ts": {"nonNull":1,"cast":1},
   "games/drift-foundry/src/game/career.ts": {"nonNull":1},
   "games/drift-foundry/src/game/events/catalog.test.ts": {"nonNull":4,"cast":2},
