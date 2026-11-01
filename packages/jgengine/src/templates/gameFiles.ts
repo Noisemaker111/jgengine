@@ -347,6 +347,19 @@ import sceneJson from "./editor.scene.json";
 export const editorLayers: EditorDocument = normalizeEditorLayers(sceneJson as unknown as EditorDocument);
 `;
 
+const grownEditorLayersTs = `import { normalizeEditorLayers, type EditorDocument } from "@jgengine/core/editor/index";
+import { withGeneratedTerrain } from "@jgengine/core/terrain/landformStart";
+
+import sceneJson from "./editor.scene.json";
+
+/**
+ * The authored scene for this game. Its ground is grown on first load from the scene's
+ * terrainGenerator (a landform from geology, ice and wind, seeded by the game id); once the editor
+ * (F2+E) saves, the grown terrain is the scene's own sculpt to reshape like any other.
+ */
+export const editorLayers: EditorDocument = withGeneratedTerrain(normalizeEditorLayers(sceneJson as unknown as EditorDocument));
+`;
+
 const editorLayersTest = `import { describe, expect, test } from "bun:test";
 
 import { collectAuthoredTriggers } from "@jgengine/core/scene/authoredTriggers";
@@ -811,6 +824,7 @@ export {
   editorLayersTest,
   editorLayersTestFor,
   editorLayersTs,
+  grownEditorLayersTs,
   editorSceneJson,
   gameAssetsTs,
   gameConfigTs,

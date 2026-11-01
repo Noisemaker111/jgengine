@@ -92,3 +92,12 @@ export function withStarterTerrain(sceneJson: string, seedText: string): string 
   const body = sceneJson.replace(/\n}\n?$/, "");
   return `${body},\n  "terrain": ${JSON.stringify(starterTerrain(seedText))}\n}\n`;
 }
+
+/**
+ * Appends a `terrainGenerator` to a scene document's JSON text: the game grows the named landform from
+ * the game id on first load (`@jgengine/core/terrain/landformStart`), and the editor's first save keeps it.
+ */
+export function withLandformStart(sceneJson: string, start: string, seedText: string): string {
+  const body = sceneJson.replace(/\n}\n?$/, "");
+  return `${body},\n  "terrainGenerator": ${JSON.stringify({ kind: "landform", start, seed: seedText })}\n}\n`;
+}
