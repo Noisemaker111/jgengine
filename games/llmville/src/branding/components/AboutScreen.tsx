@@ -1,7 +1,6 @@
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { Play } from "lucide-react";
 
-import { Card } from "@/components/ui/card";
-import { Panel } from "@/components/ui/panel";
 import {
   ABOUT_LEDE,
   ABOUT_PLAY_STEPS,
@@ -32,13 +31,13 @@ const structuredData = {
 export function AboutScreen() {
   return (
     <MainMenuLayout backTo="/">
-      <Panel variant="blueprint" as="article" className="max-h-[min(70vh,640px)] overflow-y-auto px-6 py-7 sm:max-w-xl sm:px-8">
+      <KitPanel data-shell="blueprint" as="section" className="max-h-[min(70vh,640px)] overflow-y-auto px-6 py-7 sm:max-w-xl sm:px-8">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
 
-        <header className="mb-6 border-b border-[var(--surface-border)] pb-6">
+        <header className="mb-6 border-b border-[var(--kit-line)] pb-6">
           <BrandLogo variant="inline" size="sm" showTagline={false} />
           <h1 className="mt-4 font-game text-3xl font-extrabold text-brand-cream">About LLMville</h1>
           <p className="mt-2 font-game text-sm font-bold tracking-[0.2em] text-brand-teal uppercase">
@@ -57,7 +56,7 @@ export function AboutScreen() {
           ))}
         </div>
 
-        <Card variant="sticky-note" decoration="tape" className="mt-8 px-5 py-5">
+        <KitPanel as="div" variant="card" data-shell="sticky-note" data-deco="tape" className="mt-8 px-5 py-5">
           <h2 className="font-game text-lg font-bold text-[#2d2416]">How to play</h2>
           <ol className="mt-3 list-decimal space-y-2 pl-5 font-sans text-sm text-[#4a3f32]">
             {ABOUT_PLAY_STEPS.map((step) => (
@@ -68,7 +67,7 @@ export function AboutScreen() {
             <Play className="h-4 w-4" aria-hidden />
             <span>Play LLMville</span>
           </PlayEntryAction>
-        </Card>
+        </KitPanel>
 
         <footer className="mt-8 border-t border-brand-teal/15 pt-5 text-center text-xs text-brand-cream/40">
           <p>
@@ -78,7 +77,7 @@ export function AboutScreen() {
             </a>
           </p>
         </footer>
-      </Panel>
+      </KitPanel>
     </MainMenuLayout>
   );
 }

@@ -12,7 +12,7 @@ export function BankruptScreen({ isDismissing, onDismiss }: BankruptScreenProps)
   return (
     <div className="animate-in fade-in zoom-in-95 flex w-full max-w-md flex-col items-center gap-6 text-center duration-700">
       <BrandLogo variant="stacked" size="lg" />
-      <div className="main-menu-panel w-full space-y-4 rounded-[var(--r-surface)] border border-brand-coral/35 bg-brand-coral/8 p-6">
+      <div className="main-menu-panel w-full space-y-4 rounded-[var(--kit-r-surface)] border border-brand-coral/35 bg-brand-coral/8 p-6">
         <p className="font-game text-lg font-bold text-brand-cream">Bankrupt</p>
         <p className="text-sm leading-relaxed text-brand-cream/65">
           Your lab could not cover its overhead — it was liquidated and reset. You start over with $

@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-import { BUTTON_VARIANT, Button } from "@/components/ui/button";
-import { PANEL_VARIANT, Panel } from "@/components/ui/panel";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { BrandLogo } from "@/branding/components/BrandLogo";
 import { StandalonePageShell } from "@/branding/components/StandalonePageShell";
 import { useDashboardScreenState } from "@/auth";
@@ -33,7 +32,7 @@ export function DashboardScreen() {
                 : "Sign in to sync your lab across devices."}
             </p>
           </div>
-          <Panel variant={PANEL_VARIANT.terminal} label="Account" className="space-y-5 p-8 text-center">
+          <KitPanel data-shell="terminal" eyebrow="Account" className="space-y-5 p-8 text-center">
             <h1 className="font-game text-2xl font-extrabold text-brand-cream">Account</h1>
             <p className="text-sm font-medium text-brand-cream/70">
               {isGuest ? "Sign in to save your progress." : "You are not signed in yet."}
@@ -46,7 +45,7 @@ export function DashboardScreen() {
                 <span className="text-sm">Sign up</span>
               </Link>
             </div>
-          </Panel>
+          </KitPanel>
         </div>
       </StandalonePageShell>
     );
@@ -59,10 +58,10 @@ export function DashboardScreen() {
           <BrandLogo variant="stacked" size="md" />
           <p className="mt-4 text-sm font-medium text-brand-cream/65">Signed in and ready to build.</p>
         </div>
-        <Panel variant={PANEL_VARIANT.terminal} label="Account" className="space-y-6 p-8">
+        <KitPanel data-shell="terminal" eyebrow="Account" className="space-y-6 p-8">
           <h1 className="text-center font-game text-2xl font-extrabold text-brand-cream">Account</h1>
 
-          <div className="space-y-3 rounded-xl border border-[var(--surface-border)] bg-black/20 p-5">
+          <div className="space-y-3 rounded-xl border border-[var(--kit-line)] bg-black/20 p-5">
             <div className="flex items-center justify-between gap-4">
               <span className="text-xs font-semibold text-brand-cream/45">Display name</span>
               <span className="text-sm font-semibold text-brand-cream">{displayName}</span>
@@ -80,14 +79,14 @@ export function DashboardScreen() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link to="/" className="game-btn game-btn--primary flex-1 px-4 py-3 text-center">
+            <Link to="/" className="llm-btn flex-1 px-4 py-3 text-center" data-variant="primary">
               <span className="text-sm">Back home</span>
             </Link>
-            <Button type="button" variant={BUTTON_VARIANT.secondary} onClick={() => void logout()} className="flex-1 px-4 py-3">
+            <KitButton type="button" variant="ghost" onClick={() => void logout()} className="flex-1 px-4 py-3">
               <span className="text-sm">Sign out</span>
-            </Button>
+            </KitButton>
           </div>
-        </Panel>
+        </KitPanel>
       </div>
     </StandalonePageShell>
   );

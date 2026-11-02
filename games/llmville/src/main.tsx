@@ -3,6 +3,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 
 import { AuthProvider } from "@/auth";
+import { applyLlmvilleKit } from "@/kit/llmvilleKit";
 import { authClient } from "@/auth/authClient";
 import { readOptimisticConvexToken } from "@/auth/sessionToken";
 import { registerServiceWorker } from "@/pwa/serviceWorker";
@@ -15,6 +16,8 @@ const rootElement = document.getElementById("app");
 if (!rootElement) {
   throw new Error("Root element not found");
 }
+
+applyLlmvilleKit(document);
 
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);

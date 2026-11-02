@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cn } from "@/components/ui/cn";
+import { cn } from "@/kit/cn";
 
 import {
   BUILD_CATALOG,

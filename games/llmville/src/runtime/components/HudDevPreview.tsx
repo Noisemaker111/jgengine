@@ -16,7 +16,7 @@ import {
 } from "@/tablet/tabletPreviewFixtures";
 import type { TabletAppId, TabletNavState } from "@/tablet/tablet";
 import { TABLET_APPS } from "@/tablet/tablet";
-import { cn } from "@/components/ui/cn";
+import { cn } from "@/kit/cn";
 import { WORLD_CHAT_PREVIEW_MESSAGES } from "@/multiplayer/worldChatPreviewFixtures";
 import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
 

@@ -89,6 +89,16 @@ describe("app settings store", () => {
     expect(storage.getItem(bindingOverridesStorageKey(LLMVILLE_SETTINGS_GAME_ID))).toBeNull();
   });
 
+  test("a keybind change leaves settings another store wrote alone", () => {
+    const storage = memoryStorage();
+    const store = createAppSettingsStore(storage);
+    storage.setItem(settingStorageKey(SETTING_IDS.graphicsQuality), JSON.stringify("ultra"));
+
+    store.update({ keybinds: { ...DEFAULT_APP_KEYBINDS, jump: { primary: "KeyQ", secondary: null } } });
+
+    expect(storage.getItem(settingStorageKey(SETTING_IDS.graphicsQuality))).toBe(JSON.stringify("ultra"));
+  });
+
   test("an unreadable legacy blob resets to defaults", () => {
     const storage = memoryStorage({ [LEGACY_APP_SETTINGS_KEY]: "{oops" });
     expect(createAppSettingsStore(storage).get()).toEqual(DEFAULT_APP_SETTINGS);

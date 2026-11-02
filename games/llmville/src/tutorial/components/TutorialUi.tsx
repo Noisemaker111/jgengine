@@ -1,7 +1,7 @@
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { Html } from "@react-three/drei";
 
-import { Card } from "@/components/ui/card";
-import { cn } from "@/components/ui/cn";
+import { cn } from "@/kit/cn";
 import type { PlacedRack } from "@/infrastructure/infrastructure";
 import type { TutorialHint } from "@/tutorial/tutorialRuntime";
 import { useAnimatedText } from "@/tutorial/tutorialRuntime";
@@ -74,9 +74,9 @@ export function TutorialObjective({
   const cardBodyClassName = "flex w-full flex-col gap-1";
 
   return (
-    <Card
-      variant="quest-ticket"
-      decoration="pin"
+    <KitPanel as="div"
+      variant="card" data-shell="quest-ticket"
+      data-deco="pin"
       data-ui-layer="tutorial-objective"
       className={cn("pointer-events-none w-[min(16rem,calc(100vw-2rem))]", className)}
     >
@@ -110,6 +110,6 @@ export function TutorialObjective({
           </p>
         </div>
       </div>
-    </Card>
+    </KitPanel>
   );
 }

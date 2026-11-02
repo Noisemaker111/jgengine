@@ -1,4 +1,4 @@
-import { cn } from "@/components/ui/cn";
+import { cn } from "@/kit/cn";
 import { SITE_NAME } from "@/seo/siteSeo";
 
 interface MascotBotProps {
@@ -32,14 +32,14 @@ export function MascotBot({ className, size = 40, title = SITE_NAME }: MascotBot
       {/* head / body capsule */}
       <rect x="8" y="12" width="32" height="28" rx="11" fill="currentColor" />
       {/* face screen */}
-      <rect x="14" y="18" width="20" height="14" rx="7" fill="var(--brand-ink)" />
+      <rect x="14" y="18" width="20" height="14" rx="7" fill="var(--kit-ground)" />
       {/* eyes */}
-      <circle cx="20.5" cy="25" r="2.4" fill="var(--brand-teal)" />
-      <circle cx="27.5" cy="25" r="2.4" fill="var(--brand-teal)" />
+      <circle cx="20.5" cy="25" r="2.4" fill="var(--kit-teal)" />
+      <circle cx="27.5" cy="25" r="2.4" fill="var(--kit-teal)" />
       {/* smile */}
       <path
         d="M20.5 28.5c1.4 1.3 5.6 1.3 7 0"
-        stroke="var(--brand-teal)"
+        stroke="var(--kit-teal)"
         strokeWidth="1.6"
         strokeLinecap="round"
       />

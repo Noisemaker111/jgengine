@@ -1,6 +1,6 @@
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useEffect, useMemo, useState } from "react";
 
-import { PANEL_VARIANT, Panel } from "@/components/ui/panel";
 import type { BaseModelLibraryEntry } from "@/models/training";
 import { ModelTrainingDurationEstimate } from "@/models/components/ModelPresentation";
 
@@ -61,7 +61,7 @@ export function TrainDataCommitmentModal({
       aria-labelledby="train-commitment-title"
       onClick={onCancel}
     >
-      <Panel variant={PANEL_VARIANT.terminal} label={`Data commitment · ${model.name}`} className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
+      <KitPanel data-shell="terminal" eyebrow={`Data commitment · ${model.name}`} className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
         <p className="mt-1 text-xs leading-relaxed text-[#5fc2a8]/70">
           Choose how many data tokens to commit (1× to 4× the model minimum). Higher commitment boosts baselines before quality tier and per-stat rolls.
         </p>
@@ -103,7 +103,7 @@ export function TrainDataCommitmentModal({
             <input
               type="range"
               className="h-8 w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ accentColor: "var(--brand-teal)" }}
+              style={{ accentColor: "var(--kit-teal)" }}
               min={1}
               max={maxAffordableBrackets}
               step={1}
@@ -150,7 +150,7 @@ export function TrainDataCommitmentModal({
             Start training
           </button>
         </div>
-      </Panel>
+      </KitPanel>
     </div>
   );
 }

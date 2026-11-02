@@ -7,6 +7,7 @@ import { llmvilleWorld } from "@llmville/game/game/world";
 import { buildSceneObjectPrompts } from "@llmville/game/simulation/interaction";
 import { WORLD_CAMERA_FAR, WORLD_FOG_COLOR, WORLD_FOG_FAR, WORLD_FOG_NEAR } from "@llmville/game/world/viewDistance";
 import { worldModelAssetCatalog } from "@llmville/game/world/worldModelCatalog";
+import { llmvilleHudTheme, llmvilleKit } from "@/kit/llmvilleKit";
 import { convexPresenceTransport } from "@/multiplayer/convexPresenceTransport";
 import { LlmvilleGameUI } from "@/runtime/components/LlmvilleGameUI";
 import { stepAroundNearbyPlayers } from "@/runtime/localPlayerEntity";
@@ -36,18 +37,22 @@ export const game = defineGame({
     interact: [],
   },
   GameUI: LlmvilleGameUI,
+  uiKit: llmvilleKit,
+  hudTheme: llmvilleHudTheme,
   scene: { WorldOverlay: LlmvilleWorld, environment: LlmvilleDatacenter, editorLayers: normalizeEditorLayers(sceneJson) },
   scenePlacement: false,
   camera: {
     perspective: "first",
     rigs: { firstPerson: { eyeHeight: MOVEMENT_TUNING.standEyeHeight, sensitivity: 0.002, reticle: false, viewmodel: false } },
-    lens: { frustum: { fov: 75, far: WORLD_CAMERA_FAR }, playerFov: { control: false } },
+    lens: { frustum: { fov: 75, far: WORLD_CAMERA_FAR } },
   },
   controls: {
     movement: { collideObjects: true, beforeCommit: stepAroundNearbyPlayers },
     prompts: (ctx) =>
       buildSceneObjectPrompts(ctx.scene.object.list(), (instanceId) => ctx.scene.object.catalog(instanceId)?.proximityPrompt ?? null),
     touch: { hidden: ["sprint", "crouch"], gestures: { tap: "interact" } },
+    // Desktop draws at authored size from 1280x800; the phone HUD is laid out for its own screen, not shrunk.
+    hudFit: { designSize: { width: 1280, height: 800 }, minScale: 0.75, mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
   },
   rendering: {
     lighting: {
@@ -70,5 +75,7 @@ export const game = defineGame({
     backdrop: { background: WORLD_FOG_COLOR, fog: { color: WORLD_FOG_COLOR, near: WORLD_FOG_NEAR, far: WORLD_FOG_FAR } },
     postProcessing: { toneMapping: "aces", exposure: 1.25 },
   },
-  chrome: { settings: false, notices: false },
+  // The tablet's Settings app draws the shell's settings (sound, graphics, field of view, accessibility)
+  // beside LLMville's own keybinds, so no gear is mounted and the shell's controls list stays hidden.
+  chrome: { settings: { hide: ["controls"] }, notices: false },
 });

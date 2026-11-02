@@ -34,6 +34,4 @@ export const UI_LAYER = {
   settingsModal: 180,
   /** Model detail / reveal / training-commitment modals — top of the normal stack. */
   modal: 200,
-  /** Dev-only hit-test inspector (`?debug=ui`) — always on top of everything. */
-  debugInspector: 2_147_483_000,
 } as const;

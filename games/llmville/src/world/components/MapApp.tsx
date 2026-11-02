@@ -3,10 +3,8 @@ import { cva } from "class-variance-authority";
 import { useQuery } from "convex/react";
 import { api } from "@llmville/backend/convex/_generated/api";
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/components/ui/cn";
-import { InsetSection } from "@/components/ui/inset-section";
-import { Token } from "@/components/ui/token";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { cn } from "@/kit/cn";
 import type { GameEngine } from "@/runtime/gameEngine";
 import { readPlayerPosition, subscribePlayerPosition } from "@/runtime/playerPosition";
 import { claimCost, type ClaimRejection, type DatacenterClaim } from "@llmville/game/datacenter/claims";
@@ -494,17 +492,17 @@ export function MapApp({ money, canEditGame, localGameId, claims, engine, onClai
         </div>
       </div>
 
-      <InsetSection
-        label={hoveredCell === null ? "Floor" : `Cell (${hoveredCell.cx}, ${hoveredCell.cz})`}
-        trailing={
+      <KitPanel data-shell="inset" className="flex flex-col gap-3"
+        eyebrow={hoveredCell === null ? "Floor" : `Cell (${hoveredCell.cx}, ${hoveredCell.cz})`}
+        aside={
           hoveredStatus === null ? null : hoveredStatus.kind === "own" ? (
-            <Token tone="teal">Yours</Token>
+            <span className="llm-token llm-token--teal">Yours</span>
           ) : hoveredStatus.kind === "other" ? (
-            <Token tone="amber">{hoveredStatus.ownerName}</Token>
+            <span className="llm-token llm-token--amber">{hoveredStatus.ownerName}</span>
           ) : hoveredStatus.kind === "blocked" ? (
-            <Token tone="coral">Walkway</Token>
+            <span className="llm-token llm-token--coral">Walkway</span>
           ) : (
-            <Token tone="teal">Open</Token>
+            <span className="llm-token llm-token--teal">Open</span>
           )
         }
       >
@@ -518,10 +516,10 @@ export function MapApp({ money, canEditGame, localGameId, claims, engine, onClai
         {!canEditGame && <p className="mt-1 text-xs text-brand-coral">You can only view this lab.</p>}
         {claiming && (
           <div className="mt-2">
-            <Button disabled>Claiming…</Button>
+            <KitButton disabled>Claiming…</KitButton>
           </div>
         )}
-      </InsetSection>
+      </KitPanel>
     </div>
   );
 }

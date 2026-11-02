@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 
-import { cn } from "@/components/ui/cn";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { cn } from "@/kit/cn";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { BillCardGlyph } from "@/economy/billCardGlyph";
 import type { BillType } from "@/economy/events";
 
@@ -43,8 +42,8 @@ export function InvoiceBillCard({
   const payBlocked = disabled || !canAfford;
 
   return (
-    <Card
-      variant="invoice"
+    <KitPanel as="div"
+      variant="card" data-shell="invoice"
       className={cn(
         "invoice-bill-card w-full",
         isOverdue && "invoice-bill-card--overdue",
@@ -80,16 +79,15 @@ export function InvoiceBillCard({
           Auto-deducts
         </p>
       ) : (
-        <Button
-          variant={canAfford ? "invoice-pay" : "invoice-pay-unaffordable"}
+        <KitButton
           onClick={() => void onPay?.()}
           disabled={payBlocked}
           aria-label={canAfford ? `Pay $${amountLabel}` : `Insufficient funds for $${amountLabel}`}
-          className={cn("invoice-bill-card__pay relative z-10 mt-2 w-full", disabled && canAfford && "opacity-60")}
+          className={cn(canAfford ? "llm-btn--invoice-pay" : "llm-btn--invoice-pay-unaffordable", "invoice-bill-card__pay relative z-10 mt-2 w-full", disabled && canAfford && "opacity-60")}
         >
           Pay
-        </Button>
+        </KitButton>
       )}
-    </Card>
+    </KitPanel>
   );
 }

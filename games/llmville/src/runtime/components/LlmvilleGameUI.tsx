@@ -21,6 +21,7 @@ import { useRackConfigureCommand } from "@/runtime/promptCommands";
 import { useSceneObjectSync } from "@/runtime/sceneObjects";
 import { useWorldState } from "@/runtime/worldState";
 import { isReadyWorldViewModel } from "@/runtime/worldViewModel";
+import { ReducedMotionSync } from "@/settings/components/LlmvilleSettings";
 import { useAppSettings } from "@/settings/settings";
 import { isTabletUiBlockingGameplay } from "@/tablet/tablet";
 import { useTutorialState } from "@/tutorial/tutorialRuntime";
@@ -163,6 +164,7 @@ export function LlmvilleGameUI() {
   }
   return (
     <>
+      <ReducedMotionSync />
       <GameOverlay world={world} build={build} rackHardware={rackHardware} tutorial={tutorial} isTouch={isTouch} />
       <BankruptOverlay />
     </>

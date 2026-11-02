@@ -48,10 +48,10 @@ export default function RackSlot({
       className="w-full h-[96px] flex items-stretch p-0 transition-colors"
     >
       <div
-        className={`flex flex-1 items-stretch overflow-hidden rounded-[var(--r-field)] transition-colors ${
+        className={`flex flex-1 items-stretch overflow-hidden rounded-[var(--kit-r-field)] transition-colors ${
           filled
-            ? `border border-[var(--surface-border)] bg-black/25 ${useExternalDrag ? "" : "cursor-grab active:cursor-grabbing"}`
-            : "border-2 border-dashed border-[var(--surface-border)] bg-black/10 hover:border-brand-teal/30 hover:bg-brand-teal/5"
+            ? `border border-[var(--kit-line)] bg-black/25 ${useExternalDrag ? "" : "cursor-grab active:cursor-grabbing"}`
+            : "border-2 border-dashed border-[var(--kit-line)] bg-black/10 hover:border-brand-teal/30 hover:bg-brand-teal/5"
         } ${isDragging ? "ring-1 ring-brand-teal/50" : ""}`}
       >
         {filled && hardware ? (
