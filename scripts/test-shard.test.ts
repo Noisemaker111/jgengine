@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { assignShards, bunCrashed, failureDetails, matchingShard, preparation, SHARDS, planLanes, SLOW_TEST_SECONDS, splitLanes, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
+import { assignShards, bunCrashed, failedTests, failureDetails, failureReport, matchingShard, preparation, SHARDS, planLanes, SLOW_TEST_SECONDS, splitLanes, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
   { name: "hot", label: "the core combat tests", include: ["packages/core/src/combat"] },
@@ -118,4 +118,33 @@ test("a file that reads the wall clock runs alone after the lanes, never beside 
 test("a failure's error lines are repeated at the end, once per test", () => {
   const output = ["(pass) a", "error: expect(received).toBe(expected)", "at x.test.ts:3", "(fail) suite > b [5.00ms]", "", "1 tests failed:", "(fail) suite > b [5.00ms]"].join("\n");
   expect(failureDetails(output, 2)).toEqual(["error: expect(received).toBe(expected)", "at x.test.ts:3", "(fail) suite > b [5.00ms]", ""]);
+});
+
+/** What shard f printed for #2885 on CI: the file's group marker and a passing test sat inside the digest. */
+const SHARD_F = [
+  "##[group]packages/editor/src/CreatorApp.sceneIo.test.ts:",
+  "(pass) native export round-trips through validated import and rejects an over-budget file [5096.97ms]",
+  '87 |   await press(page, "Step one frame (pause required)");',
+  "TimeoutError: waitForFunction: Timeout 30000ms exceeded.",
+  "      at /home/runner/work/jgengine/jgengine/packages/editor/src/CreatorApp.sceneIo.test.ts:88:14",
+  "##[error]",
+  "(fail) unsaved and pending failed saves survive native play, pause, resume and return [39826.03ms]",
+  "##[endgroup]",
+].join("\n");
+
+test("the digest holds only the failed test's own lines, with no log markup that folds it away", () => {
+  const [failed] = failedTests(SHARD_F);
+  expect(failed?.name).toBe("unsaved and pending failed saves survive native play, pause, resume and return");
+  expect(failed?.error).toBe("TimeoutError: waitForFunction: Timeout 30000ms exceeded.");
+  expect(failed?.lines.some((line) => line.startsWith("##[") || line.startsWith("(pass)"))).toBe(false);
+  expect(failed?.lines.at(-1)).toStartWith("(fail) unsaved");
+});
+
+test("a red shard names each failed test and its error on the run page and in the job summary", () => {
+  const report = failureReport("f", failedTests(SHARD_F));
+  expect(report.annotations).toEqual([
+    "::error title=test (f)  unsaved and pending failed saves survive native play  pause  resume and return::TimeoutError: waitForFunction: Timeout 30000ms exceeded.",
+  ]);
+  expect(report.summary).toContain("- `unsaved and pending failed saves survive native play, pause, resume and return`: TimeoutError: waitForFunction: Timeout 30000ms exceeded.");
+  expect(report.summary).toStartWith("### test (f): 1 failed");
 });
