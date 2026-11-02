@@ -1,7 +1,7 @@
 import { afterAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 
 import { matchPublicFiles, parseAssetBuildPlan } from "./buildGameAssets";
 
@@ -32,6 +32,7 @@ test("globs find model files under public, never the built folders, and honour e
     mkdirSync(join(pub, path, ".."), { recursive: true });
     writeFileSync(join(pub, path), "");
   }
-  expect(matchPublicFiles(pub, ["models/*/near.gltf"]).map((file) => file.slice(pub.length + 1))).toEqual(["models/a/near.gltf", "models/b/near.gltf"]);
-  expect(matchPublicFiles(pub, ["models/**/*.glb"], ["models/skip/*.glb"]).map((file) => file.slice(pub.length + 1))).toEqual(["models/keep/y.glb"]);
+  const under = (files: readonly string[]): string[] => files.map((file) => relative(pub, file).split(sep).join("/"));
+  expect(under(matchPublicFiles(pub, ["models/*/near.gltf"]))).toEqual(["models/a/near.gltf", "models/b/near.gltf"]);
+  expect(under(matchPublicFiles(pub, ["models/**/*.glb"], ["models/skip/*.glb"]))).toEqual(["models/keep/y.glb"]);
 });
