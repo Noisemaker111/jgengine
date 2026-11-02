@@ -37,16 +37,16 @@ function raiderPick(def: CreepDef): ModelPick {
 const TOWER_PLAN: Record<string, ModelPick> = {
   tower_archer: {
     model: `${HEXAGON}/building_tower_A_blue`,
-    style: { targetHeight: 2.6 },
+    style: { targetHeight: 3.4 },
   },
   tower_cannon: {
     model: `${HEXAGON}/building_tower_catapult_blue`,
-    style: { targetHeight: 2.4 },
+    style: { targetHeight: 3.1 },
   },
   tower_frost: {
     model: `${HEXAGON}/building_tower_B_blue`,
     style: {
-      targetHeight: 2.8,
+      targetHeight: 3.6,
       material: { emissive: "#3fb9d1", emissiveIntensity: 0.35 },
     },
   },
@@ -54,7 +54,7 @@ const TOWER_PLAN: Record<string, ModelPick> = {
   tower_arcane: {
     model: `${HEXAGON}/building_tower_base_blue`,
     style: {
-      targetHeight: 2.4,
+      targetHeight: 3.1,
       material: { color: "#b7a2e0", emissive: "#a35cff", emissiveIntensity: 0.55 },
     },
   },
@@ -62,7 +62,7 @@ const TOWER_PLAN: Record<string, ModelPick> = {
 
 const KEEP_PLAN: ModelPick = {
   model: `${HEXAGON}/building_castle_blue`,
-  style: { targetHeight: 4.4 },
+  style: { targetHeight: 7.5 },
 };
 
 function buildEntityModels(): Record<string, ModelConfig> {
@@ -76,17 +76,18 @@ function buildEntityModels(): Record<string, ModelConfig> {
 
 export const entityModels: Record<string, ModelConfig> = buildEntityModels();
 
-/** Each authored scatter item's KayKit Forest model: tall narrow pines, round oaks, low bushes and stones. */
-const SCATTER_PLAN: Record<string, string> = {
-  pine: `${FOREST}/Tree_4_A_Color1`,
-  oak: `${FOREST}/Tree_1_A_Color1`,
-  tree: `${FOREST}/Tree_3_A_Color1`,
-  bush: `${FOREST}/Bush_2_A_Color1`,
-  rock: `${FOREST}/Rock_3_A_Color1`,
-  stone: `${FOREST}/Rock_1_A_Color1`,
+/** The pack's spring lime pulled toward the highland's wet moss (`#5b7a3a`); trunks darken with it. */
+const MOSS = { color: "#a9b48e" };
+
+/** Each authored scatter item's KayKit Forest model: tall pines on the edge, round oaks, low bushes and stones. */
+const SCATTER_PLAN: Record<string, ModelPick> = {
+  pine: { model: `${FOREST}/Tree_4_A_Color1`, style: { targetHeight: 7.2, material: MOSS } },
+  oak: { model: `${FOREST}/Tree_1_A_Color1`, style: { targetHeight: 5, material: MOSS } },
+  tree: { model: `${FOREST}/Tree_3_A_Color1`, style: { targetHeight: 4.5, material: MOSS } },
+  bush: { model: `${FOREST}/Bush_2_A_Color1`, style: { targetHeight: 0.9, material: MOSS } },
+  rock: { model: `${FOREST}/Rock_3_A_Color1`, style: { targetHeight: 0.9 } },
+  stone: { model: `${FOREST}/Rock_1_A_Color1`, style: { targetHeight: 0.5 } },
 };
 
-/** Scatter palette item → catalog id when live; else InstancedScatter stylized proxy. */
-export const scatterModels: Record<string, string> = Object.fromEntries(
-  Object.entries(SCATTER_PLAN).filter(([, id]) => assets.resolve(id) !== null),
-);
+/** Scatter palette item → resolved model when its pack is live; else InstancedScatter stylized proxy. */
+export const scatterModels: Record<string, ModelConfig> = resolveModelPlan(assets, SCATTER_PLAN);

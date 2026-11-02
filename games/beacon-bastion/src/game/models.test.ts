@@ -11,8 +11,8 @@ describe("beacon-bastion models", () => {
     }
     expect(entityModels[BASE_CATALOG_ID]?.url).toContain("building_castle");
     expect(entityModels.tower_archer?.url).toContain("building_tower");
-    for (const id of Object.values(scatterModels)) {
-      expect(id.startsWith("kaykit-forest/")).toBe(true);
+    for (const config of Object.values(scatterModels)) {
+      expect(config.url).toContain("/models/kaykit-forest/");
     }
     expect(scatterModels.pine).toBeDefined();
   });
