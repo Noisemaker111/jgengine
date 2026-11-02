@@ -150,7 +150,7 @@ describe("names Windows cannot check out", () => {
   test("a committed `nul` fails the gate, as #2860's did", () => {
     const root = fixture("reserved", { "scripts/driveFlows.test.ts": FLOWS(AFTER) });
     // Git for Windows refuses the name itself unless NTFS protection is off.
-    const git = (...args: string[]) => Bun.spawnSync({ cmd: ["git", "-c", "core.protectNTFS=false", ...args], cwd: root, stdout: "pipe", stderr: "pipe" });
+    const git = (...args: string[]) => Bun.spawnSync({ cmd: ["git", "-c", "core.protectNTFS=false", ...args], cwd: root, timeout: 30_000, stdout: "pipe", stderr: "pipe" });
     expect(git("init", "-q").exitCode).toBe(0);
     // Windows cannot create the file, so the entry goes straight into the index, the way a Linux commit carries it.
     const blob = git("hash-object", "-w", "--stdin").stdout.toString().trim();
