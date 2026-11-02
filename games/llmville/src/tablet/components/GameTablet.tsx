@@ -59,7 +59,7 @@ import { StoreScreen } from "@/store/components/StoreScreen";
 import { TabletStoreTabs } from "@/tablet/components/TabletStoreTabs";
 import { TutorialArrow } from "@/tutorial/components/TutorialUi";
 import { LabGuide, type LabGoalSelection } from "@/tutorial/components/LabGuide";
-import { NeighborhoodProject } from "@/multiplayer/components/NeighborhoodProject";
+import { NeighborhoodProject } from "@/community/components/NeighborhoodProject";
 
 interface GameTabletProps {
   world: ReadyWorldViewModel;

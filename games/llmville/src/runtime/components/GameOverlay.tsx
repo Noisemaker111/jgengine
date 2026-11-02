@@ -9,7 +9,8 @@ import type { RackHardwareViewModel } from "@/infrastructure/rackHardwareSession
 import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
 import type { TutorialViewModel } from "@/tutorial/tutorialRuntime";
 import { cn } from "@/components/ui/cn";
-import { WorldChat, type WorldChatMessage } from "@/multiplayer/components/WorldChat";
+import type { ChatMessage } from "@jgengine/core/chat/chat";
+import { WorldChat } from "@/chat/components/WorldChat";
 
 import { GameResourcePanel } from "@/runtime/components/GameResourcePanel";
 import { GameHudBar } from "@/runtime/components/GameHudBar";
@@ -25,7 +26,7 @@ interface GameOverlayProps {
   isTouch: boolean;
   /** When true, HUD is rendered inside a dev preview frame instead of the browser viewport. */
   embedded?: boolean;
-  chatFixtureMessages?: readonly WorldChatMessage[];
+  chatFixtureMessages?: readonly ChatMessage[];
 }
 
 export function GameOverlay({
@@ -49,12 +50,6 @@ export function GameOverlay({
         embedded ? "absolute inset-0" : "h-dvh w-full overflow-hidden",
       )}
     >
-      {world.hasSessionConflict && (
-        <div className="pointer-events-auto absolute left-1/2 top-3 z-[100] -translate-x-1/2 rounded bg-black/80 px-3 py-1 text-xs text-amber-300 border border-amber-400/50">
-          Another session started on this account. This one is now read-only.
-        </div>
-      )}
-
       {isTouch ? (
         <div
           className="pointer-events-none absolute left-4 top-4 z-[26] sm:left-5 sm:top-5"

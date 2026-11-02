@@ -23,7 +23,6 @@ import type { DatacenterClaim, PlacementCellPolicy } from "@llmville/game/datace
 import type { CellCoord } from "@llmville/game/datacenter/grid";
 import type { GamePlayerProfile } from "@/user/user";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
-import type { WorldPresenceActions } from "@/multiplayer/presenceTransport";
 
 export interface RuntimeGame {
   _id: Id<"games">;
@@ -153,18 +152,6 @@ export interface WorldViewModel {
   launchCelebrationActive: boolean;
   tweetNotification: TweetNotification | null;
   spendPulse: WorldSpendPulse | null;
-  worldPresences: readonly {
-    presenceId: string;
-    kind: "human" | "bot";
-    actorExternalId: string;
-    gameId: Id<"games">;
-    label: string | null;
-    position: { x: number; y: number; z: number };
-    rotationY: number;
-    rotationPitch?: number;
-    online?: boolean;
-  }[];
-  hasSessionConflict: boolean;
   /** Every claim in the shared datacenter (all players). */
   claims: readonly DatacenterClaim[] | undefined;
   /** The local game's claimed cells. */
@@ -174,7 +161,6 @@ export interface WorldViewModel {
   /** Every player's racks/items in world coordinates, for the shared scene. */
   worldRacks: readonly PlacedRack[];
   worldPlacedBuildItems: readonly PlacedBuildItem[];
-  presenceActions: WorldPresenceActions;
 }
 
 export type ReadyWorldViewModel = WorldViewModel & {

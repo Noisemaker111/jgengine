@@ -10,7 +10,7 @@ import {
 } from "@llmville/game/game/runtime/buildCommands";
 import { mutation } from "./_generated/server";
 import { getEditorAccess, ownerExternalIdForActor } from "./permissions";
-import { runWorldCommand } from "./jgengine/world";
+import { runWorldCommand } from "./runtime";
 
 export const place = mutation({
   args: {

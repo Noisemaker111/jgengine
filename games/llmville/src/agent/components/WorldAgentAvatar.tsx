@@ -4,7 +4,6 @@ import { useRef, useState, type MutableRefObject } from "react";
 import { Group, MathUtils } from "three";
 
 import { advanceGaitPhase, gaitBobOffset, gaitSwayAngle } from "@jgengine/core/movement/avatarGait";
-import { cameraYawToAvatarBodyYaw } from "@jgengine/core/movement/movementModel";
 import { PlayerCharacterFigure } from "@/user/components/PlayerCharacterFigure";
 import { DEFAULT_CHARACTER_LOOK } from "@/user/playerCharacterFigure";
 import { REMOTE_AVATAR_INTERPOLATION_MS } from "@/world/location";
@@ -103,11 +102,11 @@ function DormantWorldAgentAvatar({
     const pose = readLiveRemotePose(presenceId);
     if (!pose || !groupRef.current) return;
     groupRef.current.position.set(pose.position.x, pose.position.y, pose.position.z);
-    groupRef.current.rotation.y = cameraYawToAvatarBodyYaw(pose.rotationY);
+    groupRef.current.rotation.y = pose.rotationY;
   });
   const live = readLiveRemotePose(presenceId);
   const position = live?.position ?? { x: 0, y: 0, z: 0 };
-  const rotationY = cameraYawToAvatarBodyYaw(live?.rotationY ?? 0);
+  const rotationY = live?.rotationY ?? 0;
 
   return (
     <group ref={groupRef} position={[position.x, position.y, position.z]} rotation-y={rotationY}>
@@ -137,7 +136,7 @@ function LiveQueryDrivenWorldAgentAvatar({
     const sample = sampleRemotePose(presenceId, performance.now());
     if (!sample) return;
 
-    const targetYaw = cameraYawToAvatarBodyYaw(sample.rotationY);
+    const targetYaw = sample.rotationY;
 
     if (!initializedRef.current) {
       group.position.set(sample.position.x, sample.position.y, sample.position.z);

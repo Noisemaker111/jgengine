@@ -35,11 +35,15 @@ export function stepAroundNearbyPlayers(frame: MovementCommitFrame): readonly [n
   return standingStep(frame.current, frame.next, isPositionList(stored) ? stored : []);
 }
 
-/** Spawns the local player as the entity the shell walks, facing where it last looked. */
-export function spawnLocalPlayer(ctx: GameContext, look: { yaw: number } | null): void {
+/**
+ * Spawns the local player as the entity the shell walks, where the world entry placed it and facing
+ * where it last looked. The shell's presence lane uploads this entity's pose, so it must not exist
+ * before the spawn is known.
+ */
+export function spawnLocalPlayer(ctx: GameContext, position: PlayerPosition, look: { yaw: number } | null): void {
   ctx.scene.entity.spawn(LOCAL_PLAYER_CATALOG_ID, {
     id: ctx.player.userId,
-    position: [0, 0, 0],
+    position: [position.x, 0, position.z],
     rotationY: (look?.yaw ?? 0) + SHELL_YAW_FROM_CAMERA_YAW,
     movement: { walkSpeed: LOCAL_PLAYER_WALK_SPEED },
   });

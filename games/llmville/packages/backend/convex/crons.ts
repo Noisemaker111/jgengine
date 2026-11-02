@@ -18,7 +18,7 @@ crons.interval("reap idle presences", { seconds: 15 }, internal.multiplayer.worl
 crons.interval("prune world chat", { hours: 1 }, internal.multiplayer.worldChat.pruneOldChatMessages, {});
 
 for (const spec of jgengineCronSpecs({ runtimes: [createLlmvilleRuntime()] })) {
-  if (spec.module === "runtime") crons.interval(spec.name, { seconds: spec.intervalSeconds }, internal.jgengine.runtime[spec.functionKey as "flushDirtyServers" | "tickActiveServers"]);
+  if (spec.module === "runtime") crons.interval(spec.name, { seconds: spec.intervalSeconds }, internal.runtime[spec.functionKey as "flushDirtyServers" | "tickActiveServers"]);
 }
 crons.interval("prune rate windows", { hours: 1 }, internal.clientErrors.pruneRateLimits, {});
 

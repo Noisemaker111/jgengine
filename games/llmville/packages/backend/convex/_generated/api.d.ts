@@ -26,9 +26,6 @@ import type * as frontier from "../frontier.js";
 import type * as http from "../http.js";
 import type * as inference from "../inference.js";
 import type * as inventory from "../inventory.js";
-import type * as jgengine_runtime from "../jgengine/runtime.js";
-import type * as jgengine_world from "../jgengine/world.js";
-import type * as jgengine_worldObjects from "../jgengine/worldObjects.js";
 import type * as market from "../market.js";
 import type * as models from "../models.js";
 import type * as multiplayer_worldChat from "../multiplayer/worldChat.js";
@@ -38,7 +35,9 @@ import type * as playbook from "../playbook.js";
 import type * as playerApiAuth from "../playerApiAuth.js";
 import type * as playerInternal from "../playerInternal.js";
 import type * as playerProfile from "../playerProfile.js";
+import type * as presence from "../presence.js";
 import type * as rack from "../rack.js";
+import type * as runtime from "../runtime.js";
 import type * as serving from "../serving.js";
 import type * as store from "../store.js";
 import type * as tick from "../tick.js";
@@ -47,6 +46,7 @@ import type * as unlocks from "../unlocks.js";
 import type * as upgrades from "../upgrades.js";
 import type * as user from "../user.js";
 import type * as world from "../world.js";
+import type * as worldObjects from "../worldObjects.js";
 
 import type {
   ApiFromModules,
@@ -73,9 +73,6 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   inference: typeof inference;
   inventory: typeof inventory;
-  "jgengine/runtime": typeof jgengine_runtime;
-  "jgengine/world": typeof jgengine_world;
-  "jgengine/worldObjects": typeof jgengine_worldObjects;
   market: typeof market;
   models: typeof models;
   "multiplayer/worldChat": typeof multiplayer_worldChat;
@@ -85,7 +82,9 @@ declare const fullApi: ApiFromModules<{
   playerApiAuth: typeof playerApiAuth;
   playerInternal: typeof playerInternal;
   playerProfile: typeof playerProfile;
+  presence: typeof presence;
   rack: typeof rack;
+  runtime: typeof runtime;
   serving: typeof serving;
   store: typeof store;
   tick: typeof tick;
@@ -94,6 +93,7 @@ declare const fullApi: ApiFromModules<{
   upgrades: typeof upgrades;
   user: typeof user;
   world: typeof world;
+  worldObjects: typeof worldObjects;
 }>;
 
 /**

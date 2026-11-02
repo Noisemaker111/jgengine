@@ -14,6 +14,7 @@ export interface LiveRemotePose {
   kind: "human" | "bot";
   online: boolean;
   position: { x: number; y: number; z: number };
+  /** Body yaw: +Z forward at 0, the shell's entity convention. */
   rotationY: number;
   rotationPitch: number;
   /** performance.now() when the reactive query delivered this row. */

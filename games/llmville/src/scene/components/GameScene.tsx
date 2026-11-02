@@ -22,23 +22,10 @@ import BuildProp from "@/scene/components/BuildProp";
 import { ProximityPromptMarker, type GaugeReading } from "@/scene/components/ProximityPromptMarker";
 import { ClaimedCellOverlay, EndlessDatacenter } from "@/world/components/EndlessDatacenter";
 import Rack from "@/infrastructure/components/Rack";
-import { InterpolatedWorldAgentAvatar } from "@/agent/components/WorldAgentAvatar";
-import { PresenceSyncController } from "@/movement/PresenceSyncController";
-import type { WorldPresenceActions } from "@/multiplayer/presenceTransport";
 import { SceneAxesHelper, useShowSceneAxes } from "@/scene/components/SceneAxesHelper";
 import { TutorialRackArrow } from "@/tutorial/components/TutorialUi";
 import { useWorldSceneProps } from "@/runtime/llmvilleSession";
 import { useLocalPlayerBridge } from "@/runtime/localPlayerEntity";
-
-interface WorldPresenceState {
-  presenceId: string;
-  kind: "human" | "bot";
-  label: string | null;
-  position: { x: number; y: number; z: number };
-  rotationY: number;
-  rotationPitch?: number;
-  online?: boolean;
-}
 
 /** What the scene draws, published by the HUD each time the world view model changes. */
 export interface WorldSceneProps {
@@ -52,12 +39,9 @@ export interface WorldSceneProps {
   worldPlacedBuildItems: readonly PlacedBuildItem[];
   claims: readonly DatacenterClaim[];
   placementCellPolicy: PlacementCellPolicy;
-  worldPresences: readonly WorldPresenceState[];
   playerId: string;
   playerPosition: { x: number; z: number };
   buildPlacementModeActive: boolean;
-  presenceSyncEnabled: boolean;
-  presenceActions: WorldPresenceActions;
   placementDraftItemId: BuildItemId | null;
   placementDraftDirection: BuildDirection;
   placementPreview: BuildPlacementPreview | null;
@@ -93,7 +77,6 @@ export function LlmvilleWorld() {
         worldRacks={props.worldRacks}
         worldPlacedBuildItems={props.worldPlacedBuildItems}
         claims={props.claims}
-        worldPresences={props.worldPresences}
         playerPosition={props.playerPosition}
         buildPlacementModeActive={props.buildPlacementModeActive}
         placementDraftItemId={props.placementDraftItemId}
@@ -106,12 +89,6 @@ export function LlmvilleWorld() {
         interactionHint={props.interactionHint}
         interactionTarget={props.interactionTarget}
         interactionPrompt={props.interactionPrompt}
-      />
-      <PresenceSyncController
-        engine={props.engine}
-        playerId={props.playerId}
-        enabled={props.presenceSyncEnabled}
-        presenceActions={props.presenceActions}
       />
       <BuildPlacementPreviewController
         enabled={props.placementDraftItemId !== null}
@@ -135,7 +112,6 @@ function GameWorldContent({
   worldRacks,
   worldPlacedBuildItems,
   claims,
-  worldPresences,
   buildPlacementModeActive,
   placementDraftItemId,
   placementDraftDirection,
@@ -157,7 +133,6 @@ function GameWorldContent({
   worldRacks: readonly PlacedRack[];
   worldPlacedBuildItems: readonly PlacedBuildItem[];
   claims: readonly DatacenterClaim[];
-  worldPresences: readonly WorldPresenceState[];
   buildPlacementModeActive: boolean;
   placementDraftItemId: BuildItemId | null;
   placementDraftDirection: BuildDirection;
@@ -230,15 +205,6 @@ function GameWorldContent({
           <BuildProp itemId={placementDraft.itemId} x={placementPreview.x} y={placementPreview.y} z={placementPreview.z} direction={placementDraft.direction} ghost={true} isValid={placementPreview.isValid} />
         )
       ) : null}
-      {worldPresences.map((presence) => (
-        <InterpolatedWorldAgentAvatar
-          key={presence.presenceId}
-          presenceId={presence.presenceId}
-          label={presence.label}
-          kind={presence.kind}
-          online={presence.online !== false}
-        />
-      ))}
     </>
   );
 }
