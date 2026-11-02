@@ -11,7 +11,7 @@ import {
 import { getBuildItemFootprint } from "@llmville/game/build/geometry";
 import { resolveBuildItemPlacementBounds } from "@llmville/game/build/placementBounds";
 import { TILE_SIZE } from "@llmville/game/world/grid";
-import { boundsOverlap } from "@llmville/game/world/bounds";
+import { validatePlacementBounds } from "@jgengine/core/placement/placement";
 import { cellKey, cellsForBounds } from "@llmville/game/datacenter/grid";
 import type { PlacementCellPolicy } from "@llmville/game/datacenter/claims";
 import { isStructuralColumnCell } from "@llmville/game/datacenter/layout";
@@ -228,36 +228,6 @@ export function rotationYToDirection(rotationY: number): BuildDirection {
   return normalizeBuildDirection(rotationY / (Math.PI / 2));
 }
 
-export function collidesWithExistingRacks(
-  point: WorldPoint,
-  racks: readonly { rackType: string; x: number; z: number; rotationY: number }[],
-  direction: BuildDirection,
-  itemId: string,
-): boolean {
-  const bounds = getPlacementBounds(itemId, point, direction);
-  return racks.some((rack) =>
-    boundsOverlap(
-      bounds,
-      getPlacementBounds(rack.rackType, { x: rack.x, z: rack.z }, rotationYToDirection(rack.rotationY)),
-    ),
-  );
-}
-
-export function collidesWithExistingBuildItems(
-  itemId: string,
-  point: WorldPoint,
-  direction: BuildDirection,
-  placedBuildItems: readonly { itemId: string; x: number; z: number; direction: BuildDirection }[],
-): boolean {
-  const bounds = getPlacementBounds(itemId, point, direction);
-  return placedBuildItems.some((item) =>
-    boundsOverlap(
-      bounds,
-      getPlacementBounds(item.itemId, { x: item.x, z: item.z }, item.direction),
-    ),
-  );
-}
-
 export function claimedCellKeySet(
   cells: readonly { cx: number; cz: number }[],
 ): ReadonlySet<string> {
@@ -292,12 +262,21 @@ export function isPlacementValidAt(
   context: PlacementPreviewContext,
 ): boolean {
   const { itemId, direction, racks, placedBuildItems, cellPolicy } = context;
-  const bounds = getPlacementBounds(itemId, point, direction);
-  const cells = cellsForBounds(bounds);
-  if (cells.some((cell) => !cellPolicy.canUse(cell))) return false;
-  if (cells.some((cell) => isStructuralColumnCell(cell))) return false;
-  if (collidesWithExistingRacks(point, racks, direction, itemId)) return false;
-  return !collidesWithExistingBuildItems(itemId, point, direction, placedBuildItems);
+  const obstacles = [
+    ...racks.map((rack) => ({
+      aabb: getPlacementBounds(rack.rackType, { x: rack.x, z: rack.z }, rotationYToDirection(rack.rotationY)),
+    })),
+    ...placedBuildItems.map((item) => ({
+      aabb: getPlacementBounds(item.itemId, { x: item.x, z: item.z }, item.direction),
+    })),
+  ];
+  const result = validatePlacementBounds(getPlacementBounds(itemId, point, direction), {
+    obstacles,
+    territory: (bounds) => ({
+      ok: cellsForBounds(bounds).every((cell) => cellPolicy.canUse(cell) && !isStructuralColumnCell(cell)),
+    }),
+  });
+  return result.status === "ok";
 }
 
 /** Pure placement preview from camera pose — shared by scene preview and tests. */

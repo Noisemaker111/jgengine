@@ -8423,6 +8423,16 @@
       "intent": "a placed object's per-instance state and container contents convert to and from the persisted snapshot row a host stores"
     },
     {
+      "id": "placement-bounds",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/placement/placement",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "validate already-resolved footprint bounds against bounds, obstacles and territory"
+    },
+    {
       "id": "placement-controller",
       "packages": [
         "@jgengine/core"

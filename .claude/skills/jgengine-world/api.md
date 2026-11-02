@@ -3967,12 +3967,16 @@
 
 ## @jgengine/core/placement/placement
 
+- `PlacementBoundsResult` (type): type PlacementBoundsResult = { status: "ok"; aabb: Aabb } | PlacementRejection — {@link validatePlacementBounds}'s verdict: the checked bounds, or why they were refused.
+- `PlacementBoundsRules` (type): type PlacementBoundsRules = Omit<PlacementRules, "snap"> — The rules {@link validatePlacementBounds} checks: everything in {@link PlacementRules} but the snap.
 - `PlacementObstacle` (interface): interface PlacementObstacle { aabb: Aabb; id?: string } — ⚠ undocumented · used by `footprintObstacles` (@jgengine/core/world): Bridges live reservations into `world/placement`'s `PlacementRules.obstacles` so `validatePlacement`/`createPlacementController` see the gri…
+- `PlacementRejection` (type): type PlacementRejection = | { status: "rejected"; reason: "out-of-bounds" } | { status: "rejected"; reason: "territory.blocked" } | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number } — Why a placement was refused; shared by {@link validatePlacement} and {@link validatePlacementBounds}.
 - `PlacementRequest` (interface): interface PlacementRequest { center: Vec2; footprint: Footprint; quarterTurns?: number } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
-- `PlacementResult` (type): type PlacementResult = | { status: "ok"; center: Vec2; aabb: Aabb } | { status: "rejected"; reason: "out-of-bounds" } | { status: "rejected"; reason: "territory.blocked" } | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
+- `PlacementResult` (type): type PlacementResult = { status: "ok"; center: Vec2; aabb: Aabb } | PlacementRejection — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
 - `PlacementRules` (interface): interface PlacementRules { bounds?: Aabb; obstacles?: readonly PlacementObstacle[]; snap?: number | undefined; territory?: (aabb: Aabb) => {ok: boolean} } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
 - `footprintObstacle` (function): function footprintObstacle(request: PlacementRequest, id?: string): PlacementObstacle — ⚠ undocumented
 - `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
+- `validatePlacementBounds` (function): function validatePlacementBounds(aabb: Aabb, rules: PlacementBoundsRules = {}): PlacementBoundsResult — The same bounds, overlap and territory checks as {@link validatePlacement}, for a footprint the game has already resolved to world bounds, such as one measured from a model's mesh or off its pivot.
 
 ## @jgengine/core/placement/placementController
 
@@ -6530,6 +6534,7 @@
 - `PlaceConfig` (interface): interface PlaceConfig — Input to {@link world}: place identity, substrate, and the laws of this place.
 - `PlaceWorldFeature` (interface): interface PlaceWorldFeature — A declared place — the `world()` result carried on `GameDefinition.world`.
 - `PlacedStructure` (interface): interface PlacedStructure { id: string; catalogId: string; position: StructureVec3; rotationY: number; plotId?: string; data?: Readonly<Record<string, unknown>> } — ⚠ undocumented
+- `PlacementBoundsRules` (type): type PlacementBoundsRules = Omit<PlacementRules, "snap"> — The rules {@link validatePlacementBounds} checks: everything in {@link PlacementRules} but the snap.
 - `PlacementCommit` (interface): interface PlacementCommit { center: Vec2; y: number; rotationY: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; slotId?: string } — ⚠ undocumented · used by `placeAssetFromCommit`: Bridge a {@link PlacementCommit} into the shared place-asset verb.
 - `PlacementController` (interface): interface PlacementController { hover(hit: PlacementHit): PlacementPreview; current(): PlacementPreview | null; rotate(steps?: number): PlacementPreview | null; setSnapMode(mode: SnapMode): PlacementPreview | null; cycleSnapMode(): SnapMode; setFootprint(footprint: Foot… — ⚠ undocumented · used by `createPlacementController`: Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
 - `PlacementPreview` (interface): interface PlacementPreview { center: Vec2; y: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; valid: boolean; reason?: "out-of-bounds" | "overlap" | "no-slot" | "territory.blocked"; snapMode: SnapMode; normal: PlacementVec3; slotId?: string } — ⚠ undocumented
@@ -7131,6 +7136,7 @@
 - `untypedGenerator` (function): function untypedGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): GeneratorDefinition — The untyped view of a typed generator, for code that holds raw meta bags (the editor, the variant grid): its `generate` parses params against the schema first. Registered generators are already this shape.
 - `validateAssetSpace` (function): function validateAssetSpace(raw: unknown): AssetSpaceIssue[] — Report contradictory or malformed asset-space metadata so catalog generation can reject it before it reaches a tool: non-finite headings, non-positive scales/sizes, inverted bounds, unknown anchors, and ill-formed rotation policies (a `snap` with a non-positive increment, an unknown `mode`). An empty array means valid. Validation lives here so tools consume resolved metadata instead of reinterpreting.
 - `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
+- `validatePlacementBounds` (function): function validatePlacementBounds(aabb: Aabb, rules: PlacementBoundsRules = {}): PlacementBoundsResult — The same bounds, overlap and territory checks as {@link validatePlacement}, for a footprint the game has already resolved to world bounds, such as one measured from a model's mesh or off its pivot.
 - `vehicleTuning` (function): function vehicleTuning(spec: VehicleSpec): VehicleDynamicsTuning — Build the physical tuning for a {@link VehicleSpec}. Pure and deterministic, so a parts change or a dent re-derives the tuning and `retune` swaps it in without costing the car its momentum.
 - `visibleCells` (function): function visibleCells(spec: LockSpec, col: number, window: number): LockCell[] — The render-safe slice: every open cell in columns [0, col + window]. The single source of truth for fog and the anti-cheat boundary — never serialize the full spec to a client.
 - `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.
@@ -7390,7 +7396,7 @@
 
 ## @jgengine/core/world/geometry
 
-- `Aabb` (interface): interface Aabb { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `rectRegion` (@jgengine/core/world): An axis-aligned rectangle on the XZ plane.
+- `Aabb` (interface): interface Aabb { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `validatePlacementBounds` (@jgengine/core/placement/placement): The same bounds, overlap and territory checks as {@link validatePlacement}, for a footprint the game has already resolved to world bounds, s…
 - `AvoidCorridor` (interface): interface AvoidCorridor — A clearance *corridor* along a polyline (a path/road): scatter is repelled within `halfWidth` of the centerline, feathered over the outer band. Clean straight edges — unlike approximating a corridor with a scalloped chain of discs.
 - `AvoidMasks` (interface): interface AvoidMasks — A clearance region: point discs (spawns/plots) plus centerline corridors (paths).
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
