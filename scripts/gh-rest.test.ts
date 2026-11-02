@@ -11,7 +11,7 @@ const REFUSED: GhRun = { status: 1, stdout: "", stderr: "HTTP 403: Forbidden (ht
 /** A GitHub that refuses every GraphQL `gh pr` call and serves REST from memory. */
 function cloudGithub() {
   const calls: string[][] = [];
-  const pulls: Record<string, unknown>[] = [];
+  const pulls: { number: number; head: { ref: string | undefined } }[] = [];
   const labels = new Map<number, string[]>();
   const runner = (args: string[]): GhRun => {
     calls.push(args);
@@ -48,13 +48,13 @@ function cloudGithub() {
       const head = query.get("head")?.split(":")[1];
       return answer(
         pulls
-          .filter((pull) => head === undefined || (pull["head"] as { ref: string }).ref === head)
-          .map((pull) => ({ ...pull, labels: (labels.get(pull["number"] as number) ?? []).map((name) => ({ name })) })),
+          .filter((pull) => head === undefined || pull.head.ref === head)
+          .map((pull) => ({ ...pull, labels: (labels.get(pull.number) ?? []).map((name) => ({ name })) })),
       );
     }
     const one = /^repos\/me\/game\/pulls\/(\d+)$/.exec(path ?? "");
     if (method === "GET" && one !== null) {
-      const pull = pulls.find((entry) => entry["number"] === Number(one[1]));
+      const pull = pulls.find((entry) => entry.number === Number(one[1]));
       return pull === undefined ? { status: 1, stdout: "", stderr: "HTTP 404" } : answer({ ...pull, labels: (labels.get(Number(one[1])) ?? []).map((name) => ({ name })) });
     }
     const labelPath = /^repos\/me\/game\/issues\/(\d+)\/labels$/.exec(path ?? "");
@@ -141,6 +141,6 @@ test("the queue reads a labelled PR's state and checks over REST", () => {
   ]);
 
   const listed = gh(["pr", "list", "--base", "beta", "--state", "open", "--json", "number,url,headRefName,isDraft,isCrossRepository,updatedAt,autoMergeRequest,labels"]);
-  const rows = JSON.parse(listed.stdout) as PrRow[];
+  const rows = JSON.parse(listed.stdout) as PrRow[]; // type-escape: gh pr list JSON, as the queue reads it
   expect(readyPrs(rows, "land:queue").map((pr) => [pr.number, pr.branch, pr.signal])).toEqual([[100, "fix/thing", "label"]]);
 });

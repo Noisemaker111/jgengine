@@ -159,7 +159,7 @@ export function restPr(args: readonly string[], repo: string, gh: GhRunner): GhR
   const json = <T>(run: GhRun): T | GhRun => {
     if (run.status !== 0) return run;
     try {
-      return JSON.parse(run.stdout || "null") as T;
+      return JSON.parse(run.stdout || "null") as T; // type-escape: gh api prints the REST shape named by T
     } catch (error) {
       return fail(`unreadable REST answer: ${String(error)}`);
     }
