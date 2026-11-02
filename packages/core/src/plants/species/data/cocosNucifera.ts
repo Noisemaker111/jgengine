@@ -77,7 +77,7 @@ export const COCOS_NUCIFERA: PlantSpecies = {
     sla: 8,
     lifespanYears: 2.5,
     leavesPerNode: 1,
-    color: { spring: "#4d7a2a", summer: "#4d7a2a", autumn: "#4d7a2a" },
+    color: { spring: "#4d7a2a", summer: "#4d7a2a", autumn: "#4d7a2a", autumnShade: "#4d7a2a" },
   },
   bark: { kind: "smooth", smoothUntilYears: 999, furrowDepth: 0.05, color: "#8a7d6b" },
   reproduction: { firstFlowerYears: 6, flowerColor: "#e8d98a", fruitColor: "#6b8a2e", seedMassMg: 400000 },
