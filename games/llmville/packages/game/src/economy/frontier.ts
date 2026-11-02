@@ -1,3 +1,5 @@
+import { foldStatContributions } from "@jgengine/core/progression/statGraph";
+
 /** Benchmark the frontier sits at on a world's first day; the starter fine-tune is calibrated here. */
 export const FRONTIER_BASELINE = 50;
 
@@ -37,7 +39,10 @@ export function computeFrontierBenchmark(
 }
 
 export function clampFrontierBenchmark(benchmark: number): number {
-  return Math.min(FRONTIER_MAX_BENCHMARK, Math.max(FRONTIER_BASELINE, benchmark));
+  return foldStatContributions(benchmark, [
+    { source: "frontier-baseline", op: "clampMin", value: FRONTIER_BASELINE },
+    { source: "frontier-cap", op: "clampMax", value: FRONTIER_MAX_BENCHMARK },
+  ]);
 }
 
 /** World-age frontier plus the clamped global release offset, or a per-world override. */
@@ -50,7 +55,9 @@ export function computeEffectiveFrontierBenchmark(params: {
   if (params.gameOverride !== undefined) return params.gameOverride;
   const nowMs = params.nowMs ?? Date.now();
   return clampFrontierBenchmark(
-    computeFrontierBenchmark(nowMs, params.gameCreatedAtMs ?? nowMs) + (params.frontierOffset ?? 0),
+    foldStatContributions(computeFrontierBenchmark(nowMs, params.gameCreatedAtMs ?? nowMs), [
+      { source: "frontier-release", op: "add", value: params.frontierOffset ?? 0 },
+    ]),
   );
 }
 
@@ -68,7 +75,10 @@ export function computeFrontierDecayMultiplier(
   const anchor = frontierBenchmarkAtTrain ?? modelBenchmark;
   const relativeGap = frontierBenchmark - Math.max(modelBenchmark, anchor);
   if (relativeGap <= 0) return 1;
-  return Math.max(FRONTIER_DECAY_FLOOR, 1 - relativeGap * FRONTIER_DECAY_PER_POINT);
+  return foldStatContributions(1, [
+    { source: "frontier-gap", op: "add", value: -(relativeGap * FRONTIER_DECAY_PER_POINT) },
+    { source: "frontier-decay-floor", op: "clampMin", value: FRONTIER_DECAY_FLOOR },
+  ]);
 }
 
 /** Diminishing returns when stacking more compute on a single model than the market wants. */
