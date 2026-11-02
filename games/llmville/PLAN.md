@@ -87,15 +87,13 @@ Each milestone keeps the game playing, deletes the private code it replaces in t
   - A legacy `llmville:app-settings` blob and the per-key `ai-game:*` layout each move over once on first boot. Regression tests cover both.
   - Deleted: `src/storage/storage.ts` (192) and the localStorage code in `src/settings/settings.ts` (446 → 161, with keybind content split into `keybinds.ts`).
   - Accounts and the Convex world are unchanged.
-- [ ] 2. **Movement and the shell game player.**
-  - Mount the game in `shell` `GamePlayerShell` with the Convex transport, plus an offline mode for headless boots. Move movement onto shell player movement and `cameraRig`, the clock onto `calendarClock`/`serverTick`, and timers onto `timerSet`. Land the frame-sections gap.
-  - Deletes:
-    - `src/movement/PlayerMovementController.tsx` (244), `movementInput.ts` (289), `movementStepping.ts` (43), `playerStep.ts` (52), `useMovement.ts` (68)
-    - `src/runtime/clock.ts` (72), `engineEphemeralTimers.ts` (54), `gameEngine.ts` (13), `gameEngineSession.ts` (32), `engineAccess.ts` (60), `engineWorldContext.ts` (43)
-    - `runtimePerformanceProfiler.ts` (265), `runtimePerformanceDiagnostics.ts` (542), `components/PerformanceDiagnosticOverlay.tsx` (402), `components/PerformanceDiagnosticSampler.tsx` (61)
-    - `packages/game/src/movement` (149)
-    - about 2,390 lines in all
-  - Then write the design brief and the from-zero flow.
+- [x] 2. **Movement and the shell game player.**
+  - `/game/$gameId` mounts `GameHost` with `defineGame` in `src/game.config.ts`. The HUD is the shell's `GameUI`, the racks and avatars its `WorldOverlay`, and the endless datacenter its world `environment`; a small session store shares the world view model between the two trees. The shell joins the world server through `createConvexGameTransport`, which replaced `worldServerSession.tsx` and its join gate.
+  - Shell first-person camera and walk controller move the player entity; LLMville's standing rule (columns and other players block a step) is a `beforeCommit` hook (`standingStep`). Lighting, fog, tone mapping and FOV are `rendering`/`camera` config. Touch uses the shell's joystick, look pad and tap-to-interact on `controls.prompts`.
+  - Keybind overrides moved from `llmville` to the shell's `LLMville` key and `moveBackward` became `moveBack`, once on first boot, with tests.
+  - The frame-sections gap was already closed upstream: the engine frame breakdown times every frame callback by its function name, so LLMville's callbacks are named and its F3 overlay is the shell's. The ticking calendar became core `useCalendarClock` (`time/calendarClock.view.ts`), and cue timers run on `createTimerSet`.
+  - Deleted the movement controller, input, stepping and touch controls, the profiler, diagnostics overlay and sampler, `clock.ts`, `gameContext.tsx`, `worldServerSession.tsx`, `DatacenterLighting.tsx` and the store's movement-key state (about 3,200 lines deleted, 770 added).
+  - Left for later: the offline transport for headless boots and with it the design brief and from-zero flow (play still needs a Convex deployment); the store glue (`gameEngine.ts`, `gameEngineSession.ts`, `engineAccess.ts`, `engineWorldContext.ts`), which goes when LLMville's simulation store moves onto `GameContext`; build mode on `worldModel/buildTool`.
 - [ ] 3. **HUD on the kit, with tokens.**
   - Re-express the `index.css` palette as UI-kit tokens through `customizeKit`. Build the HUD bar, resource panel, tablet frame, bill cards, toasts and settings modal from `HudSlots`, `kitHud.view`, `SettingsSection`, `KeybindingMenu` and `ToastStack`.
   - Tweets get an injected rng and the engine notification center. This removes `Math.random` and `setInterval` from `TweetNotification.tsx`.
