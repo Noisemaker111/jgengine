@@ -1,0 +1,582 @@
+[
+  {
+    "id": "quaternius-modular-women/Adventurer",
+    "source": "quaternius-modular-women",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Adventurer.glb",
+    "metrics": {
+      "glbBytes": 1585676,
+      "byteLength": 1585676,
+      "triangles": 6808,
+      "primitives": 17,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6492454335093503,
+        "d": 0.4604146658069173
+      },
+      "center": {
+        "x": 0,
+        "z": 0.029029275844448893
+      },
+      "minY": -0.0005078940081993396,
+      "maxY": 1.8275761580572223
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-women/Animated_Woman_qJ2gsTUBHL",
+    "source": "quaternius-modular-women",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Animated_Woman_qJ2gsTUBHL.glb",
+    "metrics": {
+      "glbBytes": 1530616,
+      "byteLength": 1530616,
+      "triangles": 6424,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6501149162650102,
+        "d": 0.37027597760719605
+      },
+      "center": {
+        "x": 0,
+        "z": 0.08567477529233028
+      },
+      "minY": -0.008566936166519044,
+      "maxY": 1.843474395594502
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-women/Animated_Woman",
+    "source": "quaternius-modular-women",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Animated_Woman.glb",
+    "metrics": {
+      "glbBytes": 1491780,
+      "byteLength": 1491780,
+      "triangles": 6108,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6492452472448338,
+        "d": 0.3724457832268254
+      },
+      "center": {
+        "x": 0,
+        "z": 0.06925010415400179
+      },
+      "minY": 0.0010581019471200366,
+      "maxY": 1.8435580294550642
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-women/Hooded_Adventurer",
+    "source": "quaternius-modular-women",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Hooded_Adventurer.glb",
+    "metrics": {
+      "glbBytes": 1598564,
+      "byteLength": 1598564,
+      "triangles": 7276,
+      "primitives": 17,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6492454335093503,
+        "d": 0.9869882289946329
+      },
+      "center": {
+        "x": 0,
+        "z": 0.3739696849811038
+      },
+      "minY": 0.00009125898201720437,
+      "maxY": 1.877453884484614
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-women/Punk",
+    "source": "quaternius-modular-women",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Punk.glb",
+    "metrics": {
+      "glbBytes": 1474996,
+      "byteLength": 1474996,
+      "triangles": 5956,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6492454335093503,
+        "d": 0.38298115532419297
+      },
+      "center": {
+        "x": 0,
+        "z": 0.06740660313192931
+      },
+      "minY": 0.0017639492935549207,
+      "maxY": 1.9595758611606395
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-women/Sci_Fi_Character",
+    "source": "quaternius-modular-women",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Sci_Fi_Character.glb",
+    "metrics": {
+      "glbBytes": 1681600,
+      "byteLength": 1681600,
+      "triangles": 8037,
+      "primitives": 18,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6492454335093503,
+        "d": 0.4328742528017347
+      },
+      "center": {
+        "x": 0,
+        "z": 0.11754894492801035
+      },
+      "minY": 0.0000912319472883517,
+      "maxY": 1.854073404897361
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-women/Soldier",
+    "source": "quaternius-modular-women",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Soldier.glb",
+    "metrics": {
+      "glbBytes": 1703996,
+      "byteLength": 1703996,
+      "triangles": 7900,
+      "primitives": 11,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6492454335093503,
+        "d": 0.32697866022739674
+      },
+      "center": {
+        "x": 0,
+        "z": 0.09574727863420918
+      },
+      "minY": -0.0005078949324177761,
+      "maxY": 1.8292976155331895
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-women/Suit",
+    "source": "quaternius-modular-women",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Suit.glb",
+    "metrics": {
+      "glbBytes": 1537776,
+      "byteLength": 1537776,
+      "triangles": 6482,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6492454335093503,
+        "d": 0.3712355532257987
+      },
+      "center": {
+        "x": 0,
+        "z": 0.08585082391772243
+      },
+      "minY": -0.0018691837984316938,
+      "maxY": 1.8433116004117898
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-women/Witch",
+    "source": "quaternius-modular-women",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Witch.glb",
+    "metrics": {
+      "glbBytes": 1589544,
+      "byteLength": 1589544,
+      "triangles": 6872,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6493899747729301,
+        "d": 0.5481519573491236
+      },
+      "center": {
+        "x": 0,
+        "z": 0.04180365217690703
+      },
+      "minY": 0.0000912347610700639,
+      "maxY": 2.0452042765955722
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-women/Worker",
+    "source": "quaternius-modular-women",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Worker.glb",
+    "metrics": {
+      "glbBytes": 1499720,
+      "byteLength": 1499720,
+      "triangles": 6112,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6492454335093503,
+        "d": 0.36337000674064057
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0897835971603015
+      },
+      "minY": -0.0018691837984316938,
+      "maxY": 1.858777334832943
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  }
+]

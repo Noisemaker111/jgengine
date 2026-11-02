@@ -1,0 +1,640 @@
+[
+  {
+    "id": "quaternius-modular-men/Adventurer",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Adventurer.glb",
+    "metrics": {
+      "glbBytes": 1944116,
+      "byteLength": 1944116,
+      "triangles": 10198,
+      "primitives": 15,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.5497046572778835
+      },
+      "center": {
+        "x": 0,
+        "z": 0.01183610777973626
+      },
+      "minY": -0.001223092543722532,
+      "maxY": 1.8559408895583152
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-men/Astronaut",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Astronaut.glb",
+    "metrics": {
+      "glbBytes": 1944976,
+      "byteLength": 1944976,
+      "triangles": 10558,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.4128307052480303
+      },
+      "center": {
+        "x": 0,
+        "z": 0.06646040622625118
+      },
+      "minY": -0.00043093466013137616,
+      "maxY": 1.885858698557914
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-men/Beach_Character",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Beach_Character.glb",
+    "metrics": {
+      "glbBytes": 1505104,
+      "byteLength": 1505104,
+      "triangles": 6574,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.3740377739694817
+      },
+      "center": {
+        "x": 0,
+        "z": 0.10096245851677961
+      },
+      "minY": -0.005412521665631603,
+      "maxY": 1.8776533725779938
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-men/Business_Man",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Business_Man.glb",
+    "metrics": {
+      "glbBytes": 1529248,
+      "byteLength": 1529248,
+      "triangles": 6634,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.37157619766569905
+      },
+      "center": {
+        "x": 0,
+        "z": 0.10090033759608513
+      },
+      "minY": -0.0012994316399488203,
+      "maxY": 1.8556287105833895
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-men/Casual_Character",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Casual_Character.glb",
+    "metrics": {
+      "glbBytes": 1430660,
+      "byteLength": 1430660,
+      "triangles": 5776,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.45469352168312127
+      },
+      "center": {
+        "x": 0,
+        "z": 0.05934167560054858
+      },
+      "minY": -0.0013974867782880571,
+      "maxY": 1.8565790303568566
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-men/Farmer",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Farmer.glb",
+    "metrics": {
+      "glbBytes": 1370524,
+      "byteLength": 1370524,
+      "triangles": 5476,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.39994831015977483
+      },
+      "center": {
+        "x": 0,
+        "z": 0.08671428122466479
+      },
+      "minY": -0.0003736822515168987,
+      "maxY": 1.8556039473370596
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-men/Hoodie_Character",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Hoodie_Character.glb",
+    "metrics": {
+      "glbBytes": 1456760,
+      "byteLength": 1456760,
+      "triangles": 6206,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.3778260799014702
+      },
+      "center": {
+        "x": -5.093148125467906e-12,
+        "z": 0.09777539686469289
+      },
+      "minY": -0.004176006366671771,
+      "maxY": 1.8661866387608979
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-men/King",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "King.glb",
+    "metrics": {
+      "glbBytes": 2004432,
+      "byteLength": 2004432,
+      "triangles": 11100,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.36503861984692404
+      },
+      "center": {
+        "x": 0,
+        "z": 0.10036204291240994
+      },
+      "minY": -0.00115209638016321,
+      "maxY": 1.9030404815283986
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-men/Punk",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Punk.glb",
+    "metrics": {
+      "glbBytes": 1374172,
+      "byteLength": 1374172,
+      "triangles": 5500,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.4461528665840122
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0636120035234219
+      },
+      "minY": -0.004176006395359558,
+      "maxY": 1.9654120886566155
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-men/SWAT",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "SWAT.glb",
+    "metrics": {
+      "glbBytes": 1560900,
+      "byteLength": 1560900,
+      "triangles": 7752,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.3617486664124431
+      },
+      "center": {
+        "x": 0,
+        "z": 0.09711843778659925
+      },
+      "minY": -0.0013974830683313457,
+      "maxY": 1.8524497364465482
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  },
+  {
+    "id": "quaternius-modular-men/Worker",
+    "source": "quaternius-modular-men",
+    "categories": [
+      "character",
+      "human",
+      "modular",
+      "rigged",
+      "animated"
+    ],
+    "file": "Worker.glb",
+    "metrics": {
+      "glbBytes": 1344928,
+      "byteLength": 1344928,
+      "triangles": 5240,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.675467006862164,
+        "d": 0.3892497904207004
+      },
+      "center": {
+        "x": 0,
+        "z": 0.09206354153744001
+      },
+      "minY": -0.003672594067650447,
+      "maxY": 1.8627583656367386
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Gun_Shoot",
+      "CharacterArmature|HitRecieve",
+      "CharacterArmature|HitRecieve_2",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Gun",
+      "CharacterArmature|Idle_Gun_Pointing",
+      "CharacterArmature|Idle_Gun_Shoot",
+      "CharacterArmature|Idle_Neutral",
+      "CharacterArmature|Idle_Sword",
+      "CharacterArmature|Interact",
+      "CharacterArmature|Kick_Left",
+      "CharacterArmature|Kick_Right",
+      "CharacterArmature|Punch_Left",
+      "CharacterArmature|Punch_Right",
+      "CharacterArmature|Roll",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Back",
+      "CharacterArmature|Run_Left",
+      "CharacterArmature|Run_Right",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Sword_Slash",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Wave"
+    ]
+  }
+]

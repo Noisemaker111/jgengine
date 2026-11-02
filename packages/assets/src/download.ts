@@ -1,6 +1,15 @@
 import { unzipSync, type UnzipFileFilter, type UnzipFileInfo } from "fflate";
 
-import { isScrapeDownload, type AssetSource } from "./manifest";
+import { resolveItchUrl } from "./itchArchive";
+import { polyPizzaBundleArchive } from "./polyPizzaArchive";
+import {
+  downloadLabel,
+  isScrapeDownload,
+  type AssetSource,
+  type ItchDownload,
+  type PinnedDownload,
+  type ScrapeDownload,
+} from "./manifest";
 
 export type FetchLike = typeof fetch;
 
@@ -111,9 +120,8 @@ function score(candidate: string): number {
   return value;
 }
 
-/** @internal */
-export async function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLike = fetch): Promise<string> {
-  const download = source.download;
+async function resolveArchiveUrl(download: PinnedDownload | ScrapeDownload | ItchDownload, fetchImpl: FetchLike): Promise<string> {
+  if ("itch" in download) return resolveItchUrl(download, fetchImpl);
   if (!isScrapeDownload(download)) return download.url;
   const response = await fetchImpl(download.scrape, { redirect: "follow" });
   if (!response.ok) throw new Error(`scrape ${download.scrape} -> HTTP ${response.status}`);
@@ -125,6 +133,30 @@ export async function resolveArchiveUrl(source: AssetSource, fetchImpl: FetchLik
     );
   }
   return url;
+}
+
+/** The chip Poly Pizza shows for a source licence. */
+function polyPizzaLicense(license: string): string {
+  if (license === "CC0-1.0") return "CC0";
+  if (license.startsWith("CC-BY")) return "CC-BY";
+  throw new Error(`no Poly Pizza licence chip for ${license}`);
+}
+
+/**
+ * Fetch a source's archive from its own host: a pinned URL, a scraped page, a free itch.io upload,
+ * or a Poly Pizza bundle zipped on the fly. `url` names where the bytes came from.
+ */
+export async function fetchSourceArchive(
+  source: AssetSource,
+  fetchImpl: FetchLike = fetch,
+): Promise<{ archive: Uint8Array<ArrayBuffer>; url: string }> {
+  const download = source.download;
+  if ("polyPizzaBundle" in download) {
+    const archive = await polyPizzaBundleArchive(download, polyPizzaLicense(source.license), MAX_ARCHIVE_DOWNLOAD_BYTES, fetchImpl);
+    return { archive, url: downloadLabel(download) };
+  }
+  const url = await resolveArchiveUrl(download, fetchImpl);
+  return { archive: await downloadArchive(url, fetchImpl), url };
 }
 
 const SANDBOX_DENIAL = /GitHub access to this repository is not enabled/i;
@@ -201,7 +233,7 @@ export function defaultReleaseUrl(source: AssetSource): string {
 
 async function verifyPinnedSha(source: AssetSource, archive: Uint8Array): Promise<void> {
   const download = source.download;
-  if (isScrapeDownload(download) || download.sha256 === undefined) return;
+  if (!("url" in download) || download.sha256 === undefined) return;
   const actual = await sha256Hex(archive);
   if (actual !== download.sha256) {
     throw new Error(`sha256 mismatch: expected ${download.sha256}, got ${actual}`);
@@ -226,7 +258,7 @@ export interface DownloadPackResult {
  * succeeds: (1) the mirror base override at `mirrorOverrideUrl`, (2) the
  * default GitHub-release mirror at `defaultReleaseUrl` (skipped when
  * `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`), (3) the primary provider path
- * (`resolveArchiveUrl`: scrape or pinned URL), (4) the pack's own `mirror`
+ * (`fetchSourceArchive`: pinned URL, scrape, itch.io or Drive folder), (4) the pack's own `mirror`
  * URL. A pinned `sha256` is verified against whichever
  * source supplied the bytes; a mismatch is treated as a failed attempt so the
  * next source in the chain is tried. Throws with every attempted URL and its
@@ -263,14 +295,14 @@ export async function downloadPackArchive(
     if (result !== undefined) return result;
   }
 
+  const label = downloadLabel(source.download);
+  attempted.push(label);
   try {
-    const primaryUrl = await resolveArchiveUrl(source, fetchImpl);
-    const result = await tryUrl(primaryUrl);
-    if (result !== undefined) return result;
+    const { archive, url } = await fetchSourceArchive(source, fetchImpl);
+    await verifyPinnedSha(source, archive);
+    return { archive, url, attempted };
   } catch (error) {
-    const label = isScrapeDownload(source.download) ? source.download.scrape : source.download.url;
     errors.push(`${label}: ${error instanceof Error ? error.message : String(error)}`);
-    attempted.push(label);
   }
 
   if (source.mirror !== undefined) {

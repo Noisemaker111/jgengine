@@ -3,12 +3,15 @@ import type { IndexEntry } from "../manifest";
 import s_kaykit_adventurers from "./kaykit-adventurers.json" with { type: "json" };
 import s_kaykit_city_builder from "./kaykit-city-builder.json" with { type: "json" };
 import s_kaykit_dungeon from "./kaykit-dungeon.json" with { type: "json" };
+import s_kaykit_forest from "./kaykit-forest.json" with { type: "json" };
 import s_kaykit_furniture from "./kaykit-furniture.json" with { type: "json" };
 import s_kaykit_skeletons from "./kaykit-skeletons.json" with { type: "json" };
 import s_kaykit_space_base from "./kaykit-space-base.json" with { type: "json" };
 import s_quaternius_5_low_poly_animals from "./quaternius-5-low-poly-animals.json" with { type: "json" };
 import s_quaternius_animated_animales_low_poly from "./quaternius-animated-animales-low-poly.json" with { type: "json" };
+import s_quaternius_animated_animals from "./quaternius-animated-animals.json" with { type: "json" };
 import s_quaternius_animated_characters_pack from "./quaternius-animated-characters-pack.json" with { type: "json" };
+import s_quaternius_animated_dinosaurs from "./quaternius-animated-dinosaurs.json" with { type: "json" };
 import s_quaternius_animated_fish from "./quaternius-animated-fish.json" with { type: "json" };
 import s_quaternius_animated_human_low_poly from "./quaternius-animated-human-low-poly.json" with { type: "json" };
 import s_quaternius_animated_lowpoly_robot from "./quaternius-animated-lowpoly-robot.json" with { type: "json" };
@@ -53,20 +56,26 @@ import s_quaternius_lowpoly_steampunk_turrets from "./quaternius-lowpoly-steampu
 import s_quaternius_lowpoly_survival_pack from "./quaternius-lowpoly-survival-pack.json" with { type: "json" };
 import s_quaternius_lowpoly_textured_trees from "./quaternius-lowpoly-textured-trees.json" with { type: "json" };
 import s_quaternius_medieval_village from "./quaternius-medieval-village.json" with { type: "json" };
+import s_quaternius_modular_men from "./quaternius-modular-men.json" with { type: "json" };
 import s_quaternius_modular_scifi from "./quaternius-modular-scifi.json" with { type: "json" };
+import s_quaternius_modular_women from "./quaternius-modular-women.json" with { type: "json" };
 import s_quaternius_stylized_nature from "./quaternius-stylized-nature.json" with { type: "json" };
 import s_quaternius_textured_cute_monster_pack from "./quaternius-textured-cute-monster-pack.json" with { type: "json" };
+import s_quaternius_toon_shooter from "./quaternius-toon-shooter.json" with { type: "json" };
 
 export const generatedBySource: Record<string, IndexEntry[]> = {
   "kaykit-adventurers": s_kaykit_adventurers as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "kaykit-city-builder": s_kaykit_city_builder as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "kaykit-dungeon": s_kaykit_dungeon as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "kaykit-forest": s_kaykit_forest as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "kaykit-furniture": s_kaykit_furniture as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "kaykit-skeletons": s_kaykit_skeletons as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "kaykit-space-base": s_kaykit_space_base as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-5-low-poly-animals": s_quaternius_5_low_poly_animals as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-animated-animales-low-poly": s_quaternius_animated_animales_low_poly as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-animated-animals": s_quaternius_animated_animals as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-animated-characters-pack": s_quaternius_animated_characters_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-animated-dinosaurs": s_quaternius_animated_dinosaurs as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-animated-fish": s_quaternius_animated_fish as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-animated-human-low-poly": s_quaternius_animated_human_low_poly as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-animated-lowpoly-robot": s_quaternius_animated_lowpoly_robot as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
@@ -111,9 +120,12 @@ export const generatedBySource: Record<string, IndexEntry[]> = {
   "quaternius-lowpoly-survival-pack": s_quaternius_lowpoly_survival_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-lowpoly-textured-trees": s_quaternius_lowpoly_textured_trees as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-medieval-village": s_quaternius_medieval_village as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-modular-men": s_quaternius_modular_men as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-modular-scifi": s_quaternius_modular_scifi as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-modular-women": s_quaternius_modular_women as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-stylized-nature": s_quaternius_stylized_nature as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-textured-cute-monster-pack": s_quaternius_textured_cute_monster_pack as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "quaternius-toon-shooter": s_quaternius_toon_shooter as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
 };
 
 export const generatedIndex: IndexEntry[] = Object.values(generatedBySource).flat();
