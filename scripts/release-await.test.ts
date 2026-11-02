@@ -33,15 +33,17 @@ const job = (name: string, conclusion: string | null): PublishJob => ({
 describe("which run is this release's", () => {
   test("the newest run on the release commit wins, so a re-run replaces the attempt it retried", () => {
     const shas = "a".repeat(40);
+    // gh lists newest first; 0.51.0 picked the older beta run of its commit from that order.
     const picked = pickRun(
       [
-        run({ databaseId: 1, headSha: shas }),
-        run({ databaseId: 2, headSha: "b".repeat(40) }),
         run({ databaseId: 3, headSha: shas }),
+        run({ databaseId: 2, headSha: "b".repeat(40) }),
+        run({ databaseId: 1, headSha: shas }),
       ],
       shas,
     );
     expect(picked?.databaseId).toBe(3);
+    expect(pickRun([run({ databaseId: 1, headSha: shas }), run({ databaseId: 3, headSha: shas })], shas)?.databaseId).toBe(3);
   });
 
   test("a commit with no publish run is null, not the newest run of anything", () => {
@@ -308,5 +310,24 @@ describe("waiting on the publish run", () => {
     expect(result.ok).toBe(false);
     expect(result.line).toContain("CI run 7 on main for eeeeeeee ended failure");
     expect(slept).toBe(0);
+  });
+
+  test("beta's failed run of the same commit is not main's verdict", async () => {
+    // 0.51.0: beta's push run failed its Windows suite while main's run of the same commit passed and published.
+    const sha = "f".repeat(40);
+    const betaRun = run({ headSha: sha, databaseId: 8, conclusion: "failure" });
+    const mainRun = run({ headSha: sha, databaseId: 9 });
+    const gh = (args: readonly string[]) => {
+      if (args[0] === "run" && args.includes("ci.yml")) {
+        const branch = args[args.indexOf("--branch") + 1];
+        const runs = branch === "main" ? [mainRun] : [betaRun];
+        return { status: 0, stdout: JSON.stringify(runs), stderr: "" };
+      }
+      if (args[0] === "run") return { status: 0, stdout: "[]", stderr: "" };
+      return { status: 1, stdout: "", stderr: "unexpected" };
+    };
+    const result = await awaitPublish({ version: "0.51.0", sha, gh, graceMs: 0, sleep: async () => {}, log: () => {} });
+    expect(result.line).not.toContain("ended failure");
+    expect(result.line).toContain("no publish.yml run for ffffffff on main");
   });
 });
