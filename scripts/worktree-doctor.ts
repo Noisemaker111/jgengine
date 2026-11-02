@@ -132,8 +132,9 @@ export function dependencyPlan(root: string): DepsPlan {
 /** The installed version of the package at `dir`, or null when its manifest cannot be read. */
 function installedVersion(dir: string): string | null {
   try {
-    const version = (JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { version?: unknown }).version;
-    return typeof version === "string" ? version : null;
+    const manifest: unknown = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+    if (typeof manifest !== "object" || manifest === null || !("version" in manifest)) return null;
+    return typeof manifest.version === "string" ? manifest.version : null;
   } catch {
     return null;
   }
