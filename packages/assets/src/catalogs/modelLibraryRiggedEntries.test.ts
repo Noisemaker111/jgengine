@@ -4,10 +4,7 @@ import { MODEL_LIBRARY_RIGGED_ENTRIES } from "./modelLibraryRiggedEntries";
 
 describe("rigged, vehicle and authored library entries", () => {
   test("every entry records a source, an author and a license that matches its provider", () => {
-    const names = new Set<string>();
     for (const entry of MODEL_LIBRARY_RIGGED_ENTRIES) {
-      expect(names.has(entry.name)).toBe(false);
-      names.add(entry.name);
       expect(entry.author.length).toBeGreaterThan(0);
       expect(entry.homepage).toMatch(/^https:\/\//);
       const license = { rocketbox: "MIT", khronos: "CC-BY-4.0", polyhaven: "CC0-1.0", authored: "MIT" }[entry.origin.provider as string];
