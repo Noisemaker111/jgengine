@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const ROBINIA_PSEUDOACACIA: PlantSpecies = {
   id: "robinia-pseudoacacia",
-  version: 12,
+  version: 13,
   names: {
     scientific: "Robinia pseudoacacia L.",
     common: { en: "black locust", fr: "robinier faux-acacia" },
@@ -17,11 +17,11 @@ export const ROBINIA_PSEUDOACACIA: PlantSpecies = {
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
-    apicalControl: 0.6356,
-    apicalControlMature: 0.3251,
+    apicalControl: 0.6492,
+    apicalControlMature: 0.3231,
     apicalControlHalfYears: 66.17,
     internodeMax: 0.09189,
-    branchAngle: 45.39,
+    branchAngle: 47.59,
     lateralBudsPerNode: 1,
     maxMetamersPerShoot: 8,
     establishmentYears: 0.03772,
@@ -30,7 +30,7 @@ export const ROBINIA_PSEUDOACACIA: PlantSpecies = {
     tropism: {
       gravity: 0.05,
       gravityOrderDecay: 0.4,
-      setpointAngle: 68.13,
+      setpointAngle: 66.82,
       setpointPerOrder: 21.95,
       optimal: 0.2857,
       wind: 0.15,
@@ -99,11 +99,11 @@ export const ROBINIA_PSEUDOACACIA: PlantSpecies = {
     phenology: { source: "silvics-654" },
     growth: {
       source: "crown-fit",
-      fitted: { score: 91.04, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 1000000000, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
     carbon: {
       source: "crown-fit",
-      fitted: { score: 91.04, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+      fitted: { score: 1000000000, against: "fia, carmean-1989, tallo-2022, ek-1974" },
     },
   },
 };

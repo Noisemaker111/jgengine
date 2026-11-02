@@ -45,7 +45,8 @@ export function individualGrowth(growth: PlantSpecies["growth"], seed: RandomSee
   const angle = spread.angleDeg * normal();
   return {
     ...growth,
-    apicalControlMature: 1 - (1 - growth.apicalControlMature) * leak,
+    // Apical control is a share, 0..1: a strong leak leaves the leader none, never less.
+    apicalControlMature: Math.max(0, 1 -(1 - growth.apicalControlMature) * leak),
     branchAngle: Math.max(5, Math.min(110, growth.branchAngle + angle)),
     horizontalVigour: growth.horizontalVigour * plantExp(spread.horizontalVigour * normal()),
     internodeMax: growth.internodeMax * plantExp(spread.internode * normal()),
