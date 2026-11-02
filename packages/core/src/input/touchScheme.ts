@@ -164,6 +164,12 @@ export interface TouchMovementConfig {
 /** One named control context's touch config — the same shape as the base config, minus nested modes. */
 export type TouchControlsModeConfig = Omit<TouchControlsConfig, "modes">;
 
+/** Edge bands, in CSS pixels, that touch clusters stay clear of. */
+export interface TouchReserve {
+  top?: number;
+  bottom?: number;
+}
+
 /** Game-authored refinement of the derived touch scheme on `defineGame({ touch })` — gestures, curated buttons, hidden actions, cluster layout, skin, and per-context `modes`. */
 export interface TouchControlsConfig {
   /** `false` removes the virtual joystick even when movement actions are bound; an object restricts it to one axis. */
@@ -182,6 +188,8 @@ export interface TouchControlsConfig {
   layout?: TouchLayoutConfig;
   /** Suggested default skin; the player's Settings choice overrides it. Default `glass`. */
   style?: TouchStyle;
+  /** Screen bands the clusters keep clear of, in CSS pixels, for HUD the game docks at an edge (a bottom tab bar, a top banner). Default 0. */
+  reserve?: TouchReserve;
   /**
    * Per-context control sets for games whose verbs change at runtime — on foot vs driving vs
    * flying. Each key is a mode name whose fields *replace* the matching base fields while that
@@ -230,6 +238,8 @@ export interface TouchScheme {
   layout: ResolvedTouchLayout;
   /** Game-suggested default skin; the shell swaps in the player's choice when set. */
   style: TouchStyle;
+  /** Edge bands the clusters keep clear of. */
+  reserve: { top: number; bottom: number };
 }
 
 const DEFAULT_LOOK_SENSITIVITY = 0.005;
@@ -539,5 +549,6 @@ export function deriveTouchScheme(
       utility: config?.layout?.utility ?? DEFAULT_TOUCH_LAYOUT.utility,
     },
     style: config?.style ?? DEFAULT_TOUCH_STYLE,
+    reserve: { top: Math.max(0, config?.reserve?.top ?? 0), bottom: Math.max(0, config?.reserve?.bottom ?? 0) },
   };
 }

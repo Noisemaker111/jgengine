@@ -87,7 +87,7 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
 
   if (tabletOpen || rackMenuOverlayRackId !== null || placing) return null;
   return (
-    <section data-chat-panel data-no-pointer-lock="true" aria-label="Neighborhood chat" className="pointer-events-auto absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-3 z-40 max-sm:bottom-[calc(env(safe-area-inset-bottom)+10rem)]">
+    <section data-chat-panel data-no-pointer-lock="true" aria-label="Neighborhood chat" className="pointer-events-auto absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-3 z-40 max-sm:bottom-[calc(env(safe-area-inset-bottom)+15rem)]">
       {visible ? (
         <div className="flex max-h-[min(26rem,60dvh)] w-[min(22rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-brand-teal/25 bg-brand-ink/95 text-brand-cream shadow-xl backdrop-blur-xl">
           <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">

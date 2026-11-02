@@ -50,7 +50,8 @@ export const game = defineGame({
     movement: { collideObjects: true, beforeCommit: stepAroundNearbyPlayers },
     prompts: (ctx) =>
       buildSceneObjectPrompts(ctx.scene.object.list(), (instanceId) => ctx.scene.object.catalog(instanceId)?.proximityPrompt ?? null),
-    touch: { hidden: ["sprint", "crouch"], gestures: { tap: "interact" } },
+    // The tablet peek bar docks at the bottom edge on phones.
+    touch: { hidden: ["sprint", "crouch"], gestures: { tap: "interact" }, reserve: { bottom: 80 } },
     // Desktop draws at authored size from 1280x800; the phone HUD is laid out for its own screen, not shrunk.
     hudFit: { designSize: { width: 1280, height: 800 }, minScale: 0.75, mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
   },
