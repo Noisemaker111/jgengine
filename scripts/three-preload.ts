@@ -5,4 +5,14 @@ import { join } from "node:path";
 // asynchronously. Importing three once before any script or test file loads leaves it evaluated, so those requires
 // resolve; bunfig.toml preloads this for every bun run and every bun test.
 // three is not hoisted to the root, so it is resolved from the core package that declares it.
-await import(Bun.resolveSync("three", join(import.meta.dir, "..", "packages", "core")));
+// Bun also runs this preload for `bun install`, so a checkout with nothing installed yet must get past it.
+const three = resolveThree();
+if (three !== null) await import(three);
+
+function resolveThree(): string | null {
+  try {
+    return Bun.resolveSync("three", join(import.meta.dir, "..", "packages", "core"));
+  } catch {
+    return null;
+  }
+}
