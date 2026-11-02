@@ -1,5 +1,6 @@
 import { normalizeEditorLayers } from "@jgengine/core/editor/index";
 import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
+import { convexPresence } from "@jgengine/core/runtime/adapter";
 import { defineGame } from "@jgengine/shell/defineGame";
 import { DATACENTER_CEILING_HEIGHT } from "@llmville/game/datacenter/layout";
 import { llmvilleContent } from "@llmville/game/game/content";
@@ -8,7 +9,7 @@ import { buildSceneObjectPrompts } from "@llmville/game/simulation/interaction";
 import { WORLD_CAMERA_FAR, WORLD_FOG_COLOR, WORLD_FOG_FAR, WORLD_FOG_NEAR } from "@llmville/game/world/viewDistance";
 import { worldModelAssetCatalog } from "@llmville/game/world/worldModelCatalog";
 import { llmvilleHudTheme, llmvilleKit } from "@/kit/llmvilleKit";
-import { convexPresenceTransport } from "@/multiplayer/convexPresenceTransport";
+import { LlmvilleRemotePlayers } from "@/agent/components/RemoteAgents";
 import { LlmvilleGameUI } from "@/runtime/components/LlmvilleGameUI";
 import { stepAroundNearbyPlayers } from "@/runtime/localPlayerEntity";
 import { LlmvilleDatacenter, LlmvilleWorld } from "@/scene/components/GameScene";
@@ -21,14 +22,14 @@ const WALK_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump"
 /**
  * No `replication` policy on purpose. Placed geometry never travels through the engine's `objects`
  * snapshot module — it reaches clients as bounded chunk reads via `api.world.worldScene` — and player
- * presence rides the `ConvexPresenceTransport` lane rather than the `entities` module, so
+ * presence rides the shell's presence lane (`presence:list` / `presence:sync`) rather than the `entities` module, so
  * `aoiRadius` would cull nothing. Spatial culling for this game is the chunk read seam.
  */
 export const game = defineGame({
   name: "LLMville",
   assets: worldModelAssetCatalog,
   world: llmvilleWorld,
-  multiplayer: convexPresenceTransport,
+  multiplayer: convexPresence(),
   lifecycle: "always-live",
   content: llmvilleContent,
   input: {
@@ -39,7 +40,7 @@ export const game = defineGame({
   GameUI: LlmvilleGameUI,
   uiKit: llmvilleKit,
   hudTheme: llmvilleHudTheme,
-  scene: { WorldOverlay: LlmvilleWorld, environment: LlmvilleDatacenter, editorLayers: normalizeEditorLayers(sceneJson) },
+  scene: { WorldOverlay: LlmvilleWorld, RemotePlayers: LlmvilleRemotePlayers, environment: LlmvilleDatacenter, editorLayers: normalizeEditorLayers(sceneJson) },
   scenePlacement: false,
   camera: {
     perspective: "first",

@@ -6,7 +6,7 @@ import {
 } from "@llmville/game/game/runtime/rackCommands";
 import { mutation } from "./_generated/server";
 import { getEditorAccess, ownerExternalIdForActor } from "./permissions";
-import { runWorldCommand } from "./jgengine/world";
+import { runWorldCommand } from "./runtime";
 import { coolingUnitIdValidator, hardwareModelIdValidator } from "./schema";
 
 const COMMAND_REASONS: Record<string, string> = {

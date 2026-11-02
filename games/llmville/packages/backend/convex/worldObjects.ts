@@ -1,4 +1,4 @@
-import { ownedClaimChunkKeys } from "../datacenter";
+import { ownedClaimChunkKeys } from "./datacenter";
 import type { RuntimeChunkRow } from "@jgengine/core/runtime/snapshot";
 import {
   placedObjectFromRow,
@@ -14,10 +14,9 @@ import {
   type WorldPoint,
 } from "@llmville/game/datacenter/worldChunks";
 import type { ComputeAssignmentMap, RackSnapshot } from "@llmville/game/infrastructure/infrastructure";
-import type { Doc, Id } from "../_generated/dataModel";
-import type { MutationCtx, QueryCtx } from "../_generated/server";
-import { helpers } from "./runtime";
-import { worldServerRow } from "./world";
+import type { Doc, Id } from "./_generated/dataModel";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
+import { helpers, worldServerRow } from "./runtime";
 
 export type { PlacedObject, PlacedRackObject, PlacedDecorObject };
 
@@ -85,7 +84,7 @@ export function assignmentsOf(
 }
 
 export function modelIdSet(models: readonly { _id: Id<"models"> }[]): ReadonlySet<string> {
-  return new Set(models.map((model) => model._id as string));
+  return new Set(models.map((model) => model._id));
 }
 
 export async function gameModelIds(

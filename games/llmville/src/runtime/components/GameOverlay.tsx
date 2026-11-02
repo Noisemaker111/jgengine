@@ -12,7 +12,8 @@ import TweetNotification from "@/economy/components/TweetNotification";
 import { useTweetFeed } from "@/economy/tweetFeed";
 import type { RackHardwareViewModel } from "@/infrastructure/rackHardwareSession";
 import { cn } from "@/kit/cn";
-import { WorldChat, type WorldChatMessage } from "@/multiplayer/components/WorldChat";
+import { WorldChat } from "@/chat/components/WorldChat";
+import type { ChatMessage } from "@jgengine/core/chat/chat";
 import { GameplayChrome } from "@/runtime/components/GameplayChrome";
 import { ResourceHud } from "@/runtime/components/ResourceHud";
 import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
@@ -31,7 +32,7 @@ interface GameOverlayProps {
   isTouch: boolean;
   /** When true, HUD is rendered inside a dev preview frame instead of the browser viewport. */
   embedded?: boolean;
-  chatFixtureMessages?: readonly WorldChatMessage[];
+  chatFixtureMessages?: readonly ChatMessage[];
 }
 
 export function GameOverlay({
@@ -56,12 +57,6 @@ export function GameOverlay({
         embedded ? "absolute inset-0" : "h-dvh w-full overflow-hidden",
       )}
     >
-      {world.hasSessionConflict && (
-        <div className="pointer-events-auto absolute left-1/2 top-3 z-[100] -translate-x-1/2 rounded bg-black/80 px-3 py-1 text-xs text-amber-300 border border-amber-400/50">
-          Another session started on this account. This one is now read-only.
-        </div>
-      )}
-
       <HudSlots
         storageKey={HUD_LAYOUT_KEY}
         showDuring={null}

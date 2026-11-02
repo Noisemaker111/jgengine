@@ -114,3 +114,11 @@ describe("defineGame document sky compatibility", () => {
     expect(backdrop).toEqual(before);
   });
 });
+
+describe("defineGame remote players", () => {
+  test("a game's RemotePlayers renderer reaches the playable, and none leaves the shell's capsules", () => {
+    const RemotePlayers = () => null;
+    expect(defineGame({ name: "Own avatars", scene: { RemotePlayers } }).scene?.RemotePlayers).toBe(RemotePlayers);
+    expect(defineGame({ name: "Default avatars" }).scene?.RemotePlayers).toBeUndefined();
+  });
+});

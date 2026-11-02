@@ -31,7 +31,7 @@ import { getHardwareInventoryCount, normalizeHardwareInventory, setHardwareInven
 import { isResearchCatalogItem, isResearchUnlocked, type ResearchUnlocks } from "@llmville/game/research/researchUnlocks";
 import { getBaseModelDefinition } from "@llmville/game/models/baseModels";
 import { adjustBuildInventoryCount } from "@llmville/game/build/buildTransition";
-import { gameRacksById, rackSnapshots } from "./jgengine/worldObjects";
+import { gameRacksById, rackSnapshots } from "./worldObjects";
 import { sellModelInternal, unlockBaseModelInternal } from "./models";
 import { computeUpgradeEffects } from "@llmville/game/user/personalUpgrades";
 import type { MutationCtx } from "./_generated/server";

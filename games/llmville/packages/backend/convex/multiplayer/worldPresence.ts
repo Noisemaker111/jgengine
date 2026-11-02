@@ -1,22 +1,25 @@
 import { v, type Infer } from "convex/values";
-import { pickDatacenterSpawn } from "@llmville/game/datacenter/spawn";
-import { hashStructuralSeed } from "@llmville/game/world/cityHash";
-import type { Doc, Id } from "../_generated/dataModel";
+import { cameraYawToAvatarBodyYaw } from "@jgengine/core/movement/movementModel";
+import type { Doc } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { internalMutation, mutation, query } from "../_generated/server";
 import { getReadAccess, resolveActor } from "../permissions";
 import { botActorExternalId, isBotActorExternalId, ownerFromBotActor } from "../botActor";
 import { createWorldPresenceStore, type WorldPresenceRecord } from "@jgengine/convex/worldPresence";
-import { worldServerRow } from "../jgengine/world";
-import { worldChunkKeyAt, worldChunkNeighborhoodKeysOfKey } from "@llmville/game/datacenter/worldChunks";
-import { claimsNearOrigin } from "../datacenter";
-import {
-  WORLD_POSE_RULES,
-  preferredPresenceLabel,
-  shouldPersistPresenceWorldSnapshot,
-} from "@llmville/game/multiplayer/presencePolicy";
+import { helpers } from "../runtime";
+import { LLMVILLE_GAME_ID } from "@llmville/game/game/runtime/definition";
+import { worldChunkNeighborhoodKeysOfKey } from "@llmville/game/datacenter/worldChunks";
+import { WORLD_POSE_RULES, preferredPresenceLabel } from "@llmville/game/multiplayer/presencePolicy";
+import { PRESENCE_IDLE_TIMEOUT_MS, persistGameWorldSnapshot, spawnForGame } from "../presence";
 
-const HUMAN_PRESENCE_PREFIX = "human:";
+/**
+ * Who stands where in the shared datacenter. People play through the shell's presence lane
+ * (`presence.ts`); this module is the session entry that stamps a lab, a name and a spawn on a row,
+ * the public bot API (`convexApiCatalog`), the offline residents and the reaper.
+ *
+ * Rows store body yaw, the shell's convention (+Z forward at 0). The bot API speaks camera yaw
+ * (-Z forward at 0), so it converts on the way in and out.
+ */
 
 export const communityProgress = query({
   args: {},
@@ -30,23 +33,10 @@ export const communityProgress = query({
     };
   },
 });
-const presenceStore = createWorldPresenceStore({ rules: WORLD_POSE_RULES, idleTimeoutMs: 4 * 60 * 1000 });
 
-export type WorldPresenceKind = "human" | "bot";
+const presenceStore = createWorldPresenceStore({ rules: WORLD_POSE_RULES, idleTimeoutMs: PRESENCE_IDLE_TIMEOUT_MS });
 
-function presenceKindForActor(actorExternalId: string): WorldPresenceKind {
-  return isBotActorExternalId(actorExternalId) ? "bot" : "human";
-}
-
-function humanPresenceId(actorExternalId: string): string {
-  return `${HUMAN_PRESENCE_PREFIX}${actorExternalId}`;
-}
-
-const presencePositionValidator = v.object({
-  x: v.number(),
-  y: v.number(),
-  z: v.number(),
-});
+const presencePositionValidator = v.object({ x: v.number(), y: v.number(), z: v.number() });
 
 type PresencePositionWire = Infer<typeof presencePositionValidator>;
 
@@ -65,88 +55,51 @@ const worldPresenceValidator = v.object({
 
 type WorldPresenceRow = Infer<typeof worldPresenceValidator>;
 
-async function spawnForGame(
-  ctx: QueryCtx | MutationCtx,
-  gameId: Id<"games">,
-): Promise<PresencePositionWire> {
-  const game = await ctx.db.get("games", gameId);
-  const saved = game?.lastWorldPosition;
-  if (saved) return { x: saved.x, y: 0, z: saved.z };
-  const spawn = pickDatacenterSpawn(hashStructuralSeed(["spawn", gameId]), await claimsNearOrigin(ctx));
-  return { x: spawn.x, y: 0, z: spawn.z };
+function bodyYawToCameraYaw(bodyYaw: number): number {
+  return bodyYaw - Math.PI;
 }
 
-export async function getActivePresenceByActor(ctx: QueryCtx | MutationCtx, actorExternalId: string) {
-  const row = await presenceStore.active(ctx, actorExternalId);
-  return row ? { ...row, gameId: row.homeGameId as Id<"games"> } : null;
+function snapshotWriter(ctx: MutationCtx, force: boolean) {
+  return (row: WorldPresenceRecord, now: number) => {
+    const gameId = ctx.db.normalizeId("games", row.homeGameId);
+    return gameId === null ? Promise.resolve() : persistGameWorldSnapshot(ctx, gameId, row.position, now, force);
+  };
 }
 
-async function persistGameWorldSnapshot(
-  ctx: MutationCtx,
-  gameId: Id<"games">,
-  position: { x: number; z: number },
-  now: number,
-  force = false,
-) {
-  const game = await ctx.db.get("games", gameId);
-  if (!game) return;
-  if (!force && !shouldPersistPresenceWorldSnapshot(game.lastWorldPositionAt, now)) {
-    return;
-  }
-  await ctx.db.patch(gameId, {
-    lastWorldPosition: { x: position.x, z: position.z },
-    lastWorldChunkKey: worldChunkKeyAt(position),
-    lastWorldPositionAt: now,
-  });
-}
+/**
+ * Starts (or resumes) the actor's row in the shared world at its lab's spawn and returns where that is.
+ * A human calls it once on entering; a bot calls it before roaming.
+ */
+export const ensureHumanPresence = mutation({
+  args: { gameId: v.id("games"), externalId: v.optional(v.string()) },
+  returns: v.union(v.object({ presenceId: v.string(), position: presencePositionValidator, rotationY: v.number() }), v.null()),
+  handler: async (ctx, args) => {
+    const actorExternalId = await resolveActor(ctx, args.externalId);
+    if (!actorExternalId) return null;
+    if (!(await getReadAccess(ctx, args.gameId, actorExternalId))) return null;
 
-async function leaveHumanPresenceByActor(ctx: MutationCtx, actorExternalId: string) {
-  const presence = await getActivePresenceByActor(ctx, actorExternalId);
-  if (!presence) return { left: false };
-  await presenceStore.revoke(ctx, presence, (row, now) =>
-    persistGameWorldSnapshot(ctx, row.homeGameId as Id<"games">, row.position, now, true));
-  return { left: true };
-}
+    const spawn = await spawnForGame(ctx, args.gameId);
+    await persistGameWorldSnapshot(ctx, args.gameId, spawn, Date.now(), true);
+    const server = await helpers.ensureServer(ctx, LLMVILLE_GAME_ID);
+    const bot = isBotActorExternalId(actorExternalId);
+    const user = await ctx.db.query("users").withIndex("by_external_id", (q) => q.eq("externalId", actorExternalId)).unique();
+    const label = preferredPresenceLabel(user);
+    const ownerActorId = bot ? ownerFromBotActor(actorExternalId) : undefined;
+    const row = await presenceStore.ensure(ctx, {
+      serverId: server._id,
+      actorExternalId,
+      homeGameId: args.gameId,
+      kind: bot ? "bot" : "human",
+      position: spawn,
+      presenceId: bot ? actorExternalId : `human:${actorExternalId}`,
+      ...(ownerActorId === undefined ? {} : { ownerActorId }),
+      ...(label === null ? {} : { label }),
+    });
+    return { presenceId: row.presenceId, position: row.position, rotationY: row.rotationY };
+  },
+});
 
-async function syncPresence(
-  ctx: MutationCtx,
-  presence: WorldPresenceRecord,
-  position?: { x: number; z: number; y?: number },
-  rotationY?: number,
-  rotationPitch?: number,
-) {
-  const bot = presence.kind === "bot";
-  return presenceStore.sync(ctx, presence, position
-    ? {
-      position,
-      ...(rotationY === undefined ? {} : { rotationY }),
-      ...(rotationPitch === undefined ? {} : { rotationPitch }),
-    }
-    : undefined, {
-    ...(bot ? { rules: { ...WORLD_POSE_RULES, maxSpeed: Number.MAX_VALUE, minIntervalMs: 100 } } : {}),
-    ...(!bot ? { onSnapshot: (row: WorldPresenceRecord, now: number) =>
-      persistGameWorldSnapshot(ctx, row.homeGameId as Id<"games">, row.position, now) } : {}),
-  });
-}
-
-async function ensurePresenceForActor(
-  ctx: MutationCtx, actorExternalId: string, gameId: Id<"games">, position: PresencePositionWire,
-) {
-  const server = await worldServerRow(ctx);
-  if (!server) return null;
-  const kind = presenceKindForActor(actorExternalId);
-  const user = await ctx.db.query("users").withIndex("by_external_id", q => q.eq("externalId", actorExternalId)).unique();
-  const label = preferredPresenceLabel(user);
-  const ownerActorId = kind === "bot" ? ownerFromBotActor(actorExternalId) : undefined;
-  const row = await presenceStore.ensure(ctx, {
-    serverId: server._id, actorExternalId, homeGameId: gameId, kind, position,
-    ...(ownerActorId === undefined ? {} : { ownerActorId }),
-    presenceId: kind === "bot" ? actorExternalId : humanPresenceId(actorExternalId),
-    ...(label === null || label === undefined ? {} : { label }),
-  });
-  return { presenceId: row.presenceId, position: row.position, rotationY: row.rotationY };
-}
-
+/** Bot API: move the caller's avatar, clamped to the world's pose rules. */
 export const syncPlayerPosition = mutation({
   args: {
     position: v.object({
@@ -159,133 +112,54 @@ export const syncPlayerPosition = mutation({
     rotationPitch: v.optional(v.number()),
     externalId: v.optional(v.string()),
   },
-  returns: v.object({
-    position: presencePositionValidator,
-    rotationY: v.number(),
-    rotationPitch: v.number(),
-  }),
+  returns: v.object({ position: presencePositionValidator, rotationY: v.number(), rotationPitch: v.number() }),
   handler: async (ctx, args) => {
     const actorExternalId = await resolveActor(ctx, args.externalId);
-    if (!actorExternalId) {
-      return { position: { x: 0, y: 0, z: 0 }, rotationY: 0, rotationPitch: 0 };
-    }
-
-    const presence = await getActivePresenceByActor(ctx, actorExternalId);
-    if (!presence) {
-      return { position: { x: 0, y: 0, z: 0 }, rotationY: 0, rotationPitch: 0 };
-    }
-
-    const next = await syncPresence(ctx, presence, args.position, args.rotationY ?? presence.rotationY, args.rotationPitch);
-    return { position: next.position, rotationY: next.rotationY, rotationPitch: next.rotationPitch };
+    const presence = actorExternalId === null ? null : await presenceStore.active(ctx, actorExternalId);
+    if (!presence) return { position: { x: 0, y: 0, z: 0 }, rotationY: 0, rotationPitch: 0 };
+    const bot = presence.kind === "bot";
+    const next = await presenceStore.sync(ctx, presence, {
+      position: args.position,
+      rotationY: args.rotationY === undefined ? presence.rotationY : cameraYawToAvatarBodyYaw(args.rotationY),
+      ...(args.rotationPitch === undefined ? {} : { rotationPitch: args.rotationPitch }),
+    }, {
+      // A bot shares its owner's lab, so only a person's own pose becomes the lab's saved position.
+      ...(bot ? { rules: { ...WORLD_POSE_RULES, maxSpeed: Number.MAX_VALUE, minIntervalMs: 100 } } : { onSnapshot: snapshotWriter(ctx, false) }),
+    });
+    return { position: next.position, rotationY: bodyYawToCameraYaw(next.rotationY), rotationPitch: next.rotationPitch };
   },
 });
 
-export const ensureHumanPresence = mutation({
-  args: {
-    gameId: v.id("games"),
-    externalId: v.optional(v.string()),
-  },
-  returns: v.union(
-    v.object({
-      presenceId: v.string(),
-      position: presencePositionValidator,
-      rotationY: v.number(),
-    }),
-    v.null(),
-  ),
-  handler: async (ctx, args) => {
-    const actorExternalId = await resolveActor(ctx, args.externalId);
-    if (!actorExternalId) return null;
-    if (!(await getReadAccess(ctx, args.gameId, actorExternalId))) return null;
-
-    const spawn = await spawnForGame(ctx, args.gameId);
-    await persistGameWorldSnapshot(ctx, args.gameId, spawn, Date.now(), true);
-    return await ensurePresenceForActor(ctx, actorExternalId, args.gameId, spawn);
-  },
-});
-
-export const leaveHumanPresence = mutation({
-  args: {
-    gameId: v.id("games"),
-    externalId: v.optional(v.string()),
-  },
-  returns: v.object({ left: v.boolean() }),
-  handler: async (ctx, args) => {
-    const actorExternalId = await resolveActor(ctx, args.externalId);
-    if (!actorExternalId) return { left: false };
-    if (!(await getReadAccess(ctx, args.gameId, actorExternalId))) return { left: false };
-
-    return await leaveHumanPresenceByActor(ctx, actorExternalId);
-  },
-});
-
-function toWorldPresenceRow(presence: WorldPresenceRecord): WorldPresenceRow {
+function toWorldPresenceRow(ctx: QueryCtx, presence: WorldPresenceRecord): WorldPresenceRow | null {
+  const gameId = ctx.db.normalizeId("games", presence.homeGameId);
+  if (gameId === null) return null;
   return {
     presenceId: presence.presenceId,
     kind: presence.kind === "bot" ? "bot" : "human",
     actorExternalId: presence.actorExternalId,
-    gameId: presence.homeGameId as Id<"games">,
+    gameId,
     label: presence.label ?? null,
     position: presence.position,
-    rotationY: presence.rotationY,
+    rotationY: bodyYawToCameraYaw(presence.rotationY),
     rotationPitch: presence.rotationPitch,
     online: true,
   };
 }
 
-async function listOnlinePresenceRowsNear(
-  ctx: QueryCtx | MutationCtx,
-  viewerChunkKey: string | undefined,
-): Promise<WorldPresenceRow[]> {
-  const server = await worldServerRow(ctx);
-  if (!server) return [];
-  return (await presenceStore.nearby(ctx, server._id, viewerChunkKey)).map(toWorldPresenceRow);
-}
-
-const myPresenceLocationValidator = v.union(
-  v.object({
-    position: presencePositionValidator,
-    rotationY: v.number(),
-  }),
-  v.null(),
-);
-
-/**
- * One reactive subscription for the live multiplayer read path: the caller's
- * own pose plus everyone online in the shared world. Reads only presence rows,
- * so it re-executes only when a presence row actually changes.
- */
-export const snapshot = query({
-  args: {
-    homeGameId: v.id("games"),
-    externalId: v.optional(v.string()),
-    viewerChunkKey: v.optional(v.string()),
-  },
-  returns: v.object({
-    myLocation: myPresenceLocationValidator,
-    online: v.array(worldPresenceValidator),
-  }),
+/** Bot API: players and bots in the chunks around a viewer chunk key. */
+export const listOnlinePresences = query({
+  args: { viewerChunkKey: v.optional(v.string()) },
+  returns: v.array(worldPresenceValidator),
   handler: async (ctx, args) => {
-    const actorExternalId = await resolveActor(ctx, args.externalId);
-    if (!actorExternalId) return { myLocation: null, online: [] };
-    if (!(await getReadAccess(ctx, args.homeGameId, actorExternalId))) {
-      return { myLocation: null, online: [] };
+    if (!(await ctx.auth.getUserIdentity())) return [];
+    const server = await helpers.findServer(ctx, LLMVILLE_GAME_ID);
+    if (!server) return [];
+    const rows: WorldPresenceRow[] = [];
+    for (const presence of await presenceStore.nearby(ctx, server._id, args.viewerChunkKey)) {
+      const row = toWorldPresenceRow(ctx, presence);
+      if (row !== null) rows.push(row);
     }
-
-    const presence = await getActivePresenceByActor(ctx, actorExternalId);
-    const viewerChunkKey =
-      args.viewerChunkKey ?? (presence ? worldChunkKeyAt(presence.position) : undefined);
-    const online = presence
-      ? (await presenceStore.nearby(ctx, presence.serverId, viewerChunkKey)).map(toWorldPresenceRow)
-      : await listOnlinePresenceRowsNear(ctx, viewerChunkKey);
-    const myLocation = presence
-      ? {
-          position: presence.position,
-          rotationY: presence.rotationY,
-        }
-      : null;
-
-    return { myLocation, online };
+    return rows;
   },
 });
 
@@ -303,34 +177,23 @@ const residentValidator = v.object({
 });
 
 /**
- * Every world owner with a saved position, independent of who is online —
- * never reads presence rows, so pose ticks cannot invalidate it. Clients derive
- * the dormant set by subtracting the snapshot's online actors.
+ * Every lab owner with a saved position near a chunk, independent of who is online — never reads
+ * presence rows, so pose writes cannot invalidate it. Clients drop the residents who are online.
  */
 export const cityResidents = query({
   args: { viewerChunkKey: v.optional(v.string()) },
   returns: v.array(residentValidator),
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-
+    if (!(await ctx.auth.getUserIdentity())) return [];
     const games: Doc<"games">[] = [];
     for (const chunkKey of worldChunkNeighborhoodKeysOfKey(args.viewerChunkKey)) {
-      const chunkGames = await ctx.db
-        .query("games")
-        .withIndex("by_last_world_chunk_key", (q) => q.eq("lastWorldChunkKey", chunkKey))
-        .collect();
-      games.push(...chunkGames);
+      games.push(...await ctx.db.query("games").withIndex("by_last_world_chunk_key", (q) => q.eq("lastWorldChunkKey", chunkKey)).collect());
     }
-
     const residents = [];
     for (const game of games) {
       const saved = game.lastWorldPosition;
       if (!saved) continue;
-      const user = await ctx.db
-        .query("users")
-        .withIndex("by_external_id", (q) => q.eq("externalId", game.createdBy))
-        .unique();
+      const user = await ctx.db.query("users").withIndex("by_external_id", (q) => q.eq("externalId", game.createdBy)).unique();
       residents.push({
         presenceId: `home:${game._id}`,
         kind: "human" as const,
@@ -348,51 +211,8 @@ export const cityResidents = query({
   },
 });
 
-/**
- * Human presence tick: pose upload and keep-alive in one call. Writes only
- * when the pose actually changed or lastSeenAt is stale, so idle players
- * generate no query invalidations.
- */
-export const tick = mutation({
-  args: {
-    position: v.optional(
-      v.object({
-        x: v.number(),
-        z: v.number(),
-        y: v.optional(v.number()),
-      }),
-    ),
-    rotationY: v.optional(v.number()),
-    rotationPitch: v.optional(v.number()),
-    externalId: v.optional(v.string()),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    const actorExternalId = await resolveActor(ctx, args.externalId);
-    if (!actorExternalId) return null;
-
-    const presence = await getActivePresenceByActor(ctx, actorExternalId);
-    if (!presence) return null;
-
-    await syncPresence(ctx, presence, args.position, args.rotationY ?? presence.rotationY, args.rotationPitch);
-    return null;
-  },
-});
-
-export const listOnlinePresences = query({
-  args: { viewerChunkKey: v.optional(v.string()) },
-  returns: v.array(worldPresenceValidator),
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-    return await listOnlinePresenceRowsNear(ctx, args.viewerChunkKey);
-  },
-});
-
 export const reapIdlePresences = internalMutation({
   args: {},
   returns: v.object({ reaped: v.number(), deleted: v.number() }),
-  handler: async (ctx) => presenceStore.reap(ctx, {
-    onSnapshot: (row, now) => row.homeGameId ? persistGameWorldSnapshot(ctx, row.homeGameId as Id<"games">, row.position, now, true) : Promise.resolve(),
-  }),
+  handler: async (ctx) => presenceStore.reap(ctx, { onSnapshot: snapshotWriter(ctx, true) }),
 });

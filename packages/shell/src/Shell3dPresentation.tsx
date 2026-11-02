@@ -292,6 +292,7 @@ export function Shell3dPresentation({
   };
   const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
   const WorldOverlay = playable.scene?.WorldOverlay;
+  const GameRemotePlayers = playable.scene?.RemotePlayers;
   const pointerService = useMemo(() => createPointerService(), []);
   // The player's entity selection lives on ctx so game HUDs can read (and write) it.
   const selection = ctx.scene.entity.selection;
@@ -834,6 +835,9 @@ export function Shell3dPresentation({
                         <BootSuspenseGuard area="the game's world overlay"><WorldOverlay ctx={ctx} /></BootSuspenseGuard>
                       </group>
                     ) : null}
+                    {GameRemotePlayers !== undefined ? (
+                      <BootSuspenseGuard area="the game's remote players"><GameRemotePlayers ctx={ctx} rows={remotePlayers} /></BootSuspenseGuard>
+                    ) : null}
                     </MeshLodSettings>
                     </CullingProvider>
                     <WorldItems config={playable.scene?.worldItem} />
@@ -862,7 +866,7 @@ export function Shell3dPresentation({
                     </CharacterMotionContext.Provider>
                     </TerrainQualityContext.Provider>
                   </GameProvider>
-                  <RemotePlayers rows={remotePlayers} />
+                  {GameRemotePlayers === undefined ? <RemotePlayers rows={remotePlayers} /> : null}
                   <FrameDriver
                     ctx={ctx}
                     playable={playable}

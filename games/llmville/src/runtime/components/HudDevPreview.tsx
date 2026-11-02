@@ -1,5 +1,5 @@
 import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
-import { WorldChat } from "@/multiplayer/components/WorldChat";
+import { WorldChat } from "@/chat/components/WorldChat";
 import PlacementControls from "./PlacementController";
 import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";
 import { useEffect, useMemo, useState } from "react";
@@ -17,7 +17,7 @@ import {
 import type { TabletAppId, TabletNavState } from "@/tablet/tablet";
 import { TABLET_APPS } from "@/tablet/tablet";
 import { cn } from "@/kit/cn";
-import { WORLD_CHAT_PREVIEW_MESSAGES } from "@/multiplayer/worldChatPreviewFixtures";
+import { WORLD_CHAT_PREVIEW_MESSAGES } from "@/chat/worldChatPreviewFixtures";
 import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
 
 function PreviewControlButton({

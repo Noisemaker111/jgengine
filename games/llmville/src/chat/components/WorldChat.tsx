@@ -1,21 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@llmville/backend/convex/_generated/api";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
+import type { ChatMessage } from "@jgengine/core/chat/chat";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
+import { WORLD_CHAT_CHANNEL } from "@llmville/game/multiplayer/presencePolicy";
+import { worldChatTransport } from "@/chat/worldChatTransport";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
 import { useTabletNavContext } from "@/tablet/components/tabletNav";
 
-export interface WorldChatMessage {
-  id: string;
-  authorExternalId: string;
-  authorName: string;
-  text: string;
-  createdAt: number;
-}
-
-export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { world: ReadyWorldViewModel; placing: boolean; open: boolean; setOpen: (open: boolean) => void; fixtureMessages?: readonly WorldChatMessage[] | undefined }) {
+export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { world: ReadyWorldViewModel; placing: boolean; open: boolean; setOpen: (open: boolean) => void; fixtureMessages?: readonly ChatMessage[] | undefined }) {
   const ctx = useOptionalGameContext();
   const { tabletOpen, rackMenuOverlayRackId } = useTabletNavContext();
   const [draft, setDraft] = useState("");
@@ -24,9 +17,9 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
   const input = useRef<HTMLInputElement>(null);
   const log = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
-  const recent = useQuery(api.multiplayer.worldChat.recent, fixtureMessages ? "skip" : {});
-  const messages = useMemo(() => fixtureMessages ?? recent?.slice().reverse(), [fixtureMessages, recent]);
-  const sendMessage = useMutation(api.multiplayer.worldChat.send);
+  const live = worldChatTransport.useMessages(fixtureMessages ? "skip" : WORLD_CHAT_CHANNEL);
+  const messages = fixtureMessages ?? live;
+  const chat = worldChatTransport.useActions();
   const visible = open && !tabletOpen && rackMenuOverlayRackId === null && !placing;
   const openChat = useCallback(() => {
     if (placing || tabletOpen || rackMenuOverlayRackId !== null) return;
@@ -70,8 +63,8 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
     setSending(true);
     setError(null);
     try {
-      const result = await sendMessage({ text: body.trim(), externalId: world.playerId });
-      if (!result.sent) {
+      const result = await chat.sendMessage({ channelId: WORLD_CHAT_CHANNEL, body: body.trim() });
+      if (!result.ok) {
         setError(result.reason ?? "Message could not be sent. Try again.");
         return;
       }
@@ -96,7 +89,7 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
           </div>
           <div ref={log} role="log" aria-live="polite" aria-relevant="additions" className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 text-sm select-text">
             {messages === undefined ? <p className="text-brand-cream-dim">Connecting to your neighbors…</p> : messages.length === 0 ? <p className="text-brand-cream-dim">Say hello, celebrate a launch, or ask a neighbor for help.</p> : messages.map((message) => (
-              <p key={message.id} className="break-words"><span className="mr-2 font-semibold text-brand-teal">{message.authorExternalId === world.playerId ? "You" : message.authorName}</span>{message.text}</p>
+              <p key={message.id} className="break-words"><span className="mr-2 font-semibold text-brand-teal">{message.fromUserId === world.playerId ? "You" : message.fromLabel ?? "Anonymous"}</span>{message.body}</p>
             ))}
           </div>
           <div className="flex shrink-0 gap-2 px-3 pb-2">

@@ -297,6 +297,13 @@ export function createConvexPresenceSync(
   const viewerChunks = new Map<string, string>();
   const refreshers = new Map<string, Set<() => void>>();
   const lastSentAt = new Map<string, number>();
+  // A pose row outlives its tab unless something ends it; the last unsubscribe and an unload both do.
+  const leave = (serverId: string) => {
+    void client.mutation(api.presence.leave, { serverId, ...(config.userId === undefined ? {} : { externalId: config.userId }) }).catch(() => undefined);
+  };
+  const onPageHide = () => {
+    for (const serverId of refreshers.keys()) leave(serverId);
+  };
   return {
     subscribe(serverId, onChange) {
       let unsubscribe: (() => void) | undefined;
@@ -312,6 +319,7 @@ export function createConvexPresenceSync(
       let listeners = refreshers.get(serverId);
       if (listeners === undefined) {
         listeners = new Set();
+        if (refreshers.size === 0) globalThis.addEventListener?.("pagehide", onPageHide);
         refreshers.set(serverId, listeners);
       }
       listeners.add(refresh);
@@ -324,6 +332,8 @@ export function createConvexPresenceSync(
           viewerChunks.delete(serverId);
           gates.delete(serverId);
           lastSentAt.delete(serverId);
+          leave(serverId);
+          if (refreshers.size === 0) globalThis.removeEventListener?.("pagehide", onPageHide);
         }
       };
     },

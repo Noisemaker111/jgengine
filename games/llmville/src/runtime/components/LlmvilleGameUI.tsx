@@ -16,7 +16,7 @@ import { useGameEngineInput } from "@/runtime/input";
 import { useInteractionPromptSync } from "@/runtime/interactionPrompts";
 import { useLlmvilleSession } from "@/runtime/llmvilleSession";
 import { spawnLocalPlayer, useLocalPlayerWalkSpeed } from "@/runtime/localPlayerEntity";
-import { usePlayerPosition } from "@/runtime/playerPosition";
+import { readPlayerPosition, usePlayerPosition } from "@/runtime/playerPosition";
 import { useRackConfigureCommand } from "@/runtime/promptCommands";
 import { useSceneObjectSync } from "@/runtime/sceneObjects";
 import { useWorldState } from "@/runtime/worldState";
@@ -53,12 +53,14 @@ export function LlmvilleGameUI() {
     isTabletUiBlockingGameplay(tabletNav.tabletOpen, world.isPointerLocked, isTouch)
     || tabletNav.rackMenuOverlayRackId !== null;
 
+  const enteredWorld = world.isWorldReady;
   useEffect(() => {
-    spawnLocalPlayer(ctx, localGameState().readCameraLook(0, gameId));
+    if (!enteredWorld) return;
+    spawnLocalPlayer(ctx, readPlayerPosition(world.engine), localGameState().readCameraLook(0, gameId));
     return () => {
       ctx.scene.entity.despawn(ctx.player.userId);
     };
-  }, [ctx, gameId]);
+  }, [ctx, enteredWorld, gameId, world.engine]);
   useLocalPlayerWalkSpeed(world.playerProfile?.walkSpeedLevel ?? 1);
   useSceneObjectSync(world.worldRacks, world.worldPlacedBuildItems);
   useInteractionPromptSync(world.engine);
@@ -128,12 +130,9 @@ export function LlmvilleGameUI() {
           worldPlacedBuildItems: world.worldPlacedBuildItems,
           claims: world.claims ?? [],
           placementCellPolicy: world.placementCellPolicy,
-          worldPresences: world.worldPresences,
           playerId: world.playerId,
           playerPosition,
           buildPlacementModeActive: build.buildPlacementModeActive,
-          presenceSyncEnabled: world.canViewGame,
-          presenceActions: world.presenceActions,
           placementDraftItemId: build.placementDraftItemId,
           placementDraftDirection: build.placementDraftDirection,
           placementPreview: build.placementPreview,
