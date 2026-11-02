@@ -13,7 +13,7 @@ import { registerPlaceableGeneratorOutput } from "../../scene/assetGenerator";
 import { createIndexedDbPlantCacheStorage, createPlantCache, type CachedPlantStructure, type PlantCache } from "../cache/plantCache";
 import { OPEN_TEMPERATE_SITE } from "../growth/plantEnvironment";
 import { createPlantGrowth, PLANT_SIM_VERSION } from "../growth/plantGrowth";
-import { buildPlantMesh, PLANT_MESH_LODS, plantMeshLod, type PlantMesh, type PlantStyle } from "../mesh/plantMesh";
+import { buildPlantMesh, DEFAULT_PLANT_STYLE, PLANT_MESH_LODS, plantMeshLod, type PlantMesh, type PlantStyle } from "../mesh/plantMesh";
 import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
 import { PLANT_LIBRARY } from "../species/data/plantLibrary";
 import { plantSpeciesById, registerPlantSpecies } from "../species/plantSpecies";
@@ -60,7 +60,7 @@ export const PLANT_GROWN_SCHEMA = defineParamSchema({
         { value: "clumps", label: "Clumps" },
       ],
     },
-    { type: "range", key: "leafScale", label: "leaf scale", group: "look", min: 0.5, max: 5, step: 0.05, default: 2.6, vary: false },
+    { type: "range", key: "leafScale", label: "leaf scale", group: "look", min: 0.5, max: 5, step: 0.05, default: DEFAULT_PLANT_STYLE.leafScale, vary: false },
     { type: "color", key: "leafTint", label: "leaf tint", group: "look", default: "#ffffff", vary: false },
     { type: "color", key: "barkTint", label: "bark tint", group: "look", default: "#ffffff", vary: false },
     { type: "range", key: "saturation", label: "saturation", group: "look", min: 0, max: 2, step: 0.01, default: 1, vary: false },

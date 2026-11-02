@@ -22,13 +22,14 @@ import {
 } from "./growthState";
 import { createLightField } from "./lightField";
 import { growingSeason, type GrowingSeason } from "./phenology";
-import { OPEN_TEMPERATE_SITE, siteModifier, type PlantEnvironment } from "./plantEnvironment";
+import { OPEN_TEMPERATE_SITE, SIDE_LIGHT_SHARE, siteModifier, type PlantEnvironment } from "./plantEnvironment";
 import { PLANT_PI, plantCos, plantPow, plantSin } from "./plantMath";
 import { applyThickening, createPipeCost, hasCambium, pipeDemand } from "./pipeModel";
 import { bendTowardsTropisms, lateralDirection, normalize3, type TropismWeights } from "./tropism";
+import { individualGrowth } from "./individualVariation";
 
 /** Bumped whenever a rule changes what a seed grows into; part of every structure cache key. */
-export const PLANT_SIM_VERSION = 5;
+export const PLANT_SIM_VERSION = 7;
 
 /** Caps that bound one plant's memory and per-year work. */
 export interface GrowthLimits {
@@ -41,6 +42,19 @@ export interface GrowthLimits {
 /** Most buds and nodes a plant may hold: 4000 and 60000. */
 export const DEFAULT_GROWTH_LIMITS: GrowthLimits = { maxBuds: 4000, maxNodes: 60000 };
 
+/** How {@link createPlantGrowth} grows a plant beyond its species, site and seed. */
+export interface PlantGrowthOptions {
+  /** Bud and node caps; {@link DEFAULT_GROWTH_LIMITS} when left out. */
+  limits?: GrowthLimits;
+  /**
+   * `"seeded"` (the default) grows the seed's own individual: branch angle, apical control, vigour,
+   * gravitropism and internode length drawn around the species record, so the seeds of one species
+   * differ in crown shape as much as measured trees do. `"typical"` grows the record itself, the
+   * species' central individual, as fits and calibration tests compare it against references.
+   */
+  individual?: "seeded" | "typical";
+}
+
 /** A grown plant's whole state as JSON-safe values: typed arrays travel as base64. */
 export interface PlantGrowthSnapshot {
   simVersion: number;
@@ -48,6 +62,7 @@ export interface PlantGrowthSnapshot {
   speciesVersion: number;
   seed: string;
   limits: GrowthLimits;
+  individual: "seeded" | "typical";
   env: PlantEnvironment;
   scalars: Readonly<Record<string, number>>;
   arrays: Readonly<Record<string, string>>;
@@ -107,6 +122,8 @@ const FROND_LIGHT_FRONDS = 48;
 const FROND_SPINE_POINTS = 3;
 /** Lean of each further basal stem of a multi-stemmed seedling from vertical, radians. */
 const BASAL_STEM_LEAN = (20 * Math.PI) / 180;
+/** A branch tip below this height, metres, lies on the ground. */
+const GROUND_TIP_M = 0.05;
 const MERGE_COS = 0.985;
 const MERGE_MAX_LENGTH_M = 3;
 /** Wood older than this may merge across a wider bend: its shape is set and only the node budget matters. */
@@ -159,7 +176,9 @@ function selectNth(values: Float64Array, count: number, nth: number): number {
  *
  * @capability plant-growth grow a tree from seed to any age with a real biology simulation; snapshot, restore, retune
  */
-export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, seed: string, limits: GrowthLimits = DEFAULT_GROWTH_LIMITS): PlantGrowth {
+export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, seed: string, options: PlantGrowthOptions = {}): PlantGrowth {
+  const limits = options.limits ?? DEFAULT_GROWTH_LIMITS;
+  const individual = options.individual ?? "seeded";
   const nodeCap = limits.maxNodes;
   const budCap = limits.maxBuds;
   let environment: PlantEnvironment = copyEnvironment(env);
@@ -175,13 +194,21 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     b: species.growth.shadow.b,
     depth: species.growth.shadow.depth,
   });
-  const g = species.growth;
+  // Each seed grows its own individual: architecture drawn around the species record.
+  const g = individual === "typical" ? species.growth : individualGrowth(species.growth, randomSeedFrom(Math.imul(seedHash ^ 0x51ed, 0x2c1b3c6d)));
   const c = species.carbon;
-  const fullLeafArea = species.leaf.leavesPerNode * 0.55 * (species.leaf.sizeCm / 100) * (species.leaf.sizeCm / 100);
+  const fullLeafArea = species.leaf.leavesPerNode * (g.leafNodesPerMetamer ?? 1) * 0.55 *(species.leaf.sizeCm / 100) * (species.leaf.sizeCm / 100);
   // A palm's or fern's fronds lengthen through its establishment phase; every other leaf is full size.
   const leafAreaIn = (year: number): number => fullLeafArea * frondLengthShare(g, year) ** 2;
   let leafAreaPerNode = leafAreaIn(0);
   const frondShoots = isFrondShape(species.leaf.shape);
+  // Laterals a year's shoot puts out, which share its yearly chance of a codominant stem.
+  const lateralsPerShoot = Math.max(1, g.maxMetamersPerShoot * g.lateralBudsPerNode);
+  // A broadleaf rebuilds its canopy every year and leaves out its shaded interior; evergreen foliage
+  // ages out by its own lifespan instead.
+  const crownShedShare = species.habit === "tree" && !frondShoots && species.leaf.lifespanYears <= 1 ? crownShedLightShare(species.tolerance.shade) : 0;
+  // An excurrent conifer's weak mature λ lengthens its laterals into a cone; its leader still wins.
+  const divides = species.architecture.crownForm === "decurrent";
   const cambium = hasCambium(species);
   // A frond spreads its leaf area along its whole length, so its shade and light are sampled there.
   const frondCells = new Int32Array(frondShoots ? nodeCap * FROND_LIGHT_SAMPLES : 0);
@@ -324,7 +351,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     state.nodes.metamers[i] = metamers;
     state.nodes.latent[i] = g.lateralBudsPerNode;
     state.nodes.latentAge[i] = 0;
-    state.nodes.light[i] = 0;
+    // A new shoot is lit as the bud it grew from until next year's flush reads its own light.
+    const budLight = parent >= 0 ? (tipLight[parent] ?? 0) : 0;
+    state.nodes.light[i] = budLight > 0 ? budLight : parent >= 0 ? (state.nodes.light[parent] ?? 0) : 0;
     state.nodes.vigour[i] = 0;
     state.nodes.moment[i] = 0;
     state.nodes.deficit[i] = 0;
@@ -680,27 +709,35 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       if (y > top) top = y;
       if (((budAt[i] ?? -1) >= 0 || buds > 0) && y < lowest) lowest = y;
     }
-    field.propagate(lowest === Number.POSITIVE_INFINITY ? 0 : lowest);
     const extinction = g.extinction;
     // In an even-aged stand every neighbour is a copy of this plant spacingIndex × its height away.
     field.setPeriod(environment.stand ? Math.max(1, environment.stand.spacingIndex * top) : 0);
+    field.propagate(lowest === Number.POSITIVE_INFINITY ? 0 : lowest, { share: environment.sideLight ?? SIDE_LIGHT_SHARE, extinction });
     const sky = environment.light;
+    let brightest = 0;
     for (let i = 0; i < n; i += 1) {
       state.nodes.light[i] = 0;
       tipLight[i] = 0;
-      const nodeFlags = flags[i] ?? 0;
-      if ((nodeFlags & NODE_DEAD) !== 0) continue;
+      if (((flags[i] ?? 0) & NODE_DEAD) !== 0) continue;
       if ((leaves[i] ?? 0) > 0) {
         const light = frondShoots ? frondLight(i, sky, extinction) : field.lightAtCell(midCell[i] ?? -1, sky, extinction);
         state.nodes.light[i] = light;
-        if (light < g.budLightThreshold) {
-          // Short shoots starve in deep shade and never leaf again.
-          flags[i] = nodeFlags | NODE_NO_SPUR;
-          leaves[i] = 0;
-        }
+        if (light > brightest) brightest = light;
       }
       if ((budAt[i] ?? -1) >= 0 || (latent[i] ?? 0) > 0) {
         tipLight[i] = field.lightAt(end[i * 3] ?? 0, end[i * 3 + 1] ?? 0, end[i * 3 + 2] ?? 0, sky, extinction);
+      }
+    }
+    // A shoot starves in deep shade, and one shaded far below the plant's best-lit shoots is shed even
+    // in light a lone sapling would live on: the tree feeds its best-paying shoots first, so the
+    // interior of an open crown goes leafless and its limbs show. The best-lit half of the light range
+    // is never shed, so a plant in deep shade starves slowly on its carbon balance rather than dropping
+    // every leaf in one year.
+    const shedBelow = Math.min(Math.max(g.budLightThreshold, crownShedShare * brightest), 0.5 * brightest);
+    for (let i = 0; i < n; i += 1) {
+      if ((leaves[i] ?? 0) > 0 && (state.nodes.light[i] ?? 0) < shedBelow) {
+        flags[i] = (flags[i] ?? 0) | NODE_NO_SPUR;
+        leaves[i] = 0;
       }
     }
   }
@@ -870,10 +907,15 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     return add;
   }
 
-  /** Tropism weights per branch order for the current environment; cleared when the wind changes. */
+  /** Tropism weights per branch order for the current environment and year; cleared when either changes. */
   const weightsByOrder: (TropismWeights | undefined)[] = [];
+  let weightsYear = -1;
 
   function weightsFor(order: number): TropismWeights {
+    if (weightsYear !== state.vitals.year) {
+      weightsByOrder.length = 0;
+      weightsYear = state.vitals.year;
+    }
     const cached = weightsByOrder[order];
     if (cached) return cached;
     const weights = computeWeights(order);
@@ -886,7 +928,11 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     for (let k = 0; k < order; k += 1) gravity *= g.tropism.gravityOrderDecay;
     const windAngle = (environment.wind.dir * PLANT_PI) / 180;
     const strength = environment.wind.strength * g.tropism.wind;
-    const setpointDeg = order === 0 ? 0 : Math.min(g.tropism.setpointMax, g.tropism.setpointAngle + (order - 1) * g.tropism.setpointPerOrder);
+    // Apical control holds laterals out at their set point; as it fades a decurrent crown's turn up into
+    // codominant stems and upright limbs, while an excurrent crown keeps level branches (Wilson 2000,
+    // apical control of branch angle).
+    const release = divides ? apicalControlAt(g, state.vitals.year) / Math.max(1e-6, g.apicalControl) : 1;
+    const setpointDeg = order === 0 ? 0 : Math.min(g.tropism.setpointMax, g.tropism.setpointAngle * release + (order - 1) * g.tropism.setpointPerOrder);
     const setpoint = (setpointDeg * PLANT_PI) / 180;
     return {
       optimal: g.tropism.optimal,
@@ -934,6 +980,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   function grow(scale: number): number {
     if (scale <= 0) return 0;
     const year = state.vitals.year;
+    const lambda = apicalControlAt(g, year);
     const budsBefore = state.slots.budCount;
     let shortMetamers = 0;
     for (let k = 0; k < candidates.count; k += 1) {
@@ -977,8 +1024,18 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
           axisDir[0] = heading[0] ?? 0;
           axisDir[1] = heading[1] ?? 1;
           axisDir[2] = heading[2] ?? 0;
-          const order = Math.min(255, (state.nodes.order[node] ?? 0) + 1);
-          const tip = growShoot(node, order, NODE_AXIS_START, metamers, axisDir, azimuth + PLANT_PI / 2, next);
+          // As apical control λ weakens from its seedling strength a lateral breaking near a stem's tip
+          // may overtop the leader: it keeps the stem's order and grows upright beside it as a codominant
+          // stem, and a decurrent crown divides into several (Brown, McAlpine & Kormanik 1967; Zimmermann
+          // & Brown 1971). The chance rises smoothly as λ falls, so a small change of λ makes a small
+          // change of crown, and falls with the bud's light: neighbours' shade strengthens apical
+          // dominance (Franklin 2008), so a stand-grown tree keeps a single bole where the same tree in
+          // the open divides.
+          const parentOrder = state.nodes.order[node] ?? 0;
+          const [roll, after] = stepRandomSeed(next);
+          const codominant = divides && parentOrder === 0 && year - (state.nodes.born[node] ?? 0) <= 1 && roll < codominantChance(g.apicalControl, lambda, tipLight[node] ?? 0) / lateralsPerShoot;
+          const order = codominant ? 0 : Math.min(255, parentOrder + 1);
+          const tip = growShoot(node, order, NODE_AXIS_START, metamers, axisDir, azimuth + PLANT_PI / 2, after);
           addBud(tip);
         }
       }
@@ -1271,6 +1328,8 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     state.vitals.reserveKg = Math.max(0, unspent);
     ageBuds(scale > 0 && budSlotsShort);
     applySag(state, species, sag, { foliageAbove: subFoliage, need, share, surplusPerFoliage });
+    // A branch tip pressed to the ground loses its bud: dark, scraped and browsed, it grows no further.
+    dropBuds((node) => (state.nodes.order[node] ?? 0) > 0 && (state.nodes.end[node * 3 + 1] ?? 1) < GROUND_TIP_M);
     compact();
     if (state.slots.nodeCount > maxNodesSeen) maxNodesSeen = state.slots.nodeCount;
     if (state.slots.budCount > maxBudsSeen) maxBudsSeen = state.slots.budCount;
@@ -1346,6 +1405,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         speciesVersion: species.version,
         seed,
         limits: { maxBuds: budCap, maxNodes: nodeCap },
+        individual,
         env: copyEnvironment(environment),
         scalars,
         arrays: snapshotArrays(),
@@ -1357,6 +1417,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         throw new Error(`plant snapshot: species ${snapshot.speciesId}@${snapshot.speciesVersion}, expected ${species.id}@${species.version}`);
       }
       if (snapshot.seed !== seed) throw new Error(`plant snapshot: seed ${snapshot.seed}, expected ${seed}`);
+      if (snapshot.individual !== individual) throw new Error(`plant snapshot: ${snapshot.individual} individual, expected ${individual}`);
       const next = createGrowthState(nodeCap, budCap);
       for (const name of SLOT_FIELDS) next.slots[name] = snapshot.scalars[name] ?? 0;
       for (const name of VITAL_FIELDS) next.vitals[name] = snapshot.scalars[name] ?? 0;
@@ -1400,6 +1461,28 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
 function copyEnvironment(env: PlantEnvironment): PlantEnvironment {
   const { stand, ...rest } = env;
   return { ...rest, wind: { ...env.wind }, slope: { ...env.slope }, ...(stand ? { stand: { ...stand } } : {}) };
+}
+
+/**
+ * Codominant stems a stem tip puts out per year: none while λ holds its seedling value, rising to one
+ * every two years once it has fallen 0.3 below it in full light, so a decurrent crown divides every
+ * few years rather than all at once, and never at the ground; none below half light.
+ */
+function codominantChance(seedlingLambda: number, lambda: number, light: number): number {
+  const lit = Math.min(1, Math.max(0, (light - 0.5) / 0.4));
+  return 0.5 * lit * Math.min(1, Math.max(0, (seedlingLambda - lambda) / 0.3));
+}
+
+/**
+ * Share of a tree's best-lit shoot's light below which a shoot sheds its leaves, from shade tolerance
+ * 0..1: 0.05 for the most tolerant, 0.25 for the least. A shoot pays its way only above its effective
+ * compensation point, which counts the wood that feeds it (Givnish 1988), and a tree sends water and
+ * nutrients to its best-paying shoots first, so tolerant trees prune at lower light (Kothari et al.
+ * 2025). The ends are set so tolerant broadleaves hold their leaves in an outer shell (Horn 1971).
+ */
+function crownShedLightShare(shadeTolerance: number): number {
+  const t = Math.min(1, Math.max(0, shadeTolerance));
+  return 0.25 - 0.2 * t;
 }
 
 /** λ at an age: from the young value towards the mature one, halfway at `apicalControlHalfYears`. */

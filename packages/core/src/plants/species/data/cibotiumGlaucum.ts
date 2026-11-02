@@ -80,7 +80,7 @@ export const CIBOTIUM_GLAUCUM: PlantSpecies = {
     sla: 8,
     lifespanYears: 2,
     leavesPerNode: 1,
-    color: { spring: "#5f8f3a", summer: "#5f8f3a", autumn: "#5f8f3a" },
+    color: { spring: "#5f8f3a", summer: "#5f8f3a", autumn: "#5f8f3a", autumnShade: "#5f8f3a" },
   },
   bark: { kind: "fibrous", smoothUntilYears: 999, furrowDepth: 0.2, color: "#5b4636" },
   reproduction: { firstFlowerYears: 999, seedMassMg: 0.0001 },

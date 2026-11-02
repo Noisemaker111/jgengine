@@ -318,6 +318,21 @@ provenance.
   2014, da Vinci's rule, *PLOS ONE* 9.
 - Mäkelä 1997, carbon balance and self-pruning, *Forest Science* 43.
 - Jirasek, Prusinkiewicz & Moulia 2000, biomechanics in L-system plant models: gravitational sag.
+- Alméras & Fournier 2009, reaction wood and long-term stem stability, *Journal of Theoretical
+  Biology* 256; Moulia, Coutand & Lenne 2006, posture control, *American Journal of Botany* 93.
+- Zimmermann & Brown 1971, *Trees: Structure and Function*; Gilman 2011, *An Illustrated Guide to
+  Pruning*: scaffold limbs and codominant forks. Horn 1971, *The Adaptive Geometry of Trees*:
+  monolayer crowns. McPherson et al. 2018, shade factors for 149 taxa of in-leaf urban trees,
+  *Urban Forestry & Urban Greening* 31 (USDA Forest Service; data CC0): how much sky a crown
+  in leaf covers.
+- Franklin 2008, shade avoidance, *New Phytologist* 179: neighbours' shade strengthens apical
+  dominance, so stand-grown trees divide less.
+- Givnish 1988, adaptation to sun and shade, *Australian Journal of Plant Physiology* 15: the
+  effective light compensation point. Kothari et al. 2025, self-pruning and branch carbon balance,
+  *Functional Ecology*: shade-tolerant trees shed shaded shoots at lower light.
+- Schaberg et al. 2003, red autumn foliage of sugar maple, *Tree Physiology* 23; Lee & Gould 2002,
+  leaf anthocyanins, *Advances in Botanical Research* 37. Autumn colours per species from Gilman &
+  Watson 1993–1994, USDA Forest Service tree fact sheets (US public domain).
 - Ryan & Yoder 1997, hydraulic limits to tree height, *BioScience* 47.
 - Wareing & Nasr 1961, gravimorphism, *Annals of Botany* 25; Digby & Firn 1995, the gravitropic
   set-point angle, *Plant, Cell & Environment* 18.

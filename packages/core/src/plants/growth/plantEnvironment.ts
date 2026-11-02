@@ -25,7 +25,16 @@ export interface PlantEnvironment {
    * spacing grows into its neighbours' shade (Beer–Lambert, Monsi & Saeki 1953).
    */
   stand?: { spacingIndex: number };
+  /** Share of sky light a shoot gets from the side rather than from above, 0..1; default {@link SIDE_LIGHT_SHARE}, 0 lights from above only. */
+  sideLight?: number;
 }
+
+/**
+ * Share of an overcast sky's light that reaches a randomly oriented leaf from more than 45° off the
+ * zenith: with sky radiance ∝ 1 + 2 cos θ (Moon & Spencer 1942, the CIE standard overcast sky) it is
+ * (cos 45° + cos² 45°) / 2 ≈ 0.6. The shadow cone covers the light from within 45° of the zenith.
+ */
+export const SIDE_LIGHT_SHARE = 0.6;
 
 /** A temperate, well-watered, fertile open site at 45° N: the site Carmean's curves describe. */
 export const OPEN_TEMPERATE_SITE: PlantEnvironment = {

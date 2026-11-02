@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { OPEN_TEMPERATE_SITE } from "../../growth/plantEnvironment";
 import { createPlantGrowth } from "../../growth/plantGrowth";
 import { PLANT_REGION } from "../../structure/plantStructure";
+import { CROWN_ARCHITECTURE_AGE, CROWN_ARCHITECTURE_MISSES_ALLOWED, CROWN_ARCHITECTURE_SEEDS, crownArchitecture, crownArchitectureMisses, crownArchitectureTarget } from "../../validation/crownArchitecture";
 import { PLANT_LIBRARY } from "./plantLibrary";
 import { basalStemCount, habitHeightAt20M, habitHeightCeilingM, SHRUB_STEMS } from "../habitReference";
 import { HABIT_REFERENCE } from "../habitReferenceTable";
@@ -17,7 +18,7 @@ function checkTree(species: PlantSpecies): void {
     expect(validatePlantSpecies(species)).toEqual([]);
     const reference = SPECIES_REFERENCE[species.id];
     if (reference === undefined) throw new Error(`no reference for ${species.id}`);
-    const plant = createPlantGrowth(species, REFERENCE_STAND, SEED);
+    const plant = createPlantGrowth(species, REFERENCE_STAND, SEED, { individual: "typical" });
     for (const age of AGES) {
       plant.step(age - plant.ageYears());
       const { heightM, dbhCm, crownRadiusM } = plant.structure().stats;
@@ -31,12 +32,27 @@ function checkTree(species: PlantSpecies): void {
   }, 60_000);
 }
 
+function checkArchitecture(species: PlantSpecies): void {
+  test(`${species.id}: open-grown ${species.architecture.crownForm ?? "tree"} individuals at ${CROWN_ARCHITECTURE_AGE} years keep its crown kind: fork, shape, openness and leaf shell`, () => {
+    expect(species.architecture.crownForm, "crown form").toBeDefined();
+    const target = crownArchitectureTarget(species);
+    const misses: string[] = [];
+    for (const seed of CROWN_ARCHITECTURE_SEEDS) {
+      const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, seed);
+      plant.step(CROWN_ARCHITECTURE_AGE);
+      const missed = crownArchitectureMisses(target, crownArchitecture(plant.structure()));
+      if (missed.length > 0) misses.push(`seed ${seed}: ${missed.join(", ")}`);
+    }
+    expect(misses.length, misses.join("\n")).toBeLessThanOrEqual(CROWN_ARCHITECTURE_MISSES_ALLOWED);
+  }, 60_000);
+}
+
 function checkHabit(species: PlantSpecies): void {
   test(`${species.id}: an open-grown ${species.habit} is within 15% of its USDA PLANTS height at 20 years, holds its mature height at 40 and keeps its stems`, () => {
     expect(validatePlantSpecies(species)).toEqual([]);
     const reference = HABIT_REFERENCE[species.id];
     if (reference === undefined) throw new Error(`no PLANTS reference for ${species.id}`);
-    const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, SEED);
+    const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
     for (const age of [20, 40]) {
       plant.step(age - plant.ageYears());
       const structure = plant.structure();
@@ -55,8 +71,12 @@ function checkHabit(species: PlantSpecies): void {
 
 describe("plant species library", () => {
   for (const species of PLANT_LIBRARY) {
-    if (species.habit === "tree") checkTree(species);
-    else checkHabit(species);
+    if (species.habit === "tree") {
+      checkTree(species);
+      checkArchitecture(species);
+    } else {
+      checkHabit(species);
+    }
   }
 });
 
@@ -73,5 +93,23 @@ describe("palm trunks", () => {
       expect(Math.hypot(segments.end[i * 3] ?? 0, segments.end[i * 3 + 2] ?? 0)).toBeLessThan(stats.crownRadiusM + 1);
       expect(segments.end[i * 3 + 1] ?? 0).toBeGreaterThanOrEqual(-0.01);
     }
+  });
+});
+
+describe("posture", () => {
+  test("a sweetgum whose young leader sagged rights itself and keeps every limb above ground (seed forest-b-liquidambar-styraciflua, 60 years)", () => {
+    const sweetgum = PLANT_LIBRARY.find((species) => species.id === "liquidambar-styraciflua");
+    if (sweetgum === undefined) throw new Error("liquidambar-styraciflua missing");
+    const growth = createPlantGrowth(sweetgum, { ...OPEN_TEMPERATE_SITE, light: 1 }, "forest-b-liquidambar-styraciflua");
+    growth.step(60);
+    const { segments, stats } = growth.structure();
+    let tip = 0;
+    for (let i = 1; i < segments.order.length; i += 1) {
+      if (segments.order[i] === 0 && (segments.end[i * 3 + 1] ?? 0) > (segments.end[tip * 3 + 1] ?? 0)) tip = i;
+      expect(segments.end[i * 3 + 1] ?? 0).toBeGreaterThanOrEqual(-0.01);
+    }
+    // Without reaction wood the year-2 whip sagged 38 degrees and the tree grew lying along the ground.
+    expect(stats.heightM).toBeGreaterThan(20);
+    expect(Math.hypot(segments.end[tip * 3] ?? 0, segments.end[tip * 3 + 2] ?? 0)).toBeLessThan(0.2 * stats.heightM);
   });
 });

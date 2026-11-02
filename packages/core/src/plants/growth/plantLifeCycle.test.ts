@@ -40,7 +40,7 @@ describe("plant life cycle", () => {
   test("a dead tree passes through every decay class, the soft pine faster than the dense maple", () => {
     const fallYear = (classes: number[]): number => classes.indexOf(5);
     const decay = (species: typeof ACER_SACCHARUM): { classes: number[]; heights: number[] } => {
-      const tree = createPlantGrowth(species, OPEN_TEMPERATE_SITE, "snag");
+      const tree = createPlantGrowth(species, OPEN_TEMPERATE_SITE, "snag", { individual: "typical" });
       tree.step(60);
       expect(tree.stats().decayClass).toBe(0);
       tree.kill();

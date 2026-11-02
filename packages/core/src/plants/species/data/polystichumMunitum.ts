@@ -80,7 +80,7 @@ export const POLYSTICHUM_MUNITUM: PlantSpecies = {
     sla: 8,
     lifespanYears: 2,
     leavesPerNode: 1,
-    color: { spring: "#2f5a26", summer: "#2f5a26", autumn: "#2f5a26" },
+    color: { spring: "#2f5a26", summer: "#2f5a26", autumn: "#2f5a26", autumnShade: "#2f5a26" },
   },
   bark: { kind: "smooth", smoothUntilYears: 999, furrowDepth: 0, color: "#5a4a32" },
   reproduction: { firstFlowerYears: 999, seedMassMg: 0.0001 },

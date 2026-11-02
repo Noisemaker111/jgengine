@@ -80,7 +80,7 @@ export const VACCINIUM_CORYMBOSUM: PlantSpecies = {
     sla: 18,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#b8352a" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#b8352a", autumnShade: "#c8602e" },
   },
   bark: { kind: "smooth", smoothUntilYears: 60, furrowDepth: 0.1, color: "#7a6658" },
   reproduction: { firstFlowerYears: 3, flowerColor: "#f4f1e4", fruitColor: "#3b4f8f", seedMassMg: 0.4 },
