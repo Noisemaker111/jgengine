@@ -16,8 +16,7 @@ import { adjustCurrencyByDelta, currencyBalance, currencyBalances, seedOwnerEcon
 import { seedOwnerStock, STOCK_ID } from "./inventory";
 import { readModelCatalog, seedOwnerUnlocks } from "./unlocks";
 import { readPlayerState, slotsToCounts } from "./playerProfile";
-import { helpers } from "./jgengine/runtime";
-import { worldServerRow } from "./jgengine/world";
+import { helpers, worldServerRow } from "./runtime";
 import {
   DEFAULT_STARTING_DATA_TOKENS,
   DEFAULT_STARTING_MONEY,
@@ -40,13 +39,13 @@ import {
   selectRacks,
   toSceneBuildItem,
   toSceneRack,
-} from "./jgengine/worldObjects";
+} from "./worldObjects";
 import {
   MAX_WORLD_CHUNK_QUERY_RADIUS,
   clampWorldChunkQueryRadius,
   worldChunkKeyAt,
 } from "@llmville/game/datacenter/worldChunks";
-import { placedObjectsNear } from "./jgengine/worldObjects";
+import { placedObjectsNear } from "./worldObjects";
 import { activeTrainingSessionsForGame } from "./training";
 
 

@@ -8,7 +8,7 @@ import {
 import { InventoryTrayCard } from "@/store/components/StoreListRow";
 import { useStoragePanelKeybindLabels } from "@/settings/settings";
 import { TutorialArrow } from "@/tutorial/components/TutorialUi";
-import { cn } from "@/components/ui/cn";
+import { cn } from "@/kit/cn";
 
 interface StoragePanelProps {
   tabs: readonly BuildMenuTabId[];

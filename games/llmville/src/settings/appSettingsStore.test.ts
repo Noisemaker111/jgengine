@@ -3,7 +3,13 @@ import { describe, expect, test } from "bun:test";
 import { bindingOverridesStorageKey } from "@jgengine/core/input/bindingOverrides";
 import { settingStorageKey, SETTING_IDS } from "@jgengine/core/settings/settingsModel";
 
-import { createAppSettingsStore, DEFAULT_APP_SETTINGS, LEGACY_APP_SETTINGS_KEY, LLMVILLE_SETTINGS_GAME_ID } from "./appSettingsStore";
+import {
+  createAppSettingsStore,
+  DEFAULT_APP_SETTINGS,
+  LEGACY_APP_SETTINGS_KEY,
+  LLMVILLE_SETTINGS_GAME_ID,
+  PREVIOUS_SETTINGS_GAME_ID,
+} from "./appSettingsStore";
 import { DEFAULT_APP_KEYBINDS } from "./keybinds";
 
 function memoryStorage(initial: Record<string, string> = {}) {
@@ -41,6 +47,30 @@ describe("app settings store", () => {
     expect(createAppSettingsStore(storage).get()).toEqual(settings);
   });
 
+  test("moves overrides from the old game id once and renames moveBackward to the shell's moveBack", () => {
+    const storage = memoryStorage({
+      [bindingOverridesStorageKey(PREVIOUS_SETTINGS_GAME_ID)]: JSON.stringify({ moveBackward: ["KeyR"], jump: ["KeyQ"] }),
+    });
+
+    const settings = createAppSettingsStore(storage).get();
+
+    expect(settings.keybinds.moveBack).toEqual({ primary: "KeyR", secondary: null });
+    expect(settings.keybinds.jump).toEqual({ primary: "KeyQ", secondary: null });
+    expect(storage.getItem(bindingOverridesStorageKey(PREVIOUS_SETTINGS_GAME_ID))).toBeNull();
+    expect(JSON.parse(storage.getItem(bindingOverridesStorageKey(LLMVILLE_SETTINGS_GAME_ID)) ?? "{}")).toEqual({
+      moveBack: ["KeyR"],
+      jump: ["KeyQ"],
+    });
+  });
+
+  test("a legacy blob's moveBackward binding lands on moveBack", () => {
+    const storage = memoryStorage({
+      [LEGACY_APP_SETTINGS_KEY]: JSON.stringify({ keybinds: { moveBackward: { primary: "KeyR", secondary: null } } }),
+    });
+
+    expect(createAppSettingsStore(storage).get().keybinds.moveBack).toEqual({ primary: "KeyR", secondary: null });
+  });
+
   test("starts from defaults and persists updates", () => {
     const storage = memoryStorage();
     const store = createAppSettingsStore(storage);
@@ -57,6 +87,16 @@ describe("app settings store", () => {
 
     store.update({ keybinds: DEFAULT_APP_KEYBINDS });
     expect(storage.getItem(bindingOverridesStorageKey(LLMVILLE_SETTINGS_GAME_ID))).toBeNull();
+  });
+
+  test("a keybind change leaves settings another store wrote alone", () => {
+    const storage = memoryStorage();
+    const store = createAppSettingsStore(storage);
+    storage.setItem(settingStorageKey(SETTING_IDS.graphicsQuality), JSON.stringify("ultra"));
+
+    store.update({ keybinds: { ...DEFAULT_APP_KEYBINDS, jump: { primary: "KeyQ", secondary: null } } });
+
+    expect(storage.getItem(settingStorageKey(SETTING_IDS.graphicsQuality))).toBe(JSON.stringify("ultra"));
   });
 
   test("an unreadable legacy blob resets to defaults", () => {

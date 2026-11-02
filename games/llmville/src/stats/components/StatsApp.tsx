@@ -2,9 +2,7 @@
  * Stats app — read-only site health and income readouts. Split out of the old ratio-based Dashboard;
  * GPU dedication now lives in the Inference app (drag cards onto Training/Scraping/Serving).
  */
-import { InsetSection } from "@/components/ui/inset-section";
-import { Stat, StatGrid } from "@/components/ui/stat";
-import { Token } from "@/components/ui/token";
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { servingIncomePerHour, servingThroughputPerHour } from "@llmville/game/economy/hourlyRates";
 import type { SiteHealth } from "@/runtime/worldViewModel";
 import { isOverCapacity } from "@llmville/game/infrastructure/infrastructure";
@@ -36,28 +34,28 @@ export function StatsApp({
 
   return (
     <div className="flex animate-in fade-in slide-in-from-bottom-4 flex-col gap-6 pb-24 duration-300">
-      <StatGrid className="justify-center gap-8">
-        <Stat
-          variant="scoreboard"
-          label="Tokens/hour"
-          value={tokensPerHour >= 1000 ? `${(tokensPerHour / 1000).toFixed(1)}k` : tokensPerHour}
-          tone="teal"
-        />
-        <Stat
-          variant="scoreboard"
-          label="$/hour serving"
-          value={`$${servingPerHour >= 1000 ? `${(servingPerHour / 1000).toFixed(1)}k` : servingPerHour.toFixed(0)}`}
-          tone="amber"
-        />
-      </StatGrid>
+      <div className="llm-stat-grid justify-center gap-8">
+        <div className="llm-stat llm-stat--scoreboard llm-stat--tone-teal">
+          <div className="llm-stat__content">
+            <span className="llm-stat__label">Tokens/hour</span>
+            <span className="llm-stat__value">{tokensPerHour >= 1000 ? `${(tokensPerHour / 1000).toFixed(1)}k` : tokensPerHour}</span>
+          </div>
+        </div>
+        <div className="llm-stat llm-stat--scoreboard llm-stat--tone-amber">
+          <div className="llm-stat__content">
+            <span className="llm-stat__label">$/hour serving</span>
+            <span className="llm-stat__value">{`$${servingPerHour >= 1000 ? `${(servingPerHour / 1000).toFixed(1)}k` : servingPerHour.toFixed(0)}`}</span>
+          </div>
+        </div>
+      </div>
 
-      <InsetSection
-        label="Site power"
-        trailing={
+      <KitPanel data-shell="inset" className="flex flex-col gap-3"
+        eyebrow="Site power"
+        aside={
           siteHealth.thermalThrottle * siteHealth.powerThrottle < 0.99 ? (
-            <Token tone="coral">
+            <span className="llm-token llm-token--coral">
               Throttled −{Math.round((1 - siteHealth.thermalThrottle * siteHealth.powerThrottle) * 100)}%
-            </Token>
+            </span>
           ) : undefined
         }
       >
@@ -90,9 +88,9 @@ export function StatsApp({
             Buy rack coolers →
           </button>
         )}
-      </InsetSection>
+      </KitPanel>
 
-      <InsetSection label="GPU dedication" trailing={<span className="text-[10px] font-semibold text-brand-cream/45">{totalGpus} installed</span>}>
+      <KitPanel data-shell="inset" eyebrow="GPU dedication" aside={<span className="flex flex-col gap-3 text-[10px] font-semibold text-brand-cream/45">{totalGpus} installed</span>}>
         <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
           <div>
             <p className="game-section-label">Training</p>
@@ -112,7 +110,7 @@ export function StatsApp({
           </div>
         </div>
         <p className="text-[10px] leading-snug text-brand-cream/45">Drag GPU cards in the Inference app to change dedication.</p>
-      </InsetSection>
+      </KitPanel>
     </div>
   );
 }

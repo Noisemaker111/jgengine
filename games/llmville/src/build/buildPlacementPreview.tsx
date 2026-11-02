@@ -7,8 +7,7 @@ import { computePlacementPreview, type BuildPlacementPreview, type PlacedBuildIt
 import type { BuildDirection, BuildItemId } from "@llmville/game/build/catalog";
 import type { PlacementCellPolicy } from "@llmville/game/datacenter/claims";
 import type { PlacedRack } from "@/infrastructure/infrastructure";
-import { useThree } from "@react-three/fiber";
-import { PROFILE_SECTION, useProfiledFrame } from "@/runtime/runtimePerformanceProfiler";
+import { useThree, useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Vector3 } from "three";
 
@@ -40,7 +39,7 @@ export function BuildPlacementPreviewController({
     lastPreviewKey.current = "none";
   }, [enabled, onPlacementPreviewChange]);
 
-  useProfiledFrame(PROFILE_SECTION.buildPlacement, () => {
+  useFrame(function buildPlacementPreview() {
     if (!enabled || placementDraftItemId === null) return;
 
     camera.getWorldDirection(placementDirectionVector);

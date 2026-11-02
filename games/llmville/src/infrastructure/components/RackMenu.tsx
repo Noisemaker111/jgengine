@@ -1,3 +1,4 @@
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useCallback, useMemo, useState } from "react";
 import type { RackHardwareMoveSource, RackHardwareMoveTarget } from "@/infrastructure/rackHardwareSession";
 import {
@@ -30,7 +31,6 @@ import { useRackHardwareDragVisualOptional } from "@/infrastructure/rackHardware
 
 import { useTabletNavContext } from "@/tablet/components/tabletNav";
 
-import { PANEL_VARIANT, Panel } from "@/components/ui/panel";
 import RackSlot from "./RackSlot";
 
 interface RackMenuProps {
@@ -189,10 +189,10 @@ export default function RackMenu({
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-      <Panel
+      <KitPanel
         as="div"
-        variant={PANEL_VARIANT.terminal}
-        label="Rack hardware"
+        data-shell="terminal"
+        eyebrow="Rack hardware"
         className="relative flex h-full flex-col overflow-hidden"
       >
         <button
@@ -295,7 +295,7 @@ export default function RackMenu({
             onVisitHardwareStore={onVisitHardwareStore}
           />
         </div>
-      </Panel>
+      </KitPanel>
 
       {/* Drag overlay — renders above everything in a portal, layout never shifts */}
       <DragOverlay dropAnimation={null}>

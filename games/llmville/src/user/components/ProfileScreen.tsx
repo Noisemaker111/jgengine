@@ -1,8 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Check, Coins, Cpu, Loader2, LogOut, Pencil, Sparkles, Users, X } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Stat, StatGrid } from "@/components/ui/stat";
+import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { formatCompactNumber, formatMoney } from "@/economy/economy";
 import { MainMenuLayout } from "@/runtime/components/MainMenuLayout";
 import { getAvatarById, getMentorPerkSummary, useProfileScreen, sanitizeProfileUsernameKeystroke } from "@/user/user";
@@ -116,36 +115,36 @@ export function ProfileScreen({ username: usernameParam }: ProfileScreenProps) {
                 {publicProfile.lab.name}
               </p>
             </div>
-            <StatGrid>
-              <Stat
-                variant="scoreboard"
-                tone="amber"
-                label="Cash"
-                value={`$${formatMoney(publicProfile.lab.cash)}`}
-                icon={<Coins className="h-4 w-4" aria-hidden />}
-              />
-              <Stat
-                variant="scoreboard"
-                tone="teal"
-                label="Data tokens"
-                value={formatCompactNumber(publicProfile.lab.dataTokens)}
-                icon={<Sparkles className="h-4 w-4" aria-hidden />}
-              />
-              <Stat
-                variant="scoreboard"
-                tone="cream"
-                label="Models serving"
-                value={publicProfile.lab.modelsServing}
-                icon={<Cpu className="h-4 w-4" aria-hidden />}
-              />
-              <Stat
-                variant="scoreboard"
-                tone="coral"
-                label="Models trained"
-                value={publicProfile.lab.modelsTrained}
-                icon={<Users className="h-4 w-4" aria-hidden />}
-              />
-            </StatGrid>
+            <div className="llm-stat-grid">
+              <div className="llm-stat llm-stat--scoreboard llm-stat--tone-amber">
+                <span className="llm-stat__icon"><Coins className="h-4 w-4" aria-hidden /></span>
+                <div className="llm-stat__content">
+                  <span className="llm-stat__label">Cash</span>
+                  <span className="llm-stat__value">{`$${formatMoney(publicProfile.lab.cash)}`}</span>
+                </div>
+              </div>
+              <div className="llm-stat llm-stat--scoreboard llm-stat--tone-teal">
+                <span className="llm-stat__icon"><Sparkles className="h-4 w-4" aria-hidden /></span>
+                <div className="llm-stat__content">
+                  <span className="llm-stat__label">Data tokens</span>
+                  <span className="llm-stat__value">{formatCompactNumber(publicProfile.lab.dataTokens)}</span>
+                </div>
+              </div>
+              <div className="llm-stat llm-stat--scoreboard llm-stat--tone-cream">
+                <span className="llm-stat__icon"><Cpu className="h-4 w-4" aria-hidden /></span>
+                <div className="llm-stat__content">
+                  <span className="llm-stat__label">Models serving</span>
+                  <span className="llm-stat__value">{publicProfile.lab.modelsServing}</span>
+                </div>
+              </div>
+              <div className="llm-stat llm-stat--scoreboard llm-stat--tone-coral">
+                <span className="llm-stat__icon"><Users className="h-4 w-4" aria-hidden /></span>
+                <div className="llm-stat__content">
+                  <span className="llm-stat__label">Models trained</span>
+                  <span className="llm-stat__value">{publicProfile.lab.modelsTrained}</span>
+                </div>
+              </div>
+            </div>
             {publicProfile.lab.topBenchmark > 0 ? (
               <p className="text-center text-xs font-semibold text-brand-teal/70">
                 Top benchmark score: {Math.round(publicProfile.lab.topBenchmark)}
@@ -164,16 +163,16 @@ export function ProfileScreen({ username: usernameParam }: ProfileScreenProps) {
           <div className="flex flex-col gap-2">
             {isEditing ? (
               <div className="flex gap-2">
-                <Button
+                <KitButton
                   type="button"
-                  variant="secondary"
+                  variant="ghost"
                   onClick={handleCancel}
                   className="game-menu-button flex-1"
                 >
                   <X className="h-4 w-4" aria-hidden />
                   Cancel
-                </Button>
-                <Button
+                </KitButton>
+                <KitButton
                   type="button"
                   variant="primary"
                   onClick={() => void handleSave()}
@@ -186,18 +185,18 @@ export function ProfileScreen({ username: usernameParam }: ProfileScreenProps) {
                     <Check className="h-4 w-4" aria-hidden />
                   )}
                   Save
-                </Button>
+                </KitButton>
               </div>
             ) : (
-              <Button
+              <KitButton
                 type="button"
-                variant="secondary"
+                variant="ghost"
                 onClick={() => setIsEditing(true)}
                 className="game-menu-button w-full"
               >
                 <Pencil className="h-4 w-4" aria-hidden />
                 Edit handle
-              </Button>
+              </KitButton>
             )}
           </div>
         ) : null}

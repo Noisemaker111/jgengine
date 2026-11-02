@@ -9,6 +9,19 @@ export function pickUniform<T>(rng: () => number, items: readonly T[]): T | unde
 }
 
 /**
+ * Pick the item an integer key names (the key modulo the list length, wrapped for negatives), with no random
+ * stream. Everyone holding the same key (a calendar day's hash, a shared seed) gets the same item; undefined when
+ * empty or the key is not finite.
+ *
+ * @capability weighted-pick pick one item from a set with an injected random source
+ */
+export function pickKeyed<T>(key: number, items: readonly T[]): T | undefined {
+  if (items.length === 0 || !Number.isFinite(key)) return undefined;
+  const index = Math.trunc(key) % items.length;
+  return items[index < 0 ? index + items.length : index];
+}
+
+/**
  * A shuffled copy of `values` (Fisher–Yates) drawn from `rng`; the same seeded stream always gives the same order.
  *
  * @capability weighted-pick pick one item from a set with an injected random source

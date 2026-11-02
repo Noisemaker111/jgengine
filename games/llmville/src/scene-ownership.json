@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "provider": "llmville",
+  "declarations": [
+    {
+      "provenance": { "kind": "runtime", "providerId": "llmville", "instanceId": "endless-datacenter" },
+      "reason": "The datacenter floor, ceiling, column lattice, cable trays and light rows repeat without end and are re-tiled around the player each frame (src/world/components/EndlessDatacenter.tsx). The column lattice is also a game rule: packages/game/src/datacenter/layout.ts isStructuralColumnCell blocks movement, build placement, spawn and starter claims, so it stays with those rules instead of becoming a finite list of authored columns."
+    },
+    {
+      "provenance": { "kind": "runtime", "providerId": "llmville", "instanceId": "player-placements" },
+      "reason": "Claims, racks and placed build items are player data stored in Convex and streamed by chunk (api.world.worldScene, api.datacenter.listClaims); spawn points come from the cityHash seeds saved worlds were placed with. None of it is authored world content."
+    },
+    {
+      "provenance": { "kind": "transient", "providerId": "llmville", "instanceId": "world-presences" },
+      "reason": "Other players and bots are live presence rows from Convex multiplayer; they never persist in the scene."
+    }
+  ]
+}

@@ -15,7 +15,6 @@ import {
   defaultEngineWorldContext,
   type EngineWorldRack,
 } from "@llmville/game/simulation/worldContext";
-import { createEmptyMovementKeys, type MovementKey } from "@jgengine/core/movement/movementModel";
 import {
   composeStateFeatures,
   EngineStore,
@@ -43,7 +42,6 @@ export {
   type PlayerPosition,
 } from "@llmville/game/simulation/interaction";
 
-export type { MovementKey } from "@jgengine/core/movement/movementModel";
 export type BuildPlacementDraft = CoreBuildPlacementDraft<BuildItemId>;
 
 export interface BuildMenuState {
@@ -85,7 +83,6 @@ export interface GameSessionState {
 export interface GamePlayerState {
   position: { x: number; z: number };
   rotationDegrees: number;
-  keysDown: Record<MovementKey, boolean>;
   pointerLocked: boolean;
   isPaused: boolean;
   pauseStartedAt: number | null;
@@ -149,9 +146,7 @@ export type GameWorldAction =
 export type GamePlayerAction =
   | { type: "SET_POINTER_LOCK"; pointerLocked: boolean }
   | { type: "SET_PLAYING"; playing: boolean; now: number }
-  | { type: "SET_MOVEMENT_KEY"; key: MovementKey; pressed: boolean }
   | { type: "SET_PLAYER_POSITION"; position: { x: number; z: number } }
-  | { type: "RESET_MOVEMENT_KEYS" }
   | { type: "ROTATE_PLACEMENT" };
 
 export type GameBuildAction =
@@ -200,13 +195,11 @@ export const engineActions = {
   bootstrapStart: (): GameSessionAction => ({ type: "BOOTSTRAP_START" }),
   bootstrapSuccess: (gameId: string): GameSessionAction => ({ type: "BOOTSTRAP_SUCCESS", gameId }),
   bootstrapFailure: (message: string): GameSessionAction => ({ type: "BOOTSTRAP_FAILURE", message }),
-  setMovementKey: (key: MovementKey, pressed: boolean): GamePlayerAction => ({ type: "SET_MOVEMENT_KEY", key, pressed }),
   setPlayerPosition: (position: { x: number; z: number }): GamePlayerAction => ({ type: "SET_PLAYER_POSITION", position }),
   setActivePrompt: (activePrompt: GamePositionedPrompt | null): GameWorldAction => ({
     type: ENGINE_WORLD_ACTION.setActivePrompt,
     activePrompt,
   }),
-  resetMovementKeys: (): GamePlayerAction => ({ type: "RESET_MOVEMENT_KEYS" }),
   setPointerLock: (pointerLocked: boolean): GamePlayerAction => ({ type: "SET_POINTER_LOCK", pointerLocked }),
   setPlaying: (playing: boolean, now: number): GamePlayerAction => ({ type: "SET_PLAYING", playing, now }),
   rotatePlacement: (): GamePlayerAction => ({ type: "ROTATE_PLACEMENT" }),
@@ -328,12 +321,6 @@ const gameLoopFeature: GameFeature = {
         player: { ...state.player, isPaused: !action.playing, pauseStartedAt },
         gameplay: { ...state.gameplay, tutorial },
       };
-    }
-    if (action.type === "RESET_MOVEMENT_KEYS") {
-      return { ...state, player: { ...state.player, keysDown: createEmptyMovementKeys() } };
-    }
-    if (action.type === "SET_MOVEMENT_KEY") {
-      return { ...state, player: { ...state.player, keysDown: { ...state.player.keysDown, [action.key]: action.pressed } } };
     }
     if (action.type === "SET_PLAYER_POSITION") {
       return { ...state, player: { ...state.player, position: action.position } };
@@ -585,7 +572,6 @@ function createState(params: GameEngineParams): GameEngineState {
     player: {
       position: playerPosition,
       rotationDegrees: 0,
-      keysDown: createEmptyMovementKeys(),
       pointerLocked: false,
       isPaused: true,
       pauseStartedAt: null,

@@ -1,4 +1,6 @@
 import {
+  createContext,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -947,15 +949,15 @@ const ANCHOR_POSITION: Record<TouchAnchor, CSSProperties> = {
   "top-right": { top: 0, right: 0 },
 };
 
-function anchorInset(anchor: TouchAnchor): CSSProperties {
+function anchorInset(anchor: TouchAnchor, reserve: { top: number; bottom: number }): CSSProperties {
   const safeBottom = "env(safe-area-inset-bottom, 0px)";
   const safeTop = "env(safe-area-inset-top, 0px)";
   const safeLeft = "env(safe-area-inset-left, 0px)";
   const safeRight = "env(safe-area-inset-right, 0px)";
   const pad = `${DOCK_BASE_PADDING}px`;
   const style: CSSProperties = {};
-  if (anchor.startsWith("bottom")) style.paddingBottom = `calc(${safeBottom} + ${pad})`;
-  if (anchor.startsWith("top")) style.paddingTop = `calc(${safeTop} + ${pad})`;
+  if (anchor.startsWith("bottom")) style.paddingBottom = `calc(${safeBottom} + ${pad} + ${reserve.bottom}px)`;
+  if (anchor.startsWith("top")) style.paddingTop = `calc(${safeTop} + ${pad} + ${reserve.top}px)`;
   if (anchor === "left" || anchor.endsWith("left")) style.paddingLeft = `calc(${safeLeft} + ${pad})`;
   if (anchor === "right" || anchor.endsWith("right")) style.paddingRight = `calc(${safeRight} + ${pad})`;
   if (anchor === "bottom-center" || anchor === "top-center") {
@@ -964,6 +966,9 @@ function anchorInset(anchor: TouchAnchor): CSSProperties {
   }
   return style;
 }
+
+const NO_RESERVE = { top: 0, bottom: 0 } as const;
+const TouchReserveContext = createContext<{ top: number; bottom: number }>(NO_RESERVE);
 
 function AnchoredSlot({
   anchor,
@@ -977,7 +982,7 @@ function AnchoredSlot({
   movement?: boolean;
 }) {
   return (
-    <div className="pointer-events-none absolute" style={{ zIndex: movement ? 10 : 40, ...ANCHOR_POSITION[anchor], ...anchorInset(anchor) }}>
+    <div className="pointer-events-none absolute" style={{ zIndex: movement ? 10 : 40, ...ANCHOR_POSITION[anchor], ...anchorInset(anchor, useContext(TouchReserveContext)) }}>
       <div ref={slotRef}>{children}</div>
     </div>
   );
@@ -1080,6 +1085,7 @@ export function TouchControlsDock({
   const showActions = primary.length > 0 || slots.length > 0 || (utilityJoinsActions && utility.length > 0);
 
   return (
+    <TouchReserveContext.Provider value={scheme.reserve ?? NO_RESERVE}>
     <ResolvedLayout>
       {scheme.joystick !== null ? (
         <AnchoredSlot anchor={layout.movement} slotRef={joystickRef} movement>
@@ -1130,6 +1136,7 @@ export function TouchControlsDock({
         <AnchoredButtons key={anchor} anchor={anchor} bucket={bucket} sink={sink} tokens={tokens} scale={scale} sizes={sizes} />
       ))}
     </ResolvedLayout>
+    </TouchReserveContext.Provider>
   );
 }
 

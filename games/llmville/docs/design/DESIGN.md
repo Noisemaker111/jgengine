@@ -4,10 +4,11 @@ The source of truth for how LLMville looks and feels. If you're adding UI, match
 doubt, favor warmth and clarity over flash.
 
 Companion files:
-- **Tokens only** in `apps/web/src/index.css` (`:root` palette, `@theme`, base body/html).
-- **Primitives** in `apps/web/src/components/ui/` (`Panel`, `Card`, `Button`, … — `cva` + Tailwind). No `game-ui/` or `Game*` names.
-- **Domain UI** in `<domain>/components/`.
-- Brand mark components in `apps/web/src/branding/`.
+- **Tokens and parts** in `src/kit/llmvilleKit.tsx`: the palette as UI-kit tokens (`--kit-*`), LLMville's
+  panel, card, button, meter and toast parts, and the HUD theme. The parts' stylesheet is `src/kit/llmvilleKitCss.ts`.
+- **Game skin** in `src/index.css`: Tailwind's `@theme` mapped onto the kit tokens, menus, auth and the store cards.
+- **Domain UI** in `<domain>/components/`, drawn with `KitPanel` (`data-shell` picks the card or surface), `KitButton`, `KitMeter` and `KitToast`.
+- Brand mark components in `src/branding/`.
 
 ## 1. Brand in one line
 
@@ -65,7 +66,7 @@ Use:
 
 ## 4. Components
 
-Use primitives in `components/ui/` — styles live in those files via `cva`, not in `index.css`. Name by role (`Panel`, `Card`, `Button`, `Field`, `Badge`, `Progress`), not `Game*`. Do not add new global `.game-*` classes.
+Use the kit parts (`KitPanel`, `KitButton`, `KitMeter`, `KitToast`) — their styles live in the kit stylesheet, not in `index.css`. Status chips are `llm-token` spans. Do not add new global `.game-*` classes.
 
 - `Button` — flat rounded control. Title/sentence case, never uppercase. No underborder or glass.
   - `primary` — solid coral fill. The one primary action.
@@ -166,7 +167,7 @@ Padding rules:
 
 ### 5.4 Tokens to add / consume
 
-Add explicit role-radius tokens to `index.css` `:root` and use *them*, not raw `rounded-xl`
+The role radii are kit tokens (`--kit-r-surface`, `--kit-r-control`, `--kit-r-field`, `--kit-r-pill`); use *them*, not raw `rounded-xl`
 guesses, so the system is enforceable in one place:
 
 ```css
@@ -206,11 +207,11 @@ Gentle and bouncy, never frantic. Buttons use a flat fill with a simple hover da
 ## 8. Implementation status
 
 Done:
-- Design tokens, fonts, and role radii in `index.css` `:root` / `@theme`.
+- Palette, fonts and role radii are UI-kit tokens (`src/kit/llmvilleKit.tsx`), set on `:root` at boot.
+- Panels, the themed card shells, buttons, chips, meters and toasts are the kit's parts; `components/ui/` is gone.
+- The play HUD sits in the engine's `HudSlots`; settings are the engine's settings blocks plus LLMville's keybinds and credits.
 - Main menu, login, signup, founder-select restyled to cozy palette.
 - `MascotBot` + `BrandLogo`; `index.html` fonts + metadata.
-- Field helpers exist (`Field`, `CopyControl`, `Token`, `InsetSection`) but are split across `components/game/` and misnamed with `Game*` prefix.
 
-Not done (blocking good ownership):
-- `components/game-ui/` and `components/game/` must be **merged into `components/ui/`** with role names (`Panel`, `Card`, `Button`, …) — then deleted. The whole app is the game; `game-ui` is not a meaningful layer.
-- `index.css` still contains ~2000 lines of component/feature selectors. Move into owning components and delete in one pass (see **UI** section above).
+Not done:
+- One illustrated header per tablet app (art direction A).

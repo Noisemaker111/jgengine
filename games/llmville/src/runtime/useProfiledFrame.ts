@@ -1,1 +1,0 @@
-export { useProfiledFrame } from "@/runtime/runtimePerformanceProfiler";

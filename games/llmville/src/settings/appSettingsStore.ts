@@ -6,7 +6,7 @@ import {
   saveBindingOverride,
 } from "@jgengine/core/input/bindingOverrides";
 import { ACCESSIBILITY_SETTING_IDS } from "@jgengine/core/settings/accessibilitySettings";
-import { createSettingsStore, SETTING_IDS, type GraphicsQuality } from "@jgengine/core/settings/settingsModel";
+import { createSettingsStore, SETTING_IDS, type GraphicsQuality, type SettingsStore } from "@jgengine/core/settings/settingsModel";
 
 import {
   DEFAULT_APP_KEYBINDS,
@@ -14,12 +14,16 @@ import {
   keybindFromCodes,
   keybindsEqual,
   keybindToCodes,
+  renamedActionId,
   sanitizeKeybinds,
   type AppKeybinds,
 } from "./keybinds";
 
-/** The game id the engine keys this game's binding overrides under. */
-export const LLMVILLE_SETTINGS_GAME_ID = "llmville";
+/** The game id the engine keys this game's binding overrides under: the shell reads them by game name. */
+export const LLMVILLE_SETTINGS_GAME_ID = "LLMville";
+
+/** Where binding overrides lived before the game mounted in the shell. */
+export const PREVIOUS_SETTINGS_GAME_ID = "llmville";
 
 /** The single JSON blob settings lived in before they moved onto the engine settings store. */
 export const LEGACY_APP_SETTINGS_KEY = "llmville:app-settings";
@@ -92,6 +96,8 @@ function parseLegacyAppSettings(raw: string): AppSettings {
 
 /** LLMville's settings over the engine settings store and binding overrides, on one injected storage. */
 export interface AppSettingsStore {
+  /** The engine settings store these settings live in, for engine settings blocks outside the shell. */
+  engine: SettingsStore;
   get(): AppSettings;
   update(partial: Partial<AppSettings>): AppSettings;
   subscribe(listener: () => void): () => void;
@@ -135,12 +141,16 @@ export function createAppSettingsStore(storage: KeyValueStorage | null): AppSett
     keybinds: readKeybinds(),
   });
 
+  // Only changed fields are written: the shell's settings menu writes the same cells through its own store.
   const write = (next: AppSettings, previous: AppSettings | null): void => {
-    settings.set(ACCESSIBILITY_SETTING_IDS.reducedMotion, next.reducedMotion);
-    settings.set(SETTING_IDS.graphicsQuality, PRESET_QUALITY[next.graphicsQuality]);
+    if (previous === null || previous.reducedMotion !== next.reducedMotion) settings.set(ACCESSIBILITY_SETTING_IDS.reducedMotion, next.reducedMotion);
+    if (previous === null || previous.graphicsQuality !== next.graphicsQuality) {
+      settings.set(SETTING_IDS.graphicsQuality, PRESET_QUALITY[next.graphicsQuality]);
+    }
     if (previous === null || previous.keybinds !== next.keybinds) writeKeybinds(next.keybinds);
   };
 
+  movePreviousOverrides(storage);
   const legacy = readLegacy(storage);
   if (legacy !== null) {
     write(parseLegacyAppSettings(legacy), null);
@@ -157,6 +167,7 @@ export function createAppSettingsStore(storage: KeyValueStorage | null): AppSett
   };
 
   return {
+    engine: settings,
     get: () => current,
     update: (partial) => commit({ ...current, ...partial }),
     subscribe(listener) {
@@ -172,6 +183,17 @@ export function createAppSettingsStore(storage: KeyValueStorage | null): AppSett
       commit(DEFAULT_APP_SETTINGS);
     },
   };
+}
+
+/** Moves overrides saved under the old game id once, renaming actions that changed id. */
+function movePreviousOverrides(storage: KeyValueStorage | null): void {
+  const previous = loadBindingOverrides(PREVIOUS_SETTINGS_GAME_ID, storage);
+  if (Object.keys(previous).length === 0) return;
+  for (const { id } of KEYBIND_ACTIONS) {
+    const codes = previous[id] ?? previous[renamedActionId(id) ?? id];
+    if (codes !== undefined) saveBindingOverride(LLMVILLE_SETTINGS_GAME_ID, id, codes, storage);
+  }
+  clearAllBindingOverrides(PREVIOUS_SETTINGS_GAME_ID, storage);
 }
 
 function safeRead(read: () => AppSettings): AppSettings {

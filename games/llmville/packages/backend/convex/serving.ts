@@ -42,7 +42,7 @@ import {
   type ServingSnapshot,
   type ServingTickTiming,
 } from "@llmville/game/economy/servingTick";
-import { assignmentsOf, gameModelIds, gameRacks, modelIdSet, rackSnapshots, type PlacedRackObject } from "./jgengine/worldObjects";
+import { assignmentsOf, gameModelIds, gameRacks, modelIdSet, rackSnapshots, type PlacedRackObject } from "./worldObjects";
 import { servingModeValidator } from "./schema";
 
 const NOT_APPLIED_TICK_RESULT = {

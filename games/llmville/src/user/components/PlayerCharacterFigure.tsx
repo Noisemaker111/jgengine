@@ -1,5 +1,5 @@
+import { useFrame } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
-import { PROFILE_SECTION, useProfiledFrame } from "@/runtime/runtimePerformanceProfiler";
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { SkeletonUtils } from "three-stdlib";
 import {
@@ -303,7 +303,7 @@ export function PlayerCharacterFigure({
     return undefined;
   }, [skinnedMesh, look]);
 
-  useProfiledFrame(PROFILE_SECTION.playerCharacter, (state) => {
+  useFrame(function playerCharacter(state) {
     if (walkAction && clip) {
       const phase = walkPhase !== undefined ? walkPhase : state.clock.elapsedTime * WALK_RATE;
       if (isWalking) {

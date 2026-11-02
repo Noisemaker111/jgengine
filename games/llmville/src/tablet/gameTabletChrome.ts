@@ -46,7 +46,7 @@ export function gameTabletShellMotionClass(interactable: boolean): string {
   ].join(" ");
 }
 
-/** Bezel only — box-shadow was painting a rectangular halo clipped at the top corners. */
+/** Bezel geometry only; the device's material is the kit's `tablet-device` panel shell. */
 export function gameTabletFrameClass(isTouch: boolean, collapsed: boolean): string {
   const bottomFlush = gameTabletBottomFlush(collapsed);
   const radius = gameTabletCornerRadiusClass(isTouch);
@@ -58,7 +58,7 @@ export function gameTabletFrameClass(isTouch: boolean, collapsed: boolean): stri
       ? "border-[6px] border-b-0"
       : "border-[6px]";
   return [
-    "relative flex h-full w-full flex-col overflow-hidden border-[#1a1a1e] bg-brand-ink transition-[border-radius] duration-700 cubic-bezier(0.16, 1, 0.3, 1)",
+    "relative flex h-full w-full flex-col overflow-hidden transition-[border-radius] duration-700 cubic-bezier(0.16, 1, 0.3, 1)",
     radius,
     border,
   ].join(" ");

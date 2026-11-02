@@ -2,8 +2,7 @@ import { useCallback, useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 
 import { api } from "@llmville/backend/convex/_generated/api";
-import { Button } from "@/components/ui/button";
-import { InsetSection } from "@/components/ui/inset-section";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useAuth } from "@/auth";
 import { env } from "@/webEnv";
 
@@ -23,7 +22,7 @@ function TokenReveal({ token, onDismiss }: { token: string; onDismiss: () => voi
   }, [token]);
 
   return (
-    <InsetSection label="Bot token — shown once">
+    <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="Bot token — shown once">
       <p className="text-sm text-white/70">
         Give this token to your program or LLM. It authenticates your bot at{" "}
         <span className="font-mono text-white/90">{agentApiBaseUrl()}</span>. Store it now — it will not be
@@ -33,14 +32,14 @@ function TokenReveal({ token, onDismiss }: { token: string; onDismiss: () => voi
         {token}
       </code>
       <div className="flex gap-2">
-        <Button variant="primary" onClick={copy}>
+        <KitButton variant="primary" onClick={copy}>
           {copied ? "Copied" : "Copy token"}
-        </Button>
-        <Button variant="secondary" onClick={onDismiss}>
+        </KitButton>
+        <KitButton variant="ghost" onClick={onDismiss}>
           Done
-        </Button>
+        </KitButton>
       </div>
-    </InsetSection>
+    </KitPanel>
   );
 }
 
@@ -70,7 +69,7 @@ function VisitorBans() {
   }, [banVisitor, username]);
 
   return (
-    <InsetSection label="Visitors">
+    <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="Visitors">
       <p className="text-sm text-white/70">
         Anyone signed in can walk into your lab while you're online. Ban a player to keep them — and their
         bot — out.
@@ -88,9 +87,9 @@ function VisitorBans() {
           placeholder="username"
           className="min-w-0 flex-1 rounded-md bg-black/40 px-3 py-2 font-mono text-sm text-white/90 outline-none placeholder:text-white/30"
         />
-        <Button variant="primary" onClick={() => void onBan()} disabled={busy || username.trim().length === 0}>
+        <KitButton variant="primary" onClick={() => void onBan()} disabled={busy || username.trim().length === 0}>
           {busy ? "Banning…" : "Ban"}
-        </Button>
+        </KitButton>
       </div>
       {message !== null && <p className="text-sm text-red-400">{message}</p>}
       {bans === undefined ? (
@@ -107,14 +106,14 @@ function VisitorBans() {
               <span className="truncate text-sm text-white/80">
                 {ban.username ? `@${ban.username}` : ban.displayName ?? ban.externalId}
               </span>
-              <Button variant="secondary" onClick={() => void unbanVisitor({ externalId: ban.externalId })}>
+              <KitButton variant="ghost" onClick={() => void unbanVisitor({ externalId: ban.externalId })}>
                 Unban
-              </Button>
+              </KitButton>
             </li>
           ))}
         </ul>
       )}
-    </InsetSection>
+    </KitPanel>
   );
 }
 
@@ -164,18 +163,18 @@ export function BotApp() {
   if (!isConvexAuthenticated || isAnonymous) {
     return (
       <div className="flex flex-col gap-4 pb-24">
-        <InsetSection label="LLM Bot">
+        <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="LLM Bot">
           <p className="text-sm text-white/70">
             Sign in with an account to connect an LLM bot to your lab. Guest sessions can't own a bot.
           </p>
-        </InsetSection>
+        </KitPanel>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4 pb-24">
-      <InsetSection label="LLM Bot">
+      <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="LLM Bot">
         <p className="text-sm text-white/70">
           Connect one bot to your plot, then hand its token to your own program or an LLM. The bot plays
           through the agent API, scoped only to your lab.
@@ -183,20 +182,20 @@ export function BotApp() {
         <p className="text-xs text-white/50">
           Agent API base URL: <span className="font-mono text-white/80">{agentApiBaseUrl()}</span>
         </p>
-      </InsetSection>
+      </KitPanel>
 
       {bot === undefined ? (
-        <InsetSection>
+        <KitPanel data-shell="inset" className="flex flex-col gap-3">
           <p className="text-sm text-white/60">Loading bot status…</p>
-        </InsetSection>
+        </KitPanel>
       ) : bot === null ? (
-        <InsetSection label="No bot connected">
-          <Button variant="primary" onClick={onConnect} disabled={busy}>
+        <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="No bot connected">
+          <KitButton variant="primary" onClick={onConnect} disabled={busy}>
             {busy ? "Connecting…" : "Connect bot"}
-          </Button>
-        </InsetSection>
+          </KitButton>
+        </KitPanel>
       ) : (
-        <InsetSection label={`Connected — ${bot.name}`}>
+        <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow={`Connected — ${bot.name}`}>
           <dl className="grid grid-cols-2 gap-2 text-sm">
             <dt className="text-white/50">Connected</dt>
             <dd className="text-white/80">{new Date(bot.createdAt).toLocaleString()}</dd>
@@ -206,14 +205,14 @@ export function BotApp() {
             </dd>
           </dl>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={onRotate} disabled={busy}>
+            <KitButton variant="ghost" onClick={onRotate} disabled={busy}>
               {busy ? "Working…" : "Rotate token"}
-            </Button>
-            <Button variant="default" onClick={onDisconnect} disabled={busy}>
+            </KitButton>
+            <KitButton variant="secondary" onClick={onDisconnect} disabled={busy}>
               Disconnect
-            </Button>
+            </KitButton>
           </div>
-        </InsetSection>
+        </KitPanel>
       )}
 
       {token !== null && <TokenReveal token={token} onDismiss={() => setToken(null)} />}

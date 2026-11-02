@@ -139,7 +139,9 @@ test("shared capacity subscribes to membership and capacity, without reading the
 
 test("trusted server ensure is idempotent and the first browser join uses that world", async () => {
   const { ctx, rows, fns, join } = setup();
+  expect(await fns.helpers.findServer(ctx, "demo")).toBeNull();
   const first = await fns.helpers.ensureServer(ctx, "demo");
+  expect((await fns.helpers.findServer(ctx, "demo"))?._id).toBe(first._id);
   const again = await fns.helpers.ensureServer(ctx, "demo");
   expect(again._id).toBe(first._id);
   expect(rows("jgGameServers")).toHaveLength(1);

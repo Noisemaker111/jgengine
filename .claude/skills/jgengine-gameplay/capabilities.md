@@ -1062,6 +1062,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## weighted-pick — pick one item from a set with an injected random source
 
+- `pickKeyed` (function) · `import { pickKeyed } from "@jgengine/core/random/pick"`
 - `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/gameplay"`
 - `shuffleWithRng` (function) · `import { shuffleWithRng } from "@jgengine/core/gameplay"`
 

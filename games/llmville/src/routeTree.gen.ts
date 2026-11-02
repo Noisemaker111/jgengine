@@ -26,9 +26,7 @@ import { Route as DevTabletRouteImport } from './routes/dev.tablet'
 import { Route as DevRacksRouteImport } from './routes/dev.racks'
 import { Route as DevHudRouteImport } from './routes/dev.hud'
 import { Route as DevCharacterRouteImport } from './routes/dev.character'
-import { Route as DevBuildRouteImport } from './routes/dev.build'
 import { Route as DevBillsRouteImport } from './routes/dev.bills'
-import { Route as DevAssetsRouteImport } from './routes/dev.assets'
 import { Route as CreateWorldCustomizeRouteImport } from './routes/create-world.customize'
 
 const SignupRoute = SignupRouteImport.update({
@@ -116,19 +114,9 @@ const DevCharacterRoute = DevCharacterRouteImport.update({
   path: '/character',
   getParentRoute: () => DevRoute,
 } as any)
-const DevBuildRoute = DevBuildRouteImport.update({
-  id: '/build',
-  path: '/build',
-  getParentRoute: () => DevRoute,
-} as any)
 const DevBillsRoute = DevBillsRouteImport.update({
   id: '/bills',
   path: '/bills',
-  getParentRoute: () => DevRoute,
-} as any)
-const DevAssetsRoute = DevAssetsRouteImport.update({
-  id: '/assets',
-  path: '/assets',
   getParentRoute: () => DevRoute,
 } as any)
 const CreateWorldCustomizeRoute = CreateWorldCustomizeRouteImport.update({
@@ -148,9 +136,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/create-world/customize': typeof CreateWorldCustomizeRoute
-  '/dev/assets': typeof DevAssetsRoute
   '/dev/bills': typeof DevBillsRoute
-  '/dev/build': typeof DevBuildRoute
   '/dev/character': typeof DevCharacterRoute
   '/dev/hud': typeof DevHudRoute
   '/dev/racks': typeof DevRacksRoute
@@ -171,9 +157,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/create-world/customize': typeof CreateWorldCustomizeRoute
-  '/dev/assets': typeof DevAssetsRoute
   '/dev/bills': typeof DevBillsRoute
-  '/dev/build': typeof DevBuildRoute
   '/dev/character': typeof DevCharacterRoute
   '/dev/hud': typeof DevHudRoute
   '/dev/racks': typeof DevRacksRoute
@@ -195,9 +179,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/create-world/customize': typeof CreateWorldCustomizeRoute
-  '/dev/assets': typeof DevAssetsRoute
   '/dev/bills': typeof DevBillsRoute
-  '/dev/build': typeof DevBuildRoute
   '/dev/character': typeof DevCharacterRoute
   '/dev/hud': typeof DevHudRoute
   '/dev/racks': typeof DevRacksRoute
@@ -220,9 +202,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/create-world/customize'
-    | '/dev/assets'
     | '/dev/bills'
-    | '/dev/build'
     | '/dev/character'
     | '/dev/hud'
     | '/dev/racks'
@@ -243,9 +223,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/create-world/customize'
-    | '/dev/assets'
     | '/dev/bills'
-    | '/dev/build'
     | '/dev/character'
     | '/dev/hud'
     | '/dev/racks'
@@ -266,9 +244,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/create-world/customize'
-    | '/dev/assets'
     | '/dev/bills'
-    | '/dev/build'
     | '/dev/character'
     | '/dev/hud'
     | '/dev/racks'
@@ -414,25 +390,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevCharacterRouteImport
       parentRoute: typeof DevRoute
     }
-    '/dev/build': {
-      id: '/dev/build'
-      path: '/build'
-      fullPath: '/dev/build'
-      preLoaderRoute: typeof DevBuildRouteImport
-      parentRoute: typeof DevRoute
-    }
     '/dev/bills': {
       id: '/dev/bills'
       path: '/bills'
       fullPath: '/dev/bills'
       preLoaderRoute: typeof DevBillsRouteImport
-      parentRoute: typeof DevRoute
-    }
-    '/dev/assets': {
-      id: '/dev/assets'
-      path: '/assets'
-      fullPath: '/dev/assets'
-      preLoaderRoute: typeof DevAssetsRouteImport
       parentRoute: typeof DevRoute
     }
     '/create-world/customize': {
@@ -446,9 +408,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface DevRouteChildren {
-  DevAssetsRoute: typeof DevAssetsRoute
   DevBillsRoute: typeof DevBillsRoute
-  DevBuildRoute: typeof DevBuildRoute
   DevCharacterRoute: typeof DevCharacterRoute
   DevHudRoute: typeof DevHudRoute
   DevRacksRoute: typeof DevRacksRoute
@@ -456,9 +416,7 @@ interface DevRouteChildren {
 }
 
 const DevRouteChildren: DevRouteChildren = {
-  DevAssetsRoute: DevAssetsRoute,
   DevBillsRoute: DevBillsRoute,
-  DevBuildRoute: DevBuildRoute,
   DevCharacterRoute: DevCharacterRoute,
   DevHudRoute: DevHudRoute,
   DevRacksRoute: DevRacksRoute,

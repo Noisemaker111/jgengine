@@ -121,3 +121,14 @@ test("chat history orders migrated messages by event time rather than insertion 
   const rows = await handlerOf(createChatFunctions().messages)(f.ctx, { serverId: "world", channelId: "all" }) as { body: string }[];
   expect(rows.map(row => row.body)).toEqual(["old", "new"]);
 });
+
+test("chat history carries the author's display name when the host stored one", async () => {
+  const f = context();
+  f.seed("jgGameServers", serverDoc({ _id: "world", memberUserIds: ["alice"] }));
+  f.seed("jgChatMessages", { _id: "named", _creationTime: 1, serverId: "world", channelId: "all", userId: "alice", authorName: "Alice", body: "hi", at: 100 });
+  f.seed("jgChatMessages", { _id: "plain", _creationTime: 2, serverId: "world", channelId: "all", userId: "alice", body: "yo", at: 200 });
+  expect(await handlerOf(createChatFunctions().messages)(f.ctx, { serverId: "world", channelId: "all" })).toStrictEqual([
+    { id: "named", channelId: "all", fromUserId: "alice", fromLabel: "Alice", body: "hi", at: 100 },
+    { id: "plain", channelId: "all", fromUserId: "alice", body: "yo", at: 200 },
+  ]);
+});

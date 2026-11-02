@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { exitPointerLock, requestPointerLock } from "@/movement/movementInput";
+import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { flushSync } from "react-dom";
 
 import type { WorldViewModel } from "@/runtime/worldState";
@@ -191,7 +191,7 @@ export function useTabletNav({ gameId }: UseTabletNavParams): TabletNavBundle {
       pointerLockRetryFrameRef.current = null;
       if (document.pointerLockElement === canvas) return;
       canvas.focus({ preventScroll: true });
-      requestPointerLock(canvas);
+      requestRawPointerLock(canvas);
       attemptsRemaining -= 1;
       if (attemptsRemaining <= 0) return;
       pointerLockRetryFrameRef.current = requestAnimationFrame(retryPointerLock);
@@ -205,7 +205,7 @@ export function useTabletNav({ gameId }: UseTabletNavParams): TabletNavBundle {
     setTabletOpen(true);
     setActiveTabletApp(null);
     setRackMenuOverlayRackId(null);
-    exitPointerLock();
+    document.exitPointerLock?.();
   }, [cancelPointerLockRetry]);
 
   const openTabletApp = useCallback((appId: TabletAppId, storeTab?: TabletStoreTabId) => {
@@ -216,7 +216,7 @@ export function useTabletNav({ gameId }: UseTabletNavParams): TabletNavBundle {
       setActiveStoreTab(storeTab);
     }
     setRackMenuOverlayRackId(null);
-    exitPointerLock();
+    document.exitPointerLock?.();
   }, [cancelPointerLockRetry]);
 
   const closeMenu = useCallback(() => {
@@ -234,7 +234,7 @@ export function useTabletNav({ gameId }: UseTabletNavParams): TabletNavBundle {
       setTabletOpen(false);
       setActiveTabletApp(null);
       setRackMenuOverlayRackId(menuRequest.rackId);
-      exitPointerLock();
+      document.exitPointerLock?.();
       return;
     }
 

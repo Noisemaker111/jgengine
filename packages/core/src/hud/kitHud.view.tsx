@@ -16,7 +16,8 @@ import { SpriteIcon } from "@jgengine/core/ui/icons/spriteIcon.view";
 
 /** Props for {@link KitCount}. */
 export interface KitCountProps {
-  value: number | string;
+  /** The number, or a node that draws it (a `TweenNumber` that rolls to each new value). */
+  value: ReactNode;
   label: string;
   /** Marks the readout for tests and drives as `data-count`. Default the label. */
   id?: string;

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { footprintObstacle, validatePlacement } from "./placement";
+import { footprintObstacle, validatePlacement, validatePlacementBounds } from "./placement";
 
 describe("placement", () => {
   const bounds = { minX: 0, maxX: 10, minZ: 0, maxZ: 10 };
@@ -41,5 +41,17 @@ describe("placement", () => {
       { bounds: tight },
     );
     expect(turned.status).toBe("ok");
+  });
+
+  test("validates already-resolved bounds with the same rules", () => {
+    const offPivot = { minX: 4, maxX: 7, minZ: 4.5, maxZ: 5.5 };
+    expect(validatePlacementBounds(offPivot, { bounds })).toEqual({ status: "ok", aabb: offPivot });
+    expect(validatePlacementBounds({ minX: -1, maxX: 1, minZ: 4, maxZ: 6 }, { bounds })).toEqual({ status: "rejected", reason: "out-of-bounds" });
+    const rack = { aabb: { minX: 6.5, maxX: 8, minZ: 5, maxZ: 6 }, id: "rack-1" };
+    const overlap = validatePlacementBounds(offPivot, { obstacles: [{ aabb: { minX: 0, maxX: 1, minZ: 0, maxZ: 1 } }, rack] });
+    expect(overlap).toEqual({ status: "rejected", reason: "overlap", obstacle: rack, index: 1 });
+    const touching = validatePlacementBounds(offPivot, { obstacles: [{ aabb: { minX: 7, maxX: 8, minZ: 4, maxZ: 6 } }] });
+    expect(touching.status).toBe("ok");
+    expect(validatePlacementBounds(offPivot, { territory: () => ({ ok: false }) })).toEqual({ status: "rejected", reason: "territory.blocked" });
   });
 });

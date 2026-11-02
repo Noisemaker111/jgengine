@@ -3,12 +3,10 @@ import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { MAX_WORLD_CHUNK_QUERY_RADIUS } from "@llmville/game/datacenter/worldChunks";
-import type { WorldPresenceRow } from "@/multiplayer/presenceTransport";
 
 export interface UseWorldDataQueriesOptions {
   gameId: Id<"games">;
   viewerChunkCenter: { x: number; z: number };
-  onlinePresences: readonly WorldPresenceRow[] | undefined;
 }
 
 type PersonalUpgradeList = NonNullable<ReturnType<typeof useQuery<typeof api.upgrades.listPersonalUpgrades>>>;
@@ -38,7 +36,6 @@ function useLastLoaded<T>(value: T | undefined): T | undefined {
 export function useWorldDataQueries({
   gameId,
   viewerChunkCenter,
-  onlinePresences,
 }: UseWorldDataQueriesOptions): WorldDataQueriesResult {
   // These queries depend only on the route's gameId / playerId, never on each
   // other, so they all subscribe at once. The game route only mounts this hook
@@ -71,8 +68,7 @@ export function useWorldDataQueries({
     playerProfile !== undefined &&
     personalUpgrades !== undefined &&
     claims !== undefined &&
-    worldScene !== undefined &&
-    onlinePresences !== undefined;
+    worldScene !== undefined;
 
   return {
     gameState,

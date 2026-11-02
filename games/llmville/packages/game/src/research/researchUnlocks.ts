@@ -3,6 +3,8 @@
  * and racks cost data tokens to research-unlock, then money to buy.
  */
 
+import { evaluatePredicate, type Predicate } from "@jgengine/core/rules/predicate";
+import { tierAt, type ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 import { HARDWARE_CATALOG } from "@llmville/game/infrastructure/catalog";
 import { RACK_COOLING_CATALOG } from "@llmville/game/infrastructure/catalog";
 import { RACK_CATALOG } from "@llmville/game/infrastructure/catalog";
@@ -22,14 +24,27 @@ export interface ResearchCatalogEntry {
   label: string;
 }
 
+interface HardwareResearchTier {
+  baseTokens: number;
+  tokensPerIndex: number;
+}
+
+const TOP_HARDWARE_RESEARCH_TIER: HardwareResearchTier = { baseTokens: 10000, tokensPerIndex: 500 };
+
+/** Hardware research tiers by the card's recommended game level: each step covers levels up to its `at`. */
+const HARDWARE_RESEARCH_TIERS: readonly ThresholdBoundary<HardwareResearchTier>[] = [
+  { at: 5, id: { baseTokens: 50, tokensPerIndex: 25 } },
+  { at: 25, id: { baseTokens: 200, tokensPerIndex: 40 } },
+  { at: 50, id: { baseTokens: 800, tokensPerIndex: 80 } },
+  { at: 70, id: { baseTokens: 3000, tokensPerIndex: 150 } },
+  { at: Number.POSITIVE_INFINITY, id: TOP_HARDWARE_RESEARCH_TIER },
+];
+
 /** Token costs scale with catalog tier; 0 = free research (starter items). */
 function hardwareTokenCost(index: number, unlockGameLevel: number): number {
   if (index === 0) return 0;
-  if (unlockGameLevel <= 5) return 50 + index * 25;
-  if (unlockGameLevel <= 25) return 200 + index * 40;
-  if (unlockGameLevel <= 50) return 800 + index * 80;
-  if (unlockGameLevel <= 70) return 3000 + index * 150;
-  return 10000 + index * 500;
+  const tier = tierAt(HARDWARE_RESEARCH_TIERS, unlockGameLevel, { descending: true })?.id ?? TOP_HARDWARE_RESEARCH_TIER;
+  return tier.baseTokens + index * tier.tokensPerIndex;
 }
 
 function decorTokenCost(index: number, price: number): number {
@@ -134,4 +149,16 @@ export function seedResearchUnlocksFromInventory(args: {
 
 export function getResearchTokenCost(itemId: string): number | null {
   return RESEARCH_BY_ID[itemId]?.unlockDataTokens ?? null;
+}
+
+/** The data-token Requirement on researching an entry; free research has none. */
+export function researchRequirement(entry: Pick<ResearchCatalogEntry, "unlockDataTokens">): Predicate | undefined {
+  return entry.unlockDataTokens > 0 ? { not: { lt: ["dataTokens", entry.unlockDataTokens] } } : undefined;
+}
+
+export function meetsResearchRequirement(
+  entry: Pick<ResearchCatalogEntry, "unlockDataTokens">,
+  dataTokens: number,
+): boolean {
+  return evaluatePredicate(researchRequirement(entry), { dataTokens });
 }

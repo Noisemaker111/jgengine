@@ -1,3 +1,4 @@
+import { createOnboarding, type OnboardingConfig } from "@jgengine/core/onboarding/onboarding";
 import {
   MIN_SCRAPED_DATA_TOKENS,
   REQUIRED_TUTORIAL_GPU_COUNT,
@@ -63,58 +64,52 @@ export function clampNonNegative(value: number): number {
   return Math.max(0, Math.floor(value));
 }
 
+interface TutorialStepRule {
+  node: TutorialNode;
+  text: string;
+  when: (signals: TutorialWorldSignals) => boolean;
+}
+
+/** The first-model tutorial's steps after bootstrap, in order, each done by a world condition. */
+const TUTORIAL_STEP_RULES: readonly TutorialStepRule[] = [
+  { node: TUTORIAL_NODE.openTablet, text: "Open the tablet store", when: (signals) => signals.rackPlaced },
+  { node: TUTORIAL_NODE.placeRack, text: "Place your rack", when: (signals) => signals.rackPlaced },
+  { node: TUTORIAL_NODE.buyGpus, text: "Buy GPUs", when: (signals) => signals.ownedGpuCount >= REQUIRED_TUTORIAL_GPU_COUNT },
+  { node: TUTORIAL_NODE.installGpus, text: "Install GPUs", when: (signals) => signals.installedGpuCount >= REQUIRED_TUTORIAL_GPU_COUNT },
+  { node: TUTORIAL_NODE.licenseScraper, text: "License a scraper", when: (signals) => signals.hasLicensedScraper },
+  {
+    node: TUTORIAL_NODE.scrapeTokens,
+    text: "Scrape data tokens",
+    when: (signals) => signals.scrapingAllocated && signals.dataTokens >= MIN_SCRAPED_DATA_TOKENS,
+  },
+  { node: TUTORIAL_NODE.fineTune, text: "Fine-tune a model", when: (signals) => signals.fineTunedModelCount >= 1 },
+  { node: TUTORIAL_NODE.revealModel, text: "Reveal your model", when: (signals) => signals.hasRevealedPlayerModel },
+  { node: TUTORIAL_NODE.serve, text: "Serve your model", when: (signals) => signals.playerServingModelCount >= 1 },
+];
+
+const TUTORIAL_STEP_NODES: readonly TutorialNode[] = TUTORIAL_STEP_RULES.map((rule) => rule.node);
+
+const TUTORIAL_ONBOARDING: OnboardingConfig<TutorialWorldSignals> = {
+  id: "llmville-first-model",
+  title: "Your first model",
+  style: "blended",
+  skippable: false,
+  steps: TUTORIAL_STEP_RULES.map((rule) => ({ id: rule.node, text: rule.text, done: { when: rule.when } })),
+};
+
+/** From `currentNode`, finish every step whose condition already holds and report where the tutorial stands. */
 export function advanceTutorialNode(
   currentNode: TutorialNode,
   signals: TutorialWorldSignals,
 ): TutorialProgressSnapshot {
-  let node = currentNode;
-
-  while (true) {
-    if ((node === TUTORIAL_NODE.openTablet || node === TUTORIAL_NODE.placeRack) && signals.rackPlaced) {
-      node = signals.ownedGpuCount >= REQUIRED_TUTORIAL_GPU_COUNT ? TUTORIAL_NODE.installGpus : TUTORIAL_NODE.buyGpus;
-      continue;
-    }
-
-    if (node === TUTORIAL_NODE.buyGpus && signals.ownedGpuCount >= REQUIRED_TUTORIAL_GPU_COUNT) {
-      node = TUTORIAL_NODE.installGpus;
-      continue;
-    }
-
-    if (node === TUTORIAL_NODE.installGpus && signals.installedGpuCount >= REQUIRED_TUTORIAL_GPU_COUNT) {
-      node = TUTORIAL_NODE.licenseScraper;
-      continue;
-    }
-
-    if (node === TUTORIAL_NODE.licenseScraper && signals.hasLicensedScraper) {
-      node = TUTORIAL_NODE.scrapeTokens;
-      continue;
-    }
-
-    if (
-      node === TUTORIAL_NODE.scrapeTokens
-      && signals.scrapingAllocated
-      && signals.dataTokens >= MIN_SCRAPED_DATA_TOKENS
-    ) {
-      node = TUTORIAL_NODE.fineTune;
-      continue;
-    }
-
-    if (node === TUTORIAL_NODE.fineTune && signals.fineTunedModelCount >= 1) {
-      node = TUTORIAL_NODE.revealModel;
-      continue;
-    }
-
-    if (node === TUTORIAL_NODE.revealModel && signals.hasRevealedPlayerModel) {
-      node = TUTORIAL_NODE.serve;
-      continue;
-    }
-
-    if (node === TUTORIAL_NODE.serve && signals.playerServingModelCount >= 1) {
-      return { node: TUTORIAL_NODE.complete, completed: true };
-    }
-
-    return { node, completed: node === TUTORIAL_NODE.complete };
-  }
+  const index = TUTORIAL_STEP_NODES.indexOf(currentNode);
+  if (index === -1) return { node: currentNode, completed: currentNode === TUTORIAL_NODE.complete };
+  const onboarding = createOnboarding(TUTORIAL_ONBOARDING);
+  onboarding.restore({ done: TUTORIAL_STEP_NODES.slice(0, index), progress: {}, skipped: false });
+  onboarding.evaluate(signals, "");
+  if (onboarding.isFinished()) return { node: TUTORIAL_NODE.complete, completed: true };
+  const node = TUTORIAL_STEP_NODES[onboarding.current()?.index ?? index] ?? currentNode;
+  return { node, completed: false };
 }
 
 export interface TutorialMachineState {

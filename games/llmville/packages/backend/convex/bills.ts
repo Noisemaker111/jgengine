@@ -21,7 +21,7 @@ import { resetWorldForInsolvency } from "./world";
 import { liquidateStorage, storageLiquidationValue } from "./store";
 import { trainingJobsForGame } from "./training";
 import { getFounderMultipliersForGameId } from "./founderContext";
-import { gameRacks, rackSnapshots } from "./jgengine/worldObjects";
+import { gameRacks, rackSnapshots } from "./worldObjects";
 
 export async function trySpawnDailyBills(ctx: MutationCtx, gameId: Id<"games">): Promise<number> {
   const game = await ctx.db.get(gameId);

@@ -12,8 +12,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internalMutation, mutation, query } from "./_generated/server";
 import { getEditorAccess, getReadAccess } from "./permissions";
 import { playerProfileRow } from "./playerProfile";
-import { worldServerRow } from "./jgengine/world";
-import { helpers } from "./jgengine/runtime";
+import { helpers, worldServerRow } from "./runtime";
 
 export const claimChunkKey = (cell: CellCoord) => territoryChunkKey({ x: cell.cx, z: cell.cz }, TERRITORY_POLICY);
 export async function ownerDisplayName(ctx: QueryCtx | MutationCtx, externalId: string): Promise<string> {

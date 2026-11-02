@@ -2,8 +2,8 @@ import { ChevronLeft, Play } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/components/ui/cn";
+import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { cn } from "@/kit/cn";
 import { StandalonePageShell } from "@/branding/components/StandalonePageShell";
 import { CharacterCustomizeViewport } from "@/user/components/CharacterCustomizeViewport";
 import type { CanonicalAvatarId } from "@llmville/game/user/founder";
@@ -332,7 +332,7 @@ export function CreateWorldCustomizeScreen() {
 
         {error ? <p className="mb-3 text-center text-sm text-[#f0a097]">{error}</p> : null}
 
-        <Button
+        <KitButton
           type="button"
           variant="primary"
           disabled={isLoading || !canContinue}
@@ -341,7 +341,7 @@ export function CreateWorldCustomizeScreen() {
         >
           <Play className="h-5 w-5" />
           <span>{isStarting ? "Starting your lab…" : "Start playing"}</span>
-        </Button>
+        </KitButton>
       </div>
     </StandalonePageShell>
   );

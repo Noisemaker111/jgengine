@@ -1,4 +1,3 @@
-import { WORLD_FOG_NEAR, WORLD_FOG_FAR, WORLD_CAMERA_FAR, WORLD_FOG_COLOR } from "@llmville/game/world/viewDistance";
 import {
   isRackBuildPlacementItem,
   type BuildPlacementPreview,
@@ -12,13 +11,9 @@ import {
   type InteractionHint,
   type InteractionTarget,
 } from "@llmville/game/simulation/interaction";
-import { Canvas } from "@react-three/fiber";
 import { useMemo } from "react";
-import { ACESFilmicToneMapping, PCFShadowMap } from "three";
 
 import type { DatacenterClaim, PlacementCellPolicy } from "@llmville/game/datacenter/claims";
-import { PlayerMovementController } from "@/movement/PlayerMovementController";
-import type { MovementKeysState } from "@jgengine/core/movement/movementModel";
 import type { GameEngine } from "@/runtime/gameEngine";
 import type { PlacedRack } from "@/infrastructure/infrastructure";
 import type { GpuSlotWorkload } from "@/infrastructure/computeUnits";
@@ -26,37 +21,16 @@ import type { GpuSlotWorkload } from "@/infrastructure/computeUnits";
 import BuildProp from "@/scene/components/BuildProp";
 import { ProximityPromptMarker, type GaugeReading } from "@/scene/components/ProximityPromptMarker";
 import { ClaimedCellOverlay, EndlessDatacenter } from "@/world/components/EndlessDatacenter";
-import { DatacenterLighting } from "@/scene/components/DatacenterLighting";
 import Rack from "@/infrastructure/components/Rack";
-import { InterpolatedWorldAgentAvatar } from "@/agent/components/WorldAgentAvatar";
-import { PresenceSyncController } from "@/movement/PresenceSyncController";
-import type { WorldPresenceActions } from "@/multiplayer/presenceTransport";
 import { SceneAxesHelper, useShowSceneAxes } from "@/scene/components/SceneAxesHelper";
-import { PlayLook } from "@/movement/components/PlayLook";
 import { TutorialRackArrow } from "@/tutorial/components/TutorialUi";
-import { PerformanceDiagnosticSampler } from "@/runtime/components/PerformanceDiagnosticSampler";
+import { useWorldSceneProps } from "@/runtime/llmvilleSession";
+import { useLocalPlayerBridge } from "@/runtime/localPlayerEntity";
 
-interface WorldPresenceState {
-  presenceId: string;
-  kind: "human" | "bot";
-  label: string | null;
-  position: { x: number; y: number; z: number };
-  rotationY: number;
-  rotationPitch?: number;
-  online?: boolean;
-}
-
-interface GameSceneProps {
-  activeSlot: number;
+/** What the scene draws, published by the HUD each time the world view model changes. */
+export interface WorldSceneProps {
   gameId: string;
   engine: GameEngine;
-  movementKeys: MovementKeysState;
-  playerSpeed: number;
-  canMove: boolean;
-  playInputTouch: boolean;
-  onStepPlayer: (deltaX: number, deltaZ: number) => void;
-  /** Touch only: tap the world to interact. */
-  onTouchInteract?: (() => void) | undefined;
   racks: readonly PlacedRack[];
   rackSlotWorkloadMap: ReadonlyMap<string, GpuSlotWorkload>;
   placedBuildItems: readonly PlacedBuildItem[];
@@ -65,12 +39,9 @@ interface GameSceneProps {
   worldPlacedBuildItems: readonly PlacedBuildItem[];
   claims: readonly DatacenterClaim[];
   placementCellPolicy: PlacementCellPolicy;
-  worldPresences: readonly WorldPresenceState[];
   playerId: string;
   playerPosition: { x: number; z: number };
   buildPlacementModeActive: boolean;
-  presenceSyncEnabled: boolean;
-  presenceActions: WorldPresenceActions;
   placementDraftItemId: BuildItemId | null;
   placementDraftDirection: BuildDirection;
   placementPreview: BuildPlacementPreview | null;
@@ -82,80 +53,53 @@ interface GameSceneProps {
   powerDrawKw: number;
   powerCapacityKw: number;
   onPlacementPreviewChange: (preview: BuildPlacementPreview | null) => void;
-  onSceneReady?: () => void;
 }
 
-const SCENE_MOOD = { background: WORLD_FOG_COLOR, fog: WORLD_FOG_COLOR, fogNear: WORLD_FOG_NEAR, fogFar: WORLD_FOG_FAR };
+/** The shell's world environment: the endless datacenter floor, columns and ceiling around the player. */
+export function LlmvilleDatacenter() {
+  const props = useWorldSceneProps();
+  return props === null ? null : <EndlessDatacenter engine={props.engine} />;
+}
 
-export default function GameScene(props: GameSceneProps) {
+/** The shell's world overlay: LLMville's datacenter, racks, avatars and build preview inside the shell canvas. */
+export function LlmvilleWorld() {
+  const props = useWorldSceneProps();
+  useLocalPlayerBridge(props?.engine ?? null);
+  if (props === null) return null;
   return (
-    <div className="absolute inset-0">
-      <Canvas
-        camera={{ position: [0, 1.7, 0], fov: 75, near: 0.1, far: WORLD_CAMERA_FAR }}
-        shadows="percentage"
-        gl={{ antialias: true, stencil: false, depth: true }}
-        onCreated={({ gl }) => {
-          gl.shadowMap.enabled = true;
-          gl.shadowMap.type = PCFShadowMap;
-          gl.toneMapping = ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.25;
-          (gl.domElement as HTMLCanvasElement).tabIndex = -1;
-          requestAnimationFrame(() => {
-            props.onSceneReady?.();
-          });
-        }}
-      >
-        <color attach="background" args={[SCENE_MOOD.background]} />
-        <fog attach="fog" args={[SCENE_MOOD.fog, SCENE_MOOD.fogNear, SCENE_MOOD.fogFar]} />
-        <DatacenterLighting engine={props.engine} />
-
-        <GameWorldContent
-          engine={props.engine}
-          gameId={props.gameId}
-          racks={props.racks}
-          rackSlotWorkloadMap={props.rackSlotWorkloadMap}
-          placedBuildItems={props.placedBuildItems}
-          worldRacks={props.worldRacks}
-          worldPlacedBuildItems={props.worldPlacedBuildItems}
-          claims={props.claims}
-          worldPresences={props.worldPresences}
-          playerPosition={props.playerPosition}
-          buildPlacementModeActive={props.buildPlacementModeActive}
-          placementDraftItemId={props.placementDraftItemId}
-          placementDraftDirection={props.placementDraftDirection}
-          placementPreview={props.placementPreview}
-          tutorialRack={props.tutorialRack}
-          showTutorialRackArrow={props.showTutorialRackArrow}
-          powerDrawKw={props.powerDrawKw}
-          powerCapacityKw={props.powerCapacityKw}
-          interactionHint={props.interactionHint}
-          interactionTarget={props.interactionTarget}
-          interactionPrompt={props.interactionPrompt}
-        />
-
-        <PlayLook
-          touchMode={props.playInputTouch}
-          onTouchTap={props.onTouchInteract}
-        />
-        <PlayerMovementController activeSlot={props.activeSlot} gameId={props.gameId} engine={props.engine} movementKeys={props.movementKeys} playerSpeed={props.playerSpeed} canMove={props.canMove} onStepPlayer={props.onStepPlayer} />
-        <PresenceSyncController
-          engine={props.engine}
-          playerId={props.playerId}
-          enabled={props.presenceSyncEnabled}
-          presenceActions={props.presenceActions}
-        />
-        <PerformanceDiagnosticSampler />
-        <BuildPlacementPreviewController
-          enabled={props.placementDraftItemId !== null}
-          placementDraftItemId={props.placementDraftItemId}
-          placementDraftDirection={props.placementDraftDirection}
-          racks={props.racks}
-          placedBuildItems={props.placedBuildItems}
-          placementCellPolicy={props.placementCellPolicy}
-          onPlacementPreviewChange={props.onPlacementPreviewChange}
-        />
-      </Canvas>
-    </div>
+    <>
+      <GameWorldContent
+        engine={props.engine}
+        gameId={props.gameId}
+        racks={props.racks}
+        rackSlotWorkloadMap={props.rackSlotWorkloadMap}
+        placedBuildItems={props.placedBuildItems}
+        worldRacks={props.worldRacks}
+        worldPlacedBuildItems={props.worldPlacedBuildItems}
+        claims={props.claims}
+        playerPosition={props.playerPosition}
+        buildPlacementModeActive={props.buildPlacementModeActive}
+        placementDraftItemId={props.placementDraftItemId}
+        placementDraftDirection={props.placementDraftDirection}
+        placementPreview={props.placementPreview}
+        tutorialRack={props.tutorialRack}
+        showTutorialRackArrow={props.showTutorialRackArrow}
+        powerDrawKw={props.powerDrawKw}
+        powerCapacityKw={props.powerCapacityKw}
+        interactionHint={props.interactionHint}
+        interactionTarget={props.interactionTarget}
+        interactionPrompt={props.interactionPrompt}
+      />
+      <BuildPlacementPreviewController
+        enabled={props.placementDraftItemId !== null}
+        placementDraftItemId={props.placementDraftItemId}
+        placementDraftDirection={props.placementDraftDirection}
+        racks={props.racks}
+        placedBuildItems={props.placedBuildItems}
+        placementCellPolicy={props.placementCellPolicy}
+        onPlacementPreviewChange={props.onPlacementPreviewChange}
+      />
+    </>
   );
 }
 
@@ -168,7 +112,6 @@ function GameWorldContent({
   worldRacks,
   worldPlacedBuildItems,
   claims,
-  worldPresences,
   buildPlacementModeActive,
   placementDraftItemId,
   placementDraftDirection,
@@ -190,7 +133,6 @@ function GameWorldContent({
   worldRacks: readonly PlacedRack[];
   worldPlacedBuildItems: readonly PlacedBuildItem[];
   claims: readonly DatacenterClaim[];
-  worldPresences: readonly WorldPresenceState[];
   buildPlacementModeActive: boolean;
   placementDraftItemId: BuildItemId | null;
   placementDraftDirection: BuildDirection;
@@ -231,7 +173,6 @@ function GameWorldContent({
         />
       )}
 
-      <EndlessDatacenter engine={engine} />
       <ClaimedCellOverlay claims={claims} localGameId={gameId} playerPosition={playerPosition} />
 
       {worldRacks.map((rack) => (
@@ -264,15 +205,6 @@ function GameWorldContent({
           <BuildProp itemId={placementDraft.itemId} x={placementPreview.x} y={placementPreview.y} z={placementPreview.z} direction={placementDraft.direction} ghost={true} isValid={placementPreview.isValid} />
         )
       ) : null}
-      {worldPresences.map((presence) => (
-        <InterpolatedWorldAgentAvatar
-          key={presence.presenceId}
-          presenceId={presence.presenceId}
-          label={presence.label}
-          kind={presence.kind}
-          online={presence.online !== false}
-        />
-      ))}
     </>
   );
 }

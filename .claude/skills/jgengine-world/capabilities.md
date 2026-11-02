@@ -469,6 +469,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/buildings/buildingLots"`
 
+## calendar-clock-hook — live in-world date and time for a HUD, aligned to the server clock
+
+- `useCalendarClock` (function) · `import { useCalendarClock } from "@jgengine/core/time/calendarClock.view"`
+
 ## camera-clearance — keep any camera out of world collision with a spring-arm pull-in
 
 - `clearCameraBoom` (function) · `import { clearCameraBoom } from "@jgengine/core/camera/cameraCollision"`
@@ -1614,6 +1618,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `PlaceAssetResult` (interface) · `import { PlaceAssetResult } from "@jgengine/core/world"`
 - `placeAssetFromCommit` (function) · `import { placeAssetFromCommit } from "@jgengine/core/world"`
 - `resolvePlaceAsset` (function) · `import { resolvePlaceAsset } from "@jgengine/core/world"`
+
+## placement-bounds — validate already-resolved footprint bounds against bounds, obstacles and territory
+
+- `validatePlacementBounds` (function) · `import { validatePlacementBounds } from "@jgengine/core/world"`
 
 ## placement-controller — interactive build-mode ghost preview and commit
 

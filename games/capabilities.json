@@ -1452,6 +1452,16 @@
       "intent": "derive street-facing building lots from road frontage"
     },
     {
+      "id": "calendar-clock-hook",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/time/calendarClock.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "live in-world date and time for a HUD, aligned to the server clock"
+    },
+    {
       "id": "camera-clearance",
       "packages": [
         "@jgengine/core"
@@ -8421,6 +8431,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a placed object's per-instance state and container contents convert to and from the persisted snapshot row a host stores"
+    },
+    {
+      "id": "placement-bounds",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/placement/placement",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "validate already-resolved footprint bounds against bounds, obstacles and territory"
     },
     {
       "id": "placement-controller",

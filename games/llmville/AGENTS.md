@@ -17,11 +17,15 @@ LLMville is a cosy cooperative AI-lab tycoon: build a lab, install hardware, col
 models, serve them, earn income and expand in a shared world.
 
 - This folder (`src/`): React, Vite, TanStack Router, React Three Fiber and Convex adapters.
-  Domain UI lives in `<domain>/components/`, shared primitives in `components/ui/`, and
-  `src/runtime` holds browser and React adapters only.
+  Domain UI lives in `<domain>/components/` and draws with the engine's kit parts (`KitPanel`,
+  `KitButton`, `KitMeter`, `KitToast`); LLMville's look is its UI kit in `src/kit/` (palette tokens,
+  card shells, stylesheet). `src/runtime` holds browser and React adapters only.
 - `packages/game/src/<domain>`: shared pure TypeScript catalogs, balance, transitions,
   placement and simulation, with no React or Convex imports. `game/runtime` holds authoritative
-  gameplay commands; `builder` holds portable scene-builder operations.
+  gameplay commands.
+- `src/editor.scene.json`: authored world content, edited through the JGengine editor. The endless
+  datacenter, claims, racks and build items are runtime-owned and declared in
+  `src/scene-ownership.json`.
 - `packages/backend/convex`: persistence, authentication, permission checks, domain adapters and
   migrations. `jgengine/` wraps `@jgengine/convex` factories; `multiplayer/` wires presence and
   chat. Authoritative gameplay belongs here.

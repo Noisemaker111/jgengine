@@ -27,3 +27,6 @@ export function preferredPresenceLabel(
 ): string | null {
   return profile?.username?.trim() || profile?.displayName?.trim() || null;
 }
+
+/** The shared world's one chat channel; migrated history and bot posts live here too. */
+export const WORLD_CHAT_CHANNEL = "global";

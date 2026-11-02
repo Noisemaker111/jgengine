@@ -24,8 +24,7 @@ import { useWorldModelsSlice } from "@/models/modelsSlice";
 import { DEFAULT_SERVING_MODE, type ServingModeId } from "@llmville/game/models/servingMode";
 import { EMPTY_COMPUTE_ASSIGNMENTS } from "@llmville/game/infrastructure/infrastructure";
 import { DEFAULT_SCRAPE_TIER, type ScrapeTierId } from "@llmville/game/models/scrapingTiers";
-import { useMovementSession } from "@/movement/playerStep";
-import { usePresenceTransport } from "@/multiplayer/PresenceTransportProvider";
+import { useWorldEntry } from "@/runtime/worldEntry";
 
 import { mapPlacedBuildItems as mapWorldPlacedBuildItems } from "@llmville/game/build/build";
 import { createPlacementCellPolicy } from "@llmville/game/datacenter/claims";
@@ -38,7 +37,7 @@ import { getAvatarById, normalizeAvatarId, normalizePlayerProfile } from "@/user
 import { useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo } from "react";
 
-import { useRuntimeClock } from "./clock";
+import { useCalendarClock } from "@jgengine/core/time/calendarClock.view";
 import { deriveWorldBootLabel, deriveWorldBootProgress } from "./worldBootPhase";
 
 import type { RuntimeGame, SiteHealth, WorldSpendPulse } from "./worldViewModel";
@@ -102,17 +101,9 @@ export function useWorldState({
     claimCellMutation,
     unlockResearchItemMutation,
   } = useWorldDataMutations();
-  const presenceTransport = usePresenceTransport();
   const viewerChunkKey = useGameEngineState(engine, (current) =>
     worldChunkKeyAt(current.player.position),
   );
-  const presenceFeeds = presenceTransport.useFeeds({
-    homeGameId: gameId,
-    externalId: playerId,
-    viewerChunkKey,
-  });
-  const presenceActions = presenceTransport.useActions();
-  const myPresenceLocation = presenceFeeds.myPresenceLocation;
   const viewerChunkCenter = useMemo(() => worldChunkCenterOfKey(viewerChunkKey), [viewerChunkKey]);
   const {
     gameState,
@@ -126,7 +117,6 @@ export function useWorldState({
   } = useWorldDataQueries({
     gameId,
     viewerChunkCenter,
-    onlinePresences: presenceFeeds.onlinePresences,
   });
   const game = gameState?.game;
   const shopItemsRaw = useQuery(
@@ -137,6 +127,7 @@ export function useWorldState({
   );
   const canViewGame = gameState?.access.canView === true;
   const canEditGame = gameState?.access.canEdit === true;
+  const enteredWorld = useWorldEntry(engine, game?._id ?? null, canViewGame);
   const isWorldReady =
     gameState !== undefined &&
     gameWorldState !== undefined &&
@@ -144,12 +135,12 @@ export function useWorldState({
     shopItemsRaw !== undefined &&
     canViewGame &&
     game != null &&
-    myPresenceLocation !== undefined;
+    enteredWorld;
   const worldBootInput = {
     gameStateLoaded: gameState !== undefined,
     canViewGame,
     gameFound: game != null,
-    presenceLoaded: myPresenceLocation !== undefined,
+    presenceLoaded: enteredWorld,
     queryBundleReady: isWorldQueryBundleReady,
     shopCatalogLoaded: shopItemsRaw !== undefined,
   };
@@ -268,18 +259,6 @@ export function useWorldState({
     vramUsedGb: worldSummary?.vramUsedGb ?? 0,
     vramCapacityGb: worldSummary?.vramCapacityGb ?? 0,
   }), [powerCapacityKw, worldSummary]);
-  const {
-    onStepPlayer,
-    otherWorldPresences,
-    hasBeenDisplaced,
-  } = useMovementSession({
-    engine,
-    playerId,
-    canViewGame,
-    game,
-    presenceFeeds,
-    presenceActions,
-  });
 
   const benchPosition = useMemo(() => tutorialBenchPosition(racks), [racks]);
   useEffect(() => {
@@ -356,7 +335,7 @@ export function useWorldState({
     },
   });
 
-  const gameTime = useRuntimeClock(game?.createdAt, game?.serverNow, game?.gameTimeScale);
+  const gameTime = useCalendarClock(game?.createdAt, game?.serverNow, { timeScale: game?.gameTimeScale });
   const spendPulse: WorldSpendPulse | null = useMemo(
     () => spendPulseEffect != null && spendPulseEffect.until > Date.now()
       ? { amount: spendPulseEffect.amount, token: spendPulseEffect.until }
@@ -427,7 +406,6 @@ export function useWorldState({
     rackCount: racks.length,
     onSaveProgress,
     onDismissTweet,
-    onStepPlayer,
     playerProfile: normalizedPlayerProfile,
     selectedAvatarName: getAvatarById(avatarId).name,
     gameTime,
@@ -435,19 +413,16 @@ export function useWorldState({
     interactionTarget,
     interactionPrompt,
     isPointerLocked,
-    hasSessionConflict: hasBeenDisplaced,
     canMove: !isPlayerPaused,
     launchCelebrationActive: launchCelebrationUntil !== null && launchCelebrationUntil > Date.now(),
     tweetNotification,
     spendPulse,
-    worldPresences: otherWorldPresences,
     claims,
     myClaims,
     placementCellPolicy,
     onClaimCell,
     worldRacks,
     worldPlacedBuildItems,
-    presenceActions,
   }), [
     avatarId,
     buildInventory,
@@ -480,7 +455,6 @@ export function useWorldState({
     onDismissTweet,
     onPlaceTutorialBench,
     onSaveProgress,
-    onStepPlayer,
     normalizedPlayerProfile,
     placedBuildItems,
     playerId,
@@ -500,14 +474,11 @@ export function useWorldState({
     spendPulse,
     tweetNotification,
     personalUpgrades,
-    otherWorldPresences,
-    hasBeenDisplaced,
     claims,
     myClaims,
     placementCellPolicy,
     onClaimCell,
     worldRacks,
     worldPlacedBuildItems,
-    presenceActions,
   ]);
 }

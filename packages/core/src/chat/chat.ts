@@ -23,6 +23,8 @@ export interface ChatMessage {
   id: string;
   channelId: string;
   fromUserId: string;
+  /** Display name carried with the message, so a chat log needs no lookup per author. */
+  fromLabel?: string;
   body: string;
   at: number;
 }

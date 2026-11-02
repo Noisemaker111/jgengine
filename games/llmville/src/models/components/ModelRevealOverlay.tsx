@@ -1,10 +1,9 @@
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { useCallback, useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { CARD_VARIANT, Card } from "@/components/ui/card";
-import { ProgressRow } from "@/components/ui/progress";
-import { cn } from "@/components/ui/cn";
+import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
+import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { cn } from "@/kit/cn";
 import {
   dataTokenRateToBarValue,
   formatHourlyIncome,
@@ -86,11 +85,11 @@ function getRevealBarValue(stat: RevealedStatConfig, value: number): number | nu
 }
 
 const REVEAL_STAT_TONE = {
-  moneyPerToken: "amber",
-  tokensPerSecond: "coral",
-  tokensPerToken: "teal",
-  estimatedIncomePerSecond: "teal",
-} as const satisfies Record<RevealedStatKey, "teal" | "amber" | "coral" | "cream">;
+  moneyPerToken: "warn",
+  tokensPerSecond: "accent",
+  tokensPerToken: "good",
+  estimatedIncomePerSecond: "good",
+} as const satisfies Record<RevealedStatKey, KitTone>;
 
 function ModelRevealSealedCard({ onOpen }: { onOpen: () => void }) {
   return (
@@ -100,7 +99,7 @@ function ModelRevealSealedCard({ onOpen }: { onOpen: () => void }) {
         onClick={onOpen}
         className="group relative mx-auto block h-64 w-52 cursor-pointer border-0 bg-transparent p-0 text-left transition-transform duration-300 hover:scale-[1.03]"
       >
-        <Card variant={CARD_VARIANT.redacted} decoration="stamp" className="flex h-full flex-col items-center justify-center gap-4 p-6">
+        <KitPanel as="div" variant="card" data-shell="redacted" data-deco="stamp" className="flex h-full flex-col items-center justify-center gap-4 p-6">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-ink/40 animate-pulse">
             <span className="text-4xl">🤖</span>
           </div>
@@ -111,7 +110,7 @@ function ModelRevealSealedCard({ onOpen }: { onOpen: () => void }) {
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -inset-full skew-x-12 animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           </div>
-        </Card>
+        </KitPanel>
       </button>
     </div>
   );
@@ -124,12 +123,12 @@ function ModelRevealOpeningCard({ showGlow }: { showGlow: boolean }) {
         {showGlow && (
           <div className="absolute inset-0 animate-ping rounded-sm bg-gradient-to-br from-brand-amber/35 to-brand-teal/35" />
         )}
-        <Card
-          variant="polaroid"
+        <KitPanel as="div"
+          variant="card" data-shell="polaroid"
           className="absolute inset-0 flex items-center justify-center animate-[flip_1s_ease-in-out_forwards]"
         >
           <span className="animate-bounce text-6xl">✨</span>
-        </Card>
+        </KitPanel>
       </div>
     </div>
   );
@@ -149,7 +148,7 @@ function ModelRevealStatsPanel({
   onComplete: () => void;
 }) {
   return (
-    <Card variant="model-report" decoration="fold" className="animate-in fade-in slide-in-from-bottom-8 space-y-4 p-4 duration-500">
+    <KitPanel as="div" variant="card" data-shell="model-report" data-deco="fold" className="animate-in fade-in slide-in-from-bottom-8 space-y-4 p-4 duration-500">
       <div className="animate-in zoom-in-95 space-y-2 text-center duration-500">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-sm border border-brand-teal/30 bg-brand-teal/10">
           <span className="text-2xl">🤖</span>
@@ -176,12 +175,14 @@ function ModelRevealStatsPanel({
                 isVisible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0",
               )}
             >
-              <ProgressRow
+              <KitMeter
+                className="llm-meter--row llm-meter--lcd"
                 label={`${stat.icon} ${stat.label}`}
-                valueLabel={getRevealStatDisplay(stat, value)}
-                fill={barValue ?? 0}
+                readout={getRevealStatDisplay(stat, value)}
+                value={barValue ?? 0}
+                max={100}
                 tone={REVEAL_STAT_TONE[stat.key]}
-                compact
+                size="sm"
               />
             </div>
           );
@@ -214,12 +215,12 @@ function ModelRevealStatsPanel({
 
       {phase === "complete" && (
         <div className="animate-in fade-in slide-in-from-bottom-4 pb-1 duration-500">
-          <Button variant="primary" onClick={onComplete} className="w-full py-3 text-sm">
+          <KitButton variant="primary" onClick={onComplete} className="w-full py-3 text-sm">
             Continue
-          </Button>
+          </KitButton>
         </div>
       )}
-    </Card>
+    </KitPanel>
   );
 }
 

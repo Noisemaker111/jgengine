@@ -2,7 +2,10 @@ import { HeadContent, Outlet, createRootRouteWithContext } from "@tanstack/react
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ThemeProvider } from "next-themes";
 
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "sonner";
+
+import { UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { llmvilleKit } from "@/kit/llmvilleKit";
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME, SITE_URL } from "@/seo/siteSeo";
 
 import "../index.css";
@@ -44,8 +47,11 @@ function RootComponent() {
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
-        <Outlet />
+        <UiKitRoot kit={llmvilleKit}>
+          <Outlet />
+        </UiKitRoot>
         <Toaster
+          theme="dark"
           richColors
           toastOptions={{
             style: {

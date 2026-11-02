@@ -1277,6 +1277,7 @@
     "./time/accrueSince",
     "./time/beatClock",
     "./time/calendarClock",
+    "./time/calendarClock.view",
     "./time/cooldown",
     "./time/gameClock",
     "./time/idleProgress",

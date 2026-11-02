@@ -55,6 +55,14 @@ describe("deriveTouchScheme", () => {
     expect(scheme?.style).toBe("glass");
   });
 
+  test("edge reserves default to zero and clamp negatives, so a game's bottom bar can push the dock up", () => {
+    const input = { moveLeft: ["KeyA"], moveRight: ["KeyD"], jump: ["Space"] };
+    expect(deriveTouchScheme(input, { reserved: RESERVED, firstPerson: false })?.reserve).toEqual({ top: 0, bottom: 0 });
+    expect(
+      deriveTouchScheme(input, { reserved: RESERVED, firstPerson: false, config: { reserve: { bottom: 80, top: -5 } } })?.reserve,
+    ).toEqual({ top: 0, bottom: 80 });
+  });
+
   test("turn actions fill the horizontal axis when strafing is unbound", () => {
     const scheme = deriveTouchScheme(
       { moveForward: ["KeyW"], turnLeft: ["KeyA"], turnRight: ["KeyD"] },

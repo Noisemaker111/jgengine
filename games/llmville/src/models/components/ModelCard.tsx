@@ -4,6 +4,7 @@
  * Uses real model stats when available.
  */
 
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import type { BaseModelLibraryEntry } from "@/models/training";
 import { getBaseModelBaselineStatsById, MODEL_ACTION_KIND } from "@/models/training";
 import { getBaseModelDefinition } from "@llmville/game/models/baseModels";
@@ -17,7 +18,6 @@ import {
   userModelTrainingVolumeLabel,
 } from "@/models/models";
 
-import { CARD_VARIANT, Card } from "@/components/ui/card";
 import { MODEL_CARD_ACTION_VARIANT, ModelCardAction } from "@/models/components/ModelCardAction";
 import { getDeltaFillOpacity, ModelStatRow, ModelTrainingDurationEstimate } from "@/models/components/ModelPresentation";
 import { formatTrainingDurationLabel } from "@llmville/game/models/trainingDurationLabel";
@@ -44,9 +44,9 @@ export function BaseModelCard({
 }) {
   const isTrainingThisModel = trainingSecondsRemaining != null;
   return (
-    <Card
-      variant="model-report"
-      header="Lab Report"
+    <KitPanel as="div"
+      variant="card" data-shell="model-report"
+      title="Lab Report"
       className={`${CARD_BASE} ${justUnlocked ? "animate-unlock-success" : ""}`}
       data-just-unlocked={justUnlocked ? "true" : undefined}
     >
@@ -133,7 +133,7 @@ export function BaseModelCard({
           </div>
         </div>
       </div>
-    </Card>
+    </KitPanel>
   );
 }
 
@@ -146,7 +146,7 @@ export function UnknownModelCard({
   onReveal: () => void;
 }) {
   return (
-    <Card variant={CARD_VARIANT.redacted} className={CARD_BASE}>
+    <KitPanel as="div" variant="card" data-shell="redacted" className={CARD_BASE}>
       <div className="flex-1 min-w-0 flex flex-col justify-between py-0 relative z-[1]">
         <div>
           <h3 className="font-game text-2xl font-bold text-brand-cream/40 italic tracking-tight leading-none">Unknown Model</h3>
@@ -163,7 +163,7 @@ export function UnknownModelCard({
           <ModelCardAction variant={MODEL_CARD_ACTION_VARIANT.reveal} onReveal={onReveal} />
         </div>
       </div>
-    </Card>
+    </KitPanel>
   );
 }
 
@@ -195,7 +195,7 @@ export function RevealedModelCard({
   const trainingVolumeLabel = userModelTrainingVolumeLabel(model);
 
   return (
-    <Card variant="model-report" header="Deployed Model" className={CARD_BASE}>
+    <KitPanel as="div" variant="card" data-shell="model-report" title="Deployed Model" className={CARD_BASE}>
       <div className="flex-1 min-w-0 flex flex-col justify-between py-0">
         <div>
           <h3
@@ -257,6 +257,6 @@ export function RevealedModelCard({
           </div>
         </div>
       </div>
-    </Card>
+    </KitPanel>
   );
 }

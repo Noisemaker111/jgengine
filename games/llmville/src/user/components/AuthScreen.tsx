@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import type { FormEvent, ReactNode } from "react";
 
-import { Button } from "@/components/ui/button";
+import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useLoginForm, useSignupForm } from "@/auth";
 import { AuthOAuthSection } from "@/branding/components/AuthOAuthSection";
 import { BrandLogo } from "@/branding/components/BrandLogo";
@@ -110,7 +110,7 @@ function AuthScreenBody({
       <form onSubmit={onSubmit} className="game-auth-form">
         {formFields}
         {error ? <p className="text-sm text-[#f0a097]">{error}</p> : null}
-        <Button
+        <KitButton
           type="submit"
           variant="primary"
           disabled={isLoading}
@@ -124,7 +124,7 @@ function AuthScreenBody({
           ) : (
             copy.submitLabel
           )}
-        </Button>
+        </KitButton>
       </form>
 
       <p className="text-center text-sm text-brand-cream/60">

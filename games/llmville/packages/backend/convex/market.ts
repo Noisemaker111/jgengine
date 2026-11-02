@@ -12,7 +12,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { getEditorAccess, getReadAccess } from "./permissions";
-import { gameRacks, rackSnapshots } from "./jgengine/worldObjects";
+import { gameRacks, rackSnapshots } from "./worldObjects";
 
 const hostingOpportunityValidator = v.object({
   vendorModelId: v.string(),

@@ -11,7 +11,6 @@ import { GameEngine } from "@/runtime/gameEngine";
 import type { BuildViewModel } from "@/build/buildSession";
 import type { RackHardwareViewModel } from "@/infrastructure/rackHardwareSession";
 import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
-import { localPresenceActions } from "@/multiplayer/localPresenceTransport";
 import { DEFAULT_SERVING_MODE } from "@llmville/game/models/servingMode";
 import { DEFAULT_SCRAPE_TIER } from "@llmville/game/models/scrapingTiers";
 import type { TutorialViewModel } from "@/tutorial/tutorialRuntime";
@@ -141,7 +140,6 @@ export function createTabletPreviewWorld(): ReadyWorldViewModel {
     rackCount: 0,
     onSaveProgress: noop,
     onDismissTweet: noop,
-    onStepPlayer: noop,
     playerProfile: { walkSpeedLevel: 1, trainingDurationMultiplier: 1, powerCapacityKw: 1.5 },
     selectedAvatarName: "Sam Altman",
     gameTime: {
@@ -166,8 +164,6 @@ export function createTabletPreviewWorld(): ReadyWorldViewModel {
     launchCelebrationActive: false,
     tweetNotification: null,
     spendPulse: null,
-    worldPresences: [],
-    hasSessionConflict: false,
     claims: PREVIEW_CLAIMS,
     myClaims: PREVIEW_CLAIMS.filter((claim) => claim.ownerGameId === PREVIEW_GAME_ID).map((claim) => ({
       cx: claim.cx,
@@ -177,7 +173,6 @@ export function createTabletPreviewWorld(): ReadyWorldViewModel {
     onClaimCell: async () => ({ claimed: false, reason: "insufficient_funds" }),
     worldRacks: [],
     worldPlacedBuildItems: [],
-    presenceActions: localPresenceActions,
   };
 }
 

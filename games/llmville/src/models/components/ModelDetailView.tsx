@@ -1,9 +1,7 @@
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useEffect, useState } from "react";
 
-import { InsetSection } from "@/components/ui/inset-section";
-import { PANEL_VARIANT, Panel } from "@/components/ui/panel";
-import { Token } from "@/components/ui/token";
-import { cn } from "@/components/ui/cn";
+import { cn } from "@/kit/cn";
 import { formatBaseModelTrainingVolumeLabel } from "@llmville/game/models/baseModels";
 import { getQuantizationProfile } from "@llmville/game/models/quantization";
 import { computeBenchmarkDemandMultiplier } from "@llmville/game/models/servingStats";
@@ -79,7 +77,7 @@ function BaseModelSection({
         </div>
       </div>
 
-      <InsetSection className="!gap-0 divide-y divide-[var(--surface-border)]">
+      <KitPanel data-shell="inset" className="flex flex-col gap-3 !gap-0 divide-y divide-[var(--kit-line)]">
         <InfoRow label="Creator" value={baseModel.creator} />
         <InfoRow label="Training time" value={durationLabel} />
         <InfoRow label="Source" value={baseModel.sourceType === "closed_source" ? "Closed Source" : "Open Source"} />
@@ -98,7 +96,7 @@ function BaseModelSection({
             <p className="text-xs leading-relaxed text-brand-cream/45">{baseModel.description}</p>
           </div>
         )}
-      </InsetSection>
+      </KitPanel>
     </>
   );
 }
@@ -156,9 +154,9 @@ function UserModelSection({
             <ModelStatRow color="blue" value={dataTokenRateToBarValue(tpt)} label={`${tpt} data/token`} />
           </div>
           <div className="flex shrink-0 flex-col items-center gap-1">
-            <Token tone={model.launchState === "serving" ? "teal" : "amber"}>
+            <span className={`llm-token llm-token--${model.launchState === "serving" ? "teal" : "amber"}`}>
               {model.launchState === "serving" ? "Serving" : "Owned"}
-            </Token>
+            </span>
             <span className="font-game text-xl font-bold italic leading-none tracking-tight">
               <span className="text-brand-teal">{incomeValue}</span>
               <span className="text-brand-amber">/{incomeUnit}</span>
@@ -167,7 +165,7 @@ function UserModelSection({
         </div>
       </div>
 
-      <InsetSection className="!gap-0">
+      <KitPanel data-shell="inset" className="flex flex-col gap-3 !gap-0">
         {baseModel && <InfoRow label="Based on" value={baseModel.name} />}
         {baseModel && <InfoRow label="Creator" value={baseModel.creator} />}
         <InfoRow label="Rarity" value={formatModelQualityTierLabel(model.qualityTier)} />
@@ -178,10 +176,10 @@ function UserModelSection({
         <InfoRow label="Benchmark" value={`${model.benchmarkScore} (${computeBenchmarkDemandMultiplier(model.benchmarkScore).toFixed(2)}× demand)`} />
         <InfoRow label="Precision" value={model.precisionLabel} />
         <InfoRow label="VRAM footprint" value={`${model.footprintGb.toFixed(1)} GB`} />
-      </InsetSection>
+      </KitPanel>
 
       {onQuantizeModel && (
-        <InsetSection label="Quantize">
+        <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="Quantize">
           <div className="game-control-group">
             {COMPUTE_PRECISION_VALUES.map((precision) => {
               const active = model.precision === precision;
@@ -203,7 +201,7 @@ function UserModelSection({
           <p className="text-[10px] leading-snug text-brand-cream/45">
             Lower precision shrinks VRAM and speeds throughput for a small quality hit. FP8/FP4 need capable hardware.
           </p>
-        </InsetSection>
+        </KitPanel>
       )}
     </>
   );
@@ -246,9 +244,9 @@ export function ModelDetailView({
       aria-label="Model details"
       onClick={onClose}
     >
-      <Panel
-        variant={PANEL_VARIANT.terminal}
-        label={mode === "base" ? "Base model" : "Model details"}
+      <KitPanel
+        data-shell="terminal"
+        eyebrow={mode === "base" ? "Base model" : "Model details"}
         className="max-h-[90dvh] w-full max-w-[420px] overflow-y-auto scrollbar-none overscroll-contain"
         onClick={(event) => event.stopPropagation()}
       >
@@ -287,7 +285,7 @@ export function ModelDetailView({
             />
           ) : null}
         </div>
-      </Panel>
+      </KitPanel>
     </div>
   );
 }

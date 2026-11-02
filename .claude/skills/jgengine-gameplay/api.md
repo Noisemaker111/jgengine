@@ -165,7 +165,7 @@
 - `ChatChannelDef` (interface): interface ChatChannelDef { id: string; kind: ChatChannelKind; radius?: number; historyLimit?: number; rateLimit?: ChatRateLimit } — ⚠ undocumented
 - `ChatChannelKind` (type): type ChatChannelKind = "global" | "party" | "proximity" — ⚠ undocumented
 - `ChatDeps` (interface): interface ChatDeps { events: GameEvents; now?: () => number; party?: {membersOf(userId: string): string[]}; proximity?: EmotesDeps; blockedBy?: (userId: string) => readonly string[]; maxBodyLength?: number; defaultRateLimit?: ChatRateLimit; filter?: ChatFilte… — ⚠ undocumented
-- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; body: string; at: number } — ⚠ undocumented · used by `ChatPanel` (@jgengine/core/chat/chat.view): Chat behavior over a game context or externally supplied server messages.
+- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; fromLabel?: string; body: string; at: number } — ⚠ undocumented · used by `ChatPanel` (@jgengine/core/chat/chat.view): Chat behavior over a game context or externally supplied server messages.
 - `ChatRateLimit` (interface): interface ChatRateLimit { count: number; perMs: number } — ⚠ undocumented
 - `ChatRateLimiter` (interface): interface ChatRateLimiter { allow(key: string, atMs: number): boolean; snapshot(): Record<string, number[]>; restore(state: Record<string, number[]>): void } — ⚠ undocumented
 - `ChatRecipients` (type): type ChatRecipients = readonly string[] | "all" — ⚠ undocumented
@@ -839,7 +839,7 @@
 - `GameChromeConfig` (interface): interface GameChromeConfig — Shell mount mode and the shell-owned surfaces: devtools, notices and the settings menu.
 - `GameControlsConfig` (interface): interface GameControlsConfig — Input devices, local seats, platform fit and player movement rules.
 - `GameRenderingConfig` (interface): interface GameRenderingConfig — Look, lighting and renderer budgets.
-- `GameSceneConfig` (interface): interface GameSceneConfig<TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — World rendering and entity/object presentation: the backdrop, authored scene, per-kind models and sprites, and floating readouts.
+- `GameSceneConfig` (interface): interface GameSceneConfig<TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay, TRemotePlayers = unknown> — World rendering and entity/object presentation: the backdrop, authored scene, per-kind models and sprites, and floating readouts.
 - `HemisphereLightingConfig` (interface): interface HemisphereLightingConfig { skyColor?: string; groundColor?: string; intensity?: number } — ⚠ undocumented
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
@@ -865,13 +865,14 @@
 - `NoticePresentationConfig` (interface): interface NoticePresentationConfig extends NoticeFeedConfig — How the shell presents `ctx.game.notices`; every field is optional.
 - `ObjectStyle` (interface): interface ObjectStyle { color?: string; opacity?: number; hidden?: boolean } — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
-- `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay, TProbe extends ProbeReadings = ProbeReadings> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components. Presentation is grouped by the part it tunes: `scene`, `rendering`, `controls`, `audio` and `chrome`.
+- `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay, TProbe extends ProbeReadings = ProbeReadings, TRemotePlayers = unknown> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components. Presentation is grouped by the part it tunes: `scene`, `rendering`, `controls`, `audio` and `chrome`.
 - `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
 - `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
 - `PointLightingConfig` (interface): interface PointLightingConfig — A bounded dynamic point light in world space.
 - `PointerConfig` (interface): interface PointerConfig — Mouse/touch pointer bindings for `defineGame({ pointer })`.
 - `PresentationEffectsConfig` (interface): interface PresentationEffectsConfig — Per-channel combat presentation toggles for the 3D shell canvas. Missing keys default to enabled when the parent `presentationEffects` is an object.
 - `ProbeReadings` (type): type ProbeReadings = Readonly<Record<string, number>> — What a game's `capture.probe` reports: named numbers, read by proof flows and the playtest sampler.
+- `RemotePlayersProps` (interface): interface RemotePlayersProps — What a game's `scene.RemotePlayers` receives: the other players the shell's presence lane reports, own row excluded.
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
@@ -1075,7 +1076,7 @@
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
 - `ChaseMissionOptions` (interface): interface ChaseMissionOptions extends ComposedMissionOptions — Options for {@link chaseMission}: a target kept close until it is caught.
 - `Chat` (interface): interface Chat { register(def: ChatChannelDef): void; channels(): ChatChannelDef[]; send(fromUserId: string, body: string): ChatSendResult; send(fromUserId: string, channelId: string, body: string): ChatSendResult; recent(options?: {limit?: number; channe… — ⚠ undocumented
-- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; body: string; at: number } — ⚠ undocumented · used by `ChatPanel` (@jgengine/core/chat/chat.view): Chat behavior over a game context or externally supplied server messages.
+- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; fromLabel?: string; body: string; at: number } — ⚠ undocumented · used by `ChatPanel` (@jgengine/core/chat/chat.view): Chat behavior over a game context or externally supplied server messages.
 - `ChatRateLimit` (interface): interface ChatRateLimit { count: number; perMs: number } — ⚠ undocumented
 - `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
@@ -1372,7 +1373,7 @@
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus the optional rigid-body backend and character capsule.
 - `PingCategory` (type): type PingCategory = string — A ping category id, such as `enemy`, `loot`, `location` or `danger`.
 - `PingSystem` (interface): interface PingSystem — Classify, build and broadcast pings as map markers shared with the party.
-- `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay, TProbe extends ProbeReadings = ProbeReadings> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components. Presentation is grouped by the part it tunes: `scene`, `rendering`, `controls`, `audio` and `chrome`.
+- `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay, TProbe extends ProbeReadings = ProbeReadings, TRemotePlayers = unknown> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components. Presentation is grouped by the part it tunes: `scene`, `rendering`, `controls`, `audio` and `chrome`.
 - `PointerAxisState` (interface): interface PointerAxisState { x: number; y: number; active: boolean } — ⚠ undocumented · used by `normalizePointerToAxis`: Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
 - `PointerConfig` (interface): interface PointerConfig — Mouse/touch pointer bindings for `defineGame({ pointer })`.
 - `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
@@ -1541,7 +1542,7 @@
 - `TouchControlsConfig` (interface): interface TouchControlsConfig — Game-authored refinement of the derived touch scheme on `defineGame({ touch })` — gestures, curated buttons, hidden actions, cluster layout, skin, and per-context `modes`.
 - `TouchControlsModeConfig` (type): type TouchControlsModeConfig = Omit<TouchControlsConfig, "modes"> — One named control context's touch config — the same shape as the base config, minus nested modes.
 - `TouchJoystick` (interface): interface TouchJoystick { up: string | null; down: string | null; left: string | null; right: string | null } — ⚠ undocumented
-- `TouchScheme` (interface): interface TouchScheme { joystick: TouchJoystick | null; buttons: readonly TouchButton[]; slots: readonly string[]; gestures: TouchGestureBindings | null; look: boolean; lookSensitivity: number; layout: ResolvedTouchLayout; style: TouchStyle } — ⚠ undocumented · used by `deriveTouchScheme`: Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
+- `TouchScheme` (interface): interface TouchScheme { joystick: TouchJoystick | null; buttons: readonly TouchButton[]; slots: readonly string[]; gestures: TouchGestureBindings | null; look: boolean; lookSensitivity: number; layout: ResolvedTouchLayout; style: TouchStyle; reserve: {top: numbe… — ⚠ undocumented · used by `deriveTouchScheme`: Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
 - `TrainableUnitDef` (interface): interface TrainableUnitDef — A unit the producer can train.
 - `TransactionLedger` (interface): interface TransactionLedger — The books: balances with a reason-tagged journal, and recurring charges on a cadence.
@@ -2771,6 +2772,7 @@
 
 ## @jgengine/core/random/pick
 
+- `pickKeyed` (function): function pickKeyed<T>(key: number, items: readonly T[]): T | undefined — Pick the item an integer key names (the key modulo the list length, wrapped for negatives), with no random stream. Everyone holding the same key (a calendar day's hash, a shared seed) gets the same item; undefined when empty or the key is not finite.
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
 - `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`, each on a half-open interval so a roll exactly on a boundary goes to the later item. Skips non-positive weights; undefined when nothing is eligible.
 - `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — A shuffled copy of `values` (Fisher–Yates) drawn from `rng`; the same seeded stream always gives the same order.

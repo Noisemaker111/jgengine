@@ -1,54 +1,66 @@
-import { engineActions, useGameEngineState, type GameEngine } from "@/runtime/gameEngine";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+
+import { createTimerSet } from "@jgengine/core/time/timerSet";
+import { engineActions, type GameEngine, type GameEngineState } from "@/runtime/gameEngine";
+
+/** Each timed cue: when it is due, and what clears it. A cue with no deadline is not timing. */
+const CUES: readonly { id: string; until: (state: GameEngineState) => number | null; expire: (engine: GameEngine) => void }[] = [
+  { id: "launchCelebration", until: (s) => s.effects.launchCelebrationUntil, expire: (e) => e.dispatch(engineActions.clearLaunchCelebration()) },
+  { id: "spendPulse", until: (s) => s.effects.spendPulse?.until ?? null, expire: (e) => e.dispatch(engineActions.clearSpendPulse()) },
+  { id: "unlockSuccess", until: (s) => s.effects.unlockSuccess?.until ?? null, expire: (e) => e.dispatch(engineActions.clearUnlockSuccess()) },
+  // A timed tutorial step waits while play is paused; resuming shifts its deadline.
+  { id: "tutorialStep", until: (s) => (s.player.isPaused ? null : s.gameplay.tutorial.actionUntil), expire: (e) => e.actions.tick(Date.now()) },
+];
 
 /**
- * Drives the engine's time-bounded client state with precise one-shot timers
- * instead of a periodic poll. Live gameplay numbers (money, tokens, income, heat)
- * are reactive via Convex / the game clock and update on their own; these effects
- * exist only so transient celebration / pulse cues clear themselves and so a timed
- * tutorial step can complete — each schedules a single setTimeout for exactly when
- * it is due, so an idle world performs no work and triggers no re-renders.
+ * Clears transient cues (launch celebration, spend pulse, unlock success) and completes timed tutorial
+ * steps when they are due. The deadlines live in engine state; a timer set holds one timer per cue and a
+ * single timeout wakes at the soonest, so an idle world schedules nothing.
  */
-export function useEngineEphemeralTimers(engine: GameEngine) {
-  const launchCelebrationUntil = useGameEngineState(engine, (state) => state.effects.launchCelebrationUntil);
-  const spendPulseUntil = useGameEngineState(engine, (state) => state.effects.spendPulse?.until ?? null);
-  const unlockSuccessUntil = useGameEngineState(engine, (state) => state.effects.unlockSuccess?.until ?? null);
-  const actionUntil = useGameEngineState(engine, (state) => state.gameplay.tutorial.actionUntil);
-  const isPaused = useGameEngineState(engine, (state) => state.player.isPaused);
+export function useEngineEphemeralTimers(engine: GameEngine): void {
+  const timers = useMemo(() => createTimerSet(), [engine]);
 
   useEffect(() => {
-    if (launchCelebrationUntil === null) return;
-    const id = window.setTimeout(
-      () => engine.dispatch(engineActions.clearLaunchCelebration()),
-      Math.max(0, launchCelebrationUntil - Date.now()),
-    );
-    return () => window.clearTimeout(id);
-  }, [engine, launchCelebrationUntil]);
+    const deadlines = new Map<string, number>();
+    let wake: ReturnType<typeof setTimeout> | null = null;
 
-  useEffect(() => {
-    if (spendPulseUntil === null) return;
-    const id = window.setTimeout(
-      () => engine.dispatch(engineActions.clearSpendPulse()),
-      Math.max(0, spendPulseUntil - Date.now()),
-    );
-    return () => window.clearTimeout(id);
-  }, [engine, spendPulseUntil]);
+    const schedule = () => {
+      if (wake !== null) clearTimeout(wake);
+      wake = null;
+      let soonest = Number.POSITIVE_INFINITY;
+      for (const timer of timers.list()) if (timer.running) soonest = Math.min(soonest, timer.remainingMs);
+      if (soonest !== Number.POSITIVE_INFINITY) wake = setTimeout(fire, soonest);
+    };
+    const fire = () => {
+      for (const id of timers.poll()) {
+        timers.remove(id);
+        deadlines.delete(id);
+        CUES.find((cue) => cue.id === id)?.expire(engine);
+      }
+      schedule();
+    };
+    const sync = () => {
+      const state = engine.getState();
+      for (const cue of CUES) {
+        const until = cue.until(state);
+        if (until === deadlines.get(cue.id)) continue;
+        if (until === null) {
+          timers.remove(cue.id);
+          deadlines.delete(cue.id);
+        } else {
+          timers.start(cue.id, { durationMs: until - Date.now() });
+          deadlines.set(cue.id, until);
+        }
+      }
+      fire();
+    };
 
-  useEffect(() => {
-    if (unlockSuccessUntil === null) return;
-    const id = window.setTimeout(
-      () => engine.dispatch(engineActions.clearUnlockSuccess()),
-      Math.max(0, unlockSuccessUntil - Date.now()),
-    );
-    return () => window.clearTimeout(id);
-  }, [engine, unlockSuccessUntil]);
-
-  useEffect(() => {
-    if (actionUntil === null || isPaused) return;
-    const id = window.setTimeout(
-      () => engine.actions.tick(Date.now()),
-      Math.max(0, actionUntil - Date.now()),
-    );
-    return () => window.clearTimeout(id);
-  }, [actionUntil, engine, isPaused]);
+    sync();
+    const unsubscribe = engine.subscribe(sync);
+    return () => {
+      unsubscribe();
+      if (wake !== null) clearTimeout(wake);
+      for (const id of timers.ids()) timers.remove(id);
+    };
+  }, [engine, timers]);
 }

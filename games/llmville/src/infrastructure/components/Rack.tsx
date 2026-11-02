@@ -1,6 +1,6 @@
+import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, type Ref, type RefObject } from "react";
 import { RoundedBox } from "@react-three/drei";
-import { PROFILE_SECTION, useProfiledFrame } from "@/runtime/runtimePerformanceProfiler";
 import type { MeshStandardMaterial as MeshStandardMaterialType } from "three";
 
 import { computeRackThermalStateV3, getRackSlotCapacity } from "@llmville/game/infrastructure/infrastructure";
@@ -799,7 +799,7 @@ export default function Rack({
   [working, rackId, rackType, installedHardwareSlots, installedCoolerId]);
   const activityColor = overheated ? "#e8836b" : workloads.includes("training") ? "#e0a95c" : workloads.includes("serving") ? "#5fc2a8" : workloads.includes("scraping") ? "#8db6de" : "#718078";
 
-  useProfiledFrame(PROFILE_SECTION.rackAnimation, (_state, delta) => {
+  useFrame(function rackAnimation(_state, delta) {
     if (ghost) return;
     elapsedRef.current += delta;
     if (lightRef.current) {

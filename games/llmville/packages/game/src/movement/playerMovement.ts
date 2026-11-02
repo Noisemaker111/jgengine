@@ -10,24 +10,6 @@ export interface PlayerPosition {
 /** Soft overlap radius for player-vs-player — blocks the mover, never displaces others. */
 export const PLAYER_PRESENCE_RADIUS = 0.38;
 
-export interface GeometryStep {
-  stepX: number;
-  stepZ: number;
-}
-
-/** Slides a step against the engine's solid placed geometry; supplied by the app, which owns the scene. */
-export type GeometryStepResolver = (
-  from: PlayerPosition,
-  stepX: number,
-  stepZ: number,
-) => GeometryStep;
-
-/** What a step needs beyond placed geometry — all positions in world space. */
-export interface PlayerStepContext {
-  resolveGeometryStep: GeometryStepResolver;
-  otherPlayers: readonly PlayerPosition[];
-}
-
 function collidesWithOtherPlayers(
   position: PlayerPosition,
   otherPlayers: readonly PlayerPosition[],
@@ -66,31 +48,19 @@ function canStandAt(position: PlayerPosition, otherPlayers: readonly PlayerPosit
   );
 }
 
-function advanceAxis(
-  from: PlayerPosition,
-  stepX: number,
-  stepZ: number,
-  context: PlayerStepContext,
-): PlayerPosition {
-  if (Math.abs(stepX) < 1e-6 && Math.abs(stepZ) < 1e-6) {
-    return from;
-  }
+type Point3 = readonly [number, number, number];
 
-  const allowed = context.resolveGeometryStep(from, stepX, stepZ);
-  const candidate = { x: from.x + allowed.stepX, z: from.z + allowed.stepZ };
-  if (candidate.x === from.x && candidate.z === from.z) {
-    return from;
-  }
-
-  return canStandAt(candidate, context.otherPlayers) ? candidate : from;
-}
-
-/** Commit one collision-resolved step in world coordinates. */
-export function stepPlayer(
-  current: PlayerPosition,
-  deltaX: number,
-  deltaZ: number,
-  context: PlayerStepContext,
-): PlayerPosition {
-  return advanceAxis(advanceAxis(current, deltaX, 0, context), 0, deltaZ, context);
+/**
+ * The shell's movement commit hook for LLMville's standing rule: a step into a structural column or
+ * another player keeps the open axis, else stays put. Undefined accepts the step as proposed.
+ */
+export function standingStep(
+  current: Point3,
+  next: Point3,
+  otherPlayers: readonly PlayerPosition[],
+): [number, number, number] | undefined {
+  if (canStandAt({ x: next[0], z: next[2] }, otherPlayers)) return undefined;
+  if (canStandAt({ x: next[0], z: current[2] }, otherPlayers)) return [next[0], next[1], current[2]];
+  if (canStandAt({ x: current[0], z: next[2] }, otherPlayers)) return [current[0], next[1], next[2]];
+  return [current[0], next[1], current[2]];
 }

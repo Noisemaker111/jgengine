@@ -8,7 +8,7 @@ import { isScrapeTierRunnable } from "@llmville/game/models/scrapingTiers";
 import { scrapeLaneTflopsForGame } from "./serving";
 import { mutation } from "./_generated/server";
 import { getEditorAccess, ownerExternalIdForActor } from "./permissions";
-import { runWorldCommand } from "./jgengine/world";
+import { runWorldCommand } from "./runtime";
 import { computeLaneValidator, scrapeTierValidator } from "./schema";
 
 export const assignCard = mutation({
