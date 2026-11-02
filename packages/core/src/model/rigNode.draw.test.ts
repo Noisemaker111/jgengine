@@ -66,6 +66,17 @@ describe("imported rig node references", () => {
     expect(resolveRigNode(rig, "hand.r")).toEqual({ node: exact, matchedBy: "runtime" });
   });
 
+  test("an authored node beats a loader-named primitive part with the same runtime name", () => {
+    // GLTFLoader names mesh `Sniper`'s three primitives Sniper_0..Sniper_2, colliding with node `Sniper_2`.
+    const rig = new THREE.Group(), sniper = new THREE.Group(), part = new THREE.Mesh(), sniper2 = new THREE.Mesh();
+    sniper.name = "Sniper"; sniper.userData.name = "Sniper";
+    part.name = "Sniper_2";
+    sniper2.name = "Sniper_2"; sniper2.userData.name = "Sniper_2";
+    sniper.add(part);
+    rig.add(sniper, sniper2);
+    expect(resolveRigNode(rig, "Sniper_2")).toEqual({ node: sniper2, matchedBy: "runtime" });
+  });
+
   test("duplicate original or runtime names report repair diagnostics instead of picking a node", () => {
     const rig = new THREE.Group(), a = new THREE.Bone(), b = new THREE.Bone();
     a.name = "handr"; b.name = "handr_1";

@@ -27,7 +27,10 @@ export function resolveRigNode(rig: Object3D, name: string): RigNodeResolution {
     if (node.name === name) exact.push(node);
     if (node.userData["name"] === name) authored.push(node);
   });
-  const matches = exact.length > 0 ? exact : authored;
+  // GLTFLoader names a multi-primitive mesh's parts `<mesh>_<i>` without deduplication, so an authored
+  // node called `Sniper_2` can share its runtime name with a part of mesh `Sniper`; the authored node wins.
+  const authoredExact = exact.filter((node) => node.userData["name"] === name);
+  const matches = exact.length > 1 && authoredExact.length === 1 ? authoredExact : exact.length > 0 ? exact : authored;
   const matchedBy = exact.length > 0 ? "runtime" : "authored";
   if (matches.length === 1) return { node: matches[0]!, matchedBy };
   if (matches.length > 1) return {
