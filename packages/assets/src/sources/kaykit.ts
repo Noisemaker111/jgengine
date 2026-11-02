@@ -47,7 +47,6 @@ const KAYKIT_PACKS: readonly KayKitPack[] = [
     itch: "kaykit-medieval-hexagon-pack",
     title: "KayKit Medieval Hexagon Pack",
     categories: ["hexagon", "medieval", "environment"],
-    unpulled: "catalogued for on-demand pull; no game needs hex tiles yet",
   },
   {
     id: "kaykit-furniture",

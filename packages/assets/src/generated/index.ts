@@ -5,6 +5,7 @@ import s_kaykit_city_builder from "./kaykit-city-builder.json" with { type: "jso
 import s_kaykit_dungeon from "./kaykit-dungeon.json" with { type: "json" };
 import s_kaykit_forest from "./kaykit-forest.json" with { type: "json" };
 import s_kaykit_furniture from "./kaykit-furniture.json" with { type: "json" };
+import s_kaykit_medieval_hexagon from "./kaykit-medieval-hexagon.json" with { type: "json" };
 import s_kaykit_skeletons from "./kaykit-skeletons.json" with { type: "json" };
 import s_kaykit_space_base from "./kaykit-space-base.json" with { type: "json" };
 import s_quaternius_5_low_poly_animals from "./quaternius-5-low-poly-animals.json" with { type: "json" };
@@ -69,6 +70,7 @@ export const generatedBySource: Record<string, IndexEntry[]> = {
   "kaykit-dungeon": s_kaykit_dungeon as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "kaykit-forest": s_kaykit_forest as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "kaykit-furniture": s_kaykit_furniture as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
+  "kaykit-medieval-hexagon": s_kaykit_medieval_hexagon as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "kaykit-skeletons": s_kaykit_skeletons as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "kaykit-space-base": s_kaykit_space_base as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions
   "quaternius-5-low-poly-animals": s_quaternius_5_low_poly_animals as IndexEntry[], // type-escape: a JSON import widens the manifest's literal unions

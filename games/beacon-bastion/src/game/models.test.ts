@@ -1,29 +1,28 @@
 import { describe, expect, test } from "bun:test";
 
+import { BASE_CATALOG_ID } from "./entities/base/catalog";
 import { CREEP_CATALOG } from "./entities/enemies/catalog";
 import { entityModels, scatterModels } from "./models";
 
 describe("beacon-bastion models", () => {
-  test("resolves keep/towers/raiders onto Quaternius/KayKit (or soft-empty offline)", () => {
-    for (const [key, config] of Object.entries(entityModels)) {
-      expect(config.url.length).toBeGreaterThan(0);
-      expect(config.url.includes("kenney")).toBe(false);
-      expect(key.length).toBeGreaterThan(0);
+  test("keep, towers, raiders and scatter all come from the one KayKit family", () => {
+    for (const config of Object.values(entityModels)) {
+      expect(config.url).toMatch(/\/models\/kaykit-/);
     }
+    expect(entityModels[BASE_CATALOG_ID]?.url).toContain("building_castle");
+    expect(entityModels.tower_archer?.url).toContain("building_tower");
     for (const id of Object.values(scatterModels)) {
-      expect(id.includes("kenney")).toBe(false);
-      expect(id.includes("quaternius") || id.includes("nature/")).toBe(true);
+      expect(id.startsWith("kaykit-forest/")).toBe(true);
     }
+    expect(scatterModels.pine).toBeDefined();
   });
 
-  test("keep and towers prefer dungeon modular kit when catalog is live", () => {
-    const keep = entityModels.keep ?? entityModels.base;
-    // BASE_CATALOG_ID may be "keep" — just assert any entity model that loaded is CC0.
-    const any = Object.values(entityModels)[0];
-    if (any !== undefined) {
-      expect(any.url).toMatch(/\/models\/(kaykit|quaternius)-/);
+  test("each armed raider carries its weapons in KayKit hand slots", () => {
+    for (const def of Object.values(CREEP_CATALOG)) {
+      const slots = (entityModels[def.id]?.attachments ?? []).map((attachment) => attachment.slot);
+      expect(slots.includes("handslot.r")).toBe(def.gear?.right !== undefined);
+      expect(slots.includes("handslot.l")).toBe(def.gear?.left !== undefined);
     }
-    void keep;
   });
 
   test("the three raiders read apart at the default camera: own model, own size, own rim", () => {
