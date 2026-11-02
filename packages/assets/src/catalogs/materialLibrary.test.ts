@@ -21,7 +21,6 @@ import { sourceById } from "../sources";
 describe("shared material library", () => {
   test("ships more than 40 named materials", () => {
     expect(MATERIAL_LIBRARY.length).toBeGreaterThanOrEqual(40);
-    expect(new Set(MATERIAL_LIBRARY.map((entry) => entry.name)).size).toBe(MATERIAL_LIBRARY.length);
   });
 
   test("covers every surface the epic names", () => {

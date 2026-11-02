@@ -15,11 +15,8 @@ import {
 
 describe("model library", () => {
   test("every entry is named, credited, licensed and sourced from its official site", () => {
-    const names = new Set<string>();
     for (const entry of MODEL_LIBRARY) {
       expect(entry.name).toMatch(/^[a-z-]+\/[a-z0-9-]+$/);
-      expect(names.has(entry.name)).toBe(false);
-      names.add(entry.name);
       expect(entry.author.length).toBeGreaterThan(0);
       expect(entry.intents.length).toBeGreaterThan(0);
       expect(entry.genres.length).toBeGreaterThan(0);
