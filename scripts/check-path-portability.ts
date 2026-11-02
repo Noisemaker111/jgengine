@@ -12,6 +12,7 @@
  *
  *   bun run check path-portability
  */
+import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -240,6 +241,30 @@ export function staleAllowlist(root: string, findings: readonly PortabilityFindi
   );
 }
 
+/**
+ * Windows refuses these names for any file or folder, with or without an extension (`nul`, `NUL.txt`,
+ * `com1.log`), so git cannot check the path out there. One `> nul` redirect from a bash session
+ * committed a 0-byte `nul` (#2860) and every new worktree on Windows failed until it was removed.
+ */
+const WINDOWS_RESERVED = /^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\..*)?$/i;
+
+/** Every path with a segment Windows cannot create, as given. */
+export function windowsReservedPaths(paths: readonly string[]): string[] {
+  return paths.filter((path) => path.split(/[\\/]/).some((segment) => WINDOWS_RESERVED.test(segment.replace(/[. ]+$/, ""))));
+}
+
+/** Tracked files plus untracked ones git would add, so a reserved name fails before its commit. */
+function candidatePaths(root: string): string[] {
+  const listed = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { cwd: root, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  if (listed.status === 0) return listed.stdout.split("\0").filter(Boolean);
+  return walk(root).map((path) => relative(root, path).split("\\").join("/"));
+}
+
+/** Paths under `root` that Windows cannot check out. */
+export function scanReservedNames(root: string): string[] {
+  return windowsReservedPaths(candidatePaths(root));
+}
+
 export const GUIDANCE =
   "Build the expected path the way the code builds it: `join(\"proofs\", \"flows\")`, `sep`, or the same value\n" +
   "the implementation returns. A test that is genuinely one platform's is named in\n" +
@@ -247,7 +272,7 @@ export const GUIDANCE =
   "takes a Windows path), and that reason is printed on every run.";
 
 const USAGE: Usage = {
-  summary: "fail a test that asserts one platform's path separator",
+  summary: "fail a test that asserts one platform's path separator, or a file name Windows reserves (nul, con, com1)",
   usage: "bun run check path-portability [--root <dir>]",
   flags: [{ flag: "--root <dir>", detail: "scan this tree instead of the repository (used by the gate's own fixture test)" }],
   example: "bun run check path-portability",
@@ -267,11 +292,16 @@ if (import.meta.main) {
   const offenders = findings.filter((finding) => finding.reason === null);
   const allowed = findings.filter((finding) => finding.reason !== null);
   const stale = staleAllowlist(root, findings);
+  const reserved = scanReservedNames(root);
 
   for (const finding of allowed) {
     console.log(`  allow  ${finding.file}:${finding.line}  ${finding.rule}  ${finding.reason}`);
   }
-  if (offenders.length === 0 && stale.length === 0) {
+  for (const path of reserved) {
+    console.error(`check-path-portability: ${path} uses a name Windows reserves (nul, con, prn, aux, com1-9, lpt1-9), so no Windows checkout can create it.`);
+    console.error("  fix: git rm it. A stray `nul` comes from `> nul` in bash; there, write `> /dev/null`.");
+  }
+  if (offenders.length === 0 && stale.length === 0 && reserved.length === 0) {
     console.log(`check-path-portability: ok (${allowed.length} allowlisted)`);
     process.exit(0);
   }
