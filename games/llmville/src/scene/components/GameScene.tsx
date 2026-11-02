@@ -71,6 +71,12 @@ export interface WorldSceneProps {
   onPlacementPreviewChange: (preview: BuildPlacementPreview | null) => void;
 }
 
+/** The shell's world environment: the endless datacenter floor, columns and ceiling around the player. */
+export function LlmvilleDatacenter() {
+  const props = useWorldSceneProps();
+  return props === null ? null : <EndlessDatacenter engine={props.engine} />;
+}
+
 /** The shell's world overlay: LLMville's datacenter, racks, avatars and build preview inside the shell canvas. */
 export function LlmvilleWorld() {
   const props = useWorldSceneProps();
@@ -192,7 +198,6 @@ function GameWorldContent({
         />
       )}
 
-      <EndlessDatacenter engine={engine} />
       <ClaimedCellOverlay claims={claims} localGameId={gameId} playerPosition={playerPosition} />
 
       {worldRacks.map((rack) => (

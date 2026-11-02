@@ -1,3 +1,4 @@
+import { normalizeEditorLayers } from "@jgengine/core/editor/index";
 import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
 import { defineGame } from "@jgengine/shell/defineGame";
 import { DATACENTER_CEILING_HEIGHT } from "@llmville/game/datacenter/layout";
@@ -9,8 +10,9 @@ import { worldModelAssetCatalog } from "@llmville/game/world/worldModelCatalog";
 import { convexPresenceTransport } from "@/multiplayer/convexPresenceTransport";
 import { LlmvilleGameUI } from "@/runtime/components/LlmvilleGameUI";
 import { stepAroundNearbyPlayers } from "@/runtime/localPlayerEntity";
-import { LlmvilleWorld } from "@/scene/components/GameScene";
+import { LlmvilleDatacenter, LlmvilleWorld } from "@/scene/components/GameScene";
 import { DEFAULT_APP_KEYBINDS, keybindToCodes } from "@/settings/keybinds";
+import sceneJson from "./editor.scene.json";
 
 /** The shell drives these from LLMville's keybinds; every other key stays with the game's own input. */
 const WALK_ACTIONS = ["moveForward", "moveBack", "moveLeft", "moveRight", "jump", "sprint", "crouch"] as const;
@@ -34,12 +36,12 @@ export const game = defineGame({
     interact: [],
   },
   GameUI: LlmvilleGameUI,
-  scene: { WorldOverlay: LlmvilleWorld },
+  scene: { WorldOverlay: LlmvilleWorld, environment: LlmvilleDatacenter, editorLayers: normalizeEditorLayers(sceneJson) },
   scenePlacement: false,
   camera: {
     perspective: "first",
     rigs: { firstPerson: { eyeHeight: MOVEMENT_TUNING.standEyeHeight, sensitivity: 0.002, reticle: false, viewmodel: false } },
-    lens: { frustum: { far: WORLD_CAMERA_FAR } },
+    lens: { frustum: { fov: 75, far: WORLD_CAMERA_FAR }, playerFov: { control: false } },
   },
   controls: {
     movement: { collideObjects: true, beforeCommit: stepAroundNearbyPlayers },
