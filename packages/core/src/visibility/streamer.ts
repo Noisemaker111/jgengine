@@ -129,7 +129,7 @@ export function gridCellId(x: number, z: number, cellSize: number): string {
 /**
  * Square cells covering an XZ area, aligned to world origin so the same cell size gives the same ids
  * in every game system (streaming, nav tiles, batching). Ids come from {@link gridCellId}.
- * @capability world-streaming-cells split a world area into streamable grid cells
+ * @capability world-streaming-grid split a world area into streamable grid cells
  */
 export function gridShards(options: GridShardsOptions): StreamCell[] {
   const size = options.cellSize;

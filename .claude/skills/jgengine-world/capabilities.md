@@ -2509,6 +2509,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-streaming-cells — stream a world's cells around every player with budgets, async loads and far proxies
 
 - `createCellStreaming` (function) · `import { createCellStreaming } from "@jgengine/core/visibility/cellStreaming"`
+
+## world-streaming-grid — split a world area into streamable grid cells
+
 - `gridShards` (function) · `import { gridShards } from "@jgengine/core/visibility/streamer"`
 
 ## worn-layers — draw clothing on a rigged human by body area, skinned to its skeleton

@@ -53,7 +53,7 @@ export const BLUEPRINTS: readonly Blueprint[] = [
       "jgengine-world/ai-driver",
       "jgengine-world/population-director",
       "jgengine-world/day-night-cycle",
-      "jgengine-editor/world-streaming",
+      "jgengine-world/world-streaming",
       "jgengine-ui/minimap",
     ],
   },

@@ -12874,6 +12874,16 @@
       "packages": [
         "@jgengine/core"
       ],
+      "module": "@jgengine/core/visibility/cellStreaming",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "stream a world's cells around every player with budgets, async loads and far proxies"
+    },
+    {
+      "id": "world-streaming-grid",
+      "packages": [
+        "@jgengine/core"
+      ],
       "module": "@jgengine/core/visibility/streamer",
       "gameFacing": false,
       "probe": null,
