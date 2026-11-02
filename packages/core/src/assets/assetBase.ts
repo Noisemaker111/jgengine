@@ -29,6 +29,21 @@ export function resolveAssetBaseUrl(url: string): string {
   return based || assetBase === "/" ? url : `${base}${url}`;
 }
 
+/**
+ * Whether the running game serves `url`: true or false when the host listed the game's files
+ * (the dev runner and the site do), null when it did not, so a caller that would only probe for an
+ * optional file can skip the request it knows would miss.
+ */
+export function assetFileListed(url: string): boolean | null {
+  if (gameFiles === null || !url.startsWith("/") || url.startsWith("//")) return null;
+  const base = assetBase.replace(/\/+$/, "");
+  const path = assetBase !== "/" && url.startsWith(assetBase) ? url.slice(base.length) : url;
+  const cut = path.search(/[?#]/);
+  const file = withoutDotSegments(cut < 0 ? path : path.slice(0, cut));
+  if (path.startsWith(`/${gameFiles.folder}/`)) return gameFiles.files.has(file.slice(gameFiles.folder.length + 1));
+  return gameFiles.files.has(file);
+}
+
 function withoutDotSegments(path: string): string {
   if (!path.includes("/.")) return path;
   const out: string[] = [];

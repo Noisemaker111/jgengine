@@ -4,7 +4,7 @@ import { createContext, useContext, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
+import { assetFileListed, resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import {
   builtLodFileUrl,
@@ -28,13 +28,18 @@ export function MeshLodSettings({ config, children }: { config: MeshLodConfig | 
 
 /**
  * Reads `<url>.lods/meta.json` through the app's asset base (the dev runner maps a game's files under
- * its own folder), answering null for a model nothing was built for (a 404, an HTML
+ * its own folder), answering null without a request when the host lists the game's files and this
+ * one is not among them, and null for a model nothing was built for (a 404, an HTML
  * fallback page, or a meta from another build version), so a checkout without built levels draws
  * exactly what it did before.
  * @internal
  */
 export class BuiltLodMetaLoader extends THREE.Loader<BuiltLodMeta | null> {
   override load(url: string, onLoad: (meta: BuiltLodMeta | null) => void): void {
+    if (assetFileListed(url) === false) {
+      queueMicrotask(() => onLoad(null));
+      return;
+    }
     fetch(resolveAssetBaseUrl(url))
       .then(async (response) => {
         if (!response.ok) return null;
