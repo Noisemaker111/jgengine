@@ -244,6 +244,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `configureModelLoaders` (function) · `import { configureModelLoaders } from "@jgengine/core/model/modelLoad.draw"`
 
+## model-lod-build — write simplified mesh levels and a baked impostor atlas beside a model file
+
+- `buildModelLods` (function) · `import { buildModelLods } from "@jgengine/assets/modelLodBuild"`
+
 ## model-triangle-budget — Raise or lower the per-model triangle budget
 
 - `setModelTriangleBudget` (function) · `import { setModelTriangleBudget } from "@jgengine/core/model/modelLoad.draw"`

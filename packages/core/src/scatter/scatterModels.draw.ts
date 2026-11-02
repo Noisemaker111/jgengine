@@ -19,14 +19,19 @@ export interface ScatterModelSource {
   skipShadow?: boolean;
 }
 
-/** The scale + position offset a `ModelConfig` applies before any per-instance transform — same anchor/targetHeight rules as the single-instance entity renderer. */
-function scatterModelBaseTransform(scene: THREE.Object3D, model: ModelConfig): THREE.Matrix4 {
+/**
+ * The scale + position offset a `ModelConfig` applies before any per-instance transform — same
+ * anchor/targetHeight rules as the single-instance entity renderer. `bounds` replaces the scene's own
+ * box, so a built detail level is sized by its source and never pops in size at a switch.
+ * @internal
+ */
+export function scatterModelBaseTransform(scene: THREE.Object3D, model: ModelConfig, bounds?: THREE.Box3): THREE.Matrix4 {
   let scale = model.scale ?? 1;
   let minY = 0;
   let centerX = 0;
   let centerZ = 0;
   if (model.targetHeight !== undefined) {
-    const box = new THREE.Box3().setFromObject(scene);
+    const box = bounds ?? new THREE.Box3().setFromObject(scene);
     const height = box.max.y - box.min.y;
     if (Number.isFinite(height) && height > 0) {
       scale *= model.targetHeight / height;
@@ -79,6 +84,7 @@ export function withoutMorphTargets(geometry: THREE.BufferGeometry): THREE.Buffe
 export function buildScatterModelSources(
   gltfScene: THREE.Object3D,
   model: ModelConfig,
+  bounds?: THREE.Box3,
 ): { sources: ScatterModelSource[]; root: THREE.Object3D } {
   if (parseModelHiddenNodes(model.hiddenNodes)?.length) throw new Error("Instanced model node visibility requires the individual model renderer; use EntityModel for hidden nodes");
   if (model.materialAssignments?.length) throw new Error("Instanced model material assignments require the individual model renderer; use EntityModel for authored slots");
@@ -88,7 +94,7 @@ export function buildScatterModelSources(
   applyModelWindToScene(root, model.wind, model.dims?.maxY ?? model.targetHeight ?? 4);
   if (model.material !== undefined) applyMaterialOverride(root, model.material, { clone: false, ownMaterial: material => ownModelMaterial(root, material) });
   root.updateMatrixWorld(true);
-  const base = scatterModelBaseTransform(root, model);
+  const base = scatterModelBaseTransform(root, model, bounds);
   const sources: ScatterModelSource[] = [];
   visitVisible(root, (node) => {
     const mesh = node as THREE.Mesh;

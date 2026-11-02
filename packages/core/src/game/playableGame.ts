@@ -9,6 +9,7 @@ import type { AdaptiveMusicConfig } from "../audio/adaptiveMusic";
 import type { AudioReverbConfig } from "../audio/reverb";
 import type { MusicTheme } from "../audio/music";
 import type { ModelShadowMode, ModelVariantLodConfig } from "../lod/modelLod";
+import type { MeshLodConfig } from "../lod/builtLods";
 export type { ModelShadowMode, ModelVariantConfig, ModelVariantLodConfig } from "../lod/modelLod";
 import type { UiCueOverrides } from "../ui/uiCues";
 import type { FeedbackCueOverrides } from "../audio/feedbackCues";
@@ -427,6 +428,12 @@ export interface ModelConfig {  url: string;
    * {@link ModelVariantLodConfig} and `core/world/modelLod`.
    */
   variants?: ModelVariantLodConfig | undefined;
+  /**
+   * This model's switches through the levels and impostor the asset build wrote for its file, over
+   * the game's `visibility.meshLods`; `false` keeps it on its own mesh (and its own `variants`). See
+   * {@link MeshLodConfig}.
+   */
+  meshLods?: Partial<MeshLodConfig> | false;
 }
 
 /**

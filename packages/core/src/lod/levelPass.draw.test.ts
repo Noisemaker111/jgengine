@@ -47,7 +47,7 @@ function driveFrame(options: {
 describe("variant level edge margin", () => {
   test("measures to the level's own edge plus hysteresis, and to the level below's edge minus it", () => {
     const variantSwitch = variantSwitchOf(PALM);
-    expect(variantSwitch).toEqual({ boundaries: [60], hysteresis: 6 });
+    expect(variantSwitch).toEqual({ boundaries: [60], hysteresis: 6, ratio: 0, scaleWithInstance: false });
     expect(levelEdgeMargin(20, 0, variantSwitch)).toBe(46);
     expect(levelEdgeMargin(66, 0, variantSwitch)).toBe(0);
     expect(levelEdgeMargin(200, 1, variantSwitch)).toBe(146);
@@ -160,4 +160,18 @@ describe("level pass invariance", () => {
     expect(flips).toBeGreaterThan(0);
     expect(passes).toBeLessThan(1001);
   });
+});
+
+test("a level pass that switches per unit of scale holds a doubled placement on its level twice as far out", () => {
+  const variants = { levels: [{ url: "a", maxDistance: 50 }, { url: "b" }], hysteresis: 0, scaleWithInstance: true };
+  const selector = createModelVariantSelector(variants);
+  const variantSwitch = variantSwitchOf(variants);
+  const small: SceneObject = { instanceId: "small", catalogId: "tree", position: [80, 0, 0], rotationY: 0 };
+  const big: SceneObject = { instanceId: "big", catalogId: "tree", position: [80, 0, 0], rotationY: 0, visual: { scale: 2 } };
+  const into = new Map<string, number>();
+  const margin = assignVariantLevels(selector, variantSwitch, [small, big], () => null, new THREE.Vector3(), into, new THREE.Vector3());
+  expect(into.get("small")).toBe(1);
+  expect(into.get("big")).toBe(0);
+  // The big tree switches at 100 m: 20 m of camera travel away, the small one is 30 m past its edge.
+  expect(margin).toBeCloseTo(20, 9);
 });

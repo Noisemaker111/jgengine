@@ -24,6 +24,14 @@ export interface PooledPlacement {
   readonly instanceId: string;
 }
 
+/**
+ * A source's part in its cells' far proxies. `"part"` adds its geometry to the proxy and hides behind
+ * it (a model's coarsest mesh level); `"hidden"` hides behind the proxy without adding to it (a finer
+ * level of a model whose coarsest level stands in for it); `"own"` neither adds nor hides, for a model
+ * whose far placements draw as impostor cards.
+ */
+export type ProxyRole = "part" | "hidden" | "own";
+
 /** Marks the merged far proxies a {@link StaticDrawPool} draws. @internal */
 export const STATIC_POOL_PROXY_KEY = "jgStaticDrawProxy";
 
@@ -361,9 +369,10 @@ export class StaticDrawPool {
 
   /**
    * Take `capacity` instances of one source in one cell; null when its material or geometry cannot be
-   * shared, and the caller draws it on its own.
+   * shared, and the caller draws it on its own. `proxy` is the source's part in its cells' far proxies
+   * ({@link ProxyRole}).
    */
-  acquire(source: PooledSource, cell: string, capacity: number): StaticDrawSlot | null {
+  acquire(source: PooledSource, cell: string, capacity: number, proxy: ProxyRole = "part"): StaticDrawSlot | null {
     const signature = materialSignature(source.material);
     const layout = geometryLayout(source.geometry);
     const material = singleMaterial(source.material);
@@ -386,7 +395,7 @@ export class StaticDrawPool {
       instances.push(id);
     }
     group.instances += capacity;
-    const slot = new StaticDrawSlot(this, group, batchableGeometry(source.geometry), instances);
+    const slot = new StaticDrawSlot(this, group, batchableGeometry(source.geometry), instances, proxy);
     group.slots.add(slot);
     return slot;
   }
@@ -610,6 +619,7 @@ export class StaticDrawSlot {
     private readonly group: PoolGroup,
     private readonly geometry: THREE.BufferGeometry,
     private readonly instances: readonly number[],
+    private readonly proxy: ProxyRole = "part",
   ) {
     this.placed = instances.map(() => null);
     this.wanted = instances.map(() => false);
@@ -675,7 +685,7 @@ export class StaticDrawSlot {
   refresh(index: number): void {
     const instance = this.instances[index];
     if (instance === undefined) return;
-    const shown = this.wanted[index] === true && !this.pool.proxied(this.cells[index] ?? null);
+    const shown = this.wanted[index] === true && (this.proxy === "own" || !this.pool.proxied(this.cells[index] ?? null));
     if (this.shownAt[index] === shown) return;
     this.shownAt[index] = shown;
     this.group.mesh.setVisibleAt(instance, shown);
@@ -706,7 +716,7 @@ export class StaticDrawSlot {
   /** One placed instance as a proxy part, or null when it is not placed. @internal */
   partAt(index: number): ProxyPart | null {
     const instance = this.instances[index];
-    if (instance === undefined || this.placed[index] === null) return null;
+    if (this.proxy !== "part" || instance === undefined || this.placed[index] === null) return null;
     return { geometry: this.geometry, matrix: this.group.mesh.getMatrixAt(instance, new THREE.Matrix4()), material: this.group.material };
   }
 
@@ -730,6 +740,6 @@ export class StaticDrawSlot {
     group.ids[instance] = member.instanceId;
     group.boundsDirty = true;
     const filed = this.members[index];
-    if (filed !== undefined) this.cells[index] = this.pool.file(filed, this.cells[index] ?? null, matrix.elements[12] ?? 0, matrix.elements[14] ?? 0);
+    if (filed !== undefined && this.proxy !== "own") this.cells[index] = this.pool.file(filed, this.cells[index] ?? null, matrix.elements[12] ?? 0, matrix.elements[14] ?? 0);
   }
 }

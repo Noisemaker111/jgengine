@@ -7,6 +7,8 @@ export interface ScatterVariantMember {
   readonly x: number;
   readonly y: number;
   readonly z: number;
+  /** Placement scale; read when the selector switches per unit of instance scale. Default 1. */
+  readonly scale?: number;
 }
 
 /** A camera position the level pass measures from. */
@@ -45,7 +47,8 @@ export function writeScatterVariantLevel(
     const dx = member.x - camera.x;
     const dy = member.y - camera.y;
     const dz = member.z - camera.z;
-    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    const scale = selector.scaleWithInstance ? Math.max(0.01, member.scale ?? 1) : 1;
+    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz) / scale;
     if (selector.level(member.id, distance) !== level) continue;
     if (keep !== undefined && !keep(index)) continue;
     out[count]!.multiplyMatrices(transforms[index]!, localMatrix);

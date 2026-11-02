@@ -20,6 +20,7 @@ import { detailDrawDistance, IMPOSTOR_MIN_RADIUS, sourceRadius } from "@jgengine
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { showCulled } from "@jgengine/core/visibility/culledTransforms.draw";
 import { ScatterImpostorField } from "./ScatterImpostorField.draw";
+import { builtLevelSource, reskinBuiltLevel, WithBuiltLods } from "@jgengine/core/lod/builtLods.draw";
 import { bakeGeneratorVariants, getGenerator, prepareGeneratorVariants, type GeneratorDefinition } from "@jgengine/core/generator/generator";
 import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
 import { ScatterHeroes } from "./ScatterHeroes.draw";
@@ -275,37 +276,68 @@ export function scatterBatchFootprint(batch: ScatterBatch): { x: number; z: numb
   return { x: (minX + maxX) / 2, z: (minZ + maxZ) / 2, radius: Math.hypot(maxX - minX, maxZ - minZ) / 2 };
 }
 
+/** One detail level of a chunked species: its draw sources and how far (metres to a chunk's near edge) it draws. */
+interface ScatterChunkLevel {
+  sources: ScatterModelSource[];
+  maxDistance: number;
+}
+
 /**
  * Small-detail species (below impostor size): every chunk of the species is its own group, hidden
  * once the camera is farther than {@link detailDrawDistance} from the chunk's nearest edge. Without
- * it a field the size of an island draws every pebble on it every frame.
+ * it a field the size of an island draws every pebble on it every frame. A species with built levels
+ * draws one level per chunk, chosen by the chunk's near edge with `hysteresis` (a share of each
+ * switch distance), so a far chunk costs fewer triangles and no extra draw.
  */
-function ScatterDetailInstances({ sources, batches, radius }: { sources: ScatterModelSource[]; batches: ScatterBatch[]; radius: number }) {
+function ScatterDetailInstances({ levels, batches, radius, hysteresis = 0 }: { levels: readonly ScatterChunkLevel[]; batches: ScatterBatch[]; radius: number; hysteresis?: number }) {
   const quality = useTerrainQuality();
   const reach = useMemo(() => detailDrawDistance(radius, quality), [radius, quality]);
   const footprints = useMemo(() => batches.map(scatterBatchFootprint), [batches]);
-  const groups = useRef<(THREE.Group | null)[]>([]);
+  const groups = useRef<(THREE.Group | null)[][]>([]);
+  const chosen = useMemo(() => batches.map(() => -1), [batches]);
   const cameraPosition = useMemo(() => new THREE.Vector3(), []);
   useFrame((state) => {
     state.camera.getWorldPosition(cameraPosition);
     for (let index = 0; index < footprints.length; index += 1) {
-      const group = groups.current[index];
-      const footprint = footprints[index]!;
-      if (group === null || group === undefined) continue;
-      showCulled(group, Math.hypot(cameraPosition.x - footprint.x, cameraPosition.z - footprint.z) - footprint.radius <= reach);
+      const footprint = footprints[index];
+      const row = groups.current[index];
+      if (footprint === undefined || row === undefined) continue;
+      const distance = Math.hypot(cameraPosition.x - footprint.x, cameraPosition.z - footprint.z) - footprint.radius;
+      const level = distance > reach ? -1 : chunkLevel(levels, distance, chosen[index] ?? -1, hysteresis);
+      chosen[index] = level;
+      row.forEach((group, levelIndex) => { if (group !== null) showCulled(group, levelIndex === level); });
     }
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);
   return (
     <>
       {batches.map((batch, batchIndex) => (
-        <group key={batch.key} ref={(group) => { groups.current[batchIndex] = group; }}>
-          {sources.map((source, sourceIndex) => (
-            <ScatterModelSourceInstances key={sourceIndex} source={source} matrices={batch.matrices} />
+        <group key={batch.key}>
+          {levels.map((level, levelIndex) => (
+            <group key={levelIndex} ref={(group) => { (groups.current[batchIndex] ??= [])[levelIndex] = group; }}>
+              {level.sources.map((source, sourceIndex) => (
+                <ScatterModelSourceInstances key={sourceIndex} source={source} matrices={batch.matrices} />
+              ))}
+            </group>
           ))}
         </group>
       ))}
     </>
   );
+}
+
+/**
+ * The level a chunk at `distance` draws: the first whose `maxDistance` it is inside, holding `current`
+ * until the chunk is a `hysteresis` share past the edge it would cross.
+ * @internal
+ */
+export function chunkLevel(levels: readonly { maxDistance: number }[], distance: number, current: number, hysteresis: number): number {
+  let level = levels.findIndex((candidate) => distance <= candidate.maxDistance);
+  if (level < 0) level = levels.length - 1;
+  if (current < 0 || current >= levels.length || current === level) return level;
+  const edge = current < level ? levels[current]?.maxDistance : levels[level]?.maxDistance;
+  if (edge === undefined || !Number.isFinite(edge)) return level;
+  const band = edge * hysteresis;
+  return current < level ? (distance > edge + band ? level : current) : (distance <= edge - band ? level : current);
 }
 
 /**
@@ -315,22 +347,49 @@ function ScatterDetailInstances({ sources, batches, radius }: { sources: Scatter
  * smaller one stops drawing past its detail distance.
  */
 function ScatterSingleSpecies({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }) {
-  const gltf = useLoader(sharedGltfLoader, model.url);
-  const { sources, root } = useMemo(() => buildScatterModelSources(gltf.scene, model), [gltf, model]);
-  useEffect(() => () => disposeScatterModelSources(root), [root]);
-  return <ScatterSourcesField cacheKey={`scatter:${model.url}:${JSON.stringify(model)}`} sources={sources} batches={batches} />;
+  return (
+    <WithBuiltLods model={model} impostors={false}>
+      {({ model: resolved }) => <ScatterBuiltSpecies model={model} levels={resolved.variants?.levels ?? null} hysteresis={resolved.variants?.hysteresisRatio ?? 0} batches={batches} />}
+    </WithBuiltLods>
+  );
+}
+
+/** A catalog species and the built levels it switches through per chunk (none when nothing was built). */
+function ScatterBuiltSpecies({ model, levels, hysteresis, batches }: {
+  model: ModelConfig;
+  levels: readonly { url: string; maxDistance?: number }[] | null;
+  hysteresis: number;
+  batches: ScatterBatch[];
+}) {
+  const urls = useMemo(() => levels === null ? [model.url] : levels.map((level) => level.url), [levels, model.url]);
+  const gltfs = useLoader(sharedGltfLoader, urls);
+  const harvested = useMemo(() => {
+    const source = gltfs[0];
+    return gltfs.map((gltf, index) => {
+      const built = builtLevelSource(urls[index] ?? "");
+      if (built !== null && source !== undefined) reskinBuiltLevel(gltf.scene, source);
+      return buildScatterModelSources(gltf.scene, { ...model, url: urls[index] ?? model.url }, built?.bounds);
+    });
+  }, [gltfs, urls, model]);
+  useEffect(() => () => harvested.forEach(({ root }) => disposeScatterModelSources(root)), [harvested]);
+  const chunkLevels = useMemo(() => harvested.map(({ sources }, index) => ({ sources, maxDistance: levels?.[index]?.maxDistance ?? Infinity })), [harvested, levels]);
+  return <ScatterSourcesField cacheKey={`scatter:${model.url}:${JSON.stringify(model)}`} levels={chunkLevels} batches={batches} hysteresis={hysteresis} />;
 }
 
 /** A species draw: big ones get the impostor far field, small ones stop past their detail distance. */
-function ScatterSourcesField({ cacheKey, sources, farSources, batches }: {
+function ScatterSourcesField({ cacheKey, sources: given, levels: chunkLevels, farSources, batches, hysteresis }: {
   cacheKey: string;
-  sources: ScatterModelSource[];
+  sources?: ScatterModelSource[];
+  levels?: readonly ScatterChunkLevel[];
   farSources?: ScatterModelSource[] | undefined;
   batches: ScatterBatch[];
+  hysteresis?: number;
 }) {
+  const levels = useMemo(() => chunkLevels ?? [{ sources: given ?? [], maxDistance: Infinity }], [chunkLevels, given]);
+  const sources = levels[0]?.sources ?? [];
   const radius = useMemo(() => sourceRadius(sources), [sources]);
   if (radius >= IMPOSTOR_MIN_RADIUS) return <ScatterImpostorField cacheKey={cacheKey} sources={sources} farSources={farSources} batches={batches} radius={radius} />;
-  return <ScatterDetailInstances sources={sources} batches={batches} radius={radius} />;
+  return <ScatterDetailInstances levels={levels} batches={batches} radius={radius} {...(hysteresis === undefined ? {} : { hysteresis })} />;
 }
 
 const IDENTITY = new THREE.Matrix4();

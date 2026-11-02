@@ -1,7 +1,8 @@
 import type * as THREE from "three";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { ModelVariantLodConfig, ModelVariantSelector } from "@jgengine/core/lod/modelLod";
-import { DEFAULT_VARIANT_HYSTERESIS } from "@jgengine/core/lod/modelLod";
+import { DEFAULT_VARIANT_HYSTERESIS, variantBand } from "@jgengine/core/lod/modelLod";
+import { objectVisualScale } from "@jgengine/core/scene/objectStore";
 import type { SystemProbe } from "@jgengine/core/devtools/types";
 
 /**
@@ -112,6 +113,10 @@ export function createLevelPassGate(): LevelPassGate {
 export interface VariantSwitch {
   readonly boundaries: readonly number[];
   readonly hysteresis: number;
+  /** Share of each boundary added to `hysteresis`. */
+  readonly ratio: number;
+  /** Distances are divided by each instance's largest placement scale before switching. */
+  readonly scaleWithInstance: boolean;
 }
 
 /** Read a model's variant config as {@link VariantSwitch}. @internal */
@@ -120,7 +125,12 @@ export function variantSwitchOf(variants: ModelVariantLodConfig): VariantSwitch 
   for (let index = 0; index < variants.levels.length - 1; index += 1) {
     boundaries.push(variants.levels[index]!.maxDistance!);
   }
-  return { boundaries, hysteresis: Math.max(0, variants.hysteresis ?? DEFAULT_VARIANT_HYSTERESIS) };
+  return {
+    boundaries,
+    hysteresis: Math.max(0, variants.hysteresis ?? DEFAULT_VARIANT_HYSTERESIS),
+    ratio: Math.max(0, variants.hysteresisRatio ?? 0),
+    scaleWithInstance: variants.scaleWithInstance === true,
+  };
 }
 
 /**
@@ -130,10 +140,12 @@ export function variantSwitchOf(variants: ModelVariantLodConfig): VariantSwitch 
  * @internal
  */
 export function levelEdgeMargin(distance: number, level: number, variantSwitch: VariantSwitch): number {
-  const { boundaries, hysteresis } = variantSwitch;
+  const { boundaries, hysteresis, ratio } = variantSwitch;
   let margin = Number.POSITIVE_INFINITY;
-  if (level < boundaries.length) margin = Math.abs(distance - (boundaries[level]! + hysteresis));
-  if (level > 0) margin = Math.min(margin, Math.abs(distance - (boundaries[level - 1]! - hysteresis)));
+  const out = boundaries[level];
+  const back = boundaries[level - 1];
+  if (out !== undefined) margin = Math.abs(distance - (out + variantBand(out, hysteresis, ratio)));
+  if (back !== undefined) margin = Math.min(margin, Math.abs(distance - (back - variantBand(back, hysteresis, ratio))));
   return margin;
 }
 
@@ -157,11 +169,18 @@ export function assignVariantLevels(
   for (const object of objects) {
     const current = live(object.instanceId) ?? object;
     probe.set(current.position[0] ?? 0, current.position[1] ?? 0, current.position[2] ?? 0);
-    const distance = camera.distanceTo(probe);
+    const scale = variantSwitch.scaleWithInstance ? instanceScale(current) : 1;
+    const distance = camera.distanceTo(probe) / scale;
     const level = selector.level(object.instanceId, distance);
     into.set(object.instanceId, level);
-    const edge = levelEdgeMargin(distance, level, variantSwitch);
+    const edge = levelEdgeMargin(distance, level, variantSwitch) * scale;
     if (edge < margin) margin = edge;
   }
   return margin;
+}
+
+/** The largest axis of a placement's visual scale, never below a hundredth. @internal */
+export function instanceScale(object: SceneObject): number {
+  const [x, y, z] = objectVisualScale(object.visual);
+  return Math.max(0.01, Math.abs(x), Math.abs(y), Math.abs(z));
 }

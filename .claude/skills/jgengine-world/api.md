@@ -2197,6 +2197,10 @@
 - `PlaceAlongPathOptions` (interface): interface PlaceAlongPathOptions — Options for {@link placeAlongPath}.
 - `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
 
+## @jgengine/core/instancing/staticDrawPool.draw
+
+- `ProxyRole` (type): type ProxyRole = "part" | "hidden" | "own" — A source's part in its cells' far proxies. `"part"` adds its geometry to the proxy and hides behind it (a model's coarsest mesh level); `"hidden"` hides behind the proxy without adding to it (a finer level of a model whose coarsest level stands in for it); `"own"` neither adds nor hides, for a model whose far placements draw as impostor cards.
+
 ## @jgengine/core/instancing/staticShapeInstances.draw
 
 - `StaticShapeInstance` (interface): interface StaticShapeInstance — One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale.
@@ -2471,6 +2475,28 @@
 - `lightingHasSoftShadows` (function): function lightingHasSoftShadows(lighting: LightingConfig | undefined): boolean — True when a shadow-casting directional light in `lighting` sets `lightSize`, so the soft-shadows setting changes something.
 - `softShadowRadius` (function): function softShadowRadius(input: SoftShadowInput): number — PCF filter radius, in shadow-map texels, for a light of angular size `lightSize`: the penumbra a disc of that size throws across `occluderDistance` metres, measured in this map's texels. It never drops below `baseRadius` and never passes `maxRadius`, so a far cascade with coarse texels keeps its base filter and a near one widens to the physical penumbra. Finite and monotone in `lightSize`. three r187 filters with five Vogel-disk taps over a hardware-compare sampler, which has no blocker search, so the penumbra is sized for one caster distance rather than per pixel.
 
+## @jgengine/core/lod/builtLods
+
+- `BUILT_LOD_VERSION` (const): const BUILT_LOD_VERSION: 1 — Mesh levels and impostor atlases the asset build writes next to a model file, and the rules the runtime uses to switch between them. The build (`@jgengine/assets` `buildModelLods`) and the runtime read the same names and the same {@link BuiltLodMeta}, so neither guesses the other's files.
+- `BuiltImpostor` (interface): interface BuiltImpostor — A baked far-view atlas: `frames`² views over the upper hemisphere, `cell` pixels each.
+- `BuiltLodLevel` (interface): interface BuiltLodLevel — One simplified level the build wrote: its file inside the model's lod folder and its cost.
+- `BuiltLodMeta` (interface): interface BuiltLodMeta — What the build wrote for one model file: read from `<url>.lods/meta.json`.
+- `DEFAULT_MESH_LOD_HYSTERESIS` (const): const DEFAULT_MESH_LOD_HYSTERESIS: 0.1 — Hysteresis ratio used when a {@link MeshLodConfig} sets none.
+- `IMPOSTOR_LEVEL_URL` (const): const IMPOSTOR_LEVEL_URL: "jg:impostor" — The url the impostor level carries in a resolved variant config; it names no file.
+- `MeshLodConfig` (interface): interface MeshLodConfig — How a game switches a model between its source mesh, its built levels and its impostor. Every field is data the game sets in `visibility.meshLods` (and a model can override in `ModelConfig.meshLods`).
+- `ResolvedBuiltLods` (interface): interface ResolvedBuiltLods — A model's built levels resolved for one camera: its variant config, and whether its last level is the impostor.
+- `builtLodDir` (function): function builtLodDir(url: string): string — The folder holding everything built for a model file.
+- `builtLodFileUrl` (function): function builtLodFileUrl(url: string, file: string): string — The url of one file inside a model's lod folder.
+- `builtLodMetaUrl` (function): function builtLodMetaUrl(url: string): string — The metadata file the build writes for a model file.
+- `hasBuiltLodPath` (function): function hasBuiltLodPath(url: string): boolean — A url the runtime looks up built levels for: a root-absolute path to a file the game serves from `public/` (`/models/…`), where the build writes. A bundled file (a full url from `import.meta.url`), a data or a blob url never has any.
+- `meshLodSettings` (function): function meshLodSettings(game: MeshLodConfig | false | undefined, model: Partial<MeshLodConfig> | false | undefined): MeshLodConfig | null — Merge a game's mesh-lod settings with one model's override; false or no settings turns it off.
+- `parseBuiltLodMeta` (function): function parseBuiltLodMeta(value: unknown): BuiltLodMeta | null — Parse a metadata file, or null when it is not one this runtime reads.
+- `resolveBuiltLods` (function): function resolveBuiltLods(url: string, meta: BuiltLodMeta, config: MeshLodConfig, radius: number, fovY: number): ResolvedBuiltLods | null — Turn what the build wrote and what the game asked for into the distance levels the variant selector switches on. `radius` is the model's bounding radius in metres at scale 1 (after its own normalization), `fovY` the camera's vertical field of view. Distances are per unit of instance scale (`scaleWithInstance`), so a placement drawn twice as big switches twice as far out, which is what keeps the switch at the same size on screen. Returns null when nothing would change.
+
+## @jgengine/core/lod/builtLods.draw
+
+- `BuiltLodModel` (interface): interface BuiltLodModel — A model whose draw switches through built levels: the resolved model and its built metadata.
+
 ## @jgengine/core/lod/characterLod
 
 - `CharacterLodPolicy` (interface): interface CharacterLodPolicy — Distance policy a character model's {@link ModelLodConfig} resolves to; every distance is metres.
@@ -2498,6 +2524,7 @@
 - `ModelVariantSelector` (interface): interface ModelVariantSelector — Per-instance distance switch over a model's detail levels: one answer per id, held across a boundary until the instance clears it.
 - `ModelVariantSelectorState` (interface): interface ModelVariantSelectorState — Plain JSON state of a {@link ModelVariantSelector}: each id's current level index.
 - `createModelVariantSelector` (function): function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector — Builds the per-instance distance switch for a model's variant levels.
+- `variantBand` (function): function variantBand(boundary: number, hysteresis: number, ratio: number): number — The hysteresis band around one switch boundary: the fixed metres plus the boundary's share.
 
 ## @jgengine/core/map/LightBeam.draw
 

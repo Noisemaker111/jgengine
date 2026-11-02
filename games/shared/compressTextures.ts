@@ -263,7 +263,7 @@ function walk(dir: string, seen = new Set<string>(), out: string[] = []): string
   if (seen.has(real)) return out;
   seen.add(real);
   for (const entry of readdirSync(dir)) {
-    if (entry.startsWith(".")) continue;
+    if (entry.startsWith(".") || entry.endsWith(".lods")) continue;
     const path = join(dir, entry);
     let stat;
     try {
