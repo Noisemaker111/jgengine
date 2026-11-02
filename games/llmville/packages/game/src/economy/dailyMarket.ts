@@ -1,3 +1,5 @@
+import { foldStatContributions, type StatContribution } from "@jgengine/core/progression/statGraph";
+import { pickKeyed } from "@jgengine/core/random/pick";
 import { hashString } from "@jgengine/core/random/rng";
 
 export const DAILY_MODIFIER_TYPES = [
@@ -23,70 +25,79 @@ export interface DailyMarketModifier {
   reasoningRevenueMult: number;
 }
 
-export interface DailyMarketApplicableStats {
-  revenuePerSecond: number;
-  dataTokensPerSecond: number;
-  ambientCoolingKw: number;
-  electricityBillAmount: number;
+/** The market numbers a daily modifier stacks onto. */
+type DailyMarketStat = Exclude<keyof DailyMarketModifier, "type" | "label" | "description">;
+
+/** Every market number before a day's modifier: multipliers at 1, the frontier jump at 0. */
+const DAILY_MARKET_BASE: Readonly<Record<DailyMarketStat, number>> = {
+  revenueMult: 1,
+  reasoningRevenueMult: 1,
+  dataYieldMult: 1,
+  ambientCoolingMult: 1,
+  electricityMult: 1,
+  frontierJump: 0,
+};
+
+interface DailyMarketEntry {
+  type: DailyModifierType;
+  label: string;
+  description: string;
+  effects: Partial<Record<DailyMarketStat, readonly StatContribution[]>>;
 }
 
-const DAILY_MODIFIER_POOL: readonly DailyMarketModifier[] = [
+/** The day's table: one entry per modifier, each a stack of Modifiers on the market numbers. */
+const DAILY_MARKET_TABLE: readonly DailyMarketEntry[] = [
   {
     type: "reasoning_demand_spike",
     label: "Reasoning demand spike",
     description: "Reasoning-model tokens pay 2× today.",
-    revenueMult: 1,
-    reasoningRevenueMult: 2,
-    dataYieldMult: 1,
-    ambientCoolingMult: 1,
-    electricityMult: 1,
-    frontierJump: 0,
+    effects: { reasoningRevenueMult: [{ source: "reasoning_demand_spike", op: "mul", value: 2 }] },
   },
   {
     type: "batch_bounty",
     label: "Batch bounty",
     description: "Data-token yield +50% today.",
-    revenueMult: 1,
-    reasoningRevenueMult: 1,
-    dataYieldMult: 1.5,
-    ambientCoolingMult: 1,
-    electricityMult: 1,
-    frontierJump: 0,
+    effects: { dataYieldMult: [{ source: "batch_bounty", op: "mul", value: 1.5 }] },
   },
   {
     type: "heat_wave",
     label: "Heat wave",
     description: "Ambient cooling −30%, electricity +20%.",
-    revenueMult: 1,
-    reasoningRevenueMult: 1,
-    dataYieldMult: 1,
-    ambientCoolingMult: 0.7,
-    electricityMult: 1.2,
-    frontierJump: 0,
+    effects: {
+      ambientCoolingMult: [{ source: "heat_wave", op: "mul", value: 0.7 }],
+      electricityMult: [{ source: "heat_wave", op: "mul", value: 1.2 }],
+    },
   },
   {
     type: "off_peak_power",
     label: "Off-peak power",
     description: "Electricity −40% today.",
-    revenueMult: 1,
-    reasoningRevenueMult: 1,
-    dataYieldMult: 1,
-    ambientCoolingMult: 1,
-    electricityMult: 0.6,
-    frontierJump: 0,
+    effects: { electricityMult: [{ source: "off_peak_power", op: "mul", value: 0.6 }] },
   },
   {
     type: "frontier_release",
     label: "Frontier release",
     description: "The global benchmark jumps; everyone's models decay a notch.",
-    revenueMult: 1,
-    reasoningRevenueMult: 1,
-    dataYieldMult: 1,
-    ambientCoolingMult: 1,
-    electricityMult: 1,
-    frontierJump: 5,
+    effects: { frontierJump: [{ source: "frontier_release", op: "add", value: 5 }] },
   },
-] as const;
+];
+
+function resolveDailyMarketEntry(entry: DailyMarketEntry): DailyMarketModifier {
+  const stat = (id: DailyMarketStat): number => foldStatContributions(DAILY_MARKET_BASE[id], entry.effects[id] ?? []);
+  return {
+    type: entry.type,
+    label: entry.label,
+    description: entry.description,
+    revenueMult: stat("revenueMult"),
+    reasoningRevenueMult: stat("reasoningRevenueMult"),
+    dataYieldMult: stat("dataYieldMult"),
+    ambientCoolingMult: stat("ambientCoolingMult"),
+    electricityMult: stat("electricityMult"),
+    frontierJump: stat("frontierJump"),
+  };
+}
+
+const DAILY_MODIFIER_POOL: readonly DailyMarketModifier[] = DAILY_MARKET_TABLE.map(resolveDailyMarketEntry);
 
 export function formatDailyMarketDateKey(date: Date): string {
   const year = date.getUTCFullYear();
@@ -98,6 +109,7 @@ export function formatDailyMarketDateKey(date: Date): string {
 /** Same modifier for every player on a given UTC calendar day. */
 export function getDailyModifier(date: Date = new Date()): DailyMarketModifier {
   const seed = formatDailyMarketDateKey(date);
-  const index = hashString(seed) % DAILY_MODIFIER_POOL.length;
-  return DAILY_MODIFIER_POOL[index] ?? DAILY_MODIFIER_POOL[0]!;
+  const picked = pickKeyed(hashString(seed), DAILY_MODIFIER_POOL);
+  if (picked === undefined) throw new Error("daily market table is empty");
+  return picked;
 }
