@@ -7,7 +7,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";
 import { engineActions, type GameEngine } from "@/runtime/gameEngine";
-import { DOM_EVENT } from "@/movement/movementInput";
+import { useGameContext } from "@jgengine/react/provider";
+import { setNearbyPlayers } from "@/runtime/localPlayerEntity";
 import { REMOTE_AVATAR_RENDER_CAP } from "@/world/location";
 import { readPlayerPosition } from "@/runtime/playerPosition";
 import { publishLiveRemotePoses, type LiveRemotePose } from "@/world/remotePresenceRuntime";
@@ -83,6 +84,16 @@ export function useMovementPresence({
     };
   }, [engine, onlineWorldPresences, playerId]);
 
+  const ctx = useGameContext();
+  useEffect(() => {
+    setNearbyPlayers(
+      ctx,
+      otherWorldPresences
+        .filter((presence) => presence.online !== false)
+        .map((presence) => ({ x: presence.position.x, z: presence.position.z })),
+    );
+  }, [ctx, otherWorldPresences]);
+
   // Poses republish on EVERY feed delivery — keying this on the identity-stable
   // rendered list froze remote avatars at their first synced position.
   useLayoutEffect(() => {
@@ -157,10 +168,10 @@ export function useMovementPresence({
     const onBeforeUnload = () => {
       doLeave();
     };
-    window.addEventListener(DOM_EVENT.beforeUnload, onBeforeUnload);
+    window.addEventListener("beforeunload", onBeforeUnload);
 
     return () => {
-      window.removeEventListener(DOM_EVENT.beforeUnload, onBeforeUnload);
+      window.removeEventListener("beforeunload", onBeforeUnload);
       doLeave();
       presenceInitializedRef.current = false;
     };

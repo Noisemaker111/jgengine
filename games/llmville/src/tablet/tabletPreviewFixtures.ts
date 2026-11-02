@@ -141,7 +141,6 @@ export function createTabletPreviewWorld(): ReadyWorldViewModel {
     rackCount: 0,
     onSaveProgress: noop,
     onDismissTweet: noop,
-    onStepPlayer: noop,
     playerProfile: { walkSpeedLevel: 1, trainingDurationMultiplier: 1, powerCapacityKw: 1.5 },
     selectedAvatarName: "Sam Altman",
     gameTime: {

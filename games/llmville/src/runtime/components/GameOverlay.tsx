@@ -8,9 +8,7 @@ import { useState } from "react";
 import type { RackHardwareViewModel } from "@/infrastructure/rackHardwareSession";
 import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
 import type { TutorialViewModel } from "@/tutorial/tutorialRuntime";
-import type { Movement } from "@/movement/useMovement";
 import { cn } from "@/components/ui/cn";
-import { MovementHud } from "@/movement/components/MovementHud";
 import { WorldChat, type WorldChatMessage } from "@/multiplayer/components/WorldChat";
 
 import { GameResourcePanel } from "@/runtime/components/GameResourcePanel";
@@ -18,16 +16,13 @@ import { GameHudBar } from "@/runtime/components/GameHudBar";
 import { GameTablet } from "@/tablet/components/GameTablet";
 import { GameplayChrome } from "@/runtime/components/GameplayChrome";
 import { UiHitTestOverlay, useShowUiHitTest } from "@/runtime/components/UiHitTestOverlay";
-import { PerformanceDiagnosticOverlay } from "@/runtime/components/PerformanceDiagnosticOverlay";
-import { useProfiledRender } from "@/runtime/useProfiledRender";
-import { PROFILE_SECTION } from "@/runtime/runtimePerformanceProfiler";
 
 interface GameOverlayProps {
   world: ReadyWorldViewModel;
   build: BuildViewModel;
   rackHardware: RackHardwareViewModel;
   tutorial: TutorialViewModel;
-  movement: Movement;
+  isTouch: boolean;
   /** When true, HUD is rendered inside a dev preview frame instead of the browser viewport. */
   embedded?: boolean;
   chatFixtureMessages?: readonly WorldChatMessage[];
@@ -38,12 +33,10 @@ export function GameOverlay({
   build,
   rackHardware,
   tutorial,
-  movement,
+  isTouch,
   embedded = false,
   chatFixtureMessages,
 }: GameOverlayProps) {
-  useProfiledRender(PROFILE_SECTION.reactGameOverlay);
-  const { isTouch } = movement;
   const [chatOpen, setChatOpen] = useState(false);
   const [goalId, setGoalId] = useState<string | null>(null);
   const goalSelection = { id: goalId, select: setGoalId };
@@ -77,8 +70,6 @@ export function GameOverlay({
         <GameHudBar world={world} className="pointer-events-none absolute left-4 top-4 z-[26] sm:left-5 sm:top-5" />
       )}
 
-      {isTouch && !chatOpen && <MovementHud controls={movement.controls} />}
-
       <GameTablet
         world={world}
         build={build}
@@ -89,7 +80,6 @@ export function GameOverlay({
       />
       <GameplayChrome world={world} build={build} rackHardware={rackHardware} tutorial={tutorial} isTouch={isTouch} chatOpen={chatOpen} goalSelection={goalSelection} />
       <WorldChat world={world} placing={build.buildPlacementModeActive} open={chatOpen} setOpen={setChatOpen} fixtureMessages={chatFixtureMessages} />
-      <PerformanceDiagnosticOverlay world={world} className="absolute right-4 top-4" />
 
       {showUiHitTest && <UiHitTestOverlay />}
     </div>

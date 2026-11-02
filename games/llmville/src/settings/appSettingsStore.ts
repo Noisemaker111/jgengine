@@ -14,12 +14,16 @@ import {
   keybindFromCodes,
   keybindsEqual,
   keybindToCodes,
+  renamedActionId,
   sanitizeKeybinds,
   type AppKeybinds,
 } from "./keybinds";
 
-/** The game id the engine keys this game's binding overrides under. */
-export const LLMVILLE_SETTINGS_GAME_ID = "llmville";
+/** The game id the engine keys this game's binding overrides under: the shell reads them by game name. */
+export const LLMVILLE_SETTINGS_GAME_ID = "LLMville";
+
+/** Where binding overrides lived before the game mounted in the shell. */
+export const PREVIOUS_SETTINGS_GAME_ID = "llmville";
 
 /** The single JSON blob settings lived in before they moved onto the engine settings store. */
 export const LEGACY_APP_SETTINGS_KEY = "llmville:app-settings";
@@ -141,6 +145,7 @@ export function createAppSettingsStore(storage: KeyValueStorage | null): AppSett
     if (previous === null || previous.keybinds !== next.keybinds) writeKeybinds(next.keybinds);
   };
 
+  movePreviousOverrides(storage);
   const legacy = readLegacy(storage);
   if (legacy !== null) {
     write(parseLegacyAppSettings(legacy), null);
@@ -172,6 +177,17 @@ export function createAppSettingsStore(storage: KeyValueStorage | null): AppSett
       commit(DEFAULT_APP_SETTINGS);
     },
   };
+}
+
+/** Moves overrides saved under the old game id once, renaming actions that changed id. */
+function movePreviousOverrides(storage: KeyValueStorage | null): void {
+  const previous = loadBindingOverrides(PREVIOUS_SETTINGS_GAME_ID, storage);
+  if (Object.keys(previous).length === 0) return;
+  for (const { id } of KEYBIND_ACTIONS) {
+    const codes = previous[id] ?? previous[renamedActionId(id) ?? id];
+    if (codes !== undefined) saveBindingOverride(LLMVILLE_SETTINGS_GAME_ID, id, codes, storage);
+  }
+  clearAllBindingOverrides(PREVIOUS_SETTINGS_GAME_ID, storage);
 }
 
 function safeRead(read: () => AppSettings): AppSettings {

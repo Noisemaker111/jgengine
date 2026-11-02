@@ -1,5 +1,5 @@
+import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
-import { PROFILE_SECTION, useProfiledFrame } from "@/runtime/runtimePerformanceProfiler";
 import { useRef, useState, type MutableRefObject } from "react";
 import { Group, MathUtils } from "three";
 
@@ -99,7 +99,7 @@ function DormantWorldAgentAvatar({
   kind,
 }: WorldAgentAvatarProps) {
   const groupRef = useRef<Group>(null);
-  useProfiledFrame(PROFILE_SECTION.agentAvatar, () => {
+  useFrame(function remoteAvatar() {
     const pose = readLiveRemotePose(presenceId);
     if (!pose || !groupRef.current) return;
     groupRef.current.position.set(pose.position.x, pose.position.y, pose.position.z);
@@ -131,7 +131,7 @@ function LiveQueryDrivenWorldAgentAvatar({
   const gaitPhaseRef = useRef(0);
   const [isWalking, setIsWalking] = useState(false);
 
-  useProfiledFrame(PROFILE_SECTION.agentAvatar, (_, delta) => {
+  useFrame(function remoteAvatar(_, delta) {
     const group = groupRef.current;
     if (!group) return;
     const sample = sampleRemotePose(presenceId, performance.now());

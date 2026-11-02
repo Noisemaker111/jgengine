@@ -24,7 +24,7 @@ import { useWorldModelsSlice } from "@/models/modelsSlice";
 import { DEFAULT_SERVING_MODE, type ServingModeId } from "@llmville/game/models/servingMode";
 import { EMPTY_COMPUTE_ASSIGNMENTS } from "@llmville/game/infrastructure/infrastructure";
 import { DEFAULT_SCRAPE_TIER, type ScrapeTierId } from "@llmville/game/models/scrapingTiers";
-import { useMovementSession } from "@/movement/playerStep";
+import { useMovementPresence } from "@/movement/movementPresence";
 import { usePresenceTransport } from "@/multiplayer/PresenceTransportProvider";
 
 import { mapPlacedBuildItems as mapWorldPlacedBuildItems } from "@llmville/game/build/build";
@@ -38,7 +38,7 @@ import { getAvatarById, normalizeAvatarId, normalizePlayerProfile } from "@/user
 import { useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo } from "react";
 
-import { useRuntimeClock } from "./clock";
+import { useCalendarClock } from "@jgengine/core/time/calendarClock.view";
 import { deriveWorldBootLabel, deriveWorldBootProgress } from "./worldBootPhase";
 
 import type { RuntimeGame, SiteHealth, WorldSpendPulse } from "./worldViewModel";
@@ -269,10 +269,9 @@ export function useWorldState({
     vramCapacityGb: worldSummary?.vramCapacityGb ?? 0,
   }), [powerCapacityKw, worldSummary]);
   const {
-    onStepPlayer,
     otherWorldPresences,
     hasBeenDisplaced,
-  } = useMovementSession({
+  } = useMovementPresence({
     engine,
     playerId,
     canViewGame,
@@ -356,7 +355,7 @@ export function useWorldState({
     },
   });
 
-  const gameTime = useRuntimeClock(game?.createdAt, game?.serverNow, game?.gameTimeScale);
+  const gameTime = useCalendarClock(game?.createdAt, game?.serverNow, { timeScale: game?.gameTimeScale });
   const spendPulse: WorldSpendPulse | null = useMemo(
     () => spendPulseEffect != null && spendPulseEffect.until > Date.now()
       ? { amount: spendPulseEffect.amount, token: spendPulseEffect.until }
@@ -427,7 +426,6 @@ export function useWorldState({
     rackCount: racks.length,
     onSaveProgress,
     onDismissTweet,
-    onStepPlayer,
     playerProfile: normalizedPlayerProfile,
     selectedAvatarName: getAvatarById(avatarId).name,
     gameTime,
@@ -480,7 +478,6 @@ export function useWorldState({
     onDismissTweet,
     onPlaceTutorialBench,
     onSaveProgress,
-    onStepPlayer,
     normalizedPlayerProfile,
     placedBuildItems,
     playerId,

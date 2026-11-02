@@ -2,11 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@llmville/backend/convex/_generated/api";
 import { MessageCircle, Send, X } from "lucide-react";
-import { useWorldServer } from "@/runtime/worldServerSession";
-import { engineActions } from "@/runtime/gameEngine";
+import { suspendPlayControls } from "@jgengine/core/game/controlGate";
+import { useOptionalGameContext } from "@jgengine/react/provider";
 import type { ReadyWorldViewModel } from "@/runtime/worldViewModel";
 import { useTabletNavContext } from "@/tablet/components/tabletNav";
-import { exitPointerLock } from "@/movement/movementInput";
 
 export interface WorldChatMessage {
   id: string;
@@ -17,7 +16,7 @@ export interface WorldChatMessage {
 }
 
 export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { world: ReadyWorldViewModel; placing: boolean; open: boolean; setOpen: (open: boolean) => void; fixtureMessages?: readonly WorldChatMessage[] | undefined }) {
-  const { serverId } = useWorldServer();
+  const ctx = useOptionalGameContext();
   const { tabletOpen, rackMenuOverlayRackId } = useTabletNavContext();
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -31,15 +30,16 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
   const visible = open && !tabletOpen && rackMenuOverlayRackId === null && !placing;
   const openChat = useCallback(() => {
     if (placing || tabletOpen || rackMenuOverlayRackId !== null) return;
-    world.engine.dispatch(engineActions.resetMovementKeys());
-    exitPointerLock();
+    document.exitPointerLock?.();
     setOpen(true);
     input.current?.focus();
-  }, [placing, tabletOpen, rackMenuOverlayRackId, world.engine, setOpen]);
+  }, [placing, tabletOpen, rackMenuOverlayRackId, setOpen]);
 
   useEffect(() => {
     if (visible) input.current?.focus();
   }, [visible]);
+
+  useEffect(() => (visible && ctx !== null ? suspendPlayControls(ctx) : undefined), [ctx, visible]);
 
   useEffect(() => {
     if (visible && log.current) log.current.scrollTop = log.current.scrollHeight;
@@ -65,7 +65,7 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
   }, [visible, placing, tabletOpen, rackMenuOverlayRackId, openChat, setOpen]);
 
   const send = async (body = draft) => {
-    if (!serverId || !body.trim() || busy.current) return;
+    if (!body.trim() || busy.current) return;
     busy.current = true;
     setSending(true);
     setError(null);
@@ -100,13 +100,13 @@ export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { 
             ))}
           </div>
           <div className="flex shrink-0 gap-2 px-3 pb-2">
-            {["Hello, neighbors! 👋", "Nice lab! ✨"].map((reaction) => <button key={reaction} type="button" disabled={sending || !serverId} onClick={() => void send(reaction)} className="rounded-full bg-white/5 px-3 py-1 text-xs hover:bg-white/10 disabled:opacity-50">{reaction}</button>)}
+            {["Hello, neighbors! 👋", "Nice lab! ✨"].map((reaction) => <button key={reaction} type="button" disabled={sending} onClick={() => void send(reaction)} className="rounded-full bg-white/5 px-3 py-1 text-xs hover:bg-white/10 disabled:opacity-50">{reaction}</button>)}
           </div>
           <form className="shrink-0 border-t border-white/10 p-3" onSubmit={(event) => { event.preventDefault(); void send(); }}>
             {error && <p role="alert" className="mb-2 text-xs text-brand-coral">{error}</p>}
             <div className="flex gap-2">
               <input ref={input} aria-label="Message to neighbors" readOnly={sending} maxLength={500} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Say something…" className="min-w-0 flex-1 rounded-xl bg-white/5 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-teal" onKeyDown={(event) => { if (event.nativeEvent.isComposing && event.key === "Enter") event.preventDefault(); }} />
-              <button type="submit" aria-label="Send message" disabled={!serverId || sending || !draft.trim()} className="rounded-xl bg-brand-teal p-3 text-brand-ink disabled:opacity-40"><Send size={16} /></button>
+              <button type="submit" aria-label="Send message" disabled={sending || !draft.trim()} className="rounded-xl bg-brand-teal p-3 text-brand-ink disabled:opacity-40"><Send size={16} /></button>
             </div>
           </form>
         </div>

@@ -5,7 +5,6 @@ import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";
 import { useEffect, useMemo, useState } from "react";
 
 import GameOverlay from "@/runtime/components/GameOverlay";
-import type { Movement } from "@/movement/useMovement";
 import { engineActions, useGameEngineState } from "@/runtime/gameEngine";
 import { TabletNavProvider } from "@/tablet/components/tabletNav";
 import {
@@ -127,7 +126,7 @@ function PreviewScene({
   build,
   rackHardware,
   tutorial,
-  movement,
+  isTouch,
   framed = false,
 }: {
   label: string;
@@ -136,7 +135,7 @@ function PreviewScene({
   build: ReturnType<typeof createTabletPreviewBuild>;
   rackHardware: ReturnType<typeof createTabletPreviewRackHardware>;
   tutorial: ReturnType<typeof createTabletPreviewTutorial>;
-  movement: Movement;
+  isTouch: boolean;
   framed?: boolean;
 }) {
   const scene = (
@@ -149,7 +148,7 @@ function PreviewScene({
           build={build}
           rackHardware={rackHardware}
           tutorial={tutorial}
-          movement={movement}
+          isTouch={isTouch}
           chatFixtureMessages={WORLD_CHAT_PREVIEW_MESSAGES}
         />
       </TabletNavProvider>
@@ -195,51 +194,6 @@ function HudWorkbench() {
   const rackHardware = useMemo(() => createTabletPreviewRackHardware(), []);
   const tutorial = useMemo(() => createTabletPreviewTutorial(), []);
 
-  const desktopKeys = useGameEngineState(preview.world.engine, (state) => state.player.keysDown);
-  const mobileKeys = desktopKeys;
-
-  const desktopMovement = useMemo<Movement>(
-    () => ({
-      isTouch: false,
-      controls: {
-        isTouch: false,
-        setMovementKey: (key, pressed) =>
-          preview.world.engine.dispatch(engineActions.setMovementKey(key, pressed)),
-        onSessionMouseDown: () => undefined,
-      },
-      onSessionMouseDown: () => undefined,
-      sceneBindings: {
-        movementKeys: desktopKeys,
-        playerSpeed: 2,
-        canMove: true,
-        playInputTouch: false,
-        onStepPlayer: () => undefined,
-      },
-    }),
-    [desktopKeys, preview.world.engine],
-  );
-
-  const mobileMovement = useMemo<Movement>(
-    () => ({
-      isTouch: true,
-      controls: {
-        isTouch: true,
-        setMovementKey: (key, pressed) =>
-          preview.world.engine.dispatch(engineActions.setMovementKey(key, pressed)),
-        onSessionMouseDown: () => undefined,
-      },
-      onSessionMouseDown: () => undefined,
-      sceneBindings: {
-        movementKeys: mobileKeys,
-        playerSpeed: 2,
-        canMove: true,
-        playInputTouch: true,
-        onStepPlayer: () => undefined,
-      },
-    }),
-    [mobileKeys, preview.world.engine],
-  );
-
   useEffect(() => {
     preview.world.engine.dispatch(engineActions.setPlaying(true, Date.now()));
   }, [preview.world.engine]);
@@ -274,7 +228,7 @@ function HudWorkbench() {
           build={build}
           rackHardware={rackHardware}
           tutorial={tutorial}
-          movement={desktopMovement}
+          isTouch={false}
         />
         <PreviewScene
           label="Mobile"
@@ -284,7 +238,7 @@ function HudWorkbench() {
           build={build}
           rackHardware={rackHardware}
           tutorial={tutorial}
-          movement={mobileMovement}
+          isTouch
         />
       </main>
     </div>

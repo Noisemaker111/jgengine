@@ -10,7 +10,7 @@ import type {
   TweetNotification,
 } from "@/runtime/gameEngine";
 import type { GamePositionedPrompt, InteractionTarget } from "@llmville/game/simulation/interaction";
-import type { GameTime } from "@/runtime/clock";
+import type { GameTime } from "@jgengine/core/time/calendarClock";
 import type { GameUserModel, GeneratedModelSpec } from "@/models/models";
 import type { BaseModelCatalogState, BaseModelLibraryEntry } from "@/models/training";
 import type { ResearchUnlocks } from "@llmville/game/research/researchUnlocks";
@@ -142,7 +142,6 @@ export interface WorldViewModel {
   rackCount: number;
   onSaveProgress: () => void;
   onDismissTweet: () => void;
-  onStepPlayer: (deltaX: number, deltaZ: number) => void;
   playerProfile: GamePlayerProfile | undefined;
   selectedAvatarName: string;
   gameTime: GameTime | null;

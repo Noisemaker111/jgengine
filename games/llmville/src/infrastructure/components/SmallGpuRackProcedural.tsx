@@ -1,5 +1,5 @@
+import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
-import { PROFILE_SECTION, useProfiledFrame } from "@/runtime/runtimePerformanceProfiler";
 import { Group, QuadraticBezierCurve3, TubeGeometry, Vector3 } from "three";
 import type { MeshStandardMaterial as MeshStandardMaterialType } from "three";
 
@@ -165,7 +165,7 @@ function GpuSlotContent({
     }
   }, [ghost, workload]);
 
-  useProfiledFrame(PROFILE_SECTION.rackGpuPulse, (_s, delta) => {
+  useFrame(function gpuPulse(_s, delta) {
     pulseRef.current += delta;
     const m = matRef.current;
     if (!m || ghost || workload === GPU_SPLOT_WORKLOAD.idle) return;
@@ -238,7 +238,7 @@ function GpuSlotGroup({
     ? workloadForRackSlot(workloadMap, rackId, slotIndex, hardwareId)
     : GPU_SPLOT_WORKLOAD.idle;
 
-  useProfiledFrame(PROFILE_SECTION.rackGpuPulse, (_s, delta) => {
+  useFrame(function gpuPulse(_s, delta) {
     const target = extractSlotIndex === slotIndex ? 1 : 0;
     extractRef.current += (target - extractRef.current) * Math.min(1, delta * 16);
     if (groupRef.current) {

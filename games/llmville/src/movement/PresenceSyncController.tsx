@@ -1,14 +1,15 @@
+import { useFrame, useThree } from "@react-three/fiber";
 /**
  * Pushes local player pose to Convex on the R3F frame loop. Writes are
  * fire-and-forget — remote clients receive updates through reactive queries,
  * not mutation round-trips.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Euler } from "three";
 
 import { createPoseSyncGate, type PoseSyncTuning } from "@jgengine/core/multiplayer/poseSyncGate";
-import { PROFILE_SECTION, useProfiledFrame } from "@/runtime/runtimePerformanceProfiler";
-import { readJumpOffset, readLookPitch, readLookYaw } from "@/movement/movementInput";
+import { useGameContext } from "@jgengine/react/provider";
 import type { GameEngine } from "@/runtime/gameEngine";
 import type { WorldPresenceActions } from "@/multiplayer/presenceTransport";
 
@@ -27,26 +28,25 @@ interface PresenceSyncControllerProps {
   presenceActions: WorldPresenceActions;
 }
 
-function readPlayerPose(engine: GameEngine) {
-  const pos =
-    // llmville-allow-engine-getstate-in-hooks: rAF latest-value read for Convex upload.
-    engine.getState().player.position;
-  return {
-    x: pos.x,
-    y: readJumpOffset(),
-    z: pos.z,
-    rotationY: readLookYaw(),
-    rotationPitch: readLookPitch(),
-  };
-}
-
 export function PresenceSyncController({ engine, playerId, enabled, presenceActions }: PresenceSyncControllerProps) {
   const [gate] = useState(() => createPoseSyncGate(POSE_SYNC_TUNING));
+  const ctx = useGameContext();
+  const camera = useThree((state) => state.camera);
+  const look = useMemo(() => new Euler(0, 0, 0, "YXZ"), []);
 
-  useProfiledFrame(PROFILE_SECTION.movementPresence, () => {
+  useFrame(function presenceSync() {
     if (!enabled) return;
 
-    const pose = readPlayerPose(engine);
+    // llmville-allow-engine-getstate-in-hooks: rAF latest-value read for Convex upload.
+    const position = engine.getState().player.position;
+    look.setFromQuaternion(camera.quaternion, "YXZ");
+    const pose = {
+      x: position.x,
+      y: ctx.scene.entity.get(ctx.player.userId)?.position[1] ?? 0,
+      z: position.z,
+      rotationY: look.y,
+      rotationPitch: look.x,
+    };
     if (!gate.evaluate(pose, performance.now())) return;
 
     presenceActions.syncPose({

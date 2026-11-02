@@ -35,7 +35,7 @@ export type KeybindSlot = (typeof KEYBIND_SLOT)[keyof typeof KEYBIND_SLOT];
 export type KeybindActionId =
   | "moveForward"
   | "moveLeft"
-  | "moveBackward"
+  | "moveBack"
   | "moveRight"
   | "jump"
   | "sprint"
@@ -54,7 +54,7 @@ export type KeybindActionId =
 export const KEYBIND_ACTION = {
   moveForward: "moveForward",
   moveLeft: "moveLeft",
-  moveBackward: "moveBackward",
+  moveBack: "moveBack",
   moveRight: "moveRight",
   jump: "jump",
   sprint: "sprint",
@@ -70,6 +70,9 @@ export const KEYBIND_ACTION = {
   cycleItemPrevious: "cycleItemPrevious",
   cycleItemNext: "cycleItemNext",
 } as const satisfies Record<string, KeybindActionId>;
+
+/** Action ids saved settings used before they matched the shell's movement actions. */
+const RENAMED_ACTIONS: Partial<Record<KeybindActionId, string>> = { moveBack: "moveBackward" };
 
 export const BINDABLE_KEY = {
   tab: "Tab",
@@ -88,7 +91,7 @@ export const KEYBIND_ACTIONS: readonly {
 }[] = [
   { id: KEYBIND_ACTION.moveForward, label: "Move Forward", description: "Walk forward in the world." },
   { id: KEYBIND_ACTION.moveLeft, label: "Move Left", description: "Strafe left in the world." },
-  { id: KEYBIND_ACTION.moveBackward, label: "Move Backward", description: "Walk backward in the world." },
+  { id: KEYBIND_ACTION.moveBack, label: "Move Backward", description: "Walk backward in the world." },
   { id: KEYBIND_ACTION.moveRight, label: "Move Right", description: "Strafe right in the world." },
   { id: KEYBIND_ACTION.jump, label: "Jump", description: "Jump while moving in the world." },
   { id: KEYBIND_ACTION.sprint, label: "Sprint", description: "Hold to sprint." },
@@ -108,7 +111,7 @@ export const KEYBIND_ACTIONS: readonly {
 export const DEFAULT_APP_KEYBINDS: AppKeybinds = {
   [KEYBIND_ACTION.moveForward]: { primary: "KeyW", secondary: "ArrowUp" },
   [KEYBIND_ACTION.moveLeft]: { primary: "KeyA", secondary: "ArrowLeft" },
-  [KEYBIND_ACTION.moveBackward]: { primary: "KeyS", secondary: "ArrowDown" },
+  [KEYBIND_ACTION.moveBack]: { primary: "KeyS", secondary: "ArrowDown" },
   [KEYBIND_ACTION.moveRight]: { primary: "KeyD", secondary: "ArrowRight" },
   [KEYBIND_ACTION.jump]: { primary: "Space", secondary: null },
   [KEYBIND_ACTION.sprint]: { primary: "Shift", secondary: null },
@@ -124,6 +127,11 @@ export const DEFAULT_APP_KEYBINDS: AppKeybinds = {
   [KEYBIND_ACTION.cycleItemPrevious]: { primary: "ArrowUp", secondary: null },
   [KEYBIND_ACTION.cycleItemNext]: { primary: "ArrowDown", secondary: null },
 };
+
+/** Saved action id that an older build used for `actionId`, if it was renamed. */
+export function renamedActionId(actionId: KeybindActionId): string | undefined {
+  return RENAMED_ACTIONS[actionId];
+}
 
 export function isBindableKey(value: string): value is BindableKey {
   return BINDABLE_KEY_OPTIONS.some((key) => key === value);
@@ -158,7 +166,7 @@ export function sanitizeKeybinds(input: unknown): AppKeybinds {
   return {
     [KEYBIND_ACTION.moveForward]: sanitizeSingleKeybind(candidate, KEYBIND_ACTION.moveForward),
     [KEYBIND_ACTION.moveLeft]: sanitizeSingleKeybind(candidate, KEYBIND_ACTION.moveLeft),
-    [KEYBIND_ACTION.moveBackward]: sanitizeSingleKeybind(candidate, KEYBIND_ACTION.moveBackward),
+    [KEYBIND_ACTION.moveBack]: sanitizeSingleKeybind(candidate, KEYBIND_ACTION.moveBack),
     [KEYBIND_ACTION.moveRight]: sanitizeSingleKeybind(candidate, KEYBIND_ACTION.moveRight),
     [KEYBIND_ACTION.jump]: sanitizeSingleKeybind(candidate, KEYBIND_ACTION.jump),
     [KEYBIND_ACTION.sprint]: sanitizeSingleKeybind(candidate, KEYBIND_ACTION.sprint),
@@ -178,8 +186,9 @@ export function sanitizeKeybinds(input: unknown): AppKeybinds {
 
 function sanitizeSingleKeybind(input: object, actionId: KeybindActionId): Keybind {
   const fallback = DEFAULT_APP_KEYBINDS[actionId];
-  if (!(actionId in input)) return fallback;
-  const rawValue = Reflect.get(input, actionId);
+  const savedId = actionId in input ? actionId : RENAMED_ACTIONS[actionId];
+  if (savedId === undefined || !(savedId in input)) return fallback;
+  const rawValue = Reflect.get(input, savedId);
   if (typeof rawValue !== "object" || rawValue === null) return fallback;
 
   const primary =
