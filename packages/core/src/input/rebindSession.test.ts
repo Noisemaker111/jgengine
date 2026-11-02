@@ -29,6 +29,22 @@ describe("createRebindSession", () => {
     expect(rows.every((r) => r.conflictWith.length === 0)).toBe(true);
   });
 
+  it("lets actions in different contexts share a key and flags a shared key within one context", () => {
+    const s = createRebindSession({
+      actions: [
+        { id: "moveLeft", label: "Move Left", defaultCodes: ["KeyA", "ArrowLeft"], context: "walk" },
+        { id: "previousTab", label: "Previous Tab", defaultCodes: ["KeyQ", "ArrowLeft"], context: "menu" },
+        { id: "previousItem", label: "Previous Item", defaultCodes: ["ArrowUp"], context: "menu" },
+      ],
+    });
+    expect(s.hasConflicts()).toBe(false);
+    expect(rowOf(s, "moveLeft").conflictWith).toEqual([]);
+    s.beginCapture("previousItem");
+    s.capture("ArrowLeft");
+    expect(s.conflicts()).toEqual([{ code: "ArrowLeft", actionIds: ["previousTab", "previousItem"] }]);
+    expect(rowOf(s, "moveLeft").conflictWith).toEqual([]);
+  });
+
   it("merges seeded overrides over defaults and marks the row non-default", () => {
     const s = session({ jump: ["KeyJ"] });
     const jump = rowOf(s, "jump");
