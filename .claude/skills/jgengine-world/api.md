@@ -3288,6 +3288,21 @@
 - `createNavRuntime` (function): function createNavRuntime(options: NavRuntimeOptions & { mesh: NavMeshData }): NavRuntime — Route agents over the nav mesh an editor baked. Wraps {@link createNavMeshQuery}, resolves authored off-mesh links (doors, ladders, jumps) onto the current surface, and exchanges the mesh one scene region at a time so untouched polygons keep their ids and the agents routing over them keep their paths.
 - `navMeshFromBake` (function): function navMeshFromBake(bakes: readonly SceneBake[] | undefined, id = "main"): NavMeshData | null — Read the named navigation bake an editor wrote onto a scene document. Returns `null` when the document holds no such bake yet, and throws when the stored bake is not a valid nav mesh — a corrupt bake should fail at load, not as agents walking through walls.
 
+## @jgengine/core/nav/navTiles
+
+- `NavGridTileOptions` (interface): interface NavGridTileOptions — Options for {@link navTileFromGrid}.
+- `NavTileBounds` (interface): interface NavTileBounds — The XZ square one nav tile covers.
+- `NavTileBuilder` (type): type NavTileBuilder = (tile: NavTileRequest) => NavMeshData — Builds one tile's polygons from the world as it is now. Its vertices are world coordinates and stay inside the tile's bounds; polygons meeting a tile border are stitched to the neighbouring tile's.
+- `NavTileRequest` (interface): interface NavTileRequest — The tile a builder is asked for: its grid id and footprint.
+- `NavTileStats` (interface): interface NavTileStats — What the tiled mesh holds and what its last changes cost.
+- `NavTileStore` (interface): interface NavTileStore — Where built tiles are kept, so a tile that streams back in is not rebuilt. Inject one to persist tiles.
+- `NavTileStreaming` (interface): interface NavTileStreaming extends WorldStreamerTuning — Which tiles stream in around focus points, for {@link NavTiles.follow}.
+- `NavTiles` (interface): interface NavTiles — A nav mesh kept as tiles: built, stored, rebuilt and streamed one tile at a time, routed as one mesh.
+- `NavTilesOptions` (interface): interface NavTilesOptions extends NavRuntimeOptions — Options for {@link createNavTiles}.
+- `NavTilesSnapshot` (interface): interface NavTilesSnapshot — Plain JSON state of a {@link NavTiles}: the routed tiles, the runtime's tuning and the streamer's residency.
+- `createNavTiles` (function): function createNavTiles(options: NavTilesOptions): NavTiles — A nav mesh kept as square tiles: each tile is built by the game's builder from the world as it is now and stored, a changed region rebuilds only the tiles it touches, tiles stream in and out around focus points within a per-update budget, and every loaded tile is stitched into the one {@link NavRuntime} agents already route on, so a path crosses tile borders and polygons that survive a change keep their ids.
+- `navTileFromGrid` (function): function navTileFromGrid(options: NavGridTileOptions): NavMeshData — Build one nav tile by sampling the world on a grid: each cell takes the area its centre reports, runs of cells with one area merge into rectangles, and each rectangle's sides are split at its neighbours' corners so adjacent rectangles share edges. The builder for a game whose walkable ground is a rule (lots, roads, water) rather than baked triangles.
+
 ## @jgengine/core/nav/pathFollow
 
 - `HeightSource` (interface): interface HeightSource — Anything that reports ground height at an XZ point, such as a terrain heightfield.
@@ -5845,6 +5860,37 @@
 - `CameraVisibilityContext` (interface): interface CameraVisibilityContext — A camera's contribution to visibility. The VisibilitySystem unions results across every active context: an object stays renderable/loaded if *any* relevant camera needs it. A camera can opt out of driving asset streaming (e.g. a minimap that only needs positions, not loaded meshes) via `influencesStreaming: false`.
 - `cameraInfluencesStreaming` (function): function cameraInfluencesStreaming(context: CameraVisibilityContext): boolean — ⚠ undocumented
 
+## @jgengine/core/visibility/cellContent
+
+- `CellBounds` (interface): interface CellBounds — A cell's XZ footprint.
+- `CellContent` (interface): interface CellContent<TRecord, TFrozen = never> — One kind of content following its cells in and out of residency.
+- `CellContentAdapter` (interface): interface CellContentAdapter<TRecord, TFrozen = never> — How {@link createCellContent} reads, saves and restores one kind of content.
+- `CellContentOptions` (interface): interface CellContentOptions<TRecord, TFrozen = never> — Options for {@link createCellContent}.
+- `CellContentState` (interface): interface CellContentState<TRecord, TFrozen = never> — Plain JSON state of a {@link CellContent}: what each unloaded cell holds, saved or frozen.
+- `CellContentStats` (interface): interface CellContentStats — Gauges of what a {@link CellContent} holds.
+- `CellEntityRecord` (interface): interface CellEntityRecord — A despawned entity's saved body, ready to spawn again.
+- `CellEntityStore` (interface): interface CellEntityStore — The slice of the scene entity API {@link sceneEntityCells} reads and writes.
+- `CellObjectRecord` (interface): interface CellObjectRecord — A placed object saved with its body, ready to place again.
+- `CellObjectStore` (interface): interface CellObjectStore — The slice of the scene object API {@link sceneObjectCells} reads and writes.
+- `FrozenEntity` (interface): interface FrozenEntity — How a frozen entity moved and showed before its cell unloaded.
+- `OffCellRule` (type): type OffCellRule = "simulate" | "freeze" | "despawn" — What happens to one kind of content (bodies, entities) while its cell is unloaded: `"simulate"` leaves it untouched, `"freeze"` keeps it but stops it, `"despawn"` saves it to a plain record, removes it, and brings it back from the record when the cell loads.
+- `createCellContent` (function): function createCellContent<TRecord, TFrozen = never>(options: CellContentOptions<TRecord, TFrozen>): CellContent<TRecord, TFrozen> — Make one kind of content follow its cells: when a streamed cell unloads its items are left simulating, frozen, or saved and removed, as the game picked, and when it loads they come back a few per step so a dense cell never lands in one frame. Pair one per kind (bodies, entities) with a world streamer.
+- `sceneEntityCells` (function): function sceneEntityCells(entities: CellEntityStore, options: { keep?: (entity: SceneEntity) => boolean; extra?: { save(entity: SceneEntity): unknown; restore(id: string, extra: unknown): void } } = {}): CellContentAdapter<CellEntityRecord, FrozenEntity> — Scene entities as cell content. `"despawn"` saves each entity's pose, role, movement, behaviors and look (plus the game's own `extra` record) and spawns it again under the same id; `"freeze"` stops its movement and hides it until the cell loads. Players never leave, nor anything `keep` names (the car someone is driving).
+- `sceneObjectCells` (function): function sceneObjectCells(objects: CellObjectStore, options: { keep?: (object: SceneObject) => boolean } = {}): CellContentAdapter<CellObjectRecord> — Scene objects and their bodies as cell content: an unloaded cell's props leave the object store with their colliders (so physics and every draw drop them) and are placed again, same id, when it loads. `keep` names objects that never leave. Objects have no motion to stop, so `"freeze"` keeps them.
+
+## @jgengine/core/visibility/cellStreaming
+
+- `CellFollower` (interface): interface CellFollower — One kind of content that follows its cells; every {@link CellContent} is one.
+- `CellStreaming` (interface): interface CellStreaming — Cells of a world streaming in and out around focus points, with their content following by rule.
+- `CellStreamingOptions` (interface): interface CellStreamingOptions extends CellStreamingTuning — Options for {@link createCellStreaming}.
+- `CellStreamingRenderer` (interface): interface CellStreamingRenderer — What a renderer attaching to {@link CellStreaming} supplies.
+- `CellStreamingState` (interface): interface CellStreamingState — Plain JSON state of a {@link CellStreaming}; each content kind snapshots its own parked records.
+- `CellStreamingStats` (interface): interface CellStreamingStats — Gauges for the perf overlay and probes.
+- `CellStreamingTuning` (interface): interface CellStreamingTuning extends WorldStreamerTuning — Play-time tuning of a {@link CellStreaming}.
+- `StreamedCellState` (type): type StreamedCellState = "unloaded" | "loading" | "ready" | "leaving" | "warming" — Where one streamed cell stands. `loading`: its content is being fetched and placed back. `ready`: full content. `leaving`: past the keep radius, content still placed while the renderer builds its far proxy. `warming`: never seen and out of range, placed once only so its proxy can be built. `unloaded`: its content is parked by each kind's rule.
+- `bindCellStreaming` (function): function bindCellStreaming(ctx: GameContext, streaming: CellStreaming | null): void — Hand a game's streaming to the renderer, which draws far proxies for the cells it holds. Pass null to detach.
+- `createCellStreaming` (function): function createCellStreaming(options: CellStreamingOptions): CellStreaming — Stream a world's cells around focus points: each cell loads (fetch, then its content placed back a few items per tick) within `loadRadius` of any focus, unloads past `keepRadius` of all of them, and at most `loadsPerUpdate` / `unloadsPerUpdate` cells change per tick. With a renderer attached a cell keeps a far proxy: a leaving cell parks only once its proxy is built, a loading one shows the proxy until its content is back, and cells never seen are warmed one at a time to build theirs. Bodies and entities follow by the rule each content kind was made with.
+
 ## @jgengine/core/visibility/config
 
 - `HlodConfig` (interface): interface HlodConfig — Far static cells draw one merged proxy instead of their props. Every cell of batched static props switches to its proxy from `distance` metres (camera to the cell's bounds) plus half the `hysteresis` band, and back below `distance` minus half of it; `cluster` is the proxy's detail in metres: vertices closer than it merge.
@@ -5901,6 +5947,23 @@
 - `SimulationCullingOptions` (interface): interface SimulationCullingOptions — Simulation culling is a SEPARATE, opt-in system from render culling. Render culling only decides what is drawn; this decides whether a low-priority off-screen entity updates this tick. It is disabled by default and never throttles a protected entity — physics-critical, networking-critical, audio-critical, scripted, or explicitly-active entities always update. Gameplay correctness must never depend on an entity being on-screen, so opt in only where skipping updates is provably safe.
 - `SimulationDecision` (interface): interface SimulationDecision { update: boolean; elapsed: number } — ⚠ undocumented
 - `createSimulationCuller` (function): function createSimulationCuller(options: SimulationCullingOptions = {}): SimulationCuller — ⚠ undocumented
+
+## @jgengine/core/visibility/streamer
+
+- `GridShardsOptions` (interface): interface GridShardsOptions — Options for {@link gridShards}.
+- `ShardResidency` (type): type ShardResidency = "unloaded" | "loading" | "ready" — Where one shard stands.
+- `StreamCell` (interface): interface StreamCell extends StreamerShard — One square grid cell: a shard that always has bounds.
+- `StreamFocus` (interface): interface StreamFocus — A point residency is measured from: a camera, or one player in a shared world.
+- `StreamUpdate` (interface): interface StreamUpdate — The residency change produced by one {@link WorldStreamer.update}.
+- `StreamerShard` (interface): interface StreamerShard — The proximity streamer for a world split into shards or grid cells: a stateful scheduler that decides, as one or more focus points move, which shards enter and leave residency. It is pure scheduling: reading a shard's content stays the caller's job, so the streamer has no I/O and stays deterministic. Hysteresis (`loadRadius` < `keepRadius`) stops a shard on a boundary from thrashing, per-update budgets spread a burst of loads and unloads over several updates, and a shard whose content arrives later stays `loading` until the caller marks it ready.
+- `WorldStreamer` (interface): interface WorldStreamer — A stateful proximity streamer over a fixed shard set.
+- `WorldStreamerConfig` (interface): interface WorldStreamerConfig extends WorldStreamerTuning — Configuration for {@link createWorldStreamer}.
+- `WorldStreamerState` (interface): interface WorldStreamerState — Plain JSON state of a {@link WorldStreamer}: each resident shard and whether it is ready, plus the tuning.
+- `WorldStreamerTuning` (interface): interface WorldStreamerTuning — Play-time tuning of a {@link WorldStreamer}; every field is retunable.
+- `createWorldStreamer` (function): function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer — Creates a proximity streamer over a world's shards. Always-resident shards are resident from the first update onward; each bounded shard loads when any focus comes within `loadRadius` of its footprint and unloads only once every focus is past `keepRadius`. An update reads only the index buckets near each focus plus the resident set, never the whole world, and starts at most `loadsPerUpdate` loads and `unloadsPerUpdate` unloads.
+- `gridCellId` (function): function gridCellId(x: number, z: number, cellSize: number): string — The id of the grid cell a world point falls in: `"col,row"` counted from world origin.
+- `gridShards` (function): function gridShards(options: GridShardsOptions): StreamCell[] — Square cells covering an XZ area, aligned to world origin so the same cell size gives the same ids in every game system (streaming, nav tiles, batching). Ids come from {@link gridCellId}.
+- `shardDistance` (function): function shardDistance(shard: StreamerShard, center: StreamFocus): number — Distance from a point to a shard's XZ footprint (0 when inside), or 0 for an always-resident shard.
 
 ## @jgengine/core/visibility/visibilitySystem
 
@@ -6376,6 +6439,7 @@
 - `NavCrowdSnapshot` (interface): interface NavCrowdSnapshot — Serializable crowd state: agents, their routes, and the avoidance tuning they run under.
 - `NavCrowdStats` (interface): interface NavCrowdStats — Counters a devtools probe or test reads.
 - `NavGrid` (interface): interface NavGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly bounds: Aabb; readonly diagonal: boolean; isWalkable(col: number, row: number): boolean; setWalkable(col: number, row: number, walkable: boolean): void; blo… — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
+- `NavGridTileOptions` (interface): interface NavGridTileOptions — Options for {@link navTileFromGrid}.
 - `NavLinkKind` (type): type NavLinkKind = "door" | "ladder" | "jump" | "link" — What an authored off-mesh connection crosses; the runtime prices it by kind unless the author sets a cost.
 - `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
 - `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data. Treat it as immutable once queried; queries cache derived geometry per object.
@@ -6390,6 +6454,15 @@
 - `NavRuntime` (interface): interface NavRuntime — Runtime seam over a baked {@link NavMeshData}: route, price areas, resolve authored links, rebuild in place.
 - `NavRuntimeOptions` (interface): interface NavRuntimeOptions extends NavMeshQueryOptions — Options for {@link createNavRuntime}.
 - `NavRuntimeSnapshot` (interface): interface NavRuntimeSnapshot — Serializable tuning and authored links of a {@link NavRuntime}; the baked geometry is replaced by `applyMesh`.
+- `NavTileBounds` (interface): interface NavTileBounds — The XZ square one nav tile covers.
+- `NavTileBuilder` (type): type NavTileBuilder = (tile: NavTileRequest) => NavMeshData — Builds one tile's polygons from the world as it is now. Its vertices are world coordinates and stay inside the tile's bounds; polygons meeting a tile border are stitched to the neighbouring tile's.
+- `NavTileRequest` (interface): interface NavTileRequest — The tile a builder is asked for: its grid id and footprint.
+- `NavTileStats` (interface): interface NavTileStats — What the tiled mesh holds and what its last changes cost.
+- `NavTileStore` (interface): interface NavTileStore — Where built tiles are kept, so a tile that streams back in is not rebuilt. Inject one to persist tiles.
+- `NavTileStreaming` (interface): interface NavTileStreaming extends WorldStreamerTuning — Which tiles stream in around focus points, for {@link NavTiles.follow}.
+- `NavTiles` (interface): interface NavTiles — A nav mesh kept as tiles: built, stored, rebuilt and streamed one tile at a time, routed as one mesh.
+- `NavTilesOptions` (interface): interface NavTilesOptions extends NavRuntimeOptions — Options for {@link createNavTiles}.
+- `NavTilesSnapshot` (interface): interface NavTilesSnapshot — Plain JSON state of a {@link NavTiles}: the routed tiles, the runtime's tuning and the streamer's residency.
 - `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.
 - `NoteEvent` (interface): interface NoteEvent — One scheduled note in a theme, positioned on the loop's quarter-note grid.
 - `ObjectSlotRejection` (type): type ObjectSlotRejection = | "unknown-object" | "no-slot-inventory" | "unknown-inventory" | "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" | "insufficient" — Why an object slot mutation was refused — the instance, its catalog entry, the player inventory, or the declared `accepts`/capacity.
@@ -6813,6 +6886,7 @@
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
 - `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
 - `createNavRuntime` (function): function createNavRuntime(options: NavRuntimeOptions & { mesh: NavMeshData }): NavRuntime — Route agents over the nav mesh an editor baked. Wraps {@link createNavMeshQuery}, resolves authored off-mesh links (doors, ladders, jumps) onto the current surface, and exchanges the mesh one scene region at a time so untouched polygons keep their ids and the agents routing over them keep their paths.
+- `createNavTiles` (function): function createNavTiles(options: NavTilesOptions): NavTiles — A nav mesh kept as square tiles: each tile is built by the game's builder from the world as it is now and stored, a changed region rebuilds only the tiles it touches, tiles stream in and out around focus points within a per-update budget, and every loaded tile is stitched into the one {@link NavRuntime} agents already route on, so a path crosses tile borders and polygons that survive a change keep their ids.
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 - `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}, options: ParticleSystemOptions = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
@@ -6924,6 +6998,7 @@
 - `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
 - `mtof` (function): function mtof(midi: number): number — Standard equal-temperament MIDI-to-frequency (A4 = 440 Hz at MIDI 69).
 - `navMeshFromBake` (function): function navMeshFromBake(bakes: readonly SceneBake[] | undefined, id = "main"): NavMeshData | null — Read the named navigation bake an editor wrote onto a scene document. Returns `null` when the document holds no such bake yet, and throws when the stored bake is not a valid nav mesh — a corrupt bake should fail at load, not as agents walking through walls.
+- `navTileFromGrid` (function): function navTileFromGrid(options: NavGridTileOptions): NavMeshData — Build one nav tile by sampling the world on a grid: each cell takes the area its centre reports, runs of cells with one area merge into rectangles, and each rectangle's sides are split at its neighbours' corners so adjacent rectangles share edges. The builder for a game whose walkable ground is a rule (lots, roads, water) rather than baked triangles.
 - `nextAutoTargetPolicy` (function): function nextAutoTargetPolicy(current: AutoTargetPolicy, allowed: readonly AutoTargetPolicy[] = AUTO_TARGET_POLICIES): AutoTargetPolicy — The policy after `current` in `allowed` (default {@link AUTO_TARGET_POLICIES}), wrapping at the end; a policy outside `allowed` steps to its first entry.
 - `normalizeDegrees` (function): function normalizeDegrees(degrees: number): number — Wrap `degrees` into `[0, 360)` — the canonical heading range every policy and conversion here works in. Non-finite input collapses to `0` so bad metadata never leaks a `NaN` heading downstream.
 - `notesInWindow` (function): function notesInWindow(theme: MusicTheme, anchorSec: number, fromSec: number, toSec: number): ScheduledNote[] — Pure lookahead scheduler: every note occurrence of `theme` whose onset falls in the half-open window `(fromSec, toSec]`, given the theme's loop-zero at `anchorSec`. Handles any number of loop wraps, so a director calls it once per tick with a non-overlapping window and never double-schedules a note.

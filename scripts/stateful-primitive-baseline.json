@@ -22,7 +22,6 @@
     "packages/core/src/economy/listingBook.ts#createListingBook",
     "packages/core/src/economy/priceHistory.ts#createPriceHistory",
     "packages/core/src/editor/liveSync.ts#createDocumentLiveSync",
-    "packages/core/src/editor/streamer.ts#createWorldStreamer",
     "packages/core/src/faction/factions.ts#createFactionGraph",
     "packages/core/src/faction/factions.ts#createFactionRoster",
     "packages/core/src/game/connectedPlayers.ts#createConnectedPlayers",

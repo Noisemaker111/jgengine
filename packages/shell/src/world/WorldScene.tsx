@@ -48,6 +48,7 @@ import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } fr
 import { modelLooks } from "@jgengine/core/model/modelLook";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { setCulled } from "@jgengine/core/visibility/culledTransforms.draw";
+import { CellStreamingDriver } from "@jgengine/core/visibility/cellStreaming.draw";
 import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "@jgengine/core/anim/entityPose";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";
@@ -433,13 +434,26 @@ function WorldActors({
   const candidatesById = new Map(candidates.map((candidate) => [candidate.object.instanceId, candidate]));
   const crowdModels = new Map<string, ModelConfig>();
   const renderSingle = (object: SceneObject) => {
-    object = ctx.scene.object.get(object.instanceId) ?? object;
-    const candidate = candidatesById.get(object.instanceId)!;
+    // A batch can still hold an object removed since this render gathered candidates (a streamed-out
+    // block's props): a removed object draws nothing.
+    const live = ctx.scene.object.get(object.instanceId);
+    const candidate = candidatesById.get(object.instanceId);
+    if (live === null || candidate === undefined) return null;
+    object = live;
     const model = modelWithAuthoredNodeVisibility(modelWithAuthoredMaterials(resolveObjectModel(object, objectModels, assets, modelCache), { materialAssets: document.materialAssets, markers: materialMarkers.has(object.instanceId) ? [materialMarkers.get(object.instanceId)!] : [] }, object.instanceId), materialMarkers.get(object.instanceId));
     return <ObjectMarker key={object.instanceId} object={object} custom={object === candidate.object ? candidate.custom : renderObject?.(object)} model={model} style={objectStyles?.[object.catalogId]} />;
   };
+  const modelUrls = () => {
+    const urls = new Set<string>();
+    for (const catalogId of Object.keys(objectModels ?? {})) {
+      const url = resolveObjectModel({ instanceId: "", catalogId, position: [0, 0, 0], rotationY: 0 }, objectModels, assets, modelCache)?.url;
+      if (url !== undefined) urls.add(url);
+    }
+    return [...urls];
+  };
   return (
     <>
+      <CellStreamingDriver modelUrls={modelUrls} />
       {entityIds.map((entityId) => {
         const entity = ctx.scene.entity.get(entityId);
         if (entity === null || entity.name === WORLD_ITEM_ENTITY_NAME) return null;

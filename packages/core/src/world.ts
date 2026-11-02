@@ -472,6 +472,20 @@ export {
   type SceneBake,
 } from "./nav/navRuntime";
 export {
+  createNavTiles,
+  navTileFromGrid,
+  type NavGridTileOptions,
+  type NavTileBounds,
+  type NavTileBuilder,
+  type NavTileRequest,
+  type NavTileStats,
+  type NavTileStore,
+  type NavTileStreaming,
+  type NavTiles,
+  type NavTilesOptions,
+  type NavTilesSnapshot,
+} from "./nav/navTiles";
+export {
   advancePathFollow,
   createPathFollow,
   followPathLength,

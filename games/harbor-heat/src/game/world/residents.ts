@@ -13,7 +13,8 @@ import {
 } from "@jgengine/core/gameplay";
 import type { AgentScheduleStop } from "@jgengine/core/agents/schedule";
 import type { Vec3 } from "@jgengine/core/world/geometry";
-import { createNavGrid, findPath, type NavGrid, type NavPoint } from "@jgengine/core/nav/navGrid";
+import type { NavMeshData } from "@jgengine/core/nav/navMesh";
+import { createNavTiles, navTileFromGrid, type NavTileRequest, type NavTiles } from "@jgengine/core/nav/navTiles";
 
 import { editorLayers } from "../../editorLayers";
 import { fearAt, PANIC_FEAR } from "../cityRuntime";
@@ -30,8 +31,8 @@ import { onCityRelaid, type BuildingFootprintXZ } from "./setup";
  * is split by distance through `createOffScreenWorld`, so a resident across the city is a schedule, a
  * position and a needs record and costs nothing per frame.
  *
- * The near half is this city's own: residents walk around the authored buildings on the shared nav
- * grid, so a resident that comes into range appears exactly where the cheap state already had it and
+ * The near half is this city's own: residents walk around the authored buildings on nav tiles
+ * streamed around the player, so a resident that comes into range appears exactly where the cheap state already had it and
  * walks on from there.
  */
 
@@ -153,19 +154,34 @@ interface Walker {
   path: readonly NavPoint[];
   index: number;
   position: [number, number, number];
+  /** Where the walk is headed, kept apart from the path: a route into tiles not yet loaded ends short of it. */
+  goal: readonly [number, number];
+  /** The route stopped short of the goal at the edge of the loaded tiles. */
+  partial: boolean;
 }
 
-/** The near half: nav-grid routes stepped along by hand, one entity per resident in range. */
+/** A point on a walker's route, world XZ. */
+type NavPoint = readonly [number, number];
+
+/** The near half: nav-mesh routes stepped along by hand, one entity per resident in range. */
 interface CityWalkers extends NearAgents {
   count(): number;
   /** Where a walker's route currently ends, in world XZ, for a caller deciding whether to re-aim it. */
   goal(id: string): readonly [number, number] | null;
 }
 
-/** Walk grid bounds and cell, metres. */
-const WALK_BOUNDS = { minX: -320, minZ: -320, maxX: 320, maxZ: 320 };
+/** Where walk tiles may stand, metres. */
+const WALK_BOUNDS = { min: [-320, -320] as const, max: [320, 320] as const };
+/** A walk tile's edge and its sampling cell, metres. */
+const WALK_TILE = 64;
 const WALK_CELL = 2;
-/** A step on the carriageway costs this many sidewalk steps, so walkers keep to the pavement and cross where they must. */
+/** Walk tiles load this far from the player and stay until past the keep band: a near walker's whole block, plus where it is headed. */
+const WALK_LOAD_RADIUS = NEAR_RADIUS + WALK_TILE;
+const WALK_KEEP_RADIUS = WALK_LOAD_RADIUS + WALK_TILE;
+/** Room a walker keeps from a wall, metres: half a body plus a step. */
+const WALL_CLEARANCE = 1.8;
+/** Area id of the carriageway; a step on it costs this many sidewalk steps, so walkers keep to the pavement and cross where they must. */
+const ROAD_AREA = 1;
 const ROAD_STEP_COST = 6;
 
 /** Whether a point is on a street's carriageway (kerb to kerb) as the layout draws it now. */
@@ -177,77 +193,86 @@ function onCarriageway(layout: CityLayout, x: number, z: number): boolean {
   return false;
 }
 
-/**
- * The city as a walker sees it: every lot's own rotated footprint blocked (plus a body's width, so a
- * walker never clips a wall corner) and the carriageway marked costly, both from the layout as it is
- * now, so a slider re-lay re-routes the residents with the blocks and sidewalks.
- */
-function walkGrid(buildings: readonly BuildingFootprintXZ[], layout: CityLayout): { grid: NavGrid; road: Uint8Array; cols: number } {
-  const grid: NavGrid = createNavGrid({ bounds: WALK_BOUNDS, cellSize: WALK_CELL });
-  for (const lot of buildings) {
+interface LotBox {
+  minX: number;
+  minZ: number;
+  maxX: number;
+  maxZ: number;
+}
+
+/** Every lot's rotated footprint as the box a walker keeps out of, wall clearance included. */
+function lotBoxes(buildings: readonly BuildingFootprintXZ[]): LotBox[] {
+  return buildings.map((lot) => {
     const c = Math.abs(Math.cos(lot.rotationY));
     const s = Math.abs(Math.sin(lot.rotationY));
-    const halfX = lot.halfW * c + lot.halfD * s + 0.8;
-    const halfZ = lot.halfW * s + lot.halfD * c + 0.8;
-    grid.blockAabb({ minX: lot.x - halfX, minZ: lot.z - halfZ, maxX: lot.x + halfX, maxZ: lot.z + halfZ });
-  }
-  const cols = Math.round((WALK_BOUNDS.maxX - WALK_BOUNDS.minX) / WALK_CELL);
-  const rows = Math.round((WALK_BOUNDS.maxZ - WALK_BOUNDS.minZ) / WALK_CELL);
-  const road = new Uint8Array(cols * rows);
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < cols; col += 1) {
-      const x = WALK_BOUNDS.minX + (col + 0.5) * WALK_CELL;
-      const z = WALK_BOUNDS.minZ + (row + 0.5) * WALK_CELL;
-      if (onCarriageway(layout, x, z)) road[row * cols + col] = 1;
-    }
-  }
-  return { grid, road, cols };
+    const halfX = lot.halfW * c + lot.halfD * s + WALL_CLEARANCE;
+    const halfZ = lot.halfW * s + lot.halfD * c + WALL_CLEARANCE;
+    return { minX: lot.x - halfX, minZ: lot.z - halfZ, maxX: lot.x + halfX, maxZ: lot.z + halfZ };
+  });
 }
 
 /**
- * Build the near half: residents that walk the city's sidewalks on a nav grid of the blocks as the
- * layout lays them, re-routed whenever a slider re-lays the city.
+ * One walk tile of the city as a walker sees it: the lots blocked and the carriageway costly, both
+ * from the layout as it is now. Only the lots and roads reaching this tile are read.
+ */
+function walkTile(tile: NavTileRequest, boxes: readonly LotBox[], layout: CityLayout, ground: (x: number, z: number) => number): NavMeshData {
+  const [x0, z0] = tile.bounds.min;
+  const [x1, z1] = tile.bounds.max;
+  const here = boxes.filter((box) => box.maxX > x0 && box.minX < x1 && box.maxZ > z0 && box.minZ < z1);
+  return navTileFromGrid({
+    bounds: tile.bounds,
+    cellSize: WALK_CELL,
+    heightAt: ground,
+    areaAt(x, z) {
+      for (const box of here) if (x >= box.minX && x < box.maxX && z >= box.minZ && z < box.maxZ) return null;
+      return onCarriageway(layout, x, z) ? ROAD_AREA : 0;
+    },
+  });
+}
+
+/**
+ * Build the near half: residents that walk the city's sidewalks on nav tiles of the blocks as the
+ * layout lays them. Tiles stream in around the player, a slider re-lay rebuilds the loaded ones, and
+ * a route that ended at the edge of the loaded tiles is planned again once more of the city loads.
  */
 function createCityWalkers(ctx: GameContext, buildings: readonly BuildingFootprintXZ[]): CityWalkers {
-  let walk = walkGrid(buildings, cityLayout.get());
-  const roadCost = (_from: NavPoint, to: NavPoint): number => {
-    const col = Math.floor((to[0] - WALK_BOUNDS.minX) / WALK_CELL);
-    const row = Math.floor((to[1] - WALK_BOUNDS.minZ) / WALK_CELL);
-    return walk.road[row * walk.cols + col] === 1 ? ROAD_STEP_COST : 1;
-  };
-  const isRoad = (x: number, z: number): boolean => {
-    const col = Math.floor((x - WALK_BOUNDS.minX) / WALK_CELL);
-    const row = Math.floor((z - WALK_BOUNDS.minZ) / WALK_CELL);
-    return walk.road[row * walk.cols + col] === 1;
-  };
-  // Smoothing may straighten a route but not cut a corner across the street: a shortcut that leaves
-  // the pavement only stands where the grid route itself was already crossing.
-  const keepToPavement = (from: NavPoint, to: NavPoint): boolean => {
-    if (Math.hypot(to[0] - from[0], to[1] - from[1]) <= WALK_CELL * 1.5) return true;
-    if (isRoad(from[0], from[1]) || isRoad(to[0], to[1])) return true;
-    for (let t = 0.125; t < 1; t += 0.125) {
-      if (isRoad(from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t)) return false;
-    }
-    return true;
-  };
-
-  const kindOf = new Map(RESIDENTS.map((spec) => [spec.id, spec.kind]));
+  let boxes = lotBoxes(buildings);
+  const ground = (x: number, z: number) => ctx.world.groundHeightAt(x, z);
+  const tiles: NavTiles = createNavTiles({
+    tileSize: WALK_TILE,
+    build: (tile) => walkTile(tile, boxes, cityLayout.get(), ground),
+    areaCosts: { [ROAD_AREA]: ROAD_STEP_COST },
+    maxNodes: 4096,
+    streaming: { area: WALK_BOUNDS, loadRadius: WALK_LOAD_RADIUS, keepRadius: WALK_KEEP_RADIUS, loadsPerUpdate: 1, unloadsPerUpdate: 1 },
+    devtoolsName: "harbor.walkTiles",
+  });
   const walkers = new Map<string, Walker>();
 
-  function route(from: readonly [number, number, number], to: readonly [number, number, number]): readonly NavPoint[] {
-    const path = findPath(walk.grid, [from[0], from[2]], [to[0], to[2]], { clearance: 1, maxNodes: 12000, smooth: true, stepCost: roadCost, canTraverse: keepToPavement });
-    return path ?? [[to[0], to[2]]];
+  function route(walker: Walker): void {
+    const [x, , z] = walker.position;
+    const path = tiles.runtime.plan([x, ground(x, z), z], [walker.goal[0], ground(walker.goal[0], walker.goal[1]), walker.goal[1]]);
+    const end = path?.points[path.points.length - 1];
+    walker.path = path === null ? [walker.goal] : path.points.map((point): NavPoint => [point[0], point[2]]);
+    walker.partial = end === undefined || Math.hypot(end[0] - walker.goal[0], end[2] - walker.goal[1]) > WAYPOINT_REACH;
+    walker.index = 0;
   }
 
+  const follow = () => {
+    const player = ctx.scene.entity.get(ctx.player.userId);
+    if (player === null) return;
+    const changed = tiles.follow({ x: player.position[0], z: player.position[2] });
+    if (changed.load.length === 0 && changed.unload.length === 0) return;
+    for (const walker of walkers.values()) if (walker.partial) route(walker);
+  };
+  follow();
+
   const stopRelay = onCityRelaid(ctx, (relaid) => {
-    walk = walkGrid(relaid, cityLayout.get());
-    for (const walker of walkers.values()) {
-      const goal = walker.path[walker.path.length - 1];
-      if (goal === undefined) continue;
-      walker.path = route(walker.position, [goal[0], 0, goal[1]]);
-      walker.index = 0;
-    }
+    boxes = lotBoxes(relaid);
+    tiles.invalidate({ min: WALK_BOUNDS.min, max: WALK_BOUNDS.max });
+    for (const walker of walkers.values()) route(walker);
   });
+
+  const kindOf = new Map(RESIDENTS.map((spec) => [spec.id, spec.kind]));
 
   return {
     spawn(next: NearSpawn) {
@@ -263,13 +288,17 @@ function createCityWalkers(ctx: GameContext, buildings: readonly BuildingFootpri
         rotationY: 0,
         role: "npc",
       });
-      walkers.set(next.id, {
+      const walker: Walker = {
         id: next.id,
         entityId,
-        path: route(next.position, next.goal),
+        path: [],
         index: 0,
         position: [x, next.position[1], z],
-      });
+        goal: [next.goal[0], next.goal[2]],
+        partial: false,
+      };
+      route(walker);
+      walkers.set(next.id, walker);
     },
     despawn(id: string): NearHandoff | null {
       const walker = walkers.get(id);
@@ -286,11 +315,12 @@ function createCityWalkers(ctx: GameContext, buildings: readonly BuildingFootpri
     setGoal(id: string, goal) {
       const walker = walkers.get(id);
       if (walker === undefined) return;
-      walker.path = route(walker.position, goal);
-      walker.index = 0;
+      walker.goal = [goal[0], goal[2]];
+      route(walker);
     },
     tick(dt: number) {
       if (!(dt > 0)) return;
+      follow();
       for (const walker of walkers.values()) {
         const entity = ctx.scene.entity.get(walker.entityId);
         if (entity === null) continue;
@@ -327,12 +357,11 @@ function createCityWalkers(ctx: GameContext, buildings: readonly BuildingFootpri
     count: () => walkers.size,
     goal(id) {
       const walker = walkers.get(id);
-      if (walker === undefined) return null;
-      const last = walker.path[walker.path.length - 1];
-      return last === undefined ? null : [last[0], last[1]];
+      return walker === undefined ? null : walker.goal;
     },
     dispose() {
       stopRelay();
+      tiles.dispose();
       for (const walker of walkers.values()) ctx.scene.entity.despawn(walker.entityId);
       walkers.clear();
     },
