@@ -100,5 +100,6 @@ describe("enter-vehicle snippet", () => {
     expect(code).toContain("createVehicleDynamics");
     expect(code).toContain("vehicleTuning");
     expect(code).toContain("tires:");
-  });
+    // The import loads the whole shell; a cold Windows runner took over 5 s.
+  }, 60_000);
 });
