@@ -1,9 +1,12 @@
+// framework-ok: grace period, late fee and auto-pay stay LLMville's until a second game wants bills (PLAN.md Gaps); the day cadence is the engine Schedule.
 import {
   computeGameDay,
   DEFAULT_TIME_SCALE,
+  getScaledElapsedMs,
   sanitizeGameTimeScale,
   SECONDS_PER_GAME_DAY,
 } from "@jgengine/core/time/gameClock";
+import { createPacedSchedule } from "@jgengine/core/time/pacedSchedule";
 import {
   computeBillDueAt,
   COOLANT_RATE_PER_KW,
@@ -74,9 +77,11 @@ export function shouldSpawnDailyBills(args: {
   lastBilledGameDay: number | undefined;
 }): boolean {
   const timeScale = args.gameTimeScale ?? DEFAULT_TIME_SCALE;
-  const currentGameDay = computeGameDay(args.createdAt, args.now, timeScale);
   const createdGameDay = computeGameDay(args.createdAt, args.createdAt, timeScale);
-  return currentGameDay > Math.max(args.lastBilledGameDay ?? -1, createdGameDay);
+  const billedThrough = Math.floor(Math.max(args.lastBilledGameDay ?? -1, createdGameDay));
+  const billingDays = createPacedSchedule({ firstAt: SECONDS_PER_GAME_DAY, every: SECONDS_PER_GAME_DAY }, () => 0, { maxPerTick: 1 });
+  billingDays.restore({ nextAt: (billedThrough + 1) * SECONDS_PER_GAME_DAY, fired: billedThrough, pausedAt: null });
+  return billingDays.due(getScaledElapsedMs(args.createdAt, args.now, timeScale) / 1000).length > 0;
 }
 
 export function computeDailyBills(inputs: DailyBillsInputs): DailyBillsDecision {
