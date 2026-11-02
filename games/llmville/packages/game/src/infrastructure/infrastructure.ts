@@ -25,6 +25,8 @@ import {
   type RackCoolingInventory,
   type RackCoolingUnitId,
 } from "@llmville/game/infrastructure/catalog";
+import { createStatPool } from "@jgengine/core/stats/statPool";
+import { tierAt, type ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 import {
   moveItem,
   type InventoryLayout,
@@ -290,7 +292,19 @@ export const THERMAL_TEMP_CURVE_K = 1.35;
 
 const THERMAL_THROTTLE_GRACE = 1.08;
 
-export type ThermalStatus = "cool" | "optimal" | "warm" | "hot" | "critical";
+/** How hot a card reads on its slot badge. */
+export type RackHeatBand = "cool" | "warm" | "hot";
+
+/** Heat bands over card temperature (°C): each band starts at its `at`. */
+export const RACK_HEAT_BANDS: readonly ThresholdBoundary<RackHeatBand>[] = [
+  { id: "cool", at: Number.NEGATIVE_INFINITY },
+  { id: "warm", at: 65 },
+  { id: "hot", at: 80 },
+];
+
+export function rackHeatBand(temperatureC: number): RackHeatBand {
+  return tierAt(RACK_HEAT_BANDS, temperatureC)?.id ?? "cool";
+}
 
 export interface ThermalState {
   heatLoadKw: number;
@@ -302,32 +316,49 @@ export interface ThermalState {
   temperatureC: number;
 }
 
+function thermalUtilization(heatLoadKw: number, coolingCapacityKw: number): number {
+  return coolingCapacityKw <= 0 ? (heatLoadKw > 0 ? Infinity : 0) : heatLoadKw / coolingCapacityKw;
+}
+
+/** Card heat as a Meter between ambient and the thermal ceiling, filled along the cooling curve. */
+function thermalTemperatureC(heatLoadKw: number, utilization: number): number {
+  if (heatLoadKw <= 0) return THERMAL_AMBIENT_TEMP_C;
+  if (!Number.isFinite(utilization)) return THERMAL_MAX_TEMP_C;
+  const span = THERMAL_MAX_TEMP_C - THERMAL_AMBIENT_TEMP_C;
+  return createStatPool({
+    min: THERMAL_AMBIENT_TEMP_C,
+    max: THERMAL_MAX_TEMP_C,
+    current: THERMAL_AMBIENT_TEMP_C + span * (1 - Math.exp(-THERMAL_TEMP_CURVE_K * utilization)),
+  }).current;
+}
+
 export function computeThermalState(heatLoadKw: number, coolingCapacityKw: number): ThermalState {
   const capacity = Math.max(0, coolingCapacityKw);
-  const utilization = capacity <= 0 ? (heatLoadKw > 0 ? Infinity : 0) : heatLoadKw / capacity;
+  const utilization = thermalUtilization(heatLoadKw, capacity);
   const graceCapacity = capacity * THERMAL_THROTTLE_GRACE;
   const throttleFactor =
     heatLoadKw <= graceCapacity ? 1 : graceCapacity <= 0 ? 0 : graceCapacity / heatLoadKw;
-  const span = THERMAL_MAX_TEMP_C - THERMAL_AMBIENT_TEMP_C;
-  const temperatureC =
-    heatLoadKw <= 0
-      ? THERMAL_AMBIENT_TEMP_C
-      : !Number.isFinite(utilization)
-        ? THERMAL_MAX_TEMP_C
-        : Math.min(
-            THERMAL_MAX_TEMP_C,
-            THERMAL_AMBIENT_TEMP_C + span * (1 - Math.exp(-THERMAL_TEMP_CURVE_K * utilization)),
-          );
-  return { heatLoadKw, coolingCapacityKw: capacity, utilization, throttleFactor, temperatureC };
+  return {
+    heatLoadKw,
+    coolingCapacityKw: capacity,
+    utilization,
+    throttleFactor,
+    temperatureC: thermalTemperatureC(heatLoadKw, utilization),
+  };
 }
 
 /** Electrical service capacity (kW) the lab can draw, indexed by purchased grid-hookup level. */
 export const GRID_HOOKUP_CAPACITY_KW = [1.5, 5, 20, 100, 600] as const;
 export const BASE_POWER_CAPACITY_KW = GRID_HOOKUP_CAPACITY_KW[0];
 
+/** Grid hookup as a Ladder: each purchased level is a step whose id is the service capacity it grants. */
+const GRID_HOOKUP_LADDER: readonly ThresholdBoundary<number>[] = GRID_HOOKUP_CAPACITY_KW.map((capacityKw, level) => ({
+  id: capacityKw,
+  at: level,
+}));
+
 export function gridHookupCapacityKw(level: number): number {
-  const clamped = Math.max(0, Math.min(GRID_HOOKUP_CAPACITY_KW.length - 1, Math.round(level)));
-  return GRID_HOOKUP_CAPACITY_KW[clamped] ?? BASE_POWER_CAPACITY_KW;
+  return tierAt(GRID_HOOKUP_LADDER, Math.round(level))?.id ?? BASE_POWER_CAPACITY_KW;
 }
 
 /** Breaker throttle: 1 within the service limit, else capacity/draw. */
@@ -619,15 +650,7 @@ function cardHeatKw(
 }
 
 export function computeCardTemperatureC(heatKw: number, coolingShareKw: number): number {
-  const utilization =
-    coolingShareKw <= 0 ? (heatKw > 0 ? Infinity : 0) : heatKw / coolingShareKw;
-  if (heatKw <= 0) return THERMAL_AMBIENT_TEMP_C;
-  if (!Number.isFinite(utilization)) return THERMAL_MAX_TEMP_C;
-  const span = THERMAL_MAX_TEMP_C - THERMAL_AMBIENT_TEMP_C;
-  return Math.min(
-    THERMAL_MAX_TEMP_C,
-    THERMAL_AMBIENT_TEMP_C + span * (1 - Math.exp(-THERMAL_TEMP_CURVE_K * utilization)),
-  );
+  return thermalTemperatureC(heatKw, thermalUtilization(heatKw, coolingShareKw));
 }
 
 export function computeRackThermalStateV3(

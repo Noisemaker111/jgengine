@@ -1,6 +1,13 @@
 import { getHardwareDefinition } from "@llmville/game/infrastructure/catalog";
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";
+import { rackHeatBand, type RackHeatBand } from "@llmville/game/infrastructure/infrastructure";
 import { getHardwareImagePath } from "@llmville/game/world/worldModelCatalog";
+
+const HEAT_BADGE_CLASS: Record<RackHeatBand, string> = {
+  cool: "bg-brand-teal/80 text-[#0e231e]",
+  warm: "bg-amber-500/80 text-black",
+  hot: "bg-red-500/80 text-white",
+};
 
 interface RackSlotProps {
   /** When set, slot is filled with this hardware. When undefined, slot is empty (drop zone). */
@@ -77,11 +84,7 @@ export default function RackSlot({
             )}
             {temperatureC != null && (
               <span
-                className={`absolute bottom-1 left-1 rounded px-1 py-0.5 text-[10px] font-bold tabular-nums ${
-                  temperatureC >= 80 ? "bg-red-500/80 text-white" :
-                  temperatureC >= 65 ? "bg-amber-500/80 text-black" :
-                  "bg-brand-teal/80 text-[#0e231e]"
-                }`}
+                className={`absolute bottom-1 left-1 rounded px-1 py-0.5 text-[10px] font-bold tabular-nums ${HEAT_BADGE_CLASS[rackHeatBand(temperatureC)]}`}
               >
                 {Math.round(temperatureC)}°C
               </span>

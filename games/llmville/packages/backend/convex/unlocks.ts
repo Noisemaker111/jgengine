@@ -1,3 +1,4 @@
+import { grantUnlock as grantUnlockId, hasUnlock } from "@jgengine/core/game/unlocks";
 import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import type { ResearchUnlocks } from "@llmville/game/research/researchUnlocks";
@@ -34,7 +35,7 @@ export async function readModelCatalog(ctx: QueryCtx, game: Doc<"games">): Promi
 
 export async function grantUnlock(ctx: MutationCtx, ownerExternalId: string, unlockId: string): Promise<void> {
   await patchPlayerState(ctx, ownerExternalId, (state) =>
-    state.unlocks.includes(unlockId) ? state : { ...state, unlocks: [...state.unlocks, unlockId] },
+    hasUnlock(state.unlocks, unlockId) ? state : { ...state, unlocks: grantUnlockId(state.unlocks, unlockId) },
   );
 }
 

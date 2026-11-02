@@ -18,6 +18,7 @@ import {
   getResearchCatalogEntry,
   isResearchCatalogItem,
   isResearchUnlocked,
+  meetsResearchRequirement,
   type ResearchUnlocks,
 } from "@llmville/game/research/researchUnlocks";
 
@@ -118,7 +119,7 @@ export function decideResearchUnlock(args: {
     return { unlocked: false, reason: "Already researched" };
   }
   const tokenCost = entry.unlockDataTokens;
-  if (tokenCost > 0 && args.dataTokens < tokenCost) {
+  if (!meetsResearchRequirement(entry, args.dataTokens)) {
     return { unlocked: false, reason: `Insufficient data tokens: need ${tokenCost.toLocaleString()}` };
   }
   return { unlocked: true, tokenCost };

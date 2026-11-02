@@ -104,10 +104,11 @@ Each milestone keeps the game playing, deletes the private code it replaces in t
   - Build mode checks placement with core `validatePlacementBounds` (new, beside `validatePlacement`); a test pins the old verdicts. `worldModel/buildTool` also needs `GameContext`, so it waits for M2 too.
   - Deleted `src/dev` (7,457), `packages/game/src/builder` (1,516), `vite.devPlugins.ts`, `vite.config.dev.ts`, `builder*.server.ts`, `builderAgent*.ts` and `builderScreenshotApi.ts` (2,515 together), the `/dev/build` and `/dev/assets` routes, the dev-only map decor pipeline (`MapDecor`, diorama props, `mapDecor`, `mapTypes`, `worldBuilder`; 1,703), `public/dev-assets`, the builder icons and `docs/scene-chat.md`.
   - `cityHash` seeds keep their values.
-- [ ] 5. **Rules on the parts.**
-  - Rack heat becomes a Meter and grid hookup a Ladder. Bills move onto the Schedule part, the ledger and the loan book. Research tiers become a Ladder plus Requirement. The daily market becomes a Table plus Modifiers, and the frontier becomes Phases plus Modifiers. Training stays on `jobQueue`, the tutorial moves onto `onboardingSystem`, and the neighbourhood goal onto `createContributionPool`.
-  - Every price and rate keeps its value, and the existing balance tests pin them.
-  - Deletes the private copies in `infrastructure.ts`, `billing.ts`, `dailyMarket.ts`, `frontier.ts`, `researchUnlocks.ts` and `tutorialMachine.ts`. Only LLMville's numbers and names stay.
+- [x] 5. **Rules on the parts.**
+  - Moved: grid hookup is a Ladder; rack heat is a Meter with Ladder badge bands (the duplicate heat curve is gone); the daily bill cadence is the Schedule; research tiers are a Ladder plus a data-token Requirement, and grants use `core/game/unlocks`; the daily market is a Table (new `pickKeyed`) with its numbers as Modifiers; the frontier clamp and decay floor fold as Modifiers; the tutorial step chain runs on `core/onboarding` `createOnboarding`; the neighbourhood goal is a `createContributionPool`. Training stays on `jobQueue`.
+  - Prices, rates, saves and the Convex schema are unchanged; new tests pin every value against today's outputs.
+  - Rule files lost 131 lines and gained 212 (plus 13 in core `random/pick.ts` and 247 lines of pinning tests). The files stay because they hold LLMville's catalogs and rules.
+  - Kept game-side: grace period, late fee and auto-pay in `billing.ts` (`framework-ok`, until a second game wants bills; the loan book works in integer minor units and amortizes, so it cannot reproduce them). Phases do not fit the frontier: it is a linear rise with no named states. `tutorialMachine.ts` keeps its reducer shell because `simulation/gameEngine.ts` imports it.
 - [ ] 6. **Shared world on the engine's multiplayer contracts and the Convex adapter.**
   - Presence and chat move fully onto `convexPresenceTransport` and `convexChatTransport`. Claims move onto `convex/territory`. The world read-model moves onto `hostedServer`/`hostedWorldStore` where a domain fits a snapshot.
   - Deletes `src/multiplayer/*` (110), `packages/backend/convex/jgengine/*` (266) and most of `convex/multiplayer/worldPresence.ts` (398).

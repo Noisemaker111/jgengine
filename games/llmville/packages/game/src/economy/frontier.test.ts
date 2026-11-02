@@ -65,3 +65,23 @@ describe("frontier", () => {
     ).toBe(55);
   });
 });
+
+describe("frontier on Modifiers", () => {
+  test("clamp and release offset match the closed form across a sweep", () => {
+    for (let day = 0; day <= 60; day += 0.75) {
+      for (const offset of [-20, 0, 3, 5, 40]) {
+        const raw = FRONTIER_BASELINE + day * FRONTIER_RISE_PER_DAY + offset;
+        expect(frontierAtDay(day, offset)).toBe(Math.min(FRONTIER_MAX_BENCHMARK, Math.max(FRONTIER_BASELINE, raw)));
+      }
+    }
+  });
+
+  test("decay matches the closed form across a sweep", () => {
+    for (let step = -5; step <= 40; step += 0.37) {
+      const frontier = 60 + step;
+      const gap = frontier - 60;
+      const expected = gap <= 0 ? 1 : Math.max(FRONTIER_DECAY_FLOOR, 1 - gap * 0.04);
+      expect(computeFrontierDecayMultiplier(60, frontier)).toBe(expected);
+    }
+  });
+});
