@@ -102,6 +102,7 @@ describe("dependencyPlan", () => {
       expect(dependencyPlan(root)).toEqual({
         root: ["ts-morph"],
         workspaces: [{ dir: "packages/react", deps: ["three", "@jgengine/core"] }],
+        ranges: { "ts-morph": "^28.0.0", "packages/react/three": "^0.182.0" },
       });
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -114,18 +115,19 @@ describe("dependencyPlan", () => {
       writeFileSync(
         join(root, "package.json"),
         JSON.stringify({
-          workspaces: { packages: ["games/*"] },
+          workspaces: { packages: ["games/*"], catalog: { vite: "^8.3.5", three: "^0.187.0" } },
           devDependencies: { "@typescript/native-preview": "^7.0.0" },
         }),
       );
       mkdirSync(join(root, "games", "ember-command"), { recursive: true });
       writeFileSync(
         join(root, "games", "ember-command", "package.json"),
-        JSON.stringify({ dependencies: { "@jgengine/core": "workspace:*", vite: "catalog:" } }),
+        JSON.stringify({ dependencies: { "@jgengine/core": "workspace:*", vite: "catalog:" }, devDependencies: { three: "catalog:" } }),
       );
       expect(dependencyPlan(root)).toEqual({
         root: ["@typescript/native-preview"],
-        workspaces: [{ dir: "games/ember-command", deps: ["@jgengine/core", "vite"] }],
+        workspaces: [{ dir: "games/ember-command", deps: ["@jgengine/core", "vite", "three"] }],
+        ranges: { "@typescript/native-preview": "^7.0.0", "games/ember-command/vite": "^8.3.5", "games/ember-command/three": "^0.187.0" },
       });
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -151,6 +153,24 @@ describe("probeInstall", () => {
       expect(probe.expectedJge).toBe(1);
       expect(probe.missingJge).toEqual([]);
       expect(probeInstall(join(worktree, "nope"), plan).missing).toEqual(["ts-morph", "ember-command/@jgengine/core", "ember-command/vite"]);
+    } finally {
+      rmSync(worktree, { recursive: true, force: true });
+    }
+  });
+
+  test("an installed package older than its declared range counts as not installed", () => {
+    const worktree = tempDir("jg-doctor-stale-");
+    try {
+      writeFileSync(join(worktree, "package.json"), JSON.stringify({ workspaces: { packages: ["packages/*"], catalog: { three: "^0.187.0" } } }));
+      mkdirSync(join(worktree, "packages", "core"), { recursive: true });
+      writeFileSync(join(worktree, "packages", "core", "package.json"), JSON.stringify({ name: "@jgengine/core", devDependencies: { three: "catalog:" } }));
+      const three = join(worktree, "packages", "core", "node_modules", "three");
+      mkdirSync(three, { recursive: true });
+      writeFileSync(join(three, "package.json"), JSON.stringify({ name: "three", version: "0.180.0" }));
+      expect(probeInstall(worktree, dependencyPlan(worktree)).missing).toEqual(["packages/core/three 0.180.0 (declared ^0.187.0)"]);
+
+      writeFileSync(join(three, "package.json"), JSON.stringify({ name: "three", version: "0.187.0" }));
+      expect(probeInstall(worktree, dependencyPlan(worktree)).missing).toEqual([]);
     } finally {
       rmSync(worktree, { recursive: true, force: true });
     }

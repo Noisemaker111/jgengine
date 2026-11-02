@@ -48,7 +48,7 @@ export function missingDependencies(root: string): string[] {
 
 export function missingText(missing: readonly string[]): string {
   const shown = missing.slice(0, 3).join(", ");
-  return `${missing.length} declared package(s) are not installed (${shown}${missing.length > 3 ? ", ..." : ""})`;
+  return `${missing.length} declared package(s) are missing or older than declared (${shown}${missing.length > 3 ? ", ..." : ""})`;
 }
 
 /**

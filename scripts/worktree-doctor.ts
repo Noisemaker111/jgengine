@@ -73,25 +73,42 @@ export function parseWorktreeList(porcelain: string): WorktreeRef[] {
 export interface DepsPlan {
   root: string[];
   workspaces: { dir: string; deps: string[] }[];
+  /**
+   * The version range each declared package must satisfy, keyed like `missing` entries: `name` at the
+   * root, `<dir>/<name>` in a workspace. `catalog:` is resolved; workspace links and URLs have none.
+   */
+  ranges?: Record<string, string>;
+}
+
+interface Manifest {
+  workspaces?: string[] | { packages?: string[]; catalog?: Record<string, string> };
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+}
+
+/** A range `Bun.semver` can judge (`^0.187.0`, `>=1`, `19.2.3`), after `catalog:` is resolved. */
+function semverRange(declared: string, catalog: Record<string, string>): string | null {
+  const range = declared === "catalog:" ? catalog[""] : declared.startsWith("catalog:") ? undefined : declared;
+  return range !== undefined && /^\s*(?:[\^~<>=]*\s*v?\d|\*$)/.test(range) ? range : null;
 }
 
 /**
- * Which dependencies each tree must be able to resolve: the root manifest's own
- * dependencies at the root, and every workspace package's `dependencies` inside
- * that package. Bun installs third-party packages and `@jgengine/*` links per
- * workspace, so a root-only check misses the
- * install half that actually broke.
+ * Which dependencies each tree must be able to resolve, and at what version: the root manifest's own
+ * dependencies at the root, and every workspace package's `dependencies` and `devDependencies`
+ * inside that package. Bun installs third-party packages and `@jgengine/*` links per workspace, so a
+ * root-only check misses the install half that actually broke, and a dev-only check missed core's
+ * own `three`.
  */
 export function dependencyPlan(root: string): DepsPlan {
-  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
-    workspaces?: string[] | { packages?: string[] };
-    dependencies?: Record<string, string>;
-    devDependencies?: Record<string, string>;
+  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as Manifest;
+  const catalogOf = Array.isArray(manifest.workspaces) ? {} : (manifest.workspaces?.catalog ?? {});
+  const ranges: Record<string, string> = {};
+  const note = (key: string, name: string, declared: string): void => {
+    const range = semverRange(declared, { "": catalogOf[name] ?? "" });
+    if (range !== null) ranges[key] = range;
   };
-  const own = [
-    ...Object.keys(manifest.dependencies ?? {}),
-    ...Object.keys(manifest.devDependencies ?? {}),
-  ];
+  const rootDeclared = { ...manifest.devDependencies, ...manifest.dependencies };
+  for (const [name, declared] of Object.entries(rootDeclared)) note(name, name, declared);
   const patterns = Array.isArray(manifest.workspaces)
     ? manifest.workspaces
     : (manifest.workspaces?.packages ?? []);
@@ -101,13 +118,25 @@ export function dependencyPlan(root: string): DepsPlan {
       const manifestPath = join(root, dir, "package.json");
       if (!existsSync(manifestPath)) continue;
       try {
-        const pkg = JSON.parse(readFileSync(manifestPath, "utf8")) as { dependencies?: Record<string, string> };
-        const deps = Object.keys(pkg.dependencies ?? {});
+        const pkg = JSON.parse(readFileSync(manifestPath, "utf8")) as Manifest;
+        const declared = { ...pkg.devDependencies, ...pkg.dependencies };
+        const deps = [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.devDependencies ?? {}).filter((name) => !(name in (pkg.dependencies ?? {})))];
+        for (const name of deps) note(`${dir}/${name}`, name, declared[name] ?? "");
         if (deps.length > 0) workspaces.push({ dir, deps });
       } catch {}
     }
   }
-  return { root: [...new Set(own)].sort(), workspaces };
+  return { root: Object.keys(rootDeclared).sort(), workspaces, ranges };
+}
+
+/** The installed version of the package at `dir`, or null when its manifest cannot be read. */
+function installedVersion(dir: string): string | null {
+  try {
+    const version = (JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { version?: unknown }).version;
+    return typeof version === "string" ? version : null;
+  } catch {
+    return null;
+  }
 }
 
 function expandWorkspacePattern(root: string, pattern: string): string[] {
@@ -139,17 +168,24 @@ export function probeInstall(
 ): { expected: number; missing: string[]; expectedJge: number; missingJge: string[] } {
   const missing: string[] = [];
   let expected = 0;
-  for (const name of plan.root) {
+  // An installed package older than its declared range is as unusable as a missing one: an install
+  // shared from an older checkout kept three 0.18x while the lock asked for 0.187, and every
+  // readiness check still said ok.
+  const probe = (key: string, dir: string): void => {
     expected += 1;
-    if (!existsSync(join(worktree, "node_modules", name, "package.json"))) missing.push(name);
-  }
-  for (const workspace of plan.workspaces) {
-    for (const name of workspace.deps) {
-      expected += 1;
-      if (!existsSync(join(worktree, workspace.dir, "node_modules", name, "package.json"))) {
-        missing.push(`${workspace.dir}/${name}`);
-      }
+    if (!existsSync(join(dir, "package.json"))) {
+      missing.push(key);
+      return;
     }
+    const range = plan.ranges?.[key];
+    const version = range === undefined ? null : installedVersion(dir);
+    if (range !== undefined && version !== null && !Bun.semver.satisfies(version, range)) {
+      missing.push(`${key} ${version} (declared ${range})`);
+    }
+  };
+  for (const name of plan.root) probe(name, join(worktree, "node_modules", name));
+  for (const workspace of plan.workspaces) {
+    for (const name of workspace.deps) probe(`${workspace.dir}/${name}`, join(worktree, workspace.dir, "node_modules", name));
   }
   const jgeNames = [
     ...plan.root.filter((name) => name.startsWith("@jgengine/")),
