@@ -101,9 +101,10 @@ Each milestone keeps the game playing, deletes the private code it replaces in t
   - Tweets get an injected rng and the engine notification center. This removes `Math.random` and `setInterval` from `TweetNotification.tsx`.
   - Deletes `src/components/ui/*` (597), `src/settings/components/*` (614), `src/runtime/components/GameHudBar.tsx` (19), `GameResourcePanel.tsx` (153), `UiHitTestOverlay.tsx` (206), and most of `src/index.css` (2,353 → the game's skin only).
   - Lands with before/after screenshots in direction A, the miniature lab diorama.
-- [ ] 4. **World authored in the editor.**
-  - Export today's city, plot grid and decor into `games/llmville/editor.scene.json`. The game reads it through `core/scene/AuthoredScene.draw`, and build mode moves onto `worldModel/buildTool`.
-  - Deletes `src/dev` (7,442: builder, asset workbench, previews), `packages/game/src/builder` (1,515), `vite.devPlugins.ts`, `builder*.server.ts`, `builderAgent*.ts` and `builderScreenshotApi.ts`.
+- [x] 4. **World authored in the editor.**
+  - `src/editor.scene.json` is the world's authored home, saved through the editor CLI. Today's world has no hand-placed city or decor to export: the endless datacenter is re-tiled around the player and its column lattice is a movement, placement and spawn rule, and claims, racks and build items are player data in Convex. `src/scene-ownership.json` declares those as runtime-owned, and a test audits it. Mounting `AuthoredScene` waits for the shell game player (M2), since it reads `GameContext`.
+  - Build mode checks placement with core `validatePlacementBounds` (new, beside `validatePlacement`); a test pins the old verdicts. `worldModel/buildTool` also needs `GameContext`, so it waits for M2 too.
+  - Deleted `src/dev` (7,457), `packages/game/src/builder` (1,516), `vite.devPlugins.ts`, `vite.config.dev.ts`, `builder*.server.ts`, `builderAgent*.ts` and `builderScreenshotApi.ts` (2,515 together), the `/dev/build` and `/dev/assets` routes, the dev-only map decor pipeline (`MapDecor`, diorama props, `mapDecor`, `mapTypes`, `worldBuilder`; 1,703), `public/dev-assets`, the builder icons and `docs/scene-chat.md`.
   - `cityHash` seeds keep their values.
 - [ ] 5. **Rules on the parts.**
   - Rack heat becomes a Meter and grid hookup a Ladder. Bills move onto the Schedule part, the ledger and the loan book. Research tiers become a Ladder plus Requirement. The daily market becomes a Table plus Modifiers, and the frontier becomes Phases plus Modifiers. Training stays on `jobQueue`, the tutorial moves onto `onboardingSystem`, and the neighbourhood goal onto `createContributionPool`.

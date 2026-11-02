@@ -646,7 +646,12 @@ export {
   type PlaceAssetResult,
 } from "./placement/placeAsset";
 export { createPlacedStructureStore, type PlacedStructure } from "./placement/placedStructureStore";
-export { validatePlacement, type PlacementRules } from "./placement/placement";
+export {
+  validatePlacement,
+  validatePlacementBounds,
+  type PlacementBoundsRules,
+  type PlacementRules,
+} from "./placement/placement";
 export {
   createPlacementController,
   quarterTurnsToRotationY,

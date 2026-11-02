@@ -1615,6 +1615,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `placeAssetFromCommit` (function) · `import { placeAssetFromCommit } from "@jgengine/core/world"`
 - `resolvePlaceAsset` (function) · `import { resolvePlaceAsset } from "@jgengine/core/world"`
 
+## placement-bounds — validate already-resolved footprint bounds against bounds, obstacles and territory
+
+- `validatePlacementBounds` (function) · `import { validatePlacementBounds } from "@jgengine/core/world"`
+
 ## placement-controller — interactive build-mode ghost preview and commit
 
 - `createPlacementController` (function) · `import { createPlacementController } from "@jgengine/core/world"`

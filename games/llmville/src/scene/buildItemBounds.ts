@@ -8,7 +8,7 @@ import { WORLD_MODEL_NATIVE_EXTENTS } from "@llmville/game/scene/worldModelNativ
 import type { BuildDirection } from "@llmville/game/build/catalog";
 import type { RoomBounds, WorldPoint } from "@llmville/game/world/grid";
 
-import { buildItemTransformInput } from "@llmville/game/scene/decorModelTransform";
+import { buildItemTransformInput } from "@llmville/game/scene/buildItemTransform";
 import { getCachedModelBounds } from "@/scene/modelBoundsCache";
 import { getWorldModelAsset } from "@llmville/game/world/worldModelCatalog";
 

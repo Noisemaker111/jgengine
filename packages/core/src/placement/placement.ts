@@ -28,11 +28,19 @@ export interface PlacementRules {
   territory?: (aabb: Aabb) => { ok: boolean };
 }
 
-export type PlacementResult =
-  | { status: "ok"; center: Vec2; aabb: Aabb }
+/** Why a placement was refused; shared by {@link validatePlacement} and {@link validatePlacementBounds}. */
+export type PlacementRejection =
   | { status: "rejected"; reason: "out-of-bounds" }
   | { status: "rejected"; reason: "territory.blocked" }
   | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number };
+
+export type PlacementResult = { status: "ok"; center: Vec2; aabb: Aabb } | PlacementRejection;
+
+/** The rules {@link validatePlacementBounds} checks: everything in {@link PlacementRules} but the snap. */
+export type PlacementBoundsRules = Omit<PlacementRules, "snap">;
+
+/** {@link validatePlacementBounds}'s verdict: the checked bounds, or why they were refused. */
+export type PlacementBoundsResult = { status: "ok"; aabb: Aabb } | PlacementRejection;
 
 /**
  * Footprint validity: bounds + obstacle overlap after optional grid snap.
@@ -40,22 +48,29 @@ export type PlacementResult =
  */
 export function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult {
   const center = rules.snap === undefined ? request.center : snapToGrid(request.center, rules.snap);
-  const aabb = footprintAabb(center, request.footprint, request.quarterTurns ?? 0);
+  const result = validatePlacementBounds(footprintAabb(center, request.footprint, request.quarterTurns ?? 0), rules);
+  return result.status === "ok" ? { status: "ok", center, aabb: result.aabb } : result;
+}
 
+/**
+ * The same bounds, overlap and territory checks as {@link validatePlacement}, for a footprint the game
+ * has already resolved to world bounds, such as one measured from a model's mesh or off its pivot.
+ * @capability placement-bounds validate already-resolved footprint bounds against bounds, obstacles and territory
+ */
+export function validatePlacementBounds(aabb: Aabb, rules: PlacementBoundsRules = {}): PlacementBoundsResult {
   if (rules.bounds !== undefined && !aabbContains(rules.bounds, aabb)) {
     return { status: "rejected", reason: "out-of-bounds" };
   }
 
   const obstacles = rules.obstacles ?? [];
-  for (let index = 0; index < obstacles.length; index++) {
-    const obstacle = obstacles[index]!;
+  for (const [index, obstacle] of obstacles.entries()) {
     if (aabbOverlap(aabb, obstacle.aabb)) {
       return { status: "rejected", reason: "overlap", obstacle, index };
     }
   }
 
   if (rules.territory && !rules.territory(aabb).ok) return { status: "rejected", reason: "territory.blocked" };
-  return { status: "ok", center, aabb };
+  return { status: "ok", aabb };
 }
 
 export function footprintObstacle(request: PlacementRequest, id?: string): PlacementObstacle {
