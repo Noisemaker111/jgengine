@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, setSystemTime, test } from "bun:test";
 
 import { createPresenceFunctions, type JGMutationCtx } from "./server";
 import { handlerOf, makeDb, serverDoc, type Doc } from "./testFixtures";
@@ -159,4 +159,27 @@ test("reapIdlePresence deletes rows nobody has written since the cutoff", async 
 
   expect(await handlerOf(fns.reapIdlePresence)(ctx, {})).toEqual({ reaped: 1 });
   expect(poseRows(rows).map((row) => row.userId)).toEqual(["alice"]);
+});
+
+test("checkpoint persists host state on the first sync, waits out its interval, and always runs on leave", async () => {
+  const { db, seed } = makeDb();
+  seedServer(seed);
+  seed("jgPoses", { _id: "pose:home", _creationTime: 0, serverId: "srv:presence", userId: "alice", homeGameId: "lab-1", ...POSE, updatedAt: 0 });
+
+  const written: { homeGameId?: string; x: number }[] = [];
+  const fns = createPresenceFunctions({
+    auth: "anonymous",
+    checkpoint: { intervalMs: 60_000, write: async (_ctx, row) => { written.push({ ...(row.homeGameId === undefined ? {} : { homeGameId: row.homeGameId }), x: row.position.x }); } },
+  });
+  const ctx = anonCtx(db);
+  await handlerOf(fns.sync)(ctx, { serverId: "srv:presence", pose: POSE, externalId: "alice" });
+  expect(written).toEqual([{ homeGameId: "lab-1", x: POSE.x }]);
+
+  setSystemTime(new Date(Date.now() + 1_000));
+  await handlerOf(fns.sync)(ctx, { serverId: "srv:presence", pose: { ...POSE, x: 1.5 }, externalId: "alice" });
+  setSystemTime();
+  expect(written).toHaveLength(1);
+
+  await handlerOf(fns.leave)(ctx, { serverId: "srv:presence", externalId: "alice" });
+  expect(written).toEqual([{ homeGameId: "lab-1", x: POSE.x }, { homeGameId: "lab-1", x: 1.5 }]);
 });

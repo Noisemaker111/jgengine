@@ -32,6 +32,7 @@ import {
   isPresenceExpired,
   pickReusablePresence,
   resolveActivePresence,
+  shouldPersistWorldSnapshot,
   spawnPresenceState,
   type PoseSyncRules,
   type PresencePoseState,
@@ -712,6 +713,8 @@ export type LoadedServerSnapshot = {
  */
 export type GameServerHelpers = {
   ensureServer: (ctx: JGMutationCtx, gameId: string) => Promise<ServerDoc>;
+  /** The shared singleton world `ensureServer` would return, read without creating it, so a query can scope reads to it. `null` until a player or host mutation creates it. */
+  findServer: (ctx: { db: Pick<JGQueryCtx["db"], "query"> }, gameId: string) => Promise<ServerDoc | null>;
   loadSnapshot: (
     ctx: JGMutationCtx,
     serverId: string,
@@ -1040,12 +1043,18 @@ export function createGameServerFunctions(options?: {
       }
       return joinAs(ctx, args.userId, { gameId: args.gameId, serverId }, undefined);
     },
-    async ensureServer(ctx, gameId) {
-      if (!shared || matchmaking !== "singleton") throw new Error("ensureServer requires a shared singleton host");
+    async findServer(ctx, gameId) {
+      if (!shared || matchmaking !== "singleton") throw new Error("findServer requires a shared singleton host");
       for (const status of ["running", "open"] as const) {
         const existing = await ctx.db.query("jgGameServers").withIndex("by_game_and_status", q => q.eq("gameId", gameId).eq("status", status)).first();
         if (existing) return existing;
       }
+      return null;
+    },
+    async ensureServer(ctx, gameId) {
+      if (!shared || matchmaking !== "singleton") throw new Error("ensureServer requires a shared singleton host");
+      const existing = await helpers.findServer(ctx, gameId);
+      if (existing) return existing;
       const runtime = resolveRuntime(registry, gameId);
       const now = Date.now();
       const id = await ctx.db.insert("jgGameServers", {
@@ -1626,6 +1635,14 @@ export type PresenceSyncResult = {
   displaced: boolean;
 };
 
+/** A live pose row handed to a `checkpoint` writer, so a host can persist its own last-position state. */
+export type PresenceCheckpoint = {
+  userId: string;
+  homeGameId?: string;
+  position: { x: number; y: number; z: number };
+  rotationY: number;
+};
+
 /**
  * The pose lane of a hosted server: the backend behind `PresenceSync`, which replicates where each
  * member of one `jgGameServers` server is standing. It is not the backend for `PresenceTransport` —
@@ -1649,8 +1666,20 @@ export function createPresenceFunctions(options?: {
     ctx: JGMutationCtx,
     args: { serverId: string; userId: string; kind?: string | undefined },
   ) => Promise<{ x: number; y: number; z: number } | null> | { x: number; y: number; z: number } | null;
+  /**
+   * Persist host-owned last-position state from a live row: on a sync at most once per `intervalMs`
+   * (default 30 s), and always when `leave` ends the row, so a returning player spawns where they stood.
+   */
+  checkpoint?: {
+    intervalMs?: number;
+    write: (ctx: JGMutationCtx, row: PresenceCheckpoint, nowMs: number) => Promise<void>;
+  };
 }) {
   const mode: JgAuthMode = options?.auth ?? "required";
+  const checkpointIntervalMs = options?.checkpoint?.intervalMs ?? 30_000;
+  if (!Number.isFinite(checkpointIntervalMs) || checkpointIntervalMs < 0) throw new Error("Invalid presence checkpoint interval");
+  const checkpointOf = (row: { userId: string; homeGameId?: string | undefined; x: number; y: number; z: number; rotationY: number }): PresenceCheckpoint =>
+    definedOnly({ userId: row.userId, homeGameId: row.homeGameId, position: { x: row.x, y: row.y, z: row.z }, rotationY: row.rotationY });
   const freshWindowMs = options?.freshWindowMs ?? 10_000;
   const idleCutoffMs = options?.idleCutoffMs ?? 60_000;
   const maxReapPerRun = options?.maxReapPerRun ?? 256;
@@ -1802,9 +1831,15 @@ export function createPresenceFunctions(options?: {
         };
 
         const displaced = existing?.revokedAt !== undefined;
+        const checkpoint = options?.checkpoint !== undefined
+          && shouldPersistWorldSnapshot(existing?.lastWorldSnapshotAt, now, checkpointIntervalMs);
+        if (checkpoint) {
+          await options?.checkpoint?.write(ctx, checkpointOf({ userId: actorUserId, homeGameId: existing?.homeGameId, ...pose }), now);
+        }
+        const stamp = checkpoint ? { lastWorldSnapshotAt: now } : {};
         if (existing) {
-          if (decision.changed || decision.refreshKeepAlive || displaced || Object.keys(identity).length > 0) {
-            await ctx.db.patch(existing._id, { ...pose, ...identity, chunkKey: chunkKeyAt([pose.x, pose.y, pose.z]), updatedAt: now, revokedAt: undefined });
+          if (decision.changed || decision.refreshKeepAlive || displaced || checkpoint || Object.keys(identity).length > 0) {
+            await ctx.db.patch(existing._id, { ...pose, ...identity, ...stamp, chunkKey: chunkKeyAt([pose.x, pose.y, pose.z]), updatedAt: now, revokedAt: undefined });
           }
         } else {
           await ctx.db.insert("jgPoses", {
@@ -1813,6 +1848,7 @@ export function createPresenceFunctions(options?: {
             ...pose,
             chunkKey: chunkKeyAt([pose.x, pose.y, pose.z]),
             ...identity,
+            ...stamp,
             updatedAt: now,
           });
         }
@@ -1847,7 +1883,9 @@ export function createPresenceFunctions(options?: {
 
       for (const row of rows) {
         if (args.sessionId !== undefined && row.sessionId !== args.sessionId) continue;
-        if (row.revokedAt === undefined) await ctx.db.patch(row._id, { revokedAt: now });
+        if (row.revokedAt !== undefined) continue;
+        await options?.checkpoint?.write(ctx, checkpointOf(row), now);
+        await ctx.db.patch(row._id, { revokedAt: now });
       }
       return null;
     },
@@ -2017,6 +2055,7 @@ export function createChatFunctions(options?: {
         id: v.string(),
         channelId: v.string(),
         fromUserId: v.string(),
+        fromLabel: v.optional(v.string()),
         body: v.string(),
         at: v.number(),
       }),
@@ -2032,10 +2071,11 @@ export function createChatFunctions(options?: {
         return rows
           .slice()
           .reverse()
-          .map((row) => ({
+          .map((row) => definedOnly({
             id: row._id,
             channelId: row.channelId,
             fromUserId: row.userId,
+            fromLabel: row.authorName,
             body: row.body,
             at: row.at,
           }));

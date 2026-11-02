@@ -25,6 +25,7 @@ import type { LookMood } from "../render/lookMood";
 import type { AmbientLifeConfig } from "../render/ambientLife";
 import type { GamepadFeelConfig } from "../input/gamepadModel";
 import type { LocalPlayersConfig } from "../runtime/localPlayers";
+import type { PresencePoseRow } from "../runtime/transport";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { GraphicsProfile } from "../settings/graphicsProfile";
@@ -142,6 +143,12 @@ export interface PointerConfig {
 /** Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround. */
 export interface WorldOverlayProps {
   ctx: GameContext;
+}
+
+/** What a game's `scene.RemotePlayers` receives: the other players the shell's presence lane reports, own row excluded. */
+export interface RemotePlayersProps {
+  ctx: GameContext;
+  rows: readonly PresencePoseRow[];
 }
 
 export interface EntitySpriteConfig {
@@ -839,7 +846,7 @@ export interface GameCaptureConfig<TProbe extends ProbeReadings = ProbeReadings>
 }
 
 /** World rendering and entity/object presentation: the backdrop, authored scene, per-kind models and sprites, and floating readouts. */
-export interface GameSceneConfig<TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> {
+export interface GameSceneConfig<TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay, TRemotePlayers = unknown> {
   /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. When unset and `game.world` is an `environment()` descriptor, the shell auto-renders that world here — no manual wiring needed. */
   environment?: TWorldOverlay | EnvironmentSource | undefined;
   /** The game's authored scene document (`editor.scene.json`, normalized). When set, `defineGame` always mounts `AuthoredScene` over it (draped paths, scatter, studios, placed catalog props) — any `WorldOverlay` renders alongside it as VFX only — and the embedded editor opens it as its default layers: the zero-wiring path from document to play and edit modes. */
@@ -848,6 +855,8 @@ export interface GameSceneConfig<TWorldOverlay = unknown, TRenderEntity = never,
   editorCatalogs?: readonly EditorCatalogDefinition[] | undefined;
   /** Optional canvas-layer VFX component (e.g. traveling projectiles); receives `{ ctx }` (#542) so overlay VFX read live engine state without a separate hook or a module-global workaround. */
   WorldOverlay?: TOverlay | undefined;
+  /** Draws the other players from the shell's presence lane (`multiplayer.backend.presenceSync`) in place of the shell's capsule placeholders; receives `{ ctx, rows }` with the local player's row excluded. */
+  RemotePlayers?: TRemotePlayers | undefined;
   /** Custom first-person viewmodel (#542), read when the active rig is first-person. Rendered inside the shell's camera-locked, muzzle-tracked anchor in place of the built-in three-mesh gun; receives a live `cuesRef` (velocity/bob/firing/reloading/recoil) driven from the followed entity — see `@jgengine/core/camera/GameFirstPersonCamera.draw`'s `ViewmodelProps`. Set `camera.firstPerson.viewmodel: false` to render no viewmodel at all regardless of this field. */
   viewmodel?: TViewmodel | undefined;
   /** Per-entity visual override: return your own mesh for an entity and the shell still positions it and drives selection/targeting. Return null/undefined to fall back to model → sprite → primitive. */
@@ -1004,12 +1013,13 @@ export interface PlayableGameContract<
   TViewmodel = unknown,
   TOverlay = TWorldOverlay,
   TProbe extends ProbeReadings = ProbeReadings,
+  TRemotePlayers = unknown,
 > {
   game: GameDefinition;
   content: GameContextContent;
   loop: Required<Omit<GameLoop<GameContext>, "onPlayerLeave">> & Pick<GameLoop<GameContext>, "onPlayerLeave">;
   GameUI: TUi;
-  scene?: GameSceneConfig<TWorldOverlay, TRenderEntity, TRenderObject, TViewmodel, TOverlay> | undefined;
+  scene?: GameSceneConfig<TWorldOverlay, TRenderEntity, TRenderObject, TViewmodel, TOverlay, TRemotePlayers> | undefined;
   rendering?: GameRenderingConfig | undefined;
   controls?: GameControlsConfig | undefined;
   chrome?: GameChromeConfig | undefined;

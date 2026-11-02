@@ -5637,7 +5637,12 @@
 
 ## @jgengine/core/time/calendarClock
 
-- `GameTime` (interface): interface GameTime { year: number; month: number; monthName: string; monthNameFull: string; dayOfMonth: number; hour: number; minute: number; second: number; formattedDate: string; formattedDateFull: string; formattedTime: string; formatted: string } — ⚠ undocumented
+- `GameTime` (interface): interface GameTime { year: number; month: number; monthName: string; monthNameFull: string; dayOfMonth: number; hour: number; minute: number; second: number; formattedDate: string; formattedDateFull: string; formattedTime: string; formatted: string } — ⚠ undocumented · used by `useCalendarClock` (@jgengine/core/time/calendarClock.view): The in-world calendar of a world created at `createdAt`, aligned to the server's clock from one `serverNow` reading and re-read every `tickM…
+
+## @jgengine/core/time/calendarClock.view
+
+- `CalendarClockOptions` (interface): interface CalendarClockOptions — Options for {@link useCalendarClock}.
+- `useCalendarClock` (function): function useCalendarClock(createdAt: number | undefined, serverNow: number | undefined, options: CalendarClockOptions = {}): GameTime | null — The in-world calendar of a world created at `createdAt`, aligned to the server's clock from one `serverNow` reading and re-read every `tickMs`. Null until both are known.
 
 ## @jgengine/core/time/cooldown
 
