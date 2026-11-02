@@ -1,37 +1,9 @@
 import type { AssetTransformInput } from "@llmville/game/scene/assetBounds";
 import type { GridFootprint } from "@llmville/game/world/grid";
-import { getDecorRotation, getDecorWorldPosition } from "@llmville/game/world/mapDecor";
-import type { DecorItemSpec } from "@llmville/game/world/mapTypes";
-import type { MapGridSpec } from "@llmville/game/world/grid";
 
 import type { WorldModelAsset } from "@llmville/game/world/worldModelCatalog";
 import type { WorldModelFrameEntry } from "@llmville/game/scene/worldModelFrames";
 import type { MeasuredAssetExtents } from "@llmville/game/scene/assetBounds";
-
-/**
- * Transform input for map decor GLB models.
- * Must match MapDecor → SceneModel (instanceRotation from getDecorRotation, no placementDirection).
- */
-export function decorModelTransformInput(
-  item: DecorItemSpec,
-  grid: MapGridSpec | null | undefined,
-  measuredExtents: MeasuredAssetExtents,
-  asset: WorldModelAsset | null | undefined,
-  frameEntry: WorldModelFrameEntry | undefined,
-): AssetTransformInput {
-  return {
-    frame: asset?.frame ?? frameEntry?.frame,
-    footprint: item.footprint ?? asset?.footprint ?? frameEntry?.footprint,
-    measuredExtents,
-    instancePosition: getDecorWorldPosition(item, grid),
-    instanceRotation: getDecorRotation(item),
-    instanceScale: item.scale,
-    baseRotation: asset?.baseRotation ?? frameEntry?.baseRotation,
-    basePosition: asset?.basePosition ?? frameEntry?.basePosition,
-    baseScale: asset?.baseScale ?? frameEntry?.baseScale,
-    defaultScale: asset?.defaultScale ?? frameEntry?.defaultScale,
-  };
-}
 
 export function buildItemTransformInput(
   itemId: string,

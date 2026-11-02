@@ -36,7 +36,6 @@ The #1 source of "objects clipping / wrong size / diagonal / out of map" is a mi
 **Always use the spatial debug overlay in dev:**
 
 - `?debug=room` or `?debug=spatial` or `?room=1`
-- When the 3D builder is active (`/dev/build`), the debug visuals turn on automatically.
 
 What it shows (drawn from the *exact same data* that builds walls/floor/decor):
 - Exact floor rectangle
@@ -109,4 +108,3 @@ garage_car: createAsset("Garage Car", "maps/garage-car", "…", {
 - Compass: `packages/game/src/world/cardinal.ts`
 - Grid: `packages/game/src/world/grid.ts` (`TILE_SIZE = 1`)
 - Asset frames: `packages/game/src/world/assetFrame.ts`
-- World builder DSL (author tiers in code): `packages/game/src/world/worldBuilder.ts` → `createRoom().placePerimeterWalls().placeProp(...).build()`. Per-tier builders in `packages/game/src/world/tierMaps/`. Code is the source of truth for migrated tiers; the loader in `tierMap.ts` calls `buildTierMap(tier)` and skips the JSON fetch.

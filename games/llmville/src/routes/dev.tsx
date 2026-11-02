@@ -1,11 +1,43 @@
 import { Outlet, createFileRoute, redirect, useLocation } from "@tanstack/react-router";
 
-import {
-  DEV_PREVIEW_LAYOUT,
-  DEV_PREVIEW_LINKS,
-  getDevPreviewLayout,
-  isDevPreviewActive,
-} from "@/dev/devPreviewCatalog";
+type DevPreviewLayout = "fullscreen" | "document";
+
+interface DevPreviewLink {
+  href: string;
+  title: string;
+  description: string;
+  layout: DevPreviewLayout;
+  /** When true, nav highlights only on exact path match. */
+  exact?: boolean;
+}
+
+const DEV_PREVIEW_LINKS: readonly DevPreviewLink[] = [
+  { href: "/dev", title: "All previews", description: "Index of every dev preview route.", layout: "document", exact: true },
+  { href: "/dev/hud", title: "HUD", description: "Desktop monitor + mobile HUD, tablet, and economy animations.", layout: "fullscreen" },
+  { href: "/dev/racks", title: "Racks", description: "Rack hardware visuals and slot presentation variants.", layout: "fullscreen" },
+  { href: "/dev/bills", title: "Bills", description: "Billing cards, cost breakdowns, and payment states.", layout: "fullscreen" },
+  { href: "/dev/character", title: "Character", description: "Player character look, outfit, and animation preview states.", layout: "document" },
+];
+
+function normalizeDevPath(pathname: string): string {
+  return pathname.replace(/\/$/, "") || "/dev";
+}
+
+function isDevPreviewActive(pathname: string, preview: DevPreviewLink): boolean {
+  const normalized = normalizeDevPath(pathname);
+  if (preview.exact) return normalized === preview.href;
+  return normalized === preview.href || normalized.startsWith(`${preview.href}/`);
+}
+
+function getDevPreviewLayout(pathname: string): DevPreviewLayout {
+  let best: DevPreviewLink | undefined;
+  for (const preview of DEV_PREVIEW_LINKS) {
+    if (preview.href === "/dev" || !isDevPreviewActive(pathname, preview)) continue;
+    if (!best || preview.href.length > best.href.length) best = preview;
+  }
+  return best?.layout ?? "document";
+}
+
 import { cn } from "@/components/ui/cn";
 
 function DevPreviewNav() {
@@ -91,7 +123,7 @@ function DevLayout() {
       <div
         className={cn(
           "min-h-0 flex-1",
-          layout === DEV_PREVIEW_LAYOUT.fullscreen ? "overflow-hidden" : "overflow-y-auto",
+          layout === "fullscreen" ? "overflow-hidden" : "overflow-y-auto",
         )}
       >
         {isIndex ? <DevIndexContent /> : <Outlet />}
