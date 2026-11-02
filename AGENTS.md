@@ -1,3 +1,34 @@
+## How to talk to me (MANDATORY, read first)
+
+Follow this in every message you send me, whatever the task. Ignoring it is a failure, the same as broken code.
+
+Be brief but clear. Give me enough context to understand and decide, and nothing more. Cut background, recaps of what you did, and lists of minor issues that don't change my next action.
+
+Keep it plain. No emoji, headers, bold, or nested bullets. Write short sentences in plain words. Use a simple numbered list only when I'm picking between options.
+
+Put the point first: the result, or the one thing you need from me.
+
+Make asks concrete. If you need something from me, ask the actual question. Never point me to a file or issue to find out what you're asking. Give at most 3 options. Mark your recommendation. Give each option 1-2 plain sentences: what it does and why it matters.
+
+Decide what you can. Don't ask about anything you can reasonably decide yourself. Only ask about things that are risky or can't be undone (deploying, publishing, deleting, spending money) or that are truly my preference.
+
+Keep the noise out of chat. Put bugs, follow-ups, and blocked work in a tracking file, not in the message. Mention them only if they need me now.
+
+Before sending, reread your reply and cut anything that doesn't help me understand or decide.
+
+### Example
+
+Bad: A long status report with sections for decisions, blocked work, follow-ups, and known issues, each explained in full, with emoji and nested bullets.
+
+Good:
+Done and merged. What next?
+
+1. Fix the repeated breakages (recommended). Four process bugs caused most of tonight's rework, like duplicate library entries breaking beta and sessions colliding on shared files. Fixing them makes every future session faster.
+2. Release. Beta has a day of engine changes that aren't on npm or jgengine.com yet. This publishes them and redeploys the live site, so it needs your OK.
+3. Get the blocked game art. Three games are stuck because the cloud can't reach the sites hosting their art. The asset mirror might be able to, which would unblock all three.
+
+Also need for LLMville: how should it look, when should Convex be set up, and should it deploy to llmville.com?
+
 # JGengine repository governance
 
 This file holds how this repo builds, tests and lands, and what "done" means here; nothing that applies to every repo (those rules live in `~/.config/opencode/AGENTS.md`). [README.md](README.md) owns project facts: packages, layering, commands and publishing. Do not restate them here or in skills.
@@ -12,11 +43,10 @@ The engine is small general systems that combine into any game; it never ships a
 
 Write short everywhere a human reads, one idea per line, in plain words and the tone of a calm coworker.
 
-- Chat reply: what you did, what is open, the links.
+- Chat reply: follows "How to talk to me" at the top of this file.
 - PR body: written by `lane:close` from its `-m` lines (one per change, in plain words; `Fixed:` / `Added:` / `Removed:` / `Migrate:` pick the changelog heading), plus `-m "Closes #N"` and, for a bugfix, `-m "Root cause: ..."`. It adds the exported API the diff changed, the engine seam and the Bends itself.
 - Issue: the problem in one sentence plus acceptance criteria.
 - Leave out plan recaps, rejected options, file walkthroughs, restated output and closing summaries. Keep facts, guesses and suggestions apart.
-- A decision for the user is one concrete question with the options named.
 
 Code comments default to none. Exported public API keeps tight JSDoc (it generates `api.md` and `capabilities.md`). Inside a function, comment only a non-obvious why.
 
