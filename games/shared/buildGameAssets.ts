@@ -97,7 +97,9 @@ export function matchPublicFiles(publicDir: string, include: readonly string[], 
   const skip = exclude.map((pattern) => new Bun.Glob(pattern));
   for (const pattern of include) {
     // walk-ok: the game names these globs in its own jgengine.json; the scan stays inside its public/.
-    for (const relative of new Bun.Glob(pattern).scanSync({ cwd: publicDir, followSymlinks: true, onlyFiles: true })) {
+    for (const scanned of new Bun.Glob(pattern).scanSync({ cwd: publicDir, followSymlinks: true, onlyFiles: true })) {
+      // Windows scans give `\`; the built-folder test and the exclude globs are written with `/`.
+      const relative = scanned.split("\\").join("/");
       if (relative.includes(".lods/") || skip.some((glob) => glob.match(relative))) continue;
       found.add(relative);
     }
