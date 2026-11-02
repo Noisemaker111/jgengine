@@ -68,9 +68,13 @@ export interface MeshLodConfig {
 /** Hysteresis ratio used when a {@link MeshLodConfig} sets none. */
 export const DEFAULT_MESH_LOD_HYSTERESIS = 0.1;
 
-/** A url the runtime can look up built levels for: a plain path, not a data or blob url. */
+/**
+ * A url the runtime looks up built levels for: a root-absolute path to a file the game serves from
+ * `public/` (`/models/…`), where the build writes. A bundled file (a full url from
+ * `import.meta.url`), a data or a blob url never has any.
+ */
 export function hasBuiltLodPath(url: string): boolean {
-  return url.length > 0 && !/^(data|blob):/i.test(url);
+  return url.startsWith("/") && !url.startsWith("//");
 }
 
 /** The folder holding everything built for a model file. */

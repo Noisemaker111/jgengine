@@ -38,6 +38,7 @@ describe("built lod files", () => {
     expect(builtLodFileUrl("/m/near.gltf", "lod1.glb")).toBe("/m/near.gltf.lods/lod1.glb");
     expect(hasBuiltLodPath("data:model/gltf+json;base64,AA")).toBe(false);
     expect(hasBuiltLodPath("/models/tree.glb")).toBe(true);
+    expect(hasBuiltLodPath("http://localhost/play/assets/awning-Gx.glb")).toBe(false);
   });
 
   test("a meta from another version or with a broken level reads as nothing built", () => {
