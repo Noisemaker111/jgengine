@@ -13,17 +13,15 @@ The game design stays as the README checklist states it. This plan changes what 
 - **Players.** One persistent shared world on Convex, with accounts through Better Auth and guests. This does not change.
 - **Platforms.** Desktop and phone. The touch controls stay.
 - **Camera and controls.** First person in the world, plus a tablet that holds the menus. Both stay.
-- **Look (question for the owner).** The owner wants this to be the nicest-looking game in the repo. `src/art-direction.md` describes today's look and offers three directions.
-  - **Recommendation: A, "Miniature lab diorama".** Keep today's warm cream, coral and teal palette and push it into tilt-shift, soft-shadowed miniature scenes.
-  - Why A: the brand, the docs and the 2,353-line stylesheet already point there. It is also the only one of the three that reads at a glance on a phone.
-  - **Question: A, B ("Night-shift neon") or C ("Paper blueprint")?**
+- **Look.** The owner wants this to be the nicest-looking game in the repo. `src/art-direction.md` describes today's look and offers three directions.
+  - **Chosen: A, "Miniature lab diorama"** (owner, 2026-11-02). Keep today's warm cream, coral and teal palette and push it into tilt-shift, soft-shadowed miniature scenes.
 - **Done.** Every row below marked "game" is the only private code left. All other rows import their engine owner. The game boots and plays the README's minute-5 state:
   - two GTX 1060s in one rack
   - one card scraping
   - one card serving a fine-tuned model at about $200/hr
   - bills arriving on the engine schedule
   - the world, the settings and the HUD all on engine parts
-- **Production.** llmville.com and Convex prod `adorable-oriole-506` keep deploying from the old repo until the owner switches them. Nothing in this plan deploys.
+- **Production.** llmville.com and Convex prod `adorable-oriole-506` keep deploying from the old repo through milestone 6. The owner approved switching them to this repo as milestone 7, once the shared world on the engine's Convex parts is done and tested (2026-11-02). No earlier milestone deploys.
 
 ## Design brief
 
@@ -102,16 +100,19 @@ Each milestone keeps the game playing, deletes the private code it replaces in t
   - Re-express the `index.css` palette as UI-kit tokens through `customizeKit`. Build the HUD bar, resource panel, tablet frame, bill cards, toasts and settings modal from `HudSlots`, `kitHud.view`, `SettingsSection`, `KeybindingMenu` and `ToastStack`.
   - Tweets get an injected rng and the engine notification center. This removes `Math.random` and `setInterval` from `TweetNotification.tsx`.
   - Deletes `src/components/ui/*` (597), `src/settings/components/*` (614), `src/runtime/components/GameHudBar.tsx` (19), `GameResourcePanel.tsx` (153), `UiHitTestOverlay.tsx` (206), and most of `src/index.css` (2,353 → the game's skin only).
-  - Lands with before/after screenshots in the direction the owner picks.
+  - Lands with before/after screenshots in direction A, the miniature lab diorama.
 - [ ] 4. **World authored in the editor.**
   - Export today's city, plot grid and decor into `games/llmville/editor.scene.json`. The game reads it through `core/scene/AuthoredScene.draw`, and build mode moves onto `worldModel/buildTool`.
   - Deletes `src/dev` (7,442: builder, asset workbench, previews), `packages/game/src/builder` (1,515), `vite.devPlugins.ts`, `builder*.server.ts`, `builderAgent*.ts` and `builderScreenshotApi.ts`.
   - `cityHash` seeds keep their values.
-- [ ] 5. **Shared world on the engine's multiplayer contracts and the Convex adapter.**
-  - Presence and chat move fully onto `convexPresenceTransport` and `convexChatTransport`. Claims move onto `convex/territory`. The world read-model moves onto `hostedServer`/`hostedWorldStore` where a domain fits a snapshot.
-  - Deletes `src/multiplayer/*` (110), `packages/backend/convex/jgengine/*` (266) and most of `convex/multiplayer/worldPresence.ts` (398).
-  - Migrations stay idempotent, and production keeps deploying from the old repo unless the owner says otherwise.
-- [ ] 6. **Rules on the parts.**
+- [ ] 5. **Rules on the parts.**
   - Rack heat becomes a Meter and grid hookup a Ladder. Bills move onto the Schedule part, the ledger and the loan book. Research tiers become a Ladder plus Requirement. The daily market becomes a Table plus Modifiers, and the frontier becomes Phases plus Modifiers. Training stays on `jobQueue`, the tutorial moves onto `onboardingSystem`, and the neighbourhood goal onto `createContributionPool`.
   - Every price and rate keeps its value, and the existing balance tests pin them.
   - Deletes the private copies in `infrastructure.ts`, `billing.ts`, `dailyMarket.ts`, `frontier.ts`, `researchUnlocks.ts` and `tutorialMachine.ts`. Only LLMville's numbers and names stay.
+- [ ] 6. **Shared world on the engine's multiplayer contracts and the Convex adapter.**
+  - Presence and chat move fully onto `convexPresenceTransport` and `convexChatTransport`. Claims move onto `convex/territory`. The world read-model moves onto `hostedServer`/`hostedWorldStore` where a domain fits a snapshot.
+  - Deletes `src/multiplayer/*` (110), `packages/backend/convex/jgengine/*` (266) and most of `convex/multiplayer/worldPresence.ts` (398).
+  - Migrations stay idempotent. Production keeps deploying from the old repo until milestone 7.
+- [ ] 7. **Production deploys from this repo.**
+  - Point llmville.com and Convex prod `adorable-oriole-506` at this repo, with the same env vars and schema, after milestone 6 plays against a Convex dev deployment.
+  - Owner-approved. Done when the live site serves this repo's build and existing worlds still load.
