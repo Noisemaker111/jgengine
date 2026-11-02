@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "check-types": "tsgo --noEmit -p tsconfig.json",
-    "test": "bun test --preload ../../scripts/three-preload.ts src",
+    "test": "bun test src",
     "drive": "jgengine drive",
     "shoot": "jgengine shoot"
   },
