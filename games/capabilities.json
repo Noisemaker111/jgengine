@@ -1452,6 +1452,16 @@
       "intent": "derive street-facing building lots from road frontage"
     },
     {
+      "id": "calendar-clock-hook",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/time/calendarClock.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "live in-world date and time for a HUD, aligned to the server clock"
+    },
+    {
       "id": "camera-clearance",
       "packages": [
         "@jgengine/core"
