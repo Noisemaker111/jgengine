@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { seededRng } from "./rng";
-import { pickUniform, pickWeighted } from "./pick";
+import { pickKeyed, pickUniform, pickWeighted } from "./pick";
 
 describe("pickUniform", () => {
   test("empty returns undefined", () => {
@@ -50,5 +50,23 @@ describe("pickWeighted", () => {
       { id: "off", w: 0 },
     ];
     expect(pickWeighted(() => 0.9999999999, items, (x) => x.w)?.id).toBe("on");
+  });
+});
+
+describe("pickKeyed", () => {
+  const items = ["a", "b", "c", "d", "e"];
+  test("the key modulo the length names the item", () => {
+    expect(pickKeyed(0, items)).toBe("a");
+    expect(pickKeyed(7, items)).toBe("c");
+    expect(pickKeyed(4294967295, items)).toBe(items[4294967295 % 5]);
+  });
+  test("negative keys wrap and fractions truncate", () => {
+    expect(pickKeyed(-1, items)).toBe("e");
+    expect(pickKeyed(2.9, items)).toBe("c");
+  });
+  test("empty or non-finite keys give undefined", () => {
+    expect(pickKeyed(3, [])).toBeUndefined();
+    expect(pickKeyed(Number.NaN, items)).toBeUndefined();
+    expect(pickKeyed(Number.POSITIVE_INFINITY, items)).toBeUndefined();
   });
 });
