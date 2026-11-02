@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { FONT_LIBRARY } from "./catalogs/fontLibrary";
-import { HDRI_LIBRARY } from "./catalogs/hdriLibrary";
-import { LUT_GRADES } from "./catalogs/lutGrades";
-import { MATERIAL_LIBRARY } from "./catalogs/materialLibrary";
-import { MODEL_LIBRARY } from "./catalogs/modelLibrary";
-import { sources } from "./sources";
+import { sources } from "../sources";
+import { FONT_LIBRARY } from "./fontLibrary";
+import { HDRI_LIBRARY } from "./hdriLibrary";
+import { LUT_GRADES } from "./lutGrades";
+import { MATERIAL_LIBRARY } from "./materialLibrary";
+import { MODEL_LIBRARY } from "./modelLibrary";
 
 /** Every id that appears more than once, each named once. */
 function duplicates(ids: readonly string[]): string[] {
@@ -32,7 +32,7 @@ const LISTS: readonly [string, readonly string[]][] = [
   ["font packages", FONT_LIBRARY.map((entry) => entry.package)],
 ];
 
-describe("library ids", () => {
+describe("catalog ids", () => {
   test("a repeated id is found", () => {
     expect(duplicates(["ground/beach", "ground/mud", "ground/beach"])).toEqual(["ground/beach"]);
   });
