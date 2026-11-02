@@ -79,8 +79,6 @@
   "@jgengine/core/game/connectedPlayers#createConnectedPlayers",
   "@jgengine/core/game/controlGate#setPlayControlsActive",
   "@jgengine/core/game/gamePhase#isPlaying",
-  "@jgengine/core/game/unlocks#grantUnlock",
-  "@jgengine/core/game/unlocks#hasUnlock",
   "@jgengine/core/game/unlocks#unlockTree",
   "@jgengine/core/hud/FrustumSensorHud.draw#frustumSampleDisplayEqual",
   "@jgengine/core/hud/FrustumSensorHud.draw#useFrustumSensor",

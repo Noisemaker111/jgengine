@@ -2771,6 +2771,7 @@
 
 ## @jgengine/core/random/pick
 
+- `pickKeyed` (function): function pickKeyed<T>(key: number, items: readonly T[]): T | undefined — Pick the item an integer key names (the key modulo the list length, wrapped for negatives), with no random stream. Everyone holding the same key (a calendar day's hash, a shared seed) gets the same item; undefined when empty or the key is not finite.
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
 - `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`, each on a half-open interval so a roll exactly on a boundary goes to the later item. Skips non-positive weights; undefined when nothing is eligible.
 - `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — A shuffled copy of `values` (Fisher–Yates) drawn from `rng`; the same seeded stream always gives the same order.
