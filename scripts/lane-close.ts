@@ -21,6 +21,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { assertCheckoutReady } from "./checkout-ready";
+import { originRepo, withRestFallback } from "./gh-rest";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 
@@ -261,7 +262,8 @@ export function queueInBackground(pr: number, io: LaneIo): string {
  * PR a lane just produced is usually still open when the report is printed.
  */
 function branchPr(branch: string, io: LaneIo): number | null {
-  const listed = io.sh(["gh", "pr", "list", "--head", branch, "--state", "all", "--limit", "1", "--json", "number"], false);
+  const gh = withRestFallback((args) => io.sh(["gh", ...args], false), () => originRepo(io.cwd));
+  const listed = gh(["pr", "list", "--head", branch, "--state", "all", "--limit", "1", "--json", "number"]);
   if (listed.status !== 0) return null;
   const parsed = parseJson<{ number: number }[]>(listed.stdout);
   if (!("value" in parsed)) return null;

@@ -25,6 +25,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertCheckoutReady } from "./checkout-ready";
+import { originRepo, withRestFallback } from "./gh-rest";
 import { printHelpIfAsked } from "./script-help";
 import { duration, gitCommonDir, runAt } from "./land";
 import type { Git, Run } from "./land";
@@ -486,7 +487,11 @@ function main(): void {
   const git: Git = (gitArgs) => runAt(root, "git", gitArgs, 180_000);
   const io: BatchIo = {
     git,
-    gh: (ghArgs) => runAt(root, "gh", ghArgs, 120_000),
+    gh: withRestFallback(
+      (ghArgs) => runAt(root, "gh", ghArgs, 120_000),
+      () => originRepo(root),
+      (line) => console.log(`land:batch: ${line}`),
+    ),
     verify: runVerify,
     log: (line) => console.log(`land:batch: ${line}`),
     error: (line) => console.error(`land:batch: ${line}`),

@@ -22,6 +22,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { originRepo, withRestFallback } from "./gh-rest";
 import { printHelpIfAsked } from "./script-help";
 
 const CI_STATUS_USAGE = {
@@ -470,7 +471,7 @@ function main(argv: readonly string[]): void {
     process.exit(sweep.status ?? 1);
   }
   const result = cli(argv, {
-    gh: (ghArgs) => run("gh", ghArgs),
+    gh: withRestFallback((ghArgs) => run("gh", ghArgs), () => originRepo(process.cwd())),
     git: (gitArgs) => run("git", gitArgs),
   });
   for (const line of result.stdout) console.log(line);
