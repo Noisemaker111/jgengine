@@ -1,8 +1,11 @@
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { RarityStyle } from "@jgengine/core/loot/groundItem";
 import { defineGame } from "@jgengine/shell/defineGame";
 import { findEditorMarker } from "@jgengine/core/editor/document";
+import { scrapKit } from "./art/look";
 import { buildScrapSignalEditorLayers } from "./editorLayers";
 import { MAST_BOARD } from "./game/mast";
 
@@ -301,7 +304,12 @@ export const game = defineGame({
   systems: [crashSite],
   GameUI,
   hudTheme: scrapTheme,
+  uiKit: scrapKit,
   rendering: {
+    // Ink outlines and cel bands over hard desert noon: short graphic shadows under a deep blue sky.
+    look: "comic",
+    mood: { preset: "day", sun: { azimuth: 51, elevation: 62, color: "#ffe0b0" }, skyColor: "#0f4c86", horizonColor: "#dcc39c" },
+    environmentSource: hdriEnvironment("desert-noon", { intensity: 0.8 }),
     // No `backdrop.fog`: the world's sky owns the single fog config, so the two cannot drift apart.
   // Fill was bright enough to erase the shadow side of everything, which is why silhouettes looked
   // pasted onto the ground. Sun up, ambient/hemisphere down, and a cool bounce from the sky so
@@ -315,17 +323,15 @@ export const game = defineGame({
       // olive — the whole desert's shadow side was reading green. A greyer blue keeps machines cool
       // in shade without repainting the ground.
       hemisphere: { skyColor: "#9aa8b8", groundColor: "#6b4a30", intensity: 0.4 },
-      // Mid-afternoon, not noon. The old key was almost overhead, so nothing cast a shadow long
-      // enough to describe its own shape and every object read as a sticker on flat sand.
-      // 2.5, not 2.6: the terrain's dirt grain multiplies albedo up to ~1.5x where the map is bright,
-      // so sunlit sand was arriving at the tone-mapper above 1.0 and clipping to white on the sun side.
+      // High noon (azimuth 51, elevation 62): the comic outline and cel bands now describe each
+      // shape, so the short hard shadows read as graphic rather than as stickers on flat sand.
+      // 2.35: above it the sun-side dune faces summed past 1.0 with the terrain's dirt-grain albedo
+      // boost and clipped to one white field.
       directional: [
         {
           color: "#ffe0b0",
-          // 2.35, not 2.5: at 2.5 the sun-side dune faces still summed past 1.0 with the dirt-grain
-          // albedo boost and clipped to one white field across the whole right of frame.
           intensity: 2.35,
-          position: [64, 46, -52],
+          position: [44, 106, -35],
           castShadow: true,
           // The playfield sits over a kilometre from the origin — only camera-following
           // cascades put these long afternoon shadows where the player actually is.
@@ -348,17 +354,14 @@ export const game = defineGame({
       // and smearing a white veil over the sun side of every frame. Above 1.0 only emissives — optics,
       // hazard trim, element cells, muzzle flash — cross it, which is the glow that was wanted.
       bloom: { strength: 0.3, radius: 0.62, threshold: 1.1 },
-      // Cool lift + warm gain splits shadow and highlight so the flats stop sitting in one mid-tone
-      // band. Saturation carries the warmth rather than a red-heavy gain: ACES desaturates hard as it
-      // approaches white, so a gain that pushes red is the channel that clips first.
-      // Saturation eased off 1.3: that boost was amplifying every residual hue error — olive shadow
-      // sides, cyan haze — faster than it warmed the sand.
+      // The sun-bleached comic cube does the colour; the numeric stage stays neutral under it.
       grade: {
-        vignette: 0.32,
-        saturation: 1.15,
-        gamma: 0.93,
-        lift: [0.002, 0.008, 0.024],
-        gain: [1.02, 1.0, 0.96],
+        lut: lutGrade("sun-bleached-comic"),
+        vignette: 0.2,
+        saturation: 1,
+        gamma: 1,
+        lift: [0, 0, 0],
+        gain: [1, 1, 1],
       },
     },
   },
