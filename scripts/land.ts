@@ -60,6 +60,7 @@ import { FRAGMENT_PATTERN } from "./changelog-fragments";
 import { apiNoteBullets, engineSeamLine, noteMessages, renderChangeNote } from "./change-note";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
+import { originRepo, withRestFallback } from "./gh-rest";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose } from "./verbosity";
 import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
@@ -892,9 +893,11 @@ export function runAt(cwd: string, command: string, args: string[], timeout?: nu
   return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
 }
 
-function gh(args: string[]): Run {
-  return run("gh", args);
-}
+const gh: Gh = withRestFallback(
+  (args) => run("gh", args),
+  () => originRepo(root),
+  (line) => console.log(`land: ${line}`),
+);
 
 function git(args: string[], timeout?: number): Run {
   return runAt(root, "git", args, timeout);

@@ -348,12 +348,14 @@ function scanRepo(gitRoot: string): WorktreeReport[] {
   if (!listed.ok) return [];
   const mainRoot = mainRootOf(gitRoot);
   const root = existsSync(join(mainRoot, "package.json")) ? mainRoot : gitRoot;
-  const plan = dependencyPlan(root);
+  const mainPlan = dependencyPlan(root);
   const parentLock = readParentLock(root);
   const repo = basename(root);
-  return parseWorktreeList(listed.out).map((ref) =>
-    buildReport({ repo, mainRoot: root, ref, plan, parentLock }),
-  );
+  // Each worktree is judged by its own package.json files: one on another branch declares other games.
+  return parseWorktreeList(listed.out).map((ref) => {
+    const plan = existsSync(join(ref.path, "package.json")) ? dependencyPlan(ref.path) : mainPlan;
+    return buildReport({ repo, mainRoot: root, ref, plan, parentLock });
+  });
 }
 
 /** Directories under .claude/worktrees that git does not know about - report, never touch. */
@@ -493,7 +495,7 @@ if (import.meta.main) {
       repo: basename(mainRoot),
       mainRoot,
       ref: { path, branch: branch.out === "" ? null : branch.out, locked: false },
-      plan: dependencyPlan(mainRoot),
+      plan: dependencyPlan(path),
       parentLock: readParentLock(mainRoot),
     });
     const where = basename(path);

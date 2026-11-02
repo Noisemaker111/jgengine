@@ -26,6 +26,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
+import { originRepo, withRestFallback } from "./gh-rest";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { MERGE_ATTEMPTS, QUEUE_LABEL, baseMoved, checkVerdict, duration, formatFailures, runAt } from "./land";
 import type { GhCheck, Run } from "./land";
@@ -522,7 +523,11 @@ function main(): void {
   }
 
   const result = drain(args, {
-    gh: (ghArgs) => run("gh", undefined, ghArgs),
+    gh: withRestFallback(
+      (ghArgs) => run("gh", undefined, ghArgs),
+      () => originRepo(root),
+      (line) => console.log(`land:queue: ${line}`),
+    ),
     git: (cwd, gitArgs) => run("git", cwd, gitArgs),
     pause,
     now: Date.now,
