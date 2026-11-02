@@ -66,6 +66,12 @@ export interface ProjectConfig {
   capabilities?: CapabilityAnswers;
   /** Who made the game and what it uses; the main menu's Credits reads it. */
   credits?: ProjectCredits;
+  /**
+   * The asset pipeline's plan (`bun run games:provision build <id>` in the engine monorepo): which
+   * model files under `public/` get simplified levels and baked impostors, and how. Read by
+   * `games/shared/buildGameAssets.ts`; the runtime switch thresholds live in `visibility.meshLods`.
+   */
+  assetBuild?: Record<string, unknown>;
 }
 
 /** Read and validate `<dir>/jgengine.json`; throws with the field at fault. */
@@ -132,6 +138,7 @@ export function renderProjectConfig(config: ProjectConfig): string {
     ...(config.owns === undefined || config.owns.length === 0 ? {} : { owns: [...config.owns].sort() }),
     ...(config.capabilities === undefined ? {} : { capabilities: config.capabilities }),
     ...(config.credits === undefined ? {} : { credits: config.credits }),
+    ...(config.assetBuild === undefined ? {} : { assetBuild: config.assetBuild }),
   };
   return `${JSON.stringify(ordered, null, 2)}\n`;
 }

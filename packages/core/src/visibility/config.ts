@@ -1,3 +1,4 @@
+import type { MeshLodConfig } from "../lod/builtLods";
 import type { CullingSettings, StreamingSettings, ObjectVisibilityOverrides } from "./settings";
 
 /**
@@ -33,4 +34,10 @@ export interface VisibilityConfig {
   readonly objects?: Record<string, ObjectVisibilityOverrides>;
   /** Far cells of static props draw a merged proxy. Off unless set. */
   readonly hlod?: HlodConfig;
+  /**
+   * Static props and scatter switch to the simplified levels the asset build wrote for their files
+   * (`bun run games:provision build`), by size on screen, and big static props to a baked impostor
+   * past `impostorDistance`. Off unless set; a model without built levels draws as before.
+   */
+  readonly meshLods?: MeshLodConfig;
 }

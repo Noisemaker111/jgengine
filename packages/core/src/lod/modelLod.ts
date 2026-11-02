@@ -28,6 +28,21 @@ export interface ModelVariantLodConfig {
   levels: readonly ModelVariantConfig[];
   /** Metres an instance must travel past a switch boundary before it changes level, so a camera resting on the boundary cannot flicker. Default 6. */
   hysteresis?: number;
+  /**
+   * Share of each switch distance added to `hysteresis`, so a far boundary gets a wider band than a
+   * near one. Default 0.
+   */
+  hysteresisRatio?: number;
+  /**
+   * Divide each instance's distance by its largest placement scale before switching, so a placement
+   * drawn twice as big switches twice as far out and the switch stays at one size on screen. Default false.
+   */
+  scaleWithInstance?: boolean;
+}
+
+/** The hysteresis band around one switch boundary: the fixed metres plus the boundary's share. */
+export function variantBand(boundary: number, hysteresis: number, ratio: number): number {
+  return hysteresis + (Number.isFinite(boundary) ? boundary * ratio : 0);
 }
 
 /** Plain JSON state of a {@link ModelVariantSelector}: each id's current level index. */
@@ -41,6 +56,8 @@ export interface ModelVariantSelector {
   levels(): readonly { url: string; maxDistance: number }[];
   /** The same boundaries as scheduler bands, so a `createLodScheduler` never throttles an id at a different distance than its mesh switches. */
   bands(): readonly LodBand[];
+  /** True when callers divide each distance by the instance's placement scale ({@link ModelVariantLodConfig.scaleWithInstance}). */
+  readonly scaleWithInstance: boolean;
   /** Level index for `id` at `distance` metres, carrying hysteresis from its previous answer. */
   level(id: string, distance: number): number;
   forget(id: string): void;
@@ -82,11 +99,21 @@ function normalize(config: ModelVariantLodConfig): readonly { url: string; maxDi
 export function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector {
   const levels = normalize(config);
   const hysteresis = Math.max(0, config.hysteresis ?? DEFAULT_VARIANT_HYSTERESIS);
+  const ratio = Math.max(0, config.hysteresisRatio ?? 0);
   const bands: readonly LodBand[] = levels.map((level) => ({ maxDistance: level.maxDistance, interval: 0 }));
   const current = new Map<string, number>();
   const last = levels.length - 1;
+  const outEdge = (index: number): number => {
+    const boundary = levels[index]?.maxDistance ?? Infinity;
+    return boundary + variantBand(boundary, hysteresis, ratio);
+  };
+  const backEdge = (index: number): number => {
+    const boundary = levels[index - 1]?.maxDistance ?? -Infinity;
+    return boundary - variantBand(boundary, hysteresis, ratio);
+  };
 
   return {
+    scaleWithInstance: config.scaleWithInstance === true,
     levels() {
       return levels;
     },
@@ -100,8 +127,8 @@ export function createModelVariantSelector(config: ModelVariantLodConfig): Model
         index = band === -1 ? last : band;
       }
       else {
-        while (index < last && distance > levels[index]!.maxDistance + hysteresis) index += 1;
-        while (index > 0 && distance <= levels[index - 1]!.maxDistance - hysteresis) index -= 1;
+        while (index < last && distance > outEdge(index)) index += 1;
+        while (index > 0 && distance <= backEdge(index)) index -= 1;
       }
       current.set(id, index);
       return index;

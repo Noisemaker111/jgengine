@@ -17,11 +17,13 @@ import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "@jgengine/core/model/measureCollisionMesh.draw";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
-import { acquireImpostor, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, sourceRadius, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
+import { acquireImpostor, createImpostorMaterials, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, sourceRadius, type ImpostorAtlas, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
-import { staticDrawPoolFor, type StaticDrawSlot } from "./staticDrawPool.draw";
+import { staticDrawPoolFor, type ProxyRole, type StaticDrawSlot } from "./staticDrawPool.draw";
+import { builtLevelSource, reskinBuiltLevel, useBakedImpostor, WithBuiltLods } from "@jgengine/core/lod/builtLods.draw";
+import { IMPOSTOR_LEVEL_URL, type BuiltLodMeta } from "@jgengine/core/lod/builtLods";
 import type { HlodConfig } from "@jgengine/core/visibility/config";
 import { canInstanceStaticScene, countStaticBatchDraws, staticBatchCell, gatherStaticMembers, harvestStaticPieces, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, staticModelPieces, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
 
@@ -87,20 +89,21 @@ function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObjec
   return members;
 }
 
-function ObjectSource({ source, members, objects }: {
+function ObjectSource({ source, members, objects, proxy = "part" }: {
   source: ScatterModelSource;
   members: { current: readonly SceneObject[] };
   objects: readonly SceneObject[];
+  proxy?: ProxyRole;
 }) {
   const scene = useThree((state) => state.scene);
   const [slot, setSlot] = useState<StaticDrawSlot | null | undefined>(undefined);
   const cell = staticBatchCell(objects);
   const capacity = objects.length;
   useLayoutEffect(() => {
-    const acquired = staticDrawPoolFor(scene).acquire(source, cell, capacity);
+    const acquired = staticDrawPoolFor(scene).acquire(source, cell, capacity, proxy);
     setSlot(acquired);
     return () => acquired?.release();
-  }, [scene, source, cell, capacity]);
+  }, [scene, source, cell, capacity, proxy]);
   if (slot === undefined) return null;
   return slot === null
     ? <InstancedObjectSource source={source} members={members} capacity={capacity} />
@@ -239,14 +242,52 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
     setEntry(acquireImpostor(key, gl, sources, settings));
     return () => releaseImpostor(key, settings);
   }, [key, gl, sources, settings]);
+  const assignment = useMemo(() => new Map<string, number>(), []);
+  const camera = useMemo(() => new THREE.Vector3(), []);
+  const ready = entry?.atlas != null && entry.materials !== null;
+  const last = useRef<{ at: THREE.Vector3; version: number; ready: boolean; objects: readonly SceneObject[] } | null>(null);
+  useFrame((state) => {
+    state.camera.getWorldPosition(camera);
+    const version = ctx.scene.object.version();
+    const previous = last.current;
+    if (previous !== null && previous.ready === ready && previous.objects === objects && previous.version === version &&
+      previous.at.distanceToSquared(camera) < IMPOSTOR_SPLIT_MOVE * IMPOSTOR_SPLIT_MOVE) return;
+    for (const object of objects) {
+      const live = ctx.scene.object.get(object.instanceId);
+      if (live === null) continue;
+      const scale = Math.max(...objectVisualScale(live.visual));
+      const distance = camera.distanceTo(probe.fromArray(live.position));
+      const far = ready && impostorSwitch(distance, impostorDistance(radius * scale, quality), assignment.get(live.instanceId) === 1);
+      assignment.set(live.instanceId, far ? 1 : 0);
+    }
+    last.current = { at: (previous?.at ?? new THREE.Vector3()).copy(camera), version, ready, objects };
+  }, CAMERA_POST_FRAME_PRIORITY + 0.1);
+  const members = useStaticMembers(batch, objects, assignment, 0);
+  return <>
+    {sources.map((source, index) => <ObjectSource key={index} source={source} members={members} objects={objects} proxy="own" />)}
+    {entry?.atlas != null && entry.materials !== null && (
+      <ImpostorCards poolKey={`${key}:${settings.frames}x${settings.cell}`} atlas={entry.atlas} materials={entry.materials} objects={objects} assignment={assignment} level={1} />
+    )}
+  </>;
+}
+
+/**
+ * One instanced draw of impostor cards for the placements `assignment` put on `level`, sharing its
+ * card pool with every batch of the same atlas. Placements in the visibility pass's culled set draw none.
+ */
+function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }: {
+  poolKey: string;
+  atlas: ImpostorAtlas;
+  materials: { material: THREE.MeshStandardMaterial; depth: THREE.MeshDepthMaterial };
+  objects: readonly SceneObject[];
+  assignment: ReadonlyMap<string, number>;
+  level: number;
+}) {
+  const ctx = useGameContext();
   const scene = useThree((state) => state.scene);
   const visibility = useRenderVisibility();
   const [card, setCard] = useState<{ pool: ImpostorCardPool; slice: ImpostorCardSlice } | null>(null);
   useEffect(() => {
-    if (entry?.atlas == null || entry.materials === null) return;
-    const atlas = entry.atlas;
-    const materials = entry.materials;
-    const poolKey = `${key}:${settings.frames}x${settings.cell}`;
     const pool = acquireImpostorCardPool(poolKey, scene, () => new ImpostorCardPool(impostorCard(atlas), materials.material, materials.depth));
     const slice = pool.slice(objects.length);
     setCard({ pool, slice });
@@ -255,32 +296,13 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
       releaseImpostorCardPool(poolKey, pool);
       setCard(null);
     };
-  }, [entry, key, settings, scene, objects.length]);
-  const assignment = useMemo(() => new Map<string, number>(), []);
-  const camera = useMemo(() => new THREE.Vector3(), []);
-  const last = useRef<{ at: THREE.Vector3; version: number; card: unknown; objects: readonly SceneObject[] } | null>(null);
-  useFrame((state) => {
-    state.camera.getWorldPosition(camera);
-    const version = ctx.scene.object.version();
-    const previous = last.current;
-    if (previous !== null && previous.card === card && previous.objects === objects && previous.version === version &&
-      previous.at.distanceToSquared(camera) < IMPOSTOR_SPLIT_MOVE * IMPOSTOR_SPLIT_MOVE) return;
-    for (const object of objects) {
-      const live = ctx.scene.object.get(object.instanceId);
-      if (live === null) continue;
-      const scale = Math.max(...objectVisualScale(live.visual));
-      const distance = camera.distanceTo(probe.fromArray(live.position));
-      const far = card !== null && impostorSwitch(distance, impostorDistance(radius * scale, quality), assignment.get(live.instanceId) === 1);
-      assignment.set(live.instanceId, far ? 1 : 0);
-    }
-    last.current = { at: (previous?.at ?? new THREE.Vector3()).copy(camera), version, card, objects };
-  }, CAMERA_POST_FRAME_PRIORITY + 0.1);
+  }, [poolKey, atlas, materials, scene, objects.length]);
   useFrame(() => {
     if (card === null) return;
     const { slice } = card;
     let count = 0;
     for (const object of objects) {
-      if (assignment.get(object.instanceId) !== 1) continue;
+      if (assignment.get(object.instanceId) !== level) continue;
       const live = ctx.scene.object.get(object.instanceId);
       if (live === null || !visibility.current(live.instanceId)) continue;
       cardPose.position.fromArray(live.position);
@@ -294,17 +316,14 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
     slice.ids.length = count;
   }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   useFrame((state) => card?.pool.pack(state.clock.elapsedTime), CAMERA_POST_FRAME_PRIORITY + 0.3);
-  const members = useStaticMembers(batch, objects, assignment, 0);
-  return <>
-    {sources.map((source, index) => <ObjectSource key={index} source={source} members={members} objects={objects} />)}
-  </>;
+  return null;
 }
 
 const probe = new THREE.Vector3();
 const cardPose = new THREE.Object3D();
 
 /** One detail level's GLB, harvested into instanced draws that only claim the instances the selector put on this level. */
-function VariantLevel({ url, model, batch, objects, level, assignment, measure, single }: {
+function VariantLevel({ url, model, batch, objects, level, assignment, measure, single, proxy }: {
   url: string;
   model: ModelConfig;
   batch: StaticObjectBatch;
@@ -313,11 +332,18 @@ function VariantLevel({ url, model, batch, objects, level, assignment, measure, 
   assignment: ReadonlyMap<string, number>;
   measure: boolean;
   single: (object: SceneObject) => ReactNode;
+  proxy: ProxyRole;
 }) {
   const ctx = useGameContext();
-  const gltf = useLoader(sharedGltfLoader, url);
-  const supported = useMemo(() => canInstanceStaticScene(gltf.scene, gltf.animations), [gltf]);
-  const harvested = useMemo(() => supported ? buildScatterModelSources(gltf.scene, model) : null, [supported, gltf, model]);
+  const built = builtLevelSource(url);
+  const loaded = useLoader(sharedGltfLoader, built === null ? [url] : [url, built.source]);
+  const [gltf, source] = loaded;
+  const supported = useMemo(() => gltf !== undefined && canInstanceStaticScene(gltf.scene, gltf.animations), [gltf]);
+  const harvested = useMemo(() => {
+    if (!supported || gltf === undefined) return null;
+    if (source !== undefined) reskinBuiltLevel(gltf.scene, source);
+    return buildScatterModelSources(gltf.scene, model, built?.bounds);
+  }, [supported, gltf, source, model, built]);
   useEffect(() => () => { if (harvested !== null) disposeScatterModelSources(harvested.root); }, [harvested]);
   useEffect(() => {
     if (harvested === null || !measure) return;
@@ -325,7 +351,25 @@ function VariantLevel({ url, model, batch, objects, level, assignment, measure, 
   }, [ctx, harvested, batch, measure]);
   const members = useStaticMembers(batch, objects, assignment, level);
   if (harvested === null) return <LevelSingles objects={objects} level={level} assignment={assignment} single={single} />;
-  return <>{harvested.sources.map((source, index) => <ObjectSource key={index} source={source} members={members} objects={objects} />)}</>;
+  return <>{harvested.sources.map((part, index) => <ObjectSource key={index} source={part} members={members} objects={objects} proxy={proxy} />)}</>;
+}
+
+/** The impostor level of a built model: one card per placement the selector put past its impostor distance. */
+function VariantImpostorLevel({ model, meta, objects, level, assignment }: {
+  model: ModelConfig;
+  meta: BuiltLodMeta;
+  objects: readonly SceneObject[];
+  level: number;
+  assignment: ReadonlyMap<string, number>;
+}) {
+  const atlas = useBakedImpostor(model, meta);
+  const materials = useMemo(() => atlas === null ? null : createImpostorMaterials(atlas), [atlas]);
+  useEffect(() => () => {
+    materials?.material.dispose();
+    materials?.depth.dispose();
+  }, [materials]);
+  if (atlas === null || materials === null) return null;
+  return <ImpostorCards poolKey={`built:${model.url}:${JSON.stringify(model.targetHeight ?? null)}:${model.scale ?? 1}`} atlas={atlas} materials={materials} objects={objects} assignment={assignment} level={level} />;
 }
 
 /** Members of one level drawn through the individual renderer, for a level whose asset cannot be instanced. @internal */
@@ -355,7 +399,7 @@ export function LevelSingles({ objects, level, assignment, single }: {
  * their own mesh inside one batch cell.
  * @internal
  */
-export function VariantStaticObjects({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
+export function VariantStaticObjects({ batch, single, meta = null }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode; meta?: BuiltLodMeta | null }) {
   const ctx = useGameContext();
   const { objects, excluded } = useBatchMembers(batch);
   const levels = batch.model.variants!.levels;
@@ -389,20 +433,25 @@ export function VariantStaticObjects({ batch, single }: { batch: StaticObjectBat
     revision.current = ctx.scene.object.version();
     noteLevelPass(true);
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);
+  const impostor = levels[levels.length - 1]?.url === IMPOSTOR_LEVEL_URL;
+  const coarsest = levels.length - (impostor ? 2 : 1);
   return <>
-    {levels.map((level, index) => (
-      <VariantLevel
-        key={`${level.url}:${index}`}
-        url={level.url}
-        model={levelModels[index]!}
-        batch={batch}
-        objects={objects}
-        level={index}
-        assignment={assignment}
-        measure={index === 0}
-        single={single}
-      />
-    ))}
+    {levels.map((level, index) => level.url === IMPOSTOR_LEVEL_URL
+      ? meta === null ? null : <VariantImpostorLevel key={`impostor:${index}`} model={batch.model} meta={meta} objects={objects} level={index} assignment={assignment} />
+      : (
+        <VariantLevel
+          key={`${level.url}:${index}`}
+          url={level.url}
+          model={levelModels[index]!}
+          batch={batch}
+          objects={objects}
+          level={index}
+          assignment={assignment}
+          measure={index === 0}
+          single={single}
+          proxy={impostor ? "own" : index === coarsest ? "part" : "hidden"}
+        />
+      ))}
     {excluded.map((id) => { const live = ctx.scene.object.get(id); return live === null ? null : single(live); })}
   </>;
 }
@@ -433,9 +482,22 @@ export function StaticDrawPoolDriver({ hlod }: { hlod: HlodConfig | undefined })
 export function StaticObjectModels({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
   return (
     <IsolatedModelPart model={batch.model} seam="object">
-      {batch.model.variants === undefined
-        ? <LoadedStaticObjects batch={batch} single={single} />
-        : <VariantStaticObjects batch={batch} single={single} />}
+      <WithBuiltLods model={batch.model} impostors>
+        {({ model, meta }) => <ResolvedStaticObjects batch={batch} model={model} meta={meta} single={single} />}
+      </WithBuiltLods>
     </IsolatedModelPart>
   );
+}
+
+/** A batch drawn with the model its built levels resolved to; the batch keeps one identity per model. */
+function ResolvedStaticObjects({ batch, model, meta, single }: {
+  batch: StaticObjectBatch;
+  model: ModelConfig;
+  meta: BuiltLodMeta | null;
+  single: (object: SceneObject) => ReactNode;
+}) {
+  const drawn = useMemo(() => model === batch.model ? batch : { ...batch, model }, [batch, model]);
+  return drawn.model.variants === undefined
+    ? <LoadedStaticObjects batch={drawn} single={single} />
+    : <VariantStaticObjects batch={drawn} single={single} meta={meta} />;
 }

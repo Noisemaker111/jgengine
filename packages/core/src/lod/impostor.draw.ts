@@ -72,6 +72,8 @@ export interface ImpostorAtlas {
   /** Bounding sphere of the model in its own space. */
   center: THREE.Vector3;
   radius: number;
+  /** The render targets a fresh bake drew into, for a build step that reads the pixels back. */
+  targets?: { albedo: THREE.WebGLRenderTarget; normal: THREE.WebGLRenderTarget };
   dispose(): void;
 }
 
@@ -223,6 +225,7 @@ export function bakeImpostor(renderer: THREE.WebGLRenderer, sources: readonly Im
     frames: settings.frames,
     center: sphere.center.clone(),
     radius,
+    targets: { albedo: albedoTarget, normal: normalTarget },
     dispose() {
       albedoTarget.dispose();
       normalTarget.dispose();

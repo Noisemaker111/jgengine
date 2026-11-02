@@ -518,6 +518,17 @@
 - `pullLibraryModel` (function): function pullLibraryModel(entry: ModelLibraryEntry, options: PullLibraryModelOptions): Promise<PulledLibraryModel> — Download one library model from its official source, simplify it into a near and a far level, meshopt-compress both and write them as `near.gltf` / `far.gltf` sharing one set of textures (so the far level costs geometry only). Every file is checked against the source's published md5.
 - `thinIslands` (function): function thinIslands(document: Document, material: RegExp, share: number): number — Keep an evenly spread `share` of the connected triangle islands (leaf clusters) on every primitive whose material name matches `material`, and grow each kept island about its own centre by `share^-0.35` so the canopy keeps most of its cover — the usual foliage LOD trade, not a change to the tree's size. Returns the triangles removed.
 
+## @jgengine/assets/modelLodBuild
+
+- `BakedImpostorPixels` (interface): interface BakedImpostorPixels — A baked atlas pair as raw RGBA rows, bottom row first (as the GPU reads them back).
+- `ImpostorBakePlan` (interface): interface ImpostorBakePlan — How far-view impostors are baked: data in `assetBuild.impostors`.
+- `ImpostorBaker` (type): type ImpostorBaker = (file: string, frames: number, cell: number) => Promise<BakedImpostorPixels | null> — Renders a model file's impostor atlas; the pipeline passes one backed by a headless browser.
+- `LodBuildPlan` (interface): interface LodBuildPlan — How a game's models are simplified: data in the game's `jgengine.json` `assetBuild.lods`.
+- `LodLevelPlan` (interface): interface LodLevelPlan — One simplified level a build writes: the share of triangles to keep and the simplifier's error budget.
+- `ModelLodBuildResult` (interface): interface ModelLodBuildResult — What one model's build did.
+- `SOURCE_MATERIAL_KEY` (const): const SOURCE_MATERIAL_KEY: "jgSourceMaterial" — The material extras key a level keeps its source material index under; the runtime reskins by it.
+- `buildModelLods` (function): function buildModelLods(file: string, plan: LodBuildPlan, options: { impostor?: ImpostorBakePlan | null; bake?: ImpostorBaker } = {}): Promise<ModelLodBuildResult> — Build the simplified levels (and, with a baker, the impostor atlas) for one model file into `<file>.lods/`, the folder the runtime reads (`@jgengine/core/lod/builtLods`). Cached: a source and plan that match the meta on disk rebuild nothing. Animated and skinned models are skipped.
+
 ## @jgengine/assets/modelMirror
 
 - `modelMirrorAssetName` (function): function modelMirrorAssetName(name: string): string — `model-library-<name>.zip`, the release asset holding one per-model pull exactly as it lands in the store.

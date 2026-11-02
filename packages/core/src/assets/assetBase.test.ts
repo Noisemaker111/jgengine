@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { resolveAssetBaseUrl, setAssetBase, setGameAssetFiles } from "./assetBase";
+import { assetFileListed, resolveAssetBaseUrl, setAssetBase, setGameAssetFiles } from "./assetBase";
 
 afterEach(() => {
   setAssetBase("/");
@@ -71,5 +71,21 @@ describe("resolveAssetBaseUrl", () => {
     setGameAssetFiles("games/fernwild/", ["/models/a.glb"]);
     expect(resolveAssetBaseUrl("/models/a.glb")).toBe("/games/fernwild/models/a.glb");
     expect(resolveAssetBaseUrl("/models/b.glb")).toBe("/models/b.glb");
+  });
+});
+
+describe("assetFileListed", () => {
+  test("answers from the game's file list, and not at all without one", () => {
+    setGameAssetFiles(null);
+    expect(assetFileListed("/models/a.glb.lods/meta.json")).toBeNull();
+    setAssetBase("/play/");
+    setGameAssetFiles("games/fern", ["/models/a.glb", "/models/a.glb.lods/meta.json"]);
+    expect(assetFileListed("/models/a.glb.lods/meta.json")).toBe(true);
+    expect(assetFileListed("/play/models/a.glb.lods/meta.json?v=1")).toBe(true);
+    expect(assetFileListed("/models/b.glb.lods/meta.json")).toBe(false);
+    expect(assetFileListed("/play/assets/awning-x.glb.lods/meta.json")).toBe(false);
+    expect(assetFileListed("data:model/gltf+json,{}")).toBeNull();
+    setGameAssetFiles(null);
+    setAssetBase("/");
   });
 });
