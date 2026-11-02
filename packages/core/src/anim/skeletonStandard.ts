@@ -217,6 +217,37 @@ export const QUATERNIUS_ALIEN_SCHEME: RigScheme = {
 };
 
 /**
+ * Quaternius humanoids (Ultimate Modular Men and Women, Toon Shooter): `Root > Body > Hips >
+ * Abdomen > Torso > Chest`, a shoulder per side the standard folds into `chest`, and `Wrist.L/.R`
+ * as the hand. Toon Shooter rigs stop at the forearm and have no `Chest`, so their hands stay empty
+ * and `Torso` fills the chest. No bone is a toe or a weapon slot.
+ */
+export const QUATERNIUS_HUMANOID_SCHEME: RigScheme = {
+  id: "quaternius-humanoid",
+  label: "Quaternius humanoid",
+  source: "Quaternius Ultimate Modular Men / Women, Toon Shooter (CC0)",
+  slots: {
+    root: ["Root"],
+    hips: ["Hips"],
+    spine: ["Abdomen"],
+    chest: ["Chest", "Torso"],
+    head: ["Head"],
+    "upperArm.l": ["UpperArm.L"],
+    "upperArm.r": ["UpperArm.R"],
+    "lowerArm.l": ["LowerArm.L"],
+    "lowerArm.r": ["LowerArm.R"],
+    "hand.l": ["Wrist.L"],
+    "hand.r": ["Wrist.R"],
+    "upperLeg.l": ["UpperLeg.L"],
+    "upperLeg.r": ["UpperLeg.R"],
+    "lowerLeg.l": ["LowerLeg.L"],
+    "lowerLeg.r": ["LowerLeg.R"],
+    "foot.l": ["Foot.L"],
+    "foot.r": ["Foot.R"],
+  },
+};
+
+/**
  * 3ds Max Biped rigs (`Bip01 Pelvis`, `Bip01 L UpperArm`), which every Microsoft Rocketbox human
  * shares: the engine's realistic default body. Biped has a clavicle and a neck the standard folds
  * into `chest`, and no hand-slot bone, so props attach to `hand.l`/`hand.r`.
@@ -254,6 +285,7 @@ export const RIG_SCHEMES: Readonly<Record<string, RigScheme>> = {
   [MIXAMO_SCHEME.id]: MIXAMO_SCHEME,
   [BIPED_SCHEME.id]: BIPED_SCHEME,
   [QUATERNIUS_ALIEN_SCHEME.id]: QUATERNIUS_ALIEN_SCHEME,
+  [QUATERNIUS_HUMANOID_SCHEME.id]: QUATERNIUS_HUMANOID_SCHEME,
 };
 
 /** Slots a rig needs before the engine poses it as a full humanoid body: limbs, spine and head. */

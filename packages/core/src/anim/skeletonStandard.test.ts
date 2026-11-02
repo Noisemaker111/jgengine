@@ -8,6 +8,7 @@ import {
   SKELETON_PARENT,
   SKELETON_SLOTS,
   SKELETON_STANDARD,
+  detectHumanoidRig,
   mapRigToStandard,
   retargetBoneScales,
   retargetTracks,
@@ -68,6 +69,14 @@ const MIXAMO_BONES = [
   "mixamorigRightLeg",
   "mixamorigRightFoot",
   "mixamorigRightToeBase",
+];
+
+/** The bones of a Quaternius Ultimate Modular Men rig (Farmer), fingers trimmed to one. */
+const QUATERNIUS_BONES = [
+  "Root", "Body", "Hips", "Abdomen", "Torso", "Chest", "Neck", "Head",
+  "Shoulder.L", "UpperArm.L", "LowerArm.L", "Wrist.L", "Index1.L",
+  "Shoulder.R", "UpperArm.R", "LowerArm.R", "Wrist.R", "Index1.R",
+  "UpperLeg.L", "LowerLeg.L", "UpperLeg.R", "LowerLeg.R", "Foot.L", "PT.L", "Foot.R", "PT.R",
 ];
 
 const ALIEN_BONES = ["Root", "Spine_1", "Spine_2", "Spine_3", "Spine_4", "Spine_5", "Spine_6", "Neck", "Head", "ClawBig_1.L", "ClawBig_2.L", "ClawBig_3.L"];
@@ -133,6 +142,16 @@ describe("skeleton standard", () => {
     }
     expect(map.unmapped).toContain("ClawBig_1.L");
     expect(map.unmapped).toContain("Spine_6");
+  });
+
+  test("a Quaternius modular human is detected as its own scheme, hands on the wrists", () => {
+    const map = detectHumanoidRig(QUATERNIUS_BONES);
+    expect(map?.scheme).toBe("quaternius-humanoid");
+    expect(map?.slots.spine).toBe("Abdomen");
+    expect(map?.slots.chest).toBe("Chest");
+    expect(map?.slots["hand.r"]).toBe("Wrist.R");
+    expect(map?.missing).toEqual(["handSlot.l", "handSlot.r", "toes.l", "toes.r"]);
+    expect(map?.unmapped).toContain("Shoulder.L");
   });
 
   test("an unknown scheme names the schemes that exist", () => {

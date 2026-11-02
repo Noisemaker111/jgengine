@@ -1,11 +1,13 @@
 import { libraryModelCredits } from "@jgengine/assets/catalogs/modelLibrary";
+import { creditsForSourceIds } from "@jgengine/assets/credits";
 
 import type { CreditsDocument, CreditsEntry } from "@jgengine/core/menu/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { lookCredits } from "../art/look";
 import { CREATURE_MODEL_SOURCES, type CreatureModelSource } from "./data/creatureModels";
-import { SURVIVOR_MODELS } from "./models";
+import { BODY_SOURCE_IDS } from "./assets";
+import { TOOL_MODELS } from "./models";
 import { itemIconCredits } from "./ui/itemIcons";
 
 /** One credit line per author and licence of the creature models, naming each model. */
@@ -51,11 +53,12 @@ const creditLines = (): CreditsEntry[] =>
     "Nature models: Quaternius (Stylized Nature MegaKit), CC0.",
     "Cloth texture: ambientCG (Fabric 007), CC0.",
     ...creatureCredits(),
-    ...libraryModelCredits(SURVIVOR_MODELS),
+    ...libraryModelCredits(TOOL_MODELS),
     ...itemIconCredits(),
   ].map((label) => ({ label }));
 
 export const CREDITS: CreditsDocument = mergeCredits(
   { sections: [{ heading: "Fernwild", entries: [{ label: "Fernwild — made with JGengine." }] }, { heading: "Models and icons", entries: creditLines() }] },
+  creditsForSourceIds(BODY_SOURCE_IDS),
   { sections: lookCredits() },
 );
