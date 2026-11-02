@@ -1,4 +1,4 @@
-import { cn } from "@/components/ui/cn";
+import { cn } from "@/kit/cn";
 
 interface StandalonePageShellProps {
   children: React.ReactNode;

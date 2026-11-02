@@ -1,4 +1,4 @@
-import { cn } from "@/components/ui/cn";
+import { cn } from "@/kit/cn";
 import { GpuModelPreview } from "@/scene/components/GpuModelPreview";
 import { getHardwareDefinition } from "@llmville/game/infrastructure/catalog";
 import type { HardwareModelId } from "@llmville/game/infrastructure/catalog";

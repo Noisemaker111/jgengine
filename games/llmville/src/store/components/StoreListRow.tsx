@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 
-import { Button } from "@/components/ui/button";
-import { CARD_VARIANT, Card } from "@/components/ui/card";
-import { cn } from "@/components/ui/cn";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { cn } from "@/kit/cn";
 
 interface StorePriceButtonProps {
   price: number;
@@ -22,14 +21,15 @@ export function StorePriceButton({
   className = "",
 }: StorePriceButtonProps) {
   return (
-    <Button
-      variant={affordable && !pending ? "primary" : "default"}
+    <KitButton
+      variant={affordable && !pending ? "primary" : "secondary"}
       onClick={onClick}
       disabled={!affordable || pending}
-      className={cn("game-btn--compact min-w-[78px] text-[10px]", !affordable && "cursor-not-allowed opacity-40", className)}
+      size="sm"
+      className={cn("min-w-[78px] text-[10px]", !affordable && "cursor-not-allowed opacity-40", className)}
     >
       {pending ? "…" : label ?? `$${price.toLocaleString()}`}
-    </Button>
+    </KitButton>
   );
 }
 
@@ -44,8 +44,8 @@ export function InventoryTrayCard({
   interactive?: boolean;
 }) {
   return (
-    <Card
-      variant="inventory-tray"
+    <KitPanel as="div"
+      variant="card" data-shell="inventory-tray"
       className={cn(
         "transition-all duration-300",
         interactive && "hover:border-brand-teal/40",
@@ -53,7 +53,7 @@ export function InventoryTrayCard({
       )}
     >
       {children}
-    </Card>
+    </KitPanel>
   );
 }
 
@@ -68,13 +68,13 @@ export function BlueprintCard({
   owned?: boolean;
 }) {
   return (
-    <Card
-      variant={CARD_VARIANT.blueprint}
-      decoration="fold"
+    <KitPanel as="div"
+      variant="card" data-shell="blueprint"
+      data-deco="fold"
       className={cn(owned && "border-brand-teal/50 bg-brand-teal/5", className)}
     >
       {children}
-    </Card>
+    </KitPanel>
   );
 }
 

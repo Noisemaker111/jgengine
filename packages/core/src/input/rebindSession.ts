@@ -22,6 +22,11 @@ export interface RebindActionConfig {
   label: string;
   /** The game's authored binding for this action; `reset` returns here. `locked: true` here makes the row read-only. */
   defaultCodes: ActionCodes;
+  /**
+   * Where the action is read (`"walk"`, `"menu"`). Actions in different contexts never run together, so
+   * they may share a key without a conflict. Actions without one share a single context.
+   */
+  context?: string;
 }
 
 /** Config for {@link createRebindSession}: an explicit action list, or an {@link ActionCodesMap} + labels. */
@@ -221,16 +226,22 @@ export function createRebindSession(config: RebindSessionConfig): RebindSession 
     return applyBindingOverrides(defaultMap, overrides);
   }
 
-  /** Map of normalized code → action ids currently bound to it. */
-  function codeIndex(): Map<string, string[]> {
+  /** Bucket key for a code within an action's context: only actions in one context can collide. */
+  function bucketKey(context: string | undefined, code: string): string {
+    return `${context ?? ""}\u0000${code}`;
+  }
+
+  /** Map of context + normalized code → the code and the action ids currently bound to it there. */
+  function codeIndex(): Map<string, { code: string; actionIds: string[] }> {
     const effective = effectiveMap();
-    const index = new Map<string, string[]>();
+    const index = new Map<string, { code: string; actionIds: string[] }>();
     for (const action of actionList) {
       for (const raw of allCodes(effective[action.id]!)) {
-        const norm = normalizeKeyCode(raw);
-        const bucket = index.get(norm);
-        if (bucket === undefined) index.set(norm, [action.id]);
-        else bucket.push(action.id);
+        const code = normalizeKeyCode(raw);
+        const key = bucketKey(action.context, code);
+        const bucket = index.get(key);
+        if (bucket === undefined) index.set(key, { code, actionIds: [action.id] });
+        else bucket.actionIds.push(action.id);
       }
     }
     return index;
@@ -245,9 +256,9 @@ export function createRebindSession(config: RebindSessionConfig): RebindSession 
       const primary = primaryRaw === null ? null : normalizeKeyCode(primaryRaw);
       const conflictWith = new Set<string>();
       for (const raw of allCodes(codes)) {
-        const bound = index.get(normalizeKeyCode(raw));
+        const bound = index.get(bucketKey(action.context, normalizeKeyCode(raw)));
         if (bound === undefined) continue;
-        for (const other of bound) if (other !== action.id) conflictWith.add(other);
+        for (const other of bound.actionIds) if (other !== action.id) conflictWith.add(other);
       }
       return {
         actionId: action.id,
@@ -301,13 +312,13 @@ export function createRebindSession(config: RebindSessionConfig): RebindSession 
     },
     conflicts() {
       const groups: RebindConflict[] = [];
-      for (const [code, actionIds] of codeIndex()) {
+      for (const { code, actionIds } of codeIndex().values()) {
         if (actionIds.length >= 2) groups.push({ code, actionIds: [...actionIds] });
       }
       return groups;
     },
     hasConflicts() {
-      for (const actionIds of codeIndex().values()) if (actionIds.length >= 2) return true;
+      for (const { actionIds } of codeIndex().values()) if (actionIds.length >= 2) return true;
       return false;
     },
     reset(actionId) {

@@ -44,9 +44,11 @@ import {
 } from "@/tablet/gameTabletChrome";
 import { useTabletSheetGestures, TABLET_TOUCH_CLOSED_TRANSLATE_PERCENT, TABLET_TOUCH_OPEN_TRANSLATE_PERCENT } from "@/tablet/tabletSheetGesture";
 import { useTabletNavContext } from "@/tablet/components/tabletNav";
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { UI_LAYER } from "@/runtime/uiLayers";
 
-import { SettingsApp } from "@/settings/components/SettingsApp";
+import { useSettings } from "@jgengine/core/settings/settings.view";
+import { LlmvilleSettings } from "@/settings/components/LlmvilleSettings";
 import { AllModelsApp } from "@/models/components/AllModelsApp";
 import { InferenceApp } from "@/inference/components/InferenceApp";
 import { StatsApp } from "@/stats/components/StatsApp";
@@ -90,6 +92,7 @@ export function GameTablet({ world, build, tutorial, isTouch, embedded = false, 
     toggleTablet,
   } = useGameTabletFrame({ world, tutorial, nav, isTouch });
   const [revealingModel, setRevealingModel] = useState<RevealingModelStats | null>(null);
+  const settings = useSettings();
   const tabletInteractable = !collapsed;
   const peekEnabled = isTouch && collapsed;
   const { shellTranslatePercent, shellDragging, dismissHandle, peekHandle } = useTabletSheetGestures({
@@ -136,7 +139,7 @@ export function GameTablet({ world, build, tutorial, isTouch, embedded = false, 
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
-          <div className={gameTabletFrameClass(isTouch, collapsed)}>
+          <KitPanel as="div" data-shell="tablet-device" className={gameTabletFrameClass(isTouch, collapsed)}>
             <button
               type="button"
               aria-label="Swipe down or tap to close tablet"
@@ -348,7 +351,7 @@ export function GameTablet({ world, build, tutorial, isTouch, embedded = false, 
                       )}
                       {activeTab === TABLET_APP_ID.bot && <BotApp />}
                       {activeTab === TABLET_APP_ID.settings && (
-                        <SettingsApp onExitToMenu={world.onSaveProgress} />
+                        <LlmvilleSettings categories={settings.categories} headerActionLabel="Main Menu" onHeaderAction={world.onSaveProgress} />
                       )}
                     </div>
                   </div>
@@ -387,7 +390,7 @@ export function GameTablet({ world, build, tutorial, isTouch, embedded = false, 
 
               <div className={GAME_TABLET_SCAN_LINE_CLASS} />
             </div>
-          </div>
+          </KitPanel>
         </div>
       </div>
 

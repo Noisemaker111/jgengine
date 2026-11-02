@@ -426,7 +426,6 @@
   "games/llmville/src/auth/sessionToken.ts": {"cast":1},
   "games/llmville/src/build/buildSession.ts": {"cast":3},
   "games/llmville/src/build/components/BuildCatalog.tsx": {"cast":1},
-  "games/llmville/src/components/ui/sonner.tsx": {"cast":1},
   "games/llmville/src/economy/components/BillsDevPreview.tsx": {"cast":2},
   "games/llmville/src/economy/economy.ts": {"cast":2},
   "games/llmville/src/inference/components/InferenceApp.tsx": {"cast":4},

@@ -6,7 +6,7 @@ import {
   saveBindingOverride,
 } from "@jgengine/core/input/bindingOverrides";
 import { ACCESSIBILITY_SETTING_IDS } from "@jgengine/core/settings/accessibilitySettings";
-import { createSettingsStore, SETTING_IDS, type GraphicsQuality } from "@jgengine/core/settings/settingsModel";
+import { createSettingsStore, SETTING_IDS, type GraphicsQuality, type SettingsStore } from "@jgengine/core/settings/settingsModel";
 
 import {
   DEFAULT_APP_KEYBINDS,
@@ -96,6 +96,8 @@ function parseLegacyAppSettings(raw: string): AppSettings {
 
 /** LLMville's settings over the engine settings store and binding overrides, on one injected storage. */
 export interface AppSettingsStore {
+  /** The engine settings store these settings live in, for engine settings blocks outside the shell. */
+  engine: SettingsStore;
   get(): AppSettings;
   update(partial: Partial<AppSettings>): AppSettings;
   subscribe(listener: () => void): () => void;
@@ -139,9 +141,12 @@ export function createAppSettingsStore(storage: KeyValueStorage | null): AppSett
     keybinds: readKeybinds(),
   });
 
+  // Only changed fields are written: the shell's settings menu writes the same cells through its own store.
   const write = (next: AppSettings, previous: AppSettings | null): void => {
-    settings.set(ACCESSIBILITY_SETTING_IDS.reducedMotion, next.reducedMotion);
-    settings.set(SETTING_IDS.graphicsQuality, PRESET_QUALITY[next.graphicsQuality]);
+    if (previous === null || previous.reducedMotion !== next.reducedMotion) settings.set(ACCESSIBILITY_SETTING_IDS.reducedMotion, next.reducedMotion);
+    if (previous === null || previous.graphicsQuality !== next.graphicsQuality) {
+      settings.set(SETTING_IDS.graphicsQuality, PRESET_QUALITY[next.graphicsQuality]);
+    }
     if (previous === null || previous.keybinds !== next.keybinds) writeKeybinds(next.keybinds);
   };
 
@@ -162,6 +167,7 @@ export function createAppSettingsStore(storage: KeyValueStorage | null): AppSett
   };
 
   return {
+    engine: settings,
     get: () => current,
     update: (partial) => commit({ ...current, ...partial }),
     subscribe(listener) {

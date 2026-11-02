@@ -3,6 +3,7 @@
  * dedicate them. Replaces the old ratio-based Dashboard: each physical card is a draggable chip, and
  * a card's full stats belong to exactly one job (see `computeAssignments.ts`).
  */
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useCallback, useMemo, useState } from "react";
 import {
   DndContext,
@@ -38,10 +39,7 @@ import {
 } from "@llmville/game/models/scrapingTiers";
 import type { TutorialStage } from "@llmville/game/tutorial/tutorialStages";
 
-import { InsetSection } from "@/components/ui/inset-section";
-import { Panel } from "@/components/ui/panel";
-import { Token } from "@/components/ui/token";
-import { cn } from "@/components/ui/cn";
+import { cn } from "@/kit/cn";
 import RackSlot from "@/infrastructure/components/RackSlot";
 import { RevealedModelCard, UnknownModelCard } from "@/models/components/ModelCard";
 import { ModelDetailView } from "@/models/components/ModelDetailView";
@@ -104,7 +102,7 @@ function DropLane({ id, cards, emptyLabel }: { id: string; cards: InstalledCard[
     <div
       ref={setNodeRef}
       className={cn(
-        "flex min-h-[76px] flex-wrap items-center gap-2 rounded-[var(--r-field)] border-2 border-dashed border-[var(--surface-border)] p-2 transition-colors",
+        "flex min-h-[76px] flex-wrap items-center gap-2 rounded-[var(--kit-r-field)] border-2 border-dashed border-[var(--kit-line)] p-2 transition-colors",
         isOver && "border-brand-teal/60 bg-brand-teal/5",
       )}
     >
@@ -217,9 +215,9 @@ export function InferenceApp({
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
       <div className="flex animate-in fade-in slide-in-from-bottom-4 flex-col gap-6 pb-24 duration-300">
-        <InsetSection
-          label="Available GPUs"
-          trailing={<span className="text-[10px] font-semibold text-brand-cream/45">{undedicatedCards.length} undedicated</span>}
+        <KitPanel data-shell="inset"
+          eyebrow="Available GPUs"
+          aside={<span className="flex flex-col gap-3 text-[10px] font-semibold text-brand-cream/45">{undedicatedCards.length} undedicated</span>}
         >
           <p className="text-[11px] leading-snug text-brand-cream/45">
             Choose a job for each GPU below, or drag its card onto a lane. Each GPU works on one job at a time.
@@ -243,17 +241,17 @@ export function InferenceApp({
               </label>
             ))}
           </div>
-        </InsetSection>
+        </KitPanel>
 
-        <InsetSection label="Training" trailing={<Token tone="teal">{Math.round(assignmentStats.training.tflops)} TFLOPS</Token>}>
+        <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="Training" aside={<span className="llm-token llm-token--teal">{Math.round(assignmentStats.training.tflops)} TFLOPS</span>}>
           <p className="text-[11px] leading-snug text-brand-cream/45">GPUs here train your base model — more TFLOPs, faster runs.</p>
           <DropLane id="lane:training" cards={trainingCards} emptyLabel="Drag a GPU here to train." />
-        </InsetSection>
+        </KitPanel>
 
         <div
           className={
             tutorialStarted && !tutorialCompleted && tutorialStage === "scrape_tokens"
-              ? "rounded-[var(--r-field)] ring-2 ring-brand-amber/80 ring-offset-2 ring-offset-brand-ink"
+              ? "rounded-[var(--kit-r-field)] ring-2 ring-brand-amber/80 ring-offset-2 ring-offset-brand-ink"
               : undefined
           }
         >
@@ -262,7 +260,7 @@ export function InferenceApp({
               Collect data to train your first model. Assign a GPU below and tokens arrive automatically.
             </p>
           )}
-          <InsetSection label="Collect data" trailing={<Token tone="amber">{Math.round(scrapeTflops)} TFLOPS</Token>}>
+          <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="Collect data" aside={<span className="llm-token llm-token--amber">{Math.round(scrapeTflops)} TFLOPS</span>}>
             <div className="game-control-group">
               {SCRAPE_TIER_LIST.map((tierDef) => {
                 const active = activeScrapeTier === tierDef.id;
@@ -293,18 +291,18 @@ export function InferenceApp({
             </div>
             <p className="text-[10px] leading-snug text-brand-cream/45">{getScrapeTierDef(activeScrapeTier).description}</p>
             <DropLane id="lane:scraping" cards={scrapingCards} emptyLabel="Drag a GPU here to scrape data tokens." />
-          </InsetSection>
+          </KitPanel>
         </div>
 
-        <InsetSection label="Serving">
+        <KitPanel data-shell="inset" className="flex flex-col gap-3" eyebrow="Serving">
           <p className="text-[11px] leading-snug text-brand-cream/45">
             Serve a model in the deck below, then drag GPUs onto it here — its VRAM and TFLOPs come only from the cards
             you dedicate to it.
           </p>
           {servingModels.length === 0 ? (
-            <Panel variant="inset" className="py-6 text-center text-sm text-brand-cream/45">
+            <KitPanel data-shell="inset" className="py-6 text-center text-sm text-brand-cream/45">
               No models are serving yet. Reveal and serve a model in the deck below.
-            </Panel>
+            </KitPanel>
           ) : (
             <div className="flex flex-col gap-3">
               {servingModels.map((model) => {
@@ -318,10 +316,10 @@ export function InferenceApp({
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs font-bold text-brand-cream">{model.name}</p>
                       <div className="flex items-center gap-1.5">
-                        <Token tone="teal">{Math.round(boundTflops)} TFLOPS</Token>
-                        <Token tone={fits ? "muted" : "coral"}>
+                        <span className="llm-token llm-token--teal">{Math.round(boundTflops)} TFLOPS</span>
+                        <span className={`llm-token llm-token--${fits ? "muted" : "coral"}`}>
                           {Math.round(boundVramGb)}/{Math.round(model.footprintGb)} GB
-                        </Token>
+                        </span>
                       </div>
                     </div>
                     <DropLane id={`serving:${model.id}`} cards={bound} emptyLabel="Drag a GPU here to serve this model." />
@@ -331,11 +329,11 @@ export function InferenceApp({
               })}
             </div>
           )}
-        </InsetSection>
+        </KitPanel>
 
-        <InsetSection
-          label="Serving mode"
-          trailing={<span className="text-[10px] font-semibold text-brand-cream/45">{SERVING_MODE_PROFILES[servingMode].latencyLabel}</span>}
+        <KitPanel data-shell="inset"
+          eyebrow="Serving mode"
+          aside={<span className="flex flex-col gap-3 text-[10px] font-semibold text-brand-cream/45">{SERVING_MODE_PROFILES[servingMode].latencyLabel}</span>}
         >
           <div className="game-control-group">
             {SERVING_MODE_VALUES.map((mode) => {
@@ -360,7 +358,7 @@ export function InferenceApp({
             })}
           </div>
           <p className="text-[10px] leading-snug text-brand-cream/45">{SERVING_MODE_PROFILES[servingMode].description}</p>
-        </InsetSection>
+        </KitPanel>
 
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -368,9 +366,9 @@ export function InferenceApp({
             <span className="text-[10px] font-semibold text-brand-cream/45">{userModels.length} total</span>
           </div>
           {userModels.length === 0 ? (
-            <Panel variant="inset" className="py-6 text-center text-sm text-brand-cream/45">
+            <KitPanel data-shell="inset" className="py-6 text-center text-sm text-brand-cream/45">
               Trained models land here when they are ready to reveal or deploy.
-            </Panel>
+            </KitPanel>
           ) : (
             <div className="flex flex-col gap-3">
               {userModels.map((model) =>
@@ -379,7 +377,7 @@ export function InferenceApp({
                     key={model.id}
                     className={
                       tutorialStarted && !tutorialCompleted && tutorialStage === "reveal_model"
-                        ? "rounded-[var(--r-field)] ring-2 ring-brand-teal/80 ring-offset-2 ring-offset-brand-ink"
+                        ? "rounded-[var(--kit-r-field)] ring-2 ring-brand-teal/80 ring-offset-2 ring-offset-brand-ink"
                         : undefined
                     }
                   >
@@ -410,7 +408,7 @@ export function InferenceApp({
                         !tutorialCompleted &&
                         tutorialStage === "serve" &&
                         model.launchState !== "serving"
-                        ? "rounded-[var(--r-field)] ring-2 ring-brand-teal/80 ring-offset-2 ring-offset-brand-ink"
+                        ? "rounded-[var(--kit-r-field)] ring-2 ring-brand-teal/80 ring-offset-2 ring-offset-brand-ink"
                         : undefined
                     }
                   >

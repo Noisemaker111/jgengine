@@ -1,7 +1,4 @@
-export {
-  TWEET_NOTIFICATION_DURATION_MS,
-  TWEET_NOTIFICATION_TICK_MS,
-} from "@llmville/game/economy/events";
+export { TWEET_NOTIFICATION_DURATION_MS } from "@llmville/game/economy/events";
 
 export type { BillType, DisplayBillType } from "@llmville/game/economy/events";
 

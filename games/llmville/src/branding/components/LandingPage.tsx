@@ -1,13 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2, Play, Settings, Trash2 } from "lucide-react";
 
-import { cn } from "@/components/ui/cn";
+import { cn } from "@/kit/cn";
 import { BrandLogo } from "@/branding/components/BrandLogo";
 import { RouteLoadingScreen } from "@/components/RouteLoadingScreen";
 import { MainMenuLayout } from "@/runtime/components/MainMenuLayout";
 import { useMainMenu } from "@/runtime/mainMenu";
 import { MAIN_MENU_KIND } from "@/runtime/mainMenuPhase";
-import { SettingsDock } from "@/settings/components/SettingsDock";
+import { MenuSettingsDialog } from "@/settings/components/MenuSettingsDialog";
 
 function HomeMainMenu() {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ function HomeMainMenu() {
   const warmRoute = phase.kind === MAIN_MENU_KIND.continue ? warmContinueRoute : warmCreateRoute;
 
   const openSettings = () => {
-    void navigate({ to: "/", search: { settings: true, tab: "general" } });
+    void navigate({ to: "/", search: { settings: true } });
   };
 
   return (
@@ -47,7 +47,7 @@ function HomeMainMenu() {
         className="main-menu-panel animate-in fade-in slide-in-from-bottom w-full max-w-sm space-y-2 duration-700"
       >
         {confirmDeleteWorld ? (
-          <div className="space-y-2 rounded-[var(--r-surface)] border border-brand-coral/30 bg-brand-coral/5 p-4">
+          <div className="space-y-2 rounded-[var(--kit-r-surface)] border border-brand-coral/30 bg-brand-coral/5 p-4">
             <p className="font-game text-sm font-bold text-brand-cream">Delete your lab?</p>
             <p className="text-xs leading-relaxed text-brand-cream/55">
               Your lab, racks, models, and progress will be erased. This cannot be undone.
@@ -150,7 +150,7 @@ function HomeMainMenu() {
 
 export function LandingPage() {
   return (
-    <MainMenuLayout hideHeader overlay={<SettingsDock showTrigger={false} />}>
+    <MainMenuLayout hideHeader overlay={<MenuSettingsDialog />}>
       <HomeMainMenu />
     </MainMenuLayout>
   );
