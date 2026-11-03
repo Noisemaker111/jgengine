@@ -203,8 +203,8 @@ describe("generated-artifact drift", () => {
       "ensure-ready", "source-paths", "library-index", "skill-routing", "barrels", "capabilities", "skill-api", "export-manifest", "games-ledger",
       "type-escapes", "part-stats", "recipes",
     ]);
-    expect(stages[2]!.needs).toEqual(["ensure-ready"]);
-    expect(stages[4]!.needs).toEqual(["ensure-ready", "skill-routing"]);
+    expect(stages[2]?.needs).toEqual(["ensure-ready"]);
+    expect(stages[4]?.needs).toEqual(["ensure-ready", "skill-routing"]);
     for (const stage of stages.slice(5)) expect(stage.needs).toEqual(["ensure-ready", "barrels"]);
     expect(rerunHint(stages, "barrels")).toBe("bun run gen barrels");
   });

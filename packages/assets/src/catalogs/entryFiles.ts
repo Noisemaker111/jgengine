@@ -40,12 +40,12 @@ export const LIBRARY_LISTS: readonly LibraryList[] = [
   },
 ];
 
-/** Path of a list's generated index. */
+/** Path of a list's generated index. @internal */
 export function libraryIndexPath(list: LibraryList): string {
   return `${list.dir}/index.ts`;
 }
 
-/** Entry names under `dir`, from file paths: `asphalt/wet` for `asphalt/wet.ts`. */
+/** Entry names under `dir`, from file paths: `asphalt/wet` for `asphalt/wet.ts`. @internal */
 export function libraryEntryNames(root: string, list: LibraryList): string[] {
   const base = join(root, list.dir);
   const names: string[] = [];
@@ -70,6 +70,7 @@ function identifier(name: string): string {
 /**
  * The generated index for a list. Loads every entry and throws when an entry's key is not its file
  * name, or two files map to one identifier.
+ * @internal
  */
 export async function renderLibraryIndex(root: string, list: LibraryList): Promise<string> {
   const names = libraryEntryNames(root, list);
