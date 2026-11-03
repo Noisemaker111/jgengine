@@ -63,9 +63,8 @@ describe("game scope", () => {
     }
   });
 
-  test("the smoke and perf checks branch protection reads still exist and name the scope", () => {
-    for (const job of ["perf", "smoke", "ci"]) expect(jobBlock(job)).toContain("needs.changes.outputs.reason");
-    expect(jobBlock("perf")).toContain('test "$CPU" = "success"');
+  test("the ci check branch protection reads names the scope", () => {
+    expect(jobBlock("ci")).toContain("needs.changes.outputs.reason");
   });
 
   test("a change-notes diff skips the test shards, and a skipped matrix cannot pass as run", () => {

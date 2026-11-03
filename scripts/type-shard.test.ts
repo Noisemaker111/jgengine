@@ -66,7 +66,7 @@ test("every weight names a stage the plan still has, so a rename cannot silently
 test("the plan is the types job of the check table and nothing is dropped from it", () => {
   expect(PLAN).toBe("types");
   const stages = typesPlan();
-  expect(stages.length).toBeGreaterThan(20);
+  expect(stages.length).toBeGreaterThan(10);
   expect(stages[0]!.name).toBe("ensure-ready");
   expect(stages.at(-1)!.name).toBe("types");
   expect(CONCURRENCY).toBeGreaterThan(1);

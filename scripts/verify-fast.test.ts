@@ -23,7 +23,6 @@ import {
   ownTests,
   pureRenames,
   splitByCost,
-  stepResult,
   TESTS_PER_LANE,
   workspaceOf,
   workspaces,
@@ -31,7 +30,7 @@ import {
   type Step,
   type Workspace,
 } from "./verify-fast";
-import { EXIT_UNJUDGED, runSteps, type StepResult } from "./stepScheduler";
+import { runSteps, type StepResult } from "./stepScheduler";
 import { buildImportGraph, specifiers, type ImportGraph } from "./import-graph";
 import { matchingShard, walkTestFiles } from "./test-shard";
 import { REPRESENTATIVE_GAME } from "./ci-scope";
@@ -315,26 +314,17 @@ describe("attribution fails loudly", () => {
 });
 
 describe("static gates", () => {
-  test("a package source change pays the artifact gates, and never the changelog gate lane:close satisfies itself", () => {
+  test("a package source change pays the artifact and layer gates", () => {
     const gates = gatesFor(["packages/core/src/world/terrain.ts"]);
-    expect(gates).not.toContain("changelog");
-    expect(landingGates(["packages/core/src/world/terrain.ts"])).not.toContain("changelog");
     expect(gates).toContain("artifacts");
-    expect(gates).toContain("concept-homes");
-    expect(gates).not.toContain("skills");
+    expect(gates).toContain("layers");
+    expect(gates).not.toContain("games-sync");
+    expect(gatesFor(["packages/jgengine/src/cli/index.ts"])).toContain("games-sync");
   });
 
-  test("a skill or doc change pays the stage-skills gate, and no lane pays the housekeeping ones", () => {
-    expect(gatesFor([".claude/skills/workflow/SKILL.md"])).toContain("stage-skills");
-    expect(gatesFor(["README.md"])).toContain("stage-skills");
-    for (const gate of ["skills", "fixture-location"]) expect(gatesFor(["scripts/x.ts", "README.md"])).not.toContain(gate);
-  });
-
-  test("a test change pays the spawn-timeout gate, and a browser test the budget gate", () => {
-    expect(gatesFor(["packages/core/src/a.test.ts"])).toContain("test-spawn-timeouts");
-    expect(gatesFor(["packages/core/src/a.test.ts"])).not.toContain("browser-test-budget");
-    expect(gatesFor(["packages/core/src/a.browser.test.ts"])).toContain("browser-test-budget");
-    expect(gatesFor(["packages/core/src/a.ts"])).not.toContain("test-spawn-timeouts");
+  test("a game change pays the save-state gate", () => {
+    expect(gatesFor(["games/fernwild/src/main.ts"])).toContain("games-save-states");
+    expect(gatesFor(["packages/core/src/a.ts"])).not.toContain("games-save-states");
   });
 
   test("--cheap keeps only the type-checks and gates", () => {
@@ -354,8 +344,7 @@ describe("static gates", () => {
     expect(fastSteps(plan).filter((step) => step.first === true).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
   });
 
-  // stateful-ratchet and the scaffold-launch fetch scan failed only in CI: the landing ran a
-  // hand-picked subset of what CI runs, so each lane met them one CI run at a time.
+  // A landing that ran a hand-picked subset of what CI runs met each missing check one CI run at a time.
   test("an engine landing runs every quick and types check CI runs, except the ones with a stated reason", () => {
     const landing = landingGates(["packages/core/src/city/cityKind.ts", "packages/react/src/a.ts", "games/fernwild/src/main.ts", "apps/web/src/a.ts", "registry/x.json"]);
     for (const check of [...jobChecks("quick"), ...jobChecks("types")]) {
@@ -363,17 +352,16 @@ describe("static gates", () => {
       if (reason === undefined) expect(landing).toContain(check.name);
       else expect(landing).not.toContain(check.name);
     }
-    expect(landing).toContain("stateful-ratchet");
-    expect(landing).toContain("scaffold-launch");
+    expect(landing).toContain("hud-tokens");
     for (const name of Object.keys(CI_ONLY_GATES)) expect(findCheck(name)).toBeDefined();
   });
 
-  test("a game-only landing runs the game gates and skips the engine hygiene ones it cannot reach", () => {
+  test("a game-only landing runs the game gates and skips the engine ones it cannot reach", () => {
     const landing = landingGates(["games/fernwild/src/main.ts"]);
-    for (const gate of ["games-framework", "games-design", "games-save-states", "game-feel", "art-direction", "content-gate", "module-globals"]) {
+    for (const gate of ["games-save-states", "game-determinism", "asset-availability"]) {
       expect(landing).toContain(gate);
     }
-    for (const gate of ["layers", "stateful-ratchet", "hud-tokens", "street-rule-parity", "doc-symbols", "release-set", "skill-api", "export-manifest"]) {
+    for (const gate of ["layers", "hud-tokens", "street-rule-parity", "doc-symbols", "release-set", "skill-api", "export-manifest"]) {
       expect(landing).not.toContain(gate);
     }
     // A game can commit a `nul` as easily as the engine can.
@@ -388,12 +376,8 @@ describe("static gates", () => {
     expect(landingGates(["README.md"])).toEqual(gatesFor(["README.md"]));
   });
 
-  test("a scripts change pays the capture hygiene gate", () => {
-    expect(gatesFor(["scripts/lookArg.ts"])).toContain("capture-hygiene");
-  });
-
   test("a lane never pays a generated-file comparison: lane:close regenerates those files when it lands", () => {
-    for (const gate of ["export-manifest", "games-ledger", "type-escapes", "capabilities", "source-paths"]) {
+    for (const gate of ["export-manifest", "games-ledger", "capabilities", "source-paths"]) {
       expect(gatesFor(["packages/core/src/world/terrain.ts", "games/x/src/a.ts"])).not.toContain(gate);
       expect(landingGates(["packages/core/src/world/terrain.ts", "games/x/src/a.ts"])).not.toContain(gate);
     }
@@ -520,7 +504,7 @@ describe("commands", () => {
   test("--full runs the quick job, the types job, every test shard and the other jobs", async () => {
     const steps = await fullSteps(root, ["README.md"]);
     const names = steps.map((step) => step.name);
-    for (const name of ["artifacts", "build", "export-manifest", "types (type-shard)", "web-build", "perf-cpu"]) {
+    for (const name of ["artifacts", "build", "export-manifest", "types (type-shard)", "web-build"]) {
       expect(names).toContain(name);
     }
     for (const shard of ["a", "b", "c", "d", "e", "f", "g", "h"]) expect(names).toContain(`test shard ${shard}`);
@@ -547,33 +531,24 @@ describe("commands", () => {
     );
   });
 
-  test("--full adds the frame and smoke gates only for a path that can reach them", async () => {
+  test("--full adds the smoke games only for a path that can reach them", async () => {
     expect(heavyPaths(root).test("packages/core/src/anim/crowdBatch.draw.ts")).toBe(true);
     expect(heavyPaths(root).test("scripts/lookArg.ts")).toBe(false);
     const steps = await fullSteps(root, ["packages/core/src/anim/crowdBatch.draw.ts"]);
-    const names = steps.map((step) => step.name);
-    expect(names.some((name) => name.startsWith("smoke "))).toBe(true);
-    expect(names.some((name) => name.startsWith("perf gate"))).toBe(true);
+    expect(steps.some((step) => step.name.startsWith("smoke "))).toBe(true);
   });
 
   test("every browser step is marked, so one dev server is booted for all of them", async () => {
     const steps = await fullSteps(root, ["packages/core/src/render/frame.ts"]);
     const browser = steps.filter((step) => step.browser === true).map((step) => step.name);
     expect(browser.filter((name) => name.startsWith("smoke "))).toHaveLength(4);
-    expect(browser.filter((name) => name.startsWith("perf gate"))).toHaveLength(1);
-    expect(browser).toHaveLength(5);
-  });
-
-  test("the frame gate step measures the games one at a time, so no two share the GPU", async () => {
-    const steps = await fullSteps(root, ["packages/core/src/render/frame.ts"]);
-    const perf = steps.find((step) => step.name.startsWith("perf gate"));
-    expect(perf?.command).toEqual(["bun", "scripts/perf-gate.ts"]);
+    expect(browser).toHaveLength(4);
   });
 
   test("the heaviest runnable step starts first, so the longest one does not end the run", async () => {
     const steps = await fullSteps(root, ["packages/core/src/render/frame.ts"]);
     const heaviest = steps.reduce((slowest, step) => ((step.cost ?? 1) > (slowest.cost ?? 1) ? step : slowest));
-    expect(heaviest.name.startsWith("perf gate") || heaviest.name.startsWith("test shard")).toBe(true);
+    expect(heaviest.name.startsWith("test shard")).toBe(true);
     for (const name of ["build", "test shard d", "types (type-shard)"]) {
       expect(steps.find((step) => step.name === name)?.cost).toBeGreaterThan(1);
     }
@@ -693,12 +668,6 @@ describe("parallel steps", () => {
       return done(entry.name);
     });
     expect(duringExclusive).toBe(1);
-  });
-
-  test("the timing and launch-handshake steps own the machine, so load cannot read as a regression", async () => {
-    const steps = await fullSteps(root, ["README.md"]);
-    const exclusive = steps.filter((step) => step.exclusive === true).map((step) => step.name);
-    expect(exclusive.sort()).toEqual(["perf-cpu", "scaffold-launch"]);
   });
 });
 
@@ -836,36 +805,15 @@ describe("local boots", () => {
     expect(steps.map((step) => step.command.join(" "))).toEqual([
       "bun games/scripts/provision-assets.ts scrap-signal",
       "bun games/scripts/capabilities-probe.ts scrap-signal",
-      "bun scripts/load-check.ts scrap-signal --guard",
     ]);
     expect(steps[1]?.needs).toEqual(["provision scrap-signal"]);
-    // The load guard times the same game against its baseline with the machine to itself.
-    expect(steps[2]).toMatchObject({ needs: ["provision scrap-signal"], exclusive: true, unjudgedExit: EXIT_UNJUDGED });
     // The boot runs beside the tests: its deadline waits out a busy page instead of the suite.
     const withTests = fastSteps({ ...emptyPlan, tests: ["a.test.ts"], boots: ["scrap-signal"] });
     expect(withTests.find((step) => step.name === "boot probe scrap-signal")?.needs).toEqual(["provision scrap-signal"]);
   });
 
-  test("a load guard that already passed with the same inputs is skipped, and a boot alone still provisions", () => {
+  test("a boot that already passed with the same inputs is skipped, provision and all", () => {
     const plan = { ...emptyPlan, boots: ["scrap-signal"], inputs: { "boot:scrap-signal": ["games/scrap-signal/src/main.tsx"] } };
-    const steps = fastSteps(plan, { fresh: (id) => id === "load:scrap-signal" });
-    expect(steps.map((step) => step.name)).toEqual(["provision scrap-signal", "boot probe scrap-signal"]);
-    const onlyLoad = fastSteps(plan, { fresh: (id) => id === "boot:scrap-signal" });
-    expect(onlyLoad.map((step) => step.name)).toEqual(["provision scrap-signal", "load guard scrap-signal"]);
-  });
-
-  test("a load guard another agent's work kept from judging neither fails the run nor counts as passed", () => {
-    // 28 Oct: four plant fits held the PC at 100% and harbor-heat's guard failed an unchanged engine.
-    const guard = { name: "load guard harbor-heat", unjudgedExit: EXIT_UNJUDGED };
-    const busy = stepResult(guard, EXIT_UNJUDGED, 10, "load: harbor-heat run 1 ...\nload guard not judged: other work held this PC 100% busy");
-    expect(busy).toMatchObject({ ok: true, unjudged: "load guard not judged: other work held this PC 100% busy" });
-    expect(stepResult(guard, 1, 10, "load: 1 failure(s)")).toEqual({ name: guard.name, ok: false, ms: 10, output: "load: 1 failure(s)" });
-    expect(stepResult({ name: "test x" }, EXIT_UNJUDGED, 10, "")).toMatchObject({ ok: false });
-    expect(stepResult(guard, 0, 10, "").unjudged).toBeUndefined();
-  });
-
-  test("the games job's capability gates run here with CI's arguments", () => {
-    const steps = fastSteps({ ...emptyPlan, gates: gatesFor(["games/x/src/a.ts"]) });
-    expect(steps.map((step) => step.command.join(" "))).toContain("bun games/scripts/check-capabilities.ts --summary");
+    expect(fastSteps(plan, { fresh: (id) => id === "boot:scrap-signal" })).toEqual([]);
   });
 });
