@@ -53,7 +53,7 @@ export function isScrapeDownload(download: AssetDownload): download is ScrapeDow
   return "scrape" in download;
 }
 
-/** Where a download comes from, for logs and errors. */
+/** Where a download comes from, for logs and errors. @internal */
 export function downloadLabel(download: AssetDownload): string {
   if ("scrape" in download) return download.scrape;
   if ("polyPizzaBundle" in download) return `https://poly.pizza/bundle/${download.polyPizzaBundle}`;

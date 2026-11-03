@@ -144,7 +144,7 @@ function polyPizzaLicense(license: string): string {
 
 /**
  * Fetch a source's archive from its own host: a pinned URL, a scraped page, a free itch.io upload,
- * or a Poly Pizza bundle zipped on the fly. `url` names where the bytes came from.
+ * or a Poly Pizza bundle zipped on the fly. `url` names where the bytes came from. @internal
  */
 export async function fetchSourceArchive(
   source: AssetSource,

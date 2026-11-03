@@ -3,6 +3,14 @@ import type { ItchDownload } from "./manifest";
 
 const USER_AGENT = "Mozilla/5.0 (jgengine asset mirror)";
 
+/** An itch.io JSON reply: a `url` on success, `errors` otherwise. */
+function itchReply(body: unknown): { url?: string; errors?: string[] } {
+  if (typeof body !== "object" || body === null) return {};
+  const url = "url" in body && typeof body.url === "string" ? body.url : undefined;
+  const errors = "errors" in body && Array.isArray(body.errors) ? body.errors.filter((error): error is string => typeof error === "string") : undefined;
+  return { ...(url === undefined ? {} : { url }), ...(errors === undefined ? {} : { errors }) };
+}
+
 /** The `csrf_token` an itch.io page carries in its meta tag or form. @internal */
 export function itchCsrfToken(html: string): string | undefined {
   return /name="csrf_token" content="([^"]+)"/.exec(html)?.[1] ?? /name="csrf_token" value="([^"]+)"/.exec(html)?.[1];
@@ -24,7 +32,7 @@ export function itchUploads(html: string): { id: string; title: string }[] {
 /**
  * The signed file URL for a free itch.io upload. It walks the page's own flow: the game page sets
  * a session cookie and token, `download_url` returns the download page that lists the uploads,
- * and the file endpoint returns a short-lived CDN link for the chosen one.
+ * and the file endpoint returns a short-lived CDN link for the chosen one. @internal
  */
 export async function resolveItchUrl(download: ItchDownload, fetchImpl: FetchLike = fetch): Promise<string> {
   const page = download.itch.replace(/\/+$/, "");
@@ -51,7 +59,7 @@ export async function resolveItchUrl(download: ItchDownload, fetchImpl: FetchLik
 
   const downloadUrl = await fetchImpl(`${page}/download_url`, { method: "POST", headers: headers(form), body: new URLSearchParams({ csrf_token: csrf }) });
   remember(downloadUrl);
-  const listing = (await downloadUrl.json()) as { url?: string; errors?: string[] };
+  const listing = itchReply(await downloadUrl.json());
   if (listing.url === undefined) throw new Error(`${page}/download_url: ${listing.errors?.join(", ") ?? "no url"} (is the game free?)`);
 
   const downloadPage = await fetchImpl(listing.url, { headers: headers() });
@@ -67,7 +75,7 @@ export async function resolveItchUrl(download: ItchDownload, fetchImpl: FetchLik
     headers: headers(form),
     body: new URLSearchParams({ csrf_token: csrf }),
   });
-  const signed = (await file.json()) as { url?: string; errors?: string[] };
+  const signed = itchReply(await file.json());
   if (signed.url === undefined) throw new Error(`${page}/file/${upload.id}: ${signed.errors?.join(", ") ?? "no url"}`);
   return signed.url;
 }

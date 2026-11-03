@@ -5,7 +5,7 @@
 ## @jgengine/assets
 
 - `AssetAlias` (interface): interface AssetAlias { key: string; target: string } — ⚠ undocumented · used by `aliases`: Semantic keys → live catalog ids.
-- `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
+- `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload | PolyPizzaBundleDownload | ItchDownload — ⚠ undocumented · used by `downloadLabel`: Where a download comes from, for logs and errors.
 - `AssetImportKind` (type): type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri" — Supported logical kinds for user-supplied assets.
 - `AssetImportSpec` (interface): interface AssetImportSpec — A game-owned import description; paths are relative POSIX paths, roles are authored labels.
 - `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — What a match is: a model file, a whole pack, a material, a HUD component, an icon, or a sprite (pack).
@@ -29,6 +29,7 @@
 - `GlbTextureMetrics` (interface): interface GlbTextureMetrics — Dimensions and encoded bytes for one glTF image, including images referenced by texture extensions.
 - `ImportSpecValidation` (type): type ImportSpecValidation = { ok: true; entry: AssetImportSpec } | { ok: false; reason: string } — Result of validating an import description; a successful entry is an independent JSON snapshot.
 - `IndexEntry` (interface): interface IndexEntry — A source-owned model or sprite id, with optional offline model measurements.
+- `ItchDownload` (interface): interface ItchDownload — A free itch.io download: the game page URL and the title of the upload to take.
 - `LibraryGroup` (type): type LibraryGroup = | "asphalt" | "concrete" | "stucco" | "brick" | "facade" | "tile" | "metal" | "wood" | "foliage" | "ground" | "fabric" | "stone" | "glass" | "water" — Browse groups the library browser and `assets list` share.
 - `LibraryMaterial` (interface): interface LibraryMaterial — One named material a game or the editor selects by name. `source` names the ambientCG catalog entry whose pulled maps it uses; glass and water carry response parameters only, because ambientCG publishes no scanned glass or water material and both are shader surfaces.
 - `LibraryMaterialOptions` (interface): interface LibraryMaterialOptions — Options for {@link libraryMaterialMaps} and {@link libraryMaterialAsset}.
@@ -52,6 +53,7 @@
 - `ModelSnippetOptions` (interface): interface ModelSnippetOptions { basePath?: string; seam?: "objectModels" | "entityModels" } — ⚠ undocumented · used by `modelWiringSnippet`: Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 - `PinnedDownload` (interface): interface PinnedDownload { url: string; sha256?: string } — ⚠ undocumented
 - `PolyHavenModelOrigin` (interface): interface PolyHavenModelOrigin — A Poly Haven model (CC0), fetched from `api.polyhaven.com` at its 1k texture tier.
+- `PolyPizzaBundleDownload` (interface): interface PolyPizzaBundleDownload — A Poly Pizza bundle (the `poly.pizza/bundle/<slug>` path), zipped on download as one `.glb` per model. Every model's licence must match the source's.
 - `RankAssetsOptions` (interface): interface RankAssetsOptions — Narrowing for {@link rankAssets}.
 - `RankedMatch` (interface): interface RankedMatch — A match with its score, 0 (none) to 100 (exact).
 - `ReferenceValidation` (interface): interface ReferenceValidation — The verdict for one {@link AssetReference}.
@@ -81,6 +83,7 @@
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (props/nature/urban). Prefer this for scaffolds and probes so `asset:prop_crate` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
 - `describeAssetMatch` (function): function describeAssetMatch(match: AssetMatch): string — One line naming a match for a terminal list: kind, id and title.
+- `downloadLabel` (function): function downloadLabel(download: AssetDownload): string — Where a download comes from, for logs and errors.
 - `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 - `extractMaterialMaps` (function): function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[] — Pulls the recognized PBR maps out of a material archive (ambientCG's flat `<Asset>_<Res>_<Map>.jpg` layout) and normalizes their names so resolved URLs never depend on the provider's naming or the pulled resolution.
@@ -342,11 +345,12 @@
 - `ExtractedPack` (interface): interface ExtractedPack — What `extractGlbs` pulls out of a pack archive: the models plus the textures they reference.
 - `ExtractedPackImage` (interface): interface ExtractedPackImage — An image a pack's models reference, shipped flat beside the `.glb` files.
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
-- `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented
+- `FetchLike` (type): type FetchLike = typeof fetch — ⚠ undocumented · used by `fetchSourceArchive`: Fetch a source's archive from its own host: a pinned URL, a scraped page, a free itch.io upload, or a Poly Pizza bundle zipped on the fly.
 - `MAX_ARCHIVE_COMPRESSION_RATIO` (const): const MAX_ARCHIVE_COMPRESSION_RATIO: 100 — Max allowed originalSize/size ratio for a single archive entry — past this it's treated as a zip bomb.
 - `MAX_ARCHIVE_DOWNLOAD_BYTES` (const): const MAX_ARCHIVE_DOWNLOAD_BYTES: number — Max size of a downloaded (still-compressed) archive, in bytes. Provider zips run tens of MB; this leaves headroom without buffering an unbounded response.
 - `MAX_ARCHIVE_ENTRY_COUNT` (const): const MAX_ARCHIVE_ENTRY_COUNT: 20000 — Max number of entries this module will extract out of one archive.
 - `MAX_ARCHIVE_UNCOMPRESSED_BYTES` (const): const MAX_ARCHIVE_UNCOMPRESSED_BYTES: number — Max total uncompressed size this module will inflate out of one archive, in bytes.
+- `fetchSourceArchive` (function): function fetchSourceArchive(source: AssetSource, fetchImpl: FetchLike = fetch): Promise<{ archive: Uint8Array<ArrayBuffer>; url: string }> — Fetch a source's archive from its own host: a pinned URL, a scraped page, a free itch.io upload, or a Poly Pizza bundle zipped on the fly. `url` names where the bytes came from.
 - `mirrorOverrideBase` (function): function mirrorOverrideBase(env: Readonly<Record<string, string | undefined>> = process.env): string | undefined — The `JGENGINE_ASSETS_MIRROR` base URL without a trailing slash, or undefined when unset.
 
 ## @jgengine/assets/findAssets
@@ -405,6 +409,10 @@
 - `indexSourceDir` (function): function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] — ⚠ undocumented
 - `keyFromFile` (function): function keyFromFile(file: string): string — ⚠ undocumented
 - `reindex` (function): function reindex(modelsDir: string, outDir: string): ReindexResult — ⚠ undocumented
+
+## @jgengine/assets/itchArchive
+
+- `resolveItchUrl` (function): function resolveItchUrl(download: ItchDownload, fetchImpl: FetchLike = fetch): Promise<string> — The signed file URL for a free itch.io upload. It walks the page's own flow: the game page sets a session cookie and token, `download_url` returns the download page that lists the uploads, and the file endpoint returns a short-lived CDN link for the chosen one.
 
 ## @jgengine/assets/library/assetLibrary
 
@@ -493,17 +501,20 @@
 ## @jgengine/assets/manifest
 
 - `AssetAlias` (interface): interface AssetAlias { key: string; target: string } — ⚠ undocumented · used by `aliases` (@jgengine/assets): Semantic keys → live catalog ids.
-- `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
+- `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload | PolyPizzaBundleDownload | ItchDownload — ⚠ undocumented · used by `downloadLabel`: Where a download comes from, for logs and errors.
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
 - `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; spriteLayout?: "flat" | "folders"; materialMaps?: read… — ⚠ undocumented · used by `ambientcgSources` (@jgengine/assets): Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
 - `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
 - `IndexEntry` (interface): interface IndexEntry — A source-owned model or sprite id, with optional offline model measurements.
+- `ItchDownload` (interface): interface ItchDownload — A free itch.io download: the game page URL and the title of the upload to take.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `PinnedDownload` (interface): interface PinnedDownload { url: string; sha256?: string } — ⚠ undocumented
+- `PolyPizzaBundleDownload` (interface): interface PolyPizzaBundleDownload — A Poly Pizza bundle (the `poly.pizza/bundle/<slug>` path), zipped on download as one `.glb` per model. Every model's licence must match the source's.
 - `ScrapeDownload` (interface): interface ScrapeDownload { scrape: string } — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset { id: string; url: string; license: string; author: string; categories: readonly string[] } — ⚠ undocumented
+- `downloadLabel` (function): function downloadLabel(download: AssetDownload): string — Where a download comes from, for logs and errors.
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
 
 ## @jgengine/assets/materialMapFiles
@@ -566,6 +577,11 @@
 - `STARTER_THEMES` (const): const STARTER_THEMES: readonly StarterTheme[] — Ordered starter theme ids: props, nature, urban.
 - `StarterAsset` (interface): interface StarterAsset — One curated starter model: short id, theme, live catalog target, license, suggested height.
 - `StarterTheme` (type): type StarterTheme = "props" | "nature" | "urban" — Curated drop-in starter themes for new games. Each entry maps a short semantic id (also registered as `asset:<id>`) to a live catalog GLB that is already measured (dims/anchor flow from the generated index via the alias target). Games wire them as `objectModels: { crate: "asset:prop_crate" }`. People are not a starter theme: a person is a realistic rigged human from the model library ({@link STARTER_PEOPLE}). Never Kenney — Quaternius / KayKit only.
+
+## @jgengine/assets/polyPizzaArchive
+
+- `PolyPizzaModel` (interface): interface PolyPizzaModel — One model card on a Poly Pizza bundle page.
+- `polyPizzaBundleArchive` (function): function polyPizzaBundleArchive(download: PolyPizzaBundleDownload, expectedLicense: string, maxBytes: number, fetchImpl: FetchLike = fetch): Promise<Uint8Array<ArrayBuffer>> — Zip every model of a Poly Pizza bundle as `<Title>.glb`, plus a `LICENSE.txt` naming each model's page and licence. Refuses the bundle when a model's licence is neither CC0 nor `expectedLicense`, so a re-licensed upload can never slip into a mirror under the wrong terms.
 
 ## @jgengine/assets/provisioning
 

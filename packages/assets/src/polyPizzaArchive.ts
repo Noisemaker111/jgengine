@@ -38,7 +38,7 @@ function fileStem(title: string): string {
 /**
  * Zip every model of a Poly Pizza bundle as `<Title>.glb`, plus a `LICENSE.txt` naming each
  * model's page and licence. Refuses the bundle when a model's licence is neither CC0 nor
- * `expectedLicense`, so a re-licensed upload can never slip into a mirror under the wrong terms.
+ * `expectedLicense`, so a re-licensed upload can never slip into a mirror under the wrong terms. @internal
  */
 export async function polyPizzaBundleArchive(
   download: PolyPizzaBundleDownload,

@@ -14,12 +14,13 @@ function card(resource: string, title: string, id: string, license: string): str
 const bundle = (licenseB: string) => `<html>${card(RES_A, "Character Soldier", "PpLF4rt4ah", "CC0")}${card(RES_B, "Sci Fi Character", "4pUXv5V8kq", licenseB)}</html>`;
 
 function fakeFetch(html: string): FetchLike {
-  return (async (input: string | URL | Request) => {
+  const handler = async (input: string | URL | Request) => {
     const url = String(input);
     if (url.startsWith("https://poly.pizza/bundle/")) return new Response(html);
     if (url.endsWith(".glb")) return new Response(new Uint8Array([1, 2, 3]));
     return new Response("", { status: 404 });
-  }) as FetchLike;
+  };
+  return Object.assign(handler, { preconnect: fetch.preconnect });
 }
 
 describe("parsePolyPizzaBundle", () => {
