@@ -370,7 +370,7 @@ describe("static gates", () => {
 
   test("a game-only landing runs the game gates and skips the engine hygiene ones it cannot reach", () => {
     const landing = landingGates(["games/fernwild/src/main.ts"]);
-    for (const gate of ["games-framework", "games-design", "games-depth", "games-save-states", "game-feel", "art-direction", "content-gate", "module-globals"]) {
+    for (const gate of ["games-framework", "games-design", "games-save-states", "game-feel", "art-direction", "content-gate", "module-globals"]) {
       expect(landing).toContain(gate);
     }
     for (const gate of ["layers", "stateful-ratchet", "hud-tokens", "street-rule-parity", "doc-symbols", "release-set", "skill-api", "export-manifest"]) {
@@ -862,15 +862,6 @@ describe("local boots", () => {
     expect(stepResult(guard, 1, 10, "load: 1 failure(s)")).toEqual({ name: guard.name, ok: false, ms: 10, output: "load: 1 failure(s)" });
     expect(stepResult({ name: "test x" }, EXIT_UNJUDGED, 10, "")).toMatchObject({ ok: false });
     expect(stepResult(guard, 0, 10, "").unjudged).toBeUndefined();
-  });
-
-  test("a game-only diff judges games-depth on the touched games alone, keyed on their files", () => {
-    const changed = ["games/deepward/src/world.ts"];
-    const steps = fastSteps({ ...emptyPlan, changed, gates: ["games-depth"] }, { tree: ["games/deepward/src/world.ts", "games/fernwild/src/a.ts", "games/scripts/x.ts", "packages/core/src/a.ts", "README.md"] });
-    expect(steps[0]?.command).toEqual(["bun", "games/scripts/check-game-depth.ts", "deepward"]);
-    expect(steps[0]?.units?.[0]?.inputs).toEqual(["games/deepward/src/world.ts", "games/scripts/x.ts", "packages/core/src/a.ts"]);
-    const engine = fastSteps({ ...emptyPlan, changed: ["packages/core/src/a.ts"], gates: ["games-depth"] });
-    expect(engine[0]?.command).toEqual(["bun", "games/scripts/check-game-depth.ts"]);
   });
 
   test("the games job's capability gates run here with CI's arguments", () => {

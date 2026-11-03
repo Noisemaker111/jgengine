@@ -1,6 +1,6 @@
 /**
  * A complete design brief for a made-up courier game: the shape `designBrief.ts` reads, used by the
- * games-design and games-depth tests and by the deep fixture game they play.
+ * games-design tests.
  */
 export const EXAMPLE_BRIEF = `## Design brief
 

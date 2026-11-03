@@ -2,7 +2,7 @@
  * The design brief every game writes in its `PLAN.md` before code, read as data.
  *
  * The brief is the one place a game says what it is for the player over seconds, minutes and hours,
- * and the numbers the from-zero proof and the depth check hold it to. Its shape:
+ * read by `check games-design`. Its shape:
  *
  *   ## Design brief
  *
@@ -82,18 +82,6 @@ export interface DesignBrief {
   budget: Map<string, number>;
   /** System -> the probe reading that moves when the player uses it. */
   systems: Map<string, string>;
-}
-
-/** The readings every game's probe reports for the from-zero proof and the depth check. */
-export const TAUGHT_PROBE = "taught";
-export const UNLOCKS_PROBE = "unlocks";
-
-/** The probe readings a content kind is measured by. */
-export function seenProbe(kind: string): string {
-  return `${kind}Seen`;
-}
-export function totalProbe(kind: string): string {
-  return `${kind}Total`;
 }
 
 /** The fewest of each part a brief may have. */

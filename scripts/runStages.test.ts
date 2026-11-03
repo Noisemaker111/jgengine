@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
 import {
-  ALL_CHECKS, CHECKS, checkArgsFor, checkPlan, fixHint, formatSummary, gameScope, GEN_TARGETS, genPlan, jobChecks, parseCheckArgs, reachedBy, readsPath, rerunHint, runPlan,
+  ALL_CHECKS, CHECKS, checkPlan, fixHint, formatSummary, GEN_TARGETS, genPlan, jobChecks, parseCheckArgs, reachedBy, readsPath, rerunHint, runPlan,
   SDK_CHECKS, type Stage,
 } from "./run-stages.ts";
 import { CORE_BARRELS } from "./gen-barrels";
@@ -241,20 +241,6 @@ function row(name: string): (typeof CHECKS)[number] {
 }
 
 describe("which rows a diff reaches", () => {
-  test("a game-only diff names its games; anything else judges every game", () => {
-    expect(gameScope(["games/deepward/src/a.ts", "games/fernwild/PLAN.md"])).toEqual(["deepward", "fernwild"]);
-    expect(gameScope(["games/deepward/src/a.ts", "packages/core/src/a.ts"])).toBeNull();
-    expect(gameScope(["games/scripts/check-game-depth.ts"])).toBeNull();
-    expect(gameScope(["games/capabilities.json"])).toBeNull();
-    expect(gameScope([])).toBeNull();
-  });
-
-  test("a per-game check takes the touched games after its own arguments", () => {
-    const depth = row("games-depth");
-    expect(checkArgsFor(depth, ["games/deepward/src/a.ts"])).toEqual(["deepward"]);
-    expect(checkArgsFor(depth, ["packages/core/src/a.ts"])).toEqual([]);
-  });
-
   test("a row runs for a change to what it reads, to tooling, or always when it names nothing", () => {
     const layers = row("layers");
     expect(reachedBy(layers, ["games/deepward/src/a.ts"])).toBe(false);

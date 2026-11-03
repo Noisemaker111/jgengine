@@ -142,7 +142,7 @@ export const game = defineGame({
         // The onboarding pointer: its bearing as a camera yaw and metres to it; 0 and -1 when it points nowhere.
         pointYaw: pointing === null || me === null ? 0 : Math.round(Math.atan2(pointing[0] - me.position[0], pointing[2] - me.position[2]) * 100) / 100,
         pointDist: pointing === null || me === null ? -1 : Math.round(Math.hypot(pointing[0] - me.position[0], pointing[2] - me.position[2]) * 10) / 10,
-        // Steps of the survivor's path done, and engrams known: what the depth check reads as taught and unlocked.
+        // Steps of the survivor's path done, and engrams known: what the from-zero proof reads as taught and unlocked.
         taught: onboardingOf(ctx)?.run().snapshot().done.length ?? 0,
         unlocks: view.engrams.filter((engram) => engram.learned).length,
         // The dossier: species met, items held and notes read, each of how many the island has; engrams learned of all.

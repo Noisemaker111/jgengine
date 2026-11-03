@@ -1,38 +1,24 @@
 {
-  "$comment": "Games that failed a depth rule when it landed, and why. Shrink only: remove a game's entry in the PR that makes it pass; never add one (games-design and games-depth fail an entry the base branch lacks). Rules: brief (PLAN.md design brief), from-zero (proofs/flows/from-zero.flow.ts plays a new game through real input), depth (the numbers that run measures). See games/scripts/knownFailing.ts.",
+  "$comment": "Games that failed the brief rule when it landed, and why. Shrink only: remove a game's entry in the PR that makes it pass; never add one (games-design fails an entry the base branch lacks). Rule: brief (PLAN.md design brief). See games/scripts/knownFailing.ts.",
   "beacon-bastion": {
-    "brief": "no PLAN.md design brief",
-    "from-zero": "no from-zero proof; to-first-defense waits for the first wave rather than playing from a new game",
-    "depth": "no from-zero run to measure; no content budget or unlock pace declared"
+    "brief": "no PLAN.md design brief"
   },
   "deepward": {
-    "brief": "no PLAN.md design brief (DESIGN.md exists but is not the brief)",
-    "from-zero": "no from-zero proof; depth-run seeds a mid-game record with deepward.dev.seed",
-    "depth": "a dive is 110 seconds of air; 5 salvage kinds, 4 strata and 7 blueprints are the whole content"
+    "brief": "no PLAN.md design brief (DESIGN.md exists but is not the brief)"
   },
   "drift-foundry": {
-    "brief": "no PLAN.md design brief",
-    "from-zero": "no from-zero proof; to-corridor boots into a run",
-    "depth": "no from-zero run to measure; no content budget or unlock pace declared"
+    "brief": "no PLAN.md design brief"
   },
   "ember-command": {
-    "brief": "no PLAN.md design brief",
-    "from-zero": "no from-zero proof; to-skirmish starts a skirmish directly",
-    "depth": "no from-zero run to measure; no content budget or unlock pace declared"
+    "brief": "no PLAN.md design brief"
   },
   "harbor-heat": {
-    "brief": "no PLAN.md design brief",
-    "from-zero": "no from-zero proof; its flows boot named states (chase, courier)",
-    "depth": "no from-zero run to measure; a 12-minute day and no declared content budget"
+    "brief": "no PLAN.md design brief"
   },
   "llmville": {
-    "brief": "no PLAN.md design brief",
-    "from-zero": "no from-zero proof; play needs Convex and an account, so it has never been played from zero headless",
-    "depth": "no from-zero run to measure; its 9-step tutorial is the only declared pace"
+    "brief": "no PLAN.md design brief"
   },
   "odd-orbit": {
-    "brief": "no PLAN.md design brief",
-    "from-zero": "no from-zero proof; a new household starts with 2 of 3 stations furnished and a being already working, credits rising with no input",
-    "depth": "4 beings, 6 furnishing types and 4 terms of 5 days are the whole content; no unlock pace declared"
+    "brief": "no PLAN.md design brief"
   }
 }

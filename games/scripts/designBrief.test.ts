@@ -57,23 +57,23 @@ describe("design brief", () => {
 });
 
 describe("known-failing list", () => {
-  const list = parseKnownFailing(JSON.stringify({ "$comment": "shrink only", demo: { brief: "no brief", depth: "two-minute cycles" } }));
+  const list = parseKnownFailing(JSON.stringify({ "$comment": "shrink only", demo: { brief: "no brief" } }));
 
   test("parses game -> rule -> reason and refuses an unknown rule or an empty reason", () => {
-    expect(list.get("demo")?.get("depth")).toBe("two-minute cycles");
+    expect(list.get("demo")?.get("brief")).toBe("no brief");
     expect(() => parseKnownFailing(JSON.stringify({ demo: { looks: "bad" } }))).toThrow('names rule "looks"');
+    expect(parseKnownFailing(JSON.stringify({ demo: { brief: "no brief", depth: "retired" } }), "skip").get("demo")?.size).toBe(1);
     expect(() => parseKnownFailing(JSON.stringify({ demo: { brief: " " } }))).toThrow("needs the reason");
   });
 
   test("an entry the base did not have is a problem; a removed one is not", () => {
-    const base = { kind: "list" as const, list: parseKnownFailing(JSON.stringify({ demo: { brief: "no brief" } })) };
-    expect(addedSinceBase(list, base, ["brief", "depth"])).toEqual([
-      'demo was added to games/scripts/depth-known-failing.json for "depth"; the list only shrinks - make the game pass instead',
+    const base = { kind: "list" as const, list: parseKnownFailing(JSON.stringify({ other: { brief: "no brief" } })) };
+    expect(addedSinceBase(list, base, ["brief"])).toEqual([
+      'demo was added to games/scripts/depth-known-failing.json for "brief"; the list only shrinks - make the game pass instead',
     ]);
-    expect(addedSinceBase(list, base, ["brief"])).toEqual([]);
     const smaller = parseKnownFailing("{}");
-    expect(addedSinceBase(smaller, base, ["brief", "depth"])).toEqual([]);
-    expect(addedSinceBase(list, { kind: "new" }, ["brief", "depth"])).toEqual([]);
+    expect(addedSinceBase(smaller, base, ["brief"])).toEqual([]);
+    expect(addedSinceBase(list, { kind: "new" }, ["brief"])).toEqual([]);
   });
 
   test("a failing listed game is known, a passing listed one is stale, an unlisted failure fails", () => {
