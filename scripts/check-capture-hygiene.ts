@@ -1,12 +1,15 @@
 // A hand-rolled capture script is one `headless: false` away from a visible Chrome on Jon's desktop,
 // and a crashed run leaves that window there holding gigabytes. `bun run shoot/drive/perf` are
 // headless and sweep stray browsers; a script under `scripts/` or a test must launch headless too.
+// The default run also refuses tooling that reaches GitHub without gh (scripts/githubAccess.ts).
 //
 //   bun run check capture-hygiene               # every script and test file
 //   bun scripts/check-capture-hygiene.ts a.ts    # just these files (used by its own proof)
 import { readFileSync, statSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { githubWaivers, scanForGitHubAccess } from "./githubAccess";
 
 export interface HygieneFinding {
   line: number;
@@ -120,8 +123,9 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const OWNS_LAUNCH_FLAGS = new Set(["scripts/browser-lib.ts"]);
 const SELF = "scripts/check-capture-hygiene.ts";
 
+const explicit = process.argv.slice(2).filter((arg) => !arg.startsWith("-"));
+
 function scannedFiles(): string[] {
-  const explicit = process.argv.slice(2).filter((arg) => !arg.startsWith("-"));
   if (explicit.length > 0) return explicit.map((path) => resolve(path));
   const globs = ["scripts/**/*.ts", "packages/**/*.test.ts", "apps/**/*.test.ts", "examples/**/*.test.ts"];
   const files: string[] = [];
@@ -152,3 +156,15 @@ if (findings.length > 0) {
   process.exit(1);
 }
 console.log(`check-capture-hygiene: ${launches} launch(es) in ${files} file(s), all headless`);
+
+if (explicit.length === 0) {
+  const githubAccess = await scanForGitHubAccess(root);
+  if (githubAccess.length > 0) {
+    console.error(`check-capture-hygiene: ${githubAccess.length} line(s) reach GitHub without gh; repo tooling uses gh commands or \`gh api\`, and no route around a gh failure:`);
+    for (const line of githubAccess) console.error(`  ${line}`);
+    console.error("Product features that serve users through GitHub are waived:");
+    for (const waiver of githubWaivers()) console.error(`  ${waiver}`);
+    process.exit(1);
+  }
+  console.log("check-capture-hygiene: tooling reaches GitHub only through gh");
+}

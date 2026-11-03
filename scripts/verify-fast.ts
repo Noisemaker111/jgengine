@@ -334,7 +334,9 @@ export function ownTests(file: string, testFiles: readonly string[]): string[] {
 export function gatesFor(changed: readonly string[]): string[] {
   const gates = new Set(["artifacts", "path-portability", "concept-homes", "layers"]);
   const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
-  if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("capture-hygiene");
+  // capture-hygiene also refuses tooling that reaches GitHub without gh, which apps and workflows can do.
+  const tooling = ["scripts/", "games/scripts/", "apps/", ".github/"];
+  if (changed.some((path) => tooling.some((root) => path.startsWith(root))) || shippedSource.length > 0) gates.add("capture-hygiene");
   if (changed.some((path) => path.startsWith("packages/"))) gates.add("skill-api");
   if (changed.some((path) => path.startsWith("games/"))) {
     for (const gate of ["games-framework", "module-globals", "games-save-states", "games-design"]) gates.add(gate);

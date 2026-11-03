@@ -39,6 +39,7 @@ test("the default scan reads the tree and every launch site it finds is headless
   expect(match).not.toBeNull();
   expect(Number(match?.[1])).toBeGreaterThan(0);
   expect(Number(match?.[2])).toBeGreaterThan(0);
+  expect(output).toContain("check-capture-hygiene: tooling reaches GitHub only through gh");
 });
 
 test("an explicit path is what gets read, and a headless launch passes it", () => {
