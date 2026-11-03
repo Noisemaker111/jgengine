@@ -51,10 +51,11 @@ export const POLL_INTERVAL_MS = 10_000;
  */
 export const START_GRACE_MS = 3 * 60_000;
 
-/** The run for `sha`, preferring the newest: a re-run replaces the failed attempt it retried. */
+/** The newest run for `sha` by id, whatever order `gh` lists them in: a re-run replaces the attempt it retried. */
 export function pickRun(runs: readonly PublishRun[], sha: string): PublishRun | null {
-  const matching = runs.filter((run) => run.headSha === sha);
-  return matching.length === 0 ? null : matching[matching.length - 1]!;
+  let newest: PublishRun | null = null;
+  for (const run of runs) if (run.headSha === sha && (newest === null || run.databaseId > newest.databaseId)) newest = run;
+  return newest;
 }
 
 /** The jobs that failed, in the order the run ran them; the first is the cause to name. */
@@ -199,6 +200,10 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
       "list",
       "--workflow",
       CI_WORKFLOW,
+      // The released commit is also beta's tip, and beta's push run (with its Windows suite) is a
+      // different verdict from the main run publish.yml follows.
+      "--branch",
+      "main",
       "--commit",
       options.sha,
       "--limit",

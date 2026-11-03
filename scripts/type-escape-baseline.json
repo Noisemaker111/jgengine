@@ -2065,7 +2065,7 @@
   "scripts/pr-sweep.ts": {"cast":1},
   "scripts/pr-video.ts": {"nonNull":4,"cast":1},
   "scripts/ratchet.ts": {"cast":1},
-  "scripts/release-await.ts": {"nonNull":1,"cast":1},
+  "scripts/release-await.ts": {"cast":1},
   "scripts/release.ts": {"cast":3},
   "scripts/run-stages.ts": {"nonNull":2,"cast":1},
   "scripts/scaffold-editor.test.ts": {"cast":2,"nonNull":2},

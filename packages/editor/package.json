@@ -28,7 +28,7 @@
   "scripts": {
     "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
     "check-types": "tsgo --noEmit -p tsconfig.json",
-    "test": "bun test src"
+    "test": "bun test --preload ../../scripts/three-preload.ts src"
   },
   "dependencies": {
     "@jgengine/assets": "^0.51.0",

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { missingPulls, shouldProvision, drawsPavedRoad } from "./provisionAssets";
+import { gameAssetText, missingPulls, shouldProvision, drawsPavedRoad } from "./provisionAssets";
 
 const catalogs = {
   sources: [{ id: "kaykit-city" }, { id: "ambient-rock", kind: "material" }, { id: "unused-pack" }],
@@ -37,6 +37,22 @@ describe("dev provisions what a game references", () => {
       expect(missingPulls(text, publicDir, catalogs).map((job) => job.target)).toEqual(["ambient-rock", "model:city/street-lamp"]);
     } finally {
       rmSync(publicDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("the editor scene names assets too", () => {
+  test("a surface only the scene names is provisioned", () => {
+    // 0.51.0's site deploy: Brightway Park and Ember Command named their ground in editor.scene.json only.
+    const gameDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-game-"));
+    try {
+      mkdirSync(join(gameDir, "src"), { recursive: true });
+      writeFileSync(join(gameDir, "src", "world.ts"), `export const sky = "clear";`);
+      writeFileSync(join(gameDir, "src", "editor.scene.json"), JSON.stringify({ ground: { material: "ground/dirt" } }));
+      const withMaterials = { ...catalogs, materials: [{ name: "ground/dirt", source: "ambient-rock" }] };
+      expect(missingPulls(gameAssetText(gameDir), join(gameDir, "public"), withMaterials).map((job) => job.target)).toEqual(["ambient-rock"]);
+    } finally {
+      rmSync(gameDir, { recursive: true, force: true });
     }
   });
 });

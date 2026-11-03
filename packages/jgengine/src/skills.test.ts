@@ -107,7 +107,8 @@ describe("installPackagedSkills", () => {
     }
     expect(existsSync(join(target, "jgengine-world"))).toBe(false);
     expect(existsSync(join(target, "level-design"))).toBe(false);
-  });
+    // The first copy into a fresh temp folder took 8 s on a cold Windows runner; later ones take about 1 s.
+  }, 30_000);
 
   test('"all" copies the full set', () => {
     const project = mkdtempSync(join(tmpdir(), "jgengine-skills-dst-"));
