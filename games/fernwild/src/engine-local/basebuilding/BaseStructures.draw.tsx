@@ -1,4 +1,3 @@
-// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";

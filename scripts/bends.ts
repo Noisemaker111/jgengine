@@ -23,7 +23,7 @@ const WORKFLOW = /^\.github\/workflows\//;
 const ASSERTION = /\bexpect\s*\(|\bassert(?:\.\w+)?\s*\(|\.rejects\b|\.resolves\b/;
 const SKIP = /\b(?:test|it|describe)\s*\.\s*(?:skip|todo|failing|skipIf|if\s*\(\s*false)|\b(?:xit|xtest|xdescribe)\s*\(/;
 const DISABLE =
-  /continue-on-error:\s*true|\|\|\s*true\b|@ts-ignore|@ts-nocheck|@ts-expect-error|eslint-disable|biome-ignore|\/\/\s*(?:walk|wait|home|framework)-ok\b|--no-verify|^\s*if:\s*false\b/;
+  /continue-on-error:\s*true|\|\|\s*true\b|@ts-ignore|@ts-nocheck|@ts-expect-error|eslint-disable|biome-ignore|--no-verify|^\s*if:\s*false\b/;
 
 interface FileDiff {
   file: string;

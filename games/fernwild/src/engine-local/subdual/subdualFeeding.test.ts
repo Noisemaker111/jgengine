@@ -1,4 +1,3 @@
-// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 import { expect, test } from "bun:test";
 
 import {

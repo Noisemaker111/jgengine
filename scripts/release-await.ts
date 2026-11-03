@@ -225,12 +225,12 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
     if (ci !== null && ci.status !== "completed") graceFrom = now();
     else if (ci !== null && ci.conclusion !== "success") break;
     if (now() - graceFrom >= grace) break;
-    // wait-ok: bounded by the overall timeout while CI runs, then by the grace window
+    // Bounded by the overall timeout while CI runs, then by the grace window
     await sleep(interval);
     run = pickRun(listRuns(), options.sha);
   }
   while (run === null && options.runId !== undefined && now() - started < grace) {
-    // wait-ok: the run id is known; reading it can fail briefly, and this window is bounded
+    // The run id is known; reading it can fail briefly, and this window is bounded
     await sleep(interval);
     run = readRun(options.runId);
   }
@@ -248,7 +248,7 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
   log(`release: waiting on publish run ${run.databaseId} (${run.url})`);
 
   while (run.status !== "completed" && now() - started < timeout) {
-    // wait-ok: a publish run takes ~11 minutes of real build, test and publish work; bounded by timeout
+    // A publish run takes ~11 minutes of real build, test and publish work; bounded by timeout
     await sleep(interval);
     run = readRun(run.databaseId) ?? run;
   }
@@ -286,7 +286,7 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
   let unserved = await registry.unserved(options.version);
   const servedLate = unserved.length > 0;
   while (unserved.length > 0 && now() - registryStarted < registryTimeout) {
-    // wait-ok: npm serves an accepted publish minutes later; polled, and bounded by the registry timeout
+    // npm serves an accepted publish minutes later; polled, and bounded by the registry timeout
     await sleep(interval);
     unserved = await registry.unserved(options.version);
   }

@@ -135,7 +135,7 @@ describe("games in this repo", () => {
   });
 
   test("what every game resolves checks every game", () => {
-    for (const path of ["bun.lock", "games/shared/viteEngineSource.ts", "games/scripts/framework-check.ts", "tsconfig.base.json"]) {
+    for (const path of ["bun.lock", "games/shared/viteEngineSource.ts", "games/scripts/check-save-states.ts", "tsconfig.base.json"]) {
       expect(gameScope([path], workspace).gameChecks).toEqual(["fernwild", "harbor-heat", "llmville"]);
     }
     expect(gameScope(["games/shared/viteEngineSource.ts"], workspace).scope).toBe("full");

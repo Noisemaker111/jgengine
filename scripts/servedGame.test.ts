@@ -11,7 +11,6 @@ const posix = (path: string): string => path.split(sep).join("/");
 
 function game(prefix: string, name = "harbor-heat"): string {
   // Plain bytes on disk with no engine imports: the code under test only needs a folder to name.
-  // fixture-location: allow the subject is a path outside the workspace, which is what --game-dir serves
   const dir = join(mkdtempSync(join(tmpdir(), `served-${prefix}-`)), name);
   mkdirSync(join(dir, "src"), { recursive: true });
   writeFileSync(join(dir, "src", "index.tsx"), "export const game = {};\n");
@@ -59,7 +58,6 @@ describe("serveGameDir", () => {
     remember("JG_GAME_DIR");
     const dir = game("other", "harbor-heat");
     expect(() => serveGameDir(dir, "ember-command")).toThrow(/is game "harbor-heat", not "ember-command"/);
-    // fixture-location: allow an empty folder is the subject - nothing is imported from it
     expect(() => serveGameDir(mkdtempSync(join(tmpdir(), "not-a-game-")), undefined)).toThrow(/no src\/index.tsx/);
   });
 

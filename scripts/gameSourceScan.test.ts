@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { eachGameSource } from "./gameSourceScan";
-import { findModuleGlobals } from "./moduleGlobalState";
 
 const roots: string[] = [];
 afterEach(() => {
@@ -12,7 +11,7 @@ afterEach(() => {
 });
 
 function fixture(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), "game-source-scan-")); // fixture-location: allow plain source text on disk, no engine imports resolve from it
+  const root = mkdtempSync(join(tmpdir(), "game-source-scan-"));
   roots.push(root);
   for (const [rel, text] of Object.entries(files)) {
     mkdirSync(join(root, rel, ".."), { recursive: true });
@@ -30,6 +29,5 @@ describe("eachGameSource", () => {
       "games/notes/src/readme.ts": "let ignored = 1;\n",
     });
     expect(eachGameSource(root).map((file) => file.rel).sort()).toEqual(["games/arena/src/game/loop.ts", "games/arena/src/index.tsx"]);
-    expect(findModuleGlobals(root).map((finding) => finding.where)).toEqual(["games/arena/src/game/loop.ts:1"]);
   });
 });

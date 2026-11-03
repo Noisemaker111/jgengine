@@ -7,7 +7,7 @@ import { Node, Project } from "ts-morph";
 /**
  * Integrity gate for documented *symbol names*.
  *
- * `check recipes` and `check skills` already prove that every `@jgengine/*`
+ * `check recipes` and `scripts/skillDocs.test.ts` already prove that every `@jgengine/*`
  * import *path* a doc names is a real published subpath. Nothing, however,
  * proved that the *symbols* pulled from that path actually exist — so fictional
  * APIs (`applyToMyHealthStore`, `createWsBackend({ gameId })`, invented UI
@@ -19,7 +19,7 @@ import { Node, Project } from "ts-morph";
  *
  *  1. hand-written skill markdown under `.claude/skills/ ** / *.md` (the
  *     generated `api.md` / `capabilities.md` are trustworthy by construction and
- *     skipped, mirroring `check skills`);
+ *     skipped, mirroring `skillDocs.test.ts`);
  *  2. the ``code:`` marketing/code template literals in
  *     `apps/web/src/routes/ ** / *.tsx` (scanned wholesale — real top-of-file
  *     imports there compile, so they pass, and the sample literals are the
@@ -47,7 +47,7 @@ function rel(path: string): string {
 
 // --- resolve a documented import path to its source file --------------------
 // `@jgengine/<pkg>/<sub>` -> packages/<pkg>/src/<sub>{.ts,.tsx,/index.ts}
-// mirroring how check-skill-sync resolves documented subpaths.
+// mirroring how skillDocs.test.ts resolves documented subpaths.
 function fileFor(base: string): string | undefined {
   for (const candidate of [`${base}.ts`, `${base}.tsx`, join(base, "index.ts"), join(base, "index.tsx")]) {
     if (existsSync(candidate)) return candidate;
@@ -209,7 +209,7 @@ for (const source of sources) {
   for (const { symbol, importPath, line } of extractImports(source)) {
     const file = resolveModuleFile(importPath);
     // If the module path doesn't resolve to a source file, the *path* gates
-    // (check-recipes / check-skill-sync) own that failure; here we only judge
+    // (check-recipes / skillDocs.test.ts) own that failure; here we only judge
     // symbols against a module we can actually resolve, so we never
     // false-positive on a path our resolver can't map.
     if (file === undefined) continue;
@@ -230,7 +230,7 @@ if (problems.length > 0) {
       `\n\nDocs and marketing samples may only import symbols a module actually\n` +
       `exports. Fix the symbol name, correct the module it is attributed to, or\n` +
       `implement + export it. Import paths are validated separately by\n` +
-      `check-recipes / check-skill-sync.\n`,
+      `check-recipes / skillDocs.test.ts.\n`,
   );
   process.exit(1);
 }

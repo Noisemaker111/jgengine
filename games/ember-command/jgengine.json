@@ -22,28 +22,6 @@
       "@jgengine/core/mission/mission": [
         "ember-command campaign"
       ]
-    },
-    "debt": {
-      "damage-runtime": {
-        "reason": "Combat damage runs in tactics.ts, which applies its own range and armor multipliers to every hit; adopt the shared damage table.",
-        "issue": 2482
-      },
-      "damage-target-unknown": {
-        "reason": "The tactical combat path never validates a target's resistance profile; adopt the shared damage table with its unknown-target refusal.",
-        "issue": 2482
-      },
-      "game-save": {
-        "reason": "The campaign track, stores and preferences are saved as bespoke sections at campaign beats; adopt the shared save document.",
-        "issue": 2483
-      },
-      "game-save-digest": {
-        "reason": "The campaign save has no state digest for the restore tests; adopt the shared save document's digest.",
-        "issue": 2483
-      },
-      "transaction-ledger": {
-        "reason": "The economy moves gold and lumber through tuning constants and systems.ts with no recorded reason; adopt the shared transaction ledger.",
-        "issue": 2484
-      }
     }
   }
 }

@@ -195,7 +195,6 @@ describe("only the worktrees directory belongs to a reap", () => {
   });
 
   test("a real directory is deleted and a real dirty tree is kept", () => {
-    // fixture-location: allow two empty directories and one byte of text, no engine import
     const root = join(tmpdir(), `reap-${randomUUID()}`);
     const clean = join(root, "clean");
     const dirty = join(root, "dirty");

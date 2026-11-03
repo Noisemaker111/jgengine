@@ -36,7 +36,7 @@ describe("reading exports", () => {
 test("places repository paths in their layer and leaves tests and fixtures out", () => {
   expect(layerOf("packages/core/src/camera/shake/cameraShake.ts")).toEqual({ layer: "core", path: "packages/core/src/camera/shake/cameraShake.ts", rel: "camera/shake/cameraShake.ts" });
   expect(layerOf("apps/dev/src/demo/hudDemo.tsx")?.layer).toBe("apps/dev");
-  expect(layerOf("scripts/check-concept-homes.ts")?.layer).toBe("scripts");
+  expect(layerOf("scripts/check-layers.ts")?.layer).toBe("scripts");
   expect(layerOf("packages/core/src/camera/shake/cameraShake.test.ts")).toBeNull();
   expect(layerOf("packages/core/src/meta/changelog.json")).toBeNull();
   expect(layerOf("games/odd-orbit/src/world.ts")).toBeNull();

@@ -1,4 +1,3 @@
-// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 import type { GlbClip, GlbTrack } from "./glbWrite";
 
 type V3 = readonly [number, number, number];

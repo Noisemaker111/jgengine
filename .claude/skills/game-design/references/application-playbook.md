@@ -16,7 +16,7 @@ Use this playbook to turn a pitch or an existing game into implemented, testable
 
 ### Write the design brief
 
-The greenfield contract is the `## Design brief` in the game's `PLAN.md`; its shape is in `create-game-jg` step 3 (in this repo, `games/scripts/designBrief.ts`, with a complete example in `games/scripts/briefExample.ts`). Design each line rather than filling it:
+The greenfield contract is the `## Design brief` in the game's `PLAN.md`; its shape is in `create-game-jg` step 3. Design each line rather than filling it:
 
 | Brief line | What it must answer |
 | --- | --- |

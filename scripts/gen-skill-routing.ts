@@ -61,7 +61,7 @@ export interface FolderProfile {
 
 function sourceFiles(dir: string, depth: number): { path: string; depth: number }[] {
   const out: { path: string; depth: number }[] = [];
-  for (const name of readdirSync(dir).sort()) { // walk-ok: one core feature folder, bounded
+  for (const name of readdirSync(dir).sort()) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) out.push(...sourceFiles(path, depth + 1));
     else if (/\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name) && !name.endsWith(".d.ts")) out.push({ path, depth });

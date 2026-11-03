@@ -1,4 +1,3 @@
-// home-ok: animal flight is a locomotion reference beside walking and running; flight/ holds aircraft
 import { describe, expect, test } from "bun:test";
 
 import { compareFlier, FLAPPING_MASS_LIMIT, flightPower, maximumRangeSpeed, minimumPowerSpeed, PUBLISHED_FLIERS, validateFlightReference } from "./flightPower";

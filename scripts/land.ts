@@ -3,7 +3,7 @@
 //   bun scripts/land.ts                    # bun run lane:close runs this; call it directly only from release.ts
 //   bun run lane:close                       # verify:fast, then the line below
 //   bun scripts/land.ts --commit                    # stage, commit, push, open, label
-//   bun scripts/land.ts --verify "bun run check skills"
+//   bun scripts/land.ts --verify "bun run check layers"
 //   bun scripts/land.ts --title "Menus" --body-file .scratch/body.md
 //
 // `--commit` is what lets a lane end with one command: it stages this worktree's

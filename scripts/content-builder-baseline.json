@@ -1,7 +1,0 @@
-[
-  "games/harbor-heat/src/engine-local/city/cityLayout.ts:road",
-  "games/harbor-heat/src/world.ts:ocean",
-  "games/scrap-signal/src/world.ts:building",
-  "games/scrap-signal/src/world.ts:grass",
-  "games/scrap-signal/src/world.ts:road"
-]

@@ -116,7 +116,7 @@ export interface PrView {
 export interface QueueIo {
   github: GitHub;
   git: Git;
-  /** The one place a sleep is allowed; see the `wait-ok` on the poll. */
+  /** The one place this process sleeps, between polls. */
   pause: (ms: number) => void;
   now: () => number;
   log: (line: string) => void;
@@ -250,7 +250,7 @@ export function waitForGreen(number: number, io: QueueIo): WaitResult {
         detail: `still running after ${WAIT_TIMEOUT_MS / 60_000} minutes: ${verdict.pending.length} of ${report.checks.length}${on}: ${pending}`,
       };
     }
-    io.pause(POLL_MS); // wait-ok: land:queue is the one process that waits for CI; everything else asks ci:status
+    io.pause(POLL_MS); // land:queue is the one process that waits for CI; everything else asks ci:status
   }
 }
 

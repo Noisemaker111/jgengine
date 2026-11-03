@@ -26,8 +26,8 @@ import {
  * Editor MVP loop, end to end and browserless: author a marker + a route path + a scatter region +
  * sculpted terrain through the programmatic editor session, save/load the document as JSON, then prove
  * the exact pure resolvers `<AuthoredScene>` renders from turn that one document into scene content.
- * This is the path every "hard-code the level → author it in the editor" migration (see
- * check-content-gate) depends on; if it breaks, the migrations have nowhere to land.
+ * This is the path every "hard-code the level → author it in the editor" migration depends on;
+ * if it breaks, the migrations have nowhere to land.
  */
 describe("editor MVP → AuthoredScene parity", () => {
   const session = createEditorSession(createEmptyEditorDocument());

@@ -63,7 +63,6 @@ export function gamePublicDirs(servedGameDir: string | undefined, gamesDir: stri
 export function listPublicFiles(dir: string): string[] {
   const out: string[] = [];
   const walk = (abs: string, rel: string): void => {
-    // walk-ok: a game's public/ folder is the asset tree being listed, not a source search
     for (const name of readdirSync(abs).sort()) {
       const path = join(abs, name);
       const stat = statSync(path, { throwIfNoEntry: false });

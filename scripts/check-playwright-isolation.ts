@@ -1,6 +1,6 @@
 // Three Playwright files in one `bun test` invocation, repeated: the repro for
 // Noisemaker111/jgengine#2143. Each file owns its browser, so a failure here means one file lost its
-// browser to the runner rather than a test assertion (see scripts/browser-test-budget.ts).
+// browser to the runner rather than a test assertion.
 //
 //   bun scripts/check-playwright-isolation.ts            # 20 runs, the acceptance bar
 //   bun scripts/check-playwright-isolation.ts --runs 3   # a quick pass

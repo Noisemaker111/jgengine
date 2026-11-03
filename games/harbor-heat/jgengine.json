@@ -31,12 +31,6 @@
       "@jgengine/core/sim/offScreen": [
         "harbor.residents"
       ]
-    },
-    "debt": {
-      "weapon-system": {
-        "reason": "Combat cadence lives in items/use-handlers.ts, which spends the ammo stat itself; the shared weapon runtime cannot take Harbor's ammo pool or present a shot.",
-        "issue": 2488
-      }
     }
   },
   "assetBuild": {

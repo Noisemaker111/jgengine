@@ -12,7 +12,7 @@ import { isGenerated } from "./generated-rebase";
 const stage = (name: string, needs?: string[]): Stage => ({ name, command: "bun", args: [], needs });
 
 describe("generated files a rebase regenerates", () => {
-  // A hand-kept copy of this list missed skill-routing.json and the type-escape baseline, so those
+  // A hand-kept copy of this list missed skill-routing.json and a baseline, so those
   // conflicted on every rebase two lanes shared; the list now comes from this table.
   test("every generator but the tsconfig one names its files, and the rebase list is exactly those", () => {
     for (const target of GEN_TARGETS) {
@@ -21,7 +21,6 @@ describe("generated files a rebase regenerates", () => {
     }
     for (const path of [
       "scripts/skill-routing.json",
-      "scripts/type-escape-baseline.json",
       "scripts/export-manifest.json",
       "games/capabilities.json",
       ".claude/skills/jgengine-world/api.md",
@@ -121,7 +120,7 @@ describe("formatSummary", () => {
   test("a check's re-run hint is the one command that runs it alone", () => {
     const stages = checkPlan(jobChecks("types"), false);
     expect(rerunHint(stages, "types")).toBe("bun run check types");
-    expect(rerunHint(stages, "content-gate")).toBe("bun run check content-gate");
+    expect(rerunHint(stages, "recipes")).toBe("bun run check recipes");
     expect(rerunHint(stages, "ensure-ready")).toBe("bun scripts/ensure-ready.ts --install-only");
   });
 });
@@ -150,8 +149,8 @@ describe("the check table", () => {
     for (const candidate of stages.filter((stage) => stage.name !== "ensure-ready" && stage.name !== "build")) {
       expect(candidate.needs?.every((need) => need === "ensure-ready" || need === "build")).toBe(true);
     }
-    const results = await runPlan(stages, (stage) => stage.name !== "skills");
-    expect(results.find((result) => result.name === "skills")?.state).toBe("failed");
+    const results = await runPlan(stages, (stage) => stage.name !== "recipes");
+    expect(results.find((result) => result.name === "recipes")?.state).toBe("failed");
     expect(results.find((result) => result.name === "types")?.state).toBe("passed");
   });
 
@@ -164,7 +163,7 @@ describe("the check table", () => {
 
   test("the SDK plan is the types job without the game checks CI already ran", () => {
     const sdk = SDK_CHECKS.map((check) => check.name);
-    for (const name of ["module-globals", "game-determinism", "game-front-end", "game-feel", "art-direction"]) {
+    for (const name of ["game-determinism", "asset-availability"]) {
       expect(jobChecks("types").some((check) => check.name === name)).toBe(true);
       expect(sdk).not.toContain(name);
     }
@@ -201,7 +200,7 @@ describe("generated-artifact drift", () => {
     const stages = genPlan(GEN_TARGETS);
     expect(stages.map((stage) => stage.name)).toEqual([
       "ensure-ready", "source-paths", "library-index", "skill-routing", "barrels", "capabilities", "skill-api", "export-manifest", "games-ledger",
-      "type-escapes", "part-stats", "recipes",
+      "part-stats", "recipes",
     ]);
     expect(stages[2]?.needs).toEqual(["ensure-ready"]);
     expect(stages[4]?.needs).toEqual(["ensure-ready", "skill-routing"]);
@@ -220,15 +219,15 @@ describe("parseCheckArgs", () => {
   });
 
   test("several check names run as one plan; one name keeps its own flags", () => {
-    const many = parseCheckArgs(["skills", "changelog"]);
-    expect(many.kind === "plan" ? many.stages.map((stage) => stage.name) : many.kind).toEqual(["ensure-ready", "skills", "changelog"]);
-    const one = parseCheckArgs(["concept-homes", "--base", "origin/beta"]);
-    expect(one.kind === "single" ? [one.check.name, ...one.args] : one.kind).toEqual(["concept-homes", "--base", "origin/beta"]);
+    const many = parseCheckArgs(["recipes", "layers"]);
+    expect(many.kind === "plan" ? many.stages.map((stage) => stage.name) : many.kind).toEqual(["ensure-ready", "recipes", "layers"]);
+    const one = parseCheckArgs(["layers", "--base", "origin/beta"]);
+    expect(one.kind === "single" ? [one.check.name, ...one.args] : one.kind).toEqual(["layers", "--base", "origin/beta"]);
   });
 
   test("an unknown name, or --sdk with anything else, is refused", () => {
     expect(parseCheckArgs(["nope"]).kind).toBe("error");
-    expect(parseCheckArgs(["--sdk", "skills"]).kind).toBe("error");
+    expect(parseCheckArgs(["--sdk", "recipes"]).kind).toBe("error");
     expect(parseCheckArgs(["--sdk"]).kind).toBe("plan");
     expect(parseCheckArgs(["--list"]).kind).toBe("list");
   });
@@ -256,8 +255,8 @@ describe("which rows a diff reaches", () => {
     for (const target of GEN_TARGETS) expect(target.reads).toBeDefined();
   });
 
-  test("a game-only diff regenerates only what reads games", () => {
-    expect(GEN_TARGETS.filter((target) => reachedBy(target, ["games/deepward/src/a.ts"])).map((target) => target.name)).toEqual(["type-escapes"]);
-    expect(GEN_TARGETS.filter((target) => reachedBy(target, ["games/deepward/PLAN.md"])).length).toBeGreaterThan(0);
+  test("a game-only diff regenerates nothing, and an engine diff regenerates what reads it", () => {
+    expect(GEN_TARGETS.filter((target) => reachedBy(target, ["games/deepward/src/a.ts"])).map((target) => target.name)).toEqual([]);
+    expect(GEN_TARGETS.filter((target) => reachedBy(target, ["packages/core/src/world/terrain.ts"])).length).toBeGreaterThan(0);
   });
 });

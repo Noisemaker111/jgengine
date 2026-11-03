@@ -38,7 +38,7 @@ afterEach(async () => {
   for (const dir of made) {
     for (const folder of taskFolders(dir)) {
       const pid = readRunner(folder);
-      // wait-ok: waits on the runner process ending (the event), bounded so a stuck runner cannot hang the suite
+      // Waits on the runner process ending (the event), bounded so a stuck runner cannot hang the suite
       for (let turn = 0; pid !== null && alive(pid) && turn < 600; turn += 1) await Bun.sleep(50);
     }
     removeDirSync(dir);

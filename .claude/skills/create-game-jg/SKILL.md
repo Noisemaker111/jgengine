@@ -63,14 +63,13 @@ One file, these sections, in this order:
   (at least five `- m:ss` beats to past 8:00, each saying what it teaches or unlocks, one by 2:00),
   `### Start state` (probe readings a new game may start with, at most), `### Content budget`
   (kinds and counts) and `### Systems` (each system and the probe reading that shows it was used).
-  In this repo `games/scripts/designBrief.ts` holds the exact shape, `games/scripts/briefExample.ts`
-  a complete one, and `bun run check games-design` fails a game without it. Design the loops here,
+  Design the loops here,
   with `game-design`, not later in code.
 - `## Features`: one bullet per feature, `name — engine owner` (the import or folder `has` gave),
   verdict in brackets for partial ones.
 - `## Gaps`: every gap and partial as new engine work: what to build, in which
-  `packages/<pkg>/src/<feature>/` folder, with this game as its first adopter. `bun run check
-  games-design` reads this heading as the game's gap to target; write `- none` when there is none.
+  `packages/<pkg>/src/<feature>/` folder, with this game as its first adopter; write `- none` when
+  there is none.
 - `## Milestones`: `- [ ] 1. ...` checkboxes, one commit (or a few) each on the game's one branch, in build order (the gaps a later milestone
   needs come first). Each milestone is the next 10 minutes of play, not one more system: what a
   player starting from a new game now does, learns and unlocks, and how far into the brief's first
@@ -88,8 +87,7 @@ editor scene); a grid, card, tile or other board game with no 3D scene takes `--
 game's folder. The game's `jgengine.json` says what it is and uses; change it and run `jgengine sync`.
 
 Then take the milestones in order, all on the one branch the game was asked for in. Each milestone
-ships first: a gap only this game needs stays in the game with `// framework-ok: <reason>` and an issue
-naming the seam, and the second game that wants it builds it upstream (root `AGENTS.md`, "Game changes
+ships first: a gap only this game needs stays in the game with an issue naming the seam, and the second game that wants it builds it upstream (root `AGENTS.md`, "Game changes
 improve the framework"). A milestone is committed when it plays, and ticks itself in `PLAN.md` in that
 commit. When the build teaches
 something that changes the direction, brief, features or order, edit `PLAN.md` in the same commit.

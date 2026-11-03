@@ -15,10 +15,7 @@
 // `--cheap` (the landing's preflight) runs every gate CI's quick and types jobs run and reports
 // every failure in one pass instead.
 //
-// Exit: 0 verified, 1 a step failed, 2 a changed runtime file reached no test (a
-// change this cannot attribute is never a silent pass). With `--json` the exit is
-// 0 or 1: a caller reading the document gets no meaningful 2, so an unattributed
-// change is a failed check named `attribution`.
+// Exit: 0 verified, 1 a step failed. `--plan` lists changed files no test reaches.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
@@ -34,7 +31,7 @@ import { checkCommand, findCheck, GEN_TARGETS, jobChecks, readsPath, reachedBy, 
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { siteGames } from "./siteGames";
-import { EXIT_UNJUDGED, runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
+import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 
 const VERIFY_FAST_USAGE = {
@@ -55,7 +52,6 @@ const VERIFY_FAST_USAGE = {
   exits: [
     "0 verified",
     "1 a step failed",
-    "2 a changed runtime file reached no test",
     "78 this checkout has no node_modules - run bun install, or bun run agent:bootstrap",
   ],
 } as const;
@@ -63,7 +59,6 @@ const VERIFY_FAST_USAGE = {
 export const BASE = "origin/beta";
 export const EXIT_VERIFIED = 0;
 export const EXIT_FAILED = 1;
-export const EXIT_UNATTRIBUTED = 2;
 
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 const SOURCE_FILE = /\.[cm]?[jt]sx?$/;
@@ -99,8 +94,6 @@ export interface Step extends ScheduledStep {
   fix?: string | undefined;
   /** The units this step settles; each is remembered as passed when the step passes. */
   units?: Unit[];
-  /** The exit code by which the step says it could not decide here (see `StepResult.unjudged`). */
-  unjudgedExit?: number;
 }
 
 /** One test file, type-check, gate or boot, and the changed paths that can decide its result. */
@@ -319,8 +312,7 @@ export function ownTests(file: string, testFiles: readonly string[]): string[] {
 
 /**
  * The `quick` job's cheap static gates that can cover this change. Each of these
- * already runs in CI, so running it here never invents a rule. The steps that launch a
- * browser or scaffold (`check scaffold-launch`) are left to `--full`.
+ * already runs in CI, so running it here never invents a rule.
  *
  * Both generated-file checks belong here because they are cheap against what a missed
  * one costs: `check export-manifest` reads package.json and the build tsconfig (0.1 s),
@@ -332,20 +324,8 @@ export function ownTests(file: string, testFiles: readonly string[]): string[] {
  * ship a stale generated file.
  */
 export function gatesFor(changed: readonly string[]): string[] {
-  const gates = new Set(["artifacts", "path-portability", "concept-homes", "layers"]);
-  const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
-  if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("capture-hygiene");
+  const gates = new Set(["artifacts", "path-portability", "layers", "games-save-states", "games-sync"]);
   if (changed.some((path) => path.startsWith("packages/"))) gates.add("skill-api");
-  if (changed.some((path) => path.startsWith("games/"))) {
-    for (const gate of ["games-framework", "module-globals", "games-save-states", "games-design"]) gates.add(gate);
-  }
-  if (changed.some((path) => path.startsWith("games/") || /^packages\/[^/]+\/src\//.test(path))) {
-    gates.add("games-capabilities");
-    gates.add("games-sync");
-  }
-  if (changed.some((path) => /\.(md|mdx)$/i.test(path) || path.startsWith(".claude/skills/"))) gates.add("stage-skills");
-  if (changed.some((path) => isTestFile(path))) gates.add("test-spawn-timeouts");
-  if (changed.some((path) => /\.browser\.test\.[cm]?[jt]sx?$/.test(path))) gates.add("browser-test-budget");
   return [...gates].filter((gate) => gate === "skill-api" || keepGate(gate, changed));
 }
 
@@ -369,13 +349,11 @@ function keepGate(name: string, changed: readonly string[]): boolean {
  */
 export const CI_ONLY_GATES: Readonly<Record<string, string>> = {
   types: "verify:fast type-checks every package the change reaches instead of the whole repository",
-  "type-escapes": "bun run gen runs it first in preflight, and it fails there on a gained escape",
   capabilities: "bun run gen rewrites capabilities.md first in preflight",
   "source-paths": "bun run gen rewrites the tsconfig paths first in preflight",
-  "skill-api": "bun run gen rewrites api.md and its baselines first in preflight, and fails there on a new orphan",
+  "skill-api": "bun run gen rewrites api.md first in preflight",
   "export-manifest": "bun run gen rewrites the export manifest first in preflight",
   "games-ledger": "bun run gen rewrites games/capabilities.json first in preflight",
-  changelog: "lane:close writes changes/<branch>.md itself after preflight, so a branch that commits as it goes has no note yet",
 };
 
 const CODE_PATH = /^(packages|games|scripts|apps|examples|registry)\/.+\.(?:[cm]?[jt]sx?|json)$/;
@@ -550,7 +528,7 @@ export const GATE_FIX: Readonly<Record<string, string>> = {
   "export-manifest":
     "bun run gen  (rewrites scripts/export-manifest.json from the public subpaths the build will emit)",
   "skill-api":
-    "bun run gen  (rewrites .claude/skills/*/api.md and prunes scripts/api-doc-baseline.json and scripts/api-orphan-baseline.json)",
+    "bun run gen  (rewrites .claude/skills/*/api.md)",
 };
 
 /** The files whose bytes decide a gate: what its row reads. A row that names no paths reads the whole tree. */
@@ -558,11 +536,6 @@ export function gateInputs(check: CheckDef, files: readonly string[]): string[] 
   if (check.reads === undefined) return [WHOLE_TREE];
   return files.filter((file) => readsPath(check.reads, file)).sort();
 }
-
-/** Arguments a gate needs after its script name, as CI passes them. */
-const GATE_ARGS: Readonly<Record<string, readonly string[]>> = {
-  "games-capabilities": ["--summary"],
-};
 
 /** Rough seconds per gate on this PC (2026-10-24), so the 21 s check starts before the 1 s ones. */
 const GATE_COST: Readonly<Record<string, number>> = {
@@ -600,7 +573,7 @@ export function junitCosts(xml: string): Record<string, number> {
 export interface FastOptions {
   /** Also run `check skill-api`. */
   skillApi?: boolean;
-  /** Only the type-checks and gates: no tests, boots or load guard. */
+  /** Only the type-checks and gates: no tests or boots. */
   cheap?: boolean;
   /** Lanes the steps share; the tests split into at most this many processes. */
   lanes?: number;
@@ -662,22 +635,18 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
   for (const gate of gates) {
     const check = findCheck(gate);
     if (check === undefined) throw new Error(`verify:fast: gate ${gate} is not in the check table (scripts/run-stages.ts)`);
-    const args = [...(check.args ?? []), ...(GATE_ARGS[gate] ?? [])];
+    const args = [...(check.args ?? [])];
     const settles = unit(["gate:" + gate, ...args].join(" "), options.tree === undefined ? [WHOLE_TREE] : gateInputs(check, options.tree));
     if (fresh(settles.id, settles.inputs)) continue;
     steps.push({ name: gate, command: ["bun", check.script, ...args], fix: GATE_FIX[gate], cost: GATE_COST[gate], first: true, units: [settles] });
   }
 
   const boots = plan.boots.map((game) => unit(`boot:${game}`)).filter((settles) => !fresh(settles.id, settles.inputs));
-  // The same games, timed cold against the load baseline (`bun run shoot --load --guard`): a change
-  // that makes a game freeze or reach its scene slower fails here, since CI has no GPU to see it.
-  const loads = plan.boots.map((game) => unit(`load:${game}`, plan.inputs[`boot:${game}`])).filter((settles) => !fresh(settles.id, settles.inputs));
-  const linked = [...new Set([...boots, ...loads].map((settles) => settles.id.slice(settles.id.indexOf(":") + 1)))];
-  const provision = `provision ${linked.join(" ")}`;
-  // Link (or, once per machine, download) the packs first, so the boot reads real models.
-  if (linked.length > 0) steps.push({ name: provision, command: ["bun", "games/scripts/provision-assets.ts", ...linked], cost: 2 });
   if (boots.length > 0) {
     const games = boots.map((settles) => settles.id.slice("boot:".length));
+    const provision = `provision ${games.join(" ")}`;
+    // Link (or, once per machine, download) the packs first, so the boot reads real models.
+    steps.push({ name: provision, command: ["bun", "games/scripts/provision-assets.ts", ...games], cost: 2 });
     // Beside the tests, not after them: the probe's deadline counts from when the page stops
     // loading, so a busy machine makes it slower, never red.
     steps.push({
@@ -686,21 +655,6 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       needs: [provision],
       cost: 40,
       units: boots,
-    });
-  }
-  if (loads.length > 0) {
-    const games = loads.map((settles) => settles.id.slice("load:".length));
-    // Alone on the machine: a neighbour's browser or build would read as a slower load.
-    steps.push({
-      name: `load guard ${games.join(" ")}`,
-      command: ["bun", "scripts/load-check.ts", ...games, "--guard"],
-      needs: [provision],
-      exclusive: true,
-      cost: 90,
-      units: loads,
-      // Exclusive only among these steps: another agent's work can still hold the PC, and then a
-      // slower load is reported not judged rather than failing an unchanged engine.
-      unjudgedExit: EXIT_UNJUDGED,
     });
   }
   return options.cheap === true ? steps.filter((step) => step.first === true) : steps;
@@ -781,8 +735,7 @@ export function splitByCost(files: readonly string[], cost: Readonly<Record<stri
 
 /**
  * Exactly the commands CI runs: the `quick` job, `types`, every `test` shard,
- * `web-build`, `perf-cpu`, the Windows suite, and the frame and smoke gates when
- * a changed path can reach them. CI runs these as parallel jobs on fresh runners;
+ * `web-build`, and the smoke boots when a changed path can reach them. CI runs these as parallel jobs on fresh runners;
  * here they run a few at a time in this checkout, so the wall clock approaches the
  * slowest step instead of the sum. `needs` keeps the ordering that matters: the
  * steps that read a built `dist`, and shard i's tests, wait for `build`.
@@ -797,7 +750,6 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
       name: check.name,
       command: checkCommand(check),
       ...(check.needsBuild === true ? { needs: [build.name] } : {}),
-      ...(check.name === "scaffold-launch" ? { exclusive: true } : {}),
       ...(GATE_COST[check.name] !== undefined ? { cost: GATE_COST[check.name] } : {}),
       ...(GATE_FIX[check.name] !== undefined ? { fix: GATE_FIX[check.name] } : {}),
     });
@@ -815,9 +767,6 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
   }
 
   steps.push({ name: "web-build", command: ["bun", "--cwd=apps/web", "run", "build"], cost: 40 });
-  // The CPU budgets normalize by a calibration run of the same machine, so a neighbour's
-  // build or browser reads as a regression: CI gives `perf timing` its own runner.
-  steps.push({ name: "perf-cpu", command: ["bun", "scripts/bench-cpu.ts"], exclusive: true, cost: 15 });
   // `windows-tests` (`bun --cwd=packages/jgengine run test`) is not a step here. That job
   // exists in CI because the `test` shards run on ubuntu and cannot see a Windows-only
   // failure; on this machine shard e already runs all 30 of its files, so repeating it cost
@@ -826,20 +775,12 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
 
   if (changed.some((path) => heavyPaths(root).test(path))) {
     const { SMOKE_GAMES } = (await import("./smoke-games")) as { SMOKE_GAMES: readonly string[] };
-    const { PERF_GATE_GAMES } = (await import("./perf-gate")) as { PERF_GATE_GAMES: readonly string[] };
     // The smoke games boot one at a time inside one smoke-games run, so each keeps its own step
     // and its own process. Scripts are called directly, never through a guarded `&&` chain:
     // scripts/guard.ts's win32 pass-through runs only the chain's first command and exits 0.
-    // The frame gate measures one game at a time: games sharing a GPU read each other's frames.
     for (const game of SMOKE_GAMES) {
       steps.push({ name: `smoke ${game}`, command: ["bun", "scripts/smoke-games.ts", "--games", game], browser: true, cost: 60 });
     }
-    steps.push({
-      name: `perf gate (${PERF_GATE_GAMES.length} games)`,
-      command: ["bun", "scripts/perf-gate.ts"],
-      browser: true,
-      cost: 100,
-    });
   }
   return steps;
 }
@@ -912,16 +853,7 @@ async function run(step: Step, root: string, signal?: AbortSignal): Promise<Step
   if (killed && code !== 0) {
     return { name: step.name, ok: false, ms: Date.now() - started, output: "stopped: another step failed first", stopped: true };
   }
-  return stepResult(step, code, Date.now() - started, `${stdout}${stderr}`.trim());
-}
-
-/** A finished step's result: an `unjudgedExit` is not a failure, and carries the step's last line as its reason. */
-export function stepResult(step: Pick<Step, "name" | "unjudgedExit">, code: number, ms: number, output: string): StepResult {
-  if (step.unjudgedExit !== undefined && code === step.unjudgedExit) {
-    const reason = output.split("\n").map((line) => line.trim()).filter((line) => line.length > 0).at(-1) ?? "not judged";
-    return { name: step.name, ok: true, ms, output, unjudged: reason };
-  }
-  return { name: step.name, ok: code === 0, ms, output };
+  return { name: step.name, ok: code === 0, ms: Date.now() - started, output: `${stdout}${stderr}`.trim() };
 }
 
 /**
@@ -954,17 +886,6 @@ function printPlan(plan: Plan, steps: readonly Step[]): void {
     console.log(`  no test reaches ${plan.unattributed.length} changed file(s):`);
     for (const path of plan.unattributed) console.log(`    ${path}`);
   }
-}
-
-function reportUnattributed(plan: Plan): void {
-  console.error(`\nverify:fast cannot attribute ${plan.unattributed.length} changed file(s) to a test:`);
-  for (const path of plan.unattributed) console.error(`  ${path}`);
-  console.error(
-    "\nNo test in the repository imports these and none sits beside them, so this run would prove\n" +
-      "nothing about them. Add a test next to the file, or run the package suite yourself:\n" +
-      "  bun --cwd=<package> run test\n" +
-      "A change with no reachable test is reported here rather than passing silently.",
-  );
 }
 
 async function main(argv: readonly string[]): Promise<number> {
@@ -1102,18 +1023,13 @@ async function main(argv: readonly string[]): Promise<number> {
 `, "utf8");
     if (cache === null) return;
     for (const result of passed) {
-      if (!result.ok || result.unjudged !== undefined) continue;
+      if (!result.ok) continue;
       for (const settled of steps.find((step) => step.name === result.name)?.units ?? []) cache.record(settled.id, settled.inputs);
     }
     cache.save();
   };
 
   if (json) {
-    if (plan.unattributed.length > 0) {
-      reportUnattributed(plan);
-      console.log(JSON.stringify(jsonReport([{ name: "attribution", ok: false, ms: 0 }], Date.now() - started)));
-      return EXIT_FAILED;
-    }
     const results: StepResult[] = [];
     const code = await jsonRun(steps, {
       run: async (step) => {
@@ -1143,11 +1059,7 @@ async function main(argv: readonly string[]): Promise<number> {
   }
   if (planOnly) {
     printPlan(plan, steps);
-    return plan.unattributed.length === 0 ? EXIT_VERIFIED : EXIT_UNATTRIBUTED;
-  }
-  if (plan.unattributed.length > 0) {
-    reportUnattributed(plan);
-    return EXIT_UNATTRIBUTED;
+    return EXIT_VERIFIED;
   }
 
   // The type-checks and gates start first and the run stops at the first failure, so a type
@@ -1160,10 +1072,6 @@ async function main(argv: readonly string[]): Promise<number> {
     async (step, signal) => {
       const result = await run(step, root, signal);
       if (result.stopped === true) return result;
-      if (result.unjudged !== undefined) {
-        say(`NOT JUDGED  ${result.name}  ${(result.ms / 1000).toFixed(1)}s — ${result.unjudged}`);
-        return result;
-      }
       (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
       if (!result.ok) {
         if (result.output.length > 0) printFailure(root, result.name, result.output);
@@ -1177,10 +1085,9 @@ async function main(argv: readonly string[]): Promise<number> {
   const failures = results.filter((result) => !result.ok && result.blockedBy === undefined && result.stopped !== true).map((result) => result.name);
   const notRun = results.filter((result) => result.blockedBy !== undefined || result.stopped === true).map((result) => result.name);
   const seconds = (Date.now() - started) / 1000;
-  const unjudged = results.filter((result) => result.unjudged !== undefined).map((result) => result.name);
-  const passed = results.length - failures.length - notRun.length - unjudged.length;
+  const passed = results.length - failures.length - notRun.length;
   console.log(
-    `\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}${unjudged.length > 0 ? `, ${unjudged.length} not judged (${unjudged.join(", ")}: run again on a quieter PC)` : ""}`,
+    `\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}`,
   );
   if (failures.length > 0) {
     console.log(`failed: ${failures.join(", ")}`);

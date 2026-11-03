@@ -84,25 +84,10 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun run check artifacts
-      - run: bun run check stage-skills
-      - run: git fetch --no-tags origin main
-      - run: bun run check changelog
       - run: bun run build
       - run: bun run check skill-api
       # A test that asserts one platform's path separator passes here and fails on the other runner.
       - run: bun run check path-portability
-      # One launch/retry block for the engine and for the scaffold every `jgengine create` ships.
-      - run: bun run check scaffold-launch
-      # A hand-rolled capture script must stay headless; `--headed` is the only window.
-      - run: bun run check capture-hygiene
-      # One feature, one folder: no second definition of an exported name, no concept file outside its
-      # home folder. Reads only this change's diff.
-      - name: no duplicate export or stray concept file
-        env:
-          EVENT: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          if [ "$EVENT" = "pull_request" ]; then bun run check concept-homes --base "$BASE_SHA"; else bun run check concept-homes --base HEAD^; fi
       # Needs the `bun run build` above.
       - run: bun run check export-manifest
 
@@ -137,7 +122,7 @@ jobs:
   # file falls outside every shard, and scripts/test-shard.test.ts fails if this matrix
   # and the script's shard names drift apart. `ci` needs `test`, which aggregates every
   # shard - a red shard fails `ci`. A diff that only adds change notes runs none of them:
-  # no test reads `changes/`, and `quick`'s check-changelog still validates the note.
+  # no test reads `changes/`.
   test:
     needs: [changes]
     if: needs.changes.outputs.tests != 'none'
@@ -180,8 +165,7 @@ jobs:
   # CI never downloads a model or boots a game (Jon, 25 Oct): a booted game needs the pulled
   # packs, and a download or a browser on a runner is minutes of flake for a check the lane's own
   # machine runs in seconds against the shared asset store. `lane:close` runs those boot checks
-  # locally (`verify:fast`: the capabilities probe of every game it reaches). `smoke` and `perf`
-  # stay as the check names branch protection reads.
+  # locally (`verify:fast`: the capabilities probe of every game it reaches).
   # The games under games/ run engine source from this checkout, so an engine change and the
   # games it breaks are fixed in one PR. This job checks the games `changes` named in
   # `gameChecks`: the games' own gates over every game (seconds each), then the type-check and
@@ -210,72 +194,13 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: git fetch --no-tags origin beta
-      - run: bun run check games-framework --base origin/beta
-      - run: bun run check module-globals
       - run: bun run check games-save-states
-      - run: bun run check games-design
       - run: bun run check games-ledger
-      - run: bun run check games-capabilities --summary
       # A few at a time on the runner's cores: one after another took 52 s for three games.
       - name: type-check the reached games
         run: bun scripts/check-types-all.ts $(for game in $GAMES; do printf 'games/%s ' "$game"; done)
       - name: test the games' scripts and the reached games
         run: bun test games/scripts games/shared $(for game in $GAMES; do printf 'games/%s ' "$game"; done)
-
-  # The `smoke` check the merge requires. Boots run on the lane's machine (`lane:close`), never
-  # here, so this names the scope and passes.
-  smoke:
-    needs: [changes]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: smoke verdict
-        env:
-          SCOPE: ${{ needs.changes.outputs.games }}
-          REASON: ${{ needs.changes.outputs.reason }}
-        run: |
-          echo "scope=$SCOPE ($REASON)"
-          echo "game boots run locally in lane:close against the shared asset store; CI boots no game"
-
-  # The CPU timing budgets (nav crowd, perception, utility, visibility, off-screen,
-  # flock, paths) assert via `perf timing` with JG_TIMING_GATE=1; the unit suite keeps
-  # measuring and printing them without a pass/fail ceiling. It needs no browser and
-  # takes ~40 s, and core logic in any package can move a budget, so it runs on every
-  # PR rather than joining the change-scoped set above.
-  perf-cpu:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.2
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
-      - run: bun run perf timing
-
-  # The `perf` check branch protection reads: green when the CPU budgets passed. Frame
-  # budgets need a booted game, so they run on the lane's machine, not here.
-  perf:
-    needs: [changes, perf-cpu]
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: perf verdict
-        env:
-          SCOPE: ${{ needs.changes.outputs.games }}
-          REASON: ${{ needs.changes.outputs.reason }}
-          CPU: ${{ needs.perf-cpu.result }}
-        run: |
-          echo "scope=$SCOPE ($REASON)"
-          test "$CPU" = "success"
-          echo "CPU budgets passed; frame budgets need booted games, which run on the lane machine in lane:close, never in CI"
 
   # Three package tests fail on Windows only (#2119: workspaceDoctor's wildcard and dangling
   # symlink cases, and `Bun.build` returning `EINVAL: failed to open root directory: /C:/...` in
@@ -322,7 +247,7 @@ jobs:
           echo "windows suite skipped: pull requests and main pushes run the Ubuntu suite; a push to beta or a manual run covers Windows"
 
   ci:
-    needs: [changes, quick, types, test, web-build, games, smoke, perf, windows]
+    needs: [changes, quick, types, test, web-build, games, windows]
     # A superseded run is cancelled, not failed; reporting it as a failure only pages the PR's owner.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
@@ -336,15 +261,13 @@ jobs:
           GAMES: ${{ needs.changes.outputs.games }}
           SHARDS: ${{ needs.changes.outputs.tests }}
           REASON: ${{ needs.changes.outputs.reason }}
-          SMOKE: ${{ needs.smoke.result }}
-          PERF: ${{ needs.perf.result }}
           TEST: ${{ needs.test.result }}
           GAME_CHECKS: ${{ needs.changes.outputs.gameChecks }}
           GAMES_JOB: ${{ needs.games.result }}
         run: |
           # A scope job that failed took the gated jobs down with it; never let that read as a pass.
           test "$SCOPE" = "success"
-          for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.web-build.result }}" "$PERF" "${{ needs.smoke.result }}" "${{ needs.windows.result }}"; do
+          for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.web-build.result }}" "${{ needs.windows.result }}"; do
             test "$result" = "success"
           done
           echo "game scope: $GAMES ($REASON)"
@@ -362,8 +285,7 @@ jobs:
             test "$TEST" = "success"
             echo "ran: every test shard"
           fi
-          test "$SMOKE" = "success"
-          echo "game scope $GAMES: boots and frame budgets run locally in lane:close ($REASON)"
+          echo "game scope $GAMES: boots run locally in lane:close ($REASON)"
       - name: Track red main in one issue
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:

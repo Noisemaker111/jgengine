@@ -7,24 +7,14 @@
  * from the engine source by `bun run gen games-ledger`.
  *
  * Nobody writes what a game adopts: a game adopts a capability by importing it, read from its own
- * source. A capability a game does not import needs no answer either. What a game writes, in the
- * `capabilities` section of its `jgengine.json`, is `debt`: a game-facing capability whose domain
- * the game has while it runs its own version instead, with the open issue that tracks adopting the
- * shared one; and `probes`, the boot probes that prove an adopted system live. The check reads the
- * issue number and the ids; it never judges the prose.
+ * source. What a game writes, in the `capabilities` section of its `jgengine.json`, is `probes`:
+ * the boot probes that prove an adopted system live.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 export const LEDGER_FILE = "capabilities.json";
 export const DECLARATION_FILE = "jgengine.json";
-
-/** A game-facing capability a game has the domain of but has not adopted, and the issue that tracks adopting it. */
-export interface DebtAnswer {
-  /** What the game does there today, for the reader; no check reads it. */
-  reason?: string;
-  issue: number;
-}
 
 export interface CapabilityProbe {
   kind: "devtools" | "window";
@@ -54,15 +44,6 @@ export interface Ledger {
 export interface Declaration {
   /** Boot probe names keyed by the module that can prove the system live. */
   probes?: Record<string, string[]>;
-  /** Game-facing capabilities this game has the domain of and runs its own version of, keyed by id. */
-  debt?: Record<string, DebtAnswer>;
-}
-
-export interface GameDeclaration {
-  game: string;
-  declaration: Declaration | null;
-  /** Capability ids the game's source imports. */
-  adopts: string[];
 }
 
 export interface ModuleInfo {
@@ -236,10 +217,6 @@ export function readDeclaration(root: string, game: string): Declaration | null 
   return config.capabilities ?? null;
 }
 
-export function declarationPath(root: string, game: string): string {
-  return join(root, game, DECLARATION_FILE);
-}
-
 /** Source files a declaration is seeded from. */
 export function sourceFiles(root: string, game: string): string[] {
   const out: string[] = [];
@@ -370,155 +347,8 @@ export function gameAdoption(root: string, game: string, ledger: Ledger): string
   return adoptedFromEvidence(ledger, evidence, (entry) => moduleApiNames(root, entry), hasAudioConfig);
 }
 
-/** Every game with its declaration and the adoption its source shows. */
-export function readGames(root: string, ledger: Ledger): GameDeclaration[] {
-  return gameDirs(root).map((game) => ({
-    game,
-    declaration: existsSync(declarationPath(root, game)) ? readDeclaration(root, game) : null,
-    adopts: gameAdoption(root, game, ledger),
-  }));
-}
-
 export function renderLedger(ledger: Ledger): string {
   return `${JSON.stringify(ledger, null, 2)}\n`;
-}
-
-export interface DeclarationProblem {
-  game: string;
-  capability: string;
-  module: string;
-  message: string;
-}
-
-export interface GameTally {
-  game: string;
-  /** Every adopted capability. */
-  adopted: number;
-  /** Adopted and named with a boot probe, so the running page can prove it. */
-  verified: number;
-  /** Adopted with no probe to name: the capability ships none, or the game has not named its probe. */
-  declared: number;
-  debt: number;
-}
-
-export interface DebtEntry {
-  game: string;
-  capability: string;
-  issue: number;
-}
-
-export interface DeclarationReport {
-  problems: DeclarationProblem[];
-  /** Adopted game-facing capabilities with no boot probe named: the capability ships a probe the game could name. */
-  declarationLevel: Array<{ game: string; capability: string; module: string }>;
-  adopted: number;
-  /** Adopted with a boot probe named for a capability that ships one. */
-  verified: number;
-  /** Adopted without one: a capability with no probe, or a probe the game has not named. */
-  declared: number;
-  debt: number;
-  tallies: GameTally[];
-  debtEntries: DebtEntry[];
-}
-
-/**
- * The adoption check. Adoption is read from source, so what is left to check is what a game wrote:
- * each debt entry names a game-facing capability the game does not import and points at an issue
- * by number; each boot probe belongs to a module the game adopts. Every failure is a fact about ids
- * and numbers, never a judgement of the words.
- */
-export function checkDeclarations(ledger: Ledger, games: GameDeclaration[]): DeclarationReport {
-  const known = new Map(ledger.capabilities.map((entry) => [entry.id, entry]));
-  const knownModules = new Set(ledger.capabilities.map((entry) => entry.module));
-  const problems: DeclarationProblem[] = [];
-  const declarationLevel: DeclarationReport["declarationLevel"] = [];
-  const tallies: GameTally[] = [];
-  const debtEntries: DebtEntry[] = [];
-  let adopted = 0;
-  let verified = 0;
-
-  for (const { game, declaration, adopts } of games) {
-    const tally: GameTally = { game, adopted: 0, verified: 0, declared: 0, debt: 0 };
-    tallies.push(tally);
-    const adoptSet = new Set(adopts);
-    const probedModules = new Set(Object.keys(declaration?.probes ?? {}));
-    const problem = (capability: string, module: string, message: string): void => {
-      problems.push({ game, capability, module, message: `${game} ${message}` });
-    };
-
-    for (const id of adoptSet) {
-      const entry = known.get(id);
-      if (entry === undefined) continue;
-      adopted += 1;
-      tally.adopted += 1;
-      if (entry.probe !== null && probedModules.has(entry.module)) {
-        verified += 1;
-        tally.verified += 1;
-      } else {
-        tally.declared += 1;
-        if (entry.probe !== null) declarationLevel.push({ game, capability: id, module: entry.module });
-      }
-    }
-
-    for (const [id, debt] of Object.entries(declaration?.debt ?? {})) {
-      const entry = known.get(id);
-      if (entry === undefined) {
-        problem(id, "unknown", `records debt on "${id}", which is not a capability in capabilities.json - remove it or run bun run gen games-ledger`);
-        continue;
-      }
-      const where = `"${id}" (${entry.module})`;
-      if (adoptSet.has(id)) {
-        problem(id, entry.module, `records debt on ${where} but its source imports it - the debt is paid; remove the entry`);
-        continue;
-      }
-      if (!entry.gameFacing) {
-        problem(id, entry.module, `records debt on ${where}, which ships no live probe - debt is kept for game-facing capabilities only; remove the entry`);
-        continue;
-      }
-      tally.debt += 1;
-      const issue = debt?.issue;
-      if (typeof issue !== "number" || !Number.isSafeInteger(issue) || issue <= 0) {
-        problem(id, entry.module, `records debt on ${where} with no issue number - a debt entry names the issue that tracks adopting it`);
-      } else {
-        debtEntries.push({ game, capability: id, issue });
-      }
-    }
-
-    for (const module of probedModules) {
-      if (!knownModules.has(module)) {
-        problem("*", module, `names a boot probe for unknown module "${module}" - remove it or run bun run gen games-ledger`);
-      } else if (!ledger.capabilities.some((entry) => entry.module === module && adoptSet.has(entry.id))) {
-        problem("*", module, `names a boot probe for "${module}" but its source imports none of that module's capabilities - import it or remove the probe`);
-      }
-    }
-  }
-
-  return {
-    problems,
-    declarationLevel,
-    adopted,
-    verified,
-    declared: adopted - verified,
-    debt: tallies.reduce((sum, tally) => sum + tally.debt, 0),
-    tallies,
-    debtEntries,
-  };
-}
-
-/** The per-game table: adopted-verified / adopted-declared / debt, with the debt total last. */
-export function renderSummary(report: DeclarationReport, ledger: Ledger): string {
-  const gameFacing = ledger.capabilities.filter((entry) => entry.gameFacing).length;
-  const name = Math.max(4, ...report.tallies.map((tally) => tally.game.length));
-  const row = (label: string, verified: number, declared: number, debt: number): string =>
-    [label.padEnd(name), String(verified).padStart(16), String(declared).padStart(16), String(debt).padStart(5)].join("  ");
-  const lines = [
-    `capability adoption - ${ledger.capabilities.length} capabilities, ${gameFacing} game-facing; adoption is read from each game's imports`,
-    `${"game".padEnd(name)}  adopt (verified)  adopt (declared)   debt`,
-    ...report.tallies.map((tally) => row(tally.game, tally.verified, tally.declared, tally.debt)),
-    row("TOTAL", report.verified, report.declared, report.debt),
-    `debt: ${report.debt} entr${report.debt === 1 ? "y" : "ies"} across ${new Set(report.debtEntries.map((entry) => entry.game)).size} game(s), each tracked by an issue`,
-  ];
-  return lines.join("\n");
 }
 
 /** Is the checked-in ledger behind the engine source? */

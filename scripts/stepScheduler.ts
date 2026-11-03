@@ -17,7 +17,7 @@ export interface ScheduledStep {
   first?: boolean | undefined;
 }
 
-/** Exit code of a step that could not decide on this machine right now (`StepResult.unjudged`). */
+/** Exit code of a timing tool that could not decide on this machine right now (other work kept it busy). */
 export const EXIT_UNJUDGED = 3;
 
 export interface StepResult {
@@ -29,12 +29,6 @@ export interface StepResult {
   blockedBy?: string[];
   /** True when a fail-fast run killed this step part-way: its result says nothing about it. */
   stopped?: boolean;
-  /**
-   * Why a step that cannot decide on this machine right now (a wall-clock guard on a PC other work
-   * keeps busy) neither passed nor failed. Such a step does not fail the run and is never
-   * remembered as passed, so the next run tries it again.
-   */
-  unjudged?: string;
 }
 
 export interface RunStepsOptions {

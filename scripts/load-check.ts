@@ -559,7 +559,7 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
       if (state?.playableAt != null && state.revealDone) break;
       // The guard judges the menu and the scene behind it, so it stops once the scene is read and its first two seconds timed.
       if ((args.guard || args.saveBaseline) && state?.sceneReadyAt != null && state.sceneSampled && state.revealDone) break;
-      // wait-ok: samples the page's own probe while the game loads
+      // Samples the page's own probe while the game loads
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
     if (state !== null) {

@@ -50,7 +50,6 @@ export function libraryEntryNames(root: string, list: LibraryList): string[] {
   const base = join(root, list.dir);
   const names: string[] = [];
   const visit = (dir: string): void => {
-    // walk-ok: one library folder of entry files, a few hundred at most.
     for (const name of readdirSync(dir)) {
       const path = join(dir, name);
       if (statSync(path).isDirectory()) visit(path);

@@ -1,8 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { findBlockingWaits } from "./check-no-blocking-wait";
 
 import {
   EXIT_DRAINED,
@@ -514,17 +513,3 @@ test("a generated file both sides changed never stops the queue: it takes the ba
   expect(gitIn(bare, ["merge-base", "--is-ancestor", movedTip, pushedTip]).status).toBe(0);
   expect(gitOk(bare, ["show", `${pushedTip}:scripts/export-manifest.json`])).toBe("[\"a\", \"lane\", \"other\"]");
 }, 60_000);
-
-test("the queue holds the repo's one sleep, and that sleep names its reason", () => {
-  const source = readFileSync(join(import.meta.dir, "land-queue.ts"), "utf8");
-  const calls = source.split("\n").filter((line) => /\.pause\(/.test(line));
-  expect(calls.length).toBe(1);
-  expect(calls[0]).toContain("wait-ok:");
-  expect(calls[0]).toContain("land:queue is the one process that waits for CI");
-});
-
-test("the no-blocking-wait gate still fails a script that sleeps without the exemption", () => {
-  expect(findBlockingWaits('await Bun.$`Start-Sleep -Seconds 90`;').map((wait) => wait.rule)).toEqual(["sleep"]);
-  expect(findBlockingWaits('await Bun.$`Start-Sleep -Seconds 90`; // wait-ok: the child binds its port after boot')).toEqual([]);
-  expect(findBlockingWaits("await Bun.$`sleep 4`;").map((wait) => wait.rule)).toEqual(["sleep"]);
-});

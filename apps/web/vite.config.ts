@@ -54,7 +54,6 @@ const parseGameCredit = (
 
 /** The site's live demos whose engine part a game's source (or editor scene) uses. */
 const gameDemoParts = (srcDir: string): string[] => {
-  // walk-ok: build-time scan of one game's own src folder for engine imports
   const files = readdirSync(srcDir, { recursive: true, encoding: "utf8" }).filter((file) => /\.(tsx?|json)$/.test(file));
   const found = new Set<string>();
   for (const file of files) {

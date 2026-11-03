@@ -1,4 +1,3 @@
-// home-ok: world-space HUD (nameplates, entity bars, float text, reticle, tracers, telegraphs) is HUD drawn in the scene
 import { describe, expect, test } from "bun:test";
 
 import { telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";

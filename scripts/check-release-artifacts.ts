@@ -444,7 +444,7 @@ async function main(): Promise<void> {
 
   // The publish workflow runs this in the step after `npm publish`, and npm serves a new version from
   // its CDN minutes after answering 202, so one immediate check reported a whole release as unpublished.
-  // wait-ok: registry propagation, bounded by --wait and retried only while packages are absent
+  // Registry propagation, bounded by --wait and retried only while packages are absent
   let verdicts: PackageVerdict[] = [];
   const waited = await awaitPublished({
     waitSeconds: Number(argValue(args, "--wait") ?? "0") || 0,

@@ -62,7 +62,6 @@ const LOOP = /\bwhile\s*[($:]|\bfor\s*[($]|\bfor\s+\w+\s+in\b|\bdo\s*\{|\buntil\
 const GH_CHECKS = /\bgh\s+pr\s+checks\b/i;
 const STATUS_ENDPOINT =
   /\bgh\s+pr\s+(?:view|checks|status)\b|\bgh\s+api\b[^\n]*actions\/runs|statusCheckRollup|\bgh\s+run\s+(?:list|view)\b|artifacts\/[^\n]*\/check-runs/i;
-// wait-ok: matches command text for the audit, it never runs a wait
 const SLEEP_COMMAND =
   /\bstart-sleep\b|\btimeout\s+\/t\s*\d|\bsleep\s+\d|\bthread\.sleep\b|\batomics\.wait\b|\bwait-event\b|\bbun\.sleep\b/i;
 
