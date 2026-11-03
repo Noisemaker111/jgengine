@@ -17,7 +17,7 @@ export const ACER_SACCHARUM: PlantSpecies = {
     apicalControl: 0.8937,
     apicalControlMature: 0.6,
     apicalControlHalfYears: 5.72,
-    internodeMax: 0.12,
+    internodeMax: 0.115,
     branchAngle: 58.87,
     lateralBudsPerNode: 2,
     maxMetamersPerShoot: 5,
