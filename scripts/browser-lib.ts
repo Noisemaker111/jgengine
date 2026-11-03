@@ -1069,6 +1069,16 @@ export function removeProfileDir(userDataDir: string): void {
   }
 }
 
+/**
+ * A `jg-*` directory is a browser profile only if it holds what a capture or Chrome writes into
+ * one, or nothing yet. The prefix alone also matched agents' own folders: `%TEMP%\jg-scratch` of
+ * screenshots was deleted under sessions still using it (2026-11-03). Those are never swept.
+ */
+function isBrowserProfile(dir: string): boolean {
+  const names = readdirSync(dir);
+  return names.length === 0 || [PROFILE_OWNER_FILE, PROFILE_RUN_FILE, "Local State", "Default"].some((name) => names.includes(name));
+}
+
 function readOwnerPid(dir: string): number | undefined {
   try {
     return Number(readFileSync(join(dir, PROFILE_OWNER_FILE), "utf8"));
@@ -1304,7 +1314,7 @@ export function sweepStaleProfiles(
     if (ownedProfiles.has(dir)) continue;
     try {
       const info = statSync(dir);
-      if (!info.isDirectory() || now - info.mtimeMs < minAgeMs) continue;
+      if (!info.isDirectory() || now - info.mtimeMs < minAgeMs || !isBrowserProfile(dir)) continue;
       if (pidAlive(readOwnerPid(dir))) continue;
       rmSync(dir, { recursive: true, force: true });
       removed += 1;
@@ -1328,7 +1338,7 @@ export function sweepOrphanProfiles(root = tmpdir(), now = Date.now()): number {
     if (ownedProfiles.has(dir)) continue;
     try {
       const info = statSync(dir);
-      if (!info.isDirectory()) continue;
+      if (!info.isDirectory() || !isBrowserProfile(dir)) continue;
       const owner = readOwnerPid(dir);
       if (owner === undefined ? now - info.mtimeMs < STALE_PROFILE_MS : pidAlive(owner)) continue;
       rmSync(dir, { recursive: true, force: true });
