@@ -45,6 +45,7 @@ import {
   resolveChromeReadyMs,
   startBrowser,
   sweepCaptureProfiles,
+  sweepOrphanProfiles,
   sweepStaleProfiles,
   sweepStrayBrowsers,
   pidAlive,
@@ -820,14 +821,24 @@ describe("capture profile sweep", () => {  test("removes only stale jg dirs whos
       const foreign = mkdtempSync(join(root, "other-"));
       const file = join(root, "jg-notes.txt");
       writeFileSync(file, "not a profile");
+      const leakedChrome = mkdtempSync(join(root, "jg-shoot-"));
+      writeFileSync(join(leakedChrome, "Local State"), "{}");
+      // An agent's own folder that happens to start with jg-: screenshots, no browser files.
+      const agentScratch = join(root, "jg-scratch");
+      mkdirSync(join(agentScratch, "shots"), { recursive: true });
+      writeFileSync(join(agentScratch, "shots", "s1.png"), "png");
       const stale = new Date(Date.now() - 4 * 60 * 60 * 1000);
       const fresh = new Date(Date.now() - 20 * 60 * 1000);
-      for (const dir of [leaked, liveOwned, foreign]) utimesSync(dir, stale, stale);
+      for (const dir of [leaked, liveOwned, foreign, leakedChrome, agentScratch]) utimesSync(dir, stale, stale);
       utimesSync(recent, fresh, fresh);
       utimesSync(file, stale, stale);
 
-      expect(sweepStaleProfiles(root)).toBe(1);
+      expect(sweepStaleProfiles(root)).toBe(2);
+      expect(sweepOrphanProfiles(root)).toBe(0);
 
+      expect(existsSync(agentScratch)).toBe(true);
+      expect(existsSync(join(agentScratch, "shots", "s1.png"))).toBe(true);
+      expect(existsSync(leakedChrome)).toBe(false);
       expect(existsSync(leaked)).toBe(false);
       expect(existsSync(liveOwned)).toBe(true);
       expect(existsSync(recent)).toBe(true);
