@@ -2068,7 +2068,6 @@
   "scripts/release-await.ts": {"nonNull":1,"cast":1},
   "scripts/release.ts": {"cast":3},
   "scripts/run-stages.ts": {"nonNull":2,"cast":1},
-  "scripts/runStages.test.ts": {"nonNull":1},
   "scripts/scaffold-editor.test.ts": {"cast":2,"nonNull":2},
   "scripts/servedGame.test.ts": {"nonNull":2},
   "scripts/servedGame.ts": {"nonNull":1},
