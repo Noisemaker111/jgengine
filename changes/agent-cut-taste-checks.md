@@ -14,10 +14,6 @@ Engine seam: packages/assets/src/catalogs/entryFiles.ts, packages/core/src/hud/W
 
 - bun run check: killed at the 600 s limit before (games-depth still running), 112 s and passing after. verify:fast --no-cache on a one-line Fernwild change: 332 s and failing before, 23 s and passing after
 
-### Fixed
-
-- asset build globs on Windows skip built .lods folders and honour exclusions
-
 ### Removed
 
 - checks that judged taste, pacing, budgets or process instead of broken code: games-design, game-feel, art-direction, content-gate, concept-homes, stateful-ratchet, type-escapes, changelog, script-help, browser-test-budget, test-spawn-timeouts, fixture-location, no-blocking-wait, recursive-walk, capture-hygiene, scaffold-launch, games-framework, games-capabilities, module-globals, game-front-end, skills, stage-skills --check, the skill-api JSDoc and orphan ratchets, the load guard, the CPU and frame timing gates, and verify:fast's exit 2 for files no test reaches
