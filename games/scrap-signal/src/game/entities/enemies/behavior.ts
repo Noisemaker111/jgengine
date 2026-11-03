@@ -222,6 +222,22 @@ interface Windup {
 
 const windupsOf = perContext(() => new Map<string, Windup>());
 
+/** How many attacks are winding up right now, and the heading from the player to the nearest, for the capture probe. */
+export function windupProbe(ctx: GameContext): { windups: number; windupHeading: number } {
+  const player = ctx.scene.entity.get(ctx.player.userId);
+  let heading = 0;
+  let best = Number.POSITIVE_INFINITY;
+  for (const id of windupsOf(ctx).keys()) {
+    const fighter = ctx.scene.entity.get(id);
+    if (fighter === null || player === null) continue;
+    const distance = distance2d(fighter.position, player.position);
+    if (distance >= best) continue;
+    best = distance;
+    heading = Math.atan2(fighter.position[0] - player.position[0], fighter.position[2] - player.position[2]);
+  }
+  return { windups: windupsOf(ctx).size, windupHeading: Math.round(heading * 1000) / 1000 };
+}
+
 /** The attack a fighter is winding up, if any, for a probe or a test. */
 export function pendingWindup(ctx: GameContext, enemyId: string): { kind: "swing" | "shot"; landsAtMs: number; at: EntityPosition } | null {
   const pending = windupsOf(ctx).get(enemyId);

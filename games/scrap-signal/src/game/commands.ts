@@ -13,6 +13,7 @@ import { captureScrapThumb, scrapProfile } from "./scrapProfile";
 import { refreshScrapSlots } from "./scrapSlots";
 import { noteEquipped } from "./feel";
 import { cancelReload, gunById, rarityRank, rollGun, startReload, reservePhase } from "./handroll";
+import type { GunFamily } from "./handroll/guns";
 import { depositGun, vaultOpenStore, withdrawGun } from "./items/vault";
 import { openAmmoCrate } from "./items/ammoCrates";
 import { applyWalkSpeed } from "./handling";
@@ -633,6 +634,21 @@ export function registerCommands(ctx: GameContext): void {
     ctx.game.commands.define<{ mode?: "ambush" | "upload" }>("relay.capture", {
       apply(state: GameContext, input) {
         stageRelay(state, input.mode ?? "ambush");
+      },
+    });
+    // Dev-only: put a rolled gun of one family in the first hotbar slot with its ammo full, so a
+    // capture of how guns handle does not first have to find one in a chest.
+    ctx.game.commands.define<{ family?: GunFamily }>("kit.capture", {
+      apply(state: GameContext, input) {
+        const gun = rollGun(seededRng("kit-capture"), 3, { family: input.family ?? "rifle" });
+        const userId = state.player.userId;
+        state.player.inventory.put("hotbar", gun.id, 1, { slot: 0 });
+        session.selectSlot(state, 0);
+        noteEquipped(gun.id);
+        noteGunHeld(state, gun);
+        const pool = AMMO_STAT_IDS[gun.ammo];
+        const ammo = state.scene.entity.stats.get(userId, pool);
+        if (ammo !== null) state.scene.entity.stats.set(userId, pool, { current: ammo.max });
       },
     });
     // Dev-only: drop the chassis to its last point of health, so the game's own downed tick opens

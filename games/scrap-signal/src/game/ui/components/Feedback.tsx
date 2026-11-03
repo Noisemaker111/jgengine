@@ -40,16 +40,25 @@ export function spreadRadiusPx(spread: number, fovDeg: number, viewportHeight: n
  * The crosshair is the held gun's cone: its ticks sit where a round can land, so they open while the
  * gun blooms, while you move, and close as you aim or brace. It disappears through a sniper scope.
  */
+/** A dark edge so the cream ticks read against sand and sky alike. */
+const RETICLE_OUTLINE = { filter: "drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000) drop-shadow(0 0 3px rgba(0,0,0,0.7))" };
+
 export function SpreadReticle() {
   const view = useGameStore((ctx) => handlingView(ctx));
   const { fov } = usePlayerFov();
-  if (view === null) return <Crosshair />;
+  if (view === null) {
+    return (
+      <div data-reticle-gap={0} className="pointer-events-none absolute inset-0 z-30">
+        <Crosshair style={RETICLE_OUTLINE} />
+      </div>
+    );
+  }
   const { spread, adsProgress } = view.handling;
   const zoom = 1 + ((view.presentation?.adsZoom ?? 1) - 1) * adsProgress;
   const gap = Math.max(3, Math.min(90, spreadRadiusPx(spread, fov * zoom, window.innerHeight)));
   return (
-    <div data-reticle-gap={Math.round(gap)} style={{ opacity: 1 - adsProgress * 0.35 }}>
-      <Crosshair gap={gap} size={gap * 2 + 16} thickness={2} color="rgba(255,244,226,0.9)" />
+    <div data-reticle-gap={Math.round(gap)} className="pointer-events-none absolute inset-0 z-30" style={{ opacity: 1 - adsProgress * 0.35 }}>
+      <Crosshair gap={gap} size={gap * 2 + 28} thickness={3} color="#fff4e2" style={RETICLE_OUTLINE} />
     </div>
   );
 }
