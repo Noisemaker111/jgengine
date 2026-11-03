@@ -29,7 +29,7 @@ const CI_STATUS_USAGE = {
   summary: "answer where this PR's checks stand right now, in a second, without watching",
   usage: "bun run ci:status [--pr <number>] [--branch <name>] [--repo <owner/name>] [--json] | bun run ci:status --sweep [--json]",
   flags: [
-    { flag: "--sweep", detail: "instead: every open PR armed for auto-merge but red, and on which check (exit 1 when any)" },
+    { flag: "--sweep", detail: "instead: every open PR in the landing queue (land:queue label) but red, and on which check (exit 1 when any)" },
     { flag: "--pr <number>", detail: "a merged or open PR by number; default: the PR for this branch" },
     { flag: "--branch <name>", detail: "look up the PR for this branch instead of the current one" },
     { flag: "--repo <owner/name>", detail: "another repo; default: the one this checkout names" },

@@ -25,6 +25,7 @@ import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { foldFragments, readFragments } from "./changelog-fragments";
 import { deploySite, publishThenDeploy, runStep } from "./deploy-site";
+import { checkoutGitHub } from "./github";
 import { awaitPublish, type AwaitResult, type RunGh } from "./release-await";
 
 export interface ChangelogSections {
@@ -447,7 +448,7 @@ function ghIn(root: string): RunGh {
 
 /**
  * The rest of a release that a lane used to do by hand: commit, hand the PR to `land` (which pushes,
- * opens it and arms auto-merge), wait for the merge, fast-forward `main`, then wait for the Publish
+ * opens it and labels it for the queue), merge it through the queue, fast-forward `main`, then wait for the Publish
  * run, deploy jgengine.com from the released commit, and answer with the version. `--wait` is what keeps a lane out of `Start-Sleep 480; gh run view`.
  */
 async function landAndAwait(root: string, version: string, cutFrom: string): Promise<never> {
@@ -467,13 +468,12 @@ async function landAndAwait(root: string, version: string, cutFrom: string): Pro
   }
   const land = spawnSync("bun", ["scripts/land.ts"], { cwd: root, stdio: "inherit" });
   if (land.status !== 0) {
-    console.error("release: land did not finish; the cut is committed on this branch and the PR is not armed");
+    console.error("release: land did not finish; the cut is committed on this branch and the PR is not in the landing queue");
     process.exit(land.status ?? 1);
   }
 
+  if (mergeThroughQueue(root) === null) process.exit(1);
   const gh = ghIn(root);
-  const merged = await waitForMerge(gh);
-  if (merged === null) process.exit(1);
   const forward = fastForwardMain(git);
   if (!forward.ok) {
     console.error(`release: fast-forwarding main failed: ${forward.error}`);
@@ -542,30 +542,24 @@ export function fastForwardMain(
   return { ok: true, sha };
 }
 
-/** The release PR's own merge is the event the publish run follows, so this waits on that state. */
-async function waitForMerge(
-  gh: (args: readonly string[]) => { status: number; stdout: string; stderr: string },
-): Promise<string | null> {
-  const deadline = Date.now() + 45 * 60_000;
-  while (Date.now() < deadline) {
-    const state = gh(["pr", "view", "--json", "state,number"]).stdout.trim();
-    if (state !== "") {
-      try {
-        const parsed = JSON.parse(state) as { state?: string; number?: number };
-        if (parsed.state === "MERGED") return String(parsed.number ?? "");
-        if (parsed.state === "CLOSED") {
-          console.error("release: the release PR was closed without merging, so nothing was published");
-          return null;
-        }
-      } catch {
-        // A shape this does not know is not a merge; keep waiting inside the budget.
-      }
-    }
-    // wait-ok: the release PR's checks take minutes and the merge is the event this waits for; bounded above
-    await Bun.sleep(15_000);
+/**
+ * The release PR's merge is the event the publish run follows. It merges through the landing queue,
+ * the one process that waits for CI and merges, run here in the foreground for this PR alone.
+ */
+function mergeThroughQueue(root: string): number | null {
+  const branch = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: root, encoding: "utf8" }).stdout.trim();
+  const listed = checkoutGitHub(root).listPulls({ head: branch, state: "open", limit: 1 });
+  const pr = listed.ok ? listed.value[0] : undefined;
+  if (pr === undefined) {
+    console.error(`release: no open PR for ${branch}${listed.ok ? "" : `: ${listed.error}`}; nothing was published`);
+    return null;
   }
-  console.error("release: the release PR did not merge within 45 minutes; nothing was published");
-  return null;
+  const queue = spawnSync("bun", ["scripts/land-queue.ts", "--pr", String(pr.number)], { cwd: root, stdio: "inherit" });
+  if (queue.status !== 0) {
+    console.error(`release: the landing queue did not merge #${pr.number}; nothing was published`);
+    return null;
+  }
+  return pr.number;
 }
 
 /** Compute the version a normal or patch release will publish. */

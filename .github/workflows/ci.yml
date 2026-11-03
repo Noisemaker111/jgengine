@@ -106,7 +106,7 @@ jobs:
       # Needs the `bun run build` above.
       - run: bun run check export-manifest
 
-  # PRs run everything main runs, split into parallel jobs, so squash auto-merge cannot land a red main.
+  # PRs run everything main runs, split into parallel jobs, so the landing queue cannot land a red main.
   # The type-check stages used to run one after another: 59 s on a runner, of
   # which the tsc fan-out was 21 s and three generators 23 s. scripts/type-shard.ts runs the
   # checks the table in scripts/run-stages.ts gives the `types` job, four in flight, heaviest first, and keeps this one

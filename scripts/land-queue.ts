@@ -422,7 +422,7 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
 }
 
 /**
- * Land one named PR, armed or not, and print one line: what `lane:close` runs in the background so
+ * Land one named PR, labelled or not, and print one line: what `lane:close` runs in the background so
  * the lane that handed the PR over keeps working instead of sitting in the queue.
  */
 export function drainOne(number: number, args: QueueArgs, io: QueueIo): { code: number; drained: Drained[] } {

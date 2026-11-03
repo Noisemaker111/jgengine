@@ -64,10 +64,10 @@ export interface GitHub {
   rerunRun(id: number): GhResult<null>;
 }
 
-/** `owner/repo` from a remote URL: github.com over https or ssh, or a proxy whose path ends in it. */
+/** `owner/repo` from a remote URL (github.com over https or ssh, or a proxy whose path ends in it), or `owner/repo` itself. */
 export function repoFromRemote(remote: string): string | null {
   const trimmed = remote.trim().replace(/\.git$/, "").replace(/\/+$/, "");
-  const match = /[:/]([^/:]+)\/([^/:]+)$/.exec(trimmed);
+  const match = /(?:^|[:/])([^/:\s]+)\/([^/:\s]+)$/.exec(trimmed);
   return match === null ? null : `${match[1]}/${match[2]}`;
 }
 
