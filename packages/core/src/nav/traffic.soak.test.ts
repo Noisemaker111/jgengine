@@ -175,8 +175,6 @@ describe("traffic soak", () => {
     );
     // 200 cars cost this machine about a fifteenth of the budget; the gate catches a real regression.
     gateTimingMs("traffic tick, 200 cars on an 81-junction grid", samples, 1.5, `p50 ${p50.toFixed(3)} ms, p90 ${p90.toFixed(3)} ms`);
-    expect(p50).toBeLessThan(1.5);
-    expect(p90).toBeLessThan(1.5);
     expect(stats.cars).toBe(200);
     expect(stats.stalls).toBe(0);
     expect(stats.maxDeadlockSeconds).toBeLessThan(1);

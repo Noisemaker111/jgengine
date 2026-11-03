@@ -805,7 +805,8 @@ describe("browser launch handshake", () => {
     await expect(
       waitForDebugger(1, 5_000, { browser: { exitCode: 1 }, profilePath: "/tmp/jg-profile" }),
     ).rejects.toThrow("the browser process exited (code 1) before binding the debugger on :1");
-    expect(Date.now() - startedAt).toBeLessThan(1_000);
+    // Half the 5 s wait: burning the wait fails, a busy machine does not.
+    expect(Date.now() - startedAt).toBeLessThan(2_500);
   });
 });
 

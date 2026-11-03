@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { gateTimingMs } from "../../../../../scripts/timing-budget";
 import { seededRng } from "../../random/rng";
 import { createPlantGrowth } from "../growth/plantGrowth";
 import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
@@ -60,7 +61,7 @@ describe("forest stand", () => {
     const stand = createStand({ ...NORTHERN_HARDWOODS, seed: "timing" });
     const start = performance.now();
     stand.step(300);
-    expect(performance.now() - start).toBeLessThan(10_000);
+    gateTimingMs("one hectare, 300 years", [performance.now() - start], 10_000);
     expect(stand.stats().treesPerHa).toBeGreaterThan(100);
   }, 60_000);
 

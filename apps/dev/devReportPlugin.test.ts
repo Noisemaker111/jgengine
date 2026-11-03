@@ -74,7 +74,8 @@ describe("dev report route", () => {
     store.put("deepward", report("deepward"));
     const started = Date.now();
     expect((await store.next("deepward", 5_000))!.report.game).toBe("deepward");
-    expect(Date.now() - started).toBeLessThan(100);
+    // Half the 5 s wait: burning the wait fails, a busy machine does not.
+    expect(Date.now() - started).toBeLessThan(2_500);
   });
 
   test("a crash line survives the clean report that follows a reload", () => {
