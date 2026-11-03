@@ -31,7 +31,7 @@
   "scripts": {
     "build": "bun ../../scripts/build-engine.ts",
     "check-types": "tsgo --noEmit -p tsconfig.json",
-    "test": "bun test src",
+    "test": "bun test --preload ../../scripts/three-preload.ts src",
     "styles": "bun scripts/styles.ts"
   },
   "dependencies": {

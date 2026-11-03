@@ -24,7 +24,7 @@
   "scripts": {
     "build": "bun ../../scripts/build-engine.ts",
     "check-types": "tsgo --noEmit -p tsconfig.json",
-    "test": "bun test src"
+    "test": "bun test --preload ../../scripts/three-preload.ts src"
   },
   "dependencies": {
     "@jgengine/core": "^0.51.0",
