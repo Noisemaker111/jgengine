@@ -25,7 +25,7 @@ import {
   type NameplateSample,
   type WorldBarSample,
 } from "@jgengine/core/hud/barSamples.draw";
-import { telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
+import { telegraphDecalPose, telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 
@@ -472,10 +472,8 @@ function TelegraphGeometry({ shape }: { shape: TelegraphShape }) {
 
 function TelegraphDecal({ active }: { active: ActiveTelegraph }) {
   const materialRef = useRef<THREE.MeshBasicMaterial>(null);
-  const [x, y, z] = active.event.position;
-  const dir = active.event.dir ?? 0;
   const shape = active.event.shape;
-  const forwardOffset = shape.kind === "line" ? shape.length / 2 : 0;
+  const pose = telegraphDecalPose(shape, active.event.position, active.event.dir ?? 0);
   const color = active.event.kind === "danger" ? "#ef4444" : "#f59e0b";
   useFrame(() => {
     const material = materialRef.current;
@@ -483,11 +481,7 @@ function TelegraphDecal({ active }: { active: ActiveTelegraph }) {
     material.opacity = telegraphPulseOpacity(active.bornMs, active.event.windupMs, performance.now());
   });
   return (
-    <mesh
-      position={[x + Math.sin(dir) * forwardOffset, y + 0.06, z + Math.cos(dir) * forwardOffset]}
-      rotation={[-Math.PI / 2, 0, shape.kind === "line" || shape.kind === "cone" ? -dir : 0]}
-      renderOrder={999}
-    >
+    <mesh position={pose.position} rotation={pose.rotation} renderOrder={999}>
       <TelegraphGeometry shape={shape} />
       <meshBasicMaterial
         ref={materialRef}

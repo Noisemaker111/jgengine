@@ -7,8 +7,10 @@ import { zoneLevelAt } from "../../world/zones";
 import { huntTargetFor, isFrontUnit } from "../../encounters/front";
 import { enemyById, levelDamageMult, type EnemyDef } from "./catalog";
 import {
+  dropWindup,
   homeOf,
   pruneAttackCadence,
+  pruneWindups,
   rememberHome,
   tickEnemyAttack,
 } from "./behavior";
@@ -74,6 +76,7 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
   const playerDowned = reservePhase(ctx) === "downed";
 
   pruneAttackCadence(ctx);
+  pruneWindups(ctx);
 
   const bossSamples: BossSample[] = [];
   for (const entity of ctx.scene.entity.list()) {
@@ -97,6 +100,7 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
     // Once the player is in reach it fights instead: hearing a shot never stops an enemy attacking.
     const heardAt = engaged ? null : huntTargetFor(ctx, entity.id);
     if (heardAt !== null && distance2d(anchor, heardAt) <= LEASH_RADIUS) {
+      dropWindup(ctx, entity.id);
       ctx.scene.entity.moveTowardCommit(entity.id, heardAt, { speed: def.walkSpeed, stopDistance: 1.4, dt });
       continue;
     }
@@ -111,6 +115,7 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
     }
 
     if (!engaged) {
+      dropWindup(ctx, entity.id);
       if (leashed) {
         ctx.scene.entity.moveTowardCommit(entity.id, anchor, { speed: def.walkSpeed, stopDistance: 2, dt });
       } else {
