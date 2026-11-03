@@ -30,9 +30,12 @@ export interface AwaitOptions {
   err: (text: string) => void;
   alive?: (pid: number) => boolean;
   /** Replaces the folder watch; the test drives the wait without a real child. */
-  untilExit?: (dir: string, id: string) => Promise<number | null>;
+  untilExit?: (dir: string, id: string) => Promise<WaitResult>;
   timeoutMs?: number;
 }
+
+/** The task's exit code, or why there is none: its runner died, or the wait ran out first. */
+type WaitResult = number | "lost" | "timeout";
 
 /** Print the task's output and return its exit code, once it has one. */
 export function awaitTask(options: AwaitOptions): Promise<number> {
@@ -51,7 +54,7 @@ export function awaitTask(options: AwaitOptions): Promise<number> {
     options.untilExit ??
     ((target: string) => waitForExit(target, id, options.alive ?? pidIsAlive, err, options.timeoutMs));
   return (async () => {
-    let code = readExit(dir);
+    let code: WaitResult | null = readExit(dir);
     if (code === null) {
       const command = readCommand(dir);
       err(`background await: waiting for ${id}${command.length > 0 ? ` (${command})` : ""}`);
@@ -59,7 +62,12 @@ export function awaitTask(options: AwaitOptions): Promise<number> {
     }
     const text = readOutput(dir);
     if (text.length > 0) options.write(text.endsWith("\n") ? text : `${text}\n`);
-    if (code === null) {
+    // A wait that ran out is not a lost task: the runner is still working, and awaiting again picks it up.
+    if (code === "timeout") {
+      err(`background await: ${id} is still running; run \`bun run background await ${id}\` again to keep waiting`);
+      return EXIT_TIMEOUT;
+    }
+    if (code === "lost") {
       err(`background await: ${id} never reported an exit code`);
       return EXIT_LOST;
     }
@@ -74,13 +82,13 @@ function waitForExit(
   alive: (pid: number) => boolean,
   err: (text: string) => void,
   timeoutMs?: number,
-): Promise<number | null> {
+): Promise<WaitResult> {
   return new Promise((resolve) => {
     let settled = false;
     let watcher: FSWatcher | null = null;
     let beat: ReturnType<typeof setInterval> | null = null;
     let deadline: ReturnType<typeof setTimeout> | null = null;
-    const finish = (code: number | null): void => {
+    const finish = (code: WaitResult): void => {
       if (settled) return;
       settled = true;
       watcher?.close();
@@ -107,13 +115,13 @@ function waitForExit(
       const runner = readRunner(dir);
       if (runner !== null && !alive(runner)) {
         err(`background await: the runner for ${id} is gone and left no exit code`);
-        finish(null);
+        finish("lost");
       }
     }, BEAT_MS);
     if (timeoutMs !== undefined) {
       deadline = setTimeout(() => {
         err(`background await: ${id} was still running after ${Math.round(timeoutMs / 1000)}s; it keeps running`);
-        finish(null);
+        finish("timeout");
       }, timeoutMs);
     }
   });

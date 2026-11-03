@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { removeDirSync } from "./removeDir";
 
-import { awaitTask, parseAwaitArgs, EXIT_LOST, EXIT_NO_TASK } from "./bg-await";
+import { awaitTask, parseAwaitArgs, EXIT_LOST, EXIT_NO_TASK, EXIT_TIMEOUT } from "./bg-await";
 import { commandFrom, startTask } from "./bg-run";
 import { newTaskId, readCommand, readExit, readOutput, readRunner, taskDir, TASK_ID } from "./bg-tasks";
 
@@ -200,6 +200,25 @@ test("a lost runner is answered, not waited for forever", async () => {
   expect(code).toBe(EXIT_LOST);
   expect(errors.join("\n")).toContain("left no exit code");
   expect(printed).toContain("started");
+});
+
+// A landing that took 9 minutes outlasted a 540 s wait, and the wait then also said the task
+// "never reported an exit code", which reads as a dead runner (2026-11-03, #2922 landed fine).
+test("a wait that runs out says the task is still running, never that it was lost", async () => {
+  const dir = checkout();
+  const task = taskDir(dir, "20261023-204501-abc");
+  mkdirSync(task, { recursive: true });
+  writeFileSync(join(task, "cmd.txt"), "bun scripts/land-queue.ts --pr 1\n");
+  writeFileSync(join(task, "out.log"), "");
+  // A pid nothing holds, so cleanup does not wait on it; `alive` says the runner lives.
+  writeFileSync(join(task, "runner"), "999999\n");
+
+  const errors: string[] = [];
+  const code = await awaitTask({ id: "20261023-204501-abc", checkout: dir, alive: () => true, write: () => {}, err: (line) => errors.push(line), timeoutMs: 300 });
+
+  expect(code).toBe(EXIT_TIMEOUT);
+  expect(errors.join("\n")).toContain("is still running");
+  expect(errors.join("\n")).not.toContain("never reported");
 });
 
 // A waiter woken by the exit file's creation read it before its code was written, and reported
