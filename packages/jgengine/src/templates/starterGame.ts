@@ -320,7 +320,7 @@ export function onNewPlayer(ctx: GameContext): void {
 }
 `;
 
-/** `src/game/probe.ts`: what the from-zero proof, `games-depth` and `drive --playtest` read. */
+/** `src/game/probe.ts`: what the from-zero proof and `drive --playtest` read. */
 export const starterProbeTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { run, sites } from "../loop";

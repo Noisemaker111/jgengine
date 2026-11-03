@@ -7,7 +7,7 @@ import { park, researched } from "./park";
 import { SCENARIOS, scenarioLock } from "./scenarios";
 import { session } from "./session";
 
-/** What the proofs and the depth check read from a live park. */
+/** What the proofs read from a live park. */
 export interface ParkProbe {
   [reading: string]: number;
   guests: number;

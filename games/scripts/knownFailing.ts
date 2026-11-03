@@ -1,10 +1,7 @@
 /**
- * The games that fail a depth rule today, and why. The list may only shrink.
- *
- * Three rules hold a game to hours of content rather than a two-minute demo: `brief` (a design brief
- * in `PLAN.md`), `from-zero` (a proof that starts a new game and plays its first minutes through real
- * input) and `depth` (the numbers that proof measures against the brief). A game that failed one when
- * the rule landed is listed with the reason; every other game must pass.
+ * The games that fail the `brief` rule (a design brief in `PLAN.md`) today, and why. The list may
+ * only shrink. A game that failed it when the rule landed is listed with the reason; every other game
+ * must pass.
  *
  * Shrink only, both ways round:
  *   - a listed game that now passes fails the check until its entry is removed, so a fix is recorded;
@@ -15,7 +12,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-export const DEPTH_RULES = ["brief", "from-zero", "depth"] as const;
+export const DEPTH_RULES = ["brief"] as const;
 export type DepthRule = (typeof DEPTH_RULES)[number];
 
 /** Repository-relative path of the list. */
@@ -28,8 +25,11 @@ function isRule(value: string): value is DepthRule {
   return DEPTH_RULES.some((rule) => rule === value);
 }
 
-/** Parse the list; a malformed entry throws with its place, since a list nobody can read protects nothing. */
-export function parseKnownFailing(text: string): KnownFailing {
+/**
+ * Parse the list; a malformed entry throws with its place, since a list nobody can read protects nothing.
+ * `retiredRules: "skip"` reads a base branch's list, which may name a rule since removed.
+ */
+export function parseKnownFailing(text: string, retiredRules: "throw" | "skip" = "throw"): KnownFailing {
   const raw: unknown = JSON.parse(text);
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) throw new Error(`${KNOWN_FAILING_PATH} must be an object of game -> { rule: reason }`);
   const out = new Map<string, Map<DepthRule, string>>();
@@ -38,7 +38,10 @@ export function parseKnownFailing(text: string): KnownFailing {
     if (typeof rules !== "object" || rules === null || Array.isArray(rules)) throw new Error(`${KNOWN_FAILING_PATH}: "${game}" must map rules to reasons`);
     const entry = new Map<DepthRule, string>();
     for (const [rule, reason] of Object.entries(rules)) {
-      if (!isRule(rule)) throw new Error(`${KNOWN_FAILING_PATH}: "${game}" names rule "${rule}"; the rules are ${DEPTH_RULES.join(", ")}`);
+      if (!isRule(rule)) {
+        if (retiredRules === "skip") continue;
+        throw new Error(`${KNOWN_FAILING_PATH}: "${game}" names rule "${rule}"; the rules are ${DEPTH_RULES.join(", ")}`);
+      }
       if (typeof reason !== "string" || reason.trim().length === 0) throw new Error(`${KNOWN_FAILING_PATH}: "${game}" ${rule} needs the reason it fails`);
       entry.set(rule, reason);
     }
@@ -62,7 +65,7 @@ export function readBaseKnownFailing(gamesRoot: string, base: string): BaseList 
   if (ref.status !== 0) return { kind: "unreadable", why: `${base} is not a commit here (git fetch origin beta)` };
   const shown = spawnSync("git", ["show", `${base}:${KNOWN_FAILING_PATH}`], { cwd: gamesRoot, encoding: "utf8", timeout: 15_000 });
   if (shown.status !== 0) return { kind: "new" };
-  return { kind: "list", list: parseKnownFailing(shown.stdout) };
+  return { kind: "list", list: parseKnownFailing(shown.stdout, "skip") };
 }
 
 /** Entries added since the base: each is a problem. */

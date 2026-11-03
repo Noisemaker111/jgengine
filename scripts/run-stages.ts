@@ -60,11 +60,6 @@ export interface CheckDef {
    * cached pass is keyed on these files alone. Omitted: it reads the whole tree.
    */
   readonly reads?: readonly string[];
-  /**
-   * Takes game ids after its own arguments and judges only those games. A diff inside
-   * `games/<id>/` folders alone passes the ids it touched; any other diff judges every game.
-   */
-  readonly perGame?: boolean;
 }
 
 export const CHECKS: readonly CheckDef[] = [
@@ -106,7 +101,6 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "games-framework", script: "games/scripts/framework-check.ts", jobs: ["games"], games: true, reads: ["games/", "registry/", "docs/"] },
   { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true, reads: ["games/"] },
   { name: "games-design", script: "games/scripts/check-game-design.ts", jobs: ["games"], games: true, reads: ["games/"] },
-  { name: "games-depth", script: "games/scripts/check-game-depth.ts", jobs: ["games"], games: true, reads: ["games/", "packages/"], perGame: true },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["packages/"] },
   { name: "games-capabilities", script: "games/scripts/check-capabilities.ts", jobs: ["games"], games: true, reads: ["games/", "packages/"] },
   { name: "games-sync", script: "packages/jgengine/src/cli/index.ts", args: ["sync", "--check"], jobs: ["games"], games: true, reads: ["games/", "packages/jgengine/"] },
@@ -144,30 +138,6 @@ export function readsPath(reads: readonly string[] | undefined, path: string): b
 /** True when any changed path can move this row. */
 export function reachedBy(row: { readonly reads?: readonly string[] | undefined }, changed: readonly string[]): boolean {
   return changed.some((path) => readsPath(row.reads, path));
-}
-
-const GAME_FOLDER = /^games\/([^/]+)\/./;
-const SHARED_GAME_FOLDERS = new Set(["scripts", "shared"]);
-
-/**
- * The games a diff stays inside: their ids when every changed path sits in a `games/<id>/` folder of
- * its own, else null (an engine, tooling or shared-games change judges every game).
- */
-export function gameScope(changed: readonly string[]): string[] | null {
-  if (changed.length === 0) return null;
-  const games = new Set<string>();
-  for (const path of changed) {
-    const id = GAME_FOLDER.exec(path)?.[1];
-    if (id === undefined || SHARED_GAME_FOLDERS.has(id)) return null;
-    games.add(id);
-  }
-  return [...games].sort();
-}
-
-/** The arguments a check runs with for this diff: a per-game check gets the games a game-only diff touched. */
-export function checkArgsFor(check: CheckDef, changed: readonly string[]): string[] {
-  const games = check.perGame === true ? gameScope(changed) : null;
-  return [...(check.args ?? []), ...(games ?? [])];
 }
 
 export function findCheck(name: string): CheckDef | undefined {

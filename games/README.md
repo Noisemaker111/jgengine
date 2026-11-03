@@ -59,19 +59,12 @@ the first 10 minutes beat by beat with what each teaches or unlocks, a content b
 and the onboarding style. [`scripts/designBrief.ts`](scripts/designBrief.ts) holds its exact shape
 and [`scripts/briefExample.ts`](scripts/briefExample.ts) a complete one. `bun run check games-design`
 passes a brief marked `Pending:` while milestone 1 is unticked and fails a game without a complete
-brief from the commit that ticks it; until then `games-depth` only requires the from-zero proof to play. Games that had none when the rule landed are listed, with
+brief from the commit that ticks it. Games that had none when the rule landed are listed, with
 the reason, in [`scripts/depth-known-failing.json`](scripts/depth-known-failing.json); that list
 only shrinks: a listed game that passes must leave it, and a new entry fails the check.
 
-Every game also has `proofs/flows/from-zero.flow.ts`: a headless flow with no `state` that boots a
-new game with no save and plays its first 10 minutes through real input (keys, the camera and the
-commands its buttons dispatch; teleports, clock scaling and dev commands are refused). Its probe
-reports `taught`, `unlocks`, `<kind>Seen` and `<kind>Total` for each budget kind, and each system's
-reading. `bun run check games-depth` plays it and fails the game when it starts beyond the brief's
-second 0, teaches or unlocks nothing by minute 2, stops meeting new things at the brief's pace, or
-misses the depth bars in [`scripts/fromZero.ts`](scripts/fromZero.ts) (systems touched, first
-unlock, unlocks per 10 minutes, content against the budget, longest cycle, minutes of content).
-The same known-failing list covers it. Never loosen a bar to pass a game.
+Every game also has `proofs/flows/from-zero.flow.ts`: a flow with no `state` that boots a new game
+with no save and plays its first minutes through real input (`bun run drive <game> --flow from-zero`).
 
 Every game's README states the same six-section design checklist (core loop, progression, failure
 states, minute 5 → hour 5, references, gap to target) and ends it with one `Loop proof:` line naming

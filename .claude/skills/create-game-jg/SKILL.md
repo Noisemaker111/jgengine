@@ -97,11 +97,8 @@ The branch lands once, with `bun run lane:close`, when the milestones asked for 
 milestone is never a PR of its own.
 
 The proof is `proofs/flows/from-zero.flow.ts`: a new game with no save or prepared state, played
-through real input (no teleports, clock scaling or dev commands), with a probe reporting `taught`,
-`unlocks`, each budget kind's `<kind>Seen` and `<kind>Total`, and each system's reading. `bun run
-check games-depth` plays it against the brief and the depth bars in `games/scripts/fromZero.ts`;
-`games/README.md` ("Design checklist and loop proofs") says what fails. Never seed a save or a
-mid-game state to make a milestone look reached, and never loosen a bar.
+through real input (no teleports, clock scaling or dev commands). Never seed a save or a mid-game
+state to make a milestone look reached.
 
 Treat the pitch as a unique composition of needs, never a genre kit or preset. Use `game-design` for
 the player promise, loops and progression, `level-design` for authored spaces, and the domain skills

@@ -25,7 +25,7 @@ The game design stays as the README checklist states it. This plan changes what 
 
 ## Design brief
 
-To be written once milestone 2 puts the game on the shell game player. That is the first point where a headless from-zero flow can boot it. Until then `games/scripts/depth-known-failing.json` keeps LLMville's brief, from-zero and depth entries.
+To be written once milestone 2 puts the game on the shell game player. That is the first point where a headless from-zero flow can boot it. Until then `games/scripts/depth-known-failing.json` keeps LLMville's brief entry.
 
 ## Features
 

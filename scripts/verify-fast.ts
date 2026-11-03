@@ -30,7 +30,7 @@ import { digestLines, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
 import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
-import { checkArgsFor, checkCommand, findCheck, gameScope, GEN_TARGETS, jobChecks, readsPath, reachedBy, type CheckDef } from "./run-stages";
+import { checkCommand, findCheck, GEN_TARGETS, jobChecks, readsPath, reachedBy, type CheckDef } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { siteGames } from "./siteGames";
@@ -337,7 +337,7 @@ export function gatesFor(changed: readonly string[]): string[] {
   if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("capture-hygiene");
   if (changed.some((path) => path.startsWith("packages/"))) gates.add("skill-api");
   if (changed.some((path) => path.startsWith("games/"))) {
-    for (const gate of ["games-framework", "module-globals", "games-save-states", "games-design", "games-depth"]) gates.add(gate);
+    for (const gate of ["games-framework", "module-globals", "games-save-states", "games-design"]) gates.add(gate);
   }
   if (changed.some((path) => path.startsWith("games/") || /^packages\/[^/]+\/src\//.test(path))) {
     gates.add("games-capabilities");
@@ -553,16 +553,10 @@ export const GATE_FIX: Readonly<Record<string, string>> = {
     "bun run gen  (rewrites .claude/skills/*/api.md and prunes scripts/api-doc-baseline.json and scripts/api-orphan-baseline.json)",
 };
 
-/**
- * The files whose bytes decide a gate: what its row reads, narrowed to the touched games for a
- * per-game gate on a game-only diff. A row that names no paths reads the whole tree.
- */
-export function gateInputs(check: CheckDef, changed: readonly string[], files: readonly string[]): string[] {
+/** The files whose bytes decide a gate: what its row reads. A row that names no paths reads the whole tree. */
+export function gateInputs(check: CheckDef, files: readonly string[]): string[] {
   if (check.reads === undefined) return [WHOLE_TREE];
-  const games = check.perGame === true ? gameScope(changed) : null;
-  const inScope = (file: string): boolean =>
-    games === null || !/^games\/[^/]+\//.test(file) || /^games\/(?:scripts|shared)\//.test(file) || games.some((game) => file.startsWith(`games/${game}/`));
-  return files.filter((file) => readsPath(check.reads, file) && inScope(file)).sort();
+  return files.filter((file) => readsPath(check.reads, file)).sort();
 }
 
 /** Arguments a gate needs after its script name, as CI passes them. */
@@ -668,11 +662,10 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
   for (const gate of gates) {
     const check = findCheck(gate);
     if (check === undefined) throw new Error(`verify:fast: gate ${gate} is not in the check table (scripts/run-stages.ts)`);
-    const args = [...checkArgsFor(check, plan.changed), ...(GATE_ARGS[gate] ?? [])];
-    const settles = unit(["gate:" + gate, ...args].join(" "), options.tree === undefined ? [WHOLE_TREE] : gateInputs(check, plan.changed, options.tree));
+    const args = [...(check.args ?? []), ...(GATE_ARGS[gate] ?? [])];
+    const settles = unit(["gate:" + gate, ...args].join(" "), options.tree === undefined ? [WHOLE_TREE] : gateInputs(check, options.tree));
     if (fresh(settles.id, settles.inputs)) continue;
-    const scope = check.perGame === true ? gameScope(plan.changed) : null;
-    steps.push({ name: scope === null ? gate : `${gate} ${scope.join(" ")}`, command: ["bun", check.script, ...args], fix: GATE_FIX[gate], cost: GATE_COST[gate], first: true, units: [settles] });
+    steps.push({ name: gate, command: ["bun", check.script, ...args], fix: GATE_FIX[gate], cost: GATE_COST[gate], first: true, units: [settles] });
   }
 
   const boots = plan.boots.map((game) => unit(`boot:${game}`)).filter((settles) => !fresh(settles.id, settles.inputs));
