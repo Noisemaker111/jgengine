@@ -16,7 +16,7 @@ beforeAll(async () => {
   await page.getByRole("treeitem").filter({ hasText: "Saved start 1" }).waitFor();
 }, 120000);
 
-afterAll(() => fixture.stop(session));
+afterAll(() => fixture.stop());
 
 /**
  * The play HUD's buttons, clicked without Playwright's two-frame stability check and each
