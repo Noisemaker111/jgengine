@@ -12,6 +12,7 @@ import type { TerrainDetailMaterialConfig, TerrainMaterialMaps } from "@jgengine
 
 import { MATERIAL_MAP_FILES } from "../materialMapFiles";
 import { sourceById } from "../sources";
+import { MATERIAL_LIBRARY } from "./materials/index";
 
 /** How a library surface renders: an ordinary PBR surface, cut-out foliage, glass or water. */
 export type LibrarySurface = "opaque" | "foliage" | "glass" | "water";
@@ -67,126 +68,7 @@ export interface LibraryTerrainDetail {
   tint?: number;
 }
 
-const MATTE = { metalness: 0, roughness: 0.85 } as const;
-
-/**
- * The shared library: 40+ ambientCG PBR materials plus the glass and water surfaces that need a
- * shader rather than a scan. `satisfies` keeps every entry complete, so a missing tile size or
- * response is a type error instead of a silently grey surface.
- */
-export const MATERIAL_LIBRARY: readonly LibraryMaterial[] = [
-  // Asphalt and road — wet asphalt is the same scan with a low roughness, not a second download.
-  { name: "asphalt/wet", title: "Wet asphalt", group: "asphalt", source: "ambientcg-asphalt025c", surface: "opaque", tileMetres: 4, response: { metalness: 0, roughness: 0.34, color: "#8f9498" } },
-  { name: "asphalt/dark-cracked", title: "Dark cracked asphalt", group: "asphalt", source: "ambientcg-asphalt012", surface: "opaque", tileMetres: 4, response: { metalness: 0, roughness: 0.8 } },
-  { name: "asphalt/dry", title: "Dry asphalt", group: "asphalt", source: "ambientcg-asphalt003", surface: "opaque", tileMetres: 4, response: { metalness: 0, roughness: 0.82 } },
-  { name: "asphalt/patch", title: "Patched asphalt", group: "asphalt", source: "ambientcg-asphalt021", surface: "opaque", tileMetres: 3.2, response: { metalness: 0, roughness: 0.74 } },
-  { name: "road/tarmac", title: "Tarmac road", group: "asphalt", source: "ambientcg-road001", surface: "opaque", tileMetres: 6, response: { metalness: 0, roughness: 0.7 } },
-  { name: "road/marked", title: "Marked road", group: "asphalt", source: "ambientcg-road008a", surface: "opaque", tileMetres: 8, response: { metalness: 0, roughness: 0.62 } },
-
-  // Concrete.
-  { name: "concrete/smooth", title: "Smooth concrete", group: "concrete", source: "ambientcg-concrete006", surface: "opaque", tileMetres: 3, response: { metalness: 0, roughness: 0.78 } },
-  { name: "concrete/sidewalk", title: "Sidewalk concrete", group: "concrete", source: "ambientcg-concrete034", surface: "opaque", tileMetres: 3, response: { metalness: 0, roughness: 0.82 } },
-  { name: "concrete/poured", title: "Poured concrete", group: "concrete", source: "ambientcg-concrete013", surface: "opaque", tileMetres: 3.5, response: { metalness: 0, roughness: 0.88 } },
-  { name: "concrete/rough", title: "Rough concrete", group: "concrete", source: "ambientcg-concrete025", surface: "opaque", tileMetres: 2.6, response: { metalness: 0, roughness: 0.94 } },
-
-  // Stucco and plaster.
-  { name: "stucco/painted", title: "Painted stucco", group: "stucco", source: "ambientcg-paintedplaster006", surface: "opaque", tileMetres: 2.2, response: { metalness: 0, roughness: 0.9 } },
-  { name: "stucco/warm", title: "Warm stucco", group: "stucco", source: "ambientcg-paintedplaster010", surface: "opaque", tileMetres: 2.2, response: { metalness: 0, roughness: 0.88 } },
-  { name: "plaster/interior", title: "Interior plaster", group: "stucco", source: "ambientcg-plaster001", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.92 } },
-
-  // Brick.
-  { name: "brick/red", title: "Red brick", group: "brick", source: "ambientcg-bricks004", surface: "opaque", tileMetres: 1.6, response: { metalness: 0, roughness: 0.86 } },
-  { name: "brick/painted", title: "Painted brick", group: "brick", source: "ambientcg-paintedbricks002", surface: "opaque", tileMetres: 1.6, response: { metalness: 0, roughness: 0.8 } },
-  { name: "brick/whitewash", title: "Whitewashed brick", group: "brick", source: "ambientcg-paintedbricks005", surface: "opaque", tileMetres: 1.6, response: { metalness: 0, roughness: 0.84 } },
-
-  // Tile, paving and roof.
-  { name: "tile/ceramic", title: "Ceramic tile", group: "tile", source: "ambientcg-tiles007", surface: "opaque", tileMetres: 1.2, response: { metalness: 0, roughness: 0.32 } },
-  { name: "paving/stone", title: "Stone paving", group: "tile", source: "ambientcg-pavingstones002", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.83 } },
-  { name: "paving/plaza", title: "Plaza paving", group: "tile", source: "ambientcg-pavingstones070", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.8 } },
-  { name: "paving/sett", title: "Setts", group: "tile", source: "ambientcg-pavingstones020", surface: "opaque", tileMetres: 1.8, response: { metalness: 0, roughness: 0.8 } },
-  { name: "roof/tiles", title: "Roof tiles", group: "tile", source: "ambientcg-roofingtiles006", surface: "opaque", tileMetres: 1.4, response: { metalness: 0, roughness: 0.78 } },
-
-  // Metal.
-  { name: "metal/painted", title: "Painted metal", group: "metal", source: "ambientcg-paintedmetal006", surface: "opaque", tileMetres: 1.2, response: { metalness: 0.75, roughness: 0.44 } },
-  { name: "metal/chipped", title: "Chipped paint", group: "metal", source: "ambientcg-paintedmetal002", surface: "opaque", tileMetres: 1, response: { metalness: 0.8, roughness: 0.5 } },
-  { name: "metal/steel", title: "Bare steel", group: "metal", source: "ambientcg-metal007", surface: "opaque", tileMetres: 1, response: { metalness: 0.95, roughness: 0.42 } },
-  { name: "metal/brushed", title: "Brushed metal", group: "metal", source: "ambientcg-metal032", surface: "opaque", tileMetres: 1, response: { metalness: 1, roughness: 0.3 } },
-  { name: "metal/corrugated", title: "Corrugated steel", group: "metal", source: "ambientcg-corrugatedsteel009", surface: "opaque", tileMetres: 2, response: { metalness: 0.9, roughness: 0.55 } },
-  { name: "metal/diamond-plate", title: "Diamond plate", group: "metal", source: "ambientcg-diamondplate005a", surface: "opaque", tileMetres: 1.2, response: { metalness: 0.92, roughness: 0.38 } },
-  { name: "metal/rust", title: "Rusted metal", group: "metal", source: "ambientcg-rust007", surface: "opaque", tileMetres: 1.4, response: { metalness: 0.35, roughness: 0.88 } },
-  { name: "metal/plate", title: "Steel plate", group: "metal", source: "ambientcg-metalplates001", surface: "opaque", tileMetres: 1.6, response: { metalness: 0.85, roughness: 0.5 } },
-
-  // Painted finishes: response only, no scan. A kit car or prop keeps its palette colour and gains
-  // the lacquer that separates a painted body from matte clay: a sharp clearcoat over a soft base.
-  { name: "paint/gloss", title: "Gloss car paint", group: "metal", surface: "opaque", tileMetres: 1, response: { metalness: 0.15, roughness: 0.4, clearcoat: 1, clearcoatRoughness: 0.05 } },
-  { name: "paint/satin", title: "Satin paint", group: "metal", surface: "opaque", tileMetres: 1, response: { metalness: 0, roughness: 0.52, clearcoat: 0.4, clearcoatRoughness: 0.28 } },
-
-  // Wood.
-  { name: "wood/oak", title: "Oak", group: "wood", source: "ambientcg-wood026", surface: "opaque", tileMetres: 1.4, response: { metalness: 0, roughness: 0.66 } },
-  { name: "wood/floor", title: "Wood floor", group: "wood", source: "ambientcg-woodfloor009", surface: "opaque", tileMetres: 1.8, response: { metalness: 0, roughness: 0.46 } },
-  { name: "wood/deck", title: "Deck planks", group: "wood", source: "ambientcg-planks003", surface: "opaque", tileMetres: 1.6, response: { metalness: 0, roughness: 0.75 } },
-  { name: "wood/painted", title: "Painted wood", group: "wood", source: "ambientcg-paintedwood006a", surface: "opaque", tileMetres: 1.2, response: { metalness: 0, roughness: 0.6 } },
-  { name: "wood/siding", title: "Wood siding", group: "wood", source: "ambientcg-woodsiding005", surface: "opaque", tileMetres: 1.4, response: { metalness: 0, roughness: 0.72 } },
-  { name: "wood/bark", title: "Tree bark", group: "wood", source: "ambientcg-bark002", surface: "opaque", tileMetres: 1, response: { metalness: 0, roughness: 0.92 } },
-
-  // Foliage — cut-out cards over a warm, backlit response.
-  { name: "foliage/leaf", title: "Leaf card", group: "foliage", source: "ambientcg-leaf001", surface: "foliage", tileMetres: 0.8, response: { metalness: 0, roughness: 0.55, alphaMode: "mask", alphaCutoff: 0.45, doubleSided: true, sheen: 0.6, sheenColor: "#c8d18a", sheenRoughness: 0.7 } },
-  { name: "foliage/leaf-dense", title: "Dense leaf card", group: "foliage", source: "ambientcg-leaf003", surface: "foliage", tileMetres: 1, response: { metalness: 0, roughness: 0.6, alphaMode: "mask", alphaCutoff: 0.45, doubleSided: true, sheen: 0.55, sheenColor: "#b9cc7d", sheenRoughness: 0.75 } },
-  { name: "foliage/grass", title: "Grass ground", group: "foliage", source: "ambientcg-grass001", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.9 } },
-  { name: "foliage/grass-macro", title: "Grass ground (macro)", group: "foliage", source: "ambientcg-grass001", surface: "opaque", tileMetres: 24, response: { metalness: 0, roughness: 0.9 }, terrain: { strength: 0.6, tint: 0.3 } },
-  { name: "foliage/grass-dry", title: "Dry grass", group: "foliage", source: "ambientcg-grass004", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.92 } },
-  { name: "foliage/moss", title: "Moss", group: "foliage", source: "ambientcg-moss001", surface: "opaque", tileMetres: 1.2, response: { metalness: 0, roughness: 0.95 } },
-  { name: "foliage/leaf-litter", title: "Leaf litter", group: "foliage", source: "ambientcg-scatteredleaves008", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.88 } },
-
-  // Ground and nature.
-  { name: "ground/dirt", title: "Forest floor", group: "ground", source: "ambientcg-ground037", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.9 } },
-  { name: "ground/dirt-macro", title: "Forest floor (macro)", group: "ground", source: "ambientcg-ground037", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.9 }, terrain: { strength: 0.6, tint: 0.3 } },
-  { name: "ground/sand", title: "Beach sand", group: "ground", source: "ambientcg-ground055s", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.88 } },
-  { name: "ground/beach", title: "Beach sand", group: "ground", source: "ambientcg-ground033", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.88 } },
-  { name: "ground/sand-dark", title: "Dark sand", group: "ground", source: "ambientcg-ground080", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.86 } },
-  { name: "ground/mud", title: "Wet mud", group: "ground", source: "ambientcg-ground095b", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.52 } },
-  { name: "ground/packed-dirt", title: "Packed dirt", group: "ground", source: "ambientcg-ground025", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.9 } },
-  { name: "ground/gravel", title: "Gravel", group: "ground", source: "ambientcg-gravel002", surface: "opaque", tileMetres: 1.6, response: { metalness: 0, roughness: 0.88 } },
-  { name: "ground/rock", title: "Rock face", group: "ground", source: "ambientcg-rock022", surface: "opaque", tileMetres: 3, response: { metalness: 0, roughness: 0.86 } },
-  { name: "foliage/meadow", title: "Meadow grass", group: "foliage", source: "ambientcg-grass005", surface: "opaque", tileMetres: 2, response: { metalness: 0, roughness: 0.9 } },
-  { name: "ground/jungle-floor", title: "Jungle floor", group: "ground", source: "ambientcg-ground020", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.9 } },
-  { name: "ground/cliff", title: "Cliff rock", group: "ground", source: "ambientcg-rock035", surface: "opaque", tileMetres: 3, response: { metalness: 0, roughness: 0.9 } },
-  { name: "ground/dirt-road", title: "Packed dirt road", group: "ground", source: "ambientcg-ground054", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.9 } },
-  { name: "ground/gravel-fine", title: "Fine gravel", group: "ground", source: "ambientcg-gravel022", surface: "opaque", tileMetres: 1.4, response: { metalness: 0, roughness: 0.9 } },
-  { name: "ground/gravel-road", title: "Road gravel", group: "ground", source: "ambientcg-gravel032", surface: "opaque", tileMetres: 1.6, response: { metalness: 0, roughness: 0.9 } },
-  { name: "ground/desert-cracked", title: "Cracked desert", group: "ground", source: "ambientcg-ground031", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.9 } },
-  { name: "ground/ice", title: "Ice", group: "ground", source: "ambientcg-ice001", surface: "opaque", tileMetres: 1.8, response: { metalness: 0, roughness: 0.18 } },
-  { name: "ground/snow", title: "Snow", group: "ground", source: "ambientcg-snow006", surface: "opaque", tileMetres: 2.4, response: { metalness: 0, roughness: 0.72 } },
-
-  // Fabric, plastic and stone fittings.
-  { name: "fabric/canvas", title: "Canvas", group: "fabric", source: "ambientcg-fabric007", surface: "opaque", tileMetres: 1, response: { ...MATTE } },
-  { name: "fabric/weave", title: "Woven fabric", group: "fabric", source: "ambientcg-fabric009", surface: "opaque", tileMetres: 0.8, response: { metalness: 0, roughness: 0.82, sheen: 0.3, sheenColor: "#ffffff", sheenRoughness: 0.8 } },
-  { name: "plastic/matte", title: "Matte plastic", group: "fabric", source: "ambientcg-plastic006", surface: "opaque", tileMetres: 0.8, response: { metalness: 0, roughness: 0.5 } },
-  { name: "stone/marble", title: "Marble", group: "stone", source: "ambientcg-marble001", surface: "opaque", tileMetres: 1.8, response: { metalness: 0, roughness: 0.22 } },
-  { name: "stone/terrazzo", title: "Terrazzo", group: "stone", source: "ambientcg-terrazzo005", surface: "opaque", tileMetres: 1.6, response: { metalness: 0, roughness: 0.3 } },
-
-  // Facades: whole building walls with windows, one tile spanning six 3.33 m floors and six bays of
-  // brick (`facade/brick-*`) or ten floors of curtain-wall glass (`facade/glass-*`). Project them in
-  // metres (`material.scan`) so floors land where the building's storeys are.
-  { name: "facade/brick-red", title: "Red brick facade", group: "facade", source: "ambientcg-facade018a", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.82 } },
-  { name: "facade/brick-grey", title: "Grey brick facade", group: "facade", source: "ambientcg-facade019a", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.8 } },
-  { name: "facade/brick-brown", title: "Brown brick facade", group: "facade", source: "ambientcg-facade020a", surface: "opaque", tileMetres: 20, response: { metalness: 0, roughness: 0.8 } },
-  { name: "facade/glass-blue", title: "Blue glass curtain wall", group: "facade", source: "ambientcg-facade001", surface: "opaque", tileMetres: 34, response: { metalness: 0.4, roughness: 0.14 } },
-  // Curtain wall with aluminium mullions and spandrel bands: eight 3.5 m floors and fourteen 2 m panes per tile.
-  { name: "facade/glass-curtain", title: "Glass curtain wall with mullions", group: "facade", source: "ambientcg-facade006", surface: "opaque", tileMetres: 28, response: { metalness: 0.7, roughness: 0.16 } },
-  { name: "facade/glass-mirror", title: "Mirror glass curtain wall", group: "facade", source: "ambientcg-facade005", surface: "opaque", tileMetres: 34, response: { metalness: 0.5, roughness: 0.1 } },
-
-  // Glass: transmission and roughness carry the look. The smudged variant adds a scanned
-  // fingerprint normal so glass is not a mathematically clean sheet.
-  { name: "glass/clear", title: "Clear glass", group: "glass", surface: "glass", tileMetres: 2, response: { metalness: 0, roughness: 0.03, transmission: 1, ior: 1.52, thickness: 0.01, alphaMode: "opaque" } },
-  { name: "glass/frosted", title: "Frosted glass", group: "glass", surface: "glass", tileMetres: 2, response: { metalness: 0, roughness: 0.42, transmission: 1, ior: 1.52, thickness: 0.01, alphaMode: "opaque" } },
-  { name: "glass/smudged", title: "Smudged glass", group: "glass", source: "ambientcg-fingerprints001", surface: "glass", tileMetres: 0.7, response: { metalness: 0, roughness: 0.12, transmission: 1, ior: 1.52, thickness: 0.01, alphaMode: "opaque" } },
-
-  // Water: the shell's ocean/puddle shader owns ripples; these entries carry the response and the
-  // depth tint so a game selects water by name like any other surface.
-  { name: "water/ocean", title: "Ocean water", group: "water", surface: "water", tileMetres: 8, response: { metalness: 0.02, roughness: 0.05, alphaMode: "opaque" } },
-  { name: "water/puddle", title: "Puddle", group: "water", surface: "water", tileMetres: 3, response: { metalness: 0, roughness: 0.06, alphaMode: "opaque" } },
-];
+export { MATERIAL_LIBRARY };
 
 const byName = new Map(MATERIAL_LIBRARY.map((entry) => [entry.name, entry]));
 

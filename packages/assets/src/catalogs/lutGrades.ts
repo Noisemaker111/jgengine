@@ -1,6 +1,7 @@
 import { formatCubeLut } from "@jgengine/core/postfx/cubeLut";
 import type { GradeLut, LutCube } from "@jgengine/core/render/postProcessing";
 
+import { LUT_GRADES } from "./grades/index";
 type Rgb = readonly [number, number, number];
 
 /** The numeric recipe behind one grade. Every field is optional; an empty recipe is the identity. */
@@ -37,31 +38,7 @@ export interface LutGrade {
 const clamp = (value: number): number => Math.min(1, Math.max(0, value));
 const luma = (r: number, g: number, b: number): number => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
-/** The shipped colour grades, each a recipe baked into a 32³ cube. */
-export const LUT_GRADES = [
-  { id: "warm-filmic", title: "Warm filmic", look: "Gentle S-curve, amber highlights, soft cool shadows.", recipe: { contrast: 1.08, saturation: 1.04, gain: [1.04, 1.0, 0.94], shadowTint: [-0.005, 0.0, 0.02], highlightTint: [0.03, 0.012, -0.015], fade: 0.012 } },
-  { id: "cold-teal", title: "Cold teal", look: "Blue-green cast, held highlights, crisp shadows.", recipe: { contrast: 1.06, saturation: 0.92, gain: [0.93, 1.0, 1.06], shadowTint: [-0.015, 0.012, 0.025], highlightTint: [-0.01, 0.01, 0.025] } },
-  { id: "bleach-bypass", title: "Bleach bypass", look: "Silvery, low saturation, high contrast.", recipe: { contrast: 1.18, saturation: 0.72, bleach: 0.55 } },
-  { id: "desaturated-war", title: "Desaturated war", look: "Muddy olive-grey, flat blacks, little colour.", recipe: { contrast: 1.06, saturation: 0.5, gain: [1.0, 1.0, 0.92], gamma: [1.0, 1.0, 1.04], shadowTint: [0.008, 0.012, 0.0], fade: 0.03 } },
-  { id: "sunset-orange", title: "Sunset orange", look: "Everything lit from a low orange sun.", recipe: { contrast: 1.05, saturation: 1.12, gain: [1.1, 0.97, 0.82], highlightTint: [0.05, 0.015, -0.03], shadowTint: [0.02, 0.0, 0.015] } },
-  { id: "night-blue", title: "Night blue", look: "Moonlit blue, dark mid tones, cold highlights.", recipe: { contrast: 1.04, saturation: 0.85, gain: [0.78, 0.9, 1.14], gamma: [1.12, 1.06, 0.98], shadowTint: [0.0, 0.01, 0.045], highlightTint: [-0.01, 0.01, 0.04] } },
-  { id: "pastel", title: "Pastel", look: "Airy, lifted blacks, soft saturated colour.", recipe: { contrast: 0.86, saturation: 0.9, gamma: [0.88, 0.88, 0.88], fade: 0.07, highlightTint: [0.012, 0.0, 0.012] } },
-  { id: "high-contrast-noir", title: "High-contrast noir", look: "Near black and white with hard contrast.", recipe: { contrast: 1.4, saturation: 0.08, gamma: [1.08, 1.08, 1.08] } },
-  { id: "teal-orange", title: "Teal and orange", look: "Warm skin tones against teal shadows.", recipe: { contrast: 1.08, saturation: 1.08, shadowTint: [-0.025, 0.01, 0.035], highlightTint: [0.045, 0.012, -0.03] } },
-  { id: "faded-vintage", title: "Faded vintage", look: "Lifted warm blacks and washed-out colour, like old film.", recipe: { contrast: 0.92, saturation: 0.78, gain: [1.03, 0.98, 0.9], fade: 0.09, shadowTint: [0.015, 0.008, 0.0] } },
-  { id: "toxic-green", title: "Toxic green", look: "Sickly green cast for ruins and labs.", recipe: { contrast: 1.07, saturation: 0.95, gain: [0.88, 1.08, 0.88], shadowTint: [-0.01, 0.025, 0.0], highlightTint: [-0.01, 0.03, -0.01] } },
-  { id: "neon-magenta", title: "Neon magenta", look: "Saturated magenta and cyan split for night cities.", recipe: { contrast: 1.12, saturation: 1.25, shadowTint: [0.0, 0.0, 0.04], highlightTint: [0.04, -0.02, 0.035], gain: [1.04, 0.93, 1.06] } },
-  { id: "desert-dust", title: "Desert dust", look: "Bleached sand tones and hazy highlights.", recipe: { contrast: 0.98, saturation: 0.84, gain: [1.07, 1.02, 0.88], fade: 0.035, highlightTint: [0.025, 0.015, -0.01] } },
-  { id: "neon-sunset", title: "Neon sunset", look: "Peach midtones, cream highlights and teal shadows: a warm coast at golden hour.", recipe: { contrast: 1.1, saturation: 1.15, gain: [1.06, 0.99, 0.9], shadowTint: [-0.03, 0.005, 0.035], highlightTint: [0.04, 0.02, -0.01] } },
-  { id: "sepia", title: "Sepia", look: "Brown monochrome.", recipe: { contrast: 1.04, sepia: 1 } },
-  { id: "cool-overcast", title: "Cool overcast", look: "Flat blue-grey daylight, calm and muted.", recipe: { contrast: 0.95, saturation: 0.8, gain: [0.96, 1.0, 1.05], fade: 0.02 } },
-  { id: "tropical-lush", title: "Tropical lush", look: "Teal-green shadows, warm leafy mid tones, cream highlights, a touch more colour.", recipe: { contrast: 1.06, saturation: 1.14, gain: [0.98, 1.0, 0.97], shadowTint: [-0.012, 0.018, 0.012], highlightTint: [0.008, 0.006, 0.0] } },
-  { id: "bleach-bypass-warm", title: "Bleach bypass, warm", look: "Bleached amber midtones, teal-black shadows, cream highlights.", recipe: { contrast: 1.22, saturation: 0.88, bleach: 0.4, gain: [1.08, 1.0, 0.88], shadowTint: [-0.02, 0.006, 0.012], highlightTint: [0.04, 0.012, -0.04] } },
-  { id: "pastel-dusk", title: "Pastel dusk", look: "Plum-violet shadows, rose midtones, cream highlights, soft saturated colour.", recipe: { contrast: 1.02, saturation: 1.05, gain: [1.02, 0.97, 1.03], shadowTint: [0.014, 0.002, 0.034], highlightTint: [0.03, 0.012, -0.004], fade: 0.02 } },
-  { id: "sunny-postcard", title: "Sunny postcard", look: "Teal-blue shadows, cream midtones, paper-white highlights, a little more colour.", recipe: { contrast: 1.04, saturation: 1.12, gain: [1.02, 1.0, 0.96], shadowTint: [-0.04, 0.0, 0.03], highlightTint: [0.012, 0.01, 0.0] } },
-  { id: "vivid-pop", title: "Vivid pop", look: "Punchy saturated cartoon colour.", recipe: { contrast: 1.14, saturation: 1.45, gamma: [0.97, 0.97, 0.97] } },
-  { id: "autumn-painterly", title: "Autumn painterly", look: "Golden late-afternoon midtones, cool blue-grey shadows, cream highlights, richer colour.", recipe: { contrast: 1.08, saturation: 1.15, gain: [1.06, 1.0, 0.86], shadowTint: [-0.012, 0.0, 0.03], highlightTint: [0.04, 0.02, -0.035] } },
-] as const satisfies readonly LutGrade[];
+export { LUT_GRADES };
 
 /** The id of one grade in {@link LUT_GRADES}. */
 export type LutGradeId = (typeof LUT_GRADES)[number]["id"];

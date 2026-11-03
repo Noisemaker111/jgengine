@@ -1,5 +1,7 @@
 import type { GameFontFace, GameFontPairing } from "@jgengine/core/ui/fonts.view";
 
+import { FONT_LIBRARY } from "./fonts/index";
+
 /** What a family is for: titles and numbers, reading text, or either. */
 export type FontRole = "display" | "body" | "both";
 
@@ -17,30 +19,7 @@ export interface FontEntry {
   package: string;
 }
 
-/** The shipped font families, each a display or a body face. */
-export const FONT_LIBRARY = [
-  { id: "cinzel", family: "Cinzel", role: "display", moods: ["fantasy"], author: "Natanael Gama", package: "cinzel" },
-  { id: "crimson-pro", family: "Crimson Pro", role: "body", moods: ["fantasy", "cozy"], author: "Jacques Le Bailly", package: "crimson-pro" },
-  { id: "orbitron", family: "Orbitron", role: "display", moods: ["sci-fi"], author: "Matt McInerney", package: "orbitron" },
-  { id: "rajdhani", family: "Rajdhani", role: "body", moods: ["sci-fi", "sports"], author: "Indian Type Foundry", package: "rajdhani" },
-  { id: "oswald", family: "Oswald", role: "display", moods: ["industrial", "sports"], author: "Vernon Adams", package: "oswald" },
-  { id: "barlow", family: "Barlow", role: "body", moods: ["industrial", "military"], author: "Jeremy Tribby", package: "barlow" },
-  { id: "fredoka", family: "Fredoka", role: "display", moods: ["cozy"], author: "Milena Brandão", package: "fredoka" },
-  { id: "nunito", family: "Nunito", role: "body", moods: ["cozy"], author: "Vernon Adams, Jacques Le Bailly", package: "nunito" },
-  { id: "bebas-neue", family: "Bebas Neue", role: "display", moods: ["sports"], author: "Ryoichi Tsunekawa", package: "bebas-neue" },
-  { id: "roboto", family: "Roboto", role: "body", moods: ["sports", "neutral"], author: "Christian Robertson", package: "roboto" },
-  { id: "stardos-stencil", family: "Stardos Stencil", role: "display", moods: ["military"], author: "Vernon Adams", package: "stardos-stencil" },
-  { id: "share-tech-mono", family: "Share Tech Mono", role: "both", moods: ["military", "sci-fi"], author: "Carrois Apostrophe", package: "share-tech-mono" },
-  { id: "bangers", family: "Bangers", role: "display", moods: ["sports", "comic"], author: "Vernon Adams", package: "bangers" },
-  { id: "russo-one", family: "Russo One", role: "display", moods: ["industrial", "sports"], author: "Jovanny Lemonad", package: "russo-one" },
-  { id: "source-sans-3", family: "Source Sans 3", role: "body", moods: ["neutral", "cozy"], author: "Paul D. Hunt", package: "source-sans-3" },
-  { id: "saira-stencil-one", family: "Saira Stencil One", role: "display", moods: ["industrial", "military"], author: "Omnibus-Type", package: "saira-stencil-one" },
-  { id: "barlow-condensed", family: "Barlow Condensed", role: "body", moods: ["industrial", "sports"], author: "Jeremy Tribby", package: "barlow-condensed" },
-  { id: "lilita-one", family: "Lilita One", role: "display", moods: ["cozy"], author: "Juan Montoreano", package: "lilita-one" },
-  { id: "im-fell-english-sc", family: "IM Fell English SC", role: "display", moods: ["fantasy", "historical"], author: "Igino Marini", package: "im-fell-english-sc" },
-  { id: "alegreya", family: "Alegreya", role: "body", moods: ["fantasy", "historical", "cozy"], author: "Juan Pablo del Peral", package: "alegreya" },
-  { id: "inter", family: "Inter", role: "body", moods: ["neutral", "industrial"], author: "Rasmus Andersson", package: "inter" },
-] as const satisfies readonly FontEntry[];
+export { FONT_LIBRARY };
 
 /** The id of one family in {@link FONT_LIBRARY}. */
 export type FontId = (typeof FONT_LIBRARY)[number]["id"];

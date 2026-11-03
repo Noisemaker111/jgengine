@@ -99,6 +99,22 @@ test("a new file named for a concept with a folder in its layer must sit in that
   expect(homeFailures(["packages/react/src/notificationsBell.tsx"], tree, () => true)).toEqual([]);
 });
 
+test("one-file-per-entry data folders are not concept homes, and their files are not named for concepts", () => {
+  const tree = [
+    "packages/assets/src/catalogs/materials/brick/red.ts",
+    "packages/assets/src/catalogs/materials/glass/clear.ts",
+    "packages/assets/src/sources/ambientcg/Rock022.ts",
+    "packages/assets/src/library/libraryIndex.ts",
+  ];
+  const added = [
+    "packages/assets/src/catalogs/materials/facade/brick-red.ts",
+    "packages/assets/src/sources/ambientcg/MetalPlates001.ts",
+    "packages/assets/src/catalogs/glassTint.ts",
+    "packages/assets/src/catalogs/libraryList.ts",
+  ];
+  expect(homeFailures(added, [...tree, ...added]).map((failure) => failure.file)).toEqual(["packages/assets/src/catalogs/libraryList.ts"]);
+});
+
 test("a react or shell file for a feature whose folder gathered its layers in core goes in that folder", () => {
   const tree = [
     "packages/core/src/hud/hudLayout.ts",
