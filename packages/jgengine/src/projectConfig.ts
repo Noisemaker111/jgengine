@@ -8,23 +8,13 @@ export const PROJECT_CONFIG_FILE = "jgengine.json";
 export const GAME_TEMPLATES = ["3d", "2d", "builder"] as const;
 export type GameTemplate = (typeof GAME_TEMPLATES)[number];
 
-/** A game-facing capability whose domain a game has while it runs its own version. */
-export interface CapabilityDebt {
-  /** What the game does in that domain today, for the reader; no check reads it. */
-  reason?: string;
-  /** The issue that tracks adopting the shared system. */
-  issue: number;
-}
-
 /**
- * What an engine monorepo game writes about capabilities. Adoption is not written: the check reads
- * it from the game's imports.
+ * What an engine monorepo game writes about capabilities. Adoption is not written: it is read from
+ * the game's imports.
  */
 export interface CapabilityAnswers {
   /** Boot probes, by module, that prove an adopted system live on the running page. */
   probes?: Record<string, string[]>;
-  /** Capability id to its debt. */
-  debt?: Record<string, CapabilityDebt>;
 }
 
 /** One credited line in `jgengine.json`: a person, a studio, an asset pack, a tool. */
@@ -62,7 +52,7 @@ export interface ProjectConfig {
   engine: string[];
   /** Template files this game rewrote and owns; sync leaves them alone. */
   owns?: string[];
-  /** Engine monorepo games: boot probes and adoption debt (adoption itself is read from source). */
+  /** Engine monorepo games: boot probes (adoption itself is read from source). */
   capabilities?: CapabilityAnswers;
   /** Who made the game and what it uses; the main menu's Credits reads it. */
   credits?: ProjectCredits;

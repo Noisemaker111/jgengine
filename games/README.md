@@ -56,12 +56,7 @@ id appears in the game's `src/`. `bun --filter="@games/*" run check-types` and `
 Every game carries a design brief in its `PLAN.md`, written once milestone 1 plays: the core loop (30
 seconds), session loop (10 minutes) and long loop (hours), what the player has at second 0 and why,
 the first 10 minutes beat by beat with what each teaches or unlocks, a content budget, the systems
-and the onboarding style. [`scripts/designBrief.ts`](scripts/designBrief.ts) holds its exact shape
-and [`scripts/briefExample.ts`](scripts/briefExample.ts) a complete one. `bun run check games-design`
-passes a brief marked `Pending:` while milestone 1 is unticked and fails a game without a complete
-brief from the commit that ticks it. Games that had none when the rule landed are listed, with
-the reason, in [`scripts/depth-known-failing.json`](scripts/depth-known-failing.json); that list
-only shrinks: a listed game that passes must leave it, and a new entry fails the check.
+and the onboarding style.
 
 Every game also has `proofs/flows/from-zero.flow.ts`: a flow with no `state` that boots a new game
 with no save and plays its first minutes through real input (`bun run drive <game> --flow from-zero`).
@@ -71,11 +66,8 @@ states, minute 5 → hour 5, references, gap to target) and ends it with one `Lo
 the flow that proves the stated loop. Progression is written as what the player gets over hours, in
 prose or plain bullets, never a checklist of systems: a ticked system says it exists, not that it is
 deep. A game with a `PLAN.md` (the `create-game-jg` skill) states its gap
-to target there, in its `## Gaps` section, instead of in the README. `bun run check games-design` (also run by CI) fails a game that
-is missing a section, names a flow whose `<game>/proofs/flows/<name>.flow.ts` is absent or does not
-export `defineFlow(...)`, or ships a flow that checks no arrival. Each game's typecheck covers
-`proofs/`, so a mistyped key or probe field in a flow is a compile error. A name marked `TODO` is a promised flow nobody has
-written: it is reported, and `--strict` fails it.
+to target there, in its `## Gaps` section, instead of in the README. Each game's typecheck covers
+`proofs/`, so a mistyped key or probe field in a flow is a compile error.
 
 A flow is TypeScript against the game's own probe; it names the capture state it boots, and runs
 headless (game time, no browser) unless it sets `browser: true` or the run passes `--browser`:

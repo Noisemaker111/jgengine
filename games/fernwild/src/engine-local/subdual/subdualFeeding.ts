@@ -1,4 +1,3 @@
-// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 // @skill jgengine-gameplay
 import { evalCurve, type Curve } from "@jgengine/core/progression/leveling";
 import { evaluatePredicate, type Predicate } from "@jgengine/core/rules/predicate";

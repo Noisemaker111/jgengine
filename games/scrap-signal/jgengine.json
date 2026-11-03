@@ -26,12 +26,6 @@
       "@jgengine/core/save/saveDocument": [
         "scrap.save"
       ]
-    },
-    "debt": {
-      "weapon-system": {
-        "reason": "Combat weapons wait on the engine's magazine reserve adapter and shot-presentation seam; cadence and magazines stay on the shared createMagazine until then.",
-        "issue": 2487
-      }
     }
   }
 }

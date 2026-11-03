@@ -1,4 +1,3 @@
-// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 // @skill jgengine-gameplay
 import { evaluatePredicate, type Predicate, type PredicateFacts } from "@jgengine/core/rules/predicate";
 import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";

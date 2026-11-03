@@ -1,4 +1,3 @@
-// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 import { describe, expect, test } from "bun:test";
 
 import { bodyGlbModel, bodyModel, type BodyPlan } from "./bodyPlan";

@@ -9,7 +9,6 @@ import { bundleBudgetReport, gameBundles, missingGameAssets } from "./check-site
 const catalogs = { sources: [{ id: "kaykit-dungeon" }], library: [{ name: "city/street-lamp", origin: { provider: "quaternius" } }] };
 
 function playDir(): string {
-  // fixture-location: allow plain bytes on disk standing in for a built runner
   const root = mkdtempSync(join(tmpdir(), "site-assets-"));
   for (const dir of [join(root, "games", "harbor", "models", "imported", "nature"), join(root, "models", "kaykit-dungeon"), join(root, "games", "harbor", "models", "library", "city", "street-lamp")]) mkdirSync(dir, { recursive: true });
   writeFileSync(join(root, "games", "harbor", "models", "imported", "nature", "Bush.glb"), "x");
@@ -52,7 +51,6 @@ describe("the site asset gate", () => {
 
 describe("the per-game bundle budget", () => {
   function runner(): string {
-    // fixture-location: allow plain bytes on disk standing in for a built runner
     const root = mkdtempSync(join(tmpdir(), "bundle-budget-"));
     mkdirSync(join(root, "assets"), { recursive: true });
     const put = (name: string, bytes: number) => writeFileSync(join(root, "assets", name), "x".repeat(bytes));

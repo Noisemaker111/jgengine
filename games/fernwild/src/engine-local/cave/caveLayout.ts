@@ -1,4 +1,3 @@
-// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 import type { WorldSolid } from "@jgengine/core/world/worldSolids";
 
 /** Ground height under a point, so the cave's floor, walls and roof follow the terrain. */

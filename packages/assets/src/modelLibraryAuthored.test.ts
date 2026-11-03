@@ -14,7 +14,7 @@ describe("authored library models", () => {
   });
 
   test("the server rack builds into a small meshopt GLB at real size", async () => {
-    const root = mkdtempSync(join(tmpdir(), "authored-")); // fixture-location: allow writes plain GLB bytes, nothing resolves @jgengine imports from it
+    const root = mkdtempSync(join(tmpdir(), "authored-"));
     try {
       const rack = MODEL_LIBRARY.find((entry) => entry.name === "scifi/server-rack")!;
       const built = await buildAuthoredModel(rack, root);

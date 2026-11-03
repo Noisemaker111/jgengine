@@ -141,7 +141,6 @@ export function listInstalledFiles(from: string): { root: string; files: CodeFil
   const files: CodeFile[] = [];
   for (const pkg of safeDirs(scope)) {
     const dist = join(scope, pkg, "dist");
-    // walk-ok: one installed package's dist folder, bounded and never node_modules.
     const visit = (dir: string, rel: string): void => {
       for (const entry of safeEntries(dir)) {
         const childRel = rel === "" ? entry.name : `${rel}/${entry.name}`;

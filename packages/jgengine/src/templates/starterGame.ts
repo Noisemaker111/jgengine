@@ -537,7 +537,7 @@ const TEMPLATE_LOOK: Record<StarterGameOptions["template"], string> = {
 };
 
 /** `PLAN.md`: direction, features, gaps and milestones from the create call; the brief waits for milestone 1. */
-/** The line `check games-design` accepts in place of a brief while milestone 1 is unticked. */
+/** The line that stands in for a brief while milestone 1 is unticked. */
 const PENDING_BRIEF = "Pending: written once milestone 1 plays, from what building it taught.";
 
 export function planMd(options: StarterGameOptions): string {
@@ -588,7 +588,7 @@ ${features.join("\n")}
 `;
 }
 
-/** `README.md`: the design checklist `check games-design` reads, and the loop proof line. */
+/** `README.md`: the design checklist and the loop proof line. */
 export function readmeMd(options: StarterGameOptions): string {
   return `# ${escapeHtml(options.name)}
 

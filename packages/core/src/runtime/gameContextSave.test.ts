@@ -119,7 +119,7 @@ describe("ctx.game.save", () => {
       player: { userId: "p1", isNew: true },
     });
     ctx.scene.entity.spawn("crate", { id: "crate-1", position: [1, 0, 2] });
-    await new Promise((resolve) => setTimeout(resolve, 80)); // wait-ok: real autosave timer
+    await new Promise((resolve) => setTimeout(resolve, 80));
     expect(writes.some((write) => write.value.includes("crate-1"))).toBe(true);
   });
 

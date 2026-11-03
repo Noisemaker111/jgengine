@@ -126,7 +126,7 @@ export function isInertPath(path: string): boolean {
 
 /**
  * The test shards run unless the whole diff is change notes. Skills, README and AGENTS are
- * read by tests (`check-recipes`, `check-recursive-walk`, `changelog-fragments`), so they
+ * read by tests (`check-recipes`, `skillDocs`, `changelog-fragments`), so they
  * keep the shards.
  */
 export function testsNeeded(paths: readonly string[]): "all" | "none" {

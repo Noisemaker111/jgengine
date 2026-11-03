@@ -167,7 +167,6 @@ export async function provisionLibraryKey(gameDir: string, key: string, options:
 function servedFiles(dir: string, prefix = ""): string[] {
   if (!existsSync(dir)) return [];
   const out: string[] = [];
-  // walk-ok: one pulled asset's own folder, listed so a multi-game host can serve its files
   for (const name of readdirSync(dir).sort()) {
     const path = join(dir, name);
     const stat = statSync(path, { throwIfNoEntry: false });

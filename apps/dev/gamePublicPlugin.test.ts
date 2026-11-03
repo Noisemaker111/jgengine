@@ -7,7 +7,6 @@ import { contentKey, imageVariantName } from "../../games/shared/textureVariants
 import { gamePrefetchList, gamePublicDirs, gamePublicIndexModule, libraryPullGameDir, listPublicFiles, resolvePublicFile, splitGamePublicUrl, writeGamePublics } from "./gamePublicPlugin";
 
 function fixture() {
-  // fixture-location: allow plain bytes on disk; the plugin imports nothing from @jgengine
   const root = mkdtempSync(join(tmpdir(), "game-public-"));
   const games = join(root, "games");
   const served = join(root, "lane", "harbor");

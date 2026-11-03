@@ -12,7 +12,7 @@ const scratch = join(checkoutRoot, ".scratch");
 
 function bareCheckout(): { root: string; cleanup: () => void } {
   mkdirSync(scratch, { recursive: true });
-  const root = mkdtempSync(join(scratch, "checkout-ready-")); // fixture-location: allow a bare package.json, no @jgengine import
+  const root = mkdtempSync(join(scratch, "checkout-ready-"));
   mkdirSync(join(root, "scripts"), { recursive: true });
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }

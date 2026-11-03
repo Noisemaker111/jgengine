@@ -117,7 +117,7 @@ test("a .cube LUT url is fetched, parsed and bound as the grade LUT", async () =
   globalThis.fetch = Object.assign(async () => new Response(text), { preconnect: () => undefined });
   try {
     const pass = createGradePass({ lut: { url: "/lut/test.cube" } });
-    await new Promise((done) => setTimeout(done, 0)); // wait-ok: lets the fetch microtasks settle
+    await new Promise((done) => setTimeout(done, 0));
     expect(pass.uniforms.uLutSize.value).toBe(2);
     expect(pass.uniforms.uLut.value).not.toBeNull();
     pass.dispose();

@@ -17,20 +17,6 @@
       "@jgengine/core/audio/audioProbe.view": [
         "window:__jgengineAudio"
       ]
-    },
-    "debt": {
-      "game-save": {
-        "reason": "session/save.ts writes its own household snapshot and validates every field by hand; adopt the shared save document.",
-        "issue": 2486
-      },
-      "game-save-digest": {
-        "reason": "The household save has no state digest to compare before and after a day; adopt the shared save document's digest.",
-        "issue": 2486
-      },
-      "utility-brain": {
-        "reason": "Beings choose actions from needs in sim/ai.ts inside their own agent loop; adopt the shared utility brain.",
-        "issue": 2485
-      }
     }
   }
 }

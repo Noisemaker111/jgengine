@@ -1,4 +1,3 @@
-// framework-ok: only Fernwild uses this; the second adopter extracts it (#2837)
 // @skill jgengine-gameplay
 import type { ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 import { createBuildSocketCatalog, type ConnectionRule, type SocketDef } from "@jgengine/core/placement/buildSockets";

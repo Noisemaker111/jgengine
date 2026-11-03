@@ -1,4 +1,3 @@
-// framework-ok: grace period, late fee and auto-pay stay LLMville's until a second game wants bills (PLAN.md Gaps); the day cadence is the engine Schedule.
 import {
   computeGameDay,
   DEFAULT_TIME_SCALE,

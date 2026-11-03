@@ -8,8 +8,7 @@ export const LAUNCH_BLOCK_END = "// jg-launch-block:end";
  * target. A transient handshake failure discards that browser and its profile, then retries
  * once with a fresh profile and a doubled wait; `JG_CHROME_READY_MS` sets the per-attempt
  * wait. A configuration error, and anything after the handshake, is reported once, naming
- * the step that failed. `scripts/check-scaffold-launch.ts` fails when this and the engine's
- * `scripts/browser-lib.ts` copy stop agreeing.
+ * the step that failed. It mirrors the engine's `scripts/browser-lib.ts`.
  *
  * Plain JS with no backticks or template interpolation: it is embedded verbatim in
  * `scripts/browser.mjs`, which is itself inside a template literal in `gameFiles.ts`.

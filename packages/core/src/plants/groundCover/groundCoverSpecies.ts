@@ -1,4 +1,3 @@
-// home-ok: ground-cover records are plant species grown by plants/groundCover; grass/ only draws them
 import type { PLANT_SOURCES } from "../species/speciesSources";
 
 /**

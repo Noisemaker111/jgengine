@@ -1,4 +1,3 @@
-// framework-ok: only Harbor Heat uses the city layout; the second adopter extracts it (#2837)
 /**
  * One street-and-lot layout for a city: lane width and count, parking lanes, sidewalk width, kerb
  * height, and per-zone setback, lot frontage, depth, spacing, driveways and building heights. Defaults

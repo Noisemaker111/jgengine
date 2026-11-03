@@ -62,31 +62,6 @@ export const CORE_BARREL_SKILLS: Record<string, string> = {
 
 export const SKILL_DIRS = API_SKILL_DIRS;
 
-export const INTAKE_ROUTES = {
-  create: ["create-game-jg", "game-design"],
-  design: ["game-design", "level-design"],
-  improvement: ["game-improvement", "game-design", "level-design"],
-  authoring: ["jgengine-editor", "jgengine-world"],
-  world: ["jgengine-world"],
-  gameplay: ["jgengine-gameplay"],
-  combat: ["jgengine-combat"],
-  ui: ["jgengine-ui"],
-  assets: ["jgengine-assets"],
-  multiplayer: ["jgengine-multiplayer"],
-} as const;
-
-/** In-repo intake yardstick for `bun scripts/check-skill-sync.ts --report` — what a normal game task loads inside this monorepo. The external install policy is {@link MINIMAL_GAME_SKILLS}; domains beyond it load on demand, not by default. */
-export const NORMAL_GAME_INTAKE = [
-  MAIN,
-  "game-design",
-  "jgengine-editor",
-  "jgengine-world",
-  "jgengine-gameplay",
-  "jgengine-ui",
-  "jgengine-verify",
-  "workflow",
-] as const;
-
 export function skillForModule(pkg: string, modulePath: string): string | null {
   if (pkg !== "core") {
     const domain = modulePath.split("/")[0];

@@ -18,16 +18,6 @@
       "@jgengine/core/audio/audioProbe.view": [
         "window:__jgengineAudio"
       ]
-    },
-    "debt": {
-      "game-save": {
-        "reason": "records.ts and shiftState.ts keep their own keys and shapes; adopt the shared save document for career and run state.",
-        "issue": 2481
-      },
-      "game-save-digest": {
-        "reason": "Run records and shift state have no shared digest to compare; adopt the shared save document's digest.",
-        "issue": 2481
-      }
     }
   }
 }

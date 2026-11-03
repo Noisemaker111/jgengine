@@ -573,7 +573,7 @@ export function junitCosts(xml: string): Record<string, number> {
 export interface FastOptions {
   /** Also run `check skill-api`. */
   skillApi?: boolean;
-  /** Only the type-checks and gates: no tests, boots or load guard. */
+  /** Only the type-checks and gates: no tests or boots. */
   cheap?: boolean;
   /** Lanes the steps share; the tests split into at most this many processes. */
   lanes?: number;
@@ -1085,10 +1085,9 @@ async function main(argv: readonly string[]): Promise<number> {
   const failures = results.filter((result) => !result.ok && result.blockedBy === undefined && result.stopped !== true).map((result) => result.name);
   const notRun = results.filter((result) => result.blockedBy !== undefined || result.stopped === true).map((result) => result.name);
   const seconds = (Date.now() - started) / 1000;
-  const unjudged = results.filter((result) => result.unjudged !== undefined).map((result) => result.name);
-  const passed = results.length - failures.length - notRun.length - unjudged.length;
+  const passed = results.length - failures.length - notRun.length;
   console.log(
-    `\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}${unjudged.length > 0 ? `, ${unjudged.length} not judged (${unjudged.join(", ")}: run again on a quieter PC)` : ""}`,
+    `\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}`,
   );
   if (failures.length > 0) {
     console.log(`failed: ${failures.join(", ")}`);

@@ -1,4 +1,3 @@
-// framework-ok: puts catalog props on a game-authored stall's counter; other games' stalls want it once the engine owns stall dressing.
 import { Suspense, useMemo } from "react";
 import { useLoader } from "@react-three/fiber";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";

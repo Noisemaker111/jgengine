@@ -1,4 +1,3 @@
-// home-ok: animal flight is a locomotion reference beside walking and running; flight/ holds aircraft
 import type { HumanValidationRow } from "./humanReferenceValidation";
 
 /** A flapping flier's size and drag for the power curve. */

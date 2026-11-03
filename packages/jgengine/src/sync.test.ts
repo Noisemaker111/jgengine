@@ -11,7 +11,6 @@ import { applySync, planSync, runSync, type SyncContext } from "./sync";
 const standalone: SyncContext = { variant: "standalone", engineVersion: sdkVersion(), cliVersion: cliVersion() };
 
 async function createdGame(...flags: string[]): Promise<string> {
-  // fixture-location: allow a standalone game must sit outside every workspace, and sync reads plain files
   const parent = mkdtempSync(join(tmpdir(), "jgengine-sync-"));
   const log = spyOn(console, "log").mockImplementation(() => {});
   try {
@@ -124,7 +123,6 @@ describe("jgengine sync", () => {
 
 describe("jgengine sync at a workspace root", () => {
   async function workspace(catalog: Record<string, string>): Promise<{ root: string; game: string }> {
-    // fixture-location: allow a user's workspace must sit outside the engine's own workspace
     const root = mkdtempSync(join(tmpdir(), "jgengine-sync-root-"));
     writeFileSync(
       join(root, "package.json"),

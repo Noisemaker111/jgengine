@@ -25,7 +25,7 @@ The game design stays as the README checklist states it. This plan changes what 
 
 ## Design brief
 
-To be written once milestone 2 puts the game on the shell game player. That is the first point where a headless from-zero flow can boot it. Until then `games/scripts/depth-known-failing.json` keeps LLMville's brief entry.
+To be written once milestone 2 puts the game on the shell game player. That is the first point where a headless from-zero flow can boot it.
 
 ## Features
 
@@ -111,7 +111,7 @@ Each milestone keeps the game playing, deletes the private code it replaces in t
   - Moved: grid hookup is a Ladder; rack heat is a Meter with Ladder badge bands (the duplicate heat curve is gone); the daily bill cadence is the Schedule; research tiers are a Ladder plus a data-token Requirement, and grants use `core/game/unlocks`; the daily market is a Table (new `pickKeyed`) with its numbers as Modifiers; the frontier clamp and decay floor fold as Modifiers; the tutorial step chain runs on `core/onboarding` `createOnboarding`; the neighbourhood goal is a `createContributionPool`. Training stays on `jobQueue`.
   - Prices, rates, saves and the Convex schema are unchanged; new tests pin every value against today's outputs.
   - Rule files lost 131 lines and gained 212 (plus 13 in core `random/pick.ts` and 247 lines of pinning tests). The files stay because they hold LLMville's catalogs and rules.
-  - Kept game-side: grace period, late fee and auto-pay in `billing.ts` (`framework-ok`, until a second game wants bills; the loan book works in integer minor units and amortizes, so it cannot reproduce them). Phases do not fit the frontier: it is a linear rise with no named states. `tutorialMachine.ts` keeps its reducer shell because `simulation/gameEngine.ts` imports it.
+  - Kept game-side: grace period, late fee and auto-pay in `billing.ts` (until a second game wants bills; the loan book works in integer minor units and amortizes, so it cannot reproduce them). Phases do not fit the frontier: it is a linear rise with no named states. `tutorialMachine.ts` keeps its reducer shell because `simulation/gameEngine.ts` imports it.
 - [x] 6. **Shared world on the engine's multiplayer contracts and the Convex adapter.**
   - Poses ride the shell's presence lane: `createConvexBackend` with `createConvexPresenceSync` over `presence:list/sync/leave` (engine `createPresenceFunctions` on `jgPoses`). LLMville draws the rows through the new `scene.RemotePlayers` seam (`agent/components/RemoteAgents.tsx`), adding offline residents and feeding the walk rule. `ensureHumanPresence` stamps lab, name and spawn once on entry; the player entity spawns only after, so no pose is sent from the origin.
   - Chat runs on the engine chat contract (`createConvexChatTransport` over `worldChat:messages/sendMessage`, engine `sendChatMessage`/`recentChatMessages`), with author names on `ChatMessage.fromLabel`. The bot API (`ensureHumanPresence`, `syncPlayerPosition`, `listOnlinePresences`, `worldChat:send/recent`) keeps its shape; rows now store body yaw and the bot API converts camera yaw in and out.

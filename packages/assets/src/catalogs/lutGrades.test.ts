@@ -35,7 +35,7 @@ describe("lut grades", () => {
     }, { preconnect: () => undefined });
     try {
       const loaded = createGradePass({ lut: lutGrade("night-blue") });
-      await new Promise((done) => setTimeout(done, 5)); // wait-ok: lets the fetch microtasks settle
+      await new Promise((done) => setTimeout(done, 5));
       expect(fetched).toEqual(["/lut/night-blue/night-blue.cube"]);
       expect(loaded.uniforms.uLutSize.value).toBe(32);
       loaded.dispose();
@@ -55,7 +55,7 @@ describe("lut grades", () => {
     setGameAssetFiles("games/harbor", ["/lut/night-blue/night-blue.cube"]);
     try {
       const loaded = createGradePass({ lut: lutGrade("night-blue") });
-      await new Promise((done) => setTimeout(done, 5)); // wait-ok: lets the fetch microtasks settle
+      await new Promise((done) => setTimeout(done, 5));
       expect(fetched).toEqual(["/games/harbor/lut/night-blue/night-blue.cube"]);
       loaded.dispose();
     } finally {

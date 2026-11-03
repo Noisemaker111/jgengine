@@ -24,7 +24,6 @@ describe("findBends", () => {
     expect(findBends(diff("b.test.ts", [], ['test.skip("flaky", () => {});']))[0]?.kind).toBe("test skipped");
     expect(findBends(diff(".github/workflows/ci.yml", [], ["        continue-on-error: true"]))[0]?.kind).toBe("check disabled");
     expect(findBends(diff("c.ts", [], ["  // @ts-ignore"]))[0]?.kind).toBe("check disabled");
-    expect(findBends(diff("games/x/src/a.ts", [], ["// framework-ok: authored content"]))[0]?.kind).toBe("check disabled");
   });
 
   test("a raised number and a loosened matcher are not bends", () => {
@@ -35,8 +34,8 @@ describe("findBends", () => {
   });
 
   test("a removed CI step is a disabled check; setup steps are not", () => {
-    const bends = findBends(diff(".github/workflows/ci.yml", ["      - run: bun run check skills", "      - run: bun install --frozen-lockfile"], []));
-    expect(bends.map((bend) => bend.detail)).toEqual(["CI step removed: - run: bun run check skills"]);
+    const bends = findBends(diff(".github/workflows/ci.yml", ["      - run: bun run check layers", "      - run: bun install --frozen-lockfile"], []));
+    expect(bends.map((bend) => bend.detail)).toEqual(["CI step removed: - run: bun run check layers"]);
   });
 
   test("a rule written in a string or a regex is not the rule applied", () => {

@@ -120,7 +120,7 @@ describe("formatSummary", () => {
   test("a check's re-run hint is the one command that runs it alone", () => {
     const stages = checkPlan(jobChecks("types"), false);
     expect(rerunHint(stages, "types")).toBe("bun run check types");
-    expect(rerunHint(stages, "content-gate")).toBe("bun run check content-gate");
+    expect(rerunHint(stages, "recipes")).toBe("bun run check recipes");
     expect(rerunHint(stages, "ensure-ready")).toBe("bun scripts/ensure-ready.ts --install-only");
   });
 });

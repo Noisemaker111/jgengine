@@ -1,4 +1,3 @@
-// home-ok: world-space HUD (nameplates, entity bars, float text, reticle, tracers, telegraphs) is HUD drawn in the scene
 import { Html, Line } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";

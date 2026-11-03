@@ -1,4 +1,3 @@
-// framework-ok: renders editor markers that carry a model id as static dressing; another game wants this once its scene holds scenery, then it moves upstream beside AuthoredObjects.
 import { Suspense, useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import type { Object3D } from "three";

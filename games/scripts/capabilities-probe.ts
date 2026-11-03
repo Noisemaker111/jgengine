@@ -11,8 +11,7 @@
  * The probe presses Play first (the game's `capture.play` commands through the agent bridge) and
  * counts frames from there: a system is owed live counters once the player starts, not on the menu.
  *
- * Capabilities with no probe surface stay at declaration level; `bun run check games-capabilities`
- * lists them. This command only checks modules whose declaration names a probe.
+ * This command only checks modules whose declaration names a probe.
  *
  * Usage: bun run games:capabilities probe [game...]
  */
