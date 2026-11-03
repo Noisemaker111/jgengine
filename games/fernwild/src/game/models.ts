@@ -1,5 +1,6 @@
 import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
+import { humanoidAnimation } from "@jgengine/core/anim/humanoidActions";
 import type { WornLayer } from "@jgengine/core/anim/wearable/wornRegion";
 import type { ModelAttachment, ModelConfig } from "@jgengine/core/game/playableGame";
 import type { ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
@@ -20,9 +21,12 @@ const ore = (file: string, targetHeight: number, material: NonNullable<ModelConf
 /** A survivor stands 1.8 m, slim beside every creature over dodo size. */
 const SURVIVOR_HEIGHT = 1.8;
 
+/** The packs' own idle, walk and run, plus the engine's authored jump, swim, punch, swing and gather. */
+const SURVIVOR_ANIMATION = humanoidAnimation({ idle: "CharacterArmature|Idle", walk: "CharacterArmature|Walk", run: "CharacterArmature|Run" });
+
 const BODY_MODELS: Record<string, ModelConfig> = resolveModelPlan(
   bodyPacks,
-  Object.fromEntries(BODIES.map((body) => [body.id, { model: body.model, style: { targetHeight: SURVIVOR_HEIGHT } }])),
+  Object.fromEntries(BODIES.map((body) => [body.id, { model: body.model, style: { targetHeight: SURVIVOR_HEIGHT, animation: SURVIVOR_ANIMATION } }])),
 );
 
 function bodyModel(id: string): ModelConfig {
