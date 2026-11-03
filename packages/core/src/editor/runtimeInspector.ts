@@ -288,23 +288,6 @@ export function runtimeEntityMetaWriteBackCommand(
   return null;
 }
 
-/**
- * Advances the play-control step counter: when paused with pending steps, consumes one and reports
- * whether the sim should run this frame. When not paused, always runs.
- * @capability editor-runtime-inspector gate a play-mode frame against pause/step control
- */
-export function consumeRuntimePlayStep(play: RuntimePlayControl): {
-  runFrame: boolean;
-  next: RuntimePlayControl;
-} {
-  if (!play.paused) return { runFrame: true, next: play };
-  if (play.pendingSteps <= 0) return { runFrame: false, next: play };
-  return {
-    runFrame: true,
-    next: { paused: true, pendingSteps: play.pendingSteps - 1 },
-  };
-}
-
 /** Default play-control state when entering play mode (running). */
 export function createRuntimePlayControl(paused = false): RuntimePlayControl {
   return { paused, pendingSteps: 0 };

@@ -101,9 +101,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createMovementSchema` (function) · `import { createMovementSchema } from "@jgengine/core/editor/movementCatalog"`
 - `readAuthoredMovement` (function) · `import { readAuthoredMovement } from "@jgengine/core/editor/movementCatalog"`
 
-## editor-runtime-inspector — gate a play-mode frame against pause/step control
+## editor-runtime-inspector — read one live runtime entity field or tunable
 
-- `consumeRuntimePlayStep` (function) · `import { consumeRuntimePlayStep } from "@jgengine/core/editor"`
 - `getRuntimeInspectorValue` (function) · `import { getRuntimeInspectorValue } from "@jgengine/core/editor"`
 - `planRuntimeInspectorSet` (function) · `import { planRuntimeInspectorSet } from "@jgengine/core/editor"`
 - `runtimeEntityMetaWriteBackCommand` (function) · `import { runtimeEntityMetaWriteBackCommand } from "@jgengine/core/editor"`

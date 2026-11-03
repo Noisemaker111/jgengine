@@ -202,7 +202,6 @@ export type { DocumentLiveSync, DocumentLiveEvent } from "./liveSync";
 /** Ephemeral runtime entity/tunable state streamed on the reverse channel. */
 export type { RuntimeEntityState, RuntimeStateDelta, RuntimeStateSnapshot } from "./liveSync";
 export {
-  consumeRuntimePlayStep,
   createRuntimePlayControl,
   getRuntimeInspectorValue,
   planRuntimeInspectorSet,

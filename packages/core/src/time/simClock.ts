@@ -65,6 +65,8 @@ export interface SimClock {
   speed(): number;
   pause(): void;
   play(): void;
+  /** While paused, let the next `count` calls to `advance` run as if playing, then stay paused: one call is one simulation step, however long the render frame is. */
+  step(count?: number): void;
   toggle(): void;
   /** Set the play multiplier; `0` (or negative) pauses, any positive value unpauses and becomes the resume speed. */
   setSpeed(multiplier: number): void;
@@ -126,6 +128,7 @@ export function createSimClock(options: SimClockOptions = {}): SimClock & { adva
   let paused = config.startPaused ?? false;
   let playSpeed = speeds[0]!;
   let timescale = 1;
+  let owedSteps = 0;
   let nextTimerId = 0;
   const timers = new Map<number, Timer>();
   let displayMinute = minuteIndex(now, dayLength);
@@ -178,7 +181,11 @@ export function createSimClock(options: SimClockOptions = {}): SimClock & { adva
   }
 
   function advance(realDt: number): number {
-    if (paused || realDt <= 0 || timescale === 0) return 0;
+    if (realDt <= 0 || timescale === 0) return 0;
+    if (paused) {
+      if (owedSteps === 0) return 0;
+      owedSteps -= 1;
+    }
     const gameDt = realDt * scale * playSpeed * timescale;
     const localDt = realDt * playSpeed * timescale;
     now += gameDt;
@@ -199,9 +206,15 @@ export function createSimClock(options: SimClockOptions = {}): SimClock & { adva
   }
 
   function play(): void {
+    owedSteps = 0;
     if (!paused) return;
     paused = false;
     onChange();
+  }
+
+  function step(count = 1): void {
+    if (!paused || !(count > 0)) return;
+    owedSteps += Math.floor(count);
   }
 
   function setSpeed(multiplier: number): void {
@@ -241,6 +254,7 @@ export function createSimClock(options: SimClockOptions = {}): SimClock & { adva
     paused = state.paused;
     playSpeed = state.playSpeed;
     timescale = state.timescale;
+    owedSteps = 0;
     displayMinute = minuteIndex(now, dayLength);
     onChange();
   }
@@ -265,6 +279,7 @@ export function createSimClock(options: SimClockOptions = {}): SimClock & { adva
     speed: () => (paused ? 0 : playSpeed),
     pause,
     play,
+    step,
     toggle: () => (paused ? play() : pause()),
     setSpeed,
     cycleSpeed,
