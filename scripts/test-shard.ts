@@ -60,19 +60,90 @@ export interface Shard {
 }
 
 /**
- * Seconds the slowest test files took on a CI runner (landforms: run 41087291823, 2026-10-30; scripts:
- * run 41368822356, 2026-11-02), so a shard's lanes split by time rather than count. Every other file
- * counts as one second.
+ * Seconds of tests the slowest files ran on a CI runner, averaged over runs 41588206348 and
+ * 41589937587 (2026-11-03), so a shard's lanes split by time rather than count. The same file
+ * swings up to 40% between runs; a lane's wall time is its tests plus 15-25 s of loading.
  */
 export const SLOW_TEST_SECONDS: Readonly<Record<string, number>> = {
-  "packages/core/src/landform/glacial/glacialErosion.test.ts": 148,
-  "packages/core/src/landform/evolution/landscapeEvolution.browser.test.ts": 51,
-  "scripts/reference/physics/bondedRock.test.ts": 140,
-  "scripts/reference/physics/discreteElementExperiments.test.ts": 86,
-  "scripts/reference/physics/referenceCar.test.ts": 25,
+  "packages/core/src/landform/glacial/glacialLandscape.test.ts": 21,
+  "packages/core/src/landform/evolution/landscapeEvolution.browser.test.ts": 21,
+  "packages/core/src/landform/evolution/landscapeEvolution.test.ts": 11,
+  "packages/core/src/landform/dunes/duneField.test.ts": 7,
+  "packages/core/src/plants/species/data/plantLibrary.test.ts": 25,
+  "packages/core/src/anim/animationHook.draw.test.ts": 21,
+  "packages/core/src/city/cityKind.test.ts": 19,
+  "packages/core/src/roads/streetGenerator.test.ts": 15,
+  "packages/core/src/inventory/dragLayer.view.test.ts": 13,
+  "packages/core/src/plants/growth/plantGrowth.test.ts": 12,
+  "packages/core/src/ambientFauna/ambientFauna.test.ts": 9,
+  "packages/core/src/plants/grown/plantGrown.test.ts": 7,
+  "packages/core/src/grass/grassStream.draw.test.ts": 6,
+  "packages/core/src/settings/settingsSection.view.test.ts": 6,
+  "packages/core/src/movement/reference/humanReference.test.ts": 5,
+  "packages/core/src/multiplayer/voice.view.test.ts": 5,
+  "packages/core/src/physics/vehicleDynamics.test.ts": 5,
+  "packages/core/src/hud/hudPanelLayout.view.test.ts": 4,
+  "packages/core/src/map/mapPointer.view.test.ts": 4,
+  "packages/core/src/physics/carStrength.test.ts": 4,
+  "packages/core/src/plants/validation/crownAllometry.test.ts": 4,
+  "scripts/reference/physics/referenceCar.test.ts": 20,
   "scripts/tarballInstall.test.ts": 19,
-  "scripts/captureCliParity.test.ts": 15,
+  "scripts/captureCliParity.test.ts": 17,
+  "scripts/reference/physics/granularExperiments.test.ts": 11,
+  "scripts/reference/physics/seakeepingHull.test.ts": 8,
 };
+
+/** A file with no measured time: about 0.03 s of tests and its share of the loading. */
+export const UNMEASURED_FILE_SECONDS = 0.1;
+
+/**
+ * Files whose one process would set their shard's length, run as two: the tests whose full name
+ * contains `match`, and every other test. The second pattern is the first's negation, so a test
+ * added later always lands in one of the two. Seconds are those two parts on a runner (run 41588206348).
+ */
+export const SPLIT_TESTS: Readonly<Record<string, { match: string; seconds: readonly [number, number] }>> = {
+  "packages/core/src/landform/glacial/glacialErosion.test.ts": { match: "the fast path", seconds: [51, 46] },
+  "scripts/reference/physics/bondedRock.test.ts": { match: "calibrates to its Young's modulus", seconds: [86, 28] },
+  "scripts/reference/physics/discreteElementExperiments.test.ts": { match: "pours a cone", seconds: [56, 16] },
+};
+
+const UNIT_PATTERN = " -t ";
+
+/** A bun test name pattern matching names that contain `text`, or (negated) every other name. */
+export function namePattern(text: string, negated: boolean): string {
+  const literal = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return negated ? `^(?!.*${literal})` : literal;
+}
+
+/** What a lane runs: whole files, and split files as `file -t pattern`, with each one's cost. */
+export function laneUnits(files: readonly string[]): { units: string[]; cost: Record<string, number> } {
+  const units: string[] = [];
+  const cost: Record<string, number> = {};
+  for (const file of files) {
+    const split = SPLIT_TESTS[file];
+    if (split === undefined) {
+      units.push(file);
+      cost[file] = SLOW_TEST_SECONDS[file] ?? UNMEASURED_FILE_SECONDS;
+      continue;
+    }
+    for (const [index, negated] of [false, true].entries()) {
+      const unit = `${file}${UNIT_PATTERN}${namePattern(split.match, negated)}`;
+      units.push(unit);
+      cost[unit] = split.seconds[index] ?? UNMEASURED_FILE_SECONDS;
+    }
+  }
+  return { units, cost };
+}
+
+/** A lane's units as the `bun test` argument lists that run them: whole files together, then each split part. */
+export function unitCommands(units: readonly string[]): string[][] {
+  const whole = units.filter((unit) => !unit.includes(UNIT_PATTERN));
+  const parts = units.filter((unit) => unit.includes(UNIT_PATTERN)).map((unit) => {
+    const at = unit.indexOf(UNIT_PATTERN);
+    return [unit.slice(0, at), "-t", unit.slice(at + UNIT_PATTERN.length)];
+  });
+  return [...(whole.length > 0 ? [whole] : []), ...parts];
+}
 
 /**
  * A test that reads the wall clock (`performance.now()`) can hold a timing budget, and a budget
@@ -83,41 +154,29 @@ export function readsWallClock(source: string): boolean {
   return source.includes("performance.now(");
 }
 
-/** The lanes for a shard's files, and the files that run alone after them. */
+/** The lanes for a shard's files (split files as two units), and the files that run alone after them. */
 export function planLanes(files: readonly string[], lanes: number, source: (file: string) => string): { lanes: string[][]; alone: string[] } {
   if (lanes <= 1) return { lanes: [[...files]], alone: [] };
   const alone = files.filter((file) => readsWallClock(source(file)));
-  const rest = files.filter((file) => !alone.includes(file));
-  return { lanes: rest.length === 0 ? [] : splitLanes(rest, lanes), alone };
+  const { units, cost } = laneUnits(files.filter((file) => !alone.includes(file)));
+  return { lanes: units.length === 0 ? [] : splitLanes(units, lanes, cost), alone };
 }
 
 /**
- * Files split into at most `lanes` groups of near-equal cost. Each measured slow file takes the
- * lightest group; the rest fill the groups in path order, so a lane holds whole folders and loads
- * only their part of the module graph. Dealt round robin, every lane loaded every folder's imports:
- * shard h's four lanes did 257 s of work for 221 s of tests, and sixteen batches did 411 s
- * (runs 41588206348, 41589157131).
+ * Units split into at most `lanes` groups of near-equal measured cost, costliest first, each to
+ * the lightest group. Neither batches nor folder order beat this: sixteen batches reloaded the
+ * shared modules in each process (shard h did 411 s of work for 221 s of tests), and whole
+ * folders put one lane at 149 s beside one at 37 s (runs 41589157131, 41589937587).
  */
-export function splitLanes(files: readonly string[], lanes: number, cost: Readonly<Record<string, number>> = SLOW_TEST_SECONDS): string[][] {
-  const groups = Array.from({ length: Math.max(1, Math.min(lanes, files.length)) }, (): { files: string[]; total: number } => ({ files: [], total: 0 }));
-  const slow = files.filter((file) => cost[file] !== undefined).sort((a, b) => (cost[b] ?? 0) - (cost[a] ?? 0) || a.localeCompare(b));
-  for (const file of slow) {
+export function splitLanes(units: readonly string[], lanes: number, cost: Readonly<Record<string, number>> = SLOW_TEST_SECONDS): string[][] {
+  const groups = Array.from({ length: Math.max(1, Math.min(lanes, units.length)) }, (): { units: string[]; total: number } => ({ units: [], total: 0 }));
+  const seconds = (unit: string): number => cost[unit] ?? UNMEASURED_FILE_SECONDS;
+  for (const unit of [...units].sort((a, b) => seconds(b) - seconds(a) || a.localeCompare(b))) {
     const lightest = groups.reduce((low, group) => (group.total < low.total ? group : low));
-    lightest.files.push(file);
-    lightest.total += cost[file] ?? 1;
+    lightest.units.push(unit);
+    lightest.total += seconds(unit);
   }
-  const rest = files.filter((file) => cost[file] === undefined).sort();
-  const target = (groups.reduce((sum, group) => sum + group.total, 0) + rest.length) / groups.length;
-  let index = 0;
-  for (const group of groups.sort((a, b) => a.total - b.total)) {
-    const last = group === groups[groups.length - 1];
-    while (index < rest.length && (last || group.total < target)) {
-      group.files.push(rest[index] ?? "");
-      group.total += 1;
-      index += 1;
-    }
-  }
-  return groups.filter((group) => group.files.length > 0).map((group) => group.files.sort());
+  return groups.map((group) => group.units.sort());
 }
 
 /** Eight shards by measured cost; the CI matrix runs one job per entry, in this order. */
@@ -310,13 +369,19 @@ async function main(): Promise<void> {
   }
   const plan = planLanes(assigned, shard.lanes ?? 1, (file) => readFileSync(join(root, file), "utf8"));
   const runGroup = async (group: readonly string[], label: string, held: boolean): Promise<{ code: number; output: string; line: string }> => {
-    let status = await runTests(group, held);
-    if (status.bunCrashed) {
-      // Bun itself aborted, so no test reached a verdict; the same files run once more.
-      console.log(`test-shard ${name}${label}: Bun crashed (not a test failure); running it once more`);
-      status = await runTests(group, held);
+    let code = 0;
+    let output = "";
+    for (const args of unitCommands(group)) {
+      let status = await runTests(args, held);
+      if (status.bunCrashed) {
+        // Bun itself aborted, so no test reached a verdict; the same files run once more.
+        console.log(`test-shard ${name}${label}: Bun crashed (not a test failure); running it once more`);
+        status = await runTests(args, held);
+      }
+      if (code === 0) code = status.code;
+      output += status.output;
     }
-    return { code: status.code, output: status.output, line: label.length > 0 ? `test-shard ${name}${label}: ${group.length} file(s), exit ${status.code}` : "" };
+    return { code, output, line: label.length > 0 ? `test-shard ${name}${label}: ${group.length} unit(s), exit ${code}` : "" };
   };
   const many = plan.lanes.length > 1;
   const lanes = await Promise.all(plan.lanes.map((group, index) => runGroup(group, many ? ` lane ${index + 1}/${plan.lanes.length}` : "", many)));

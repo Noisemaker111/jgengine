@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { assignShards, bunCrashed, failedTests, failureDetails, failureReport, matchingShard, preparation, SHARDS, planLanes, SLOW_TEST_SECONDS, splitLanes, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
+import { assignShards, bunCrashed, failedTests, failureDetails, failureReport, matchingShard, preparation, SHARDS, laneUnits, planLanes, SLOW_TEST_SECONDS, SPLIT_TESTS, splitLanes, unitCommands, UNMEASURED_FILE_SECONDS, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
   { name: "hot", label: "the core combat tests", include: ["packages/core/src/combat"] },
@@ -95,23 +95,39 @@ test("every shard names what it runs, so a red `test (a)` is diagnosable", () =>
 });
 
 test("a shard's lanes split by measured cost, so the long simulations never share one", () => {
-  const files = [...Object.keys(SLOW_TEST_SECONDS), "a.test.ts", "b.test.ts"];
-  const lanes = splitLanes(files, 4);
+  const cost = { "slow1.test.ts": 90, "slow2.test.ts": 80, "slow3.test.ts": 60 };
+  const files = [...Object.keys(cost), "a.test.ts", "b.test.ts"];
+  const lanes = splitLanes(files, 4, cost);
   expect(lanes).toHaveLength(4);
-  for (const lane of lanes) expect(lane.filter((file) => (SLOW_TEST_SECONDS[file] ?? 0) > 100).length).toBeLessThanOrEqual(1);
+  for (const lane of lanes) expect(lane.filter((file) => file.startsWith("slow")).length).toBeLessThanOrEqual(1);
   expect(lanes.flat().sort()).toEqual([...files].sort());
   expect(splitLanes(["one.test.ts"], 4)).toEqual([["one.test.ts"]]);
 });
 
-test("the slow files are in the shard that runs them in lanes", () => {
-  for (const file of Object.keys(SLOW_TEST_SECONDS)) expect(matchingShard(file)?.lanes).toBeGreaterThan(1);
+test("the slow and split files are in the shards that run them in lanes", () => {
+  for (const file of [...Object.keys(SLOW_TEST_SECONDS), ...Object.keys(SPLIT_TESTS)]) expect(matchingShard(file)?.lanes).toBeGreaterThan(1);
+});
+
+test("a split file runs as its matching tests and every other test, in separate processes", () => {
+  const file = Object.keys(SPLIT_TESTS)[0] ?? "";
+  const { units, cost } = laneUnits([file, "plain.test.ts"]);
+  expect(units).toHaveLength(3);
+  const [match, rest] = units.filter((unit) => unit.startsWith(file)).map((unit) => new RegExp(unit.split(" -t ")[1] ?? ""));
+  const name = `suite > ${SPLIT_TESTS[file]?.match ?? ""} (and more)`;
+  // Every test name lands in exactly one part, including one added after the table was written.
+  for (const test of [name, "suite > some later test"]) expect([match?.test(test), rest?.test(test)].filter(Boolean)).toHaveLength(1);
+  expect(match?.test(name)).toBe(true);
+  expect(cost["plain.test.ts"]).toBe(UNMEASURED_FILE_SECONDS);
+  expect(unitCommands(splitLanes(units, 1, cost)[0] ?? [])).toEqual([["plain.test.ts"], ...units.filter((unit) => unit.startsWith(file)).sort().map((unit) => unit.split(" -t ").flatMap((part, index) => (index === 0 ? [part, "-t"] : [part])))]);
 });
 
 // The reference sims moved from packages/core to scripts (#2838) while this table still named the
 // old paths, so they landed in shard i's single process and made it the longest job by minutes.
 test("every slow file and every include still names a test file, so a move cannot strand the split", () => {
   const files = walkTestFiles();
-  expect(Object.keys(SLOW_TEST_SECONDS).filter((file) => !files.includes(file))).toEqual([]);
+  expect([...Object.keys(SLOW_TEST_SECONDS), ...Object.keys(SPLIT_TESTS)].filter((file) => !files.includes(file))).toEqual([]);
+  // A split pattern that matches no test fails its run loudly; this catches a rename before CI does.
+  for (const [file, split] of Object.entries(SPLIT_TESTS)) expect(readFileSync(file, "utf8")).toContain(split.match);
   const stale = SHARDS.flatMap((shard) => shard.include.filter((prefix) => !files.some((file) => file === prefix || file.startsWith(`${prefix}/`))).map((prefix) => `${shard.name}: ${prefix}`));
   expect(stale).toEqual([]);
 });
@@ -124,14 +140,7 @@ test("a file that reads the wall clock runs alone after the lanes, never beside 
   expect(planLanes(Object.keys(sources), 1, (file) => sources[file] ?? "")).toEqual({ lanes: [Object.keys(sources)], alone: [] });
 });
 
-test("a lane holds whole folders in path order, so it loads only their imports", () => {
-  const files = ["x/a1.test.ts", "y/b1.test.ts", "x/a2.test.ts", "y/b2.test.ts", "z/c1.test.ts", "z/c2.test.ts"];
-  expect(splitLanes(files, 3, {})).toEqual([
-    ["x/a1.test.ts", "x/a2.test.ts"],
-    ["y/b1.test.ts", "y/b2.test.ts"],
-    ["z/c1.test.ts", "z/c2.test.ts"],
-  ]);
-  // A measured slow file fills its own lane; the rest share the others.
+test("a measured slow file fills its own lane and the rest share the others", () => {
   const sized = splitLanes(["slow.test.ts", "a.test.ts", "b.test.ts", "c.test.ts"], 2, { "slow.test.ts": 50 });
   expect(sized).toContainEqual(["slow.test.ts"]);
   expect(sized).toContainEqual(["a.test.ts", "b.test.ts", "c.test.ts"]);
