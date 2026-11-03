@@ -373,9 +373,11 @@ describe("static gates", () => {
     for (const gate of ["games-framework", "games-design", "games-depth", "games-save-states", "game-feel", "art-direction", "content-gate", "module-globals"]) {
       expect(landing).toContain(gate);
     }
-    for (const gate of ["layers", "stateful-ratchet", "hud-tokens", "street-rule-parity", "doc-symbols", "release-set", "path-portability", "skill-api", "export-manifest"]) {
+    for (const gate of ["layers", "stateful-ratchet", "hud-tokens", "street-rule-parity", "doc-symbols", "release-set", "skill-api", "export-manifest"]) {
       expect(landing).not.toContain(gate);
     }
+    // A game can commit a `nul` as easily as the engine can.
+    expect(landing).toContain("path-portability");
   });
 
   test("a check script change reaches every gate, since the rule itself moved", () => {

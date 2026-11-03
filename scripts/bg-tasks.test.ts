@@ -161,7 +161,10 @@ test("a lost runner is answered, not waited for forever", async () => {
 
 test("the wait is the exit event: it returns as soon as the task exits, not on the heartbeat", async () => {
   const dir = checkout();
-  const id = startTask({ command: "ping -n 2 127.0.0.1 >nul & exit 3", checkout: dir });
+  // One command both shells read alike; `ping ... >nul` on bash wrote a file named `nul` into the repo (#2860).
+  const script = join(dir, "exit-3.ts");
+  writeFileSync(script, "setTimeout(() => process.exit(3), 1000);\n");
+  const id = startTask({ command: `bun ${script.split("\\").join("/")}`, checkout: dir });
 
   let printed = "";
   const code = await awaitTask({ id, checkout: dir, write: (text) => (printed += text), err: () => {} });

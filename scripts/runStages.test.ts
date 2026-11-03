@@ -264,8 +264,8 @@ describe("which rows a diff reaches", () => {
     expect(readsPath(["packages/core/src/city/cityKind.ts"], "packages/core/src/city/cityKind.ts.bak")).toBe(false);
   });
 
-  test("every row says what it reads, except the whole-tree type-check", () => {
-    for (const check of CHECKS) if (check.name !== "types") expect(check.reads).toBeDefined();
+  test("every row says what it reads, except the whole-tree type-check and path check", () => {
+    for (const check of CHECKS) if (check.name !== "types" && check.name !== "path-portability") expect(check.reads).toBeDefined();
     for (const target of GEN_TARGETS) expect(target.reads).toBeDefined();
   });
 

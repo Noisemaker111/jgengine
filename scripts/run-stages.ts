@@ -91,7 +91,8 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "test-spawn-timeouts", script: "scripts/check-test-spawn-timeouts.ts", jobs: ["types"], reads: ["packages/", "apps/"] },
   { name: "browser-test-budget", script: "scripts/browser-test-budget.ts", jobs: [], reads: ["packages/", "apps/"] },
   { name: "fixture-location", script: "scripts/check-fixture-location.ts", jobs: [], reads: ["packages/", "apps/", "examples/", "registry/"] },
-  { name: "path-portability", script: "scripts/check-path-portability.ts", jobs: ["types", "quick"], reads: ["packages/"] },
+  // Reads the whole tree: a file named `nul` anywhere breaks every Windows checkout.
+  { name: "path-portability", script: "scripts/check-path-portability.ts", jobs: ["types", "quick"] },
   { name: "no-blocking-wait", script: "scripts/check-no-blocking-wait.ts", jobs: ["types"], reads: ["packages/"] },
   { name: "script-help", script: "scripts/check-script-help.ts", jobs: [], reads: [] },
   { name: "types", script: "scripts/check-types-all.ts", jobs: ["types"] },

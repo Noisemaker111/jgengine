@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { findSeparatorAssertions, scanPathPortability } from "./check-path-portability";
+import { findSeparatorAssertions, scanPathPortability, scanReservedNames, windowsReservedPaths } from "./check-path-portability";
 
 const SCRIPT = join(import.meta.dir, "check-path-portability.ts");
 const SCRATCH = join(import.meta.dir, "..", ".scratch");
@@ -134,5 +134,33 @@ describe("the gate over a tree", () => {
   test("this repository has no unallowlisted separator assertion", () => {
     const offenders = scanPathPortability(join(import.meta.dir, "..")).filter((finding) => finding.reason === null);
     expect(offenders.map((finding) => `${finding.file}:${finding.line} ${finding.rule}`)).toEqual([]);
+  });
+});
+
+describe("names Windows cannot check out", () => {
+  test("every reserved device name is caught, with or without an extension, in any folder", () => {
+    const reserved = ["nul", "NUL", "con", "prn", "aux", "com1", "COM9", "lpt1", "lpt9", "nul.txt", "Aux.tar.gz", "games/x/con", "a/lpt3/b.ts", "nul.", "con "];
+    expect(windowsReservedPaths(reserved)).toEqual(reserved);
+  });
+
+  test("names that only start with a reserved word are fine", () => {
+    expect(windowsReservedPaths(["null.ts", "console.ts", "nul_check.ts", "auxiliary/x.ts", "com0", "com10", "lpt", "prnt.md", "connect/nul-free.ts"])).toEqual([]);
+  });
+
+  test("a committed `nul` fails the gate, as #2860's did", () => {
+    const root = fixture("reserved", { "scripts/driveFlows.test.ts": FLOWS(AFTER) });
+    // Git for Windows refuses the name itself unless NTFS protection is off.
+    const git = (...args: string[]) => Bun.spawnSync({ cmd: ["git", "-c", "core.protectNTFS=false", ...args], cwd: root, timeout: 30_000, stdout: "pipe", stderr: "pipe" });
+    expect(git("init", "-q").exitCode).toBe(0);
+    // Windows cannot create the file, so the entry goes straight into the index, the way a Linux commit carries it.
+    const blob = git("hash-object", "-w", "--stdin").stdout.toString().trim();
+    expect(git("update-index", "--add", "--cacheinfo", `100644,${blob},nul`).exitCode).toBe(0);
+    const run = runGate(root);
+    expect(run.code).toBe(1);
+    expect(run.stderr).toContain("nul uses a name Windows reserves");
+  });
+
+  test("this repository has no reserved name", () => {
+    expect(scanReservedNames(join(import.meta.dir, ".."))).toEqual([]);
   });
 });
