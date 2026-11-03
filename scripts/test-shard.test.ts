@@ -107,6 +107,15 @@ test("the slow files are in the shard that runs them in lanes", () => {
   for (const file of Object.keys(SLOW_TEST_SECONDS)) expect(matchingShard(file)?.lanes).toBeGreaterThan(1);
 });
 
+// The reference sims moved from packages/core to scripts (#2838) while this table still named the
+// old paths, so they landed in shard i's single process and made it the longest job by minutes.
+test("every slow file and every include still names a test file, so a move cannot strand the split", () => {
+  const files = walkTestFiles();
+  expect(Object.keys(SLOW_TEST_SECONDS).filter((file) => !files.includes(file))).toEqual([]);
+  const stale = SHARDS.flatMap((shard) => shard.include.filter((prefix) => !files.some((file) => file === prefix || file.startsWith(`${prefix}/`))).map((prefix) => `${shard.name}: ${prefix}`));
+  expect(stale).toEqual([]);
+});
+
 test("a file that reads the wall clock runs alone after the lanes, never beside them", () => {
   const sources: Record<string, string> = { "a.test.ts": "expect(1).toBe(1)", "timed.test.ts": "const t = performance.now();", "b.test.ts": "" };
   const plan = planLanes(Object.keys(sources), 4, (file) => sources[file] ?? "");

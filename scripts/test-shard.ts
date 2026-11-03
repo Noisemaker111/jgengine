@@ -60,14 +60,18 @@ export interface Shard {
 }
 
 /**
- * Seconds the slowest test files took on a CI runner (run 41087291823, 2026-10-30), so a shard's
- * lanes split by time rather than count. Every other file counts as one second.
+ * Seconds the slowest test files took on a CI runner (landforms: run 41087291823, 2026-10-30; scripts:
+ * run 41368822356, 2026-11-02), so a shard's lanes split by time rather than count. Every other file
+ * counts as one second.
  */
 export const SLOW_TEST_SECONDS: Readonly<Record<string, number>> = {
   "packages/core/src/landform/glacial/glacialErosion.test.ts": 148,
-  "packages/core/src/physics/reference/bondedRock.test.ts": 137,
-  "packages/core/src/physics/reference/discreteElementExperiments.test.ts": 88,
   "packages/core/src/landform/evolution/landscapeEvolution.browser.test.ts": 51,
+  "scripts/reference/physics/bondedRock.test.ts": 140,
+  "scripts/reference/physics/discreteElementExperiments.test.ts": 86,
+  "scripts/reference/physics/referenceCar.test.ts": 25,
+  "scripts/tarballInstall.test.ts": 19,
+  "scripts/captureCliParity.test.ts": 15,
 };
 
 /**
@@ -138,12 +142,11 @@ export const SHARDS: readonly Shard[] = [
   },
   {
     name: "d",
-    label: "core world, landforms and the physics reference sims",
-    // The world suite (seconds since the city generator moved out) plus the long simulations:
-    // glacial erosion 148 s, bonded rock 137 s, the DEM experiments 88 s and landscape evolution
-    // 51 s on a runner. In shard h they made it a 13-minute job; here four lanes hold it near the
-    // longest file.
-    include: ["packages/core/src/world", "packages/core/src/landform", "packages/core/src/physics/reference"],
+    label: "core world and landforms",
+    // The world suite (seconds since the city generator moved out) plus the long landform
+    // simulations: glacial erosion 148 s and landscape evolution 51 s on a runner. In shard h they
+    // made it a 13-minute job; here four lanes hold it near the longest file.
+    include: ["packages/core/src/world", "packages/core/src/landform"],
     needs: [],
     lanes: 4,
   },
@@ -183,11 +186,15 @@ export const SHARDS: readonly Shard[] = [
   },
   {
     name: "i",
-    label: "scripts and the built gate",
-    // 35 s of repo gates and CLI tests; anything a new root adds lands here too. It is the only
-    // shard that reads a built dist, so it is the only job that pays for the build.
+    label: "scripts, the physics reference sims and the built gate",
+    // Repo gates, CLI tests and the physics and flight reference sims, which import the built
+    // @jgengine/core; anything a new root adds lands here too. It is the only shard that reads a
+    // built dist, so it is the only job that pays for the build. In one process it took 410 s of
+    // test time (run 41368822356): bonded rock 140 s and the DEM experiments 86 s ran after
+    // everything else, so four lanes hold it near the longest file.
     include: ["scripts", ...TEST_ROOTS],
     needs: ["build"],
+    lanes: 4,
   },
 ];
 
