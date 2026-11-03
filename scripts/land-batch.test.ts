@@ -20,7 +20,8 @@ import {
   runOnTip,
 } from "./land-batch";
 import type { BatchArgs, BatchIo } from "./land-batch";
-import type { Git, Run } from "./land";
+import type { Run } from "./land";
+import { fakeGitHub, type FakeGitHub } from "./github.fixture";
 
 const slow = (name: string, fn: () => void): void => {
   test(name, fn, 60_000);
@@ -132,10 +133,10 @@ function argsFor(branches: string[], extra: Partial<BatchArgs> = {}): BatchArgs 
  * The verify stand-in reads the work tree it is given: a branch that adds `bad.txt` fails, anything
  * else passes, so a failing branch is exercised without running a real gate.
  */
-function batchIo(work: string, log: string[] = [], gh?: (args: string[]) => Run): BatchIo {
+function batchIo(work: string, log: string[] = [], api: FakeGitHub = fakeGitHub()): BatchIo {
   return {
     git: (args) => gitIn(work, args),
-    gh: gh ?? (() => ({ status: 1, stdout: "", stderr: "no gh in this test" })),
+    github: api.github,
     verify: () => !existsSync(join(work, "bad.txt")),
     log: (line) => log.push(line),
     error: (line) => log.push(`ERR ${line}`),
@@ -312,29 +313,43 @@ slow("--explain without a recorded batch says so instead of guessing", () => {
 slow("a PR named for a landed branch is attributed in the merge commit, and closed only if GitHub left it open", () => {
   const { work } = fixtures();
   branch(work, "agent/one", "one.txt", "one\n", "one");
-  const calls: string[][] = [];
-  const gh: Git = (args) => {
-    calls.push(args);
-    if (args[0] === "pr" && args[1] === "list") {
-      return { status: 0, stdout: JSON.stringify([{ number: 2400, title: "One", headRefName: "agent/one" }]), stderr: "" };
-    }
-    if (args[0] === "pr" && args[1] === "view") return { status: 0, stdout: JSON.stringify({ state: "OPEN" }), stderr: "" };
-    return { status: 0, stdout: "", stderr: "" };
-  };
-  const outcome = landBatch(argsFor(["agent/one"]), batchIo(work, [], gh));
+  const api = fakeGitHub({ pulls: [{ number: 2400, title: "One", head: "agent/one" }] });
+  const outcome = landBatch(argsFor(["agent/one"]), batchIo(work, [], api));
   expect(outcome.landed[0]?.pr).toBe(2400);
   expect(gitOk(work, ["log", "-1", "--format=%s", "origin/beta"])).toContain("Merge pull request #2400");
-  expect(calls.some((args) => args[1] === "close" && args[2] === "2400")).toBe(true);
+  expect(api.pulls.get(2400)?.state).toBe("closed");
+  expect(api.comments.map((comment) => comment.number)).toEqual([2400]);
+
+  // GitHub marks a PR merged when the push carries its commits; that one is left alone.
+  const { work: again } = fixtures();
+  branch(again, "agent/one", "one.txt", "one\n", "one");
+  const landedByPush: FakeGitHub = fakeGitHub({
+    pulls: [{ number: 2401, title: "One", head: "agent/one" }],
+    fail: (call) => {
+      const pr = landedByPush.pulls.get(2401);
+      if (pr !== undefined && call.method === "GET" && call.path.endsWith("/pulls/2401")) {
+        pr.state = "closed";
+        pr.merged = true;
+      }
+      return undefined;
+    },
+  });
+  landBatch(argsFor(["agent/one"]), batchIo(again, [], landedByPush));
+  expect(landedByPush.comments).toEqual([]);
+  expect(landedByPush.calls.some((call) => call.method === "PATCH")).toBe(false);
   expect(readFileSync(recordPath((args) => gitIn(work, args)), "utf8")).toContain("agent/one");
 });
 
 slow("the hand-off names the run the batch started, and asks nothing of the reader that waits", () => {
-  const gh: Git = (args) =>
-    args[0] === "run"
-      ? { status: 0, stdout: JSON.stringify([{ databaseId: 40110539507, headSha: "bbbb" }, { databaseId: 42, headSha: "aaaa" }]), stderr: "" }
-      : { status: 1, stdout: "", stderr: "no gh in this test" };
-  expect(runOnTip({ gh } as unknown as BatchIo, "beta", "aaaa")).toBe(42);
-  expect(runOnTip({ gh } as unknown as BatchIo, "beta", "cccc")).toBeNull();
+  const { github } = fakeGitHub({
+    runs: [
+      { id: 40110539507, branch: "beta", headSha: "bbbb" },
+      { id: 42, branch: "beta", headSha: "aaaa" },
+      { id: 43, branch: "agent/other", headSha: "cccc" },
+    ],
+  });
+  expect(runOnTip({ github }, "beta", "aaaa")).toBe(42);
+  expect(runOnTip({ github }, "beta", "cccc")).toBeNull();
   expect(handOffLines("aaaaaaaaaaaa", "beta", 42)[0]).toBe("status: gh run view 42 --json status,conclusion");
   expect(handOffLines("aaaaaaaaaaaa", "beta")[0]).toContain("gh run list --branch beta");
   expect(handOffLines("aaaaaaaaaaaa", "beta")[2]).toContain("waits for nothing");

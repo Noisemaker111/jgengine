@@ -21,7 +21,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { assertCheckoutReady } from "./checkout-ready";
-import { originRepo, withRestFallback } from "./gh-rest";
+import { gitHub, repoFromRemote } from "./github";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose, takeVerboseFlag } from "./verbosity";
 
@@ -248,7 +248,7 @@ export function queueInBackground(pr: number, io: LaneIo): string {
   const started = io.sh(["run", "background", "start", "bun", "scripts/land-queue.ts", "--pr", String(pr)], false);
   const id = lastLine(started.stdout);
   if (started.status !== 0 || id.length === 0) {
-    return `lane:close: #${pr} waits on auto-merge; ask for its checks with bun run ci:status --pr ${pr}`;
+    return `lane:close: #${pr} waits in the landing queue; ask for its checks with bun run ci:status --pr ${pr}`;
   }
   return (
     `lane:close: #${pr} is handed to the landing queue and is not merged yet. ` +
@@ -258,17 +258,15 @@ export function queueInBackground(pr: number, io: LaneIo): string {
 }
 
 /**
- * The PR this branch handed over: open and armed, or already merged. `land` no longer waits, so the
+ * The PR this branch handed over: open and labelled for the queue, or already merged. `land` no longer waits, so the
  * PR a lane just produced is usually still open when the report is printed.
  */
 function branchPr(branch: string, io: LaneIo): number | null {
-  const gh = withRestFallback((args) => io.sh(["gh", ...args], false), () => originRepo(io.cwd));
-  const listed = gh(["pr", "list", "--head", branch, "--state", "all", "--limit", "1", "--json", "number"]);
-  if (listed.status !== 0) return null;
-  const parsed = parseJson<{ number: number }[]>(listed.stdout);
-  if (!("value" in parsed)) return null;
-  const found = parsed.value[0];
-  return found === undefined ? null : found.number;
+  const remote = io.sh(["git", "remote", "get-url", "origin"], false);
+  const repo = remote.status === 0 ? repoFromRemote(remote.stdout) : null;
+  if (repo === null) return null;
+  const listed = gitHub((args) => io.sh(["gh", ...args], false), repo).listPulls({ head: branch, state: "all", limit: 1 });
+  return listed.ok ? (listed.value[0]?.number ?? null) : null;
 }
 
 function filesChanged(io: LaneIo): string {

@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 
 import {
   EXIT_CHECKS_FAILED,
+  EXIT_COULD_NOT_MERGE,
   EXIT_LANDED,
   EXIT_VERIFY_FAILED,
   LOCK_STALE_MS,
@@ -33,9 +34,10 @@ import {
   noteLines,
   syncOntoBase,
 } from "./land";
-import type { FragmentFile, Gh, GhCheck, LandIo, LockWait, Run } from "./land";
+import type { FragmentFile, GhCheck, LandIo, LockWait, Run } from "./land";
 import { attemptsOf, judgeChecks } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
+import { fakeGitHub, type FakeCall, type FakeCheck, type FakeGitHub } from "./github.fixture";
 
 test("a command printing more than Node's 1 MiB default comes back whole, as `git show` of a big api.md does", () => {
   const size = 3 * 1024 * 1024;
@@ -221,69 +223,57 @@ test("with no fragment and no commits the one-line summary is the body", () => {
   expect(body).toEqual({ text: "the last commit", explicit: false });
 });
 
-/** A gh that answers from a script and records every call, so a landing can be replayed without GitHub. */
-function scriptedGh(answers: { open?: { number: number; url: string }[]; body?: string; title?: string; fail?: string }): {
-  gh: Gh;
-  calls: string[][];
-} {
-  const calls: string[][] = [];
-  const gh: Gh = (args) => {
-    calls.push(args);
-    const joined = args.join(" ");
-    if (answers.fail !== undefined && joined.startsWith(answers.fail)) {
-      return { status: 1, stdout: "", stderr: `scripted ${answers.fail} failure` };
-    }
-    if (joined.startsWith("pr list")) {
-      return { status: 0, stdout: JSON.stringify(answers.open ?? []), stderr: "" };
-    }
-    if (joined.startsWith("pr view")) {
-      return { status: 0, stdout: JSON.stringify({ body: answers.body ?? "", title: answers.title ?? "" }), stderr: "" };
-    }
-    if (joined.startsWith("pr create")) {
-      return { status: 0, stdout: "https://github.com/Noisemaker111/JGengine/pull/4242\n", stderr: "" };
-    }
-    return { status: 0, stdout: "", stderr: "" };
-  };
-  return { gh, calls };
+const LAND_REPO = "Noisemaker111/JGengine";
+
+/** GitHub with one open PR on agent/lane-x per entry, so a landing can be replayed without GitHub. */
+function prApi(open: { number: number; body?: string; title?: string }[], fail?: (call: FakeCall) => string | undefined) {
+  return fakeGitHub({
+    repo: LAND_REPO,
+    pulls: open.map((pr) => ({ number: pr.number, head: "agent/lane-x", body: pr.body ?? "", title: pr.title ?? "" })),
+    ...(fail === undefined ? {} : { fail }),
+  });
 }
+
+const edits = (api: FakeGitHub): FakeCall[] => api.calls.filter((call) => call.method === "PATCH");
 
 const noLog = (): void => {};
 
 test("a reused PR has its stale body and title replaced with the explicit ones", () => {
-  const { gh, calls } = scriptedGh({ open: [{ number: 12, url: "https://example.test/12" }], body: "a stale body", title: "the first run's title" });
+  const api = prApi([{ number: 12, body: "a stale body", title: "the first run's title" }]);
   const pr = ensurePr({
     args: { base: "beta", bodyFile: ".scratch/body.md" },
     branch: "agent/lane-x",
     summary: "the last commit",
     body: { text: "the body I wrote", explicit: true },
-    gh,
+    github: api.github,
     log: noLog,
   });
-  expect(pr).toEqual({ number: 12, url: "https://example.test/12" });
-  expect(calls).toContainEqual(["pr", "view", "12", "--json", "body,title"]);
-  expect(calls).toContainEqual(["pr", "edit", "12", "--body", "the body I wrote", "--title", "the last commit"]);
+  expect(pr).toEqual({ number: 12, url: `https://github.com/${LAND_REPO}/pull/12` });
+  expect(edits(api)).toEqual([
+    { method: "PATCH", path: `repos/${LAND_REPO}/pulls/12`, fields: { title: "the last commit", body: "the body I wrote" } },
+  ]);
 });
 
 test("a re-close with -m retitles the reused PR from the new note, and a matching title is left alone", () => {
-  const stale = scriptedGh({ open: [{ number: 16, url: "https://example.test/16" }], body: "the note", title: "old subject" });
+  const stale = prApi([{ number: 16, body: "the note", title: "old subject" }]);
   ensurePr({
     args: { base: "beta" },
     branch: "agent/lane-x",
     summary: "new subject",
     body: { text: "the note", explicit: true },
-    gh: stale.gh,
+    github: stale.github,
     log: noLog,
   });
-  expect(stale.calls).toContainEqual(["pr", "edit", "16", "--title", "new subject"]);
+  expect(edits(stale).map((call) => call.fields)).toEqual([{ title: "new subject" }]);
 
-  const same = scriptedGh({ open: [{ number: 17, url: "https://example.test/17" }], body: "the note", title: "new subject" });
-  ensurePr({ args: { base: "beta" }, branch: "agent/lane-x", summary: "new subject", body: { text: "the note", explicit: true }, gh: same.gh, log: noLog });
-  expect(same.calls.some((call) => call[1] === "edit")).toBe(false);
+  const same = prApi([{ number: 17, body: "the note", title: "new subject" }]);
+  ensurePr({ args: { base: "beta" }, branch: "agent/lane-x", summary: "new subject", body: { text: "the note", explicit: true }, github: same.github, log: noLog });
+  expect(edits(same)).toEqual([]);
 
   // A body land was not given leaves the title alone too.
-  const kept = scriptedGh({ open: [{ number: 18, url: "https://example.test/18" }], body: "someone's body", title: "someone's title" });
-  ensurePr({ args: { base: "beta" }, branch: "agent/lane-x", summary: "new subject", body: { text: "x", explicit: false, bends: "" }, gh: kept.gh, log: noLog });
-  expect(kept.calls.some((call) => call.includes("--title"))).toBe(false);
+  const kept = prApi([{ number: 18, body: "someone's body", title: "someone's title" }]);
+  ensurePr({ args: { base: "beta" }, branch: "agent/lane-x", summary: "new subject", body: { text: "x", explicit: false, bends: "" }, github: kept.github, log: noLog });
+  expect(edits(kept).some((call) => call.fields["title"] !== undefined)).toBe(false);
 });
 
 test("fragments are split by what the diff adds, not by which one is newest", () => {
@@ -297,66 +287,58 @@ test("fragments are split by what the diff adds, not by which one is newest", ()
 });
 
 test("a reused PR keeps a body land was not given, and one that already matches is not rewritten", () => {
-  const kept = scriptedGh({ open: [{ number: 13, url: "https://example.test/13" }], body: "a body someone wrote" });
+  const kept = prApi([{ number: 13, body: "a body someone wrote" }]);
   ensurePr({
     args: { base: "beta" },
     branch: "agent/lane-x",
     summary: "the last commit",
     body: { text: "### Changed\n\n- The fragment.\n", explicit: false },
-    gh: kept.gh,
+    github: kept.github,
     log: noLog,
   });
-  expect(kept.calls.some((call) => call[1] === "edit")).toBe(false);
+  expect(edits(kept)).toEqual([]);
 
-  const same = scriptedGh({ open: [{ number: 14, url: "https://example.test/14" }], body: "the body I wrote\n", title: "the last commit" });
+  const same = prApi([{ number: 14, body: "the body I wrote\n", title: "the last commit" }]);
   ensurePr({
     args: { base: "beta", bodyFile: ".scratch/body.md" },
     branch: "agent/lane-x",
     summary: "the last commit",
     body: { text: "the body I wrote", explicit: true },
-    gh: same.gh,
+    github: same.github,
     log: noLog,
   });
-  expect(same.calls.some((call) => call[1] === "edit")).toBe(false);
+  expect(edits(same)).toEqual([]);
 });
 
 test("a body that cannot be written over the reused PR stops the landing", () => {
-  const { gh } = scriptedGh({ open: [{ number: 15, url: "https://example.test/15" }], body: "stale", fail: "pr edit" });
+  const api = prApi([{ number: 15, body: "stale" }], (call) => (call.method === "PATCH" ? "HTTP 422: Validation Failed" : undefined));
   const pr = ensurePr({
     args: { base: "beta", bodyFile: ".scratch/body.md" },
     branch: "agent/lane-x",
     summary: "the last commit",
     body: { text: "the body I wrote", explicit: true },
-    gh,
+    github: api.github,
     log: noLog,
   });
   expect(pr).toBeNull();
 });
 
-test("opening a PR sends the explicit body rather than the fragment", () => {
-  const { gh, calls } = scriptedGh({ open: [] });
+test("opening a PR sends the explicit body rather than the fragment, over REST", () => {
+  const api = prApi([]);
   const pr = ensurePr({
     args: { base: "beta", title: "Menus", bodyFile: ".scratch/body.md" },
     branch: "agent/lane-x",
     summary: "the last commit",
     body: { text: "the body I wrote", explicit: true },
-    gh,
+    github: api.github,
     log: noLog,
   });
-  expect(pr).toEqual({ number: 4242, url: "https://github.com/Noisemaker111/JGengine/pull/4242" });
-  const create = calls.find((call) => call[1] === "create");
-  expect(create).toEqual([
-    "pr",
-    "create",
-    "--base",
-    "beta",
-    "--head",
-    "agent/lane-x",
-    "--title",
-    "Menus",
-    "--body",
-    "the body I wrote",
+  expect(pr).toEqual({ number: 1, url: `https://github.com/${LAND_REPO}/pull/1` });
+  expect(api.calls.map((call) => `${call.method} ${call.path}`)).toEqual([
+    `GET repos/${LAND_REPO}/pulls?state=open&per_page=30&head=${encodeURIComponent("Noisemaker111:agent/lane-x")}&base=beta`,
+    `POST repos/${LAND_REPO}/pulls`,
   ]);
+  expect(api.calls[1]?.fields).toEqual({ base: "beta", head: "agent/lane-x", title: "Menus", body: "the body I wrote" });
 });
 
 test("maps a green check list to no failures", () => {
@@ -768,8 +750,8 @@ test("only a moved base, not a failing check, sends a merge back to rebase", () 
 
 /**
  * A landing driven end to end by `scripts/land.ts` itself, in its own process so two of them really
- * run at once: the fake GitHub answers PR calls, enforces "up to date" like branch protection, and
- * performs a real merge into the throwaway remote.
+ * run at once against a real throwaway remote; the fake GitHub answers PR calls and marks when it is
+ * labelling, so a test can see whether two labellings overlapped.
  */
 const HARNESS = `
 import { appendFileSync, writeFileSync } from "node:fs";
@@ -782,48 +764,25 @@ const gitAt = (cwd) => (args) => {
   return { status: r.status ?? 1, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
 };
 const lane = gitAt(cfg.clone);
-const bare = gitAt(cfg.bare);
-const server = gitAt(cfg.server);
-const ok = { status: 0, stdout: "", stderr: "" };
 const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-let created = false;
+const done = { ok: true, value: null };
 const url = "https://example.test/" + cfg.number;
-const gh = (args) => {
-  const joined = args.join(" ");
-  if (joined.startsWith("pr list")) return { status: 0, stdout: created ? JSON.stringify([{ number: cfg.number, url }]) : "[]", stderr: "" };
-  if (joined.startsWith("pr create")) { created = true; return { status: 0, stdout: url + "\\n", stderr: "" }; }
-  if (joined.startsWith("pr view") && joined.includes("body")) return { status: 0, stdout: JSON.stringify({ body: "" }), stderr: "" };
-  if (joined.startsWith("pr view") && joined.includes("statusCheckRollup")) {
-    return {
-      status: 0,
-      stdout: JSON.stringify({
-        headRefOid: "head1",
-        statusCheckRollup: [{ name: "ci", conclusion: "SUCCESS", status: "COMPLETED", detailsUrl: "https://example.test/actions/runs/1/job/2" }],
-      }),
-      stderr: "",
-    };
-  }
-  if (joined.startsWith("pr view")) return { status: 0, stdout: JSON.stringify({ state: "MERGED", url }), stderr: "" };
-  if (joined.startsWith("pr edit")) return ok;
-  if (joined.startsWith("pr checks")) return { status: 0, stdout: JSON.stringify([{ name: "ci", state: "SUCCESS", bucket: "pass" }]), stderr: "" };
-  if (joined.startsWith("pr merge")) {
-    at("MERGE-START");
-    pause(cfg.mergeMs);
-    const tip = bare(["rev-parse", "refs/heads/" + cfg.branch]).stdout.trim();
-    const beta = bare(["rev-parse", "refs/heads/beta"]).stdout.trim();
-    const upToDate = bare(["merge-base", "--is-ancestor", beta, tip]).status === 0;
-    if (cfg.strictBase && !upToDate) {
-      at("MERGE-END");
-      return { status: 1, stdout: "", stderr: "the base branch was modified. Review and try the merge again." };
-    }
-    server(["fetch", "-q", "origin", cfg.branch, "beta"]);
-    server(["checkout", "-q", "-B", "beta", "origin/beta"]);
-    const merged = server(["merge", "-q", "--no-ff", "-m", "Merge " + cfg.branch, "origin/" + cfg.branch]);
-    const pushed = merged.status === 0 ? server(["push", "-q", "origin", "beta"]) : merged;
-    at("MERGE-END");
-    return pushed;
-  }
-  return ok;
+const pull = { number: cfg.number, url, title: "", body: "", state: "OPEN", isDraft: false, isCrossRepository: false, headRefName: cfg.branch, headRefOid: "head1", baseRefName: "beta", updatedAt: null, mergeStateStatus: "CLEAN", labels: [] };
+let created = false;
+const github = {
+  repo: "me/game",
+  listPulls: () => ({ ok: true, value: created ? [pull] : [] }),
+  pull: () => ({ ok: true, value: pull }),
+  checks: () => ({ ok: true, value: [{ name: "ci", conclusion: "SUCCESS", status: "COMPLETED", detailsUrl: "https://example.test/actions/runs/1/job/2" }] }),
+  createPull: () => { created = true; return { ok: true, value: { number: cfg.number, url } }; },
+  editPull: () => done,
+  addLabel: (number, label) => {
+    at("LABEL-START");
+    pause(cfg.labelMs);
+    pull.labels.push(label);
+    at("LABEL-END");
+    return done;
+  },
 };
 const waits = [];
 at("START");
@@ -834,7 +793,7 @@ const code = land.landBranch({
   waits,
   io: {
     git: lane,
-    gh,
+    github,
     verify: () => cfg.verifyOk,
     log: (line) => at("LOG " + line),
     error: (line) => at("ERR " + line),
@@ -863,12 +822,10 @@ interface Landing {
   span: { start: number; end: number };
 }
 
-/** A bare origin, a clone that plays GitHub's merge, and one branch per lane. */
-function landingRepo(names: readonly string[]): { bare: string; server: string; lanes: Lane[] } {
+/** A bare origin and one branch per lane. */
+function landingRepo(names: readonly string[]): { lanes: Lane[] } {
   const { bare, work } = originWithBeta();
   const home = dirname(work);
-  const server = join(home, "server");
-  gitOk(home, ["clone", "-q", bare, server]);
   const lanes = names.map((name) => {
     const clone = join(home, `lane-${name}`);
     gitOk(home, ["clone", "-q", "-b", "beta", bare, clone]);
@@ -877,7 +834,7 @@ function landingRepo(names: readonly string[]): { bare: string; server: string; 
     commit(clone, `${name}.txt`, `${name}\n`, `${name} work`);
     return { clone, branch };
   });
-  return { bare, server, lanes };
+  return { lanes };
 }
 
 function runDir(): string {
@@ -889,12 +846,9 @@ function runDir(): string {
 
 function startLanding(options: {
   lane: Lane;
-  bare: string;
-  server: string;
   lock: string;
   number: number;
-  mergeMs?: number;
-  strictBase?: boolean;
+  labelMs?: number;
   verify?: string;
   verifyOk?: boolean;
   dir?: string;
@@ -905,12 +859,9 @@ function startLanding(options: {
   const config = {
     clone: options.lane.clone,
     branch: options.lane.branch,
-    bare: options.bare,
-    server: options.server,
     lock: options.lock,
     number: options.number,
-    mergeMs: options.mergeMs ?? 150,
-    strictBase: options.strictBase ?? true,
+    labelMs: options.labelMs ?? 150,
     verify: options.verify ?? undefined,
     verifyOk: options.verifyOk ?? true,
     events,
@@ -970,10 +921,10 @@ function printLanding(label: string, landing: Landing): void {
   for (const line of landing.logs) console.log(`  land: ${line}`);
 }
 
-test("two landings at once both hand over, and the lock keeps their arming apart", async () => {
+test("two landings at once both hand over, and the lock keeps their labelling apart", async () => {
   const pair = landingRepo(["a", "b"]);
   const lock = join(dirname(pair.lanes[0]!.clone), "land.lock");
-  const shared = { bare: pair.bare, server: pair.server, lock, strictBase: false };
+  const shared = { lock };
   const [a, b] = await Promise.all([
     startLanding({ ...shared, lane: pair.lanes[0]!, number: 2 }),
     startLanding({ ...shared, lane: pair.lanes[1]!, number: 3 }),
@@ -984,8 +935,8 @@ test("two landings at once both hand over, and the lock keeps their arming apart
   expect(a.code).toBe(0);
   expect(b.code).toBe(0);
 
-  const [aMerge, bMerge] = [windows(a.events, "MERGE-START", "MERGE-END")[0]!, windows(b.events, "MERGE-START", "MERGE-END")[0]!];
-  expect(overlap(aMerge, bMerge)).toBeLessThanOrEqual(0);
+  const [aLabel, bLabel] = [windows(a.events, "LABEL-START", "LABEL-END")[0]!, windows(b.events, "LABEL-START", "LABEL-END")[0]!];
+  expect(overlap(aLabel, bLabel)).toBeLessThanOrEqual(0);
 
   expect(a.logs.some((line) => /^worked .+, waited .+ for the lock/.test(line))).toBe(true);
   expect(b.logs.some((line) => /^worked .+, waited .+ for the lock/.test(line))).toBe(true);
@@ -999,8 +950,6 @@ test("a landing that queues prints what it waited for, and its summary splits wa
 
   const landing = await startLanding({
     lane: repo.lanes[0]!,
-    bare: repo.bare,
-    server: repo.server,
     lock,
     number: 4,
   });
@@ -1014,12 +963,10 @@ test("a landing that queues prints what it waited for, and its summary splits wa
   await holder.child.exited;
 }, 120_000);
 
-test("a failed verify stops the landing before it merges", async () => {
+test("a failed verify stops the landing before it labels", async () => {
   const repo = landingRepo(["unverified"]);
   const landing = await startLanding({
     lane: repo.lanes[0]!,
-    bare: repo.bare,
-    server: repo.server,
     lock: join(dirname(repo.lanes[0]!.clone), "land.lock"),
     number: 6,
     verify: "the-command",
@@ -1029,7 +976,7 @@ test("a failed verify stops the landing before it merges", async () => {
   expect(landing.code).toBe(EXIT_VERIFY_FAILED);
   expect(landing.logs).toContain("verify the-command");
   expect(landing.errors).toContain("verify failed: the-command");
-  expect(windows(landing.events, "MERGE-START", "MERGE-END").length).toBe(0);
+  expect(windows(landing.events, "LABEL-START", "LABEL-END").length).toBe(0);
 }, 120_000);
 
 /** Git for a hand-off: the push, the fetch and a branch already on top of the base. */
@@ -1045,41 +992,23 @@ function scriptedGit(answers: { behind?: string } = {}): { git: (args: string[])
   return { git, calls };
 }
 
-const GREEN: RollupEntry[] = [{ name: "ci", conclusion: "SUCCESS", status: "COMPLETED", detailsUrl: "https://example.test/job/1" }];
-const URL_4242 = "https://github.com/Noisemaker111/JGengine/pull/4242";
+const GREEN: FakeCheck[] = [{ name: "ci", url: "https://example.test/job/1" }];
+const URL_4242 = `https://github.com/${LAND_REPO}/pull/4242`;
 
-/** A rollup as GitHub sends it: one row per attempt, `startedAt` ordering the attempts. */
-function rollupOf(
-  entries: readonly { name: string; conclusion?: string; status?: string; startedAt?: string; url?: string }[],
-): RollupEntry[] {
-  return entries.map((entry) => ({
-    name: entry.name,
-    conclusion: entry.conclusion ?? null,
-    status: entry.status ?? "COMPLETED",
-    startedAt: entry.startedAt ?? null,
-    detailsUrl: entry.url ?? "",
-  }));
+/** GitHub for a hand-off: no open PR yet, so land opens #4242, whose head commit carries `checks`. */
+function handOffApi(options: { checks?: FakeCheck[]; fail?: (call: FakeCall) => string | undefined } = {}): FakeGitHub {
+  return fakeGitHub({
+    repo: LAND_REPO,
+    nextNumber: 4242,
+    checks: { "sha-4242": options.checks ?? GREEN },
+    ...(options.fail === undefined ? {} : { fail: options.fail }),
+  });
 }
 
-function handOffGh(options: { autoMerge?: Run; label?: Run; rollup?: RollupEntry[] } = {}): { gh: Gh; calls: string[][] } {
-  const calls: string[][] = [];
-  const gh: Gh = (args) => {
-    calls.push(args);
-    const joined = args.join(" ");
-    if (joined.startsWith("pr list")) return { status: 0, stdout: "[]", stderr: "" };
-    if (joined.startsWith("pr create")) return { status: 0, stdout: `${URL_4242}\n`, stderr: "" };
-    if (joined.startsWith("pr view")) {
-      return { status: 0, stdout: JSON.stringify({ headRefOid: "head1", statusCheckRollup: options.rollup ?? GREEN }), stderr: "" };
-    }
-    if (joined.startsWith("pr merge")) return options.autoMerge ?? { status: 0, stdout: "", stderr: "" };
-    if (joined.startsWith("pr edit")) return options.label ?? { status: 0, stdout: "", stderr: "" };
-    return { status: 0, stdout: "", stderr: "" };
-  };
-  return { gh, calls };
-}
+const labelCalls = (api: FakeGitHub): FakeCall[] => api.calls.filter((call) => call.path.endsWith("/labels"));
 
 /** An io that records what a hand-off prints. */
-function handOffIo(parts: { git: (args: string[]) => Run; gh: Gh; verifyOk?: boolean }): {
+function handOffIo(parts: { git: (args: string[]) => Run; github: FakeGitHub; verifyOk?: boolean }): {
   io: LandIo;
   logs: string[];
   errors: string[];
@@ -1089,7 +1018,7 @@ function handOffIo(parts: { git: (args: string[]) => Run; gh: Gh; verifyOk?: boo
   return {
     io: {
       git: parts.git,
-      gh: parts.gh,
+      github: parts.github.github,
       verify: () => parts.verifyOk ?? true,
       log: (line) => logs.push(line),
       error: (line) => errors.push(line),
@@ -1101,13 +1030,14 @@ function handOffIo(parts: { git: (args: string[]) => Run; gh: Gh; verifyOk?: boo
 
 test("land hands the PR over in one pass: the URL and the status command", () => {
   const { git } = scriptedGit();
-  const { gh, calls } = handOffGh();
-  const { io, logs } = handOffIo({ git, gh });
+  const api = handOffApi();
+  const { io, logs } = handOffIo({ git, github: api });
 
   const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
-  expect(calls).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
+  expect(api.pulls.get(4242)?.labels).toEqual([QUEUE_LABEL]);
+  expect(logs).toContain(`labelled the PR ${QUEUE_LABEL}`);
   expect(logs).toContain(URL_4242);
   expect(logs).toContain("status: bun run ci:status --pr 4242");
   expect(logs).toContainEqual(expect.stringContaining("waiting: bun run lane:close --queue"));
@@ -1115,66 +1045,53 @@ test("land hands the PR over in one pass: the URL and the status command", () =>
   expect(handOffLines({ number: 7, url: "u" })[1]).toBe("status: bun run ci:status --pr 7");
 });
 
-test("an auto-merge the repo refuses labels the PR for the queue instead of failing the hand-off", () => {
-  const { git } = scriptedGit();
-  const { gh, calls } = handOffGh({ autoMerge: { status: 1, stdout: "", stderr: "auto-merge is not allowed here" } });
-  const { io, logs } = handOffIo({ git, gh });
-
-  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
-
-  expect(code).toBe(EXIT_LANDED);
-  expect(calls).toContainEqual(["pr", "edit", "4242", "--add-label", QUEUE_LABEL]);
-  expect(logs).toContain(`auto-merge unavailable (auto-merge is not allowed here); labelled the PR ${QUEUE_LABEL}`);
-  expect(logs).toContain("status: bun run ci:status --pr 4242");
+test("a hand-off takes one path: every GitHub call is gh api, and nothing merges or arms auto-merge", () => {
+  const api = handOffApi();
+  const { io } = handOffIo({ git: scriptedGit().git, github: api });
+  landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+  expect(api.calls.map((call) => `${call.method} ${call.path.split("?")[0]}`)).toEqual([
+    `GET repos/${LAND_REPO}/pulls`,
+    `POST repos/${LAND_REPO}/pulls`,
+    `GET repos/${LAND_REPO}/pulls/4242`,
+    `GET repos/${LAND_REPO}/commits/sha-4242/check-runs`,
+    `POST repos/${LAND_REPO}/issues/4242/labels`,
+  ]);
 });
 
-test("a base that moved before the hand-off is rebased and armed again, without watching", () => {
-  const { git, calls } = scriptedGit();
-  const { gh } = handOffGh();
-  let attempts = 0;
-  const arming: Gh = (args) => {
-    const joined = args.join(" ");
-    if (joined.startsWith("pr merge") && (attempts += 1) === 1) {
-      return { status: 1, stdout: "", stderr: "the base branch was modified. Review and try the merge again." };
-    }
-    return gh(args);
-  };
-  const { io, logs } = handOffIo({ git, gh: arming });
-
+test("a label GitHub refuses fails the hand-off with GitHub's words, and nothing routes around it", () => {
+  const api = handOffApi({ fail: (call) => (call.path.endsWith("/labels") ? "HTTP 403: Resource not accessible by integration" : undefined) });
+  const { io, errors } = handOffIo({ git: scriptedGit().git, github: api });
   const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
-
-  expect(code).toBe(EXIT_LANDED);
-  expect(attempts).toBe(2);
-  expect(logs).toContainEqual(expect.stringMatching(/^origin\/beta moved before the hand-off/));
-  expect(calls.filter((call) => call.join(" ").startsWith("push -u origin HEAD")).length).toBe(2);
-  expect(logs).toContain("status: bun run ci:status --pr 4242");
+  expect(code).toBe(EXIT_COULD_NOT_MERGE);
+  expect(errors).toContain(`could not add the ${QUEUE_LABEL} label to #4242: HTTP 403: Resource not accessible by integration`);
+  expect(labelCalls(api)).toHaveLength(1);
 });
 
 test("a cancelled attempt from a superseded run is not a failure: the pass on this commit stands", () => {
   // Two pulls of the same branch: the first suite passed, the second was cancelled when it was
   // superseded. Every name has a green attempt on this commit, so the PR is ready to hand over.
-  const superseded = rollupOf([
-    { name: "ci", conclusion: "SUCCESS", startedAt: "2026-10-24T04:12:44Z" },
-    { name: "ci", conclusion: "CANCELLED", startedAt: "2026-10-24T04:17:03Z" },
-    { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-24T04:10:17Z" },
-    { name: "types", conclusion: "CANCELLED", startedAt: "2026-10-24T04:15:15Z" },
-  ]);
-  const { gh, calls } = handOffGh({ rollup: superseded });
-  const { io, logs, errors } = handOffIo({ git: scriptedGit().git, gh });
+  const superseded: FakeCheck[] = [
+    { name: "ci", conclusion: "success", startedAt: "2026-10-24T04:12:44Z" },
+    { name: "ci", conclusion: "cancelled", startedAt: "2026-10-24T04:17:03Z" },
+    { name: "types", conclusion: "success", startedAt: "2026-10-24T04:10:17Z" },
+    { name: "types", conclusion: "cancelled", startedAt: "2026-10-24T04:15:15Z" },
+  ];
+  const api = handOffApi({ checks: superseded });
+  const { io, logs, errors } = handOffIo({ git: scriptedGit().git, github: api });
 
   const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
   expect(errors).toEqual([]);
-  expect(calls).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
+  expect(labelCalls(api)).toHaveLength(1);
   expect(logs).toContain(URL_4242);
 });
 
 test("an attempt on an older commit contributes nothing to this commit's verdict", () => {
-  const stale = rollupOf([
-    { name: "ci", conclusion: "CANCELLED", startedAt: "2026-10-24T04:00:00Z" },
-    { name: "ci", conclusion: "SUCCESS", startedAt: "2026-10-24T04:12:44Z" },
-  ]);
+  const stale: RollupEntry[] = [
+    { name: "ci", conclusion: "CANCELLED", status: "COMPLETED", startedAt: "2026-10-24T04:00:00Z", detailsUrl: "" },
+    { name: "ci", conclusion: "SUCCESS", status: "COMPLETED", startedAt: "2026-10-24T04:12:44Z", detailsUrl: "" },
+  ];
   const judged = judgeChecks(attemptsOf(stale), "head1");
   expect(judged).toEqual([
     { name: "ci", state: "SUCCESS", bucket: "pass", url: "", runId: null },
@@ -1190,35 +1107,34 @@ test("an attempt on an older commit contributes nothing to this commit's verdict
 });
 
 test("checks still running are reported as running, with how many and the run, never as failed", () => {
-  const running = rollupOf([
-    { name: "ci", conclusion: "SUCCESS", url: "https://example.test/actions/runs/700/job/1" },
-    { name: "test (ui)", status: "IN_PROGRESS", url: "https://example.test/actions/runs/701/job/2" },
-    { name: "types", status: "QUEUED", url: "https://example.test/actions/runs/701/job/3" },
-  ]);
-  const { gh, calls } = handOffGh({ rollup: running });
-  const { io, logs, errors } = handOffIo({ git: scriptedGit().git, gh });
+  const running: FakeCheck[] = [
+    { name: "ci", url: "https://example.test/actions/runs/700/job/1" },
+    { name: "test (ui)", status: "in_progress", conclusion: null, url: "https://example.test/actions/runs/701/job/2" },
+    { name: "types", status: "queued", conclusion: null, url: "https://example.test/actions/runs/701/job/3" },
+  ];
+  const api = handOffApi({ checks: running });
+  const { io, logs, errors } = handOffIo({ git: scriptedGit().git, github: api });
 
   const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
   expect(errors).toEqual([]);
-  expect(logs).toContain("checks still running: 2 of 3 (run 701); auto-merge waits for them");
-  expect(calls.filter((call) => call[1] === "merge")).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
+  expect(logs).toContain("checks still running: 2 of 3 (run 701); the queue waits for them");
+  expect(api.pulls.get(4242)?.labels).toEqual([QUEUE_LABEL]);
 });
 
-test("checks that already failed stop the hand-off, and a failed verify never arms anything", () => {
-  const failing = rollupOf([{ name: "test (ui)", conclusion: "FAILURE", url: "https://example.test/job/9" }]);
-  const failedChecks = handOffGh({ rollup: failing });
-  const first = handOffIo({ git: scriptedGit().git, gh: failedChecks.gh });
+test("checks that already failed stop the hand-off, and a failed verify never labels anything", () => {
+  const failedChecks = handOffApi({ checks: [{ name: "test (ui)", conclusion: "failure", url: "https://example.test/job/9" }] });
+  const first = handOffIo({ git: scriptedGit().git, github: failedChecks });
   expect(
     landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io: first.io }),
   ).toBe(EXIT_CHECKS_FAILED);
-  expect(failedChecks.calls.some((call) => call[1] === "merge")).toBe(false);
+  expect(labelCalls(failedChecks)).toEqual([]);
   expect(first.errors).toContain("checks failed: test (ui)");
   expect(first.errors).toContain("  test (ui) https://example.test/job/9");
 
-  const unverified = handOffGh();
-  const second = handOffIo({ git: scriptedGit().git, gh: unverified.gh, verifyOk: false });
+  const unverified = handOffApi();
+  const second = handOffIo({ git: scriptedGit().git, github: unverified, verifyOk: false });
   expect(
     landBranch({
       args: { base: "beta", commit: false, allow: [], messages: [], verify: "bun run preflight" },
@@ -1227,20 +1143,20 @@ test("checks that already failed stop the hand-off, and a failed verify never ar
       io: second.io,
     }),
   ).toBe(EXIT_VERIFY_FAILED);
-  expect(unverified.calls.some((call) => call[1] === "merge")).toBe(false);
+  expect(labelCalls(unverified)).toEqual([]);
   expect(second.logs).toContain("verify bun run preflight");
 });
 
 test("a reused PR keeps its body and gets the Bends section the diff now shows", () => {
-  const { gh, calls } = scriptedGh({ open: [{ number: 12, url: "https://example.test/12" }], body: "Context.\n\n## Bends\n\nold" });
+  const api = prApi([{ number: 12, body: "Context.\n\n## Bends\n\nold" }]);
   const pr = ensurePr({
     args: { base: "beta" },
     branch: "agent/lane-x",
     summary: "the last commit",
     body: { text: "from the fragment", explicit: false, bends: "## Bends\n\n- test skipped: `a.test.ts` - test.skip" },
-    gh,
+    github: api.github,
     log: noLog,
   });
-  expect(pr).toEqual({ number: 12, url: "https://example.test/12" });
-  expect(calls).toContainEqual(["pr", "edit", "12", "--body", "Context.\n\n## Bends\n\n- test skipped: `a.test.ts` - test.skip\n"]);
+  expect(pr).toEqual({ number: 12, url: `https://github.com/${LAND_REPO}/pull/12` });
+  expect(edits(api).map((call) => call.fields)).toEqual([{ body: "Context.\n\n## Bends\n\n- test skipped: `a.test.ts` - test.skip\n" }]);
 });

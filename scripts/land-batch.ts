@@ -25,7 +25,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertCheckoutReady } from "./checkout-ready";
-import { originRepo, withRestFallback } from "./gh-rest";
+import { checkoutGitHub, type GitHub } from "./github";
 import { printHelpIfAsked } from "./script-help";
 import { duration, gitCommonDir, runAt } from "./land";
 import type { Git, Run } from "./land";
@@ -147,7 +147,7 @@ export interface BatchPr {
 export interface BatchIo {
   /** Runs in this checkout. */
   git: Git;
-  gh: (args: string[]) => Run;
+  github: GitHub;
   /** Runs the verify command in this checkout; true when it passed. */
   verify: (command: string) => boolean;
   log: (line: string) => void;
@@ -169,15 +169,10 @@ export function short(sha: string): string {
 
 /** Open PRs into the base, by head branch, so a merge commit can name its PR the way GitHub does. */
 export function openPrs(io: BatchIo, base: string): Map<string, BatchPr> {
-  const listed = io.gh(["pr", "list", "--base", base, "--state", "open", "--limit", "100", "--json", "number,title,headRefName"]);
+  const listed = io.github.listPulls({ base, state: "open", limit: 100 });
   const byBranch = new Map<string, BatchPr>();
-  if (listed.status !== 0) return byBranch;
-  try {
-    const rows = JSON.parse(listed.stdout || "[]") as { number: number; title: string; headRefName: string }[];
-    for (const row of rows) byBranch.set(row.headRefName, { number: row.number, title: row.title });
-  } catch {
-    return byBranch;
-  }
+  if (!listed.ok) return byBranch;
+  for (const row of listed.value) byBranch.set(row.headRefName, { number: row.number, title: row.title });
   return byBranch;
 }
 
@@ -352,15 +347,10 @@ function record(io: BatchIo, value: BatchRecord): void {
  * The Action run the batch push started, when GitHub has it yet. One read, never a watch: the run
  * is the thing that tells the batch's state, and asking for it costs a second.
  */
-export function runOnTip(io: BatchIo, base: string, tip: string): number | null {
-  const listed = io.gh(["run", "list", "--branch", base, "--limit", "3", "--json", "databaseId,headSha"]);
-  if (listed.status !== 0) return null;
-  try {
-    const rows = JSON.parse(listed.stdout || "[]") as { databaseId: number; headSha: string }[];
-    return rows.find((row) => row.headSha === tip)?.databaseId ?? null;
-  } catch {
-    return null;
-  }
+export function runOnTip(io: Pick<BatchIo, "github">, base: string, tip: string): number | null {
+  const listed = io.github.branchRuns(base, 3);
+  if (!listed.ok) return null;
+  return listed.value.find((row) => row.headSha === tip)?.id ?? null;
 }
 
 /** What an author reads instead of a wait: where the CI answer is, and which command gives it. */
@@ -381,23 +371,13 @@ export function handOffLines(tip: string, base: string, runId: number | null = n
 function annotatePrs(io: BatchIo, outcome: BatchOutcome): void {
   for (const entry of outcome.landed) {
     if (entry.pr === undefined) continue;
-    const view = io.gh(["pr", "view", String(entry.pr), "--json", "state"]);
-    if (view.status !== 0) continue;
-    let state = "";
-    try {
-      state = (JSON.parse(view.stdout) as { state?: string }).state ?? "";
-    } catch {
-      continue;
-    }
-    if (state !== "OPEN") continue;
-    const closed = io.gh([
-      "pr",
-      "close",
-      String(entry.pr),
-      "--comment",
+    const view = io.github.pull(entry.pr);
+    if (!view.ok || view.value.state !== "OPEN") continue;
+    const closed = io.github.closePull(
+      entry.pr,
       `Landed in the batch push ${short(outcome.tip ?? "")} as ${short(entry.commit)}; its commits are in ${outcome.base}.`,
-    ]);
-    if (closed.status === 0) io.log(`closed PR #${entry.pr}: it landed as ${short(entry.commit)}`);
+    );
+    if (closed.ok) io.log(`closed PR #${entry.pr}: it landed as ${short(entry.commit)}`);
   }
 }
 
@@ -487,11 +467,7 @@ function main(): void {
   const git: Git = (gitArgs) => runAt(root, "git", gitArgs, 180_000);
   const io: BatchIo = {
     git,
-    gh: withRestFallback(
-      (ghArgs) => runAt(root, "gh", ghArgs, 120_000),
-      () => originRepo(root),
-      (line) => console.log(`land:batch: ${line}`),
-    ),
+    github: checkoutGitHub(root),
     verify: runVerify,
     log: (line) => console.log(`land:batch: ${line}`),
     error: (line) => console.error(`land:batch: ${line}`),

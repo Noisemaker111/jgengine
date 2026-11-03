@@ -22,12 +22,24 @@ import {
   type RollupEntry,
   type Run,
 } from "./ci-status";
+import type { GhRunner } from "./github";
+import { fakeGitHub, type FakeCheck, type FakePull } from "./github.fixture";
 
 function run(status: number, stdout = "", stderr = ""): Run {
   return { status, stdout, stderr };
 }
 
-function io(gh: (args: string[]) => Run, branch = "agent/example"): CiIo {
+const REPO = "Noisemaker111/jgengine";
+
+/** One PR (#7 on agent/x, head `h7`) whose head commit carries `checks`. */
+function api(checks: FakeCheck[], pulls: FakePull[] = [{ number: 7, head: "agent/x", sha: "h7" }]) {
+  return fakeGitHub({ repo: REPO, pulls, checks: { h7: checks } });
+}
+
+const QUICK_PASS: FakeCheck = { name: "quick", url: "https://github.com/o/r/actions/runs/4100/job/9" };
+const GATE_RUNNING: FakeCheck = { name: "gate", status: "in_progress", conclusion: null, url: "https://github.com/o/r/actions/runs/4100/job/10" };
+
+function io(gh: GhRunner, branch = "agent/example"): CiIo {
   return {
     gh,
     git: (args) =>
@@ -244,20 +256,23 @@ describe("one query, one answer", () => {
     expect(text).not.toContain("— fail:");
   });
 
-  test("a PR number costs one gh call", () => {
-    const calls: string[][] = [];
-    const answer = ask({ pr: 7, json: false }, io((args) => {
-      calls.push(args);
-      return run(0, JSON.stringify({ number: 7, url: "u", state: "OPEN", headRefName: "b", statusCheckRollup: ROLLUP }));
-    }));
-    expect("reason" in answer).toBe(false);
-    expect(calls).toHaveLength(1);
+  test("a PR number costs two gh api calls: the PR, then its head commit's checks", () => {
+    const github = api([QUICK_PASS, GATE_RUNNING]);
+    const answer = ask({ pr: 7, json: false }, io(github.gh));
+    expect(answer).toMatchObject({ pr: 7, branch: "agent/x", state: "OPEN", verdict: "pending", runIds: [4100] });
+    expect(github.calls.map((call) => call.path)).toEqual([`repos/${REPO}/pulls/7`, `repos/${REPO}/commits/h7/check-runs?per_page=100`]);
+  });
+
+  test("a branch finds its open PR, and --repo names another repository", () => {
+    const github = fakeGitHub({ repo: "o/r", pulls: [{ number: 7, head: "agent/x", sha: "h7" }], checks: { h7: [QUICK_PASS] } });
+    const answer = ask({ branch: "agent/x", repo: "o/r", json: false }, io(github.gh));
+    expect(answer).toMatchObject({ pr: 7, verdict: "pass" });
   });
 });
 
 describe("honest refusals", () => {
   test("a branch with no open PR says so instead of printing an empty table", () => {
-    const answer = ask({ branch: "agent/x", json: false }, io(() => run(0, "[]")));
+    const answer = ask({ branch: "agent/x", json: false }, io(api([], []).gh));
     expect(answer).toMatchObject({ reason: "no-pr" });
     expect((answer as { message: string }).message).toContain("no open PR for agent/x on Noisemaker111/jgengine - nothing to answer");
     expect(exitCodeFor(answer)).not.toBe(EXIT_GREEN);
@@ -265,22 +280,22 @@ describe("honest refusals", () => {
   });
 
   test("a PR with no checks yet is pending, not green", () => {
-    const answer = ask({ pr: 9, json: false }, io(() => run(0, JSON.stringify({
-      number: 9,
-      url: "u",
-      state: "OPEN",
-      headRefName: "b",
-      statusCheckRollup: [],
-    }))));
+    const answer = ask({ pr: 7, json: false }, io(api([]).gh));
     expect(answer).toMatchObject({ reason: "no-checks" });
     expect((answer as { message: string }).message).toContain("no checks yet");
     expect(exitCodeFor(answer)).toBe(EXIT_CANNOT_ANSWER);
   });
 
   test("gh failing is a refusal with gh's own words", () => {
-    const answer = ask({ pr: 9, json: false }, io(() => run(1, "", "no pull requests found for branch")));
+    const refused = fakeGitHub({ repo: REPO, fail: () => "HTTP 403: Resource not accessible by integration" });
+    const answer = ask({ pr: 9, json: false }, io(refused.gh));
     expect(answer).toMatchObject({ reason: "gh-failed" });
-    expect((answer as { message: string }).message).toContain("no pull requests found");
+    expect((answer as { message: string }).message).toContain("HTTP 403: Resource not accessible");
+  });
+
+  test("an origin that names no GitHub repository is refused, not guessed", () => {
+    const answer = ask({ pr: 7, json: false }, { gh: api([QUICK_PASS]).gh, git: () => run(0, "\n") });
+    expect(answer).toMatchObject({ reason: "bad-args" });
   });
 
   test("verdicts map to distinct exit codes", () => {
@@ -291,41 +306,29 @@ describe("honest refusals", () => {
   });
 
   test("the command prints the refusal and exits non-zero, json or not", () => {
-    const noPr = cli(["--branch", "agent/x"], io(() => run(0, "[]")), () => 0);
+    const noPr = cli(["--branch", "agent/x"], io(api([], []).gh), () => 0);
     expect(noPr.code).toBe(EXIT_CANNOT_ANSWER);
     // A lane reads stdout: the reason is the answer, so silence here is the bug this guards.
     expect(noPr.stdout.join("\n")).toContain("no open PR for agent/x on Noisemaker111/jgengine - nothing to answer");
     expect(noPr.stderr).toEqual([]);
 
-    const json = cli(["--branch", "agent/x", "--json"], io(() => run(0, "[]")), () => 0);
+    const json = cli(["--branch", "agent/x", "--json"], io(api([], []).gh), () => 0);
     expect(json.code).toBe(EXIT_CANNOT_ANSWER);
     expect(JSON.parse(json.stdout[0]!)).toMatchObject({ ok: false, reason: "no-pr" });
   });
 
   test("a green PR exits 0 and a pending one exits 2", () => {
     let clock = 0;
-    const green = cli(["--pr", "3"], io(() => run(0, JSON.stringify({
-      number: 3,
-      url: "u",
-      state: "OPEN",
-      headRefName: "b",
-      statusCheckRollup: [ROLLUP[0]],
-    }))), () => (clock += 1000));
+    const green = cli(["--pr", "7"], io(api([QUICK_PASS]).gh), () => (clock += 1000));
     expect(green.code).toBe(EXIT_GREEN);
     expect(green.stdout.join("\n")).toContain("answered in 1.0s");
 
-    const pending = cli(["--pr", "3"], io(() => run(0, JSON.stringify({
-      number: 3,
-      url: "u",
-      state: "OPEN",
-      headRefName: "b",
-      statusCheckRollup: ROLLUP,
-    }))), () => 0);
+    const pending = cli(["--pr", "7"], io(api([QUICK_PASS, GATE_RUNNING]).gh), () => 0);
     expect(pending.code).toBe(EXIT_PENDING);
   });
 
   test("a bad argument exits 3 with the reason", () => {
-    const result = cli(["--pr", "x"], io(() => run(0, "[]")), () => 0);
+    const result = cli(["--pr", "x"], io(api([]).gh), () => 0);
     expect(result.code).toBe(EXIT_CANNOT_ANSWER);
     expect(result.stderr.join("\n")).toContain("--pr needs a PR number");
   });

@@ -3,10 +3,13 @@
  * with GitHub's NATIVE INLINE PLAYER in PR/issue bodies and comments — the
  * only URLs GitHub plays inline (`github.com/user-attachments/assets/<uuid>`).
  *
- * There is deliberately no token API for this (community discussion #29993;
- * cli/cli#13256 is blocked on one), so this uses the browser upload flow via
- * the `user-attachments` npm package, authenticated with a GitHub session
- * cookie provided as the `GH_SESSION_TOKEN` environment secret:
+ * Everything else this script asks GitHub goes through `gh api`. The upload
+ * cannot: the attachment store lives on github.com's browser upload endpoint,
+ * not the REST API, so `gh api` cannot address it, and gh has no command for
+ * it (community discussion #29993; cli/cli#13256 is blocked on GitHub adding
+ * an API). So the upload uses the browser flow via the `user-attachments` npm
+ * package, authenticated with a GitHub session cookie provided as the
+ * `GH_SESSION_TOKEN` environment secret:
  *
  *   1. Log into github.com as a bot/machine account with repo write access
  *      (a dedicated account bounds the blast radius — the cookie is a
@@ -28,6 +31,8 @@ import { readFileSync, existsSync, statSync } from "node:fs";
 import { basename, extname } from "node:path";
 import { execFileSync } from "node:child_process";
 import { uploadPoliciesAssets } from "user-attachments";
+
+import { ghCli, repoFromRemote, type GhRunner } from "./github";
 
 const CONTENT_TYPES: Record<string, string> = {
   ".mp4": "video/mp4",
@@ -51,31 +56,18 @@ export function sessionCookie(secret: string): string {
   return `user_session=${trimmed}; __Host-user_session_same_site=${trimmed}`;
 }
 
-export function parseOriginRepo(url: string): { owner: string; repo: string } | null {
-  const match = url.replace(/\.git$/, "").match(/([^/:]+)\/([^/]+)$/);
-  return match === null ? null : { owner: match[1]!, repo: match[2]! };
-}
-
 function fail(message: string): never {
   process.stderr.write(`pr-video: ${message}\n`);
   process.exit(1);
 }
 
-async function repositoryId(owner: string, repo: string): Promise<number> {
-  // Unauthenticated calls 403 from shared egress IPs (cloud proxies, Actions
-  // runners) — authenticate with whatever CI token is around when one is set.
-  const token = process.env["GH_TOKEN"] ?? process.env["GITHUB_TOKEN"];
-  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-    headers: {
-      accept: "application/vnd.github+json",
-      "user-agent": "jgengine-pr-video",
-      ...(token !== undefined && token.length > 0 ? { authorization: `Bearer ${token}` } : {}),
-    },
-  });
-  if (!response.ok) fail(`could not resolve repository id for ${owner}/${repo} (HTTP ${response.status})`);
-  const body = (await response.json()) as { id?: number };
-  if (typeof body.id !== "number") fail(`no repository id in API response for ${owner}/${repo}`);
-  return body.id;
+/** The numeric repository id the attachment store wants, read through `gh api`. */
+export function repositoryId(repo: string, gh: GhRunner = ghCli()): number {
+  const answer = gh(["api", `repos/${repo}`, "--jq", ".id"]);
+  if (answer.status !== 0) fail(`could not resolve repository id for ${repo}: ${(answer.stderr || answer.stdout).trim()}`);
+  const id = Number(answer.stdout.trim());
+  if (!Number.isSafeInteger(id) || id <= 0) fail(`no repository id in gh api's answer for ${repo}`);
+  return id;
 }
 
 if (import.meta.main) {
@@ -121,9 +113,9 @@ if (import.meta.main) {
   // from an isolated temp dir that is not a git checkout.
   const source =
     repoArg ?? execFileSync("git", ["remote", "get-url", "origin"], { encoding: "utf8" }).trim();
-  const parsed = parseOriginRepo(source);
-  if (parsed === null) fail(`could not parse owner/repo from ${source}`);
-  const repoId = await repositoryId(parsed.owner, parsed.repo);
+  const repo = repoFromRemote(source);
+  if (repo === null) fail(`could not parse owner/repo from ${source}`);
+  const repoId = repositoryId(repo);
   const cookie = sessionCookie(secret);
 
   for (const path of files) {

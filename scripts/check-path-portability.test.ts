@@ -160,6 +160,18 @@ describe("names Windows cannot check out", () => {
     expect(run.stderr).toContain("nul uses a name Windows reserves");
   });
 
+  test("a script that reaches GitHub without gh fails the gate, untracked or committed", () => {
+    const root = fixture("github", {
+      "scripts/driveFlows.test.ts": FLOWS(AFTER),
+      "scripts/ship.ts": "const page = await fetch(`https://api.github.com/repos/${repo}/pulls`);\n",
+    });
+    expect(Bun.spawnSync({ cmd: ["git", "init", "-q"], cwd: root, timeout: 30_000 }).exitCode).toBe(0);
+    const run = runGate(root);
+    expect(run.code).toBe(1);
+    expect(run.stderr).toContain("scripts/ship.ts:1 calls GitHub's API host directly");
+    expect(run.stderr).toContain("packages/github/ [rest-host, sdk, token]");
+  });
+
   test("this repository has no reserved name", () => {
     expect(scanReservedNames(join(import.meta.dir, ".."))).toEqual([]);
   });

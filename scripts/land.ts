@@ -2,7 +2,7 @@
 // hand-assembled sequence of push, open and wait:
 //   bun scripts/land.ts                    # bun run lane:close runs this; call it directly only from release.ts
 //   bun run lane:close                       # verify:fast, then the line below
-//   bun scripts/land.ts --commit                    # stage, commit, push, open, arm
+//   bun scripts/land.ts --commit                    # stage, commit, push, open, label
 //   bun scripts/land.ts --verify "bun run check skills"
 //   bun scripts/land.ts --title "Menus" --body-file .scratch/body.md
 //
@@ -18,7 +18,7 @@
 // It refuses on `main` or (without `--commit`) a dirty tree, pushes, rebases onto the base, reuses
 // an open PR or opens one (body: --body-file when given, else the `changes/`
 // fragment this branch's own diff adds, else the branch's commit messages, whole),
-// runs --verify, arms auto-merge and exits in seconds: it prints the PR URL and
+// runs --verify, labels the PR `land:queue` and exits in seconds: it prints the PR URL and
 // `bun run ci:status --pr <n>`, the one command that answers status later. It
 // never polls and never sleeps.
 //
@@ -28,8 +28,8 @@
 // does not contain.
 //
 // Waiting is `bun run lane:close --queue`'s job, and only its: a branch hands off when
-// land arms auto-merge (or, where the repo cannot arm it, labels the PR
-// `land:queue`). The queue rebases a PR whose base moved, waits for its checks
+// land labels the PR `land:queue`. Every GitHub call goes through `gh api`
+// (`scripts/github.ts`), which has no auto-merge. The queue rebases a PR whose base moved, waits for its checks
 // once, merges it and prints one line per PR with that PR's wait time and run.
 // Exit codes: 0 handed to the queue, 1 verify failed, 2 checks already failed,
 // 3 could not hand off (including a refused branch or dirty tree).
@@ -43,10 +43,9 @@
 // its own push in this run succeeded — a branch it did not push is refused.
 //
 // The lock covers only the moments two landings touch the same thing: the push,
-// rebase and PR for a branch and a base, and the arming. When the base moved
-// before the arming, land releases, rebases and arms again, at most
-// MERGE_ATTEMPTS times. Every wait, and the work either side of it, is printed,
-// so throughput is measured rather than guessed.
+// rebase and PR for a branch and a base, and the hand-off label. Every wait,
+// and the work either side of it, is printed, so throughput is measured rather
+// than guessed.
 //
 // The lock is one file in the repo's git directory: every worktree of the repo
 // shares it (so lanes queue with each other, not just with themselves), and it
@@ -60,7 +59,7 @@ import { FRAGMENT_PATTERN } from "./changelog-fragments";
 import { apiNoteBullets, engineSeamLine, noteMessages, renderChangeNote } from "./change-note";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
-import { originRepo, withRestFallback } from "./gh-rest";
+import { checkoutGitHub, type GitHub } from "./github";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose } from "./verbosity";
 import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
@@ -73,7 +72,7 @@ const LAND_USAGE = {
     { flag: "-m, --message <text>", detail: "with --commit: what changed, in plain words; repeatable. `Fixed: ...`, `Added: ...`, `Removed: ...`, `Migrate: ...` pick the changelog heading (default Changed). Writes changes/<branch>.md" },
     { flag: "--title <title>", detail: "PR title when land opens a PR" },
     { flag: "--body-file <path>", detail: "PR body from this file; wins over a changes/ fragment" },
-    { flag: "--verify <command>", detail: "command to run before arming, e.g. \"bun run verify:fast\"" },
+    { flag: "--verify <command>", detail: "command to run before the hand-off, e.g. \"bun run verify:fast\"" },
     { flag: "--base <branch>", detail: "branch to land into (default: beta)" },
     { flag: "--commit", detail: "stage and commit this worktree's changes first, with the changes/ fragment as the message" },
     { flag: "--allow <path>", detail: "commit a path the --commit guards refuse; repeatable" },
@@ -95,10 +94,10 @@ export const EXIT_VERIFY_FAILED = 1;
 export const EXIT_CHECKS_FAILED = 2;
 export const EXIT_COULD_NOT_MERGE = 3;
 
-/** How many times one landing rebases and arms again after the base moves under it. */
+/** How many times the queue rebases and merges again after the base moves under a PR. */
 export const MERGE_ATTEMPTS = 3;
 
-/** The label that marks a PR ready for the queue when the repo cannot arm auto-merge. */
+/** The label that hands a PR to the landing queue; REST has no auto-merge, so this is the only signal. */
 export const QUEUE_LABEL = "land:queue";
 
 export interface LandArgs {
@@ -893,12 +892,6 @@ export function runAt(cwd: string, command: string, args: string[], timeout?: nu
   return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
 }
 
-const gh: Gh = withRestFallback(
-  (args) => run("gh", args),
-  () => originRepo(root),
-  (line) => console.log(`land: ${line}`),
-);
-
 function git(args: string[], timeout?: number): Run {
   return runAt(root, "git", args, timeout);
 }
@@ -994,29 +987,22 @@ function firstLine(text: string): string {
   return text.split("\n").map((line) => line.trim()).find((line) => line.length > 0) ?? text.trim();
 }
 
-/** Any gh invocation in one run; the land test binds this to a scripted PR list. */
-export type Gh = (args: string[]) => Run;
-
 /** Everything a landing reaches outside itself, so the land test can drive the whole sequence. */
 export interface LandIo {
   git: Git;
-  gh: Gh;
+  github: GitHub;
   /** Runs `--verify`; true when the command passed. */
   verify: (command: string) => boolean;
   log: (line: string) => void;
   error: (line: string) => void;
 }
 
-function readChecks(runGh: Gh, number: number): { checks: GhCheck[]; error?: string } {
-  const result = runGh(["pr", "view", String(number), "--json", "headRefOid,statusCheckRollup"]);
-  if (result.status !== 0) return { checks: [], error: details(result) };
-  let view: { headRefOid?: string; statusCheckRollup?: readonly RollupEntry[] | null };
-  try {
-    view = JSON.parse(result.stdout) as typeof view;
-  } catch (error) {
-    return { checks: [], error: `unreadable gh pr view output: ${String(error)}` };
-  }
-  const judged = judgeChecks(attemptsOf(view.statusCheckRollup ?? []), view.headRefOid);
+function readChecks(github: GitHub, number: number): { checks: GhCheck[]; error?: string } {
+  const pull = github.pull(number);
+  if (!pull.ok) return { checks: [], error: pull.error };
+  const rollup = github.checks(pull.value.headRefOid);
+  if (!rollup.ok) return { checks: [], error: rollup.error };
+  const judged = judgeChecks(attemptsOf(rollup.value), pull.value.headRefOid);
   return {
     checks: judged.map((check) => ({ name: check.name, state: check.state, bucket: check.bucket, link: check.url })),
   };
@@ -1042,34 +1028,27 @@ export interface PrRef {
 export function updatePr(
   number: number,
   next: { body: string | ((current: string) => string); title?: string },
-  gh: Gh,
+  github: GitHub,
   log = (line: string) => console.log(`land: ${line}`),
 ): boolean {
-  const view = gh(["pr", "view", String(number), "--json", "body,title"]);
-  if (view.status !== 0) {
-    console.error(`land: gh pr view #${number} failed: ${details(view)}`);
+  const view = github.pull(number);
+  if (!view.ok) {
+    console.error(`land: reading PR #${number} failed: ${view.error}`);
     return false;
   }
-  let current: { body?: string; title?: string } = {};
-  try {
-    current = JSON.parse(view.stdout) as { body?: string; title?: string };
-  } catch (error) {
-    console.error(`land: unreadable gh pr view output for #${number}: ${String(error)}`);
-    return false;
-  }
-  const currentBody = current.body ?? "";
-  const body = typeof next.body === "string" ? next.body : next.body(currentBody);
-  const edit: string[] = [];
-  if (currentBody.trim() !== body.trim()) edit.push("--body", body);
-  if (next.title !== undefined && next.title.trim() !== "" && (current.title ?? "").trim() !== next.title.trim()) edit.push("--title", next.title);
-  const changed = [edit.includes("--body") ? "body" : null, edit.includes("--title") ? "title" : null].filter((part) => part !== null).join(" and ");
-  if (edit.length === 0) {
+  const current = view.value;
+  const body = typeof next.body === "string" ? next.body : next.body(current.body);
+  const patch: { body?: string; title?: string } = {};
+  if (current.body.trim() !== body.trim()) patch.body = body;
+  if (next.title !== undefined && next.title.trim() !== "" && current.title.trim() !== next.title.trim()) patch.title = next.title;
+  const changed = [patch.body !== undefined ? "body" : null, patch.title !== undefined ? "title" : null].filter((part) => part !== null).join(" and ");
+  if (changed === "") {
     log(`PR #${number} already reads as given`);
     return true;
   }
-  const edited = gh(["pr", "edit", String(number), ...edit]);
-  if (edited.status !== 0) {
-    console.error(`land: could not update PR #${number} ${changed}: ${details(edited)}`);
+  const edited = github.editPull(number, patch);
+  if (!edited.ok) {
+    console.error(`land: could not update PR #${number} ${changed}: ${edited.error}`);
     return false;
   }
   log(`updated PR #${number} ${changed}`);
@@ -1086,55 +1065,39 @@ export function ensurePr(options: {
   branch: string;
   summary: string;
   body: PrBody;
-  gh: Gh;
+  github: GitHub;
   log?: (line: string) => void;
 }): PrRef | null {
-  const { args, branch, summary, body, gh: runGh } = options;
+  const { args, branch, summary, body, github } = options;
   const log = options.log ?? ((line: string) => console.log(`land: ${line}`));
 
-  const listed = runGh(["pr", "list", "--head", branch, "--base", args.base, "--state", "open", "--json", "number,url"]);
-  if (listed.status !== 0) {
-    console.error(`land: gh pr list failed: ${details(listed)}`);
+  const listed = github.listPulls({ head: branch, base: args.base, state: "open" });
+  if (!listed.ok) {
+    console.error(`land: listing PRs failed: ${listed.error}`);
     return null;
   }
-  const open = JSON.parse(listed.stdout || "[]") as PrRef[];
-  const existing = open[0];
-  if (existing !== undefined) {
+  const found = listed.value[0];
+  if (found !== undefined) {
+    const existing = { number: found.number, url: found.url };
     log(`reusing PR #${existing.number} ${existing.url}`);
     // A body land was given (`--body-file`, or `-m` lines that rewrote the note) rewrites the title too,
     // so a re-close never leaves the first run's title over the new description.
-    if (body.explicit && !updatePr(existing.number, { body: body.text, title: args.title ?? summary }, runGh, log)) return null;
+    if (body.explicit && !updatePr(existing.number, { body: body.text, title: args.title ?? summary }, github, log)) return null;
     // A reused PR keeps its body, but its Bends section is rewritten from the diff it now carries.
-    if (!body.explicit && body.bends !== undefined && !updatePr(existing.number, { body: (current) => withBends(current, body.bends!) }, runGh, log)) {
+    const bends = body.bends;
+    if (!body.explicit && bends !== undefined && !updatePr(existing.number, { body: (current) => withBends(current, bends) }, github, log)) {
       return null;
     }
     return existing;
   }
 
-  const created = runGh([
-    "pr",
-    "create",
-    "--base",
-    args.base,
-    "--head",
-    branch,
-    "--title",
-    args.title ?? summary,
-    "--body",
-    body.text,
-  ]);
-  if (created.status !== 0) {
-    console.error(`land: gh pr create failed: ${details(created)}`);
+  const created = github.createPull({ base: args.base, head: branch, title: args.title ?? summary, body: body.text });
+  if (!created.ok) {
+    console.error(`land: opening the PR failed: ${created.error}`);
     return null;
   }
-  const url = created.stdout.trim().split("\n").pop() ?? "";
-  const number = Number(url.split("/").pop());
-  if (!Number.isFinite(number)) {
-    console.error(`land: could not read a PR number from ${url}`);
-    return null;
-  }
-  log(`opened PR #${number} ${url}`);
-  return { number, url };
+  log(`opened PR #${created.value.number} ${created.value.url}`);
+  return created.value;
 }
 
 /** The failure is a result: name every check that failed and let the run of each speak for itself. */
@@ -1196,37 +1159,26 @@ function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
   const bends = diff.status === 0 ? bendsSection(findBends(diff.stdout)) : undefined;
   if (bends !== undefined) io.log(bends === "" ? "Bends: none in the diff" : "Bends: listed in the PR body");
   const withSection = bends === undefined ? body : { ...body, text: withBends(body.text, bends), bends };
-  const pr = ensurePr({ args, branch, summary, body: withSection, gh: io.gh, log: io.log });
+  const pr = ensurePr({ args, branch, summary, body: withSection, github: io.github, log: io.log });
   return pr ?? EXIT_COULD_NOT_MERGE;
 }
 
-/** What arming means for the hand-off: the queue's readiness signal, or why there is none. */
-export type Arming =
-  | { kind: "armed" }
-  | { kind: "labelled"; why: string }
-  | { kind: "retry"; why: string }
-  | { kind: "failed"; code: number };
-
 /**
- * Hand the PR to the queue: arm auto-merge, which is what the queue reads as ready. A repo that
- * refuses to arm gets the `land:queue` label instead, and the queue merges that PR directly.
+ * Hand the PR to the queue: the `land:queue` label is what the queue reads as ready, and the queue
+ * waits for the checks and merges. Returns an exit code when the hand-off failed.
  */
-function armForQueue(io: LandIo, number: number): Arming {
-  const { checks } = readChecks(io.gh, number);
+function labelForQueue(io: LandIo, number: number): number | null {
+  const { checks } = readChecks(io.github, number);
   const verdict = checkVerdict(checks);
-  if (verdict.failures.length > 0) return { kind: "failed", code: reportChecks(io, checks) };
+  if (verdict.failures.length > 0) return reportChecks(io, checks);
   if (verdict.pending.length > 0) {
     const on = runningRunIds(checks, verdict.pending);
-    io.log(`checks still running: ${verdict.pending.length} of ${checks.length}${on}; auto-merge waits for them`);
+    io.log(`checks still running: ${verdict.pending.length} of ${checks.length}${on}; the queue waits for them`);
   }
-  const armed = io.gh(["pr", "merge", String(number), "--auto", "--merge"]);
-  if (armed.status === 0) return { kind: "armed" };
-  const why = details(armed);
-  if (baseMoved(why)) return { kind: "retry", why };
-  const labelled = io.gh(["pr", "edit", String(number), "--add-label", QUEUE_LABEL]);
-  if (labelled.status === 0) return { kind: "labelled", why: firstLine(why) };
-  io.error(`could not arm auto-merge (${firstLine(why)}) or add the ${QUEUE_LABEL} label (${details(labelled)})`);
-  return { kind: "failed", code: EXIT_COULD_NOT_MERGE };
+  const labelled = io.github.addLabel(number, QUEUE_LABEL);
+  if (labelled.ok) return null;
+  io.error(`could not add the ${QUEUE_LABEL} label to #${number}: ${labelled.error}`);
+  return EXIT_COULD_NOT_MERGE;
 }
 
 /** What an author reads instead of a wait: the PR, how to ask later, and who waits now. */
@@ -1251,8 +1203,8 @@ export interface LandRun {
 }
 
 /**
- * Land `branch`: push it, open or reuse its PR, arm auto-merge and return. The lock is held only
- * around the shared moments: the push and PR, and the arming.
+ * Land `branch`: push it, open or reuse its PR, label it for the queue and return. The lock is held
+ * only around the shared moments: the push and PR, and the label.
  */
 export function landBranch(run: LandRun): number {
   const waits = run.waits ?? [];
@@ -1285,7 +1237,7 @@ export function landBranch(run: LandRun): number {
   }
 }
 
-/** Push, open, verify, arm: everything the author owes, and none of the waiting. */
+/** Push, open, verify, label: everything the author owes, and none of the waiting. */
 function handOff(run: LandRun, waits: LockWait[]): number {
   const { args, branch, io } = run;
   const prepared = landLocked({ path: run.lock, branch, log: io.log }, () => prepare(args, branch, io), waits);
@@ -1299,34 +1251,11 @@ function handOff(run: LandRun, waits: LockWait[]): number {
     }
   }
 
-  for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
-    const armed = landLocked({ path: run.lock, branch, log: io.log }, () => armForQueue(io, prepared.number), waits);
-    if (armed.kind === "failed") return armed.code;
-    if (armed.kind === "retry") {
-      if (attempt === MERGE_ATTEMPTS) {
-        io.error(`could not hand #${prepared.number} over after ${MERGE_ATTEMPTS} attempts: ${firstLine(armed.why)}`);
-        return EXIT_COULD_NOT_MERGE;
-      }
-      io.log(
-        `origin/${args.base} moved before the hand-off (${firstLine(armed.why)}); ` +
-          `rebasing (attempt ${attempt + 1} of ${MERGE_ATTEMPTS})`,
-      );
-      const synced = landLocked(
-        { path: run.lock, branch, log: io.log },
-        () => syncOntoBase({ branch, base: args.base, git: io.git }),
-        waits,
-      );
-      if (synced.refusal !== null) {
-        io.error(synced.refusal);
-        return EXIT_COULD_NOT_MERGE;
-      }
-      continue;
-    }
-    if (armed.kind === "labelled") io.log(`auto-merge unavailable (${armed.why}); labelled the PR ${QUEUE_LABEL}`);
-    for (const line of handOffLines(prepared)) io.log(line);
-    return EXIT_LANDED;
-  }
-  return EXIT_COULD_NOT_MERGE;
+  const failed = landLocked({ path: run.lock, branch, log: io.log }, () => labelForQueue(io, prepared.number), waits);
+  if (failed !== null) return failed;
+  io.log(`labelled the PR ${QUEUE_LABEL}`);
+  for (const line of handOffLines(prepared)) io.log(line);
+  return EXIT_LANDED;
 }
 
 function main(): void {
@@ -1352,7 +1281,7 @@ function main(): void {
     lock: lockPath(gitCommonDir(git)),
     io: {
       git: (gitArgs) => git(gitArgs, 120_000),
-      gh,
+      github: checkoutGitHub(root),
       verify: runVerify,
       log: (line) => console.log(`land: ${line}`),
       error: (line) => console.error(`land: ${line}`),

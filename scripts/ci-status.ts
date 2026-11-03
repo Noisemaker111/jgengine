@@ -22,14 +22,14 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { originRepo, withRestFallback } from "./gh-rest";
+import { ghCli, gitHub, repoFromRemote, type GhRunner, type Pull } from "./github";
 import { printHelpIfAsked } from "./script-help";
 
 const CI_STATUS_USAGE = {
   summary: "answer where this PR's checks stand right now, in a second, without watching",
   usage: "bun run ci:status [--pr <number>] [--branch <name>] [--repo <owner/name>] [--json] | bun run ci:status --sweep [--json]",
   flags: [
-    { flag: "--sweep", detail: "instead: every open PR armed for auto-merge but red, and on which check (exit 1 when any)" },
+    { flag: "--sweep", detail: "instead: every open PR in the landing queue (land:queue label) but red, and on which check (exit 1 when any)" },
     { flag: "--pr <number>", detail: "a merged or open PR by number; default: the PR for this branch" },
     { flag: "--branch <name>", detail: "look up the PR for this branch instead of the current one" },
     { flag: "--repo <owner/name>", detail: "another repo; default: the one this checkout names" },
@@ -62,7 +62,6 @@ export interface Run {
   stderr: string;
 }
 
-export type Gh = (args: string[]) => Run;
 export type Git = (args: string[]) => Run;
 
 /** One row of `statusCheckRollup`: a check run or a legacy commit status. */
@@ -314,79 +313,65 @@ interface PrView {
   url: string;
   state: string;
   headRefName: string;
-  headRefOid?: string;
-  statusCheckRollup: RollupEntry[] | null;
+  headRefOid: string;
+  statusCheckRollup: RollupEntry[];
 }
 
 export interface CiIo {
-  gh: Gh;
+  /** `gh` itself; every call goes through `gh api` (scripts/github.ts). */
+  gh: GhRunner;
   git: Git;
 }
 
-function ghRun(io: CiIo, args: string[]): Run {
-  return io.gh(args);
+function firstLine(text: string): string {
+  return text.split("\n")[0] ?? text;
 }
 
-function describe(run: Run): string {
-  const text = (run.stderr || run.stdout).trim();
-  return text.length > 0 ? (text.split("\n")[0] ?? text) : `gh exited ${run.status}`;
-}
-
-/** `owner/name` for the line a lane reads, from `--repo` or this checkout's origin. */
-export function repoName(args: CiStatusArgs, git: Git): string {
+/** `owner/name` from `--repo` or this checkout's origin. */
+export function repoName(args: CiStatusArgs, git: Git): string | null {
   if (args.repo !== undefined) return args.repo;
-  const remote = git(["remote", "get-url", "origin"]).stdout.trim();
-  const match = /github\.com[:/]+([^/]+)\/([^/]+?)(?:\.git)?$/.exec(remote);
-  return match === null ? "this repository" : `${match[1]}/${match[2]}`;
+  return repoFromRemote(git(["remote", "get-url", "origin"]).stdout);
 }
 
-/** Resolve the one PR this question is about, without watching anything. */
+/** Resolve the one PR this question is about, with its head commit's checks, without watching anything. */
 export function resolvePr(args: CiStatusArgs, io: CiIo): { pr: PrView } | Refusal {
-  const repo = args.repo === undefined ? [] : ["-R", args.repo];
+  const repo = repoName(args, io.git);
+  if (repo === null) return { reason: "bad-args", message: "no GitHub repository in the origin remote; pass --repo <owner/name>" };
+  const github = gitHub(io.gh, repo);
+
+  let pull: Pull;
   if (args.pr !== undefined) {
-    const view = ghRun(io, ["pr", "view", String(args.pr), "--json", "number,url,state,headRefName,headRefOid,statusCheckRollup", ...repo]);
-    if (view.status !== 0) return { reason: "gh-failed", message: `gh pr view #${args.pr} failed: ${describe(view)}` };
-    return { pr: parsePr(view.stdout, args.pr) };
+    const view = github.pull(args.pr);
+    if (!view.ok) return { reason: "gh-failed", message: `reading PR #${args.pr} failed: ${firstLine(view.error)}` };
+    pull = view.value;
+  } else {
+    const branch = args.branch ?? io.git(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.trim();
+    if (branch.length === 0) return { reason: "no-pr", message: "could not read the current branch" };
+    const listed = github.listPulls({ head: branch, state: "open", limit: 1 });
+    if (!listed.ok) return { reason: "gh-failed", message: `listing PRs for ${branch} failed: ${firstLine(listed.error)}` };
+    const found = listed.value[0];
+    if (found === undefined) return { reason: "no-pr", message: `no open PR for ${branch} on ${repo} - nothing to answer` };
+    pull = found;
   }
 
-  const branch = args.branch ?? io.git(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.trim();
-  if (branch.length === 0) return { reason: "no-pr", message: "could not read the current branch" };
-  const listed = ghRun(io, [
-    "pr",
-    "list",
-    "--head",
-    branch,
-    "--state",
-    "open",
-    "--limit",
-    "1",
-    "--json",
-    "number,url,state,headRefName,headRefOid,statusCheckRollup",
-    ...repo,
-  ]);
-  if (listed.status !== 0) return { reason: "gh-failed", message: `gh pr list failed: ${describe(listed)}` };
-  let rows: PrView[];
-  try {
-    rows = JSON.parse(listed.stdout || "[]") as PrView[];
-  } catch (error) {
-    return { reason: "gh-failed", message: `unreadable gh pr list output: ${String(error)}` };
-  }
-  const found = rows[0];
-  if (found === undefined) {
-    return { reason: "no-pr", message: `no open PR for ${branch} on ${repoName(args, io.git)} - nothing to answer` };
-  }
-  return { pr: found };
-}
-
-function parsePr(stdout: string, asked: number): PrView {
-  const parsed = JSON.parse(stdout) as PrView;
-  return { ...parsed, number: parsed.number ?? asked, statusCheckRollup: parsed.statusCheckRollup ?? [] };
+  const checks = github.checks(pull.headRefOid);
+  if (!checks.ok) return { reason: "gh-failed", message: `reading checks on #${pull.number} failed: ${firstLine(checks.error)}` };
+  return {
+    pr: {
+      number: pull.number,
+      url: pull.url,
+      state: pull.state,
+      headRefName: pull.headRefName,
+      headRefOid: pull.headRefOid,
+      statusCheckRollup: checks.value,
+    },
+  };
 }
 
 export function ask(args: CiStatusArgs, io: CiIo): CiStatus | Refusal {
   const resolved = resolvePr(args, io);
   if ("reason" in resolved) return resolved;
-  const rollup = resolved.pr.statusCheckRollup ?? [];
+  const rollup = resolved.pr.statusCheckRollup;
   if (rollup.length === 0) {
     return {
       reason: "no-checks",
@@ -395,9 +380,9 @@ export function ask(args: CiStatusArgs, io: CiIo): CiStatus | Refusal {
   }
   return summarizeChecks({
     pr: resolved.pr.number,
-    url: resolved.pr.url ?? "",
-    branch: resolved.pr.headRefName ?? "",
-    state: resolved.pr.state ?? "",
+    url: resolved.pr.url,
+    branch: resolved.pr.headRefName,
+    state: resolved.pr.state,
     headSha: resolved.pr.headRefOid,
     rollup,
     wallMs: 0,
@@ -471,7 +456,7 @@ function main(argv: readonly string[]): void {
     process.exit(sweep.status ?? 1);
   }
   const result = cli(argv, {
-    gh: withRestFallback((ghArgs) => run("gh", ghArgs), () => originRepo(process.cwd())),
+    gh: ghCli(),
     git: (gitArgs) => run("git", gitArgs),
   });
   for (const line of result.stdout) console.log(line);

@@ -94,8 +94,8 @@ jobs:
           CLIP="$GITHUB_WORKSPACE/_clips/${{ steps.params.outputs.clip_path }}"
           [ -f "$CLIP" ] || { echo "::error::clip not found on pr-shots branch: ${{ steps.params.outputs.clip_path }}"; exit 1; }
           # Minimal isolated install: pr-video.ts needs only the user-attachments
-          # package, not the monorepo's workspace install.
-          mkdir /tmp/pv && cp scripts/pr-video.ts /tmp/pv/
+          # package and the gh client, not the monorepo's workspace install.
+          mkdir /tmp/pv && cp scripts/pr-video.ts scripts/github.ts /tmp/pv/
           cd /tmp/pv && echo '{"type":"module"}' > package.json && bun add user-attachments
           URL="$(bun pr-video.ts "$CLIP" --repo "${{ github.repository }}")"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
