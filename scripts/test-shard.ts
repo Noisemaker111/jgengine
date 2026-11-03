@@ -83,15 +83,37 @@ export function readsWallClock(source: string): boolean {
   return source.includes("performance.now(");
 }
 
-/** The lanes for a shard's files, and the files that run alone after them. */
-export function planLanes(files: readonly string[], lanes: number, source: (file: string) => string): { lanes: string[][]; alone: string[] } {
-  if (lanes <= 1) return { lanes: [[...files]], alone: [] };
+/**
+ * Batches per lane. Most files have no measured cost, and four fixed lanes of equal file count
+ * finished 98 s, 75 s, 50 s and 34 s in shard h (run 41588206348): module loading, not the table,
+ * decides a file's cost. Smaller batches pulled by whichever lane is free even that out.
+ */
+export const BATCHES_PER_LANE = 4;
+
+/** The batches the lanes pull, heaviest first, and the files that run alone after them. */
+export function planLanes(files: readonly string[], lanes: number, source: (file: string) => string): { batches: string[][]; alone: string[] } {
+  if (lanes <= 1) return { batches: [[...files]], alone: [] };
   const alone = files.filter((file) => readsWallClock(source(file)));
   const rest = files.filter((file) => !alone.includes(file));
-  return { lanes: rest.length === 0 ? [] : splitLanes(rest, lanes), alone };
+  return { batches: rest.length === 0 ? [] : splitLanes(rest, lanes * BATCHES_PER_LANE), alone };
 }
 
-/** Files split into at most `lanes` groups of near-equal cost, heaviest first. */
+/** Run `items` with at most `lanes` in flight, each lane taking the next item as it frees; results keep the items' order. */
+export async function runPool<T, R>(items: readonly T[], lanes: number, run: (item: T, index: number) => Promise<R>): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  const lane = async (): Promise<void> => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      results[index] = await run(items[index] as T, index);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(lanes, items.length)) }, lane));
+  return results;
+}
+
+/** Files split into at most `lanes` groups of near-equal cost, the costliest group first. */
 export function splitLanes(files: readonly string[], lanes: number, cost: Readonly<Record<string, number>> = SLOW_TEST_SECONDS): string[][] {
   const groups = Array.from({ length: Math.max(1, Math.min(lanes, files.length)) }, (): { files: string[]; total: number } => ({ files: [], total: 0 }));
   const ordered = [...files].sort((a, b) => (cost[b] ?? 1) - (cost[a] ?? 1) || a.localeCompare(b));
@@ -100,7 +122,7 @@ export function splitLanes(files: readonly string[], lanes: number, cost: Readon
     lightest.files.push(file);
     lightest.total += cost[file] ?? 1;
   }
-  return groups.map((group) => group.files.sort());
+  return groups.sort((a, b) => b.total - a.total).map((group) => group.files.sort());
 }
 
 /** Eight shards by measured cost; the CI matrix runs one job per entry, in this order. */
@@ -301,8 +323,8 @@ async function main(): Promise<void> {
     }
     return { code: status.code, output: status.output, line: label.length > 0 ? `test-shard ${name}${label}: ${group.length} file(s), exit ${status.code}` : "" };
   };
-  const many = plan.lanes.length > 1;
-  const lanes = await Promise.all(plan.lanes.map((group, index) => runGroup(group, many ? ` lane ${index + 1}/${plan.lanes.length}` : "", many)));
+  const many = plan.batches.length > 1;
+  const lanes = await runPool(plan.batches, shard.lanes ?? 1, (group, index) => runGroup(group, many ? ` batch ${index + 1}/${plan.batches.length}` : "", many));
   // Passing lanes first and failing ones last, so a failure sits at the end of the job's log.
   for (const lane of [...lanes.filter((entry) => entry.code === 0), ...lanes.filter((entry) => entry.code !== 0)]) {
     if (many) process.stdout.write(lane.output);
