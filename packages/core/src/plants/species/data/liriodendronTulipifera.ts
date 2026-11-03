@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const LIRIODENDRON_TULIPIFERA: PlantSpecies = {
   id: "liriodendron-tulipifera",
-  version: 7,
+  version: 8,
   names: {
     scientific: "Liriodendron tulipifera L.",
     common: { en: "yellow-poplar", fr: "tulipier de Virginie" },
@@ -46,17 +46,17 @@ export const LIRIODENDRON_TULIPIFERA: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 1,
-    lueGPerMJ: 2.362,
-    lightHalfSaturation: 0.429,
-    respiration: 0.7777,
+    hydraulicHeightShare: 0.7344,
+    lueGPerMJ: 3.537,
+    lightHalfSaturation: 0.4395,
+    respiration: 0.828,
     sapwoodRespiration: 0.02,
     rootRespiration: 2,
     rootPerFoliage: 0.6,
     rootTurnover: 0.8,
     foliageTurnover: 1,
     growthEfficiency: 0.75,
-    sapwoodPerFoliage: 0.000175,
+    sapwoodPerFoliage: 0.000297,
     sapwoodTurnover: 0.04,
     pipeExponent: 2.3,
     reproductiveShare: 0.06,

@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const BETULA_ALLEGHANIENSIS: PlantSpecies = {
   id: "betula-alleghaniensis",
-  version: 9,
+  version: 10,
   names: {
     scientific: "Betula alleghaniensis Britton",
     common: { en: "yellow birch", fr: "bouleau jaune" },
@@ -46,23 +46,23 @@ export const BETULA_ALLEGHANIENSIS: PlantSpecies = {
     basalStems: 1,
   },
   carbon: {
-    hydraulicHeightShare: 1,
-    lueGPerMJ: 2.533,
-    lightHalfSaturation: 1.467,
-    respiration: 0.9193,
+    hydraulicHeightShare: 0.7814,
+    lueGPerMJ: 2.187,
+    lightHalfSaturation: 0.8148,
+    respiration: 0.8785,
     sapwoodRespiration: 0.02,
     rootRespiration: 2,
     rootPerFoliage: 0.6,
     rootTurnover: 0.8,
     foliageTurnover: 1,
     growthEfficiency: 0.75,
-    sapwoodPerFoliage: 0.000175,
+    sapwoodPerFoliage: 0.0002296,
     sapwoodTurnover: 0.04,
     pipeExponent: 2.3,
     reproductiveShare: 0.06,
     pruneDeficitYears: 2,
     coarseRootShare: 0.25,
-    hydraulicExponent: 3,
+    hydraulicExponent: 5,
   },
   wood: {
     densityKgM3: 550,
