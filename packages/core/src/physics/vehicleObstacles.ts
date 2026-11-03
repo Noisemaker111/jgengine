@@ -12,6 +12,26 @@ export type VehicleMoveClamp = (
 ) => readonly [number, number] & { readonly motion?: readonly [number, number] };
 
 /**
+ * The part of a clamp's displacement that may become velocity: it can only take components away from the
+ * attempted move, never add or reverse them. Removing orthogonal components of `attempted` (a slide, a corner)
+ * lands on the disc whose diameter runs from zero to `attempted`, and such a result is kept. A result outside
+ * it also moved the body (a push-out, a shove backwards): its correction is read as one contact surface and
+ * only the part of the move into that surface is removed, so position recovery never turns into momentum.
+ * @internal
+ */
+export function motionWithinAttempt(attemptedX: number, attemptedZ: number, allowedX: number, allowedZ: number): [number, number] {
+  const cx = attemptedX / 2;
+  const cz = attemptedZ / 2;
+  if (Math.hypot(allowedX - cx, allowedZ - cz) <= Math.hypot(cx, cz) + 1e-12) return [allowedX, allowedZ];
+  const ex = allowedX - attemptedX;
+  const ez = allowedZ - attemptedZ;
+  const len = Math.hypot(ex, ez);
+  const into = (attemptedX * ex + attemptedZ * ez) / len;
+  if (into >= 0) return [attemptedX, attemptedZ];
+  return [attemptedX - (into * ex) / len, attemptedZ - (into * ez) / len];
+}
+
+/**
  * A single blocked-move event a car can react to (#1051): crash damage, screen shake, a metal-crunch
  * cue. Reported once, when a move is first vetoed, then consumed by {@link VehicleObstacleClamp.takeImpact}.
  */

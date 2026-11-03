@@ -132,6 +132,42 @@ describe("vehicle dynamics collision recovery", () => {
     expect(car.pose().position[2]).toBeCloseTo(step.motion.position[2], 9);
   });
 
+  test("a clamp that shoves a moving car backwards moves it without reversing it", () => {
+    let shove = false;
+    const car = createVehicleDynamics(gripRwd, {
+      clampMove: (from, to) => (shove ? [from[0] + 0.05, from[1] - 0.2] : to),
+    });
+    let step = car.tick(DT, axis({}));
+    for (let i = 0; i < 120; i++) step = car.tick(DT, axis({ throttle: 1 }));
+    expect(step.motion.forwardSpeed).toBeGreaterThan(5);
+    shove = true;
+    const before = step.motion.position[2];
+    for (let i = 0; i < 30; i++) {
+      step = car.tick(DT, axis({}));
+      expect(step.motion.forwardSpeed).toBeGreaterThanOrEqual(0);
+    }
+    expect(step.motion.position[2]).toBeLessThan(before - 5);
+  });
+
+  test("a game clamp's recovery combined with obstacles is neither velocity nor a crash", () => {
+    let pushes = 1;
+    const car = createVehicleDynamics(gripRwd, {
+      clampMove: (from, to) => {
+        if (pushes === 0) return to;
+        pushes--;
+        const end: [number, number] = [to[0] + 0.6, to[1]];
+        const motion: readonly [number, number] = [to[0] - from[0], to[1] - from[1]];
+        return Object.assign(end, { motion });
+      },
+      obstacles: () => [{ position: [2, 0, 0], halfExtents: [0.5, 1, 0.5] }],
+      bodyRadius: 1.2,
+    });
+    const step = car.tick(DT, axis({}));
+    expect(step.impact).toBeNull();
+    expect(car.velocity()).toEqual([0, 0]);
+    expect(step.motion.position[0]).toBeCloseTo(0.3, 2);
+  });
+
   test("a plain diagonal clamp preserves motion and is called once per physics substep", () => {
     let calls = 0;
     const car = createVehicleDynamics(ballCar, {
