@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import * as THREE from "three";
 
 import { buildPostGraph, disposeGraph, planPostStages } from "./PostProcessing.draw";
+import { BeautyPass } from "./beautyPass.draw";
 import { ContactShadowPass, contactShadowFragment, findKeyLight, towardLight } from "./contactShadowPass.draw";
 
 test("the key light is the strongest visible shadow-casting sun", () => {
@@ -57,6 +58,8 @@ test("contact shadows run on medium and up, after AO, and never on low or under 
   expect(pass).toBeDefined();
   expect(pass.needsSwap).toBe(false);
   expect(pass.material.uniforms.uIntensity!.value).toBe(0.3);
-  expect(pass.material.uniforms.tDepth!.value).toBe(graph.composer.renderTarget1.depthTexture);
+  const beauty = graph.composer.passes[0] as BeautyPass;
+  expect(beauty).toBeInstanceOf(BeautyPass);
+  expect(pass.material.uniforms.tDepth!.value).toBe(beauty.target.depthTexture);
   disposeGraph(graph);
 });
