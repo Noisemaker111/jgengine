@@ -67,13 +67,14 @@ export function RuntimePlayPublisher({ api }: { api: EditorHostApi }) {
       if (ctx.time.isPaused()) ctx.time.play();
       return;
     }
-    if (play.pendingSteps > 0) {
-      if (ctx.time.isPaused()) ctx.time.play();
-      api.setPlayControl({ paused: true, pendingSteps: play.pendingSteps - 1 });
-      return;
-    }
     // Freeze before the next simulation frame; positive priorities would take over canvas rendering.
     if (!ctx.time.isPaused()) ctx.time.pause();
+    // The clock owes each step to a simulation step, not to this render frame: a frame shorter than
+    // one fixed step runs no simulation step at all.
+    if (play.pendingSteps > 0) {
+      ctx.time.step(play.pendingSteps);
+      api.setPlayControl({ paused: true, pendingSteps: 0 });
+    }
   }, -1);
 
   return null;

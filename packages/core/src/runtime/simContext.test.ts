@@ -22,3 +22,24 @@ test("fixed steps own scaled time once, including pause, restore and prediction"
   sim.advance(0.1, (_dt, _tick, gameDt) => expect(gameDt).toBe(0.2));
   expect(time.now()).toBeCloseTo(0.6);
 });
+
+// #2885: the editor's Step button played the clock for one render frame. A frame shorter than one
+// fixed step ran no simulation step, so the step was spent and time never moved.
+test("a paused step moves time by exactly one fixed step, whatever the frame lengths", () => {
+  const time = createSimClock();
+  const sim = createSimContext({ config: { hz: 60 }, entities: createEntityStore(), time });
+  time.pause();
+  time.step();
+  const gameDts: number[] = [];
+  const body = (_dt: number, _tick: number, gameDt: number) => gameDts.push(gameDt);
+  sim.advance(0.008, body);
+  expect(time.now()).toBe(0);
+  sim.advance(0.01, body);
+  sim.advance(0.05, body);
+  expect(gameDts.filter((dt) => dt > 0)).toEqual([1 / 60]);
+  expect(time.now()).toBeCloseTo(1 / 60);
+  expect(time.isPaused()).toBe(true);
+  time.step(3);
+  sim.advance(0.05, body);
+  expect(time.now()).toBeCloseTo(4 / 60);
+});

@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 
 import { normalizeEditorLayers } from "./document";
 import {
-  consumeRuntimePlayStep,
   createRuntimePlayControl,
   getRuntimeInspectorValue,
   planRuntimeInspectorSet,
@@ -142,18 +141,7 @@ describe("runtimeEntityMetaWriteBackCommand", () => {
   });
 });
 
-describe("consumeRuntimePlayStep", () => {
-  test("running play always runs; paused holds until step", () => {
-    expect(consumeRuntimePlayStep({ paused: false, pendingSteps: 0 })).toEqual({
-      runFrame: true,
-      next: { paused: false, pendingSteps: 0 },
-    });
-    expect(consumeRuntimePlayStep({ paused: true, pendingSteps: 0 }).runFrame).toBe(false);
-    const stepped = consumeRuntimePlayStep({ paused: true, pendingSteps: 2 });
-    expect(stepped.runFrame).toBe(true);
-    expect(stepped.next).toEqual({ paused: true, pendingSteps: 1 });
-  });
-
+describe("createRuntimePlayControl", () => {
   test("createRuntimePlayControl defaults", () => {
     expect(createRuntimePlayControl()).toEqual({ paused: false, pendingSteps: 0 });
     expect(createRuntimePlayControl(true).paused).toBe(true);

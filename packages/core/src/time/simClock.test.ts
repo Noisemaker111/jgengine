@@ -395,3 +395,24 @@ describe("createSimClock — timescale", () => {
     expect(changes).toBe(1);
   });
 });
+
+describe("createSimClock — step", () => {
+  test("a step is owed only while paused, and play or a restore clears it", () => {
+    const clock = createSimClock();
+    clock.step();
+    expect(clock.advance(0.1)).toBeCloseTo(0.1);
+    clock.pause();
+    clock.step(2);
+    expect(clock.advance(0.1)).toBeCloseTo(0.1);
+    expect(clock.advance(0.1)).toBeCloseTo(0.1);
+    expect(clock.advance(0.1)).toBe(0);
+    clock.step(5);
+    clock.hydrate(clock.snapshot());
+    expect(clock.advance(0.1)).toBe(0);
+    clock.step(5);
+    clock.play();
+    clock.pause();
+    expect(clock.advance(0.1)).toBe(0);
+    expect(clock.isPaused()).toBe(true);
+  });
+});
