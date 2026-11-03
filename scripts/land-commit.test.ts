@@ -12,12 +12,12 @@ import {
   landBranch,
   parseArgs,
   refusalFor,
+  QUEUE_LABEL,
   type FragmentFile,
-  type Gh,
-  type GhCheck,
   type LandIo,
   type Run,
 } from "./land";
+import { fakeGitHub, type FakeGitHub } from "./github.fixture";
 
 const SCRATCH = join(import.meta.dir, "..", ".scratch");
 const made: string[] = [];
@@ -377,26 +377,15 @@ function scriptedGit(options: {
   return { git, calls };
 }
 
-const GREEN: GhCheck[] = [{ name: "ci", state: "SUCCESS", bucket: "pass" }];
 const PR_URL = "https://github.com/Noisemaker111/JGengine/pull/4242";
 
-function scriptedGh(): { gh: Gh; calls: string[][] } {
-  const calls: string[][] = [];
-  const gh: Gh = (args) => {
-    calls.push(args);
-    const joined = args.join(" ");
-    if (joined.startsWith("pr list")) return { status: 0, stdout: "[]", stderr: "" };
-    if (joined.startsWith("pr create")) return { status: 0, stdout: `${PR_URL}\n`, stderr: "" };
-    if (joined.startsWith("pr view")) {
-      return { status: 0, stdout: JSON.stringify({ headRefOid: "head1", statusCheckRollup: GREEN }), stderr: "" };
-    }
-    if (joined.startsWith("pr checks")) return { status: 0, stdout: JSON.stringify(GREEN), stderr: "" };
-    return { status: 0, stdout: "", stderr: "" };
-  };
-  return { gh, calls };
+/** GitHub with no PR yet: land opens #4242, whose head commit has one green check. */
+function scriptedGh(): { github: FakeGitHub; calls: FakeGitHub["calls"]; labelled: () => boolean } {
+  const github = fakeGitHub({ repo: "Noisemaker111/JGengine", nextNumber: 4242, checks: { "sha-4242": [{ name: "ci" }] } });
+  return { github, calls: github.calls, labelled: () => (github.pulls.get(4242)?.labels ?? []).includes(QUEUE_LABEL) };
 }
 
-function handOffIo(git: (args: string[]) => Run, gh: Gh): { io: LandIo; logs: string[]; errors: string[] } {
+function handOffIo(git: (args: string[]) => Run, gh: FakeGitHub): { io: LandIo; logs: string[]; errors: string[] } {
   const logs: string[] = [];
   const errors: string[] = [];
   return {
@@ -404,7 +393,7 @@ function handOffIo(git: (args: string[]) => Run, gh: Gh): { io: LandIo; logs: st
     errors,
     io: {
       git,
-      gh,
+      github: gh.github,
       verify: () => true,
       log: (line) => logs.push(line),
       error: (line) => errors.push(line),
@@ -416,7 +405,7 @@ const FRAGMENT = "### Changed\n\n- The lane closes itself in one command.\n";
 
 test("land --commit commits with the branch fragment, then hands the PR over in the same run", () => {
   const { git, calls } = scriptedGit({ status: " M scripts/land.ts\n", diff: "changes/agent-lane-x.md\n" });
-  const { gh, calls: ghCalls } = scriptedGh();
+  const { github: gh, calls: ghCalls, labelled } = scriptedGh();
   const { io, logs } = handOffIo(git, gh);
 
   const code = landBranch({
@@ -431,7 +420,7 @@ test("land --commit commits with the branch fragment, then hands the PR over in 
   expect(calls).toContainEqual(["add", "-A"]);
   expect(calls).toContainEqual(["commit", "-m", "The lane closes itself in one command.", "-m", "- The lane closes itself in one command."]);
   expect(calls.some((call) => call.join(" ").startsWith("push -u origin HEAD"))).toBe(true);
-  expect(ghCalls).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
+  expect(labelled()).toBe(true);
   expect(logs).toContain("committed The lane closes itself in one command. (changes/agent-lane-x.md)");
   expect(logs).toContain(PR_URL);
   expect(logs).toContain("status: bun run ci:status --pr 4242");
@@ -439,7 +428,7 @@ test("land --commit commits with the branch fragment, then hands the PR over in 
 
 test("land --commit with nothing to commit lands what the branch already has", () => {
   const { git, calls } = scriptedGit();
-  const { gh } = scriptedGh();
+  const { github: gh } = scriptedGh();
   const { io, logs } = handOffIo(git, gh);
 
   const code = landBranch({
@@ -458,7 +447,7 @@ test("land --commit with nothing to commit lands what the branch already has", (
 
 test("a failed commit stops the landing before anything is pushed", () => {
   const { git, calls } = scriptedGit({ status: " M shared.txt\n" });
-  const { gh, calls: ghCalls } = scriptedGh();
+  const { github: gh, calls: ghCalls, labelled } = scriptedGh();
   const { io } = handOffIo(git, gh);
   const failing = (args: string[]): Run =>
     args[0] === "commit" ? { status: 1, stdout: "", stderr: "nothing added to commit" } : git(args);
@@ -533,7 +522,7 @@ test("--commit prints every path it will commit, and refuses the whole set with 
     staged: ["scripts/land.ts", "changes/agent-lane-x.md"],
     added: ["changes/agent-lane-x.md"],
   });
-  const { gh, calls: ghCalls } = scriptedGh();
+  const { github: gh, calls: ghCalls, labelled } = scriptedGh();
   const { io, logs, errors } = handOffIo(git, gh);
 
   const code = landBranch({
@@ -563,7 +552,7 @@ test("--allow keeps one refused file on purpose", () => {
     added: ["changes/agent-lane-x.md"],
     diff: "changes/agent-lane-x.md\n",
   });
-  const { gh, calls: ghCalls } = scriptedGh();
+  const { github: gh, calls: ghCalls, labelled } = scriptedGh();
   const { io } = handOffIo(git, gh);
 
   const code = landBranch({
@@ -576,5 +565,5 @@ test("--allow keeps one refused file on purpose", () => {
 
   expect(code).toBe(EXIT_LANDED);
   expect(calls.some((call) => call[0] === "commit")).toBe(true);
-  expect(ghCalls).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
+  expect(labelled()).toBe(true);
 });

@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
 import type { RollupEntry } from "./ci-status";
-import { armState, formatText, isArmed, sweep, type SweepPr } from "./pr-sweep";
+import { fakeGitHub } from "./github.fixture";
+import { QUEUE_LABEL } from "./land";
+import { armState, formatText, isQueued, readSweep, sweep, type SweepPr } from "./pr-sweep";
 
 function pr(overrides: Partial<SweepPr> = {}): SweepPr {
   return {
@@ -10,8 +12,8 @@ function pr(overrides: Partial<SweepPr> = {}): SweepPr {
     headRefName: "agent/lane-release-integrity",
     headRefOid: "head1",
     isDraft: false,
-    mergeable: "MERGEABLE",
-    autoMergeRequest: { enabledAt: "2026-10-23T23:55:43Z" },
+    mergeStateStatus: "CLEAN",
+    labels: [QUEUE_LABEL],
     statusCheckRollup: [],
     ...overrides,
   };
@@ -67,7 +69,7 @@ function rollup2330(): RollupEntry[] {
   return entries;
 }
 
-describe("armed PR sweep", () => {
+describe("queued PR sweep", () => {
   test("#2330's 42 rows for 21 names, cancelled attempt beside each pass, read clean", () => {
     const rollup = rollup2330();
     expect(rollup.length).toBe(42);
@@ -163,9 +165,9 @@ describe("armed PR sweep", () => {
     expect(state.waiting).toEqual(["cancelled with no result, so a re-run decides: 2 of 3: smoke-game, perf-game"]);
   });
 
-  test("a conflict or a draft blocks an armed PR even with every check green", () => {
+  test("a conflict or a draft blocks a queued PR even with every check green", () => {
     const green = [attempt("quick", "SUCCESS", "2026-10-24T04:10:00Z")];
-    expect(armState(pr({ mergeable: "CONFLICTING", statusCheckRollup: green })).red).toEqual(["merge conflict with beta"]);
+    expect(armState(pr({ mergeStateStatus: "DIRTY", statusCheckRollup: green })).red).toEqual(["merge conflict with beta"]);
     expect(armState(pr({ isDraft: true, statusCheckRollup: green })).red).toEqual(["still a draft"]);
   });
 
@@ -173,15 +175,36 @@ describe("armed PR sweep", () => {
     expect(armState(pr({ statusCheckRollup: [] }))).toEqual({ red: [], waiting: ["no checks reported yet"], verdict: "wait" });
   });
 
-  test("only a PR with an auto-merge request counts as armed", () => {
-    expect(isArmed(pr())).toBe(true);
-    expect(isArmed(pr({ autoMergeRequest: null }))).toBe(false);
-    expect(isArmed(pr({ autoMergeRequest: undefined }))).toBe(false);
+  test("only a PR with the land:queue label counts as queued", () => {
+    expect(isQueued(pr())).toBe(true);
+    expect(isQueued(pr({ labels: [] }))).toBe(false);
+    expect(isQueued(pr({ labels: ["bug"] }))).toBe(false);
+  });
+});
+
+describe("reading the sweep over gh api", () => {
+  test("reads merge state and checks only for queued PRs, and names a conflict", () => {
+    const api = fakeGitHub({
+      pulls: [
+        { number: 1, head: "agent/a", sha: "a1", labels: [QUEUE_LABEL], mergeableState: "dirty" },
+        { number: 2, head: "agent/b", sha: "b1", labels: [QUEUE_LABEL], mergeableState: "clean" },
+        { number: 3, head: "agent/c", sha: "c1" },
+      ],
+      checks: { a1: [{ name: "quick" }], b1: [{ name: "quick", conclusion: "failure" }], c1: [{ name: "quick", conclusion: "failure" }] },
+    });
+    const report = readSweep(api.github);
+    expect(report.open).toBe(3);
+    expect(report.rows.map((row) => [row.pr.number, row.state.red])).toEqual([
+      [2, ["quick failure"]],
+      [1, ["merge conflict with beta"]],
+    ]);
+    expect(report.exitCode).toBe(1);
+    expect(api.calls.some((call) => call.path.includes("/c1/"))).toBe(false);
   });
 });
 
 describe("the sweep report", () => {
-  test("one line per armed PR, names the red check, and exits non-zero while any is red", () => {
+  test("one line per queued PR, names the red check, and exits non-zero while any is red", () => {
     const report = sweep([
       pr({ number: 2330, statusCheckRollup: rollup2330() }),
       pr({ number: 2331 }),
@@ -189,21 +212,21 @@ describe("the sweep report", () => {
         number: 2332,
         statusCheckRollup: [attempt("test (f)", "FAILURE", "2026-10-24T04:20:00Z", { detailsUrl: "https://example.test/run" })],
       }),
-      pr({ number: 2333, autoMergeRequest: null, statusCheckRollup: [attempt("quick", "FAILURE", "2026-10-24T04:20:00Z")] }),
+      pr({ number: 2333, labels: [], statusCheckRollup: [attempt("quick", "FAILURE", "2026-10-24T04:20:00Z")] }),
     ]);
     expect(report.open).toBe(4);
     expect(report.rows.map((row) => row.pr.number)).toEqual([2330, 2331, 2332]);
     expect(report.exitCode).toBe(1);
     const lines = formatText(report);
-    expect(lines[0]).toBe("ci:status --sweep: 4 open PR(s), 3 armed for auto-merge");
+    expect(lines[0]).toBe("ci:status --sweep: 4 open PR(s), 3 in the landing queue");
     expect(lines.filter((line) => line.startsWith("  RED "))).toEqual(["  RED  #2332 agent/lane-release-integrity - release: make shipping an unimportable version impossible"]);
-    expect(lines).toContain("         armed and red: test (f) failure https://example.test/run");
-    expect(lines.at(-1)).toBe("ci:status --sweep: 1 armed PR(s) will never merge until fixed: #2332");
+    expect(lines).toContain("         queued and red: test (f) failure https://example.test/run");
+    expect(lines.at(-1)).toBe("ci:status --sweep: 1 queued PR(s) will never merge until fixed: #2332");
   });
 
   test("an all-clean sweep exits zero", () => {
     const report = sweep([pr({ number: 2330, statusCheckRollup: rollup2330() })]);
     expect(report.exitCode).toBe(0);
-    expect(formatText(report).at(-1)).toBe("ci:status --sweep: no armed PR is red");
+    expect(formatText(report).at(-1)).toBe("ci:status --sweep: no queued PR is red");
   });
 });

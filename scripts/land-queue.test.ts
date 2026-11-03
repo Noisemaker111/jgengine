@@ -19,6 +19,8 @@ import {
 } from "./land-queue";
 import type { QueueIo, PrRow, ReadyPr } from "./land-queue";
 import type { Run } from "./land";
+import type { GitHub } from "./github";
+import { fakeGitHub, type FakeCheck, type FakeGitHub, type FakePull } from "./github.fixture";
 
 const SCRATCH = join(import.meta.dir, "..", ".scratch");
 const made: string[] = [];
@@ -30,44 +32,17 @@ function ok(stdout = ""): Run {
   return { status: 0, stdout, stderr: "" };
 }
 
-function fail(stderr: string): Run {
-  return { status: 1, stdout: "", stderr };
+const HEAD = "head1";
+
+/** One open PR, #`number` on agent/<number>, whose head commit carries `checks`. */
+function onePr(number: number, checks: FakeCheck[], extra: Partial<FakePull> = {}): FakeGitHub {
+  return fakeGitHub({ pulls: [{ number, head: `agent/${number}`, sha: HEAD, ...extra }], checks: { [HEAD]: checks } });
 }
 
-function rollup(entries: readonly { name: string; conclusion?: string; status?: string; startedAt?: string; url?: string }[]): string {
-  return JSON.stringify(
-    entries.map((entry) => ({
-      name: entry.name,
-      conclusion: entry.conclusion ?? null,
-      status: entry.status ?? "COMPLETED",
-      startedAt: entry.startedAt ?? null,
-      detailsUrl: entry.url ?? "",
-    })),
-  );
-}
+const merges = (api: FakeGitHub): number[] =>
+  api.calls.filter((call) => call.method === "PUT" && call.path.endsWith("/merge")).map((call) => Number(call.path.split("/").at(-2)));
 
-/** A gh that answers PR views from a script, records every call, and merges when told to. */
-function scriptedGh(options: {
-  views: Record<number, () => Run>;
-  merge?: (number: number) => Run;
-  list?: PrRow[];
-}): { gh: QueueIo["gh"]; calls: string[][] } {
-  const calls: string[][] = [];
-  const gh: QueueIo["gh"] = (args) => {
-    calls.push(args);
-    const joined = args.join(" ");
-    if (joined.startsWith("pr list")) return ok(JSON.stringify(options.list ?? []));
-    if (joined.startsWith("pr view")) return options.views[Number(args[2])]?.() ?? fail("no scripted view");
-    if (joined.startsWith("pr merge")) {
-      const number = Number(args[2]);
-      return options.merge?.(number) ?? ok();
-    }
-    return ok();
-  };
-  return { gh, calls };
-}
-
-function io(overrides: Partial<QueueIo> & { gh: QueueIo["gh"] }): QueueIo & { lines: string[]; errors: string[] } {
+function io(overrides: Partial<QueueIo> & { github: GitHub }): QueueIo & { lines: string[]; errors: string[] } {
   const lines: string[] = [];
   const errors: string[] = [];
   return {
@@ -83,7 +58,15 @@ function io(overrides: Partial<QueueIo> & { gh: QueueIo["gh"] }): QueueIo & { li
 }
 
 function row(overrides: Partial<PrRow> & { number: number }): PrRow {
-  return { url: `https://example.test/${overrides.number}`, headRefName: `agent/${overrides.number}`, ...overrides };
+  return {
+    url: `https://example.test/${overrides.number}`,
+    headRefName: `agent/${overrides.number}`,
+    isDraft: false,
+    isCrossRepository: false,
+    updatedAt: null,
+    labels: [],
+    ...overrides,
+  };
 }
 
 test("parses the base and the readiness label, and rejects typos", () => {
@@ -93,29 +76,26 @@ test("parses the base and the readiness label, and rejects typos", () => {
   expect(() => parseArgs(["--wait"])).toThrow("unknown argument --wait");
 });
 
-test("ready is auto-merge armed or the label, and drafts and forks are not ready", () => {
+test("ready is the label alone, and drafts and forks are not ready", () => {
   const ready = readyPrs(
     [
-      row({ number: 3, autoMergeRequest: { enabledAt: "2026-10-24T01:00:00Z" } }),
-      row({ number: 4, labels: [{ name: "land:queue" }], updatedAt: "2026-10-24T00:30:00Z" }),
-      row({ number: 5, labels: [{ name: "bug" }] }),
-      row({ number: 6, autoMergeRequest: { enabledAt: "2026-10-24T00:10:00Z" }, isDraft: true }),
-      row({ number: 7, autoMergeRequest: { enabledAt: "2026-10-24T00:10:00Z" }, isCrossRepository: true }),
+      row({ number: 3, labels: ["land:queue"], updatedAt: "2026-10-24T01:00:00Z" }),
+      row({ number: 4, labels: ["land:queue"], updatedAt: "2026-10-24T00:30:00Z" }),
+      row({ number: 5, labels: ["bug"] }),
+      row({ number: 6, labels: ["land:queue"], isDraft: true }),
+      row({ number: 7, labels: ["land:queue"], isCrossRepository: true }),
     ],
     "land:queue",
   );
-  expect(ready.map((pr) => [pr.number, pr.signal])).toEqual([
-    [4, "label"],
-    [3, "auto-merge"],
-  ]);
+  expect(ready.map((pr) => pr.number)).toEqual([4, 3]);
 });
 
 test("the drain is ordered by when each PR became ready, not by branch name or number", () => {
   const ready = readyPrs(
     [
-      row({ number: 10, headRefName: "agent/aaa-first-alphabetically", autoMergeRequest: { enabledAt: "2026-10-24T02:00:00Z" } }),
-      row({ number: 11, headRefName: "agent/zzz-last-alphabetically", autoMergeRequest: { enabledAt: "2026-10-24T00:00:00Z" } }),
-      row({ number: 9, headRefName: "agent/mmm", labels: [{ name: "land:queue" }], updatedAt: "2026-10-24T01:00:00Z" }),
+      row({ number: 10, headRefName: "agent/aaa-first-alphabetically", labels: ["land:queue"], updatedAt: "2026-10-24T02:00:00Z" }),
+      row({ number: 11, headRefName: "agent/zzz-last-alphabetically", labels: ["land:queue"], updatedAt: "2026-10-24T00:00:00Z" }),
+      row({ number: 9, headRefName: "agent/mmm", labels: ["land:queue"], updatedAt: "2026-10-24T01:00:00Z" }),
     ],
     "land:queue",
   );
@@ -129,25 +109,18 @@ test("the drain is ordered by when each PR became ready, not by branch name or n
 test("waits once per PR, reports the run it waited on, and stops at the first green", () => {
   let clock = 0;
   const pauses: number[] = [];
-  const answers = [
-    rollup([{ name: "ci", status: "IN_PROGRESS", conclusion: "", url: "https://example.test/actions/runs/901/job/1" }]),
-    rollup([{ name: "ci", status: "IN_PROGRESS", conclusion: "", url: "https://example.test/actions/runs/901/job/1" }]),
-    rollup([{ name: "ci", conclusion: "SUCCESS", url: "https://example.test/actions/runs/901/job/1" }]),
-  ];
+  const running: FakeCheck = { name: "ci", status: "in_progress", conclusion: null, url: "https://example.test/actions/runs/901/job/1" };
+  const answers: FakeCheck[][] = [[running], [running], [{ name: "ci", url: "https://example.test/actions/runs/901/job/1" }]];
   let step = 0;
-  const gh: QueueIo["gh"] = (args) => {
-    if (args.join(" ").startsWith("pr view")) {
-      return ok(JSON.stringify({ number: 21, url: "u", state: "OPEN", headRefName: "agent/x", statusCheckRollup: JSON.parse(answers[Math.min(step, answers.length - 1)]!) }));
-    }
-    return ok();
-  };
+  const api = onePr(21, answers[0] ?? []);
   const result = waitForGreen(21, io({
-    gh,
+    github: api.github,
     now: () => clock,
     pause: (ms) => {
       pauses.push(ms);
       step += 1;
       clock += ms;
+      api.checks[HEAD] = answers[Math.min(step, answers.length - 1)] ?? [];
     },
   }));
 
@@ -158,37 +131,25 @@ test("waits once per PR, reports the run it waited on, and stops at the first gr
 });
 
 test("a superseded cancelled attempt does not stop the queue, and a running check is never a pass", () => {
-  const view = (number: number, entries: Parameters<typeof rollup>[0]) => () =>
-    ok(
-      JSON.stringify({
-        number,
-        url: "u",
-        state: "OPEN",
-        headRefName: `agent/${number}`,
-        headRefOid: "head1",
-        statusCheckRollup: JSON.parse(rollup(entries)),
-      }),
-    );
-
   // Same shape as PR #2330 on 2026-10-24: a second workflow run on the head commit was cancelled
   // after the first passed. The old row-by-row verdict called 9 of these checks failures.
-  const superseded = view(24, [
-    { name: "ci", conclusion: "SUCCESS", startedAt: "2026-10-24T04:12:44Z", url: "https://example.test/actions/runs/601/job/1" },
-    { name: "ci", conclusion: "CANCELLED", startedAt: "2026-10-24T04:17:03Z", url: "https://example.test/actions/runs/602/job/2" },
-    { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-24T04:10:17Z" },
-    { name: "types", conclusion: "CANCELLED", startedAt: "2026-10-24T04:15:15Z" },
+  const superseded = onePr(24, [
+    { name: "ci", conclusion: "success", startedAt: "2026-10-24T04:12:44Z", url: "https://example.test/actions/runs/601/job/1" },
+    { name: "ci", conclusion: "cancelled", startedAt: "2026-10-24T04:17:03Z", url: "https://example.test/actions/runs/602/job/2" },
+    { name: "types", conclusion: "success", startedAt: "2026-10-24T04:10:17Z" },
+    { name: "types", conclusion: "cancelled", startedAt: "2026-10-24T04:15:15Z" },
   ]);
-  const green = waitForGreen(24, io({ gh: superseded }));
+  const green = waitForGreen(24, io({ github: superseded.github }));
   expect(green.verdict).toBe("green");
   expect(green.detail).toBe("");
 
   const failed = waitForGreen(
     25,
     io({
-      gh: view(25, [
-        { name: "test (ui)", conclusion: "SUCCESS", startedAt: "2026-10-24T04:10:00Z" },
-        { name: "test (ui)", conclusion: "FAILURE", startedAt: "2026-10-24T04:20:00Z", url: "https://example.test/job/7" },
-      ]),
+      github: onePr(25, [
+        { name: "test (ui)", conclusion: "success", startedAt: "2026-10-24T04:10:00Z" },
+        { name: "test (ui)", conclusion: "failure", startedAt: "2026-10-24T04:20:00Z", url: "https://example.test/job/7" },
+      ]).github,
     }),
   );
   expect(failed.verdict).toBe("failed");
@@ -198,10 +159,10 @@ test("a superseded cancelled attempt does not stop the queue, and a running chec
   const running = waitForGreen(
     26,
     io({
-      gh: view(26, [
-        { name: "ci", conclusion: "SUCCESS", startedAt: "2026-10-24T04:10:00Z" },
-        { name: "perf", status: "IN_PROGRESS", conclusion: "", startedAt: "2026-10-24T04:20:00Z", url: "https://example.test/actions/runs/603/job/3" },
-      ]),
+      github: onePr(26, [
+        { name: "ci", conclusion: "success", startedAt: "2026-10-24T04:10:00Z" },
+        { name: "perf", status: "in_progress", conclusion: null, startedAt: "2026-10-24T04:20:00Z", url: "https://example.test/actions/runs/603/job/3" },
+      ]).github,
       now: () => clock,
       pause: (ms) => {
         clock += ms;
@@ -216,26 +177,29 @@ test("a run cancelled by its replacement on the same commit keeps the queue wait
   // PR #2496 on 25 Oct: two pull_request runs on one commit; the newer cancelled the older's jobs
   // before it had any of its own, and the queue called the cancellations failures in under a second.
   let step = 0;
-  const answers = [
-    rollup([
-      { name: "games", conclusion: "CANCELLED", startedAt: "2026-10-26T00:54:10Z" },
-      { name: "types", status: "IN_PROGRESS", conclusion: "", startedAt: "2026-10-26T00:54:10Z" },
-    ]),
-    rollup([
-      { name: "games", conclusion: "CANCELLED", startedAt: "2026-10-26T00:54:10Z" },
-      { name: "games", conclusion: "SUCCESS", startedAt: "2026-10-26T00:55:00Z" },
-      { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-26T00:55:00Z" },
-    ]),
+  const answers: FakeCheck[][] = [
+    [
+      { name: "games", conclusion: "cancelled", startedAt: "2026-10-26T00:54:10Z" },
+      { name: "types", status: "in_progress", conclusion: null, startedAt: "2026-10-26T00:54:10Z" },
+    ],
+    [
+      { name: "games", conclusion: "cancelled", startedAt: "2026-10-26T00:54:10Z" },
+      { name: "games", conclusion: "success", startedAt: "2026-10-26T00:55:00Z" },
+      { name: "types", conclusion: "success", startedAt: "2026-10-26T00:55:00Z" },
+    ],
   ];
-  const gh: QueueIo["gh"] = (args) =>
-    args.join(" ").startsWith("pr view")
-      ? ok(JSON.stringify({ number: 27, url: "u", state: "OPEN", headRefName: "agent/27", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[Math.min(step, answers.length - 1)]!) }))
-      : ok();
-  const result = waitForGreen(27, io({ gh, pause: () => (step += 1) }));
+  const api = onePr(27, answers[0] ?? []);
+  const result = waitForGreen(27, io({
+    github: api.github,
+    pause: () => {
+      step += 1;
+      api.checks[HEAD] = answers[Math.min(step, answers.length - 1)] ?? [];
+    },
+  }));
   expect(result.verdict).toBe("green");
   expect(step).toBe(1);
 
-  const settled = waitForGreen(28, io({ gh: () => ok(JSON.stringify({ number: 28, url: "u", state: "OPEN", headRefName: "agent/28", statusCheckRollup: JSON.parse(rollup([{ name: "games", conclusion: "CANCELLED" }, { name: "types", conclusion: "SUCCESS" }])) })) }));
+  const settled = waitForGreen(28, io({ github: onePr(28, [{ name: "games", conclusion: "cancelled" }, { name: "types" }]).github }));
   expect(settled.verdict).toBe("failed");
 });
 
@@ -243,32 +207,32 @@ test("a run cancelled with nothing replacing it is run again once, never read as
   // A PR body edit started a second run on the same commit that cancelled the first; the status
   // scripts read the cancelled checks as failures although no check had failed.
   let step = 0;
-  const reruns: string[] = [];
-  const answers = [
-    rollup([
-      { name: "test (h)", conclusion: "CANCELLED", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/1" },
-      { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/2" },
-    ]),
-    rollup([
-      { name: "test (h)", conclusion: "CANCELLED", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/1" },
-      { name: "test (h)", conclusion: "SUCCESS", startedAt: "2026-10-28T10:05:00Z", url: "https://example.test/actions/runs/700/job/3" },
-      { name: "types", conclusion: "SUCCESS", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/2" },
-    ]),
+  const answers: FakeCheck[][] = [
+    [
+      { name: "test (h)", conclusion: "cancelled", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/1" },
+      { name: "types", conclusion: "success", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/2" },
+    ],
+    [
+      { name: "test (h)", conclusion: "cancelled", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/1" },
+      { name: "test (h)", conclusion: "success", startedAt: "2026-10-28T10:05:00Z", url: "https://example.test/actions/runs/700/job/3" },
+      { name: "types", conclusion: "success", startedAt: "2026-10-28T10:00:00Z", url: "https://example.test/actions/runs/700/job/2" },
+    ],
   ];
-  const gh: QueueIo["gh"] = (args) => {
-    if (args[0] === "run" && args[1] === "rerun") reruns.push(args[2] ?? "");
-    return args.join(" ").startsWith("pr view")
-      ? ok(JSON.stringify({ number: 29, url: "u", state: "OPEN", headRefName: "agent/29", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[Math.min(step, answers.length - 1)] ?? "[]") }))
-      : ok();
-  };
-  const result = waitForGreen(29, io({ gh, pause: () => (step += 1) }));
-  expect(reruns).toEqual(["700"]);
+  const api = onePr(29, answers[0] ?? []);
+  const result = waitForGreen(29, io({
+    github: api.github,
+    pause: () => {
+      step += 1;
+      api.checks[HEAD] = answers[Math.min(step, answers.length - 1)] ?? [];
+    },
+  }));
+  expect(api.reruns).toEqual([700]);
   expect(result.verdict).toBe("green");
 
   // Still cancelled once the rerun has had its grace: then it is reported, with the check named.
   let clock = 0;
   const again = waitForGreen(30, io({
-    gh: (args) => (args.join(" ").startsWith("pr view") ? ok(JSON.stringify({ number: 30, url: "u", state: "OPEN", headRefName: "agent/30", headRefOid: "head1", statusCheckRollup: JSON.parse(answers[0] ?? "[]") })) : ok()),
+    github: onePr(30, answers[0] ?? []).github,
     now: () => clock,
     pause: (ms) => {
       clock += ms;
@@ -282,10 +246,7 @@ test("a run cancelled with nothing replacing it is run again once, never read as
 test("a failing check ends the wait at once, and a wait that never settles gives up at the ceiling", () => {
   let paused = 0;
   const failed = waitForGreen(22, io({
-    gh: (args) =>
-      args.join(" ").startsWith("pr view")
-        ? ok(JSON.stringify({ number: 22, url: "u", state: "OPEN", headRefName: "agent/y", statusCheckRollup: JSON.parse(rollup([{ name: "test (ui)", conclusion: "FAILURE", url: "https://example.test/job/7" }])) }))
-        : ok(),
+    github: onePr(22, [{ name: "test (ui)", conclusion: "failure", url: "https://example.test/job/7" }]).github,
     pause: () => {
       paused += 1;
     },
@@ -297,10 +258,7 @@ test("a failing check ends the wait at once, and a wait that never settles gives
 
   let clock = 0;
   const stuck = waitForGreen(23, io({
-    gh: (args) =>
-      args.join(" ").startsWith("pr view")
-        ? ok(JSON.stringify({ number: 23, url: "u", state: "OPEN", headRefName: "agent/z", statusCheckRollup: JSON.parse(rollup([{ name: "ci", status: "QUEUED", conclusion: "" }])) }))
-        : ok(),
+    github: onePr(23, [{ name: "ci", status: "queued", conclusion: null }]).github,
     now: () => clock,
     pause: (ms) => {
       clock += ms;
@@ -316,36 +274,20 @@ const pr = (number: number, branch = `agent/${number}`): ReadyPr => ({
   url: `https://example.test/${number}`,
   branch,
   readyAt: 0,
-  signal: "auto-merge",
 });
 
 test("landing prints one line per PR with that PR's wait and run, in readiness order", () => {
   let clock = 0;
-  const merged: number[] = [];
-  const greenFor = (number: number) => () =>
-    ok(
-      JSON.stringify({
-        number,
-        url: `https://example.test/${number}`,
-        state: "OPEN",
-        headRefName: `agent/${number}`,
-        mergeStateStatus: "CLEAN",
-        statusCheckRollup: JSON.parse(rollup([{ name: "ci", conclusion: "SUCCESS", url: `https://example.test/actions/runs/${number}0/job/1` }])),
-      }),
-    );
-  const { gh } = scriptedGh({
-    list: [
-      row({ number: 31, headRefName: "agent/aaa", autoMergeRequest: { enabledAt: "2026-10-24T03:00:00Z" } }),
-      row({ number: 32, headRefName: "agent/zzz", autoMergeRequest: { enabledAt: "2026-10-24T02:00:00Z" } }),
+  const greenAt = (number: number): FakeCheck[] => [{ name: "ci", url: `https://example.test/actions/runs/${number}0/job/1` }];
+  const api = fakeGitHub({
+    pulls: [
+      { number: 31, head: "agent/aaa", sha: "h31", labels: ["land:queue"], updatedAt: "2026-10-24T03:00:00Z", mergeableState: "clean" },
+      { number: 32, head: "agent/zzz", sha: "h32", labels: ["land:queue"], updatedAt: "2026-10-24T02:00:00Z", mergeableState: "clean" },
     ],
-    views: { 31: greenFor(31), 32: greenFor(32) },
-    merge: (number) => {
-      merged.push(number);
-      return ok();
-    },
+    checks: { h31: greenAt(31), h32: greenAt(32) },
   });
   const out = io({
-    gh,
+    github: api.github,
     now: () => clock,
     pause: (ms) => {
       clock += ms;
@@ -354,77 +296,80 @@ test("landing prints one line per PR with that PR's wait and run, in readiness o
   const result = drain({ base: "beta", label: "land:queue" }, out);
 
   expect(result.code).toBe(EXIT_DRAINED);
-  expect(merged).toEqual([32, 31]);
+  expect(merges(api)).toEqual([32, 31]);
   expect(result.drained.map((entry) => entry.pr.number)).toEqual([32, 31]);
-  expect(out.lines).toContainEqual(expect.stringMatching(/^#32 agent\/zzz \(auto-merge\) landed without waiting, run 320$/));
+  expect(out.lines).toContainEqual("#32 agent/zzz landed without waiting, run 320");
   expect(out.lines.at(-1)).toMatch(/^drained 2 of 2 in /);
 });
 
 test("nothing ready prints one line and exits 0, and a failed PR reports and exits 1", () => {
-  const empty = io({ gh: scriptedGh({ list: [row({ number: 40 })], views: {} }).gh });
+  const empty = io({ github: onePr(40, []).github });
   const nothing = drain({ base: "beta", label: "land:queue" }, empty);
   expect(nothing.code).toBe(EXIT_DRAINED);
-  expect(empty.lines).toEqual([expect.stringMatching(/^nothing ready: no open PR into beta has auto-merge armed or the land:queue label$/)]);
+  expect(empty.lines).toEqual(["nothing ready: no open PR into beta has the land:queue label"]);
 
-  const { gh } = scriptedGh({
-    list: [row({ number: 41, autoMergeRequest: { enabledAt: "2026-10-24T00:00:00Z" } })],
-    views: {
-      41: () =>
-        ok(
-          JSON.stringify({
-            number: 41,
-            url: "u",
-            state: "OPEN",
-            headRefName: "agent/41",
-            mergeStateStatus: "DIRTY",
-            statusCheckRollup: [],
-          }),
-        ),
-    },
-  });
-  const conflicted = io({ gh });
+  const conflicted = io({ github: onePr(41, [], { labels: ["land:queue"], mergeableState: "dirty" }).github });
   const failed = drain({ base: "beta", label: "land:queue" }, conflicted);
   expect(failed.code).toBe(EXIT_SOMETHING_FAILED);
-  expect(conflicted.errors[0]).toContain("#41 agent/41 (auto-merge) not landed: waited 0s");
+  expect(conflicted.errors[0]).toContain("#41 agent/41 not landed: waited 0s");
   expect(conflicted.errors[0]).toContain("conflicts with the base");
 });
 
-test("a PR auto-merge already landed is reported as landed without waiting", () => {
-  const { gh, calls } = scriptedGh({
-    list: [row({ number: 50, autoMergeRequest: { enabledAt: "2026-10-24T00:00:00Z" } })],
-    views: { 50: () => ok(JSON.stringify({ number: 50, url: "u", state: "MERGED", headRefName: "agent/50", statusCheckRollup: [] })) },
-  });
-  const out = io({ gh });
-  const result = drain({ base: "beta", label: "land:queue" }, out);
+test("a PR merged before the queue reached it is reported as landed, and not merged again", () => {
+  const api = onePr(50, [], { state: "closed", merged: true });
+  const out = io({ github: api.github });
+  const result = drain({ base: "beta", label: "land:queue", pr: 50 }, out);
   expect(result.code).toBe(EXIT_DRAINED);
-  expect(out.lines).toContain("#50 agent/50 (auto-merge) landed without waiting");
-  expect(calls.some((call) => call[1] === "merge")).toBe(false);
+  expect(out.lines).toContain("#50 agent/50 landed without waiting");
+  expect(merges(api)).toEqual([]);
 });
 
-test("--pr lands only that PR, armed or not, and prints one line", () => {
+test("--pr lands only that PR, labelled or not, and prints one line", () => {
   expect(parseArgs(["--pr", "61"])).toEqual({ base: "beta", label: "land:queue", pr: 61 });
   expect(() => parseArgs(["--pr", "x"])).toThrow("--pr needs a PR number");
-  const green = rollup([{ name: "test", conclusion: "SUCCESS" }]);
-  const { gh, calls } = scriptedGh({
-    list: [row({ number: 60, autoMergeRequest: { enabledAt: "2026-10-24T00:00:00Z" } })],
-    views: {
-      61: () => ok(JSON.stringify({ number: 61, url: "u", state: "OPEN", headRefName: "agent/61", mergeStateStatus: "CLEAN", statusCheckRollup: JSON.parse(green) })),
-    },
+  const api = fakeGitHub({
+    pulls: [
+      { number: 60, head: "agent/60", sha: "h60", labels: ["land:queue"] },
+      { number: 61, head: "agent/61", sha: "h61", mergeableState: "clean" },
+    ],
+    checks: { h60: [{ name: "test" }], h61: [{ name: "test" }] },
   });
-  const out = io({ gh });
+  const out = io({ github: api.github });
   const result = drain({ base: "beta", label: "land:queue", pr: 61 }, out);
   expect(result.code).toBe(EXIT_DRAINED);
-  expect(out.lines).toEqual(["#61 agent/61 (auto-merge) landed without waiting"]);
-  expect(calls.some((call) => call[0] === "pr" && call[1] === "list")).toBe(false);
-  expect(calls.some((call) => call[1] === "merge" && call[2] === "61")).toBe(true);
+  expect(out.lines).toEqual(["#61 agent/61 landed without waiting"]);
+  expect(api.calls.some((call) => call.path.includes("/pulls?"))).toBe(false);
+  expect(merges(api)).toEqual([61]);
+});
+
+test("a merge GitHub refuses for a moved base is rebased and tried again; any other refusal is named", () => {
+  let refusals = 0;
+  const moved = fakeGitHub({
+    pulls: [{ number: 70, head: "agent/70", sha: HEAD, mergeableState: "clean" }],
+    checks: { [HEAD]: [{ name: "ci" }] },
+    fail: (call) => (call.method === "PUT" && (refusals += 1) === 1 ? "HTTP 405: Base branch was modified. Review and try the merge again." : undefined),
+  });
+  const out = io({ github: moved.github });
+  expect(drain({ base: "beta", label: "land:queue", pr: 70 }, out).code).toBe(EXIT_DRAINED);
+  expect(refusals).toBe(2);
+  expect(out.lines).toContainEqual(expect.stringContaining("#70 agent/70 merge refused because origin/beta moved"));
+
+  const refused = fakeGitHub({
+    pulls: [{ number: 71, head: "agent/71", sha: HEAD, mergeableState: "clean" }],
+    checks: { [HEAD]: [{ name: "ci" }] },
+    fail: (call) => (call.method === "PUT" ? "HTTP 405: Required status check \"ci\" is expected." : undefined),
+  });
+  const named = io({ github: refused.github });
+  expect(drain({ base: "beta", label: "land:queue", pr: 71 }, named).code).toBe(EXIT_SOMETHING_FAILED);
+  expect(named.errors[0]).toContain("Required status check");
 });
 
 test("formatOutcome names the wait and the run, and never leaves a failed PR looking landed", () => {
   expect(formatOutcome({ pr: pr(1), outcome: "landed", waitedMs: 161_000, runIds: [901], detail: "" })).toBe(
-    "#1 agent/1 (auto-merge) landed: waited 2m41s, run 901",
+    "#1 agent/1 landed: waited 2m41s, run 901",
   );
   expect(formatOutcome({ pr: pr(2), outcome: "failed", waitedMs: 0, runIds: [], detail: "conflicts" })).toBe(
-    "#2 agent/2 (auto-merge) not landed: waited 0s: conflicts",
+    "#2 agent/2 not landed: waited 0s: conflicts",
   );
 });
 
@@ -481,7 +426,7 @@ test("a branch the base moved under is rebased in a scratch checkout, and one al
   };
 
   const ioFor = (branch: string): QueueIo => ({
-    gh: () => ok(),
+    github: fakeGitHub().github,
     git,
     pause: () => {},
     now: () => 0,
@@ -547,7 +492,7 @@ test("a generated file both sides changed never stops the queue: it takes the ba
     branch: "agent/gen",
     base: "beta",
     io: {
-      gh: () => ok(),
+      github: fakeGitHub().github,
       git: (_dir, args) => gitIn(work, args),
       pause: () => {},
       now: () => 0,

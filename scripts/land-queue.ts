@@ -5,9 +5,9 @@
 //   bun run lane:close --queue --base beta --label land:queue
 //   bun run lane:close --queue --pr 2278             # only that PR; lane:close starts this in the background
 //
-// Ready means auto-merge is armed — which is exactly what `bun run lane:close` does at hand-off — or the
-// PR carries the `land:queue` label, which land adds where the repo will not arm auto-merge. Drafts
-// and other repositories' branches are not ready. A lane hands off by running `bun run lane:close`; it
+// Ready means the PR carries the `land:queue` label, which `bun run lane:close` adds at hand-off. Every
+// GitHub call goes through `gh api` (`scripts/github.ts`), which has no auto-merge, so the label is the
+// only signal. Drafts and other repositories' branches are not ready. A lane hands off by running `bun run lane:close`; it
 // never rebases, labels or waits, and the branch it pushed is merged as-is unless the base moved.
 //
 // Per PR, oldest-ready first, the queue:
@@ -26,7 +26,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
-import { originRepo, withRestFallback } from "./gh-rest";
+import { checkoutGitHub, type GhResult, type GitHub, type Pull } from "./github";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { MERGE_ATTEMPTS, QUEUE_LABEL, baseMoved, checkVerdict, duration, formatFailures, runAt } from "./land";
 import type { GhCheck, Run } from "./land";
@@ -42,7 +42,6 @@ export const POLL_MS = 10_000;
 /** How long a rerun of a cancelled run gets to register its jobs before its cancellations count. */
 export const RERUN_GRACE_MS = 120_000;
 
-export type Gh = (args: string[]) => Run;
 export type Git = (cwd: string, args: string[]) => Run;
 
 export interface QueueArgs {
@@ -74,17 +73,8 @@ function value(argv: readonly string[], at: number, flag: string): string {
   return found;
 }
 
-/** One row of `gh pr list`, narrowed to what makes a PR ready and orders it. */
-export interface PrRow {
-  number: number;
-  url: string;
-  headRefName: string;
-  isDraft?: boolean;
-  isCrossRepository?: boolean;
-  updatedAt?: string;
-  autoMergeRequest?: { enabledAt?: string | null } | null;
-  labels?: { name: string }[];
-}
+/** One listed PR, narrowed to what makes it ready and orders it. */
+export type PrRow = Pick<Pull, "number" | "url" | "headRefName" | "isDraft" | "isCrossRepository" | "updatedAt" | "labels">;
 
 export interface ReadyPr {
   number: number;
@@ -92,7 +82,6 @@ export interface ReadyPr {
   branch: string;
   /** Milliseconds since the epoch, when it became ready: what the drain is ordered by. */
   readyAt: number;
-  signal: "auto-merge" | "label";
 }
 
 function timeOf(text: string | null | undefined, fallback: number): number {
@@ -101,24 +90,15 @@ function timeOf(text: string | null | undefined, fallback: number): number {
 }
 
 /**
- * Ready PRs, oldest-ready first. Readiness time is auto-merge's `enabledAt`, else the PR's last
- * update, which is the moment the label was added; never the branch name, which says nothing about
- * who waited longest.
+ * Labelled PRs, oldest-ready first. Readiness time is the PR's last update, which is the moment the
+ * label was added; never the branch name, which says nothing about who waited longest.
  */
 export function readyPrs(rows: readonly PrRow[], label: string, now = Date.now()): ReadyPr[] {
   const ready: ReadyPr[] = [];
   for (const row of rows) {
-    if (row.isDraft === true || row.isCrossRepository === true) continue;
-    const armed = row.autoMergeRequest ?? null;
-    const labelled = (row.labels ?? []).some((entry) => entry.name === label);
-    if (armed === null && !labelled) continue;
-    ready.push({
-      number: row.number,
-      url: row.url,
-      branch: row.headRefName,
-      readyAt: armed !== null ? timeOf(armed.enabledAt, now) : timeOf(row.updatedAt, now),
-      signal: armed !== null ? "auto-merge" : "label",
-    });
+    if (row.isDraft || row.isCrossRepository) continue;
+    if (!row.labels.includes(label)) continue;
+    ready.push({ number: row.number, url: row.url, branch: row.headRefName, readyAt: timeOf(row.updatedAt, now) });
   }
   return ready.sort((a, b) => a.readyAt - b.readyAt || a.number - b.number);
 }
@@ -134,7 +114,7 @@ export interface PrView {
 }
 
 export interface QueueIo {
-  gh: Gh;
+  github: GitHub;
   git: Git;
   /** The one place a sleep is allowed; see the `wait-ok` on the poll. */
   pause: (ms: number) => void;
@@ -155,21 +135,23 @@ function firstLine(text: string): string {
   return text.split("\n").map((line) => line.trim()).find((line) => line.length > 0) ?? text.trim();
 }
 
-export function readView(gh: Gh, number: number): PrView | null {
-  const view = gh([
-    "pr",
-    "view",
-    String(number),
-    "--json",
-    "number,url,state,headRefName,headRefOid,mergeStateStatus,statusCheckRollup",
-  ]);
-  if (view.status !== 0) return null;
-  try {
-    const parsed = JSON.parse(view.stdout) as PrView;
-    return { ...parsed, number: parsed.number ?? number, statusCheckRollup: parsed.statusCheckRollup ?? [] };
-  } catch {
-    return null;
-  }
+/** The PR and the checks on its head commit; null when GitHub could not be read. */
+export function readView(github: GitHub, number: number): PrView | null {
+  const pull = github.pull(number);
+  if (!pull.ok) return null;
+  const view = pull.value;
+  const settled: GhResult<RollupEntry[]> = { ok: true, value: [] };
+  const checks = view.state === "OPEN" ? github.checks(view.headRefOid) : settled;
+  if (!checks.ok) return null;
+  return {
+    number: view.number,
+    url: view.url,
+    state: view.state,
+    headRefName: view.headRefName,
+    headRefOid: view.headRefOid,
+    mergeStateStatus: view.mergeStateStatus,
+    statusCheckRollup: checks.value,
+  };
 }
 
 export interface CheckReport {
@@ -206,9 +188,9 @@ export function waitForGreen(number: number, io: QueueIo): WaitResult {
   let runIds: number[] = [];
   let rerunAt: number | null = null;
   for (;;) {
-    const view = readView(io.gh, number);
+    const view = readView(io.github, number);
     if (view === null) {
-      return { verdict: "unreadable", checks: [], runIds, waitedMs: io.now() - startedAt, detail: "gh pr view failed" };
+      return { verdict: "unreadable", checks: [], runIds, waitedMs: io.now() - startedAt, detail: "reading the PR failed" };
     }
     if (view.state === "MERGED") {
       return { verdict: "green", checks: [], runIds, waitedMs: io.now() - startedAt, detail: "already merged" };
@@ -240,7 +222,7 @@ export function waitForGreen(number: number, io: QueueIo): WaitResult {
       ];
       if (cancelledRuns.length > 0) {
         rerunAt = io.now();
-        for (const id of cancelledRuns) io.gh(["run", "rerun", String(id)]);
+        for (const id of cancelledRuns) io.github.rerunRun(id);
         io.log(`#${number}: run ${cancelledRuns.join(", ")} was cancelled before a verdict; running it again`);
         rerunning = true;
       }
@@ -373,7 +355,7 @@ export interface Drained {
 
 /** One line per PR, so a drain reads at a glance and a lane's wait is a number. */
 export function formatOutcome(drained: Drained): string {
-  const head = `#${drained.pr.number} ${drained.pr.branch} (${drained.pr.signal})`;
+  const head = `#${drained.pr.number} ${drained.pr.branch}`;
   const runs = drained.runIds.length > 0 ? `, run ${drained.runIds.join(", ")}` : "";
   const detail = drained.detail
     .split("\n")
@@ -403,9 +385,9 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
   });
 
   for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
-    const view = readView(io.gh, pr.number);
+    const view = readView(io.github, pr.number);
     if (view === null) return done("failed", "could not read the PR");
-    if (view.state === "MERGED") return done("landed", "auto-merge had already landed it");
+    if (view.state === "MERGED") return done("landed", "it was already merged");
     if (view.state !== "OPEN") return done("skipped", `state ${view.state}`);
     if (view.mergeStateStatus === "DIRTY") return done("failed", "conflicts with the base; a person has to resolve it");
 
@@ -419,15 +401,14 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
     waitedMs += waited.waitedMs;
     if (waited.runIds.length > 0) runIds = waited.runIds;
     if (waited.verdict === "green") {
-      const merged = io.gh(["pr", "merge", String(pr.number), "--merge"]);
-      if (merged.status === 0) {
+      const merged = io.github.mergePull(pr.number);
+      if (merged.ok) {
         return done("landed", waited.detail);
       }
-      // Auto-merge races this merge: it lands the PR when its checks turn green, so a refusal can
-      // simply mean the PR is already in.
-      const after = readView(io.gh, pr.number);
-      if (after?.state === "MERGED") return done("landed", "auto-merge merged it first");
-      const why = details(merged);
+      // A person or another queue run may have merged it a moment earlier.
+      const after = readView(io.github, pr.number);
+      if (after?.state === "MERGED") return done("landed", "it was merged first by someone else");
+      const why = merged.error;
       if (!baseMoved(why)) return done("failed", firstLine(why));
       if (attempt === MERGE_ATTEMPTS) return done("failed", `base kept moving: ${firstLine(why)}`);
       io.log(`#${pr.number} ${pr.branch} merge refused because origin/${args.base} moved; rebasing and waiting again`);
@@ -445,12 +426,12 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
  * the lane that handed the PR over keeps working instead of sitting in the queue.
  */
 export function drainOne(number: number, args: QueueArgs, io: QueueIo): { code: number; drained: Drained[] } {
-  const view = readView(io.gh, number);
+  const view = readView(io.github, number);
   if (view === null) {
     io.error(`#${number} could not be read`);
     return { code: EXIT_SOMETHING_FAILED, drained: [] };
   }
-  const pr: ReadyPr = { number, url: view.url, branch: view.headRefName, readyAt: io.now(), signal: "auto-merge" };
+  const pr: ReadyPr = { number, url: view.url, branch: view.headRefName, readyAt: io.now() };
   const result = landOne(pr, args, io);
   const line = formatOutcome(result);
   if (result.outcome === "failed") io.error(line);
@@ -462,33 +443,15 @@ export function drainOne(number: number, args: QueueArgs, io: QueueIo): { code: 
 export function drain(args: QueueArgs, io: QueueIo): { code: number; drained: Drained[] } {
   if (args.pr !== undefined) return drainOne(args.pr, args, io);
   const startedAt = io.now();
-  const listed = io.gh([
-    "pr",
-    "list",
-    "--base",
-    args.base,
-    "--state",
-    "open",
-    "--limit",
-    "50",
-    "--json",
-    "number,url,headRefName,isDraft,isCrossRepository,updatedAt,autoMergeRequest,labels",
-  ]);
-  if (listed.status !== 0) {
-    io.error(`gh pr list failed: ${details(listed)}`);
-    return { code: EXIT_SOMETHING_FAILED, drained: [] };
-  }
-  let rows: PrRow[];
-  try {
-    rows = JSON.parse(listed.stdout || "[]") as PrRow[];
-  } catch (error) {
-    io.error(`unreadable gh pr list output: ${String(error)}`);
+  const listed = io.github.listPulls({ base: args.base, state: "open", limit: 50 });
+  if (!listed.ok) {
+    io.error(`listing PRs failed: ${listed.error}`);
     return { code: EXIT_SOMETHING_FAILED, drained: [] };
   }
 
-  const ready = readyPrs(rows, args.label, io.now());
+  const ready = readyPrs(listed.value, args.label, io.now());
   if (ready.length === 0) {
-    io.log(`nothing ready: no open PR into ${args.base} has auto-merge armed or the ${args.label} label`);
+    io.log(`nothing ready: no open PR into ${args.base} has the ${args.label} label`);
     return { code: EXIT_DRAINED, drained: [] };
   }
 
@@ -523,11 +486,7 @@ function main(): void {
   }
 
   const result = drain(args, {
-    gh: withRestFallback(
-      (ghArgs) => run("gh", undefined, ghArgs),
-      () => originRepo(root),
-      (line) => console.log(`land:queue: ${line}`),
-    ),
+    github: checkoutGitHub(root),
     git: (cwd, gitArgs) => run("git", cwd, gitArgs),
     pause,
     now: Date.now,

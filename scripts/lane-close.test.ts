@@ -53,7 +53,9 @@ function io(script: Script = {}): LaneIo & { lines: { out: string[]; err: string
       if (key.startsWith("run ci:status")) {
         return { ...run(), stdout: script.ci ?? CI_OK, status: script.ciStatus ?? 0 };
       }
-      if (key.startsWith("gh pr list")) {
+      if (key === "git remote get-url origin") return { ...run(), stdout: "git@github.com:Noisemaker111/jgengine.git\n" };
+      // The one way to GitHub: a `gh pr` call falls through to an empty answer and finds no PR.
+      if (key.startsWith("gh api repos/Noisemaker111/jgengine/pulls?") && key.includes("head=Noisemaker111%3A")) {
         return { ...run(), stdout: JSON.stringify(script.pr === null ? [] : [{ number: script.pr ?? 2278 }]) };
       }
       if (key.startsWith("git diff --shortstat")) {
