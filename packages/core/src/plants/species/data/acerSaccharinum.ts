@@ -9,7 +9,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const ACER_SACCHARINUM: PlantSpecies = {
   id: "acer-saccharinum",
-  version: 6,
+  version: 7,
   names: { scientific: "Acer saccharinum L.", common: { en: "silver maple", fr: "érable argenté" } },
   ids: { usda: "ACSA2" },
   habit: "tree",
@@ -44,9 +44,9 @@ export const ACER_SACCHARINUM: PlantSpecies = {
     basalStems: 3,
   },
   carbon: {
-    hydraulicHeightShare: 1,
-    lueGPerMJ: 3.577,
-    lightHalfSaturation: 1.5,
+    hydraulicHeightShare: 0.6704,
+    lueGPerMJ: 3.358,
+    lightHalfSaturation: 1.206,
     respiration: 0.6,
     sapwoodRespiration: 0.02,
     rootRespiration: 2,
@@ -54,13 +54,13 @@ export const ACER_SACCHARINUM: PlantSpecies = {
     rootTurnover: 0.8,
     foliageTurnover: 1,
     growthEfficiency: 0.75,
-    sapwoodPerFoliage: 0.000175,
+    sapwoodPerFoliage: 0.000352,
     sapwoodTurnover: 0.04,
     pipeExponent: 2.3,
     reproductiveShare: 0.06,
     pruneDeficitYears: 2,
     coarseRootShare: 0.25,
-    hydraulicExponent: 1,
+    hydraulicExponent: 4,
   },
   wood: {
     densityKgM3: 440,

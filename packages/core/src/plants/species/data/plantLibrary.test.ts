@@ -12,45 +12,25 @@ import { SPECIES_REFERENCE } from "../speciesReferenceTable";
 
 const SEED = "a";
 const AGES = [20, 50, 100] as const;
+/** Stand-grown DBH error allowed, and the share of the Tallo crown band's high edge. */
+const STRICT = { dbh: 0.25, talloHigh: 1 };
 /**
- * Records picked for how the tree looks rather than fitted to the forestry tables: the sugar maple is
- * hand-tuned, and the rest keep their earlier fit, whose open-grown crowns render fuller than a refit
- * to this model. Their stand-grown tree gets the wider bands of `LOOK_SLACK`, and the crown-kind
- * guardrails (fork, centroid, leaf shell) are not checked.
+ * Records that miss the stand tables because no record of them both passes and grows a whole crown in
+ * the open: the hand-tuned sugar maple, and six whose refit dies back, thins to a third of its leaf
+ * area or stands as a bare pole at 60 years open-grown. Each gets only the DBH error and Tallo overrun
+ * it measures.
  */
-const LOOK_TUNED = new Set([
-  "acer-saccharum",
-  "acer-saccharinum",
-  "betula-alleghaniensis",
-  "carya-ovata",
-  "fagus-grandifolia",
-  "fraxinus-americana",
-  "fraxinus-nigra",
-  "fraxinus-pennsylvanica",
-  "juglans-nigra",
-  "liriodendron-tulipifera",
-  "pinus-banksiana",
-  "pinus-contorta",
-  "pinus-echinata",
-  "pinus-elliottii",
-  "pinus-palustris",
-  "pinus-taeda",
-  "pinus-virginiana",
-  "populus-deltoides",
-  "populus-grandidentata",
-  "prunus-serotina",
-  "quercus-alba",
-  "quercus-coccinea",
-  "quercus-falcata",
-  "quercus-macrocarpa",
-  "quercus-montana",
-  "quercus-velutina",
-  "robinia-pseudoacacia",
-  "ulmus-americana",
-]);
-/** Stand-grown height and DBH error allowed, and the share of the Tallo crown band's low and high edges. */
-const STRICT = { height: 0.15, dbh: 0.25, talloLow: 1, talloHigh: 1 };
-const LOOK_SLACK = { height: 0.25, dbh: 0.45, talloLow: 0.75, talloHigh: 1.3 };
+const LOOK_SLACK: Readonly<Record<string, typeof STRICT>> = {
+  "acer-saccharum": { dbh: 0.25, talloHigh: 1.1 },
+  "fraxinus-nigra": { dbh: 0.25, talloHigh: 1.1 },
+  "pinus-contorta": { dbh: 0.4, talloHigh: 1.05 },
+  "pinus-taeda": { dbh: 0.35, talloHigh: 1 },
+  "prunus-serotina": { dbh: 0.35, talloHigh: 1.1 },
+  "quercus-coccinea": { dbh: 0.4, talloHigh: 1.3 },
+  "robinia-pseudoacacia": { dbh: 0.45, talloHigh: 1.3 },
+};
+/** Of {@link LOOK_SLACK}, those whose crown-kind guardrails (fork, centroid, leaf shell) are not checked. */
+const CROWN_KIND_UNCHECKED = new Set(["acer-saccharum", "fraxinus-nigra", "prunus-serotina"]);
 
 function checkTree(species: PlantSpecies): void {
   test(`${species.id}: a stand-grown tree is within 15% of its height, 25% of its DBH and inside the Tallo crown band at 20, 50 and 100 years`, () => {
@@ -58,15 +38,15 @@ function checkTree(species: PlantSpecies): void {
     const reference = SPECIES_REFERENCE[species.id];
     if (reference === undefined) throw new Error(`no reference for ${species.id}`);
     const plant = createPlantGrowth(species, REFERENCE_STAND, SEED, { individual: "typical" });
-    const slack = LOOK_TUNED.has(species.id) ? LOOK_SLACK : STRICT;
+    const slack = LOOK_SLACK[species.id] ?? STRICT;
     for (const age of AGES) {
       plant.step(age - plant.ageYears());
       const { heightM, dbhCm, crownRadiusM } = plant.structure().stats;
-      expect(Math.abs(heightM / standHeightAtM(reference, age) - 1), `${age} y height ${heightM.toFixed(1)} m`).toBeLessThan(slack.height);
+      expect(Math.abs(heightM / standHeightAtM(reference, age) - 1), `${age} y height ${heightM.toFixed(1)} m`).toBeLessThan(0.15);
       expect(Math.abs(dbhCm / standDbhAtCm(reference, age) - 1), `${age} y DBH ${dbhCm.toFixed(1)} cm`).toBeLessThan(slack.dbh);
       const band = crownWidthBandM(reference, dbhCm);
       if (band === null) throw new Error(`no Tallo record for ${species.id}`);
-      expect(2 * crownRadiusM, `${age} y crown width`).toBeGreaterThanOrEqual(band.lowM * slack.talloLow);
+      expect(2 * crownRadiusM, `${age} y crown width`).toBeGreaterThanOrEqual(band.lowM);
       expect(2 * crownRadiusM, `${age} y crown width`).toBeLessThanOrEqual(band.highM * slack.talloHigh);
     }
   }, 60_000);
@@ -113,7 +93,7 @@ describe("plant species library", () => {
   for (const species of PLANT_LIBRARY) {
     if (species.habit === "tree") {
       checkTree(species);
-      if (!LOOK_TUNED.has(species.id)) checkArchitecture(species);
+      if (!CROWN_KIND_UNCHECKED.has(species.id)) checkArchitecture(species);
     } else {
       checkHabit(species);
     }
