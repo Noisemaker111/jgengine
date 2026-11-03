@@ -389,6 +389,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `UnknownStatusError` (class) · `import { UnknownStatusError } from "@jgengine/core/combat"`
 
+## telegraph-hit-test — test whether a point is inside a circle, ring, cone or line telegraph, to resolve a dodgeable attack
+
+- `pointInTelegraph` (function) · `import { pointInTelegraph } from "@jgengine/core/combat/telegraph"`
+
 ## threats-from-memory — turn perception memory into a bounded, ranked threat list
 
 - `threatsFromMemory` (function) · `import { threatsFromMemory } from "@jgengine/core/combat"`

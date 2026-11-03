@@ -11196,6 +11196,16 @@
       "intent": "research nodes with prerequisites that unlock recipes"
     },
     {
+      "id": "telegraph-hit-test",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/combat/telegraph",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "test whether a point is inside a circle, ring, cone or line telegraph, to resolve a dodgeable attack"
+    },
+    {
       "id": "teleport-player",
       "packages": [
         "@jgengine/core"
