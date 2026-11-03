@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { gateTimingMs } from "../../../../scripts/timing-budget";
 import { defineGenerator } from "../generator/generator";
 import { defineParamSchema } from "../generator/paramSchema";
 import { createScatterHeroSet, type ScatterHeroMember } from "./scatterHeroes";
@@ -55,7 +56,7 @@ describe("scatter hero set", () => {
     set.setMembers(members);
     const started = performance.now();
     for (let step = 0; step < 1000; step += 1) set.update((step * 37) % 200_000, 0);
-    expect(performance.now() - started).toBeLessThan(500);
+    gateTimingMs("1000 hero updates over 200,000 members", [performance.now() - started], 500);
   });
 });
 

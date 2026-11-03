@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { gateTimingMs } from "../../../../../scripts/timing-budget";
 import { devtools } from "../../devtools/devtools";
 import { createGameEvents, type DamageAppliedEvent } from "../../game/events";
 import { createDamageRuntime, UnknownTargetProfileError, type DamageRuntimeConfig } from "./damageRuntime";
@@ -302,7 +303,6 @@ describe("bounded cost", () => {
     }
     const started = performance.now();
     for (let tick = 0; tick < 600; tick += 1) damage.tick(1 / 60);
-    const elapsed = performance.now() - started;
-    expect(elapsed).toBeLessThan(400);
+    gateTimingMs("600 damage ticks, 200 targets with four statuses", [performance.now() - started], 400);
   });
 });

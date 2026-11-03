@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { gateTimingMs } from "../../../../../scripts/timing-budget";
 import { prepareGenerator, runGenerator } from "../../generator/generator";
 import { parseParams } from "../../generator/paramSchema";
 import { createMemoryPlantCacheStorage, createPlantCache } from "../cache/plantCache";
@@ -19,14 +20,14 @@ const REALISTIC = { foliage: "leaves", shading: "lit", barkGrain: true };
 const TOON = { foliage: "clumps", shading: "ramp", rampBands: 3, rampSoftness: 0.1, saturation: 1.35, barkGrain: false };
 const CLAY = { foliage: "clumps", shading: "lit", paint: 0.9, brightness: 1.05, colorJitter: 0.03, barkGrain: false, leafTint: "#e9d8c4", barkTint: "#cdb8a0" };
 
-function fastest(run: () => void, times = 5): number {
-  let best = Infinity;
+function samplesOf(run: () => void, times = 5): number[] {
+  const samples: number[] = [];
   for (let i = 0; i < times; i += 1) {
     const start = performance.now();
     run();
-    best = Math.min(best, performance.now() - start);
+    samples.push(performance.now() - start);
   }
-  return best;
+  return samples;
 }
 
 describe("plant mesh", () => {
@@ -103,7 +104,7 @@ describe("plant.grown", () => {
   test("a prepared plant returns from memory in under 5 ms", async () => {
     const generator = createPlantGrownGenerator(createPlantCache());
     await prepareGenerator(generator, params);
-    expect(fastest(() => runGenerator(generator, params))).toBeLessThan(5);
+    gateTimingMs("prepared plant from memory", samplesOf(() => runGenerator(generator, params)), 5);
   });
 
   test("a plant stored by an earlier session returns in under 5 ms", async () => {
@@ -112,15 +113,15 @@ describe("plant.grown", () => {
     await prepareGenerator(createPlantGrownGenerator(first), params);
     await first.flush();
     expect(storage.keys()).toHaveLength(2);
-    let best = Infinity;
+    const samples: number[] = [];
     for (let i = 0; i < 5; i += 1) {
       const generator = createPlantGrownGenerator(createPlantCache({ storage }));
       const start = performance.now();
       await prepareGenerator(generator, params);
       runGenerator(generator, params);
-      best = Math.min(best, performance.now() - start);
+      samples.push(performance.now() - start);
     }
-    expect(best).toBeLessThan(5);
+    gateTimingMs("plant from an earlier session's storage", samples, 5);
   });
 
   test("generate without prepare grows on the spot and matches the prepared plant", async () => {

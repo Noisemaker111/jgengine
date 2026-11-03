@@ -262,7 +262,8 @@ describe("portable CDP deadlines", () => {
     try {
       const start = Date.now();
       await expect(lib.screenshotTo(session, out, 10000, 50)).rejects.toThrow("CDP Page.captureScreenshot timed out");
-      expect(Date.now() - start).toBeLessThan(1000);
+      // Half the 10 s wait: burning the wait fails, a busy machine does not.
+      expect(Date.now() - start).toBeLessThan(5000);
       await messaged;
       expect(messages).toBe(1);
       expect(session.pending.size).toBe(0);
