@@ -43,6 +43,7 @@ import { noteKill, noteZone } from "./game/progression/discovery";
 import { grantLevelUnlocks, rarityCapFor, zoneOpen } from "./game/progression/unlocks";
 import { NPCS, quests, zoneOpener } from "./game/quests/catalog";
 import { creditObjective, npcDialogStore, reconcileQuestWorld, settleRadioQuests } from "./game/quests/givers";
+import { nearestDiscoveredStation, recoverChassis } from "./game/recovery";
 import { session } from "./game/session";
 import { SCRAP_SLOTS } from "./game/scrapSlots";
 import {
@@ -173,23 +174,6 @@ function onLevelUp(ctx: GameContext, userId: string): void {
   for (const opened of grantLevelUnlocks(ctx, level)) {
     ctx.game.notices.push({ text: `Unlocked: ${opened}`, tone: "success" });
   }
-}
-
-function nearestDiscoveredStation(ctx: GameContext): { x: number; z: number } {
-  const discovered = discoveredStationsStore.read(ctx);
-  const playerEntity = ctx.scene.entity.get(ctx.player.userId);
-  const from = playerEntity?.position ?? PLAYER_SPAWN;
-  let best: { x: number; z: number } = { x: PLAYER_SPAWN[0], z: PLAYER_SPAWN[2] };
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (const station of TRAVEL_STATIONS) {
-    if (!discovered.includes(station.zoneId)) continue;
-    const distance = Math.hypot(from[0] - station.x, from[2] - station.z);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      best = { x: station.x + 4, z: station.z + 4 };
-    }
-  }
-  return best;
 }
 
 function respawnAtNewU(ctx: GameContext): void {
@@ -373,6 +357,8 @@ async function resumeOrStart(ctx: GameContext): Promise<void> {
     reconcileQuestWorld(ctx);
     grantLevelUnlocks(ctx, ctx.scene.entity.stats.get(ctx.player.userId, "level")?.current ?? 1);
   }
+  // After the build is hydrated, so a save that lost the chassis gets it back at its own level.
+  if (worldLoaded && recoverChassis(ctx) !== null) syncCombatTargets(ctx);
   settleBootPhase(ctx);
 }
 
