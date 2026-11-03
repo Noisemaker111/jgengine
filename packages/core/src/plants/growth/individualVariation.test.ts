@@ -10,11 +10,7 @@ import { createPlantGrowth } from "./plantGrowth";
 const SEEDS = 10;
 
 describe("individual variation", () => {
-  // Known gap: the sugar maple fit that passes its Ek width and crown-shape tests leaves its weakest
-  // mature-leader individual (spread-5) 26% short at 40 years. A weak leader's codominant stems stall
-  // instead of climbing; a stronger species leader fixes it but loses the fork and shape checks.
-  // Marked failing so it reports the day the growth model closes it.
-  test.failing("open-grown seeds of one species differ in crown width inside the Tallo band, and stay near the typical tree's height", () => {
+  test("open-grown seeds of one species differ in crown width inside the Tallo band, and stay near the typical tree's height", () => {
     const species = PLANT_LIBRARY.find((entry) => entry.id === "acer-saccharum");
     const reference = SPECIES_REFERENCE["acer-saccharum"];
     if (species === undefined || reference === undefined) throw new Error("sugar maple missing");
