@@ -13,7 +13,8 @@ import { assets } from "./game/assets";
 import { audio, objectSounds } from "./game/audio/catalog";
 import { audioProbe } from "./game/audio/drive";
 import { frontProbe } from "./game/encounters/front";
-import { reserveProbe } from "./game/handroll/reserve";
+import { reserveProbe, reservePhase } from "./game/handroll/reserve";
+import { canSprint, handlingView } from "./game/handling";
 import { lookedAtItem, STAND_ON } from "./game/commands";
 import { crashSite } from "./game/progression/onboarding";
 import { depthProbe } from "./game/progression/probe";
@@ -281,6 +282,7 @@ export const game = defineGame({
     hotbarSelection: () => session.selectedSlot(),
     movement: {
       collideObjects: true,
+      canSprint: (ctx) => canSprint(ctx, reservePhase(ctx) === "downed"),
       beforeCommit: (frame) => {
         const currentGround = terrainField.sampleHeight(frame.current[0], frame.current[2]);
         const tooSteep = (x: number, z: number) => {
@@ -368,8 +370,10 @@ export const game = defineGame({
   camera: {
     perspective: "first",
     rigs: {
-      firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
+      // The reticle is the game's own (`SpreadReticle`): it opens with the held gun's cone.
+      firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: false, viewmodel: false },
     },
+    follow: { weapon: (_id, ctx) => handlingView(ctx) },
     lens: { frustum: { far: 4200 } },
   },
 });

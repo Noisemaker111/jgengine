@@ -11,12 +11,14 @@ import { noteHit, noteShot } from "../feel";
 import { playHit, playShot } from "../audio/drive";
 import {
   applyElementalProc,
+  cancelReload,
   consumeRound,
   gunById,
   isReloading,
   magLoaded,
   startReload,
 } from "../handroll";
+import { fireHandling, handlingView, playerStance, shotAim } from "../handling";
 import type { HitReactionConfig } from "@jgengine/core/combat/hitReaction";
 
 const combatRng = seededRng("scrap-combat-procs");
@@ -80,7 +82,13 @@ const fireGun: ItemUseHandler<GameContext> = {
     const gun = gunById(input.itemId);
     if (gun === undefined) return { state: ctx, error: "unknown-gun" };
     const nowMs = ctx.time.now() * 1000;
-    if (isReloading(ctx, gun)) return { state: ctx };
+    // A sprinting chassis has its gun down: the trigger waits until the sprint ends.
+    if (playerStance(ctx).sprinting) return { state: ctx, error: "sprinting" };
+    if (isReloading(ctx, gun)) {
+      // Rounds still in the magazine: the trigger cuts the reload short and fires them.
+      if (magLoaded(ctx, gun) < gun.ammoPerShot) return { state: ctx };
+      cancelReload(ctx, gun);
+    }
 
     const gateKey = `${input.from}:${gun.id}`;
     const readyAt = lastFiredAt.get(gateKey) ?? 0;
@@ -105,7 +113,9 @@ const fireGun: ItemUseHandler<GameContext> = {
     playShot(ctx, gun.family);
     cameraShake(Math.min(0.3, 0.05 + gun.weapon.damage / 400), 6);
 
-    const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
+    const look = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
+    // The cone and climb are the engine handling's: read the climb before this shot adds to it.
+    const aim = shotAim(look, handlingView(ctx), fireHandling(ctx, gun).spread);
     // Delivery stays the engine projectile (its cone, ballistics and settled event are what the tracer
     // and cover rules are built on); damage is the shared model's job, so the projectile itself lands 0.
     const shotInput: ProjectileShotInput = { from: input.from, via: { item: gun.id, amount: 0 }, aim, effect: "damage" };

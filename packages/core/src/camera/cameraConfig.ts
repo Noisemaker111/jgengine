@@ -1,3 +1,4 @@
+import type { GameContext } from "../runtime/gameContext";
 import type { CameraRigShakeConfig } from "./shake/cameraShake";
 import type { WeaponHandlingFrame } from "../combat/weaponHandling";
 import type { WeaponPresentationTuning } from "../combat/weaponPresentation";
@@ -435,9 +436,10 @@ export interface GameCameraFollowConfig {
    * The followed entity's held weapon, read every frame by the `first` and `shoulder` rigs. Return the
    * weapon's `createWeaponHandling` frame and its presentation tuning, or `null` for none. First person
    * poses the viewmodel from it (offset, ADS pose, viewmodel FOV, sway, bob, kick) and adds the recoil to
-   * the look; over-the-shoulder takes its ADS blend from `adsProgress` and adds the same recoil.
+   * the look; over-the-shoulder takes its ADS blend from `adsProgress` and adds the same recoil. `ctx` is
+   * the running game, so the hook reads per-run weapon state rather than a module global.
    */
-  weapon?: (entityId: string) => CameraWeaponView | null;
+  weapon?: (entityId: string, ctx: GameContext) => CameraWeaponView | null;
 }
 
 /** Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig. */

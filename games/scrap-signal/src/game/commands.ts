@@ -12,10 +12,10 @@ import { scrapSave } from "./save";
 import { captureScrapThumb, scrapProfile } from "./scrapProfile";
 import { refreshScrapSlots } from "./scrapSlots";
 import { noteEquipped } from "./feel";
-import { gunById, rarityRank, rollGun, startReload, reservePhase } from "./handroll";
+import { cancelReload, gunById, rarityRank, rollGun, startReload, reservePhase } from "./handroll";
 import { depositGun, vaultOpenStore, withdrawGun } from "./items/vault";
 import { openAmmoCrate } from "./items/ammoCrates";
-import { playerDef } from "./entities/players/catalog";
+import { applyWalkSpeed } from "./handling";
 import { session } from "./session";
 import { chestDropSpot } from "./items/chestDrops";
 import { noteGunHeld } from "./progression/discovery";
@@ -258,6 +258,8 @@ export function registerCommands(ctx: GameContext): void {
       if (itemId === null) return;
       const gun = gunById(itemId);
       if (gun === undefined) return;
+      // The same key cancels a reload in flight, keeping the rounds already loaded.
+      if (cancelReload(state, gun)) return;
       startReload(state, gun);
     },
   });
@@ -672,9 +674,7 @@ function applyPassiveEffects(ctx: GameContext, previousHealthMult = 1): void {
       ctx.scene.entity.stats.delta(userId, "health", Math.max(0, max - health.max));
     }
   }
-  ctx.scene.entity.update(userId, {
-    movement: { walkSpeed: Math.round(playerDef.walkSpeed * (1 + bonus("moveSpeed")) * 10) / 10 },
-  });
+  applyWalkSpeed(ctx, reservePhase(ctx) === "downed");
 }
 
 

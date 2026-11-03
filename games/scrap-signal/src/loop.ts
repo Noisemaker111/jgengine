@@ -14,7 +14,8 @@ import { settleBootPhase } from "./game/bootPhase";
 import { resetCombat, syncCombatTargets, tickCombat } from "./game/combat/hitModel";
 import { registerPerks } from "./game/combat/gunPerks";
 import { startAmbience, tickAudio } from "./game/audio/drive";
-import { noteEquipped, noteGameNow, noteLevelUp, notePlayerHealth } from "./game/feel";
+import { equippedGun, noteEquipped, noteGameNow, noteLevelUp, notePlayerHealth } from "./game/feel";
+import { applyWalkSpeed, tickHandling } from "./game/handling";
 import { tickEnemies } from "./game/entities/enemies/ai";
 import { tickFront } from "./game/encounters/front";
 import { loseRift, registerRift, riftLootFor, riftShieldRegen, tickRift } from "./game/rift/rift";
@@ -56,7 +57,6 @@ import { PLAYER_SPAWN, PLAYER_SPAWN_YAW, respawnClusters, setupWorld } from "./g
 
 const dropRng = seededRng("scrap-gun-drops");
 const RESPAWN_SWEEP_SECONDS = 25;
-const DOWNED_WALK_SPEED = 1.6;
 const STATION_DISCOVER_RADIUS = 8;
 
 function deathAnchor(ctx: GameContext, event: EntityDiedEvent): readonly [number, number, number] {
@@ -148,7 +148,6 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
     dropAmmoAt(ctx, event, anchor);
     if (reservePhase(ctx) === "downed") {
       powerSurge(ctx);
-      ctx.scene.entity.update(userId, { movement: { walkSpeed: playerDef.walkSpeed } });
       ctx.scene.entity.floatText({ instanceId: userId, text: "POWER SURGE!", kind: "pickup" });
     }
   }
@@ -200,10 +199,7 @@ function respawnAtNewU(ctx: GameContext): void {
   if (fee > 0) spend(ctx, "cash", fee, "respawn-fee");
   const station = nearestDiscoveredStation(ctx);
   const y = ctx.world.groundHeightAt(station.x, station.z);
-  ctx.scene.entity.update(userId, {
-    position: [station.x, y, station.z],
-    movement: { walkSpeed: playerDef.walkSpeed },
-  });
+  ctx.scene.entity.update(userId, { position: [station.x, y, station.z] });
   const health = ctx.scene.entity.stats.get(userId, "health");
   if (health !== null) ctx.scene.entity.stats.delta(userId, "health", health.max);
   const shield = ctx.scene.entity.stats.get(userId, "shield");
@@ -220,10 +216,7 @@ function tickReserve(ctx: GameContext, dt: number): void {
   const userId = ctx.player.userId;
   const health = ctx.scene.entity.stats.get(userId, "health");
   if (health === null) return;
-  if (reservePhase(ctx) === "alive" && health.current <= (health.min ?? 1)) {
-    enterDowned(ctx);
-    ctx.scene.entity.update(userId, { movement: { walkSpeed: DOWNED_WALK_SPEED } });
-  }
+  if (reservePhase(ctx) === "alive" && health.current <= (health.min ?? 1)) enterDowned(ctx);
   // The shared state owns the countdown; its `died` event is the game's cue to pay the fee.
   for (const event of tickDowned(ctx, dt)) {
     if (event.kind === "died") {
@@ -418,6 +411,8 @@ function onTick(ctx: GameContext, dt: number): void {
   tickCombat(ctx, dt);
   tickReloads(ctx, dt);
   tickReserve(ctx, dt);
+  tickHandling(ctx, gunById(equippedGun() ?? "") ?? null, dt);
+  applyWalkSpeed(ctx, reservePhase(ctx) === "downed");
   tickRelay(ctx, dt);
   tickMastWatch(ctx, dt);
   tickZoneAndStations(ctx, nowMs);

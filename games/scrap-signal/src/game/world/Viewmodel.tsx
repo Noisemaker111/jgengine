@@ -8,6 +8,7 @@ import { airAt, gust } from "./air";
 import { zoneAt } from "./zones";
 import { equippedGun, gameNow, muzzleFlashVisible, recoilAt } from "../feel";
 import { gunById, isReloading, type GunDef, type GunFamily } from "../handroll";
+import { handlingView } from "../handling";
 import { ELEMENT_COLORS } from "../palette";
 import { SalvageRelay } from "./Relay";
 import { QuestMarker } from "./QuestMarker";
@@ -383,11 +384,14 @@ export function FerralonViewmodel() {
       reloadSpin = Math.sin(state.clock.elapsedTime * 9) * 0.35;
     }
 
+    // Aimed, the gun comes up to the centre line and the walk bob mostly settles.
+    const ads = handlingView(ctx)?.handling.adsProgress ?? 0;
+    const bob = (0.4 + moving) * (1 - ads * 0.75);
     group.position.copy(camera.position);
     group.quaternion.copy(camera.quaternion);
-    group.translateX(0.24 + Math.sin(bobTime.current) * 0.006 * (0.4 + moving));
-    group.translateY(-0.24 - reloadDip + Math.abs(Math.cos(bobTime.current)) * 0.009 * (0.4 + moving) + recoil * 0.02);
-    group.translateZ(-0.5 + recoil * 0.07);
+    group.translateX(0.24 * (1 - ads) + Math.sin(bobTime.current) * 0.006 * bob);
+    group.translateY(-0.24 + ads * 0.125 - reloadDip + Math.abs(Math.cos(bobTime.current)) * 0.009 * bob + recoil * 0.02);
+    group.translateZ(-0.5 + ads * 0.08 + recoil * 0.07);
     group.rotateX(recoil * 0.09 - reloadSpin * 0.6);
     group.rotateZ(reloadSpin * 0.12);
 
