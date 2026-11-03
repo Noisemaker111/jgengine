@@ -392,13 +392,6 @@ describe("static gates", () => {
     expect(gatesFor(["scripts/lookArg.ts"])).toContain("capture-hygiene");
   });
 
-  test("a change that could reach GitHub (apps, a workflow, a games script) pays the gate that refuses routes around gh", () => {
-    for (const path of ["apps/web/src/routes/stats.ts", ".github/workflows/notify.yml", "games/scripts/sync.ts"]) {
-      expect(gatesFor([path])).toContain("capture-hygiene");
-    }
-    expect(gatesFor(["README.md"])).not.toContain("capture-hygiene");
-  });
-
   test("a lane never pays a generated-file comparison: lane:close regenerates those files when it lands", () => {
     for (const gate of ["export-manifest", "games-ledger", "type-escapes", "capabilities", "source-paths"]) {
       expect(gatesFor(["packages/core/src/world/terrain.ts", "games/x/src/a.ts"])).not.toContain(gate);

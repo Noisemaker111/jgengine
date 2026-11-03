@@ -10,6 +10,9 @@
  * function under test consumes) or genuinely POSIX-only (a git path, which is always `/`) is named in
  * `scripts/path-portability-allow.json` with a reason, and that list is printed on every run.
  *
+ * It also runs the gh-only rule for tooling (scripts/githubAccess.ts) over the same file list, since
+ * this is the one gate that reads the whole tree on every verify:fast.
+ *
  *   bun run check path-portability
  */
 import { spawnSync } from "node:child_process";
@@ -17,6 +20,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { githubWaivers, scanForGitHubAccess } from "./githubAccess";
 import { printHelpIfAsked, type Usage } from "./script-help";
 
 const ROOTS = ["scripts", "packages"];
@@ -254,7 +258,7 @@ export function windowsReservedPaths(paths: readonly string[]): string[] {
 }
 
 /** Tracked files plus untracked ones git would add, so a reserved name fails before its commit. */
-function candidatePaths(root: string): string[] {
+export function candidatePaths(root: string): string[] {
   const listed = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { cwd: root, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
   if (listed.status === 0) return listed.stdout.split("\0").filter(Boolean);
   return walk(root).map((path) => relative(root, path).split("\\").join("/"));
@@ -272,7 +276,7 @@ export const GUIDANCE =
   "takes a Windows path), and that reason is printed on every run.";
 
 const USAGE: Usage = {
-  summary: "fail a test that asserts one platform's path separator, or a file name Windows reserves (nul, con, com1)",
+  summary: "fail a test that asserts one platform's path separator, a file name Windows reserves (nul, con, com1), or tooling that reaches GitHub without gh",
   usage: "bun run check path-portability [--root <dir>]",
   flags: [{ flag: "--root <dir>", detail: "scan this tree instead of the repository (used by the gate's own fixture test)" }],
   example: "bun run check path-portability",
@@ -292,7 +296,9 @@ if (import.meta.main) {
   const offenders = findings.filter((finding) => finding.reason === null);
   const allowed = findings.filter((finding) => finding.reason !== null);
   const stale = staleAllowlist(root, findings);
-  const reserved = scanReservedNames(root);
+  const paths = candidatePaths(root);
+  const reserved = windowsReservedPaths(paths);
+  const github = scanForGitHubAccess(root, paths);
 
   for (const finding of allowed) {
     console.log(`  allow  ${finding.file}:${finding.line}  ${finding.rule}  ${finding.reason}`);
@@ -301,8 +307,14 @@ if (import.meta.main) {
     console.error(`check-path-portability: ${path} uses a name Windows reserves (nul, con, prn, aux, com1-9, lpt1-9), so no Windows checkout can create it.`);
     console.error("  fix: git rm it. A stray `nul` comes from `> nul` in bash; there, write `> /dev/null`.");
   }
-  if (offenders.length === 0 && stale.length === 0 && reserved.length === 0) {
-    console.log(`check-path-portability: ok (${allowed.length} allowlisted)`);
+  if (github.length > 0) {
+    console.error(`check-path-portability: ${github.length} line(s) reach GitHub without gh; repo tooling uses gh commands or \`gh api\`, and no route around a gh failure:`);
+    for (const line of github) console.error(`  ${line}`);
+    console.error("  product features that serve users through GitHub are waived:");
+    for (const waiver of githubWaivers()) console.error(`    ${waiver}`);
+  }
+  if (offenders.length === 0 && stale.length === 0 && reserved.length === 0 && github.length === 0) {
+    console.log(`check-path-portability: ok (${allowed.length} allowlisted; tooling reaches GitHub only through gh)`);
     process.exit(0);
   }
   if (offenders.length > 0) {

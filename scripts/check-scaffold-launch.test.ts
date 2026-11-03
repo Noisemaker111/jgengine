@@ -35,7 +35,7 @@ describe("the repo-wide localhost fetch scan", () => {
   test("skips tests, and honours a remote-only waiver", async () => {
     const root = tree({
       "scripts/probe.test.ts": "await fetch(\"http://127.0.0.1:1\");\n",
-      "scripts/data-table.ts": "await fetch(pageUrl);\n",
+      "scripts/mirror-assets.ts": "await fetch(`https://api.github.com${path}`);\n",
       "scripts/clean.ts": "export const ok = 1;\n",
     });
     expect(await scanForFetchEverywhere(root)).toEqual([]);
@@ -43,11 +43,6 @@ describe("the repo-wide localhost fetch scan", () => {
 
   test("this repository is clean today", async () => {
     expect(await scanForFetchEverywhere()).toEqual([]);
-  });
-
-  test("a script that fetched GitHub before it moved to gh is no longer waived", async () => {
-    const root = tree({ "scripts/mirror-assets.ts": "await fetch(`https://api.github.com${path}`);\n" });
-    expect(await scanForFetchEverywhere(root)).toEqual(["scripts/mirror-assets.ts:1"]);
   });
 });
 

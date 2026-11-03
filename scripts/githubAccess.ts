@@ -1,12 +1,11 @@
 /**
  * Repo tooling reaches GitHub through gh only: its commands, else `gh api`. This scan names every
  * other route (a direct API URL, an SDK, a token read) and every landing script that composes its own
- * gh call instead of going through scripts/github.ts. `check capture-hygiene` runs it, so verify:fast
- * refuses a change that adds one.
+ * gh call instead of going through scripts/github.ts. `check path-portability`, which reads the whole
+ * tree on every verify:fast and in CI, runs it over the files git lists.
  */
-import { relative as relativeTo } from "node:path";
-
-import { isTypeScript, runtimeSources } from "./check-scaffold-launch";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 /** A way to reach GitHub other than gh, and why it is refused. */
 const GITHUB_ROUTES: readonly { rule: string; pattern: RegExp; why: string }[] = [
@@ -43,11 +42,19 @@ const GITHUB_PRODUCT: readonly { prefix: string; rules: readonly string[]; why: 
   },
 ];
 
-/** The files that define the rule itself, so their patterns are not read as uses. */
-const SELF = new Set(["scripts/githubAccess.ts", "scripts/check-scaffold-launch.ts"]);
+const SELF = "scripts/githubAccess.ts";
+const BUILT = /(?:^|\/)(?:node_modules|dist|\.output)\//;
 
-function githubWaiver(relative: string, rule: string): boolean {
-  return GITHUB_PRODUCT.some((waiver) => relative.startsWith(waiver.prefix) && waiver.rules.includes(rule));
+/** Tooling and shipped source the rule covers; tests are left out, since they plant these routes on purpose. */
+export function coveredByGitHubRule(path: string): boolean {
+  if (path === SELF || BUILT.test(path)) return false;
+  if (path.startsWith(".github/")) return /\.(?:ya?ml|sh)$/.test(path);
+  if (!/\.tsx?$/.test(path) || /\.(?:test|spec)\.tsx?$/.test(path)) return false;
+  return /^(?:scripts|games\/scripts|apps)\//.test(path) || /^packages\/[^/]+\/src\//.test(path);
+}
+
+function githubWaiver(path: string, rule: string): boolean {
+  return GITHUB_PRODUCT.some((waiver) => path.startsWith(waiver.prefix) && waiver.rules.includes(rule));
 }
 
 /** Every waiver in force, for the failure message. */
@@ -56,34 +63,32 @@ export function githubWaivers(): string[] {
 }
 
 /**
- * `file:line why` for every place tooling reaches GitHub without gh, sorted by file and line: scripts,
- * package sources, games/scripts, apps and .github workflows; tests are skipped.
+ * `file:line why` for every place tooling reaches GitHub without gh, sorted by file and line.
+ * `paths` are `/`-separated and relative to `root`; only the ones the rule covers are read.
  */
-export async function scanForGitHubAccess(cwd = process.cwd()): Promise<string[]> {
-  const offending: { file: string; line: number; why: string }[] = [];
-  const sources = runtimeSources(cwd, [
-    { dir: "games/scripts", keep: isTypeScript },
-    { dir: "apps", keep: (path) => isTypeScript(path) && !/[\\/](?:node_modules|dist|\.output)[\\/]/.test(path) },
-    { dir: ".github", keep: (path) => /\.ya?ml$|\.sh$/.test(path) },
-  ]);
-  for (const path of sources) {
-    const relative = relativeTo(cwd, path).replaceAll("\\", "/");
-    if (SELF.has(relative)) continue;
-    const text = await Bun.file(path).text();
-    const lines = text.split("\n");
-    for (let index = 0; index < lines.length; index += 1) {
-      const line = lines[index] ?? "";
+export function scanForGitHubAccess(root: string, paths: readonly string[]): string[] {
+  const offending: string[] = [];
+  for (const path of [...paths].filter(coveredByGitHubRule).sort()) {
+    let text: string;
+    try {
+      text = readFileSync(join(root, path), "utf8");
+    } catch {
+      continue;
+    }
+    const found: { line: number; why: string }[] = [];
+    text.split("\n").forEach((line, index) => {
       for (const route of GITHUB_ROUTES) {
-        if (route.pattern.test(line) && !githubWaiver(relative, route.rule)) offending.push({ file: relative, line: index + 1, why: route.why });
+        if (route.pattern.test(line) && !githubWaiver(path, route.rule)) found.push({ line: index + 1, why: route.why });
+      }
+    });
+    if (LANDING_SCRIPTS.includes(path)) {
+      // A gh argv often spans lines (`[\n  "pr",`), so the landing rule reads the whole file.
+      for (const call of text.matchAll(OWN_GH_CALL)) {
+        found.push({ line: text.slice(0, call.index).split("\n").length, why: "builds its own gh call; landing scripts go through scripts/github.ts" });
       }
     }
-    if (!LANDING_SCRIPTS.includes(relative)) continue;
-    // A gh argv often spans lines (`[\n  "pr",`), so the landing rule reads the whole file.
-    for (const call of text.matchAll(OWN_GH_CALL)) {
-      const line = text.slice(0, call.index).split("\n").length;
-      offending.push({ file: relative, line, why: "builds its own gh call; landing scripts go through scripts/github.ts" });
-    }
+    found.sort((a, b) => a.line - b.line);
+    for (const hit of found) offending.push(`${path}:${hit.line} ${hit.why}`);
   }
-  offending.sort((a, b) => (a.file === b.file ? a.line - b.line : a.file < b.file ? -1 : 1));
-  return offending.map((found) => `${found.file}:${found.line} ${found.why}`);
+  return offending;
 }

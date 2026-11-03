@@ -231,6 +231,8 @@ const REMOTE_FETCH: Record<string, string> = {
   "scripts/check-release-artifacts.ts": "registry.npmjs.org metadata and tarballs",
   "scripts/creator-app-fixture.ts": "browser-side page script inside a fixture app, not a Node probe",
   "scripts/data-table.ts": "a public web page the caller names, fetched once for its data table",
+  "scripts/mirror-assets.ts": "api.github.com and uploads.github.com",
+  "scripts/pr-video.ts": "api.github.com",
   "packages/assets/src/cli/pull.ts": "remote asset registry, URL from the caller",
   "packages/assets/src/library/libraryIngest.ts": "public asset catalogues (ambientCG, Poly Haven, Sketchfab, api.github.com) listed by library ingest",
   "packages/assets/src/library/librarySmithsonian.ts": "the Smithsonian Open Access search API (api.si.edu) listed by library ingest",
@@ -247,10 +249,7 @@ const REMOTE_FETCH: Record<string, string> = {
   "packages/core/src/devtools/frameSampler.view.ts": "browser-side sampler for an endpoint the page was handed",
 };
 
-export const isTypeScript = (path: string): boolean => /\.tsx?$/.test(path) && !path.includes(".test.");
-
-/** `scripts/` and every package's `src/`, plus whatever other roots a scan names. */
-export function runtimeSources(cwd = process.cwd(), more: readonly { dir: string; keep: (path: string) => boolean }[] = []): string[] {
+function runtimeSources(cwd = process.cwd()): string[] {
   const files: string[] = [];
   const walk = (dir: string, keep: (path: string) => boolean): void => {
     if (!existsSync(dir)) return;
@@ -270,7 +269,6 @@ export function runtimeSources(cwd = process.cwd(), more: readonly { dir: string
       walk(join(packages, entry.name, "src"), (path) => path.endsWith(".ts") && !path.includes(".test."));
     }
   }
-  for (const root of more) walk(join(cwd, root.dir), root.keep);
   return files;
 }
 
