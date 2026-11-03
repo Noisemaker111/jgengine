@@ -1,9 +1,8 @@
-import { libraryModelCredits } from "@jgengine/assets/catalogs/modelLibrary";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
+import { lookCredits } from "../art/look";
 import { ASSET_SOURCE_IDS } from "./assets";
-import { RAIDER_HUMANS } from "./models";
 
 /** The keep's own work, then every pack it actually ships - both derived, neither retyped by hand. */
 const AUTHORED = {
@@ -19,10 +18,6 @@ const AUTHORED = {
       ],
     },
     {
-      heading: "Raider bodies",
-      entries: libraryModelCredits(RAIDER_HUMANS).map((label) => ({ label })),
-    },
-    {
       heading: "Built with",
       entries: [
         { label: "JGengine", detail: "game SDK", href: "https://github.com/Noisemaker111/jgengine" },
@@ -34,4 +29,8 @@ const AUTHORED = {
   notice: "Every model pack above is used under the license it is listed with.",
 };
 
-export const BEACON_CREDITS = mergeCredits(AUTHORED, creditsForSourceIds(ASSET_SOURCE_IDS));
+export const BEACON_CREDITS = mergeCredits(
+  AUTHORED,
+  creditsForSourceIds(ASSET_SOURCE_IDS),
+  { title: "BEACON BASTION", sections: lookCredits() },
+);

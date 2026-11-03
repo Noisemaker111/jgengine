@@ -1,0 +1,2576 @@
+[
+  {
+    "id": "quaternius-toon-shooter/Ak47",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Ak47.glb",
+    "metrics": {
+      "glbBytes": 59864,
+      "byteLength": 59864,
+      "triangles": 1122,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4223123434931049,
+        "d": 0.1536710612507461
+      },
+      "center": {
+        "x": -0.3162354929372675,
+        "z": -0.0015455574954709658
+      },
+      "minY": -0.3177760863943693,
+      "maxY": 0.4125657417327587
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Barrier_Fixed",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Barrier_Fixed.glb",
+    "metrics": {
+      "glbBytes": 146784,
+      "byteLength": 146784,
+      "triangles": 1208,
+      "primitives": 7,
+      "textures": [
+        {
+          "image": 0,
+          "width": 894,
+          "height": 894,
+          "byteLength": 76597
+        }
+      ],
+      "maxTextureDimension": 894
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.80552560091019,
+        "d": 0.666640628507956
+      },
+      "center": {
+        "x": -0.00656805932521487,
+        "z": -0.005256117285160455
+      },
+      "minY": -0.0034994636436255274,
+      "maxY": 3.1797848789868826
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Barrier_Large",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Barrier_Large.glb",
+    "metrics": {
+      "glbBytes": 107332,
+      "byteLength": 107332,
+      "triangles": 624,
+      "primitives": 5,
+      "textures": [
+        {
+          "image": 0,
+          "width": 894,
+          "height": 894,
+          "byteLength": 76597
+        }
+      ],
+      "maxTextureDimension": 894
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.80552560091019,
+        "d": 0.666640628507956
+      },
+      "center": {
+        "x": -0.00656805932521487,
+        "z": -0.005256117285160455
+      },
+      "minY": -0.0034994636436255274,
+      "maxY": 3.1797848789868826
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Barrier_Single",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Barrier_Single.glb",
+    "metrics": {
+      "glbBytes": 12164,
+      "byteLength": 12164,
+      "triangles": 232,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8902431640604824,
+        "d": 0.6568985436227883
+      },
+      "center": {
+        "x": 0.010287387074685184,
+        "z": -0.00038520623244026053
+      },
+      "minY": -0.0034994234094862684,
+      "maxY": 0.6245871447794493
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Barrier_Trash",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Barrier_Trash.glb",
+    "metrics": {
+      "glbBytes": 125536,
+      "byteLength": 125536,
+      "triangles": 4261,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.488417507922801,
+        "d": 1.3097275922310383
+      },
+      "center": {
+        "x": -0.07911457214331219,
+        "z": 0.13888522514781543
+      },
+      "minY": -0.01931004579507265,
+      "maxY": 2.4901628182428333
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Bear_Trap",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Bear_Trap.glb",
+    "metrics": {
+      "glbBytes": 25016,
+      "byteLength": 25016,
+      "triangles": 608,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8765208677947788,
+        "d": 1.0383617628559834
+      },
+      "center": {
+        "x": 0,
+        "z": 0.08730860963721165
+      },
+      "minY": -0.014057091687172582,
+      "maxY": 0.1837430162347239
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Brick_Wall_GhSmk5IA5i",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Brick_Wall_GhSmk5IA5i.glb",
+    "metrics": {
+      "glbBytes": 13396,
+      "byteLength": 13396,
+      "triangles": 216,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.237448514635436,
+        "d": 0.20603749776485425
+      },
+      "center": {
+        "x": -0.009929396893291087,
+        "z": -4.0403706470792944e-8
+      },
+      "minY": -0.013818575233635862,
+      "maxY": 0.6901298141574133
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Brick_Wall",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Brick_Wall.glb",
+    "metrics": {
+      "glbBytes": 7564,
+      "byteLength": 7564,
+      "triangles": 108,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.237448353659518,
+        "d": 0.20603742863487054
+      },
+      "center": {
+        "x": 0.0116134464308294,
+        "z": -1.6848435008265383e-8
+      },
+      "minY": -0.006757440817650694,
+      "maxY": 0.3324364773082433
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Broken_Car",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Broken_Car.glb",
+    "metrics": {
+      "glbBytes": 211012,
+      "byteLength": 211012,
+      "triangles": 5432,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.6412893129657027,
+        "d": 5.493777068322589
+      },
+      "center": {
+        "x": 0,
+        "z": 0.20166468511297397
+      },
+      "minY": -0.09803121294970263,
+      "maxY": 1.6622485406665035
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Cardboard_Boxes_rdKKO0DvMG",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cardboard_Boxes_rdKKO0DvMG.glb",
+    "metrics": {
+      "glbBytes": 7520,
+      "byteLength": 7520,
+      "triangles": 108,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9755382936167223,
+        "d": 0.9207026881374056
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0049676527357359335
+      },
+      "minY": -6.11848167189152e-8,
+      "maxY": 0.9473276560854763
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Cardboard_Boxes_V9KbWC8Vd6",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cardboard_Boxes_V9KbWC8Vd6.glb",
+    "metrics": {
+      "glbBytes": 25280,
+      "byteLength": 25280,
+      "triangles": 432,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.415075386971116,
+        "d": 0.9863220012838869
+      },
+      "center": {
+        "x": 0.02845063070433873,
+        "z": 0.023918965251734453
+      },
+      "minY": 0.018783354990557177,
+      "maxY": 1.7658082109552549
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Cardboard_Boxes_zt2WLYypMl",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cardboard_Boxes_zt2WLYypMl.glb",
+    "metrics": {
+      "glbBytes": 25180,
+      "byteLength": 25180,
+      "triangles": 432,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.255239548590871,
+        "d": 1.2140955286556783
+      },
+      "center": {
+        "x": 0.044974624956974185,
+        "z": -1.5148335047454609e-7
+      },
+      "minY": -8.15622254811469e-8,
+      "maxY": 2.2549068291473535
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Cardboard_Boxes",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cardboard_Boxes.glb",
+    "metrics": {
+      "glbBytes": 7532,
+      "byteLength": 7532,
+      "triangles": 108,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9755382936167223,
+        "d": 0.7265468870685843
+      },
+      "center": {
+        "x": 0,
+        "z": -3.4217803146496806e-8
+      },
+      "minY": -4.880900129586178e-8,
+      "maxY": 0.5093494589337787
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Character_Enemy",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Character_Enemy.glb",
+    "metrics": {
+      "glbBytes": 1552600,
+      "byteLength": 1552600,
+      "triangles": 19478,
+      "primitives": 79,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.7243808305418296,
+        "d": 2.3793050682208112
+      },
+      "center": {
+        "x": 0,
+        "z": 0.8135068365032441
+      },
+      "minY": -0.07525386591143424,
+      "maxY": 2.2755614679734775
+    },
+    "clips": [
+      "Idle",
+      "Death",
+      "Duck",
+      "HitReact",
+      "Idle_Shoot",
+      "Jump",
+      "Jump_Idle",
+      "Jump_Land",
+      "No",
+      "Punch",
+      "Run",
+      "Run_Gun",
+      "Run_Shoot",
+      "Walk",
+      "Walk_Shoot",
+      "Wave",
+      "Yes",
+      "CharacterArmature|Death",
+      "CharacterArmature|Duck",
+      "CharacterArmature|HitReact",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Shoot",
+      "CharacterArmature|Jump",
+      "CharacterArmature|Jump_Idle",
+      "CharacterArmature|Jump_Land",
+      "CharacterArmature|No",
+      "CharacterArmature|Punch",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Gun",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Shoot",
+      "CharacterArmature|Wave",
+      "CharacterArmature|Yes"
+    ]
+  },
+  {
+    "id": "quaternius-toon-shooter/Character_Hazmat",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Character_Hazmat.glb",
+    "metrics": {
+      "glbBytes": 1401712,
+      "byteLength": 1401712,
+      "triangles": 20346,
+      "primitives": 76,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.7243808305418296,
+        "d": 2.433911516569357
+      },
+      "center": {
+        "x": 0,
+        "z": 0.8648790861341225
+      },
+      "minY": -0.09499478466398448,
+      "maxY": 2.114292148515103
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Duck",
+      "CharacterArmature|HitReact",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Shoot",
+      "CharacterArmature|Jump",
+      "CharacterArmature|Jump_Idle",
+      "CharacterArmature|Jump_Land",
+      "CharacterArmature|No",
+      "CharacterArmature|Punch",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Gun",
+      "CharacterArmature|Run_Shoot",
+      "CharacterArmature|Walk",
+      "CharacterArmature|Walk_Shoot",
+      "CharacterArmature|Wave",
+      "CharacterArmature|Yes"
+    ]
+  },
+  {
+    "id": "quaternius-toon-shooter/Character_Soldier",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Character_Soldier.glb",
+    "metrics": {
+      "glbBytes": 1333700,
+      "byteLength": 1333700,
+      "triangles": 20712,
+      "primitives": 60,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.725187771310257,
+        "d": 2.4389735180153433
+      },
+      "center": {
+        "x": 0,
+        "z": 0.9004513359810851
+      },
+      "minY": -0.02119112093465568,
+      "maxY": 2.259001887197493
+    },
+    "clips": [
+      "CharacterArmature|Death",
+      "CharacterArmature|Duck",
+      "CharacterArmature|HitReact",
+      "CharacterArmature|Idle",
+      "CharacterArmature|Idle_Shoot",
+      "CharacterArmature|Jump",
+      "CharacterArmature|Jump_Idle",
+      "CharacterArmature|Jump_Land",
+      "CharacterArmature|No",
+      "CharacterArmature|Punch",
+      "CharacterArmature|Run",
+      "CharacterArmature|Run_Gun",
+      "CharacterArmature|Wave",
+      "CharacterArmature|Yes"
+    ]
+  },
+  {
+    "id": "quaternius-toon-shooter/Container_Small",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Container_Small.glb",
+    "metrics": {
+      "glbBytes": 40124,
+      "byteLength": 40124,
+      "triangles": 920,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1944740705500285,
+        "d": 2.0900447113738023
+      },
+      "center": {
+        "x": 0,
+        "z": -1.483820796233104e-7
+      },
+      "minY": 0.03900703873052616,
+      "maxY": 2.1697357151788235
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Crate",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Crate.glb",
+    "metrics": {
+      "glbBytes": 12980,
+      "byteLength": 12980,
+      "triangles": 264,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7898498042219233,
+        "d": 0.7898498833098122
+      },
+      "center": {
+        "x": 0,
+        "z": -5.347003181888077e-8
+      },
+      "minY": 0.003039426932659717,
+      "maxY": 0.7928892027253107
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Debris_Papers_CCRSdAJxsD",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Debris_Papers_CCRSdAJxsD.glb",
+    "metrics": {
+      "glbBytes": 2076,
+      "byteLength": 2076,
+      "triangles": 6,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6023445871444523,
+        "d": 0.7311397053176214
+      },
+      "center": {
+        "x": 0.10846547324662885,
+        "z": 0.009299316947093489
+      },
+      "minY": 0.0013555713987386706,
+      "maxY": 0.0042031462805697875
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Debris_Papers_MujITy1NRR",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Debris_Papers_MujITy1NRR.glb",
+    "metrics": {
+      "glbBytes": 2616,
+      "byteLength": 2616,
+      "triangles": 16,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.240219283011876,
+        "d": 1.047199428744611
+      },
+      "center": {
+        "x": 0.08842858794850339,
+        "z": -0.05377399842002617
+      },
+      "minY": 0.0013555548072164225,
+      "maxY": 0.004203147849390459
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Debris_Papers",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Debris_Papers.glb",
+    "metrics": {
+      "glbBytes": 2400,
+      "byteLength": 2400,
+      "triangles": 12,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1841244558388224,
+        "d": 1.2298385927947764
+      },
+      "center": {
+        "x": 0.09818239830321668,
+        "z": -0.10185127700872293
+      },
+      "minY": 0.0013555368793183701,
+      "maxY": 0.0061002686187886365
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Debris_Pile",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Debris_Pile.glb",
+    "metrics": {
+      "glbBytes": 26776,
+      "byteLength": 26776,
+      "triangles": 424,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1160056719155715,
+        "d": 2.6256870011201046
+      },
+      "center": {
+        "x": 0.04556989666622813,
+        "z": 0.13105000302550995
+      },
+      "minY": 0.0133914034660011,
+      "maxY": 0.17684280902337085
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Dumpster",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Dumpster.glb",
+    "metrics": {
+      "glbBytes": 19784,
+      "byteLength": 19784,
+      "triangles": 302,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.441602654007558,
+        "d": 1.2955451468186396
+      },
+      "center": {
+        "x": 0,
+        "z": -4.2183848331101004e-7
+      },
+      "minY": -0.04023643611997167,
+      "maxY": 1.9899580526575529
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Exploding_Barrel_Spil",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Exploding_Barrel_Spil.glb",
+    "metrics": {
+      "glbBytes": 24328,
+      "byteLength": 24328,
+      "triangles": 724,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.5258103373040193,
+        "d": 1.3998548934254567
+      },
+      "center": {
+        "x": 0.05936696542338227,
+        "z": -0.2571817378132569
+      },
+      "minY": -0.05410784735097948,
+      "maxY": 0.7423901085406038
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Exploding_Barrel",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Exploding_Barrel.glb",
+    "metrics": {
+      "glbBytes": 19056,
+      "byteLength": 19056,
+      "triangles": 516,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7849848943787692,
+        "d": 0.7849850388118884
+      },
+      "center": {
+        "x": -6.789523612771298e-7,
+        "z": 5.0139455337605554e-8
+      },
+      "minY": -9.281873793050875e-9,
+      "maxY": 1.0242861490139554
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Fence_Long",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Fence_Long.glb",
+    "metrics": {
+      "glbBytes": 12140,
+      "byteLength": 12140,
+      "triangles": 424,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.664122971378276,
+        "d": 0.6160429245186348
+      },
+      "center": {
+        "x": 0,
+        "z": -1.0133292449587827e-7
+      },
+      "minY": 0.00042828181369712094,
+      "maxY": 1.047543057590303
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Fence",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Fence.glb",
+    "metrics": {
+      "glbBytes": 12132,
+      "byteLength": 12132,
+      "triangles": 424,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8825560520346727,
+        "d": 0.6160429245186348
+      },
+      "center": {
+        "x": 0,
+        "z": -1.0133292449587827e-7
+      },
+      "minY": 0.00042828181369712094,
+      "maxY": 1.047543057590303
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Fire_Grenade",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Fire_Grenade.glb",
+    "metrics": {
+      "glbBytes": 31760,
+      "byteLength": 31760,
+      "triangles": 916,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5695037238445575,
+        "d": 0.47063617652522133
+      },
+      "center": {
+        "x": -0.04943382032592436,
+        "z": -1.0700661792761856e-7
+      },
+      "minY": -0.5205729292973026,
+      "maxY": 0.3294422847142439
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Gas_Can",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Gas_Can.glb",
+    "metrics": {
+      "glbBytes": 28932,
+      "byteLength": 28932,
+      "triangles": 788,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7966101422016428,
+        "d": 0.3414301624265627
+      },
+      "center": {
+        "x": 0.016017389514089986,
+        "z": -6.848239422763136e-8
+      },
+      "minY": -0.0014725415294125157,
+      "maxY": 1.047798229569489
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Gas_Tank",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Gas_Tank.glb",
+    "metrics": {
+      "glbBytes": 33296,
+      "byteLength": 33296,
+      "triangles": 1004,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.006215832827424,
+        "d": 1.0062159397672938
+      },
+      "center": {
+        "x": 0,
+        "z": -1.6054375756580086e-7
+      },
+      "minY": -0.001200989091749128,
+      "maxY": 1.386042522465357
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Grenade_Launcher",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Grenade_Launcher.glb",
+    "metrics": {
+      "glbBytes": 68944,
+      "byteLength": 68944,
+      "triangles": 1259,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2047638650983568,
+        "d": 0.4779311649650636
+      },
+      "center": {
+        "x": -0.0877790385857225,
+        "z": 3.2373160638310416e-8
+      },
+      "minY": -0.2817049084753861,
+      "maxY": 0.2733146766477745
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Grenade",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Grenade.glb",
+    "metrics": {
+      "glbBytes": 25912,
+      "byteLength": 25912,
+      "triangles": 820,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5636719322818836,
+        "d": 0.4589725846740583
+      },
+      "center": {
+        "x": -0.05234971610726129,
+        "z": -1.105387798377988e-7
+      },
+      "minY": -0.27570458959580635,
+      "maxY": 0.32944228445211876
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Health",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Health.glb",
+    "metrics": {
+      "glbBytes": 26820,
+      "byteLength": 26820,
+      "triangles": 732,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8609683224420224,
+        "d": 0.403907749145903
+      },
+      "center": {
+        "x": 0.0004884520248895352,
+        "z": -4.256024255244739e-9
+      },
+      "minY": -0.004831567267003486,
+      "maxY": 0.7327967782587489
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Key",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Key.glb",
+    "metrics": {
+      "glbBytes": 12964,
+      "byteLength": 12964,
+      "triangles": 472,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.554814545280169,
+        "d": 0.09128101238524752
+      },
+      "center": {
+        "x": 0.13658977304139575,
+        "z": 3.205835596986617e-11
+      },
+      "minY": -0.14129470584833248,
+      "maxY": 0.14081750091091397
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Knife_NNzzvlGXzO",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Knife_NNzzvlGXzO.glb",
+    "metrics": {
+      "glbBytes": 27944,
+      "byteLength": 27944,
+      "triangles": 761,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.24807436900131602,
+        "d": 0.12980083784519003
+      },
+      "center": {
+        "x": 0.0008275785404166167,
+        "z": -5.923098222310186e-8
+      },
+      "minY": -0.18390393017898776,
+      "maxY": 1.1688352910258468
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Knife",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Knife.glb",
+    "metrics": {
+      "glbBytes": 26408,
+      "byteLength": 26408,
+      "triangles": 687,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.25960370199812766,
+        "d": 0.13102479870295983
+      },
+      "center": {
+        "x": 0.022637951680133384,
+        "z": -1.279949310012407e-7
+      },
+      "minY": -0.23543570384551352,
+      "maxY": 1.1728513777855294
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Landmine",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Landmine.glb",
+    "metrics": {
+      "glbBytes": 13284,
+      "byteLength": 13284,
+      "triangles": 300,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.114880691645654,
+        "d": 1.1148806754753786
+      },
+      "center": {
+        "x": -1.829313639456487e-8,
+        "z": -2.874477672554221e-8
+      },
+      "minY": -0.011964800301685348,
+      "maxY": 0.28219088461891595
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Metal_Fence",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Metal_Fence.glb",
+    "metrics": {
+      "glbBytes": 89540,
+      "byteLength": 89540,
+      "triangles": 218,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 894,
+          "height": 894,
+          "byteLength": 76597
+        }
+      ],
+      "maxTextureDimension": 894
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.5489436239004197,
+        "d": 0.11470445078135053
+      },
+      "center": {
+        "x": 0,
+        "z": -0.1483929967060732
+      },
+      "minY": -0.0011387760646058224,
+      "maxY": 2.874191300623676
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Pallet_Broken",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Pallet_Broken.glb",
+    "metrics": {
+      "glbBytes": 15396,
+      "byteLength": 15396,
+      "triangles": 258,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.693722964294544,
+        "d": 1.4665210818618108
+      },
+      "center": {
+        "x": -0.015044447435945296,
+        "z": -0.052337160292218576
+      },
+      "minY": -1.0555200735751612e-7,
+      "maxY": 0.2506986411611512
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Pallet",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Pallet.glb",
+    "metrics": {
+      "glbBytes": 10264,
+      "byteLength": 10264,
+      "triangles": 176,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6960199802769163,
+        "d": 1.4565840157740566
+      },
+      "center": {
+        "x": 0,
+        "z": -1.2150592587634179e-8
+      },
+      "minY": -0.006177084143217448,
+      "maxY": 0.18704483677125971
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Pipes",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Pipes.glb",
+    "metrics": {
+      "glbBytes": 20844,
+      "byteLength": 20844,
+      "triangles": 688,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0019973130418243,
+        "d": 4.265839696259388
+      },
+      "center": {
+        "x": 0.0032255202306459008,
+        "z": -2.4352631022850346e-10
+      },
+      "minY": -0.022798555573613998,
+      "maxY": 0.9329552588742468
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Pistol",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Pistol.glb",
+    "metrics": {
+      "glbBytes": 52312,
+      "byteLength": 52312,
+      "triangles": 990,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.790928967762738,
+        "d": 0.11808271730717322
+      },
+      "center": {
+        "x": -0.285373715450987,
+        "z": 8.342974741615272e-8
+      },
+      "minY": -0.12720106349645954,
+      "maxY": 0.3550371811438038
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Revolver_Small",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Revolver_Small.glb",
+    "metrics": {
+      "glbBytes": 67484,
+      "byteLength": 67484,
+      "triangles": 1350,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6631575874052951,
+        "d": 0.1576410006610146
+      },
+      "center": {
+        "x": -0.20850215223617852,
+        "z": -8.630178863974769e-7
+      },
+      "minY": -0.1439011198973692,
+      "maxY": 0.3657469929055104
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Revolver",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Revolver.glb",
+    "metrics": {
+      "glbBytes": 74496,
+      "byteLength": 74496,
+      "triangles": 1354,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9888043510727581,
+        "d": 0.1751309313105302
+      },
+      "center": {
+        "x": -0.340520223835483,
+        "z": -0.005756932172946136
+      },
+      "minY": -0.17934330935578177,
+      "maxY": 0.34956209845423253
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Rocket_Launcher",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Rocket_Launcher.glb",
+    "metrics": {
+      "glbBytes": 63396,
+      "byteLength": 63396,
+      "triangles": 1228,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.301598159521525,
+        "d": 0.4689062268724362
+      },
+      "center": {
+        "x": -0.1298941371938359,
+        "z": 0.00040941845290533296
+      },
+      "minY": -0.10964025813655551,
+      "maxY": 0.6368384383361859
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Sack_Trench_Small",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Sack_Trench_Small.glb",
+    "metrics": {
+      "glbBytes": 66628,
+      "byteLength": 66628,
+      "triangles": 3584,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.315445238806238,
+        "d": 0.7472282493053329
+      },
+      "center": {
+        "x": 0.002257865238957768,
+        "z": -0.05596959016727038
+      },
+      "minY": -0.011241173358537731,
+      "maxY": 0.9209833158257752
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Sack_Trench",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Sack_Trench.glb",
+    "metrics": {
+      "glbBytes": 131468,
+      "byteLength": 131468,
+      "triangles": 7168,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.1618559683129437,
+        "d": 0.7751035458533424
+      },
+      "center": {
+        "x": 0.05623797139336195,
+        "z": -0.09321745263380996
+      },
+      "minY": -0.011241164024886782,
+      "maxY": 1.182875786361838
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Shipping_Container_Structure",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Shipping_Container_Structure.glb",
+    "metrics": {
+      "glbBytes": 245716,
+      "byteLength": 245716,
+      "triangles": 3966,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.975181766041718,
+        "d": 4.521350313620502
+      },
+      "center": {
+        "x": -0.6507309450671546,
+        "z": 0.45413802028992944
+      },
+      "minY": -0.05257462701470345,
+      "maxY": 4.507357487330505
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Shipping_Container",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Shipping_Container.glb",
+    "metrics": {
+      "glbBytes": 57020,
+      "byteLength": 57020,
+      "triangles": 1336,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.359494832559452,
+        "d": 2.0900447113737943
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4727059283181632e-7
+      },
+      "minY": 0.03073454536260397,
+      "maxY": 2.161463160413461
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Short_Cannon",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Short_Cannon.glb",
+    "metrics": {
+      "glbBytes": 29192,
+      "byteLength": 29192,
+      "triangles": 462,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2062378926202661,
+        "d": 0.13175220660132042
+      },
+      "center": {
+        "x": -0.30305112013593305,
+        "z": -0.005231351402001511
+      },
+      "minY": -0.16043929210854932,
+      "maxY": 0.15363745892455632
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Shotgun",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Shotgun.glb",
+    "metrics": {
+      "glbBytes": 59800,
+      "byteLength": 59800,
+      "triangles": 1264,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5504425857216098,
+        "d": 0.1223834097628657
+      },
+      "center": {
+        "x": -0.47468699049204494,
+        "z": 9.929003385450441e-8
+      },
+      "minY": -0.16041273645951637,
+      "maxY": 0.17036707269287815
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Shovel",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Shovel.glb",
+    "metrics": {
+      "glbBytes": 30644,
+      "byteLength": 30644,
+      "triangles": 662,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.35329920059093733,
+        "d": 0.0915977257232618
+      },
+      "center": {
+        "x": 0.0009428198269875177,
+        "z": 0.0020242457992126796
+      },
+      "minY": -0.43944880964694655,
+      "maxY": 0.6698532935751093
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Sign",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Sign.glb",
+    "metrics": {
+      "glbBytes": 16576,
+      "byteLength": 16576,
+      "triangles": 284,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5696068296662958,
+        "d": 0.5224598708315746
+      },
+      "center": {
+        "x": 0,
+        "z": -7.16125907462839e-8
+      },
+      "minY": 0.01688940486568175,
+      "maxY": 1.04910044534801
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Smg",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Smg.glb",
+    "metrics": {
+      "glbBytes": 60464,
+      "byteLength": 60464,
+      "triangles": 1006,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.143798814155165,
+        "d": 0.12740239756194238
+      },
+      "center": {
+        "x": -0.4422749276272975,
+        "z": -0.00068842390110746
+      },
+      "minY": -0.2573567654682696,
+      "maxY": 0.3608116602938775
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Sniper_8sfc8FTChN",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Sniper_8sfc8FTChN.glb",
+    "metrics": {
+      "glbBytes": 105200,
+      "byteLength": 105200,
+      "triangles": 1441,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.052392251789569,
+        "d": 0.1906443582819719
+      },
+      "center": {
+        "x": -0.5617932416498654,
+        "z": -0.009186765469650235
+      },
+      "minY": -0.3044968442246396,
+      "maxY": 0.45853619982867594
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Sniper",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Sniper.glb",
+    "metrics": {
+      "glbBytes": 72968,
+      "byteLength": 72968,
+      "triangles": 1298,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7351486720144709,
+        "d": 0.19403831888186224
+      },
+      "center": {
+        "x": -0.3974781837314345,
+        "z": 0.0022466377201814727
+      },
+      "minY": -0.3168607556670343,
+      "maxY": 0.46837310968600726
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Sofa_Small",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Sofa_Small.glb",
+    "metrics": {
+      "glbBytes": 10228,
+      "byteLength": 10228,
+      "triangles": 264,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0322439785251034,
+        "d": 1.4642563544967442
+      },
+      "center": {
+        "x": 0.0034209887935006122,
+        "z": -0.15352938207089312
+      },
+      "minY": -0.0038256646829606233,
+      "maxY": 1.3202656509012523
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Sofa",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Sofa.glb",
+    "metrics": {
+      "glbBytes": 14968,
+      "byteLength": 14968,
+      "triangles": 416,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.349930684115699,
+        "d": 1.4642563544967442
+      },
+      "center": {
+        "x": -6.508297157870047e-7,
+        "z": -0.15352970748574196
+      },
+      "minY": -0.0038256646830043457,
+      "maxY": 1.3202656509012085
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Street_Light",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Street_Light.glb",
+    "metrics": {
+      "glbBytes": 11056,
+      "byteLength": 11056,
+      "triangles": 324,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4182420704425057,
+        "d": 2.0860939990906093
+      },
+      "center": {
+        "x": -1.0232907203533426e-7,
+        "z": 0.8399462632025657
+      },
+      "minY": -0.008023492635394053,
+      "maxY": 5.637773722494433
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Structure_oUkHO0kbQt",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Structure_oUkHO0kbQt.glb",
+    "metrics": {
+      "glbBytes": 326012,
+      "byteLength": 326012,
+      "triangles": 5276,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 10.584166490179262,
+        "d": 7.972267843805804
+      },
+      "center": {
+        "x": 1.295123013775423,
+        "z": 1.9467554955292081
+      },
+      "minY": -0.15785291626407294,
+      "maxY": 7.6302053122975
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Structure_PB5Cd3dL24",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Structure_PB5Cd3dL24.glb",
+    "metrics": {
+      "glbBytes": 332136,
+      "byteLength": 332136,
+      "triangles": 5530,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 10.386435942717107,
+        "d": 7.412857067567399
+      },
+      "center": {
+        "x": -0.07697525697595564,
+        "z": 1.1973507015044
+      },
+      "minY": -0.02770753744737729,
+      "maxY": 7.630206118358282
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Structure",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Structure.glb",
+    "metrics": {
+      "glbBytes": 322968,
+      "byteLength": 322968,
+      "triangles": 5555,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.8735595074704205,
+        "d": 4.521350983499986
+      },
+      "center": {
+        "x": -0.5999198157815058,
+        "z": 0.45413768535018706
+      },
+      "minY": -0.028056952046520218,
+      "maxY": 9.493105972561397
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Tank",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Tank.glb",
+    "metrics": {
+      "glbBytes": 109996,
+      "byteLength": 109996,
+      "triangles": 2800,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.372458407222215,
+        "d": 2.5028812964187246
+      },
+      "center": {
+        "x": 0,
+        "z": 0.11285978732456114
+      },
+      "minY": 0.0011585090147412586,
+      "maxY": 2.144648252774689
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Tires",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Tires.glb",
+    "metrics": {
+      "glbBytes": 79980,
+      "byteLength": 79980,
+      "triangles": 1776,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7555633422227643,
+        "d": 1.1444182666266292
+      },
+      "center": {
+        "x": 0.30422989740871326,
+        "z": 0.0005888277902835193
+      },
+      "minY": -0.02889351471384077,
+      "maxY": 1.0586180296965129
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Traffic_Cone",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Traffic_Cone.glb",
+    "metrics": {
+      "glbBytes": 8280,
+      "byteLength": 8280,
+      "triangles": 168,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6745675232356368,
+        "d": 0.6745675856939437
+      },
+      "center": {
+        "x": 0,
+        "z": -4.2978987702113614e-8
+      },
+      "minY": 0.0015264680666792123,
+      "maxY": 0.6382376317135481
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Trash_Container_Open",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Trash_Container_Open.glb",
+    "metrics": {
+      "glbBytes": 60080,
+      "byteLength": 60080,
+      "triangles": 1374,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.1628797321083413,
+        "d": 2.6253469929173985
+      },
+      "center": {
+        "x": -0.29321672422540324,
+        "z": 0.46209348446785686
+      },
+      "minY": -0.06801513673683614,
+      "maxY": 3.267017626458297
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Tree_1BkD9JnKrE",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Tree_1BkD9JnKrE.glb",
+    "metrics": {
+      "glbBytes": 48232,
+      "byteLength": 48232,
+      "triangles": 2504,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.4381374040530552,
+        "d": 3.306048634889141
+      },
+      "center": {
+        "x": -0.13281680454513556,
+        "z": 0.14050690286385759
+      },
+      "minY": -0.005133634755002167,
+      "maxY": 5.859423602683059
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Tree_i4QMw4L64D",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Tree_i4QMw4L64D.glb",
+    "metrics": {
+      "glbBytes": 46488,
+      "byteLength": 46488,
+      "triangles": 2412,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.2661150942983825,
+        "d": 2.639797119590301
+      },
+      "center": {
+        "x": -0.15678321421070607,
+        "z": 8.475386192863255e-8
+      },
+      "minY": -3.866371693539829e-8,
+      "maxY": 5.588999214953755
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Tree_QeYQEpgPcC",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Tree_QeYQEpgPcC.glb",
+    "metrics": {
+      "glbBytes": 32744,
+      "byteLength": 32744,
+      "triangles": 1652,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0807084729560223,
+        "d": 2.0814223563215575
+      },
+      "center": {
+        "x": -0.00035333087838373967,
+        "z": -6.65721140213904e-7
+      },
+      "minY": 0.0006018496917276003,
+      "maxY": 6.220743951101369
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Tree",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Tree.glb",
+    "metrics": {
+      "glbBytes": 21872,
+      "byteLength": 21872,
+      "triangles": 1044,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.3023027427163907,
+        "d": 2.6320226408799794
+      },
+      "center": {
+        "x": 0.017539563241712464,
+        "z": -4.786363144715367e-7
+      },
+      "minY": 0.0006018365722758666,
+      "maxY": 5.076590973841252
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Water_Tank_Floor",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Water_Tank_Floor.glb",
+    "metrics": {
+      "glbBytes": 25696,
+      "byteLength": 25696,
+      "triangles": 784,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7601872962680103,
+        "d": 4.568877747742873
+      },
+      "center": {
+        "x": -4.775017696245776e-7,
+        "z": 2.2870594307278225e-14
+      },
+      "minY": -0.02504103565527299,
+      "maxY": 1.8835256057045229
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Water_Tank",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Water_Tank.glb",
+    "metrics": {
+      "glbBytes": 35380,
+      "byteLength": 35380,
+      "triangles": 872,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6212506776609712,
+        "d": 2.349971974509715
+      },
+      "center": {
+        "x": -0.0010585737828131547,
+        "z": 0.2987641386247904
+      },
+      "minY": -0.04879489488681242,
+      "maxY": 3.471727829003025
+    }
+  },
+  {
+    "id": "quaternius-toon-shooter/Wood_Planks",
+    "source": "quaternius-toon-shooter",
+    "categories": [
+      "character",
+      "weapon",
+      "gun",
+      "shooter",
+      "prop",
+      "rigged",
+      "animated"
+    ],
+    "file": "Wood_Planks.glb",
+    "metrics": {
+      "glbBytes": 10864,
+      "byteLength": 10864,
+      "triangles": 150,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.716432110356293,
+        "d": 1.7283209540968523
+      },
+      "center": {
+        "x": 0.028493420914721818,
+        "z": -0.032668917441048384
+      },
+      "minY": 0.09606247264010548,
+      "maxY": 0.2204600669442313
+    }
+  }
+]

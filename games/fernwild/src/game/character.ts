@@ -4,12 +4,12 @@ import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 
 import { editorLayers } from "../editorLayers";
 
-/** ARK's creator bodies: two men and two women from the Rocketbox people, each a look on the survivor model. */
+/** ARK's creator bodies: two men and two women from Quaternius' modular people, each a look on the survivor model. */
 export const BODIES = [
-  { id: "man-1", label: "Man 1", sex: "male", model: "human/man-casual" },
-  { id: "man-2", label: "Man 2", sex: "male", model: "human/man-casual-2" },
-  { id: "woman-1", label: "Woman 1", sex: "female", model: "human/woman-casual" },
-  { id: "woman-2", label: "Woman 2", sex: "female", model: "human/woman-casual-2" },
+  { id: "man-1", label: "Man 1", sex: "male", model: "quaternius-modular-men/Adventurer" },
+  { id: "man-2", label: "Man 2", sex: "male", model: "quaternius-modular-men/Farmer" },
+  { id: "woman-1", label: "Woman 1", sex: "female", model: "quaternius-modular-women/Adventurer" },
+  { id: "woman-2", label: "Woman 2", sex: "female", model: "quaternius-modular-women/Hooded_Adventurer" },
 ] as const;
 
 export type BodyId = (typeof BODIES)[number]["id"];

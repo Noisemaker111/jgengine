@@ -1,8 +1,10 @@
 import type { CSSProperties } from "react";
 import type { GamePreviewProps } from "@jgengine/react/preview";
 
+import { BEACON_FONTS } from "./game/ui/theme";
+
 const labelStyle: CSSProperties = {
-  fontFamily: "\"Arial Narrow\", \"Roboto Condensed\", \"Segoe UI\", sans-serif",
+  fontFamily: BEACON_FONTS.fontDisplay,
   fontSize: "1.1cqw",
   fontWeight: 700,
   letterSpacing: "0.08em",
@@ -33,7 +35,7 @@ function Tower({ label, cost, color }: { label: string; cost: number; color: str
           boxShadow: `0 0 10px ${color}66`,
         }}
       />
-      <span style={{ fontFamily: "Consolas, monospace", fontSize: "1.1cqw", fontWeight: 700, color: "#e6e8d8" }}>{cost}g</span>
+      <span style={{ fontFamily: BEACON_FONTS.fontBody, fontVariantNumeric: "tabular-nums", fontSize: "1.1cqw", fontWeight: 700, color: "#e6e8d8" }}>{cost}g</span>
       <span style={{ ...labelStyle, fontSize: "0.95cqw" }}>{label}</span>
     </div>
   );
@@ -51,7 +53,7 @@ export default function BeaconBastionPreview({ className }: GamePreviewProps) {
         overflow: "hidden",
         background: "linear-gradient(#1c2013, #14160f 55%, #0a0b07)",
         color: "#e6e8d8",
-        fontFamily: "\"Segoe UI\", system-ui, sans-serif",
+        fontFamily: BEACON_FONTS.fontBody,
         userSelect: "none",
       }}
     >
@@ -146,7 +148,7 @@ export default function BeaconBastionPreview({ className }: GamePreviewProps) {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.2cqw" }}>
           <span style={labelStyle}>Gold</span>
-          <span style={{ fontFamily: "Consolas, monospace", fontSize: "2cqw", fontWeight: 800, color: "#d8c169" }}>150</span>
+          <span style={{ fontFamily: BEACON_FONTS.fontBody, fontVariantNumeric: "tabular-nums", fontSize: "2cqw", fontWeight: 800, color: "#d8c169" }}>150</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.2cqw" }}>
           <span style={labelStyle}>Wave</span>

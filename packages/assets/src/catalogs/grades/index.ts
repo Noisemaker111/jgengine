@@ -14,6 +14,7 @@ import nightBlue from "./night-blue";
 import pastel from "./pastel";
 import pastelDusk from "./pastel-dusk";
 import sepia from "./sepia";
+import sunBleachedComic from "./sun-bleached-comic";
 import sunnyPostcard from "./sunny-postcard";
 import sunsetOrange from "./sunset-orange";
 import tealOrange from "./teal-orange";
@@ -39,6 +40,7 @@ export const LUT_GRADES = [
   pastel,
   pastelDusk,
   sepia,
+  sunBleachedComic,
   sunnyPostcard,
   sunsetOrange,
   tealOrange,

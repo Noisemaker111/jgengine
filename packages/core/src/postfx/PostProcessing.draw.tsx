@@ -42,6 +42,7 @@ import { linkDrawsOffFrame, sceneRevealed, warmupDraws } from "@jgengine/core/re
 import { readSkyLight } from "@jgengine/core/sky/skyLight.draw";
 import { ExposureMeterPass } from "./autoExposure.draw";
 import { AtmospherePass } from "./atmospherePass.draw";
+import { BeautyPass } from "./beautyPass.draw";
 import { ContactShadowPass } from "./contactShadowPass.draw";
 import { createGradePass } from "./gradeShader.draw";
 import { MotionBlurPass } from "./motionBlurPass.draw";
@@ -427,7 +428,6 @@ export function buildPostGraph(
   const target = new THREE.WebGLRenderTarget(width, height, {
     type: THREE.HalfFloatType,
     samples: beautyDepth === null ? plan.samples : 0,
-    ...(beautyDepth === null ? {} : { depthTexture: beautyDepth }),
   });
   const composer = new EffectComposer(gl, target);
   const built: PostfxStage[] = [];
@@ -437,7 +437,8 @@ export function buildPostGraph(
     effects.push(pass);
   };
   const taa = plan.taa && beautyDepth !== null ? new TemporalAaPass(camera, beautyDepth, width, height) : null;
-  composer.addPass(taa === null ? new RenderPass(scene, camera) : new JitteredRenderPass(scene, camera, taa));
+  const scenePass = taa === null ? new RenderPass(scene, camera) : new JitteredRenderPass(scene, camera, taa);
+  composer.addPass(beautyDepth === null ? scenePass : new BeautyPass(scenePass, beautyDepth, width, height));
 
   if (plan.ao !== null) {
     const ao = new OverlayAwareGTAOPass(scene, camera, width, height);

@@ -1,5 +1,8 @@
+import { hdriEnvironment } from "@jgengine/assets/catalogs/hdriLibrary";
+import { lutGrade } from "@jgengine/assets/catalogs/lutGrades";
 import { defineGame } from "@jgengine/shell/gameKit";
 
+import { beaconKit } from "./art/look";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { BEACON_SOUNDS } from "./game/audio";
@@ -40,6 +43,7 @@ export const game = defineGame({
   },
   // The keep's own theme: beacon-fire accent, soot timber surfaces, Cinzel and Alegreya Sans.
   hudTheme: beaconTheme,
+  uiKit: beaconKit,
   controls: {
     // The phone HUD is laid out for 390x844 in style.css, so it draws at its own size instead of the
   // desktop layout shrunk to 0.4.
@@ -113,19 +117,19 @@ export const game = defineGame({
     }),
   },
   rendering: {
+    // Late highland afternoon: a low western sun rakes the keep and towers into long shadows, and a
+    // partly cloudy sky supplies the cool fill so shadow sides lean slate blue.
+    look: "cinematic",
     shadows: true,
-    // Graded post stack without the cinematic preset's image-based light, which washed the slopes
-  // blue under this world's own golden-hour sky.
+    mood: { preset: "golden", sun: { azimuth: 240, elevation: 34, color: "#ffd9a8" }, horizonColor: "#c9d6d8", fog: { near: 120, far: 260 } },
+    environmentSource: hdriEnvironment("highland-clouds", { intensity: 0.8 }),
     postProcessing: {
       toneMapping: "aces",
       exposure: 0.95,
       bloom: { strength: 0.16, radius: 0.5, threshold: 0.95 },
       ao: { intensity: 1.3, radius: 1.4 },
-      grade: { saturation: 1.12, gain: [1.05, 1.02, 0.95], vignette: 0.22 },
+      grade: { lut: lutGrade("warm-filmic"), vignette: 0.22, saturation: 1, gamma: 1, lift: [0, 0, 0], gain: [1, 1, 1] },
     },
-    // Warm low sun rakes the relief so mounds, towers, and the keep cast long readable shadows; a cool
-  // hemisphere fill keeps the shadow sides from going muddy black.
-    mood: { preset: "day", sun: { azimuth: 237, elevation: 49, color: "#ffeccb", intensity: 1.45 }, fog: { near: 110, far: 230 } },
   },
   camera: {
     rig: "topDown",

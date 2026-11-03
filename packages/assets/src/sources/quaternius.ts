@@ -4,7 +4,8 @@ import type { AssetSource } from "../manifest";
  * Quaternius megakits. The quaternius.com pack pages JS-gate the free download
  * (no `.zip` in HTML), so scrape fails in CI. Free **Standard** zips are also
  * mirrored on OpenGameArt with stable direct URLs and include a `glTF/` tree
- * (packed to `.glb` at extract). Prefer pinned OGA URLs when available.
+ * (packed to `.glb` at extract). Prefer pinned OGA URLs when available, then
+ * Quaternius's own Poly Pizza bundles.
  *
  * A pack only belongs here once its archive has been confirmed to ship `glTF/`.
  * The Street Pack, pinned here as "Downtown City MegaKit", ships Blends/FBX/OBJ
@@ -18,6 +19,14 @@ interface QuaterniusPack {
   categories: readonly string[];
   /** OpenGameArt direct zip when known (Standard free pack). */
   ogaZip?: string;
+  /**
+   * Quaternius's own Poly Pizza bundle (`poly.pizza/bundle/<slug>`), one GLB per model. The pack
+   * page's Google Drive folder answers "quota exceeded" to every anonymous download. Only packs
+   * released before the Quaternius Asset License (2026-08-28), which bars re-hosting, go here.
+   */
+  polyPizza?: string;
+  /** Licence when it is not CC0: the strictest one Poly Pizza lists on the bundle's models. */
+  license?: string;
   /** Why this pack contributes nothing to the index yet; see `AssetSource.unpulled`. */
   unpulled?: string;
 }
@@ -65,7 +74,36 @@ const QUATERNIUS_PACKS: readonly QuaterniusPack[] = [
     slug: "ultimateanimatedanimals",
     title: "Ultimate Animated Animal Pack",
     categories: ["animal", "creature", "wildlife", "rigged", "animated"],
-    unpulled: "no OGA zip pinned; the quaternius.com page JS-gates the download, so a pull cannot resolve it",
+    polyPizza: "Animated-Animal-Pack-ILAPXeUYiS",
+  },
+  {
+    id: "quaternius-animated-dinosaurs",
+    slug: "animateddinosaurs",
+    title: "Animated Dinosaur Pack",
+    categories: ["animal", "dinosaur", "creature", "rigged", "animated"],
+    polyPizza: "Animated-Dinosaur-Bundle-SmoLdBLO2K",
+  },
+  {
+    id: "quaternius-modular-men",
+    slug: "ultimatemodularcharacters",
+    title: "Ultimate Modular Men Pack",
+    categories: ["character", "human", "modular", "rigged", "animated"],
+    polyPizza: "Ultimate-Modular-Men-Pack-ZiH8muWqwQ",
+  },
+  {
+    id: "quaternius-modular-women",
+    slug: "ultimatemodularwomen",
+    title: "Ultimate Modular Women Pack",
+    categories: ["character", "human", "modular", "rigged", "animated"],
+    polyPizza: "Ultimate-Modular-Women-Pack-aCBDXDdTNN",
+    license: "CC-BY-3.0",
+  },
+  {
+    id: "quaternius-toon-shooter",
+    slug: "toonshootergamekit",
+    title: "Toon Shooter Game Kit",
+    categories: ["character", "weapon", "gun", "shooter", "prop", "rigged", "animated"],
+    polyPizza: "Toon-Shooter-Game-Kit-qraiSXoAru",
   },
   {
     id: "quaternius-monsters",
@@ -155,13 +193,15 @@ export const quaterniusSources: readonly AssetSource[] = QUATERNIUS_PACKS.map((p
   id: pack.id,
   provider: "quaternius",
   title: pack.title,
-  license: "CC0-1.0",
+  license: pack.license ?? "CC0-1.0",
   author: "Quaternius",
   categories: pack.categories,
   download:
     pack.ogaZip !== undefined
       ? { url: pack.ogaZip }
-      : { scrape: `https://quaternius.com/packs/${pack.slug}.html` },
+      : pack.polyPizza !== undefined
+        ? { polyPizzaBundle: pack.polyPizza }
+        : { scrape: `https://quaternius.com/packs/${pack.slug}.html` },
   homepage: `https://quaternius.com/packs/${pack.slug}.html`,
   ...(pack.ogaZip !== undefined ? { mirror: pack.ogaZip } : {}),
   ...(pack.unpulled !== undefined ? { unpulled: pack.unpulled } : {}),

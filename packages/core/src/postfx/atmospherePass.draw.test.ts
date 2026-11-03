@@ -5,6 +5,7 @@ import { DEFAULT_ATMOSPHERE } from "@jgengine/core/render/postProcessing";
 import { resolveMood } from "@jgengine/core/render/lookMood";
 
 import { buildPostGraph, disposeGraph, planPostStages, resolveAtmosphereStage } from "./PostProcessing.draw";
+import { BeautyPass } from "./beautyPass.draw";
 import { AtmospherePass, atmosphereFragment, findHazeLamps, MAX_HAZE_LAMPS, nearestHazeLamps, sunShaftVisibility } from "./atmospherePass.draw";
 
 test("shafts show for a sun on screen and fade past the edges, behind the camera and below the horizon", () => {
@@ -51,7 +52,9 @@ test("the atmosphere runs on medium and up, after contact shadows, off on low", 
   expect(graph.stages.slice(0, 2)).toEqual(["contactShadows", "atmosphere"]);
   const pass = graph.composer.passes.find((candidate) => candidate instanceof AtmospherePass) as AtmospherePass;
   expect(pass.needsSwap).toBe(false);
-  expect(pass.material.uniforms.tDepth!.value).toBe(graph.composer.renderTarget1.depthTexture);
+  const beauty = graph.composer.passes[0] as BeautyPass;
+  expect(beauty).toBeInstanceOf(BeautyPass);
+  expect(pass.material.uniforms.tDepth!.value).toBe(beauty.target.depthTexture);
   disposeGraph(graph);
 });
 

@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import * as THREE from "three";
 
 import { buildPostGraph, disposeGraph, planPostStages } from "./PostProcessing.draw";
+import { BeautyPass } from "./beautyPass.draw";
 import { JitteredRenderPass, TemporalAaPass, halton, taaJitter } from "./temporalAaPass.draw";
 
 test("halton walks the low-discrepancy sequence", () => {
@@ -33,8 +34,10 @@ test("a TAA chain jitters the beauty render and resolves after the other stages"
   expect(plan.taa).toBe(true);
   const graph = buildPostGraph(stubRenderer(), new THREE.Scene(), new THREE.PerspectiveCamera(), plan, 320, 180);
   const passes = graph.composer.passes;
-  expect(passes[0]).toBeInstanceOf(JitteredRenderPass);
+  const beauty = passes[0] as BeautyPass;
+  expect(beauty).toBeInstanceOf(BeautyPass);
+  expect(beauty.scenePass).toBeInstanceOf(JitteredRenderPass);
   expect(passes.some((pass) => pass instanceof TemporalAaPass)).toBe(true);
-  expect(graph.composer.renderTarget1.depthTexture).not.toBeNull();
+  expect(beauty.target.depthTexture).not.toBeNull();
   disposeGraph(graph);
 });

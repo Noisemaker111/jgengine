@@ -1,0 +1,4069 @@
+[
+  {
+    "id": "kaykit-forest/Bush_1_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_1_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 3704,
+      "byteLength": 52383,
+      "triangles": 72,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.26717671751976013,
+        "d": 0.2340862900018692
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": 7.450580596923828e-9
+      },
+      "minY": -0.0029310714453458786,
+      "maxY": 0.2237223982810974
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_1_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_1_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 6016,
+      "byteLength": 54695,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7224250435829163,
+        "d": 0.7224250733852386
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": -0.012356013059616089,
+      "maxY": 0.4717560112476349
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_1_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_1_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 6012,
+      "byteLength": 54691,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2041236758232117,
+        "d": 1.204123854637146
+      },
+      "center": {
+        "x": 8.940696716308594e-8,
+        "z": 0
+      },
+      "minY": -0.011357247829437256,
+      "maxY": 0.7960658073425293
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_1_D_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_1_D_Color1.glb",
+    "metrics": {
+      "glbBytes": 6012,
+      "byteLength": 54691,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.566851556301117,
+        "d": 1.566851794719696
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": -0.01525149866938591,
+      "maxY": 0.9784849286079407
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_1_E_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_1_E_Color1.glb",
+    "metrics": {
+      "glbBytes": 17732,
+      "byteLength": 66411,
+      "triangles": 552,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.575141727924347,
+        "d": 1.3165557980537415
+      },
+      "center": {
+        "x": -0.044233471155166626,
+        "z": 0.05237218737602234
+      },
+      "minY": -0.012356013059616089,
+      "maxY": 0.7960658073425293
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_1_F_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_1_F_Color1.glb",
+    "metrics": {
+      "glbBytes": 17680,
+      "byteLength": 66359,
+      "triangles": 576,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.282745122909546,
+        "d": 1.8790394067764282
+      },
+      "center": {
+        "x": 0.07744133472442627,
+        "z": -0.13152605295181274
+      },
+      "minY": -0.01525149866938591,
+      "maxY": 0.9784849286079407
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_1_G_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_1_G_Color1.glb",
+    "metrics": {
+      "glbBytes": 29344,
+      "byteLength": 78023,
+      "triangles": 984,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.104071855545044,
+        "d": 1.748061716556549
+      },
+      "center": {
+        "x": -0.07922351360321045,
+        "z": 0.008406668901443481
+      },
+      "minY": -0.01525149866938591,
+      "maxY": 0.9784849286079407
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_2_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_2_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 2380,
+      "byteLength": 51059,
+      "triangles": 44,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.527999997138977,
+        "d": 0.527999997138977
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 1.9669533557475916e-8,
+      "maxY": 0.527999997138977
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_2_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_2_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 3796,
+      "byteLength": 52475,
+      "triangles": 108,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8579999804496765,
+        "d": 0.8579999804496765
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -1.1801719779214181e-7,
+      "maxY": 0.857999861240387
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_2_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_2_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 3792,
+      "byteLength": 52471,
+      "triangles": 108,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3199999928474426,
+        "d": 1.3200000524520874
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": -7.867813422990366e-8,
+      "maxY": 1.3199999332427979
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_2_D_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_2_D_Color1.glb",
+    "metrics": {
+      "glbBytes": 5864,
+      "byteLength": 54543,
+      "triangles": 196,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5722906589508057,
+        "d": 1.018472135066986
+      },
+      "center": {
+        "x": -0.03726273775100708,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": -1.1801719779214181e-7,
+      "maxY": 0.857999861240387
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_2_E_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_2_E_Color1.glb",
+    "metrics": {
+      "glbBytes": 12156,
+      "byteLength": 60835,
+      "triangles": 476,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.348020076751709,
+        "d": 2.00628262758255
+      },
+      "center": {
+        "x": 0.049228549003601074,
+        "z": -0.07553181052207947
+      },
+      "minY": -1.1909008179600278e-7,
+      "maxY": 1.3319998979568481
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_2_F_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_2_F_Color1.glb",
+    "metrics": {
+      "glbBytes": 9692,
+      "byteLength": 58371,
+      "triangles": 368,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0074886679649353,
+        "d": 1.5944474339485168
+      },
+      "center": {
+        "x": 0.08870962262153625,
+        "z": 0.04809561371803284
+      },
+      "minY": 0,
+      "maxY": 1.7919158935546875
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_3_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_3_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 6608,
+      "byteLength": 55287,
+      "triangles": 208,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.033058226108551,
+        "d": 1.033058226108551
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": -0.025402218103408813,
+      "maxY": 0.459860622882843
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_3_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_3_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 8112,
+      "byteLength": 56791,
+      "triangles": 240,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.683336079120636,
+        "d": 1.683336079120636
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 2.9802322387695312e-8
+      },
+      "minY": -0.026114314794540405,
+      "maxY": 0.7774202227592468
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_3_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_3_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 8912,
+      "byteLength": 57591,
+      "triangles": 272,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.490047335624695,
+        "d": 2.4900470972061157
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 1.7881393432617188e-7
+      },
+      "minY": -0.026809334754943848,
+      "maxY": 1.1238441467285156
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_4_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_4_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 2380,
+      "byteLength": 51059,
+      "triangles": 44,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5768209099769592,
+        "d": 0.576820969581604
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": -0.00021919608116149902,
+      "maxY": 0.4341813921928406
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_4_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_4_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 2384,
+      "byteLength": 51063,
+      "triangles": 44,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9908365905284882,
+        "d": 0.9908367395401001
+      },
+      "center": {
+        "x": -1.043081283569336e-7,
+        "z": 0
+      },
+      "minY": -0.0031614303588867188,
+      "maxY": 0.7401965260505676
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_4_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_4_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 3920,
+      "byteLength": 52599,
+      "triangles": 108,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5811933875083923,
+        "d": 1.5811933279037476
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": -0.006419066339731216,
+      "maxY": 1.2955689430236816
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_4_D_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_4_D_Color1.glb",
+    "metrics": {
+      "glbBytes": 4448,
+      "byteLength": 53127,
+      "triangles": 132,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7407188415527344,
+        "d": 1.2872429490089417
+      },
+      "center": {
+        "x": -0.0505218505859375,
+        "z": -0.023767203092575073
+      },
+      "minY": -0.0031614303588867188,
+      "maxY": 0.7401965260505676
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_4_E_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_4_E_Color1.glb",
+    "metrics": {
+      "glbBytes": 8052,
+      "byteLength": 56731,
+      "triangles": 284,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.696296215057373,
+        "d": 2.278584361076355
+      },
+      "center": {
+        "x": -0.12112045288085938,
+        "z": -0.018750369548797607
+      },
+      "minY": -0.006419066339731216,
+      "maxY": 1.2955689430236816
+    }
+  },
+  {
+    "id": "kaykit-forest/Bush_4_F_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Bush_4_F_Color1.glb",
+    "metrics": {
+      "glbBytes": 8056,
+      "byteLength": 56735,
+      "triangles": 284,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.3924463987350464,
+        "d": 2.1390676498413086
+      },
+      "center": {
+        "x": -0.029309093952178955,
+        "z": 0.10596728324890137
+      },
+      "minY": -0.006419066339731216,
+      "maxY": 1.2955689430236816
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_1_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_1_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 3412,
+      "byteLength": 52091,
+      "triangles": 44,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3392551690340042,
+        "d": 0.15177005529403687
+      },
+      "center": {
+        "x": 0.0000036582350730895996,
+        "z": -0.002499029040336609
+      },
+      "minY": -0.019999999552965164,
+      "maxY": 0.5393414497375488
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_1_A_Singlesided_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_1_A_Singlesided_Color1.glb",
+    "metrics": {
+      "glbBytes": 2036,
+      "byteLength": 50715,
+      "triangles": 14,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.28669892251491547,
+        "d": 0.12698420882225037
+      },
+      "center": {
+        "x": 0.000013239681720733643,
+        "z": -0.019051343202590942
+      },
+      "minY": -0.019999999552965164,
+      "maxY": 0.5393414497375488
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_1_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_1_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 7532,
+      "byteLength": 56211,
+      "triangles": 132,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5050753951072693,
+        "d": 0.5557224452495575
+      },
+      "center": {
+        "x": -0.013477891683578491,
+        "z": -0.05897657573223114
+      },
+      "minY": -0.05628953129053116,
+      "maxY": 0.48120546340942383
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_1_B_Singlesided_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_1_B_Singlesided_Color1.glb",
+    "metrics": {
+      "glbBytes": 3360,
+      "byteLength": 52039,
+      "triangles": 42,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5119863152503967,
+        "d": 0.5326692461967468
+      },
+      "center": {
+        "x": -0.013671904802322388,
+        "z": -0.07663437724113464
+      },
+      "minY": -0.04650232195854187,
+      "maxY": 0.47371888160705566
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_1_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_1_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 19868,
+      "byteLength": 68547,
+      "triangles": 396,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7517659068107605,
+        "d": 0.7171123623847961
+      },
+      "center": {
+        "x": -0.018083930015563965,
+        "z": -0.025730669498443604
+      },
+      "minY": -0.03707636147737503,
+      "maxY": 0.5463452339172363
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_1_C_Singlesided_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_1_C_Singlesided_Color1.glb",
+    "metrics": {
+      "glbBytes": 7324,
+      "byteLength": 56003,
+      "triangles": 126,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7341960966587067,
+        "d": 0.7250126898288727
+      },
+      "center": {
+        "x": -0.004860356450080872,
+        "z": -0.026161745190620422
+      },
+      "minY": -0.03390756994485855,
+      "maxY": 0.5463452339172363
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_1_D_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_1_D_Color1.glb",
+    "metrics": {
+      "glbBytes": 26036,
+      "byteLength": 74715,
+      "triangles": 528,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0806079506874084,
+        "d": 1.1775312423706055
+      },
+      "center": {
+        "x": 0.039874643087387085,
+        "z": -0.022122859954833984
+      },
+      "minY": -0.04217022657394409,
+      "maxY": 0.5463452339172363
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_1_D_Singlesided_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_1_D_Singlesided_Color1.glb",
+    "metrics": {
+      "glbBytes": 9304,
+      "byteLength": 57983,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.04218789935112,
+        "d": 1.1864053010940552
+      },
+      "center": {
+        "x": 0.03053058683872223,
+        "z": -0.022572457790374756
+      },
+      "minY": -0.03735730051994324,
+      "maxY": 0.5463452339172363
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_1_Mesh",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_1_Mesh.glb",
+    "metrics": {
+      "glbBytes": 3072,
+      "byteLength": 3072,
+      "triangles": 44,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3392551690340042,
+        "d": 0.15177005529403687
+      },
+      "center": {
+        "x": 0.0000036582350730895996,
+        "z": -0.002499029040336609
+      },
+      "minY": -0.019999999552965164,
+      "maxY": 0.5393414497375488
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_1_SingleSided_Mesh",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_1_SingleSided_Mesh.glb",
+    "metrics": {
+      "glbBytes": 1696,
+      "byteLength": 1696,
+      "triangles": 14,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.28669892251491547,
+        "d": 0.12698420882225037
+      },
+      "center": {
+        "x": 0.000013239681720733643,
+        "z": -0.019051343202590942
+      },
+      "minY": -0.019999999552965164,
+      "maxY": 0.5393414497375488
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_2_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_2_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 3412,
+      "byteLength": 52091,
+      "triangles": 44,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15502481907606125,
+        "d": 0.2536519169807434
+      },
+      "center": {
+        "x": 0.000006128102540969849,
+        "z": -0.04722139239311218
+      },
+      "minY": -0.03126681596040726,
+      "maxY": 0.8874897360801697
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_2_A_Singlesided_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_2_A_Singlesided_Color1.glb",
+    "metrics": {
+      "glbBytes": 2036,
+      "byteLength": 50715,
+      "triangles": 14,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15502481907606125,
+        "d": 0.2273414134979248
+      },
+      "center": {
+        "x": 0.000006128102540969849,
+        "z": -0.04722139239311218
+      },
+      "minY": -0.03126681596040726,
+      "maxY": 0.8874897360801697
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_2_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_2_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 7532,
+      "byteLength": 56211,
+      "triangles": 132,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.40347057580947876,
+        "d": 0.3973674178123474
+      },
+      "center": {
+        "x": -0.011866167187690735,
+        "z": -0.07536706328392029
+      },
+      "minY": -0.031266819685697556,
+      "maxY": 0.8874897956848145
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_2_B_Singlesided_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_2_B_Singlesided_Color1.glb",
+    "metrics": {
+      "glbBytes": 3360,
+      "byteLength": 52039,
+      "triangles": 42,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3840968757867813,
+        "d": 0.3782888427376747
+      },
+      "center": {
+        "x": -0.0112994983792305,
+        "z": -0.07174764201045036
+      },
+      "minY": -0.031266819685697556,
+      "maxY": 0.8874897956848145
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_2_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_2_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 26036,
+      "byteLength": 74715,
+      "triangles": 528,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8964875936508179,
+        "d": 0.7574845552444458
+      },
+      "center": {
+        "x": 0.044941842555999756,
+        "z": -0.05590277910232544
+      },
+      "minY": -0.047739177942276,
+      "maxY": 0.8874897360801697
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_2_C_Singlesided_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_2_C_Singlesided_Color1.glb",
+    "metrics": {
+      "glbBytes": 9308,
+      "byteLength": 57987,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8718788027763367,
+        "d": 0.7383463978767395
+      },
+      "center": {
+        "x": 0.04430297017097473,
+        "z": -0.05464056134223938
+      },
+      "minY": -0.04606397822499275,
+      "maxY": 0.8874897360801697
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_2_D_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_2_D_Color1.glb",
+    "metrics": {
+      "glbBytes": 26036,
+      "byteLength": 74715,
+      "triangles": 528,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1044983267784119,
+        "d": 1.3664203882217407
+      },
+      "center": {
+        "x": -0.020521968603134155,
+        "z": -0.02885138988494873
+      },
+      "minY": -0.04773612692952156,
+      "maxY": 0.8874897360801697
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_2_D_Singlesided_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_2_D_Singlesided_Color1.glb",
+    "metrics": {
+      "glbBytes": 9304,
+      "byteLength": 57983,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.083444595336914,
+        "d": 1.3432582020759583
+      },
+      "center": {
+        "x": -0.02114182710647583,
+        "z": -0.027358323335647583
+      },
+      "minY": -0.04606503248214722,
+      "maxY": 0.887491762638092
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_2_Mesh",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_2_Mesh.glb",
+    "metrics": {
+      "glbBytes": 3072,
+      "byteLength": 3072,
+      "triangles": 44,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15502481907606125,
+        "d": 0.2536519169807434
+      },
+      "center": {
+        "x": 0.000006128102540969849,
+        "z": -0.04722139239311218
+      },
+      "minY": -0.03126681596040726,
+      "maxY": 0.8874897360801697
+    }
+  },
+  {
+    "id": "kaykit-forest/Grass_2_SingleSided_Mesh",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Grass_2_SingleSided_Mesh.glb",
+    "metrics": {
+      "glbBytes": 1696,
+      "byteLength": 1696,
+      "triangles": 14,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15502481907606125,
+        "d": 0.2273414134979248
+      },
+      "center": {
+        "x": 0.000006128102540969849,
+        "z": -0.04722139239311218
+      },
+      "minY": -0.03126681596040726,
+      "maxY": 0.8874897360801697
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 4180,
+      "byteLength": 52859,
+      "triangles": 48,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5780297815799713,
+        "d": 0.6077764630317688
+      },
+      "center": {
+        "x": -0.030512109398841858,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 0.5402679443359375
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 4120,
+      "byteLength": 52799,
+      "triangles": 48,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5511225610971451,
+        "d": 0.5778046250343323
+      },
+      "center": {
+        "x": -0.10854306071996689,
+        "z": -0.01767665147781372
+      },
+      "minY": 0,
+      "maxY": 0.5402679443359375
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 4244,
+      "byteLength": 52923,
+      "triangles": 48,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5188338756561279,
+        "d": 0.6050857305526733
+      },
+      "center": {
+        "x": 0.03406521677970886,
+        "z": -0.03632473945617676
+      },
+      "minY": 0,
+      "maxY": 0.5402679443359375
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_D_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_D_Color1.glb",
+    "metrics": {
+      "glbBytes": 6132,
+      "byteLength": 54811,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9270614683628082,
+        "d": 1.1566168665885925
+      },
+      "center": {
+        "x": 0.07673625648021698,
+        "z": -0.04644075036048889
+      },
+      "minY": 0,
+      "maxY": 1.129973292350769
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_E_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_E_Color1.glb",
+    "metrics": {
+      "glbBytes": 6164,
+      "byteLength": 54843,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 1.0853657722473145
+      },
+      "center": {
+        "x": 0,
+        "z": -0.10967016220092773
+      },
+      "minY": 0,
+      "maxY": 1.129973292350769
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_F_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_F_Color1.glb",
+    "metrics": {
+      "glbBytes": 6228,
+      "byteLength": 54907,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1,
+        "d": 0.8660254776477814
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4901161193847656e-8
+      },
+      "minY": 0,
+      "maxY": 1.129973292350769
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_G_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_G_Color1.glb",
+    "metrics": {
+      "glbBytes": 6280,
+      "byteLength": 54959,
+      "triangles": 104,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7450319528579712,
+        "d": 1.6503188610076904
+      },
+      "center": {
+        "x": -0.2723003029823303,
+        "z": 0.09865951538085938
+      },
+      "minY": 0,
+      "maxY": 1.8677520751953125
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_H_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_H_Color1.glb",
+    "metrics": {
+      "glbBytes": 6444,
+      "byteLength": 55123,
+      "triangles": 104,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.531927466392517,
+        "d": 1.531927466392517
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 1.8677520751953125
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_I_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_I_Color1.glb",
+    "metrics": {
+      "glbBytes": 6312,
+      "byteLength": 54991,
+      "triangles": 104,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6053681373596191,
+        "d": 1.9985049366950989
+      },
+      "center": {
+        "x": -0.05322307348251343,
+        "z": 0.04771849513053894
+      },
+      "minY": 0,
+      "maxY": 1.8677520751953125
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_J_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_J_Color1.glb",
+    "metrics": {
+      "glbBytes": 32152,
+      "byteLength": 80831,
+      "triangles": 521,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.390880823135376,
+        "d": 3.7570303678512573
+      },
+      "center": {
+        "x": -0.5300487279891968,
+        "z": 0.16141444444656372
+      },
+      "minY": 0,
+      "maxY": 3.3557422161102295
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_K_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_K_Color1.glb",
+    "metrics": {
+      "glbBytes": 32344,
+      "byteLength": 81023,
+      "triangles": 529,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.689298152923584,
+        "d": 3.130425810813904
+      },
+      "center": {
+        "x": -0.22938942909240723,
+        "z": -0.03715747594833374
+      },
+      "minY": 0.0000152587890625,
+      "maxY": 3.64831280708313
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_L_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_L_Color1.glb",
+    "metrics": {
+      "glbBytes": 30644,
+      "byteLength": 79323,
+      "triangles": 494,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.29444682598114,
+        "d": 2.622002601623535
+      },
+      "center": {
+        "x": -0.1799575686454773,
+        "z": -0.23346924781799316
+      },
+      "minY": 0,
+      "maxY": 3.3994436264038086
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_M_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_M_Color1.glb",
+    "metrics": {
+      "glbBytes": 31520,
+      "byteLength": 80199,
+      "triangles": 528,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.905210852622986,
+        "d": 2.7112412452697754
+      },
+      "center": {
+        "x": -0.22648078203201294,
+        "z": -0.14508068561553955
+      },
+      "minY": 0,
+      "maxY": 3.5159718990325928
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_N_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_N_Color1.glb",
+    "metrics": {
+      "glbBytes": 21936,
+      "byteLength": 70615,
+      "triangles": 355,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.3048516511917114,
+        "d": 2.243267774581909
+      },
+      "center": {
+        "x": -0.015209734439849854,
+        "z": -0.23206079006195068
+      },
+      "minY": 0,
+      "maxY": 4.49750280380249
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_O_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_O_Color1.glb",
+    "metrics": {
+      "glbBytes": 13684,
+      "byteLength": 62363,
+      "triangles": 223,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.11008882522583,
+        "d": 2.11008882522583
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0,
+      "maxY": 4.576678276062012
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_P_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_P_Color1.glb",
+    "metrics": {
+      "glbBytes": 24124,
+      "byteLength": 72803,
+      "triangles": 405,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.2082619667053223,
+        "d": 1.8383129835128784
+      },
+      "center": {
+        "x": -0.18984246253967285,
+        "z": -0.0038243532180786133
+      },
+      "minY": 0,
+      "maxY": 4.005790710449219
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_1_Q_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_1_Q_Color1.glb",
+    "metrics": {
+      "glbBytes": 31392,
+      "byteLength": 80071,
+      "triangles": 497,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.2162715196609497,
+        "d": 2.797101616859436
+      },
+      "center": {
+        "x": -0.12053829431533813,
+        "z": -0.09746581315994263
+      },
+      "minY": -0.0000040054324017546605,
+      "maxY": 4.277825355529785
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_2_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_2_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 2192,
+      "byteLength": 50871,
+      "triangles": 12,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.21556153148412704,
+        "d": 0.21556152403354645
+      },
+      "center": {
+        "x": 0.00000328943133354187,
+        "z": 0
+      },
+      "minY": 0.000006578415195690468,
+      "maxY": 0.21556809544563293
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_2_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_2_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 2768,
+      "byteLength": 51447,
+      "triangles": 44,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6300756931304932,
+        "d": 0.6300756931304932
+      },
+      "center": {
+        "x": 0.000009834766387939453,
+        "z": 0
+      },
+      "minY": 0.000019700484699569643,
+      "maxY": 0.6455651521682739
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_2_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_2_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 4692,
+      "byteLength": 53371,
+      "triangles": 108,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2952622771263123,
+        "d": 1.2952622175216675
+      },
+      "center": {
+        "x": 0.000020235776901245117,
+        "z": 0
+      },
+      "minY": 0.00004047247057314962,
+      "maxY": 1.326242446899414
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_2_D_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_2_D_Color1.glb",
+    "metrics": {
+      "glbBytes": 4692,
+      "byteLength": 53371,
+      "triangles": 108,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7088359594345093,
+        "d": 1.7088359594345093
+      },
+      "center": {
+        "x": 0.000026524066925048828,
+        "z": 0
+      },
+      "minY": 0.00005309373591444455,
+      "maxY": 1.7398285865783691
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_2_E_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_2_E_Color1.glb",
+    "metrics": {
+      "glbBytes": 16280,
+      "byteLength": 64959,
+      "triangles": 438,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.1677979230880737,
+        "d": 3.3067965507507324
+      },
+      "center": {
+        "x": 0.0025183558464050293,
+        "z": 0.27239441871643066
+      },
+      "minY": 0.000008223018994613085,
+      "maxY": 2.8619492053985596
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_2_F_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_2_F_Color1.glb",
+    "metrics": {
+      "glbBytes": 15960,
+      "byteLength": 64639,
+      "triangles": 428,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.143422842025757,
+        "d": 2.868933320045471
+      },
+      "center": {
+        "x": -0.38114607334136963,
+        "z": 0.000026404857635498047
+      },
+      "minY": 0.000024625605874462053,
+      "maxY": 2.8619492053985596
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_2_G_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_2_G_Color1.glb",
+    "metrics": {
+      "glbBytes": 17604,
+      "byteLength": 66283,
+      "triangles": 488,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.0931668281555176,
+        "d": 3.728743553161621
+      },
+      "center": {
+        "x": 0.20382404327392578,
+        "z": -0.0443425178527832
+      },
+      "minY": 0.000008223018994613085,
+      "maxY": 3.1958234310150146
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_2_H_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_2_H_Color1.glb",
+    "metrics": {
+      "glbBytes": 12064,
+      "byteLength": 60743,
+      "triangles": 312,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.6968629360198975,
+        "d": 3.310571312904358
+      },
+      "center": {
+        "x": 0.4334012269973755,
+        "z": 0.24026530981063843
+      },
+      "minY": 0.000008223018994613085,
+      "maxY": 2.7569611072540283
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 5796,
+      "byteLength": 54475,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.956294059753418,
+        "d": 0.8074788153171539
+      },
+      "center": {
+        "x": -0.05137312412261963,
+        "z": -0.011160686612129211
+      },
+      "minY": -0.465302437543869,
+      "maxY": 0.393566370010376
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 5928,
+      "byteLength": 54607,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.819164514541626,
+        "d": 0.8467588424682617
+      },
+      "center": {
+        "x": -0.009915441274642944,
+        "z": 0.004845291376113892
+      },
+      "minY": -0.5262008309364319,
+      "maxY": 0.501471221446991
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 5572,
+      "byteLength": 54251,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8050132095813751,
+        "d": 0.8596837520599365
+      },
+      "center": {
+        "x": -0.03970937430858612,
+        "z": 0.02908387780189514
+      },
+      "minY": -0.5185414552688599,
+      "maxY": 0.4490572214126587
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_D_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_D_Color1.glb",
+    "metrics": {
+      "glbBytes": 5668,
+      "byteLength": 54347,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9325081706047058,
+        "d": 0.7944729328155518
+      },
+      "center": {
+        "x": -0.03476002812385559,
+        "z": -0.00955691933631897
+      },
+      "minY": -0.5125517845153809,
+      "maxY": 0.4590817093849182
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_E_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_E_Color1.glb",
+    "metrics": {
+      "glbBytes": 5732,
+      "byteLength": 54411,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1452747583389282,
+        "d": 1.1811442375183105
+      },
+      "center": {
+        "x": 0.01621067523956299,
+        "z": 0.0071111321449279785
+      },
+      "minY": -0.5915006995201111,
+      "maxY": 0.696137011051178
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_F_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_F_Color1.glb",
+    "metrics": {
+      "glbBytes": 6564,
+      "byteLength": 55243,
+      "triangles": 84,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.087601363658905,
+        "d": 1.1883383393287659
+      },
+      "center": {
+        "x": 0.018218547105789185,
+        "z": 0.003915697336196899
+      },
+      "minY": -0.5879820585250854,
+      "maxY": 0.5875235795974731
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_G_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_G_Color1.glb",
+    "metrics": {
+      "glbBytes": 8572,
+      "byteLength": 57251,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8623309135437012,
+        "d": 1.7340992093086243
+      },
+      "center": {
+        "x": -0.024565279483795166,
+        "z": -0.023450404405593872
+      },
+      "minY": -0.8728035688400269,
+      "maxY": 1.1273317337036133
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_H_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_H_Color1.glb",
+    "metrics": {
+      "glbBytes": 8060,
+      "byteLength": 56739,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9546829462051392,
+        "d": 1.758516013622284
+      },
+      "center": {
+        "x": -0.022043883800506592,
+        "z": -0.029955178499221802
+      },
+      "minY": -0.9761516451835632,
+      "maxY": 1.0821900367736816
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_I_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_I_Color1.glb",
+    "metrics": {
+      "glbBytes": 7704,
+      "byteLength": 56383,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.921872854232788,
+        "d": 1.64256089925766
+      },
+      "center": {
+        "x": 0.020562350749969482,
+        "z": 0.11740782856941223
+      },
+      "minY": -1.023193359375,
+      "maxY": 1.0854747295379639
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_J_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_J_Color1.glb",
+    "metrics": {
+      "glbBytes": 9372,
+      "byteLength": 58051,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9729081988334656,
+        "d": 1.7361948490142822
+      },
+      "center": {
+        "x": 0.08061876893043518,
+        "z": 0.039236605167388916
+      },
+      "minY": -0.9173879027366638,
+      "maxY": 0.9783214330673218
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_K_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_K_Color1.glb",
+    "metrics": {
+      "glbBytes": 9372,
+      "byteLength": 58051,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.60780930519104,
+        "d": 2.5904884338378906
+      },
+      "center": {
+        "x": 0.01732313632965088,
+        "z": -0.10949826240539551
+      },
+      "minY": -1.009484887123108,
+      "maxY": 1.2137798070907593
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_L_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_L_Color1.glb",
+    "metrics": {
+      "glbBytes": 7900,
+      "byteLength": 56579,
+      "triangles": 168,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.6178643703460693,
+        "d": 2.559226632118225
+      },
+      "center": {
+        "x": -0.14771640300750732,
+        "z": -0.0888403058052063
+      },
+      "minY": -1.0459975004196167,
+      "maxY": 1.2216897010803223
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_M_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_M_Color1.glb",
+    "metrics": {
+      "glbBytes": 12648,
+      "byteLength": 61327,
+      "triangles": 320,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.4338523149490356,
+        "d": 2.8094685077667236
+      },
+      "center": {
+        "x": 0.2185007929801941,
+        "z": -0.030767440795898438
+      },
+      "minY": -1.635921835899353,
+      "maxY": 1.9641033411026
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_N_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_N_Color1.glb",
+    "metrics": {
+      "glbBytes": 13616,
+      "byteLength": 62295,
+      "triangles": 320,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.424771308898926,
+        "d": 2.9845681190490723
+      },
+      "center": {
+        "x": 0.04295516014099121,
+        "z": -0.11610114574432373
+      },
+      "minY": -1.5922086238861084,
+      "maxY": 1.9342432022094727
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_O_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_O_Color1.glb",
+    "metrics": {
+      "glbBytes": 13676,
+      "byteLength": 62355,
+      "triangles": 320,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.4757704734802246,
+        "d": 2.932662844657898
+      },
+      "center": {
+        "x": 0.2712085247039795,
+        "z": -0.023329079151153564
+      },
+      "minY": -1.4263556003570557,
+      "maxY": 2.045736789703369
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_P_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_P_Color1.glb",
+    "metrics": {
+      "glbBytes": 12172,
+      "byteLength": 60851,
+      "triangles": 320,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.29009473323822,
+        "d": 2.8744587898254395
+      },
+      "center": {
+        "x": -0.09992259740829468,
+        "z": 0.03385508060455322
+      },
+      "minY": -1.7424235343933105,
+      "maxY": 1.941025972366333
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_Q_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_Q_Color1.glb",
+    "metrics": {
+      "glbBytes": 14668,
+      "byteLength": 63347,
+      "triangles": 320,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.650445461273193,
+        "d": 4.4782164096832275
+      },
+      "center": {
+        "x": 0.329681396484375,
+        "z": 0.08056819438934326
+      },
+      "minY": -1.6244807243347168,
+      "maxY": 2.092097759246826
+    }
+  },
+  {
+    "id": "kaykit-forest/Rock_3_R_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Rock_3_R_Color1.glb",
+    "metrics": {
+      "glbBytes": 11628,
+      "byteLength": 60307,
+      "triangles": 320,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.163222789764404,
+        "d": 4.214516878128052
+      },
+      "center": {
+        "x": 0.40284276008605957,
+        "z": 0.0544968843460083
+      },
+      "minY": -1.70847749710083,
+      "maxY": 2.138747215270996
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_1_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_1_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 18844,
+      "byteLength": 67523,
+      "triangles": 530,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.18099308013916,
+        "d": 3.251126766204834
+      },
+      "center": {
+        "x": -0.3440943956375122,
+        "z": 3.5762786865234375e-7
+      },
+      "minY": -0.26131799817085266,
+      "maxY": 3.899381160736084
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_1_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_1_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 20372,
+      "byteLength": 69051,
+      "triangles": 636,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.006826043128967,
+        "d": 3.4454872608184814
+      },
+      "center": {
+        "x": 0.21389120817184448,
+        "z": 4.76837158203125e-7
+      },
+      "minY": -0.3410367965698242,
+      "maxY": 4.588586807250977
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_1_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_1_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 47660,
+      "byteLength": 96339,
+      "triangles": 1364,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.691295623779297,
+        "d": 5.753352403640747
+      },
+      "center": {
+        "x": 0.5998430252075195,
+        "z": 8.344650268554688e-7
+      },
+      "minY": -0.3923197388648987,
+      "maxY": 7.42193078994751
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_2_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_2_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 9548,
+      "byteLength": 58227,
+      "triangles": 336,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.5999999046325684,
+        "d": 1.9999998211860657
+      },
+      "center": {
+        "x": -0.3410923480987549,
+        "z": -0.21443971991539001
+      },
+      "minY": -0.3735181987285614,
+      "maxY": 4.301268100738525
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_2_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_2_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 13048,
+      "byteLength": 61727,
+      "triangles": 492,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.7000001668930054,
+        "d": 2.0999999046325684
+      },
+      "center": {
+        "x": 0.23530274629592896,
+        "z": 0.328629732131958
+      },
+      "minY": -0.3447669744491577,
+      "maxY": 5.697314262390137
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_2_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_2_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 16800,
+      "byteLength": 65479,
+      "triangles": 648,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.599999904632568,
+        "d": 3.4000000953674316
+      },
+      "center": {
+        "x": -0.21242094039916992,
+        "z": -0.18919730186462402
+      },
+      "minY": -0.39324718713760376,
+      "maxY": 6.527140140533447
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_2_D_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_2_D_Color1.glb",
+    "metrics": {
+      "glbBytes": 34280,
+      "byteLength": 82959,
+      "triangles": 1428,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.739607095718384,
+        "d": 4.034363269805908
+      },
+      "center": {
+        "x": -0.08110344409942627,
+        "z": -0.3738727569580078
+      },
+      "minY": -0.39324718713760376,
+      "maxY": 7.694401264190674
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_2_E_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_2_E_Color1.glb",
+    "metrics": {
+      "glbBytes": 37376,
+      "byteLength": 86055,
+      "triangles": 1560,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.050903797149658,
+        "d": 5.676908016204834
+      },
+      "center": {
+        "x": 0.08140921592712402,
+        "z": 0.05955243110656738
+      },
+      "minY": -0.43637216091156006,
+      "maxY": 8.355417251586914
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_3_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_3_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 31100,
+      "byteLength": 79779,
+      "triangles": 978,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.0931984186172485,
+        "d": 3.09319806098938
+      },
+      "center": {
+        "x": -0.005520045757293701,
+        "z": -1.1920928955078125e-7
+      },
+      "minY": -0.26131799817085266,
+      "maxY": 3.245279550552368
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_3_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_3_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 30648,
+      "byteLength": 79327,
+      "triangles": 988,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.1294167041778564,
+        "d": 4.129416227340698
+      },
+      "center": {
+        "x": -0.02693164348602295,
+        "z": -1.1920928955078125e-7
+      },
+      "minY": -0.3410367965698242,
+      "maxY": 4.011837005615234
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_3_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_3_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 72652,
+      "byteLength": 121331,
+      "triangles": 2228,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.632240056991577,
+        "d": 4.624737858772278
+      },
+      "center": {
+        "x": -0.4228278398513794,
+        "z": 0.43475526571273804
+      },
+      "minY": -0.3923197388648987,
+      "maxY": 5.399654388427734
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_4_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_4_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 13928,
+      "byteLength": 62607,
+      "triangles": 404,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0073514580726624,
+        "d": 2.00435334444046
+      },
+      "center": {
+        "x": 0.043667763471603394,
+        "z": -0.01750454306602478
+      },
+      "minY": -0.34212493896484375,
+      "maxY": 4.932270050048828
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_4_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_4_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 17452,
+      "byteLength": 66131,
+      "triangles": 522,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.5740087032318115,
+        "d": 2.2702505588531494
+      },
+      "center": {
+        "x": 0.043759942054748535,
+        "z": -0.21125292778015137
+      },
+      "minY": -0.3763887882232666,
+      "maxY": 6.566202163696289
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_4_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_4_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 32500,
+      "byteLength": 81179,
+      "triangles": 982,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.7351596355438232,
+        "d": 2.869092345237732
+      },
+      "center": {
+        "x": 0.13667380809783936,
+        "z": -0.1127968430519104
+      },
+      "minY": -0.3565221428871155,
+      "maxY": 10.417509078979492
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_Bare_1_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_Bare_1_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 13104,
+      "byteLength": 61783,
+      "triangles": 324,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.128615915775299,
+        "d": 1.0340879261493683
+      },
+      "center": {
+        "x": 0.05208936333656311,
+        "z": -0.07733236253261566
+      },
+      "minY": -0.26131799817085266,
+      "maxY": 2.5956156253814697
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_Bare_1_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_Bare_1_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 12544,
+      "byteLength": 61223,
+      "triangles": 332,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9647076427936554,
+        "d": 1.4512782990932465
+      },
+      "center": {
+        "x": 0.5380979627370834,
+        "z": -0.26679159700870514
+      },
+      "minY": -0.3410367965698242,
+      "maxY": 2.909778356552124
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_Bare_1_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_Bare_1_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 37004,
+      "byteLength": 85683,
+      "triangles": 936,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.7369390726089478,
+        "d": 2.074174404144287
+      },
+      "center": {
+        "x": 0.5018085837364197,
+        "z": -0.35822391510009766
+      },
+      "minY": -0.3923197388648987,
+      "maxY": 4.863067150115967
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_Bare_2_A_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_Bare_2_A_Color1.glb",
+    "metrics": {
+      "glbBytes": 16372,
+      "byteLength": 65051,
+      "triangles": 404,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1963326930999756,
+        "d": 0.6000328660011292
+      },
+      "center": {
+        "x": -0.09414780139923096,
+        "z": 0.09086692333221436
+      },
+      "minY": -0.3583489954471588,
+      "maxY": 3.484485149383545
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_Bare_2_B_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_Bare_2_B_Color1.glb",
+    "metrics": {
+      "glbBytes": 18140,
+      "byteLength": 66819,
+      "triangles": 448,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7877527475357056,
+        "d": 0.6638514399528503
+      },
+      "center": {
+        "x": -0.06169766187667847,
+        "z": 0.09822702407836914
+      },
+      "minY": -0.3588429391384125,
+      "maxY": 5.1828694343566895
+    }
+  },
+  {
+    "id": "kaykit-forest/Tree_Bare_2_C_Color1",
+    "source": "kaykit-forest",
+    "categories": [
+      "nature",
+      "tree",
+      "rock",
+      "plant",
+      "environment"
+    ],
+    "file": "Tree_Bare_2_C_Color1.glb",
+    "metrics": {
+      "glbBytes": 24472,
+      "byteLength": 73151,
+      "triangles": 634,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 1024,
+          "height": 1024,
+          "byteLength": 48679
+        }
+      ],
+      "maxTextureDimension": 1024
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5779301524162292,
+        "d": 1.103801965713501
+      },
+      "center": {
+        "x": -0.04740825295448303,
+        "z": -0.05343359708786011
+      },
+      "minY": -0.4630469083786011,
+      "maxY": 7.150547504425049
+    }
+  }
+]

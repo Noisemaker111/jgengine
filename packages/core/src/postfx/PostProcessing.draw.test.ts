@@ -6,6 +6,7 @@ import { DEFAULT_AO } from "@jgengine/core/render/postProcessing";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { advanceRevealFade, buildPostGraph, disposeGraph, planPostStages, resolveAoStage, showEffects, startRevealFade, syncSize, availablePostfxStages } from "./PostProcessing.draw";
 import { ExposureMeterPass } from "./autoExposure.draw";
+import { BeautyPass } from "./beautyPass.draw";
 import { RevealFadePass, RevealSnapshotPass } from "./revealFade.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
 
@@ -215,7 +216,8 @@ describe("effects after the reveal", () => {
     const graph = fullChain();
     const on = graph.composer.passes.filter((pass) => pass.enabled);
     expect(on).toHaveLength(4);
-    expect(on[0]).toBeInstanceOf(JitteredRenderPass);
+    expect(on[0]).toBeInstanceOf(BeautyPass);
+    expect((on[0] as BeautyPass).scenePass).toBeInstanceOf(JitteredRenderPass);
     expect(on[1]).toBeInstanceOf(ExposureMeterPass);
     expect(on[2]).toBeInstanceOf(OutputPass);
     expect(on[3]).toBe(graph.grade!);
@@ -272,9 +274,28 @@ describe("effects after the reveal", () => {
     disposeGraph(graph);
   });
 
+  test("the depth the effects sample lives on the beauty target, never on the chain's ping-pong buffers", () => {
+    // A pass that skips its swap (SSR with nothing glossy in view) flips which buffer a frame starts
+    // on. With the depth on a ping-pong buffer, an effect then wrote into the target whose depth it
+    // sampled, a feedback loop that drew the whole 3D view black (#2902).
+    const graph = fullChain();
+    const beauty = graph.composer.passes[0] as BeautyPass;
+    const depth = beauty.target.depthTexture;
+    expect(depth).toBeInstanceOf(THREE.DepthTexture);
+    expect(graph.composer.renderTarget1.depthTexture).toBeNull();
+    expect(graph.composer.renderTarget2.depthTexture).toBeNull();
+    const sampled = graph.composer.passes.flatMap((pass) => {
+      const uniforms = (pass as { uniforms?: Record<string, { value: unknown }> }).uniforms ?? (pass as { material?: { uniforms?: Record<string, { value: unknown }> } }).material?.uniforms ?? {};
+      return Object.values(uniforms).map((uniform) => uniform.value).filter((value) => value instanceof THREE.DepthTexture);
+    });
+    expect(sampled.length).toBeGreaterThan(0);
+    for (const texture of sampled) expect(texture).toBe(depth);
+    disposeGraph(graph);
+  });
+
   test("the beauty pass jitters only while temporal AA is on to resolve it", () => {
     const graph = fullChain();
-    const beauty = graph.composer.passes[0] as JitteredRenderPass;
+    const beauty = (graph.composer.passes[0] as BeautyPass).scenePass;
     const projections: number[][] = [];
     const renderer = {
       autoClear: true,

@@ -7,14 +7,17 @@ import { MACHINE } from "./palette";
 const MODEL_SOURCES = [
   "quaternius-modular-scifi",
   "quaternius-stylized-nature",
-  "kaykit-space-base",
+  "quaternius-toon-shooter",
+  "quaternius-animated-mech-pack",
+  "quaternius-animated-lowpoly-robot",
+  "quaternius-low-poly-desert-assets",
 ] as const;
 
 const MATERIAL_SOURCES = {
-  /** Ferralon's dirt floor — real grain so the flats stop reading as flat vertex colour. */
-  ground: "ambientcg-ground025",
-  /** Stratified sedimentary cliff — the layered banding that sells badlands relief. */
-  cliff: "ambientcg-rock022",
+  /** Ferralon's cracked desert floor — real grain so the flats stop reading as flat vertex colour. */
+  ground: "ambientcg-ground031",
+  /** Rust-banded cliff rock for mesas, spires and boulders. */
+  cliff: "ambientcg-rock035",
   /** Warm scratched plate for scavenger chassis and improvised structures. */
   scrapMetal: "ambientcg-metal007",
   /** Riveted panel for manufactured loader armour and industrial props. */
@@ -103,9 +106,3 @@ export function chassisOf(
     (fallback === "husk" ? HUSK_CHASSIS : LOADER_CHASSIS);
   return def.plate === undefined ? style : { ...style, plate: def.plate };
 }
-
-export const NPC_STYLES: Record<string, { coat: string }> = {
-  dr_sparx: { coat: "#d8d4c8" },
-  rigg: { coat: "#8a6a1e" },
-  gauge: { coat: "#3a4a5e" },
-};

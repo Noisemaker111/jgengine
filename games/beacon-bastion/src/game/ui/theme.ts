@@ -3,7 +3,7 @@ import { HUD_THEME_PRESETS, type HudTheme } from "@jgengine/core/hud/hudTheme.vi
 
 import { GAME_FONTS } from "../../art/fonts/fonts";
 
-/** Cinzel for carved titles and numbers, Alegreya Sans for the little reading there is. */
+/** Cinzel for carved titles, Alegreya Sans for numbers and the little reading there is. */
 export const BEACON_FONTS = gameFontStacks(GAME_FONTS);
 
 const base = HUD_THEME_PRESETS.fieldkit;
@@ -31,7 +31,7 @@ export const beaconTheme: HudTheme = {
     text: "#f4ead2",
     textDim: "#c2b08c",
   },
-  font: { display: BEACON_FONTS.fontDisplay, body: BEACON_FONTS.fontBody, numeric: BEACON_FONTS.fontNumeric },
+  font: { display: BEACON_FONTS.fontDisplay, body: BEACON_FONTS.fontBody, numeric: BEACON_FONTS.fontBody },
 };
 
 /** The beacon's fire, for glows and the cursor. */

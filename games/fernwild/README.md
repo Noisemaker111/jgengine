@@ -115,8 +115,8 @@ are drawn.
   close to ARK's but not exact. Every species has a free model (CC0 or CC-BY), but where no free
   model of the animal exists its nearest relative stands in at the species' size and colour: the dodo
   is a dove, the phiomia an elephant, pteranodon an eagle, argentavis a vulture, ankylosaurus and
-  doedicurus armadillos, dimetrodon and megalania salamanders, allosaurus and baryonyx a generic
-  tyrannosaur, carnotaurus and yutyrannus the T-Rex, dilophosaur, troodon and compy the raptor,
+  doedicurus armadillos, dimetrodon and megalania salamanders, allosaurus, baryonyx, carnotaurus and
+  yutyrannus the T-Rex, diplodocus the apatosaurus, purlovia a fox, dilophosaur, troodon and compy the raptor,
   pachy and iguanodon the parasaur, chalicotherium a ground sloth, paraceratherium a rhino,
   gigantopithecus a yeti, and so on (`src/game/data/creatureModels.ts` lists every one). Building has
   no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed

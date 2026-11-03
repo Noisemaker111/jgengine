@@ -1,15 +1,16 @@
 import type { AssetSource } from "../manifest";
 
 /**
- * KayKit packs are mirrored from the author's public GitHub mirrors
- * (github.com/KayKit-Game-Assets) — itch.io pages JS-gate the free download,
- * so scrape never finds a .zip. GitHub archive URLs are stable CC0 sources
- * with real `.glb` characters + props.
+ * KayKit packs come from the author's public GitHub mirrors (github.com/KayKit-Game-Assets)
+ * where one exists: stable CC0 archives with real `.glb` characters and props. Packs with no
+ * GitHub mirror take their free itch.io upload through the page's own download flow.
  */
 interface KayKitPack {
   id: string;
-  /** GitHub repo under KayKit-Game-Assets. */
-  repo: string;
+  /** GitHub repo under KayKit-Game-Assets; packs without one download their free upload from itch.io. */
+  repo?: string;
+  /** Title of the free itch.io upload, for packs with no GitHub repo. */
+  itchUpload?: string;
   /** itch.io homepage slug (docs / credit). */
   itch: string;
   title: string;
@@ -46,7 +47,6 @@ const KAYKIT_PACKS: readonly KayKitPack[] = [
     itch: "kaykit-medieval-hexagon-pack",
     title: "KayKit Medieval Hexagon Pack",
     categories: ["hexagon", "medieval", "environment"],
-    unpulled: "catalogued for on-demand pull; no game needs hex tiles yet",
   },
   {
     id: "kaykit-furniture",
@@ -93,21 +93,31 @@ const KAYKIT_PACKS: readonly KayKitPack[] = [
     categories: ["restaurant", "food", "prop", "interior"],
     unpulled: "listed in the asset library from its repository tree; reindex after the first pull",
   },
+  {
+    id: "kaykit-forest",
+    itchUpload: "Free",
+    itch: "kaykit-forest",
+    title: "KayKit Forest Nature Pack",
+    categories: ["nature", "tree", "rock", "plant", "environment"],
+  },
 ];
 
 function githubArchiveUrl(repo: string): string {
   return `https://github.com/KayKit-Game-Assets/${repo}/archive/refs/heads/main.zip`;
 }
 
-export const kaykitSources: readonly AssetSource[] = KAYKIT_PACKS.map((pack) => ({
-  id: pack.id,
-  provider: "kaykit",
-  title: pack.title,
-  license: "CC0-1.0",
-  author: "Kay Lousberg",
-  categories: pack.categories,
-  download: { url: githubArchiveUrl(pack.repo) },
-  homepage: `https://kaylousberg.itch.io/${pack.itch}`,
-  mirror: githubArchiveUrl(pack.repo),
-  ...(pack.unpulled !== undefined ? { unpulled: pack.unpulled } : {}),
-}));
+export const kaykitSources: readonly AssetSource[] = KAYKIT_PACKS.map((pack): AssetSource => {
+  const homepage = `https://kaylousberg.itch.io/${pack.itch}`;
+  return {
+    id: pack.id,
+    provider: "kaykit",
+    title: pack.title,
+    license: "CC0-1.0",
+    author: "Kay Lousberg",
+    categories: pack.categories,
+    download: pack.repo !== undefined ? { url: githubArchiveUrl(pack.repo) } : { itch: homepage, upload: pack.itchUpload ?? "Free" },
+    homepage,
+    ...(pack.repo !== undefined ? { mirror: githubArchiveUrl(pack.repo) } : {}),
+    ...(pack.unpulled !== undefined ? { unpulled: pack.unpulled } : {}),
+  };
+});

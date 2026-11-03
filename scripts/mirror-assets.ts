@@ -10,7 +10,7 @@ import { lookMirrorName, lookServedPath, pullCuratedLook } from "../packages/ass
 import { FONT_LIBRARY } from "../packages/assets/src/catalogs/fontLibrary";
 import { HDRI_LIBRARY } from "../packages/assets/src/catalogs/hdriLibrary";
 import { MODEL_LIBRARY, libraryModelDir } from "../packages/assets/src/catalogs/modelLibrary";
-import { resolveArchiveUrl, downloadArchive } from "../packages/assets/src/download";
+import { fetchSourceArchive } from "../packages/assets/src/download";
 import { pullLibraryModel } from "../packages/assets/src/modelLibraryPull";
 import { modelMirrorAssetName, zipPulledModel } from "../packages/assets/src/modelMirror";
 import { pullRocketboxModel } from "../packages/assets/src/rocketboxPull";
@@ -77,8 +77,7 @@ for (const source of sources) {
   const assetName = `${source.provider}-${source.id}.zip`;
   if (have.has(assetName)) continue;
   try {
-    const url = await resolveArchiveUrl(source);
-    const archive = await downloadArchive(url);
+    const { archive, url } = await fetchSourceArchive(source);
     upload(assetName, archive);
     uploaded += 1;
     console.log(`mirrored ${assetName} (${(archive.byteLength / 1_048_576).toFixed(1)} MB) from ${url}`);

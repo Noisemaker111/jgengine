@@ -19,8 +19,10 @@ export interface CreepDef {
   leak: number;
   /** Visual size, and the hitbox it derives. The default camera puts about seven vertical pixels on one world unit, so this carries most of the "which raider is that" answer. */
   scale: number;
-  /** The body: a realistic library human (`human/soldier`) for the living, a `kaykit-skeletons` model for the dead. */
+  /** The body: a `kaykit-adventurers` model for the living, a `kaykit-skeletons` model for the dead. */
   model: string;
+  /** Weapons in each hand, `kaykit-adventurers` prop ids: the heavy ranks carry a two-hander or a shield so rank shows in outline. */
+  gear?: { right?: string; left?: string };
   /** A second skeleton model when the first is missing; living raiders have none. */
   fallbackModel?: string;
   /** Body tint, multiplied over the model's own texture - the arena is warm tan and green, so each raider carries a hue the ground never has. */
@@ -49,7 +51,8 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     bounty: 4,
     leak: 1,
     scale: 0.8,
-    model: "human/jogger",
+    model: "kaykit-adventurers/Rogue",
+    gear: { right: "kaykit-adventurers/dagger" },
     color: "#9be8ff",
     rim: { color: "#ffe4b0", strength: 1.8, power: 2.4 },
     class: "flesh",
@@ -63,7 +66,8 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     bounty: 6,
     leak: 1,
     scale: 1.15,
-    model: "human/man-casual-2",
+    model: "kaykit-adventurers/Knight",
+    gear: { right: "kaykit-adventurers/axe_1handed", left: "kaykit-adventurers/shield_round" },
     color: "#bcd2ff",
     rim: { color: "#dbe8ff", strength: 2.2, power: 2.4 },
     class: "flesh",
@@ -77,7 +81,8 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     bounty: 10,
     leak: 1,
     scale: 1.35,
-    model: "human/police-officer-female",
+    model: "kaykit-adventurers/Knight",
+    gear: { right: "kaykit-adventurers/sword_1handed", left: "kaykit-adventurers/shield_square_color" },
     color: "#f2d16b",
     rim: { color: "#fff0b8", strength: 3, power: 2 },
     class: "flesh",
@@ -91,7 +96,8 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     bounty: 90,
     leak: 6,
     scale: 1.95,
-    model: "human/soldier",
+    model: "kaykit-adventurers/Knight",
+    gear: { right: "kaykit-adventurers/sword_2handed_color" },
     color: "#ff5c4d",
     rim: { color: "#ffd2c4", strength: 3.4, power: 1.8 },
     class: "flesh",
@@ -105,7 +111,8 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     bounty: 15,
     leak: 2,
     scale: 1.6,
-    model: "human/construction-worker",
+    model: "kaykit-adventurers/Barbarian",
+    gear: { right: "kaykit-adventurers/axe_2handed" },
     color: "#ff8a7a",
     rim: { color: "#fff2d6", strength: 2.6, power: 2 },
     class: "flesh",
@@ -122,7 +129,8 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     bounty: 18,
     leak: 1,
     scale: 1.45,
-    model: "human/security-guard",
+    model: "kaykit-adventurers/Knight",
+    gear: { right: "kaykit-adventurers/sword_1handed", left: "kaykit-adventurers/shield_badge_color" },
     color: "#b7f7c0",
     rim: { color: "#e9ffd6", strength: 3, power: 2 },
     class: "flesh",
@@ -137,7 +145,8 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     bounty: 16,
     leak: 1,
     scale: 1.3,
-    model: "human/woman-casual-2",
+    model: "kaykit-adventurers/Rogue_Hooded",
+    gear: { right: "kaykit-adventurers/dagger", left: "kaykit-adventurers/dagger" },
     color: "#e7a4ff",
     rim: { color: "#f5d9ff", strength: 2.8, power: 2.2 },
     class: "flesh",
@@ -152,7 +161,8 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     bounty: 24,
     leak: 2,
     scale: 1.7,
-    model: "human/construction-worker",
+    model: "kaykit-adventurers/Barbarian",
+    gear: { right: "kaykit-adventurers/axe_1handed", left: "kaykit-adventurers/shield_spikes_color" },
     color: "#8fd0ff",
     rim: { color: "#d8efff", strength: 3, power: 1.9 },
     class: "bone",
@@ -166,7 +176,8 @@ export const CREEP_CATALOG: Record<string, CreepDef> = {
     bounty: 140,
     leak: 8,
     scale: 2.1,
-    model: "human/soldier",
+    model: "kaykit-adventurers/Barbarian",
+    gear: { right: "kaykit-adventurers/sword_2handed_color" },
     color: "#ff7a1f",
     rim: { color: "#ffd9a8", strength: 3.6, power: 1.7 },
     class: "flesh",

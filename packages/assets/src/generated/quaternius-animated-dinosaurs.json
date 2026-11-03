@@ -1,0 +1,242 @@
+[
+  {
+    "id": "quaternius-animated-dinosaurs/Apatosaurus",
+    "source": "quaternius-animated-dinosaurs",
+    "categories": [
+      "animal",
+      "dinosaur",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Apatosaurus.glb",
+    "metrics": {
+      "glbBytes": 380776,
+      "byteLength": 380776,
+      "triangles": 1438,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.61317577958107,
+        "d": 49.737384782016505
+      },
+      "center": {
+        "x": -1.862645144790065e-7,
+        "z": -1.709350717162211
+      },
+      "minY": -0.07367539168750681,
+      "maxY": 11.604780328256457
+    },
+    "clips": [
+      "Armature|Apatosaurus_Attack",
+      "Armature|Apatosaurus_Idle",
+      "Armature|Apatosaurus_Jump",
+      "Armature|Apatosaurus_Run",
+      "Armature|Apatosaurus_Walk",
+      "Armature|Stegosaurus_Death"
+    ]
+  },
+  {
+    "id": "quaternius-animated-dinosaurs/Parasaurolophus",
+    "source": "quaternius-animated-dinosaurs",
+    "categories": [
+      "animal",
+      "dinosaur",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Parasaurolophus.glb",
+    "metrics": {
+      "glbBytes": 291016,
+      "byteLength": 291016,
+      "triangles": 1412,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9503474235534661,
+        "d": 12.481130352518399
+      },
+      "center": {
+        "x": 0,
+        "z": -1.5454403087990025
+      },
+      "minY": -0.009430902959874438,
+      "maxY": 5.9700426253821925
+    },
+    "clips": [
+      "Armature|Parasaurolophus_Attack",
+      "Armature|Parasaurolophus_Death",
+      "Armature|Parasaurolophus_Idle",
+      "Armature|Parasaurolophus_Jump",
+      "Armature|Parasaurolophus_Run",
+      "Armature|Parasaurolophus_Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-dinosaurs/Stegosaurus",
+    "source": "quaternius-animated-dinosaurs",
+    "categories": [
+      "animal",
+      "dinosaur",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Stegosaurus.glb",
+    "metrics": {
+      "glbBytes": 423036,
+      "byteLength": 423036,
+      "triangles": 2282,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.70637958496809,
+        "d": 23.053494733116633
+      },
+      "center": {
+        "x": -9.31322552411018e-8,
+        "z": -3.85065731494404
+      },
+      "minY": -0.1062289248258378,
+      "maxY": 10.510133614424928
+    },
+    "clips": [
+      "Armature|Stegosaurus_Attack",
+      "Armature|Stegosaurus_Death",
+      "Armature|Stegosaurus_Idle",
+      "Armature|Stegosaurus_Jump",
+      "Armature|Stegosaurus_Run",
+      "Armature|Stegosaurus_Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-dinosaurs/T_Rex",
+    "source": "quaternius-animated-dinosaurs",
+    "categories": [
+      "animal",
+      "dinosaur",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "T_Rex.glb",
+    "metrics": {
+      "glbBytes": 336568,
+      "byteLength": 336568,
+      "triangles": 1820,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.95367397367955,
+        "d": 31.029577046672006
+      },
+      "center": {
+        "x": -5.587935449913317e-7,
+        "z": -1.086961658421819
+      },
+      "minY": -0.0038123381113217324,
+      "maxY": 15.221188949455255
+    },
+    "clips": [
+      "Armature|TRex_Attack",
+      "Armature|TRex_Death",
+      "Armature|TRex_Idle",
+      "Armature|TRex_Jump",
+      "Armature|TRex_Run",
+      "Armature|TRex_Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-dinosaurs/Triceratops",
+    "source": "quaternius-animated-dinosaurs",
+    "categories": [
+      "animal",
+      "dinosaur",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Triceratops.glb",
+    "metrics": {
+      "glbBytes": 309684,
+      "byteLength": 309684,
+      "triangles": 1332,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.844103617480682,
+        "d": 22.508728353690323
+      },
+      "center": {
+        "x": 7.35522518446885e-8,
+        "z": -1.0788913373874047
+      },
+      "minY": -5.57149657645369,
+      "maxY": 13.068096335762593
+    },
+    "clips": [
+      "Armature|Triceratops_Attack",
+      "Armature|Triceratops_Death",
+      "Armature|Triceratops_Idle",
+      "Armature|Triceratops_Jump",
+      "Armature|Triceratops_Run",
+      "Armature|Triceratops_Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-dinosaurs/Velociraptor",
+    "source": "quaternius-animated-dinosaurs",
+    "categories": [
+      "animal",
+      "dinosaur",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Velociraptor.glb",
+    "metrics": {
+      "glbBytes": 285828,
+      "byteLength": 285828,
+      "triangles": 1248,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.635786737987973,
+        "d": 13.276307648048654
+      },
+      "center": {
+        "x": 0,
+        "z": -1.474050576755133
+      },
+      "minY": -0.05287793518569502,
+      "maxY": 5.460933483533513
+    },
+    "clips": [
+      "Armature|Velociraptor_Attack",
+      "Armature|Velociraptor_Death",
+      "Armature|Velociraptor_Idle",
+      "Armature|Velociraptor_Jump",
+      "Armature|Velociraptor_Run",
+      "Armature|Velociraptor_Walk"
+    ]
+  }
+]

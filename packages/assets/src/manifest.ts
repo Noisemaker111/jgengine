@@ -33,10 +33,32 @@ export interface ScrapeDownload {
   scrape: string;
 }
 
-export type AssetDownload = PinnedDownload | ScrapeDownload;
+/**
+ * A Poly Pizza bundle (the `poly.pizza/bundle/<slug>` path), zipped on download as one `.glb` per
+ * model. Every model's licence must match the source's.
+ */
+export interface PolyPizzaBundleDownload {
+  polyPizzaBundle: string;
+}
+
+/** A free itch.io download: the game page URL and the title of the upload to take. */
+export interface ItchDownload {
+  itch: string;
+  upload: string;
+}
+
+export type AssetDownload = PinnedDownload | ScrapeDownload | PolyPizzaBundleDownload | ItchDownload;
 
 export function isScrapeDownload(download: AssetDownload): download is ScrapeDownload {
   return "scrape" in download;
+}
+
+/** Where a download comes from, for logs and errors. @internal */
+export function downloadLabel(download: AssetDownload): string {
+  if ("scrape" in download) return download.scrape;
+  if ("polyPizzaBundle" in download) return `https://poly.pizza/bundle/${download.polyPizzaBundle}`;
+  if ("itch" in download) return `${download.itch} (${download.upload})`;
+  return download.url;
 }
 
 export interface AssetSource {

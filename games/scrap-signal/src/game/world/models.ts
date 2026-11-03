@@ -1,50 +1,52 @@
-import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
-import type { ModelAttachment, ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
+import type { ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
-import { assets, chassisOf, CLIFF_MAPS, NPC_STYLES, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
+import { assets, chassisOf, CLIFF_MAPS, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
 import { MACHINE } from "../palette";
 import { enemies, type EnemyDef } from "../entities/enemies/catalog";
-import { robotChassis } from "./robots";
 
 const SCIFI = "quaternius-modular-scifi";
 const NATURE = "quaternius-stylized-nature";
-const SPACE = "kaykit-space-base";
+const TOON = "quaternius-toon-shooter";
+const MECH = "quaternius-animated-mech-pack";
+const ROBOT = "quaternius-animated-lowpoly-robot";
+const DESERT = "quaternius-low-poly-desert-assets";
 
 /**
  * Rigged picks carry no explicit `animation`: a catalog-resolved rig is stamped `animation: "auto"`
- * and the engine derives its states and one-shots from the GLB's real clip names. Humanoids are
- * library humans, which bring the engine's humanoid clip set, and hold their tools in the `hand.r`
- * socket every mapped human rig gets.
+ * and the engine derives its states and one-shots from the GLB's real clip names.
  */
 const HUMANOID_HEIGHT = 1.8;
 
-/** A tool in a human's right fist, haft down out of the grip. */
-function inHand(name: string): ModelAttachment {
-  return { slot: "hand.r", model: libraryModel(name), position: [0, -0.09, 0.02], rotation: [2.62, 0, 0] };
+/**
+ * Every gun a Toon Shooter character carries in its right hand. The pack ships them all on the rig;
+ * a character shows one and hides the rest.
+ */
+const TOON_GUNS = [
+  "Revolver", "Revolver_Small", "Pistol", "GrenadeLauncher", "ShortCannon", "Shotgun", "Sniper_2",
+  "Sniper", "SMG", "RocketLauncher", "Shovel", "AK", "Knife_1", "Knife_2",
+] as const;
+type ToonGun = (typeof TOON_GUNS)[number];
+
+/** Hide every gun on a Toon Shooter rig but `gun`. */
+function holding(gun: ToonGun): string[] {
+  return TOON_GUNS.filter((candidate) => candidate !== gun);
 }
 
 type RigKind = "humanoid" | "beast" | "machine";
 
-const BASE_HEIGHT: Record<RigKind, number> = { humanoid: 1.8, beast: 1.2, machine: 1.7 };
+const BASE_HEIGHT: Record<RigKind, number> = { humanoid: HUMANOID_HEIGHT, beast: 1.2, machine: 2.6 };
 
 /**
- * Enemy casting.
- *
- * Ferralon's hostiles are machines by name ("Husk Drone", "Hauler Frame", "Loader"), but no CC0 pack
- * we ship has a rigged robot, so the cast is the closest rigged silhouette per family plus a machine
- * finish: humanoid drones on library humans plated like mannequins, beast-frames on the Quaternius aliens (which carry
- * their own idle clip), and the heavy loaders on sci-fi hardware.
- *
- * The loaders are the honest weak spot — `drill_structure` and friends are static scenery with no
- * rig, so a heavy frame slides rather than walks. Replacing them needs either a rigged mech pack or
- * a working rig-less part composition; see the tracked issue.
+ * Enemy casting. Scrapjack crews are Quaternius Toon Shooter characters, each with the one gun that
+ * tells its rank; beast-frames are the Quaternius sci-fi aliens; loaders and heavy frames are the
+ * Quaternius Animated Mechs, which walk, punch and die on their own clips. One studio, one bevel.
  */
-const RIG_BY_ID: Record<string, { kind: RigKind; model: string; fallbackModel?: string }> = {
-  husk: { kind: "humanoid", model: "human/man-casual" },
-  marauder: { kind: "humanoid", model: "human/construction-worker" },
-  nomad: { kind: "machine", model: `${SPACE}/spacetruck`, fallbackModel: `${SCIFI}/Prop_Computer` },
-  elite_husk: { kind: "humanoid", model: "human/soldier" },
+const RIG_BY_ID: Record<string, { kind: RigKind; model: string; fallbackModel?: string; gun?: ToonGun }> = {
+  husk: { kind: "humanoid", model: `${TOON}/Character_Enemy`, gun: "Pistol" },
+  marauder: { kind: "humanoid", model: `${TOON}/Character_Hazmat`, gun: "Shovel" },
+  nomad: { kind: "machine", model: `${MECH}/Leela`, fallbackModel: `${MECH}/Mike` },
+  elite_husk: { kind: "humanoid", model: `${TOON}/Character_Soldier`, gun: "AK" },
   ripper_pup: { kind: "beast", model: `${SCIFI}/Alien_Cyclop`, fallbackModel: `${SCIFI}/Alien_Scolitex` },
   ripper: { kind: "beast", model: `${SCIFI}/Alien_Cyclop`, fallbackModel: `${SCIFI}/Alien_Oculichrysalis` },
   elite_ripper: { kind: "beast", model: `${SCIFI}/Alien_Oculichrysalis`, fallbackModel: `${SCIFI}/Alien_Cyclop` },
@@ -52,21 +54,14 @@ const RIG_BY_ID: Record<string, { kind: RigKind; model: string; fallbackModel?: 
   bruiser: { kind: "beast", model: `${SCIFI}/Alien_Scolitex`, fallbackModel: `${SCIFI}/Alien_Oculichrysalis` },
   crawler: { kind: "beast", model: `${SCIFI}/Alien_Oculichrysalis`, fallbackModel: `${SCIFI}/Alien_Scolitex` },
   crawler_soldier: { kind: "beast", model: `${SCIFI}/Alien_Oculichrysalis`, fallbackModel: `${SCIFI}/Alien_Cyclop` },
-  loader: { kind: "machine", model: `${SPACE}/drill_structure`, fallbackModel: `${SCIFI}/Column_MetalSupport` },
-  loader_war: { kind: "machine", model: `${SPACE}/structure_tall`, fallbackModel: `${SPACE}/drill_structure` },
-  elite_loader: { kind: "machine", model: `${SPACE}/structure_tall`, fallbackModel: `${SPACE}/lander_A` },
+  loader: { kind: "machine", model: `${MECH}/Mike`, fallbackModel: `${MECH}/Stan` },
+  loader_war: { kind: "machine", model: `${MECH}/Stan`, fallbackModel: `${MECH}/Mike` },
+  elite_loader: { kind: "machine", model: `${MECH}/George`, fallbackModel: `${MECH}/Stan` },
   old_tusk: { kind: "beast", model: `${SCIFI}/Alien_Scolitex`, fallbackModel: `${SCIFI}/Alien_Oculichrysalis` },
   wreck_maw: { kind: "beast", model: `${SCIFI}/Alien_Cyclop`, fallbackModel: `${SCIFI}/Alien_Scolitex` },
   foreman_maw: { kind: "beast", model: `${SCIFI}/Alien_Oculichrysalis`, fallbackModel: `${SCIFI}/Alien_Cyclop` },
-  captain_rusk: { kind: "humanoid", model: "human/security-guard" },
-  foundry_heart: { kind: "machine", model: `${SPACE}/lander_A`, fallbackModel: `${SPACE}/structure_tall` },
-};
-
-/** Drones carry a scavenged tool; the beasts and hardware carry nothing. */
-const WEAPONS: Record<string, string> = {
-  marauder: "survival/stone-hatchet",
-  elite_husk: "survival/wooden-club",
-  captain_rusk: "survival/stone-pick",
+  captain_rusk: { kind: "humanoid", model: `${TOON}/Character_Soldier`, gun: "RocketLauncher" },
+  foundry_heart: { kind: "machine", model: `${MECH}/George`, fallbackModel: `${MECH}/Stan` },
 };
 
 /**
@@ -76,26 +71,18 @@ const WEAPONS: Record<string, string> = {
  */
 function enemyFinish(def: EnemyDef, kind: RigKind): ModelMaterialOverride {
   const style = chassisOf(def, "husk");
-  const machined = kind !== "beast";
-  return {
-    color: style.plate,
-    // Moderate metalness: a fully metallic surface has no diffuse response, so outdoors under one
-    // sun it renders as a black body with a hot rim instead of readable machined metal.
-    metalness: machined ? 0.5 : 0.2,
-    roughness: machined ? 0.45 : 0.75,
-    ...(machined ? { maps: def.elite ? PANEL_MAPS : SCRAP_METAL_MAPS } : {}),
-    // Silhouette separation. Hostiles stand on sand within a stop of their own value, so the read at
-    // 40 m is an edge, not an albedo: a cool rim for the machines, hotter and stronger on elites so
-    // a elite announces itself before its health bar does.
-    rim: {
-      color: def.elite ? style.optic : MACHINE.rimCool,
-      strength: def.elite ? 0.9 : 0.45,
-      power: def.elite ? 2.6 : 3.4,
-    },
-    // No emissive here. `ModelMaterialOverride` applies to *every* material in the model, and these
-    // are single-mesh casts with no separate optic — an emissive optic colour turns the whole body
-    // into a glowing lamp. Elites read through their plate colour instead (see CHASSIS).
+  // Silhouette separation. Hostiles stand on sand within a stop of their own value, so the read at
+  // 40 m is an edge, not an albedo: a cool rim, hotter and stronger on elites so an elite announces
+  // itself before its health bar does.
+  const rim = {
+    color: def.elite ? style.optic : MACHINE.rimCool,
+    strength: def.elite ? 0.9 : 0.45,
+    power: def.elite ? 2.6 : 3.4,
   };
+  // Crews and mechs keep their pack's painted parts (skin, cloth, hazard trim): a whole-model tint
+  // would flatten them to one colour. The aliens are one material, so their plate is the read.
+  if (kind !== "beast") return { rim };
+  return { color: style.plate, metalness: 0.2, roughness: 0.75, rim };
 }
 
 /** A local breed wears its base's rig. */
@@ -105,100 +92,38 @@ function rigOf(def: EnemyDef) {
 
 function enemyPick(def: EnemyDef): ModelPick | null {
   const rig = rigOf(def);
-  if (rig === undefined || rig.kind === "humanoid") return null;
+  if (rig === undefined) return null;
   return {
     model: rig.model,
     ...(rig.fallbackModel === undefined ? {} : { fallbackModel: rig.fallbackModel }),
-    style: { targetHeight: BASE_HEIGHT[rig.kind] * def.scale, material: enemyFinish(def, rig.kind) },
+    style: {
+      targetHeight: BASE_HEIGHT[rig.kind] * def.scale,
+      material: enemyFinish(def, rig.kind),
+      ...(rig.gun === undefined ? {} : { hiddenNodes: holding(rig.gun) }),
+    },
   };
 }
 
-function humanEnemy(def: EnemyDef): ModelConfig | null {
-  const rig = rigOf(def);
-  if (rig?.kind !== "humanoid") return null;
-  const weapon = WEAPONS[def.look ?? def.id];
-  return {
-    ...libraryModel(rig.model, { targetHeight: BASE_HEIGHT.humanoid * def.scale }),
-    material: enemyFinish(def, rig.kind),
-    ...(weapon === undefined ? {} : { attachments: [inHand(weapon)] }),
-  };
-}
-
-const coat = (npc: string): ModelMaterialOverride => {
-  const style = NPC_STYLES[npc];
-  return style === undefined ? {} : { color: style.coat };
+/** The crew: the Toon Shooter cast in their own colours, each with the gun of their trade. */
+const NPCS: Record<string, { body: string; gun: ToonGun }> = {
+  dr_sparx: { body: `${TOON}/Character_Hazmat`, gun: "Revolver_Small" },
+  rigg: { body: `${TOON}/Character_Hazmat`, gun: "Shotgun" },
+  gauge: { body: `${TOON}/Character_Soldier`, gun: "Revolver" },
+  reactor_hunter: { body: `${TOON}/Character_Soldier`, gun: "Sniper" },
 };
-
-/** The crew: library humans in their coats, each with the tool of their trade. */
-const NPCS: Record<string, { human: string; material: ModelMaterialOverride; tool?: string }> = {
-  dr_sparx: { human: "human/businesswoman", material: coat("dr_sparx") },
-  rigg: { human: "human/construction-worker", material: coat("rigg"), tool: "survival/stone-hatchet" },
-  gauge: { human: "human/police-officer-female", material: coat("gauge"), tool: "survival/wooden-club" },
-  reactor_hunter: { human: "human/soldier", material: { color: "#5a5a5a", metalness: 0.5, roughness: 0.4 }, tool: "survival/spear" },
-};
-
-function npcModel(npc: { human: string; material: ModelMaterialOverride; tool?: string }): ModelConfig {
-  return {
-    ...libraryModel(npc.human, { targetHeight: HUMANOID_HEIGHT }),
-    material: npc.material,
-    ...(npc.tool === undefined ? {} : { attachments: [inHand(npc.tool)] }),
-  };
-}
-
-/** The model-library names the cast wears and carries, for the credits. */
-export const CAST_LIBRARY_MODELS: readonly string[] = [
-  ...new Set([
-    ...Object.values(RIG_BY_ID).filter((rig) => rig.kind === "humanoid").map((rig) => rig.model),
-    ...Object.values(WEAPONS),
-    ...Object.values(NPCS).flatMap((npc) => [npc.human, ...(npc.tool === undefined ? [] : [npc.tool])]),
-  ]),
-];
 
 function buildEntityModels(): Record<string, ModelConfig> {
-  const enemyPlan: Record<string, ModelPick> = {};
+  const plan: Record<string, ModelPick> = {};
   for (const def of enemies) {
     const pick = enemyPick(def);
-    if (pick !== null) enemyPlan[def.id] = pick;
+    if (pick !== null) plan[def.id] = pick;
   }
-  const models: Record<string, ModelConfig> = resolveModelPlan(assets, enemyPlan);
-  for (const def of enemies) {
-    const human = humanEnemy(def);
-    if (human !== null) models[def.id] = human;
+  for (const [id, npc] of Object.entries(NPCS)) {
+    plan[id] = { model: npc.body, style: { targetHeight: HUMANOID_HEIGHT, hiddenNodes: holding(npc.gun) } };
   }
-
-  // Loaders walk as kit-bashed part compositions; the rigged pick above stays their fallback when a
-  // chassis piece is missing from the catalog.
-  for (const def of enemies) {
-    if (rigOf(def)?.kind !== "machine") continue;
-    const chassis = robotChassis(def, BASE_HEIGHT.machine * def.scale);
-    if (chassis !== null) models[def.id] = chassis;
-  }
-
-  for (const [id, npc] of Object.entries(NPCS)) models[id] = npcModel(npc);
-
-  // B0-LT is a hovering repair drone, not a walker — a lamp head with no legs reads correctly.
-  Object.assign(
-    models,
-    resolveModelPlan(assets, {
-      bolt: {
-        model: `${SPACE}/lights`,
-        fallbackModel: `${SCIFI}/Prop_Light_Small`,
-        style: {
-          targetHeight: 0.9,
-          y: 0.7,
-          material: {
-            color: MACHINE.steel,
-            metalness: 0.8,
-            roughness: 0.3,
-            emissive: MACHINE.optic,
-            emissiveIntensity: 1.6,
-            maps: PANEL_MAPS,
-          },
-        },
-      },
-    }),
-  );
-  return models;
+  // B0-LT, the guide: a small walking robot with a lit visor.
+  plan["bolt"] = { model: `${ROBOT}/Robot`, style: { targetHeight: 1.1, material: { rim: { color: MACHINE.optic, strength: 0.6, power: 2.8 } } } };
+  return resolveModelPlan(assets, plan);
 }
 
 export const entityModels: Record<string, ModelConfig> = buildEntityModels();
@@ -306,14 +231,14 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
     style: { scale: 1.5, material: { rim: BARK_RIM } },
   },
   wreck: {
-    model: `${SPACE}/cargo_A`,
-    fallbackModel: `${SCIFI}/Prop_Crate4`,
-    style: { scale: 1.6, material: { color: MACHINE.rust, ...SCRAP } },
+    model: `${TOON}/Shipping_Container`,
+    fallbackModel: `${TOON}/Container_Small`,
+    style: { targetHeight: 2.6, material: { rim: BARK_RIM } },
   },
   barricade: {
-    model: `${SCIFI}/Prop_Rail_2`,
-    fallbackModel: `${SCIFI}/ShortWall_Metal2_Straight`,
-    style: { scale: 2.8, material: { color: MACHINE.scrap, ...SCRAP } },
+    model: `${TOON}/Barrier_Large`,
+    fallbackModel: `${TOON}/Barrier_Fixed`,
+    style: { targetHeight: 2.4, material: { rim: BARK_RIM } },
   },
   watchtower: {
     model: `${SCIFI}/Platform_Rails_4WideTall`,
@@ -321,25 +246,20 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
     style: { scale: 1.8, material: { color: MACHINE.iron, ...PANEL } },
   },
   tent: {
-    model: `${SPACE}/structure_low`,
-    fallbackModel: `${SCIFI}/Prop_Vent_Wide`,
-    style: { scale: 2.4, material: { color: "#b09878", ...SCRAP } },
+    model: `${TOON}/Shipping_Container_Structure`,
+    fallbackModel: `${TOON}/Shipping_Container`,
+    style: { targetHeight: 3.6, material: { rim: BARK_RIM } },
   },
-  // Decal_Sign is flat wall/floor decal geometry — placed in the open it lay on the sand as a
-  // painted diamond, so every "signpost" was invisible at eye level. A standing floodlight post
-  // reads as roadside infrastructure from any angle.
+  // A standing roadside sign reads from any angle; a flat decal lay on the sand unseen.
   signpost: {
-    model: `${SPACE}/lights`,
+    model: `${TOON}/Sign`,
     fallbackModel: `${SCIFI}/Column_Simple`,
-    style: { scale: 1.6, material: { color: MACHINE.hazard, metalness: 0.4, roughness: 0.6 } },
+    style: { targetHeight: 2.2, material: { rim: BARK_RIM } },
   },
   street_lamp: {
-    model: `${SCIFI}/Prop_Light_Floor`,
-    fallbackModel: `${SCIFI}/Prop_Light_Small`,
-    style: {
-      scale: 2.6,
-      material: { color: MACHINE.iron, ...PANEL, emissive: "#ffd98a", emissiveIntensity: 1.2 },
-    },
+    model: `${TOON}/Street_Light`,
+    fallbackModel: `${SCIFI}/Prop_Light_Floor`,
+    style: { targetHeight: 6, material: { rim: BARK_RIM } },
   },
   road_marker: {
     model: `${SCIFI}/Decal_Sign`,
@@ -347,21 +267,20 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
     style: { scale: 2, material: { color: MACHINE.hazard, metalness: 0.4, roughness: 0.6 } },
   },
   bus_wreck: {
-    model: `${SPACE}/spacetruck_large`,
-    fallbackModel: `${SPACE}/spacetruck`,
-    style: { scale: 2.45, material: { color: MACHINE.rust, ...SCRAP } },
+    model: `${TOON}/Broken_Car`,
+    fallbackModel: `${TOON}/Shipping_Container`,
+    style: { targetHeight: 4.2, material: { rim: BARK_RIM } },
   },
   water_tower: {
-    model: `${SPACE}/structure_tall`,
+    model: `${TOON}/Water_Tank`,
     fallbackModel: `${SCIFI}/Column_Large_Straight`,
-    style: { scale: 1.22, material: { color: MACHINE.scrap, ...SCRAP } },
+    style: { targetHeight: 9, material: { rim: BARK_RIM } },
   },
-  // Bleached-bone landmark: a leafless silhouette only. `TwistedTree_*` carries red autumn foliage,
-  // which on an arid waste reads as a crimson canopy rather than a skeleton.
+  // Bleached-bone landmark: a beast's skeleton half sunk in the sand.
   bone_arch: {
-    model: `${NATURE}/DeadTree_4`,
-    fallbackModel: `${NATURE}/DeadTree_2`,
-    style: { scale: 1.8, material: { rim: BONE_RIM } },
+    model: `${DESERT}/Bones`,
+    fallbackModel: `${NATURE}/DeadTree_4`,
+    style: { targetHeight: 3.2, material: { rim: BONE_RIM } },
   },
   reactor_gate: {
     model: `${SCIFI}/Door_Frame_SquareTall`,
@@ -388,11 +307,11 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
       material: { color: "#a8502c", ...SCRAP, rim: { color: "#ffb46a", strength: 0.5, power: 3 } },
     },
   },
-  // Tall verticals for ridgelines and story clusters — a harvester turbine reads at two kilometres
+  // Tall verticals for ridgelines and story clusters — an antenna mast reads at two kilometres
   // and gives the eye a destination the smooth dunes never offered.
   wind_turbine: {
-    model: `${SPACE}/windturbine_tall`,
-    fallbackModel: `${SPACE}/windturbine_low`,
-    style: { scale: 2.2, material: { color: MACHINE.steel, ...PANEL } },
+    model: `${SCIFI}/Column_Astra`,
+    fallbackModel: `${SCIFI}/Column_Pipes`,
+    style: { targetHeight: 16, material: { color: MACHINE.steel, ...PANEL } },
   },
 });

@@ -1,10 +1,13 @@
 import { librarySurfaceScan } from "@jgengine/assets/catalogs/materialLibrary";
 import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
+import { humanoidAnimation } from "@jgengine/core/anim/humanoidActions";
 import type { WornLayer } from "@jgengine/core/anim/wearable/wornRegion";
 import type { ModelAttachment, ModelConfig } from "@jgengine/core/game/playableGame";
 import type { ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
 import type { ScatterSolidSpec } from "@jgengine/core/scatter/scatterSolids";
+import { resolveModelPlan } from "@jgengine/core/model/resolveModel";
 
+import { bodyPacks } from "./assets";
 import { BODIES } from "./character";
 import { SPECIES_MODELS } from "./data/creatureModels";
 import { HARVESTABLES } from "./data/harvestables";
@@ -15,7 +18,22 @@ const nature = (file: string, targetHeight: number): ModelConfig => ({ url: `${N
 /** A rock tinted to read as the ore it holds. */
 const ore = (file: string, targetHeight: number, material: NonNullable<ModelConfig["material"]>): ModelConfig => ({ ...nature(file, targetHeight), material });
 
-const SURVIVOR = "human/man-casual";
+/** A survivor stands 1.8 m, slim beside every creature over dodo size. */
+const SURVIVOR_HEIGHT = 1.8;
+
+/** The packs' own idle, walk and run, plus the engine's authored jump, swim, punch, swing and gather. */
+const SURVIVOR_ANIMATION = humanoidAnimation({ idle: "CharacterArmature|Idle", walk: "CharacterArmature|Walk", run: "CharacterArmature|Run" });
+
+const BODY_MODELS: Record<string, ModelConfig> = resolveModelPlan(
+  bodyPacks,
+  Object.fromEntries(BODIES.map((body) => [body.id, { model: body.model, style: { targetHeight: SURVIVOR_HEIGHT, animation: SURVIVOR_ANIMATION } }])),
+);
+
+function bodyModel(id: string): ModelConfig {
+  const model = BODY_MODELS[id];
+  if (model === undefined) throw new Error(`fernwild: survivor body "${id}" is missing from the Quaternius modular packs`);
+  return model;
+}
 
 /** A tool in the right fist: the haft runs down out of the grip, its head swings over and down. */
 const GRIP: [number, number, number] = [2.62, 0, 0];
@@ -57,15 +75,15 @@ const WORN: Record<string, WornLayer> = Object.fromEntries(
   }),
 );
 
-/** The model-library names the survivor, its creator bodies and its tools draw, for the credits. */
-export const SURVIVOR_MODELS: readonly string[] = [...new Set([SURVIVOR, ...BODIES.map((body) => body.model), ...Object.values(TOOLS).map((tool) => tool.model)])];
+/** The model-library names the survivor's tools draw, for the credits. */
+export const TOOL_MODELS: readonly string[] = [...new Set(Object.values(TOOLS).map((tool) => tool.model))];
 
 /**
  * The survivor and every species: free animal models (data/creatureModels.ts), each drawn at the
  * species' standing height and tinted where a relative stands in for it.
  */
 export const entityModels: Record<string, ModelConfig> = {
-  player: { ...libraryModel(SURVIVOR), held: HELD, worn: WORN, looks: Object.fromEntries(BODIES.map((body) => [body.id, libraryModel(body.model)])) },
+  player: { ...bodyModel(BODIES[0].id), held: HELD, worn: WORN, looks: Object.fromEntries(BODIES.map((body) => [body.id, bodyModel(body.id)])) },
   ...Object.fromEntries(
     Object.entries(SPECIES_MODELS).map(([species, { file, height, tint, tintMaterials }]) => [
       species,

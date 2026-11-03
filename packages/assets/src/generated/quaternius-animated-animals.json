@@ -1,0 +1,712 @@
+[
+  {
+    "id": "quaternius-animated-animals/Alpaca",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Alpaca.glb",
+    "metrics": {
+      "glbBytes": 1053804,
+      "byteLength": 1053804,
+      "triangles": 2060,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2655378319323058,
+        "d": 4.299389747069526
+      },
+      "center": {
+        "x": -4.656612900832968e-8,
+        "z": 0.41817350199238845
+      },
+      "minY": 0.004994042551677997,
+      "maxY": 5.402582294427765
+    },
+    "clips": [
+      "Attack_Headbutt",
+      "Attack_Kick",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_toIdle",
+      "Walk",
+      "Idle_Headlow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack_Headbutt",
+      "AnimalArmature|Attack_Kick",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_Headlow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Idle_HitReact_Right",
+      "AnimalArmature|Jump_toIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/Bull",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Bull.glb",
+    "metrics": {
+      "glbBytes": 1038360,
+      "byteLength": 1038360,
+      "triangles": 2418,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.5134469382464903,
+        "d": 8.066983990677752
+      },
+      "center": {
+        "x": 1.3969838497107645e-7,
+        "z": 1.0538756423331592
+      },
+      "minY": -0.055506439391041155,
+      "maxY": 4.531166476749404
+    },
+    "clips": [
+      "Attack_Headbutt",
+      "Attack_Kick",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_toIdle",
+      "Walk",
+      "Idle_Headlow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack_Headbutt",
+      "AnimalArmature|Attack_Kick",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_Headlow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Jump_toIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/Cow",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cow.glb",
+    "metrics": {
+      "glbBytes": 1028584,
+      "byteLength": 1028584,
+      "triangles": 2450,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.3121883161366,
+        "d": 8.066984155000002
+      },
+      "center": {
+        "x": 1.3969838996708006e-7,
+        "z": 1.053875704372599
+      },
+      "minY": -0.055506439391041155,
+      "maxY": 4.531166458270695
+    },
+    "clips": [
+      "Attack_Headbutt",
+      "Attack_Kick",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_toIdle",
+      "Walk",
+      "Idle_Headlow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack_Headbutt",
+      "AnimalArmature|Attack_Kick",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_Headlow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Jump_toIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/Deer",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Deer.glb",
+    "metrics": {
+      "glbBytes": 1007564,
+      "byteLength": 1007564,
+      "triangles": 2096,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.458978606387973,
+        "d": 4.397311418832785
+      },
+      "center": {
+        "x": 6.98491935402501e-8,
+        "z": 0.5564593792487592
+      },
+      "minY": -0.013107549336263269,
+      "maxY": 4.260977947275234
+    },
+    "clips": [
+      "Attack_Headbutt",
+      "Attack_Kick",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_toIdle",
+      "Walk",
+      "Idle_Headlow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack_Headbutt",
+      "AnimalArmature|Attack_Kick",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_Headlow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Idle_HitReact_Right",
+      "AnimalArmature|Jump_toIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/Donkey",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Donkey.glb",
+    "metrics": {
+      "glbBytes": 1093824,
+      "byteLength": 1093824,
+      "triangles": 2000,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.16025535389781,
+        "d": 4.708029547220618
+      },
+      "center": {
+        "x": -4.656612895281853e-8,
+        "z": 0.6446857623239648
+      },
+      "minY": 0.004988927205675075,
+      "maxY": 3.9587738550369047
+    },
+    "clips": [
+      "Attack_Headbutt",
+      "Attack_Kick",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_toIdle",
+      "Walk",
+      "Idle_Headlow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack_Headbutt",
+      "AnimalArmature|Attack_Kick",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_Headlow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Idle_HitReact_Right",
+      "AnimalArmature|Jump_toIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/Fox",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Fox.glb",
+    "metrics": {
+      "glbBytes": 960228,
+      "byteLength": 960228,
+      "triangles": 1848,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.061666198074818,
+        "d": 5.883055453975169
+      },
+      "center": {
+        "x": 0,
+        "z": -0.23878451016268598
+      },
+      "minY": -0.0019308138008226762,
+      "maxY": 2.6747666577350673
+    },
+    "clips": [
+      "Attack",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_ToIdle",
+      "Walk",
+      "Idle_2_HeadLow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_2_HeadLow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Idle_HitReact_Right",
+      "AnimalArmature|Jump_ToIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/Horse",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Horse.glb",
+    "metrics": {
+      "glbBytes": 1108124,
+      "byteLength": 1108124,
+      "triangles": 2182,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4069361612200741,
+        "d": 5.676113967871572
+      },
+      "center": {
+        "x": 0,
+        "z": 0.6147661284087538
+      },
+      "minY": -0.01121953084848198,
+      "maxY": 4.812727039372252
+    },
+    "clips": [
+      "Attack_Headbutt",
+      "Attack_Kick",
+      "Death",
+      "Eating",
+      "Gallop_Jump",
+      "Gallop",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_toIdle",
+      "Walk",
+      "Idle_Headlow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack_Headbutt",
+      "AnimalArmature|Attack_Kick",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_Headlow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Idle_HitReact_Right",
+      "AnimalArmature|Jump_toIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/Husky",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Husky.glb",
+    "metrics": {
+      "glbBytes": 927536,
+      "byteLength": 927536,
+      "triangles": 1920,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.989964604377746,
+        "d": 3.889196602295753
+      },
+      "center": {
+        "x": 0,
+        "z": 0.47033427287472296
+      },
+      "minY": 0.0030389950523310467,
+      "maxY": 3.1941083970679838
+    },
+    "clips": [
+      "Attack",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_ToIdle",
+      "Walk",
+      "Idle_2",
+      "Idle_2_HeadLow",
+      "Idle",
+      "AnimalArmature|Attack",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_2_HeadLow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Idle_HitReact_Right",
+      "AnimalArmature|Jump_ToIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/Shiba_Inu",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Shiba_Inu.glb",
+    "metrics": {
+      "glbBytes": 851196,
+      "byteLength": 851196,
+      "triangles": 1950,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.07104741036892,
+        "d": 3.948446398906401
+      },
+      "center": {
+        "x": 0,
+        "z": 0.5198149790136747
+      },
+      "minY": 0.004425128534334965,
+      "maxY": 3.1000232260482163
+    },
+    "clips": [
+      "Attack",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_ToIdle",
+      "Walk",
+      "Idle_2_HeadLow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_2_HeadLow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Idle_HitReact_Right",
+      "AnimalArmature|Jump_ToIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/Stag",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Stag.glb",
+    "metrics": {
+      "glbBytes": 1044172,
+      "byteLength": 1044172,
+      "triangles": 3667,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.7039257658919014,
+        "d": 4.83748728932016
+      },
+      "center": {
+        "x": -0.042120663796765045,
+        "z": 0.6171247681772901
+      },
+      "minY": 0.00970322478563853,
+      "maxY": 5.462694213396854
+    },
+    "clips": [
+      "Attack_Headbutt",
+      "Attack_Kick",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_toIdle",
+      "Walk",
+      "Idle_Headlow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack_Headbutt",
+      "AnimalArmature|Attack_Kick",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_Headlow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Idle_HitReact_Right",
+      "AnimalArmature|Jump_toIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/White_Horse",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "White_Horse.glb",
+    "metrics": {
+      "glbBytes": 1109444,
+      "byteLength": 1109444,
+      "triangles": 2182,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4069361612200741,
+        "d": 5.676113967871572
+      },
+      "center": {
+        "x": 0,
+        "z": 0.6147661284087538
+      },
+      "minY": -0.01121953084848198,
+      "maxY": 4.812727047482871
+    },
+    "clips": [
+      "Attack_Headbutt",
+      "Attack_Kick",
+      "Death",
+      "Eating",
+      "Gallop_Jump",
+      "Gallop",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_toIdle",
+      "Walk",
+      "Idle_Headlow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack_Headbutt",
+      "AnimalArmature|Attack_Kick",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_Headlow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Idle_HitReact_Right",
+      "AnimalArmature|Jump_toIdle",
+      "AnimalArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animals/Wolf",
+    "source": "quaternius-animated-animals",
+    "categories": [
+      "animal",
+      "creature",
+      "wildlife",
+      "rigged",
+      "animated"
+    ],
+    "file": "Wolf.glb",
+    "metrics": {
+      "glbBytes": 986712,
+      "byteLength": 986712,
+      "triangles": 1962,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0651998221874242,
+        "d": 5.553088235497688
+      },
+      "center": {
+        "x": 0,
+        "z": -0.21535337897089124
+      },
+      "minY": -0.010203104008888842,
+      "maxY": 2.670809869865409
+    },
+    "clips": [
+      "Attack",
+      "Death",
+      "Eating",
+      "Gallop",
+      "Gallop_Jump",
+      "Idle_HitReact_Left",
+      "Idle_HitReact_Right",
+      "Jump_ToIdle",
+      "Walk",
+      "Idle_2_HeadLow",
+      "Idle_2",
+      "Idle",
+      "AnimalArmature|Attack",
+      "AnimalArmature|Death",
+      "AnimalArmature|Eating",
+      "AnimalArmature|Gallop",
+      "AnimalArmature|Gallop_Jump",
+      "AnimalArmature|Idle",
+      "AnimalArmature|Idle_2",
+      "AnimalArmature|Idle_2_HeadLow",
+      "AnimalArmature|Idle_HitReact_Left",
+      "AnimalArmature|Idle_HitReact_Right",
+      "AnimalArmature|Jump_ToIdle",
+      "AnimalArmature|Walk"
+    ]
+  }
+]

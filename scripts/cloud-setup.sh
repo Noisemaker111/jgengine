@@ -24,3 +24,13 @@ bun run jgengine assets pull quaternius-lowpoly-medieval-village-pack
 bun run jgengine assets pull quaternius-lowpoly-medieval-buildings
 bun run jgengine assets pull quaternius-fantasy-props
 bun run jgengine assets pull quaternius-lowpoly-crops-pack
+
+# Scrap Signal, Beacon Bastion and Fernwild's packs, mirrored to the packs release from Poly Pizza and itch.io.
+bun run jgengine assets pull quaternius-toon-shooter
+bun run jgengine assets pull quaternius-animated-mech-pack
+bun run jgengine assets pull quaternius-animated-lowpoly-robot
+bun run jgengine assets pull quaternius-low-poly-desert-assets
+bun run jgengine assets pull kaykit-medieval-hexagon
+bun run jgengine assets pull kaykit-forest
+bun run jgengine assets pull quaternius-modular-men
+bun run jgengine assets pull quaternius-modular-women
