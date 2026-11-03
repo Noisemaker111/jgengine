@@ -100,17 +100,13 @@ export function planLanes(files: readonly string[], lanes: number, source: (file
 
 /** Run `items` with at most `lanes` in flight, each lane taking the next item as it frees; results keep the items' order. */
 export async function runPool<T, R>(items: readonly T[], lanes: number, run: (item: T, index: number) => Promise<R>): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let next = 0;
+  const results = new Map<number, R>();
+  const queue = items.map((item, index) => ({ item, index }));
   const lane = async (): Promise<void> => {
-    while (next < items.length) {
-      const index = next;
-      next += 1;
-      results[index] = await run(items[index] as T, index);
-    }
+    for (let job = queue.shift(); job !== undefined; job = queue.shift()) results.set(job.index, await run(job.item, job.index));
   };
   await Promise.all(Array.from({ length: Math.max(1, Math.min(lanes, items.length)) }, lane));
-  return results;
+  return [...results.entries()].sort(([a], [b]) => a - b).map(([, result]) => result);
 }
 
 /** Files split into at most `lanes` groups of near-equal cost, the costliest group first. */
