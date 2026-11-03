@@ -5,7 +5,7 @@
 //   <id>/out.log    its stdout and stderr, together
 //   <id>/runner     the pid of the process running it
 //   <id>/exit       written once, on exit, with the exit code
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 export const BG_DIR = join(".scratch", "bg");
@@ -38,12 +38,10 @@ export function readText(path: string): string | null {
   }
 }
 
-/** The task's exit code once it has one, else null. */
+/** The task's exit code once it has one, else null. An empty or partial file is no code yet, never 0. */
 export function readExit(dir: string): number | null {
-  if (!existsSync(join(dir, "exit"))) return null;
-  const text = readText(join(dir, "exit"));
-  const code = Number((text ?? "").trim());
-  return Number.isInteger(code) ? code : null;
+  const text = (readText(join(dir, "exit")) ?? "").trim();
+  return /^-?\d+$/.test(text) ? Number(text) : null;
 }
 
 export function readOutput(dir: string): string {

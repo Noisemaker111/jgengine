@@ -159,6 +159,16 @@ test("a lost runner is answered, not waited for forever", async () => {
   expect(printed).toContain("started");
 });
 
+// A waiter woken by the exit file's creation read it before its code was written, and reported
+// a task that exited 3 as exited 0 (CI run 41587553136, four test lanes on one runner).
+test("an exit file with no code yet is no code, never a pass", () => {
+  const dir = checkout();
+  writeFileSync(join(dir, "exit"), "");
+  expect(readExit(dir)).toBeNull();
+  writeFileSync(join(dir, "exit"), "3\n");
+  expect(readExit(dir)).toBe(3);
+});
+
 test("the wait is the exit event: it returns as soon as the task exits, not on the heartbeat", async () => {
   const dir = checkout();
   // One command both shells read alike; `ping ... >nul` on bash wrote a file named `nul` into the repo (#2860).

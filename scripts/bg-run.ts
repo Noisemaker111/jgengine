@@ -13,7 +13,7 @@
 // `background start` starts a supervisor detached from this process; the supervisor runs the command, writes
 // its output to `.scratch/bg/<id>/out.log` and its exit code to `exit`, then exits itself.
 import { spawn } from "node:child_process";
-import { closeSync, mkdirSync, openSync, writeFileSync } from "node:fs";
+import { closeSync, mkdirSync, openSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -67,7 +67,9 @@ export function supervise(dir: string, command: string): void {
   });
   const finish = (code: number, note?: string): void => {
     if (note !== undefined) writeFileSync(join(dir, "out.log"), `${note}\n`, { flag: "a" });
-    writeFileSync(join(dir, "exit"), `${code}\n`);
+    // Renamed into place, so a waiter woken by the file's creation never reads it half written.
+    writeFileSync(join(dir, "exit.tmp"), `${code}\n`);
+    renameSync(join(dir, "exit.tmp"), join(dir, "exit"));
     try {
       closeSync(fd);
     } catch {
