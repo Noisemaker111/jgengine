@@ -4,7 +4,7 @@ import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createEmptyEditorDocument, type EditorEnvironment } from "@jgengine/core/editor/index";
+import { createEmptyEditorDocument, normalizeEditorLayers, withDerivedEditorLayers, type EditorEnvironment } from "@jgengine/core/editor/index";
 
 import { parseEditorCliArgs, saveSceneDocument } from "./cli";
 
@@ -107,6 +107,31 @@ describe("saveSceneDocument", () => {
     document.markers.push({ id: "invalid", kind: "prop", position: { x: "invalid" as unknown as number, y: 0, z: 0 } });
     expect(saveSceneDocument("demo", document, root).ok).toBe(false);
     expect(readFileSync(path, "utf8")).toBe("existing authored bytes\n");
+  });
+
+  test("save, load, save is stable and never writes a game's derived layers", () => {
+    const root = mkdtempSync(join(tmpdir(), "editor-cli-save-"));
+    mkdirSync(join(root, "demo", "src"), { recursive: true });
+    const scenePath = join(root, "demo", "src", "editor.scene.json");
+    const authored = createEmptyEditorDocument();
+    authored.volumes.push({ id: "zone_a", kind: "zone", shape: "box", center: { x: 0, y: 0, z: 0 }, size: { x: 4, y: 2, z: 4 } });
+    writeFileSync(scenePath, `${JSON.stringify(authored, null, 2)}\n`);
+    // What a game's `editorLayers` does: the scene file plus volumes built from its spawn table.
+    const load = () =>
+      withDerivedEditorLayers(normalizeEditorLayers(JSON.parse(readFileSync(scenePath, "utf8"))), {
+        volumes: Array.from({ length: 87 }, (_, i) => ({ id: `aggro_${i}`, kind: "aggro", shape: "cylinder" as const, center: { x: i, y: 0, z: 0 }, radius: 6 })),
+      });
+
+    expect(load().volumes).toHaveLength(88);
+    const first = saveSceneDocument("demo", load(), root);
+    expect(first).toMatchObject({ ok: true, derivedSkipped: 87 });
+    const afterFirst = readFileSync(scenePath, "utf8");
+    expect(saveSceneDocument("demo", load(), root)).toMatchObject({ ok: true, derivedSkipped: 87 });
+    const afterSecond = readFileSync(scenePath, "utf8");
+    expect(afterSecond).toBe(afterFirst);
+    expect(afterSecond).not.toContain("aggro_");
+    expect(afterSecond).not.toContain("derived");
+    expect(normalizeEditorLayers(JSON.parse(afterSecond)).volumes.map((v) => v.id)).toEqual(["zone_a"]);
   });
 
   test("writes dev-save-format JSON into the game's src directory", () => {

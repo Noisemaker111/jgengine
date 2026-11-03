@@ -31,6 +31,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `resolveCatalogDefinitions` (function) · `import { resolveCatalogDefinitions } from "@jgengine/core/editor"`
 - `seedEditorCatalogs` (function) · `import { seedEditorCatalogs } from "@jgengine/core/editor"`
 
+## editor-derived-layers — show runtime-built markers, volumes and paths in the editor without saving them into the scene
+
+- `withDerivedEditorLayers` (function) · `import { withDerivedEditorLayers } from "@jgengine/core/editor"`
+
 ## editor-entities — Author entity stats/movement per catalog row instead of hardcoding TS.
 
 - `entityDefinitionSchema` (const) · `import { entityDefinitionSchema } from "@jgengine/core/editor"`

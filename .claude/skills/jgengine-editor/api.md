@@ -12,6 +12,7 @@
 - `CsvGridExportOptions` (interface): interface CsvGridExportOptions — Options for exporting a grid layer as CSV.
 - `CsvGridImportOptions` (interface): interface CsvGridImportOptions — Options for importing a CSV grid (one value id per cell).
 - `DecodeWorldManifestResult` (type): type DecodeWorldManifestResult = | { ok: true; manifest: WorldManifest } | { ok: false; errors: EditorDocumentDiagnostic[] } — Result of {@link decodeWorldManifest}: a typed manifest, or every diagnostic collected decoding it.
+- `DerivedEditorLayers` (interface): interface DerivedEditorLayers — Layers a game builds from code (AI volumes from a spawn table, markers from a catalog) to show in the editor.
 - `DirectiveFootprint` (interface): interface DirectiveFootprint — A resolved directive footprint: the XZ bounds to scatter within, plus an optional clip polygon.
 - `DirectiveInstancePatch` (interface): interface DirectiveInstancePatch — A per-instance hand-tweak over a materialized directive, keyed by the minted instance id.
 - `DocumentBakeOptions` (interface): interface DocumentBakeOptions extends MinimapBakeOptions — Options for {@link bakeMinimapFromDocument}.
@@ -161,6 +162,7 @@
 - `subscribeDocumentLiveSyncInstall` (function): function subscribeDocumentLiveSyncInstall(listener: () => void): () => void — Subscribe to install/uninstall of the global live-sync bus (AuthoredScene re-attaches when the editor host mounts over a running game).
 - `summarizeRuntimeInspector` (function): function summarizeRuntimeInspector(snapshot: RuntimeStateSnapshot, overrides: Readonly<Record<string, RuntimeEntityState>>, play: RuntimePlayControl): RuntimeInspectorSummary — Builds the compact reverse-channel summary used by the play-mode inspector panel and the `runtime_summary` bridge RPC.
 - `terrainBoundsFromDocument` (function): function terrainBoundsFromDocument(doc: EditorDocument, options: EnvironmentContentOptions = {}): WorldBounds — The origin-centered terrain footprint that covers every authored object in a document, padded and floored to `minBounds`. An empty document yields exactly `minBounds`. Because `environment()` terrain is centered on the origin, the footprint is sized symmetrically to the farthest object on each axis, so no authored object falls off the ground.
+- `withDerivedEditorLayers` (function): function withDerivedEditorLayers(authored: EditorDocument, derived: DerivedEditorLayers): EditorDocument — Adds code-built layers to an authored scene for display, tagged `meta.derived` so every save drops them again: the scene file keeps only what was authored. A derived entry replaces an authored one with its id.
 - `worldToGridCell` (function): function worldToGridCell(layer: EditorGridLayer, x: number, y: number, z: number): { col: number; row: number } — Inverse of {@link gridCellToWorld}: the nearest cell to a world point (may be out of bounds). The shared world→cell map runtime uses to answer "which cell is the player standing on".
 
 ## @jgengine/core/editor/commands
@@ -197,9 +199,11 @@
 
 ## @jgengine/core/editor/document
 
+- `DerivedEditorLayers` (interface): interface DerivedEditorLayers — Layers a game builds from code (AI volumes from a spawn table, markers from a catalog) to show in the editor.
 - `findEditorCatalog` (function): function findEditorCatalog(doc: EditorDocument, id: string): EditorCatalogData | undefined — Looks up a gameplay data catalog by id on the scene document.
 - `findEditorCatalogEntry` (function): function findEditorCatalogEntry(doc: EditorDocument, catalogId: string, entryId: string): EditorCatalogEntry | undefined — Looks up one entry inside a gameplay data catalog.
 - `seedEditorCatalogs` (function): function seedEditorCatalogs(doc: EditorDocument, definitions: readonly EditorCatalogDefinition[]): EditorDocument — Seeds default catalog rows from game-exported definitions into a document: missing catalogs and missing entries are filled from the definition; existing document values win (overlay already applied).
+- `withDerivedEditorLayers` (function): function withDerivedEditorLayers(authored: EditorDocument, derived: DerivedEditorLayers): EditorDocument — Adds code-built layers to an authored scene for display, tagged `meta.derived` so every save drops them again: the scene file keeps only what was authored. A derived entry replaces an authored one with its id.
 
 ## @jgengine/core/editor/entityCatalog
 
@@ -760,7 +764,7 @@
 ## @jgengine/editor/mcp/cli
 
 - `EditorCliOptions` (type): type EditorCliOptions = { gameId: string; port: number; rpcSources: RpcPayloadSource[]; save: boolean; serve: boolean; stdio: boolean; } — Parsed CLI flags for the headless editor control plane.
-- `SaveSceneResult` (type): type SaveSceneResult = { ok: true; saved: string } | { ok: false; error: string } — Result of a `--save` write-back: the path written, or why nothing was written.
+- `SaveSceneResult` (type): type SaveSceneResult = { ok: true; saved: string; derivedSkipped: number } | { ok: false; error: string } — Result of a `--save` write-back: the path written and how many derived entries it left out, or why nothing was written.
 
 ## @jgengine/editor/mcp/fieldSpec
 

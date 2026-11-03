@@ -88,6 +88,7 @@ export {
   findEditorPath,
   findEditorPrefab,
   findEditorVolume,
+  authoredEditorDocument,
   importEditorDocumentJson,
   isEditorObjectCollectionLocked,
   isEditorObjectHidden,
@@ -98,10 +99,13 @@ export {
   normalizeEditorLayers,
   requireEditorMarker,
   seedEditorCatalogs,
+  withDerivedEditorLayers,
   wouldCreateCycle,
 } from "./document";
 /** One field-level failure surfaced while decoding an untrusted editor document. */
 export type { EditorDocumentDiagnostic } from "./document";
+/** Code-built layers a game shows in the editor but never saves into its scene. */
+export type { DerivedEditorLayers } from "./document";
 export {
   WORLD_BASE_SHARD_ID,
   WORLD_MANIFEST_KIND,

@@ -13,6 +13,8 @@ export interface SaveEndpointResponse {
   path?: string;
   applied?: number;
   skipped?: readonly { table: string; key: string; reason: string }[];
+  /** Scene saves: code-built (`meta.derived`) entries left out of the file. */
+  derivedSkipped?: number;
   error?: string;
 }
 

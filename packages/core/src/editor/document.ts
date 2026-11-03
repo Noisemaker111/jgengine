@@ -1602,6 +1602,53 @@ export function importEditorDocumentJson(raw: string): EditorDocument {
   return decoded.document;
 }
 
+/** Layers a game builds from code (AI volumes from a spawn table, markers from a catalog) to show in the editor. */
+export interface DerivedEditorLayers {
+  markers?: readonly EditorMarker[];
+  volumes?: readonly EditorVolume[];
+  paths?: readonly EditorPath[];
+  annotations?: readonly EditorNote[];
+}
+
+function tagDerived<T extends { meta?: Record<string, unknown> }>(entries: readonly T[] | undefined): T[] {
+  return (entries ?? []).map((entry) => ({ ...entry, meta: { ...entry.meta, derived: true } }));
+}
+
+function isDerived(entry: { meta?: Record<string, unknown> }): boolean {
+  return entry.meta?.["derived"] === true;
+}
+
+/**
+ * Adds code-built layers to an authored scene for display, tagged `meta.derived` so every save drops them
+ * again: the scene file keeps only what was authored. A derived entry replaces an authored one with its id.
+ * @capability editor-derived-layers show runtime-built markers, volumes and paths in the editor without saving them into the scene
+ */
+export function withDerivedEditorLayers(authored: EditorDocument, derived: DerivedEditorLayers): EditorDocument {
+  return {
+    ...authored,
+    markers: upsertById(authored.markers, tagDerived(derived.markers)),
+    volumes: upsertById(authored.volumes, tagDerived(derived.volumes)),
+    paths: upsertById(authored.paths, tagDerived(derived.paths)),
+    annotations: upsertById(authored.annotations, tagDerived(derived.annotations)),
+  };
+}
+
+/**
+ * The part of a session document a save writes: every `meta.derived` entry removed. `derivedSkipped` counts
+ * them so a save can say what it left out.
+ * @internal
+ */
+export function authoredEditorDocument(document: EditorDocument): { document: EditorDocument; derivedSkipped: number } {
+  const markers = document.markers.filter((entry) => !isDerived(entry));
+  const volumes = document.volumes.filter((entry) => !isDerived(entry));
+  const paths = document.paths.filter((entry) => !isDerived(entry));
+  const annotations = document.annotations.filter((entry) => !isDerived(entry));
+  const kept = markers.length + volumes.length + paths.length + annotations.length;
+  const all = document.markers.length + document.volumes.length + document.paths.length + document.annotations.length;
+  if (kept === all) return { document, derivedSkipped: 0 };
+  return { document: { ...document, markers, volumes, paths, annotations }, derivedSkipped: all - kept };
+}
+
 function upsertById<T extends { id: string }>(base: readonly T[], overlay: readonly T[]): T[] {
   const overlayIds = new Set(overlay.map((item) => item.id));
   return [...base.filter((item) => !overlayIds.has(item.id)), ...overlay];

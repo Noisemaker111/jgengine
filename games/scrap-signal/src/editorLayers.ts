@@ -1,5 +1,6 @@
 import {
   normalizeEditorLayers,
+  withDerivedEditorLayers,
   type EditorDocument,
   type EditorLayersInput,
   type EditorVolume,
@@ -113,13 +114,7 @@ function derivedAiVolumes(): EditorVolume[] {
 }
 
 export function buildScrapSignalEditorLayers(): EditorDocument {
-  const scene = normalizeEditorLayers(sceneJson as unknown as EditorLayersInput);
-  const volumes = new Map(scene.volumes.map((volume) => [volume.id, volume]));
-  for (const volume of derivedAiVolumes()) volumes.set(volume.id, volume);
-  return {
-    ...scene,
-    volumes: [...volumes.values()],
-  };
+  return withDerivedEditorLayers(normalizeEditorLayers(sceneJson as unknown as EditorLayersInput), { volumes: derivedAiVolumes() });
 }
 
 export const editorLayers = buildScrapSignalEditorLayers;

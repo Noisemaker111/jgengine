@@ -15,7 +15,7 @@ import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { decodeEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
+import { authoredEditorDocument, decodeEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
 
 import { createEditorHost } from "../session";
 import { startEditorBridgeServerNode } from "./bridgeServer.node.ts";
@@ -92,8 +92,8 @@ export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
   return { gameId, port, rpcSources, save, serve, stdio };
 }
 
-/** Result of a `--save` write-back: the path written, or why nothing was written. */
-export type SaveSceneResult = { ok: true; saved: string } | { ok: false; error: string };
+/** Result of a `--save` write-back: the path written and how many derived entries it left out, or why nothing was written. */
+export type SaveSceneResult = { ok: true; saved: string; derivedSkipped: number } | { ok: false; error: string };
 
 /**
  * Writes a session document to `<gamesRoot>/<gameId>/src/editor.scene.json` in the exact format
@@ -110,8 +110,9 @@ export function saveSceneDocument(gameId: string, document: EditorDocument, game
     return { ok: false, error: `--save: invalid editor document: ${decoded.errors.map((error) => `${error.path} ${error.message}`).join("; ")}` };
   }
   const path = join(srcDir, "editor.scene.json");
-  writeFileSync(path, `${JSON.stringify(decoded.document, null, 2)}\n`);
-  return { ok: true, saved: path };
+  const authored = authoredEditorDocument(decoded.document);
+  writeFileSync(path, `${JSON.stringify(authored.document, null, 2)}\n`);
+  return { ok: true, saved: path, derivedSkipped: authored.derivedSkipped };
 }
 
 async function main(argv: string[]): Promise<number> {

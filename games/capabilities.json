@@ -3066,6 +3066,16 @@
       "intent": "Persist and load one gameplay catalog entry's tuned params."
     },
     {
+      "id": "editor-derived-layers",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/editor/document",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "show runtime-built markers, volumes and paths in the editor without saving them into the scene"
+    },
+    {
       "id": "editor-entities",
       "packages": [
         "@jgengine/core"
