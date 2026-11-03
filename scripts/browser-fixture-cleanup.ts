@@ -18,7 +18,7 @@ export interface BrowserFixtureResources {
   releasePending?: () => void | Promise<void>;
   ownedBrowserProcess?: OwnedBrowserProcess | undefined;
   browser?: { close: () => Promise<void> } | undefined;
-  server?: { stop: (closeActiveConnections: boolean) => unknown };
+  server?: { stop: (closeActiveConnections: boolean) => unknown } | undefined;
   removeScratch: () => Promise<void>;
 }
 
