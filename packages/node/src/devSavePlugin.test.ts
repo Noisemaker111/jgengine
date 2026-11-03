@@ -59,6 +59,22 @@ describe("dev save endpoint", () => {
     expect(saved.markers[0]?.id).toBe("boss");
   });
 
+  test("an editor save leaves out derived entries", () => {
+    const gamesDir = makeGamesDir("proving-grounds", {});
+    const json = JSON.stringify({
+      version: 1,
+      markers: [{ id: "boss", kind: "boss", position: { x: 1, y: 0, z: 2 } }],
+      volumes: [{ id: "aggro_0", kind: "aggro", shape: "cylinder", center: { x: 0, y: 0, z: 0 }, radius: 6, meta: { derived: true } }],
+      paths: [],
+      annotations: [],
+    });
+    const result = handleSaveRequest(gamesSrcDir(gamesDir), JSON.stringify({ kind: "editor-document", gameId: "proving-grounds", json }));
+    expect(result).toMatchObject({ ok: true, derivedSkipped: 1 });
+    const saved = readFileSync(join(gamesDir, "proving-grounds/src", EDITOR_SCENE_FILENAME), "utf8");
+    expect(saved).toContain('"boss"');
+    expect(saved).not.toContain("aggro_0");
+  });
+
   test("rejects unknown and malicious game ids", () => {
     const gamesDir = makeGamesDir("real-game", {});
     for (const gameId of ["missing", "../evil", "a/../../b"]) {

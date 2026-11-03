@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { decodeEditorDocument } from "@jgengine/core/editor/index";
 
+import sceneJson from "./editor.scene.json";
 import { buildScrapSignalEditorLayers } from "./editorLayers";
 
 describe("scrap-signal editorLayers", () => {
@@ -19,5 +20,11 @@ describe("scrap-signal editorLayers", () => {
     expect(doc.volumes.some((v) => v.kind === "leash")).toBe(true);
     expect(doc.volumes.some((v) => v.kind === "discover")).toBe(true);
     expect(doc.paths.length).toBeGreaterThan(0);
+  });
+
+  test("the scene file holds no derived AI volumes", () => {
+    const derived = new Set(buildScrapSignalEditorLayers().volumes.filter((v) => v.meta?.["derived"] === true).map((v) => v.id));
+    expect(derived.size).toBeGreaterThan(80);
+    expect(sceneJson.volumes.filter((v) => derived.has(v.id))).toEqual([]);
   });
 });

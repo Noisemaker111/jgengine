@@ -5,7 +5,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { rewriteTunableExport } from "@jgengine/core/devtools/rewriteTunables";
 import type { SaveEndpointRequest, SaveEndpointResponse } from "@jgengine/core/devtools/saveEndpoint";
 import { splitTunablePath } from "@jgengine/core/devtools/tunableSchema";
-import { importEditorDocumentJson } from "@jgengine/core/editor/document";
+import { authoredEditorDocument, importEditorDocumentJson } from "@jgengine/core/editor/document";
 
 /** Route the dev save middleware answers on; matches `installSaveEndpoint` defaults. */
 export const SAVE_ENDPOINT_PATH = "/__jgengine/save";
@@ -37,10 +37,10 @@ export function gamesSrcDir(gamesDir: string, servedDir?: string): SrcDirResolve
 }
 
 function saveEditorDocument(dir: string, json: string): SaveEndpointResponse {
-  const document = importEditorDocumentJson(json);
+  const { document, derivedSkipped } = authoredEditorDocument(importEditorDocumentJson(json));
   const path = join(dir, EDITOR_SCENE_FILENAME);
   writeFileSync(path, `${JSON.stringify(document, null, 2)}\n`);
-  return { ok: true, path };
+  return { ok: true, path, derivedSkipped };
 }
 
 function listSourceFiles(dir: string): string[] {
