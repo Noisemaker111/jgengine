@@ -2,6 +2,7 @@
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { staticDrawPoolFor } from "@jgengine/core/instancing/staticDrawPool.draw";
@@ -15,7 +16,7 @@ const fetched = new Map<string, Promise<void>>();
 function fetchModel(url: string): Promise<void> {
   let known = fetched.get(url);
   if (known === undefined) {
-    known = (typeof fetch === "undefined" ? Promise.resolve() : fetch(url).then((response) => response.arrayBuffer()).then(() => undefined))
+    known = (typeof fetch === "undefined" ? Promise.resolve() : fetch(resolveAssetBaseUrl(url)).then((response) => response.arrayBuffer()).then(() => undefined))
       .catch(() => undefined)
       .then(() => useLoader.preload(sharedGltfLoader, url));
     fetched.set(url, known);

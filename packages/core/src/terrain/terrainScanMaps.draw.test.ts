@@ -4,7 +4,9 @@ import { resolveTerrainDetail } from "@jgengine/core/terrain/terrain";
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 
 import { createTerrainDetailMaterial, createTerrainSurfaceTextures } from "./terrainDetailMaterial.draw";
-import { packTerrainScan, terrainScanKey, terrainScanRequests } from "./terrainScanMaps.draw";
+import { setAssetBase, setGameAssetFiles } from "@jgengine/core/assets/assetBase";
+
+import { fetchTerrainScanMap, packTerrainScan, terrainScanKey, terrainScanRequests } from "./terrainScanMaps.draw";
 import { createTerrainPaintTextures, packTerrainPaintWeights } from "./terrainSurfaces.draw";
 import { createEditableTerrain } from "./terraform";
 
@@ -93,4 +95,26 @@ test("the preset path compiles with no scan code and no array textures", () => {
   expect(material.defines?.["JG_TERRAIN_GEN"]).toBeUndefined();
   expect(paint.slots[0]?.scan).toBeUndefined();
   expect(paint.slots[0]?.tileMetres).toBe(0);
+});
+
+test("a scan map loads from the game's folder and refuses a page that is not an image", async () => {
+  const realFetch = globalThis.fetch;
+  const asked: string[] = [];
+  const reply = (type: string) =>
+    Object.assign(async (input: string | URL | Request) => {
+      asked.push(String(input));
+      return new Response("<!doctype html>", { headers: { "content-type": type } });
+    }, { preconnect: realFetch.preconnect });
+  setAssetBase("/");
+  setGameAssetFiles("games/dunes", ["/materials/sand/albedo.jpg"]);
+  try {
+    globalThis.fetch = reply("text/html");
+    await expect(fetchTerrainScanMap("/materials/sand/albedo.jpg")).rejects.toThrow("/games/dunes/materials/sand/albedo.jpg");
+    globalThis.fetch = reply("image/jpeg");
+    expect((await fetchTerrainScanMap("/materials/sand/albedo.jpg")).size).toBeGreaterThan(0);
+    expect(asked).toEqual(["/games/dunes/materials/sand/albedo.jpg", "/games/dunes/materials/sand/albedo.jpg"]);
+  } finally {
+    globalThis.fetch = realFetch;
+    setGameAssetFiles(null);
+  }
 });

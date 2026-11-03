@@ -1,3 +1,4 @@
+import { resolveAssetBaseUrl } from "../assets/assetBase";
 import type { SurfaceMaterialMaps } from "../material/surfaceMaterialGenerator";
 import type { TerrainMaterialMaps } from "../world/features";
 import type { ResolvedTerrainSurfaces } from "./terrain";
@@ -71,17 +72,30 @@ export function terrainScanKey(maps: TerrainMaterialMaps): string {
   return [maps.color, maps.normal, maps.roughness ?? "", maps.ao ?? "", maps.displacement ?? ""].join("|");
 }
 
+/**
+ * Fetch one scan map through the asset base, so a game served from a subfolder (the dev runner's
+ * `/games/<id>/`, the site's `/play/`) reads its own file. A response that is not an image (a host's
+ * HTML fallback for a path it does not serve) names the URL instead of failing as an undecodable image.
+ * @internal
+ */
+export async function fetchTerrainScanMap(url: string): Promise<Blob> {
+  const resolved = resolveAssetBaseUrl(url);
+  const response = await fetch(resolved);
+  if (!response.ok) throw new Error(`terrain scan map ${resolved}: HTTP ${response.status}`);
+  const type = response.headers.get("content-type") ?? "";
+  if (!type.startsWith("image/")) throw new Error(`terrain scan map ${resolved} is served as "${type}", not an image`);
+  return response.blob();
+}
+
 async function decode(url: string, size: number): Promise<Uint8ClampedArray> {
-  const image = new Image();
-  image.crossOrigin = "anonymous";
-  image.src = url;
-  await image.decode();
+  const image = await createImageBitmap(await fetchTerrainScanMap(url), { resizeWidth: size, resizeHeight: size, resizeQuality: "high" });
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (context === null) throw new Error("2d canvas unavailable for terrain scan decode");
   context.drawImage(image, 0, 0, size, size);
+  image.close();
   return context.getImageData(0, 0, size, size).data;
 }
 
