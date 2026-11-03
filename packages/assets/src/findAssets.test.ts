@@ -45,9 +45,9 @@ describe("findAssets", () => {
   });
 
   test("a request nothing here covers names the free sources to search, with the search filled in", () => {
-    const result = findAssets("dinosaur", nothingOnDisk);
+    const result = findAssets("narwhal", nothingOnDisk);
     expect(result.matches).toEqual([]);
-    expect(result.elsewhere.map((source) => source.url)).toEqual(["https://poly.pizza/search/dinosaur", "https://polyhaven.com/models?s=dinosaur"]);
+    expect(result.elsewhere.map((source) => source.url)).toEqual(["https://poly.pizza/search/narwhal", "https://polyhaven.com/models?s=narwhal"]);
   });
 
   test("a known library gap comes back with its reason and route", () => {

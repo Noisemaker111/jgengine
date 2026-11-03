@@ -25,8 +25,9 @@ describe("assets find", () => {
     const knight = findAssets("knight", { has: () => false, gameFiles: [] });
     expect(pickOf({ query: "knight" }, knight)?.id).toBe("kaykit-adventurers/Knight");
     expect(pickOf({ query: "knight", pick: "nope" }, knight)).toBeNull();
-    const dinosaur = findAssets("dinosaur", { has: () => false, gameFiles: [] });
-    expect(pickOf({ query: "dinosaur" }, dinosaur)).toBeNull();
+    const raptor = findAssets("raptor", { has: () => false, gameFiles: [] });
+    expect(raptor.matches.length).toBeGreaterThan(0);
+    expect(pickOf({ query: "raptor" }, raptor)).toBeNull();
   });
 
   test("--provision links a stored pack, copies another game's file and skips a name with no confident match", () => {
@@ -42,7 +43,7 @@ describe("assets find", () => {
       const store = join(root, "store");
       mkdirSync(join(store, "models", "kaykit-adventurers"), { recursive: true });
       writeFileSync(join(store, "models", "kaykit-adventurers", "Knight.glb"), "knight bytes");
-      writeFileSync(join(root, "list.json"), JSON.stringify(["knight", { query: "raptor", pick: "other:models/imported/creatures/velociraptor.glb" }, "dinosaur"]));
+      writeFileSync(join(root, "list.json"), JSON.stringify(["knight", { query: "raptor", pick: "other:models/imported/creatures/velociraptor.glb" }, "raptor"]));
       expect(checkoutRoot(game)).toBe(root);
 
       const run = spawnSync(process.execPath, [cli, "find", "--list", join(root, "list.json"), "--game", game, "--provision", "--limit", "3"], {
@@ -53,7 +54,7 @@ describe("assets find", () => {
       });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout) as { results: { query: string; matches: { id: string; onDisk: boolean }[] }[]; provisioned: Record<string, string[]> };
-      expect(out.provisioned).toEqual({ linked: ["kaykit-adventurers"], pulled: [], copied: ["other:models/imported/creatures/velociraptor.glb"], failed: [], skipped: ["dinosaur"] });
+      expect(out.provisioned).toEqual({ linked: ["kaykit-adventurers"], pulled: [], copied: ["other:models/imported/creatures/velociraptor.glb"], failed: [], skipped: ["raptor"] });
       expect(lstatSync(join(game, "public", "models", "kaykit-adventurers")).isSymbolicLink()).toBe(true);
       expect(readFileSync(join(game, "public", "models", "kaykit-adventurers", "Knight.glb"), "utf8")).toBe("knight bytes");
       expect(readFileSync(join(game, "public", "models", "imported", "creatures", "velociraptor.glb"), "utf8")).toBe("raptor bytes");
