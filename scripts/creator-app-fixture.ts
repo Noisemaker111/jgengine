@@ -26,7 +26,8 @@ export interface CreatorAppSession {
 
 export interface CreatorAppFixture {
   start(): Promise<CreatorAppSession>;
-  stop(session: CreatorAppSession): Promise<void>;
+  /** Frees whatever start got to, so a start that timed out still leaves no browser or server behind. */
+  stop(): Promise<void>;
 }
 
 export function creatorAppFixture(name: string): CreatorAppFixture {
@@ -42,6 +43,14 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
 
   async function start(): Promise<CreatorAppSession> {
     const errors: string[] = [];
+    // A start past its test's time limit only reports "a hook timed out" (CI run 41662514726);
+    // a step that takes over 10 s says so, so the next one names where the time went.
+    let stepStart = Date.now();
+    const step = (name: string): void => {
+      const took = Date.now() - stepStart;
+      if (took > 10_000) console.error(`creator fixture: ${name} took ${(took / 1000).toFixed(1)}s`);
+      stepStart = Date.now();
+    };
     await removeDir(scratch);
     await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
     for (const peer of ["react", "react-dom", "three"]) await symlink(resolve(editorRoot, "node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
@@ -53,6 +62,7 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
     await mkdir(`${scratch}/node_modules/@react-three`, { recursive: true });
     for (const peer of ["@react-three/fiber", "@react-three/drei"]) await symlink(resolve(editorRoot, "node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
     await installPublicPackages(scratch, ["core", "react", "ws", "shell", "navbake", "editor"]);
+    step("linking the packages");
     await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState,useEffect} from 'react';import {createRoot} from 'react-dom/client';
     import {useGameContext} from '@jgengine/react/provider';
@@ -80,6 +90,7 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
     const { Scanner } = await import(Bun.resolveSync("@tailwindcss/oxide", tailwindImporter));
     const compiled = await compile(await Bun.file(stylePath).text(), { base: resolve(stylePath, ".."), from: stylePath, onDependency: () => {} });
     const css = compiled.build(new Scanner({ sources: compiled.sources }).scan());
+    step("bundling the page and its CSS");
     server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: (request, held) => {
       const path = new URL(request.url).pathname;
       if (path === "/hold-next-save") {
@@ -109,13 +120,15 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
         await launchedBrowser.close();
       });
     } finally { await inspection.detach(); }
+    step("launching Chrome");
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     page.on("pageerror", (failure) => errors.push(failure.message));
     await page.goto(`http://127.0.0.1:${server.port}`);
+    step("loading the page");
     return { page, server, scratch, evidence, errors, heldSaveArrived: () => heldSaveArrived };
   }
 
-  async function stop(session: CreatorAppSession): Promise<void> {
+  async function stop(): Promise<void> {
     await cleanupBrowserFixture({
       releasePending: () => {
         const release = releaseFailedSave;
@@ -124,7 +137,7 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
       },
       ownedBrowserProcess,
       browser,
-      server: session.server,
+      server,
       // The killed browser can still hold a served file here for a moment on Windows.
       removeScratch: () => removeDir(scratch),
     });

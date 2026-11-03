@@ -13,7 +13,7 @@ beforeAll(async () => {
   session = await fixture.start();
 }, 60000);
 
-afterAll(() => fixture.stop(session));
+afterAll(() => fixture.stop());
 
 test("production menu mounts the actual editor and repeats save/play/return/reopen across reload", async () => {
   const { page, evidence } = session;

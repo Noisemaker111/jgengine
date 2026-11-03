@@ -55,11 +55,11 @@ test("a task id is a folder name: sortable by start, and never a path", () => {
   expect(TASK_ID.test("a/b")).toBe(false);
 });
 
-test("starting a task returns an id at once and hands the supervisor a detached argv", () => {
+test("starting a task returns an id at once and hands the supervisor only its task folder", () => {
   const dir = checkout();
   const spawned: string[][] = [];
   const id = startTask({
-    command: "bun run verify:fast --full",
+    command: `bun run verify:fast --full & echo "a & b"`,
     checkout: dir,
     id: "20261023-204501-abc",
     spawnDetached: (file, args) => spawned.push([file, ...args]),
@@ -67,10 +67,53 @@ test("starting a task returns an id at once and hands the supervisor a detached 
 
   expect(id).toBe("20261023-204501-abc");
   expect(spawned.length).toBe(1);
-  expect(spawned[0]!.join(" ")).toContain("--supervise");
-  expect(spawned[0]!.slice(-1)[0]).toBe("bun run verify:fast --full");
-  expect(readCommand(taskDir(dir, id))).toBe("bun run verify:fast --full");
+  // The command travels in cmd.txt, never through a command line WMI or a shell would re-split.
+  expect(spawned[0]!.slice(1)).toEqual([join(import.meta.dir, "bg-run.ts"), "--supervise", taskDir(dir, id)]);
+  expect(readCommand(taskDir(dir, id))).toBe(`bun run verify:fast --full & echo "a & b"`);
   expect(existsSync(join(taskDir(dir, id), "out.log"))).toBe(false);
+});
+
+// lane:close's land-queue runner died with an empty log when the `bun run` that started it exited
+// (2026-11-03): a detached child was still in its caller's process tree. Ending the caller's whole
+// tree must leave the task running.
+test.skipIf(process.platform !== "win32")("a task outlives its caller's whole process tree", async () => {
+  const dir = checkout();
+  const starter = join(dir, "starter.ts");
+  const bgRun = join(import.meta.dir, "bg-run.ts").split("\\").join("/");
+  writeFileSync(
+    starter,
+    `import { startTask } from "${bgRun}";\n` +
+      `console.log(startTask({ command: "bun -e \\"setTimeout(() => { console.log('outlived'); process.exit(5) }, 1500)\\"", checkout: ${JSON.stringify(dir)} }));\n` +
+      `setInterval(() => {}, 1000);\n`,
+  );
+  const caller = Bun.spawn({ cmd: [process.execPath, starter], stdout: "pipe", stderr: "inherit" });
+  const reader = caller.stdout.getReader();
+  const first = new TextDecoder().decode((await reader.read()).value);
+  const id = first.split("\n")[0]!.trim();
+  expect(TASK_ID.test(id)).toBe(true);
+  // Wait for the runner to exist, then end the caller and everything it started.
+  for (let turn = 0; readRunner(taskDir(dir, id)) === null && turn < 200; turn += 1) await Bun.sleep(25);
+  Bun.spawnSync({ cmd: ["taskkill", "/T", "/F", "/PID", String(caller.pid)], stdout: "ignore", stderr: "ignore" });
+  await caller.exited;
+
+  let printed = "";
+  const code = await awaitTask({ id, checkout: dir, write: (text) => (printed += text), err: () => {}, timeoutMs: 30_000 });
+  expect(code).toBe(5);
+  expect(printed).toContain("outlived");
+  expect(existsSync(join(taskDir(dir, id), "env.json"))).toBe(false);
+});
+
+test("a supervisor started outside the caller runs the command with the caller's environment", async () => {
+  const dir = checkout();
+  process.env["BG_TEST_MARK"] = "from-the-caller";
+  try {
+    const id = startTask({ command: `bun -e "console.log('mark=' + process.env.BG_TEST_MARK)"`, checkout: dir });
+    let printed = "";
+    expect(await awaitTask({ id, checkout: dir, write: (text) => (printed += text), err: () => {}, timeoutMs: 30_000 })).toBe(0);
+    expect(printed).toContain("mark=from-the-caller");
+  } finally {
+    delete process.env["BG_TEST_MARK"];
+  }
 });
 
 test("bun's argument separator is not part of the command", () => {
