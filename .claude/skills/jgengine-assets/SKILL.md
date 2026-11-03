@@ -60,7 +60,7 @@ Material sources declare the map roles in their pinned archive through `AssetSou
 
 ## Material library
 
-`@jgengine/assets/catalogs/materialLibrary` is the shared palette: `MATERIAL_LIBRARY` names 58 surfaces (`asphalt/wet`, `metal/painted`, `stucco/painted`, `brick/red`, `wood/oak`, `foliage/leaf`, `glass/clear`, `water/ocean`, `ground/sand`, `concrete/smooth`, …), each with its ambientCG source, world tile size in metres and physical response. Select by name — never by source id or filename.
+`@jgengine/assets/catalogs/materialLibrary` is the shared palette: `MATERIAL_LIBRARY` names 78 surfaces (`asphalt/wet`, `metal/painted`, `stucco/painted`, `brick/red`, `wood/oak`, `foliage/leaf`, `glass/clear`, `water/ocean`, `ground/sand`, `concrete/smooth`, …), each with its ambientCG source, world tile size in metres and physical response. Select by name — never by source id or filename.
 
 - `assets pull library --dir <public>` pulls every pinned map set (about 360 MB of 1K-JPG archives; each pulled material is then 5-7 MB beside its name). Pull into a game's `public/materials` and build assets with `libraryMaterialAsset(name)`; the returned `MaterialAsset` is the same editable value the editor writes into `editor.scene.json`.
 - Bridges turn a name into the seam each consumer takes, so a game never hand-wires URLs: `librarySurfaceScan(name, { tint, strength, repeat })` is a `TerrainDetailMaterialConfig` for terrain detail, a `road({ materials: { road, sidewalk, curb } })` layer or a model's `material.scan` (`libraryTerrainMaterial` is the same call), `libraryBuildingSurface(name, { slotMetres })` is a `BuildingSurfaceMaterial` (a `building()` palette entry), and `librarySurfaceParameters(name)` is the sparse `MaterialSurfaceParameters` a `MaterialAsset` or an override carries — `{ ...librarySurfaceParameters("paint/gloss"), color }` lacquers a kit car. `tint` 0 keeps the authored colour and takes only the scan's grain, normal and roughness.
@@ -108,7 +108,7 @@ A game picks a sky, a grade, a surface and fonts by id, one line each. Naming th
 - Surface: `librarySurfaceScan("asphalt/dry")`, `libraryTerrainMaterial(name)` or `libraryBuildingSurface(name)` (`catalogs/materialLibrary`; ambientCG surfaces, 1K colour, normal, roughness and AO where the scan has them).
 - Fonts: `const FONTS = libraryFontPairing("oswald", "barlow"); useGameFonts(FONTS); gameFontStacks(FONTS)` (`catalogs/fontLibrary`; OFL families incl. Bangers, display and body roles).
 - Credits: `creditsForLooks({ hdri, lut, fonts })` next to `creditsForSourceIds`. CREDITS.md lists the sources.
-- A new curated id is one row in its catalog plus a mirror run (`scripts/mirror-assets.ts` uploads `look-<kind>-<id>.<ext>` to the `packs` release).
+- A new curated id is one file named for it plus a mirror run (`scripts/mirror-assets.ts` uploads `look-<kind>-<id>.<ext>` to the `packs` release). Fonts, HDRIs, grades, materials and pinned ambientCG scans keep one file per entry (`catalogs/fonts/oswald.ts`, `catalogs/materials/asphalt/wet.ts`, `sources/ambientcg/Asphalt025C.ts`); `bun run gen library-index` writes each folder's `index.ts`. Two branches adding the same id then conflict on that file instead of both landing.
 
 ## Source rules
 

@@ -236,6 +236,12 @@ export interface GenTarget {
  */
 export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "source-paths", script: "scripts/sourcePaths.ts", reads: ["packages/", "apps/", "examples/", "registry/", "games/llmville/packages/"] },
+  {
+    name: "library-index",
+    script: "packages/assets/scripts/gen-library-index.ts",
+    outputs: [/^packages\/assets\/src\/(?:catalogs\/(?:fonts|hdris|grades|materials)|sources\/ambientcg)\/index\.ts$/],
+    reads: ["packages/assets/src/catalogs/", "packages/assets/src/sources/"],
+  },
   { name: "skill-routing", script: "scripts/gen-skill-routing.ts", outputs: [/^scripts\/skill-routing\.json$/], reads: ["packages/", ".claude/"] },
   {
     name: "barrels",

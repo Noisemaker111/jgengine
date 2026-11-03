@@ -1,5 +1,7 @@
 import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 
+import { HDRI_LIBRARY } from "./hdris/index";
+
 /** One curated Poly Haven HDRI. */
 export interface HdriEntry {
   /** The id a game names, e.g. `"golden-hour"`. */
@@ -12,25 +14,7 @@ export interface HdriEntry {
   look: string;
 }
 
-/** The shipped HDRIs, each one Poly Haven asset under a plain id. */
-export const HDRI_LIBRARY = [
-  { id: "clear-noon", title: "Noon Grass", polyhaven: "noon_grass", author: "Greg Zaal", look: "Clear blue sky, high sun, open grass." },
-  { id: "partly-cloudy", title: "Kloppenheim 06 (Pure Sky)", polyhaven: "kloppenheim_06_puresky", author: "Greg Zaal, Jarod Guest", look: "Soft clouds, low contrast daylight." },
-  { id: "golden-hour", title: "Venice Sunset", polyhaven: "venice_sunset", author: "Greg Zaal", look: "Low warm sun over water and rooftops." },
-  { id: "overcast", title: "Overcast Soil (Pure Sky)", polyhaven: "overcast_soil_puresky", author: "Jarod Guest, Sergej Majboroda", look: "Even grey light, no hard shadows." },
-  { id: "harbour-sunset", title: "Small Harbour Sunset", polyhaven: "small_harbour_sunset", author: "Greg Zaal", look: "Pink and orange sunset over a small harbour, sun on the horizon." },
-  { id: "dusk", title: "Qwantani Dusk 2 (Pure Sky)", polyhaven: "qwantani_dusk_2_puresky", author: "Greg Zaal, Jarod Guest", look: "Sun gone, orange horizon fading to blue." },
-  { id: "night-city", title: "Shanghai Bund", polyhaven: "shanghai_bund", author: "Greg Zaal", look: "City skyline lit at night across a river." },
-  { id: "night-clear", title: "Satara Night", polyhaven: "satara_night", author: "Greg Zaal", look: "Open country under a clear night sky." },
-  { id: "interior-industrial", title: "Industrial Workshop Foundry", polyhaven: "industrial_workshop_foundry", author: "Dimitrios Savva, Jarod Guest", look: "Large workshop with window light and dark corners." },
-  { id: "industrial-pipe-valve", title: "Industrial Pipe & Valve 01", polyhaven: "industrial_pipe_and_valve_01", author: "Philip Modin", look: "Dim industrial warehouse, warm lamps over pipework and valves." },
-  { id: "forest-shade", title: "Forest Slope", polyhaven: "forest_slope", author: "Andreas Mischok", look: "Green dappled shade under trees." },
-  { id: "tropical-clouds", title: "Kloofendal 38d Partly Cloudy (Pure Sky)", polyhaven: "kloofendal_38d_partly_cloudy_puresky", author: "Greg Zaal, Jarod Guest", look: "Bright blue sky with scattered white clouds, high sun." },
-  { id: "industrial-sunset", title: "Industrial Sunset 02 (Pure Sky)", polyhaven: "industrial_sunset_02_puresky", author: "Greg Zaal, Jarod Guest", look: "Low orange sun over a hazy industrial horizon, no ground." },
-  { id: "lilac-dusk", title: "Kiara 9 Dusk", polyhaven: "kiara_9_dusk", author: "Greg Zaal", look: "Sun just down, soft peach horizon fading to lilac and violet." },
-  { id: "clear-puresky", title: "Kloofendal 43d Clear (Pure Sky)", polyhaven: "kloofendal_43d_clear_puresky", author: "Greg Zaal, Jarod Guest", look: "Cloudless blue sky, high warm sun, no ground." },
-  { id: "snow", title: "Snowy Park 01", polyhaven: "snowy_park_01", author: "Oliksiy Yakovlyev", look: "Bright snow under a pale overcast sky." },
-] as const satisfies readonly HdriEntry[];
+export { HDRI_LIBRARY };
 
 /** The id of one HDRI in {@link HDRI_LIBRARY}. */
 export type HdriId = (typeof HDRI_LIBRARY)[number]["id"];
