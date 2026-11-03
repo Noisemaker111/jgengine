@@ -105,14 +105,14 @@ test.skipIf(process.platform !== "win32")("a task outlives its caller's whole pr
 
 test("a supervisor started outside the caller runs the command with the caller's environment", async () => {
   const dir = checkout();
-  process.env.BG_TEST_MARK = "from-the-caller";
+  process.env["BG_TEST_MARK"] = "from-the-caller";
   try {
     const id = startTask({ command: `bun -e "console.log('mark=' + process.env.BG_TEST_MARK)"`, checkout: dir });
     let printed = "";
     expect(await awaitTask({ id, checkout: dir, write: (text) => (printed += text), err: () => {}, timeoutMs: 30_000 })).toBe(0);
     expect(printed).toContain("mark=from-the-caller");
   } finally {
-    delete process.env.BG_TEST_MARK;
+    delete process.env["BG_TEST_MARK"];
   }
 });
 
