@@ -8,14 +8,14 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const CARYA_OVATA: PlantSpecies = {
   id: "carya-ovata",
-  version: 1,
+  version: 10,
   names: {
     scientific: "Carya ovata (Mill.) K. Koch",
     common: { en: "shagbark hickory", fr: "caryer ovale" },
   },
   ids: { usda: "CAOV2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.6718,
@@ -79,7 +79,7 @@ export const CARYA_OVATA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d9b22e" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d9a22e", autumnShade: "#e0c04c" },
   },
   bark: { kind: "peeling", smoothUntilYears: 30, furrowDepth: 0.6, color: "#6c655c" },
   reproduction: { firstFlowerYears: 40, seedMassMg: 5000 },

@@ -1,4 +1,5 @@
 import type { PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
+import { BAAD_LEAF_TO_SAPWOOD } from "../../packages/core/src/plants/validation/stemAllometry";
 import { createCmaEs } from "./cmaEs";
 import type { TrialScore } from "./speciesScore";
 import type { Trial } from "./speciesTrial";
@@ -10,6 +11,8 @@ export interface FitParameter {
   hi: number;
   integer?: boolean;
   log?: boolean;
+  /** Value a record without this optional field has. */
+  absent?: number;
 }
 
 /**
@@ -33,11 +36,14 @@ export const FIT_PARAMETERS: readonly FitParameter[] = [
   { path: "growth.tropism.optimal", lo: 0, hi: 0.4 },
   { path: "growth.budLightThreshold", lo: 0.02, hi: 0.2, log: true },
   { path: "growth.spurYears", lo: 2, hi: 30, integer: true },
+  { path: "growth.leafNodesPerMetamer", lo: 1, hi: 4, log: true, absent: 1 },
   { path: "carbon.lueGPerMJ", lo: 1, hi: 5, log: true },
   { path: "carbon.lightHalfSaturation", lo: 0.2, hi: 1.5, log: true },
   { path: "carbon.respiration", lo: 0.6, hi: 3, log: true },
   { path: "carbon.hydraulicExponent", lo: 1, hi: 8, integer: true },
   { path: "carbon.hydraulicHeightShare", lo: 0.4, hi: 1 },
+  // Sapwood per leaf area, inside the leaf-to-sapwood range trees are measured at.
+  { path: "carbon.sapwoodPerFoliage", lo: 1 / BAAD_LEAF_TO_SAPWOOD.deciduous.high, hi: 1 / BAAD_LEAF_TO_SAPWOOD.evergreen.low, log: true },
 ];
 
 type Bag = Record<string, unknown>;
@@ -94,15 +100,29 @@ export async function fitSpecies(
   start: PlantSpecies,
   scoreTrial: (trial: Trial) => TrialScore,
   evaluate: Evaluate,
-  options: { generations: number; lambda: number; sigma: number; seed: number; parameters?: readonly FitParameter[]; onBest: (best: FitProgress) => void; onGeneration?: (line: string) => void },
+  options: {
+    generations: number;
+    lambda: number;
+    sigma: number;
+    seed: number;
+    parameters?: readonly FitParameter[];
+    onBest: (best: FitProgress) => void;
+    onGeneration?: (line: string) => void;
+    /** Stop early once the best so far is good enough. */
+    until?: (best: FitProgress) => boolean;
+  },
 ): Promise<FitProgress> {
   const parameters = options.parameters ?? FIT_PARAMETERS;
   const at = (point: readonly number[]): PlantSpecies => speciesAt(start, point, parameters);
-  const origin = parameters.map((p) => toUnit(p, readPath(start, p.path)));
+  const origin = parameters.map((p) => {
+    const value = readPath(start, p.path);
+    return toUnit(p, Number.isNaN(value) && p.absent !== undefined ? p.absent : value);
+  });
   const first = await evaluate(at(origin));
   const firstScore = first === null ? { total: 1e9, parts: {} } : scoreTrial(first);
   let best: FitProgress = { generation: 0, score: firstScore.total, parts: firstScore.parts, species: at(origin) };
   options.onBest(best);
+  if (options.until?.(best) === true) return best;
   const search = createCmaEs(origin, options.sigma, options.lambda, options.seed);
   for (let generation = 1; generation <= options.generations; generation += 1) {
     const population = search.ask();
@@ -117,6 +137,10 @@ export async function fitSpecies(
       const scored = scoreTrial(trial);
       best = { generation, score: scored.total, parts: scored.parts, species: at(point) };
       options.onBest(best);
+    }
+    if (options.until?.(best) === true) {
+      options.onGeneration?.(`gen ${generation} stopped at ${best.score.toFixed(2)}: within the library test's limits`);
+      return best;
     }
     options.onGeneration?.(`gen ${generation} best ${best.score.toFixed(2)} sigma ${search.sigma.toFixed(3)} ${JSON.stringify(Object.fromEntries(Object.entries(best.parts).map(([k2, v]) => [k2, Number(v.toFixed(2))])))}`);
   }

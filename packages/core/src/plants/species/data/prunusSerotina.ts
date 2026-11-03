@@ -8,11 +8,11 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PRUNUS_SEROTINA: PlantSpecies = {
   id: "prunus-serotina",
-  version: 1,
+  version: 12,
   names: { scientific: "Prunus serotina Ehrh.", common: { en: "black cherry", fr: "cerisier tardif" } },
   ids: { usda: "PRSE2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144 },
+  architecture: { model: "rauh", phyllotaxis: "spiral", divergence: 144, crownForm: "decurrent" },
   growth: {
     apicalControl: 0.9314,
     apicalControlMature: 0.4817,
@@ -76,7 +76,7 @@ export const PRUNUS_SEROTINA: PlantSpecies = {
     sla: 20,
     lifespanYears: 0.5,
     leavesPerNode: 1,
-    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d4762c" },
+    color: { spring: "#a6c463", summer: "#3f6f30", autumn: "#d4562c", autumnShade: "#e0b040" },
   },
   bark: { kind: "scaly", smoothUntilYears: 20, furrowDepth: 0.3, color: "#3d2f2a" },
   reproduction: { firstFlowerYears: 10, flowerColor: "#f3f1e6", seedMassMg: 90 },

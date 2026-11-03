@@ -51,7 +51,7 @@ export function buildSpeciesRecord(traits: SpeciesTraits, imported: ImportedValu
     names: { scientific: traits.scientific, common: { en: traits.common.en, fr: traits.common.fr } },
     ids: { usda: traits.usda },
     habit: "tree",
-    architecture: { ...traits.architecture },
+    architecture: { ...traits.architecture, crownForm: traits.form },
     growth: {
       ...fitted.growth,
       basalStems: traits.basalStems ?? 1,

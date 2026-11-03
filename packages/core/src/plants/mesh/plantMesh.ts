@@ -4,7 +4,7 @@ import { hashString } from "../../random/rng";
 import { hexRgb, icosphere, type NatureMesh, type NatureRgb } from "../../nature/natureMesh";
 import type { LeafShapeParams } from "../species/plantSpecies";
 import { frondPose, frondSpine, isFrondShape, type FrondPose } from "../structure/frondPose";
-import { hashPlantStructure, PLANT_CLUSTER_LEVELS, PLANT_ORGAN, PLANT_REGION, type PlantStructure } from "../structure/plantStructure";
+import { hashPlantStructure, PLANT_CLUSTER_LEVELS, PLANT_ORGAN, PLANT_REGION, PLANT_SHOOT_LEAF_SPAN, type PlantStructure } from "../structure/plantStructure";
 import { PLANT_LEAF_ATLAS_CELL_COUNT, PLANT_LEAF_ATLAS_CELLS } from "./plantLeafAtlas";
 
 /** Detail of each mesh level, highest first: leaves, shoot cards, then leaf clusters at two sizes. */
@@ -55,7 +55,7 @@ export interface PlantStyle {
  */
 export const DEFAULT_PLANT_STYLE: PlantStyle = {
   foliage: "leaves",
-  leafScale: 2.6,
+  leafScale: 1,
   leafTint: "#ffffff",
   barkTint: "#ffffff",
   saturation: 1,
@@ -282,16 +282,22 @@ function leafRowColors(structure: PlantStructure): Float32Array {
   const out = new Float32Array(rows * 3);
   const spring = hexRgb(structure.leafColor.spring);
   const summer = hexRgb(structure.leafColor.summer);
-  const autumn = hexRgb(structure.leafColor.autumn);
+  const autumnSun = hexRgb(structure.leafColor.autumn);
+  const autumnShade = hexRgb(structure.leafColor.autumnShade);
+  const autumn = new Float64Array(3);
   const color = new Float64Array(3);
   const { colorState, crownDepth, health } = structure.leaves;
   for (let row = 0; row < rows; row += 1) {
     const chlorophyll = colorState[row * 4] ?? 1;
     const senescence = colorState[row * 4 + 3] ?? 0;
+    const anthocyanin = colorState[row * 4 + 2] ?? 0;
     const young = senescence > 0 ? 0 : Math.min(1, (1 - chlorophyll) / 0.3);
     mixInto(color, summer, spring, young);
     const base: NatureRgb = [color[0] ?? 0, color[1] ?? 0, color[2] ?? 0];
-    mixInto(color, base, autumn, senescence);
+    // Chlorophyll goes to show the carotenoid yellow, and anthocyanin reddens it from there.
+    mixInto(autumn, base, autumnShade, senescence);
+    const yellowed: NatureRgb = [autumn[0] ?? 0, autumn[1] ?? 0, autumn[2] ?? 0];
+    mixInto(color, yellowed, autumnSun, anthocyanin);
     const weak: NatureRgb = [color[0] ?? 0, color[1] ?? 0, color[2] ?? 0];
     mixInto(color, weak, DRY_LEAF, (1 - (health[row] ?? 1)) * 0.5);
     const shadeIn = 1 - 0.4 * (crownDepth[row] ?? 0);
@@ -617,7 +623,7 @@ function addLeafCards(build: FoliageBuild, perRowOverride: number | null, cardSc
       const nx = face[0] ?? 0;
       const ny = face[1] ?? 1;
       const nz = face[2] ?? 0;
-      const t = perRow === 1 ? 0.35 : 0.3 + (0.7 * (k + 0.5)) / perRow;
+      const t = perRow === 1 ? 0.35 : 1 - PLANT_SHOOT_LEAF_SPAN + (PLANT_SHOOT_LEAF_SPAN * (k + 0.5)) / perRow;
       // The atlas leaf spans about 0.1..0.9 of its cell, so the quad is a little longer than the leaf.
       const quad = length / 0.8;
       const half = quad * 0.5;

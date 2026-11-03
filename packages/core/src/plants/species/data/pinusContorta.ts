@@ -8,14 +8,14 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PINUS_CONTORTA: PlantSpecies = {
   id: "pinus-contorta",
-  version: 1,
+  version: 10,
   names: {
     scientific: "Pinus contorta Douglas ex Loudon",
     common: { en: "lodgepole pine", fr: "pin tordu" },
   },
   ids: { usda: "PICO" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.95,
     apicalControlMature: 0.7865,
@@ -79,7 +79,7 @@ export const PINUS_CONTORTA: PlantSpecies = {
     sla: 6,
     lifespanYears: 5,
     leavesPerNode: 6,
-    color: { spring: "#88b070", summer: "#3f6339", autumn: "#3f6339" },
+    color: { spring: "#88b070", summer: "#3f6339", autumn: "#3f6339", autumnShade: "#3f6339" },
   },
   bark: { kind: "scaly", smoothUntilYears: 15, furrowDepth: 0.2, color: "#6d5848" },
   reproduction: { firstFlowerYears: 6, seedMassMg: 4 },

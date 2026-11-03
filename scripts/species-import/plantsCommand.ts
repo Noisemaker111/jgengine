@@ -6,8 +6,9 @@ import { availableParallelism } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
+import type { CrownForm, PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
 import { siteIndexHeightM, type SiteIndexCurve } from "../../packages/core/src/plants/validation/heightAgeCurves";
+import { crownArchitectureTarget } from "../../packages/core/src/plants/validation/crownArchitecture";
 import { growthCurveAt, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../../packages/core/src/plants/species/speciesReference";
 import { SPECIES_REFERENCE } from "../../packages/core/src/plants/species/speciesReferenceTable";
 import { parseCsv, csvNumber } from "./csv";
@@ -17,7 +18,7 @@ import { siteTreesOf, standReference } from "./siteTrees";
 import { fitSpecies, type Evaluate } from "./speciesFit";
 import { buildSpeciesRecord, speciesRecordSource, type FittedParameters, type ImportedValues } from "./speciesRecord";
 import { scoreTrial, type FitTarget } from "./speciesScore";
-import { SHADE_TOLERANCE, SPECIES_TRAITS, type CrownForm, type SpeciesTraits } from "./speciesTraits";
+import { SHADE_TOLERANCE, SPECIES_TRAITS, type SpeciesTraits } from "./speciesTraits";
 import { TRIAL_AGES, runHabitTrial, runTrial, type Trial } from "./speciesTrial";
 import { talloCrownWidthClasses } from "./tallo";
 import { buildHabitRecord, habitFitParameters, HABIT_TRAITS, startingHabitCarbon, startingHabitGrowth, habitReferenceTableSource, importHabitReference, scoreHabitTrial, type HabitTraits } from "./habitSpecies";
@@ -26,6 +27,10 @@ import { HABIT_REFERENCE } from "../../packages/core/src/plants/species/habitRef
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const PLANTS = join(ROOT, "packages/core/src/plants");
 const FIT_DIR = join(ROOT, ".scratch/species-fit");
+// A fresh fit searches widely; one resuming a saved fit searches near it, since with ~20 parameters a
+// wide step lands every trial far from a good start and the search drifts away from it.
+const FRESH_SIGMA = "0.12";
+const RESUMED_SIGMA = "0.04";
 const INCH_CM = 2.54;
 const FOOT_M = 0.3048;
 
@@ -36,7 +41,8 @@ const HELP = `bun run jgengine plants <verb> [species ids]
   write <id...|--all> write species/data records from traits, imported values and the fit
   report <id...>      grow each record and print it against its reference
 
-fit flags: --generations <n> (40) --lambda <n> (16) --workers <n> --seeds a,b --sigma <x> (0.12)`;
+fit flags: --generations <n> (40) --lambda <n> (16) --workers <n> --seeds a,b --sigma <x> (0.12, or 0.04 resuming a saved fit)
+  --until-pass        stop a tree's fit once it is inside the library test's height, DBH, Tallo, crown-shape and crown-architecture limits`;
 
 const scientificKey = (traits: SpeciesTraits): string => traits.scientific.split(" ").slice(0, 2).join(" ");
 const camel = (id: string): string => id.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
@@ -190,7 +196,8 @@ function importedValues(traits: SpeciesTraits, reference: SpeciesReference): Imp
 }
 
 function fitTarget(traits: SpeciesTraits, record: PlantSpecies, reference: SpeciesReference): FitTarget {
-  return { reference, form: traits.form, maxCrownRadiusM: record.limits.maxCrownRadiusM, shadeTolerant: SHADE_TOLERANCE[traits.shade] >= 0.7 };
+  const architecture = crownArchitectureTarget({ architecture: { ...record.architecture, crownForm: traits.form }, tolerance: { ...record.tolerance, shade: SHADE_TOLERANCE[traits.shade] }, leaf: record.leaf });
+  return { reference, form: traits.form, architecture, maxCrownRadiusM: record.limits.maxCrownRadiusM, shadeTolerant: SHADE_TOLERANCE[traits.shade] >= 0.7 };
 }
 
 async function loadRecord(id: string): Promise<PlantSpecies | undefined> {
@@ -283,7 +290,7 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
       await fitSpecies(start, (trial) => scoreHabitTrial(reference, habit, trial), pool.evaluate, {
         generations: Number(flag(argv, "--generations", "40")),
         lambda: Number(flag(argv, "--lambda", "16")),
-        sigma: Number(flag(argv, "--sigma", "0.12")),
+        sigma: Number(flag(argv, "--sigma", resumed === undefined ? FRESH_SIGMA : RESUMED_SIGMA)),
         seed: 1,
         parameters: habitFitParameters(habit),
         onBest: (best) => writeFileSync(out, JSON.stringify({ score: best.score, parts: best.parts, against: HABIT_AGAINST, species: best.species } satisfies FitFile, null, 1)),
@@ -296,14 +303,17 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
     const out = join(FIT_DIR, `${id}.json`);
     const resumed: FitFile | undefined = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : undefined;
     // A fit saved before a field existed resumes with that field's neutral value.
-    const start = resumed === undefined ? await startingRecord(traits) : { ...resumed.species, carbon: { ...resumed.species.carbon, hydraulicHeightShare: resumed.species.carbon.hydraulicHeightShare ?? 1 } };
+    const resumedStart = resumed === undefined ? await startingRecord(traits) : { ...resumed.species, carbon: { ...resumed.species.carbon, hydraulicHeightShare: resumed.species.carbon.hydraulicHeightShare ?? 1 } };
+    // The trial reads the crown form to grow the seeded individuals the guardrails check.
+    const start: PlantSpecies = { ...resumedStart, architecture: { ...resumedStart.architecture, crownForm: traits.form } };
     const target = fitTarget(traits, start, referenceOf(id));
     const pool = workerPool(workers, seeds, target.shadeTolerant);
     await fitSpecies(start, (trial) => scoreTrial(target, trial), pool.evaluate, {
       generations: Number(flag(argv, "--generations", "40")),
       lambda: Number(flag(argv, "--lambda", "16")),
-      sigma: Number(flag(argv, "--sigma", "0.12")),
+      sigma: Number(flag(argv, "--sigma", resumed === undefined ? FRESH_SIGMA : RESUMED_SIGMA)),
       seed: 1,
+      ...(argv.includes("--until-pass") ? { until: (best: { parts: Record<string, number> }) => (best.parts["limits"] ?? 1) === 0 && (best.parts["tallo"] ?? 1) === 0 && (best.parts["shape"] ?? 1) === 0 && (best.parts["architecture"] ?? 0) === 0 && (best.parts["dead"] ?? 0) === 0 } : {}),
       onBest: (best) => writeFileSync(out, JSON.stringify({ score: best.score, parts: best.parts, against: AGAINST, species: best.species } satisfies FitFile, null, 1)),
       onGeneration: (line) => console.log(`${id} ${line}`),
     });

@@ -17,6 +17,8 @@ export const PLANT_ORGAN = { flower: 0, fruit: 1 } as const;
 
 /** Cluster levels per leaf: own shoot axis, its order-2 limb, its order-1 limb. */
 export const PLANT_CLUSTER_LEVELS = 3;
+/** Share of a shoot, from its tip back, its leaves hang along; the rest is bare. */
+export const PLANT_SHOOT_LEAF_SPAN = 0.7;
 /** Height bins and azimuth sectors of {@link PlantStructure.crownHull}. */
 export const CROWN_HULL_BINS = 16;
 /** Compass sectors per height bin of the crown envelope. */
@@ -110,17 +112,38 @@ function radiusOf(state: GrowthState, i: number): number {
   return Math.sqrt(((state.nodes.sapArea[i] ?? 0) + (state.nodes.heartArea[i] ?? 0)) / PLANT_PI);
 }
 
-function leafColor(day: number, season: GrowingSeason, out: Float32Array, at: number): void {
+/** A number in [0, 1) from two integers, the same for the same pair. */
+function unitHash(a: number, b: number): number {
+  let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35);
+  h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d);
+  h ^= h >>> 13;
+  return (h >>> 0) / 4294967296;
+}
+
+function seedHash(seed: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  return h | 0;
+}
+
+/**
+ * Pigments of one leaf row on `day`. Senescence starts `earlyDays` before the species' leaf fall, so
+ * trees and branches turn at their own pace; anthocyanin builds with sun on the leaf and the tree's
+ * own `redness` (sugar maples of one stand range from yellow to scarlet, Schaberg et al. 2003).
+ */
+function leafColor(day: number, season: GrowingSeason, out: Float32Array, at: number, earlyDays: number, sun: number, redness: number): void {
   // Evergreen foliage (out all year) never turns.
   const evergreen = season.leafOnDay <= 1 && season.leafOffDay >= 365;
-  const fall = season.leafOffDay - day;
+  const fall = season.leafOffDay - day - earlyDays;
   const flush = evergreen ? 365 : day - season.leafOnDay;
-  let senescence = !evergreen && fall < 25 ? (25 - fall) / 25 : 0;
+  // One limb's leaves turn within about two weeks; the crown takes longer as its limbs turn in turn.
+  let senescence = !evergreen && fall < 14 ? (14 - fall) / 14 : 0;
   if (senescence > 1) senescence = 1;
+  if (senescence < 0) senescence = 0;
   const young = flush < 14 ? 1 - flush / 14 : 0;
   out[at] = (1 - senescence) * (1 - 0.3 * young);
   out[at + 1] = 0.35 + 0.4 * senescence;
-  out[at + 2] = 0.6 * senescence;
+  out[at + 2] = senescence * redness * sun;
   out[at + 3] = senescence;
 }
 
@@ -212,6 +235,8 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
   // Fronds reach well past the node that bears them, so they set the plant's height and crown.
   const fronds = isFrondShape(species.leaf.shape);
   const frondLength = (species.leaf.sizeCm / 100) * frondLengthShare(species.growth, state.vitals.year);
+  // One leaf's area, as the growth model counts it.
+  const leafArea = 0.55 * (species.leaf.sizeCm / 100) * (species.leaf.sizeCm / 100);
   const frondPoints: number[] = [];
   if (fronds) {
     const pose: FrondPose = { azimuth: 0, elevation: 0, sag: 0 };
@@ -271,6 +296,10 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
   const keyMaps = [new Map<number, number>(), new Map<number, number>(), new Map<number, number>()];
   const keyOf = [axis, limb2, limb1];
   const openSky = Math.max(1e-6, maxLight(state));
+  const treeHash = seedHash(source.seed);
+  // One tree turns up to a week before or after another, and leans to red or to yellow.
+  const treeEarly = 12 * (unitHash(treeHash, 1) - 0.5);
+  const redness = 0.35 + 0.65 * unitHash(treeHash, 2);
   let row = 0;
   for (let i = 0; i < n && leafOn; i += 1) {
     if ((state.nodes.foliage[i] ?? 0) <= 0) continue;
@@ -289,7 +318,8 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     up[row * 3 + 1] = dy;
     up[row * 3 + 2] = dz;
     size[row] = fronds ? frondLength : species.leaf.sizeCm / 100;
-    count[row] = fronds ? frondCount(state.nodes.foliage[i] ?? 0, frondLength) : species.leaf.leavesPerNode;
+    // Every leaf the node carries, at its real size: its leaf area over one leaf's.
+    count[row] = fronds ? frondCount(state.nodes.foliage[i] ?? 0, frondLength) : Math.max(1, Math.min(65535, Math.round((state.nodes.foliage[i] ?? 0) / leafArea)));
     segment[row] = i;
     for (let level = 0; level < PLANT_CLUSTER_LEVELS; level += 1) {
       const key = keyOf[level]?.[i] ?? i;
@@ -304,7 +334,10 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     }
     const depth = 1 - (state.nodes.light[i] ?? 0) / openSky;
     crownDepth[row] = depth < 0 ? 0 : depth > 1 ? 1 : depth;
-    leafColor(dayOfYear, season, colorState, row * 4);
+    const sun = 1 - (crownDepth[row] ?? 0);
+    // A limb turns as one, and sunlit leaves turn first, so a turning crown is patchy and brightest outside.
+    const limbEarly = 16 * (unitHash(treeHash, limb2[i] ?? i) - 0.5) + 8 * (sun - 0.5) + 6;
+    leafColor(dayOfYear, season, colorState, row * 4, treeEarly + limbEarly, sun, redness);
     leafHealth[row] = state.vitals.health;
     row += 1;
   }

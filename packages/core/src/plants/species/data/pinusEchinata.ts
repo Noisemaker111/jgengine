@@ -8,11 +8,11 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const PINUS_ECHINATA: PlantSpecies = {
   id: "pinus-echinata",
-  version: 1,
+  version: 3,
   names: { scientific: "Pinus echinata Mill.", common: { en: "shortleaf pine", fr: "pin jaune" } },
   ids: { usda: "PIEC2" },
   habit: "tree",
-  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
+  architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5, crownForm: "excurrent" },
   growth: {
     apicalControl: 0.8301,
     apicalControlMature: 0.7322,
@@ -76,7 +76,7 @@ export const PINUS_ECHINATA: PlantSpecies = {
     sla: 9,
     lifespanYears: 3,
     leavesPerNode: 6,
-    color: { spring: "#88b070", summer: "#3f6840", autumn: "#3f6840" },
+    color: { spring: "#88b070", summer: "#3f6840", autumn: "#3f6840", autumnShade: "#3f6840" },
   },
   bark: { kind: "plated", smoothUntilYears: 10, furrowDepth: 0.5, color: "#6e4c38" },
   reproduction: { firstFlowerYears: 20, seedMassMg: 10 },

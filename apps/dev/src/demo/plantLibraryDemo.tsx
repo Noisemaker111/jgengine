@@ -11,10 +11,11 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 
 import { demoGame } from "./demoGame";
 
-/** Every library species open-grown to one age, in rows a capture view frames one at a time. */
-const SHEET = { age: 60, perRow: 9, spacing: 24, rowGap: 300, detail: 0.5 };
+const PARAMS = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
+/** Every library species open-grown to one age (`?age=25` picks another), in rows a capture view frames one at a time. */
+const SHEET = { age: Number(PARAMS.get("age") ?? 60) || 60, perRow: 9, spacing: 24, rowGap: 300, detail: 0.5 };
 /** `?seed=forest-b` regrows every species from another seed; each plant's seed is `<seed>-<species id>`. */
-const SEED = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search).get("seed") ?? "library";
+const SEED = PARAMS.get("seed") ?? "library";
 
 function LibraryTree({ species, label, position }: { species: string; label: string; position: [number, number, number] }) {
   const [mesh, setMesh] = useState<PlantMesh | null>(null);
