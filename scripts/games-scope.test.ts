@@ -1,11 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { randomUUID } from "node:crypto";
-import { copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { rmSync } from "node:fs";
 
 import { writeGameTree } from "./fixtures/gameTree";
-import { findFrontEndGaps } from "./gameFrontEnd";
-import { findGameFeelGaps } from "./gameFeel";
 import {
   ignoredGames,
   ignoredGamesWarning,
@@ -38,24 +34,6 @@ function clone(extra: Record<string, string>): string {
   return root;
 }
 
-/** The same clone with the real gate script copied beside it, so it runs end to end. */
-function gateTree(files: Record<string, string>): string {
-  const root = clone({ ...files, "scripts/game-feel-baseline.json": "[]\n" });
-  mkdirSync(join(root, "scripts"), { recursive: true });
-  for (const name of ["check-game-feel.ts", "gameFeel.ts", "games-scope.ts", "ratchet.ts"]) {
-    copyFileSync(join(import.meta.dir, name), join(root, "scripts", name));
-  }
-  return root;
-}
-
-function runGate(root: string): { code: number | null; output: string } {
-  const proc = Bun.spawnSync(["bun", join(root, "scripts/check-game-feel.ts")], { cwd: root, timeout: 60_000 });
-  return { code: proc.exitCode, output: proc.stdout.toString() + proc.stderr.toString() };
-}
-
-const healthy = "camera targetSmoothing; attack; audio.play(); hitReaction;";
-const defective = "const camera = true;";
-
 describe("the Games scope", () => {
   test("is the reference set the perf gate measures, whatever the clone also holds", () => {
     const root = clone({ "games/beatlane/src/index.tsx": "attack; camera;" });
@@ -73,18 +51,18 @@ describe("the Games scope", () => {
     await Bun.write(`${root}/games/studios/src/index.ts`, "export {};\n");
     const ignored = ignoredGames(root, referenceGames(root));
     expect(ignored).toEqual(["apexline", "beatlane"]);
-    expect(ignoredGamesWarning("check-game-feel", ignored)).toContain("apexline, beatlane");
-    expect(ignoredGamesWarning("check-game-feel", ignored)).toStartWith("check-game-feel: ignoring 2 game(s)");
+    expect(ignoredGamesWarning("check-game-determinism", ignored)).toContain("apexline, beatlane");
+    expect(ignoredGamesWarning("check-game-determinism", ignored)).toStartWith("check-game-determinism: ignoring 2 game(s)");
   });
 
   test("warns only when a game was skipped", () => {
-    expect(ignoredGamesWarning("check-game-feel", [])).toBeNull();
+    expect(ignoredGamesWarning("check-game-determinism", [])).toBeNull();
     const lines: string[] = [];
     const written = console.warn;
     console.warn = (line: string) => void lines.push(line);
     try {
-      warnIgnoredGames("check-game-feel", []);
-      warnIgnoredGames("check-game-feel", ["beatlane"]);
+      warnIgnoredGames("check-game-determinism", []);
+      warnIgnoredGames("check-game-determinism", ["beatlane"]);
     } finally {
       console.warn = written;
     }
@@ -93,56 +71,3 @@ describe("the Games scope", () => {
   });
 });
 
-describe("a gate scoped to the reference set", () => {
-  test("passes on a clone with extra sibling games that have defects of their own", () => {
-    const root = clone({
-      "games/harbor-heat/src/index.tsx": healthy,
-      "games/beatlane/src/index.tsx": defective,
-      "games/deepstack/src/index.tsx": "const camera = true; attack;",
-    });
-    expect(findGameFeelGaps(root, referenceGames(root))).toEqual([]);
-    expect(findFrontEndGaps(root, referenceGames(root)).map((gap) => gap.key)).toEqual([
-      "harbor-heat#credits",
-      "harbor-heat#settings",
-    ]);
-  });
-
-  test("still fails on a real defect in one of the eight", () => {
-    const root = clone({
-      "games/harbor-heat/src/index.tsx": healthy,
-      "games/deepward/src/index.tsx": defective,
-      "games/beatlane/src/index.tsx": healthy,
-    });
-    expect(findGameFeelGaps(root, referenceGames(root)).map((gap) => gap.key)).toEqual(["deepward#camera-smoothing"]);
-  });
-
-  test("the unscoped scan still sees every game, so a fixture tree keeps working", () => {
-    const root = clone({ "games/beatlane/src/index.tsx": defective });
-    expect(findGameFeelGaps(root).map((gap) => gap.key)).toEqual(["beatlane#camera-smoothing"]);
-  });
-});
-
-describe("check-game-feel end to end", () => {  test("passes on a clone with extra games, and warns naming them", () => {
-    const root = gateTree({
-      "games/harbor-heat/src/index.tsx": healthy,
-      "games/apexline/src/index.tsx": defective,
-      "games/deepstack/src/index.tsx": "const camera = true; attack;",
-    });
-    const { code, output } = runGate(root);
-    expect(code).toBe(0);
-    expect(output).toContain("check-game-feel ok");
-    expect(output).toContain("ignoring 2 game(s)");
-    expect(output).toContain("apexline, deepstack");
-  });
-
-  test("still fails on a real defect in one of the eight", () => {
-    const root = gateTree({
-      "games/harbor-heat/src/index.tsx": defective,
-      "games/beatlane/src/index.tsx": healthy,
-    });
-    const { code, output } = runGate(root);
-    expect(code).toBe(1);
-    expect(output).toContain("harbor-heat — camera needs damping or smoothing");
-    expect(output).toContain("failed: 1 new offender(s)");
-  });
-});

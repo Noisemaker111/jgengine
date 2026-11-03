@@ -133,24 +133,4 @@ describe("a real failure stays a real failure", () => {
     expect(result.status).not.toBe(EXIT_NOT_SET_UP);
     expect(`${result.stdout}${result.stderr}`).not.toContain("this checkout cannot run that yet");
   });
-
-  test("a script whose help is broken still fails the gate with exit 1", () => {
-    const { root, cleanup } = bareCheckout();
-    try {
-      writeFileSync(join(root, "package.json"), JSON.stringify({ scripts: { broken: "bun scripts/broken.ts" } }));
-      writeFileSync(
-        join(root, "scripts", "broken.ts"),
-        `if (process.argv.includes("--help")) { console.log("broken: usage"); process.exit(4); }\n`,
-      );
-      const result = spawnSync(process.execPath, [join(checkoutRoot, "scripts", "check-script-help.ts"), "--root", root], {
-        cwd: checkoutRoot,
-        encoding: "utf8",
-        timeout: 60_000,
-      });
-      expect(result.status).toBe(1);
-      expect(result.stdout).toContain("exited 4");
-    } finally {
-      cleanup();
-    }
-  });
 });

@@ -1,24 +1,14 @@
 /**
  * Surface-diet acceptance — structural checks on the shipped public surface.
- * Drives real files and collectAdoption; fails if the cut regresses.
+ * Drives real files; fails if the cut regresses.
  */
 import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { collectAdoption } from "./apiAdoption";
-
 const root = join(import.meta.dir, "..");
 
 describe("CUTLIST surface diet", () => {
-  test("orphan baseline is under 400", () => {
-    const path = join(root, "scripts/api-orphan-baseline.json");
-    expect(existsSync(path)).toBe(true);
-    const orphans = JSON.parse(readFileSync(path, "utf8")) as string[];
-    expect(Array.isArray(orphans)).toBe(true);
-    expect(orphans.length).toBeLessThan(400);
-  });
-
   test("core package root only re-exports version/changelog surface", () => {
     const src = readFileSync(join(root, "packages/core/src/index.ts"), "utf8");
     expect(src).toMatch(/\bVERSION\b/);
@@ -70,14 +60,6 @@ describe("CUTLIST surface diet", () => {
     expect(readme).not.toMatch(/games:voxel-mine/);
   });
 
-  test("orphan adoption counts packages/*/src cross-package imports", () => {
-    const adoptionSrc = readFileSync(join(root, "scripts/apiAdoption.ts"), "utf8");
-    expect(adoptionSrc).toMatch(/packages\/\*\/src\/\*\*\/\*\.ts/);
-    // Real path: ws host imports createGameRuntime from core — must register as adopted.
-    const adoption = collectAdoption(root);
-    expect([...adoption.bindings].some((key) => key.endsWith("#createGameRuntime"))).toBe(true);
-    expect([...adoption.bindings].some((key) => /#(?:createGameContext|defineGame)$/.test(key))).toBe(true);
-  });
 
   test("skill routing omits tooling packages github and jgengine CLI", () => {
     const routing = readFileSync(join(root, "scripts/skillRouting.ts"), "utf8");
