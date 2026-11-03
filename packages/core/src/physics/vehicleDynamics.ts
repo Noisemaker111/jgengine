@@ -1,6 +1,6 @@
 import type { AxisInput } from "../input/axisInput";
 import type { CollisionObstacle } from "../movement/movementModel";
-import { createVehicleObstacleClamp, type VehicleImpact, type VehicleMoveClamp } from "./vehicleObstacles";
+import { createVehicleObstacleClamp, motionWithinAttempt, type VehicleImpact, type VehicleMoveClamp } from "./vehicleObstacles";
 import { sampleGripCurve, type GripCurve } from "./gripCurve";
 import { clamp, clamp01 } from "../math/scalar";
 import type { WindField } from "../world/wind";
@@ -896,7 +896,17 @@ export function createVehicleDynamics(
       ? userClamp
       : userClamp === undefined
         ? obstacleClamp.clampMove
-        : (from, to) => obstacleClamp.clampMove(from, userClamp(from, to));
+        : (from, to) => {
+            // The game clamp's own recovery is position, not an attempted move: start the solids pass from
+            // where it recovered to, so they never see the push-out as motion or as a crash.
+            const user = userClamp(from, to);
+            const start: readonly [number, number] = user.motion === undefined ? from : [user[0] - user.motion[0], user[1] - user.motion[1]];
+            const solid = obstacleClamp.clampMove(start, user);
+            if (start === from) return solid;
+            const motion: readonly [number, number] = solid.motion ?? [solid[0] - start[0], solid[1] - start[1]];
+            const end: [number, number] = [solid[0], solid[1]];
+            return Object.assign(end, { motion });
+          };
   const dragAt = options.dragAt;
   const spawnGround = options.position?.[1] ?? 0;
   const groundAt = options.groundHeight ?? (() => spawnGround);
@@ -1604,15 +1614,15 @@ export function createVehicleDynamics(
     const toZ = state.motion.z + nvz * h;
     if (clampMove !== undefined && h > 0) {
       const allowed = clampMove([state.motion.x, state.motion.z], [toX, toZ]);
-      const wanted = Math.hypot(nvx, nvz);
-      nvx = (allowed.motion?.[0] ?? allowed[0] - state.motion.x) / h;
-      nvz = (allowed.motion?.[1] ?? allowed[1] - state.motion.z) / h;
       // A clamp that pushes the car back onto the road moves it, but never hands it speed it did not have.
-      const kept = Math.hypot(nvx, nvz);
-      if (kept > wanted && kept > 0) {
-        nvx *= wanted / kept;
-        nvz *= wanted / kept;
-      }
+      const [mx, mz] = motionWithinAttempt(
+        toX - state.motion.x,
+        toZ - state.motion.z,
+        allowed.motion?.[0] ?? allowed[0] - state.motion.x,
+        allowed.motion?.[1] ?? allowed[1] - state.motion.z,
+      );
+      nvx = mx / h;
+      nvz = mz / h;
       state.motion.x = allowed[0];
       state.motion.z = allowed[1];
     } else {
