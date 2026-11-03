@@ -13,6 +13,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { LIBRARY_LISTS } from "../packages/assets/src/catalogs/entryFiles";
 import { declaredExport } from "../packages/jgengine/src/find/codeMap";
 import { printHelpIfAsked, type Usage } from "./script-help";
 
@@ -311,8 +312,15 @@ export function featureFolderFor(path: string, features: ReadonlySet<string>, be
   return null;
 }
 
+/** A file in a one-file-per-entry data folder: named for its entry's id, and its folders group entries, not features. */
+export function isEntryFile(path: string): boolean {
+  return LIBRARY_LISTS.some((list) => path.startsWith(`${list.dir}/`));
+}
+
 /** Home-folder failures for the files a branch added or moved. */
-export function homeFailures(added: readonly string[], allPaths: readonly string[], isExempt: (path: string) => boolean = () => false): Failure[] {
+export function homeFailures(addedPaths: readonly string[], everyPath: readonly string[], isExempt: (path: string) => boolean = () => false): Failure[] {
+  const added = addedPaths.filter((path) => !isEntryFile(path));
+  const allPaths = everyPath.filter((path) => !isEntryFile(path));
   const layers = layerFolders(allPaths);
   const addedSet = new Set(added);
   const before = layerFolders(allPaths.filter((path) => !addedSet.has(path)));

@@ -200,11 +200,12 @@ describe("generated-artifact drift", () => {
   test("gen regenerates every committed artifact, routing before barrels before their readers", () => {
     const stages = genPlan(GEN_TARGETS);
     expect(stages.map((stage) => stage.name)).toEqual([
-      "ensure-ready", "source-paths", "skill-routing", "barrels", "capabilities", "skill-api", "export-manifest", "games-ledger",
+      "ensure-ready", "source-paths", "library-index", "skill-routing", "barrels", "capabilities", "skill-api", "export-manifest", "games-ledger",
       "type-escapes", "part-stats", "recipes",
     ]);
-    expect(stages[3]!.needs).toEqual(["ensure-ready", "skill-routing"]);
-    for (const stage of stages.slice(4)) expect(stage.needs).toEqual(["ensure-ready", "barrels"]);
+    expect(stages[2]!.needs).toEqual(["ensure-ready"]);
+    expect(stages[4]!.needs).toEqual(["ensure-ready", "skill-routing"]);
+    for (const stage of stages.slice(5)) expect(stage.needs).toEqual(["ensure-ready", "barrels"]);
     expect(rerunHint(stages, "barrels")).toBe("bun run gen barrels");
   });
 });

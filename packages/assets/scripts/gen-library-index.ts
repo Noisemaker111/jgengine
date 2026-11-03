@@ -4,7 +4,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { LIBRARY_LISTS, libraryIndexPath, renderLibraryIndex } from "../src/catalogs/libraryIndex";
+import { LIBRARY_LISTS, libraryIndexPath, renderLibraryIndex } from "../src/catalogs/entryFiles";
 
 const root = join(import.meta.dir, "..", "..", "..");
 for (const list of LIBRARY_LISTS) writeFileSync(join(root, libraryIndexPath(list)), await renderLibraryIndex(root, list));

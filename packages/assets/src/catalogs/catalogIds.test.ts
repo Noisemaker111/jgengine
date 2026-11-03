@@ -5,7 +5,7 @@ import { join, relative, sep } from "node:path";
 import { sources } from "../sources";
 import { FONT_LIBRARY } from "./fontLibrary";
 import { HDRI_LIBRARY } from "./hdriLibrary";
-import { LIBRARY_LISTS, libraryEntryNames, libraryIndexPath, renderLibraryIndex } from "./libraryIndex";
+import { LIBRARY_LISTS, libraryEntryNames, libraryIndexPath, renderLibraryIndex } from "./entryFiles";
 import { LUT_GRADES } from "./lutGrades";
 import { MATERIAL_LIBRARY } from "./materialLibrary";
 import { MODEL_LIBRARY } from "./modelLibrary";
