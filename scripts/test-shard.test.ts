@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { assignShards, BATCHES_PER_LANE, bunCrashed, failedTests, failureDetails, failureReport, matchingShard, preparation, SHARDS, planLanes, runPool, SLOW_TEST_SECONDS, splitLanes, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
+import { assignShards, bunCrashed, failedTests, failureDetails, failureReport, matchingShard, preparation, SHARDS, planLanes, SLOW_TEST_SECONDS, splitLanes, TEST_ROOTS, walkTestFiles, type Shard } from "./test-shard";
 
 const TABLE: Shard[] = [
   { name: "hot", label: "the core combat tests", include: ["packages/core/src/combat"] },
@@ -120,29 +120,21 @@ test("a file that reads the wall clock runs alone after the lanes, never beside 
   const sources: Record<string, string> = { "a.test.ts": "expect(1).toBe(1)", "timed.test.ts": "const t = performance.now();", "b.test.ts": "" };
   const plan = planLanes(Object.keys(sources), 4, (file) => sources[file] ?? "");
   expect(plan.alone).toEqual(["timed.test.ts"]);
-  expect(plan.batches.flat().sort()).toEqual(["a.test.ts", "b.test.ts"]);
-  expect(planLanes(Object.keys(sources), 1, (file) => sources[file] ?? "")).toEqual({ batches: [Object.keys(sources)], alone: [] });
+  expect(plan.lanes.flat().sort()).toEqual(["a.test.ts", "b.test.ts"]);
+  expect(planLanes(Object.keys(sources), 1, (file) => sources[file] ?? "")).toEqual({ lanes: [Object.keys(sources)], alone: [] });
 });
 
-test("a lane that frees takes the next batch, so one slow batch never holds the others' work back", async () => {
-  const order: string[] = [];
-  const results = await runPool([30, 5, 5, 5], 2, async (ms, index) => {
-    await Bun.sleep(ms);
-    order.push(`batch ${index}`);
-    return index;
-  });
-  expect(results).toEqual([0, 1, 2, 3]);
-  // The 30 ms batch holds one lane; the other lane runs all three short ones before it finishes.
-  expect(order).toEqual(["batch 1", "batch 2", "batch 3", "batch 0"]);
-});
-
-test("a shard in lanes is cut into more batches than lanes, the costliest first", () => {
-  const files = Array.from({ length: 40 }, (_, i) => `f${i}.test.ts`);
-  const plan = planLanes(files, 4, () => "");
-  expect(plan.batches).toHaveLength(4 * BATCHES_PER_LANE);
-  expect(plan.batches.flat().sort()).toEqual([...files].sort());
-  const sized = splitLanes(["slow.test.ts", "a.test.ts", "b.test.ts"], 2, { "slow.test.ts": 50 });
-  expect(sized[0]).toEqual(["slow.test.ts"]);
+test("a lane holds whole folders in path order, so it loads only their imports", () => {
+  const files = ["x/a1.test.ts", "y/b1.test.ts", "x/a2.test.ts", "y/b2.test.ts", "z/c1.test.ts", "z/c2.test.ts"];
+  expect(splitLanes(files, 3, {})).toEqual([
+    ["x/a1.test.ts", "x/a2.test.ts"],
+    ["y/b1.test.ts", "y/b2.test.ts"],
+    ["z/c1.test.ts", "z/c2.test.ts"],
+  ]);
+  // A measured slow file fills its own lane; the rest share the others.
+  const sized = splitLanes(["slow.test.ts", "a.test.ts", "b.test.ts", "c.test.ts"], 2, { "slow.test.ts": 50 });
+  expect(sized).toContainEqual(["slow.test.ts"]);
+  expect(sized).toContainEqual(["a.test.ts", "b.test.ts", "c.test.ts"]);
 });
 
 test("a failure's error lines are repeated at the end, once per test", () => {
