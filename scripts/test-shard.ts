@@ -30,7 +30,7 @@
 // and apps/dev joins e. React (41 s) cannot fold into anything without clearing 60 s, so it
 // carries the editor's unit tests and nothing else. Moving a directory means re-timing the
 // shard and updating these numbers in the same commit.
-import { readdirSync, readFileSync } from "node:fs";
+import { appendFileSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -307,25 +307,66 @@ async function main(): Promise<void> {
     console.log(alone.line);
     results.push(alone);
   }
-  const details = results.filter((entry) => entry.code !== 0).flatMap((entry) => failureDetails(entry.output));
-  if (details.length > 0) console.log(`\ntest-shard ${name}: what failed\n${details.join("\n")}`);
+  const failed = results.filter((entry) => entry.code !== 0).flatMap((entry) => failedTests(entry.output));
+  if (failed.length > 0) {
+    console.log(`\ntest-shard ${name}: what failed\n${failed.flatMap((test) => [...test.lines, ""]).join("\n")}`);
+    const report = failureReport(name, failed);
+    for (const line of report.annotations) console.log(line);
+    const summaryFile = process.env["GITHUB_STEP_SUMMARY"];
+    if (summaryFile !== undefined && summaryFile !== "") appendFileSync(summaryFile, report.summary);
+  }
   const codes = results.map((entry) => entry.code);
   process.exit(codes.find((code) => code !== 0) ?? 0);
 }
 
-/** Each `(fail)` line with the error output before it, once per test, so a failure reads at the end of a long log. */
-export function failureDetails(output: string, before = 25): string[] {
-  const lines = output.split("\n");
+/** GitHub's log commands Bun prints under Actions: a `##[group]` repeated in the digest folded the failure out of sight. */
+const CI_MARKUP = /^(?:##\[[a-z]+\]|::[a-z-]+[ :])/;
+
+/** One failed test: its name, the first error line Bun printed for it, and the lines that led to it. */
+export interface FailedTest {
+  name: string;
+  error: string;
+  lines: string[];
+}
+
+/** Every failed test once, each with only its own output: from the line after the test before it, up to `before` lines. */
+export function failedTests(output: string, before = 25): FailedTest[] {
+  const lines = output.split(/\r?\n/);
   const seen = new Set<string>();
-  const blocks: string[] = [];
+  const failed: FailedTest[] = [];
   lines.forEach((line, index) => {
     if (!line.startsWith("(fail) ")) return;
-    const name = line.replace(/ \[[\d.]+ms\]$/, "");
+    const name = line.replace(/^\(fail\) /, "").replace(/ \[[\d.]+ms\]$/, "");
     if (seen.has(name)) return;
     seen.add(name);
-    blocks.push(...lines.slice(Math.max(0, index - before), index + 1), "");
+    let start = index;
+    while (start > 0 && index - start < before && !/^\((?:pass|fail|skip|todo)\) /.test(lines[start - 1] ?? "")) start -= 1;
+    const own = lines.slice(start, index + 1).filter((entry) => !CI_MARKUP.test(entry));
+    const error = own.find((entry) => /^\s*(?:error:|\w*Error:)/.test(entry))?.trim() ?? "no error line printed";
+    failed.push({ name, error, lines: own });
   });
-  return blocks;
+  return failed;
+}
+
+/** Each `(fail)` line with the error output before it, once per test, so a failure reads at the end of a long log. */
+export function failureDetails(output: string, before = 25): string[] {
+  return failedTests(output, before).flatMap((test) => [...test.lines, ""]);
+}
+
+/**
+ * What a red shard puts where a reader looks first: one annotation per failed test on the run page,
+ * and a list in the job summary, each naming the test and its first error line.
+ */
+export function failureReport(shard: string, failed: readonly FailedTest[]): { annotations: string[]; summary: string } {
+  const escape = (text: string): string => text.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+  const annotations = failed.map((test) => `::error title=${escape(`test (${shard}): ${test.name}`).replace(/[:,]/g, " ")}::${escape(test.error)}`);
+  const summary = [
+    `### test (${shard}): ${failed.length} failed`,
+    "",
+    ...failed.map((test) => `- \`${test.name.replace(/`/g, "'")}\`: ${test.error.replace(/`/g, "'")}`),
+    "",
+  ].join("\n");
+  return { annotations, summary };
 }
 
 /** Bun's own crash banner: printed by the runtime, never by a test. */
