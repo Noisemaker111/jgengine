@@ -1,5 +1,5 @@
-import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmdirSync, symlinkSync, unlinkSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
+import { appendFileSync, cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmdirSync, symlinkSync, unlinkSync } from "node:fs";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
 /**
  * One on-disk store for every pulled model, material and sprite, shared by the main checkout and
@@ -79,14 +79,55 @@ export function seedStore(storeDir: string, candidates: readonly string[]): bool
  */
 export function linkFromStore(storeDir: string, publicPath: string): boolean {
   if (!dirHasEntries(storeDir)) return false;
-  if (dirHasEntries(publicPath)) return true;
+  if (dirHasEntries(publicPath)) {
+    // A link made before links were excluded gets its line now.
+    if (lstatSync(publicPath).isSymbolicLink()) excludeFromGit(publicPath);
+    return true;
+  }
   if (lexists(publicPath)) {
     if (lstatSync(publicPath).isSymbolicLink()) unlinkSync(publicPath);
     else rmdirSync(publicPath);
   }
   mkdirSync(dirname(publicPath), { recursive: true });
   symlinkSync(realpathSync(storeDir), publicPath, "junction");
+  excludeFromGit(publicPath);
   return true;
+}
+
+/** The checkout `path` sits in (the nearest folder with a `.git` file or folder) and its git common dir. */
+function checkoutOf(path: string): { top: string; commonDir: string } | null {
+  for (let dir = dirname(resolve(path)); ; dir = dirname(dir)) {
+    const dotGit = join(dir, ".git");
+    if (lexists(dotGit)) {
+      if (!lstatSync(dotGit).isFile()) return { top: dir, commonDir: dotGit };
+      const match = /^gitdir:\s*(.+)$/m.exec(readFileSync(dotGit, "utf8"));
+      if (match?.[1] === undefined) return null;
+      const gitDir = resolve(dir, match[1].trim());
+      const common = join(gitDir, "commondir");
+      return { top: dir, commonDir: existsSync(common) ? resolve(gitDir, readFileSync(common, "utf8").trim()) : gitDir };
+    }
+    if (dirname(dir) === dir) return null;
+  }
+}
+
+/**
+ * Keep a store link out of git wherever it is made. Git follows the link and lists the store's files
+ * as new, and `.gitignore` only covered the kinds someone remembered (fonts were committed twice), so
+ * each link is written to the repository's own `info/exclude` as it is created. That file is never
+ * committed and every worktree of the repository reads it.
+ * @internal
+ */
+export function excludeFromGit(linkPath: string): void {
+  const checkout = checkoutOf(linkPath);
+  if (checkout === null) return;
+  const rel = relative(checkout.top, resolve(linkPath)).split(sep).join("/");
+  if (rel === "" || rel.startsWith("..")) return;
+  const exclude = join(checkout.commonDir, "info", "exclude");
+  const line = `/${rel}`;
+  const current = existsSync(exclude) ? readFileSync(exclude, "utf8") : "";
+  if (current.split(/\r?\n/).includes(line)) return;
+  mkdirSync(dirname(exclude), { recursive: true });
+  appendFileSync(exclude, `${current.length > 0 && !current.endsWith("\n") ? "\n" : ""}${line}\n`);
 }
 
 /**

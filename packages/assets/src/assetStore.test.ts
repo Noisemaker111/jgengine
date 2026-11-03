@@ -7,9 +7,47 @@ import { assetStoreRoot, linkFromStore, mainCheckoutOf, provisionJobs, seedCandi
 const scratch = join(import.meta.dir, "../../../.scratch");
 mkdirSync(scratch, { recursive: true });
 
+/** A throwaway checkout: its own `.git`, so the links it makes never reach this repository's exclude file. */
 function tree(): string {
-  return mkdtempSync(join(scratch, "jg-asset-store-"));
+  const root = mkdtempSync(join(scratch, "jg-asset-store-"));
+  mkdirSync(join(root, ".git", "info"), { recursive: true });
+  return root;
 }
+
+function git(cwd: string, ...args: string[]): string {
+  const run = Bun.spawnSync({ cmd: ["git", ...args], cwd, timeout: 30_000, stdout: "pipe", stderr: "pipe" });
+  return run.stdout.toString();
+}
+
+describe("store links stay out of git", () => {
+  test("a linked pack is not listed as new, in the main checkout or a worktree", () => {
+    const root = mkdtempSync(join(scratch, "jg-asset-store-git-"));
+    try {
+      const repo = join(root, "repo");
+      mkdirSync(repo, { recursive: true });
+      git(repo, "init", "-q");
+      git(repo, "-c", "user.email=t@example.test", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "start");
+      const store = join(root, "store", "fonts");
+      mkdirSync(store, { recursive: true });
+      writeFileSync(join(store, "inter.woff2"), "font");
+
+      expect(linkFromStore(store, join(repo, "games", "mine", "public", "fonts"))).toBe(true);
+      expect(git(repo, "status", "--porcelain", "--untracked-files=all")).toBe("");
+
+      const lane = join(root, "lane");
+      git(repo, "worktree", "add", "-q", "--detach", lane);
+      expect(linkFromStore(store, join(lane, "games", "other", "public", "fonts"))).toBe(true);
+      expect(git(lane, "status", "--porcelain", "--untracked-files=all")).toBe("");
+
+      // Linking again adds no second line.
+      linkFromStore(store, join(repo, "games", "mine", "public", "fonts"));
+      const lines = readFileSync(join(repo, ".git", "info", "exclude"), "utf8").split("\n").filter((line) => line.includes("public/fonts"));
+      expect(lines).toEqual(["/games/mine/public/fonts", "/games/other/public/fonts"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("the shared asset store", () => {
   test("a worktree resolves the store beside its main checkout; JG_ASSET_STORE moves it", () => {
