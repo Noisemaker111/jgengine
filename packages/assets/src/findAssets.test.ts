@@ -39,9 +39,9 @@ describe("findAssets", () => {
   });
 
   test("the game's own copy counts as on disk", () => {
-    const result = findAssets("velociraptor", { has: () => false, game: "mine", gameFiles: [{ game: "other", rel: "models/imported/a/velociraptor.glb" }, { game: "mine", rel: "models/imported/a/velociraptor.glb" }] });
+    const result = findAssets("glimmerwing", { has: () => false, game: "mine", gameFiles: [{ game: "other", rel: "models/imported/a/glimmerwing.glb" }, { game: "mine", rel: "models/imported/a/glimmerwing.glb" }] });
     expect(result.matches).toHaveLength(1);
-    expect(result.matches[0]).toMatchObject({ id: "mine:models/imported/a/velociraptor.glb", onDisk: true });
+    expect(result.matches[0]).toMatchObject({ id: "mine:models/imported/a/glimmerwing.glb", onDisk: true });
   });
 
   test("a request nothing here covers names the free sources to search, with the search filled in", () => {
