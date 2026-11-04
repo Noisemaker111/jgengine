@@ -48,9 +48,9 @@ import { createGradePass } from "./gradeShader.draw";
 import { MotionBlurPass } from "./motionBlurPass.draw";
 import { SsrPass } from "./ssrPass.draw";
 import { postfxTierPolicy } from "./postfxTierPolicy";
-import { releasePostfxOverlayTracking } from "./postfxOverlay.draw";
+import { releasePostfxOverlayTracking, restorePostfxOverlays } from "./postfxOverlay.draw";
 import { RevealFadePass, RevealSnapshotPass, stepRevealFade } from "./revealFade.draw";
-import { StylizePass } from "./stylizePass.draw";
+import { hideForOutlinePrepass, StylizePass } from "./stylizePass.draw";
 import { renderShadowlessPrepass } from "./shadowPrepass.draw";
 import { JitteredRenderPass, TemporalAaPass } from "./temporalAaPass.draw";
 
@@ -92,6 +92,18 @@ const AO_RESOLUTION = 0.5;
 
 class OverlayAwareGTAOPass extends GTAOPass {
   private readonly hiddenOverlays: THREE.Object3D[] = [];
+  private readonly hiddenForOutline: THREE.Object3D[] = [];
+  /** Set when the outline pass reads this prepass: it then also hides what an outline must not see. */
+  private outlineReads = false;
+
+  /** The normal/depth prepass this pass draws each frame, for the outline pass to read instead of drawing its own; null when AO reads the beauty depth. */
+  shareOutlinePrepass(): { normal: THREE.Texture; depth: THREE.Texture } | null {
+    const target = (this as unknown as { normalRenderTarget?: THREE.WebGLRenderTarget })["normalRenderTarget"];
+    const rendersGbuffer = (this as unknown as { _renderGBuffer?: boolean })._renderGBuffer !== false;
+    if (!rendersGbuffer || target === undefined || target.depthTexture === null) return null;
+    this.outlineReads = true;
+    return { normal: target.texture, depth: target.depthTexture };
+  }
 
   constructor(scene: THREE.Scene, camera: THREE.Camera, width?: number, height?: number) {
     super(scene, camera, width, height);
@@ -126,8 +138,15 @@ class OverlayAwareGTAOPass extends GTAOPass {
       super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
       return;
     }
-    renderShadowlessPrepass(renderer, this.scene, this.hiddenOverlays, () =>
-      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive), true);
+    renderShadowlessPrepass(renderer, this.scene, this.hiddenOverlays, () => {
+      if (!this.outlineReads) return super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
+      hideForOutlinePrepass(this.scene, this.hiddenForOutline);
+      try {
+        return super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
+      } finally {
+        restorePostfxOverlays(this.hiddenForOutline);
+      }
+    }, true);
   }
 }
 
@@ -440,8 +459,10 @@ export function buildPostGraph(
   const scenePass = taa === null ? new RenderPass(scene, camera) : new JitteredRenderPass(scene, camera, taa);
   composer.addPass(beautyDepth === null ? scenePass : new BeautyPass(scenePass, beautyDepth, width, height));
 
+  let aoPass: OverlayAwareGTAOPass | null = null;
   if (plan.ao !== null) {
     const ao = new OverlayAwareGTAOPass(scene, camera, width, height);
+    aoPass = ao;
     if (beautyDepth !== null) ao.setGBuffer(beautyDepth);
     ao.blendIntensity = plan.ao.blend ?? 1;
     ao.updateGtaoMaterial({
@@ -528,7 +549,10 @@ export function buildPostGraph(
   composer.addPass(new OutputPass());
 
   if (plan.stylize !== null) {
-    effect(new StylizePass(scene, camera, plan.stylize));
+    // AO's prepass already drew the scene's normals and depth this frame; drawing them again for
+    // the outlines was a third full scene render in a comic-look game.
+    const outlined = plan.stylize.outline !== undefined && plan.stylize.outline !== false;
+    effect(new StylizePass(scene, camera, plan.stylize, outlined ? (aoPass?.shareOutlinePrepass() ?? null) : null));
     built.push("stylize");
   }
 

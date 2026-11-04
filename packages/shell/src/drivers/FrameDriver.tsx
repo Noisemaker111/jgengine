@@ -407,7 +407,7 @@ export function FrameDriver({
   };
   const simulateRef = useRef(simulate);
   simulateRef.current = simulate;
-  useEffect(() => (poster ? undefined : registerSimStepper((rawDt) => simulateRef.current(rawDt))), [poster]);
+  useEffect(() => (poster ? undefined : registerSimStepper((rawDt) => ctx.batch(() => simulateRef.current(rawDt)))), [poster, ctx]);
 
   useFrame((_state, rawDt) => {
     if (poster) {
@@ -421,7 +421,7 @@ export function FrameDriver({
     }
     onFrameMs?.(rawDt * 1000);
     const simStart = performance.now();
-    if (!simulate(rawDt)) return;
+    if (!ctx.batch(() => simulate(rawDt))) return;
     devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });
   }, GAME_SIM_FRAME_PRIORITY);
   return null;

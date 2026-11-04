@@ -128,6 +128,7 @@ export function applyGraphicsQuality(
 /**
  * Wrap a settings store so the graphics tier reads as `quality` for this session only: every
  * graphics field resolves from that tier until the player changes it, and nothing is persisted.
+ * Auto quality is off while the tier is pinned, so a slow game cannot move off the tier it was asked for.
  * Capture hosts use it (`?quality=low`) to render cheap iteration shots without leaving the
  * draft tier in the browser profile for the next full-quality shot.
  */
@@ -139,6 +140,7 @@ export function withGraphicsQualityOverride(
   const tier = resolveGraphicsProfile(quality, overrides?.[quality]);
   const pinned = new Map<string, SettingValue>([
     [SETTING_IDS.graphicsQuality, quality],
+    [SETTING_IDS.graphicsAuto, false],
     [SETTING_IDS.graphicsRenderScale, tier.renderScale],
     [SETTING_IDS.graphicsAnisotropy, String(tier.anisotropy)],
     [SETTING_IDS.graphicsSoftShadows, tier.softShadows],

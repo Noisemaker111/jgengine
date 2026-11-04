@@ -112,12 +112,12 @@ function skipsDepthPrepass(material: MaterialLike): boolean {
 /**
  * Hide what the outline prepass must not see: marked overlays, points/lines/sprites, custom
  * shader meshes, and transparent or alpha-cut meshes (foliage cards would otherwise outline as
- * solid quads).
+ * solid quads). Hidden branches are not walked: they draw nothing either way.
+ * @internal
  */
-function hideForPrepass(scene: THREE.Object3D, out: THREE.Object3D[]): void {
+export function hideForOutlinePrepass(scene: THREE.Object3D, out: THREE.Object3D[]): void {
   out.length = 0;
-  scene.traverse((object) => {
-    if (!object.visible) return;
+  scene.traverseVisible((object) => {
     const drawable = object as THREE.Mesh;
     const hide =
       isPostfxOverlay(object) ||
@@ -134,7 +134,9 @@ function hideForPrepass(scene: THREE.Object3D, out: THREE.Object3D[]): void {
 /**
  * Art-style post pass: ink outlines from a normal+depth prepass, cel luminance bands, and
  * pixelation. Runs on the display-space frame after `OutputPass`. The prepass renders only
- * when outlines are on, and reuses the frame's shadow maps instead of re-rendering them.
+ * when outlines are on, and reuses the frame's shadow maps instead of re-rendering them. Given
+ * `shared` buffers (the AO pass's normal/depth prepass, drawn earlier the same frame with the same
+ * hiding rule), it reads those and draws no prepass of its own.
  * @internal
  */
 export class StylizePass extends Pass {
@@ -149,17 +151,18 @@ export class StylizePass extends Pass {
     private readonly scene: THREE.Scene,
     private readonly camera: THREE.Camera,
     config: StylizeConfig,
+    shared: { normal: THREE.Texture; depth: THREE.Texture } | null = null,
   ) {
     super();
     const outline = config.outline === undefined || config.outline === false ? null : config.outline;
-    this.normalTarget = outline === null
+    this.normalTarget = outline === null || shared !== null
       ? null
       : new THREE.WebGLRenderTarget(1, 1, { depthTexture: new THREE.DepthTexture(1, 1), type: THREE.UnsignedByteType });
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         tDiffuse: { value: null },
-        tNormal: { value: this.normalTarget?.texture ?? null },
-        tDepth: { value: this.normalTarget?.depthTexture ?? null },
+        tNormal: { value: shared?.normal ?? this.normalTarget?.texture ?? null },
+        tDepth: { value: shared?.depth ?? this.normalTarget?.depthTexture ?? null },
         uResolution: { value: new THREE.Vector2(1, 1) },
         uNear: { value: 0.1 },
         uFar: { value: 1000 },
@@ -210,7 +213,7 @@ export class StylizePass extends Pass {
     const previousShadowUpdate = renderer.shadowMap.autoUpdate;
     const previousClearAlpha = renderer.getClearAlpha();
     renderer.getClearColor(this.clearColor);
-    hideForPrepass(scene, this.hidden);
+    hideForOutlinePrepass(scene, this.hidden);
     scene.overrideMaterial = this.normalMaterial;
     scene.background = null;
     renderer.shadowMap.autoUpdate = false;

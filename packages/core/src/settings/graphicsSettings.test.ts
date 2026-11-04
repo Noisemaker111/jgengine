@@ -102,6 +102,12 @@ describe("withGraphicsQualityOverride", () => {
     expect(readGraphicsSettings(pinned).profile.postStages.dof).toBe(false);
   });
 
+  test("a pinned tier turns auto quality off", () => {
+    const pinned = withGraphicsQualityOverride(createSettingsStore(memStorage()), "high");
+    expect(pinned.get(SETTING_IDS.graphicsAuto, true)).toBe(false);
+    expect(readGraphicsSettings(pinned).auto).toBe(false);
+  });
+
   test("parses only known tiers", () => {
     expect(parseGraphicsQuality("low")).toBe("low");
     expect(parseGraphicsQuality("draft")).toBeNull();

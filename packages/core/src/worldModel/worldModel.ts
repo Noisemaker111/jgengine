@@ -885,11 +885,30 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     kindId !== null && (kindId === want || (kinds[kindId]?.tags ?? []).includes(want));
   const kindOf = (id: string, current: WorldModelState): string | null =>
     current.instances?.[id]?.kind ?? def.things?.[id]?.kind ?? null;
-  const membersOf = (kind: string, current: WorldModelState, building: boolean): string[] => {
-    const out: string[] = [];
-    for (const [id, thing] of Object.entries(def.things ?? {})) if (thing.kind !== undefined && matchesKind(thing.kind, kind)) out.push(id);
-    for (const [id, instance] of Object.entries(current.instances ?? {})) if (matchesKind(instance.kind, kind) && (building || instance.ready)) out.push(id);
-    return out;
+  // Members are read on every total and timer, so they are indexed: things once (the declaration
+  // never changes), placed instances once per instance table (every write that places, removes or
+  // readies one makes a new table).
+  const thingMembers = new Map<string, readonly string[]>();
+  let membersFrom: WorldModelState["instances"] | null = null;
+  const instanceMembers = new Map<string, readonly string[]>();
+  const membersOf = (kind: string, current: WorldModelState, building: boolean): readonly string[] => {
+    let things = thingMembers.get(kind);
+    if (things === undefined) {
+      things = Object.entries(def.things ?? {}).filter(([, thing]) => thing.kind !== undefined && matchesKind(thing.kind, kind)).map(([id]) => id);
+      thingMembers.set(kind, things);
+    }
+    if (membersFrom !== current.instances) {
+      membersFrom = current.instances;
+      instanceMembers.clear();
+    }
+    const key = building ? `${kind}\u0000building` : kind;
+    let members = instanceMembers.get(key);
+    if (members === undefined) {
+      const placed = Object.entries(current.instances ?? {}).filter(([, instance]) => matchesKind(instance.kind, kind) && (building || instance.ready)).map(([id]) => id);
+      members = placed.length === 0 ? things : [...things, ...placed];
+      instanceMembers.set(key, members);
+    }
+    return members;
   };
   const testOn = (conditions: WorldConditions | undefined, subject: string, facts: Readonly<Record<string, WorldFactValue>>): boolean => {
     if (conditions === undefined) return true;
@@ -897,40 +916,47 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     return true;
   };
   const numberOf = (value: WorldFactValue | undefined): number => (typeof value === "number" ? value : 0);
-  // Totals are computed per state, so every read of one state sees the same numbers.
-  let totalsCache: { from: WorldModelState; facts: Record<string, WorldFactValue> } | null = null;
-  const allFacts = (current: WorldModelState): Readonly<Record<string, WorldFactValue>> => {
-    const base = withTotals(current);
-    const live = options.live?.();
-    if (live === undefined) return base;
-    const keys = Object.keys(live);
-    if (keys.length === 0) return base;
-    const merged: Record<string, WorldFactValue> = { ...base };
-    for (const key of keys) merged[key] = live[key]!;
-    return merged;
-  };
-  const withTotals = (current: WorldModelState): Readonly<Record<string, WorldFactValue>> => {
-    if (def.totals === undefined) return current.facts;
-    if (totalsCache !== null && totalsCache.from === current) return totalsCache.facts;
-    const facts: Record<string, WorldFactValue> = { ...current.facts };
-    for (const [key, total] of Object.entries(def.totals)) {
-      let value = 0;
-      for (const id of membersOf(total.of, current, total.building === true)) {
-        if (!testOn(total.where, id, current.facts)) continue;
-        if (total.sum !== undefined) value += numberOf(current.facts[`${id}.${total.sum}`]);
-        else if (total.max !== undefined) value = Math.max(value, numberOf(current.facts[`${id}.${total.max}`]));
-        else value += 1;
-      }
-      facts[key] = value;
+  // A total is worked out when it is read, at most once per state, so every read of one state sees
+  // the same number and a read of any other fact never pays for the totals.
+  let totalsFrom: WorldModelState | null = null;
+  const totalValues = new Map<string, number>();
+  const totalOf = (key: string, total: WorldTotalDecl, current: WorldModelState): number => {
+    if (totalsFrom !== current) {
+      totalsFrom = current;
+      totalValues.clear();
     }
-    totalsCache = { from: current, facts };
-    return facts;
+    const cached = totalValues.get(key);
+    if (cached !== undefined) return cached;
+    let value = 0;
+    for (const id of membersOf(total.of, current, total.building === true)) {
+      if (!testOn(total.where, id, current.facts)) continue;
+      if (total.sum !== undefined) value += numberOf(current.facts[`${id}.${total.sum}`]);
+      else if (total.max !== undefined) value = Math.max(value, numberOf(current.facts[`${id}.${total.max}`]));
+      else value += 1;
+    }
+    totalValues.set(key, value);
+    return value;
+  };
+  /** One fact as every reader sees it: a live fact, else a total, else the saved fact. No table is copied. */
+  const factOf = (key: string, current: WorldModelState, live: Readonly<Record<string, WorldFactValue>> | undefined): WorldFactValue | undefined => {
+    if (live !== undefined && Object.hasOwn(live, key)) return live[key];
+    const total = def.totals !== undefined && Object.hasOwn(def.totals, key) ? def.totals[key] : undefined;
+    return total === undefined ? current.facts[key] : totalOf(key, total, current);
+  };
+  /** The whole fact table with totals and live facts in: one copy, for the few readers that hand it on. */
+  const allFacts = (current: WorldModelState): Readonly<Record<string, WorldFactValue>> => {
+    const live = options.live?.();
+    if (def.totals === undefined && (live === undefined || Object.keys(live).length === 0)) return current.facts;
+    const merged: Record<string, WorldFactValue> = { ...current.facts };
+    for (const [key, total] of Object.entries(def.totals ?? {})) merged[key] = totalOf(key, total, current);
+    if (live !== undefined) for (const key of Object.keys(live)) merged[key] = live[key]!;
+    return merged;
   };
 
   const test = (conditions: WorldConditions | undefined, current = state()): boolean => {
     if (conditions === undefined) return true;
-    const facts = allFacts(current);
-    for (const [key, condition] of Object.entries(conditions)) if (!passes(facts[key], condition)) return false;
+    const live = options.live?.();
+    for (const [key, condition] of Object.entries(conditions)) if (!passes(factOf(key, current, live), condition)) return false;
     return true;
   };
 
@@ -938,11 +964,11 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
   /** What is missing to pay `cost` × `scale`: each spend must keep its fact at or above its floor. */
   const shortfall = (cost: WorldChanges | undefined, scale: number, current: WorldModelState): Record<string, number> | null => {
     if (cost === undefined) return null;
-    const facts = allFacts(current);
+    const live = options.live?.();
     let short: Record<string, number> | null = null;
     for (const [key, value] of Object.entries(cost)) {
       if (typeof value !== "number" || value >= 0) continue;
-      const after = numberOf(facts[key]) + value * scale;
+      const after = numberOf(factOf(key, current, live)) + value * scale;
       const floor = specFor(key)?.min ?? 0;
       if (after < floor) (short ??= {})[key] = Math.ceil(floor - after);
     }
@@ -1260,10 +1286,10 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
     }
     // Flows read totals from the state the step started from, so income follows what stood then.
     if (def.flows !== undefined) {
-      const before = allFacts(current);
+      const live = options.live?.();
       for (const flow of Object.values(def.flows)) {
         if (!test(flow.when, current)) continue;
-        const amount = (flow.rate ?? 1) * (flow.from === undefined ? 1 : numberOf(before[flow.from])) * dt;
+        const amount = (flow.rate ?? 1) * (flow.from === undefined ? 1 : numberOf(factOf(flow.from, current, live))) * dt;
         if (amount === 0) continue;
         applyInto(facts, flow.to, amount, 1);
         moved = true;
@@ -1321,8 +1347,8 @@ export function createWorldModel(def: WorldModelDef, options: WorldModelOptions 
   const view = (): WorldModel => model;
   const model: WorldModel = {
     def,
-    fact: (key) => allFacts(state())[key],
-    num: (key) => numberOf(allFacts(state())[key]),
+    fact: (key) => factOf(key, state(), options.live?.()),
+    num: (key) => numberOf(factOf(key, state(), options.live?.())),
     facts: () => allFacts(state()),
     change(changes, scale = 1) {
       const current = state();
