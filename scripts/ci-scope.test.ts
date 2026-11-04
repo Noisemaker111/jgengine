@@ -30,7 +30,7 @@ describe("game scope", () => {
     expect(gameScope(["packages/core/src/sim/population.ts"]).games).toEqual([...FRAME_GAMES]);
   });
 
-  test("a shared surface boots the one representative game, not all eight", () => {
+  test("a shared surface boots the one representative game, not all of them", () => {
     for (const path of [
       "packages/core/src/menu/gameMenu.view.tsx",
       "packages/core/src/combat/projectiles.ts",
@@ -122,10 +122,17 @@ describe("games in this repo", () => {
     expect(verdict.gameChecks).toEqual(["harbor-heat"]);
   });
 
-  test("a game outside the frame set runs its checks and no frame budget", () => {
+  test("every playable game is in the frame set, so a change inside one measures it", () => {
     const verdict = gameScope(["games/fernwild/src/game/garden.ts"], workspace);
-    expect(verdict.scope).toBe("none");
+    expect(verdict.scope).toBe("surface");
+    expect(verdict.games).toEqual(["fernwild"]);
     expect(verdict.gameChecks).toEqual(["fernwild"]);
+  });
+
+  test("a game without a web entry runs its checks and no frame budget", () => {
+    const verdict = gameScope(["games/llmville/convex/world.ts"], workspace);
+    expect(verdict.scope).toBe("none");
+    expect(verdict.gameChecks).toEqual(["llmville"]);
   });
 
   test("an engine package change checks every game that declares it", () => {

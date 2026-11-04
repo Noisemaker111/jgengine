@@ -66,7 +66,9 @@ describe("external capture targets", () => {
       for (const keep of [[], ["--keep"]]) {
         const result = spawnSync(process.execPath, [
           import.meta.dir + "/drive-dev.ts", "--url", "http://127.0.0.1:1", "--reuse-storage", ...keep,
-        ], { cwd, env: { ...process.env, JG_CHROME_PORT: "1" }, encoding: "utf8", timeout: 5_000 });
+          // The limit only stops a hang: the script loads much of the engine before it refuses, which
+          // took over 5 s on a cold CI runner, and the refusal itself is what this checks.
+        ], { cwd, env: { ...process.env, JG_CHROME_PORT: "1" }, encoding: "utf8", timeout: 30_000 });
         expect(result.status).toBe(1);
         expect(result.stderr).toContain("--reuse-storage requires a live warm browser");
         expect(result.stderr).toContain("--keep alone only preserves the new profile");
@@ -76,7 +78,7 @@ describe("external capture targets", () => {
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
-  });
+  }, 70_000);
 
   test("normalizes loopback and preserves the native document and query", () => {
     const native = externalCaptureUrl("http://localhost:5518/play?map=courtyard#room-2");

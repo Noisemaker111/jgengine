@@ -1,10 +1,11 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "bun:test";
 
-import { FRAME_GAMES, gameScope, REPRESENTATIVE_GAME } from "./ci-scope";
-import { PERF_GATE_GAMES } from "./perf-gate";
+import { FRAME_GAMES, gameScope, playableGames, REPRESENTATIVE_GAME } from "./ci-scope";
 import { SMOKE_GAMES } from "./smoke-games";
 
 // The `changes` job turns the game jobs on from `scripts/ci-scope.ts`. This holds both
@@ -50,11 +51,27 @@ describe("game scope", () => {
     expect(FAST_PATHS.filter((path) => gameScope([path]).scope !== "none")).toEqual([]);
   });
 
-  test("the one game list is the frame gate's own list", () => {
-    expect([...FRAME_GAMES]).toEqual([...PERF_GATE_GAMES]);
-    expect(PERF_GATE_GAMES).toContain(REPRESENTATIVE_GAME);
+  test("the one game list is every game folder with a web entry", () => {
+    const entries = [...new Bun.Glob("games/*/src/index.tsx").scanSync({ cwd: fileURLToPath(new URL("..", import.meta.url)) })];
+    const games = entries.map((entry) => entry.replaceAll("\\", "/").split("/")[1] ?? "").sort();
+    expect([...FRAME_GAMES]).toEqual(games);
+    expect(FRAME_GAMES).toContain(REPRESENTATIVE_GAME);
     // The ships-the-frame smoke set stays a subset, so folding it into the frame gate lost no game.
-    for (const game of SMOKE_GAMES) expect(PERF_GATE_GAMES).toContain(game);
+    for (const game of SMOKE_GAMES) expect(FRAME_GAMES).toContain(game);
+  });
+
+  test("a game folder without a web entry is not a playable game", () => {
+    const root = mkdtempSync(join(tmpdir(), "playable-"));
+    try {
+      mkdirSync(join(root, "games", "shooter", "src"), { recursive: true });
+      writeFileSync(join(root, "games", "shooter", "src", "index.tsx"), "");
+      mkdirSync(join(root, "games", "notes"), { recursive: true });
+      mkdirSync(join(root, "games", "racer", "src"), { recursive: true });
+      writeFileSync(join(root, "games", "racer", "src", "index.tsx"), "");
+      expect(playableGames(root)).toEqual(["racer", "shooter"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   test("CI never boots a game or downloads a model", () => {

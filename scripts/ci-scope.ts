@@ -13,20 +13,22 @@ import { printHelpIfAsked, type Usage } from "./script-help";
 export type GameScope = "full" | "surface" | "none";
 
 /**
- * Every reference game the frame gate measures. `scripts/heavy-paths.test.ts` holds this
- * equal to `PERF_GATE_GAMES`, which this file cannot import: the `changes` job runs it with
- * no node_modules, so it depends on nothing.
+ * Every playable game: each folder under `games/` with a web entry (`src/index.tsx`). The frame
+ * gate judges all of them, CI's perf matrix measures all of them, and `perf network --all` loads
+ * all of them, so a new game is measured the day it lands. Read from disk with node builtins
+ * only: the `changes` job runs this file with no node_modules.
  */
-export const FRAME_GAMES = [
-  "harbor-heat",
-  "scrap-signal",
-  "brightway-park",
-  "ember-command",
-  "beacon-bastion",
-  "drift-foundry",
-  "odd-orbit",
-  "deepward",
-] as const;
+export function playableGames(root: string = join(import.meta.dirname, "..")): string[] {
+  const games = join(root, "games");
+  if (!existsSync(games)) return [];
+  return readdirSync(games, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(games, entry.name, "src", "index.tsx")))
+    .map((entry) => entry.name)
+    .sort();
+}
+
+/** {@link playableGames} of this checkout. */
+export const FRAME_GAMES: readonly string[] = playableGames();
 
 /**
  * The one game a shared-surface change boots. It imports every engine package the reference
@@ -73,7 +75,7 @@ const FULL = [
 /**
  * A rendered or consumed surface outside the frame's own work. It can break a boot and move
  * what a game draws, so one representative game boots it; it is not the code a frame runs
- * through, so the other seven games would pay for the same answer.
+ * through, so the other games would pay for the same answer.
  */
 const SURFACE = [
   /^packages\/(core|shell|react|editor|assets|navbake|rapier|jgengine)\//,
@@ -151,7 +153,7 @@ export function gameScope(paths: readonly string[], workspace: GameWorkspace = r
   // A change inside one reference game measures that game; a game outside the frame set has
   // no budget, and the `games` job still checks it.
   const inGame = live.filter((path) => gameOf(path) !== null);
-  const framed = [...new Set(inGame.map(gameOf))].filter((id): id is string => (FRAME_GAMES as readonly string[]).includes(id ?? ""));
+  const framed = [...new Set(inGame.map(gameOf))].filter((id): id is string => FRAME_GAMES.includes(id ?? ""));
   const surface = live.filter((path) => SURFACE.some((pattern) => pattern.test(path)));
   if (surface.length > 0 || framed.length > 0) {
     const games = surface.length > 0 ? [...new Set([REPRESENTATIVE_GAME, ...framed])] : framed;

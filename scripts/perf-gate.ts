@@ -9,6 +9,7 @@ import {
   openPageSession,
   withBrowserSession,
 } from "./browser-lib";
+import { FRAME_GAMES } from "./ci-scope";
 import { measureGame } from "./perf-play";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import {
@@ -28,7 +29,7 @@ import {
 import { runPool } from "./type-shard";
 
 /**
- * Frame-time gate: plays every reference game, waits out the warmup, then fails a game whose p95
+ * Frame-time gate: plays every playable game (`FRAME_GAMES`), waits out the warmup, then fails a game whose p95
  * frame time on the reference GPU (RTX 3070 at 1600x900, uncapped clock) is over the
  * 16.7 ms every game shares, or whose frame loop still allocates GL objects after warmup.
  *
@@ -61,18 +62,6 @@ export { checkBudget, loadBudget, type BudgetViolation, type LoadedBudget, type 
 /** The viewport the gate measures at: the reference one, so a frame time is comparable with the budget. */
 export const GATE_SIZE = { width: 1600, height: 900 } as const;
 
-/** The reference games the epic's budget passes cover. */
-export const PERF_GATE_GAMES = [
-  "harbor-heat",
-  "scrap-signal",
-  "brightway-park",
-  "ember-command",
-  "beacon-bastion",
-  "drift-foundry",
-  "odd-orbit",
-  "deepward",
-] as const;
-
 export interface GateArgs {
   games: string[];
   /** The tier every game is measured at; undefined measures each game's own tier. */
@@ -89,7 +78,7 @@ export function debugPortFor(index: number): number {
 }
 
 export function parseGateArgs(argv: readonly string[]): GateArgs {
-  let games: string[] = [...PERF_GATE_GAMES];
+  let games: string[] = [...FRAME_GAMES];
   let quality: GraphicsTier | undefined;
   let draft = false;
   let seconds = DEFAULT_SECONDS;
@@ -139,7 +128,7 @@ const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality l
   warmup. On another GPU the frame time is printed, not judged. Draws are printed, not gated.
   Games over budget today are listed in ${KNOWN_SLOW_PATH}; the list only shrinks.
 
-  --games           comma-separated game ids (default: the 8 reference games)
+  --games           comma-separated game ids (default: every game under games/ with a web entry)
   --seconds         measured window per game (default ${DEFAULT_SECONDS})
   --quality         the graphics tier each game is measured at (low, medium, high, ultra). Without
                     it each game runs its own default tier, and every record names the tier it got.

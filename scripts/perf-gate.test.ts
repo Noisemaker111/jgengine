@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { PerfRecord } from "./perf-play";
-import { PERF_GATE_GAMES, DEBUG_PORT_BASE, checkBudget, debugPortFor, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
+import { DEBUG_PORT_BASE, checkBudget, debugPortFor, gateVerdicts, loadBudget, parseGateArgs, type PerfBudget } from "./perf-gate";
 import { frameVerdict, knownSlowAdded, parseKnownSlow, readKnownSlow, summarizeRecord, unjudgedFrameTime } from "./perf-budget";
 import { FRAME_GAMES } from "./ci-scope";
 
@@ -150,7 +150,7 @@ describe("the known-slow list", () => {
 
   test("the committed list names only gated games, each with a reason", () => {
     for (const [game, reason] of readKnownSlow()) {
-      expect(PERF_GATE_GAMES.some((gated) => gated === game)).toBe(true);
+      expect(FRAME_GAMES).toContain(game);
       expect(reason.length).toBeGreaterThan(0);
     }
   });
@@ -206,13 +206,14 @@ describe("loadBudget", () => {
   });
 
   test("the committed budgets parse for every gated game", () => {
-    for (const game of PERF_GATE_GAMES) expect(loadBudget(game).budget).toBeDefined();
+    for (const game of FRAME_GAMES) expect(loadBudget(game).budget).toBeDefined();
   });
 });
 
 describe("parseGateArgs", () => {
-  test("defaults to every reference game at each game's own tier, one at a time so no two share the GPU", () => {
-    expect(parseGateArgs([])).toEqual({ games: [...PERF_GATE_GAMES], draft: false, seconds: 6, jobs: 1 });
+  test("defaults to every playable game at each game's own tier, one at a time so no two share the GPU", () => {
+    expect(parseGateArgs([])).toEqual({ games: [...FRAME_GAMES], draft: false, seconds: 6, jobs: 1 });
+    expect(parseGateArgs([]).games).toContain("fernwild");
   });
 
   test("pins one tier for every game, and reads it back into the argument table", () => {
@@ -252,13 +253,13 @@ describe("parseGateArgs", () => {
 
 describe("debugPortFor", () => {
   test("gives every game in a run its own browser, never one shared by two", () => {
-    const ports = PERF_GATE_GAMES.map((_game, index) => debugPortFor(index));
+    const ports = FRAME_GAMES.map((_game, index) => debugPortFor(index));
     expect(new Set(ports).size).toBe(ports.length);
-    expect(ports).toEqual(PERF_GATE_GAMES.map((_game, index) => DEBUG_PORT_BASE + index));
+    expect(ports).toEqual(FRAME_GAMES.map((_game, index) => DEBUG_PORT_BASE + index));
   });
 
   test("stays outside the band the warm Chrome uses, so two runs cannot attach to each other", () => {
-    for (let index = 0; index < PERF_GATE_GAMES.length; index += 1) {
+    for (let index = 0; index < FRAME_GAMES.length; index += 1) {
       const port = debugPortFor(index);
       expect(port).toBeGreaterThanOrEqual(9900);
       expect(DEBUG_PORT_BASE).toBeGreaterThan(9899);
@@ -271,8 +272,6 @@ describe("ci matrix", () => {
 
   test("frame budgets are measured on the lane's machine, never on a CI runner", () => {
     expect(workflow).not.toContain("perf:gate");
-    // `scripts/ci-scope.ts` cannot import this list: the `changes` job runs it with no node_modules.
-    expect([...FRAME_GAMES]).toEqual([...PERF_GATE_GAMES]);
   });
 });
 
