@@ -187,7 +187,7 @@ export interface LandformStepReport {
   eroded: number;
   /** Sediment volume laid down by rivers and in standing water. */
   deposited: number;
-  /** Volume that left the map through outlets. */
+  /** Net volume that left the map through outlets (negative if diffusion brings material in). */
   exported: number;
   /** Volume that failed in landslides. */
   landslid: number;
@@ -994,6 +994,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       diffuser.diffuse(height, dCell, dt);
       for (let i = 0; i < cells; i += 1) {
         const change = (height[i] ?? 0) - (erosion[i] ?? 0);
+        report.exported -= change * cellArea;
         if (change > 0) {
           // Creep lays colluvium, which reads as soil.
           cover.add(i, COVER.soil, change);

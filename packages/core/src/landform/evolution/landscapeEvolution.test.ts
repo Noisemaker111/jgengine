@@ -149,6 +149,21 @@ describe("landscape evolution: rock strata", () => {
 });
 
 describe("landscape evolution: sediment", () => {
+  test("creep across an outlet is included in the exported volume", () => {
+    const cols = 9;
+    const rows = 9;
+    const heights = Float64Array.from({ length: cols * rows }, (_, i) => (rows - 1 - Math.floor(i / cols)) * 10);
+    const model = createLandscapeEvolution({
+      grid: { cols, rows, cellSize: 10, outlets: ["south"] }, seed: "creep-budget",
+      initial: { heights, roughness: 0 },
+      params: { uplift: 0, erodibility: 0, diffusivity: 0.1, soilProduction: 0, timeStep: 100 },
+    });
+    const start = model.fields().height.reduce((a, b) => a + b, 0) * 100;
+    const report = model.step();
+    const end = model.fields().height.reduce((a, b) => a + b, 0) * 100;
+    expect(report.exported).toBeGreaterThan(0);
+    expect(Math.abs(start - end - report.exported)).toBeLessThan(1e-8);
+  });
   test("every cubic metre is accounted for: change in land volume = uplift − export", () => {
     const model = createLandscapeEvolution({
       grid: { cols: 48, rows: 48, cellSize: 100, outlets: ["south"] },
