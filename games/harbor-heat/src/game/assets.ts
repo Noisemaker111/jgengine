@@ -1,4 +1,5 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
+import { quaterniusLowpolyCars } from "@jgengine/assets/generated/packs";
 import { buildMaterialCatalog } from "@jgengine/assets/materials";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
@@ -6,7 +7,7 @@ import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
  * Quaternius' CC0 low-poly cars give traffic its bodies beyond the library's one sports car: real
  * 4 m sedans, a taxi and a coupe, resprayed into the city's palette (see `world/models.ts`).
  */
-const MODEL_SOURCES = ["quaternius-lowpoly-cars"] as const;
+const MODEL_PACKS = [quaterniusLowpolyCars];
 
 /**
  * Ground grain under the isle's authored sand/scrub palette. Blended at a low `tint` so the beach,
@@ -32,11 +33,11 @@ const SURFACE_MATERIALS = [
 ] as const;
 
 /** Every pack this game ships — credits are generated from it, so it cannot drift. */
-export const ASSET_SOURCE_IDS: readonly string[] = [...MODEL_SOURCES, GROUND_MATERIAL, ...SURFACE_MATERIALS];
+export const ASSET_SOURCE_IDS: readonly string[] = [...MODEL_PACKS.map((pack) => pack.id), GROUND_MATERIAL, ...SURFACE_MATERIALS];
 
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
-  sources: [...MODEL_SOURCES],
+  packs: MODEL_PACKS,
 });
 
 const materials = buildMaterialCatalog({ basePath: "/materials" });

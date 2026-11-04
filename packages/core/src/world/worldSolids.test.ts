@@ -9,6 +9,7 @@ import { createPhysicsWorldBackend } from "../physics/physicsWorldBackend";
 import { syncWorldColliders } from "../physics/worldColliders";
 import { createGameContext, type GameContext } from "../runtime/gameContext";
 import { createAssetCatalog } from "../scene/assetCatalog";
+import { registerAllSceneKinds } from "../scene/allSceneKinds";
 import { createSceneRaycast } from "../scene/sceneRaycast";
 import { createPerception } from "../sensor/perception";
 import { resolveAuthoredSolids, syncAuthoredSolids } from "./authoredSolids";
@@ -407,6 +408,8 @@ const CITY_DOCUMENT = {
 };
 
 describe("studio solids", () => {
+  registerAllSceneKinds();
+
   test("a city volume's buildings resolve to solids, and solid: false turns them off", () => {
     const solids = resolveAuthoredSolids(CITY_DOCUMENT).get("downtown");
     expect(solids?.length ?? 0).toBeGreaterThan(10);

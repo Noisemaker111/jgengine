@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 
 import { findHudOverlayHost, HUD_OVERLAY_HOST_ATTRIBUTE } from "@jgengine/core/hud/hudThemeRoot.view";
 
+import type { UiKit } from "@jgengine/core/ui/kit/uiKit.view";
+import { paperKit } from "@jgengine/core/ui/kit/uiKitPaper.view";
 import { ShellUiKit } from "@jgengine/shell/ShellChrome";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { SettingsChrome } from "./SettingsChrome.draw";
@@ -16,13 +18,13 @@ const { renderToStaticMarkup } = (await import(Bun.resolveSync("react-dom/server
   renderToStaticMarkup: (node: ReactNode) => string;
 };
 
-function playable(uiKit?: string): PlayableGame {
+function playable(uiKit?: UiKit): PlayableGame {
   return { game: { name: "settings-host-test", input: {} }, ...(uiKit === undefined ? {} : { uiKit }) } as unknown as PlayableGame;
 }
 
 describe("shell settings dialog", () => {
   test("the shell mounts an overlay host inside the kit, carrying the kit's colours for the dialog", () => {
-    const kitted = renderToStaticMarkup(<ShellUiKit playable={playable("paper")}><p>hud</p></ShellUiKit>);
+    const kitted = renderToStaticMarkup(<ShellUiKit playable={playable(paperKit)}><p>hud</p></ShellUiKit>);
     const host = kitted.match(new RegExp(`<div ${HUD_OVERLAY_HOST_ATTRIBUTE}=""[^>]*>`))?.[0] ?? "";
     expect(host).toContain("display:contents");
     expect(host).toContain("--jg-surface:var(--kit-surface)");

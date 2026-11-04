@@ -1,0 +1,4 @@
+{
+  "engineKb": 1835,
+  "baseline": "2026-11-03 bun scripts/check-site-assets.ts --bundles on the runner built from fix/site-bundle-budgets: the JS and CSS every game downloads past the shell measured 1747.6 KiB, plus 5%. Raise it only for an engine feature every game needs, and say which here."
+}

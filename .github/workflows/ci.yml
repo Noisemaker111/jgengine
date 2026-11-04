@@ -161,6 +161,8 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bun --cwd=apps/web run build
+      # Download size before merge: the engine every game loads once, each game's own part against its bundleKb.
+      - run: bun run check site-bundles
 
   # CI never downloads a model or boots a game (Jon, 25 Oct): a booted game needs the pulled
   # packs, and a download or a browser on a runner is minutes of flake for a check the lane's own

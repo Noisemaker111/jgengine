@@ -373,11 +373,11 @@ export function probe(ctx: GameContext) {
 
 /** `src/game/ui/kit.ts`: the game's own UI language, reshaped from a built-in kit. */
 export const starterKitTs = `import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
-import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+import { parchmentKit } from "@jgengine/core/ui/kit/uiKitParchment.view";
 
 // The look of every menu, pane and HUD part. Pick the base kit and fonts from src/art-direction.md;
 // the tokens below are this game's, not the kit's defaults.
-export const kit = customizeKit(UI_KITS.parchment, {
+export const kit = customizeKit(parchmentKit, {
   tokens: {
     accent: "#d9822b",
     accentInk: "#1d1306",

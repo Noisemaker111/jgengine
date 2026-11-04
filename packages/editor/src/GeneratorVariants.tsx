@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 
 import { generatorVariants, type GeneratorDefinition, type GeneratorVariant } from "@jgengine/core/generator/generator";
 import { GeneratorVariantGrid } from "@jgengine/core/generator/GeneratorVariantGrid.draw";
-import { registerBuiltinSceneKindRenderers } from "@jgengine/core/scene/builtinSceneKindRenderers.draw";
+import { registerAllSceneKindRenderers } from "@jgengine/core/scene/allSceneKindRenderers.draw";
 
 import type { EditorHostApi } from "./session";
 import { FieldRow, SectionAction } from "./shell/fields";
 import { INPUT_CLS } from "./shell/theme";
 
-registerBuiltinSceneKindRenderers();
+registerAllSceneKindRenderers();
 
 const VARIANT_COUNT = 20;
 

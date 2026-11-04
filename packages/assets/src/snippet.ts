@@ -1,3 +1,4 @@
+import { packExportName } from "./manifest";
 import { componentInstallUrl, type RegistryComponent } from "./registry";
 
 function pascalCase(name: string): string {
@@ -20,10 +21,12 @@ export function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}
   const basePath = options.basePath ?? "/models";
   const seam = options.seam ?? "objectModels";
   const key = seam === "entityModels" ? "hero" : id;
+  const pack = packExportName(id.split("/")[0] ?? id);
   return [
     `// src/game/assets.ts`,
-    `import { buildCatalog } from "@jgengine/assets";`,
-    `export const catalog = buildCatalog({ basePath: ${JSON.stringify(basePath)} });`,
+    `import { buildCatalog } from "@jgengine/assets/catalogs/build";`,
+    `import { ${pack} } from "@jgengine/assets/generated/packs";`,
+    `export const catalog = buildCatalog({ basePath: ${JSON.stringify(basePath)}, packs: [${pack}] });`,
     ``,
     `// in defineGame({ ... }):`,
     `${seam}: {`,

@@ -17,10 +17,7 @@ import { registerPoleLineKind } from "../world/poleLineKind";
 import { registerDecalKind } from "../world/decalKind";
 import { registerBuildingGenerator } from "../buildings/buildingGenerator";
 import { registerNatureGenerators } from "../nature/natureGenerators";
-import { registerPlantGenerators } from "../plants/grown/plantGrown";
 import { registerSurfaceMaterialGenerator } from "../material/surfaceMaterialGenerator";
-import { registerCityKind } from "../city/cityKind";
-import { registerForestStandKind } from "../plants/stand/forestStand";
 import { registerGroundCoverKind } from "../plants/groundCover/groundCoverField";
 import { describeScatterCoverage, densityCoverage } from "../scatter/scatterCoverage";
 import { registerSceneKind } from "./sceneKinds";
@@ -60,7 +57,11 @@ const LIGHT_SCHEMA: ParamSchema = {
 
 let registered = false;
 
-/** Idempotently registers the engine's built-in environment scene kinds + generators. @internal */
+/**
+ * Idempotently registers the engine's light built-in environment scene kinds + generators. The heavy
+ * ones (city, forest stands, grown plants) load on demand (`ON_DEMAND_SCENE_KINDS`), or all at once
+ * with `registerAllSceneKinds`. @internal
+ */
 export function registerBuiltinSceneKinds(): void {
   if (registered) return;
   registered = true;
@@ -92,13 +93,10 @@ export function registerBuiltinSceneKinds(): void {
   registerGrassKind();
   registerSoilKind();
   registerAmbientFaunaKind();
-  registerCityKind();
-  registerForestStandKind();
   registerGroundCoverKind();
   registerPoleLineKind();
   registerDecalKind();
   registerBuildingGenerator();
   registerNatureGenerators();
-  registerPlantGenerators();
   registerSurfaceMaterialGenerator();
 }

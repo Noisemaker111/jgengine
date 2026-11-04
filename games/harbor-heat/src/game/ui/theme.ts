@@ -2,7 +2,7 @@ import { libraryFontPairing } from "@jgengine/assets/catalogs/fontLibrary";
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { hudTheme } from "@jgengine/core/hud/hudTheme.view";
 import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
-import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+import { inkKit } from "@jgengine/core/ui/kit/uiKitInk.view";
 
 /** Bangers on every sign and number, Barlow for reading: the boulevard's two faces, both from the shared font library. */
 export const HARBOR_FONTS = libraryFontPairing("bangers", "barlow");
@@ -33,7 +33,7 @@ export const HH = {
  * caption tab is a sunset band (amber into orange into coral), halftone dots are warm, and type is the
  * condensed street-sign face of the boulevard.
  */
-export const harborKit = customizeKit(UI_KITS.ink, {
+export const harborKit = customizeKit(inkKit, {
   name: "Harbor Heat",
   tokens: {
     ink: HH.ink,

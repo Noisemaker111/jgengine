@@ -10,6 +10,7 @@
 - `AssetImportSpec` (interface): interface AssetImportSpec — A game-owned import description; paths are relative POSIX paths, roles are authored labels.
 - `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — What a match is: a model file, a whole pack, a material, a HUD component, an icon, or a sprite (pack).
 - `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — One catalog entry a query matched, shaped by its kind.
+- `AssetPack` (interface): interface AssetPack — One pulled model pack's index: its source id and every entry measured from its GLBs. Each pack is its own named export in `@jgengine/assets/generated/packs`, so a game bundles only the packs it imports and hands to `buildCatalog({ packs })`.
 - `AssetProvenance` (interface): interface AssetProvenance — The resolved ownership of one logical asset id — the provisioning contract for that id.
 - `AssetProvenanceKind` (type): type AssetProvenanceKind = "committed" | "provisioned" | "dangling" — How an asset id's bytes reach a clean checkout: - `committed` — resolves to a self-hosted / remote URL carried in the shipped index (a {@link SingleAsset}); no pull step, available immediately. - `provisioned` — a pack {@link IndexEntry}; the id is declared but its GLB is fetched on demand by `assets pull <source>` into the consumer's served dir. - `dangling` — nothing in the index, singles, or aliases owns the id, so no provisioning step exists and it can never resolve on a clean clone.
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
@@ -17,7 +18,7 @@
 - `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; spriteLayout?: "flat" | "folders"; materialMaps?: read… — ⚠ undocumented · used by `ambientcgSources`: Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
-- `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; sources?: readonly string[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
+- `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; packs: readonly AssetPack[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases.
 - `BuildMaterialCatalogOptions` (interface): interface BuildMaterialCatalogOptions — Options for `buildMaterialCatalog`.
 - `BuildSpriteCatalogOptions` (interface): interface BuildSpriteCatalogOptions — Options for `buildSpriteCatalog`.
 - `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
@@ -62,6 +63,7 @@
 - `ReindexSpritesResult` (interface): interface ReindexSpritesResult — Per-source and total counts returned by `reindexSprites`.
 - `ResolveProvenanceOptions` (interface): interface ResolveProvenanceOptions — Override the data {@link resolveProvenance} resolves against; every field defaults to the shipped catalog.
 - `STARTER_ASSETS` (const): const STARTER_ASSETS: readonly StarterAsset[] — Flat list of every curated starter asset across themes.
+- `STARTER_MODEL_PACKS` (const): const STARTER_MODEL_PACKS: readonly AssetPack[] — The model packs behind the curated starter assets: the same packs, in order, as `STARTER_SOURCE_PACKS`.
 - `STARTER_PACKS` (const): const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> — Theme → assets table for browse/docs (`STARTER_PACKS.props`, …).
 - `STARTER_PEOPLE` (const): const STARTER_PEOPLE: readonly string[] — The model-library people a fresh game pulls with the starter packs: realistic rigged humans, a man and a woman, that `libraryModel(name)` animates with the full humanoid clip set.
 - `STARTER_SOURCE_PACKS` (const): const STARTER_SOURCE_PACKS: readonly string[] — Source pack ids a game must pull so every starter asset URL resolves on disk.
@@ -75,13 +77,13 @@
 - `VerifyResult` (interface): interface VerifyResult { ok: boolean; errors: string[] } — ⚠ undocumented
 - `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:prop_crate`, `nature_tree`, …) come from {@link starterAliases}.
 - `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs. A pinned id the family sweep already covers stays with the sweep, so catalog ids never appear twice.
-- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra. See {@link BuildCatalogOptions} for filtering and opt-outs.
+- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions): AssetCatalog — Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra; an alias whose target is in no named pack is skipped. See {@link BuildCatalogOptions} for the pack list and opt-outs.
 - `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
 - `buildSpriteCatalog` (function): function buildSpriteCatalog(options: BuildSpriteCatalogOptions = {}): AssetCatalog — Resolves individual pulled sprite/icon ids (e.g. `gameicons-icons/sword`) to `{ url }`.
 - `classifyAssetFile` (function): function classifyAssetFile(bytes: Uint8Array, _filename: string): AssetImportKind | null — Classify supported container headers from complete file bytes; filenames never override bytes. Recognizes GLB/glTF, PNG/JPEG/KTX2, Ogg/WAV/MP3, TTF/OTF/WOFF/WOFF2, HDR/EXR and JSON sprite sheets. This is format detection, not decoder validation. Images classify as texture; authors choose sprite/material in the spec.
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
-- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (props/nature/urban). Prefer this for scaffolds and probes so `asset:prop_crate` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
+- `createStarterCatalog` (function): function createStarterCatalog(options: Partial<BuildCatalogOptions> = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (props/nature/urban). Prefer this for scaffolds and probes so `asset:prop_crate` etc. resolve without pulling the whole library. Pass `packs` to swap them; full control: {@link buildCatalog}.
 - `describeAssetMatch` (function): function describeAssetMatch(match: AssetMatch): string — One line naming a match for a terminal list: kind, id and title.
 - `entryForSpriteFile` (function): function entryForSpriteFile(source: AssetSource, file: string): IndexEntry — Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
@@ -91,8 +93,9 @@
 - `findLibraryModel` (function): function findLibraryModel(query: string, options: FindLibraryModelOptions = {}): readonly ModelLibraryMatch[] — Rank library models for a plain-words request: an exact intent wins, then intent and title word overlap; a genre filter narrows the set. An empty result with a matching `libraryModelGap` means the library knows it has nothing realistic for that request.
 - `findLibraryModelByName` (function): function findLibraryModelByName(name: string): ModelLibraryEntry | null — The entry with this exact name, or `null`.
 - `gameiconsSources` (const): const gameiconsSources: readonly AssetSource[] — game-icons.net (https://game-icons.net) — ~4,000 CC BY 3.0 SVG item/ability icons from 40+ contributing artists, mirrored as one GitHub repo (github.com/game-icons/icons). `HEAD` resolves the default branch without pinning a name or commit, so this always mirrors the current set; the per-artist `license.txt` files inside the repo carry the individual credits behind this pack's single collective `author` field.
-- `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
-- `generatedIndex` (const): const generatedIndex: IndexEntry[] — ⚠ undocumented
+- `generatedBySource` (const): const generatedBySource: Readonly<Record<string, readonly IndexEntry[]>> — ⚠ undocumented
+- `generatedIndex` (const): const generatedIndex: readonly IndexEntry[] — ⚠ undocumented
+- `generatedPacks` (const): const generatedPacks: readonly AssetPack[] — Every pulled pack. Importing this bundles the whole library; a game imports only its own packs from `./packs`.
 - `generatedSpriteBySource` (const): const generatedSpriteBySource: Record<string, IndexEntry[]> — Pulled sprite/icon entries grouped by source id.
 - `generatedSpriteIndex` (const): const generatedSpriteIndex: IndexEntry[] — Every pulled sprite/icon entry across all sources, flattened.
 - `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
@@ -114,6 +117,7 @@
 - `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model.
 - `modelSources` (const): const modelSources: readonly AssetSource[] — Every source whose archive holds GLB models (Quaternius, KayKit packs).
 - `modelWiringSnippet` (function): function modelWiringSnippet(id: string, options: ModelSnippetOptions = {}): string — Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
+- `packExportName` (function): function packExportName(sourceId: string): string — The name a pack is exported under in `generated/packs`: its source id in camelCase (`kaykit-dungeon` → `kaykitDungeon`).
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
 - `rankAssets` (function): function rankAssets(query: string, options: RankAssetsOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
 - `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
@@ -151,9 +155,9 @@
 
 ## @jgengine/assets/catalogs/build
 
-- `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; sources?: readonly string[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
+- `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; packs: readonly AssetPack[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases.
 - `CatalogExtra` (interface): interface CatalogExtra — A durable, hand-or-tool authored catalog entry that is not part of the generated pack index, singles, or aliases — the shape the editor writes into a promoted game's `src/game/assets.ts` when an asset is imported. `label` is human-facing only and is intentionally not registered into the catalog (it mirrors how a single asset's author/license live only in the source literal), so at runtime an extra resolves to exactly `{ url }`.
-- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra. See {@link BuildCatalogOptions} for filtering and opt-outs.
+- `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions): AssetCatalog — Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra; an alias whose target is in no named pack is skipped. See {@link BuildCatalogOptions} for the pack list and opt-outs.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
 
 ## @jgengine/assets/catalogs/buildSprites
@@ -285,7 +289,8 @@
 
 ## @jgengine/assets/catalogs/starter
 
-- `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (props/nature/urban). Prefer this for scaffolds and probes so `asset:prop_crate` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
+- `STARTER_MODEL_PACKS` (const): const STARTER_MODEL_PACKS: readonly AssetPack[] — The model packs behind the curated starter assets: the same packs, in order, as `STARTER_SOURCE_PACKS`.
+- `createStarterCatalog` (function): function createStarterCatalog(options: Partial<BuildCatalogOptions> = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (props/nature/urban). Prefer this for scaffolds and probes so `asset:prop_crate` etc. resolve without pulling the whole library. Pass `packs` to swap them; full control: {@link buildCatalog}.
 
 ## @jgengine/assets/cli/find
 
@@ -323,10 +328,10 @@
 - `CreditsGrouping` (type): type CreditsGrouping = "license" | "provider" — Grouping for {@link creditsForSources} — one section per license (default) or per provider.
 - `allAssetSources` (function): function allAssetSources(): readonly AssetSource[] — Every catalogued source, for a credits screen that lists the whole shipped catalog.
 - `creditsForAssetIds` (function): function creditsForAssetIds(ids: Iterable<string>, options: { title?: string; grouping?: CreditsGrouping; notice?: string } = {}): CreditsDocument — One call from the asset ids a game ships to a ready {@link CreditsDocument} — the credit obligation for borrowed assets, derived rather than hand-maintained.
-- `creditsForSourceIds` (function): function creditsForSourceIds(ids: Iterable<string>, options: { title?: string; grouping?: CreditsGrouping; notice?: string } = {}): CreditsDocument — One call from the source ids a game declares to a ready {@link CreditsDocument} — the usual entry point, since `buildCatalog({ sources })` already names them.
+- `creditsForSourceIds` (function): function creditsForSourceIds(ids: Iterable<string>, options: { title?: string; grouping?: CreditsGrouping; notice?: string } = {}): CreditsDocument — One call from the source ids a game declares to a ready {@link CreditsDocument} — the usual entry point, since the packs a game hands to `buildCatalog({ packs })` already carry them.
 - `creditsForSources` (function): function creditsForSources(used: readonly AssetSource[], grouping: CreditsGrouping = "license"): CreditsSection[] — Turns asset sources into credit sections, one per license or provider, each entry naming the pack and its author with the pack homepage as `href`. Feed it {@link sourcesForAssetIds} so the screen credits what shipped, and fold the result into the game's hand-authored credits with `mergeCredits`.
 - `sourcesForAssetIds` (function): function sourcesForAssetIds(ids: Iterable<string>): AssetSource[] — The distinct asset sources behind a set of asset ids — the packs a game actually ships, not the whole catalog. Unknown ids are skipped; order follows first use so a stable id list gives a stable credits screen.
-- `sourcesForSourceIds` (function): function sourcesForSourceIds(ids: Iterable<string>): AssetSource[] — The distinct sources behind a set of source ids — the shape a game already declares to `buildCatalog({ sources })` / `buildMaterialCatalog`. Unknown ids are skipped.
+- `sourcesForSourceIds` (function): function sourcesForSourceIds(ids: Iterable<string>): AssetSource[] — The distinct sources behind a set of source ids — the `id`s of the packs a game hands to `buildCatalog({ packs })`, plus its material sources. Unknown ids are skipped.
 
 ## @jgengine/assets/dims
 
@@ -363,13 +368,332 @@
 
 ## @jgengine/assets/generated
 
-- `generatedBySource` (const): const generatedBySource: Record<string, IndexEntry[]> — ⚠ undocumented
-- `generatedIndex` (const): const generatedIndex: IndexEntry[] — ⚠ undocumented
+- `generatedBySource` (const): const generatedBySource: Readonly<Record<string, readonly IndexEntry[]>> — ⚠ undocumented
+- `generatedIndex` (const): const generatedIndex: readonly IndexEntry[] — ⚠ undocumented
+- `generatedPacks` (const): const generatedPacks: readonly AssetPack[] — Every pulled pack. Importing this bundles the whole library; a game imports only its own packs from `./packs`.
 
 ## @jgengine/assets/generated-sprites
 
 - `generatedSpriteBySource` (const): const generatedSpriteBySource: Record<string, IndexEntry[]> — Pulled sprite/icon entries grouped by source id.
 - `generatedSpriteIndex` (const): const generatedSpriteIndex: IndexEntry[] — Every pulled sprite/icon entry across all sources, flattened.
+
+## @jgengine/assets/generated/pack/kaykit-adventurers
+
+- `kaykitAdventurers` (const): const kaykitAdventurers: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/kaykit-city-builder
+
+- `kaykitCityBuilder` (const): const kaykitCityBuilder: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/kaykit-dungeon
+
+- `kaykitDungeon` (const): const kaykitDungeon: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/kaykit-forest
+
+- `kaykitForest` (const): const kaykitForest: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/kaykit-furniture
+
+- `kaykitFurniture` (const): const kaykitFurniture: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/kaykit-medieval-hexagon
+
+- `kaykitMedievalHexagon` (const): const kaykitMedievalHexagon: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/kaykit-skeletons
+
+- `kaykitSkeletons` (const): const kaykitSkeletons: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/kaykit-space-base
+
+- `kaykitSpaceBase` (const): const kaykitSpaceBase: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-5-low-poly-animals
+
+- `quaternius5LowPolyAnimals` (const): const quaternius5LowPolyAnimals: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-animated-animales-low-poly
+
+- `quaterniusAnimatedAnimalesLowPoly` (const): const quaterniusAnimatedAnimalesLowPoly: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-animated-animals
+
+- `quaterniusAnimatedAnimals` (const): const quaterniusAnimatedAnimals: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-animated-characters-pack
+
+- `quaterniusAnimatedCharactersPack` (const): const quaterniusAnimatedCharactersPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-animated-dinosaurs
+
+- `quaterniusAnimatedDinosaurs` (const): const quaterniusAnimatedDinosaurs: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-animated-fish
+
+- `quaterniusAnimatedFish` (const): const quaterniusAnimatedFish: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-animated-human-low-poly
+
+- `quaterniusAnimatedHumanLowPoly` (const): const quaterniusAnimatedHumanLowPoly: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-animated-lowpoly-robot
+
+- `quaterniusAnimatedLowpolyRobot` (const): const quaterniusAnimatedLowpolyRobot: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-animated-mech-pack
+
+- `quaterniusAnimatedMechPack` (const): const quaterniusAnimatedMechPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-fantasy-low-poly-trees-and-bushes
+
+- `quaterniusFantasyLowPolyTreesAndBushes` (const): const quaterniusFantasyLowPolyTreesAndBushes: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-fantasy-props
+
+- `quaterniusFantasyProps` (const): const quaterniusFantasyProps: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-furniture-low-poly
+
+- `quaterniusFurnitureLowPoly` (const): const quaterniusFurnitureLowPoly: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-animated-guns
+
+- `quaterniusLowPolyAnimatedGuns` (const): const quaterniusLowPolyAnimatedGuns: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-cars-0
+
+- `quaterniusLowPolyCars0` (const): const quaterniusLowPolyCars0: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-desert-assets
+
+- `quaterniusLowPolyDesertAssets` (const): const quaterniusLowPolyDesertAssets: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-food-pack
+
+- `quaterniusLowPolyFoodPack` (const): const quaterniusLowPolyFoodPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-furniture-1
+
+- `quaterniusLowPolyFurniture1` (const): const quaterniusLowPolyFurniture1: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-guns
+
+- `quaterniusLowPolyGuns` (const): const quaterniusLowPolyGuns: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-guns-pack
+
+- `quaterniusLowPolyGunsPack` (const): const quaterniusLowPolyGunsPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-medieval-weapons
+
+- `quaterniusLowPolyMedievalWeapons` (const): const quaterniusLowPolyMedievalWeapons: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-nature-pack-1
+
+- `quaterniusLowPolyNaturePack1` (const): const quaterniusLowPolyNaturePack1: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-pirate-pack
+
+- `quaterniusLowPolyPiratePack` (const): const quaterniusLowPolyPiratePack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-rpg-pack
+
+- `quaterniusLowPolyRpgPack` (const): const quaterniusLowPolyRpgPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-low-poly-space-assets
+
+- `quaterniusLowPolySpaceAssets` (const): const quaterniusLowPolySpaceAssets: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-animated-farm-animal-pack
+
+- `quaterniusLowpolyAnimatedFarmAnimalPack` (const): const quaterniusLowpolyAnimatedFarmAnimalPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-animated-knight
+
+- `quaterniusLowpolyAnimatedKnight` (const): const quaterniusLowpolyAnimatedKnight: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-animated-monsters
+
+- `quaterniusLowpolyAnimatedMonsters` (const): const quaterniusLowpolyAnimatedMonsters: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-buildings
+
+- `quaterniusLowpolyBuildings` (const): const quaterniusLowpolyBuildings: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-buildings-pack
+
+- `quaterniusLowpolyBuildingsPack` (const): const quaterniusLowpolyBuildingsPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-cars
+
+- `quaterniusLowpolyCars` (const): const quaterniusLowpolyCars: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-crops-pack
+
+- `quaterniusLowpolyCropsPack` (const): const quaterniusLowpolyCropsPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-house-interior-pack
+
+- `quaterniusLowpolyHouseInteriorPack` (const): const quaterniusLowpolyHouseInteriorPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-medieval-buildings
+
+- `quaterniusLowpolyMedievalBuildings` (const): const quaterniusLowpolyMedievalBuildings: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-medieval-village-pack
+
+- `quaterniusLowpolyMedievalVillagePack` (const): const quaterniusLowpolyMedievalVillagePack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-medieval-weapons
+
+- `quaterniusLowpolyMedievalWeapons` (const): const quaterniusLowpolyMedievalWeapons: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-modular-dungeon-pack
+
+- `quaterniusLowpolyModularDungeonPack` (const): const quaterniusLowpolyModularDungeonPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-modular-sci-fi-environments
+
+- `quaterniusLowpolyModularSciFiEnvironments` (const): const quaterniusLowpolyModularSciFiEnvironments: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-modular-street-pack
+
+- `quaterniusLowpolyModularStreetPack` (const): const quaterniusLowpolyModularStreetPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-nature-pack
+
+- `quaterniusLowpolyNaturePack` (const): const quaterniusLowpolyNaturePack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-posed-humans
+
+- `quaterniusLowpolyPosedHumans` (const): const quaterniusLowpolyPosedHumans: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-public-transport
+
+- `quaterniusLowpolyPublicTransport` (const): const quaterniusLowpolyPublicTransport: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-rpg
+
+- `quaterniusLowpolyRpg` (const): const quaterniusLowpolyRpg: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-rpg-characters
+
+- `quaterniusLowpolyRpgCharacters` (const): const quaterniusLowpolyRpgCharacters: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-ship-pack
+
+- `quaterniusLowpolyShipPack` (const): const quaterniusLowpolyShipPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-spaceships-pack
+
+- `quaterniusLowpolySpaceshipsPack` (const): const quaterniusLowpolySpaceshipsPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-steampunk-turrets
+
+- `quaterniusLowpolySteampunkTurrets` (const): const quaterniusLowpolySteampunkTurrets: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-survival-pack
+
+- `quaterniusLowpolySurvivalPack` (const): const quaterniusLowpolySurvivalPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-lowpoly-textured-trees
+
+- `quaterniusLowpolyTexturedTrees` (const): const quaterniusLowpolyTexturedTrees: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-medieval-village
+
+- `quaterniusMedievalVillage` (const): const quaterniusMedievalVillage: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-modular-men
+
+- `quaterniusModularMen` (const): const quaterniusModularMen: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-modular-scifi
+
+- `quaterniusModularScifi` (const): const quaterniusModularScifi: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-modular-women
+
+- `quaterniusModularWomen` (const): const quaterniusModularWomen: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-stylized-nature
+
+- `quaterniusStylizedNature` (const): const quaterniusStylizedNature: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-textured-cute-monster-pack
+
+- `quaterniusTexturedCuteMonsterPack` (const): const quaterniusTexturedCuteMonsterPack: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/pack/quaternius-toon-shooter
+
+- `quaterniusToonShooter` (const): const quaterniusToonShooter: AssetPack — ⚠ undocumented
+
+## @jgengine/assets/generated/packs
+
+- `kaykitAdventurers` (const): const kaykitAdventurers: AssetPack — ⚠ undocumented
+- `kaykitCityBuilder` (const): const kaykitCityBuilder: AssetPack — ⚠ undocumented
+- `kaykitDungeon` (const): const kaykitDungeon: AssetPack — ⚠ undocumented
+- `kaykitForest` (const): const kaykitForest: AssetPack — ⚠ undocumented
+- `kaykitFurniture` (const): const kaykitFurniture: AssetPack — ⚠ undocumented
+- `kaykitMedievalHexagon` (const): const kaykitMedievalHexagon: AssetPack — ⚠ undocumented
+- `kaykitSkeletons` (const): const kaykitSkeletons: AssetPack — ⚠ undocumented
+- `kaykitSpaceBase` (const): const kaykitSpaceBase: AssetPack — ⚠ undocumented
+- `quaternius5LowPolyAnimals` (const): const quaternius5LowPolyAnimals: AssetPack — ⚠ undocumented
+- `quaterniusAnimatedAnimalesLowPoly` (const): const quaterniusAnimatedAnimalesLowPoly: AssetPack — ⚠ undocumented
+- `quaterniusAnimatedAnimals` (const): const quaterniusAnimatedAnimals: AssetPack — ⚠ undocumented
+- `quaterniusAnimatedCharactersPack` (const): const quaterniusAnimatedCharactersPack: AssetPack — ⚠ undocumented
+- `quaterniusAnimatedDinosaurs` (const): const quaterniusAnimatedDinosaurs: AssetPack — ⚠ undocumented
+- `quaterniusAnimatedFish` (const): const quaterniusAnimatedFish: AssetPack — ⚠ undocumented
+- `quaterniusAnimatedHumanLowPoly` (const): const quaterniusAnimatedHumanLowPoly: AssetPack — ⚠ undocumented
+- `quaterniusAnimatedLowpolyRobot` (const): const quaterniusAnimatedLowpolyRobot: AssetPack — ⚠ undocumented
+- `quaterniusAnimatedMechPack` (const): const quaterniusAnimatedMechPack: AssetPack — ⚠ undocumented
+- `quaterniusFantasyLowPolyTreesAndBushes` (const): const quaterniusFantasyLowPolyTreesAndBushes: AssetPack — ⚠ undocumented
+- `quaterniusFantasyProps` (const): const quaterniusFantasyProps: AssetPack — ⚠ undocumented
+- `quaterniusFurnitureLowPoly` (const): const quaterniusFurnitureLowPoly: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyAnimatedGuns` (const): const quaterniusLowPolyAnimatedGuns: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyCars0` (const): const quaterniusLowPolyCars0: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyDesertAssets` (const): const quaterniusLowPolyDesertAssets: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyFoodPack` (const): const quaterniusLowPolyFoodPack: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyFurniture1` (const): const quaterniusLowPolyFurniture1: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyGuns` (const): const quaterniusLowPolyGuns: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyGunsPack` (const): const quaterniusLowPolyGunsPack: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyMedievalWeapons` (const): const quaterniusLowPolyMedievalWeapons: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyNaturePack1` (const): const quaterniusLowPolyNaturePack1: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyPiratePack` (const): const quaterniusLowPolyPiratePack: AssetPack — ⚠ undocumented
+- `quaterniusLowPolyRpgPack` (const): const quaterniusLowPolyRpgPack: AssetPack — ⚠ undocumented
+- `quaterniusLowPolySpaceAssets` (const): const quaterniusLowPolySpaceAssets: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyAnimatedFarmAnimalPack` (const): const quaterniusLowpolyAnimatedFarmAnimalPack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyAnimatedKnight` (const): const quaterniusLowpolyAnimatedKnight: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyAnimatedMonsters` (const): const quaterniusLowpolyAnimatedMonsters: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyBuildings` (const): const quaterniusLowpolyBuildings: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyBuildingsPack` (const): const quaterniusLowpolyBuildingsPack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyCars` (const): const quaterniusLowpolyCars: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyCropsPack` (const): const quaterniusLowpolyCropsPack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyHouseInteriorPack` (const): const quaterniusLowpolyHouseInteriorPack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyMedievalBuildings` (const): const quaterniusLowpolyMedievalBuildings: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyMedievalVillagePack` (const): const quaterniusLowpolyMedievalVillagePack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyMedievalWeapons` (const): const quaterniusLowpolyMedievalWeapons: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyModularDungeonPack` (const): const quaterniusLowpolyModularDungeonPack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyModularSciFiEnvironments` (const): const quaterniusLowpolyModularSciFiEnvironments: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyModularStreetPack` (const): const quaterniusLowpolyModularStreetPack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyNaturePack` (const): const quaterniusLowpolyNaturePack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyPosedHumans` (const): const quaterniusLowpolyPosedHumans: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyPublicTransport` (const): const quaterniusLowpolyPublicTransport: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyRpg` (const): const quaterniusLowpolyRpg: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyRpgCharacters` (const): const quaterniusLowpolyRpgCharacters: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyShipPack` (const): const quaterniusLowpolyShipPack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolySpaceshipsPack` (const): const quaterniusLowpolySpaceshipsPack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolySteampunkTurrets` (const): const quaterniusLowpolySteampunkTurrets: AssetPack — ⚠ undocumented
+- `quaterniusLowpolySurvivalPack` (const): const quaterniusLowpolySurvivalPack: AssetPack — ⚠ undocumented
+- `quaterniusLowpolyTexturedTrees` (const): const quaterniusLowpolyTexturedTrees: AssetPack — ⚠ undocumented
+- `quaterniusMedievalVillage` (const): const quaterniusMedievalVillage: AssetPack — ⚠ undocumented
+- `quaterniusModularMen` (const): const quaterniusModularMen: AssetPack — ⚠ undocumented
+- `quaterniusModularScifi` (const): const quaterniusModularScifi: AssetPack — ⚠ undocumented
+- `quaterniusModularWomen` (const): const quaterniusModularWomen: AssetPack — ⚠ undocumented
+- `quaterniusStylizedNature` (const): const quaterniusStylizedNature: AssetPack — ⚠ undocumented
+- `quaterniusTexturedCuteMonsterPack` (const): const quaterniusTexturedCuteMonsterPack: AssetPack — ⚠ undocumented
+- `quaterniusToonShooter` (const): const quaterniusToonShooter: AssetPack — ⚠ undocumented
 
 ## @jgengine/assets/glbMetrics
 
@@ -407,6 +731,7 @@
 - `indexSourceDir` (function): function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] — ⚠ undocumented
 - `keyFromFile` (function): function keyFromFile(file: string): string — ⚠ undocumented
 - `reindex` (function): function reindex(modelsDir: string, outDir: string): ReindexResult — ⚠ undocumented
+- `writeIndexBarrels` (function): function writeIndexBarrels(outDir: string): void — Writes the generated pack modules and the barrel over every `<source>.json` already in `outDir`.
 
 ## @jgengine/assets/library/assetLibrary
 
@@ -496,6 +821,7 @@
 
 - `AssetAlias` (interface): interface AssetAlias { key: string; target: string } — ⚠ undocumented · used by `aliases` (@jgengine/assets): Semantic keys → live catalog ids.
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload | PolyPizzaBundleDownload | ItchDownload — ⚠ undocumented
+- `AssetPack` (interface): interface AssetPack — One pulled model pack's index: its source id and every entry measured from its GLBs. Each pack is its own named export in `@jgengine/assets/generated/packs`, so a game bundles only the packs it imports and hands to `buildCatalog({ packs })`.
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
 - `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; spriteLayout?: "flat" | "folders"; materialMaps?: read… — ⚠ undocumented · used by `ambientcgSources` (@jgengine/assets): Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
@@ -509,6 +835,7 @@
 - `ScrapeDownload` (interface): interface ScrapeDownload { scrape: string } — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset { id: string; url: string; license: string; author: string; categories: readonly string[] } — ⚠ undocumented
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
+- `packExportName` (function): function packExportName(sourceId: string): string — The name a pack is exported under in `generated/packs`: its source id in camelCase (`kaykit-dungeon` → `kaykitDungeon`).
 
 ## @jgengine/assets/materialMapFiles
 

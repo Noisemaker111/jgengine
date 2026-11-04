@@ -1,7 +1,8 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
+import { kaykitCityBuilder, kaykitSpaceBase, quaternius5LowPolyAnimals } from "@jgengine/assets/generated/packs";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-const MODEL_SOURCES = ["kaykit-city-builder", "kaykit-space-base", "quaternius-5-low-poly-animals"] as const;
+const MODEL_PACKS = [kaykitCityBuilder, kaykitSpaceBase, quaternius5LowPolyAnimals];
 /** Packed dirt on the yard and dark cracked asphalt on the racing line, named by the shared material library. */
 const GROUND_SOURCES = ["ambientcg-ground025", "ambientcg-asphalt012"] as const;
 /**
@@ -17,12 +18,12 @@ const FACADE_MATERIAL_SOURCES = [
 
 /** Every pack this game ships — the credits screen is generated from it, so it cannot drift. */
 export const ASSET_SOURCE_IDS: readonly string[] = [
-  ...MODEL_SOURCES,
+  ...MODEL_PACKS.map((pack) => pack.id),
   ...GROUND_SOURCES,
   ...FACADE_MATERIAL_SOURCES,
 ];
 
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
-  sources: [...MODEL_SOURCES],
+  packs: MODEL_PACKS,
 });

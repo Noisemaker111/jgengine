@@ -40,10 +40,13 @@ export interface PerfBudget {
    */
   programsLinked?: number;
   /**
-   * KiB of JS and CSS a player downloads for this game past the runner shell (its entry chunk and every chunk
-   * it preloads, shared engine chunks included). `check-site-assets` fails a build over it.
+   * KiB of JS and CSS this game downloads beyond the shared engine: its entry chunk and every chunk it preloads
+   * that not every game loads. The engine is budgeted once, as `engineKb` in `apps/dev/bundle-budget.json`.
+   * `check-site-assets --bundles` fails a build over it; CI's web-build job runs it before merge.
    */
   bundleKb?: number;
+  /** Why `bundleKb` is what it is: the measurement it came from, and the feature behind each raise. */
+  bundleBaseline?: string;
   /** Whole-frame draws at the last baseline, printed beside the measured count. Not a gate. */
   drawsFrame?: number;
   /** How the numbers above were produced (date, command, GPU). */
@@ -69,7 +72,7 @@ export interface BudgetViolation {
 
 export const fmtCount = (value: number): string => value.toLocaleString("en-US");
 
-const FIELDS = new Set(["programsLinked", "drawsFrame", "bundleKb", "baseline"]);
+const FIELDS = new Set(["programsLinked", "drawsFrame", "bundleKb", "bundleBaseline", "baseline"]);
 
 function positive(raw: unknown, game: string, field: string, source: string): number {
   if (typeof raw !== "number" || !Number.isFinite(raw) || raw < 0) {
@@ -86,13 +89,14 @@ function parseBudgetEntry(raw: unknown, game: string, source: string): PerfBudge
   const unknown = Object.keys(entry).filter((key) => !FIELDS.has(key));
   if (unknown.length > 0) {
     throw new Error(
-      `perf gate: ${source} "${game}" has ${unknown.join(", ")}; a budget is the shared ${FRAME_BUDGET_MS} ms p95 frame, so a file holds only programsLinked, drawsFrame (reported), bundleKb (the site build gate) and baseline`,
+      `perf gate: ${source} "${game}" has ${unknown.join(", ")}; a budget is the shared ${FRAME_BUDGET_MS} ms p95 frame, so a file holds only programsLinked, drawsFrame (reported), bundleKb and bundleBaseline (the download size gate) and baseline`,
     );
   }
   return {
     ...(entry["programsLinked"] === undefined ? {} : { programsLinked: positive(entry["programsLinked"], game, "programsLinked", source) }),
     ...(entry["bundleKb"] === undefined ? {} : { bundleKb: positive(entry["bundleKb"], game, "bundleKb", source) }),
     ...(entry["drawsFrame"] === undefined ? {} : { drawsFrame: positive(entry["drawsFrame"], game, "drawsFrame", source) }),
+    ...(typeof entry["bundleBaseline"] === "string" ? { bundleBaseline: entry["bundleBaseline"] } : {}),
     ...(typeof entry["baseline"] === "string" ? { baseline: entry["baseline"] } : {}),
   };
 }

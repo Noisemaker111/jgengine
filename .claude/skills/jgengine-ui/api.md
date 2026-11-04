@@ -1426,7 +1426,7 @@
 - `KitToastProps` (interface): interface KitToastProps — A short-lived message.
 - `KitTone` (type): type KitTone = "neutral" | "accent" | "good" | "warn" | "bad" — The meaning a kit component carries; each kit draws it in its own language.
 - `UI_KIT_PARTS` (const): const UI_KIT_PARTS: readonly UiKitPart[] — Every part a kit must implement.
-- `UiKit` (interface): interface UiKit — A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game picks one with `defineGame({ uiKit: "ink" })` and reshapes it with {@link customizeKit}.
+- `UiKit` (interface): interface UiKit — A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game imports one (`inkKit` from `uiKitInk.view`), passes it as `defineGame({ uiKit: inkKit })` and reshapes it with {@link customizeKit}.
 - `UiKitComponents` (interface): interface UiKitComponents — The seven parts every kit ships, so switching kits never breaks a game.
 - `UiKitCustomization` (interface): interface UiKitCustomization — What a game changes when it reshapes a kit.
 - `UiKitMotion` (interface): interface UiKitMotion — How a kit's surfaces enter and leave.
@@ -1504,8 +1504,7 @@
 ## @jgengine/core/ui/kit/uiKits.view
 
 - `UI_KITS` (const): const UI_KITS: Readonly<Record<UiKitName, UiKit>> — The eight built-in UI kits, each a complete visual language with every part: `ink` comic caper, `paper` cardboard and stickers, `parchment` painterly fantasy, `terminal` brutalist console, `holo` angular sci-fi hologram, `broadcast` sports TV graphics, `arcade` retro pixel cabinet, `signal` in-world signage and departure boards.
-- `UiKitName` (type): type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal" — The built-in kit names a game can pick with `defineGame({ uiKit: "<name>" })`.
-- `resolveUiKit` (function): function resolveUiKit(kit: UiKitName | UiKit): UiKit — A built-in kit by name, or a kit object as given (for example from `customizeKit`).
+- `UiKitName` (type): type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal" — The built-in kit names, for tools and previews that list every kit.
 
 ## @jgengine/core/ui/kit/uiKitsPreview.view
 
@@ -2086,13 +2085,13 @@
 - `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
 - `UI_KITS` (const): const UI_KITS: Readonly<Record<UiKitName, UiKit>> — The eight built-in UI kits, each a complete visual language with every part: `ink` comic caper, `paper` cardboard and stickers, `parchment` painterly fantasy, `terminal` brutalist console, `holo` angular sci-fi hologram, `broadcast` sports TV graphics, `arcade` retro pixel cabinet, `signal` in-world signage and departure boards.
 - `UI_KIT_PARTS` (const): const UI_KIT_PARTS: readonly UiKitPart[] — Every part a kit must implement.
-- `UiKit` (interface): interface UiKit — A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game picks one with `defineGame({ uiKit: "ink" })` and reshapes it with {@link customizeKit}.
+- `UiKit` (interface): interface UiKit — A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game imports one (`inkKit` from `uiKitInk.view`), passes it as `defineGame({ uiKit: inkKit })` and reshapes it with {@link customizeKit}.
 - `UiKitComponents` (interface): interface UiKitComponents — The seven parts every kit ships, so switching kits never breaks a game.
 - `UiKitCustomization` (interface): interface UiKitCustomization — What a game changes when it reshapes a kit.
 - `UiKitMenuPreview` (function): function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: UiKitMenuPreviewPane; className?: string | undefined }): ReactNode — A kit's pause menu with one of the engine's own panes in it (settings, credits, continue or saves), so one picture shows that engine panes read in the kit's colours and type.
 - `UiKitMenuPreviewPane` (type): type UiKitMenuPreviewPane = "settings" | "credits" | "continue" | "saves" — The engine panes a kit's menu can host, for {@link UiKitMenuPreview}.
 - `UiKitMotion` (interface): interface UiKitMotion — How a kit's surfaces enter and leave.
-- `UiKitName` (type): type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal" — The built-in kit names a game can pick with `defineGame({ uiKit: "<name>" })`.
+- `UiKitName` (type): type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal" — The built-in kit names, for tools and previews that list every kit.
 - `UiKitPart` (type): type UiKitPart = keyof UiKitComponents — The names of {@link UiKitComponents}.
 - `UiKitPreview` (function): function UiKitPreview({ kit, className }: { kit: UiKit; className?: string | undefined }): ReactNode — One kit, large: the specimen plus its dialog and strip, for working on a single kit.
 - `UiKitRoot` (function): function UiKitRoot({ kit, bindings, glyphSet = "xbox", children, className, style, box = false }: UiKitRootProps): ReactNode — Puts a UI kit in charge of everything below it: injects its stylesheet, sets its `--kit-*` tokens and makes `KitButton`, `KitPanel`, `KitMeter`, `KitPrompt`, `KitToast`, `KitMenu` and `KitMinimapFrame` draw in its language. The shell mounts it for `defineGame({ uiKit })`; nest another to show a second kit.
@@ -2180,7 +2179,6 @@
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `resolveHudTheme` (function): function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme — Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme.
 - `resolvePreviewFixture` (function): function resolvePreviewFixture(name: string): PreviewFixture | undefined — Resolve a fixture by name, or `undefined` when it is not registered.
-- `resolveUiKit` (function): function resolveUiKit(kit: UiKitName | UiKit): UiKit — A built-in kit by name, or a kit object as given (for example from `customizeKit`).
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `schoolForAction` (function): function schoolForAction(action: string): IconSchool — Infers an {@link IconSchool} from an action id (keyword match); `neutral` when nothing matches.
 - `schoolForItem` (function): function schoolForItem(itemId: string): IconSchool — Infers an {@link IconSchool} from an item id (keyword match); `neutral` when nothing matches.

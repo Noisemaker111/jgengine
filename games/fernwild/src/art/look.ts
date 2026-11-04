@@ -1,7 +1,7 @@
 import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits";
 import { libraryFontPairing } from "@jgengine/assets/catalogs/fontLibrary";
 import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
-import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+import { holoKit } from "@jgengine/core/ui/kit/uiKitHolo.view";
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 
 /** The art direction's looks, named once: the sky, the grade and the type the credits list. */
@@ -11,7 +11,7 @@ export const FERN_FONTS = libraryFontPairing("oswald", "source-sans-3");
 const STACKS = gameFontStacks(FERN_FONTS);
 
 /** Holo kit, shallows-teal accent, Oswald over Source Sans 3. */
-export const fernwildKit = customizeKit(UI_KITS.holo, {
+export const fernwildKit = customizeKit(holoKit, {
   name: "fernwild",
   tokens: { accent: "#3fd0c9", accentInk: "#062a2a", fontDisplay: STACKS.fontDisplay, fontBody: STACKS.fontBody },
 });

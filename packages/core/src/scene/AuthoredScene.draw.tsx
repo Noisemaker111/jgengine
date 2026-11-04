@@ -1,7 +1,7 @@
 // @skill jgengine-world
 import { AuthoredFlocks } from "@jgengine/core/ai/AuthoredFlocks.draw";
 import { AuthoredWeatherLayer } from "@jgengine/core/weather/AuthoredWeatherLayer.draw";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useSyncExternalStore } from "react";
 
 import type { EditorDocument, EditorMarker, EditorPath, EditorVolume } from "@jgengine/core/editor/index";
 import {
@@ -35,7 +35,8 @@ import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
 import { createModelMapResolver } from "@jgengine/core/model/resolveModel";
 import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
 import { GeneratedAssetInstance } from "./GeneratedAssetRenderer.draw";
-import { registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers.draw";
+import { loadOnDemandSceneKinds, onDemandSceneKindReady, registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers.draw";
+import { onDemandSceneKindsFor, sceneKindNeeds } from "./onDemandSceneKinds";
 import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
 
 const noopSubscribe = (): (() => void) => () => undefined;
@@ -67,6 +68,31 @@ export function useLiveEditorDocument(document: EditorDocument, live = true): Ed
 }
 
 registerBuiltinSceneKindRenderers();
+
+/**
+ * Loads the on-demand systems (city, grown plants) the document and scatter palette use, and reports
+ * when they are registered. Until then the kind-driven layers wait, so a city volume or forest stand
+ * never draws as a plain road or an empty patch.
+ */
+function useOnDemandSceneKinds(document: EditorDocument, scatterModels: AuthoredSceneProps["scatterModels"]): boolean {
+  const needed = useMemo(() => {
+    const generators: string[] = [];
+    for (const value of Object.values(scatterModels ?? {})) if (isScatterGeneratorItem(value)) generators.push(value.generator);
+    return onDemandSceneKindsFor(sceneKindNeeds(document, generators));
+  }, [document, scatterModels]);
+  const ready = needed.every(onDemandSceneKindReady);
+  const [, loaded] = useReducer((count: number) => count + 1, 0);
+  useEffect(() => {
+    if (ready) return;
+    let live = true;
+    loadOnDemandSceneKinds(needed).then(
+      () => { if (live) loaded(); },
+      (error: unknown) => console.error("[jgengine] a scene system failed to load", error),
+    );
+    return () => { live = false; };
+  }, [needed, ready]);
+  return ready;
+}
 
 function markerToKindObject(marker: EditorMarker): SceneKindObject {
   return { id: marker.id, kind: marker.kind, position: marker.position, ...(marker.rotationY === undefined ? {} : { rotationY: marker.rotationY }), ...(marker.meta === undefined ? {} : { meta: marker.meta }) };
@@ -331,9 +357,11 @@ export function AuthoredScene({
 }: AuthoredSceneProps) {
   const ctx = useGameContext();
   const liveDocument = useLiveEditorDocument(document, live);
+  const kindsReady = useOnDemandSceneKinds(liveDocument, scatterModels);
   // Authoring updates configuration only. Physics remains owned by the fixed game-time stages.
   useEffect(() => { ctx.environment.retune(liveDocument); }, [ctx.environment, liveDocument]);
-  const instances = useMemo(() => resolveScatter(liveDocument, field), [liveDocument, field]);
+  // A forest stand fills its area through a scatter source its on-demand system registers.
+  const instances = useMemo(() => (kindsReady ? resolveScatter(liveDocument, field) : []), [liveDocument, field, kindsReady]);
   const clearing = scatterClearingOf(ctx);
   const hidden = useSyncExternalStore(clearing.subscribe, clearing.hidden, clearing.hidden);
   const solidPlacements = useMemo(
@@ -370,24 +398,28 @@ export function AuthoredScene({
     <>
       <AuthoredWeatherLayer document={liveDocument} heightAt={field.sampleHeight} diagnostics={diagnostics} />
       {flockModels === undefined ? null : <AuthoredFlocks models={flockModels} assets={assets} />}
-      <AuthoredPaths
-        document={liveDocument}
-        field={field}
-        surfaceDetail={pathSurfaceDetail}
-        {...(pathKinds === undefined ? {} : { kinds: pathKinds })}
-      />
-      <InstancedScatter instances={instances} hidden={hidden} {...(scatterBudget === undefined ? {} : { maxInstances: scatterBudget })} {...(resolveItem === undefined ? {} : { resolveItem })} />
-      <AuthoredStudios
-        document={liveDocument}
-        context={{
-          document: liveDocument,
-          field,
-          ...(assets === undefined ? {} : { assets }),
-          ...(groundColorAt === undefined ? {} : { groundColorAt }),
-        }}
-      />
-      <AuthoredGenerators document={liveDocument} field={field} />
-      <AuthoredSolids document={liveDocument} field={field} />
+      {kindsReady ? (
+        <>
+          <AuthoredPaths
+            document={liveDocument}
+            field={field}
+            surfaceDetail={pathSurfaceDetail}
+            {...(pathKinds === undefined ? {} : { kinds: pathKinds })}
+          />
+          <InstancedScatter instances={instances} hidden={hidden} {...(scatterBudget === undefined ? {} : { maxInstances: scatterBudget })} {...(resolveItem === undefined ? {} : { resolveItem })} />
+          <AuthoredStudios
+            document={liveDocument}
+            context={{
+              document: liveDocument,
+              field,
+              ...(assets === undefined ? {} : { assets }),
+              ...(groundColorAt === undefined ? {} : { groundColorAt }),
+            }}
+          />
+          <AuthoredGenerators document={liveDocument} field={field} />
+          <AuthoredSolids document={liveDocument} field={field} />
+        </>
+      ) : null}
       {shouldPlaceObjects ? (
         <AuthoredObjects document={liveDocument} field={field} verticalOffset={objectVerticalOffset} synchronize={live && getDocumentLiveSync() !== null}
           {...(objectExcludeKinds === undefined ? {} : { excludeKinds: objectExcludeKinds })} />

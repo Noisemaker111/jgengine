@@ -92,6 +92,24 @@ export interface AssetSource {
   unpulled?: string;
 }
 
+/**
+ * One pulled model pack's index: its source id and every entry measured from its GLBs. Each pack
+ * is its own named export in `@jgengine/assets/generated/packs`, so a game bundles only the packs it
+ * imports and hands to `buildCatalog({ packs })`.
+ */
+export interface AssetPack {
+  readonly id: string;
+  readonly entries: readonly IndexEntry[];
+}
+
+/** The name a pack is exported under in `generated/packs`: its source id in camelCase (`kaykit-dungeon` → `kaykitDungeon`). */
+export function packExportName(sourceId: string): string {
+  const words = sourceId.split(/[^a-zA-Z0-9]+/).filter((word) => word.length > 0);
+  const name = words.map((word, i) => (i === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1))).join("");
+  if (!/^[a-zA-Z_$]/.test(name)) throw new Error(`source id "${sourceId}" does not make a valid pack export name`);
+  return name;
+}
+
 /** A source-owned model or sprite id, with optional offline model measurements. */
 export interface IndexEntry {
   id: string;

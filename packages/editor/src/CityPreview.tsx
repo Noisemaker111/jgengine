@@ -6,7 +6,7 @@ import { editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import { useGameContext } from "@jgengine/react/provider";
-import { registerBuiltinSceneKindRenderers } from "@jgengine/core/scene/builtinSceneKindRenderers.draw";
+import { registerAllSceneKindRenderers } from "@jgengine/core/scene/allSceneKindRenderers.draw";
 import { getSceneKindRenderer } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
 import type { EditorHostApi } from "./session";
@@ -20,7 +20,7 @@ import { useStoreSelector } from "./useStoreSelector";
  * @internal — mounted by `EditorApp`; not a game-author entry point.
  */
 export const CityPreview = memo(function CityPreview({ api }: { api: EditorHostApi }) {
-  registerBuiltinSceneKindRenderers();
+  registerAllSceneKindRenderers();
   const ctx = useGameContext();
   const session: EditorSession = api.getSession();
 

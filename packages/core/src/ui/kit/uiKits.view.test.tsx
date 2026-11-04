@@ -17,7 +17,7 @@ import { paperKit } from "./uiKitPaper.view";
 import { parchmentKit } from "./uiKitParchment.view";
 import { plainKit } from "./uiKitPlain.view";
 import { KitActionPrompt, KitButton, kitHudBridge, KitMenu, KitMeter, KitMinimapFrame, KitPanel, KitPrompt, KitToast, UiKitRoot, useActionGlyph } from "./uiKitRoot.view";
-import { resolveUiKit, UI_KITS, type UiKitName } from "./uiKits.view";
+import { UI_KITS, type UiKitName } from "./uiKits.view";
 import { UiKitsPreview } from "./uiKitsPreview.view";
 import { signalKit } from "./uiKitSignal.view";
 import { terminalKit } from "./uiKitTerminal.view";
@@ -113,12 +113,6 @@ describe("built-in UI kits", () => {
         expect({ name, size: Number(match[1]) >= 12 }).toEqual({ name, size: true });
       }
     }
-  });
-
-  test("resolveUiKit takes a name or a kit", () => {
-    expect(resolveUiKit("paper")).toBe(UI_KITS.paper);
-    const custom = customizeKit(UI_KITS.ink, { tokens: { accent: "#ff00aa" } });
-    expect(resolveUiKit(custom)).toBe(custom);
   });
 
   test("the registry holds each kit module's own export, and the plain fallback is complete too", () => {

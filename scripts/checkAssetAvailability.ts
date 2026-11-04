@@ -2,6 +2,9 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+import { packExportName } from "../packages/assets/src/manifest";
+import { sources } from "../packages/assets/src/sources";
+
 /**
  * Clean-checkout asset-pack availability gate.
  *
@@ -26,10 +29,10 @@ export const SENTINEL_PACKS: ReadonlySet<string> = new Set(["imported"]);
 export interface PackReference {
   /** The game id that references the pack. */
   game: string;
-  /** The pack folder id (the `<pack>` in `/models/<pack>/` and in `buildCatalog({ sources })`). */
+  /** The pack folder id (the `<pack>` in `/models/<pack>/`, and the `id` of a pack imported from `generated/packs`). */
   pack: string;
   /** How the reference was found — for the failure diagnostic. */
-  via: "buildCatalog" | "path-literal";
+  via: "pack-import" | "path-literal";
 }
 
 /** Inputs to the pure availability check: what is referenced vs. what a clean checkout can provide. */
@@ -80,24 +83,19 @@ function sourceFilesUnder(dir: string): string[] {
   return out;
 }
 
-// The `sources: [...]` array of a `buildCatalog(...)` call — scoped to buildCatalog so
-// unrelated arrays like a game's `resources: [...]` never leak in. Non-greedy from the
-// call head to the first `sources` key, and `\bsources` so `resources:` cannot match.
-const BUILD_CATALOG_SOURCES = /buildCatalog\s*\(\s*\{[\s\S]*?\bsources\s*:\s*\[([^\]]*)\]/g;
-const QUOTED = /["'\x60]([a-zA-Z0-9_-]+)["'\x60]/g;
-const SPREAD_BINDING = /\.\.\.\s*([A-Za-z_$][\w$]*)/g;
-const STRING_ARRAY_BINDING = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*\[([^\]]*)\]/g;
+// The named imports of the generated pack module: `import { kaykitDungeon, ... } from "@jgengine/assets/generated/packs"`.
+const PACK_IMPORT = /import\s*\{([^}]*)\}\s*from\s*["']@jgengine\/assets\/generated\/packs["']/g;
+const IMPORT_NAME = /([A-Za-z_$][\w$]*)(?:\s+as\s+[A-Za-z_$][\w$]*)?/g;
 const MODELS_LITERAL = /\/models\/([a-zA-Z0-9_-]+)\//g;
 
+/** Every declared model source by the name its pack is exported under. */
+const sourceByPackName = new Map(sources.map((source) => [packExportName(source.id), source.id]));
+
 /**
- * Extract every model-pack reference from a single game's source: the string
- * literals of any `buildCatalog({ sources: [...] })` array, plus every
+ * Extract every model-pack reference from a single game's source: every pack imported from
+ * `@jgengine/assets/generated/packs` (what `buildCatalog({ packs })` registers), plus every
  * `/models/<pack>/` served-path literal (how packs like `claudecraft` that skip
  * `buildCatalog` still declare their folder dependency).
- *
- * `sources` often spreads a named const (`sources: [...ASSET_SOURCE_IDS]`), so the
- * same-file binding's string array is followed — a game that names its pack list is
- * still a game that depends on those packs.
  */
 export function packReferencesForGame(game: string, srcDir: string): PackReference[] {
   const refs = new Map<string, PackReference>();
@@ -106,15 +104,10 @@ export function packReferencesForGame(game: string, srcDir: string): PackReferen
   };
   for (const file of sourceFilesUnder(srcDir)) {
     const text = readFileSync(file, "utf8");
-    const bindings = new Map<string, string>();
-    for (const match of text.matchAll(STRING_ARRAY_BINDING)) bindings.set(match[1]!, match[2]!);
-    for (const match of text.matchAll(BUILD_CATALOG_SOURCES)) {
-      const inner = match[1]!;
-      for (const quoted of inner.matchAll(QUOTED)) add(quoted[1]!, "buildCatalog");
-      for (const spread of inner.matchAll(SPREAD_BINDING)) {
-        const bound = bindings.get(spread[1]!);
-        if (bound === undefined) continue;
-        for (const quoted of bound.matchAll(QUOTED)) add(quoted[1]!, "buildCatalog");
+    for (const match of text.matchAll(PACK_IMPORT)) {
+      for (const name of (match[1] ?? "").matchAll(IMPORT_NAME)) {
+        const pack = sourceByPackName.get(name[1] ?? "");
+        if (pack !== undefined) add(pack, "pack-import");
       }
     }
     for (const match of text.matchAll(MODELS_LITERAL)) add(match[1]!, "path-literal");

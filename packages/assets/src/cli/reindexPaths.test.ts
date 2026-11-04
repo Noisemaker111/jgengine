@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { reindex } from "../indexGen";
 import { resolveDefaultOutputRoot, resolveDefaultReindexDir, resolveGeneratedDir } from "./paths";
@@ -51,7 +51,7 @@ describe("resolveDefaultReindexDir", () => {
 });
 
 describe("reindex post-install tree", () => {
-  test("writes JSON + JS barrel that a published buildCatalog can import", () => {
+  test("writes JSON + JS barrel that a published buildCatalog can import", async () => {
     const root = makeReindexRoot();
     const modelsDir = join(root, "models", "quaternius-modular-scifi");
     const outDir = join(root, "dist", "generated");
@@ -65,8 +65,15 @@ describe("reindex post-install tree", () => {
       expect(existsSync(join(outDir, "index.js"))).toBe(true);
       expect(existsSync(join(outDir, "index.ts"))).toBe(true);
 
+      const packs = readFileSync(join(outDir, "packs.js"), "utf8");
+      expect(packs).toContain('export { quaterniusModularScifi } from "./pack/quaternius-modular-scifi";');
+      const pack = readFileSync(join(outDir, "pack", "quaternius-modular-scifi.js"), "utf8");
+      expect(pack).toContain('from "../quaternius-modular-scifi.json"');
+      expect(pack).toContain('export const quaterniusModularScifi = { id: "quaternius-modular-scifi"');
+      const loaded: unknown = await import(pathToFileURL(join(outDir, "packs.js")).href);
+      expect(loaded).toMatchObject({ quaterniusModularScifi: { id: "quaternius-modular-scifi" } });
       const js = readFileSync(join(outDir, "index.js"), "utf8");
-      expect(js).toContain('from "./quaternius-modular-scifi.json"');
+      expect(js).toContain("quaterniusModularScifi,");
       expect(js).toContain("export const generatedIndex");
 
       const entries = JSON.parse(readFileSync(join(outDir, "quaternius-modular-scifi.json"), "utf8")) as {
@@ -95,9 +102,9 @@ describe("reindex post-install tree", () => {
       writeFileSync(join(natureDir, "tree.glb"), new Uint8Array([0x67, 0x6c, 0x54, 0x46]));
       reindex(join(root, "models-nature"), outDir);
 
-      const js = readFileSync(join(outDir, "index.js"), "utf8");
-      expect(js).toContain('from "./quaternius-modular-scifi.json"');
-      expect(js).toContain('from "./quaternius-stylized-nature.json"');
+      const js = readFileSync(join(outDir, "packs.js"), "utf8");
+      expect(js).toContain('from "./pack/quaternius-modular-scifi"');
+      expect(js).toContain('from "./pack/quaternius-stylized-nature"');
       expect(existsSync(join(outDir, "quaternius-modular-scifi.json"))).toBe(true);
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -113,14 +120,14 @@ describe("reindex post-install tree", () => {
 
     try {
       reindex(join(root, "models"), outDir);
-      const before = readFileSync(join(outDir, "index.ts"), "utf8");
+      const before = readFileSync(join(outDir, "packs.ts"), "utf8");
 
       const customDir = join(root, "custom", "my-local-pack");
       mkdirSync(customDir, { recursive: true });
       writeFileSync(join(customDir, "prop.glb"), new Uint8Array([0x67, 0x6c, 0x54, 0x46]));
       const result = reindex(join(root, "custom"), outDir);
 
-      expect(readFileSync(join(outDir, "index.ts"), "utf8")).toBe(before);
+      expect(readFileSync(join(outDir, "packs.ts"), "utf8")).toBe(before);
       expect(result.perSource.some((entry) => entry.source.includes("my-local-pack"))).toBe(true);
     } finally {
       rmSync(root, { recursive: true, force: true });

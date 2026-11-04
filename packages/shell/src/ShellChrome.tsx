@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ComponentType, type ReactNode } from "react";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
@@ -6,7 +6,6 @@ import { HudOverlayHost, HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.vi
 import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";
 import { GameProvider } from "@jgengine/react/provider";
 import { kitHudBridge, UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { resolveUiKit } from "@jgengine/core/ui/kit/uiKits.view";
 
 import {
   DiagnosticOverlay,
@@ -29,7 +28,7 @@ const DevtoolsOverlay = lazy(() =>
 
 /** Mounts the game's `uiKit` (with its bindings, for prompts) around the GameUI; no kit renders children as-is. @internal */
 export function ShellUiKit({ playable, children }: { playable: PlayableGame; children?: ReactNode }): ReactNode {
-  const kit = useMemo(() => (playable.uiKit === undefined ? null : resolveUiKit(playable.uiKit)), [playable]);
+  const kit = playable.uiKit ?? null;
   // The overlay host lets the shell's settings dialog draw inside the HUD theme and the kit, so it takes
   // the game's `hudTheme` colours, or the kit's colours and type, instead of the engine default.
   if (kit === null) return <>{children}<HudOverlayHost /></>;
