@@ -18,7 +18,7 @@ import {
 } from "./land-queue";
 import type { QueueIo, PrRow, ReadyPr } from "./land-queue";
 import type { Run } from "./land";
-import type { GitHub } from "./github";
+import { gitHub, type GhRun, type GitHub } from "./github";
 import { fakeGitHub, type FakeCheck, type FakeGitHub, type FakePull } from "./github.fixture";
 
 const SCRATCH = join(import.meta.dir, "..", ".scratch");
@@ -513,3 +513,15 @@ test("a generated file both sides changed never stops the queue: it takes the ba
   expect(gitIn(bare, ["merge-base", "--is-ancestor", movedTip, pushedTip]).status).toBe(0);
   expect(gitOk(bare, ["show", `${pushedTip}:scripts/export-manifest.json`])).toBe("[\"a\", \"lane\", \"other\"]");
 }, 60_000);
+test("--pr lands through GitHub 500s and 502s on its reads and its merge", () => {
+  const api = onePr(62, [{ name: "test" }], { mergeableState: "clean" });
+  const outage: GhRun = { status: 1, stdout: "", stderr: "gh: Server Error (HTTP 502)" };
+  let calls = 0;
+  const pauses: number[] = [];
+  // Every other request fails as GitHub did on 4 Nov: the first read, the waits and the merge alike.
+  const github = gitHub((args) => (++calls % 2 === 1 ? outage : api.gh(args)), "me/game", (ms) => pauses.push(ms));
+  const result = drain({ base: "beta", label: "land:queue", pr: 62 }, io({ github }));
+  expect(result.code).toBe(EXIT_DRAINED);
+  expect(merges(api)).toEqual([62]);
+  expect(pauses.length).toBeGreaterThanOrEqual(3);
+});

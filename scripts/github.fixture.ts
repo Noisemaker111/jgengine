@@ -186,5 +186,5 @@ export function fakeGitHub(seed: {
     return refuse(`HTTP 404: the fake has no ${call.method} ${call.path}`);
   };
 
-  return { github: gitHub(gh, repo), gh, calls, pulls, checks, comments, reruns };
+  return { github: gitHub(gh, repo, () => {}), gh, calls, pulls, checks, comments, reruns };
 }

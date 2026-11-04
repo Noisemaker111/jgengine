@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { gitHub, repoFromRemote, type GhRun } from "./github";
+import { OUTAGE_ATTEMPTS, gitHub, repoFromRemote, type GhRun } from "./github";
 import { fakeGitHub } from "./github.fixture";
 
 describe("repoFromRemote", () => {
@@ -36,6 +36,29 @@ describe("the GitHub client", () => {
     expect(seen.length).toBe(results.length);
     expect(seen.every((args) => args[0] === "api")).toBe(true);
     expect(results.map((result) => (result.ok ? "ok" : result.error))).toEqual(results.map(() => "HTTP 403: Resource not accessible by integration"));
+  });
+
+  test("a request GitHub's outage answered is tried again, a few times at most; a refusal is not", () => {
+    const answers: GhRun[] = [
+      { status: 1, stdout: "", stderr: "gh: HTTP 500" },
+      { status: 1, stdout: "", stderr: "gh: Server Error (HTTP 502)" },
+      { status: 0, stdout: JSON.stringify({ number: 3, state: "open", head: { ref: "agent/x", sha: "s" }, base: { ref: "beta" } }), stderr: "" },
+    ];
+    let calls = 0;
+    const pauses: number[] = [];
+    const recovered = gitHub(() => answers[calls++]!, "me/game", (ms) => pauses.push(ms)).pull(3);
+    expect(recovered.ok && recovered.value.headRefName).toBe("agent/x");
+    expect(pauses.length).toBe(2);
+
+    let down = 0;
+    const outage = gitHub(() => (down++, { status: 1, stdout: "", stderr: "gh: HTTP 503" }), "me/game", () => {}).pull(3);
+    expect(outage).toEqual({ ok: false, error: "gh: HTTP 503" });
+    expect(down).toBe(OUTAGE_ATTEMPTS);
+
+    let refusals = 0;
+    const refused = gitHub(() => (refusals++, { status: 1, stdout: "", stderr: "HTTP 405: Pull Request is not mergeable" }), "me/game", () => {}).mergePull(3);
+    expect(refused.ok).toBe(false);
+    expect(refusals).toBe(1);
   });
 
   test("a PR reads its state, head, merge state and labels from the REST answer", () => {

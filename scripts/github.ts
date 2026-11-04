@@ -17,6 +17,34 @@ export type GhRunner = (args: string[]) => GhRun;
 
 export type GhResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
+/**
+ * GitHub's own outage answers (a 500, 502 or 503, or no connection): the same request a few seconds
+ * later goes through. On 4 Nov they ended a landing three times in a row, on a read, a push and a merge.
+ */
+export const GITHUB_OUTAGE = /HTTP 5\d\d|Internal Server Error|Server Error|Bad Gateway|Service Unavailable|error: 5\d\d|error connecting to/i;
+/** Tries of one request GitHub answered with {@link GITHUB_OUTAGE} before its error is returned. */
+export const OUTAGE_ATTEMPTS = 3;
+
+/** Blocks this process for `ms`: the landing scripts are synchronous. */
+export function sleepSync(ms: number): void {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * Runs a command again, after a pause, while it fails with a {@link GITHUB_OUTAGE} answer; any other
+ * failure, a refusal or a rejected push included, comes back at once.
+ */
+export function retryOutages<R extends { status: number; stdout: string; stderr: string }>(
+  run: () => R,
+  pause: (ms: number) => void = sleepSync,
+): R {
+  for (let attempt = 1; ; attempt += 1) {
+    const result = run();
+    if (result.status === 0 || attempt >= OUTAGE_ATTEMPTS || !GITHUB_OUTAGE.test(`${result.stderr}\n${result.stdout}`)) return result;
+    pause(5_000 * attempt);
+  }
+}
+
 /** One pull request, in the words the landing scripts read. */
 export interface Pull {
   number: number;
@@ -139,10 +167,10 @@ function checkOf(value: unknown): RollupEntry {
   };
 }
 
-/** GitHub for `repo` (`owner/name`) through `gh api`. */
-export function gitHub(gh: GhRunner, repo: string): GitHub {
+/** GitHub for `repo` (`owner/name`) through `gh api`; a request GitHub's outage answered is tried again. */
+export function gitHub(gh: GhRunner, repo: string, pause: (ms: number) => void = sleepSync): GitHub {
   const call = (args: string[]): GhResult<unknown> => {
-    const run = gh(["api", ...args]);
+    const run = retryOutages(() => gh(["api", ...args]), pause);
     if (run.status !== 0) return { ok: false, error: (run.stderr || run.stdout).trim() || `gh api exited ${run.status}` };
     try {
       return { ok: true, value: run.stdout.trim() === "" ? null : JSON.parse(run.stdout) };

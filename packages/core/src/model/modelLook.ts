@@ -10,10 +10,22 @@ export function modelForLook(model: ModelConfig, look: string | undefined): Mode
   if (look === undefined) return model;
   const over = model.looks?.[look];
   if (over === undefined) return model;
+  // One object per model and look: renderers key their materials and bakes on the model they are
+  // given, so a fresh copy each render rebuilt them (and relinked their shaders) every time.
+  let known = drawnLooks.get(model);
+  if (known === undefined) {
+    known = new Map();
+    drawnLooks.set(model, known);
+  }
+  const cached = known.get(look);
+  if (cached !== undefined && cached.over === over) return cached.drawn;
   const drawn: ModelConfig = { ...model, ...over };
   delete drawn.looks;
+  known.set(look, { over, drawn });
   return drawn;
 }
+
+const drawnLooks = new WeakMap<ModelConfig, Map<string, { over: object; drawn: ModelConfig }>>();
 
 /** Every body a model can draw: itself, then each of its looks, for preloading or crowd batching. */
 export function modelLooks(model: ModelConfig): ModelConfig[] {

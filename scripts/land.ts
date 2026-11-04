@@ -59,7 +59,7 @@ import { FRAGMENT_PATTERN } from "./changelog-fragments";
 import { apiNoteBullets, engineSeamLine, noteMessages, renderChangeNote } from "./change-note";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
-import { checkoutGitHub, type GitHub } from "./github";
+import { checkoutGitHub, retryOutages, sleepSync, type GitHub } from "./github";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose } from "./verbosity";
 import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
@@ -630,10 +630,6 @@ export function refusalFor(args: LandArgs, branch: string, status: string): stri
   return landRefusal(branch, args.commit ? "" : status, args.base);
 }
 
-function sleep(ms: number): void {
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-}
-
 /** `42s`, `2m30s`, `1h05m`: how long a landing, or a wait, took. */
 export function duration(ms: number): string {
   if (ms <= 0) return "0s";
@@ -757,7 +753,7 @@ export function acquireLock(options: LockOptions): HeldLock {
   const pid = options.pid ?? process.pid;
   const now = options.now ?? Date.now;
   const alive = options.alive ?? pidIsAlive;
-  const wait = options.wait ?? sleep;
+  const wait = options.wait ?? sleepSync;
   const log = options.log ?? ((line: string) => console.log(`land: ${line}`));
   const startedAt = now();
   let announced: string | null = null;
@@ -913,6 +909,11 @@ export interface SyncResult {
   refusal: string | null;
 }
 
+/** `git` that runs a push or fetch again when GitHub's outage answered it, as the GitHub client does. */
+export function retryServerErrors(git: Git, pause: (ms: number) => void = sleepSync): Git {
+  return (args) => retryOutages(() => git(args), pause);
+}
+
 /**
  * Push the branch, rebase it onto `origin/<base>`, and push it again when the rebase moved it.
  * Land owns a branch only once its own push succeeds; a branch that already exists on the remote
@@ -924,8 +925,11 @@ export function syncOntoBase(options: {
   git: Git;
   /** Runs a generator in this checkout; a rebase that resolved generated files reruns them. */
   exec?: (command: readonly string[]) => Run;
+  /** Waits between tries of a command GitHub answered with a server error. */
+  pause?: (ms: number) => void;
 }): SyncResult {
-  const { branch, base, git: runGit } = options;
+  const { branch, base } = options;
+  const runGit = retryServerErrors(options.git, options.pause);
   const exec = options.exec ?? ((command: readonly string[]): Run => run(command[0]!, command.slice(1), 20 * 60_000));
 
   let pushed = runGit(["push", "-u", "origin", "HEAD"]);

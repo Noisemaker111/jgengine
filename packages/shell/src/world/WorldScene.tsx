@@ -1,7 +1,7 @@
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
 import { modelWithAuthoredNodeVisibility } from "@jgengine/core/editor/modelNodeVisibility";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, type ComponentType, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, type ComponentType, type ReactNode } from "react";
 import * as THREE from "three";
 
 import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
@@ -45,7 +45,7 @@ import {
   setCharacterLodTier,
   type CharacterLodTier,
 } from "@jgengine/core/lod/characterLod";
-import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
+import { resolveEntityModel, resolveObjectModel, type EntityModelCacheEntry, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
 import { modelLooks } from "@jgengine/core/model/modelLook";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { setCulled } from "@jgengine/core/visibility/culledTransforms.draw";
@@ -64,7 +64,9 @@ const EMPTY_DOCUMENT = createEmptyEditorDocument();
 const GROUND_SIZE = 160;
 const GROUND_SEGMENTS = 80;
 
-function EntityMarker({
+// Memoized: the entity list re-renders whenever one entity comes or goes, and every other marker's
+// inputs are unchanged then (entities are updated in place, and their models resolve to one object).
+const EntityMarker = memo(function EntityMarker({
   entity,
   custom,
   model: baseModel,
@@ -204,7 +206,7 @@ function EntityMarker({
       ) : null}
     </group>
   );
-}
+});
 
 /**
  * Whether an object draws its catalog model through a per-placement scale group. A scaled
@@ -363,49 +365,114 @@ function WorldEnvironment({ environment: Environment }: { environment: Component
   );
 }
 
-function WorldActors({
+/**
+ * The scene's entities. Kept apart from {@link WorldObjects} so a car or a passer-by coming and going
+ * re-renders this list alone, and each marker only when its own inputs change, instead of regrouping
+ * every static object in the world: the cost of a membership change follows what changed.
+ */
+function WorldEntities({
   entitySprites,
   entityModels,
-  objectModels,
-  objectStyles,
   assets,
   renderEntity,
-  renderObject,
   selectedIds,
   hideLocalActor,
-  editorLayers,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
+  assets: AssetCatalog;
+  renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
+  selectedIds: ReadonlySet<string>;
+  hideLocalActor: boolean;
+}) {
+  const ctx = useGameContext();
+  const entityIds = useSceneEntityIds();
+  const modelCache = useMemo(() => new Map<string, EntityModelCacheEntry>(), [entityModels, assets]);
+  const player = usePlayer();
+  const targetId = useTarget(player.userId);
+  const controlledId = useGameStore((c) => c.player.possession.active(player.userId));
+  const crowdRegistry = useMemo(() => new CharacterCrowdRegistry(), []);
+  const handleSelect = useCallback(
+    (entity: SceneEntity) => {
+      const relation = ctx.scene.entity.canReceive(entity.id, "damage") === null ? "hostile" : "friendly";
+      ctx.scene.entity.setTarget(ctx.player.possession.active(player.userId), relation === "hostile" || entity.role === "npc" ? entity.id : null);
+    },
+    [ctx, player.userId],
+  );
+  // Dev diagnostic (no-op unless armed): re-zero the entity seam before this render re-tallies which
+  // actors fall back to primitives. Committing the log runs in a useEffect after the render.
+  beginFallbackSeam("entity");
+  useEffect(() => {
+    endFallbackPass();
+  });
+  const crowdModels = new Map<string, ModelConfig>();
+  const markers = entityIds.map((entityId) => {
+    const entity = ctx.scene.entity.get(entityId);
+    if (entity === null || entity.name === WORLD_ITEM_ENTITY_NAME) return null;
+    if (hideLocalActor && entityId === controlledId) return null;
+    const custom = renderEntity?.(entity);
+    const model = resolveEntityModel(entityModels?.[entity.name], assets, entity.name, modelCache);
+    const sprite = entitySprites?.[entity.name];
+    // Entity models resolve via the hard resolveModel (throws on a present-but-missing id), so
+    // reaching the primitive capsule with no model or sprite means the mapping was omitted.
+    if ((custom === undefined || custom === null) && model === undefined && sprite === undefined) {
+      reportFallbackSeam("entity", "omittedMapping");
+    }
+    for (const body of model === undefined ? [] : modelLooks(model)) if (crowdEligible(body)) crowdModels.set(crowdKindOf(body), body);
+    return (
+      <EntityMarker
+        key={entityId}
+        entity={entity}
+        custom={custom}
+        model={model}
+        sprite={sprite}
+        isLocal={entityId === controlledId}
+        targeted={entityId === targetId}
+        selected={selectedIds.has(entityId)}
+        crowd={crowdRegistry}
+        onSelect={handleSelect}
+      />
+    );
+  });
+  return (
+    <>
+      {markers}
+      {crowdModels.size > 0 ? (
+        <CharacterCrowd
+          models={[...crowdModels.values()]}
+          registry={crowdRegistry}
+          onPick={(entityId) => {
+            const live = ctx.scene.entity.get(entityId);
+            if (live !== null) handleSelect(live);
+          }}
+        />
+      ) : null}
+    </>
+  );
+}
+
+/** The scene's placed objects: one draw per batch of alike static props, and a marker for the rest. */
+function WorldObjects({
+  objectModels,
+  objectStyles,
+  assets,
+  renderObject,
+  editorLayers,
+}: {
   objectModels: Record<string, string | ModelConfig> | undefined;
   objectStyles: Record<string, ObjectStyle> | undefined;
   assets: AssetCatalog;
-  renderEntity: ((entity: SceneEntity) => ReactNode) | undefined;
   renderObject: ((object: SceneObject) => ReactNode) | undefined;
-  selectedIds: ReadonlySet<string>;
-  hideLocalActor: boolean;
   editorLayers?: EditorDocument | undefined;
 }) {
   const ctx = useGameContext();
   const scene = useThree((state) => state.scene);
-  const entityIds = useSceneEntityIds();
   const objectIds = useSceneObjectIds();
   const document = useLiveEditorDocument(editorLayers ?? EMPTY_DOCUMENT, editorLayers !== undefined);
   const materialMarkers = useMemo(() => new Map(document.markers.map((marker) => [marker.id, marker])), [document]);
   const authoredIds = useMemo(() => new Set(resolveAuthoredObjects(document).map((object) => object.instanceId)), [document]);
   const batchCache = useRef(new Map<string, StaticObjectBatch>());
   const modelCache = useMemo(() => new Map<string, ObjectModelCacheEntry>(), [objectModels, assets]);
-  const player = usePlayer();
-  const targetId = useTarget(player.userId);
-  const controlledId = useGameStore((c) => c.player.possession.active(player.userId));
-  const crowdRegistry = useMemo(() => new CharacterCrowdRegistry(), []);
-  const handleSelect = (entity: SceneEntity) => {
-    const relation = ctx.scene.entity.canReceive(entity.id, "damage") === null ? "hostile" : "friendly";
-    ctx.scene.entity.setTarget(controlledId, relation === "hostile" || entity.role === "npc" ? entity.id : null);
-  };
-  // Dev diagnostic (no-op unless armed): re-zero the entity/object seams before this render re-tallies
-  // which actors fall back to primitives. Committing the log runs in a useEffect after the render.
-  beginFallbackSeam("entity");
   beginFallbackSeam("object");
   useEffect(() => {
     endFallbackPass();
@@ -431,7 +498,6 @@ function WorldActors({
     singles: grouped.singles.length,
   });
   const candidatesById = new Map(candidates.map((candidate) => [candidate.object.instanceId, candidate]));
-  const crowdModels = new Map<string, ModelConfig>();
   const renderSingle = (object: SceneObject) => {
     // A batch can still hold an object removed since this render gathered candidates (a streamed-out
     // block's props): a removed object draws nothing.
@@ -453,44 +519,6 @@ function WorldActors({
   return (
     <>
       <CellStreamingDriver modelUrls={modelUrls} />
-      {entityIds.map((entityId) => {
-        const entity = ctx.scene.entity.get(entityId);
-        if (entity === null || entity.name === WORLD_ITEM_ENTITY_NAME) return null;
-        if (hideLocalActor && entityId === controlledId) return null;
-        const custom = renderEntity?.(entity);
-        const model = resolveEntityModel(entityModels?.[entity.name], assets, entity.name);
-        const sprite = entitySprites?.[entity.name];
-        // Entity models resolve via the hard resolveModel (throws on a present-but-missing id), so
-        // reaching the primitive capsule with no model or sprite means the mapping was omitted.
-        if ((custom === undefined || custom === null) && model === undefined && sprite === undefined) {
-          reportFallbackSeam("entity", "omittedMapping");
-        }
-        for (const body of model === undefined ? [] : modelLooks(model)) if (crowdEligible(body)) crowdModels.set(crowdKindOf(body), body);
-        return (
-          <EntityMarker
-            key={entityId}
-            entity={entity}
-            custom={custom}
-            model={model}
-            sprite={sprite}
-            isLocal={entityId === controlledId}
-            targeted={entityId === targetId}
-            selected={selectedIds.has(entityId)}
-            crowd={crowdRegistry}
-            onSelect={handleSelect}
-          />
-        );
-      })}
-      {crowdModels.size > 0 ? (
-        <CharacterCrowd
-          models={[...crowdModels.values()]}
-          registry={crowdRegistry}
-          onPick={(entityId) => {
-            const live = ctx.scene.entity.get(entityId);
-            if (live !== null) handleSelect(live);
-          }}
-        />
-      ) : null}
       {grouped.singles.map((candidate) => renderSingle(candidate.object))}
       {grouped.batches.map((batch) => <StaticObjectModels key={batch.key} batch={batch} single={renderSingle} />)}
     </>
@@ -526,18 +554,15 @@ export function WorldView({
     <>
       <WindClock />
       <WorldEnvironment environment={environment} />
-      <WorldActors
+      <WorldEntities
         entitySprites={entitySprites}
         entityModels={entityModels}
-        objectModels={objectModels}
-        objectStyles={objectStyles}
         assets={assets}
         renderEntity={renderEntity}
-        renderObject={renderObject}
         selectedIds={selectedIds}
         hideLocalActor={hideLocalActor}
-        editorLayers={editorLayers}
       />
+      <WorldObjects objectModels={objectModels} objectStyles={objectStyles} assets={assets} renderObject={renderObject} editorLayers={editorLayers} />
     </>
   );
 }

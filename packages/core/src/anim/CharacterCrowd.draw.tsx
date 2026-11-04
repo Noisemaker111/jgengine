@@ -18,10 +18,10 @@ import {
 import {
   CharacterCrowdRegistry,
   crowdClipsOf,
-  crowdKindOf,
   crowdSpeedBandsOf,
   crowdTintOf,
   setCrowdKindReady,
+  stableCrowdKinds,
   type CrowdMember,
 } from "./crowdRegistry.draw";
 import { applyMaterialOverrideToMaterial, overrideTargets } from "@jgengine/core/material/materialOverride.draw";
@@ -250,14 +250,8 @@ export interface CharacterCrowdProps {
  * @capability character-crowd draw animated or static characters as batched instanced draws instead of posing each skeleton
  */
 export function CharacterCrowd({ models, registry, fps = 24, onPick }: CharacterCrowdProps) {
-  const kinds = useMemo(() => {
-    const unique = new Map<string, ModelConfig>();
-    for (const model of models) {
-      const kind = crowdKindOf(model);
-      if (!unique.has(kind)) unique.set(kind, model);
-    }
-    return [...unique.entries()];
-  }, [models]);
+  const held = useRef(new Map<string, ModelConfig>());
+  const kinds = useMemo(() => stableCrowdKinds(models, held.current), [models]);
 
   useEffect(() => {
     const dispose = devtools.probes.registerSystem("render/characters", characterLodProbe());
