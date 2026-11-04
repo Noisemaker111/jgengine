@@ -1,6 +1,6 @@
 {
   "name": "jgengine",
-  "version": "0.49.0",
+  "version": "0.50.0",
   "description": "jgengine — game framework SDK CLI (npm package jgengine / @jgengine/*). Not automotive. Humans: tell a coding agent Make a game that ... with jgengine. Agents: create, skills, doctor, desktop. Skills ship in the package under skills/. https://jgengine.com",
   "keywords": [
     "jgengine",
@@ -49,7 +49,7 @@
     "test": "bun test --preload ../../scripts/three-preload.ts src"
   },
   "dependencies": {
-    "@jgengine/assets": "^0.52.0"
+    "@jgengine/assets": "^0.53.0"
   },
   "devDependencies": {
     "@types/node": "^24"
