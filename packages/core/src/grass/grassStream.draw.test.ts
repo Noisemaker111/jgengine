@@ -19,6 +19,30 @@ test("a streaming slice bounds ground queries even for a dense leaf", () => {
   } finally { field.dispose(); }
 });
 
+test("startup grows the nearest real leaf across slices and frees its partial buffer", () => {
+  const { stream: field, scene, bake } = stream({ area: 16 });
+  const view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  const expected = bakeGrassNode(bake, 0, 1, 1, 1);
+  field.update(view, VIEW_HEIGHT, 0);
+  const mesh = field.group.children[0];
+  expect(mesh).toBeInstanceOf(THREE.Mesh);
+  if (!(mesh instanceof THREE.Mesh) || !(mesh.geometry instanceof THREE.InstancedBufferGeometry)) throw new Error("missing partial leaf");
+  const offsets = mesh.geometry.getAttribute("instanceOffset");
+  expect(offsets.count).toBe(1);
+  expect(offsets.getX(0)).toBe(expected.offsets[0]);
+  expect(offsets.getY(0)).toBe(expected.offsets[1]);
+  expect(offsets.getZ(0)).toBe(expected.offsets[2]);
+  field.update(view, VIEW_HEIGHT, 0);
+  expect(mesh.geometry.getAttribute("instanceOffset")).toBe(offsets);
+  expect(offsets.count).toBe(2);
+  expect(offsets.getX(1)).toBe(expected.offsets[3]);
+  let disposed = false;
+  mesh.geometry.addEventListener("dispose", () => { disposed = true; });
+  field.dispose();
+  expect(disposed).toBe(true);
+  expect(scene.children[0]?.children.length).toBe(0);
+});
+
 test("sliced work completes with the same grass and bounded ground queries", () => {
   let queries = 0;
   const look = readGrassLook({ slopeThin: 1 });
@@ -43,11 +67,39 @@ test("sliced work completes with the same grass and bounded ground queries", () 
   expect(calls).toBeGreaterThan(1);
   const roots = (scene: THREE.Scene) => submit(scene, view).drawn.flatMap(({ mesh, count }) => {
     const offset = mesh.geometry.getAttribute("instanceOffset");
-    return Array.from({ length: count }, (_, i) => [offset.getX(i), offset.getY(i), offset.getZ(i)].join(","));
+    const shape = mesh.geometry.getAttribute("instanceShape");
+    const vary = mesh.geometry.getAttribute("instanceVary");
+    const tone = mesh.geometry.getAttribute("instanceTone");
+    return Array.from({ length: count }, (_, i) => [offset.getX(i), offset.getY(i), offset.getZ(i), shape.getX(i), shape.getY(i), shape.getZ(i), shape.getW(i), vary.getX(i), vary.getY(i), vary.getZ(i), vary.getW(i), tone.getX(i)].join(","));
   }).sort();
   expect(roots(sliced.scene)).toEqual(roots(whole.scene));
   sliced.stream.dispose();
   whole.stream.dispose();
+});
+
+test("startup and immediate bakes agree across views and detail levels", () => {
+  for (const [view, height] of [
+    [camera([0, 1.7, 0], [0, 0.5, -30]), 100],
+    [camera([12, 5, 13], [0, 0, 0]), 900],
+    [camera([0, 40, 0], [0, 0, -1]), 900],
+  ] as const) {
+    const sliced = stream({ area: 24, seed: "startup-comparison" });
+    const whole = stream({ area: 24, seed: "startup-comparison" });
+    sliced.stream.update(view, height, 0);
+    whole.stream.update(view, height, Infinity);
+    for (let i = 0; i < 1000 && sliced.stream.stats().pending > 0; i += 1) sliced.stream.update(view, height, 1000);
+    expect(sliced.stream.stats().pending).toBe(0);
+    const roots = (scene: THREE.Scene) => submit(scene, view).drawn.flatMap(({ mesh, count }) => {
+      const offsets = mesh.geometry.getAttribute("instanceOffset");
+      const shape = mesh.geometry.getAttribute("instanceShape");
+      const vary = mesh.geometry.getAttribute("instanceVary");
+      const tone = mesh.geometry.getAttribute("instanceTone");
+      return Array.from({ length: count }, (_, i) => [offsets.getX(i), offsets.getY(i), offsets.getZ(i), shape.getX(i), shape.getY(i), shape.getZ(i), shape.getW(i), vary.getX(i), vary.getY(i), vary.getZ(i), vary.getW(i), tone.getX(i)].join(","));
+    }).sort();
+    expect(roots(sliced.scene)).toEqual(roots(whole.scene));
+    sliced.stream.dispose();
+    whole.stream.dispose();
+  }
 });
 
 test("ground revision discards unfinished and cached grass before rebuilding", () => {

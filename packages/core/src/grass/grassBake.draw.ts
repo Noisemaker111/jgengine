@@ -162,8 +162,8 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
   return step.value;
 }
 
-/** Incremental form of {@link bakeGrassNode}; each step processes at most one cell, tuft or sort item. */
-export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: number, iz: number, share: number, immediate = false): Generator<"work" | "tuft", GrassTufts> {
+/** Incremental form of {@link bakeGrassNode}; each step processes at most one cell, tuft or sort item. @internal */
+export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: number, iz: number, share: number, immediate = false, progress?: (tufts: GrassTufts) => void): Generator<"work" | "tuft", GrassTufts> {
   const { look } = bake;
   const span = 2 ** level;
   const cx0 = ix * span, cz0 = iz * span;
@@ -195,6 +195,7 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
   const flutterStiff = 1 - look.blade.stiffness;
   let maxReach = 0;
   let n = 0;
+  let partial: GrassTufts | undefined;
   for (const cell of cells) {
     const random = seededRng(`${bake.seed}|${cell.cx}|${cell.cz}`);
     const u = random();
@@ -259,6 +260,13 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       roots.expandByPoint(point.set(x, y, z));
       maxReach = Math.max(maxReach, height * 1.15 + width * 2 + (flower > 0 ? look.flowers.flowerSize : 0));
       n += 1;
+      if (progress !== undefined) {
+        partial ??= { count: 0, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: 0 };
+        partial.count = n;
+        partial.ranks[n - 1] = vary[(n - 1) * 4 + 3]!;
+        partial.extent = maxReach + look.tuft.tuftSpread;
+        progress(partial);
+      }
       if (!immediate) yield "tuft";
     }
   }
