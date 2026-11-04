@@ -4390,7 +4390,7 @@
 ## @jgengine/core/plants/species/habitReference
 
 - `HABIT_CHECK_AGES` (const): const HABIT_CHECK_AGES: readonly [5, 10, 20, 40] — Ages a habit species is grown to and checked at.
-- `HabitReference` (interface): interface HabitReference — What USDA PLANTS says a shrub, palm, fern or herb grows into, for species no forest inventory measures: imported by `bun run jgengine plants import` and checked by the species library test. Heights are open-grown on a good site, as PLANTS characteristics describe them.
+- `HabitReference` (interface): interface HabitReference — What USDA PLANTS says a shrub, palm, fern or herb grows into, for species no forest inventory measures: imported by `bun run jgengine plants import` and fitted to by `plants fit`. Heights are open-grown on a good site, as PLANTS characteristics describe them.
 - `SHRUB_STEMS` (const): const SHRUB_STEMS: { readonly min: 3; readonly max: 30; } — Most stems a multi-stemmed shrub should keep alive at 20 years, and fewest.
 - `basalStemCount` (function): function basalStemCount(segments: { parent: Int32Array; order: Uint8Array; region: Uint8Array }, deadwoodRegion: number): number — Live basal stems of a grown structure: the order-0 segments rising straight from the collar.
 - `habitHeightAt20M` (function): function habitHeightAt20M(reference: HabitReference): number — Height a habit species should reach by 20 years: PLANTS' 20-year height, or its mature height for a fern or herb that is full grown within a few years.
@@ -4417,7 +4417,7 @@
 
 - `GrowthCurve` (interface): interface GrowthCurve — Chapman–Richards growth curve y = a·(1 − e^(−k·t))^p of total age t.
 - `REFERENCE_STAND` (const): const REFERENCE_STAND: PlantEnvironment — The stand a species is grown in to compare with its reference: fully stocked and even-aged, seen from a dominant tree. FIA site trees and Tallo stand-grown crowns are dominant and codominant trees, which hold more growing space than the stand's mean tree (Oliver & Larson 1996, Forest Stand Dynamics), so the spacing index is 0.3 rather than the mean tree's 0.25.
-- `SpeciesReference` (interface): interface SpeciesReference — What measured trees say one species should grow into, imported from public tables by `bun run jgengine plants import` and checked by the species library test.
+- `SpeciesReference` (interface): interface SpeciesReference — What measured trees say one species should grow into, imported from public tables by `bun run jgengine plants import` and fitted to by `plants fit`.
 - `crownWidthBandM` (function): function crownWidthBandM(reference: Pick<SpeciesReference, "crownWidth">, dbhCm: number): { lowM: number; highM: number } | null — The 10th–90th percentile crown width in metres of measured stand-grown trees of a species at `dbhCm`, interpolated between its Tallo DBH classes; below the first class it scales linearly to zero. Null when the species has no Tallo record.
 - `growthCurveAt` (function): function growthCurveAt(curve: GrowthCurve, ageYears: number): number — A {@link GrowthCurve} at `ageYears`.
 - `standDbhAtCm` (function): function standDbhAtCm(reference: SpeciesReference, ageYears: number): number — DBH in centimetres of a dominant stand-grown tree of the species at `ageYears`: its FIA site-tree curve within the ages those trees cover; younger, the site trees' height–diameter relation read at {@link standHeightAtM}, since height is known at every age and a young tree's DBH is not.
@@ -4485,7 +4485,6 @@
 - `ForestCrownWidthEquation` (interface): interface ForestCrownWidthEquation — Bechtold 2003 forest-grown crown width CW = a + b·D + cr·CR% + hi·HI in feet from DBH in inches, used from 5 in DBH, as coded in FVS Lake States `cwcalc.f` (US public domain).
 - `OpenCrownWidthEquation` (interface): interface OpenCrownWidthEquation — Ek 1974 open-grown crown width CW = a + b·D^c in feet from DBH in inches, used from 3 in DBH, as coded in the Forest Vegetation Simulator's Lake States `cwcalc.f` (US public domain).
 - `crownProfile` (function): function crownProfile(structure: PlantStructure): CrownProfile — Crown profile of a plant from its envelope's sector-mean radius per height bin. An excurrent conifer carries its spread low with a narrow top; a decurrent broadleaf carries it near mid-crown with full shoulders. One long low limb moves the centroid only as far as its share of the crown.
-- `forestGrownCrownWidthM` (function): function forestGrownCrownWidthM(equation: ForestCrownWidthEquation, dbhCm: number, crownRatio: number): number — Crown width in metres of a forest-grown tree of `dbhCm` and crown ratio 0..1 (Bechtold 2003) in northern Wisconsin. Below 5 in DBH it scales linearly to zero, as FVS does.
 - `openGrownCrownWidthM` (function): function openGrownCrownWidthM(equation: OpenCrownWidthEquation, dbhCm: number): number — Crown width in metres of an open-grown tree of `dbhCm` (Ek 1974). Below 3 in DBH it scales linearly to zero, as FVS does.
 
 ## @jgengine/core/plants/validation/crownArchitecture
