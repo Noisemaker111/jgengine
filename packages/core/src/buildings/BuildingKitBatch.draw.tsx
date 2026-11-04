@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import { staticDrawPoolFor, type PooledPlacement, type StaticDrawSlot } from "@jgengine/core/instancing/staticDrawPool.draw";
-import { STATIC_POOL_CELL } from "@jgengine/core/instancing/staticObjectBatches.draw";
+import { staticPoolCellAt } from "@jgengine/core/instancing/staticObjectBatches.draw";
 import { culledByDistance } from "@jgengine/core/visibility/distance";
 
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
@@ -56,7 +56,7 @@ export interface KitPlacement extends PooledPlacement {
 export function kitChunkPlacements(anchor: THREE.Matrix4, chunk: InstanceChunk): { members: KitPlacement[]; cell: string; sphere: THREE.Sphere } {
   const members = chunk.matrices.map((matrix, index) => ({ instanceId: "", index, matrix: new THREE.Matrix4().multiplyMatrices(anchor, matrix) }));
   const sphere = chunk.bounds.clone().applyMatrix4(anchor).getBoundingSphere(new THREE.Sphere());
-  const cell = `${Math.floor(sphere.center.x / STATIC_POOL_CELL)},${Math.floor(sphere.center.z / STATIC_POOL_CELL)}`;
+  const cell = staticPoolCellAt(sphere.center.x, sphere.center.z);
   return { members, cell, sphere };
 }
 

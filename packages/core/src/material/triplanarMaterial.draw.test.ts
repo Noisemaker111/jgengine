@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
 import { applyTriplanarProjection, triplanarChunks } from "./triplanarMaterial.draw";
+import { compilesBatched } from "./compileLayers.draw";
+import { materialSignature } from "@jgengine/core/instancing/staticDrawPool.draw";
 
 describe("triplanar world projection", () => {
   test("samples by world position, not mesh UVs", () => {
@@ -52,10 +54,34 @@ describe("triplanar world projection", () => {
     material.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
     expect(shader.uniforms["uJgTriTile"]?.value).toBe(1.5);
     expect(shader.uniforms["uJgTriSharp"]?.value).toBe(6);
-    expect(shader.vertexShader).toContain("vJgTriNormal = normalize(mat3(modelMatrix) * objectNormal)");
+    expect(shader.vertexShader).toContain("vJgTriNormal = normalize(mat3(modelMatrix) * jgTriObjectNormal)");
     expect(shader.fragmentShader).toContain("uniform float uJgTriTile");
     expect(shader.fragmentShader).not.toContain("#include <normal_fragment_maps>");
     expect(shader.fragmentShader).toContain("float roughnessFactor = roughness;");
     expect(shader.vertexShader.split("vJgTriPos = (modelMatrix * jgTriWorld).xyz;").length).toBe(2);
+  });
+
+  test("a placement's own rotation turns the projection's normal, under instancing and batching alike", () => {
+    const material = new THREE.MeshStandardMaterial();
+    applyTriplanarProjection(material, { tileMetres: 2 });
+    const shader = { uniforms: {}, vertexShader: THREE.ShaderLib.physical.vertexShader, fragmentShader: THREE.ShaderLib.physical.fragmentShader };
+    material.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
+    const vertex = shader.vertexShader;
+    for (const matrix of ["instanceMatrix", "batchingMatrix"]) {
+      expect(vertex).toContain(`jgTriObjectNormal = mat3(${matrix}) * jgTriObjectNormal;`);
+      expect(vertex).toContain(`jgTriWorld = ${matrix} * jgTriWorld;`);
+    }
+    // The batch's matrix is declared by three's batching chunk, which must come before the normal uses it.
+    expect(vertex.indexOf("#include <batching_vertex>")).toBeGreaterThan(-1);
+    expect(vertex.indexOf("#include <batching_vertex>")).toBeLessThan(vertex.indexOf("mat3(batchingMatrix)"));
+  });
+
+  test("triplanar materials share a batched draw only with the same projection", () => {
+    const projected = (tileMetres: number) => applyTriplanarProjection(new THREE.MeshStandardMaterial({ color: "#808080" }), { tileMetres, sharpness: 6 });
+    const [a, b, c] = [projected(2), projected(2), projected(3)];
+    expect(compilesBatched(a)).toBe(true);
+    expect(materialSignature(a)).not.toBeNull();
+    expect(materialSignature(a)).toBe(materialSignature(b));
+    expect(materialSignature(a)).not.toBe(materialSignature(c));
   });
 });

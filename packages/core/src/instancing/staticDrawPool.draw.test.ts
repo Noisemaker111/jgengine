@@ -6,7 +6,7 @@ import { recordCompileLayer } from "@jgengine/core/material/compileLayers.draw";
 import { applyWetness } from "@jgengine/core/material/wetSurfaces.draw";
 import { applyModelSurface } from "@jgengine/core/model/modelSurface.draw";
 import { applyModelWind, resolveModelWind } from "@jgengine/core/model/modelWind.draw";
-import { batchableGeometry, geometryLayout, materialSignature, STATIC_POOL_MESH_KEY, STATIC_POOL_PROXY_KEY, STATIC_PROXY_CELL, StaticDrawPool } from "./staticDrawPool.draw";
+import { batchableGeometry, geometryLayout, materialSignature, mirrorPooledTextures, STATIC_POOL_MESH_KEY, STATIC_POOL_PROXY_KEY, STATIC_PROXY_CELL, StaticDrawPool } from "./staticDrawPool.draw";
 
 function palette(color = "#c0a080"): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
@@ -52,6 +52,31 @@ test("materials that draw the same pixels share a signature; any drawn differenc
   expect(materialSignature(swaying)).toBeNull();
   expect(materialSignature(new THREE.MeshStandardMaterial({ transparent: true }))).toBeNull();
   expect(materialSignature([palette(), palette()])).toBeNull();
+});
+
+test("a texture the source swaps in after the batch is made reaches the batch before it draws", () => {
+  const scene = new THREE.Scene();
+  const pool = new StaticDrawPool(scene);
+  const source = palette();
+  const standIn = new THREE.Texture();
+  source.map = standIn;
+  pool.acquire({ geometry: box(), material: source }, "0,0", 1);
+  const [batch] = pooledMeshes(scene);
+  const owned = batch!.material as THREE.MeshStandardMaterial;
+  expect(owned).not.toBe(source);
+  expect(owned.map).toBe(standIn);
+  // A bake landing: same slots, new textures, no recompile on the source.
+  const baked = new THREE.Texture();
+  const bakedNormal = new THREE.Texture();
+  source.map = baked;
+  source.normalMap = bakedNormal;
+  const version = owned.version;
+  mirrorPooledTextures(batch!);
+  expect(owned.map).toBe(baked);
+  expect(owned.normalMap).toBe(bakedNormal);
+  // The normal slot was empty, so the copy recompiles with it, as the source would.
+  expect(owned.version).toBeGreaterThan(version);
+  pool.dispose();
 });
 
 test("the model surface pass batches: its materials still share a signature", () => {

@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import { prepareGenerator, runGenerator, type GeneratorDefinition } from "@jgengine/core/generator/generator";
-import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
+import { getGeneratorMesh, type GeneratorMeshSource } from "@jgengine/core/generator/generatorMesh.draw";
 import { composeInstance } from "@jgengine/core/instancing/instanceUpload.draw";
+import { staticDrawPoolFor, type PooledPlacement, type StaticDrawPool, type StaticDrawSlot } from "@jgengine/core/instancing/staticDrawPool.draw";
+import { staticPoolCellAt } from "@jgengine/core/instancing/staticObjectBatches.draw";
 import type { ScatterInstance } from "./scatterRegion";
 import { createScatterHeroSet } from "./scatterHeroes";
 import { scatterPlacementVariant, type ScatterGeneratorItem } from "./scatterGenerator";
@@ -19,9 +21,72 @@ const GROWING_AT_ONCE = 4;
 const SHOW_INTERVAL_S = 0.5;
 const SMALL_SHADOW_RADIUS = 0.6;
 
-interface HeroMesh {
-  group: THREE.Group;
-  geometries: THREE.BufferGeometry[];
+/** A hero's world placement in the shared batches. Heroes name no scene object, so picking reports none. */
+interface HeroPlacement extends PooledPlacement {
+  readonly matrix: THREE.Matrix4;
+}
+
+const NO_PLACEMENTS: readonly HeroPlacement[] = [];
+const heroSlotOf = (): number => 0;
+const heroMatrixOf = (placement: HeroPlacement, out: THREE.Matrix4): THREE.Matrix4 => out.copy(placement.matrix);
+
+/**
+ * One grown hero: the parts the shared static batches took, one instance each, and the parts they
+ * could not (a see-through or custom-shader material) as meshes under `group`. Hidden until shown.
+ * @internal
+ */
+export interface HeroMesh {
+  readonly group: THREE.Group;
+  readonly slots: readonly StaticDrawSlot[];
+  readonly placement: HeroPlacement;
+  readonly geometries: readonly THREE.BufferGeometry[];
+}
+
+/**
+ * Hand a grown hero's parts to the shared static batches at its world `matrix`, so every hero of a
+ * species shares one draw per material and area instead of a draw per part per hero (and per shadow
+ * cascade). A part the batches cannot share becomes its own mesh under the returned group.
+ * @internal
+ */
+export function placeHero(pool: StaticDrawPool, sources: readonly GeneratorMeshSource[], matrix: THREE.Matrix4): HeroMesh {
+  const placement: HeroPlacement = { instanceId: "", matrix };
+  const cell = staticPoolCellAt(matrix.elements[12] ?? 0, matrix.elements[14] ?? 0);
+  const group = new THREE.Group();
+  group.matrixAutoUpdate = false;
+  group.matrix.copy(matrix);
+  group.visible = false;
+  const slots: StaticDrawSlot[] = [];
+  const geometries: THREE.BufferGeometry[] = [];
+  for (const source of sources) {
+    if (source.geometry.boundingSphere === null) source.geometry.computeBoundingSphere();
+    const castShadow = source.castShadow ?? (source.geometry.boundingSphere?.radius ?? 1) >= SMALL_SHADOW_RADIUS;
+    const receiveShadow = source.receiveShadow ?? true;
+    geometries.push(source.geometry);
+    const slot = pool.acquire({ geometry: source.geometry, material: source.material, castShadow, receiveShadow }, cell, 1, "own");
+    if (slot !== null) {
+      slot.place([placement], heroSlotOf, heroMatrixOf);
+      slots.push(slot);
+      continue;
+    }
+    const mesh = new THREE.Mesh(source.geometry, source.material);
+    mesh.castShadow = castShadow;
+    mesh.receiveShadow = receiveShadow;
+    group.add(mesh);
+  }
+  return { group, slots, placement, geometries };
+}
+
+/** Show or hide a placed hero in every draw it is part of. @internal */
+export function showHero(hero: HeroMesh, shown: boolean): void {
+  hero.group.visible = shown;
+  for (const slot of hero.slots) slot.sync(shown ? [hero.placement] : NO_PLACEMENTS, heroSlotOf, heroMatrixOf);
+}
+
+/** Take a hero out of its batches and free the geometry it was grown with. @internal */
+export function dropHero(hero: HeroMesh): void {
+  for (const slot of hero.slots) slot.release();
+  hero.group.removeFromParent();
+  for (const geometry of hero.geometries) geometry.dispose();
 }
 
 /** Props for {@link ScatterHeroes}. */
@@ -36,14 +101,14 @@ export interface ScatterHeroesProps {
 }
 
 /**
- * The near placements of a unique scatter species, each grown from its own seed and drawn as its own
- * mesh. Placements are picked by {@link createScatterHeroSet}, grown a few at a time (off the main
+ * The near placements of a unique scatter species, each grown from its own seed into its own mesh,
+ * drawn through the shared static batches ({@link placeHero}). Placements are picked by {@link createScatterHeroSet}, grown a few at a time (off the main
  * thread where the generator prepares there), and a stand-in is hidden only once its own mesh is
  * ready, so nothing pops out while a tree grows.
  * @internal
  */
 export function ScatterHeroes({ item, definition, spec, instances, onShown }: ScatterHeroesProps) {
-  const root = useRef<THREE.Group>(null);
+  const scene = useThree((state) => state.scene);
   const detail = spec.heroDetail ?? spec.detail ?? 1;
   const heroSet = useMemo(
     () => createScatterHeroSet({ heroes: spec.heroes ?? 32, distance: spec.heroDistance ?? 40 }),
@@ -65,10 +130,9 @@ export function ScatterHeroes({ item, definition, spec, instances, onShown }: Sc
   const dirty = useRef(true);
 
   const drop = (id: string): void => {
-    const mesh = meshes.current.get(id);
-    if (mesh === undefined) return;
-    mesh.group.removeFromParent();
-    for (const geometry of mesh.geometries) geometry.dispose();
+    const hero = meshes.current.get(id);
+    if (hero === undefined) return;
+    dropHero(hero);
     meshes.current.delete(id);
   };
 
@@ -91,21 +155,10 @@ export function ScatterHeroes({ item, definition, spec, instances, onShown }: Sc
       .then(() => {
         if (!live.current) return;
         const sources = build(runGenerator(definition, meta, { detail })) ?? [];
-        const group = new THREE.Group();
-        group.matrixAutoUpdate = false;
-        composeInstance(group.matrix, [placement.x, placement.y, placement.z], [0, placement.rotationY, 0], placement.scale);
-        group.visible = false;
-        const geometries: THREE.BufferGeometry[] = [];
-        for (const source of sources) {
-          if (source.geometry.boundingSphere === null) source.geometry.computeBoundingSphere();
-          const mesh = new THREE.Mesh(source.geometry, source.material);
-          mesh.castShadow = source.castShadow ?? (source.geometry.boundingSphere?.radius ?? 1) >= SMALL_SHADOW_RADIUS;
-          mesh.receiveShadow = source.receiveShadow ?? true;
-          group.add(mesh);
-          geometries.push(source.geometry);
-        }
-        meshes.current.set(id, { group, geometries });
-        root.current?.add(group);
+        const matrix = composeInstance(new THREE.Matrix4(), [placement.x, placement.y, placement.z], [0, placement.rotationY, 0], placement.scale);
+        const hero = placeHero(staticDrawPoolFor(scene), sources, matrix);
+        meshes.current.set(id, hero);
+        scene.add(hero.group);
       })
       .catch((error: unknown) => console.error(`[jgengine] scatter ${item} failed to grow ${id}`, error))
       .finally(() => {
@@ -145,9 +198,9 @@ export function ScatterHeroes({ item, definition, spec, instances, onShown }: Sc
     shownKey.current = key;
     lastShown.current = now;
     const shown = new Set(pending.current);
-    for (const [id, mesh] of meshes.current) mesh.group.visible = shown.has(id);
+    for (const [id, hero] of meshes.current) showHero(hero, shown.has(id));
     onShown(shown);
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);
 
-  return <group ref={root} />;
+  return null;
 }

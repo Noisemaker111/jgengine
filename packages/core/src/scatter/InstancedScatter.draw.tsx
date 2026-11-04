@@ -25,6 +25,8 @@ import { bakeGeneratorVariants, getGenerator, prepareGeneratorVariants, type Gen
 import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
 import { ScatterHeroes } from "./ScatterHeroes.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
+import { staticDrawPoolFor, StaticDrawSlot, type PooledPlacement, type StaticDrawPool } from "@jgengine/core/instancing/staticDrawPool.draw";
+import { staticPoolCellAt } from "@jgengine/core/instancing/staticObjectBatches.draw";
 import {
   assignScatterVariants,
   coarserScatterLevels,
@@ -242,15 +244,88 @@ function uploadPicked(mesh: THREE.InstancedMesh, batch: ScatterBatch, picks: Det
   }, { localMatrix });
 }
 
-/** A detail field's draws, by chunk, level and draw source: a slot holds a mesh only while its level picks a placement. */
-type DetailMeshes = (THREE.InstancedMesh | undefined)[][][];
+/**
+ * One chunk's draw of one level and source: its share of the shared static batches, where every chunk,
+ * variant and species with the same material draws together, or its own instanced mesh when the
+ * batches cannot take its material (see-through, custom shader).
+ */
+type DetailDraw = THREE.InstancedMesh | StaticDrawSlot;
+
+/** A detail field's draws, by chunk, level and draw source: a slot holds a draw only while its level picks a placement. */
+type DetailMeshes = (DetailDraw | undefined)[][][];
+
+/** A placement of a chunk as a shared-batch member; scatter names no scene object, so picking reports none. */
+interface DetailPlacement extends PooledPlacement {
+  readonly index: number;
+}
+
+const detailPlacements = new WeakMap<ScatterBatch, readonly DetailPlacement[]>();
+
+function placementsOf(batch: ScatterBatch): readonly DetailPlacement[] {
+  let known = detailPlacements.get(batch);
+  if (known === undefined) {
+    known = batch.instances.map((_, index) => ({ instanceId: "", index }));
+    detailPlacements.set(batch, known);
+  }
+  return known;
+}
+
+const detailSlotOf = (placement: DetailPlacement): number => placement.index;
+
+function detailMatrixOf(batch: ScatterBatch, local: THREE.Matrix4): (placement: DetailPlacement, out: THREE.Matrix4) => THREE.Matrix4 {
+  return (placement, out) => out.multiplyMatrices(batch.matrices[placement.index] ?? IDENTITY, local);
+}
+
+function acquireDetailSlot(pool: StaticDrawPool, batch: ScatterBatch, source: ScatterModelSource): StaticDrawSlot | null {
+  const footprint = scatterBatchFootprint(batch);
+  const slot = pool.acquire(
+    { geometry: source.geometry, material: source.material, castShadow: source.skipShadow !== true, receiveShadow: true },
+    staticPoolCellAt(footprint.x, footprint.z),
+    batch.instances.length,
+    "own",
+  );
+  slot?.place(placementsOf(batch), detailSlotOf, detailMatrixOf(batch, source.localMatrix));
+  return slot;
+}
+
+function addDetailMesh(field: THREE.Object3D, source: ScatterModelSource, count: number): THREE.InstancedMesh {
+  const mesh = new THREE.InstancedMesh(source.geometry, source.material, count);
+  mesh.castShadow = source.skipShadow !== true;
+  mesh.receiveShadow = true;
+  field.add(mesh);
+  freezeStaticTransforms(mesh);
+  return mesh;
+}
+
+function showPicked(slot: StaticDrawSlot, batch: ScatterBatch, picks: DetailPicks, level: number, local: THREE.Matrix4): void {
+  const members = picks.members[level];
+  const count = members === undefined ? 0 : (picks.counts[level] ?? 0);
+  const all = placementsOf(batch);
+  const shown: DetailPlacement[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const placement = all[members?.[index] ?? -1];
+    if (placement !== undefined) shown.push(placement);
+  }
+  slot.sync(shown, detailSlotOf, detailMatrixOf(batch, local));
+}
+
+function dropDetailDraw(field: THREE.Object3D, draw: DetailDraw): void {
+  if (draw instanceof StaticDrawSlot) {
+    draw.release();
+    return;
+  }
+  field.remove(draw);
+  draw.dispose();
+}
 
 /**
  * Bring one chunk's draws of one level in line with its picks: a draw source that now holds placements
- * gets a mesh under `field` and their transforms, and one that holds none leaves the scene and frees
- * its instance buffer. An empty mesh still costs three's scene walks (every render pass visits every
- * child) and the matrix pass, and an island holds tens of thousands of chunk, level and source
- * slots, so keeping them all in the scene made the frame grow with the world instead of the view.
+ * gets a draw and their transforms, and one that holds none gives its draw back. With a `pool` the
+ * draw is a slot of the shared static batches, so the frame's draw count follows the materials in
+ * view rather than chunks times variants times levels; without one, or for a material the batches
+ * cannot take, it is an instanced mesh under `field`. An empty mesh still costs three's scene walks
+ * (every render pass visits every child) and an island holds tens of thousands of chunk, level and
+ * source slots, so keeping them all made the frame grow with the world instead of the view.
  * @internal
  */
 export function syncDetailDraws(
@@ -261,36 +336,31 @@ export function syncDetailDraws(
   picks: DetailPicks,
   levelIndex: number,
   sources: readonly ScatterModelSource[],
+  pool: StaticDrawPool | null = null,
 ): void {
   const row = ((meshes[batchIndex] ??= [])[levelIndex] ??= []);
   const count = picks.counts[levelIndex] ?? 0;
   sources.forEach((source, sourceIndex) => {
-    let mesh = row[sourceIndex];
+    let draw = row[sourceIndex];
     if (count === 0) {
-      if (mesh === undefined) return;
-      field.remove(mesh);
-      mesh.dispose();
+      if (draw === undefined) return;
+      dropDetailDraw(field, draw);
       row[sourceIndex] = undefined;
       return;
     }
-    const added = mesh === undefined;
-    mesh ??= new THREE.InstancedMesh(source.geometry, source.material, count);
-    uploadPicked(mesh, batch, picks, levelIndex, source.localMatrix);
-    if (!added) return;
-    mesh.castShadow = source.skipShadow !== true;
-    mesh.receiveShadow = true;
-    field.add(mesh);
-    freezeStaticTransforms(mesh);
-    row[sourceIndex] = mesh;
+    if (draw === undefined) {
+      draw = (pool === null ? null : acquireDetailSlot(pool, batch, source)) ?? addDetailMesh(field, source, count);
+      row[sourceIndex] = draw;
+    }
+    if (draw instanceof StaticDrawSlot) showPicked(draw, batch, picks, levelIndex, source.localMatrix);
+    else uploadPicked(draw, batch, picks, levelIndex, source.localMatrix);
   });
 }
 
-/** Take every draw of a detail field out of the scene and free its instance buffers. @internal */
+/** Give back every draw of a detail field: meshes leave the scene and free their buffers, slots return to the shared batches. @internal */
 export function clearDetailDraws(field: THREE.Object3D, meshes: DetailMeshes): void {
-  for (const levels of meshes) for (const row of levels ?? []) for (const mesh of row ?? []) {
-    if (mesh === undefined) continue;
-    field.remove(mesh);
-    mesh.dispose();
+  for (const levels of meshes) for (const row of levels ?? []) for (const draw of row ?? []) {
+    if (draw !== undefined) dropDetailDraw(field, draw);
   }
   meshes.length = 0;
 }
@@ -432,6 +502,7 @@ function ScatterDetailInstances({ levels, batches, radius, hysteresis = 0 }: { l
   const footprints = useMemo(() => batches.map(scatterBatchFootprint), [batches]);
   const picks = useMemo(() => batches.map((batch) => createDetailPicks(batch.instances.length, levels.length)), [batches, levels]);
   const group = useMemo(() => new THREE.Group(), []);
+  const pool = staticDrawPoolFor(useThree((state) => state.scene));
   const meshes = useMemo<DetailMeshes>(() => [], [picks]);
   const cameraPosition = useMemo(() => new THREE.Vector3(), []);
   const lastCamera = useMemo(() => new THREE.Vector3(Number.POSITIVE_INFINITY, 0, 0), [picks, reach, hysteresis]);
@@ -456,7 +527,7 @@ function ScatterDetailInstances({ levels, batches, radius, hysteresis = 0 }: { l
         : pickDetailPlacements(pick, levels, batch.instances, cameraPosition.x, cameraPosition.z, reach, hysteresis);
       if (!changed) continue;
       levels.forEach((level, levelIndex) => {
-        if (pick.dirty[levelIndex] === 1) syncDetailDraws(group, meshes, index, batch, pick, levelIndex, level.sources);
+        if (pick.dirty[levelIndex] === 1) syncDetailDraws(group, meshes, index, batch, pick, levelIndex, level.sources, pool);
       });
     }
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);

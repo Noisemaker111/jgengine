@@ -159,7 +159,12 @@ export const STATIC_POOL_CELL = 512;
 /** The cell a batch's placements draw in, from its first placement. @internal */
 export function staticBatchCell(objects: readonly SceneObject[], cell = STATIC_POOL_CELL): string {
   const first = objects[0];
-  return first === undefined ? "" : `${Math.floor(first.position[0] / cell)},${Math.floor(first.position[2] / cell)}`;
+  return first === undefined ? "" : staticPoolCellAt(first.position[0], first.position[2], cell);
+}
+
+/** The shared-batch cell a world point falls in. @internal */
+export function staticPoolCellAt(x: number, z: number, cell = STATIC_POOL_CELL): string {
+  return `${Math.floor(x / cell)},${Math.floor(z / cell)}`;
 }
 
 /** Smallest same-model group a cell batches on its own. @internal */
