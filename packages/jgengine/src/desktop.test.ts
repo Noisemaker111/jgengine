@@ -31,9 +31,11 @@ test("private maps leave the package and match its exact script and map bytes", 
   mkdirSync(dist);
   writeFileSync(join(dist, "app.js"), "generated code");
   writeFileSync(join(dist, "app.js.map"), '{"version":3,"sources":["private.ts"],"names":[],"mappings":"AAAA"}');
+  writeFileSync(join(dist, "world.map"), "game data");
   const result = extractDesktopMaps(dist, privateRoot);
   expect(result.count).toBe(1);
   expect(existsSync(join(dist, "app.js.map"))).toBe(false);
+  expect(readFileSync(join(dist, "world.map"), "utf8")).toBe("game data");
   expect(readPrivateDesktopMap(privateRoot, result.digest, "generated code")).toContain("private.ts");
   expect(readPrivateDesktopMap(privateRoot, result.digest, "different code")).toBeNull();
   const indexPath = join(result.directory, "index.json");
@@ -330,6 +332,15 @@ describe("buildPlan + writeStaging", () => {
 });
 
 describe("CI smoke-build (dry-run)", () => {
+  test("normal staging excludes frontend source maps", async () => {
+    const dir = scaffoldGame();
+    const out = join(dir, "ordinary-output");
+    mkdirSync(join(dir, "dist"), { recursive: true });
+    writeFileSync(join(dir, "dist", "app.js"), "generated code");
+    writeFileSync(join(dir, "dist", "app.js.map"), "private sources");
+    expect(await runDesktopAsync([dir, "--dry-run", "--skip-frontend-build", "--out", out], dir)).toBe(0);
+    expect(existsSync(join(out, "dist", "app.js.map"))).toBe(false);
+  });
   test("diagnostic staging records a fingerprint but does not claim a dry run built the source", async () => {
     const dir = scaffoldGame();
     const out = join(dir, "diagnostic-output");

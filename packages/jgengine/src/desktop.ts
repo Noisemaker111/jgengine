@@ -922,11 +922,15 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
     }
   }
 
-  if (plan.diagnostics && plan.projectDir !== null && sourceBefore !== null) {
+  const maps = plan.mode === "project" ? extractDesktopMaps(join(stage.stagingDir, "dist"), join(stage.stagingDir, "private-maps")) : null;
+  if (plan.diagnostics && plan.projectDir !== null && sourceBefore !== null && maps !== null) {
     const sourceAfter = desktopBuildSource(plan.projectDir);
     const stable = sourceBefore.commit !== null && sourceBefore.commit === sourceAfter.commit && sourceBefore.dirty === false && sourceAfter.dirty === false && !parsed.skipFrontendBuild && !parsed.dryRun;
     const changed = sourceBefore.commit !== null && sourceAfter.commit !== null && (sourceBefore.commit !== sourceAfter.commit || (sourceBefore.dirty === false && sourceAfter.dirty === true));
-    const maps = extractDesktopMaps(join(stage.stagingDir, "dist"), join(stage.stagingDir, "private-maps"));
+    if (maps.count === 0 && !parsed.dryRun) {
+      console.error("error: diagnostic frontend has no JavaScript source maps; configure the project build to emit them");
+      return 1;
+    }
     const manifest = { sourceBefore, sourceAfter, sourceStatus: stable ? "unchanged-clean" : changed ? "changed" : "unverified", codeSha256: desktopCodeHash(join(stage.stagingDir, "dist")), privateMapsSha256: maps.digest, privateMapCount: maps.count, includes: "staged HTML, JS and CSS; excludes assets and private maps" };
     writeFileSync(join(stage.stagingDir, "dist", "jgengine-build.json"), `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(`  diagnostics source ${manifest.sourceStatus}; code SHA-256 ${manifest.codeSha256}`);

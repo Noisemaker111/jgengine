@@ -15,7 +15,7 @@ export function extractDesktopMaps(dist: string, privateRoot: string): { digest:
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) visit(path);
-      else if (entry.isFile() && entry.name.endsWith(".map")) {
+      else if (entry.isFile() && /\.(js|css)\.map$/i.test(entry.name)) {
         const script = path.slice(0, -4);
         if (script.endsWith(".js") && existsSync(script)) {
           const bytes = readFileSync(path);
