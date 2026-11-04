@@ -24,6 +24,13 @@ describe("model looks", () => {
     expect(modelForLook(survivor, "giant")).toBe(survivor);
   });
 
+  test("a look is one object per model, so renderers keyed on it keep their materials", () => {
+    expect(modelForLook(survivor, "woman")).toBe(modelForLook(survivor, "woman"));
+    expect(modelLooks(survivor)[1]).toBe(modelForLook(survivor, "woman"));
+    const other: ModelConfig = { ...survivor };
+    expect(modelForLook(other, "woman")).not.toBe(modelForLook(survivor, "woman"));
+  });
+
   test("modelLooks lists the model then every look", () => {
     expect(modelLooks(survivor).map((model) => model.url)).toEqual(["/models/man.glb", "/models/woman.glb"]);
   });

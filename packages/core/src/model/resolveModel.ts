@@ -84,16 +84,48 @@ export function resolveObjectModel(
   return resolved !== undefined && object.animation !== undefined ? { ...resolved, animation: object.animation } : resolved;
 }
 
+/** @internal */
+export interface EntityModelCacheEntry {
+  input: string | ModelConfig | undefined;
+  refs: readonly (ModelAssetRef | null)[];
+  model: ModelConfig | undefined;
+}
+
+/** The catalog entries an entity model's resolution reads: its own id, or its attachments' and parts' ids. */
+function entityModelRefs(value: string | ModelConfig | undefined, assets: AssetCatalog): (ModelAssetRef | null)[] {
+  if (value === undefined) return [];
+  if (typeof value === "string") return [assets.resolve(value)];
+  const refs: (ModelAssetRef | null)[] = [];
+  for (const mount of [...(value.attachments ?? []), ...(value.parts ?? [])]) {
+    if (typeof mount.model === "string") refs.push(assets.resolve(mount.model));
+  }
+  return refs;
+}
+
 /**
  * Resolve an entity model plus bone-attachment / kit-of-parts models through the catalog
- * so mounts receive fully-resolved `ModelConfig`s.
+ * so mounts receive fully-resolved `ModelConfig`s. One object per entity kind while its mapping and
+ * catalog entries stay the same: renderers key their materials and bakes on the model they are
+ * given, so a fresh copy per render rebuilt them, and relinked their shaders, mid-play.
  * @internal
  */
 export function resolveEntityModel(
   value: string | ModelConfig | undefined,
   assets: AssetCatalog,
   key: string,
+  cache: Map<string, EntityModelCacheEntry>,
 ): ModelConfig | undefined {
+  const refs = entityModelRefs(value, assets);
+  const cached = cache.get(key);
+  if (cached !== undefined && cached.input === value && cached.refs.length === refs.length && cached.refs.every((ref, i) => ref === refs[i])) {
+    return cached.model;
+  }
+  const model = resolveFreshEntityModel(value, assets, key);
+  cache.set(key, { input: value, refs, model });
+  return model;
+}
+
+function resolveFreshEntityModel(value: string | ModelConfig | undefined, assets: AssetCatalog, key: string): ModelConfig | undefined {
   const model = resolveModel(value, assets, { seam: "entityModels", key });
   if (model === undefined) return model;
   if (model.attachments === undefined && model.parts === undefined) return model;

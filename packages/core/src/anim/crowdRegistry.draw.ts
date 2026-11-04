@@ -47,6 +47,24 @@ export function crowdKindOf(model: ModelConfig): string {
   return `${model.url}\u0000${model.targetHeight ?? 0}\u0000${model.scale ?? 1}\u0000${JSON.stringify(material)}`;
 }
 
+/**
+ * One model per crowd kind, holding the one a kind already drew with while the kind stays. Every
+ * model of a kind draws the same batch, but the world hands over whichever entity's model it met
+ * last, and a batch builds its materials from the model it is given: a new one each time cars came
+ * and went rebuilt the batch and relinked all its shaders mid-play. `held` is updated in place.
+ * @internal
+ */
+export function stableCrowdKinds(models: readonly ModelConfig[], held: Map<string, ModelConfig>): [string, ModelConfig][] {
+  const unique = new Map<string, ModelConfig>();
+  for (const model of models) {
+    const kind = crowdKindOf(model);
+    if (!unique.has(kind)) unique.set(kind, held.get(kind) ?? model);
+  }
+  held.clear();
+  for (const [kind, model] of unique) held.set(kind, model);
+  return [...unique.entries()];
+}
+
 /** The colour a crowd batch tints one member's overridden materials with, or undefined for none. @internal */
 export function crowdTintOf(model: ModelConfig): string | undefined {
   return model.material?.color;

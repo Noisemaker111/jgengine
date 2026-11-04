@@ -104,7 +104,7 @@ describe("resolveEntityModel", () => {
   assets.register("sword", { url: "/models/sword.glb" });
 
   test("passes through a plain catalog id", () => {
-    expect(resolveEntityModel("hero", assets, "player")).toEqual({ url: "/models/hero.glb", animation: "auto" });
+    expect(resolveEntityModel("hero", assets, "player", new Map())).toEqual({ url: "/models/hero.glb", animation: "auto" });
   });
 
   test("resolves attachment models through the catalog", () => {
@@ -115,8 +115,25 @@ describe("resolveEntityModel", () => {
       },
       assets,
       "player",
+      new Map(),
     );
     expect(resolved?.attachments?.[0]?.model).toEqual({ url: "/models/sword.glb", animation: "auto" });
+  });
+
+  test("keeps one model object per kind until its mapping or catalog entries change", () => {
+    const local = createAssetCatalog();
+    local.register("hero", { url: "/models/hero.glb" });
+    local.register("sword", { url: "/models/sword.glb" });
+    const cache = new Map();
+    const armed = { url: "/models/hero.glb", attachments: [{ bone: "hand_r", model: "sword" }] };
+    const first = resolveEntityModel("hero", local, "player", cache);
+    expect(resolveEntityModel("hero", local, "player", cache)).toBe(first);
+    const withSword = resolveEntityModel(armed, local, "guard", cache);
+    expect(resolveEntityModel(armed, local, "guard", cache)).toBe(withSword);
+    local.register("sword", { url: "/models/sabre.glb" });
+    expect(resolveEntityModel(armed, local, "guard", cache)?.attachments?.[0]?.model).toEqual({ url: "/models/sabre.glb", animation: "auto" });
+    local.register("hero", { url: "/models/hero-v2.glb" });
+    expect(resolveEntityModel("hero", local, "player", cache)?.url).toBe("/models/hero-v2.glb");
   });
 });
 

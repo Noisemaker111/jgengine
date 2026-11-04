@@ -9,6 +9,7 @@ import {
   crowdEligible,
   crowdKindOf,
   crowdSpeedBandsOf,
+  stableCrowdKinds,
 } from "./crowdRegistry.draw";
 
 const character: ModelConfig = {
@@ -28,6 +29,20 @@ describe("crowdKindOf", () => {
 
   test("two characters of different models never share a batch", () => {
     expect(crowdKindOf(guest)).not.toBe(crowdKindOf({ ...guest, url: "brightway-park/guest_b" }));
+  });
+});
+
+describe("stableCrowdKinds", () => {
+  test("a kind keeps the model it first drew with while it stays, and lets go once it leaves", () => {
+    const held = new Map<string, ModelConfig>();
+    const first = { ...character };
+    const later = { ...character };
+    expect(stableCrowdKinds([first, guest], held).map(([, model]) => model)).toEqual([first, guest]);
+    const [[, kept]] = stableCrowdKinds([later], held);
+    expect(kept).toBe(first);
+    stableCrowdKinds([guest], held);
+    const [[, fresh]] = stableCrowdKinds([later], held);
+    expect(fresh).toBe(later);
   });
 });
 
