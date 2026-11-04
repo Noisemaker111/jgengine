@@ -256,6 +256,7 @@
 
 - `DiscoverModule` (interface): interface DiscoverModule — Discovery subsystem: the public discover and probes facades plus internal record map and helpers.
 - `DiscoveredRecord` (interface): interface DiscoveredRecord — Internal record for an auto-discovered field: identity, kind, initial value, source object, and get/set accessors.
+- `SCENE_PROBE_REFRESH_MS` (const): const SCENE_PROBE_REFRESH_MS: 2000 — How often a probe that walks the whole scene walks it again; in between it answers its last reading.
 - `createDiscoverModule` (const): const createDiscoverModule: (deps: { signal: ChangeSignal; register: <T>(name: string, initial: T, options?: TunableOptions<T> | undefined) => Tunable<T>; controlRecords: Map<string, ControlRecord>; }) => DiscoverModule — Create the discovery subsystem that scans objects/tables for tunable fields and binds them as controls and probes.
 
 ## @jgengine/core/devtools/fallbackSeams

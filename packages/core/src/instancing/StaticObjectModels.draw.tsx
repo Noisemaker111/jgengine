@@ -6,6 +6,7 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { devtools } from "@jgengine/core/devtools/devtools";
+import { sceneProbeReading } from "@jgengine/core/devtools/discover";
 import { useGameContext } from "@jgengine/react/provider";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { IsolatedModelPart } from "@jgengine/core/model/SceneModels.draw";
@@ -40,17 +41,16 @@ export function useStaticObjectBatchProbe(
 ): void {
   const ref = useRef(stats);
   ref.current = stats;
-  useEffect(
-    () =>
-      devtools.probes.registerSystem("render/staticBatches", {
-        counters: () => ({ ...ref.current, ...countStaticBatchDraws(scene) }),
-        state: () => {
-          const { draws, drawn } = countStaticBatchDraws(scene);
-          return `${ref.current.batches} batches · ${draws} draws · ${drawn}/${ref.current.instances} instances drawn`;
-        },
-      }),
-    [scene],
-  );
+  useEffect(() => {
+    const drawCounts = sceneProbeReading(() => countStaticBatchDraws(scene));
+    return devtools.probes.registerSystem("render/staticBatches", {
+      counters: () => ({ ...ref.current, ...drawCounts() }),
+      state: () => {
+        const { draws, drawn } = drawCounts();
+        return `${ref.current.batches} batches · ${draws} draws · ${drawn}/${ref.current.instances} instances drawn`;
+      },
+    });
+  }, [scene]);
   useEffect(() => devtools.probes.registerSystem("render/levelPass", levelPassProbe()), []);
 }
 

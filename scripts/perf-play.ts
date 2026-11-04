@@ -189,8 +189,9 @@ before side is measured once: run \`bun run perf <game>\` before editing, then a
                     page URL. The run fails when the page reports a different tier, so a record
                     always names the tier it measured.
   --draft           iteration preset: low tier and half viewport, for a smoke run you will not quote
-  --profile         also print the inclusive-time table to stderr, and save the whole CPU profile
-                    beside the record (<game>.cpuprofile, opens in Chrome DevTools' Performance panel)
+  --profile         also print the inclusive-time table and the top allocating functions (MB/s) to
+                    stderr, and save the whole CPU profile beside the record (<game>.cpuprofile,
+                    opens in Chrome DevTools' Performance panel)
   --seconds         measured window in seconds (default ${DEFAULT_SECONDS})
   --telemetry       in-page report sampler: on (default) or off (?telemetry=off) for an A/B run
   --uncapped        the default: an unthrottled rAF clock (--disable-frame-rate-limit,
@@ -572,6 +573,40 @@ export function aggregateInclusiveTime(
   return rank(inclusive, windowMs, top);
 }
 
+/** One node of a CDP sampling heap profile: bytes allocated by this frame itself, and its callees. */
+export interface HeapSampleNode {
+  callFrame: ProfileNode["callFrame"];
+  selfSize: number;
+  children?: HeapSampleNode[];
+}
+
+/** One function's share of what the window allocated, for `--profile`. */
+export interface AllocationEntry {
+  fn: string;
+  at: string;
+  /** MB this function allocated per second of play: the garbage the collector later stops a frame for. */
+  mbPerSecond: number;
+}
+
+/** Bytes allocated per function over the window, biggest first, from a sampling heap profile. */
+export function aggregateAllocations(head: HeapSampleNode, windowMs: number, top = TOP_SELF): AllocationEntry[] {
+  const bytes = new Map<string, number>();
+  const visit = (node: HeapSampleNode) => {
+    const key = frameKey({ id: 0, callFrame: node.callFrame }) ?? "(root)";
+    if (node.selfSize > 0) bytes.set(key, (bytes.get(key) ?? 0) + node.selfSize);
+    for (const child of node.children ?? []) visit(child);
+  };
+  visit(head);
+  const seconds = Math.max(windowMs / 1000, 0.001);
+  return [...bytes]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, top)
+    .map(([key, total]) => {
+      const [fn = "(anonymous)", at = ""] = key.split("\t");
+      return { fn, at, mbPerSecond: Math.round((total / 1_048_576 / seconds) * 100) / 100 };
+    });
+}
+
 function frameKey(node: ProfileNode | undefined): string | null {
   if (node === undefined) return null;
   const name = node.callFrame.functionName.length > 0 ? node.callFrame.functionName : "(anonymous)";
@@ -928,6 +963,8 @@ export interface MeasureOptions {
   warmupMs?: number;
   /** Run the CPU profiler pass afterwards; the budget gate does not need it. */
   profile?: boolean;
+  /** Also sample what the profiled window allocates, by function (`--profile`). */
+  allocations?: boolean;
   /** In-page report sampler: `off` loads the same build with `?telemetry=off` for an A/B run. */
   telemetry?: "on" | "off";
   /** Settings seeded into the page's settings storage before it boots. */
@@ -950,6 +987,8 @@ export interface PerfMeasure {
   profile: RawProfile | null;
   /** Wall-clock length of the profile window in ms, for percentages. */
   profileMs: number;
+  /** Who allocated what over the profiled window, biggest first; null unless `allocations` was asked for. */
+  allocators: AllocationEntry[] | null;
   /** Blank-page rAF median the uncapped run proved its clock with, or null on the capped path. */
   clockProbeMs: number | null;
 }
@@ -1035,8 +1074,9 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   await applyDevice(session, "desktop", draft ? "half" : "full", options.size ?? {});
   const url = perfPageUrl({ base, game, quality, telemetry: options.telemetry, state: options.state, params });
   // Same navigation the capture tools use: it fails on a page exception or a failed document
-  // instead of waiting out the readiness timeout.
-  await navigateCapturePage(session, url.toString(), 90_000);
+  // instead of waiting out the readiness timeout. The timeout outlasts the page's own readiness
+  // budget (2.5 minutes, past the shader warmup's cap), so a slow load reports its own reason.
+  await navigateCapturePage(session, url.toString(), 210_000);
   // The tier the game resolved, not the flag: a record that names a tier it never rendered at is
   // exactly the evidence gap this flag closes.
   const reportedTier = await readReportedQuality(session);
@@ -1088,16 +1128,29 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const residentPrograms = snapshot?.probes?.["shaderPrograms"];
 
   let raw: RawProfile | null = null;
+  let allocators: AllocationEntry[] | null = null;
   let profiledMs = 0;
   if (profileRun) {
     await session.send("Profiler.enable");
     await session.send("Profiler.setSamplingInterval", { interval: PROFILE_SAMPLING_US });
+    // Only the `--profile` run samples allocations: the sampler itself costs a little per allocation.
+    const sampleHeap = options.allocations === true;
+    if (sampleHeap) {
+      await session.send("HeapProfiler.enable");
+      // Collected objects are the garbage itself; without these flags only survivors are counted.
+      await session.send("HeapProfiler.startSampling", { samplingInterval: 16_384, includeObjectsCollectedByMajorGC: true, includeObjectsCollectedByMinorGC: true });
+    }
     await session.send("Profiler.start");
     const profiledAt = Date.now();
     await session.evaluate(`new Promise((r) => setTimeout(r, ${seconds * 1000}))`, { awaitPromise: true });
     profiledMs = Date.now() - profiledAt;
     const stopped = await session.send("Profiler.stop");
     raw = (stopped["profile"] ?? { nodes: [], samples: [], timeDeltas: [] }) as RawProfile;
+    if (sampleHeap) {
+      const heap = await session.send("HeapProfiler.stopSampling");
+      const head = (heap["profile"] as { head?: HeapSampleNode } | undefined)?.head;
+      allocators = head === undefined ? null : aggregateAllocations(head, profiledMs);
+    }
   }
 
   await releasePath();
@@ -1165,7 +1218,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     throw new Error(`${game} threw while being measured: ${throws.exceptions.join("; ")}`);
   }
 
-  return { record, profile: raw, profileMs: profiledMs, clockProbeMs };
+  return { record, profile: raw, profileMs: profiledMs, allocators, clockProbeMs };
 }
 
 async function main(): Promise<void> {
@@ -1207,7 +1260,7 @@ async function main(): Promise<void> {
   const measureOne = async (game: string, debugPort: number, base: string): Promise<void> => {
     const session = await openPageSession(debugPort);
     try {
-      const measured = await measureGame({ session, base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock, path, size });
+      const measured = await measureGame({ session, base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock, path, size, allocations: profile });
       if (measuredEngine !== null) measured.record.engine = measuredEngine;
       console.error(`perf: ${game} tier ${measured.record.quality}${draft ? " (draft: low tier, half viewport)" : ""}`);
       const pin = perfStateLine(state, params);
@@ -1234,6 +1287,10 @@ async function main(): Promise<void> {
         writeFileSync(profilePath, JSON.stringify(measured.profile));
         console.error(`perf: CPU profile written to ${profilePath}`);
       }
+      if (measured.allocators !== null && measured.allocators.length > 0) {
+        console.error("perf: allocated per second of play (sampled), the garbage collection pauses come from these");
+        for (const entry of measured.allocators) console.error(`${entry.mbPerSecond.toFixed(2).padStart(8)} MB/s  ${entry.fn}  ${entry.at}`);
+      }
       if (measured.record.profile?.top.length === 0) console.error("perf: the CPU profile produced no samples");
       if (measured.record.gl.attached !== true) {
         console.error("perf: GL allocation counters saw no activity — the WebGL hooks did not attach");
@@ -1256,6 +1313,9 @@ async function main(): Promise<void> {
       {
         keep: false,
         timeoutMs: 120_000,
+        // One browser plays every game in turn, so the deadline grows with the batch: a fixed one
+        // killed a long batch, or one slow load, partway through.
+        hardDeadlineMs: pending.length * 300_000,
         frameClock,
         headed,
         server: server.child,
