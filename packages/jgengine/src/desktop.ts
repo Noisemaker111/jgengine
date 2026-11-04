@@ -81,7 +81,7 @@ export function desktopBuildSource(projectDir: string): BuildSource {
   return { commit: head.status === 0 ? head.stdout.trim() || null : null, dirty: status.status === 0 ? status.stdout.trim().length > 0 : null };
 }
 
-/** Fingerprint the staged HTML, JS, CSS and source maps, not external models or textures. @internal */
+/** Fingerprint the staged HTML, JS and CSS, not game assets or private source maps. @internal */
 export function desktopCodeHash(dist: string): string {
   const hash = createHash("sha256");
   const visit = (dir: string, prefix: string) => {
@@ -89,7 +89,7 @@ export function desktopCodeHash(dist: string): string {
       const name = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
       const path = join(dir, entry.name);
       if (entry.isDirectory()) visit(path, name);
-      else if (entry.isFile() && /\.(html|js|css|map)$/i.test(entry.name)) { hash.update(name); hash.update("\0"); hash.update(readFileSync(path)); }
+      else if (entry.isFile() && /\.(html|js|css)$/i.test(entry.name)) { hash.update(name); hash.update("\0"); hash.update(readFileSync(path)); }
     }
   };
   visit(dist, "");

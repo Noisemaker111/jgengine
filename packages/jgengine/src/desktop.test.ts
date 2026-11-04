@@ -241,8 +241,10 @@ describe("buildPlan + writeStaging", () => {
     writeFileSync(join(dir, "index.html"), "<script src='game.js'></script>");
     writeFileSync(join(dir, "game.js"), "first");
     writeFileSync(join(dir, "model.glb"), "one");
+    writeFileSync(join(dir, "world.map"), "one");
     const original = desktopCodeHash(dir);
     writeFileSync(join(dir, "model.glb"), "two");
+    writeFileSync(join(dir, "world.map"), "two");
     expect(desktopCodeHash(dir)).toBe(original);
     writeFileSync(join(dir, "game.js"), "second");
     expect(desktopCodeHash(dir)).not.toBe(original);
