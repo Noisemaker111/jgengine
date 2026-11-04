@@ -4,7 +4,7 @@
 
 ## @jgengine/core/ai/AuthoredFlocks.draw
 
-- `AuthoredFlocks` (function): function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstances = 256 }: AuthoredFlocksProps): ReactElement — Render bounded authored habitat agents with game-selected species models. The environment owns movement and lifetime; existing model owners load, animate, and dispose the native GLB. Unmapped species have no substitute geometry.
+- `AuthoredFlocks` (function): function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstances = 256 }: AuthoredFlocksProps): ReactElement — Render bounded authored habitat agents with game-selected species models. The environment owns movement and lifetime. A species whose model has no animation draws every agent as instances, one draw per material however big the flock; an animated one draws each agent on its own rig. Unmapped species have no substitute geometry.
 - `AuthoredFlocksProps` (interface): interface AuthoredFlocksProps — Caller-owned species models for authored habitat agents.
 
 ## @jgengine/core/ai/alertLevel
@@ -5872,7 +5872,7 @@
 ## @jgengine/core/visibility/CullingProvider.draw
 
 - `CullingProvider` (function): function CullingProvider({ config, drawDistance, children }: { config: VisibilityConfig | undefined; drawDistance?: number; children: ReactNode }): ReactNode — Drives automatic frustum + distance culling for every entity and placed object. It reads the live render camera each frame, updates the engine VisibilitySystem, and exposes a predicate the entity/object markers consult to toggle `group.visible` — objects fully outside the view (plus a conservative preload margin) are never submitted to the renderer, without unmounting them or touching gameplay. UI, sky, terrain, and environment live outside this subtree and are unaffected.
-- `useRenderVisibility` (function): function useRenderVisibility(): MutableRefObject<VisiblePredicate> — Read the current render-visibility predicate. Backward compatible: with no CullingProvider mounted (or culling disabled) it returns an always-visible ref, so a marker that consults it behaves exactly as before this feature existed.
+- `useRenderVisibility` (function): function useRenderVisibility(): MutableRefObject<VisiblePredicate> — Read the current render-visibility predicate. Backward compatible: with no CullingProvider mounted (or culling disabled) it returns an always-visible ref, so a marker that consults it behaves exactly as before this feature existed. The ref holds a new predicate only on a frame the visible set changed, so work that depends on nothing but the set can skip while it is the same one.
 
 ## @jgengine/core/visibility/assetStreaming
 
@@ -6007,7 +6007,7 @@
 
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
 - `VisibilityDebugSnapshot` (interface): interface VisibilityDebugSnapshot { cameras: {id: string; kind: CameraKind; corners: number[]; preloadMargin: number}[]; bounds: {id: string; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number; visible: boolean}[]; partitions: {key: string; c… — ⚠ undocumented
-- `VisibilityResult` (interface): interface VisibilityResult { readonly visible: ReadonlySet<string>; readonly preload: ReadonlySet<string>; readonly stats: VisibilityStats } — ⚠ undocumented
+- `VisibilityResult` (interface): interface VisibilityResult { readonly visible: ReadonlySet<string>; readonly preload: ReadonlySet<string>; readonly stats: VisibilityStats; readonly generation: number } — ⚠ undocumented
 - `VisibilitySystem` (interface): interface VisibilitySystem { update(): VisibilityResult; isVisible(id: string): boolean; isPreloaded(id: string): boolean; boundsOf(id: string): RenderBounds | undefined; settings(): CullingSettings; setSettings(patch: Partial<CullingSettings>): void; stats(): Visibi… — ⚠ undocumented
 - `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions { readonly renderables: () => Iterable<Renderable>; readonly cameras: () => readonly CameraVisibilityContext[]; readonly settings?: Partial<CullingSettings>; readonly sceneOverrides?: ObjectVisibilityOverrides; readonly globalOverrides?: Ob… — ⚠ undocumented
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
