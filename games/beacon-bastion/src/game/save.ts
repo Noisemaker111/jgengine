@@ -216,7 +216,8 @@ export function keepCanCheckpoint(ctx: GameContext): boolean {
 /** Save a live defense at most once a second, only while its slot still contains our last write. */
 export function checkpointKeep(ctx: GameContext, dt: number): Promise<void> | undefined {
   const state = checkpoints(ctx);
-  if (state.slot === null || state.pending !== null || state.failed) return;
+  if (state.pending !== null) return state.pending;
+  if (state.slot === null || state.failed) return;
   state.elapsed += dt;
   if (state.elapsed < 1) return;
   state.elapsed = 0;
