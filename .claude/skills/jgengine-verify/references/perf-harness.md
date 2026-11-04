@@ -24,7 +24,7 @@ The same breakdown is live in any dev build: the debug menu's perf panel shows "
 
 The breakdown reports timed scope calls per frame (average and maximum). Render calls include legitimate shadow and post work; a count alone does not establish waste. `bun run perf <game> --param frameMembers=1` times individual shared-frame members and counts instrumented fauna updates, agents, ground queries, ground-revision invalidations and shader readiness checks under their requesting callback. Compare a matching run without that parameter to measure overhead. Other work is unobserved, omitted summary rows are counted, and an unresolved `frame#` remains unattributed. GPU timing covers only completed queries; unavailable timings are not zero. The saved summary is not an exhaustive trace.
 
-The saved record also compares the running dev server's checkout and boot revision with the measuring checkout. `matched` proves that identity only, not that dirty files or compiled assets are byte-identical. A mismatch or unavailable server identity is saved with the run and cannot become a cached baseline.
+The saved record also compares the running dev server's checkout and boot revision with the measuring checkout. `matched` proves that identity only, not that dirty files or compiled assets are byte-identical. A mismatch or unavailable server identity is saved with the run and cannot become a cached baseline. Callback locations use the served source map; a missing map is labeled `generated` and counted as unresolved.
 
 Runs are headless on purpose: headless Chrome draws on the real GPU here, while `--headed` puts an off-screen window under the desktop compositor, so its numbers are not the ones to report.
 

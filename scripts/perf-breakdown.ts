@@ -3,6 +3,7 @@
 // by source line, and diff two records so one fix is one run.
 import { cdpField, remoteObjectId, type CdpSession } from "./browser-lib";
 import { fpsAt, type FrameBreakdownSummary, type NamedCost } from "../packages/core/src/devtools/frameBreakdown";
+import { SourceMap } from "node:module";
 
 /** How the run moves through the game while it is measured. */
 export type PerfPath = "walk" | "still";
@@ -46,11 +47,13 @@ export async function resetBreakdown(session: CdpSession): Promise<boolean> {
 export async function readBreakdown(session: CdpSession): Promise<FrameBreakdownSummary | null> {
   const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jgFrameBreakdown?.summary({ top: 15 }) ?? null`);
   if (summary === null || summary === undefined) return null;
-  const urls = new Map<string, string>();
+  const scripts = new Map<string, { url: string; map: string | null }>();
+  const maps = new Map<string, SourceMap | null>();
   const names = new Map<string, string>();
+  const resolvedOwners = new Set<string>();
   let failure: string | undefined;
   const off = session.on("Debugger.scriptParsed", (params) => {
-    urls.set(String(params["scriptId"]), String(params["url"]));
+    scripts.set(String(params["scriptId"]), { url: String(params["url"]), map: typeof params["sourceMapURL"] === "string" ? params["sourceMapURL"] : null });
   });
   try {
     await session.send("Debugger.enable");
@@ -60,8 +63,9 @@ export async function readBreakdown(session: CdpSession): Promise<FrameBreakdown
       if (owner === undefined) continue;
       let resolved = names.get(owner);
       if (resolved === undefined) {
-        const located = await locateCallback(session, owner, urls);
-        resolved = located === null ? owner : `${owner} ${located}`;
+        const located = await locateCallback(session, owner, scripts, maps);
+        resolved = located === null ? owner : `${owner} ${located.label}`;
+        if (located?.mapped === true) resolvedOwners.add(owner);
         names.set(owner, resolved);
       }
       entry.name = detail.length === 0 ? resolved : `${resolved} | ${detail.join(" | ")}`;
@@ -74,12 +78,12 @@ export async function readBreakdown(session: CdpSession): Promise<FrameBreakdown
   }
   const owners = new Set([...summary.cpu, ...(summary.calls ?? [])].map((entry) => entry.name.split(" | ")[0]?.split(" ")[0]).filter((name): name is string => name?.startsWith("frame#") === true));
   let resolved = 0;
-  for (const owner of owners) if ((names.get(owner) ?? owner) !== owner) resolved += 1;
+  for (const owner of owners) if (resolvedOwners.has(owner)) resolved += 1;
   summary.sources = { resolved, unresolved: owners.size - resolved, ...(failure === undefined ? {} : { error: failure }) };
   return summary;
 }
 
-async function locateCallback(session: CdpSession, label: string, urls: ReadonlyMap<string, string>): Promise<string | null> {
+async function locateCallback(session: CdpSession, label: string, scripts: ReadonlyMap<string, { url: string; map: string | null }>, maps: Map<string, SourceMap | null>): Promise<{ label: string; mapped: boolean } | null> {
   const found = await session.send("Runtime.evaluate", { expression: `globalThis.__jgFrameBreakdown?.callbacks()[${JSON.stringify(label)}]` });
   const objectId = remoteObjectId(found["result"]);
   if (objectId === undefined) return null;
@@ -91,10 +95,28 @@ async function locateCallback(session: CdpSession, label: string, urls: Readonly
   await session.send("Runtime.releaseObject", { objectId }).catch(() => {});
   const scriptId = cdpField(where, "scriptId");
   const lineNumber = cdpField(where, "lineNumber");
+  const columnNumber = cdpField(where, "columnNumber");
   if (typeof scriptId !== "string" || typeof lineNumber !== "number") return null;
-  const url = urls.get(scriptId) ?? "";
+  const script = scripts.get(scriptId);
+  if (script === undefined || script.url === "") return null;
+  let map = maps.get(scriptId);
+  if (map === undefined) {
+    map = null;
+    if (script.map !== null && script.map !== "") {
+      try {
+        const mapUrl = new URL(script.map, script.url).toString();
+        if (!mapUrl.startsWith("data:") && new URL(mapUrl).origin !== new URL(script.url).origin) throw new Error("cross-origin source map");
+        const raw = await session.evaluate<string>(`fetch(${JSON.stringify(mapUrl)}).then(r => { if (!r.ok) throw new Error('source map HTTP ' + r.status); return r.text(); })`, { awaitPromise: true });
+        if (raw !== undefined) map = new SourceMap(JSON.parse(raw));
+      } catch { /* Keep the generated location when a source map cannot be loaded. */ }
+    }
+    maps.set(scriptId, map);
+  }
+  const original = map?.findEntry(lineNumber, typeof columnNumber === "number" ? columnNumber : 0);
+  const mapped = original?.originalSource !== undefined && original.originalLine !== undefined;
+  const url = mapped ? original.originalSource : script.url;
   const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "").replace(/^\/@fs\//, "").replace(/^.*?\/(packages|games|apps)\//, "$1/");
-  return path === "" ? null : `${path}:${lineNumber + 1}`;
+  return path === "" ? null : { label: `${mapped ? "" : "generated "}${path}:${mapped ? original.originalLine + 1 : lineNumber + 1}`, mapped };
 }
 
 /** A cost's system: its `frame#<n>` or system label, without the source location appended to it. */
