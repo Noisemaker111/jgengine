@@ -29,7 +29,7 @@ function browser(editorCanvas: boolean) {
     documentElement: root,
     querySelector: (selector: string) => {
       if (selector === "[data-jg-editor] canvas") return present ? {} : null;
-      if (selector === "canvas, [data-jg-frame-ready]") return {};
+      if (selector === "canvas, [data-jg-frame-ready]" || selector === "[data-jg-editor], canvas") return {};
       return null;
     },
   };
@@ -50,6 +50,8 @@ describe("editor capture readiness", () => {
   test("waits for the editor canvas even when another canvas exists", async () => {
     const page = browser(false);
     const cancel = armCaptureReady("editor");
+    expect(page.root.dataset.jgCapture).toBe("preparing");
+    await new Promise<void>((resolve) => setTimeout(resolve, 5));
     expect(page.root.dataset.jgCapture).toBe("preparing");
     page.mount();
     await flush();
