@@ -4820,7 +4820,7 @@
 
 ## @jgengine/core/scene/assetCatalog
 
-- `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> { register(id: string, asset: TMeta): void; resolve(id: string): TMeta | null; has(id: string): boolean; ids(): readonly string[] } — ⚠ undocumented · used by `buildCatalog` (@jgengine/assets): Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
+- `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> { register(id: string, asset: TMeta): void; resolve(id: string): TMeta | null; has(id: string): boolean; ids(): readonly string[] } — ⚠ undocumented · used by `buildCatalog` (@jgengine/assets): Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases.
 - `AssetRef` (type): type AssetRef = ModelAssetRef | GeneratorAssetRef — A catalog entry: a static GLB model, or a parametric generator.
 - `GeneratorAssetRef` (interface): interface GeneratorAssetRef — A catalog entry backed by a registered parts generator (`registerGenerator`, output `"parts"`) instead of a GLB URL — a slider-driven parametric prop (bookcase, building). `defaults` seeds a fresh placement's params. Placed instances persist `{ assetId, params, seed }` in the scene and re-resolve at runtime.
 - `ModelAssetRef` (interface): interface ModelAssetRef { url: string; anchor?: "center" | "origin"; dims?: ModelDims; collisionMesh?: CollisionMeshData; space?: AssetSpace; clips?: readonly string[] } — ⚠ undocumented · used by `createHostedWorldSessionAsync` (@jgengine/core/runtime/hostedWorldSession): Build a hosted session from an asynchronous persistence backend.
@@ -5081,6 +5081,11 @@
 - `SceneObject` (interface): interface SceneObject { instanceId: string; catalogId: string; position: EntityPosition; rotationY: number; parentSpace?: string; visual?: ObjectVisual; animation?: ModelAnimationConfig | "auto" | "none"; state?: Record<string, unknown>; slots?: InventoryState } — ⚠ undocumented · used by `fromRuntimeObjectRow` (@jgengine/core/runtime/objectRows): Inverse of {@link toRuntimeObjectRow}: rebuild the live placed object a host persisted.
 - `createObjectStore` (function): function createObjectStore(): ObjectStore — ⚠ undocumented
 - `objectVisualScale` (function): function objectVisualScale(visual: ObjectVisual | undefined): readonly [number, number, number] — ⚠ undocumented
+
+## @jgengine/core/scene/onDemandSceneKinds
+
+- `OnDemandSceneKindId` (type): type OnDemandSceneKindId = "city" | "plants" — A heavy built-in system a scene loads only when it uses one of its kinds or generators.
+- `SceneKindNeeds` (interface): interface SceneKindNeeds — What a scene asks of the registries: the kinds its objects use and the generator ids they name.
 
 ## @jgengine/core/scene/paintLayer
 
@@ -6209,7 +6214,7 @@
 - `AreaStackPolicy` (type): type AreaStackPolicy<P> = (memberships: readonly AreaMembership<P>[]) => AreaMembership<P>[] — Reduce one receiver's overlapping memberships to the subset that applies under a stacking rule.
 - `AreaStepInput` (interface): interface AreaStepInput — Per-tick inputs the field needs to reconcile membership without scanning the world.
 - `AssetAnchor` (type): type AssetAnchor = "center" | "corner" | { readonly x: number; readonly z: number } — Where a model's pivot sits within its footprint: `center` (origin at the footprint center), `corner` (origin at the min-X/min-Z corner), or a normalized `{ x, z }` fraction in `[-0.5, 0.5]`.
-- `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> { register(id: string, asset: TMeta): void; resolve(id: string): TMeta | null; has(id: string): boolean; ids(): readonly string[] } — ⚠ undocumented · used by `buildCatalog` (@jgengine/assets): Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
+- `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> { register(id: string, asset: TMeta): void; resolve(id: string): TMeta | null; has(id: string): boolean; ids(): readonly string[] } — ⚠ undocumented · used by `buildCatalog` (@jgengine/assets): Builds a game's asset catalog from the CC0 model packs it names plus singles, extras, and aliases.
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
 - `AssetSpaceIssue` (interface): interface AssetSpaceIssue — One problem found by {@link validateAssetSpace}: which metadata field and why it is invalid.
 - `AttackMoveOrderPayload` (interface): interface AttackMoveOrderPayload — Payload for an attack-move: advance toward `point`, engaging hostiles encountered en route.
