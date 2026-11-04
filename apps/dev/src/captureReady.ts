@@ -145,6 +145,7 @@ async function waitForModelStreaming(): Promise<void> {
     if (modelLoadIdleMs() >= MODEL_IDLE_MS) return;
     await delay(100);
   }
+  throw new Error("models did not finish loading before capture");
 }
 
 function nextFrames(count: number): Promise<void> {
@@ -172,8 +173,7 @@ async function settleView(): Promise<void> {
     QUIESCENCE_TIMEOUT_MS,
   );
   if (failure === null) return;
-  if (viewActivity().viewLoading) throw new Error(failure);
-  addCaptureNote(failure);
+  throw new Error(failure);
 }
 
 /**
@@ -286,7 +286,7 @@ export function armCaptureReady(
         await waitForSelector("[data-poster-ready]", 25_000);
         await delay(200);
       } else if (mode === "editor") {
-        await waitForSelector("[data-jg-editor], canvas", 30_000);
+        await waitForSelector("[data-jg-editor] canvas", 30_000);
         await waitPlayFrames(readCaptureQuery().settle ?? 3_500);
       } else {
         await waitPlayFrames(readCaptureQuery().settle ?? defaultSettleMs ?? 2_500);

@@ -123,6 +123,7 @@ function runAssets(argv: string[]): number {
 }
 
 function runEditor(argv: string[]): number {
+  const usage = "usage: jgengine editor [dir] [--assets <dir>] [--port <n>] [--out <workspace-dir>] [--pm bun|npm|pnpm]";
   const positional: string[] = [];
   let assetsDir: string | undefined;
   let port: string | undefined;
@@ -130,11 +131,21 @@ function runEditor(argv: string[]): number {
   let pmFlag: string | undefined;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i] ?? "";
-    if (arg === "--assets") assetsDir = argv[(i += 1)];
-    else if (arg === "--port") port = argv[(i += 1)];
-    else if (arg === "--out") outDir = argv[(i += 1)];
-    else if (arg === "--pm") pmFlag = argv[(i += 1)];
-    else if (!arg.startsWith("-")) positional.push(arg);
+    if (arg === "--help" || arg === "-h") { console.log(usage); return 0; }
+    if (["--assets", "--port", "--out", "--pm"].includes(arg)) {
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) { console.error(`error: ${arg} needs a value\n${usage}`); return 1; }
+      if (arg === "--assets") assetsDir = value;
+      else if (arg === "--port") port = value;
+      else if (arg === "--out") outDir = value;
+      else pmFlag = value;
+    } else if (arg.startsWith("-")) { console.error(`error: unknown option ${arg}\n${usage}`); return 1; }
+    else positional.push(arg);
+  }
+  if (positional.length > 1 || (pmFlag !== undefined && !["bun", "npm", "pnpm"].includes(pmFlag)) ||
+      (port !== undefined && (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535))) {
+    console.error(`error: invalid editor arguments\n${usage}`);
+    return 1;
   }
 
   const targetDir = resolve(positional[0] ?? ".");

@@ -24,6 +24,18 @@ import { provisionGame, provisionLibraryKey, shouldProvision } from "../shared/p
 
 const root = join(import.meta.dir, "..");
 const argv = process.argv.slice(2).filter((arg) => arg !== "--");
+const usage = "usage: games:provision [game ...] [--link-only] | <game> --library <source>:<id> | build [game ...] [--textures-only] [--no-impostors]";
+if (argv.includes("--help") || argv.includes("-h")) {
+  console.log(usage);
+  process.exit(0);
+}
+const build = argv[0] === "build";
+const allowed = build ? ["--textures-only", "--no-impostors"] : ["--link-only", "--library"];
+const unknown = argv.find((arg) => arg.startsWith("-") && !allowed.includes(arg));
+if (unknown !== undefined) {
+  console.error(`games:provision: unknown option ${unknown}\n${usage}`);
+  process.exit(1);
+}
 if (argv[0] === "build") {
   if (!shouldProvision(process.env)) {
     console.log("games:provision build: skipped in CI (JG_DEV_PROVISION=1 runs it)");
