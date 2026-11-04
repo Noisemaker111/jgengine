@@ -19,8 +19,8 @@ export const DEFAULT_CHARACTER_LOD: CharacterLodPolicy = {
   crowdCapacity: 128,
 };
 
-/** What a character's distance from the camera costs it this frame. */
-export type CharacterLodTier = "full" | "half" | "quarter" | "crowd";
+/** What a character's distance from the camera costs it this frame; `hidden` is one out of view, which draws nothing and casts no shadow, so it is never posed. */
+export type CharacterLodTier = "full" | "half" | "quarter" | "crowd" | "hidden";
 
 /**
  * Fills a model's authoring gaps with {@link DEFAULT_CHARACTER_LOD}. A missing, negative or
@@ -69,7 +69,29 @@ export function characterRigTier(distance: number, config: ModelLodConfig | unde
   return "quarter";
 }
 
-/** Share of frames a tier poses the rig: 1, 0.5, 0.25, and 0 once the GPU crowd draws it. @internal */
+/**
+ * The tier a world character takes this frame, before a crowd batch claims it. Posing follows what is
+ * seen: a character out of view is drawn by nothing and casts no shadow, so it is `hidden` and never
+ * posed; one in view poses at the rate its distance earns, or joins the crowd when its kind can. The
+ * local player and a model with `lod: false` always pose at full rate (the local rig also drives its
+ * first-person body when its own model is hidden).
+ * @internal
+ */
+export function characterViewTier(view: {
+  shown: boolean;
+  local: boolean;
+  lod: ModelLodConfig | false | undefined;
+  distance: number;
+  /** Whether a ready crowd batch could draw this character. */
+  crowd: boolean;
+  previous?: CharacterLodTier | undefined;
+}): CharacterLodTier {
+  if (view.local || view.lod === false) return "full";
+  if (!view.shown) return "hidden";
+  return view.crowd ? characterLodTier(view.distance, view.lod, view.previous) : characterRigTier(view.distance, view.lod);
+}
+
+/** Share of frames a tier poses the rig: 1, 0.5, 0.25, and 0 once the GPU crowd draws it or it is out of view. @internal */
 export function characterLodRate(tier: CharacterLodTier): number {
   switch (tier) {
     case "full":
@@ -79,11 +101,12 @@ export function characterLodRate(tier: CharacterLodTier): number {
     case "quarter":
       return 0.25;
     case "crowd":
+    case "hidden":
       return 0;
   }
 }
 
-/** Frames between pose updates for a tier: 1, 2, 4, and `0` meaning "never" for the crowd tier. */
+/** Frames between pose updates for a tier: 1, 2, 4, and `0` meaning "never" for the crowd and hidden tiers. */
 export function characterLodInterval(tier: CharacterLodTier): number {
   const rate = characterLodRate(tier);
   return rate === 0 ? 0 : Math.round(1 / rate);
@@ -195,7 +218,7 @@ export function resetCharacterLodStats(): void {
 }
 
 function readCharacterLod(): { counters: Record<string, number>; line: string } {
-  const counts = { full: 0, half: 0, quarter: 0, crowd: 0 };
+  const counts = { full: 0, half: 0, quarter: 0, crowd: 0, hidden: 0 };
   let parts = 0;
   let bones = 0;
   for (const [id, rig] of rigs) {
@@ -218,6 +241,7 @@ function readCharacterLod(): { counters: Record<string, number>; line: string } 
       halfRate: counts.half,
       quarterRate: counts.quarter,
       crowdRate: counts.crowd,
+      hiddenRate: counts.hidden,
       footIk: planted.size,
       glancing: glancing.size,
     },

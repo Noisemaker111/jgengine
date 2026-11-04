@@ -8,6 +8,7 @@ import {
   characterLodRate,
   characterLodTier,
   characterLodTierOf,
+  characterViewTier,
   characterRigTier,
   DEFAULT_CHARACTER_LOD,
   noteAnimationPhase,
@@ -82,6 +83,25 @@ describe("characterLodRate", () => {
     expect(characterLodRate("crowd")).toBe(0);
     expect([characterLodInterval("full"), characterLodInterval("half"), characterLodInterval("quarter")]).toEqual([1, 2, 4]);
     expect(characterLodInterval("crowd")).toBe(0);
+    expect(characterLodInterval("hidden")).toBe(0);
+  });
+});
+
+describe("characterViewTier", () => {
+  const view = { shown: true, local: false, lod: undefined, distance: 5, crowd: false };
+  test("a character out of view is never posed", () => {
+    expect(characterViewTier({ ...view, shown: false })).toBe("hidden");
+    expect(characterViewTier({ ...view, shown: false, crowd: true, distance: 80 })).toBe("hidden");
+  });
+
+  test("a character with no crowd batch still poses at the rate its distance earns", () => {
+    expect([5, 20, 60].map((distance) => characterViewTier({ ...view, distance }))).toEqual(["full", "half", "quarter"]);
+    expect(characterViewTier({ ...view, distance: 60, crowd: true })).toBe("crowd");
+  });
+
+  test("the local player and a model without LOD always pose at full rate", () => {
+    expect(characterViewTier({ ...view, local: true, shown: false, distance: 60 })).toBe("full");
+    expect(characterViewTier({ ...view, lod: false, shown: false, distance: 60 })).toBe("full");
   });
 });
 

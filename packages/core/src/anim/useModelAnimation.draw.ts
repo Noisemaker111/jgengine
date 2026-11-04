@@ -519,8 +519,14 @@ export function useModelAnimation(
     }
     // Distance tiers pose a far rig on fewer frames; the accumulated time keeps the clip at real
     // speed, so a half-rate character walks the same distance, it just reaches its poses less often.
-    const interval = characterLodInterval(characterLodTierOf(instanceId));
-    if (interval === 0) return;
+    // A hidden rig is not posed, but its clock keeps running: seen again, it poses where its clips
+    // would be by now, so a death or a reload finished off screen is finished.
+    const tier = characterLodTierOf(instanceId);
+    const interval = characterLodInterval(tier);
+    if (interval === 0) {
+      if (tier === "hidden") pendingRef.current += playbackDelta;
+      return;
+    }
     pendingRef.current += playbackDelta;
     frameRef.current += 1;
     if (interval > 1 && frameRef.current % interval !== 0) return;

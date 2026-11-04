@@ -135,7 +135,7 @@ describe("static authored object batching", () => {
       { model: { url: "a", parts: [{ model: { url: "b", animation: { clip: "spin" } } }] } },
       { model: { url: "a", variants: { levels: [{ url: "a", maxDistance: 40 }, { url: "a-far" }] }, parts: [{ model: { url: "b" } }] } },
       { model: { url: "a", attachments: [{ model: "b", slot: "hand" }] } },
-      { model: { url: "a", material: { maps: { color: "a.png" } } } }, { model: { url: "a", scale: -1 } },
+      { model: { url: "a", scale: -1 } },
       { model: { url: "a", materialAssignments: [{ materialId: "cloth", selector: { slot: "Shirt" } }] } },
       { object: { ...candidate(0).object, state: { locked: true } } },
       { style: { hidden: true } }, { style: { color: "red", opacity: 0.4 } },
@@ -143,6 +143,25 @@ describe("static authored object batching", () => {
       { object: { ...candidate(0).object, visual: { color: "blue", opacity: 0.7 } } },
     ];
     for (const patch of excluded) expect(groupStaticObjects(Array.from({ length: 10 }, (_, i) => candidate(i, patch))).batches).toHaveLength(0);
+  });
+
+  test("a model with override maps batches, drawing the maps its caller loaded", () => {
+    const textured = { url: "a", material: { maps: { color: "a.png", normal: "a-n.png" } } };
+    expect(groupStaticObjects(Array.from({ length: 4 }, (_, i) => candidate(i, { model: textured }))).batches).toHaveLength(1);
+    const pieces = staticModelPieces(textured);
+    const scenes = pieces.map(() => ({ scene: modelScene().root, animations: [] }));
+    expect(() => harvestStaticPieces(pieces, scenes)).toThrow(/override maps/);
+    const color = new THREE.Texture();
+    const normal = new THREE.Texture();
+    const harvested = harvestStaticPieces(pieces, scenes, [{ color, normal }])!;
+    expect(harvested.sources.length).toBeGreaterThan(0);
+    const materials = harvested.sources.flatMap((source) => Array.isArray(source.material) ? source.material : [source.material]);
+    expect(materials.length).toBeGreaterThan(0);
+    for (const material of materials) {
+      expect(material).toBeInstanceOf(THREE.MeshStandardMaterial);
+      expect(material).toMatchObject({ map: color, normalMap: normal });
+    }
+    for (const root of harvested.roots) disposeScatterModelSources(root);
   });
 
   test("a positive per-placement scale batches and lands in the instance matrix", () => {
