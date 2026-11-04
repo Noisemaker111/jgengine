@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { frameWorkObserver } from "@jgengine/core/devtools/frameBreakdown";
 
 import {
   bakeGrassNode,
@@ -107,10 +108,16 @@ export class GrassStream {
    * bakes, so a call makes progress on any budget.
    */
   update(camera: THREE.Camera, viewHeight: number, budgetMs: number): void {
+    const observe = frameWorkObserver();
     this.group.updateWorldMatrix(true, false);
     camera.updateMatrixWorld();
     this.viewHeight = Math.max(1, viewHeight);
-    if (!this.changed(camera) && this.pending === 0) return;
+    const changed = this.changed(camera);
+    if (!changed && this.pending === 0) { observe?.("grass unchanged updates", 1); return; }
+    let visited = 0;
+    let heightProbes = 0;
+    let baked = 0;
+    let tufts = 0;
     this.frame += 1;
     const lod = this.cameraLod(camera);
     camera.getWorldPosition(this.cameraPosition);
@@ -118,6 +125,10 @@ export class GrassStream {
     this.matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.matrix, camera.coordinateSystem);
     const visit = (level: number, ix: number, iz: number) => {
+      if (observe !== null) {
+        visited += 1;
+        if (!this.heights.has(`${level}:${ix}:${iz}`)) heightProbes += 9;
+      }
       const box = this.nodeWorldBox(level, ix, iz);
       if (!lod.perspective && !this.frustum.intersectsBox(box)) return;
       const distance = box.distanceToPoint(this.cameraPosition);
@@ -150,6 +161,7 @@ export class GrassStream {
         if (now() - started <= budgetMs) {
           if (leaf !== undefined) this.drop(leaf);
           leaf = this.bakeLeaf(key, node.level, node.ix, node.iz, Math.min(1, node.share * BAKE_HEADROOM));
+          if (observe !== null) { baked += 1; tufts += leaf.tufts.count; }
         } else {
           pending += 1;
           leaf ??= this.ancestor(node.level, node.ix, node.iz);
@@ -168,6 +180,14 @@ export class GrassStream {
     this.drawn = [...next];
     this.pending = pending;
     this.evict();
+    if (observe !== null) {
+      observe(changed ? "grass view or transform changed" : "grass pending bake", 1);
+      observe("grass nodes visited", visited);
+      observe("grass selection height queries", heightProbes);
+      observe("grass leaves baked", baked);
+      observe("grass tufts baked", tufts);
+      observe("grass leaves pending", pending);
+    }
   }
 
   /** What the stream holds and draws now. */

@@ -2,12 +2,34 @@ import { expect, test } from "bun:test";
 import * as THREE from "three";
 
 import { GRASS_DEFAULTS, GRASS_PRESETS, readGrassLook, type GrassLook } from "@jgengine/core/grass/grassKind";
+import { observeFrameWork } from "@jgengine/core/devtools/frameBreakdown";
 
 import { bakeGrassNode, grassTuftsBelow, resolveGrassBake, type GrassBakeOptions } from "./grassBake.draw";
 import { createGrassMaterial } from "./grassMaterial.draw";
 import { GrassStream } from "./grassStream.draw";
 
 const VIEW_HEIGHT = 900;
+
+test("grass work counts distinguish a stable view from a changed view", () => {
+  const { stream: field } = stream({ area: 100 });
+  const view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  const counts = new Map<string, number>();
+  observeFrameWork((name, count) => counts.set(name, (counts.get(name) ?? 0) + count));
+  try {
+    field.update(view, VIEW_HEIGHT, Infinity);
+    expect(counts.get("grass nodes visited")).toBeGreaterThan(0);
+    expect(counts.get("grass leaves baked")).toBeGreaterThan(0);
+    counts.clear();
+    field.update(view, VIEW_HEIGHT, Infinity);
+    expect(counts.get("grass unchanged updates")).toBe(1);
+    expect(counts.get("grass nodes visited")).toBeUndefined();
+    counts.clear();
+    view.position.x += 5;
+    field.update(view, VIEW_HEIGHT, 0);
+    expect(counts.get("grass view or transform changed")).toBe(1);
+    expect(counts.get("grass nodes visited")).toBeGreaterThan(0);
+  } finally { observeFrameWork(null); field.dispose(); }
+});
 
 function camera(position: [number, number, number], target: [number, number, number]): THREE.PerspectiveCamera {
   const result = new THREE.PerspectiveCamera(55, 1600 / VIEW_HEIGHT, 0.1, 2000);

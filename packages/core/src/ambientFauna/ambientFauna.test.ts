@@ -227,17 +227,24 @@ describe("cost", () => {
       ...(tracked ? { groundRevision: terrain.heightRevision } : {}),
     });
     const fauna = make(true);
-    for (let step = 0; step < 60; step += 1) fauna.update(frame(step / 30));
+    const stale = createAmbientFauna([group("drift", disc, 30)], { groundAt: terrain.sampleHeight, groundRevision: () => 0 });
+    for (let step = 0; step < 60; step += 1) { fauna.update(frame(step / 30)); stale.update(frame(step / 30)); }
     reads = 0;
     fauna.update(frame(2));
     const reused = reads;
     terrain.apply({ mode: "raise", center: [0, 0], radius: 45, strength: 10, falloff: "none" });
     reads = 0;
     fauna.update(frame(2 + 1 / 30));
+    stale.update(frame(2 + 1 / 30));
     expect(reads).toBeGreaterThan(reused);
     for (const state of fauna.groups) everyAgent(state, (x, y, z) => {
       expect(y).toBeGreaterThanOrEqual(terrain.sampleHeight(x, z) + state.spec.band.min - 1e-3);
     });
+    let staleAgents = 0;
+    for (const state of stale.groups) everyAgent(state, (x, y, z) => {
+      if (y < terrain.sampleHeight(x, z) + state.spec.band.min - 1e-3) staleAgents += 1;
+    });
+    expect(staleAgents).toBeGreaterThan(0);
     const untracked = make(false);
     for (let step = 0; step < 3; step += 1) untracked.update(frame(step / 30));
     reads = 0;
