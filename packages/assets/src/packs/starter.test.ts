@@ -3,7 +3,8 @@ import { describe, expect, test } from "bun:test";
 import { aliases } from "../aliases";
 import { buildCatalog } from "../catalogs/build";
 import { findLibraryModelByName, libraryModel } from "../catalogs/modelLibrary";
-import { generatedIndex } from "../generated";
+import { createStarterCatalog, STARTER_MODEL_PACKS } from "../catalogs/starter";
+import { generatedIndex, generatedPacks } from "../generated";
 import {
   STARTER_ASSETS,
   STARTER_PACKS,
@@ -45,11 +46,15 @@ describe("starter packs", () => {
       expect(typeof animation === "object" && animation.humanoidActions).toBe(true);
     }
     expect(STARTER_SOURCE_PACKS).not.toContain("kaykit-adventurers");
-    expect(buildCatalog({ basePath: "/models" }).resolve("asset:person_casual")).toBeNull();
+    expect(buildCatalog({ basePath: "/models", packs: generatedPacks }).resolve("asset:person_casual")).toBeNull();
   });
 
-  test("asset:prop_crate and short id resolve through buildCatalog with dims", () => {
-    const catalog = buildCatalog({ basePath: "/models" });
+  test("the starter catalog's packs are the starter source packs", () => {
+    expect(STARTER_MODEL_PACKS.map((pack) => pack.id)).toEqual([...STARTER_SOURCE_PACKS]);
+  });
+
+  test("asset:prop_crate and short id resolve through the starter catalog with dims", () => {
+    const catalog = createStarterCatalog({ basePath: "/models" });
     const viaAsset = catalog.resolve("asset:prop_crate");
     const viaShort = catalog.resolve("prop_crate");
     const viaStarter = catalog.resolve("starter/prop_crate");

@@ -32,7 +32,7 @@ export {
 } from "./spriteIndexGen";
 export { singles } from "./singles";
 export { aliases } from "./aliases";
-export { generatedIndex, generatedBySource } from "./generated";
+export { generatedIndex, generatedBySource, generatedPacks } from "./generated";
 export { generatedSpriteIndex, generatedSpriteBySource } from "./generated-sprites";
 export { readGlbDims } from "./dims";
 export { buildCatalog, entryUrl, type BuildCatalogOptions } from "./catalogs/build";
@@ -72,7 +72,7 @@ export {
 } from "./catalogs/modelLibrary";
 export { classifyAssetFile, validateImportSpec, type AssetImportKind, type AssetImportSpec, type ImportSpecValidation } from "./importSpec";
 export { buildSpriteCatalog, type BuildSpriteCatalogOptions } from "./catalogs/buildSprites";
-export { createStarterCatalog } from "./catalogs/starter";
+export { createStarterCatalog, STARTER_MODEL_PACKS } from "./catalogs/starter";
 export {
   STARTER_ASSETS,
   STARTER_PACKS,

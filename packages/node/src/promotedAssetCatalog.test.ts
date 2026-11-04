@@ -13,10 +13,11 @@ import {
 } from "./promotedAssetCatalog";
 
 const BASE_SOURCE = `import { buildCatalog } from "@jgengine/assets/catalogs/build";
+import { quaterniusStylizedNature } from "@jgengine/assets/generated/packs";
 
 export const assets = buildCatalog({
   basePath: "/models",
-  sources: ["quaternius-stylized-nature"],
+  packs: [quaterniusStylizedNature],
 });
 `;
 
@@ -65,7 +66,7 @@ test("importPromotedAsset writes bytes, returns the shipped url, and adds a dura
   expect(src).toContain('url: "/models/imported/Spaceship.glb"');
 
   // Round-trip: the emitted entry, fed to buildCatalog, resolves the id to the same url.
-  const catalog = buildCatalog({ extras: [imported as PromotedExtra] });
+  const catalog = buildCatalog({ packs: [], extras: [imported as PromotedExtra] });
   expect(catalog.resolve(imported.id)?.url).toBe(imported.url);
 });
 

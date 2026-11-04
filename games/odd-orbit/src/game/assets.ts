@@ -1,17 +1,15 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
 import { findLibraryMaterial, libraryMaterialMaps } from "@jgengine/assets/catalogs/materialLibrary";
+import { kaykitFurniture, kaykitSpaceBase, quaterniusStylizedNature, quaterniusTexturedCuteMonsterPack } from "@jgengine/assets/generated/packs";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
+
+const MODEL_PACKS = [quaterniusTexturedCuteMonsterPack, quaterniusStylizedNature, kaykitFurniture, kaykitSpaceBase];
 
 /** Preferred CC0 packs — pull + reindex to light up MODEL_PLAN ids. */
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
-  sources: [
-    "quaternius-textured-cute-monster-pack",
-    "quaternius-stylized-nature",
-    "kaykit-furniture",
-    "kaykit-space-base",
-  ],
+  packs: MODEL_PACKS,
 });
 
 /**
@@ -23,10 +21,7 @@ const GROUND_MATERIAL_SOURCE = "ambientcg-gravel002";
 
 /** Every pack this game pulls — the credits screen is generated from it, so it cannot drift. */
 export const ASSET_SOURCE_IDS: readonly string[] = [
-  "quaternius-textured-cute-monster-pack",
-  "quaternius-stylized-nature",
-  "kaykit-furniture",
-  "kaykit-space-base",
+  ...MODEL_PACKS.map((pack) => pack.id),
   "ambientcg-metalplates001",
   "ambientcg-terrazzo005",
   "ambientcg-tiles007",

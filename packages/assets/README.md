@@ -20,7 +20,7 @@ A self-generating, license-verified index of thousands of CC0 3D models, PBR mat
 5. **Materials** (`src/sources/ambientcg.ts` + `src/materials.ts`) G�� `kind: "material"` sources, one CC0 PBR material each (hundreds of ambientCG materials: grass, rock, wood, brick, metal, fabricGǪ). `pull` normalizes the maps to fixed filenames, so `buildMaterialCatalog({ basePath })` resolves ids and `material/GǪ` aliases to map URLs with no generated index at all.
 6. **Sprites** (`src/sources/gameicons.ts` + `src/spriteIndexGen.ts`) G�� `kind: "sprite"` sources, packs of individual SVG/PNG icon and UI files (game-icons.net's ~4,000 CC BY 3.0 icons as one mirrored repo). Same shape as models G�� `reindex-sprites` discovers real files after a pull and writes `src/generated-sprites/*.json`, resolved through `buildSpriteCatalog({ basePath })`.
 
-Model entries collapse into the core `AssetCatalog` via `buildCatalog({ basePath })`; materials resolve through `buildMaterialCatalog({ basePath })`; sprites/icons resolve through `buildSpriteCatalog({ basePath })`.
+Model entries collapse into the core `AssetCatalog` via `buildCatalog({ basePath, packs })`; materials resolve through `buildMaterialCatalog({ basePath })`; sprites/icons resolve through `buildSpriteCatalog({ basePath })`.
 
 ## `add` G�� one command for anything
 
@@ -138,10 +138,11 @@ assets add "https://poly.pizza/GǪ/model.glb" --category prop --license CC0-1.0 
 Build the catalog once, then address ids (or aliases) G�� resolve returns `{ url }`:
 
 ```ts
-import { buildCatalog } from "@jgengine/assets";
+import { buildCatalog } from "@jgengine/assets/catalogs/build";
 import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
+import { quaterniusStylizedNature } from "@jgengine/assets/generated/packs";
 
-const catalog = buildCatalog({ basePath: "/models" });
+const catalog = buildCatalog({ basePath: "/models", packs: [quaterniusStylizedNature] });
 
 catalog.resolve("quaternius-stylized-nature/Pine_1"); // { url: "/models/quaternius-stylized-nature/Pine_1.glb" }
 catalog.resolve("nature/tree_pine");                   // alias G�� same url
@@ -158,7 +159,7 @@ export const game: PlayableGame = {
 };
 ```
 
-`buildCatalog({ sources: ["quaternius-stylized-nature"] })` restricts to chosen packs; `includeAliases` / `includeSingles` default true. Discover ids with `assets add <query>` (or `jgengine find <words>` / `assets list --category <c>`) instead of memorizing them.
+`packs` names the packs the catalog registers, each imported by name from `@jgengine/assets/generated/packs`, so a game's bundle carries only the packs it ships (`generatedPacks` from `@jgengine/assets/generated` is the whole library, for tools). `includeAliases` / `includeSingles` default true. Discover ids with `assets add <query>` (or `jgengine find <words>` / `assets list --category <c>`) instead of memorizing them.
 
 Materials resolve the same way G�� ids (or `material/GǪ` aliases) to normalized PBR map URLs:
 
@@ -191,7 +192,7 @@ A resolved id only yields a **URL** G�� the GLB must be somewhere your app s
 bun src/cli/pull.ts pull quaternius-stylized-nature --dir ../../apps/dev/public   # G�� apps/dev/public/models/quaternius-stylized-nature/*.glb
 ```
 
-`buildCatalog({ basePath: "/models" })` then resolves to `/models/quaternius-stylized-nature/GǪ`, which the dev server serves from `public/models/` (gitignored G�� the bytes are the consumer's, fetched once from the provider's CDN).
+`buildCatalog({ basePath: "/models", packs: [quaterniusStylizedNature] })` then resolves to `/models/quaternius-stylized-nature/GǪ`, which the dev server serves from `public/models/` (gitignored G�� the bytes are the consumer's, fetched once from the provider's CDN).
 
 Sprite/icon packs pull the same way, into `public/sprites/`:
 

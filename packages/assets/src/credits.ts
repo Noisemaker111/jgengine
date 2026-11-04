@@ -29,8 +29,8 @@ export function sourcesForAssetIds(ids: Iterable<string>): AssetSource[] {
 }
 
 /**
- * The distinct sources behind a set of source ids — the shape a game already declares to
- * `buildCatalog({ sources })` / `buildMaterialCatalog`. Unknown ids are skipped.
+ * The distinct sources behind a set of source ids — the `id`s of the packs a game hands to
+ * `buildCatalog({ packs })`, plus its material sources. Unknown ids are skipped.
  *
  * @capability sources-for-source-ids resolve the asset pack metadata behind the source ids a game declares
  */
@@ -88,7 +88,7 @@ export function creditsForAssetIds(
 
 /**
  * One call from the source ids a game declares to a ready {@link CreditsDocument} — the usual entry
- * point, since `buildCatalog({ sources })` already names them.
+ * point, since the packs a game hands to `buildCatalog({ packs })` already carry them.
  *
  * @capability credits-for-source-ids build a credits document from the asset source ids a game declares
  */

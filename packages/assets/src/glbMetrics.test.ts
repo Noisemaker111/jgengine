@@ -424,7 +424,7 @@ describe("budget enforcement and indexing", () => {
     const generated = join(root, "generated");
     expect(reindex(models, generated).total).toBe(1);
     expect(JSON.parse(readFileSync(join(generated, `${source.id}.json`), "utf8"))).toEqual(entries);
-    expect(readFileSync(join(generated, "index.js"), "utf8")).toContain(`./${source.id}.json`);
+    expect(readFileSync(join(generated, "pack", `${source.id}.js`), "utf8")).toContain(`../${source.id}.json`);
   });
 });
 

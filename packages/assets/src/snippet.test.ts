@@ -13,6 +13,8 @@ describe("wiring snippets", () => {
   test("model snippet resolves the id through buildCatalog", () => {
     const snippet = modelWiringSnippet("quaternius-modular-scifi/astronautA", { seam: "entityModels" });
     expect(snippet).toContain("buildCatalog");
+    expect(snippet).toContain(`import { quaterniusModularScifi } from "@jgengine/assets/generated/packs";`);
+    expect(snippet).toContain("packs: [quaterniusModularScifi]");
     expect(snippet).toContain("quaternius-modular-scifi/astronautA");
     expect(snippet).toContain("entityModels");
   });

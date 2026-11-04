@@ -1,17 +1,25 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
+import {
+  quaterniusAnimatedLowpolyRobot,
+  quaterniusAnimatedMechPack,
+  quaterniusLowPolyDesertAssets,
+  quaterniusModularScifi,
+  quaterniusStylizedNature,
+  quaterniusToonShooter,
+} from "@jgengine/assets/generated/packs";
 import { buildMaterialCatalog } from "@jgengine/assets/materials";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 import { MACHINE } from "./palette";
 
-const MODEL_SOURCES = [
-  "quaternius-modular-scifi",
-  "quaternius-stylized-nature",
-  "quaternius-toon-shooter",
-  "quaternius-animated-mech-pack",
-  "quaternius-animated-lowpoly-robot",
-  "quaternius-low-poly-desert-assets",
-] as const;
+const MODEL_PACKS = [
+  quaterniusModularScifi,
+  quaterniusStylizedNature,
+  quaterniusToonShooter,
+  quaterniusAnimatedMechPack,
+  quaterniusAnimatedLowpolyRobot,
+  quaterniusLowPolyDesertAssets,
+];
 
 const MATERIAL_SOURCES = {
   /** Ferralon's cracked desert floor — real grain so the flats stop reading as flat vertex colour. */
@@ -26,13 +34,13 @@ const MATERIAL_SOURCES = {
 
 /** Every pack this game ships — credits are generated from it, so it cannot drift. */
 export const ASSET_SOURCE_IDS: readonly string[] = [
-  ...MODEL_SOURCES,
+  ...MODEL_PACKS.map((pack) => pack.id),
   ...Object.values(MATERIAL_SOURCES),
 ];
 
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
-  sources: [...MODEL_SOURCES],
+  packs: MODEL_PACKS,
 });
 
 const materials = buildMaterialCatalog({ basePath: "/materials" });

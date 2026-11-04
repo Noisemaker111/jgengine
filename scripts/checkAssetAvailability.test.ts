@@ -19,7 +19,7 @@ import {
 describe("checkAssetAvailability", () => {
   test("fails a referenced pack that is neither committed nor provisioned (the pre-fix bug)", () => {
     const result = checkAssetAvailability({
-      references: [{ game: "the-robots", pack: "kaykit-skeletons", via: "buildCatalog" }],
+      references: [{ game: "the-robots", pack: "kaykit-skeletons", via: "pack-import" }],
       committed: new Set(["kaykit-adventurers"]),
       provisioned: new Set(),
     });
@@ -32,7 +32,7 @@ describe("checkAssetAvailability", () => {
 
   test("passes when the pack is committed", () => {
     const result = checkAssetAvailability({
-      references: [{ game: "the-robots", pack: "kaykit-skeletons", via: "buildCatalog" }],
+      references: [{ game: "the-robots", pack: "kaykit-skeletons", via: "pack-import" }],
       committed: new Set(["kaykit-skeletons"]),
       provisioned: new Set(),
     });
@@ -42,7 +42,7 @@ describe("checkAssetAvailability", () => {
 
   test("passes when the pack is provisioned by a bootstrap pull step", () => {
     const result = checkAssetAvailability({
-      references: [{ game: "starhome", pack: "quaternius-modular-scifi", via: "buildCatalog" }],
+      references: [{ game: "starhome", pack: "quaternius-modular-scifi", via: "pack-import" }],
       committed: new Set(),
       provisioned: new Set(["quaternius-modular-scifi"]),
     });
@@ -61,7 +61,7 @@ describe("checkAssetAvailability", () => {
   test("reports every dangling reference, not just the first", () => {
     const result = checkAssetAvailability({
       references: [
-        { game: "a", pack: "ghost-one", via: "buildCatalog" },
+        { game: "a", pack: "ghost-one", via: "pack-import" },
         { game: "b", pack: "ghost-two", via: "path-literal" },
       ],
       committed: new Set(),
@@ -88,34 +88,27 @@ describe("packReferencesForGame", () => {
     for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
   };
 
-  test("extracts multi-line buildCatalog sources", () => {
+  test("extracts every pack imported from the generated pack module, multi-line and renamed", () => {
     const srcDir = makeGame({
-      "game/assets.ts":
-        'export const assets = buildCatalog({\n  basePath: "/models",\n  sources: [\n    "quaternius-modular-scifi",\n    "kaykit-space-base",\n  ],\n});\n',
+      "game/assets.ts": [
+        'import {',
+        '  quaterniusModularScifi,',
+        '  kaykitSpaceBase as base,',
+        '} from "@jgengine/assets/generated/packs";',
+        'export const assets = buildCatalog({ basePath: "/models", packs: [quaterniusModularScifi, base] });',
+      ].join("\n"),
     });
     const refs = packReferencesForGame("the-robots", srcDir);
-    const packs = new Set(refs.map((r) => r.pack));
-    expect(packs.has("quaternius-modular-scifi")).toBe(true);
-    expect(packs.has("kaykit-space-base")).toBe(true);
-    expect(refs.every((r) => r.via === "buildCatalog")).toBe(true);
+    expect(refs.map((r) => r.pack).sort()).toEqual(["kaykit-space-base", "quaternius-modular-scifi"]);
+    expect(refs.every((r) => r.via === "pack-import")).toBe(true);
     cleanup();
   });
 
-  test("follows a named pack list spread into buildCatalog sources", () => {
+  test("ignores names imported from other modules", () => {
     const srcDir = makeGame({
-      "game/assets.ts": [
-        "const ASSET_SOURCE_IDS = [\"kaykit-skeletons\", \"quaternius-medieval-village\"] as const;",
-        "export const assets = buildCatalog({",
-        "  basePath: \"/models\",",
-        "  sources: [...ASSET_SOURCE_IDS],",
-        "});",
-      ].join("\\n"),
+      "game/assets.ts": 'import { kaykitSkeletons } from "./local";\nconst resources = ["kaykit-forest"];\n',
     });
-    const refs = packReferencesForGame("beacon-bastion", srcDir);
-    const packs = new Set(refs.map((ref) => ref.pack));
-    expect(packs.has("kaykit-skeletons")).toBe(true);
-    expect(packs.has("quaternius-medieval-village")).toBe(true);
-    expect(refs.every((ref) => ref.via === "buildCatalog")).toBe(true);
+    expect(packReferencesForGame("beacon-bastion", srcDir)).toEqual([]);
     cleanup();
   });
 
