@@ -81,6 +81,7 @@ describe("Harbor Heat circuit races", () => {
     streetPlayOf(ctx).tick(ctx, 0.05);
     expect(raceStore.read(ctx)).toMatchObject({ finished: true, won: false });
     expect(raceStore.read(ctx)?.forfeit).toContain("left the car");
+    expect(ctx.scene.entity.get(RIVAL_RACER_ID)).toBeNull();
   });
 
   test("swapping into another car forfeits the race", () => {

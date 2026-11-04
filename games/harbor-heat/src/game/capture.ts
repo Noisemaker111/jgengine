@@ -7,6 +7,7 @@ import { harborSave, saveHarborState } from "./save";
 import { startedStore } from "./commands";
 import { sessionStore } from "./session";
 import { streetPlayOf } from "./streetPlay";
+import { RACE_ROUTES } from "./world/districts";
 import { courierSettlement, courierStore, DELIVERY_ROUTES } from "./jobs/courier";
 
 /** What a staged chase should look like when the capture takes it. */
@@ -97,6 +98,20 @@ export function registerCaptureCommands(ctx: GameContext): void {
       const [x, , z] = player.position;
       const id = state.scene.entity.spawn(kind, { position: [x, state.world.groundHeightAt(x, z), z], rotationY: player.rotationY ?? 0, role: "prop" });
       streetPlay.enterVehicle(state, id);
+      return state;
+    },
+  });
+  // The driven car on a circuit's start line, facing its first gate, with the race started there.
+  ctx.game.commands.define<{ route?: string }>("race.stage", {
+    apply(state, input) {
+      const route = RACE_ROUTES.find((r) => r.id === input?.route) ?? RACE_ROUTES[0];
+      const car = streetPlayOf(state).drivingVehicleId();
+      const start = route?.checkpoints.at(-1);
+      const first = route?.checkpoints[0];
+      if (car === null || start === undefined || first === undefined) return state;
+      const heading = Math.atan2(first[0] - start[0], first[1] - start[1]);
+      streetPlayOf(state).placeVehicle(state, car, [start[0], state.world.groundHeightAt(start[0], start[1]), start[1]], heading);
+      state.game.commands.run("race.start", {});
       return state;
     },
   });

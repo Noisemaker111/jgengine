@@ -161,13 +161,15 @@ export function createRace(driving: Driving): Race {
       race.addRacer(ctx.player.userId, raceStartedAt);
       race.addRacer(RIVAL_RACER_ID, raceStartedAt);
       activeRival = rival;
+      // The rival lines up beside the player on the grid, not inside their car.
+      const grid: readonly [number, number] = [start[0] + 4, start[1] + 4];
       ctx.scene.entity.spawn(rival.car, {
         id: RIVAL_RACER_ID,
-        position: [start[0], ctx.world.groundHeightAt(start[0], start[1]), start[1]],
+        position: [grid[0], ctx.world.groundHeightAt(grid[0], grid[1]), grid[1]],
         role: "prop",
       });
       rivalConfig = {
-        waypoints: [...checkpoints, first].map(([x, z]) => [x, 0, z] as const),
+        waypoints: [grid, ...checkpoints, first].map(([x, z]) => [x, 0, z] as const),
         speed: rival.pace,
         loop: false,
       };
