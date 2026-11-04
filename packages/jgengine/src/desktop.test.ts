@@ -8,6 +8,7 @@ import {
   buildPlan,
   checkToolchains,
   defaultIdentifier,
+  desktopCodeHash,
   isAllowedDesktopOrigin,
   parseDesktopArgs,
   resolveMetadata,
@@ -209,6 +210,29 @@ describe("metadata defaults", () => {
 });
 
 describe("buildPlan + writeStaging", () => {
+  test("desktop code fingerprint changes with bundled code and ignores models", () => {
+    const dir = scratch();
+    writeFileSync(join(dir, "index.html"), "<script src='game.js'></script>");
+    writeFileSync(join(dir, "game.js"), "first");
+    writeFileSync(join(dir, "model.glb"), "one");
+    const original = desktopCodeHash(dir);
+    writeFileSync(join(dir, "model.glb"), "two");
+    expect(desktopCodeHash(dir)).toBe(original);
+    writeFileSync(join(dir, "game.js"), "second");
+    expect(desktopCodeHash(dir)).not.toBe(original);
+  });
+  test("diagnostic desktop build enables local telemetry and inspection only when requested", () => {
+    const dir = scaffoldGame();
+    const parsed = parseDesktopArgs([dir, "--diagnostics", "--out", join(dir, "diagnostic-stage")]);
+    if ("error" in parsed) throw new Error(parsed.error);
+    const plan = buildPlan(parsed, dir);
+    if ("error" in plan) throw new Error(plan.error);
+    const stage = writeStaging(plan);
+    const conf = JSON.parse(readFileSync(stage.tauriConfPath, "utf8")) as { app: { windows: { url?: string }[] } };
+    expect(conf.app.windows[0]?.url).toBe("index.html?telemetry=local&frameMembers=1");
+    expect(readFileSync(join(stage.stagingDir, "src-tauri", "Cargo.toml"), "utf8")).toContain('"devtools"');
+    expect(parseDesktopArgs(["--url", "https://jgengine.com", "--diagnostics"])).toEqual({ error: "--diagnostics requires a local project" });
+  });
   test("project plan points frontendDist at offline dist and stages under .jgengine/desktop", () => {
     const dir = scaffoldGame();
     const parsed = parseDesktopArgs([dir, "--dry-run"]);
@@ -260,6 +284,8 @@ describe("buildPlan + writeStaging", () => {
     expect(conf.version).toBe("0.1.0");
     expect(conf.build.frontendDist).toBe("../dist");
     expect(conf.bundle.targets).toEqual(["nsis"]);
+    expect(readFileSync(stage.tauriConfPath, "utf8")).not.toContain("telemetry=local");
+    expect(readFileSync(join(stage.stagingDir, "src-tauri", "Cargo.toml"), "utf8")).not.toContain('"devtools"');
     expect(existsSync(join(stage.stagingDir, "src-tauri", "Cargo.toml"))).toBe(true);
     expect(existsSync(join(stage.stagingDir, "src-tauri", "icons", "icon.png"))).toBe(true);
     expect(existsSync(join(stage.stagingDir, "src-tauri", "src", "main.rs"))).toBe(true);
@@ -280,6 +306,15 @@ describe("buildPlan + writeStaging", () => {
 });
 
 describe("CI smoke-build (dry-run)", () => {
+  test("diagnostic staging records a fingerprint but does not claim a dry run built the source", async () => {
+    const dir = scaffoldGame();
+    const out = join(dir, "diagnostic-output");
+    expect(await runDesktopAsync([dir, "--dry-run", "--diagnostics", "--out", out], dir)).toBe(0);
+    const manifest = JSON.parse(readFileSync(join(out, "dist", "jgengine-build.json"), "utf8")) as { sourceStatus: string; codeSha256: string };
+    expect(manifest.sourceStatus).toBe("unverified");
+    expect(manifest.codeSha256).toHaveLength(64);
+    expect(manifest.codeSha256).toBe(desktopCodeHash(join(out, "dist")));
+  });
   test(
     "project dry-run stages a single-game installer project",
     async () => {

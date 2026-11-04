@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   cpSync,
   existsSync,
@@ -40,6 +41,7 @@ export interface DesktopArgs {
   dryRun: boolean;
   skipFrontendBuild: boolean;
   allowRemote: boolean;
+  diagnostics: boolean;
 }
 
 export interface DesktopPlan {
@@ -52,6 +54,7 @@ export interface DesktopPlan {
   /** Set when a project icon was found but could not be read, so the jgengine mark is used. */
   iconWarning: string | null;
   frontendDist: string;
+  diagnostics: boolean;
 }
 
 export interface ToolchainReport {
@@ -65,6 +68,31 @@ export interface StageResult {
   metadata: DesktopMetadata;
   frontendDist: string;
   mode: DesktopMode;
+}
+
+interface BuildSource { commit: string | null; dirty: boolean | null }
+
+/** Source identity from the project checkout; unavailable git state stays unknown. @internal */
+export function desktopBuildSource(projectDir: string): BuildSource {
+  const run = (args: string[]) => spawnSync("git", args, { cwd: projectDir, encoding: "utf8", windowsHide: true, timeout: 5_000 });
+  const head = run(["rev-parse", "HEAD"]);
+  const status = run(["status", "--porcelain"]);
+  return { commit: head.status === 0 ? head.stdout.trim() || null : null, dirty: status.status === 0 ? status.stdout.trim().length > 0 : null };
+}
+
+/** Fingerprint the staged HTML, JS, CSS and source maps, not external models or textures. @internal */
+export function desktopCodeHash(dist: string): string {
+  const hash = createHash("sha256");
+  const visit = (dir: string, prefix: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const name = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) visit(path, name);
+      else if (entry.isFile() && /\.(html|js|css|map)$/i.test(entry.name)) { hash.update(name); hash.update("\0"); hash.update(readFileSync(path)); }
+    }
+  };
+  visit(dist, "");
+  return hash.digest("hex");
 }
 
 const VALUE_FLAGS = new Set(["--url", "--name", "--id", "--version", "--icon", "--out"]);
@@ -93,6 +121,7 @@ options:
   --out <dir>         staging directory (default: <project>/.jgengine/desktop)
   --dry-run           generate staging + config only; skip toolchain + Rust build
   --skip-frontend-build  reuse existing dist/ (local mode; for tests)
+  --diagnostics       opt into local frame telemetry and WebView developer tools
   --allow-remote      allow --url to point at a host outside the trusted allowlist
                        (localhost, jgengine.com and its subdomains) — only pass this
                        for a hosted URL you trust; the shipped app loads it live
@@ -126,6 +155,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
   const dryRun = hasFlag(argv, "dry-run");
   const skipFrontendBuild = hasFlag(argv, "skip-frontend-build");
   const allowRemote = hasFlag(argv, "allow-remote");
+  const diagnostics = hasFlag(argv, "diagnostics");
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
@@ -134,6 +164,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
       arg === "--dry-run" ||
       arg === "--skip-frontend-build" ||
       arg === "--allow-remote" ||
+      arg === "--diagnostics" ||
       arg === "--help" ||
       arg === "-h"
     )
@@ -163,6 +194,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
   if (url !== undefined && projectDir !== null) {
     return { error: "pass either a project directory or --url, not both" };
   }
+  if (url !== undefined && diagnostics) return { error: "--diagnostics requires a local project" };
 
   if (url !== undefined) {
     return {
@@ -177,6 +209,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
       dryRun,
       skipFrontendBuild,
       allowRemote,
+      diagnostics,
     };
   }
 
@@ -192,6 +225,7 @@ export function parseDesktopArgs(argv: string[]): DesktopArgs | { error: string 
     dryRun,
     skipFrontendBuild,
     allowRemote,
+    diagnostics,
   };
 }
 
@@ -425,6 +459,7 @@ export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): Deskt
       iconSource,
       iconWarning: null,
       frontendDist: validated.url.toString(),
+      diagnostics: false,
     };
   }
 
@@ -457,6 +492,7 @@ export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): Deskt
     iconSource,
     iconWarning: projectIconError,
     frontendDist: "../dist",
+    diagnostics: args.diagnostics,
   };
 }
 
@@ -483,6 +519,7 @@ function tauriConf(plan: DesktopPlan): string {
             width: 1280,
             height: 800,
             resizable: true,
+            ...(plan.diagnostics ? { url: "index.html?telemetry=local&frameMembers=1" } : {}),
           },
         ],
         security: {
@@ -500,7 +537,7 @@ function tauriConf(plan: DesktopPlan): string {
   )}\n`;
 }
 
-function cargoToml(crate: string, version: string): string {
+function cargoToml(crate: string, version: string, diagnostics: boolean): string {
   return `[package]
 name = "${crate}"
 version = "${version}"
@@ -516,7 +553,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 # Without "compression": game assets are mostly already-compressed models and textures, and brotli over
 # them at build time costs minutes per game. The NSIS installer compresses the whole app anyway.
-tauri = { version = "2", default-features = false, features = ["wry", "common-controls-v6", "dynamic-acl", "x11", "dbus"] }
+tauri = { version = "2", default-features = false, features = ["wry", "common-controls-v6", "dynamic-acl", "x11", "dbus"${diagnostics ? ', "devtools"' : ""}] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 `;
@@ -604,7 +641,7 @@ export function writeStaging(plan: DesktopPlan): StageResult {
 
   writeFileSync(join(stagingDir, "package.json"), stagingPackageJson(plan.metadata.productName));
   writeFileSync(join(srcTauri, "tauri.conf.json"), tauriConf(plan));
-  writeFileSync(join(srcTauri, "Cargo.toml"), cargoToml(crate, plan.metadata.version));
+  writeFileSync(join(srcTauri, "Cargo.toml"), cargoToml(crate, plan.metadata.version, plan.diagnostics));
   writeFileSync(join(srcTauri, "build.rs"), buildRs());
   writeFileSync(join(srcTauri, "src", "lib.rs"), libRs());
   writeFileSync(join(srcTauri, "src", "main.rs"), mainRs(crate));
@@ -845,6 +882,7 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
     }
   }
 
+  const sourceBefore = plan.diagnostics && plan.projectDir !== null ? desktopBuildSource(plan.projectDir) : null;
   if (plan.mode === "project" && plan.projectDir !== null && !parsed.skipFrontendBuild && !parsed.dryRun) {
     console.log(`building web frontend in ${plan.projectDir}…`);
     const built = buildFrontend(plan.projectDir);
@@ -881,6 +919,15 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
         )}</title></head><body><p>dry-run placeholder</p></body></html>\n`,
       );
     }
+  }
+
+  if (plan.diagnostics && plan.projectDir !== null && sourceBefore !== null) {
+    const sourceAfter = desktopBuildSource(plan.projectDir);
+    const stable = sourceBefore.commit !== null && sourceBefore.commit === sourceAfter.commit && sourceBefore.dirty === false && sourceAfter.dirty === false && !parsed.skipFrontendBuild && !parsed.dryRun;
+    const changed = sourceBefore.commit !== null && sourceAfter.commit !== null && (sourceBefore.commit !== sourceAfter.commit || (sourceBefore.dirty === false && sourceAfter.dirty === true));
+    const manifest = { sourceBefore, sourceAfter, sourceStatus: stable ? "unchanged-clean" : changed ? "changed" : "unverified", codeSha256: desktopCodeHash(join(stage.stagingDir, "dist")), includes: "staged HTML, JS, CSS and source maps; excludes assets" };
+    writeFileSync(join(stage.stagingDir, "dist", "jgengine-build.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+    console.log(`  diagnostics source ${manifest.sourceStatus}; code SHA-256 ${manifest.codeSha256}`);
   }
 
   console.log(`  product  ${stage.metadata.productName}`);

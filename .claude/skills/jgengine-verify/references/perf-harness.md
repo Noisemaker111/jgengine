@@ -26,6 +26,8 @@ The breakdown reports timed scope calls per frame (average and maximum). Render 
 
 The saved record also compares the running dev server's checkout and boot revision with the measuring checkout. `matched` proves that identity only, not that dirty files or compiled assets are byte-identical. A mismatch or unavailable server identity is saved with the run and cannot become a cached baseline. Callback locations use the served source map; a missing map is labeled `generated` and counted as unresolved.
 
+For an opt-in local diagnostic session on a shipped web build, `?telemetry=local&frameMembers=1` enables the same in-page report without probing or posting to the dev server. `bun run jgengine desktop <game-dir> --diagnostics` opts a local desktop build into that mode and WebView developer tools. This does not attach the perf CLI to the app or establish that its source maps match.
+
 Runs are headless on purpose: headless Chrome draws on the real GPU here, while `--headed` puts an off-screen window under the desktop compositor, so its numbers are not the ones to report.
 
 An A/B of two live gameplay windows measures the scene, not the setting: runs of one build moved harbor-heat between 1172 and 1296 draws (9.5%), so a millisecond-scale effect sat inside that noise. `--state <name>` boots into the game's own `capture.states` entry (the same mechanism `shoot --state` uses) and `--param spawn=x,y,z` / `--param seed=7` pin what no state covers; both are echoed on stderr and in the record's `state`/`params` beside `overrides`. Pinning brightway-park's `paused` state across two runs gave identical draws (1095) and triangles (100,177), where the unpinned pair of one build differed by 9.5%.
