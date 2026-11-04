@@ -44,6 +44,41 @@ test("records real shared members and repeated render calls through the frame lo
   }
 });
 
+test("unresolved and disjoint GPU queries remain unavailable until complete", () => {
+  const prior = Reflect.get(globalThis, "window");
+  Reflect.set(globalThis, "window", { location: { search: "" } });
+  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
+  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
+    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
+    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
+  } };
+  let ready = false;
+  let disjoint = false;
+  const gl = {
+    QUERY_RESULT_AVAILABLE: 1, QUERY_RESULT: 2,
+    getExtension: () => ({ TIME_ELAPSED_EXT: 3, GPU_DISJOINT_EXT: 4 }),
+    createQuery: () => ({}), beginQuery() {}, endQuery() {}, deleteQuery() {},
+    getParameter: () => disjoint,
+    getQueryParameter: (_query: unknown, name: number) => name === 1 ? ready : 1_000_000,
+  };
+  const renderer = { getContext: () => gl, shadowMap: {}, info: { programs: [] }, render() {} };
+  const store = { getState: () => ({ internal }) };
+  const breakdown = installFrameBreakdown(renderer as never, store as never);
+  internal.subscribe({ current: () => renderer.render() }, 0);
+  const frame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 60); };
+  try {
+    frame(); frame();
+    expect(breakdown.records()[0]?.gpu).toBeNull();
+    ready = true; frame();
+    expect(breakdown.records()[0]?.gpu?.["main"]).toBe(1);
+    disjoint = true; frame();
+    expect(breakdown.records()[2]?.gpu).toBeNull();
+  } finally {
+    breakdown.dispose();
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+});
+
 test("attributes real fauna terrain queries and terrain edits to a shared callback", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "?frameMembers=1" } });
