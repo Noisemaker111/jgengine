@@ -3,6 +3,8 @@ import { describe, expect, test } from "bun:test";
 import { gateTimingMs } from "../../../../scripts/timing-budget";
 import { windField } from "../world/wind";
 import { createEditableTerrain } from "../terrain/terraform";
+import { groundFieldFor } from "../terrain/terrain";
+import { environment, terrain as terrainFeature } from "../world/features";
 import {
   createAmbientFauna,
   windowPresence,
@@ -221,10 +223,11 @@ describe("cost", () => {
 
   test("terrain edits invalidate cached heights and unknown revisions never reuse across updates", () => {
     const terrain = createEditableTerrain({ bounds: { minX: -50, minZ: -50, maxX: 50, maxZ: 50 }, cellSize: 2 });
+    const ground = groundFieldFor(environment({ terrain: terrainFeature({ heightField: terrain.sampleHeight, heightRevision: () => terrain.heightRevision?.() }) }));
     let reads = 0;
     const make = (tracked: boolean) => createAmbientFauna([group("drift", disc, 30)], {
-      groundAt: (x, z) => { reads += 1; return terrain.sampleHeight(x, z); },
-      ...(tracked ? { groundRevision: terrain.heightRevision } : {}),
+      groundAt: (x, z) => { reads += 1; return ground.sampleHeight(x, z); },
+      ...(tracked ? { groundRevision: () => ground.heightRevision?.() } : {}),
     });
     const fauna = make(true);
     const stale = createAmbientFauna([group("drift", disc, 30)], { groundAt: terrain.sampleHeight, groundRevision: () => 0 });

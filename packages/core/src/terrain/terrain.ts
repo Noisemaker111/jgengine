@@ -260,8 +260,7 @@ export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
 /** @internal */
 export function groundFieldFor(world?: WorldFeature): TerrainField {
   if (world !== undefined && world.kind === "environment") {
-    const field = resolveEnvironmentField(world);
-    return world.roadSource === undefined ? { ...field, heightRevision: () => 0 } : field;
+    return resolveEnvironmentField(world);
   }
   // Place worlds (`world()` from world/place) stand on a flat baseline field: flat/board grounds are
   // exactly y=0, while round/voxel grounds keep their sampled shape in the game's own generation
@@ -490,10 +489,24 @@ export function resolveEnvironmentField(feature: EnvironmentWorldFeature): Terra
     feature.clearings === undefined || feature.clearings.length === 0
       ? sculpted
       : flattenFieldAround(sculpted, feature.clearings);
-  if (feature.roadSource !== undefined) return liveRoadDrapedField({ ...cleared, heightRevision: () => 0 }, feature.roadSource);
-  return feature.roads === undefined || feature.roads.length === 0
+  const revisions = [feature.terrain?.heightRevision, ...(feature.islands ?? []).map((island) => island.heightRevision)].filter((revision): revision is () => number | undefined => revision !== undefined);
+  const previous = revisions.map((revision) => revision());
+  let version = 0;
+  const heightRevision = () => {
+    let unknown = false;
+    for (let i = 0; i < revisions.length; i += 1) {
+      const next = revisions[i]?.();
+      if (next === undefined) unknown = true;
+      if (next !== previous[i]) { previous[i] = next; version += 1; }
+    }
+    return unknown ? undefined : version;
+  };
+  const tracked = { ...cleared, heightRevision };
+  if (feature.roadSource !== undefined) return liveRoadDrapedField(tracked, feature.roadSource);
+  const result = feature.roads === undefined || feature.roads.length === 0
     ? cleared
     : roadDrapedField(cleared, feature.roads);
+  return { ...result, heightRevision };
 }
 
 /** Which way the ground falls at a point and how steeply. */
