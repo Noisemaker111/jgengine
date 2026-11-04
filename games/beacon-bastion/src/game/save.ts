@@ -1,4 +1,4 @@
-import { createGameSave, type GameSave, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
+import { createGameSave, GAME_SAVE_VERSION, type GameSave, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
 import { localSaveBackend } from "@jgengine/core/save/saveStore";
 import { createSaveSlots, type SaveSlots } from "@jgengine/core/save/saveSlots";
 import { gameSaveSlotSource, refreshSaveSlots, type SaveSlotsRefresh } from "@jgengine/core/save/saveSlotIndex";
@@ -22,6 +22,7 @@ import type { EncounterState } from "@jgengine/core/waves/encounter";
 import type { PressurePlan } from "@jgengine/core/waves/pressure";
 import { KEEP_POINT, ROUTES, SPAWN_POINT_KEY } from "./world/path";
 import { captureKeepThumb, keepProfile } from "./thumbs";
+import { defineStore } from "@jgengine/core/store/defineStore";
 
 /** The keeps a player can hold. One document per keep, all inside the shared save document. */
 export const KEEP_SLOTS = ["keep", "ward", "beacon"] as const;
@@ -181,6 +182,68 @@ export function validWorldSave(value: unknown): value is WorldModelState {
 }
 
 const boundSave = perContext(() => ({ save: null as GameSave | null }));
+const checkpoints = perContext(() => ({ slot: null as string | null, raw: null as string | null, elapsed: 0, pending: null as Promise<void> | null, guarding: false, failed: false }));
+const unsavedKeep = defineStore<boolean>("beacon:unsaved", () => true);
+
+function keepBytes(slot: string): string | null {
+  return localStorage.getItem(`game-save:beacon-bastion:${slot}`);
+}
+
+function resumableKeep(raw: string | null): boolean {
+  if (raw === null) return false;
+  try {
+    const document: unknown = JSON.parse(raw);
+    if (typeof document !== "object" || document === null || !("version" in document) || document.version !== GAME_SAVE_VERSION || !("value" in document)) return false;
+    const value = document.value;
+    if (typeof value !== "object" || value === null || !("game" in value) || value.game !== "beacon-bastion" || !("systems" in value)) return false;
+    const systems = value.systems;
+    if (typeof systems !== "object" || systems === null) return false;
+    return "world" in systems && validWorldSave(systems.world) && "defense" in systems && validDefenseSave(systems.defense)
+      && "legacy" in systems && upgradeLegacy(systems.legacy) !== null;
+  } catch { return false; }
+}
+
+/** Whether this defense has a slot it may update automatically. */
+export function keepIsUnsaved(ctx: GameContext): boolean {
+  return unsavedKeep.read(ctx);
+}
+
+export function keepCanCheckpoint(ctx: GameContext): boolean {
+  const state = checkpoints(ctx);
+  return state.slot !== null && !state.failed;
+}
+
+/** Save a live defense at most once a second, only while its slot still contains our last write. */
+export async function checkpointKeep(ctx: GameContext, dt: number): Promise<void> {
+  const state = checkpoints(ctx);
+  if (state.slot === null || state.pending !== null || state.failed) return;
+  state.elapsed += dt;
+  if (state.elapsed < 1) return;
+  state.elapsed = 0;
+  const save = beaconSave(ctx);
+  const slot = state.slot;
+  try {
+    if (save.slot() !== slot || keepBytes(slot) !== state.raw) { state.failed = true; unsavedKeep.write(ctx, true); return; }
+  } catch { state.failed = true; unsavedKeep.write(ctx, true); return; }
+  state.guarding = true;
+  const pending = save.save().then(() => {
+    if (save.status() === "error") { state.failed = true; unsavedKeep.write(ctx, true); return; }
+    state.raw = keepBytes(slot);
+    unsavedKeep.write(ctx, false);
+  }).catch(() => { state.failed = true; unsavedKeep.write(ctx, true); });
+  state.pending = pending;
+  try { await pending; } finally { state.guarding = false; state.pending = null; }
+}
+
+/** Save on withdrawal without taking ownership of a different or externally changed keep. */
+export async function withdrawKeep(ctx: GameContext): Promise<void> {
+  await checkpoints(ctx).pending;
+  if (!keepCanCheckpoint(ctx)) return;
+  await captureKeepThumb();
+  await checkpointKeep(ctx, 1);
+  if (!keepCanCheckpoint(ctx)) throw new Error("The keep changed or could not be saved.");
+  await refreshBeaconSlots(ctx);
+}
 
 /** The keep's world as one save section: purse, walls, towers and their levels, builds under way. */
 export function worldSystem(ctx: GameContext): GameSaveSystem {
@@ -267,7 +330,17 @@ export function beaconSave(ctx: GameContext): GameSave {
   const slot = boundSave(ctx);
   if (slot.save !== null) return slot.save;
   const save = createGameSave({
-    backend: localSaveBackend(),
+    backend: localSaveBackend({
+      getItem: key => localStorage.getItem(key),
+      setItem: (key, value) => {
+        const state = checkpoints(ctx);
+        if (state.guarding && state.slot !== null && key === `game-save:beacon-bastion:${state.slot}` && localStorage.getItem(key) !== state.raw) {
+          throw new Error("Keep changed in another window");
+        }
+        localStorage.setItem(key, value);
+      },
+      removeItem: key => localStorage.removeItem(key),
+    }, { errorMode: "throw" }),
     game: "beacon-bastion",
     slot: KEEP_SLOTS[0],
     clock: () => ctx.time.now(),
@@ -323,21 +396,35 @@ export function refreshBeaconSlots(ctx: GameContext): Promise<SaveSlotsRefresh> 
 
 /** Keep a run under a specific keep: switch the document to it, then write the live state. */
 export async function saveToSlot(ctx: GameContext, slot: string): Promise<void> {
+  await checkpoints(ctx).pending;
   const save = beaconSave(ctx);
   await captureKeepThumb();
   if (save.slot() !== slot) await save.switchSlot(slot);
   await save.save();
+  const state = checkpoints(ctx);
+  if (save.status() === "error") { state.failed = true; unsavedKeep.write(ctx, true); throw new Error("The keep could not be saved."); }
+  state.slot = slot;
+  state.raw = keepBytes(slot);
+  state.failed = false;
+  unsavedKeep.write(ctx, false);
   await refreshBeaconSlots(ctx);
 }
 
 /** Read a keep back into the live world without saving over it first. */
 export async function loadSlot(ctx: GameContext, slot: string): Promise<void> {
+  await checkpoints(ctx).pending;
   const save = beaconSave(ctx);
   if (save.slot() === slot) {
     await save.load();
   } else {
     await save.switchSlot(slot, { flush: false });
   }
+  const state = checkpoints(ctx);
+  try { state.raw = keepBytes(slot); } catch { state.raw = null; }
+  state.slot = resumableKeep(state.raw) ? slot : null;
+  state.elapsed = 0;
+  state.failed = false;
+  unsavedKeep.write(ctx, state.slot === null);
 }
 
 export function firstEmptyKeep(): string | null {
@@ -362,9 +449,18 @@ export function newestKeep(): string | null {
 
 /** Draft a fresh run into a keep: the run that follows is saved under that keep. */
 export async function prepareKeep(ctx: GameContext, slot: string): Promise<void> {
+  await checkpoints(ctx).pending;
   const save = beaconSave(ctx);
   // Switching only loads documents; a fresh run overwrites nothing until it saves.
   if (save.slot() !== slot) await save.switchSlot(slot, { flush: false });
+  const state = checkpoints(ctx);
+  let raw: string | null;
+  try { raw = keepBytes(slot); } catch { state.slot = null; state.failed = true; unsavedKeep.write(ctx, true); return; }
+  state.slot = raw === null ? slot : null;
+  state.raw = raw;
+  state.elapsed = 0;
+  state.failed = false;
+  unsavedKeep.write(ctx, true);
 }
 
 

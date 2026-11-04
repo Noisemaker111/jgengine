@@ -18,6 +18,7 @@ import {
   beaconSave,
   beaconSlots,
   keepForNewRun,
+  keepCanCheckpoint,
   loadSlot,
   prepareKeep,
   refreshBeaconSlots,
@@ -262,12 +263,14 @@ export function BeaconMenu() {
       beginRun(ctx);
     });
 
-  const saveHere = () =>
-    whileLoading("Writing the keep", async () => {
-      const slot = beaconSave(ctx).slot();
+  const saveHere = () => {
+    const slot = beaconSave(ctx).slot();
+    if (!keepCanCheckpoint(ctx) && beaconSlots.get(slot)?.empty === false && !window.confirm(`Replace the saved defense in ${KEEP_LABEL[slot] ?? slot}?`)) return;
+    void whileLoading("Writing the keep", async () => {
       await saveToSlot(ctx, slot);
       setNotice(`Kept in ${KEEP_LABEL[slot] ?? slot}`);
     });
+  };
 
   const held = keeps.filter((slot) => !slot.empty).length;
 
@@ -399,7 +402,7 @@ export function BeaconMenu() {
     { id: "save", label: `Save ${keepName}` },
     { id: "settings", label: "Settings" },
     { id: "credits", label: "Credits" },
-    { id: "title", label: "Withdraw to title" },
+    { id: "title", label: keepCanCheckpoint(ctx) ? "Withdraw to title" : "Withdraw without saving" },
   ];
   const pick = (id: string) => {
     if (id === "resume") resumeRun(ctx);
