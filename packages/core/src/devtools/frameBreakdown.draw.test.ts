@@ -6,6 +6,37 @@ import { createEditableTerrain } from "../terrain/terraform";
 import { readBreakdown } from "../../../../scripts/perf-breakdown";
 import { installFrameBreakdown } from "./frameBreakdown.draw";
 
+test("disposing and reinstalling the recorder restores live callbacks", () => {
+  const prior = Reflect.get(globalThis, "window");
+  Reflect.set(globalThis, "window", { location: { search: "" } });
+  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
+  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
+    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
+    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
+  } };
+  const store = { getState: () => ({ internal }) };
+  const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
+  const callback = () => renderer.render();
+  const ref = { current: callback };
+  internal.subscribe(ref, 0);
+  const frame = () => { for (const { ref: task } of subscribers) task.current({}, 1 / 60); };
+  const first = installFrameBreakdown(renderer as never, store as never);
+  try {
+    frame(); frame();
+    first.dispose();
+    expect(ref.current).toBe(callback);
+    const second = installFrameBreakdown(renderer as never, store as never);
+    try {
+      frame(); frame();
+      expect(second.records()[0]?.calls?.["render:main"]).toBe(1);
+      expect(Object.values(second.callbacks())).toContain(callback);
+    } finally { second.dispose(); }
+  } finally {
+    first.dispose();
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+});
+
 test("records real shared members and repeated render calls through the frame loop", () => {
   const prior = Reflect.get(globalThis, "window");
   Reflect.set(globalThis, "window", { location: { search: "?frameMembers=1" } });

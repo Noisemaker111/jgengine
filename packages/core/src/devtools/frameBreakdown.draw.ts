@@ -50,9 +50,6 @@ export function measureComposerPasses(composer: { passes: readonly object[] }): 
   activePasses?.(composer);
 }
 
-/** Post passes and frame callbacks already timed, so a second sighting does not wrap them twice. */
-const wrapped = new WeakSet<object>();
-
 /** One field of a value the engine does not type here (a three.js object, a GL argument); `undefined` off a non-object. */
 function field(value: unknown, key: string): unknown {
   return typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
@@ -132,6 +129,7 @@ function gpuTimers(context: WebGLRenderingContext | WebGL2RenderingContext): { g
 /** Install the breakdown on a renderer and the r3f loop driving it. @internal */
 export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore): FrameBreakdown {
   active?.dispose();
+  const wrapped = new WeakSet<object>();
   const context = renderer.getContext();
   const timers = gpuTimers(context);
   const restore: (() => void)[] = [];
@@ -370,7 +368,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       // The pass that draws the scene is the main pass, whatever the composer calls it.
       const label = /RenderPass$/.test(name) ? "main" : `post:${name.replace(/^_/, "")}`;
       wrapped.add(pass);
-      Reflect.set(pass, "render", (...args: unknown[]): unknown => {
+      const timedPass = (...args: unknown[]): unknown => {
         enterPass(label);
         cpuEnter(label === "main" ? "pass:main" : label);
         try {
@@ -379,13 +377,17 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
           lastWorkEnd = cpuLeave();
           leavePass();
         }
-      });
+      };
+      Reflect.set(pass, "render", timedPass);
+      restore.push(() => { if (Reflect.get(pass, "render") === timedPass) Reflect.set(pass, "render", render); });
     }
   };
 
   // Frame callbacks: each r3f subscriber timed under a stable label.
   const labels = new WeakMap<object, string>();
   const callbacks: Record<string, RenderCallback> = {};
+  const subscriberWrappers = new Map<object, { ref: { current: RenderCallback }; original: RenderCallback; wrapper: RenderCallback }>();
+  const liveSubscribers = new Set<object>();
   let nextLabel = 0;
   const memberLabels = new WeakMap<object, string>();
   const detailedWork = new URLSearchParams(window.location.search).get("frameMembers") === "1";
@@ -417,6 +419,9 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     restore.push(() => observeSharedFrames(store, null));
   }
   const wrapSubscribers = () => {
+    liveSubscribers.clear();
+    for (const subscription of store.getState().internal.subscribers) liveSubscribers.add(subscription.ref);
+    for (const ref of subscriberWrappers.keys()) if (!liveSubscribers.has(ref)) subscriberWrappers.delete(ref);
     for (const subscription of store.getState().internal.subscribers) {
       const fn = subscription.ref.current;
       if (typeof fn !== "function" || wrapped.has(fn) || fn === tick) continue;
@@ -449,8 +454,13 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       };
       wrapped.add(timedCallback);
       subscription.ref.current = timedCallback;
+      subscriberWrappers.set(subscription.ref, { ref: subscription.ref, original: fn, wrapper: timedCallback });
     }
   };
+  restore.push(() => {
+    for (const { ref, original, wrapper } of subscriberWrappers.values()) if (ref.current === wrapper) ref.current = original;
+    subscriberWrappers.clear();
+  });
 
   // The first callback of every frame closes the previous frame and opens the next.
   const tick: RenderCallback = () => {
