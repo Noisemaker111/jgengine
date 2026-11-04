@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { deploySite, deploySteps, publishThenDeploy, siteWorktreePath, type DeployResult, type RunStep } from "./deploy-site";
@@ -121,6 +121,39 @@ test("the site builds in its own worktree at the released commit, though the rel
   } finally {
     rmSync(repo.dir, { recursive: true, force: true });
   }
+});
+
+test("a site check builds and runs the asset check without uploading", () => {
+  const repo = releaseRepo();
+  try {
+    const { run, steps } = recordingRun();
+    const result = deploySite(repo.release, run, repo.sha, "check");
+
+    expect(result.ok).toBe(true);
+    expect(result.line).toContain("site check");
+    expect(steps.map((step) => step.command)).toEqual([
+      "bun scripts/ensure-ready.ts --install-only",
+      "bun run games:provision",
+      "bun --cwd=apps/web run build:checked",
+    ]);
+    expect(steps.some((step) => step.command.includes("deploy:cloudflare"))).toBe(false);
+    expect(git(repo.main, ["worktree", "list", "--porcelain"]).stdout).not.toContain("site-deploy-");
+  } finally {
+    rmSync(repo.dir, { recursive: true, force: true });
+  }
+});
+
+test("the site's checked build is what the deploy uploads, and the release checks it before publishing", () => {
+  const scripts = JSON.parse(readFileSync(join(import.meta.dir, "..", "apps", "web", "package.json"), "utf8")).scripts as Record<string, string>;
+  expect(scripts["build:checked"]).toContain("check-site-assets.ts");
+  expect(scripts["deploy:cloudflare"]).toStartWith("bun run build:checked && ");
+
+  // The site check must come before the version bump: anything after it is already on its way to npm.
+  const release = readFileSync(join(import.meta.dir, "release.ts"), "utf8");
+  const check = release.indexOf('deploySite(root, runStep, "HEAD", "check")');
+  const bump = release.indexOf('"scripts/set-version.ts"');
+  expect(check).toBeGreaterThan(0);
+  expect(bump).toBeGreaterThan(check);
 });
 
 test("a failed build stops at that step, names it, and still removes its worktree", () => {

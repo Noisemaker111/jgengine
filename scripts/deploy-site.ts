@@ -35,12 +35,19 @@ export interface DeployResult {
   line: string;
 }
 
-/** The commands a site deploy runs inside its worktree, in order. */
-export function deploySteps(): string[][] {
+/**
+ * `deploy` builds, checks and uploads the site. `check` builds and checks it without uploading: a
+ * release runs it before anything is published, so a site that cannot ship stops the release while
+ * npm still has the previous version, instead of after.
+ */
+export type SiteMode = "deploy" | "check";
+
+/** The commands a site deploy (or check) runs inside its worktree, in order. */
+export function deploySteps(mode: SiteMode = "deploy"): string[][] {
   return [
     ["bun", "scripts/ensure-ready.ts", "--install-only"],
     ["bun", "run", "games:provision"],
-    ["bun", "--cwd=apps/web", "run", "deploy:cloudflare"],
+    ["bun", "--cwd=apps/web", "run", mode === "deploy" ? "deploy:cloudflare" : "build:checked"],
   ];
 }
 
@@ -53,38 +60,44 @@ export function siteWorktreePath(mainRoot: string, commit: string): string {
  * Deploy `sha` (HEAD when omitted) from a fresh worktree at that commit. The folder the call runs from
  * only names the commit and the main checkout, so a release that emptied its own folder still deploys.
  */
-export function deploySite(root: string, run: RunStep, sha?: string): DeployResult {
+export function deploySite(root: string, run: RunStep, sha?: string, mode: SiteMode = "deploy"): DeployResult {
   const resolved = run(["git", "rev-parse", "--verify", "--quiet", sha ?? "HEAD"], root);
   const commit = resolved.stdout.trim();
   if (resolved.status !== 0 || commit === "") {
-    return { ok: false, line: `deploy:site FAILED: cannot resolve ${sha ?? "HEAD"} to a commit; jgengine.com was not updated` };
+    return { ok: false, line: `${siteLabel(mode)} FAILED: cannot resolve ${sha ?? "HEAD"} to a commit; jgengine.com was not updated` };
   }
   const mainRoot = mainCheckoutRoot(root) ?? root;
   const worktree = siteWorktreePath(mainRoot, commit);
   removeSiteWorktree(mainRoot, worktree, run);
   const added = run(["git", "worktree", "add", "--detach", worktree, commit], mainRoot);
   if (added.status !== 0) {
-    return { ok: false, line: `deploy:site FAILED at \`git worktree add\` (exit ${added.status}); jgengine.com was not updated${reasonOf(added)}` };
+    return { ok: false, line: `${siteLabel(mode)} FAILED at \`git worktree add\` (exit ${added.status}); jgengine.com was not updated${reasonOf(added)}` };
   }
 
   let outcome: DeployResult;
   let removed = true;
   try {
-    outcome = buildAndDeploy(worktree, run, commit);
+    outcome = buildAndDeploy(worktree, run, commit, mode);
   } finally {
     removed = removeSiteWorktree(mainRoot, worktree, run);
   }
-  return removed ? outcome : { ...outcome, line: `${outcome.line}\ndeploy:site: could not remove ${worktree}; remove it with git worktree remove --force` };
+  return removed ? outcome : { ...outcome, line: `${outcome.line}\n${siteLabel(mode)}: could not remove ${worktree}; remove it with git worktree remove --force` };
 }
 
-function buildAndDeploy(worktree: string, run: RunStep, commit: string): DeployResult {
-  for (const step of deploySteps()) {
+function siteLabel(mode: SiteMode): string {
+  return mode === "deploy" ? "deploy:site" : "site check";
+}
+
+function buildAndDeploy(worktree: string, run: RunStep, commit: string, mode: SiteMode): DeployResult {
+  for (const step of deploySteps(mode)) {
     const result = run(step, worktree);
     if (result.status !== 0) {
-      return { ok: false, line: `deploy:site FAILED at \`${step.join(" ")}\` (exit ${result.status}); jgengine.com was not updated${reasonOf(result)}` };
+      return { ok: false, line: `${siteLabel(mode)} FAILED at \`${step.join(" ")}\` (exit ${result.status}); jgengine.com was not updated${reasonOf(result)}` };
     }
   }
-  return { ok: true, line: `deploy:site: jgengine.com deployed from ${commit.slice(0, 9)}` };
+  return mode === "deploy"
+    ? { ok: true, line: `deploy:site: jgengine.com deployed from ${commit.slice(0, 9)}` }
+    : { ok: true, line: `site check: jgengine.com builds and passes its asset check at ${commit.slice(0, 9)}` };
 }
 
 function reasonOf(result: StepResult): string {

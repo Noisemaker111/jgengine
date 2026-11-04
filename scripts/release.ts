@@ -340,6 +340,18 @@ function main(): void {
     process.exit(1);
   }
 
+  // Build and check the site before cutting anything. Publishing first and building the site after once
+  // left 0.52.0 on npm with jgengine.com still on 0.51.0, because 8 game bundles failed the site's asset
+  // check. Nothing is bumped, committed or published until the site this release would deploy passes.
+  if (!dryRun) {
+    const site = deploySite(root, runStep, "HEAD", "check");
+    console.log(site.line);
+    if (!site.ok) {
+      console.error("release: stopped before cutting; nothing was published. Fix the site, then run the release again.");
+      process.exit(1);
+    }
+  }
+
   const changelogPath = `${root}CHANGELOG.md`;
   const mirrorPath = `${root}packages/core/src/meta/changelog.ts`;
   const fragments = readFragments(root);
