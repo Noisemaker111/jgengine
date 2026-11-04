@@ -18,7 +18,7 @@ test("work counts resolve the owning shared callback source through the profiler
   let onScript: (params: Record<string, unknown>) => void = () => {};
   let lookups = 0;
   const session = {
-    evaluate: async (expression: string) => expression.startsWith("fetch(") ? JSON.stringify({ version: 3, sources: ["packages/core/src/ambientFauna/AmbientFauna.draw.tsx"], names: [], mappings: `${";".repeat(30)}AAAA` }) : summary,
+    evaluate: async (expression: string) => expression.startsWith("fetch(") ? JSON.stringify({ version: 3, sources: ["AmbientFauna.draw.tsx"], names: [], mappings: `${";".repeat(30)}AAAA` }) : summary,
     on: (_event: string, callback: typeof onScript) => { onScript = callback; return () => {}; },
     send: async (method: string, params?: Record<string, unknown>) => {
       if (method === "Debugger.enable") onScript({ scriptId: "42", url: "http://localhost/packages/core/src/ambientFauna/AmbientFauna.draw.tsx", sourceMapURL: "http://localhost/source.map" });

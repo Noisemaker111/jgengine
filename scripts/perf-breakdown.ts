@@ -114,7 +114,7 @@ async function locateCallback(session: CdpSession, label: string, scripts: Reado
   }
   const original = map?.findEntry(lineNumber, typeof columnNumber === "number" ? columnNumber : 0);
   const mapped = original?.originalSource !== undefined && original.originalLine !== undefined;
-  const url = mapped ? original.originalSource : script.url;
+  const url = mapped ? new URL(original.originalSource, script.url).toString() : script.url;
   const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "").replace(/^\/@fs\//, "").replace(/^.*?\/(packages|games|apps)\//, "$1/");
   return path === "" ? null : { label: `${mapped ? "" : "generated "}${path}:${mapped ? original.originalLine + 1 : lineNumber + 1}`, mapped };
 }
