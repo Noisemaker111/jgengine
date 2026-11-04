@@ -8,7 +8,7 @@ import { STARTING_LIVES } from "./entities/base/catalog";
 import { keep, towerLevel } from "./keep";
 import { resetSession, session } from "./session";
 import { advanceKeep, beaconRunner } from "./testing";
-import { captureDefense, defenseSystem, legacySystem, validDefenseSave, worldSystem } from "./save";
+import { beaconSave, captureDefense, defenseSystem, legacySystem, loadSlot, prepareKeep, validDefenseSave, worldSystem } from "./save";
 import { drawRelics, freshLegacy, legacy, openingGold, upgradeLegacy, writeLegacy } from "./waves/legacy";
 import { WARDEN_ID, bossProfile } from "./waves/manifest";
 
@@ -47,6 +47,34 @@ function playedIntoWave(): void {
 }
 
 describe("the keep's save document", () => {
+  test("opening or preparing another keep does not overwrite the one left behind", async () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const data = new Map<string, string>();
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => { data.set(key, value); },
+      removeItem: (key: string) => { data.delete(key); },
+    } });
+    try {
+      const save = beaconSave(runner.ctx);
+      await save.save();
+      const key = "game-save:beacon-bastion:keep";
+      const originalBytes = data.get(key);
+      expect(originalBytes).toBeDefined();
+      world().set("keep.gold", 999);
+      await loadSlot(runner.ctx, "ward");
+      expect(data.get(key)).toBe(originalBytes);
+      await save.save();
+      const wardKey = "game-save:beacon-bastion:ward";
+      const wardBytes = data.get(wardKey);
+      world().set("keep.gold", 888);
+      await prepareKeep(runner.ctx, "beacon");
+      expect(data.get(wardKey)).toBe(wardBytes);
+    } finally {
+      if (original) Object.defineProperty(globalThis, "localStorage", original);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
+  });
   test("the world section brings back purse, walls, towers with their levels and a build mid-rise", async () => {
     playedIntoWave();
     const facts = { ...world().facts() };
