@@ -10,7 +10,8 @@ import { creepTraits } from "../../entities/enemies/catalog";
 import { FLANK_POINT_KEY } from "../../world/path";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 
-import { keep } from "../../keep";
+import { keep, MEND_RULE } from "../../keep";
+import { HELD_PAY_RULE, interestOn } from "../../waves/heldWavePay";
 import { TOTAL_WAVES } from "../../waves/manifest";
 import { activeCreepCount, currentWaveNumber, session } from "../../session";
 import { canSendWave, waveOverlapBonus } from "../../waves/director";
@@ -32,6 +33,7 @@ export function KeepSigns() {
   const account = useGameStore((ctx) => legacy.read(ctx));
   const relic = carriedRelic(account);
   const pay = bountyScale(Math.min(wave, TOTAL_WAVES), relicBountyScale(account));
+  const interest = interestOn(gold);
   const ratio = livesMax > 0 ? lives / livesMax : 0;
   const danger = ratio <= 0.3;
 
@@ -46,15 +48,21 @@ export function KeepSigns() {
           </KitPanel>
         </div>
       </HudFade>
-      <HudFade watch={[gold, pay]} dimTo={0.45} idleMs={4000}>
+      <HudFade watch={[gold, pay, lives]} dimTo={0.45} idleMs={4000}>
         <div className="bb-purse">
           <span className="bb-chains" aria-hidden />
           <KitPanel material="wood" cut="notch" depth={8} padding="5px 14px 6px 10px" className="bb-purse-sign" aria-label={`${gold} gold`}>
             <GameIcon name="coin" size={20} color="#f6cf5a" />
             <span className="bb-purse-num">{gold}</span>
           </KitPanel>
-          <span className="bb-pay" title="Kill pay this wave">
-            ×{pay.toFixed(2)} bounty
+          <span className="bb-pay-row">
+            <span className="bb-pay" title="Kill pay this wave">
+              ×{pay.toFixed(2)} bounty
+            </span>
+            <span className="bb-pay" data-jg="interest" title={`A held wave pays ${HELD_PAY_RULE.interestRate * 100}% interest on the purse, up to ${HELD_PAY_RULE.interestMax}`}>
+              +{interest} interest
+            </span>
+            <MendButton />
           </span>
           {relic === null ? null : (
             <span className="bb-relic" title={relic.detail}>
@@ -64,6 +72,41 @@ export function KeepSigns() {
         </div>
       </HudFade>
     </div>
+  );
+}
+
+/**
+ * The masons' call beside the purse: shown once a raider has broken through, it mends one breach per
+ * press for its price, and stays dim while raiders are still on the road. Its spot is kept while the
+ * walls are whole, so the first breach never shifts the HUD mid-wave.
+ */
+function MendButton() {
+  const keybinds = useActionBindings();
+  const { commands } = useGame();
+  const breaches = useGameStore((ctx) => keep.of(ctx).num("keep.breaches"));
+  const open = useGameStore((ctx) => keep.of(ctx).canAct("mend") === null);
+  const whole = breaches <= 0;
+  const key = actionLabel(keybinds, "mendWalls");
+  return (
+    <KitButton
+      material="stone"
+      cut="chamfer"
+      depth={6}
+      padding="3px 9px 4px"
+      className="bb-mend"
+      data-jg="mend"
+      data-whole={whole ? "" : undefined}
+      aria-hidden={whole ? true : undefined}
+      disabled={whole}
+      data-dim={open ? undefined : ""}
+      title={open ? `Mend one breach for ${MEND_RULE.gold} gold` : "Mend the walls once the road is clear"}
+      cue={open ? "confirm" : undefined}
+      onClick={() => commands.run("mendWalls", {})}
+    >
+      <GameIcon name="hammer" size={13} />
+      <span>Mend {MEND_RULE.gold}g</span>
+      {key === null ? null : <kbd>{key}</kbd>}
+    </KitButton>
   );
 }
 

@@ -22,6 +22,14 @@ is what the build does now.
     marches on its own. Calling it early pays 1.2 gold per second skipped, capped at 40.
   - The clock holds while a boss walks.
   - Raiders leak 1–8 lives each into the keep. A kill pays the raider's weight times the wave curve.
+  - Held-wave pay (`src/game/waves/heldWavePay.ts`). The first time the road is clear after a wave has
+    fully arrived, the garrison is paid for every wave since the last pay:
+    - wages of 10 + 2 × the wave number;
+    - interest of 10% of the purse, capped at 20, so banking gold competes with spending it;
+    - 10 more when no raider broke through since the last pay.
+    - A wave called early is still paid, at the next clear road, but interest pays once per clear road.
+  - Mending. Every life lost is a breach. With the road clear, R or the Mend sign beside the purse
+    mends one breach for 20 gold, up to the walls the defense opened with.
 - **Damage and raiders.**
   - Every shot is pierce, blast, frost or arcane, read against what the raider is made of (the engine
     damage table):

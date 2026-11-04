@@ -956,6 +956,39 @@ body,
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
 }
 
+.bb-pay-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.bb-mend {
+  font-family: var(--jg-font-display);
+  font-weight: 700;
+  font-size: 11px;
+  color: #f6e6c4;
+}
+
+.bb-mend > [data-jg-frame-face] {
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+}
+
+.bb-mend kbd {
+  font-size: 9px;
+  opacity: 0.75;
+}
+
+.bb-mend[data-dim] {
+  opacity: 0.5;
+}
+
+.bb-mend[data-whole] {
+  visibility: hidden;
+}
+
 .bb-waveboard {
   display: flex;
   flex-direction: column;
@@ -1437,6 +1470,18 @@ body,
   .bb-plinth-num,
   .bb-purse-num {
     font-size: 18px;
+  }
+
+  /* The Mend sign wraps under the pay lines so the signs stay clear of the wave board. */
+  .bb-pay-row {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    justify-items: start;
+  }
+
+  .bb-pay-row .bb-mend {
+    grid-column: 1 / -1;
   }
 
   .bb-board {

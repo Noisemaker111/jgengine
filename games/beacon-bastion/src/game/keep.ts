@@ -23,6 +23,9 @@ import { session } from "./session";
 /** Share of everything a tower cost (build and upgrades) that a sale returns. */
 export const SELL_SHARE = 0.7;
 
+/** What mending one wall breach costs and restores. Repairs wait for a clear road. */
+export const MEND_RULE = { gold: 20, lives: 1 } as const;
+
 /** One sale for every tower type: the `tower` tag covers them all. */
 export const sellAction = (_kind?: string) => "sell";
 
@@ -75,6 +78,14 @@ export const keep = defineGameSpec({
           held: false,
           /** Stars the finished defense earned (0 until it ends, and for a fall). */
           stars: 0,
+          /** Lives lost and not yet mended. */
+          breaches: { value: 0, min: 0 },
+          /** Lives lost since the last held-wave pay. */
+          wave_leaks: { value: 0, min: 0 },
+          /** The last wave the garrison was paid for. */
+          paid_wave: 0,
+          /** The newest wave has fully arrived and no raider is on the road. */
+          field_clear: true,
         },
       },
     },
@@ -83,6 +94,15 @@ export const keep = defineGameSpec({
     actions: Object.assign(
       // The kind's refund (SELL_SHARE) is a share of everything the tower cost, upgrades included.
       { sell: { label: "Sell", on: "tower", removes: true, note: "{target} sold." } },
+      {
+        mend: {
+          label: "Mend the walls",
+          when: { "keep.field_clear": true, "keep.breaches": { atLeast: MEND_RULE.lives } },
+          cost: { "keep.gold": -MEND_RULE.gold },
+          world: { "keep.lives": MEND_RULE.lives, "keep.breaches": -MEND_RULE.lives },
+          refuse: "Mend the walls once the road is clear",
+        },
+      },
       aimActions(),
       ...defs.map((def) => upgradePathActions(TOWER_LADDERS[def.id]!)),
     ),
@@ -90,7 +110,8 @@ export const keep = defineGameSpec({
     ripples: {
       bounty: { world: { "keep.gold": 1, "keep.bounty_earned": 1 } },
       overlap_bonus: { world: { "keep.gold": 1 }, note: "An early release paid the keep." },
-      leak: { world: { "keep.lives": -1 }, note: "Raiders broke through to the keep.", hook: "keep_breached" },
+      leak: { world: { "keep.lives": -1, "keep.breaches": 1, "keep.wave_leaks": 1 }, note: "Raiders broke through to the keep.", hook: "keep_breached" },
+      held_pay: { world: { "keep.gold": 1 }, note: "The garrison was paid for holding the road." },
     },
     totals,
   },

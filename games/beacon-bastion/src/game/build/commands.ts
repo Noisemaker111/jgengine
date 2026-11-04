@@ -116,6 +116,19 @@ export function registerBuildCommands(ctx: GameContext): void {
   ctx.game.commands.define<TowerTargetInput | undefined>("sellTower", towerAction(() => sellAction()));
   ctx.game.commands.define<TowerTargetInput | undefined>("upgradeTower", towerAction(upgradeActionFor));
   ctx.game.commands.define<TowerTargetInput | undefined>("cycleAim", towerAction((state, id) => nextAimFor(state, id)));
+  // One breach per press, so a repair is always a choice the player sees priced.
+  ctx.game.commands.define("mendWalls", {
+    validate(state) {
+      const world = keep.of(state);
+      if (runEnded(world)) return { reason: "run-ended" };
+      if (world.num("keep.breaches") <= 0) return { reason: "walls-whole", message: "The walls are whole" };
+      return refusal(world.canAct("mend"));
+    },
+    apply(state) {
+      state.game.commands.run("beacon.act", { action: "mend" });
+      return state;
+    },
+  });
   TOWER_IDS.forEach((id, index) => {
     ctx.game.commands.define(`buildTower${index + 1}`, selectTowerCommand(id));
   });
