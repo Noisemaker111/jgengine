@@ -7,7 +7,8 @@ import { harborSave, saveHarborState } from "./save";
 import { startedStore } from "./commands";
 import { sessionStore } from "./session";
 import { streetPlayOf } from "./streetPlay";
-import { courierStore } from "./jobs/courier";
+import { RACE_ROUTES } from "./world/districts";
+import { courierSettlement, courierStore, DELIVERY_ROUTES } from "./jobs/courier";
 
 /** What a staged chase should look like when the capture takes it. */
 export type StageMode = "chase";
@@ -100,6 +101,20 @@ export function registerCaptureCommands(ctx: GameContext): void {
       return state;
     },
   });
+  // The driven car on a circuit's start line, facing its first gate, with the race started there.
+  ctx.game.commands.define<{ route?: string }>("race.stage", {
+    apply(state, input) {
+      const route = RACE_ROUTES.find((r) => r.id === input?.route) ?? RACE_ROUTES[0];
+      const car = streetPlayOf(state).drivingVehicleId();
+      const start = route?.checkpoints.at(-1);
+      const first = route?.checkpoints[0];
+      if (car === null || start === undefined || first === undefined) return state;
+      const heading = Math.atan2(first[0] - start[0], first[1] - start[1]);
+      streetPlayOf(state).placeVehicle(state, car, [start[0], state.world.groundHeightAt(start[0], start[1]), start[1]], heading);
+      state.game.commands.run("race.start", {});
+      return state;
+    },
+  });
   // Jump the day clock (a 720 s cycle, noon at 360) to see the evening or the night.
   ctx.game.commands.define<{ at?: number }>("time.stage", {
     apply(state, input) {
@@ -111,10 +126,16 @@ export function registerCaptureCommands(ctx: GameContext): void {
     },
   });
   // The end-of-run receipt, paid or missed, without carrying a parcel across town.
+  // A paid standard parcel arrives knocked about, so its slip shows the on-time bonus and the damage claim.
   ctx.game.commands.define<{ won?: boolean }>("result.stage", {
     apply(state, input) {
       const won = input?.won !== false;
-      courierStore.write(state, { ...courierStore.read(state), phase: won ? "won" : "lost", receipt: { won, reward: won ? 340 : 0, reason: won ? null : "Deadline passed" } });
+      const current = courierStore.read(state);
+      const route = DELIVERY_ROUTES[current.route % DELIVERY_ROUTES.length];
+      const condition = won ? 74 : 100;
+      const { lines } = courierSettlement({ payout: route?.payout ?? 0, rush: false, won, handoff: 22, condition });
+      const reward = lines.reduce((sum, line) => sum + line.amount, 0);
+      courierStore.write(state, { ...current, service: "standard", condition, phase: won ? "won" : "lost", receipt: { won, reward, reason: won ? null : "Deadline passed", lines } });
       sessionStore.write(state, { ...sessionStore.read(state), notice: "courier" });
       return state;
     },

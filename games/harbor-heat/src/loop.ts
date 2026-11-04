@@ -163,7 +163,8 @@ function tickRaceEconomy(ctx: GameContext): void {
         ctx.game.notices.push({ text: `Won ${snapshot.label} — $${RACE_WIN_PAYOUT}.`, tone: "success" });
       }
     } else {
-      ctx.game.notices.push({ text: `Lost ${snapshot.label}. The start line runs it again anytime.`, tone: "warn" });
+      const why = snapshot.forfeit ?? `${snapshot.rival || "Your rival"} took it.`;
+      ctx.game.notices.push({ text: `Lost ${snapshot.label}. ${why} The start line runs it again anytime.`, tone: "warn" });
     }
   }
   if (ctx.time.now() >= mission(ctx).raceClearAt) raceStore.clear(ctx);

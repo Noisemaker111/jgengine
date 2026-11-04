@@ -17,19 +17,18 @@ import { defineStore } from "@jgengine/core/store/defineStore";
 import { editorLayers } from "../../editorLayers";
 import { earn, spend } from "../cash";
 import { vehicleById } from "../entities/vehicles/catalog";
-import { streetPlayOf } from "../streetPlay";
+import { groundCarId, streetPlayOf } from "../streetPlay";
 import { grantCred } from "../progression/cred";
 import { RACE_ROUTES } from "../world/districts";
+import { rivalsFor } from "../race/rivals";
 
 /** The street-race stake, and what a place pays back as a multiple of it: first triples, second breaks even. */
 export const GIG_RACE_STAKE = 200;
 const GIG_RACE_PAYOUTS = [3, 1] as const;
 /** Cred per paid gig, by kind. */
 const GIG_CRED: Record<string, number> = { taxi: 10, flowers: 15, street: 40 };
-/** The fare standing at the kerb, and the cars a street race lines up. */
+/** The fare standing at the kerb. */
 export const FARE_ID = "gig_fare";
-const RIVAL_CARS = ["car_muscle", "car_sport"] as const;
-const RIVAL_SPEEDS = [15.5, 13.8] as const;
 /** Seconds between fresh taxi hails while on duty with nobody waiting. */
 const HAIL_EVERY = 4;
 /** Night hours (20:00–06:00) page a street race to anyone driving. */
@@ -147,6 +146,8 @@ interface GigRuntime {
   lastSpeed: number;
   lastHull: number | null;
   rivals: Map<string, { config: PathFollowConfig; state: PathFollowState }>;
+  /** The car a fare or race is being run in; swapping it mid-job is leaving it. */
+  jobCar: string | null;
   /** A dropped-off fare walking away, and when it leaves the scene. */
   walkOff: { until: number; to: readonly [number, number, number] } | null;
 }
@@ -158,17 +159,12 @@ const runtimes = perContext((): GigRuntime => ({
   lastSpeed: 0,
   lastHull: null,
   rivals: new Map(),
+  jobCar: null,
   walkOff: null,
 }));
 
 export function gigBoard(ctx: GameContext): SideJobs {
   return runtimes(ctx).board;
-}
-
-function groundCar(ctx: GameContext): string | null {
-  const id = streetPlayOf(ctx).drivingVehicleId();
-  if (id === null) return null;
-  return vehicleById(ctx.scene.entity.get(id)?.name ?? "")?.dynamics.type === "ground" ? id : null;
 }
 
 function bodyAt(ctx: GameContext): { x: number; z: number } | null {
@@ -210,20 +206,27 @@ function syncFare(ctx: GameContext): void {
   }
 }
 
-function spawnRivals(ctx: GameContext, rivals: readonly string[]): void {
+/** Line up the circuit's own crew beside the player; returns who they are, for the start call. */
+function spawnRivals(ctx: GameContext, rivals: readonly string[]): string[] {
   const rt = runtimes(ctx);
   const job = rt.board.job();
-  if (job === null) return;
+  if (job === null) return [];
   const start = job.offer.pickup;
   const gates = job.offer.drops;
+  const crew = rivalsFor(job.offer.routeId);
+  const names: string[] = [];
   rivals.forEach((id, i) => {
+    const rival = crew[i % crew.length];
+    if (rival === undefined) return;
     const side = i === 0 ? 4 : -4;
     const position = ground(ctx, start.x + side, start.z + side);
     if (ctx.scene.entity.get(id) !== null) ctx.scene.entity.despawn(id);
-    ctx.scene.entity.spawn(RIVAL_CARS[i % RIVAL_CARS.length]!, { id, position, role: "prop" });
-    const config: PathFollowConfig = { waypoints: [[position[0], 0, position[2]], ...gates.map((g) => [g.x, 0, g.z] as const)], speed: RIVAL_SPEEDS[i % RIVAL_SPEEDS.length]!, loop: false };
+    ctx.scene.entity.spawn(rival.car, { id, position, role: "prop" });
+    const config: PathFollowConfig = { waypoints: [[position[0], 0, position[2]], ...gates.map((g) => [g.x, 0, g.z] as const)], speed: rival.pace, loop: false };
     rt.rivals.set(id, { config, state: createPathFollow(config) });
+    names.push(`${rival.name} (${vehicleById(rival.car)?.label ?? rival.car})`);
   });
+  return names;
 }
 
 function clearRivals(ctx: GameContext): void {
@@ -293,8 +296,8 @@ function handle(ctx: GameContext, events: readonly SideJobEvent[]): void {
         ctx.game.feedback.cue("pickup", `Three bouquets loaded — keep it smooth.`);
       }
     } else if (event.type === "race-started") {
-      spawnRivals(ctx, event.rivals);
-      ctx.game.feedback.cue("objective", "Street race — go!");
+      const names = spawnRivals(ctx, event.rivals);
+      ctx.game.feedback.cue("objective", names.length > 0 ? `Street race — go! Against ${names.join(" and ")}.` : "Street race — go!");
     } else if (event.type === "leg") {
       const job = rt.board.job();
       if (job?.offer.kindId === "flowers" && event.leg < event.of) ctx.game.feedback.cue("objective", `Bouquet ${event.leg} of ${event.of} delivered.`);
@@ -347,7 +350,7 @@ function pageNightRace(ctx: GameContext, at: { x: number; z: number }): void {
 
 export function tickGigs(ctx: GameContext, dt: number): void {
   const rt = runtimes(ctx);
-  const car = groundCar(ctx);
+  const car = groundCarId(ctx);
   const at = bodyAt(ctx);
   const speed = car === null ? 0 : kmh(streetPlayOf(ctx).carSpeedKmh());
   const hull = car === null ? null : (ctx.scene.entity.stats.get(car, "health")?.current ?? null);
@@ -356,8 +359,12 @@ export function tickGigs(ctx: GameContext, dt: number): void {
   rt.lastSpeed = speed;
   rt.lastHull = hull;
   const job = rt.board.job();
-  // A fare or a racer who loses the car loses the job; a florist's run can be walked.
-  if (job !== null && car === null && job.phase === "en-route" && job.offer.kindId !== "flowers") {
+  // A fare or a racer who gets out, or into another car, loses the job; a florist's run can be walked.
+  const carBound = job !== null && job.phase === "en-route" && job.offer.kindId !== "flowers";
+  if (!carBound) rt.jobCar = null;
+  else if (rt.jobCar === null && car !== null) rt.jobCar = car;
+  else if (car === null || car !== rt.jobCar) {
+    rt.jobCar = null;
     handle(ctx, rt.board.fail("left-car"));
   }
   if (car !== null && at !== null) {
@@ -415,7 +422,7 @@ export function failGigs(ctx: GameContext, reason: string): void {
 export function registerGigs(ctx: GameContext): void {
   ctx.game.commands.define("taxiDuty", {
     validate(state) {
-      return groundCar(state) === null && !runtimes(state).duty ? { reason: "no-car", message: "Get in a car to work fares." } : null;
+      return groundCarId(state) === null && !runtimes(state).duty ? { reason: "no-car", message: "Get in a car to work fares." } : null;
     },
     apply(state) {
       setDuty(state, !runtimes(state).duty);
@@ -440,7 +447,7 @@ export function registerGigs(ctx: GameContext): void {
   });
   ctx.game.commands.define("gigs.race", {
     validate(state) {
-      if (groundCar(state) === null) return { reason: "no-car", message: "You need a car to race." };
+      if (groundCarId(state) === null) return { reason: "no-car", message: "You need a car to race." };
       if (gigBoard(state).job() !== null) return { reason: "busy", message: "Finish the job you are on first." };
       return null;
     },
@@ -484,7 +491,7 @@ export function stageGig(ctx: GameContext, mode: "taxi" | "race" | "flowers"): v
     ctx.game.commands.run("gigs.flowers", {});
     return;
   }
-  if (groundCar(ctx) === null) {
+  if (groundCarId(ctx) === null) {
     const player = ctx.scene.entity.get(ctx.player.userId);
     const car = ctx.scene.entity.list()
       .filter((entity) => vehicleById(entity.name)?.dynamics.type === "ground" && !entity.id.startsWith("cruiser_") && !entity.id.includes(":rival:"))
@@ -504,7 +511,7 @@ export function stageGig(ctx: GameContext, mode: "taxi" | "race" | "flowers"): v
 }
 
 function warpToTarget(ctx: GameContext, short: number): void {
-  const car = groundCar(ctx);
+  const car = groundCarId(ctx);
   const at = bodyAt(ctx);
   const gigs = gigStore.read(ctx);
   const target = gigs.view?.target ?? gigs.offers[0]?.pickup ?? null;

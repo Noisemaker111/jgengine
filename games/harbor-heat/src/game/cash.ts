@@ -26,6 +26,7 @@ export type CashReason =
   | "courier-payout"
   | "courier-bonus"
   | "courier-bond"
+  | "courier-damage"
   | "gig-fare"
   | "gig-tip"
   | "gig-streak"

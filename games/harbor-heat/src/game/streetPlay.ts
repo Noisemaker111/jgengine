@@ -4,6 +4,7 @@ import type { VehicleDamageState } from "@jgengine/core/physics/vehicleDamage";
 import { createDriving, type VehicleTelemetry } from "./driving/driving";
 import { createPursuit, type PursuitSave, type WantedSnapshot, type WitnessFilter } from "./hhpd/pursuit";
 import { createRace } from "./race/race";
+import { vehicleById } from "./entities/vehicles/catalog";
 
 export { drivingStore, type VehicleTelemetry } from "./driving/driving";
 export { MAX_HEAT, MAX_STARS, PURSUIT_STARS, wantedStore, type WantedSnapshot } from "./hhpd/pursuit";
@@ -92,3 +93,10 @@ export function createStreetPlay(): StreetPlay {
 
 /** Per-`GameContext` streetPlay instance — replaces the old module-global singleton (#632). */
 export const streetPlayOf = perContext(() => createStreetPlay());
+
+/** The ground car the player is driving, or null on foot or in an aircraft: what races, fares and express parcels need. */
+export function groundCarId(ctx: GameContext): string | null {
+  const id = streetPlayOf(ctx).drivingVehicleId();
+  if (id === null) return null;
+  return vehicleById(ctx.scene.entity.get(id)?.name ?? "")?.dynamics.type === "ground" ? id : null;
+}

@@ -16,7 +16,7 @@ import { harborKit, harborTheme } from "./game/ui/theme";
 import { loop } from "./loop";
 import { residentBoardStore } from "./game/world/residents";
 import { physics, world } from "./world";
-import { drivingStore } from "./game/streetPlay";
+import { drivingStore, RIVAL_RACER_ID, raceStore } from "./game/streetPlay";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { wantedStore } from "./game/streetPlay";
 import { convoySnapshot } from "./game/runState";
@@ -165,6 +165,8 @@ export const game = defineGame({
       "drive-cop": ["game.start", { name: "drive.stage", input: { vehicle: "car_cop" } }],
       "drive-bus": ["game.start", { name: "drive.stage", input: { vehicle: "car_bus" } }],
       "fly-heli": ["game.start", { name: "drive.stage", input: { vehicle: "air_helicopter" } }],
+      // On the Palm Heights Climb's start line with the race just started against the circuit's own rival.
+      "race-heights": ["game.start", { name: "drive.stage", input: { vehicle: "car_sport" } }, { name: "race.stage", input: { route: "race-heights" } }],
       noon: ["game.start", { name: "time.stage", input: { at: 360 } }],
       night: ["game.start", { name: "time.stage", input: { at: 700 } }],
       shop: ["game.start", "shop.open"],
@@ -205,7 +207,12 @@ export const game = defineGame({
       const entity = ctx.scene.entity.get(vehicleId ?? ctx.player.userId);
       const nearest = residentBoardStore.read(ctx)[0];
       const wanted = wantedSnapshotOf(ctx);
+      const race = raceStore.read(ctx);
       return {
+        // A circuit race in progress, and one that ended because the player left the car.
+        racing: race?.active === true ? 1 : 0,
+        raceForfeit: race?.forfeit != null ? 1 : 0,
+        rivalOnScene: ctx.scene.entity.get(RIVAL_RACER_ID) === null ? 0 : 1,
         x: entity?.position[0] ?? 0,
         y: entity?.position[1] ?? 0,
         z: entity?.position[2] ?? 0,

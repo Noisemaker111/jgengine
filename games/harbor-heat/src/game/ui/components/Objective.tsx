@@ -74,7 +74,7 @@ function goalOf(ctx: GameContext, at: XZ): Goal {
   const race = raceStore.read(ctx);
   const circuit = race?.active === true ? RACE_ROUTES.find((r) => r.id === race.routeId) : undefined;
   if (race !== undefined && circuit !== undefined) {
-    return { key: `race:${circuit.id}`, eyebrow: `${race.label} · ${race.position === 1 ? "leading" : "second"}`, title: `Gate ${Math.min(race.checkpoint + 1, race.total)} of ${race.total}`, target: circuit.checkpoints[Math.min(race.checkpoint, circuit.checkpoints.length - 1)], hint: "Drive through each gate in order." };
+    return { key: `race:${circuit.id}`, eyebrow: `${race.label} · ${race.position === 1 ? "leading" : "second"}`, title: `Gate ${Math.min(race.checkpoint + 1, race.total)} of ${race.total}`, target: circuit.checkpoints[Math.min(race.checkpoint, circuit.checkpoints.length - 1)], hint: `Drive through each gate in order. Racing ${race.rival}; leaving the car forfeits.` };
   }
   const gig = gigGoal(ctx);
   if (gig !== null && gig.key.startsWith("gig:job")) return gig;
@@ -84,12 +84,13 @@ function goalOf(ctx: GameContext, at: XZ): Goal {
     const step = courierObjectiveStore.read(ctx);
     if (step?.step === 2) {
       const runner = ctx.scene.entity.get(THIEF);
-      return { key: "runner", eyebrow: "Parcel snatched", title: "Catch the runner", target: runner === null ? undefined : xz(runner.position), deadline: step.remaining === null ? undefined : { remaining: step.remaining, total: 60 }, hint: "Get within 3 m. Keep them alive or the parcel burns." };
+      return { key: "runner", eyebrow: `Parcel snatched · ${Math.round(courier.condition ?? 100)}% intact`, title: "Catch the runner", target: runner === null ? undefined : xz(runner.position), deadline: step.remaining === null ? undefined : { remaining: step.remaining, total: 60 }, hint: "Get within 3 m. Keep them alive or the parcel burns. It takes a knock every second they have it." };
     }
     const rush = courier.service === "rush";
     const crates = cargoStore.read(ctx).carried;
-    const load = rush ? `Fragile parcel · ${Math.round(courier.condition ?? 100)}% intact` : crates > 0 ? `Parcel + ${crates} crates` : "Parcel aboard";
-    return { key: `parcel:${courier.route}`, eyebrow: load, title: `Deliver to ${route.recipient}`, target: route.position, deadline: { remaining: courier.remaining, total: courierDeadline(route.seconds, rush) }, hint: rush ? "Stay under 35 km/h and avoid hits: damage spoils the cargo." : `${route.hint} Stop beside it to hand over.` };
+    const intact = `${Math.round(courier.condition ?? 100)}% intact`;
+    const load = rush ? `Fragile parcel · ${intact}` : crates > 0 ? `Parcel + ${crates} crates · ${intact}` : `Parcel · ${intact}`;
+    return { key: `parcel:${courier.route}`, eyebrow: load, title: `Deliver to ${route.recipient}`, target: route.position, deadline: { remaining: courier.remaining, total: courierDeadline(route.seconds, rush) }, hint: rush ? "Stay under 35 km/h and avoid hits: damage spoils the cargo." : `${route.hint} Stop beside it to hand over. Knocks cost you a damage claim.` };
   }
   if (gig !== null) return gig;
   const raid = frontViews(ctx).find((front) => front.status === "raid");
