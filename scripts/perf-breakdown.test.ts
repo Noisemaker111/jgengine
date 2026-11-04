@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { summarizeBreakdown, type FrameBreakdownRecord } from "../packages/core/src/devtools/frameBreakdown";
-import { compareBreakdowns, readBreakdown } from "./perf-breakdown";
+import { compareBreakdowns, readBreakdown, startPath } from "./perf-breakdown";
 
 test("comparison does not turn missing GPU samples into zero", () => {
   const frame: FrameBreakdownRecord = { intervalMs: 10, workMs: 5, cpu: {}, gpu: null, draws: 0, triangles: 0, compiles: 0, compileMs: 0, uploads: 0, uploadBytes: 0, uploadMs: 0, heapMb: null, heapDropMb: 0 };
@@ -10,6 +10,28 @@ test("comparison does not turn missing GPU samples into zero", () => {
   expect(text).toContain("gpu            unavailable in one or both runs");
   expect(text).toContain("cost p50       unavailable without GPU timings");
   expect(text).not.toContain("cost p50 allows");
+});
+
+test("walk focuses the play surface only when the page has no focused control", async () => {
+  const events: string[] = [];
+  let focuses = 0;
+  class Surface { focus() { focuses += 1; } }
+  const surface = new Surface();
+  const body = {};
+  const document = { body, activeElement: body, querySelector: () => surface };
+  const session = {
+    evaluate: async (expression: string) => Function("document", "HTMLElement", `return ${expression}`)(document, Surface),
+    send: async (method: string, params: { type?: string; code?: string }) => { events.push(`${method}:${params.type ?? ""}:${params.code ?? ""}`); },
+  };
+  const release = await startPath(session as never, "walk");
+  await release();
+  expect(focuses).toBe(1);
+  document.activeElement = {};
+  const releaseFocused = await startPath(session as never, "walk");
+  await releaseFocused();
+  expect(focuses).toBe(1);
+  expect(events).toContain("Input.dispatchKeyEvent:keyDown:KeyW");
+  expect(events).toContain("Input.dispatchKeyEvent:keyUp:KeyW");
 });
 
 test("work counts resolve the owning shared callback source through the profiler", async () => {

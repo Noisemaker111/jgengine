@@ -14,6 +14,7 @@ export type PerfPath = "walk" | "still";
  */
 export async function startPath(session: CdpSession, path: PerfPath): Promise<() => Promise<void>> {
   if (path === "still") return async () => {};
+  await session.evaluate(`(() => { if (document.activeElement !== document.body && document.activeElement !== null) return; const surface = document.querySelector('[data-jg-play-surface]'); if (surface instanceof HTMLElement) surface.focus({ preventScroll: true }); })()`);
   const key = (type: "keyDown" | "keyUp", code: string, text: string) =>
     session.send("Input.dispatchKeyEvent", { type, code, key: text, windowsVirtualKeyCode: text.toUpperCase().charCodeAt(0) });
   await session.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 960, y: 540 });

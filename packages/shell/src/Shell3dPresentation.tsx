@@ -673,6 +673,7 @@ export function Shell3dPresentation({
           <div
             ref={wrapperRef}
             tabIndex={0}
+            data-jg-play-surface=""
             {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
             className="relative h-full w-full bg-neutral-950 outline-none"
             onKeyDown={keys.onKeyDown}
