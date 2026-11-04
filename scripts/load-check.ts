@@ -13,7 +13,7 @@ import { chromium, type Frame, type Page } from "playwright-core";
 import { assetStoreRoot } from "../packages/assets/src/assetStore";
 import { provisionGame } from "../games/shared/provisionAssets";
 import { compressedVariant, textureVariantDir } from "../games/shared/textureVariants";
-import { killPid, pickDebugPort, removeProfileDir, startBrowser, waitForPidExit } from "./browser-lib";
+import { killPid, removeProfileDir, startBrowser, waitForPidExit } from "./browser-lib";
 import { printHelpIfAsked } from "./script-help";
 import { BOOT_SEQUENCE_ATTRIBUTE, bootSequenceErrors, parseBootSequence } from "../packages/core/src/boot/bootSequence";
 import { siteGames } from "./siteGames";
@@ -507,7 +507,7 @@ async function playFrame(page: Page): Promise<Frame | null> {
 }
 
 async function measureOnce(base: string, game: string, path: string, args: LoadArgs, shotDir: string): Promise<LoadSample> {
-  const started = await startBrowser({ debugPort: pickDebugPort(), prefix: "jg-load-", headed: !args.headless });
+  const started = await startBrowser({ debugPort: 0, prefix: "jg-load-", headed: !args.headless });
   const browser = await chromium.connectOverCDP(`http://127.0.0.1:${started.debugPort}`);
   const sample: LoadSample = { game, firstPaint: null, menuShown: null, worstClick: null, sceneReady: null, playable: null, revealWorstFrame: null, longestTaskMs: 0, blockingMs: 0, transferKb: 0, menuLabel: null };
   try {
