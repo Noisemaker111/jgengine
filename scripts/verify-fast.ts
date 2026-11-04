@@ -782,6 +782,7 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
   }
 
   steps.push({ name: "web-build", command: ["bun", "--cwd=apps/web", "run", "build"], cost: 40 });
+  steps.push({ name: "site-bundles", command: ["bun", "run", "check", "site-bundles"], needs: ["web-build"] });
   // `windows-tests` (`bun --cwd=packages/jgengine run test`) is not a step here. That job
   // exists in CI because the `test` shards run on ubuntu and cannot see a Windows-only
   // failure; on this machine shard e already runs all 30 of its files, so repeating it cost

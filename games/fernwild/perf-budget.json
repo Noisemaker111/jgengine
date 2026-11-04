@@ -1,3 +1,4 @@
 {
-  "bundleKb": 4405
+  "bundleKb": 1153,
+  "bundleBaseline": "2026-11-03 check-site-assets --bundles: own part 1047.3 KiB beyond the shared engine (2795 KiB download), plus 10%."
 }

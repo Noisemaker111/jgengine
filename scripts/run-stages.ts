@@ -87,6 +87,8 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "games-sync", script: "packages/jgengine/src/cli/index.ts", args: ["sync", "--check"], jobs: ["games"], games: true, reads: ["games/", "packages/jgengine/"] },
   { name: "games-glb-textures", script: "games/scripts/check-glb-textures.ts", jobs: [], games: true, reads: ["games/"] },
   { name: "version", script: "scripts/set-version.ts", args: ["--check"], jobs: [], reads: ["packages/"] },
+  // Reads the site build, so CI's web-build job runs it after `bun --cwd=apps/web run build`.
+  { name: "site-bundles", script: "scripts/check-site-assets.ts", args: ["--bundles"], jobs: [], games: true, skipsTests: true, reads: ["apps/", "packages/", "games/"] },
 ];
 
 /**

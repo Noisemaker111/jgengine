@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { assetLiterals } from "../apps/dev/gamePublicPlugin";
-import { bundleBudgetReport, gameBundles, missingGameAssets } from "./check-site-assets";
+import { bundleBudgetReport, missingGameAssets, runnerBundles } from "./check-site-assets";
 
 const catalogs = { sources: [{ id: "kaykit-dungeon" }], library: [{ name: "city/street-lamp", origin: { provider: "quaternius" } }] };
 
@@ -49,7 +49,8 @@ describe("the site asset gate", () => {
   });
 });
 
-describe("the per-game bundle budget", () => {
+describe("the bundle budgets", () => {
+  // alpha and gamma share a-own.js, so it is part of each one's own code, not the engine.
   function runner(): string {
     const root = mkdtempSync(join(tmpdir(), "bundle-budget-"));
     mkdirSync(join(root, "assets"), { recursive: true });
@@ -61,31 +62,37 @@ describe("the per-game bundle budget", () => {
     put("a.css", 100);
     put("entry-a.js", 10);
     put("entry-b.js", 20);
+    put("entry-c.js", 30);
     writeFileSync(join(root, "index.html"), '<script src="/play/assets/shell.js"></script>');
     const files = ["assets/shell.js", "assets/engine.js", "assets/a-own.js", "assets/b-own.js", "assets/a.css"];
     writeFileSync(
       join(root, "assets", "registries-X.js"),
       `m.f=${JSON.stringify(files)}` +
         '"../../../games/alpha/src/index.tsx":()=>a(()=>import(`./entry-a.js`),__vite__mapDeps([0,1,2,4])),' +
-        '"../../../games/beta/src/index.tsx":()=>a(()=>import(`./entry-b.js`),__vite__mapDeps([0,1,3]))',
+        '"../../../games/beta/src/index.tsx":()=>a(()=>import(`./entry-b.js`),__vite__mapDeps([0,1,3])),' +
+        '"../../../games/gamma/src/index.tsx":()=>a(()=>import(`./entry-c.js`),__vite__mapDeps([0,1,2]))',
     );
     return root;
   }
 
-  test("counts a game's preloaded JS and CSS past the shell, and what only it loads", () => {
-    const bundles = gameBundles(runner());
-    expect(bundles.get("alpha")).toEqual({ bytes: 10 + 2048 + 1024 + 100, ownBytes: 10 + 1024 + 100, files: 4 });
-    expect(bundles.get("beta")).toEqual({ bytes: 20 + 2048 + 512, ownBytes: 20 + 512, files: 3 });
+  test("measures the engine every game loads once, and each game's download and own part past the shell", () => {
+    const bundles = runnerBundles(runner());
+    expect(bundles.engine).toEqual({ bytes: 2048, files: 1 });
+    expect(bundles.games.get("alpha")).toEqual({ total: { bytes: 10 + 2048 + 1024 + 100, files: 4 }, own: { bytes: 10 + 1024 + 100, files: 3 } });
+    expect(bundles.games.get("beta")).toEqual({ total: { bytes: 20 + 2048 + 512, files: 3 }, own: { bytes: 20 + 512, files: 2 } });
+    expect(bundles.games.get("gamma")).toEqual({ total: { bytes: 30 + 2048 + 1024, files: 3 }, own: { bytes: 30 + 1024, files: 2 } });
   });
 
-  test("fails a game over its budget or without one, and prints a row per game", () => {
-    const bundles = gameBundles(runner());
-    const report = bundleBudgetReport(bundles, (game) => (game === "alpha" ? 3 : undefined));
+  test("fails the engine or a game over its budget or without one, and prints one row each", () => {
+    const bundles = runnerBundles(runner());
+    const report = bundleBudgetReport(bundles, 1, (game) => (game === "alpha" ? 1 : game === "gamma" ? 2 : undefined));
     expect(report.failures).toEqual([
-      "alpha: bundle 3.1 KiB is over its 3 KiB budget",
-      "beta: no bundleKb budget (add it to its perf-budget.json; today it is 2.5 KiB)",
+      "engine (every game): 2 KiB is over its 1 KiB budget",
+      "alpha: 1.1 KiB is over its 1 KiB budget",
+      "beta: no budget (add bundleKb to its perf-budget.json; today it is 0.5 KiB)",
     ]);
-    expect(report.table.split("\n")).toHaveLength(3);
-    expect(bundleBudgetReport(bundles, () => 4).failures).toEqual([]);
+    expect(report.table.split("\n")).toHaveLength(5);
+    expect(bundleBudgetReport(bundles, undefined, () => 2).failures).toEqual(["engine (every game): no budget (add engineKb to apps/dev/bundle-budget.json; today it is 2 KiB)"]);
+    expect(bundleBudgetReport(bundles, 2, () => 2).failures).toEqual([]);
   });
 });

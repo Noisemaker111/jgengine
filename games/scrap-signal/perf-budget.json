@@ -1,6 +1,7 @@
 {
   "drawsFrame": 534,
   "programsLinked": 3,
-  "bundleKb": 4038,
+  "bundleKb": 954,
+  "bundleBaseline": "2026-11-03 check-site-assets --bundles: own part 867.1 KiB beyond the shared engine (2615 KiB download), plus 10%.",
   "baseline": "2026-10-23 bun run perf scrap-signal --seconds 6, whole-frame p95 as the gate compares it, GeForce RTX 3070 D3D11, 1600x900 full, engine 02162d4a at pinned Games dac3865e. drawsFrame is that run's whole-frame draw ceiling, printed beside each gate run as a reference, not gated; every game is judged on the shared 16.7 ms p95 frame."
 }
