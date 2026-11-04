@@ -61,10 +61,10 @@ function playOutDefense(ctx: GameContext): void {
 function stageBreach(ctx: GameContext): void {
   sendWave(ctx);
   for (let elapsed = 0; elapsed < MAX_STAGED_SECONDS; elapsed += 1) {
-    const world = keep.of(ctx);
-    if (world.fact("keep.field_clear") === true || runEnded(world)) return;
     session.countdown.disarm();
     advance(ctx, 1);
+    const world = keep.of(ctx);
+    if (world.fact("keep.field_clear") === true || runEnded(world)) return;
   }
 }
 

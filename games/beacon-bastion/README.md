@@ -28,7 +28,7 @@ is what the build does now.
     - interest of 10% of the purse, capped at 20, so banking gold competes with spending it;
     - 10 more when no raider broke through since the last pay.
     - A wave called early is still paid, at the next clear road, but interest pays once per clear road.
-  - Mending. Every life lost is a breach. With the road clear, R or the Mend sign under the walls
+  - Mending. Every life lost is a breach. With the road clear, R or the Mend sign beside the purse
     mends one breach for 20 gold, up to the walls the defense opened with.
 - **Damage and raiders.**
   - Every shot is pierce, blast, frost or arcane, read against what the raider is made of (the engine

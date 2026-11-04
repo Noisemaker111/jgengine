@@ -46,21 +46,23 @@ export function KeepSigns() {
             <span className="bb-plinth-num">{lives}</span>
             <span className="bb-plinth-max">/{livesMax}</span>
           </KitPanel>
-          <MendButton />
         </div>
       </HudFade>
-      <HudFade watch={[gold, pay]} dimTo={0.45} idleMs={4000}>
+      <HudFade watch={[gold, pay, lives]} dimTo={0.45} idleMs={4000}>
         <div className="bb-purse">
           <span className="bb-chains" aria-hidden />
           <KitPanel material="wood" cut="notch" depth={8} padding="5px 14px 6px 10px" className="bb-purse-sign" aria-label={`${gold} gold`}>
             <GameIcon name="coin" size={20} color="#f6cf5a" />
             <span className="bb-purse-num">{gold}</span>
           </KitPanel>
-          <span className="bb-pay" title="Kill pay this wave">
-            ×{pay.toFixed(2)} bounty
-          </span>
-          <span className="bb-pay" data-jg="interest" title={`A held wave pays ${HELD_PAY_RULE.interestRate * 100}% interest on the purse, up to ${HELD_PAY_RULE.interestMax}`}>
-            +{interest} interest
+          <span className="bb-pay-row">
+            <span className="bb-pay" title="Kill pay this wave">
+              ×{pay.toFixed(2)} bounty
+            </span>
+            <span className="bb-pay" data-jg="interest" title={`A held wave pays ${HELD_PAY_RULE.interestRate * 100}% interest on the purse, up to ${HELD_PAY_RULE.interestMax}`}>
+              +{interest} interest
+            </span>
+            <MendButton />
           </span>
           {relic === null ? null : (
             <span className="bb-relic" title={relic.detail}>
@@ -74,15 +76,16 @@ export function KeepSigns() {
 }
 
 /**
- * The masons' call under the walls: shown once a raider has broken through, it mends one breach per
- * press for its price, and stays dim while raiders are still on the road.
+ * The masons' call beside the purse: shown once a raider has broken through, it mends one breach per
+ * press for its price, and stays dim while raiders are still on the road. Its spot is kept while the
+ * walls are whole, so the first breach never shifts the HUD mid-wave.
  */
 function MendButton() {
   const keybinds = useActionBindings();
   const { commands } = useGame();
   const breaches = useGameStore((ctx) => keep.of(ctx).num("keep.breaches"));
   const open = useGameStore((ctx) => keep.of(ctx).canAct("mend") === null);
-  if (breaches <= 0) return null;
+  const whole = breaches <= 0;
   const key = actionLabel(keybinds, "mendWalls");
   return (
     <KitButton
@@ -92,6 +95,9 @@ function MendButton() {
       padding="3px 9px 4px"
       className="bb-mend"
       data-jg="mend"
+      data-whole={whole ? "" : undefined}
+      aria-hidden={whole ? true : undefined}
+      disabled={whole}
       data-dim={open ? undefined : ""}
       title={open ? `Mend one breach for ${MEND_RULE.gold} gold` : "Mend the walls once the road is clear"}
       cue={open ? "confirm" : undefined}
