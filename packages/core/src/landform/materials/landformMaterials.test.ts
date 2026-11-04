@@ -1,12 +1,50 @@
 import { describe, expect, test } from "bun:test";
-import { createLandscapeEvolution } from "../evolution/landscapeEvolution";
+import { createLandscapeEvolution, type LandscapeEvolution } from "../evolution/landscapeEvolution";
 import { fitPowerLaw } from "../validation/geomorphicLaws";
 import { LANDFORM_SURFACE_KINDS, landformSurface } from "./landformSurface";
-import { COVER, COVER_CLASSES, settlingVelocity, weatheredDepth } from "./sedimentCover";
+import { COVER, COVER_CLASSES, relativeDeposition, settlingVelocity, weatheredDepth } from "./sedimentCover";
 
 const CLASSES = COVER_CLASSES.length;
 
+function checkCover(model: LandscapeEvolution, step: number): void {
+  const fields = model.fields();
+  if (Object.values(fields).some((field) => field.some((value) => !Number.isFinite(value)))) throw new Error(`non-finite field at step ${step}`);
+  for (let i = 0; i < fields.sediment.length; i += 1) {
+    let sum = 0;
+    for (let c = 0; c < CLASSES; c += 1) {
+      const value = fields.cover[i * CLASSES + c] ?? 0;
+      if (value < 0) throw new Error(`negative cover at step ${step}, cell ${i}`);
+      sum += value;
+    }
+    if (sum !== fields.sediment[i]) throw new Error(`cover mismatch at step ${step}, cell ${i}`);
+  }
+}
+
 describe("grain settling", () => {
+  test("vertical concentration tends to a mixed column in fast flow and bed concentration in slow flow", () => {
+    const sand = settlingVelocity(5e-4);
+    const gravel = settlingVelocity(0.02);
+    const silt = settlingVelocity(2e-5);
+    expect(relativeDeposition(gravel, sand, 1, 0)).toBeCloseTo(gravel / sand, 12);
+    expect(relativeDeposition(gravel, sand, 1, 1e-320)).toBeCloseTo(gravel / sand, 12);
+    expect(relativeDeposition(gravel, sand, 1e9, 1)).toBeCloseTo(gravel / sand, 7);
+    expect(relativeDeposition(gravel, sand, 0, 1)).toBeCloseTo((gravel / sand) ** 2, 10);
+    expect(relativeDeposition(silt, sand, 0, 1)).toBeCloseTo((silt / sand) ** 2, 10);
+    expect(relativeDeposition(sand, sand, 0.1, 1)).toBeCloseTo(1, 12);
+    expect(relativeDeposition(gravel, sand, 0.01, 1)).toBeGreaterThan(relativeDeposition(gravel, sand, 1, 1));
+    expect(relativeDeposition(gravel, sand, 0.1, 4)).toBeGreaterThan(relativeDeposition(gravel, sand, 0.1, 1));
+    expect(relativeDeposition(silt, sand, 0.01, 1)).toBeLessThan(relativeDeposition(silt, sand, 1, 1));
+  });
+
+  test("sorting parameters reject invalid values without changing a running model", () => {
+    const model = createLandscapeEvolution({ grid: { cols: 3, rows: 3, cellSize: 100 }, seed: "sorting-params" });
+    expect(() => model.retune({ bankfullRunoff: 0 })).toThrow();
+    expect(() => model.retune({ concentrationStrength: -1 })).toThrow();
+    expect(model.params().bankfullRunoff).toBeUndefined();
+    model.retune({ bankfullRunoff: 2, concentrationStrength: 4 });
+    expect(model.params().bankfullRunoff).toBe(2);
+    expect(model.params().concentrationStrength).toBe(4);
+  });
   test("settling speeds match Ferguson & Church (2004): 0.5 mm sand about 7 cm/s, 20 mm gravel about 0.66 m/s, silt Stokes-slow", () => {
     expect(settlingVelocity(5e-4)).toBeCloseTo(0.071, 3);
     expect(settlingVelocity(0.02)).toBeCloseTo(0.656, 3);
@@ -16,11 +54,41 @@ describe("grain settling", () => {
 });
 
 describe("soil", () => {
+  test("uplifted landscape stays finite", () => {
+    const model = createLandscapeEvolution({
+      grid: { cols: 64, rows: 64, cellSize: 200 }, seed: "weathering",
+      params: { uplift: 4e-3, erodibility: 6e-6, diffusivity: 0.05, timeStep: 5e3 },
+    });
+    for (let k = 0; k < 300; k += 1) {
+      const report = model.step();
+      if (Object.values(report).some((value) => !Number.isFinite(value))) {
+        throw new Error(`non-finite state at step ${k + 1}: ${JSON.stringify(report)}`);
+      }
+      checkCover(model, k + 1);
+    }
+  }, 30_000);
   test("weathering integrates P = P₀ e^(−h/h₀) exactly", () => {
     // Bare rock for 1000 years in one step or a thousand gives the same soil.
     let stepped = 0;
     for (let k = 0; k < 1000; k += 1) stepped = weatheredDepth(stepped, 7.7e-5, 0.5, 1);
     expect(weatheredDepth(0, 7.7e-5, 0.5, 1000)).toBeCloseTo(stepped, 12);
+  });
+
+  test("weathering stays finite and monotone from bare rock to extreme cover", () => {
+    for (const depth of [0, 0.1, 1, 100, 354, 355, 1000, 1e100, Number.MAX_VALUE]) {
+      const next = weatheredDepth(depth, 7.7e-5, 0.5, 1e4);
+      expect(Number.isFinite(next)).toBe(true);
+      expect(next).toBeGreaterThanOrEqual(depth);
+      expect(next - depth).toBeLessThanOrEqual(0.77 + 1e-12);
+    }
+    for (const depth of [0, 0.1, 1, 10, 100]) {
+      const expected = 0.5 * Math.log(Math.exp(depth / 0.5) + 0.77 / 0.5);
+      expect(weatheredDepth(depth, 7.7e-5, 0.5, 1e4)).toBeCloseTo(expected, 12);
+    }
+    expect(weatheredDepth(0, 1e-308, 1e308, 1)).toBeGreaterThan(0);
+    expect(Number.isFinite(weatheredDepth(0, 1e308, 1e308, 1e308))).toBe(true);
+    expect(weatheredDepth(1000, 1, 0.5, 1)).toBe(1000);
+    expect(weatheredDepth(1, 2, 0.5, 2)).toBeGreaterThan(weatheredDepth(1, 1, 0.5, 2));
   });
 
   test("on an eroding hillslope soil settles at the depth where production equals erosion, h = h₀ ln(P₀/E)", () => {
@@ -54,7 +122,16 @@ describe("river sorting", () => {
       seed: "fan",
       params: { uplift: 2e-3, upliftMap, erodibility: 2e-5, deposition: 3, diffusivity: 0.01, timeStep: 1e4 },
     });
-    for (let k = 0; k < 300; k += 1) model.step();
+    const start = model.fields().height.reduce((a, b) => a + b, 0);
+    let exported = 0;
+    for (let k = 0; k < 300; k += 1) {
+      const report = model.step();
+      exported += report.exported;
+      if (Object.values(report).some((value) => !Number.isFinite(value))) {
+        throw new Error(`non-finite state at step ${k + 1}: ${JSON.stringify(report)}`);
+      }
+      checkCover(model, k + 1);
+    }
     const { cover } = model.fields();
     const sizes = [0.02, 5e-4, 2e-5];
     const distance: number[] = [];
@@ -92,6 +169,9 @@ describe("river sorting", () => {
       sxx += ((distance[k] ?? 0) - mx) ** 2;
     }
     const alpha = -sxy / sxx;
+    const end = model.fields().height.reduce((a, b) => a + b, 0);
+    const uplift = model.fields().exhumation.reduce((a, b) => a + b, 0);
+    expect(Math.abs((end - start - uplift) * 10000 + exported) / exported).toBeLessThan(1e-9);
     expect(alpha).toBeGreaterThan(1e-4);
     expect(gravelNear / 16).toBeGreaterThan((gravelFar / 16) * 1.5);
     // Silt passes the fan and leaves the map.

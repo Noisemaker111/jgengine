@@ -32,7 +32,7 @@ import { snowlineAt, type SnowlineHistory } from "../glacial/glacialClimate";
 import { createGlacierFlow, type GlacierModel } from "../glacial/glacierFlow";
 import { GLEN_RATE_FACTOR, iceDeformationRate } from "../glacial/iceFlow";
 import { landformTopology, type LandformGrid } from "../grid/landformGrid";
-import { COVER, COVER_CLASSES, createSedimentCover, DEFAULT_GRAIN_SIZES, DEFAULT_ROCK_YIELD, settlingVelocity, weatheredDepth, type GrainSizes } from "../materials/sedimentCover";
+import { COVER, COVER_CLASSES, createSedimentCover, DEFAULT_GRAIN_SIZES, DEFAULT_ROCK_YIELD, relativeDeposition, settlingVelocity, weatheredDepth, type GrainSizes } from "../materials/sedimentCover";
 import { createHillslopeDiffuser } from "./hillslopeDiffusion";
 import { createLandslider } from "./landsliding";
 import { resolveStrata, tanDegrees, UNIFORM_ROCK, type LandformStrata, type ResolvedStrata } from "./rockStrata";
@@ -132,6 +132,10 @@ export interface LandformParams {
    * speed against sand's. 0 carries all sediment out, about 1 builds wide fans.
    */
   deposition: number;
+  /** Effective runoff in m/yr used as a bankfull discharge proxy for grain sorting. Default 1 m/yr, the runoff in Yuan et al. (2019)'s reference landscape. */
+  bankfullRunoff?: number;
+  /** Strength of vertical grain concentration during deposition: 0 disables it; 1 uses the exponential profile. Default 1. */
+  concentrationStrength?: number;
   /** Multiplier on K where loose sediment covers the rock. */
   sedimentErodibility: number;
   /** Soil production rate P₀ in m/yr from bare bedrock (Heimsath et al. 1997 measured 7.7·10⁻⁵). */
@@ -288,6 +292,7 @@ export interface LandscapeEvolutionOptions {
 // Most of a cell a glacier wears its bed in one turn of ice flow and erosion.
 const COUPLED_WEAR = 0.1;
 const LOOSE_DEPTH = 1;
+const DISCHARGE_DEPTH_SCALE = 0.58 / plantPow(31557600, 0.36);
 
 function checkMap(name: string, map: readonly number[] | undefined, cells: number): void {
   if (map !== undefined && map.length !== cells) throw new Error(`landform ${name} has ${map.length} values for ${cells} cells`);
@@ -305,6 +310,13 @@ function copyParams(params: LandformParams): LandformParams {
     ...(glacial === undefined ? {} : { glacial: { ...glacial, ...(glacial.elaHistory === undefined ? {} : { elaHistory: glacial.elaHistory.map(([year, ela]) => [year, ela] as const) }) } }),
     ...(coastal === undefined ? {} : { coastal: { ...coastal } }),
   };
+}
+
+function checkSortingParams(params: LandformParams): void {
+  const runoff = params.bankfullRunoff ?? 1;
+  const strength = params.concentrationStrength ?? 1;
+  if (!Number.isFinite(runoff) || runoff <= 0) throw new Error(`landform bankfullRunoff must be positive and finite, got ${runoff}`);
+  if (!Number.isFinite(strength) || strength < 0) throw new Error(`landform concentrationStrength must be nonnegative and finite, got ${strength}`);
 }
 
 /**
@@ -334,6 +346,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
   const { cells, base, cellArea, cols, rows, cellSize, neighbour } = topology;
   const seed = options.seed;
   let params = copyParams({ ...DEFAULT_LANDFORM_PARAMS, ...options.params });
+  checkSortingParams(params);
   checkMap("upliftMap", params.upliftMap, cells);
   checkMap("rainfall", params.rainfall, cells);
   let strata: ResolvedStrata = resolveStrata(params.strata ?? UNIFORM_ROCK, cols, rows, cellSize);
@@ -396,6 +409,8 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
   const waves = createWaveEroder(topology);
   const grains = new Float64Array(cells * 3);
   let settling: readonly number[] = settlingShares(params.grainSizes ?? DEFAULT_GRAIN_SIZES);
+  let sandVelocity = settlingVelocity((params.grainSizes ?? DEFAULT_GRAIN_SIZES).sand);
+  let depthForArea = DISCHARGE_DEPTH_SCALE * plantPow(params.bankfullRunoff ?? 1, 0.36);
   let time = 0;
   let steps = 0;
 
@@ -529,8 +544,9 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     return volume - laidTotal;
   }
 
-  // Carry each grain size down the stack. On land each size settles a share G·v/v_sand·a/A of what
-  // passes. Standing water keeps gravel and sand where the river enters, building a delta, and holds
+  // Carry each grain size down the stack. G is the sand coefficient; each grain scales it by its
+  // settling speed and its bed-to-mean concentration relative to sand. Standing water keeps gravel
+  // and sand where the river enters, building a delta, and holds
   // silt in suspension until it settles over the whole floor, when the stack reaches the outlet.
   function settle(report: LandformStepReport): void {
     const { stack, receiver, area, water } = router;
@@ -560,6 +576,13 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       }
       let room = label >= 0 ? ((water[i] ?? 0) - (height[i] ?? 0)) * cellArea : 0;
       let laidHere = 0;
+      let shear = 0;
+      if (label < 0 && passing > 0 && g > 0 && shielded[i] !== 1 && (params.concentrationStrength ?? 1) > 0) {
+        // Davy & Lague (2009), §4.1: representative river depth from discharge, and u*² = g h S.
+        const waterDepth = depthForArea * plantPow(area[i] ?? cellArea, 0.36);
+        const slope = Math.max(0, ((height[i] ?? 0) - (height[r] ?? 0)) / (router.receiverDistance[i] ?? cellSize));
+        shear = Math.sqrt(9.81) * Math.sqrt(waterDepth) * Math.sqrt(slope);
+      }
       for (let c = 0; c < 3; c += 1) {
         const volume = flux[i * 3 + c] ?? 0;
         let kept = 0;
@@ -568,7 +591,8 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
             kept = room > 0 ? (volume < room ? volume : room) : 0;
             room -= kept;
           } else if (g > 0 && shielded[i] !== 1) {
-            const share = (g * (settling[c] ?? 1) * cellArea) / (area[i] ?? cellArea);
+            const relative = relativeDeposition((settling[c] ?? 1) * sandVelocity, sandVelocity, shear, params.concentrationStrength ?? 1);
+            const share = (g * relative * cellArea) / (area[i] ?? cellArea);
             kept = volume * (share < 1 ? share : 1);
           }
         }
@@ -1045,6 +1069,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
 
   function retune(patch: Partial<LandformParams>): void {
     const next = copyParams({ ...params, ...patch });
+    checkSortingParams(next);
     checkMap("upliftMap", next.upliftMap, cells);
     checkMap("rainfall", next.rainfall, cells);
     params = next;
@@ -1052,6 +1077,8 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     rockSlopes = strata.layers.map((rock) => tanDegrees(rock.criticalAngle ?? 45));
     reposeSlope = tanDegrees(params.reposeAngle);
     settling = settlingShares(params.grainSizes ?? DEFAULT_GRAIN_SIZES);
+    sandVelocity = settlingVelocity((params.grainSizes ?? DEFAULT_GRAIN_SIZES).sand);
+    depthForArea = DISCHARGE_DEPTH_SCALE * plantPow(params.bankfullRunoff ?? 1, 0.36);
   }
 
   classify();

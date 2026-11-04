@@ -75,14 +75,46 @@ export function settlingVelocity(diameter: number): number {
   return weight / (18 * viscosity + Math.sqrt(0.75 * submerged * gravity * diameter * diameter * diameter));
 }
 
+function concentrationAverage(x: number): number {
+  return x < 1e-5 ? 1 - x / 2 + x * x / 6 : (1 - plantExp(-x)) / x;
+}
+
+/**
+ * Relative deposition coefficient against sand. For the exponential concentration profile in
+ * Davy & Lague (2009), section 4.1, a uniform flow velocity gives bed/mean concentration
+ * R/(1 − exp(−R)), R = v/(0.4 u*). The sand coefficient includes its own concentration.
+ * @internal
+ */
+export function relativeDeposition(velocity: number, sandVelocity: number, shearVelocity: number, concentrationStrength: number): number {
+  const ratio = velocity / sandVelocity;
+  if (concentrationStrength <= 0) return ratio;
+  if (shearVelocity <= 0) return ratio * ratio;
+  const sandRouse = (sandVelocity / shearVelocity) * (concentrationStrength / 0.4);
+  const grainRouse = (velocity / shearVelocity) * (concentrationStrength / 0.4);
+  if (!Number.isFinite(sandRouse) || !Number.isFinite(grainRouse)) return ratio * ratio;
+  return ratio * concentrationAverage(sandRouse) / concentrationAverage(grainRouse);
+}
+
 /**
  * Soil thickness after weathering for `dt` years from `depth`, solving dh/dt = P₀ e^(−h/h₀) exactly:
  * h' = h₀ ln(e^(h/h₀) + P₀ dt / h₀).
+ * Inputs are nonnegative and finite, with a positive depth scale. Results beyond the finite range saturate.
  * @capability landform-materials per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation
  */
 export function weatheredDepth(depth: number, production: number, depthScale: number, dt: number): number {
   if (production <= 0 || dt <= 0) return depth;
-  return depthScale * plantLog(plantExp(depth / depthScale) + (production * dt) / depthScale);
+  const logAmount = plantLog(production) + plantLog(dt) - depth / depthScale;
+  const x = logAmount - plantLog(depthScale);
+  let increase: number;
+  if (x < -20) {
+    // Evaluate h₀·log1p(exp(x)) without underflowing exp(x) before multiplying by h₀.
+    const half = plantExp(logAmount / 2);
+    const ratio = plantExp(x);
+    increase = half * half * (1 - ratio / 2 + ratio * ratio / 3);
+  } else {
+    increase = depthScale * (x > 36 ? x : plantLog(1 + plantExp(x)));
+  }
+  return Math.min(Number.MAX_VALUE, depth + increase);
 }
 
 /** Per-cell thickness of each cover class. @internal */

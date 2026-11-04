@@ -36,6 +36,8 @@ Land is grown, not noised: `createLandscapeEvolution({ grid, seed, params, initi
 
 A map drawn as shapes uses survey terrain (`@jgengine/core/terrain/surveyTerrain`): `surveyFromDocument` reads `coast`, `hills` and `biome` outlines, `peak` markers and `ridge`, `cliff` and `river` paths from the scene, and `surveyTerrain` turns them into terrain config. `hills` rolls separate hills inside its outline (`meta.height`, `scale`, `ridged`, `falloff`); `cliff` raises the left of its line by `meta.height` across a `face` metres wide and eases back over `reach` (`side: "right"` flips it); `meta.erosion` (0..1) on a peak or ridge cuts gullies into it. Author them with `add_path`/`set_meta`, as Fernwild does.
 
+River deposition accounts for the concentration of each grain size near the bed. `concentrationStrength` sets that effect (0 off, 1 reference); `bankfullRunoff` sets the effective runoff in m/yr used to estimate channel depth (default 1). The estimate is a proxy, not a measured flood discharge. `exported` is net outlet volume, including hillslope creep.
+
 ## World = place (the definition of a world)
 
 A world is the place a game happens in — substrate + laws — declared with `world()` from
