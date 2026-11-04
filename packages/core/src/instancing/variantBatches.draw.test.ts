@@ -65,7 +65,7 @@ function drawLevels(
 }
 
 function palmBatch(store: ReturnType<typeof createObjectStore>, model: ModelConfig = PALM): StaticObjectBatch {
-  return groupStaticObjects(store.list().map((object) => ({ object, model, authored: true, custom: false, catalog: null }))).batches[0]!;
+  return groupStaticObjects(store.list().map((object) => ({ object, model, custom: false, catalog: null }))).batches[0]!;
 }
 
 describe("model variant batches", () => {

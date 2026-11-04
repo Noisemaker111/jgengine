@@ -26,7 +26,7 @@ import { staticDrawPoolFor, type ProxyRole, type StaticDrawSlot } from "./static
 import { builtLevelSource, reskinBuiltLevel, useBakedImpostor, WithBuiltLods } from "@jgengine/core/lod/builtLods.draw";
 import { IMPOSTOR_LEVEL_URL, type BuiltLodMeta } from "@jgengine/core/lod/builtLods";
 import type { HlodConfig } from "@jgengine/core/visibility/config";
-import { canInstanceStaticScene, countStaticBatchDraws, staticBatchCell, gatherStaticMembers, harvestStaticPieces, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, staticModelPieces, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
+import { blendsSource, canInstanceStaticScene, countStaticBatchDraws, staticBatchCell, gatherStaticMembers, harvestStaticPieces, incompatibleStaticObjectIds, isCompatibleStaticObject, sortFarToNear, STATIC_BATCH_MESH_KEY, staticModelPieces, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
 
 /**
  * Report what static object batching is doing to `debug_snapshot().systems`: the grouped batches, the
@@ -154,6 +154,9 @@ function InstancedObjectSource({ source, members, capacity }: {
 }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const scratch = useMemo(() => new THREE.Object3D(), []);
+  const blends = useMemo(() => blendsSource(source), [source]);
+  const eye = useMemo(() => new THREE.Vector3(), []);
+  const ordered = useMemo((): SceneObject[] => [], []);
   const attach = useCallback((mesh: THREE.InstancedMesh | null) => {
     ref.current = mesh;
     if (mesh !== null) freezeStaticTransforms(mesh);
@@ -162,8 +165,10 @@ function InstancedObjectSource({ source, members, capacity }: {
     const mesh = ref.current;
     return () => { mesh?.dispose(); };
   }, [capacity, source]);
-  useFrame(() => {
-    if (ref.current !== null) syncStaticObjectSource(ref.current, source, members.current, scratch);
+  useFrame((state) => {
+    if (ref.current === null) return;
+    const drawn = blends ? sortFarToNear(members.current, state.camera.getWorldPosition(eye), ordered) : members.current;
+    syncStaticObjectSource(ref.current, source, drawn, scratch);
   }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   return <instancedMesh ref={attach} args={[source.geometry, source.material, capacity]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow ?? false} receiveShadow={source.receiveShadow ?? false} dispose={null} />;
 }
@@ -478,7 +483,7 @@ export function StaticDrawPoolDriver({ hlod }: { hlod: HlodConfig | undefined })
   return null;
 }
 
-/** Render compatible authored or `scenery` props as shared model draws, preserving unsupported models. @internal */
+/** Render compatible props as shared model draws, preserving unsupported models. @internal */
 export function StaticObjectModels({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
   return (
     <IsolatedModelPart model={batch.model} seam="object">
