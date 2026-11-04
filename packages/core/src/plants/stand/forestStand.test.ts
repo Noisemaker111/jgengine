@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { resolveScatter } from "../../scatter/scatterRegion";
-import { registerBuiltinSceneKinds } from "../../scene/builtinSceneKinds";
+import { registerAllSceneKinds } from "../../scene/allSceneKinds";
 import { getSceneKind } from "../../scene/sceneKinds";
 import type { ScenePathLike } from "../../world/sceneShapes";
 import { FOREST_STAND_KIND, growForestStandPlot, readForestStandParams, resolveForestStand } from "./forestStand";
@@ -15,7 +15,7 @@ function stand(meta: Record<string, unknown>, id = "pines"): ScenePathLike {
 describe("forest stand scene kind", () => {
   test("a scene with a forest stand loads twice to the same placements", () => {
     const doc = () => ({ markers: [], paths: [stand({ species: [{ item: "pinus-resinosa", weight: 2 }, { item: "betula-papyrifera", weight: 1 }] })], volumes: [] });
-    registerBuiltinSceneKinds();
+    registerAllSceneKinds();
     const a = resolveScatter(doc());
     const b = resolveScatter(doc());
     expect(a.length).toBeGreaterThan(50);

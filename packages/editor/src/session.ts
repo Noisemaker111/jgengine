@@ -29,13 +29,13 @@ import type { ParamSchema } from "@jgengine/core/generator/paramSchema";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import type { ModelMaterialSlotInfo } from "@jgengine/core/material/materialAsset.draw";
 
-import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
+import { registerAllSceneKinds } from "@jgengine/core/scene/allSceneKinds";
 
 import { EDITOR_RPC_HANDLERS, type HandlerContext } from "./handlers";
 import { warmNavBake } from "./handlers/navmesh";
 import { emitEditorConsole } from "./shell/consoleSink";
 
-registerBuiltinSceneKinds();
+registerAllSceneKinds();
 
 /** How the editor hosts the game: frozen placement view, roamable world, the real game, or HUD-layout authoring. */
 export type EditorRunMode = "edit" | "walk" | "play" | "hud";
