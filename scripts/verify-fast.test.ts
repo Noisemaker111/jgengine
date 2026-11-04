@@ -141,6 +141,16 @@ describe("workspace mapping", () => {
     expect(plan.typechecks).toEqual(["scripts"]);
   });
 
+  test("an engine change type-checks every package whose program imports it, not only the engine's own", () => {
+    const graph = fixtureGraph({
+      "packages/shell/src/render/World.tsx": 'import { sample } from "@jgengine/core/world/terrain";',
+      "packages/core/src/world/terrain.ts": "export const sample = 1;",
+      "packages/core/src/game/loop.ts": "export const tick = 1;",
+    });
+    expect(verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: [], workspaces: fakeWorkspaces, graph }).typechecks).toEqual(["packages/core", "packages/shell"]);
+    expect(verifyPlan({ changed: ["packages/core/src/game/loop.ts"], testFiles: [], workspaces: fakeWorkspaces, graph }).typechecks).toEqual(["packages/core"]);
+  });
+
   test("reads the real workspace list and their check-types scripts", () => {
     const real = workspaces(root);
     const core = real.find((workspace) => workspace.dir === "packages/core");

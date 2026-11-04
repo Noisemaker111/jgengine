@@ -466,17 +466,18 @@ export function verifyPlan(input: {
     typechecks.push("scripts");
   }
 
-  // A game is reached by its own files and by every engine file its import graph contains: an
-  // engine change type-checks each game whose program includes it. A game's own change also runs
-  // its whole suite, since its tests read its scene and data files from disk.
+  // A workspace is reached by its own files and by every file its import graph contains: an engine
+  // change type-checks each package, app and game whose program includes it, since each compiles
+  // the engine's source under its own settings (an unused local the engine's own check allows fails
+  // the shell's, as CI's types job runs every one). A game's own change also runs its whole suite,
+  // since its tests read its scene and data files from disk.
   for (const workspace of input.workspaces) {
-    if (!GAME_DIR.test(workspace.dir)) continue;
     const prefix = `${workspace.dir}/`;
     const touched = touchedPaths.some((path) => path.startsWith(prefix));
     const imports = !touched && [...reachedBy.keys()].some((file) => file.startsWith(prefix) && !isTestFile(file));
     if (!touched && !imports) continue;
     if (workspace.checkTypes && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
-    if (touched) for (const test of input.testFiles) if (test.startsWith(prefix)) tests.add(test);
+    if (touched && GAME_DIR.test(workspace.dir)) for (const test of input.testFiles) if (test.startsWith(prefix)) tests.add(test);
   }
 
   // A file no test reaches is still covered when its package's whole suite runs: that is the suite

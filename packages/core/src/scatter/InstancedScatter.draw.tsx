@@ -628,7 +628,7 @@ function ScatterGeneratorSpecies({ item, species }: { item: string; species: Sca
     if (farLevels === undefined) return [{ sources: own, maxDistance: Infinity }];
     return [
       { sources: own, maxDistance: coarser[0]?.from ?? Infinity },
-      ...coarser.map((level, index) => ({ sources: farLevels[index] ?? [], maxDistance: coarser[index + 1]?.from ?? Infinity })),
+      ...coarser.map((_, index) => ({ sources: farLevels[index] ?? [], maxDistance: coarser[index + 1]?.from ?? Infinity })),
     ];
   }), [near, far, coarser]);
   const variants = useMemo(() => near.map((nearLevels) => nearLevels[0] ?? []), [near]);
