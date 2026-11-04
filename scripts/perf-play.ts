@@ -189,7 +189,8 @@ before side is measured once: run \`bun run perf <game>\` before editing, then a
                     page URL. The run fails when the page reports a different tier, so a record
                     always names the tier it measured.
   --draft           iteration preset: low tier and half viewport, for a smoke run you will not quote
-  --profile         also print the inclusive-time table to stderr
+  --profile         also print the inclusive-time table to stderr, and save the whole CPU profile
+                    beside the record (<game>.cpuprofile, opens in Chrome DevTools' Performance panel)
   --seconds         measured window in seconds (default ${DEFAULT_SECONDS})
   --telemetry       in-page report sampler: on (default) or off (?telemetry=off) for an A/B run
   --uncapped        the default: an unthrottled rAF clock (--disable-frame-rate-limit,
@@ -1229,6 +1230,9 @@ async function main(): Promise<void> {
       console.error(`perf: record written to ${outPath}${commit === null ? "" : ` (kept as the ${commit} baseline)`}`);
       if (profile && measured.profile !== null) {
         printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
+        const profilePath = outPath.replace(/\.json$/, "") + ".cpuprofile";
+        writeFileSync(profilePath, JSON.stringify(measured.profile));
+        console.error(`perf: CPU profile written to ${profilePath}`);
       }
       if (measured.record.profile?.top.length === 0) console.error("perf: the CPU profile produced no samples");
       if (measured.record.gl.attached !== true) {
