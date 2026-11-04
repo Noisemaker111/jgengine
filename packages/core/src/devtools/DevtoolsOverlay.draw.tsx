@@ -11,6 +11,7 @@ import type { PlayableGame } from "@jgengine/shell/registry";
 import { heavyModels } from "@jgengine/core/model/modelLoad.draw";
 import { triangleProbe } from "@jgengine/core/render/triangleAttribution.draw";
 import { buildLeanReport } from "./devtoolsReports.draw";
+import { sceneProbeReading } from "./discover";
 import { PerfPanel } from "./PerfPanel.view";
 import { LogsPanel } from "./LogsPanel.view";
 import { NetPanel } from "./NetPanel.draw";
@@ -37,16 +38,7 @@ export function DevtoolsRendererProbe() {
   useEffect(() => {
     // One walk serves the counters, the state line and the probe: a snapshot reads the same frame.
     const probe = triangleProbe(scene);
-    let cachedAt = 0;
-    let cached = probe.table();
-    const read = () => {
-      const now = performance.now();
-      if (now - cachedAt > 500) {
-        cachedAt = now;
-        cached = probe.table();
-      }
-      return cached;
-    };
+    const read = sceneProbeReading(() => probe.table());
     const disposeProbe = devtools.probes.register("render/triangles", () => read());
     const disposeSystem = devtools.probes.registerSystem("render/triangles", {
       counters: () => {

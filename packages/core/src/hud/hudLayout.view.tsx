@@ -64,6 +64,8 @@ const DRAG_THRESHOLD_PX = 4;
 const PERSIST_DELAY_MS = 200;
 const EDIT_BAR_Z = 100000;
 const PANEL_GAP = 10;
+/** Least time between two HUD overflow checks; each one measures every panel and forces a layout. */
+const HUD_CHECK_INTERVAL_MS = 500;
 const COMPACT_HUD_SCALE = 0.85;
 
 /**
@@ -587,11 +589,14 @@ export function HudCanvas({
     const host = measurableHost(canvas);
     if (typeof requestAnimationFrame !== "function") return;
     let frame = 0;
+    let wait: ReturnType<typeof setTimeout> | null = null;
+    let checkedAt = Number.NEGATIVE_INFINITY;
     let lastReport = "";
     let lastOverlapReport = "";
     const dev = isDevBuild();
     const check = () => {
       frame = 0;
+      checkedAt = performance.now();
       const hostRect = host.getBoundingClientRect();
       if (hostRect.width <= 0 || hostRect.height <= 0) return;
       const viewportSize = { width: hostRect.width, height: hostRect.height };
@@ -662,9 +667,20 @@ export function HudCanvas({
         }
       }
     };
+    // A HUD that moves a bar or a marker every frame mutates every frame; measuring every panel
+    // each time forced a page layout per frame. The check reports layout mistakes, so a few a
+    // second still catch them, and the last change is always checked.
     const schedule = () => {
-      if (frame !== 0) return;
-      frame = requestAnimationFrame(check);
+      if (frame !== 0 || wait !== null) return;
+      const due = checkedAt + HUD_CHECK_INTERVAL_MS - performance.now();
+      if (due <= 0) {
+        frame = requestAnimationFrame(check);
+        return;
+      }
+      wait = setTimeout(() => {
+        wait = null;
+        frame = requestAnimationFrame(check);
+      }, due);
     };
     const settle = setTimeout(schedule, 400);
     const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
@@ -674,6 +690,7 @@ export function HudCanvas({
     mutationObserver?.observe(canvas, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] });
     return () => {
       clearTimeout(settle);
+      if (wait !== null) clearTimeout(wait);
       if (frame !== 0) cancelAnimationFrame(frame);
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();

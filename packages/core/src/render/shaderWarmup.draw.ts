@@ -141,10 +141,14 @@ function linkState(properties: { get(material: object): unknown }, object: Drawa
  * program is ready. One that is still not ready after {@link SHADER_WARMUP_DEFAULTS.stallMs} is
  * drawn anyway, so a driver that never reports completion cannot keep it hidden. `active` says when
  * to do this; the gate turns it off while it holds whole frames for a newly mounted view. Returns
- * the undo. @internal
+ * the undo.
+ *
+ * The check rides on the renderer's own draws, so it costs a lookup per draw the frame makes. It
+ * used to walk the whole visible scene before every render, which grew with the world rather than
+ * with what the camera sees. @internal
  */
 export function deferUnlinkedDraws(
-  renderer: ShaderWarmupRenderer & { render: RenderMethod; readonly properties: { get(material: object): unknown } },
+  renderer: ShaderWarmupRenderer & { render: RenderMethod; renderBufferDirect(...args: Parameters<DrawMethod>): unknown; readonly properties: { get(material: object): unknown } },
   scene: Object3D,
   active: () => boolean,
   now: () => number = () => performance.now(),
@@ -153,33 +157,38 @@ export function deferUnlinkedDraws(
   const previous = renderer.render;
   const firstSeen = new WeakMap<Object3D, number>();
   let undone = false;
+  // Per render of the scene: when it started, and what it met with no program yet.
+  let at = 0;
+  const missing = new Set<Drawable>();
+  /** Whether this draw is of something still linking; such a draw is left out of the frame. */
+  const leaveOut = (object: Object3D): boolean => {
+    // A pass's own full-screen quad is drawn without being in the scene; only the scene's drawables are deferred.
+    if (object.parent === null || !isDrawable(object)) return false;
+    const state = linkState(renderer.properties, object);
+    if (state === "linked") return false;
+    if (state === "missing") missing.add(object);
+    const since = firstSeen.get(object) ?? at;
+    firstSeen.set(object, since);
+    return at - since <= SHADER_WARMUP_DEFAULTS.stallMs;
+  };
   const deferring = function (this: unknown, drawn: never, camera: never): unknown {
     if (undone || (drawn as Object3D) !== scene || !active()) return previous.call(renderer, drawn, camera);
-    const view = camera as Camera;
-    const missing: Drawable[] = [];
-    const pending: Drawable[] = [];
-    visitVisible(scene, (object) => {
-      if (!isDrawable(object) || !object.layers.test(view.layers)) return;
-      const state = linkState(renderer.properties, object);
-      if (state === "missing") missing.push(object);
-      else if (state === "building") pending.push(object);
-    });
-    const overridden = (scene as Scene).overrideMaterial != null;
-    if (missing.length > 0 && !overridden) compileObjects(renderer, scene, view, missing);
-    const hidden: Object3D[] = [];
-    const at = now();
-    for (const object of missing.length > 0 ? [...pending, ...missing] : pending) {
-      if (linkState(renderer.properties, object) === "linked") continue;
-      const since = firstSeen.get(object) ?? at;
-      firstSeen.set(object, since);
-      if (at - since > SHADER_WARMUP_DEFAULTS.stallMs) continue;
-      object.visible = false;
-      hidden.push(object);
-    }
+    at = now();
+    missing.clear();
+    const draw = renderer.renderBufferDirect;
+    const drawOwned = Object.prototype.hasOwnProperty.call(renderer, "renderBufferDirect");
+    const checked: DrawMethod = (...args) => (leaveOut(args[4]) ? undefined : draw.apply(renderer, args));
+    renderer.renderBufferDirect = checked;
     try {
       return previous.call(renderer, drawn, camera);
     } finally {
-      for (const object of hidden) object.visible = true;
+      if (renderer.renderBufferDirect === checked) {
+        if (drawOwned) renderer.renderBufferDirect = draw;
+        else delete (renderer as { renderBufferDirect?: unknown }).renderBufferDirect;
+      }
+      // Linked after the draw, not before it: a link only queues work, and the next frame draws it once it is ready.
+      if (missing.size > 0 && (scene as Scene).overrideMaterial == null) compileObjects(renderer, scene, camera as Camera, [...missing]);
+      missing.clear();
     }
   } as RenderMethod;
   renderer.render = deferring;
@@ -570,6 +579,8 @@ export interface HoldDrawsOptions {
 }
 
 type RenderMethod = (scene: never, camera: never) => unknown;
+/** three's per-draw call, `renderBufferDirect(camera, scene, geometry, material, object, group)`; every pass draws through it. */
+type DrawMethod = (camera: Camera, scene: Scene, geometry: BufferGeometry, material: Material, object: Object3D, group: unknown) => unknown;
 
 const heldRenderers = new WeakMap<object, () => boolean>();
 

@@ -17,6 +17,25 @@ import { formatLogArg } from "./logs";
 import type { ControlRecord } from "./controls";
 import type { Devtools, DiscoveredEntry, SystemProbe, SystemProbeReading, Tunable, TunableAccessor } from "./types";
 
+/** How often a probe that walks the whole scene walks it again; in between it answers its last reading. */
+export const SCENE_PROBE_REFRESH_MS = 2_000;
+
+/**
+ * A probe reading that walks the scene, taken again at most every {@link SCENE_PROBE_REFRESH_MS}.
+ * Probes are read on every long frame and by every telemetry report, and each read used to walk
+ * the scene again: a slow frame paid for a walk that made the next one slow too, and a bigger
+ * world paid more.
+ * @internal
+ */
+export function sceneProbeReading<T>(read: () => T, now: () => number = () => performance.now()): () => T {
+  let last: { value: T; at: number } | null = null;
+  return () => {
+    const at = now();
+    if (last === null || at - last.at >= SCENE_PROBE_REFRESH_MS) last = { value: read(), at };
+    return last.value;
+  };
+}
+
 /** Internal record for an auto-discovered field: identity, kind, initial value, source object, and get/set accessors. */
 export interface DiscoveredRecord {
   id: string;

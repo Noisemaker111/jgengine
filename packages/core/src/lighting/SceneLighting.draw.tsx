@@ -12,6 +12,7 @@ import type {
 } from "@jgengine/core/game/playableGame";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import { devtools } from "@jgengine/core/devtools/devtools";
+import { sceneProbeReading } from "@jgengine/core/devtools/discover";
 
 import { CascadedShadows } from "./CascadedShadows.draw";
 import { lightShadowFilter } from "./softShadows";
@@ -155,19 +156,18 @@ export function ConfiguredLighting({
       cullRef.current = null;
     };
   }, [scene, shadowsCast, casterRadius]);
-  useEffect(
-    () =>
-      devtools.probes.registerSystem("render/shadows", {
-        counters: () => cullRef.current?.stats() ?? { casters: 0, skipped: 0, minRadius: casterRadius },
-        state: () => {
-          const stats = cullRef.current?.stats();
-          return stats === undefined
-            ? "no shadow-casting directional light"
-            : `${stats.casters} casters · ${stats.skipped} under ${stats.minRadius} m skipped`;
-        },
-      }),
-    [casterRadius],
-  );
+  useEffect(() => {
+    const casterStats = sceneProbeReading(() => cullRef.current?.stats());
+    return devtools.probes.registerSystem("render/shadows", {
+      counters: () => casterStats() ?? { casters: 0, skipped: 0, minRadius: casterRadius },
+      state: () => {
+        const stats = casterStats();
+        return stats === undefined
+          ? "no shadow-casting directional light"
+          : `${stats.casters} casters · ${stats.skipped} under ${stats.minRadius} m skipped`;
+      },
+    });
+  }, [casterRadius]);
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const hemisphereRef = useRef<THREE.HemisphereLight>(null);
   const baseAmbient = lighting.ambient?.intensity ?? 0.55;

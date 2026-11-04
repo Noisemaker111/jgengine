@@ -5,6 +5,7 @@
  */
 
 import { modelLoadIdleMs, modelLoadStarts } from "@jgengine/core/model/modelLoad.draw";
+import { SHADER_WARMUP_DEFAULTS } from "@jgengine/core/render/shaderWarmup.draw";
 
 import { resolvedLook } from "./appEnv";
 import { pickStartAction, waitForQuiescentView, type StartCandidate, type ViewActivity } from "./captureSettle";
@@ -123,8 +124,12 @@ function delay(ms: number): Promise<void> {
 /** Streaming counts as done after this much loader idle; below it a model can still pop in. */
 const MODEL_IDLE_MS = 400;
 const MODEL_IDLE_TIMEOUT_MS = 15_000;
-/** Budget for staged work to tick, mount and finish streaming before the gate gives up. */
-const QUIESCENCE_TIMEOUT_MS = 90_000;
+/**
+ * Budget for staged work to tick, mount and finish streaming before the gate gives up. It outlasts
+ * the shader warmup's own cap, which always lifts the loading screen in the end: a shorter one
+ * reported a slow load (a GPU short of memory) as a scene that never mounted.
+ */
+const QUIESCENCE_TIMEOUT_MS = SHADER_WARMUP_DEFAULTS.planBudgetMs + 30_000;
 /** Start-menu rounds the gate clicks through when the game declares no `capture.play`. */
 const AUTO_START_ROUNDS = 3;
 

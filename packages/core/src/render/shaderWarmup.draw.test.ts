@@ -1265,6 +1265,7 @@ describe("deferUnlinkedDraws", () => {
     const ready = new Set<object>();
     const compiled: string[] = [];
     const drawn: string[][] = [];
+    const passQuads: Mesh[] = [];
     const renderer = {
       properties: { get: (material: object) => programs.get(material) ?? {} },
       compile(group: Object3D) {
@@ -1274,12 +1275,17 @@ describe("deferUnlinkedDraws", () => {
           programs.set(material, { currentProgram: { isReady: () => ready.has(material) } });
         }
       },
-      render(scene: Scene, _camera: PerspectiveCamera) {
-        const names: string[] = [];
+      // Like three: the render walks the scene and draws each mesh through `renderBufferDirect`.
+      render(scene: Scene, camera: PerspectiveCamera) {
+        drawn.push([]);
         scene.traverseVisible((object) => {
-          if ((object as Mesh).isMesh) names.push(((object as Mesh).material as Material).name);
+          if ((object as Mesh).isMesh && object.userData["culled"] !== true) renderer.renderBufferDirect(camera, scene, (object as Mesh).geometry, (object as Mesh).material as Material, object, null);
         });
-        drawn.push(names);
+        // A pass's own full-screen quad (a shadow blur), drawn inside the render but not in the scene.
+        for (const quad of passQuads) renderer.renderBufferDirect(camera, null, quad.geometry, quad.material as Material, quad, null);
+      },
+      renderBufferDirect(_camera: unknown, _scene: unknown, _geometry: unknown, material: Material, _object: Object3D, _group: unknown) {
+        drawn.at(-1)?.push(material.name);
       },
     };
     const scene = new Scene();
@@ -1293,7 +1299,7 @@ describe("deferUnlinkedDraws", () => {
       scene.add(mesh);
       return mesh;
     };
-    return { renderer, scene, camera, add, ready, compiled, drawn };
+    return { renderer, scene, camera, add, ready, compiled, drawn, passQuads };
   }
 
   test("a drawable that arrives unlinked is left out of the frame while it links, then drawn", () => {
@@ -1316,6 +1322,19 @@ describe("deferUnlinkedDraws", () => {
     ready.add(part.material as object);
     renderer.render(scene, camera);
     expect(drawn.at(-1), "drawn with the first frame its program is ready").toEqual(["road", "part"]);
+  });
+
+  test("checks only what the frame draws, so its cost follows the view and not the world", () => {
+    const { renderer, scene, camera, add, compiled, drawn, passQuads } = deferringFixture();
+    deferUnlinkedDraws(renderer as never, scene, () => true, () => 0);
+    add("road", true);
+    // Thousands of props the camera culls: a walk of the scene would visit and link every one.
+    for (let index = 0; index < 2_000; index += 1) add(`far${index}`, false).userData["culled"] = true;
+    passQuads.push(new Mesh(new BoxGeometry(1, 1, 1), Object.assign(new MeshBasicMaterial(), { name: "pass quad" })));
+
+    renderer.render(scene, camera);
+    expect(compiled, "nothing the frame skipped is linked").toEqual([]);
+    expect(drawn.at(-1), "a pass's own quad is never left out").toEqual(["road", "pass quad"]);
   });
 
   test("draws everything when inactive, for other scenes, after undo, and once a link has stalled", () => {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createDevtools, formatLogMessage, instrumentLatency } from "./devtools";
+import { SCENE_PROBE_REFRESH_MS, sceneProbeReading } from "./discover";
 
 describe("devtools controls", () => {
   test("infers slider for numbers with derived bounds", () => {
@@ -620,5 +621,19 @@ describe("devtools structured tunables", () => {
     });
     expect(result.skipped[0]?.reason).toContain("kind mismatch");
     expect(dev.controls.get("x")!.read()).toBe(1);
+  });
+});
+
+describe("sceneProbeReading", () => {
+  test("a probe that walks the scene walks it once however often it is read, then again when stale", () => {
+    let walks = 0;
+    let clock = 0;
+    const read = sceneProbeReading(() => (walks += 1), () => clock);
+    // A long frame, then a report's counters and state line, all in the same second.
+    for (let index = 0; index < 50; index += 1) read();
+    expect(walks).toBe(1);
+    clock += SCENE_PROBE_REFRESH_MS;
+    expect(read()).toBe(2);
+    expect(walks).toBe(2);
   });
 });
