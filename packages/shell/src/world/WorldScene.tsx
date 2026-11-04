@@ -39,7 +39,7 @@ import {
   crowdTintOf,
 } from "@jgengine/core/anim/crowdRegistry.draw";
 import {
-  characterLodTier,
+  characterViewTier,
   characterRigTier,
   clearCharacterLodTier,
   setCharacterLodTier,
@@ -109,25 +109,22 @@ function EntityMarker({
     writeRenderPoseIfChanged(group, ctx, entityId, live, scratchRef.current, memoRef.current);
     const inView = visibleRef.current(entityId);
     const shown = live.hidden !== true && inView;
-    let tier: CharacterLodTier | undefined;
     let batched = false;
-    if (crowdModel !== undefined && crowd !== undefined && crowdKind !== undefined && crowdKindReady(crowdKind) && shown) {
-      const [x, y, z] = live.position;
-      const distance = Math.sqrt(
-        (state.camera.position.x - x) ** 2 + (state.camera.position.y - y) ** 2 + (state.camera.position.z - z) ** 2,
-      );
-      const lod = crowdModel.lod === false ? undefined : crowdModel.lod;
-      tier = characterLodTier(distance, lod, tierRef.current);
-      if (tier === "crowd") {
-        // A painted character keeps its own rig: its strokes live on its materials, not in the batch.
-        const painted = ctx.scene.entity.paint.version(entityId) !== 0;
-        batched = !painted && crowd.claim(entityId, crowdKind, { x, y, z, rotationY: live.rotationY ?? 0, speed: groundSpeed(live), size: live.size ?? 1, tint: crowdTint });
-        // An over-cap batch leaves the rest of its kind on their own rigs at the tier their distance
-        // earns, so a crowded scene loses draws rather than characters.
-        if (!batched) tier = characterRigTier(distance, lod);
-      }
-      setCharacterLodTier(entityId, tier);
+    const [x, y, z] = live.position;
+    const distance = Math.sqrt(
+      (state.camera.position.x - x) ** 2 + (state.camera.position.y - y) ** 2 + (state.camera.position.z - z) ** 2,
+    );
+    const crowdReady = crowdModel !== undefined && crowd !== undefined && crowdKind !== undefined && crowdKindReady(crowdKind);
+    let tier = characterViewTier({ shown, local: isLocal, lod: model?.lod, distance, crowd: crowdReady, previous: tierRef.current });
+    if (tier === "crowd" && crowd !== undefined && crowdKind !== undefined) {
+      // A painted character keeps its own rig: its strokes live on its materials, not in the batch.
+      const painted = ctx.scene.entity.paint.version(entityId) !== 0;
+      batched = !painted && crowd.claim(entityId, crowdKind, { x, y, z, rotationY: live.rotationY ?? 0, speed: groundSpeed(live), size: live.size ?? 1, tint: crowdTint });
+      // An over-cap batch leaves the rest of its kind on their own rigs at the tier their distance
+      // earns, so a crowded scene loses draws rather than characters.
+      if (!batched) tier = characterRigTier(distance, model?.lod === false ? undefined : model?.lod);
     }
+    setCharacterLodTier(entityId, tier);
     if (!batched) crowd?.delete(entityId);
     tierRef.current = tier;
     // The marker itself stays mounted and visible while a batch draws the character: its status

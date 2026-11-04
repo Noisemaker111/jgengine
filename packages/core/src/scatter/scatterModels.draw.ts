@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
 
-import { applyMaterialOverride } from "@jgengine/core/material/materialOverride.draw";
+import { applyMaterialOverride, type MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
 import { cloneModelScene, disposeModelScene, ownModelMaterial } from "@jgengine/core/model/modelRender.draw";
 import { applyModelSurface } from "@jgengine/core/model/modelSurface.draw";
 import { applyModelWindToScene } from "@jgengine/core/model/modelWind.draw";
@@ -85,17 +85,18 @@ export function buildScatterModelSources(
   gltfScene: THREE.Object3D,
   model: ModelConfig,
   bounds?: THREE.Box3,
+  textures?: MaterialOverrideTextures,
 ): { sources: ScatterModelSource[]; root: THREE.Object3D } {
   if (parseModelHiddenNodes(model.hiddenNodes)?.length) throw new Error("Instanced model node visibility requires the individual model renderer; use EntityModel for hidden nodes");
   if (model.materialAssignments?.length) throw new Error("Instanced model material assignments require the individual model renderer; use EntityModel for authored slots");
-  if (model.material?.maps !== undefined) throw new Error("Instanced model override maps require an owned texture loader; use EntityModel for authored maps");
+  if (model.material?.maps !== undefined && textures === undefined) throw new Error("Instanced model override maps must be loaded by the caller (useOverrideMapSets) and passed as `textures`");
   applyModelSurface(gltfScene);
   const root = cloneModelScene(gltfScene, { shadows: model.shadows, surfaceDetail: model.surfaceDetail });
   // Sway ramps over vertex heights in the model's own units, so its default span is the model's own
   // measured height: a GLB placed at three sizes sways alike at each and shares one material.
   const ownHeight = model.dims?.maxY ?? (bounds ?? new THREE.Box3().setFromObject(gltfScene)).max.y;
   applyModelWindToScene(root, model.wind, Number.isFinite(ownHeight) && ownHeight > 0 ? ownHeight : 4);
-  if (model.material !== undefined) applyMaterialOverride(root, model.material, { clone: false, ownMaterial: material => ownModelMaterial(root, material) });
+  if (model.material !== undefined) applyMaterialOverride(root, model.material, { clone: false, ...(textures === undefined ? {} : { textures }), ownMaterial: material => ownModelMaterial(root, material) });
   root.updateMatrixWorld(true);
   const base = scatterModelBaseTransform(root, model, bounds);
   const sources: ScatterModelSource[] = [];

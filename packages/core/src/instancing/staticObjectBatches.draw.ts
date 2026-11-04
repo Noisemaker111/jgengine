@@ -3,6 +3,7 @@ import type { ModelConfig, ObjectStyle } from "@jgengine/core/game/playableGame"
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
 import type { GameContextObjectEntry } from "@jgengine/core/runtime/gameContext";
 import { buildScatterModelSources, type ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
+import type { MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
 import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { submitInstanceCount, submitsDraw } from "@jgengine/core/render/submittedDraws.draw";
 import { shownPooledIds, STATIC_POOL_MESH_KEY, type StaticDrawPool } from "./staticDrawPool.draw";
@@ -61,7 +62,7 @@ function isStaticModel(model: ModelConfig, animation: SceneObject["animation"] |
   const parts = model.parts ?? [];
   return (animation === undefined || animation === "auto" || animation === "none") && (model.ik === undefined || model.ik === "none") &&
     (model.scale ?? 1) >= 0 && (model.attachments?.length ?? 0) === 0 &&
-    model.partMotion === undefined && model.surfaceDetail !== false && model.material?.maps === undefined && (model.materialAssignments?.length ?? 0) === 0 &&
+    model.partMotion === undefined && model.surfaceDetail !== false && (model.materialAssignments?.length ?? 0) === 0 &&
     (model.hiddenNodes === undefined || (Array.isArray(model.hiddenNodes) && model.hiddenNodes.length === 0)) &&
     (parts.length === 0 || (model.variants === undefined && parts.every((part) => part.role === undefined && (part.scale ?? 1) > 0 &&
       (typeof part.model === "string" || (part.model.variants === undefined && isStaticModel(part.model, part.model.animation))))));
@@ -328,17 +329,19 @@ export function canInstanceStaticScene(scene: THREE.Object3D, clips: readonly TH
 /**
  * Harvest every piece of a model into batch sources, each carried to its part offset. Null when any
  * piece's loaded scene cannot be instanced, so the whole placement stays on the individual renderer.
+ * `maps` holds each piece's loaded override maps, in piece order (see `useOverrideMapSets`).
  * @internal
  */
 export function harvestStaticPieces(
   pieces: readonly StaticModelPiece[],
   gltfs: readonly { scene: THREE.Object3D; animations: THREE.AnimationClip[] }[],
+  maps: readonly (MaterialOverrideTextures | undefined)[] = [],
 ): { sources: ScatterModelSource[]; roots: THREE.Object3D[] } | null {
   if (!gltfs.every((gltf) => canInstanceStaticScene(gltf.scene, gltf.animations))) return null;
   const sources: ScatterModelSource[] = [];
   const roots: THREE.Object3D[] = [];
   pieces.forEach((piece, index) => {
-    const harvested = buildScatterModelSources(gltfs[index]!.scene, piece.model);
+    const harvested = buildScatterModelSources(gltfs[index]!.scene, piece.model, undefined, maps[index]);
     roots.push(harvested.root);
     for (const source of harvested.sources) sources.push({ ...source, localMatrix: piece.matrix.clone().multiply(source.localMatrix) });
   });

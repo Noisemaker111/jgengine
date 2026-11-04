@@ -373,29 +373,11 @@ export function useModelMaterialTextures(model: Pick<ModelConfig, "material" | "
   const referenced = (model.materialAssets ?? []).filter(asset => ids.has(asset.id));
   const key = JSON.stringify([model.material?.maps, referenced]);
   const entries = useMemo(() => {
-    const result: { assetId?: string; role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] = [];
-    const maps: Partial<Record<MaterialTextureRole, string>> = model.material?.maps ?? {};
-    for (const [role, url] of Object.entries(maps)) if (url !== undefined) result.push({ role: role as MaterialTextureRole, metadata: { url, colorSpace: MATERIAL_TEXTURE_SEMANTICS[role as MaterialTextureRole].colorSpace } });
+    const result: { assetId?: string; role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] = overrideMapEntries(model.material?.maps);
     for (const asset of referenced) for (const [role, metadata] of Object.entries(asset.textures ?? {})) result.push({ assetId: asset.id, role: role as MaterialTextureRole, metadata: metadata! });
     return result;
   }, [key]);
-  const renderer = useThree(state => state.gl);
-  if (entries.some(entry => /\.ktx2(?:[?#]|$)/i.test(entry.metadata.url))) detectKtx2Support(renderer);
-  const loaded = useLoader(MaterialTextureLoader, entries.map(entry => entry.metadata.url));
-  const views = useDisposable(() => {
-    const owned: THREE.Texture[] = [];
-    try {
-      entries.forEach((entry, index) => {
-        const view = configureMaterialTexture(entry.role, entry.metadata, loaded[index]!);
-        view.flipY = false;
-        owned.push(view);
-      });
-      return owned;
-    } catch (error) {
-      owned.forEach(texture => texture.dispose());
-      throw error;
-    }
-  }, [entries, loaded]);
+  const views = useMaterialTextureViews(entries);
   return useMemo(() => {
     const global: MaterialOverrideTextures = {};
     const assets = new Map<string, MaterialOverrideTextures>();
@@ -409,6 +391,57 @@ export function useModelMaterialTextures(model: Pick<ModelConfig, "material" | "
     });
     return { global, assets };
   }, [entries, views]);
+}
+
+/**
+ * Loaded override maps for each model of a batched placement, in order; `undefined` for a model with
+ * none. Every view of one URL shares its loaded image, so batches of different models that use the
+ * same maps still merge into one draw.
+ * @internal
+ */
+export function useOverrideMapSets(models: readonly Pick<ModelConfig, "material">[]): readonly (MaterialOverrideTextures | undefined)[] {
+  const key = JSON.stringify(models.map(model => model.material?.maps ?? null));
+  const entries = useMemo(
+    () => models.flatMap((model, piece) => overrideMapEntries(model.material?.maps).map(entry => ({ ...entry, piece }))),
+    [key],
+  );
+  const views = useMaterialTextureViews(entries);
+  return useMemo(() => {
+    const sets: (MaterialOverrideTextures | undefined)[] = models.map(() => undefined);
+    entries.forEach((entry, index) => {
+      const set = sets[entry.piece] ?? {};
+      set[entry.role] = views[index]!;
+      sets[entry.piece] = set;
+    });
+    return sets;
+  }, [entries, views, models.length]);
+}
+
+function overrideMapEntries(maps: Partial<Record<MaterialTextureRole, string>> | undefined): { role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] {
+  const result: { role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] = [];
+  for (const [role, url] of Object.entries(maps ?? {})) if (url !== undefined) result.push({ role: role as MaterialTextureRole, metadata: { url, colorSpace: MATERIAL_TEXTURE_SEMANTICS[role as MaterialTextureRole].colorSpace } });
+  return result;
+}
+
+/** Loads each entry's image and returns an owned, configured view of it, disposed with the caller. */
+function useMaterialTextureViews(entries: readonly { role: MaterialTextureRole; metadata: MaterialTextureMetadata }[]): THREE.Texture[] {
+  const renderer = useThree(state => state.gl);
+  if (entries.some(entry => /\.ktx2(?:[?#]|$)/i.test(entry.metadata.url))) detectKtx2Support(renderer);
+  const loaded = useLoader(MaterialTextureLoader, entries.map(entry => entry.metadata.url));
+  return useDisposable(() => {
+    const owned: THREE.Texture[] = [];
+    try {
+      entries.forEach((entry, index) => {
+        const view = configureMaterialTexture(entry.role, entry.metadata, loaded[index]!);
+        view.flipY = false;
+        owned.push(view);
+      });
+      return owned;
+    } catch (error) {
+      owned.forEach(texture => texture.dispose());
+      throw error;
+    }
+  }, [entries, loaded]);
 }
 
 /**

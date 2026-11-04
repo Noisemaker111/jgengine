@@ -9,6 +9,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { sceneProbeReading } from "@jgengine/core/devtools/discover";
 import { useGameContext } from "@jgengine/react/provider";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
+import { useOverrideMapSets } from "@jgengine/core/material/materialAsset.draw";
 import { IsolatedModelPart } from "@jgengine/core/model/SceneModels.draw";
 import { variantLevelModel } from "@jgengine/core/lod/singleVariantLod.draw";
 import { assignVariantLevels, createLevelPassGate, levelPassProbe, noteLevelPass, noteLevelPassFrame, variantSwitchOf } from "@jgengine/core/lod/levelPass.draw";
@@ -203,7 +204,8 @@ function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; sing
   const { objects, excluded } = useBatchMembers(batch);
   const pieces = useMemo(() => staticModelPieces(batch.model), [batch.model]);
   const gltfs = useLoader(sharedGltfLoader, pieces.map((piece) => piece.model.url));
-  const harvested = useMemo(() => harvestStaticPieces(pieces, gltfs), [pieces, gltfs]);
+  const maps = useOverrideMapSets(useMemo(() => pieces.map((piece) => piece.model), [pieces]));
+  const harvested = useMemo(() => harvestStaticPieces(pieces, gltfs, maps), [pieces, gltfs, maps]);
   useEffect(() => () => { if (harvested !== null) for (const root of harvested.roots) disposeScatterModelSources(root); }, [harvested]);
   useEffect(() => {
     if (harvested === null) return;
@@ -344,11 +346,12 @@ function VariantLevel({ url, model, batch, objects, level, assignment, measure, 
   const loaded = useLoader(sharedGltfLoader, built === null ? [url] : [url, built.source]);
   const [gltf, source] = loaded;
   const supported = useMemo(() => gltf !== undefined && canInstanceStaticScene(gltf.scene, gltf.animations), [gltf]);
+  const [maps] = useOverrideMapSets(useMemo(() => [model], [model]));
   const harvested = useMemo(() => {
     if (!supported || gltf === undefined) return null;
     if (source !== undefined) reskinBuiltLevel(gltf.scene, source);
-    return buildScatterModelSources(gltf.scene, model, built?.bounds);
-  }, [supported, gltf, source, model, built]);
+    return buildScatterModelSources(gltf.scene, model, built?.bounds, maps);
+  }, [supported, gltf, source, model, built, maps]);
   useEffect(() => () => { if (harvested !== null) disposeScatterModelSources(harvested.root); }, [harvested]);
   useEffect(() => {
     if (harvested === null || !measure) return;

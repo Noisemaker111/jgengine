@@ -44,6 +44,11 @@ export function BuildingRenderBudget({ drawDistance, visibility, cullingDisabled
   return <BuildingRenderContext.Provider value={policy}>{children}</BuildingRenderContext.Provider>;
 }
 
+/** The distance policy facade parts under this budget follow. @internal */
+export function useBuildingRenderPolicy(): BuildingRenderPolicy {
+  return useContext(BuildingRenderContext);
+}
+
 /** Test world bounds; transforming the box first also conservatively encloses affine shear. @internal */
 export function buildingChunkWithinBudget(
   bounds: THREE.Box3,

@@ -2502,9 +2502,9 @@
 ## @jgengine/core/lod/characterLod
 
 - `CharacterLodPolicy` (interface): interface CharacterLodPolicy — Distance policy a character model's {@link ModelLodConfig} resolves to; every distance is metres.
-- `CharacterLodTier` (type): type CharacterLodTier = "full" | "half" | "quarter" | "crowd" — What a character's distance from the camera costs it this frame.
+- `CharacterLodTier` (type): type CharacterLodTier = "full" | "half" | "quarter" | "crowd" | "hidden" — What a character's distance from the camera costs it this frame; `hidden` is one out of view, which draws nothing and casts no shadow, so it is never posed.
 - `DEFAULT_CHARACTER_LOD` (const): const DEFAULT_CHARACTER_LOD: CharacterLodPolicy — The engine's default character tiers: full under 15 m, half under 40 m, GPU crowd beyond 25 m.
-- `characterLodInterval` (function): function characterLodInterval(tier: CharacterLodTier): number — Frames between pose updates for a tier: 1, 2, 4, and `0` meaning "never" for the crowd tier.
+- `characterLodInterval` (function): function characterLodInterval(tier: CharacterLodTier): number — Frames between pose updates for a tier: 1, 2, 4, and `0` meaning "never" for the crowd and hidden tiers.
 - `characterLodTier` (function): function characterLodTier(distance: number, config: ModelLodConfig | undefined, previous?: CharacterLodTier): CharacterLodTier — The tier a character at `distance` falls in. Passing the tier it held last frame applies the crowd hysteresis, so a character walking along the crowd boundary does not swap representation every frame.
 - `characterRigTier` (function): function characterRigTier(distance: number, config: ModelLodConfig | undefined): CharacterLodTier — The tier a character poses its own rig on, ignoring the crowd path. A crowd character whose batch is full falls back to this, so an over-cap crowd draws every member on its own rig instead of dropping the ones past the cap.
 
