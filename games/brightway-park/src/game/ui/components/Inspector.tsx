@@ -10,6 +10,8 @@ import { parkDuration } from "../../books";
 import { fairPrice, parkObject, patrolRadius, PATROL, reliability, repairAction, ridePrice, stallPrice, stockOf } from "../../park";
 import { accessOf, connectCost } from "../../build/links";
 import { refundOf } from "../../parkScene";
+import { isShut, refitLadder, refitOf, REFITS, reopenAction, rideUpkeep, shutAction, SHUT_UPKEEP } from "../../rideRefits";
+import { upgradeOptions } from "@jgengine/core/worldModel/upgradePaths";
 import { usePark } from "../usePark";
 import { GuestPanel } from "./GuestPanel";
 
@@ -56,6 +58,9 @@ export function Inspector() {
   const repairRefusal = repair === null ? null : w.canAct(repair, obj.id);
   const access = accessOf(ctx, obj.id);
   const shut = access !== null && !access.open;
+  const refurbishing = def.ride !== undefined && isShut(w, obj.id);
+  const refit = def.ride === undefined ? null : refitOf(w, obj.id);
+  const refitChoices = def.ride === undefined || refit !== null ? [] : upgradeOptions(w, refitLadder(def), obj.id);
   const excitement = rideView(obj.id)?.ratings.excitement ?? 0;
   const crew = order === null ? (w.num("n.staff_mechanic") < 1 ? "needs a mechanic" : "waiting for the mechanic") : order.active ? `mechanic on it · ${parkDuration(order.remaining)}` : "mechanic queued";
   return (
@@ -76,6 +81,19 @@ export function Inspector() {
           <span className="bw-stepper"><KitButton size="sm" aria-label="Lower ride ticket" onClick={() => act(`price_down_${obj.kind}`)}>−</KitButton><b>${ridePrice(w, obj.kind)}</b>
             <KitButton size="sm" aria-label="Raise ride ticket" onClick={() => act(`price_up_${obj.kind}`)}>+</KitButton></span></div>
         <div className="bw-line"><span>Guests pay up to</span><b>${Math.floor(fairPrice(w, obj, excitement))}</b></div>
+        <div className="bw-line" role="status">{refurbishing
+          ? <><span><b>Refurbishing</b> · {Number(wear ?? 0) === 0 ? "good as new" : `${wear} wear left`}</span>
+            <KitButton size="sm" variant="primary" data-jg="reopen" onClick={() => act(reopenAction(obj.kind))}>Reopen</KitButton></>
+          : <><span>Rest it at {Math.round(SHUT_UPKEEP * 100)}% upkeep</span>
+            <KitButton size="sm" data-jg="shut" disabled={broken} title={broken ? "Repair it first" : undefined} onClick={() => act(shutAction(obj.kind))}>Refurbish</KitButton></>}</div>
+        {refitChoices.length === 0 ? null : <div className="bw-refits" data-jg="refits">
+          {refitChoices.map((option) => (
+            <KitButton key={option.action} size="sm" data-jg={`refit-${option.branch ?? ""}`} disabled={option.refusal !== null} title={option.refusal?.message} onClick={() => act(option.action)}>
+              {option.label} · ${-(option.cost["park.cash"] ?? 0)}
+            </KitButton>
+          ))}
+          {refitChoices.map((option) => <small key={option.action}>{option.detail}</small>)}
+        </div>}
         {order !== null ? <KitMeter size="sm" label="Repair" value={order.progress} max={1} readout={`${Math.round(order.progress * 100)}%`} tone="warn" /> : null}
       </> : null}
       {def.stall !== undefined ? <div className="bw-line"><span>Price · guests pay up to ${Math.floor(fairPrice(w, obj, 0))}</span>
@@ -86,10 +104,11 @@ export function Inspector() {
           <KitButton size="sm" aria-label="Widen the patrol" disabled={patrolRadius(w, obj.id) >= PATROL.max} onClick={() => act(`patrol_wider_${obj.kind}`)}>+</KitButton></span></div> : null}
       <Rows rows={[
         ...(def.staff !== undefined ? [["Wage", `$${def.upkeep} / day`]] as [string, string][] : [
-          ["Appeal", broken ? "0 while down" : w.num(`${obj.id}.appeal`).toFixed(1)], ["Upkeep", `$${def.upkeep} / day`]] as [string, string][]),
-        ...(def.ride !== undefined ? [["Scenery charm", `+${w.num(`${obj.id}.theme`).toFixed(1)}`]] as [string, string][] : []),
+          ["Appeal", broken ? "0 while down" : w.num(`${obj.id}.appeal`).toFixed(1)],
+          ["Upkeep", `$${def.ride === undefined ? def.upkeep : Math.round(rideUpkeep(w, obj.id, def))} / day`]] as [string, string][]),
+        ...(def.ride !== undefined ? [["Scenery charm", `+${w.num(`${obj.id}.theme`).toFixed(1)}`], ...(refit === null ? [] : [["Refit", REFITS[refit].label]])] as [string, string][] : []),
         ...(access?.open && def.ride !== undefined ? [["Queue line", access.line.length > 0 ? `${access.line.length} tiles` : "none · guests wait at the entrance"]] as [string, string][] : []),
-        ...(def.ride !== undefined ? [["In line", `${queued ?? 0} · ${Math.round(Number(waitSeconds ?? 0))}s wait`], ["Reliability", `${reliability(def, Number(wear ?? 0))}% · ${wear ?? 0} runs since service`], ["Breakdowns", `${breakdowns ?? 0} in ${cycles ?? 0} runs`], ["Intensity", rideThrill(def.id, circuit).toFixed(1)],
+        ...(def.ride !== undefined ? [["In line", `${queued ?? 0} · ${Math.round(Number(waitSeconds ?? 0))}s wait`], ["Seats", `${rideView(obj.id)?.capacity ?? def.ride.capacity}`], ["Reliability", `${reliability(def, Number(wear ?? 0), w.num(`${obj.id}.wear_scale`))}% · ${wear ?? 0} runs since service`], ["Breakdowns", `${breakdowns ?? 0} in ${cycles ?? 0} runs`], ["Intensity", rideThrill(def.id, circuit).toFixed(1)],
           ...["guest_a", "guest_c", "guest_d"].map((kind) => [`${guestRidePreference(kind).label} fit`, `${Math.round(rideFit(kind, def.id, circuit) * 100)}%`])] as [string, string][] : []),
         ...(def.id === "ride_coaster" ? [["Circuit", circuit.closed ? `${circuit.pieces} pieces · ${Math.round(circuit.length)} m · ${circuit.lapSeconds.toFixed(1)} s` : `${tracks} laid · loop open`],
           ["Excitement", `${circuit.excitement.toFixed(1)} · nausea ${circuit.nausea.toFixed(1)}`], ["Drop · pace", `${circuit.drop.toFixed(1)} m · ${circuit.averageSpeed.toFixed(1)} m/s`]] as [string, string][] : []),

@@ -5,6 +5,7 @@ import { BUILDABLES } from "../objects/catalog";
 import { park } from "../park";
 import { autoConnect, readNetwork, type Access, type Network } from "./network";
 import { LAND_FACT } from "./terrain";
+import { isShut } from "../rideRefits";
 
 /**
  * The park's network as the live game reads it: worked out again only when something is built or
@@ -33,14 +34,14 @@ export function accessOf(ctx: GameContext, id: string): Access | null {
   return parkNetwork(ctx).access.get(id) ?? null;
 }
 
-/** Write each ride and shop's `closed` fact from the network. */
+/** Write each ride and shop's `closed` fact from the network and whether the player shut it. */
 export function relinkPark(ctx: GameContext): void {
   const w = park.of(ctx);
   const net = parkNetwork(ctx);
   for (const [id, access] of net.access) {
     const def = BUILDABLES[w.instance(id)?.kind ?? ""];
     if (def === undefined || (def.ride === undefined && def.stall === undefined)) continue;
-    const closed = !access.open;
+    const closed = !access.open || isShut(w, id);
     if (w.fact(`${id}.closed`) !== closed) w.set(`${id}.closed`, closed);
   }
 }

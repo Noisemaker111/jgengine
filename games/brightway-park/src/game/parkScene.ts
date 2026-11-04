@@ -92,6 +92,12 @@ export function landed(ctx: GameContext, action: string, target: string | null):
   const decl = w.def.actions?.[action];
   if (target !== null && action.startsWith("repair_")) fixRide(target);
   if (target !== null && action.startsWith("service_")) serviceRide(target);
+  // A refit, closure or reopening changes the ride's appeal, upkeep and whether guests may use it.
+  const kind = target === null ? undefined : w.instance(target)?.kind;
+  if (kind !== undefined && BUILDABLES[kind]?.ride !== undefined) {
+    rethemeRides(ctx);
+    relinkPark(ctx);
+  }
   if (decl?.note !== undefined) {
     const line = w.log().at(-1);
     if (line !== undefined && line.kind === action) ctx.game.notices.push({ text: line.text, tone: action.startsWith("take_") ? "info" : "success" });
