@@ -7,6 +7,7 @@
  */
 import { findSchemaPreset, type ParamSchema } from "../generator/paramSchema";
 import { generatorVariantFor, variantIndexAt, type GeneratorDefinition, type GeneratorVariant } from "../generator/generator";
+import { screenSizeDistance } from "../lod/builtLods";
 import type { ScatterInstance } from "./scatterRegion";
 
 /** A scatter palette item grown by a registered generator. */
@@ -76,6 +77,33 @@ export function scatterPlacementVariant(definition: GeneratorDefinition, item: s
 export function scatterGeneratorBase(item: ScatterGeneratorItem, schema: ParamSchema): Record<string, unknown> {
   const preset = item.preset === undefined ? undefined : findSchemaPreset(schema, item.preset);
   return { ...preset?.values, ...item.params };
+}
+
+/**
+ * The coarser details a generated species switches to as it shrinks on screen, one per `screenSizes`
+ * step of the game's `visibility.meshLods`: the generator's own levels below `detail`, coarsest last,
+ * so the farthest band draws the cheapest mesh. Each comes with the distance it starts at, where a
+ * species of bounding `radius` spans that step's share of the view through a camera of vertical field
+ * of view `fovY`. Empty when the generator offers nothing coarser or the game asks for no levels.
+ * @internal
+ */
+export function coarserScatterLevels(
+  detail: number,
+  generatorLods: readonly number[] | undefined,
+  screenSizes: readonly number[],
+  radius: number,
+  fovY: number,
+): { detail: number; from: number }[] {
+  const coarser = [...new Set(generatorLods ?? [])].filter((lod) => lod < detail).sort((a, b) => b - a);
+  const details = screenSizes.length === 0 ? [] : coarser.slice(-screenSizes.length);
+  const levels: { detail: number; from: number }[] = [];
+  details.forEach((lod, index) => {
+    const size = screenSizes[index];
+    if (size === undefined) return;
+    const from = screenSizeDistance(radius, size, fovY);
+    if (Number.isFinite(from) && from > (levels[levels.length - 1]?.from ?? 0)) levels.push({ detail: lod, from });
+  });
+  return levels;
 }
 
 const VARIANT_MARK = "~v";

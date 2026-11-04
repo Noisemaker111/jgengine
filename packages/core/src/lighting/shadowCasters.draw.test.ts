@@ -94,5 +94,23 @@ describe("cullSmallShadowCasters", () => {
     cull.restore();
     expect(nested.castShadow).toBe(true);
   });
+
+  test("stops watching a subtree once it leaves the tree, and watches it again when it returns", () => {
+    const scene = new THREE.Scene();
+    const holder = new THREE.Group();
+    scene.add(holder);
+    cullSmallShadowCasters(scene);
+
+    scene.remove(holder);
+    const whileAway = box(0.25);
+    holder.add(whileAway);
+    expect(whileAway.castShadow).toBe(true);
+
+    scene.add(holder);
+    expect(whileAway.castShadow).toBe(false);
+    const afterReturn = box(0.25);
+    holder.add(afterReturn);
+    expect(afterReturn.castShadow).toBe(false);
+  });
 });
 
