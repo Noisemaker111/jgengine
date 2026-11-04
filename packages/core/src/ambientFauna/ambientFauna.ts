@@ -91,6 +91,24 @@ const SOAR_LOOP_POINTS = 24;
 const SEABED_CLEARANCE = 0.25;
 const MIN_WATER_COLUMN = 0.6;
 const WIND_REFRESH_SECONDS = 0.5;
+/**
+ * An agent reuses the ground height it last read while it is within this distance of where it read
+ * it and clear of every limit that height sets by more than the ground can have changed since. A
+ * ground read in a sculpted world costs microseconds, and thousands of agents used to read it every
+ * frame; reused, each reads it about once every 5 to 15 frames and lands where a read every frame
+ * would put it, on ground up to the slope it assumes.
+ */
+const GROUND_REUSE_M = 0.5;
+/**
+ * The slope a reused height assumes: at least 1 (45°), and twice the steepest slope the agent has
+ * met, measured between its reads and around its first one, so steep ground narrows its own reuse.
+ */
+const GROUND_MIN_SLOPE = 1;
+const GROUND_SLOPE_SAFETY = 2;
+/** Reads closer together than this say nothing reliable about the slope. */
+const GROUND_SLOPE_BASE_M = 0.05;
+/** Floats per agent in `groundRead`: x, z, height, assumed slope. */
+const GROUND_READ_STRIDE = 4;
 const TWO_PI = Math.PI * 2;
 
 /** A group with every default filled in and its footprint measured. */
@@ -223,6 +241,46 @@ interface GroupRuntime extends FaunaGroupState {
   windZ: number;
   windAt: number;
   count: number;
+  /** Each agent's last ground read, {@link GROUND_READ_STRIDE} floats: x, z, height, assumed slope; NaN before its first read. */
+  groundRead: Float32Array;
+}
+
+/**
+ * The ground height agent `i` last read, when it decides the same as a fresh read would: `y` sits over
+ * `ground + low` and under `ground + high` by more than the ground can have changed since the agent
+ * moved away from where it read it. NaN means read it again.
+ */
+function reusableGround(g: GroupRuntime, i: number, x: number, z: number, y: number, low: number, high: number): number {
+  const b = i * GROUND_READ_STRIDE;
+  const dx = x - (g.groundRead[b] ?? Number.NaN);
+  const dz = z - (g.groundRead[b + 1] ?? Number.NaN);
+  const moved = Math.sqrt(dx * dx + dz * dz);
+  const ground = g.groundRead[b + 2] ?? Number.NaN;
+  const slack = moved * (g.groundRead[b + 3] ?? Number.NaN);
+  return moved <= GROUND_REUSE_M && y - (ground + low) >= slack && ground + high - y >= slack ? ground : Number.NaN;
+}
+
+/** Read the ground under agent `i` and remember it with the slope it implies; undefined when the world has no ground. */
+function readGround(g: GroupRuntime, world: FaunaWorld, i: number, x: number, z: number): number | undefined {
+  const ground = world.groundAt?.(x, z);
+  if (ground === undefined) return undefined;
+  const b = i * GROUND_READ_STRIDE;
+  const dx = x - (g.groundRead[b] ?? Number.NaN);
+  const dz = z - (g.groundRead[b + 1] ?? Number.NaN);
+  const apart = Math.sqrt(dx * dx + dz * dz);
+  if (apart >= GROUND_SLOPE_BASE_M) {
+    const seen = Math.abs(ground - (g.groundRead[b + 2] ?? ground)) / apart;
+    g.groundRead[b + 3] = Math.max(g.groundRead[b + 3] ?? GROUND_MIN_SLOPE, seen * GROUND_SLOPE_SAFETY);
+  } else if (Number.isNaN(apart)) {
+    // A first read has no earlier one to compare with: two more, a reuse distance away, say how steep it is here.
+    const alongX = Math.abs((world.groundAt?.(x + GROUND_REUSE_M, z) ?? ground) - ground);
+    const alongZ = Math.abs((world.groundAt?.(x, z + GROUND_REUSE_M) ?? ground) - ground);
+    g.groundRead[b + 3] = Math.max(GROUND_MIN_SLOPE, (Math.sqrt(alongX * alongX + alongZ * alongZ) / GROUND_REUSE_M) * GROUND_SLOPE_SAFETY);
+  }
+  g.groundRead[b] = x;
+  g.groundRead[b + 1] = z;
+  g.groundRead[b + 2] = ground;
+  return ground;
 }
 
 function insideAreaProject(area: FaunaArea, position: Float32Array, velocity: Float32Array, base: number): void {
@@ -251,10 +309,14 @@ function surfaceOf(spec: ResolvedFaunaGroup, world: FaunaWorld, x: number, z: nu
   return world.surfaceAt?.(x, z, time) ?? spec.surface ?? 0;
 }
 
+/** The highest seabed under `surface` that still leaves a fish room to swim. */
+function deepestAllowedFloor(spec: ResolvedFaunaGroup, surface: number): number {
+  return surface - spec.band.min - MIN_WATER_COLUMN;
+}
+
 function waterAllows(spec: ResolvedFaunaGroup, world: FaunaWorld, x: number, z: number, time: number): boolean {
-  const surface = surfaceOf(spec, world, x, z, time);
-  const floor = world.groundAt?.(x, z) ?? surface - spec.band.max - 1;
-  return surface - floor >= spec.band.min + MIN_WATER_COLUMN;
+  const floor = world.groundAt?.(x, z);
+  return floor === undefined || floor <= deepestAllowedFloor(spec, surfaceOf(spec, world, x, z, time));
 }
 
 function placeAgents(group: GroupRuntime, world: FaunaWorld): void {
@@ -327,17 +389,21 @@ function stepSchool(g: GroupRuntime, world: FaunaWorld, time: number, dt: number
     insideAreaProject(area, position, velocity, b);
     const x = (position[b] ?? 0);
     const z = (position[b + 2] ?? 0);
-    if (!waterAllows(spec, world, x, z, time)) {
+    const deepest = deepestAllowedFloor(spec, surfaceOf(spec, world, x, z, time));
+    let seabed = reusableGround(g, i, x, z, deepest, 0, Infinity);
+    if (Number.isNaN(seabed)) seabed = readGround(g, world, i, x, z) ?? -Infinity;
+    if (!(seabed <= deepest)) {
       position[b] = (before[b] ?? 0); position[b + 2] = (before[b + 2] ?? 0);
       velocity[b] = -(velocity[b] ?? 0) * 0.6; velocity[b + 2] = -(velocity[b + 2] ?? 0) * 0.6;
     }
     const px = (position[b] ?? 0);
     const pz = (position[b + 2] ?? 0);
+    const y = (position[b + 1] ?? 0);
     const surface = surfaceOf(spec, world, px, pz, time);
-    const floor = world.groundAt?.(px, pz) ?? -Infinity;
+    let floor = reusableGround(g, i, px, pz, y, SEABED_CLEARANCE, Infinity);
+    if (Number.isNaN(floor)) floor = readGround(g, world, i, px, pz) ?? -Infinity;
     const top = surface - spec.band.min;
     const bottom = Math.min(top, Math.max(floor + SEABED_CLEARANCE, surface - spec.band.max));
-    const y = (position[b + 1] ?? 0);
     if (y > top) { position[b + 1] = top; if ((velocity[b + 1] ?? 0) > 0) velocity[b + 1] = 0; }
     else if (y < bottom) { position[b + 1] = bottom; if ((velocity[b + 1] ?? 0) < 0) velocity[b + 1] = 0; }
   }
@@ -386,10 +452,13 @@ function clampToPlants(g: GroupRuntime, world: FaunaWorld, active: number): void
   for (let i = 0; i < active; i += 1) {
     const b = i * 3;
     insideAreaProject(spec.area, position, velocity, b);
-    const ground = world.groundAt?.((position[b] ?? 0), (position[b + 2] ?? 0)) ?? 0;
+    const x = (position[b] ?? 0);
+    const z = (position[b + 2] ?? 0);
+    const y = (position[b + 1] ?? 0);
+    let ground = reusableGround(g, i, x, z, y, spec.band.min, spec.band.max);
+    if (Number.isNaN(ground)) ground = readGround(g, world, i, x, z) ?? 0;
     const low = ground + spec.band.min;
     const high = Math.max(low, ground + spec.band.max);
-    const y = (position[b + 1] ?? 0);
     if (y < low) { position[b + 1] = low; if ((velocity[b + 1] ?? 0) < 0) velocity[b + 1] = 0; }
     else if (y > high) { position[b + 1] = high; if ((velocity[b + 1] ?? 0) > 0) velocity[b + 1] = 0; }
   }
@@ -470,6 +539,7 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
       windX: 0,
       windZ: 0,
       windAt: -Infinity,
+      groundRead: new Float32Array(count * GROUND_READ_STRIDE).fill(Number.NaN),
     });
   }
 

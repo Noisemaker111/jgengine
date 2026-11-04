@@ -204,6 +204,31 @@ describe("cost", () => {
     expect(grown).toBeLessThan(400_000);
   });
 
+  test("agents read the ground as they move across it, not every frame", () => {
+    let reads = 0;
+    const counted: FaunaWorld = { ...world, groundAt: (x, z) => { reads += 1; return world.groundAt?.(x, z) ?? 0; } };
+    const fauna = createAmbientFauna([group("school", box, 120, { band: { min: 0.3, max: 2.5 } }), group("swarm", box, 60, { id: "b" }), group("drift", box, 60, { id: "c" })], counted);
+    const agents = fauna.total();
+    for (let step = 0; step < 60; step += 1) fauna.update(frame(step / 30));
+    reads = 0;
+    const frames = 900;
+    for (let step = 60; step < 60 + frames; step += 1) fauna.update(frame(step / 30));
+    // Every frame used to read it once per insect and twice per fish.
+    expect(reads).toBeLessThan((agents * frames) / 4);
+  });
+
+  test("a reused ground height keeps insects inside their band over ground steeper than 45°", () => {
+    const steep = (x: number, z: number): number => Math.sin(x * 0.8) * 3 + Math.cos(z * 0.6) * 2;
+    const fauna = createAmbientFauna([group("swarm", disc, 100), group("drift", disc, 100, { id: "c" })], { groundAt: steep, plantAt: () => true });
+    for (let step = 0; step < 3600; step += 1) {
+      fauna.update(frame(step / 30));
+      for (const state of fauna.groups) everyAgent(state, (x, y, z) => {
+        expect(y).toBeGreaterThanOrEqual(steep(x, z) + state.spec.band.min - 1e-3);
+        expect(y).toBeLessThanOrEqual(steep(x, z) + state.spec.band.max + 1e-3);
+      });
+    }
+  });
+
   test("a 2,000-agent set ticks inside a stated budget", () => {
     const fauna = createAmbientFauna(big(), plain, { simulateRange: 1e6 });
     expect(fauna.total()).toBe(2000);
