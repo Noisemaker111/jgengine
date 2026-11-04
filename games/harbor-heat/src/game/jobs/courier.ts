@@ -14,7 +14,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { createSessionLoop, installSessionProbe, type SessionLoop, type SessionLoopState } from "@jgengine/core/run/sessionLoop";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { editorLayers } from "../../editorLayers";
-import { streetPlayOf } from "../streetPlay";
+import { groundCarId, streetPlayOf } from "../streetPlay";
 import { bankContraband, failContraband, loadContraband } from "../items/cargoHaul";
 import { grantCred } from "../progression/cred";
 import { earn, spend } from "../cash";
@@ -54,6 +54,8 @@ export interface CourierState {
   service?: "standard" | "rush";
   condition?: number;
   lastHealth?: number;
+  /** Delivery seconds left when the parcel changed hands: what the on-time bonus pays on. */
+  handoff?: number;
   /** What the last contract's boundary settled: the receipt the results card shows. */
   receipt?: CourierReceipt | null;
   /** Published from the session loop, never decided here: `open` while a parcel is carried. */
@@ -61,23 +63,67 @@ export interface CourierState {
   /** Deliveries that paid — the career tally the route rotation and the rush gate read. */
   delivered: number;
 }
+/** One line of a receipt: what it was for and the cash it moved (negative is a charge). */
+export interface ReceiptLine {
+  label: string;
+  amount: number;
+}
 /** One contract's settlement, as the mission session's `settle` returned it. */
 export interface CourierReceipt {
   won: boolean;
-  /** Contract payout plus what the run carried, or 0 when the parcel was lost. */
+  /** Net cash the contract moved: the payout and every extra, less the damage claim and any lost bond. */
   reward: number;
   reason: string | null;
+  /** Each line in the order it landed, so the slip shows why the total is what it is. */
+  lines: readonly ReceiptLine[];
 }
-/** What the mission session's boundary hands its `settle`: the route it ran and whether it closed clean. */
+/** What the mission session's boundary hands its `settle`: the route it ran, how it closed and its itemized lines. */
 export interface CourierSettlementInput {
   won: boolean;
   route: (typeof DELIVERY_ROUTES)[number];
   reason?: string | undefined;
+  settlement: CourierSettlement;
 }
 export const RUSH_BOND = 60;
+/** How hard each service is on its parcel: rush cargo is fragile, a standard box takes half the knocks. */
+const FRAGILITY = { standard: 0.5, rush: 1 } as const;
+/** Condition a parcel loses each second the runner has it. */
+const RUNNER_WEAR = 1.5;
+/** Share of the payout a standard client claims back for a parcel at 0% condition. */
+const DAMAGE_CLAIM = 0.5;
 export function courierDeadline(seconds: number, rush: boolean): number { return rush ? Math.ceil(seconds * 0.35) : seconds; }
-export function cargoCondition(condition: number, dt: number, speedKmh: number, healthLost: number): number {
-  return Math.max(0, condition - Math.max(0, speedKmh - 35) * Math.max(0, dt) * 0.12 - Math.max(0, healthLost) * 2);
+/** Wear on a parcel this step: speed above 35 km/h and every hit the courier takes, scaled by how fragile it is. */
+export function cargoCondition(condition: number, dt: number, speedKmh: number, healthLost: number, fragility = 1): number {
+  const wear = Math.max(0, speedKmh - 35) * Math.max(0, dt) * 0.12 + Math.max(0, healthLost) * 2;
+  return Math.max(0, condition - wear * Math.max(0, fragility));
+}
+
+/**
+ * What a contract settles to. `lines` is the whole story the receipt shows, the bond paid at the booth
+ * included; `carried` is what the boundary still has to pay (the mission pays the contract line itself)
+ * and `claim` what it still has to charge.
+ */
+export interface CourierSettlement {
+  lines: ReceiptLine[];
+  carried: number;
+  claim: number;
+}
+
+export function courierSettlement(input: { payout: number; rush: boolean; won: boolean; handoff: number; condition: number }): CourierSettlement {
+  const c = Math.max(0, Math.min(100, input.condition)) / 100;
+  if (!input.won) return { lines: input.rush ? [{ label: "Bond forfeited", amount: -RUSH_BOND }] : [], carried: 0, claim: 0 };
+  const lines: ReceiptLine[] = [{ label: "Contract", amount: input.payout }];
+  const onTime = Math.floor(Math.max(0, input.handoff) * 2);
+  if (onTime > 0) lines.push({ label: "On time", amount: onTime });
+  if (input.rush) {
+    const premium = Math.floor(input.payout * 0.8 * c);
+    const bondBack = Math.floor(RUSH_BOND * c);
+    lines.push({ label: "Fragile premium", amount: premium }, { label: "Bond paid", amount: -RUSH_BOND }, { label: "Bond returned", amount: bondBack });
+    return { lines, carried: onTime + premium + bondBack, claim: 0 };
+  }
+  const claim = Math.floor(input.payout * (1 - c) * DAMAGE_CLAIM);
+  if (claim > 0) lines.push({ label: "Cargo damage", amount: -claim });
+  return { lines, carried: onTime, claim };
 }
 export const courierStore = defineStore<CourierState>("harbor.courier", () => ({ phase: "idle", route: 0, remaining: 0, delivered: 0, receipt: null, distance: 0, heading: 0 }));
 
@@ -110,20 +156,25 @@ export function restoreCourierLoop(ctx: GameContext, state: SessionLoopState): v
 
 /**
  * The boundary's rule, and the only place a contract pays: a clean delivery banks what the run
- * carried (the time and cargo bonus on top of the mission's own payout), a failed one loses it and
- * the parcel's contraband with it. The contract payout itself is still the mission machine's reward.
+ * carried (the time and cargo extras on top of the mission's own payout) and charges the damage
+ * claim; a failed one loses it all and the parcel's contraband with it. The contract payout itself
+ * is still the mission machine's reward.
  */
 function settleCourier(ctx: GameContext, carried: number, input: CourierSettlementInput): CourierReceipt {
+  const { lines, claim } = input.settlement;
+  const reward = lines.reduce((sum, line) => sum + line.amount, 0);
   if (!input.won) {
     failContraband(ctx);
     ctx.game.feedback.cue("deny", input.reason ?? "The parcel is gone.");
-    return { won: false, reward: 0, reason: input.reason ?? null };
+    return { won: false, reward, reason: input.reason ?? null, lines };
   }
   if (carried > 0) earn(ctx, carried, "courier-bonus", input.route.label);
+  const charge = Math.min(claim, ctx.game.economy.balance(ctx.player.userId, "cash"));
+  if (charge > 0) spend(ctx, charge, "courier-damage", input.route.label);
   grantCred(ctx, 15);
   bankContraband(ctx);
-  ctx.game.feedback.cue("objective", `Delivered to ${input.route.recipient} — $${input.route.payout + carried}.`);
-  return { won: true, reward: input.route.payout + carried, reason: null };
+  ctx.game.feedback.cue("objective", `Delivered to ${input.route.recipient} — $${reward}.`);
+  return { won: true, reward, reason: null, lines };
 }
 
 /** Republish the loop's own phase into the HUD store; nothing else decides whether a mission is live. */
@@ -280,18 +331,13 @@ export function finishCourier(ctx: GameContext, won: boolean, reason?: string): 
   const current = courierStore.read(ctx);
   if (loop.phase() !== "open") return;
   const route = routeOf(current);
-  const rush = current.service === "rush";
-  const condition = current.condition ?? 100;
   const remaining = Math.max(0, current.remaining);
   // The contract's base payout is mission data; the time, condition and bond extras stay Harbor Heat's,
   // and they are what the session carries to its boundary.
-  const bonus = won
-    ? Math.floor(remaining * 2) + (rush ? Math.floor(route.payout * 0.8 * condition / 100) + Math.floor(RUSH_BOND * condition / 100) : 0)
-    : 0;
-  if (bonus > 0) loop.carry(bonus);
-  const settlement = loop.settle({ won, route, reason });
-  // The receipt shows everything that landed: the contract's payout plus the extras the boundary banked.
-  const next: CourierState = { ...current, remaining, delivered: current.delivered + (won ? 1 : 0), receipt: settlement.result };
+  const settlement = courierSettlement({ payout: route.payout, rush: current.service === "rush", won, handoff: current.handoff ?? 0, condition: current.condition ?? 100 });
+  if (settlement.carried > 0) loop.carry(settlement.carried);
+  const closed = loop.settle({ won, route, reason, settlement });
+  const next: CourierState = { ...current, remaining, delivered: current.delivered + (won ? 1 : 0), receipt: closed.result };
   publishCourier(ctx, next);
   sessionStore.write(ctx, { ...sessionStore.read(ctx), notice: "courier" });
   syncSession(ctx, true);
@@ -337,6 +383,9 @@ function handleMissionEvents(ctx: GameContext, events: readonly MissionEvent[]):
   for (const event of events) {
     if (event.kind === "objective") {
       if (event.objectiveId === "recover") {
+        // The delivery clock stops at the handover; the runner's own timer is not time saved.
+        const current = courierStore.read(ctx);
+        courierStore.write(ctx, { ...current, handoff: Math.max(0, current.remaining) });
         spawnThief(ctx);
         ctx.game.feedback.cue("objective", "Parcel handed over — catch the runner.");
       }
@@ -366,6 +415,7 @@ function acceptRefusal(state: GameContext, input: { service?: string } | undefin
   if (!near(state, DISPATCH, 9)) return { reason: "not-at-dispatch", message: "Take a parcel from the dispatch booth." };
   if (input?.service !== "rush") return null;
   if (current.delivered < 1) return { reason: "rush-locked", message: "Complete a standard delivery first." };
+  if (groundCarId(state) === null) return { reason: "no-car", message: "Express needs a ground car. Standard parcels go on foot." };
   if (state.game.economy.balance(state.player.userId, "cash") < RUSH_BOND) {
     return { reason: "no-bond", message: `Fragile rush needs a $${RUSH_BOND} bond.` };
   }
@@ -382,7 +432,7 @@ function acceptParcel(state: GameContext, input: { service?: string } | undefine
   const position = courierPosition(state)!;
   courierRuntime(state).start(courierMissionId(routeIndex, rush));
   courierLoop(state).start();
-  const contract: CourierState = { ...current, route: routeIndex, remaining: courierDeadline(route.seconds, rush), receipt: null, service: rush ? "rush" : "standard", condition: 100, lastHealth: state.scene.entity.stats.get(state.player.userId, "health")?.current ?? 100,
+  const contract: CourierState = { ...current, route: routeIndex, remaining: courierDeadline(route.seconds, rush), receipt: null, service: rush ? "rush" : "standard", condition: 100, handoff: 0, lastHealth: state.scene.entity.stats.get(state.player.userId, "health")?.current ?? 100,
     distance: Math.round(Math.hypot(position[0] - route.position[0], position[2] - route.position[1])) };
   publishCourier(state, contract);
   syncObjective(state);
@@ -425,9 +475,15 @@ export function registerCourier(ctx: GameContext): void {
   // The receipt's "Try again" / "Next parcel": back at the booth with the parcel in hand, no walk back.
   ctx.game.commands.define<{ service?: string }>("courier.retry", { apply(state, input) {
     dismissReceipt(state);
-    streetPlayOf(state).exitVehicle(state, true);
     const x = DISPATCH[0] + 3;
-    state.scene.entity.setPose(state.player.userId, { position: [x, state.world.groundHeightAt(x, DISPATCH[1]), DISPATCH[1]] });
+    const at: [number, number, number] = [x, state.world.groundHeightAt(x, DISPATCH[1]), DISPATCH[1]];
+    // An express retry keeps its car, since express needs one; anything else walks up to the booth.
+    const car = input?.service === "rush" ? groundCarId(state) : null;
+    if (car !== null) streetPlayOf(state).placeVehicle(state, car, at, 0);
+    else {
+      streetPlayOf(state).exitVehicle(state, true);
+      state.scene.entity.setPose(state.player.userId, { position: at });
+    }
     const service = acceptRefusal(state, input) === null ? input : undefined;
     if (acceptRefusal(state, service) === null) acceptParcel(state, service);
   } });
@@ -441,7 +497,11 @@ export function tickCourier(ctx: GameContext, dt: number): void {
   const route = routeOf(current);
   const position = courierPosition(ctx);
   const health = ctx.scene.entity.stats.get(ctx.player.userId, "health")?.current ?? 100;
-  const condition = current.service === "rush" ? cargoCondition(current.condition ?? 100, dt, streetPlayOf(ctx).carSpeedKmh(), (current.lastHealth ?? health) - health) : 100;
+  const held = current.condition ?? 100;
+  // Every parcel wears with the driving; once the runner has it, it wears in their hands until caught.
+  const condition = runtime.view()?.objectiveId === "recover"
+    ? Math.max(0, held - RUNNER_WEAR * Math.max(0, dt))
+    : cargoCondition(held, dt, streetPlayOf(ctx).carSpeedKmh(), (current.lastHealth ?? health) - health, FRAGILITY[current.service ?? "standard"]);
   const dx = route.position[0] - (position?.[0] ?? DISPATCH[0]);
   const dz = route.position[1] - (position?.[2] ?? DISPATCH[1]);
   moveThief(ctx, dt);
@@ -495,7 +555,9 @@ export function restoreCourier(ctx: GameContext): void {
   // A save written at the boundary leaves the loop open with nothing to run; close that session as the
   // lost parcel it is instead of leaving an unreachable mission blocking the dispatch booth.
   if (loop.phase() === "open" && (mission === null || mission.status !== "active")) {
-    loop.settle({ won: false, route: routeOf(current), reason: "The parcel's contract was gone after the reload." });
+    const route = routeOf(current);
+    const settlement = courierSettlement({ payout: route.payout, rush: current.service === "rush", won: false, handoff: 0, condition: 0 });
+    loop.settle({ won: false, route, reason: "The parcel's contract was gone after the reload.", settlement });
   }
   publishCourier(ctx, courierStore.read(ctx));
 }

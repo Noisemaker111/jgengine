@@ -7,7 +7,7 @@ import { harborSave, saveHarborState } from "./save";
 import { startedStore } from "./commands";
 import { sessionStore } from "./session";
 import { streetPlayOf } from "./streetPlay";
-import { courierStore } from "./jobs/courier";
+import { courierSettlement, courierStore, DELIVERY_ROUTES } from "./jobs/courier";
 
 /** What a staged chase should look like when the capture takes it. */
 export type StageMode = "chase";
@@ -111,10 +111,16 @@ export function registerCaptureCommands(ctx: GameContext): void {
     },
   });
   // The end-of-run receipt, paid or missed, without carrying a parcel across town.
+  // A paid standard parcel arrives knocked about, so its slip shows the on-time bonus and the damage claim.
   ctx.game.commands.define<{ won?: boolean }>("result.stage", {
     apply(state, input) {
       const won = input?.won !== false;
-      courierStore.write(state, { ...courierStore.read(state), phase: won ? "won" : "lost", receipt: { won, reward: won ? 340 : 0, reason: won ? null : "Deadline passed" } });
+      const current = courierStore.read(state);
+      const route = DELIVERY_ROUTES[current.route % DELIVERY_ROUTES.length];
+      const condition = won ? 74 : 100;
+      const { lines } = courierSettlement({ payout: route?.payout ?? 0, rush: false, won, handoff: 22, condition });
+      const reward = lines.reduce((sum, line) => sum + line.amount, 0);
+      courierStore.write(state, { ...current, service: "standard", condition, phase: won ? "won" : "lost", receipt: { won, reward, reason: won ? null : "Deadline passed", lines } });
       sessionStore.write(state, { ...sessionStore.read(state), notice: "courier" });
       return state;
     },

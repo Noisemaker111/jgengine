@@ -52,11 +52,11 @@ describe("Mainsail courier mission session", () => {
     ctx.scene.entity.setPose(ctx.player.userId, { position: [...thief!.position] });
     tickCourier(ctx, 0.1);
 
-    // The same numbers the contract always paid: the contract's payout plus the time bonus.
-    const remaining = Math.max(0, courierStore.read(ctx).remaining);
-    const bonus = Math.floor(remaining * 2);
+    // The contract's payout plus the time bonus on the delivery clock at the handover.
+    const bonus = Math.floor((courierStore.read(ctx).handoff ?? 0) * 2);
     const receipt = courierStore.read(ctx).receipt!;
     expect(receipt.won).toBe(true);
+    expect(bonus).toBe(120);
     expect(receipt.reward).toBe(route.payout + bonus);
     expect(loop.phase()).toBe("closed");
     expect(loop.snapshot()).toMatchObject({ session: 1, closed: 1, carried: 0 });
