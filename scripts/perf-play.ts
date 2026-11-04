@@ -982,6 +982,13 @@ export function movementEvidence(start: { position: number[] | null; error: stri
   return { start: a, end: b, displacement, focus: [start.focus, end.focus], errors: [start.error, end.error].filter((error): error is string => error !== null) };
 }
 
+/** Whether endpoint evidence supports a matched walking route; intermediate paths remain unmeasured. */
+export function movementComparison(before: PerfRecord["movement"], after: PerfRecord["movement"]): "unavailable" | "unequal" | "endpoints match" {
+  if (before?.start == null || before.end == null || after?.start == null || after.end == null) return "unavailable";
+  const separated = (a: readonly number[], b: readonly number[]) => a.length !== b.length || a.some((value, index) => Math.abs(value - (b[index] ?? Infinity)) > 0.01);
+  return separated(before.start, after.start) || separated(before.end, after.end) ? "unequal" : "endpoints match";
+}
+
 /** Compare the live server's identity, not just the measuring process's checkout. */
 export function compareServedSource(server: ServerIdentityReport | null, expectedRoot: string, expectedCommit: string | null): "matched" | "mismatch" | "unavailable" {
   if (server === null || server.head === undefined || expectedCommit === null) return "unavailable";
@@ -1544,6 +1551,7 @@ export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null)
     }
   }
   lines.push(`run: ${conditions}`);
+  if (record.path === "walk") lines.push(record.movement?.displacement == null ? "movement: unavailable" : `movement: ${record.movement.displacement.toFixed(2)} m net; endpoints only`);
   const before = baseline?.breakdown;
   if (baseline !== null && before !== null && before !== undefined && record.breakdown !== null && record.breakdown !== undefined) {
     lines.push("", compareBreakdowns(before, record.breakdown));
@@ -1559,6 +1567,7 @@ export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null)
       JSON.stringify(baseline.overrides) !== JSON.stringify(record.overrides) ? "settings" : null,
     ].filter((value): value is string => value !== null);
     if (different.length > 0) lines.push(`  unequal conditions: ${different.join(", ")}; the difference cannot be attributed to one change`);
+    if (baseline.path === "walk" || record.path === "walk") lines.push(`  movement comparison: ${movementComparison(baseline.movement, record.movement)}; intermediate paths unmeasured`);
     const beforeProblem = baselineLogProblem(baseline.logs ?? null);
     const afterProblem = baselineLogProblem(record.logs ?? null);
     if (beforeProblem !== null || afterProblem !== null) lines.push(`  incomplete evidence: before ${beforeProblem ?? "none"}; after ${afterProblem ?? "none"}`);

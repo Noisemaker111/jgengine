@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { joinFrameGroup } from "../render/useSharedFrame.draw";
 import { createAmbientFauna } from "../ambientFauna/ambientFauna";
 import { createEditableTerrain } from "../terrain/terraform";
+import { readBreakdown } from "../../../../scripts/perf-breakdown";
 import { installFrameBreakdown } from "./frameBreakdown.draw";
 
 test("records real shared members and repeated render calls through the frame loop", () => {
@@ -75,6 +76,54 @@ test("unresolved and disjoint GPU queries remain unavailable until complete", ()
     expect(breakdown.records()[2]?.gpu).toBeNull();
   } finally {
     breakdown.dispose();
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+});
+
+test("shared member identities survive the recorder and source-map report", async () => {
+  const prior = Reflect.get(globalThis, "window");
+  Reflect.set(globalThis, "window", { location: { search: "?frameMembers=1" } });
+  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
+  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
+    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
+    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
+  } };
+  const store = { getState: () => ({ internal }) };
+  const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
+  const first = () => {};
+  const second = () => {};
+  const leaveFirst = joinFrameGroup(store, internal.subscribe, 0, { current: first });
+  const leaveSecond = joinFrameGroup(store, internal.subscribe, 0, { current: second });
+  const breakdown = installFrameBreakdown(renderer as never, store as never);
+  try {
+    for (let i = 0; i < 2; i += 1) for (const { ref } of subscribers) ref.current({}, 1 / 60);
+    const callbacks = Object.entries(breakdown.callbacks());
+    const firstLabel = callbacks.find(([, callback]) => callback === first)?.[0];
+    const secondLabel = callbacks.find(([, callback]) => callback === second)?.[0];
+    expect(firstLabel).toBeDefined(); expect(secondLabel).toBeDefined();
+    let parsed: (event: Record<string, unknown>) => void = () => {};
+    const session = {
+      evaluate: async (expression: string) => expression.startsWith("fetch(") ? JSON.stringify({ version: 3, sources: [expression.includes("first.map") ? "first.ts" : "second.ts"], names: [], mappings: "AAAA" }) : breakdown.summary({ top: 100 }),
+      on: (_event: string, callback: typeof parsed) => { parsed = callback; return () => {}; },
+      send: async (method: string, params?: Record<string, unknown>) => {
+        if (method === "Debugger.enable") {
+          parsed({ scriptId: "1", url: "http://localhost/packages/core/src/first.ts", sourceMapURL: "first.map" });
+          parsed({ scriptId: "2", url: "http://localhost/packages/core/src/second.ts", sourceMapURL: "second.map" });
+        }
+        if (method === "Runtime.evaluate") {
+          const expression = String(params?.["expression"]);
+          const id = expression.includes(JSON.stringify(firstLabel)) ? "1" : expression.includes(JSON.stringify(secondLabel)) ? "2" : null;
+          return { result: id === null ? {} : { objectId: id } };
+        }
+        if (method === "Runtime.getProperties") return { internalProperties: [{ name: "[[FunctionLocation]]", value: { value: { scriptId: params?.["objectId"], lineNumber: 0, columnNumber: 0 } } }] };
+        return {};
+      },
+    };
+    const summary = await readBreakdown(session as never);
+    expect(summary?.calls?.find((row) => row.name.startsWith(`${firstLabel} packages/core/src/first.ts:1`))?.avg).toBe(1);
+    expect(summary?.calls?.find((row) => row.name.startsWith(`${secondLabel} packages/core/src/second.ts:1`))?.avg).toBe(1);
+  } finally {
+    breakdown.dispose(); leaveFirst(); leaveSecond();
     if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
   }
 });

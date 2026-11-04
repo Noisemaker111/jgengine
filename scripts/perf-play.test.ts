@@ -15,6 +15,7 @@ import {
   measureGame,
   measureSceneNodes,
   movementEvidence,
+  movementComparison,
   parseDeclaredSettings,
   parsePerfArgs,
   parseSettingSpec,
@@ -42,6 +43,13 @@ test("performance source identity rejects a different checkout or server revisio
 test("performance movement records displacement and unavailable endpoints", () => {
   expect(movementEvidence({ position: [1, 2, 3], error: null, focus: "DIV" }, { position: [4, 2, 7], error: null, focus: "DIV" })).toEqual({ start: [1, 2, 3], end: [4, 2, 7], displacement: 5, focus: ["DIV", "DIV"], errors: [] });
   expect(movementEvidence({ position: null, error: "no player", focus: null }, { position: [0, 0, 0], error: null, focus: "BODY" })).toEqual({ start: null, end: [0, 0, 0], displacement: null, focus: [null, "BODY"], errors: ["no player"] });
+});
+
+test("walking comparisons disclose different or missing endpoints", () => {
+  const movement = { start: [1, 2, 3], end: [4, 2, 7], displacement: 5, focus: ["DIV"], errors: [] };
+  expect(movementComparison(movement, movement)).toBe("endpoints match");
+  expect(movementComparison(movement, { ...movement, end: [5, 2, 7] })).toBe("unequal");
+  expect(movementComparison(undefined, movement)).toBe("unavailable");
 });
 
 test("missing assets, errors and unavailable logs cannot become a clean baseline", () => {
