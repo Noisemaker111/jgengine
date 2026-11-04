@@ -48,8 +48,24 @@ interface Leaf {
   /** Patch-local root box grown by blade and wind reach. */
   bounds: THREE.Box3;
   used: number;
+  growing: GrowingGrassAttribute[];
 }
 interface DesiredNode { level: number; ix: number; iz: number; share: number; distance: number }
+
+class GrowingGrassAttribute extends THREE.InstancedBufferAttribute {
+  override count = 0;
+
+  constructor(array: Float32Array, itemSize: number, count: number) {
+    super(array, itemSize);
+    this.count = count;
+    this.setUsage(THREE.DynamicDrawUsage);
+  }
+
+  grow(count: number): void {
+    this.count = count;
+    this.needsUpdate = true;
+  }
+}
 
 /** Per-frame bookkeeping the stream reports, for tests and devtools. */
 export interface GrassStreamStats {
@@ -163,7 +179,7 @@ export class GrassStream {
       steps += 1;
       if (step.value === "selection") selections += 1;
       if (step.value === "tuft") tufts += 1;
-      if (step.value === "seed") { selections += 1; tufts += 1; }
+      if (step.value === "seed") { selections += 1; tufts += 1; steps += 1; }
       const tuftQueries = this.bake.look.growth.slopeThin > 0 ? 5 : 1;
       if (budgetMs !== Infinity && (selections * 9 + tufts * tuftQueries >= 8184 || steps >= 32768 || now() - started >= budgetMs)) break;
     }
@@ -257,11 +273,7 @@ export class GrassStream {
     const leaf = this.preview;
     if (leaf === undefined) return;
     const { geometry, tufts } = leaf;
-    for (const name of ["instanceOffset", "instanceShape", "instanceVary", "instanceTone"]) {
-      const attribute = geometry.getAttribute(name);
-      attribute.count = tufts.count;
-      attribute.needsUpdate = true;
-    }
+    for (const attribute of leaf.growing) attribute.grow(tufts.count);
     geometry.instanceCount = tufts.count;
     const bounds = tufts.roots.clone().expandByScalar(tufts.extent * this.template.heightScale + this.handle.windReach);
     geometry.boundingBox = bounds;
@@ -469,17 +481,17 @@ export class GrassStream {
     geometry.setAttribute("bladeVary", new THREE.BufferAttribute(t.bladeVary, 4));
     geometry.setAttribute("bladeBendScale", new THREE.BufferAttribute(t.bladeBendScale, 1));
     geometry.setIndex(new THREE.BufferAttribute(t.index, 1));
-    geometry.setAttribute("instanceOffset", new THREE.InstancedBufferAttribute(tufts.offsets, 3));
-    geometry.setAttribute("instanceShape", new THREE.InstancedBufferAttribute(tufts.shape, 4));
-    geometry.setAttribute("instanceVary", new THREE.InstancedBufferAttribute(tufts.vary, 4));
-    geometry.setAttribute("instanceTone", new THREE.InstancedBufferAttribute(tufts.tone, 1));
-    if (!cache) {
-      for (const name of ["instanceOffset", "instanceShape", "instanceVary", "instanceTone"]) {
-        const attribute = geometry.getAttribute(name);
-        attribute.count = tufts.count;
-        attribute.setUsage(THREE.DynamicDrawUsage);
-      }
-    }
+    const growing: GrowingGrassAttribute[] = [];
+    const instanceAttribute = (array: Float32Array, size: number): THREE.InstancedBufferAttribute => {
+      if (cache) return new THREE.InstancedBufferAttribute(array, size);
+      const attribute = new GrowingGrassAttribute(array, size, tufts.count);
+      growing.push(attribute);
+      return attribute;
+    };
+    geometry.setAttribute("instanceOffset", instanceAttribute(tufts.offsets, 3));
+    geometry.setAttribute("instanceShape", instanceAttribute(tufts.shape, 4));
+    geometry.setAttribute("instanceVary", instanceAttribute(tufts.vary, 4));
+    geometry.setAttribute("instanceTone", instanceAttribute(tufts.tone, 1));
     geometry.instanceCount = tufts.count;
     const bounds = tufts.count === 0 ? new THREE.Box3() : tufts.roots.clone().expandByScalar(tufts.extent * t.heightScale + this.handle.windReach);
     geometry.boundingBox = bounds;
@@ -507,7 +519,7 @@ export class GrassStream {
       const detail = t.lods[Math.min(1, t.lods.length - 1)]!;
       geometry.setDrawRange(detail.start, detail.count);
     };
-    const leaf: Leaf = { key, level, ix, iz, share, tufts, geometry, mesh, bounds, used: this.frame };
+    const leaf: Leaf = { key, level, ix, iz, share, tufts, geometry, mesh, bounds, used: this.frame, growing };
     if (cache) this.cache.set(key, leaf);
     return leaf;
   }

@@ -79,6 +79,29 @@ test("translated authored grass roots follow world terrain without adding the vo
   });
 });
 
+test("authored grass restarts an unfinished leaf when its terrain revision changes", async () => {
+  const Renderer = renderer();
+  const object = { id: "changing-meadow", kind: "grass_field", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 8, y: 0.5, z: 8 }, meta: {} };
+  let height = 0, revision = 0;
+  const context = { document: { markers: [], paths: [], volumes: [object] }, field: { sampleHeight: () => height, heightRevision: () => revision } } as unknown as SceneKindRenderContext;
+  await mounted(cameraAt(0, 4, 8, [0, 0, 0]), createElement(Renderer, { objects: [object], context }), async (scene) => {
+    expect(bladeMeshes(scene).length).toBeGreaterThan(0);
+    height = 3;
+    revision += 1;
+    await act(async () => { advance(performance.now()); });
+    scene.updateMatrixWorld(true);
+    const meshes = bladeMeshes(scene);
+    expect(meshes.length).toBeGreaterThan(0);
+    for (const mesh of meshes) {
+      const offsets = mesh.geometry.getAttribute("instanceOffset");
+      for (let i = 0; i < offsets.count; i += 1) {
+        const world = new THREE.Vector3(offsets.getX(i), offsets.getY(i), offsets.getZ(i)).applyMatrix4(mesh.matrixWorld);
+        expect(world.y).toBe(3);
+      }
+    }
+  });
+});
+
 test("an authored grass_field volume mounts the ground-cover mat under its blades", async () => {
   const Renderer = renderer();
   const object = { id: "park", kind: "grass_field", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 8, y: 0, z: 6 }, meta: { baseColor: "#53734a", tipColor: "#819064", seed: "park" } };
