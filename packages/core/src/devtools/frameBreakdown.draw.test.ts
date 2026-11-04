@@ -205,3 +205,43 @@ test("attributes real fauna terrain queries and terrain edits to a shared callba
     if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
   }
 });
+
+test("deep observation preserves the same fauna workload and query count", () => {
+  const prior = Reflect.get(globalThis, "window");
+  const run = (deep: boolean) => {
+    Reflect.set(globalThis, "window", { location: { search: deep ? "?frameMembers=1" : "" } });
+    const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
+    const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
+      const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
+      return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
+    } };
+    const store = { getState: () => ({ internal }) };
+    const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
+    let queries = 0;
+    const fauna = createAmbientFauna([{ id: "motes", species: "motes", motion: "drift", area: { shape: "disc", x: 0, z: 0, radius: 20 }, count: 20, seed: 1 }], { groundAt: () => { queries += 1; return 0; }, groundRevision: () => 0 });
+    let time = 0;
+    const update = () => fauna.update({ dt: 1 / 30, time: time += 1 / 30, sunHeight: 1, focusX: 0, focusZ: 0 });
+    const leave = joinFrameGroup(store, internal.subscribe, 0, { current: update });
+    const breakdown = installFrameBreakdown(renderer as never, store as never);
+    try {
+      queries = 0;
+      for (let i = 0; i < 60; i += 1) for (const { ref } of subscribers) ref.current({}, 1 / 30);
+      const completedQueries = queries;
+      for (const { ref } of subscribers) ref.current({}, 1 / 30);
+      const owner = Object.entries(breakdown.callbacks()).find(([, callback]) => callback === update)?.[0];
+      const counted = breakdown.records().reduce((sum, record) => sum + (record.calls?.[`${owner} | fauna ground queries`] ?? 0), 0);
+      return { snapshot: fauna.snapshot(), queries, completedQueries, counted, owner };
+    } finally { breakdown.dispose(); leave(); }
+  };
+  try {
+    const normal = run(false);
+    const deep = run(true);
+    expect(deep.snapshot).toEqual(normal.snapshot);
+    expect(deep.queries).toBe(normal.queries);
+    expect(deep.owner).toBeDefined();
+    expect(deep.counted).toBeGreaterThan(0);
+    expect(deep.counted).toBe(deep.completedQueries);
+  } finally {
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+});
