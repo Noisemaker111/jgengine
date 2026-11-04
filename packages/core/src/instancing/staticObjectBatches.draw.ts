@@ -11,6 +11,7 @@ import { shownPooledIds, STATIC_POOL_MESH_KEY, type StaticDrawPool } from "./sta
 export interface StaticObjectCandidate {
   object: SceneObject;
   model?: ModelConfig | undefined;
+  authored: boolean;
   custom: boolean;
   catalog: GameContextObjectEntry | null;
   style?: ObjectStyle | undefined;
@@ -23,15 +24,11 @@ export interface StaticObjectBatch {
   objects: SceneObject[];
 }
 
-/**
- * The same compatibility gate is used when live placements change after grouping. Editor-authored and
- * game-placed props batch alike: a placement that later gains state, a tint or a moving clip leaves its
- * batch for the individual renderer on the next frame, so batching needs no opt-in.
- * @internal
- */
+/** The same compatibility gate is used when live placements change after grouping. @internal */
 export function canBatchStaticObject(candidate: StaticObjectCandidate): boolean {
   const { object, model, catalog } = candidate;
-  return !candidate.custom && candidate.style === undefined && isCompatibleStaticObject(object, model, catalog);
+  return (candidate.authored || catalog?.scenery === true) && !candidate.custom && candidate.style === undefined &&
+    isCompatibleStaticObject(object, model, catalog);
 }
 
 /** Checks a live placement without constructing a grouping candidate. @internal */
@@ -169,7 +166,7 @@ export function staticBatchCell(objects: readonly SceneObject[], cell = STATIC_P
 export const STATIC_BATCH_MIN = 2;
 
 /**
- * Groups compatible props by model inside {@link STATIC_BATCH_CELL} metres, at
+ * Groups compatible authored or `scenery` props by model inside {@link STATIC_BATCH_CELL} metres, at
  * least {@link STATIC_BATCH_MIN} of a model to a cell. Culling stays per instance:
  * `syncStaticObjectSource` compacts each batch's drawn range against the visibility predicate every
  * frame, and the cell keeps the batch's one bounding sphere small enough that three's own frustum

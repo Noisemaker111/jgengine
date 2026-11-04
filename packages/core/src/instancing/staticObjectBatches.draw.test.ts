@@ -11,12 +11,12 @@ import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
 import { measureLocalCollisionTriangles } from "@jgengine/core/model/measureCollisionMesh.draw";
 import { resolveObjectModel, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
 import { buildCullingDriver } from "@jgengine/core/visibility/cullingDriver";
-import { blendsSource, canBatchStaticObject, canInstanceStaticScene, sortFarToNear,countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_CELL, STATIC_BATCH_MESH_KEY, STATIC_BATCH_MIN, incompatibleStaticObjectIds, gatherStaticMembers, harvestStaticPieces, staticModelPieces, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches.draw";
+import { blendsSource, canBatchStaticObject, canInstanceStaticScene, sortFarToNear, countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_CELL, STATIC_BATCH_MESH_KEY, STATIC_BATCH_MIN, incompatibleStaticObjectIds, gatherStaticMembers, harvestStaticPieces, staticModelPieces, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches.draw";
 
 function candidate(index: number, patch: Partial<StaticObjectCandidate> = {}): StaticObjectCandidate {
   return {
     object: { instanceId: `prop-${index}`, catalogId: "model-a", position: [index % 8, 1, 2], rotationY: index / 10 },
-    model: { url: "model-a.glb", animation: "auto" }, custom: false, catalog: null, ...patch,
+    model: { url: "model-a.glb", animation: "auto" }, authored: true, custom: false, catalog: null, ...patch,
   };
 }
 
@@ -126,9 +126,9 @@ describe("static authored object batching", () => {
     expect(countStaticBatchDraws(scene)).toEqual({ draws: 2, drawn: 1 });
   });
 
-  test("keeps custom, interactive, animated, textured, moving-part and mirrored placements independent", () => {
+  test("keeps custom, runtime, interactive, animated, textured, moving-part and mirrored placements independent", () => {
     const excluded: Partial<StaticObjectCandidate>[] = [
-      { custom: true }, { catalog: { verbs: [{} as never] } },
+      { authored: false }, { custom: true }, { catalog: { verbs: [{} as never] } },
       { catalog: { proximityPrompt: {} as never } }, { catalog: { breakable: { baseBreakTime: 1 } } },
       { catalog: { slotInventory: {} as never } }, { model: { url: "a", animation: { clip: "spin" } } },
       { model: { url: "a", ik: "auto" } }, { model: { url: "a", parts: [{ model: { url: "b" }, role: "leg.l" }] } },
@@ -162,17 +162,9 @@ describe("static authored object batching", () => {
     mesh.dispose(); geometry.dispose(); source.material.dispose();
   });
 
-  test("game-placed props batch with no opt-in, and leave the batch once a placement gains state", () => {
-    const store = createObjectStore();
-    for (let i = 0; i < 10; i++) store.place("lamp", i * 3, 0, 0, { instanceId: `lamp-${i}` });
-    const catalog = { halfExtents: [0.2, 2, 0.2] as const };
-    const candidates = () => store.list().map((object) => candidate(0, { object, model: { url: "lamp.glb" }, catalog }));
-    const batch = groupStaticObjects(candidates()).batches[0]!;
-    expect(batch.objects).toHaveLength(10);
-    expect(groupStaticObjects(candidates()).singles).toHaveLength(0);
-    store.setState("lamp-3", { broken: true });
-    expect(incompatibleStaticObjectIds(batch, store.get, () => catalog, [])).toEqual(["lamp-3"]);
-    expect(groupStaticObjects(Array.from({ length: 10 }, (_, i) => candidate(i, { catalog: { verbs: [{} as never] } }))).batches).toHaveLength(0);
+  test("batches runtime placements whose catalog declares them scenery", () => {
+    expect(groupStaticObjects(Array.from({ length: 10 }, (_, i) => candidate(i, { authored: false, catalog: { scenery: true } }))).batches).toHaveLength(1);
+    expect(groupStaticObjects(Array.from({ length: 10 }, (_, i) => candidate(i, { authored: false, catalog: { scenery: true, verbs: [{} as never] } }))).batches).toHaveLength(0);
   });
 
   test("reuses unchanged batch/model identities and falls back when live compatibility changes", () => {
@@ -365,7 +357,7 @@ describe("static authored object batching", () => {
     }
     const saved = JSON.stringify(document);
     const store = createObjectStore(); placeAuthoredObjects(store, resolveAuthoredObjects(document), (x, z) => x / 10 + z / 20);
-    const grouped = groupStaticObjects(store.list().map((object) => ({ object, model: configs.get(object.catalogId)!, custom: false, catalog: null })));
+    const grouped = groupStaticObjects(store.list().map((object) => ({ object, model: configs.get(object.catalogId)!, authored: true, custom: false, catalog: null })));
     expect(grouped.singles).toHaveLength(0); expect(grouped.batches).toHaveLength(24);
     expect(grouped.batches.every((batch) => batch.objects.length === 128)).toBe(true);
     expect(new Set(grouped.batches.map((batch) => batch.model.url)).size).toBe(24);
@@ -418,7 +410,7 @@ describe("static authored object batching", () => {
   test("a batch keeps its instances when members are removed, and rebuilds when one is regrouped elsewhere", () => {
     const store = createObjectStore();
     for (let i = 0; i < 6; i++) store.place("a", i, 0, 0, { instanceId: `a-${i}` });
-    const candidates = () => store.list().map((object) => candidate(0, { object, model: { url: "a.glb" } }));
+    const candidates = () => store.list().map((object) => candidate(0, { object, model: { url: "a.glb" }, catalog: { scenery: true }, authored: false }));
     const first = groupStaticObjects(candidates()).batches[0]!;
     const cache = new Map([[first.key, first]]);
     store.remove("a-2"); store.remove("a-4");

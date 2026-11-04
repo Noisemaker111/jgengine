@@ -483,7 +483,7 @@ export function StaticDrawPoolDriver({ hlod }: { hlod: HlodConfig | undefined })
   return null;
 }
 
-/** Render compatible props as shared model draws, preserving unsupported models. @internal */
+/** Render compatible authored or `scenery` props as shared model draws, preserving unsupported models. @internal */
 export function StaticObjectModels({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
   return (
     <IsolatedModelPart model={batch.model} seam="object">

@@ -114,7 +114,7 @@ describe("a batch with no instances issues no draw", () => {
     const store = createObjectStore();
     store.place("obj_palm", 0, 0, 0, { instanceId: "near-a" });
     store.place("obj_palm", 0, 0, 10, { instanceId: "near-b" });
-    const batch = groupStaticObjects(store.list().map((object) => ({ object, model: PALM, custom: false, catalog: null }))).batches[0]!;
+    const batch = groupStaticObjects(store.list().map((object) => ({ object, model: PALM, authored: true, custom: false, catalog: null }))).batches[0]!;
     const selector = createModelVariantSelector(PALM.variants!);
     const camera = new THREE.Vector3(0, 0, 0);
     const probe = new THREE.Vector3();

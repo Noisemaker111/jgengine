@@ -6,6 +6,7 @@ import * as THREE from "three";
 
 import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
 import { hashString } from "@jgengine/core/random/rng";
+import { resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects";
 import { useLiveEditorDocument } from "@jgengine/core/scene/AuthoredScene.draw";
 import { StaticObjectModels, useStaticObjectBatchProbe } from "@jgengine/core/instancing/StaticObjectModels.draw";
 import { groupStaticObjects, type StaticObjectBatch } from "@jgengine/core/instancing/staticObjectBatches.draw";
@@ -392,6 +393,7 @@ function WorldActors({
   const objectIds = useSceneObjectIds();
   const document = useLiveEditorDocument(editorLayers ?? EMPTY_DOCUMENT, editorLayers !== undefined);
   const materialMarkers = useMemo(() => new Map(document.markers.map((marker) => [marker.id, marker])), [document]);
+  const authoredIds = useMemo(() => new Set(resolveAuthoredObjects(document).map((object) => object.instanceId)), [document]);
   const batchCache = useRef(new Map<string, StaticObjectBatch>());
   const modelCache = useMemo(() => new Map<string, ObjectModelCacheEntry>(), [objectModels, assets]);
   const player = usePlayer();
@@ -420,7 +422,7 @@ function WorldActors({
     if ((custom === undefined || custom === null) && model === undefined && style?.hidden !== true) {
       reportFallbackSeam("object", objectModels?.[object.catalogId] === undefined ? "omittedMapping" : "unpulledPack");
     }
-    return [{ object, model, custom, style, catalog: ctx.scene.object.catalog(instanceId) }];
+    return [{ object, model, custom, style, authored: authoredIds.has(instanceId), catalog: ctx.scene.object.catalog(instanceId) }];
   });
   const grouped = groupStaticObjects(candidates.map((candidate) => ({ ...candidate, custom: candidate.custom !== undefined && candidate.custom !== null })), batchCache.current);
   batchCache.current = new Map(grouped.batches.map((batch) => [batch.key, batch]));
