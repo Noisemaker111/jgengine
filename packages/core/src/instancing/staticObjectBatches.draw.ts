@@ -312,7 +312,8 @@ export function canInstanceStaticScene(scene: THREE.Object3D, clips: readonly TH
       mesh.morphTargetInfluences !== undefined || mesh.onBeforeRender !== THREE.Object3D.prototype.onBeforeRender ||
       mesh.onAfterRender !== THREE.Object3D.prototype.onAfterRender) supported = false;
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    if (materials.some((material) => material.transparent || (material as THREE.ShaderMaterial).isShaderMaterial)) supported = false;
+    // See-through parts batch too: their sources draw instances far to near (see `sortFarToNear`).
+    if (materials.some((material) => (material as THREE.ShaderMaterial).isShaderMaterial)) supported = false;
     const elements = mesh.matrixWorld.elements;
     for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) {
       const dot = elements[a * 4]! * elements[b * 4]! + elements[a * 4 + 1]! * elements[b * 4 + 1]! + elements[a * 4 + 2]! * elements[b * 4 + 2]!;
@@ -365,6 +366,29 @@ export function gatherStaticMembers(
   }
   into.length = count;
   return into;
+}
+
+/**
+ * Order placements farthest from `eye` first, into a reused array. A see-through source blends each
+ * instance over what is already drawn, so its instances draw back to front as separate meshes would.
+ * @internal
+ */
+export function sortFarToNear(members: readonly SceneObject[], eye: THREE.Vector3, into: SceneObject[]): SceneObject[] {
+  into.length = 0;
+  for (const member of members) into.push(member);
+  const distance = (object: SceneObject) => {
+    const dx = object.position[0] - eye.x;
+    const dy = object.position[1] - eye.y;
+    const dz = object.position[2] - eye.z;
+    return dx * dx + dy * dy + dz * dz;
+  };
+  into.sort((a, b) => distance(b) - distance(a));
+  return into;
+}
+
+/** Whether any of a source's materials blends over what is behind it. @internal */
+export function blendsSource(source: ScatterModelSource): boolean {
+  return Array.isArray(source.material) ? source.material.some((material) => material.transparent) : source.material.transparent;
 }
 
 /** Write the gathered placements into one source's instances and picking identities without allocating per instance. @internal */

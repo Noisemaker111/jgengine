@@ -11,7 +11,7 @@ import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
 import { measureLocalCollisionTriangles } from "@jgengine/core/model/measureCollisionMesh.draw";
 import { resolveObjectModel, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
 import { buildCullingDriver } from "@jgengine/core/visibility/cullingDriver";
-import { canBatchStaticObject, canInstanceStaticScene, countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_CELL, STATIC_BATCH_MESH_KEY, STATIC_BATCH_MIN, incompatibleStaticObjectIds, gatherStaticMembers, harvestStaticPieces, staticModelPieces, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches.draw";
+import { blendsSource, canBatchStaticObject, canInstanceStaticScene, sortFarToNear, countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_CELL, STATIC_BATCH_MESH_KEY, STATIC_BATCH_MIN, incompatibleStaticObjectIds, gatherStaticMembers, harvestStaticPieces, staticModelPieces, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches.draw";
 
 function candidate(index: number, patch: Partial<StaticObjectCandidate> = {}): StaticObjectCandidate {
   return {
@@ -209,7 +209,7 @@ describe("static authored object batching", () => {
     expect(incompatibleStaticObjectIds(batch, (id) => empty.find((entry) => entry.object.instanceId === id)!.object, () => null, [])).toEqual([]);
   });
 
-  test("loaded model safety rejects animations, skeletons, morphs, transparency, custom draws and negative transforms", () => {
+  test("loaded model safety rejects animations, skeletons, morphs, shader materials, custom draws and negative transforms", () => {
     const { root, mesh } = modelScene();
     expect(canInstanceStaticScene(root, [])).toBe(true);
     mesh.rotation.y = 0.7;
@@ -222,13 +222,39 @@ describe("static authored object batching", () => {
     mesh.morphTargetInfluences = [0];
     expect(canInstanceStaticScene(root, [])).toBe(false);
     delete mesh.morphTargetInfluences;
+    // Lamp glass and foliage cards blend; their sources draw far to near instead of falling back.
     (mesh.material as THREE.Material[])[0]!.transparent = true;
-    expect(canInstanceStaticScene(root, [])).toBe(false);
+    expect(canInstanceStaticScene(root, [])).toBe(true);
     (mesh.material as THREE.Material[])[0]!.transparent = false;
+    const shader = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.ShaderMaterial());
+    root.add(shader);
+    expect(canInstanceStaticScene(root, [])).toBe(false);
+    root.remove(shader);
     mesh.onBeforeRender = () => {};
     expect(canInstanceStaticScene(root, [])).toBe(false);
     root.add(new THREE.SkinnedMesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()));
     expect(canInstanceStaticScene(root, [])).toBe(false);
+  });
+
+  test("a see-through source writes its instances farthest from the eye first", () => {
+    const store = createObjectStore();
+    for (const [id, x] of [["near", 2], ["far", 30], ["mid", 10]] as const) store.place("lamp", x, 0, 0, { instanceId: id });
+    const opaque = { geometry: new THREE.BoxGeometry(), material: new THREE.MeshStandardMaterial(), localMatrix: new THREE.Matrix4() };
+    const glass = { ...opaque, material: [new THREE.MeshStandardMaterial(), new THREE.MeshStandardMaterial({ transparent: true })] };
+    expect(blendsSource(opaque)).toBe(false);
+    expect(blendsSource(glass)).toBe(true);
+    const ordered = sortFarToNear(store.list(), new THREE.Vector3(0, 0, 0), []);
+    expect(ordered.map((object) => object.instanceId)).toEqual(["far", "mid", "near"]);
+    const mesh = new THREE.InstancedMesh(glass.geometry, glass.material, 3);
+    syncStaticObjectSource(mesh, glass, ordered, new THREE.Object3D());
+    expect(mesh.userData[POINTER_OBJECT_INSTANCES_KEY]).toEqual(["far", "mid", "near"]);
+    // The camera crossing to the other side reverses the draw order.
+    syncStaticObjectSource(mesh, glass, sortFarToNear(store.list(), new THREE.Vector3(40, 0, 0), ordered), new THREE.Object3D());
+    expect(mesh.userData[POINTER_OBJECT_INSTANCES_KEY]).toEqual(["near", "mid", "far"]);
+    const first = new THREE.Matrix4();
+    mesh.getMatrixAt(0, first);
+    expect(new THREE.Vector3().setFromMatrixPosition(first).x).toBe(2);
+    mesh.dispose(); opaque.geometry.dispose(); opaque.material.dispose(); for (const material of glass.material) material.dispose();
   });
 
   test("fallback resolves a supplied live catalog and animation instead of the original parent's model", () => {
