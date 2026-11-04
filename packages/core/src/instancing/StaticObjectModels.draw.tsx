@@ -1,6 +1,6 @@
 // @skill jgengine-world
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react";
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
@@ -560,8 +560,8 @@ export function StaticDrawPoolDriver({ hlod }: { hlod: HlodConfig | undefined })
   return null;
 }
 
-/** Render compatible authored or `scenery` props as shared model draws, preserving unsupported models. @internal */
-export function StaticObjectModels({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
+/** Render compatible authored or `scenery` props as shared model draws, preserving unsupported models. Re-renders only when its batch or renderer changes. @internal */
+export const StaticObjectModels = memo(function StaticObjectModels({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
   return (
     <IsolatedModelPart model={batch.model} seam="object">
       <WithBuiltLods model={batch.model} impostors>
@@ -569,7 +569,7 @@ export function StaticObjectModels({ batch, single }: { batch: StaticObjectBatch
       </WithBuiltLods>
     </IsolatedModelPart>
   );
-}
+});
 
 /** A batch drawn with the model its built levels resolved to; the batch keeps one identity per model. */
 function ResolvedStaticObjects({ batch, model, meta, single }: {

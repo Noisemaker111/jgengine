@@ -497,17 +497,17 @@ function WorldObjects({
     instances: grouped.batches.reduce((total, batch) => total + batch.objects.length, 0),
     singles: grouped.singles.length,
   });
-  const candidatesById = new Map(candidates.map((candidate) => [candidate.object.instanceId, candidate]));
-  const renderSingle = (object: SceneObject) => {
-    // A batch can still hold an object removed since this render gathered candidates (a streamed-out
-    // block's props): a removed object draws nothing.
+  // One renderer while its inputs hold, so a placement or removal re-renders only the batches it
+  // changed, not every batch in the world.
+  const renderSingle = useCallback((object: SceneObject) => {
+    // A batch can still hold an object removed since it was grouped (a streamed-out block's props):
+    // a removed object draws nothing.
     const live = ctx.scene.object.get(object.instanceId);
-    const candidate = candidatesById.get(object.instanceId);
-    if (live === null || candidate === undefined) return null;
-    object = live;
-    const model = modelWithAuthoredNodeVisibility(modelWithAuthoredMaterials(resolveObjectModel(object, objectModels, assets, modelCache), { materialAssets: document.materialAssets, markers: materialMarkers.has(object.instanceId) ? [materialMarkers.get(object.instanceId)!] : [] }, object.instanceId), materialMarkers.get(object.instanceId));
-    return <ObjectMarker key={object.instanceId} object={object} custom={object === candidate.object ? candidate.custom : renderObject?.(object)} model={model} style={objectStyles?.[object.catalogId]} />;
-  };
+    if (live === null) return null;
+    const marker = materialMarkers.get(live.instanceId);
+    const model = modelWithAuthoredNodeVisibility(modelWithAuthoredMaterials(resolveObjectModel(live, objectModels, assets, modelCache), { materialAssets: document.materialAssets, markers: marker === undefined ? [] : [marker] }, live.instanceId), marker);
+    return <ObjectMarker key={live.instanceId} object={live} custom={renderObject?.(live)} model={model} style={objectStyles?.[live.catalogId]} />;
+  }, [ctx, materialMarkers, objectModels, assets, modelCache, document, renderObject, objectStyles]);
   const modelUrls = () => {
     const urls = new Set<string>();
     for (const catalogId of Object.keys(objectModels ?? {})) {
