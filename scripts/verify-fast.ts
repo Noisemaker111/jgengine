@@ -92,7 +92,7 @@ export interface Step extends ScheduledStep {
    * lanes guessing and pushed them to CI to find out.
    */
   fix?: string | undefined;
-  /** The units this step settles; each is remembered as passed when the step passes. */
+  /** The units this step settles; each is remembered as passed when the step passes, and a test file also when its own tests all passed in a step that failed. */
   units?: Unit[];
 }
 
@@ -534,7 +534,7 @@ export const GATE_FIX: Readonly<Record<string, string>> = {
 /** The files whose bytes decide a gate: what its row reads. A row that names no paths reads the whole tree. */
 export function gateInputs(check: CheckDef, files: readonly string[]): string[] {
   if (check.reads === undefined) return [WHOLE_TREE];
-  return files.filter((file) => readsPath(check.reads, file)).sort();
+  return files.filter((file) => readsPath(check, file)).sort();
 }
 
 /** Rough seconds per gate on this PC (2026-10-24), so the 21 s check starts before the 1 s ones. */
@@ -568,6 +568,21 @@ export function junitCosts(xml: string): Record<string, number> {
     if (file !== undefined && Number.isFinite(time)) costs[file.replaceAll("\\", "/")] = time;
   }
   return costs;
+}
+
+/**
+ * The test files a junit report shows passing: every test in the file's own suite passed. A file
+ * that failed to load, or a process that died before writing the report, is not in it.
+ */
+export function junitPassedFiles(xml: string): string[] {
+  const passed: string[] = [];
+  for (const match of xml.matchAll(/<testsuite\s[^>]*>/g)) {
+    const tag = match[0];
+    if (/\sline="/.test(tag)) continue;
+    const file = /\sfile="([^"]+)"/.exec(tag)?.[1];
+    if (file !== undefined && /\sfailures="0"/.test(tag) && !/\serrors="[1-9]/.test(tag)) passed.push(file.replaceAll("\\", "/"));
+  }
+  return passed;
 }
 
 export interface FastOptions {
@@ -832,27 +847,14 @@ export async function jsonRun(
   return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
 }
 
-async function run(step: Step, root: string, signal?: AbortSignal): Promise<StepResult> {
+async function run(step: Step, root: string): Promise<StepResult> {
   const started = Date.now();
-  if (signal?.aborted === true) return { name: step.name, ok: false, ms: 0, output: "stopped before it started", stopped: true };
   const proc = Bun.spawn(step.command, { cwd: root, stdout: "pipe", stderr: "pipe" });
-  // A fail-fast run stops what is still running; a browser or dev server the step started goes with it.
-  let killed = false;
-  const stop = (): void => {
-    killed = true;
-    if (process.platform === "win32") spawnSync("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 15_000 });
-    else proc.kill("SIGKILL");
-  };
-  signal?.addEventListener("abort", stop, { once: true });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  signal?.removeEventListener("abort", stop);
-  if (killed && code !== 0) {
-    return { name: step.name, ok: false, ms: Date.now() - started, output: "stopped: another step failed first", stopped: true };
-  }
   return { name: step.name, ok: code === 0, ms: Date.now() - started, output: `${stdout}${stderr}`.trim() };
 }
 
@@ -1015,16 +1017,21 @@ async function main(argv: readonly string[]): Promise<number> {
       return hit;
     },
   });
-  const remember = (passed: readonly StepResult[]): void => {
+  const remember = (results: readonly StepResult[]): void => {
+    const passedFiles = new Set<string>();
     for (const report of existsSync(join(root, reportDir)) ? readdirSync(join(root, reportDir)) : []) {
-      Object.assign(testCosts, junitCosts(readFileSync(join(root, reportDir, report), "utf8")));
+      const xml = readFileSync(join(root, reportDir, report), "utf8");
+      Object.assign(testCosts, junitCosts(xml));
+      for (const file of junitPassedFiles(xml)) passedFiles.add(file);
     }
     writeFileSync(costFile, `${JSON.stringify(testCosts)}
 `, "utf8");
     if (cache === null) return;
-    for (const result of passed) {
-      if (!result.ok) continue;
-      for (const settled of steps.find((step) => step.name === result.name)?.units ?? []) cache.record(settled.id, settled.inputs);
+    for (const result of results) {
+      for (const settled of steps.find((step) => step.name === result.name)?.units ?? []) {
+        // A failed test process still proved every file whose own tests all passed, so a retry reruns only the rest.
+        if (result.ok || (settled.id.startsWith("test:") && passedFiles.has(settled.id.slice("test:".length)))) cache.record(settled.id, settled.inputs);
+      }
     }
     cache.save();
   };
@@ -1062,16 +1069,16 @@ async function main(argv: readonly string[]): Promise<number> {
     return EXIT_VERIFIED;
   }
 
-  // The type-checks and gates start first and the run stops at the first failure, so a type
-  // error or a drifted file is named in seconds and the tests behind it never start. Each
-  // result prints the moment it is known. `--cheap` runs only those seconds-long steps, so it
-  // runs every one: a landing that fixed one gate only to meet the next cost a close per gate.
+  // The type-checks and gates start first and nothing new starts after a failure, so a type
+  // error or a drifted file is named in seconds and the tests behind it never start; the steps
+  // already running finish, so the next run reuses their passes. Each result prints the moment
+  // it is known. `--cheap` runs only those seconds-long steps, so it runs every one: a landing
+  // that fixed one gate only to meet the next cost a close per gate.
   const results = await runSteps(
     steps,
     DEFAULT_JOBS,
-    async (step, signal) => {
-      const result = await run(step, root, signal);
-      if (result.stopped === true) return result;
+    async (step) => {
+      const result = await run(step, root);
       (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
       if (!result.ok) {
         if (result.output.length > 0) printFailure(root, result.name, result.output);
@@ -1082,8 +1089,8 @@ async function main(argv: readonly string[]): Promise<number> {
     { failFast: !cheap },
   );
   remember(results);
-  const failures = results.filter((result) => !result.ok && result.blockedBy === undefined && result.stopped !== true).map((result) => result.name);
-  const notRun = results.filter((result) => result.blockedBy !== undefined || result.stopped === true).map((result) => result.name);
+  const failures = results.filter((result) => !result.ok && result.blockedBy === undefined).map((result) => result.name);
+  const notRun = results.filter((result) => result.blockedBy !== undefined).map((result) => result.name);
   const seconds = (Date.now() - started) / 1000;
   const passed = results.length - failures.length - notRun.length;
   console.log(

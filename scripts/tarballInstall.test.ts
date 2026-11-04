@@ -3,16 +3,18 @@ import { execFileSync } from "node:child_process";
 import { basename, dirname, join } from "node:path";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { distStalenessForPackageDir } from "./distStaleness";
 import {
   computeExposedSubpaths,
-  distExists,
   isForbiddenSubpath,
   packageDir,
   publishedPackages,
   readPublishedManifest,
 } from "./exportManifest";
 
-const built = publishedPackages.every((pkg) => distExists(pkg));
+// Packing a dist older than its source tests an earlier tree, not this one: CI builds right
+// before this file, and a local run without a fresh `bun run build` skips it.
+const built = publishedPackages.every((pkg) => distStalenessForPackageDir(packageDir(pkg)) === null);
 
 // `npm pack` does real filesystem + gzip work whose wall-time scales with
 // machine load. Packing each package once per case (as this suite used to)

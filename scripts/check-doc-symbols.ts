@@ -154,6 +154,7 @@ function docSources(): DocSource[] {
   const routesRoot = join(root, "apps", "web", "src", "routes");
   if (existsSync(routesRoot)) {
     for (const file of new Glob("**/*.tsx").scanSync({ cwd: routesRoot, absolute: true })) {
+      if (file.endsWith(".test.tsx")) continue;
       out.push({ file, text: readFileSync(file, "utf8") });
     }
   }

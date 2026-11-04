@@ -145,7 +145,7 @@ function gitNames(args: string[]): string[] {
 
 /** Every file a generator's output depends on, its own outputs included. */
 function genInputs(target: GenTarget, tree: readonly string[]): string[] {
-  return tree.filter((file) => readsPath(target.reads, file));
+  return tree.filter((file) => readsPath(target, file));
 }
 
 function genCache(): { fresh: (target: GenTarget) => boolean; record: (targets: readonly GenTarget[]) => void } {

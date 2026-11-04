@@ -60,18 +60,20 @@ export interface CheckDef {
    * cached pass is keyed on these files alone. Omitted: it reads the whole tree.
    */
   readonly reads?: readonly string[];
+  /** Never reads a test file (`*.test.ts(x)`): a change to tests alone neither reaches it nor stales its cached pass. */
+  readonly skipsTests?: boolean;
 }
 
 export const CHECKS: readonly CheckDef[] = [
   { name: "artifacts", script: "scripts/check-no-src-artifacts.ts", jobs: ["types", "quick"], generated: true, reads: ["packages/"] },
   { name: "release-set", script: "scripts/check-release-set.ts", jobs: ["types"], reads: ["packages/"] },
-  { name: "skill-api", script: "scripts/gen-skill-api.ts", args: ["--check"], jobs: ["types", "quick"], needsBuild: true, generated: true, reads: ["packages/", ".claude/"] },
+  { name: "skill-api", script: "scripts/gen-skill-api.ts", args: ["--check"], jobs: ["types", "quick"], needsBuild: true, generated: true, reads: ["packages/", ".claude/"], skipsTests: true },
   { name: "game-determinism", script: "scripts/check-game-determinism.ts", jobs: ["types"], games: true, reads: ["games/"] },
-  { name: "capabilities", script: "scripts/gen-capability-index.ts", args: ["--check"], jobs: ["types"], generated: true, reads: ["packages/", ".claude/"] },
+  { name: "capabilities", script: "scripts/gen-capability-index.ts", args: ["--check"], jobs: ["types"], generated: true, reads: ["packages/", ".claude/"], skipsTests: true },
   { name: "asset-availability", script: "scripts/checkAssetAvailability.ts", jobs: ["types"], games: true, reads: ["games/", "apps/dev/public/"] },
   { name: "pack-texture-layout", script: "scripts/check-pack-texture-layout.ts", jobs: ["types"], reads: ["apps/"] },
   { name: "recipes", script: "scripts/check-recipes.ts", jobs: ["types"], reads: [".claude/", "games/"] },
-  { name: "doc-symbols", script: "scripts/check-doc-symbols.ts", jobs: ["types"], reads: [".claude/", "apps/", "packages/"] },
+  { name: "doc-symbols", script: "scripts/check-doc-symbols.ts", jobs: ["types"], reads: [".claude/", "apps/", "packages/"], skipsTests: true },
   { name: "hud-tokens", script: "scripts/check-hud-tokens.ts", jobs: ["types"], reads: ["packages/react/src/", "registry/"] },
   { name: "street-rule-parity", script: "scripts/check-street-rule-parity.ts", jobs: ["types"], reads: ["packages/core/src/city/cityKind.ts", "packages/core/src/roads/streetGenerator.ts", "packages/editor/src/handlers/streets.ts"] },
   { name: "source-paths", script: "scripts/sourcePaths.ts", args: ["--check"], jobs: ["types"], generated: true, reads: ["packages/", "apps/", "examples/", "registry/", "games/llmville/packages/"] },
@@ -79,9 +81,9 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "path-portability", script: "scripts/check-path-portability.ts", jobs: ["types", "quick"] },
   { name: "types", script: "scripts/check-types-all.ts", jobs: ["types"] },
   { name: "layers", script: "scripts/check-layers.ts", jobs: ["quick"], reads: ["packages/core/src/", "packages/react/src/", "packages/shell/src/"] },
-  { name: "export-manifest", script: "scripts/gen-export-manifest.ts", args: ["--check"], jobs: ["quick"], needsBuild: true, generated: true, reads: ["packages/"] },
+  { name: "export-manifest", script: "scripts/gen-export-manifest.ts", args: ["--check"], jobs: ["quick"], needsBuild: true, generated: true, reads: ["packages/"], skipsTests: true },
   { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true, reads: ["games/"] },
-  { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["packages/"] },
+  { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["packages/"], skipsTests: true },
   { name: "games-sync", script: "packages/jgengine/src/cli/index.ts", args: ["sync", "--check"], jobs: ["games"], games: true, reads: ["games/", "packages/jgengine/"] },
   { name: "games-glb-textures", script: "games/scripts/check-glb-textures.ts", jobs: [], games: true, reads: ["games/"] },
   { name: "version", script: "scripts/set-version.ts", args: ["--check"], jobs: [], reads: ["packages/"] },
@@ -107,15 +109,24 @@ function under(path: string, prefix: string): boolean {
   return prefix.endsWith("/") ? path.startsWith(prefix) : path === prefix;
 }
 
-/** True when a change to `path` can move a row that reads `reads` (undefined: the whole tree). */
-export function readsPath(reads: readonly string[] | undefined, path: string): boolean {
-  if (reads === undefined) return true;
-  return TOOLING_PATHS.some((prefix) => under(path, prefix)) || reads.some((prefix) => under(path, prefix));
+/** What a check or generator row says about the files it reads. */
+export interface ReadsRow {
+  readonly reads?: readonly string[] | undefined;
+  readonly skipsTests?: boolean | undefined;
+}
+
+const TEST_FILE = /\.test\.tsx?$/;
+
+/** True when a change to `path` can move `row` (no `reads`: the whole tree). */
+export function readsPath(row: ReadsRow, path: string): boolean {
+  if (row.skipsTests === true && TEST_FILE.test(path)) return false;
+  if (row.reads === undefined) return true;
+  return TOOLING_PATHS.some((prefix) => under(path, prefix)) || row.reads.some((prefix) => under(path, prefix));
 }
 
 /** True when any changed path can move this row. */
-export function reachedBy(row: { readonly reads?: readonly string[] | undefined }, changed: readonly string[]): boolean {
-  return changed.some((path) => readsPath(row.reads, path));
+export function reachedBy(row: ReadsRow, changed: readonly string[]): boolean {
+  return changed.some((path) => readsPath(row, path));
 }
 
 export function findCheck(name: string): CheckDef | undefined {
@@ -176,6 +187,8 @@ export interface GenTarget {
   readonly outputs?: readonly RegExp[];
   /** The repository paths it reads, as `CheckDef.reads`: a diff that reaches none leaves its files as they are. */
   readonly reads?: readonly string[];
+  /** As `CheckDef.skipsTests`. */
+  readonly skipsTests?: boolean;
 }
 
 /**
@@ -190,19 +203,20 @@ export const GEN_TARGETS: readonly GenTarget[] = [
     outputs: [/^packages\/assets\/src\/(?:catalogs\/(?:fonts|hdris|grades|materials)|sources\/ambientcg)\/index\.ts$/],
     reads: ["packages/assets/src/catalogs/", "packages/assets/src/sources/"],
   },
-  { name: "skill-routing", script: "scripts/gen-skill-routing.ts", outputs: [/^scripts\/skill-routing\.json$/], reads: ["packages/", ".claude/"] },
+  { name: "skill-routing", script: "scripts/gen-skill-routing.ts", outputs: [/^scripts\/skill-routing\.json$/], reads: ["packages/", ".claude/"], skipsTests: true },
   {
     name: "barrels",
     script: "scripts/gen-barrels.ts",
     after: ["skill-routing"],
     reads: ["packages/", ".claude/"],
+    skipsTests: true,
     outputs: [/^packages\/core\/src\/(?:world|combat|gameplay|multiplayer|ui)\.ts$/],
   },
-  { name: "capabilities", script: "scripts/gen-capability-index.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/[^/]+\/capabilities\.md$/], reads: ["packages/", ".claude/"] },
-  { name: "skill-api", script: "scripts/gen-skill-api-safe.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/[^/]+\/api\.md$/], reads: ["packages/", ".claude/"] },
-  { name: "export-manifest", script: "scripts/gen-export-manifest.ts", after: ["barrels"], outputs: [/^scripts\/export-manifest\.json$/], reads: ["packages/"] },
-  { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"], outputs: [/^games\/capabilities\.json$/], reads: ["packages/"] },
-  { name: "part-stats", script: "scripts/part-stats.ts", after: ["barrels"], outputs: [/^scripts\/part-stats\.json$/], reads: ["packages/core/src/"] },
+  { name: "capabilities", script: "scripts/gen-capability-index.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/[^/]+\/capabilities\.md$/], reads: ["packages/", ".claude/"], skipsTests: true },
+  { name: "skill-api", script: "scripts/gen-skill-api-safe.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/[^/]+\/api\.md$/], reads: ["packages/", ".claude/"], skipsTests: true },
+  { name: "export-manifest", script: "scripts/gen-export-manifest.ts", after: ["barrels"], outputs: [/^scripts\/export-manifest\.json$/], reads: ["packages/"], skipsTests: true },
+  { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"], outputs: [/^games\/capabilities\.json$/], reads: ["packages/"], skipsTests: true },
+  { name: "part-stats", script: "scripts/part-stats.ts", after: ["barrels"], outputs: [/^scripts\/part-stats\.json$/], reads: ["packages/core/src/"], skipsTests: true },
   { name: "recipes", script: "scripts/gen-cookbook.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/jgengine\/recipes\/cookbook\.md$/], reads: ["packages/core/src/recipes/"] },
 ];
 
