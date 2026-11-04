@@ -129,7 +129,7 @@ function renderPack(pack: { id: string; name: string; json: string }, typed: boo
   return `${lines.join("\n")}\n`;
 }
 
-function renderPacks(sourceIds: readonly string[], typed: boolean): string {
+function renderPacks(sourceIds: readonly string[]): string {
   const packs = orderedPacks(sourceIds);
   const lines = [GENERATED_HEADER];
   for (const pack of packs) lines.push(`export { ${pack.name} } from "./pack/${pack.id}";`);
@@ -177,7 +177,7 @@ export function writeIndexBarrels(outDir: string): void {
   for (const ext of extensions) {
     const typed = ext === "ts";
     for (const pack of orderedPacks(barrelIds)) writeFileSync(join(packDir, `${pack.id}.${ext}`), renderPack(pack, typed));
-    writeFileSync(join(outDir, `packs.${ext}`), renderPacks(barrelIds, typed));
+    writeFileSync(join(outDir, `packs.${ext}`), renderPacks(barrelIds));
     writeFileSync(join(outDir, `index.${ext}`), renderBarrel(barrelIds, typed));
   }
 }
