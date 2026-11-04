@@ -18,6 +18,7 @@ import { BUILDABLES, BUILD_IDS, buildableDef, THEME_CAP, type BuildableDef } fro
 import { SCENARIOS } from "./scenarios";
 import { BOOK_LINES, CAMPAIGNS } from "./books";
 import { despawnObject, dispatchCrew, landed, scenarioEnded, spawnObject } from "./parkScene";
+import { retuneRideUpkeep, rideRunActions, rideRunFacts } from "./rideRefits";
 
 /**
  * Brightway Park is one declaration. Every ride, stall, path and post is a kind on the park lot;
@@ -78,6 +79,7 @@ function kindOf(def: BuildableDef): WorldKindDecl {
     facts["broken"] = false;
     // Charm from scenery in reach, which the park adds to the ride's appeal and excitement.
     facts["theme"] = 0;
+    Object.assign(facts, rideRunFacts(def));
   }
   if (def.staff !== undefined) {
     // The patrol area's radius in metres, around the post.
@@ -142,6 +144,7 @@ function rideActions(def: BuildableDef): Record<string, WorldActionDecl> {
     },
     [`price_up_${def.id}`]: { label: `Raise the ${def.label} ticket`, world: { [`price.${def.id}`]: 1 } },
     [`price_down_${def.id}`]: { label: `Lower the ${def.label} ticket`, world: { [`price.${def.id}`]: -1 } },
+    ...rideRunActions(def),
   };
 }
 
@@ -272,6 +275,8 @@ const totals: Record<string, WorldTotalDecl> = {
   "park.rides": { of: "ride" },
   "park.rides_open": { of: "ride", where: { broken: false, closed: false } },
   "park.stalls": { of: "stall" },
+  // What refits and closures add to the rides' upkeep (negative saves), per day.
+  "park.upkeep_delta": { of: "ride", sum: "upkeep_delta" },
 };
 const flows: Record<string, WorldFlowDecl> = {
   // Every guest drops a little litter; every janitor post sweeps it up.
@@ -279,6 +284,10 @@ const flows: Record<string, WorldFlowDecl> = {
   sweep: { to: "park.litter", from: "n.staff_janitor", rate: -(buildableDef("staff_janitor").staff!.cleaning * 0.08) },
   // Every bin catches what about two-thirds of a guest would drop.
   bins: { to: "park.litter", from: "n.deco_bin", rate: -0.004 },
+  // Refits and closures move the rides' upkeep off what each kind costs as built.
+  upkeep_rides_delta: { to: "park.cash", from: "park.upkeep_delta", rate: -1 / DAY_LENGTH },
+  bill_rides_delta: { to: "park.spent_today", from: "park.upkeep_delta", rate: 1 / DAY_LENGTH },
+  book_rides_delta: { to: monthLine("upkeep"), from: "park.upkeep_delta", rate: 1 / DAY_LENGTH },
 };
 // The ground's height levels, a digit a cell; and which version of the path rules the park was laid under.
 const prices: Record<string, WorldFactsDecl[string]> = { [LAND_FACT]: FLAT_LAND, "park.netv": 0 };
@@ -470,7 +479,8 @@ export function fairPrice(w: WorldModel, obj: ParkObject, excitement: number): n
 /**
  * Scenery charms the rides in its reach: each ride's `theme` is the bonus of every scenery piece
  * within that piece's radius (measured to the ride's edge), capped, and its appeal is its own plus
- * that charm. Run after anything is built or removed.
+ * that charm and its refit's. Each ride's upkeep change from its refit and closure is written too.
+ * Run after anything is built or removed, and after a refit or closure lands.
  */
 export function rethemeRides(ctx: GameContext): void {
   const w = park.of(ctx);
@@ -484,10 +494,10 @@ export function rethemeRides(ctx: GameContext): void {
       if (Math.hypot(deco.x - obj.x, deco.z - obj.z) <= reach) theme += deco.def.theme!.bonus;
     }
     theme = Math.round(Math.min(THEME_CAP, theme) * 10) / 10;
-    if (w.num(`${obj.id}.theme`) !== theme) {
-      w.set(`${obj.id}.theme`, theme);
-      w.set(`${obj.id}.appeal`, Math.round((obj.def.appeal + theme) * 10) / 10);
-    }
+    if (w.num(`${obj.id}.theme`) !== theme) w.set(`${obj.id}.theme`, theme);
+    const appeal = Math.round((obj.def.appeal + theme + w.num(`${obj.id}.refit_appeal`)) * 10) / 10;
+    if (w.num(`${obj.id}.appeal`) !== appeal) w.set(`${obj.id}.appeal`, appeal);
+    retuneRideUpkeep(w, obj.id, obj.def);
   }
 }
 
@@ -499,10 +509,13 @@ export function patrolRadius(w: WorldModel, postId: string): number {
 /** Every placed ride. */
 export const rideObjects = (ctx: GameContext): readonly ParkObject[] => parkObjects(ctx).filter((obj) => obj.def.ride !== undefined);
 
-/** A ride's chance in a hundred of running its next cycle without breaking, from its wear (runs since its last service). */
-export function reliability(def: BuildableDef, wear: number): number {
+/**
+ * A ride's chance in a hundred of running its next cycle without breaking, from its wear (runs since
+ * its last service) and how fast its refit wears it (`wearScale`, 1 as built).
+ */
+export function reliability(def: BuildableDef, wear: number, wearScale = 1): number {
   // The ride sim counts the run before it rolls: the next run is wear + 1.
-  const odds = def.ride === undefined ? 0 : def.ride.breakdown.baseChance + def.ride.breakdown.wearChance * (wear + 1);
+  const odds = def.ride === undefined ? 0 : def.ride.breakdown.baseChance + def.ride.breakdown.wearChance * wearScale * (wear + 1);
   return Math.max(0, Math.round((1 - odds) * 1000) / 10);
 }
 
@@ -537,6 +550,7 @@ export function parkMetrics(w: WorldModel): ParkMetrics {
     if (def.ride !== undefined) variety += 1;
     if (def.stall !== undefined) needs.add(def.stall.need);
   }
+  dailyUpkeep += w.num("park.upkeep_delta");
   return {
     rides: w.num("park.rides"),
     ridesOpen: w.num("park.rides_open"),

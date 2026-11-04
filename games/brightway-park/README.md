@@ -24,6 +24,11 @@ Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the 
     sim. Wear builds every cycle until the ride breaks (the ride window shows its reliability for
     the next run); a broken ride stays down until a mechanic repairs it, a newly hired mechanic goes
     straight to it, and servicing clears wear before it breaks.
+  - Ride refits. Each ride takes one refit for 40% of its price, and the choice is final. Efficient
+    cuts upkeep 30% and wear 40% for half a point of appeal; Premium seats half as many again, boards
+    15% slower, adds 1.5 appeal and costs 50% more to run and 25% more wear. A ride can be closed to
+    refurbish it: guests stay off, upkeep drops to a quarter and one run of wear comes off every 6
+    seconds until it reopens. A broken ride needs its repair first.
   - Money that binds. Every stall and ride has a price the player sets; a guest refuses one more
     than a quarter over what it is worth ("too expensive" counts on the dashboard). Ten shops and
     facilities: burgers, drinks, toilets and the information kiosk at the start, six more in the lab.

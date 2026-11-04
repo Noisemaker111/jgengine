@@ -13,6 +13,7 @@ import { DEFAULT_QUEUE_SEED_SERVICE_SECONDS, DEFAULT_QUEUE_WINDOW } from "@jgeng
 
 import { park as parkSpec, parkObjects, type ParkObject } from "./park";
 import { buildCoasterCircuit, type CoasterCircuit, type TrackPoint } from "./coaster/circuit";
+import { isShut, REFURB_SECONDS } from "./rideRefits";
 
 /**
  * The park's rides run on the shared ride sim (`@jgengine/core/sim/rides`): each ride owns its own
@@ -21,7 +22,8 @@ import { buildCoasterCircuit, type CoasterCircuit, type TrackPoint } from "./coa
  * never to fix a ride itself: it stays down until the crew's order lands and calls {@link fixRide}.
  */
 
-const park: { system: RideSystem | null; key: string } = { system: null, key: "" };
+/** `refurb`: park seconds toward the next run of wear a shut ride sheds. */
+const park: { system: RideSystem | null; key: string; refurb: number } = { system: null, key: "", refurb: 0 };
 
 /** A ride the sim never repairs on its own; the world's crew does. */
 const HELD_DOWN = 1e9;
@@ -58,8 +60,17 @@ export function rideRatings(obj: ParkObject, circuit: CoasterCircuit, theme = 0)
   return { ...base, excitement: Math.round((base.excitement + theme * THEME_EXCITEMENT) * 10) / 10 };
 }
 
+/** A ride's refit as the sim reads it: scales on its seats, its boarding time and its wear (1 as built). */
+export interface RideScales {
+  capacity: number;
+  service: number;
+  wear: number;
+}
+
+const AS_BUILT: RideScales = { capacity: 1, service: 1, wear: 1 };
+
 /** One placed ride as the shared sim's data. */
-export function rideDefinition(obj: ParkObject, circuit: CoasterCircuit, theme = 0): RideDefinition {
+export function rideDefinition(obj: ParkObject, circuit: CoasterCircuit, theme = 0, scales: RideScales = AS_BUILT): RideDefinition {
   const ride = obj.def.ride;
   if (ride === undefined) throw new Error(`brightway-park: "${obj.kind}" is not a ride`);
   // A coaster's lap is the track's own length at the track's own pace, so laying rail changes the ride.
@@ -67,23 +78,27 @@ export function rideDefinition(obj: ParkObject, circuit: CoasterCircuit, theme =
   return {
     id: obj.id,
     ratings: rideRatings(obj, circuit, theme),
-    capacity: ride.capacity,
-    loadSeconds: ride.loadSeconds,
+    capacity: Math.max(1, Math.round(ride.capacity * scales.capacity)),
+    loadSeconds: Math.round(ride.loadSeconds * scales.service * 10) / 10,
     rideSeconds,
-    unloadSeconds: ride.unloadSeconds,
-    breakdown: { ...ride.breakdown, repairSeconds: HELD_DOWN, repairCost: 0 },
+    unloadSeconds: Math.round(ride.unloadSeconds * scales.service * 10) / 10,
+    breakdown: { ...ride.breakdown, wearChance: ride.breakdown.wearChance * scales.wear, repairSeconds: HELD_DOWN, repairCost: 0 },
   };
 }
 
 function desiredDefinitions(ctx: GameContext): RideDefinition[] {
   const circuit = coasterCircuit(ctx);
   const w = parkSpec.of(ctx);
-  return parkObjects(ctx).filter((obj) => obj.def.ride !== undefined).map((obj) => rideDefinition(obj, circuit, w.num(`${obj.id}.theme`)));
+  return parkObjects(ctx).filter((obj) => obj.def.ride !== undefined).map((obj) => rideDefinition(obj, circuit, w.num(`${obj.id}.theme`), {
+    capacity: w.num(`${obj.id}.capacity_scale`),
+    service: w.num(`${obj.id}.service_scale`),
+    wear: w.num(`${obj.id}.wear_scale`),
+  }));
 }
 
 function definitionKey(definitions: readonly RideDefinition[]): string {
   return definitions
-    .map((d) => [d.id, d.capacity, d.loadSeconds, d.rideSeconds, d.unloadSeconds, d.ratings.excitement, d.ratings.intensity].join(":"))
+    .map((d) => [d.id, d.capacity, d.loadSeconds, d.rideSeconds, d.unloadSeconds, d.ratings.excitement, d.ratings.intensity, d.breakdown?.wearChance ?? 0].join(":"))
     .join("|");
 }
 
@@ -132,6 +147,7 @@ export function resetRides(): void {
   park.system?.dispose();
   park.system = null;
   park.key = "";
+  park.refurb = 0;
 }
 
 export const rideView = (rideId: string): RideView | null => rideSystem().ride(rideId);
@@ -152,6 +168,20 @@ export function fixRide(rideId: string): void {
   // A repair is a full overhaul: the wear curve starts again from new.
   entry.wear = 0;
   system.restore(snapshot);
+}
+
+/** Take `runs` of wear off each of these rides (a refurbishment's progress); a broken ride keeps its own. */
+export function easeWear(rideIds: readonly string[], runs: number): void {
+  if (rideIds.length === 0 || runs <= 0) return;
+  const system = rideSystem();
+  const snapshot = system.snapshot();
+  let moved = false;
+  for (const entry of snapshot.rides) {
+    if (!rideIds.includes(entry.definition.id) || entry.phase === "broken" || entry.wear <= 0) continue;
+    entry.wear = Math.max(0, entry.wear - runs);
+    moved = true;
+  }
+  if (moved) system.restore(snapshot);
 }
 
 /** Take a ride down now (the drive's and the tests' way to see a breakdown without waiting on the dice). */
@@ -199,4 +229,15 @@ export function rideBoard(): RideBoard {
 export function tickRides(ctx: GameContext, dt: number, sink: RideTickSink): void {
   syncRidePark(ctx);
   rideSystem().tick(dt, sink);
+  tickRefurbishment(ctx, dt);
+}
+
+/** Every {@link REFURB_SECONDS} of park time, each ride shut for refurbishment wears off one run. */
+function tickRefurbishment(ctx: GameContext, dt: number): void {
+  park.refurb += dt;
+  if (park.refurb < REFURB_SECONDS) return;
+  const runs = Math.floor(park.refurb / REFURB_SECONDS);
+  park.refurb -= runs * REFURB_SECONDS;
+  const w = parkSpec.of(ctx);
+  easeWear(parkObjects(ctx).filter((obj) => obj.def.ride !== undefined && isShut(w, obj.id)).map((obj) => obj.id), runs);
 }
