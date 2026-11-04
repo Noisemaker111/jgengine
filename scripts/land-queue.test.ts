@@ -541,3 +541,20 @@ test("a failed read while waiting is tried again, and only reads failing in a ro
   expect(result.verdict).toBe("unreadable");
   expect(result.detail).toBe(`reading the PR failed ${READ_ATTEMPTS} times in a row: error connecting to api.github.com`);
 });
+
+test("--pr survives a GitHub 500 on every read it makes, the first one included", () => {
+  const api = onePr(62, [{ name: "test" }], { mergeableState: "clean" });
+  let reads = 0;
+  const github: GitHub = {
+    ...api.github,
+    pull: (number) => {
+      reads += 1;
+      return reads % 2 === 1 ? { ok: false, error: "gh: HTTP 500" } : api.github.pull(number);
+    },
+  };
+  const out = io({ github });
+  const result = drain({ base: "beta", label: "land:queue", pr: 62 }, out);
+  expect(result.code).toBe(EXIT_DRAINED);
+  expect(merges(api)).toEqual([62]);
+  expect(out.lines.filter((line) => line.includes("gh: HTTP 500")).length).toBeGreaterThanOrEqual(2);
+});

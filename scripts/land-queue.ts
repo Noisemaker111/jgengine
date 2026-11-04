@@ -135,8 +135,24 @@ function firstLine(text: string): string {
   return text.split("\n").map((line) => line.trim()).find((line) => line.length > 0) ?? text.trim();
 }
 
-/** The PR and the checks on its head commit, or what GitHub answered when it could not be read. */
-export function readView(github: GitHub, number: number): GhResult<PrView> {
+/** Reads that may fail in a row before the queue gives up on a PR: GitHub answers a 500 now and then. */
+export const READ_ATTEMPTS = 3;
+
+/**
+ * The PR and the checks on its head commit, or what GitHub last answered when it could not be read
+ * {@link READ_ATTEMPTS} times in a row, a poll apart. Every read the queue makes goes through here.
+ */
+export function readView(io: Pick<QueueIo, "github" | "pause" | "log">, number: number): GhResult<PrView> {
+  for (let attempt = 1; ; attempt += 1) {
+    const read = readViewOnce(io.github, number);
+    if (read.ok) return read;
+    if (attempt >= READ_ATTEMPTS) return { ok: false, error: `failed ${attempt} times in a row: ${firstLine(read.error)}` };
+    io.log(`#${number}: reading the PR failed (${firstLine(read.error)}); trying again`);
+    io.pause(POLL_MS);
+  }
+}
+
+function readViewOnce(github: GitHub, number: number): GhResult<PrView> {
   const pull = github.pull(number);
   if (!pull.ok) return pull;
   const view = pull.value;
@@ -156,9 +172,6 @@ export function readView(github: GitHub, number: number): GhResult<PrView> {
     },
   };
 }
-
-/** Reads in a row that may fail while waiting before the wait gives up: one failed `gh api` call is a network blip. */
-export const READ_ATTEMPTS = 3;
 
 export interface CheckReport {
   checks: GhCheck[];
@@ -193,19 +206,11 @@ export function waitForGreen(number: number, io: QueueIo): WaitResult {
   const startedAt = io.now();
   let runIds: number[] = [];
   let rerunAt: number | null = null;
-  let misses = 0;
   for (;;) {
-    const read = readView(io.github, number);
+    const read = readView(io, number);
     if (!read.ok) {
-      misses += 1;
-      if (misses >= READ_ATTEMPTS) {
-        return { verdict: "unreadable", checks: [], runIds, waitedMs: io.now() - startedAt, detail: `reading the PR failed ${misses} times in a row: ${firstLine(read.error)}` };
-      }
-      io.log(`#${number}: reading the PR failed (${firstLine(read.error)}); trying again`);
-      io.pause(POLL_MS);
-      continue;
+      return { verdict: "unreadable", checks: [], runIds, waitedMs: io.now() - startedAt, detail: `reading the PR ${read.error}` };
     }
-    misses = 0;
     const view = read.value;
     if (view.state === "MERGED") {
       return { verdict: "green", checks: [], runIds, waitedMs: io.now() - startedAt, detail: "already merged" };
@@ -400,7 +405,7 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
   });
 
   for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
-    const read = readView(io.github, pr.number);
+    const read = readView(io, pr.number);
     if (!read.ok) return done("failed", `could not read the PR: ${firstLine(read.error)}`);
     const view = read.value;
     if (view.state === "MERGED") return done("landed", "it was already merged");
@@ -422,7 +427,7 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
         return done("landed", waited.detail);
       }
       // A person or another queue run may have merged it a moment earlier.
-      const after = readView(io.github, pr.number);
+      const after = readView(io, pr.number);
       if (after.ok && after.value.state === "MERGED") return done("landed", "it was merged first by someone else");
       const why = merged.error;
       if (!baseMoved(why)) return done("failed", firstLine(why));
@@ -442,7 +447,7 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
  * the lane that handed the PR over keeps working instead of sitting in the queue.
  */
 export function drainOne(number: number, args: QueueArgs, io: QueueIo): { code: number; drained: Drained[] } {
-  const read = readView(io.github, number);
+  const read = readView(io, number);
   if (!read.ok) {
     io.error(`#${number} could not be read: ${firstLine(read.error)}`);
     return { code: EXIT_SOMETHING_FAILED, drained: [] };
