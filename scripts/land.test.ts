@@ -34,12 +34,12 @@ import {
   noteLines,
   syncOntoBase,
   retryServerErrors,
-  SERVER_ERROR_ATTEMPTS,
 } from "./land";
 import type { FragmentFile, GhCheck, LandIo, LockWait, Run } from "./land";
 import { attemptsOf, judgeChecks } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
 import { fakeGitHub, type FakeCall, type FakeCheck, type FakeGitHub } from "./github.fixture";
+import { OUTAGE_ATTEMPTS } from "./github";
 
 test("a command printing more than Node's 1 MiB default comes back whole, as `git show` of a big api.md does", () => {
   const size = 3 * 1024 * 1024;
@@ -1176,9 +1176,9 @@ test("a git command GitHub answers with a server error runs again; any other fai
   expect(blip.calls.length).toBe(2);
   expect(pauses.length).toBe(1);
 
-  const down = answers(Array.from({ length: SERVER_ERROR_ATTEMPTS }, () => serverError));
+  const down = answers(Array.from({ length: OUTAGE_ATTEMPTS }, () => serverError));
   expect(retryServerErrors(down.git, () => {})(["push"])).toEqual(serverError);
-  expect(down.calls.length).toBe(SERVER_ERROR_ATTEMPTS);
+  expect(down.calls.length).toBe(OUTAGE_ATTEMPTS);
 
   const refused = answers([rejected]);
   expect(retryServerErrors(refused.git, () => {})(["push"])).toEqual(rejected);

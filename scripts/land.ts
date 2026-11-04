@@ -59,7 +59,7 @@ import { FRAGMENT_PATTERN } from "./changelog-fragments";
 import { apiNoteBullets, engineSeamLine, noteMessages, renderChangeNote } from "./change-note";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
-import { checkoutGitHub, type GitHub } from "./github";
+import { checkoutGitHub, retryOutages, sleepSync, type GitHub } from "./github";
 import { printHelpIfAsked } from "./script-help";
 import { isVerbose } from "./verbosity";
 import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
@@ -630,10 +630,6 @@ export function refusalFor(args: LandArgs, branch: string, status: string): stri
   return landRefusal(branch, args.commit ? "" : status, args.base);
 }
 
-function sleep(ms: number): void {
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-}
-
 /** `42s`, `2m30s`, `1h05m`: how long a landing, or a wait, took. */
 export function duration(ms: number): string {
   if (ms <= 0) return "0s";
@@ -757,7 +753,7 @@ export function acquireLock(options: LockOptions): HeldLock {
   const pid = options.pid ?? process.pid;
   const now = options.now ?? Date.now;
   const alive = options.alive ?? pidIsAlive;
-  const wait = options.wait ?? sleep;
+  const wait = options.wait ?? sleepSync;
   const log = options.log ?? ((line: string) => console.log(`land: ${line}`));
   const startedAt = now();
   let announced: string | null = null;
@@ -913,22 +909,9 @@ export interface SyncResult {
   refusal: string | null;
 }
 
-const SERVER_ERROR = /Internal Server Error|Service Unavailable|Bad Gateway|HTTP 5\d\d|error: 5\d\d/i;
-export const SERVER_ERROR_ATTEMPTS = 3;
-
-/**
- * `git` that runs a command again when GitHub answered it with a server error: a push or fetch
- * GitHub refuses with a 500 goes through the same command a few seconds later (4 Nov, twice in a
- * row on #2947). Any other failure, a rejected push included, is returned at once.
- */
-export function retryServerErrors(git: Git, pause: (ms: number) => void = sleep): Git {
-  return (args) => {
-    for (let attempt = 1; ; attempt += 1) {
-      const result = git(args);
-      if (result.status === 0 || attempt >= SERVER_ERROR_ATTEMPTS || !SERVER_ERROR.test(details(result))) return result;
-      pause(5_000 * attempt);
-    }
-  };
+/** `git` that runs a push or fetch again when GitHub's outage answered it, as the GitHub client does. */
+export function retryServerErrors(git: Git, pause: (ms: number) => void = sleepSync): Git {
+  return (args) => retryOutages(() => git(args), pause);
 }
 
 /**

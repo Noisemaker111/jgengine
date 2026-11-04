@@ -7,7 +7,6 @@ import {
   EXIT_DRAINED,
   EXIT_SOMETHING_FAILED,
   POLL_MS,
-  READ_ATTEMPTS,
   RERUN_GRACE_MS,
   WAIT_TIMEOUT_MS,
   drain,
@@ -19,7 +18,7 @@ import {
 } from "./land-queue";
 import type { QueueIo, PrRow, ReadyPr } from "./land-queue";
 import type { Run } from "./land";
-import type { GitHub } from "./github";
+import { gitHub, type GhRun, type GitHub } from "./github";
 import { fakeGitHub, type FakeCheck, type FakeGitHub, type FakePull } from "./github.fixture";
 
 const SCRATCH = join(import.meta.dir, "..", ".scratch");
@@ -514,47 +513,15 @@ test("a generated file both sides changed never stops the queue: it takes the ba
   expect(gitIn(bare, ["merge-base", "--is-ancestor", movedTip, pushedTip]).status).toBe(0);
   expect(gitOk(bare, ["show", `${pushedTip}:scripts/export-manifest.json`])).toBe("[\"a\", \"lane\", \"other\"]");
 }, 60_000);
-
-test("a failed read while waiting is tried again, and only reads failing in a row give up, naming GitHub's answer", () => {
-  const flaky = (failures: number): { github: GitHub; reads: () => number } => {
-    const base = onePr(31, [{ name: "ci" }]).github;
-    let reads = 0;
-    return {
-      reads: () => reads,
-      github: {
-        ...base,
-        pull: (number) => {
-          reads += 1;
-          return reads <= failures ? { ok: false, error: "error connecting to api.github.com\ncheck your internet connection" } : base.pull(number);
-        },
-      },
-    };
-  };
-  const blip = flaky(READ_ATTEMPTS - 1);
-  const recovered = io({ github: blip.github });
-  expect(waitForGreen(31, recovered).verdict).toBe("green");
-  expect(blip.reads()).toBe(READ_ATTEMPTS);
-  expect(recovered.lines[0]).toContain("error connecting to api.github.com");
-
-  const down = flaky(READ_ATTEMPTS);
-  const result = waitForGreen(31, io({ github: down.github }));
-  expect(result.verdict).toBe("unreadable");
-  expect(result.detail).toBe(`reading the PR failed ${READ_ATTEMPTS} times in a row: error connecting to api.github.com`);
-});
-
-test("--pr survives a GitHub 500 on every read it makes, the first one included", () => {
+test("--pr lands through GitHub 500s and 502s on its reads and its merge", () => {
   const api = onePr(62, [{ name: "test" }], { mergeableState: "clean" });
-  let reads = 0;
-  const github: GitHub = {
-    ...api.github,
-    pull: (number) => {
-      reads += 1;
-      return reads % 2 === 1 ? { ok: false, error: "gh: HTTP 500" } : api.github.pull(number);
-    },
-  };
-  const out = io({ github });
-  const result = drain({ base: "beta", label: "land:queue", pr: 62 }, out);
+  const outage: GhRun = { status: 1, stdout: "", stderr: "gh: Server Error (HTTP 502)" };
+  let calls = 0;
+  const pauses: number[] = [];
+  // Every other request fails as GitHub did on 4 Nov: the first read, the waits and the merge alike.
+  const github = gitHub((args) => (++calls % 2 === 1 ? outage : api.gh(args)), "me/game", (ms) => pauses.push(ms));
+  const result = drain({ base: "beta", label: "land:queue", pr: 62 }, io({ github }));
   expect(result.code).toBe(EXIT_DRAINED);
   expect(merges(api)).toEqual([62]);
-  expect(out.lines.filter((line) => line.includes("gh: HTTP 500")).length).toBeGreaterThanOrEqual(2);
+  expect(pauses.length).toBeGreaterThanOrEqual(3);
 });

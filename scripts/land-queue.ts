@@ -26,7 +26,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
-import { checkoutGitHub, type GhResult, type GitHub, type Pull } from "./github";
+import { checkoutGitHub, sleepSync, type GhResult, type GitHub, type Pull } from "./github";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { MERGE_ATTEMPTS, QUEUE_LABEL, baseMoved, checkVerdict, duration, formatFailures, retryServerErrors, runAt } from "./land";
 import type { GhCheck, Run } from "./land";
@@ -135,24 +135,8 @@ function firstLine(text: string): string {
   return text.split("\n").map((line) => line.trim()).find((line) => line.length > 0) ?? text.trim();
 }
 
-/** Reads that may fail in a row before the queue gives up on a PR: GitHub answers a 500 now and then. */
-export const READ_ATTEMPTS = 3;
-
-/**
- * The PR and the checks on its head commit, or what GitHub last answered when it could not be read
- * {@link READ_ATTEMPTS} times in a row, a poll apart. Every read the queue makes goes through here.
- */
-export function readView(io: Pick<QueueIo, "github" | "pause" | "log">, number: number): GhResult<PrView> {
-  for (let attempt = 1; ; attempt += 1) {
-    const read = readViewOnce(io.github, number);
-    if (read.ok) return read;
-    if (attempt >= READ_ATTEMPTS) return { ok: false, error: `failed ${attempt} times in a row: ${firstLine(read.error)}` };
-    io.log(`#${number}: reading the PR failed (${firstLine(read.error)}); trying again`);
-    io.pause(POLL_MS);
-  }
-}
-
-function readViewOnce(github: GitHub, number: number): GhResult<PrView> {
+/** The PR and the checks on its head commit, or what GitHub answered when it could not be read. */
+export function readView(github: GitHub, number: number): GhResult<PrView> {
   const pull = github.pull(number);
   if (!pull.ok) return pull;
   const view = pull.value;
@@ -207,9 +191,9 @@ export function waitForGreen(number: number, io: QueueIo): WaitResult {
   let runIds: number[] = [];
   let rerunAt: number | null = null;
   for (;;) {
-    const read = readView(io, number);
+    const read = readView(io.github, number);
     if (!read.ok) {
-      return { verdict: "unreadable", checks: [], runIds, waitedMs: io.now() - startedAt, detail: `reading the PR ${read.error}` };
+      return { verdict: "unreadable", checks: [], runIds, waitedMs: io.now() - startedAt, detail: `reading the PR failed: ${firstLine(read.error)}` };
     }
     const view = read.value;
     if (view.state === "MERGED") {
@@ -405,7 +389,7 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
   });
 
   for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
-    const read = readView(io, pr.number);
+    const read = readView(io.github, pr.number);
     if (!read.ok) return done("failed", `could not read the PR: ${firstLine(read.error)}`);
     const view = read.value;
     if (view.state === "MERGED") return done("landed", "it was already merged");
@@ -427,7 +411,7 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
         return done("landed", waited.detail);
       }
       // A person or another queue run may have merged it a moment earlier.
-      const after = readView(io, pr.number);
+      const after = readView(io.github, pr.number);
       if (after.ok && after.value.state === "MERGED") return done("landed", "it was merged first by someone else");
       const why = merged.error;
       if (!baseMoved(why)) return done("failed", firstLine(why));
@@ -447,7 +431,7 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
  * the lane that handed the PR over keeps working instead of sitting in the queue.
  */
 export function drainOne(number: number, args: QueueArgs, io: QueueIo): { code: number; drained: Drained[] } {
-  const read = readView(io, number);
+  const read = readView(io.github, number);
   if (!read.ok) {
     io.error(`#${number} could not be read: ${firstLine(read.error)}`);
     return { code: EXIT_SOMETHING_FAILED, drained: [] };
@@ -508,17 +492,13 @@ function main(): void {
 
   const result = drain(args, {
     github: checkoutGitHub(root),
-    git: (cwd, gitArgs) => retryServerErrors((args) => run("git", cwd, args), pause)(gitArgs),
-    pause,
+    git: (cwd, gitArgs) => retryServerErrors((args) => run("git", cwd, args))(gitArgs),
+    pause: sleepSync,
     now: Date.now,
     log: (line) => console.log(`land:queue: ${line}`),
     error: (line) => console.error(`land:queue: ${line}`),
   });
   process.exit(result.code);
-}
-
-function pause(ms: number): void {
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 if (import.meta.main) main();
