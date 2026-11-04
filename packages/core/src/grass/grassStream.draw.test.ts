@@ -10,6 +10,108 @@ import { GrassStream } from "./grassStream.draw";
 
 const VIEW_HEIGHT = 900;
 
+test("a streaming slice bounds ground queries even for a dense leaf", () => {
+  let queries = 0;
+  const { stream: field } = stream({ area: 400, heightAt: () => { queries += 1; return 0; } });
+  try {
+    field.update(camera([0, 1.7, 0], [0, 0.5, -30]), VIEW_HEIGHT, 0);
+    expect(queries).toBeLessThanOrEqual(128);
+  } finally { field.dispose(); }
+});
+
+test("sliced work completes with the same grass and bounded ground queries", () => {
+  let queries = 0;
+  const look = readGrassLook({ slopeThin: 1 });
+  const heightAt = (x: number, z: number) => { queries += 1; return x * 0.01 + z * 0.02; };
+  const sliced = stream({ area: 16, look, heightAt });
+  const whole = stream({ area: 16, look, heightAt });
+  const view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  whole.stream.update(view, VIEW_HEIGHT, Infinity);
+  let calls = 0;
+  const counts = new Map<string, number>();
+  observeFrameWork((name, count) => counts.set(name, (counts.get(name) ?? 0) + count));
+  do {
+    queries = 0;
+    counts.clear();
+    sliced.stream.update(view, VIEW_HEIGHT, 1000);
+    expect(queries).toBeLessThanOrEqual(8192);
+    expect((counts.get("grass nodes visited") ?? 0) + (counts.get("grass bake tuft candidates") ?? 0) + (counts.get("grass other work steps") ?? 0)).toBeLessThanOrEqual(32768);
+    calls += 1;
+  } while (sliced.stream.stats().pending > 0 && calls < 1000);
+  observeFrameWork(null);
+  expect(sliced.stream.stats().pending).toBe(0);
+  expect(calls).toBeGreaterThan(1);
+  const roots = (scene: THREE.Scene) => submit(scene, view).drawn.flatMap(({ mesh, count }) => {
+    const offset = mesh.geometry.getAttribute("instanceOffset");
+    return Array.from({ length: count }, (_, i) => [offset.getX(i), offset.getY(i), offset.getZ(i)].join(","));
+  }).sort();
+  expect(roots(sliced.scene)).toEqual(roots(whole.scene));
+  sliced.stream.dispose();
+  whole.stream.dispose();
+});
+
+test("ground revision discards unfinished and cached grass before rebuilding", () => {
+  let revision = 0, height = 0;
+  const bake = resolveGrassBake({ look: GRASS_DEFAULTS, area: 16, heightAt: () => height });
+  const handle = createGrassMaterial(GRASS_DEFAULTS);
+  const field = new GrassStream(bake, handle, { heightRevision: () => revision });
+  const scene = new THREE.Scene();
+  scene.add(field.group);
+  const view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  field.update(view, VIEW_HEIGHT, Infinity);
+  expect(field.stats().cached).toBeGreaterThan(0);
+  height = 3;
+  revision += 1;
+  field.update(view, VIEW_HEIGHT, 0);
+  expect(field.group.visible).toBe(false);
+  height = 5;
+  revision += 1;
+  for (let i = 0; i < 1000 && field.stats().pending > 0; i += 1) field.update(view, VIEW_HEIGHT, 1000);
+  expect(field.stats().pending).toBe(0);
+  const drawn = submit(scene, view).drawn;
+  expect(drawn.length).toBeGreaterThan(0);
+  for (const { mesh } of drawn) {
+    const offsets = mesh.geometry.getAttribute("instanceOffset");
+    for (let i = 0; i < offsets.count; i += 1) expect(offsets.getY(i)).toBe(5);
+  }
+  field.dispose();
+  handle.material.dispose();
+});
+
+test("continuous movement keeps the cache bounded and settles when movement stops", () => {
+  const { stream: field } = stream({ area: 40 });
+  let view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  for (let i = 0; i < 60; i += 1) {
+    view = camera([i % 20 - 10, 1.7, 0], [i % 20 - 10, 0.5, -30]);
+    field.update(view, VIEW_HEIGHT, 1000);
+    expect(field.stats().cached).toBeLessThanOrEqual(256);
+  }
+  for (let i = 0; i < 1000 && field.stats().pending > 0; i += 1) field.update(view, VIEW_HEIGHT, 1000);
+  expect(field.stats().pending).toBe(0);
+  field.dispose();
+});
+
+test("a moved camera eventually replaces unfinished selection with its own view", () => {
+  const sliced = stream({ area: 40 });
+  const whole = stream({ area: 40 });
+  const first = camera([0, 1.7, 0], [0, 0.5, -30]);
+  const moved = camera([12, 1.7, 12], [12, 0.5, -18]);
+  sliced.stream.update(first, VIEW_HEIGHT, 0);
+  whole.stream.update(moved, VIEW_HEIGHT, Infinity);
+  for (let i = 0; i < 1000; i += 1) {
+    sliced.stream.update(moved, VIEW_HEIGHT, 1000);
+    if (sliced.stream.stats().pending === 0) break;
+  }
+  expect(sliced.stream.stats().pending).toBe(0);
+  const roots = (scene: THREE.Scene) => submit(scene, moved).drawn.flatMap(({ mesh, count }) => {
+    const offsets = mesh.geometry.getAttribute("instanceOffset");
+    return Array.from({ length: count }, (_, i) => [offsets.getX(i), offsets.getY(i), offsets.getZ(i)].join(","));
+  }).sort();
+  expect(roots(sliced.scene)).toEqual(roots(whole.scene));
+  sliced.stream.dispose();
+  whole.stream.dispose();
+});
+
 test("grass work counts distinguish a stable view from a changed view", () => {
   const { stream: field } = stream({ area: 100 });
   const view = camera([0, 1.7, 0], [0, 0.5, -30]);

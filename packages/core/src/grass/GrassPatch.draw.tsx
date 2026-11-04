@@ -42,6 +42,8 @@ export interface GrassPatchProps extends Omit<ThreeElements["group"], "children"
   exclude?: readonly GrassExclusion[];
   /** Patch-local ground height. */
   heightAt?: TerrainHeightSampler;
+  /** Revision of mutable ground heights; omit when the sampler is immutable. */
+  heightRevision?: (() => number | undefined) | undefined;
   /** Patch-local 0..1 coverage (roads, footings); 0 grows nothing. */
   coverageAt?: TerrainHeightSampler;
   /** World height of the patch origin, for `look.growAbove`. Default 0. */
@@ -67,6 +69,7 @@ export function GrassPatch({
   edgeFeather,
   exclude,
   heightAt,
+  heightRevision,
   coverageAt,
   baseHeight,
   groundColor,
@@ -88,7 +91,7 @@ export function GrassPatch({
   const handle = useMemo(() => createGrassMaterial(windy ? { ...look, wind: { ...look.wind, windStrength: Math.max(1, look.wind.windStrength) } } : look, groundColor), [look, groundColor, windy]);
   const origin = useRef<Group>(null);
   const world = useMemo(() => new Vector3(), []);
-  const stream = useMemo(() => new GrassStream(bake, handle, { castShadow, receiveShadow, frustumCulled }), [bake, handle, castShadow, receiveShadow, frustumCulled]);
+  const stream = useMemo(() => new GrassStream(bake, handle, { castShadow, receiveShadow, frustumCulled, ...(heightRevision === undefined ? {} : { heightRevision }) }), [bake, handle, castShadow, receiveShadow, frustumCulled, heightRevision]);
   const filling = useRef(true);
   useEffect(() => {
     filling.current = true;

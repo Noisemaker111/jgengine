@@ -54,6 +54,7 @@ function OneGrass({ object, context, resolve }: { object: SceneKindObject; conte
   const resolved = useMemo(() => resolve(object), [object, resolve]);
   const heightAt = useCallback((x: number, z: number) => resolved === null ? 0 :
     sampleHeight(context.field, x + resolved.center[0], z + resolved.center[2]) - resolved.center[1], [context.field, resolved]);
+  const heightRevision = useCallback(() => context.field.heightRevision?.(), [context.field]);
   const area = useMemo<[number, number] | null>(
     () => (resolved === null ? null : [resolved.size[0], resolved.size[1]]),
     [resolved],
@@ -97,6 +98,7 @@ function OneGrass({ object, context, resolve }: { object: SceneKindObject; conte
       seed={object.id}
       groundColor={context.groundColorAt?.(center[0], center[2])}
       heightAt={heightAt}
+      heightRevision={heightRevision}
       coverageAt={coverageAt}
       baseHeight={center[1]}
       edgeFeather={2.2}
