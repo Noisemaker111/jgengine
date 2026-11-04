@@ -1,8 +1,9 @@
-import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import { BootSuspenseGuard } from "@jgengine/core/boot/bootScreen.view";
 import { sharedGltfLoader, trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import { groupInstancesByCell } from "@jgengine/core/instancing/instanceCells";
@@ -460,9 +461,9 @@ function ScatterVariantSpecies({ model, batches }: { model: ModelConfig; batches
   return (
     <>
       {variants.levels.map((level, index) => (
-        <Suspense key={`${level.url}:${index}`} fallback={null}>
+        <BootSuspenseGuard key={`${level.url}:${index}`} area={`scatter level ${level.url}:${index}`}>
           <ScatterVariantLevel model={model} url={level.url} level={index} selector={selector} batches={batches} />
-        </Suspense>
+        </BootSuspenseGuard>
       ))}
     </>
   );
@@ -778,9 +779,14 @@ export function InstancedScatter({
   hidden,
 }: InstancedScatterProps) {
   const capped = useMemo(() => capScatterInstances(instances, maxInstances), [instances, maxInstances]);
+  const items = useMemo(() => [...new Set(capped.map((instance) => instance.item))], [capped]);
+  // Asked every render and keyed by what came back, not by the function: a game passes an inline
+  // `resolveItem`, and keying on it rebuilt every species' draws, and relinked their shaders, on
+  // each render of the game's world.
+  const resolutions = items.map((item) => resolveItem?.(item) ?? null);
+  const resolutionKey = JSON.stringify(resolutions);
   const resolved = useMemo(() => {
-    const byItem = new Map<string, ModelConfig | ScatterGeneratorItem | null>();
-    for (const instance of capped) if (!byItem.has(instance.item)) byItem.set(instance.item, resolveItem?.(instance.item) ?? null);
+    const byItem = new Map<string, ModelConfig | ScatterGeneratorItem | null>(items.map((item, index) => [item, resolutions[index] ?? null]));
     const generators = new Map<string, { definition: GeneratorDefinition; spec: ScatterGeneratorItem }>();
     for (const [item, result] of byItem) {
       const spec = generatorSpec(item, result);
@@ -788,7 +794,7 @@ export function InstancedScatter({
       if (spec !== null && definition !== undefined) generators.set(item, { definition, spec });
     }
     return { byItem, generators };
-  }, [capped, resolveItem]);
+  }, [items, resolutionKey]); // `resolutionKey` stands for `resolutions`
   const assigned = useMemo(
     () => resolved.generators.size === 0 ? capped : assignScatterVariants(capped, (item) => {
       const generator = resolved.generators.get(item);
@@ -878,9 +884,9 @@ export function InstancedScatter({
         return geometry === undefined ? null : <ScatterBatchMesh key={batch.key} batch={batch} geometry={geometry} />;
       })}
       {modelSpecies.map(([item, species]) => (
-        <Suspense key={item} fallback={null}>
+        <BootSuspenseGuard key={item} area={`scatter species ${item}`}>
           <ScatterModelSpecies model={species.model} batches={species.batches} />
-        </Suspense>
+        </BootSuspenseGuard>
       ))}
       {generatorSpecies.map(([item, species]) => (
         <ScatterGeneratorSpecies key={item} item={item} species={species} />

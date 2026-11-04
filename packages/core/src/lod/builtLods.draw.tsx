@@ -18,6 +18,7 @@ import {
 } from "@jgengine/core/lod/builtLods";
 import type { ImpostorAtlas } from "@jgengine/core/lod/impostor.draw";
 import { scatterModelBaseTransform } from "@jgengine/core/scatter/scatterModels.draw";
+import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 
 const MeshLodContext = createContext<MeshLodConfig | undefined>(undefined);
 
@@ -47,8 +48,16 @@ export function useMeshLodView(): { settings: MeshLodConfig | null; fovY: number
  */
 export class BuiltLodMetaLoader extends THREE.Loader<BuiltLodMeta | null> {
   override load(url: string, onLoad: (meta: BuiltLodMeta | null) => void): void {
+    const done = trackSceneWork(`lod:${url}`);
+    const finish = (meta: BuiltLodMeta | null): void => {
+      try {
+        onLoad(meta);
+      } finally {
+        done();
+      }
+    };
     if (assetFileListed(url) === false) {
-      queueMicrotask(() => onLoad(null));
+      queueMicrotask(() => finish(null));
       return;
     }
     fetch(resolveAssetBaseUrl(url))
@@ -62,7 +71,7 @@ export class BuiltLodMetaLoader extends THREE.Loader<BuiltLodMeta | null> {
         }
       })
       .catch(() => null)
-      .then(onLoad);
+      .then(finish);
   }
 }
 

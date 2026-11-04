@@ -3,6 +3,8 @@ import * as THREE from "three";
 import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { batchHookSignature, compilesBatched, isHookUserData, isLayerDefine, isLayerUserData, ownCacheKey, withoutCompileLayers } from "@jgengine/core/material/compileLayers.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
+import { Lingering } from "@jgengine/core/run/lingering";
+import { nextFrame } from "@jgengine/core/run/nextFrame.draw";
 import { runSliced, type SlicedRun } from "@jgengine/core/run/slicedWork";
 import type { HlodConfig } from "@jgengine/core/visibility/config";
 import { cellProxyJob, type ProxyPart } from "./cellProxy.draw";
@@ -263,6 +265,8 @@ export function shownPooledIds(mesh: THREE.BatchedMesh, into: Set<string>): void
  */
 export class StaticDrawPool {
   private readonly groups = new Map<string, PoolGroup>();
+  /** Emptied batches out of the scene, kept a moment so one refilled straight away keeps its linked material. */
+  private readonly emptied = new Lingering<string, PoolGroup>(disposeGroup);
   private readonly cells = new Map<string, ProxyCell>();
   private hlod: HlodConfig | null = null;
   private hold: ((x: number, z: number) => boolean) | null = null;
@@ -380,7 +384,9 @@ export class StaticDrawPool {
     const key = `${cell}#${source.castShadow === true}${source.receiveShadow === true}#${layout}#${signature}`;
     let group = this.groups.get(key);
     if (group === undefined) {
-      group = this.createGroup(key, source, material, capacity);
+      const emptied = this.emptied.take(key);
+      if (emptied !== undefined) this.parent.add(emptied.mesh);
+      group = emptied ?? this.createGroup(key, source, material, capacity);
       this.groups.set(key, group);
     }
     const geometryId = this.addGeometry(group, batchableGeometry(source.geometry));
@@ -405,6 +411,7 @@ export class StaticDrawPool {
     this.building?.run.cancel();
     this.building = null;
     for (const group of this.groups.values()) disposeGroup(group);
+    this.emptied.flush();
     for (const cell of this.cells.values()) this.dropProxy(cell);
     this.groups.clear();
     this.cells.clear();
@@ -459,7 +466,7 @@ export class StaticDrawPool {
       if (part !== null) parts.push(part);
     }
     if (parts.length === 0) return;
-    const run = runSliced(cellProxyJob(parts, hlod.cluster), { budgetMs: 2 });
+    const run = runSliced(cellProxyJob(parts, hlod.cluster), { budgetMs: 2, yieldThread: nextFrame });
     this.building = { cell, run };
     run.done.then(
       (geometry) => {
@@ -521,8 +528,10 @@ export class StaticDrawPool {
       group.geometries.delete(geometry);
     }
     if (group.instances === 0) {
-      disposeGroup(group);
+      showCulled(group.mesh, false);
+      group.mesh.removeFromParent();
       this.groups.delete(group.key);
+      this.emptied.park(group.key, group);
       return;
     }
     group.boundsDirty = true;

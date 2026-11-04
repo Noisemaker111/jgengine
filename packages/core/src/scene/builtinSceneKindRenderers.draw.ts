@@ -8,6 +8,7 @@
  */
 import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
 import { ON_DEMAND_SCENE_KINDS, type OnDemandSceneKind, type OnDemandSceneKindId } from "@jgengine/core/scene/onDemandSceneKinds";
+import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 
 import { registerGrassFieldRenderer } from "@jgengine/core/grass/GrassFieldRenderer.draw";
 import { registerWaterRenderer } from "@jgengine/core/water/WaterRenderer.draw";
@@ -65,7 +66,8 @@ export function loadOnDemandSceneKinds(entries: readonly OnDemandSceneKind[] = O
     entries.map((entry) => {
       const pending = loading.get(entry.id);
       if (pending !== undefined) return pending;
-      const load = Promise.all([entry.load(), ON_DEMAND_DRAW[entry.id]()]).then(
+      const done = trackSceneWork(`scene-system:${entry.id}`);
+      const load = Promise.all([Promise.resolve().then(entry.load), Promise.resolve().then(ON_DEMAND_DRAW[entry.id])]).then(
         () => {
           drawn.add(entry.id);
         },
@@ -73,7 +75,7 @@ export function loadOnDemandSceneKinds(entries: readonly OnDemandSceneKind[] = O
           loading.delete(entry.id);
           throw error;
         },
-      );
+      ).finally(done);
       loading.set(entry.id, load);
       return load;
     }),

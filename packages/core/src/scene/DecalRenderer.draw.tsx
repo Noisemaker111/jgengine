@@ -173,7 +173,10 @@ function Decals({ objects, heightAt }: { objects: readonly SceneKindObject[]; he
     for (const draw of batches.draws) draw.geometry.dispose();
   }, [batches]);
   useEffect(() => () => { for (const material of materials) material.dispose(); }, [materials]);
-  return <>{batches.draws.map((draw) => <mesh key={draw.key} geometry={draw.geometry} material={materials[draw.page]} receiveShadow frustumCulled />)}</>;
+  return <>{batches.draws.map((draw) => {
+    const material = materials[draw.page];
+    return material === undefined ? null : <mesh key={draw.key} geometry={draw.geometry} material={material} receiveShadow frustumCulled />;
+  })}</>;
 }
 
 /** Registers the `decal` marker renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */

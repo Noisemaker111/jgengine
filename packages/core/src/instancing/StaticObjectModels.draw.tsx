@@ -23,6 +23,7 @@ import { acquireImpostor, createImpostorMaterials, IMPOSTOR_MIN_RADIUS, impostor
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
+import { useSharedFrame } from "@jgengine/core/render/useSharedFrame.draw";
 import { staticDrawPoolFor, type ProxyRole, type StaticDrawSlot } from "./staticDrawPool.draw";
 import { builtLevelSource, reskinBuiltLevel, useBakedImpostor, WithBuiltLods } from "@jgengine/core/lod/builtLods.draw";
 import { IMPOSTOR_LEVEL_URL, type BuiltLodMeta } from "@jgengine/core/lod/builtLods";
@@ -111,7 +112,7 @@ function useBatchMembers(batch: StaticObjectBatch): { objects: readonly SceneObj
   const fallbackObjects = useRef(new Map<string, SceneObject>());
   const changed = useObjectChanges();
   useEffect(() => changed.mark(), [batch, changed]);
-  useFrame(() => {
+  useSharedFrame(() => {
     if (!changed.take()) return;
     const next = incompatibleStaticObjectIds(batch, ctx.scene.object.get, ctx.scene.object.catalog, excluded, fallbackObjects.current);
     if (next !== excluded) setExcluded(next);
@@ -132,8 +133,7 @@ function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObjec
   const members = useMemo((): StaticMembers => ({ current: [], version: 0 }), []);
   const changed = useObjectChanges();
   const gathered = useRef<{ visible: unknown; objects: unknown; assignment: unknown; revision: number; level: unknown }>({ visible: null, objects: null, assignment: null, revision: -1, level: null });
-  useFrame(() => {
-    if (!drawn) return;
+  useSharedFrame(() => {
     const last = gathered.current;
     const objectsChanged = changed.take();
     const revision = assignment?.revision ?? 0;
@@ -148,7 +148,7 @@ function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObjec
       return object !== null && object.catalogId === batch.objects[0]!.catalogId &&
         isCompatibleStaticObject(object, batch.model, ctx.scene.object.catalog(id)) ? object : null;
     }, visibility.current, accept, members.current);
-  }, CAMERA_POST_FRAME_PRIORITY + 0.15);
+  }, CAMERA_POST_FRAME_PRIORITY + 0.15, drawn);
   return members;
 }
 
@@ -173,6 +173,23 @@ function ObjectSource({ source, members, objects, proxy = "part" }: {
     : <PooledObjectSource slot={slot} source={source} members={members} objects={objects} />;
 }
 
+/** What a pooled source last placed: its slot, its objects, and each one's record as it was. @internal */
+export interface SourcePlacement<Slot> {
+  slot: Slot;
+  objects: readonly SceneObject[];
+  records: readonly (SceneObject | null)[];
+}
+
+/**
+ * Whether a pooled source must place its instances again: a new slot or object list, or a record of
+ * one of its own objects replaced. The store replaces a record when its object moves, turns or leaves,
+ * so a world change that touched none of this source's objects costs it a compare, not a re-place.
+ * @internal
+ */
+export function placementStale<Slot>(last: SourcePlacement<Slot> | null, slot: Slot, objects: readonly SceneObject[], get: (instanceId: string) => SceneObject | null): boolean {
+  return last === null || last.slot !== slot || last.objects !== objects || objects.some((object, index) => get(object.instanceId) !== last.records[index]);
+}
+
 /** A source whose material a pool batch shares: its placements are instances of that batch. */
 function PooledObjectSource({ slot, source, members, objects }: {
   slot: StaticDrawSlot;
@@ -191,24 +208,27 @@ function PooledObjectSource({ slot, source, members, objects }: {
     return out.multiplyMatrices(scratch.matrix, source.localMatrix);
   }, [scratch, source]);
   const ctx = useGameContext();
-  const placedAt = useRef<{ slot: StaticDrawSlot; version: number } | null>(null);
+  const placed = useRef<SourcePlacement<StaticDrawSlot> | null>(null);
+  const checkedVersion = useRef(-1);
   const syncedAt = useRef<{ slot: StaticDrawSlot; members: number; placed: unknown; slotOf: unknown } | null>(null);
   const live = useMemo((): SceneObject[] => [], []);
-  useFrame(() => {
+  useSharedFrame(() => {
     const version = ctx.scene.object.version();
-    if (placedAt.current?.slot !== slot || placedAt.current.version !== version) {
-      placedAt.current = { slot, version };
-      live.length = 0;
-      for (const object of objects) {
-        const current = ctx.scene.object.get(object.instanceId);
-        if (current !== null) live.push(current);
+    const last = placed.current;
+    if (last === null || last.slot !== slot || last.objects !== objects || checkedVersion.current !== version) {
+      checkedVersion.current = version;
+      if (placementStale(last, slot, objects, ctx.scene.object.get)) {
+        const records = objects.map((object) => ctx.scene.object.get(object.instanceId));
+        live.length = 0;
+        for (const record of records) if (record !== null) live.push(record);
+        placed.current = { slot, objects, records };
+        slot.place(live, slotOf, matrixOf);
       }
-      slot.place(live, slotOf, matrixOf);
     }
     // The shown instances follow the members alone: written again only after they were gathered again.
     const synced = syncedAt.current;
-    if (synced?.slot === slot && synced.members === members.version && synced.placed === placedAt.current && synced.slotOf === slotOf) return;
-    syncedAt.current = { slot, members: members.version, placed: placedAt.current, slotOf };
+    if (synced?.slot === slot && synced.members === members.version && synced.placed === placed.current && synced.slotOf === slotOf) return;
+    syncedAt.current = { slot, members: members.version, placed: placed.current, slotOf };
     slot.sync(members.current, slotOf, matrixOf);
   }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   return null;
@@ -234,7 +254,7 @@ function InstancedObjectSource({ source, members, capacity }: {
     return () => { mesh?.dispose(); };
   }, [capacity, source]);
   const syncedAt = useRef<{ mesh: THREE.InstancedMesh | null; members: number }>({ mesh: null, members: -1 });
-  useFrame((state) => {
+  useSharedFrame((state) => {
     const mesh = ref.current;
     if (mesh === null) return;
     // An opaque source's instances follow the members alone; a see-through one re-sorts as the camera moves.
@@ -327,7 +347,7 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
   const camera = useMemo(() => new THREE.Vector3(), []);
   const ready = entry?.atlas != null && entry.materials !== null;
   const last = useRef<{ at: THREE.Vector3; version: number; ready: boolean; objects: readonly SceneObject[] } | null>(null);
-  useFrame((state) => {
+  useSharedFrame((state) => {
     state.camera.getWorldPosition(camera);
     const version = ctx.scene.object.version();
     const previous = last.current;
@@ -369,7 +389,7 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
   const visibility = useRenderVisibility();
   const [card, setCard] = useState<{ pool: ImpostorCardPool; slice: ImpostorCardSlice } | null>(null);
   useEffect(() => {
-    const pool = acquireImpostorCardPool(poolKey, scene, () => new ImpostorCardPool(impostorCard(atlas), materials.material, materials.depth));
+    const pool = acquireImpostorCardPool(poolKey, scene, materials.material, () => new ImpostorCardPool(impostorCard(atlas), materials.material, materials.depth));
     const slice = pool.slice(objects.length);
     setCard({ pool, slice });
     return () => {
@@ -378,7 +398,7 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
       setCard(null);
     };
   }, [poolKey, atlas, materials, scene, objects.length]);
-  useFrame(() => {
+  useSharedFrame(() => {
     if (card === null) return;
     const { slice } = card;
     let count = 0;
@@ -396,7 +416,7 @@ function ImpostorCards({ poolKey, atlas, materials, objects, assignment, level }
     slice.count = count;
     slice.ids.length = count;
   }, CAMERA_POST_FRAME_PRIORITY + 0.2);
-  useFrame((state) => card?.pool.pack(state.clock.elapsedTime), CAMERA_POST_FRAME_PRIORITY + 0.3);
+  useSharedFrame((state) => card?.pool.pack(state.clock.elapsedTime), CAMERA_POST_FRAME_PRIORITY + 0.3);
   return null;
 }
 
@@ -464,7 +484,7 @@ export function LevelSingles({ objects, level, assignment, single }: {
   const ctx = useGameContext();
   const visibility = useRenderVisibility();
   const [members, setMembers] = useState<readonly SceneObject[]>(objects);
-  useFrame(() => {
+  useSharedFrame(() => {
     const next = objects.flatMap((object) => {
       const live = ctx.scene.object.get(object.instanceId);
       if (live === null || !visibility.current(live.instanceId)) return [];
@@ -497,7 +517,7 @@ export function VariantStaticObjects({ batch, single, meta = null }: { batch: St
   const members = useRef<readonly SceneObject[]>(objects);
   const revision = useRef(-1);
   const activeSelector = useRef(selector);
-  useFrame((state) => {
+  useSharedFrame((state) => {
     noteLevelPassFrame();
     state.camera.getWorldPosition(camera);
     const membership = members.current !== objects;

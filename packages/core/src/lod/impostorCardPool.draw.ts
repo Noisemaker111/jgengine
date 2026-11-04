@@ -2,6 +2,7 @@ import * as THREE from "three";
 
 import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
 import { submitInstanceCount } from "@jgengine/core/render/submittedDraws.draw";
+import { Lingering } from "@jgengine/core/run/lingering";
 
 /** One user's share of a pooled card draw: its far placements this frame. @internal */
 export interface ImpostorCardSlice {
@@ -78,16 +79,25 @@ export class ImpostorCardPool {
   }
 }
 
-const pools = new Map<string, { pool: ImpostorCardPool; users: number; parent: THREE.Object3D }>();
+interface SharedCardPool {
+  pool: ImpostorCardPool;
+  users: number;
+  parent: THREE.Object3D;
+}
+
+const pools = new Map<string, SharedCardPool>();
+const unusedPools = new Lingering<string, SharedCardPool>(({ pool }) => pool.dispose());
 
 /**
  * The shared card pool for `key`, created on first use and added under `parent`. Release it with
- * {@link releaseImpostorCardPool}; the last release removes and disposes it.
+ * {@link releaseImpostorCardPool}; the last release takes it out of the scene, and it is disposed a
+ * moment later unless taken again first under the same parent drawing the same `material`.
  * @internal
  */
 export function acquireImpostorCardPool(
   key: string,
   parent: THREE.Object3D,
+  material: THREE.Material,
   create: () => ImpostorCardPool,
 ): ImpostorCardPool {
   const found = pools.get(key);
@@ -95,10 +105,14 @@ export function acquireImpostorCardPool(
     found.users += 1;
     return found.pool;
   }
-  const pool = create();
-  parent.add(pool.mesh);
-  pools.set(key, { pool, users: 1, parent });
-  return pool;
+  const unused = unusedPools.take(key);
+  const reusable = unused !== undefined && unused.parent === parent && unused.pool.mesh.material === material;
+  if (unused !== undefined && !reusable) unused.pool.dispose();
+  const shared = unused !== undefined && reusable ? unused : { pool: create(), users: 0, parent };
+  shared.users = 1;
+  parent.add(shared.pool.mesh);
+  pools.set(key, shared);
+  return shared.pool;
 }
 
 /** Drops one user of the pool for `key`. @internal */
@@ -108,6 +122,6 @@ export function releaseImpostorCardPool(key: string, pool: ImpostorCardPool): vo
   found.users -= 1;
   if (found.users > 0) return;
   found.parent.remove(pool.mesh);
-  pool.dispose();
   pools.delete(key);
+  unusedPools.park(key, found);
 }

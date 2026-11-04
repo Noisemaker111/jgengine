@@ -6,6 +6,8 @@ import { groupInstancesByCell } from "@jgengine/core/instancing/instanceCells";
 export interface InstanceChunk {
   key: string;
   matrices: THREE.Matrix4[];
+  /** Where each of `matrices` sat in the list given to {@link partitionInstances}, so per-instance data (a tint) can follow it. */
+  sources: number[];
   /** Union of every instance's transformed geometry box. */
   bounds: THREE.Box3;
 }
@@ -35,19 +37,20 @@ export function partitionInstances(
   if (geometry.boundingBox === null) geometry.computeBoundingBox();
   const geometryBounds = geometry.boundingBox;
   if (geometryBounds === null || geometryBounds.isEmpty() || matrices.length === 0) return [];
-  const placed = matrices.map((matrix) => {
+  const placed = matrices.map((matrix, source) => {
     const final = options.localMatrix === undefined ? matrix : new THREE.Matrix4().multiplyMatrices(matrix, options.localMatrix);
     const bounds = geometryBounds.clone().applyMatrix4(final);
     const center = bounds.getCenter(new THREE.Vector3());
-    return { final, bounds, center: [center.x, center.z] as const };
+    return { source, final, bounds, center: [center.x, center.z] as const };
   });
   const aggregate = placed.reduce((box, entry) => box.union(entry.bounds), new THREE.Box3());
   if (aggregate.max.x - aggregate.min.x <= cellSize && aggregate.max.z - aggregate.min.z <= cellSize) {
-    return [{ key: "compact", matrices: placed.map((entry) => entry.final), bounds: aggregate }];
+    return [{ key: "compact", matrices: placed.map((entry) => entry.final), sources: placed.map((entry) => entry.source), bounds: aggregate }];
   }
   return groupInstancesByCell(placed, cellSize, (entry) => entry.center).map((cell) => ({
     key: cell.key,
     matrices: cell.items.map((entry) => entry.final),
+    sources: cell.items.map((entry) => entry.source),
     bounds: cell.items.reduce((box, entry) => box.union(entry.bounds), new THREE.Box3()),
   }));
 }

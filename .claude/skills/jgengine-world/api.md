@@ -4809,6 +4809,10 @@
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
 - `AuthoredSolids` (function): function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }): null — Writes the document's studio solids (city buildings and any kind with a `solids` hook) into `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
 
+## @jgengine/core/scene/DecalRenderer.draw
+
+- `DECAL_CELL` (const): const DECAL_CELL: 128 — Edge in metres of the world cell one merged decal draw covers, so an unseen cell still culls whole.
+
 ## @jgengine/core/scene/GeneratedAssetRenderer.draw
 
 - `GeneratedAssetProps` (interface): interface GeneratedAssetProps — Props for {@link GeneratedAsset}: the placed instance's `meta` (assetId + params + seed) and transform.

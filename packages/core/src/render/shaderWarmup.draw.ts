@@ -121,6 +121,31 @@ export function firstUnlinkedDrawable(renderer: Pick<ShaderWarmupRenderer, "prop
   return found;
 }
 
+/** The kind of object a program is built for: plain, skinned, instanced, batched. */
+type Variant = number;
+
+/** What three records on a material about the object its current program was built for. */
+interface MaterialKind {
+  skinning?: boolean;
+  instancing?: boolean;
+  batching?: boolean;
+}
+
+function variantOf(object: Object3D): Variant {
+  const kind = object as { isSkinnedMesh?: boolean; isInstancedMesh?: boolean; isBatchedMesh?: boolean };
+  return (kind.isSkinnedMesh === true ? 1 : 0) | (kind.isInstancedMesh === true ? 2 : 0) | (kind.isBatchedMesh === true ? 4 : 0);
+}
+
+function variantOfProgram(properties: MaterialKind): Variant {
+  return (properties.skinning === true ? 1 : 0) | (properties.instancing === true ? 2 : 0) | (properties.batching === true ? 4 : 0);
+}
+
+/** Whether a material is one a shadow pass draws with: a depth material, or a point light's distance one. */
+function isShadowMaterial(material: Material, only?: "distance"): boolean {
+  const kind = material as { isMeshDepthMaterial?: boolean; isMeshDistanceMaterial?: boolean };
+  return kind.isMeshDistanceMaterial === true || (only === undefined && kind.isMeshDepthMaterial === true);
+}
+
 /** Whether a drawable's programs are ready to draw, still building, or not started (`missing`). */
 function linkState(properties: { get(material: object): unknown }, object: Drawable): "linked" | "building" | "missing" {
   let state: "linked" | "building" | "missing" = "linked";
@@ -157,27 +182,95 @@ export function deferUnlinkedDraws(
   const previous = renderer.render;
   const firstSeen = new WeakMap<Object3D, number>();
   let undone = false;
-  // Per render of the scene: when it started, and what it met with no program yet.
+  // Per render of the scene: when it started, and each object and material it met with no program yet.
   let at = 0;
-  const missing = new Set<Drawable>();
+  let leftOut = false;
+  const missing = new Map<Material, Map<Drawable, Variant>>();
+  /** The object kinds each material has a ready program for, and links started but not yet ready. */
+  const linkedKinds = new WeakMap<Material, Set<Variant>>();
+  let linking: { material: Material; variant: Variant; program: unknown }[] = [];
+  /** The kinds of shadow pass the frames draw (directional or spot depth, point distance), read off their draws. */
+  const shadowKinds = new Set<"z" | "d">();
+  const shadowStandIns = new Map<string, Material>();
+  let shadowTarget: WebGLRenderTarget | undefined;
+  const link = (material: Material, variant: Variant, object: Drawable, camera: Camera): void => {
+    if (isShadowMaterial(material)) {
+      const target = renderer.getRenderTarget?.() ?? null;
+      shadowTarget ??= new WebGLRenderTarget(1, 1);
+      const lights: Object3D[] = [];
+      visitVisible(scene, (node) => {
+        if ((node as { isLight?: boolean }).isLight === true && node.layers.test(camera.layers)) lights.push(node);
+      });
+      try {
+        renderer.setRenderTarget?.(shadowTarget);
+        // Shadow draws have no fog or environment and always render into a map.
+        renderer.compile(standInGroup([standIn(object, material), ...lights]), camera, new Scene());
+      } finally {
+        renderer.setRenderTarget?.(target);
+      }
+    } else compileObjects(renderer, scene, camera, [object], () => material);
+    const program = (renderer.properties.get(material) as { currentProgram?: unknown } | undefined)?.currentProgram;
+    if (program != null) linking.push({ material, variant, program });
+  };
+  const markLinked = (material: Material, variant: Variant): void => {
+    const kinds = linkedKinds.get(material);
+    if (kinds === undefined) linkedKinds.set(material, new Set([variant]));
+    else kinds.add(variant);
+  };
+  /**
+   * Whether `material` has a ready program for drawing `object`. One material serves objects of
+   * several kinds (the shadow pass draws plain, skinned and instanced casters with the same depth
+   * material), each its own program, and three keeps only the last one used as current.
+   */
+  const drawState = (material: Material, object: Drawable): "linked" | "building" | "missing" => {
+    const properties = renderer.properties.get(material) as (MaterialKind & { currentProgram?: unknown }) | undefined;
+    const program = properties?.currentProgram;
+    if (program == null) return "missing";
+    if (!programReady(program)) return "building";
+    const variant = variantOf(object);
+    if (variantOfProgram(properties ?? {}) === variant) {
+      markLinked(material, variant);
+      return "linked";
+    }
+    return linkedKinds.get(material)?.has(variant) === true ? "linked" : "missing";
+  };
   /** Whether this draw is of something still linking; such a draw is left out of the frame. */
-  const leaveOut = (object: Object3D): boolean => {
+  const leaveOut = (object: Object3D, material: Material | null): boolean => {
     // A pass's own full-screen quad is drawn without being in the scene; only the scene's drawables are deferred.
-    if (object.parent === null || !isDrawable(object)) return false;
-    const state = linkState(renderer.properties, object);
+    if (object.parent === null || !isDrawable(object) || material == null || material.visible === false) return false;
+    // Checked against the material this draw uses, so a shadow or override pass's program counts too.
+    const state = drawState(material, object);
     if (state === "linked") return false;
-    if (state === "missing") missing.add(object);
+    if (state === "missing") {
+      const objects = missing.get(material) ?? new Map<Drawable, Variant>();
+      missing.set(material, objects);
+      objects.set(object, variantOf(object));
+    }
     const since = firstSeen.get(object) ?? at;
     firstSeen.set(object, since);
-    return at - since <= SHADER_WARMUP_DEFAULTS.stallMs;
+    const out = at - since <= SHADER_WARMUP_DEFAULTS.stallMs;
+    leftOut ||= out;
+    return out;
   };
   const deferring = function (this: unknown, drawn: never, camera: never): unknown {
     if (undone || (drawn as Object3D) !== scene || !active()) return previous.call(renderer, drawn, camera);
     at = now();
     missing.clear();
+    leftOut = false;
+    if (linking.length > 0) {
+      linking = linking.filter((entry) => {
+        if (!programReady(entry.program)) return true;
+        markLinked(entry.material, entry.variant);
+        return false;
+      });
+    }
     const draw = renderer.renderBufferDirect;
     const drawOwned = Object.prototype.hasOwnProperty.call(renderer, "renderBufferDirect");
-    const checked: DrawMethod = (...args) => (leaveOut(args[4]) ? undefined : draw.apply(renderer, args));
+    const checked: DrawMethod = (...args) => {
+      // three's shadow pass draws with no scene.
+      if (args[1] === null && isShadowMaterial(args[3])) shadowKinds.add(isShadowMaterial(args[3], "distance") ? "d" : "z");
+      return leaveOut(args[4], args[3]) ? undefined : draw.apply(renderer, args);
+    };
     renderer.renderBufferDirect = checked;
     try {
       return previous.call(renderer, drawn, camera);
@@ -187,14 +280,38 @@ export function deferUnlinkedDraws(
         else delete (renderer as { renderBufferDirect?: unknown }).renderBufferDirect;
       }
       // Linked after the draw, not before it: a link only queues work, and the next frame draws it once it is ready.
-      if (missing.size > 0 && (scene as Scene).overrideMaterial == null) compileObjects(renderer, scene, camera as Camera, [...missing]);
+      // One object per kind and material is enough; each is linked as the draw that met it would link it.
+      for (const [material, objects] of missing) {
+        const kinds = new Map<Variant, Drawable>();
+        for (const [object, variant] of objects) if (!kinds.has(variant)) kinds.set(variant, object);
+        for (const [variant, object] of kinds) {
+          link(material, variant, object, camera);
+          // A caster's shadow has its own program. Linked with its lit one, not seconds later when
+          // the caster first walks into the shadow's reach and its depth draw meets it unlinked.
+          if (object.castShadow !== true || renderer.shadowMap?.enabled !== true || isShadowMaterial(material)) continue;
+          for (const kind of shadowKinds) link(shadowMaterialFor(object, material, kind === "d", shadowStandIns), variant, object, camera);
+        }
+      }
       missing.clear();
+      // A caster left out of a shadow pass that only redraws on request would stay missing from its map.
+      if (leftOut && renderer.shadowMap !== undefined) renderer.shadowMap.needsUpdate = true;
     }
   } as RenderMethod;
+  if (renderer.shadowMap?.enabled === true) {
+    const target = renderer.getRenderTarget?.() ?? null;
+    shadowTarget = new WebGLRenderTarget(1, 1);
+    try {
+      renderer.setRenderTarget?.(shadowTarget);
+    } finally {
+      renderer.setRenderTarget?.(target);
+    }
+  }
   renderer.render = deferring;
   return () => {
     if (undone) return;
     undone = true;
+    shadowTarget?.dispose();
+    for (const material of shadowStandIns.values()) material.dispose();
     if (renderer.render !== deferring) return;
     if (owned) renderer.render = previous;
     else delete (renderer as { render?: unknown }).render;
@@ -819,30 +936,37 @@ type ShadowSource = Material & {
 const SHADOW_SIDE: Record<number, number> = { [FrontSide]: BackSide, [BackSide]: FrontSide, [DoubleSide]: DoubleSide };
 
 /**
+ * Copy onto `depth` what three's shadow pass copies from the caster's `material` before each draw:
+ * side, alpha test, maps and displacement, which all change the program.
+ */
+function castFrom(depth: MeshDepthMaterial | MeshDistanceMaterial, material: ShadowSource): void {
+  depth.side = (material.shadowSide ?? SHADOW_SIDE[material.side] ?? material.side) as Material["side"];
+  depth.alphaTest = material.alphaToCoverage === true ? 0.5 : material.alphaTest;
+  depth.map = (material.map ?? null) as Texture | null;
+  depth.alphaMap = (material.alphaMap ?? null) as Texture | null;
+  depth.displacementMap = (material.displacementMap ?? null) as Texture | null;
+  depth.displacementScale = material.displacementScale ?? 1;
+}
+
+/**
  * The depth material the shadow pass will draw `material` with, mirroring three's own choice: the
- * object's custom depth material, else its shared depth material carrying this material's maps,
- * alpha test, displacement and side, which all change the program. Stand-ins are cached by
- * exactly those, so one is linked per program.
+ * object's custom depth material, else its shared depth material, either one carrying this
+ * material's maps, alpha test, displacement and side as three copies them at the draw. A custom one
+ * linked before that copy would link a program the draw never uses. Stand-ins are cached by
+ * exactly what the copy changes, so one is linked per program.
  */
 function shadowMaterialFor(object: Object3D, material: ShadowSource, point: boolean, cache: Map<string, Material>): Material {
   const custom = (point ? (object as { customDistanceMaterial?: Material }).customDistanceMaterial : (object as { customDepthMaterial?: Material }).customDepthMaterial);
+  if (custom instanceof MeshDepthMaterial || custom instanceof MeshDistanceMaterial) castFrom(custom, material);
   if (custom !== undefined) return custom;
   const alphaTest = material.alphaToCoverage === true ? 0.5 : material.alphaTest;
   const side = material.shadowSide ?? SHADOW_SIDE[material.side] ?? material.side;
   const channel = (texture: unknown): string => (texture == null ? "-" : String((texture as { channel?: number }).channel ?? 0));
-  const displaced = material.displacementMap != null && material.displacementScale !== 0;
-  const key = [point ? "d" : "z", channel(material.map), channel(material.alphaMap), alphaTest > 0 ? "a" : "", displaced ? channel(material.displacementMap) : "-", side].join("|");
+  const key = [point ? "d" : "z", channel(material.map), channel(material.alphaMap), alphaTest > 0 ? "a" : "", channel(material.displacementMap), side].join("|");
   let made = cache.get(key);
   if (made === undefined) {
     const depth = point ? new MeshDistanceMaterial() : new MeshDepthMaterial();
-    depth.side = side as Material["side"];
-    depth.alphaTest = alphaTest;
-    depth.map = (material.map ?? null) as Texture | null;
-    depth.alphaMap = (material.alphaMap ?? null) as Texture | null;
-    if (displaced) {
-      depth.displacementMap = material.displacementMap as Texture;
-      depth.displacementScale = material.displacementScale ?? 1;
-    }
+    castFrom(depth, material);
     made = depth;
     cache.set(key, made);
   }
@@ -874,6 +998,30 @@ function runPreparers(scene: Object3D): void {
       /* a preparer that throws leaves its materials to their first draw */
     }
   }
+}
+
+const warmupSpawns = new WeakMap<Object3D, Set<() => Iterable<Object3D>>>();
+
+/**
+ * Register drawables that are not in the scene yet but will be, such as one of each kind of effect
+ * a pool mounts on demand. The covered warmup links their programs against the scene's lights, so
+ * the first one to appear mid-game finds its program linked instead of linking it in play.
+ * `spawnables` is read each round. Returns the unregister. @internal
+ */
+export function warmupSpawnables(scene: Object3D, spawnables: () => Iterable<Object3D>): () => void {
+  let sources = warmupSpawns.get(scene);
+  if (sources === undefined) {
+    sources = new Set();
+    warmupSpawns.set(scene, sources);
+  }
+  sources.add(spawnables);
+  return () => sources.delete(spawnables);
+}
+
+function spawnablesOf(scene: Object3D): Object3D[] {
+  const found: Object3D[] = [];
+  for (const spawnables of warmupSpawns.get(scene) ?? []) for (const object of spawnables()) if (object.parent === null) found.push(object);
+  return found;
 }
 
 const warmupHolds = new WeakMap<Object3D, Set<Promise<unknown>>>();
@@ -1496,7 +1644,9 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     // pass reaches. The rest is compiled under the cover too, after it: a menu camera that drifts
     // or orbits turns to it while the menu is up, and linking it then stalls the menu.
     const firstFrame = [...sceneJobs(objects, context), ...shadowJobs([...objects, ...casters], context), ...heldJobs(objects)];
-    const later = [...sceneJobs([...casters, ...rest], context), ...shadowJobs(rest, context)];
+    // Content that will mount in play is linked with the rest; it is not in the graph to draw.
+    const spawned = spawnablesOf(options.scene);
+    const later = [...sceneJobs([...casters, ...rest, ...spawned], context), ...shadowJobs([...rest, ...spawned], context)];
     const jobs = [...firstFrame, ...later];
     markTimeline("jg:warmup:round", { firstFrame: firstFrame.length, later: later.length, programs: before });
     // A round with nothing new still compiles once, so a renderer that refuses fails the warmup.
@@ -1524,6 +1674,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     options.scene.traverse((object) => {
       if (isDrawable(object)) drawables.push(object);
     });
+    drawables.push(...spawnablesOf(options.scene));
     runPreparers(options.scene);
     const context = readContext();
     await runJobs([...sceneJobs(drawables, context), ...shadowJobs(drawables, context)], () => cancelled);

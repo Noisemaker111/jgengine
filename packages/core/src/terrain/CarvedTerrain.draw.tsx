@@ -2,6 +2,7 @@ import { type ThreeElements, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
+import { nextFrame } from "@jgengine/core/run/nextFrame.draw";
 import { runSliced, type SlicedRun } from "@jgengine/core/run/slicedWork";
 
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
@@ -139,7 +140,7 @@ function ChunkedGround({
     sinceCheck.current = 0;
     const job = chunks.nextRefinement(state.camera.getWorldPosition(eyeScratch));
     if (job === null) return;
-    const run = runSliced(job, { budgetMs: 3 });
+    const run = runSliced(job, { budgetMs: 1, yieldThread: nextFrame });
     refining.current = run;
     run.done.then(
       () => {

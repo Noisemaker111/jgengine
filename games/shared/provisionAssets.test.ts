@@ -15,6 +15,17 @@ const catalogs = {
 mkdirSync(join(import.meta.dir, "../../.scratch"), { recursive: true });
 
 describe("dev provisions what a game references", () => {
+  test("pulls named pack imports, including aliases, without a quoted source id", () => {
+    const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));
+    try {
+      const text = `import { kaykitCity as buildings, ambientRock } from "@jgengine/assets/generated/packs";`;
+      expect(missingPulls(text, publicDir, catalogs).map((job) => job.target)).toEqual(["kaykit-city", "ambient-rock"]);
+      expect(missingPulls(`import { kaykitCity } from "somewhere-else";`, publicDir, catalogs)).toEqual([]);
+    } finally {
+      rmSync(publicDir, { recursive: true, force: true });
+    }
+  });
+
   test("pulls quoted shared-library keys once per served folder", () => {
     const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));
     try {

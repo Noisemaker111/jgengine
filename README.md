@@ -146,7 +146,7 @@ bun run games:provision    # link the asset packs the games reference from the s
 bun dev              # jgengine.com locally, games playable at /games/<id>
 bun run perf <game>  # 1080p walk: frame p50/p95/p99, CPU per system, GPU per pass, top objects and hitches with their cause, as a text summary and .scratch/perf/<game>.json (--compare before.json diffs, --json prints the record) (--help; --state pins the scene, --param k=v pins a spawn/seed, --set key=value prices a setting)
 bun run perf live <game> # the same JSON for a game already open in a browser, ~0.3 s, fails on a GL allocation after warmup (its frame time is printed: an in-page clock is vsynced)
-bun run perf gate    # frame check, run by hand: plays every game under games/ with a web entry, one at a time, and fails a p95 frame over 16.7 ms on the RTX 3070 at 1600x900 (printed, not judged, on any other GPU), or any program/framebuffer created after warmup; draws are printed, not gated; games over budget today are in scripts/perf-known-failing.json, which only shrinks (--help)
+bun run perf gate    # frame check, run by hand: plays every game under games/ with a web entry, one at a time, and fails a p95 frame over 16.7 ms on the RTX 3070 at 1600x900 (printed, not judged, on any other GPU), or any program/framebuffer created after warmup; draws are printed, not gated (--help)
 bun run perf timing    # CPU timing check, run by hand: re-runs the benchmarks that carry wall-clock budgets (nav crowd, perception, utility, visibility, off-screen, flock, paths) and fails when one exceeds it
 # one game standalone:
 bun --cwd=games/harbor-heat run dev

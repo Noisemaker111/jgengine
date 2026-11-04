@@ -165,6 +165,9 @@ export function checkBudget(record: BudgetRecord, budget: PerfBudget): BudgetVio
   if (record.render.draws === null || record.render.draws === 0) {
     return [unavailable(game, "frame", "0 draw calls means the game never reached play")];
   }
+  if (record.render.drawsFrame === 0 && (record.render.drawsFrames ?? 0) > 0) {
+    return [unavailable(game, "frame", "the measured frames did not keep drawing; a stale renderer snapshot cannot prove play")];
+  }
   const found: BudgetViolation[] = [];
   if (record.frame.samples === 0) found.push(unavailable(game, "p95 frame", "the window measured no frames"));
   else if (unjudgedFrameTime(record) === null && record.frame.p95Ms > FRAME_BUDGET_MS) {

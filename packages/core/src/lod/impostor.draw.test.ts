@@ -2,7 +2,50 @@ import { expect, test } from "bun:test";
 
 import * as THREE from "three";
 
-import { hemiOctDecode, hemiOctEncode, impostorDistance, impostorSettingsForQuality, impostorSwitch, impostorUp } from "./impostor.draw";
+import { acquireImpostor, hemiOctDecode, hemiOctEncode, impostorDistance, impostorSettingsForQuality, impostorSwitch, impostorUp, releaseImpostor } from "./impostor.draw";
+
+/** A renderer that only counts the bake's draws: enough to see whether a bake happened. */
+function countingRenderer(): { renderer: THREE.WebGLRenderer; draws: () => number } {
+  let draws = 0;
+  const known: Record<string, unknown> = {
+    shadowMap: { autoUpdate: true },
+    autoClear: true,
+    getClearColor: (color: THREE.Color) => color,
+    getClearAlpha: () => 1,
+    getRenderTarget: () => null,
+    render: () => {
+      draws += 1;
+    },
+  };
+  const renderer = new Proxy(known, { get: (target, name) => (typeof name === "string" && name in target ? target[name] : () => undefined) });
+  return { renderer: renderer as unknown as THREE.WebGLRenderer, draws: () => draws };
+}
+
+test("an impostor whose batches all leave is kept for the next one, and freed once its model is disposed", () => {
+  const { renderer, draws } = countingRenderer();
+  const geometry = new THREE.BoxGeometry(1, 2, 1);
+  const sources = [{ geometry, material: new THREE.MeshStandardMaterial(), localMatrix: new THREE.Matrix4() }];
+  const settings = { frames: 2, cell: 8 };
+  const first = acquireImpostor("kept-tree", renderer, sources, settings);
+  const baked = draws();
+  expect(baked).toBeGreaterThan(0);
+  releaseImpostor("kept-tree", settings);
+  // A grove burnt down and regrown long after: the same bake, no draws, links or render targets.
+  expect(acquireImpostor("kept-tree", renderer, sources, settings)).toBe(first);
+  expect(draws()).toBe(baked);
+
+  let freed = false;
+  first.materials?.material.addEventListener("dispose", () => {
+    freed = true;
+  });
+  geometry.dispose();
+  expect(freed, "a model disposed while a batch still draws its impostor keeps it until that batch goes").toBe(false);
+  releaseImpostor("kept-tree", settings);
+  expect(freed).toBe(true);
+  expect(acquireImpostor("kept-tree", renderer, sources, settings)).not.toBe(first);
+  expect(draws()).toBeGreaterThan(baked);
+  releaseImpostor("kept-tree", settings);
+});
 
 test("hemi-octahedral directions round-trip for every view above the horizon", () => {
   const out = new THREE.Vector3();

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { assetStoreRoot, dirHasEntries, provisionJobs, type ProvisionResult, type PullJob } from "../../packages/assets/src/assetStore";
 import { compressedVariant, textureVariantDir } from "./textureVariants";
+import { importedPackNames, packExportName } from "../../packages/assets/src/manifest";
 
 const assetsDir = fileURLToPath(new URL("../../packages/assets", import.meta.url));
 const provisionScript = fileURLToPath(new URL("../scripts/provision-assets.ts", import.meta.url));
@@ -50,11 +51,12 @@ function sourceText(dir: string): string {
  */
 export function missingPulls(text: string, publicDir: string, catalogs: AssetCatalogs): PullJob[] {
   const quoted = (id: string): boolean => text.includes(`"${id}"`) || text.includes(`'${id}'`);
+  const imported = importedPackNames(text);
   const aliased = new Set((catalogs.aliases ?? []).filter((alias) => quoted(alias.key)).map((alias) => alias.target.split("/")[0]!));
   const jobs: PullJob[] = [];
   const named = new Set((catalogs.materials ?? []).filter((entry) => entry.source !== undefined && quoted(entry.name)).map((entry) => entry.source));
   for (const source of catalogs.sources) {
-    if (!quoted(source.id) && !aliased.has(source.id) && !named.has(source.id)) continue;
+    if (!quoted(source.id) && !imported.has(packExportName(source.id)) && !aliased.has(source.id) && !named.has(source.id)) continue;
     const subdir = source.kind === "material" ? "materials" : source.kind === "sprite" ? "sprites" : "models";
     const dir = join(subdir, source.id);
     if (!dirHasEntries(join(publicDir, dir))) jobs.push({ target: source.id, dir });

@@ -73,6 +73,11 @@ export interface ObjectStore {
   list(filter?: ObjectListFilter): readonly SceneObject[];
   /** Stable-identity list of all placed object ids; identity changes only on place/remove, not on move/rotate/setVisual. Pair with {@link subscribeMembership} for membership-only React subscriptions (#625). */
   ids(): readonly string[];
+  /**
+   * Counts placements (`place` and `hydrate`). A membership change that leaves it alone only removed
+   * objects, so a view that already hides removed objects need not rebuild for it.
+   */
+  placements(): number;
   at(x: number, y: number, z: number, tolerance?: number): SceneObject[];
   inBox(min: EntityPosition, max: EntityPosition): readonly SceneObject[];
   /** Bumps whenever membership, a position or a rotation changes — cheap cache key for consumers. */
@@ -151,6 +156,7 @@ export function createObjectStore(): ObjectStore {
   const coarseIndex = new Map<number, Set<string>>();
   let nextCounter = 1;
   let revision = 0;
+  let placements = 0;
   const retained = new Set<() => readonly SceneObject[]>();
 
   function generateId(): string {
@@ -232,6 +238,7 @@ export function createObjectStore(): ObjectStore {
       });
       indexAdd(instanceId, position);
       revision += 1;
+      placements += 1;
       return instanceId;
     },
     remove(instanceId) {
@@ -302,6 +309,9 @@ export function createObjectStore(): ObjectStore {
     },
     ids() {
       return store.keysSnapshot();
+    },
+    placements() {
+      return placements;
     },
     at(x, y, z, tolerance = 0) {
       const minCx = cellIndexOf(x - tolerance);
@@ -436,6 +446,7 @@ export function createObjectStore(): ObjectStore {
         indexAdd(object.instanceId, object.position);
       }
       revision += 1;
+      placements += 1;
     },
   };
 }

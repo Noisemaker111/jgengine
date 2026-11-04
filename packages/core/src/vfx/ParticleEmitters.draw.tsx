@@ -1,9 +1,10 @@
 // @skill jgengine-world
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import type { Group } from "three";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
+import { warmupSpawnables } from "@jgengine/core/render/shaderWarmup.draw";
 import { DEFAULT_GRAPHICS_PROFILES } from "@jgengine/core/settings/graphicsProfile";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import { createParticleSystem, type ParticleEvent, type ParticleSystem } from "@jgengine/core/vfx/particles";
@@ -11,7 +12,7 @@ import { planParticleBudget } from "@jgengine/core/vfx/particleBudget";
 import type { ParticleCollisionEffect, ParticleEmitterSpec, ParticleRenderHint } from "@jgengine/core/vfx/particleDirector";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { ParticleField, type ParticleFieldMetrics } from "./ParticleField.draw";
+import { fieldPrograms, ParticleField, type ParticleFieldMetrics } from "./ParticleField.draw";
 import type { Vec3 } from "@jgengine/core/world/geometry";
 
 interface ParticlePose { position: Vec3; yaw: number; found: boolean }
@@ -74,6 +75,17 @@ export function ParticleEmitters({ quality, particleCap, particleBudget, diagnos
   const timing = useRef({ poolsCreated: 0, poolsRetired: 0, updateSamples: 0, lastUpdateMs: 0, totalUpdateMs: 0, maxUpdateMs: 0, droppedCatchupSeconds: 0 });
   const resources = useRef<ParticleFieldMetrics>({ fieldsMounted: 0, fieldsUnmounted: 0, liveFields: 0, attributeBytes: 0, totalUploadMs: 0, maxUploadMs: 0, uploadSamples: 0 });
   const [, setGeneration] = useState(0);
+  const scene = useThree((state) => state.scene);
+
+  // A burst mounts its field on the frame it fires; its program is linked under the loading cover instead.
+  useEffect(() => {
+    const programs = fieldPrograms();
+    const unregister = warmupSpawnables(scene, () => programs.objects);
+    return () => {
+      unregister();
+      programs.dispose();
+    };
+  }, [scene]);
 
   function pose(spec: ParticleEmitterSpec): ParticlePose {
     const offset = spec.offset ?? [0, 0, 0];

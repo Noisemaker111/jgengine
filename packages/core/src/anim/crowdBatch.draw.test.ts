@@ -140,6 +140,17 @@ describe("a character batch", () => {
     expect(crowd.ids).toEqual([]);
   });
 
+  test("sends the GPU only the slots it drew, and nothing for an empty batch", () => {
+    const crowd = batch(64);
+    crowd.write([{ id: "a", member: member(1) }, { id: "b", member: member(2) }]);
+    expect(crowd.mesh.instanceMatrix.updateRanges).toEqual([{ start: 0, count: 2 * 16 }]);
+    expect(crowd.play.updateRanges).toEqual([{ start: 0, count: 2 * 3 }]);
+    const sent = crowd.mesh.instanceMatrix.version;
+    crowd.write([]);
+    crowd.write([]);
+    expect(crowd.mesh.instanceMatrix.version).toBe(sent);
+  });
+
   test("never draws past its capacity even when the registry hands it more", () => {
     const crowd = batch(2);
     expect(crowd.write([{ id: "a", member: member(1) }, { id: "b", member: member(2) }, { id: "c", member: member(3) }])).toBe(2);

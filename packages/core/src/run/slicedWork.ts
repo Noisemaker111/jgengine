@@ -10,7 +10,11 @@ export interface SlicedWorkOptions {
   /** Work per slice before the thread is handed back. Default 8 ms, half a 60 Hz frame. */
   budgetMs?: number;
   now?: () => number;
-  /** Hands the thread back; resolves when the next slice may run. Default: a zero-delay timer. */
+  /**
+   * Hands the thread back; resolves when the next slice may run. Default: a zero-delay timer, for
+   * builds the player waits on. Work during play supplies a yield tied to the frame loop, so it
+   * takes at most one slice a frame: several timer slices can land between two frames and stall one.
+   */
   yieldThread?: () => Promise<void>;
 }
 

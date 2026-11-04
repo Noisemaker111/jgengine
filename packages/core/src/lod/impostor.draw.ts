@@ -355,11 +355,21 @@ export interface ImpostorEntry {
   users: number;
 }
 
-const cache = new Map<string, ImpostorEntry>();
+const cache = new Map<string, ImpostorEntry & { modelGone: boolean }>();
+
+function freeImpostor(id: string, entry: ImpostorEntry): void {
+  if (cache.get(id) === entry) cache.delete(id);
+  entry.atlas?.dispose();
+  entry.materials?.material.dispose();
+  entry.materials?.depth.dispose();
+}
 
 /**
- * The shared impostor for a model: baked once per model and quality, released when its last user
- * goes. Returns null when the model has nothing to bake.
+ * The shared impostor for a model: baked once per model and quality, and kept for as long as the
+ * model's own geometry is, so batches that come and go as a game plays (a grove burnt down and
+ * regrown, a district streamed out and back) take the same bake instead of baking again mid-play.
+ * It is freed once the model's geometry is disposed and its last user has gone. Returns null when
+ * the model has nothing to bake.
  * @internal
  */
 export function acquireImpostor(
@@ -372,24 +382,28 @@ export function acquireImpostor(
   let entry = cache.get(id);
   if (entry === undefined) {
     const atlas = bakeImpostor(renderer, sources, settings);
-    entry = { atlas, materials: atlas === null ? null : createImpostorMaterials(atlas), users: 0 };
-    cache.set(id, entry);
+    const made = { atlas, materials: atlas === null ? null : createImpostorMaterials(atlas), users: 0, modelGone: false };
+    entry = made;
+    cache.set(id, made);
+    const model = sources[0]?.geometry;
+    const gone = () => {
+      model?.removeEventListener("dispose", gone);
+      made.modelGone = true;
+      if (made.users === 0) freeImpostor(id, made);
+    };
+    model?.addEventListener("dispose", gone);
   }
   entry.users += 1;
   return entry;
 }
 
-/** Drop one user of a shared impostor; the last one disposes it. @internal */
+/** Drop one user of a shared impostor; the bake stays for the next user unless its model is gone. @internal */
 export function releaseImpostor(key: string, settings: ImpostorSettings): void {
   const id = `${key}|${settings.frames}x${settings.cell}`;
   const entry = cache.get(id);
   if (entry === undefined) return;
-  entry.users -= 1;
-  if (entry.users > 0) return;
-  cache.delete(id);
-  entry.atlas?.dispose();
-  entry.materials?.material.dispose();
-  entry.materials?.depth.dispose();
+  entry.users = Math.max(0, entry.users - 1);
+  if (entry.users === 0 && entry.modelGone) freeImpostor(id, entry);
 }
 
 /** The unit card every instance of `atlas` draws, bounded by the model it stands in for so culling stays honest. @internal */

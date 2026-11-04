@@ -1,7 +1,7 @@
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
 import { modelWithAuthoredNodeVisibility } from "@jgengine/core/editor/modelNodeVisibility";
 import { useFrame, useThree } from "@react-three/fiber";
-import { memo, useCallback, useEffect, useMemo, useRef, type ComponentType, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import * as THREE from "three";
 
 import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
@@ -13,7 +13,7 @@ import { groupStaticObjects, type StaticObjectBatch } from "@jgengine/core/insta
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
-import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
+import { objectVisualScale, type ObjectStore, type SceneObject } from "@jgengine/core/scene/objectStore";
 import { WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/loot/groundItem";
 import type { EntitySpriteConfig, ModelConfig, ObjectStyle } from "@jgengine/core/game/playableGame";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
@@ -23,7 +23,7 @@ import {
   reportFallbackSeam,
 } from "@jgengine/core/devtools/fallbackSeams";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
+import { useSceneEntityIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 
 import { DefaultSurface, detailMaps } from "@jgengine/core/material/defaultSurface.draw";
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
@@ -218,7 +218,7 @@ export function drawsScaledModel(object: Pick<SceneObject, "visual">): boolean {
   return object.visual?.scale !== undefined;
 }
 
-function ObjectMarker({
+const ObjectMarker = memo(function ObjectMarker({
   object,
   custom,
   model,
@@ -242,7 +242,11 @@ function ObjectMarker({
     const group = groupRef.current;
     if (group === null) return;
     const live = ctx.scene.object.get(instanceId);
-    if (live === null) return;
+    // Removed: the object list does not re-render for a removal, so the marker hides itself.
+    if (live === null) {
+      group.visible = false;
+      return;
+    }
     writePoseIfChanged(group, live, memoRef.current);
     group.visible = visibleRef.current(instanceId);
     setCulled(group, !group.visible);
@@ -270,7 +274,7 @@ function ObjectMarker({
       )}
     </group>
   );
-}
+});
 
 function GroundPlane() {
   const geometry = useMemo(() => {
@@ -452,6 +456,25 @@ function WorldEntities({
 }
 
 /** The scene's placed objects: one draw per batch of alike static props, and a marker for the rest. */
+/**
+ * The placed object ids as of the last placement. Removals alone keep the same list: a batch keeps a
+ * removed member, which draws nothing, and a lone prop's marker hides itself once its object is gone,
+ * so clearing props away re-renders nothing. The list may name removed objects until the next placement.
+ * @internal
+ */
+export function placedObjectIds(store: Pick<ObjectStore, "ids" | "placements">): () => readonly string[] {
+  let seen = -1;
+  let ids: readonly string[] = [];
+  return () => {
+    const placements = store.placements();
+    if (placements !== seen) {
+      seen = placements;
+      ids = store.ids();
+    }
+    return ids;
+  };
+}
+
 function WorldObjects({
   objectModels,
   objectStyles,
@@ -467,31 +490,40 @@ function WorldObjects({
 }) {
   const ctx = useGameContext();
   const scene = useThree((state) => state.scene);
-  const objectIds = useSceneObjectIds();
+  const readIds = useMemo(() => placedObjectIds(ctx.scene.object), [ctx]);
+  const objectIds = useSyncExternalStore(ctx.scene.object.subscribeMembership, readIds, readIds);
   const document = useLiveEditorDocument(editorLayers ?? EMPTY_DOCUMENT, editorLayers !== undefined);
   const materialMarkers = useMemo(() => new Map(document.markers.map((marker) => [marker.id, marker])), [document]);
   const authoredIds = useMemo(() => new Set(resolveAuthoredObjects(document).map((object) => object.instanceId)), [document]);
   const batchCache = useRef(new Map<string, StaticObjectBatch>());
   const modelCache = useMemo(() => new Map<string, ObjectModelCacheEntry>(), [objectModels, assets]);
-  beginFallbackSeam("object");
   useEffect(() => {
     endFallbackPass();
   });
-  const candidates = objectIds.flatMap((instanceId) => {
-    const object = ctx.scene.object.get(instanceId);
-    if (object === null) return [];
-    const custom = renderObject?.(object);
-    const model = modelWithAuthoredNodeVisibility(modelWithAuthoredMaterials(resolveObjectModel(object, objectModels, assets, modelCache), { materialAssets: document.materialAssets, markers: materialMarkers.has(object.instanceId) ? [materialMarkers.get(object.instanceId)!] : [] }, object.instanceId), materialMarkers.get(object.instanceId));
-    const style = objectStyles?.[object.catalogId];
-    // Reaching the primitive box means no model resolved. A present-but-unresolved objectModels
-    // key implies its asset pack is not pulled; an absent key is an omitted (often intended) mapping.
-    if ((custom === undefined || custom === null) && model === undefined && style?.hidden !== true) {
-      reportFallbackSeam("object", objectModels?.[object.catalogId] === undefined ? "omittedMapping" : "unpulledPack");
-    }
-    return [{ object, model, custom, style, authored: authoredIds.has(instanceId), catalog: ctx.scene.object.catalog(instanceId) }];
-  });
-  const grouped = groupStaticObjects(candidates.map((candidate) => ({ ...candidate, custom: candidate.custom !== undefined && candidate.custom !== null })), batchCache.current);
-  batchCache.current = new Map(grouped.batches.map((batch) => [batch.key, batch]));
+  // Regrouped only when a placement or an input changed what the grouping was built from.
+  const grouping = useRef<{ inputs: readonly unknown[]; grouped: ReturnType<typeof groupStaticObjects> } | null>(null);
+  const inputs = [objectIds, ctx, objectModels, assets, modelCache, document, materialMarkers, authoredIds, renderObject, objectStyles];
+  let grouped = grouping.current !== null && grouping.current.inputs.every((value, index) => value === inputs[index]) ? grouping.current.grouped : null;
+  if (grouped === null) {
+    beginFallbackSeam("object");
+    const candidates = objectIds.flatMap((instanceId) => {
+      const object = ctx.scene.object.get(instanceId);
+      if (object === null) return [];
+      const custom = renderObject?.(object);
+      const marker = materialMarkers.get(object.instanceId);
+      const model = modelWithAuthoredNodeVisibility(modelWithAuthoredMaterials(resolveObjectModel(object, objectModels, assets, modelCache), { materialAssets: document.materialAssets, markers: marker === undefined ? [] : [marker] }, object.instanceId), marker);
+      const style = objectStyles?.[object.catalogId];
+      // Reaching the primitive box means no model resolved. A present-but-unresolved objectModels
+      // key implies its asset pack is not pulled; an absent key is an omitted (often intended) mapping.
+      if ((custom === undefined || custom === null) && model === undefined && style?.hidden !== true) {
+        reportFallbackSeam("object", objectModels?.[object.catalogId] === undefined ? "omittedMapping" : "unpulledPack");
+      }
+      return [{ object, model, custom: custom !== undefined && custom !== null, style, authored: authoredIds.has(instanceId), catalog: ctx.scene.object.catalog(instanceId) }];
+    });
+    grouped = groupStaticObjects(candidates, batchCache.current);
+    batchCache.current = new Map(grouped.batches.map((batch) => [batch.key, batch]));
+  }
+  grouping.current = { inputs, grouped };
   useStaticObjectBatchProbe(scene, {
     batches: grouped.batches.length,
     instances: grouped.batches.reduce((total, batch) => total + batch.objects.length, 0),

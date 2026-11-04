@@ -9,6 +9,7 @@ import {
   aggregateSelfTime,
   cappedClockProblem,
   droppedOverrides,
+  DRAW_FRAME_COUNTER_SCRIPT,
   measureGame,
   measureSceneNodes,
   parseDeclaredSettings,
@@ -24,6 +25,32 @@ import {
   summarizeFrameDraws,
   undeclaredSettingErrors,
 } from "./perf-play";
+
+test("whole-frame draws include extension calls once, even when the extension or inherited methods are reused", () => {
+  const ticks: (() => void)[] = [];
+  let calls = 0;
+  const extension = { multiDrawElementsWEBGL() { calls += 1; return this; } };
+  class Gl {
+    drawElements() { calls += 1; return this; }
+    getExtension() { return extension; }
+  }
+  class Gl2 extends Gl {}
+  const scope: {
+    WebGLRenderingContext: typeof Gl;
+    WebGL2RenderingContext: typeof Gl2;
+    __jgPerfDraws?: { start(): void; stop(): number[] };
+  } = { WebGLRenderingContext: Gl, WebGL2RenderingContext: Gl2 };
+  new Function("globalThis", "requestAnimationFrame", DRAW_FRAME_COUNTER_SCRIPT)(scope, (tick: () => void) => ticks.push(tick));
+  const gl = new Gl2();
+  const ext = gl.getExtension();
+  gl.getExtension();
+  scope.__jgPerfDraws?.start();
+  expect(gl.drawElements()).toBe(gl);
+  expect(ext.multiDrawElementsWEBGL()).toBe(ext);
+  ticks.shift()?.();
+  expect(scope.__jgPerfDraws?.stop()).toEqual([2]);
+  expect(calls).toBe(2);
+});
 
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({

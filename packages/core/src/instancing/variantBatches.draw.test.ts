@@ -5,7 +5,7 @@ import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, gatherStaticMembers, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
-import { LevelAssignment, LevelSingles, VariantStaticObjects } from "./StaticObjectModels.draw";
+import { LevelAssignment, LevelSingles, placementStale, VariantStaticObjects } from "./StaticObjectModels.draw";
 
 const FULL_TRIANGLES = 9134;
 const FAR_TRIANGLES = 4110;
@@ -145,4 +145,21 @@ test("a level assignment's revision moves only when a placement changes level", 
   assignment.clear();
   expect(assignment.revision).not.toBe(moved);
   expect(assignment.get("a")).toBeUndefined();
+});
+
+test("a pooled source places again only when one of its own objects moved or left", () => {
+  const store = createObjectStore();
+  store.place("crate", 0, 0, 0, { instanceId: "mine" });
+  store.place("crate", 9, 0, 0, { instanceId: "other" });
+  const objects = [store.get("mine")].filter((object) => object !== null);
+  const slot = {};
+  const last = { slot, objects, records: objects.map((object) => store.get(object.instanceId)) };
+  expect(placementStale(null, slot, objects, store.get)).toBe(true);
+  expect(placementStale(last, slot, objects, store.get)).toBe(false);
+  store.move("other", 9, 0, 5);
+  store.remove("other");
+  expect(placementStale(last, slot, objects, store.get)).toBe(false);
+  store.move("mine", 2, 0, 0);
+  expect(placementStale(last, slot, objects, store.get)).toBe(true);
+  expect(placementStale(last, {}, objects, store.get)).toBe(true);
 });

@@ -114,3 +114,37 @@ describe("cullSmallShadowCasters", () => {
   });
 });
 
+
+describe("giveStableShadowDepth", () => {
+  test("a kept caster draws its shadow through one depth material per caster material and mesh kind", () => {
+    const scene = new THREE.Scene();
+    const textured = new THREE.MeshStandardMaterial({ map: new THREE.Texture() });
+    const plain = new THREE.MeshStandardMaterial();
+    const a = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), textured);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), textured);
+    const c = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), plain);
+    const batch = new THREE.InstancedMesh(new THREE.BoxGeometry(4, 4, 4), textured, 2);
+    for (const mesh of [a, b, c, batch]) mesh.castShadow = true;
+    scene.add(a, b, c, batch);
+    scene.updateMatrixWorld(true);
+    cullSmallShadowCasters(scene);
+
+    expect(a.customDepthMaterial).toBeInstanceOf(THREE.MeshDepthMaterial);
+    expect(b.customDepthMaterial).toBe(a.customDepthMaterial);
+    expect(c.customDepthMaterial).not.toBe(a.customDepthMaterial);
+    expect(batch.customDepthMaterial).not.toBe(a.customDepthMaterial);
+  });
+
+  test("keeps a depth material the game set, and gives none to a culled caster", () => {
+    const own = new THREE.MeshDepthMaterial();
+    const authored = box(6);
+    authored.customDepthMaterial = own;
+    const small = box(0.3);
+    const scene = new THREE.Scene();
+    scene.add(authored, small);
+    scene.updateMatrixWorld(true);
+    cullSmallShadowCasters(scene);
+    expect(authored.customDepthMaterial).toBe(own);
+    expect(small.customDepthMaterial).toBeUndefined();
+  });
+});

@@ -56,6 +56,13 @@ const copyShader = {
   `,
 };
 
+/**
+ * Frames a finished readback waits for the GPU to catch up before it is read anyway: about a second
+ * at 60 fps, so a game that keeps the GPU a frame behind still adapts, at one wait per sample.
+ * @internal
+ */
+export const DRAIN_WAIT_FRAMES = 60;
+
 /** Linear luminance encoded in one byte by {@link ExposureMeterPass}. @internal */
 export function decodeMeterByte(value: number, target: Float32Array, targetIndex: number): void {
   target[targetIndex] = Math.pow(2, (value / 255) * LOG_RANGE + LOG_MIN);
@@ -85,6 +92,10 @@ export class ExposureMeterPass extends Pass {
   private gl: WebGL2RenderingContext | null = null;
   private pbo: WebGLBuffer | null = null;
   private fence: WebGLSync | null = null;
+  /** Fenced after the last frame's drawing while a readback waits; see {@link frameEnd}. */
+  private drain: WebGLSync | null = null;
+  /** Frames a finished readback has waited for the GPU to catch up. */
+  private waited = 0;
 
   constructor(
     private readonly onSample: (samples: Float32Array, seconds: number) => void,
@@ -164,29 +175,53 @@ export class ExposureMeterPass extends Pass {
     gl.readPixels(0, 0, METER_SIZE, METER_SIZE, gl.RGBA, gl.UNSIGNED_BYTE, 0);
     gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
     this.fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+    this.waited = 0;
   }
 
   /**
-   * Takes a finished readback, if one is ready. Call it before the frame draws anything: reading a
-   * buffer back makes the browser's GPU process run every command queued ahead of it, so a read made
-   * after the scene waits for the whole scene, while one made first waits for nothing.
+   * Mark the end of the frame's drawing while a readback waits, so the next {@link collect} can tell
+   * whether the GPU has caught up with it. Call it after the frame's last draw.
+   */
+  frameEnd(): void {
+    const gl = this.gl;
+    if (gl === null || this.fence === null) return;
+    // Only the newest frame counts: the GPU finishing an older one says nothing of the frames after it.
+    if (this.drain !== null) gl.deleteSync(this.drain);
+    this.drain = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+  }
+
+  /**
+   * Takes a finished readback, if one is ready. Call it before the frame draws anything. Reading a
+   * buffer back makes the browser's GPU process first run every command queued ahead of the read,
+   * whatever the readback's own fence says: a read while the GPU is a frame behind waited for that
+   * whole frame, 15-130 ms when the browser was also holding the frame back. So the read waits for a
+   * frame whose last draw the GPU has finished (see {@link frameEnd}), when nothing is queued ahead of
+   * it, and only after {@link DRAIN_WAIT_FRAMES} frames without one does it read anyway.
    */
   collect(): void {
     const gl = this.gl;
     if (gl === null || this.fence === null || this.pbo === null) return;
     const status = gl.clientWaitSync(this.fence, 0, 0);
     if (status === gl.TIMEOUT_EXPIRED) return;
-    if (status === gl.WAIT_FAILED) {
-      gl.deleteSync(this.fence);
-      this.fence = null;
-      return;
+    if (status !== gl.WAIT_FAILED && !this.caughtUp(gl)) return;
+    if (status !== gl.WAIT_FAILED) {
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, this.pbo);
+      gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, this.pixels);
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
     }
-    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, this.pbo);
-    gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, this.pixels);
-    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
     gl.deleteSync(this.fence);
     this.fence = null;
-    this.emit();
+    if (status !== gl.WAIT_FAILED) this.emit();
+  }
+
+  /** Whether the GPU has finished the last frame's drawing; each answer uses up the frame's marker. */
+  private caughtUp(gl: WebGL2RenderingContext): boolean {
+    this.waited += 1;
+    const drain = this.drain;
+    this.drain = null;
+    const done = drain !== null && gl.clientWaitSync(drain, 0, 0) !== gl.TIMEOUT_EXPIRED;
+    if (drain !== null) gl.deleteSync(drain);
+    return done || this.waited > DRAIN_WAIT_FRAMES;
   }
 
   private emit(): void {
@@ -200,8 +235,10 @@ export class ExposureMeterPass extends Pass {
   override dispose(): void {
     if (this.gl !== null) {
       if (this.fence !== null) this.gl.deleteSync(this.fence);
+      if (this.drain !== null) this.gl.deleteSync(this.drain);
       if (this.pbo !== null) this.gl.deleteBuffer(this.pbo);
       this.fence = null;
+      this.drain = null;
       this.pbo = null;
     }
     this.meterTarget.dispose();

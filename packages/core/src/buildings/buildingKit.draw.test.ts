@@ -13,7 +13,7 @@ import {
   type BuildingKitInstance,
 } from "./buildingKitFit.draw";
 import type { BuildingPartPlacement } from "@jgengine/core/buildings/buildings";
-import { boxKindCastsShadow, type InstancedBuildingPlacement } from "./GeneratedBuilding.draw";
+import { boxKindCastsShadow, buildingBoxFamilies, type InstancedBuildingPlacement } from "./GeneratedBuilding.draw";
 import { generateBuilding } from "@jgengine/core/buildings/buildings";
 
 function part(overrides: Partial<BuildingPartPlacement> = {}): BuildingPartPlacement {
@@ -299,5 +299,49 @@ describe("generated glass shadows", () => {
     expect(boxKindCastsShadow("storefront", boxes)).toBe(false);
     expect(boxKindCastsShadow("wall", boxes)).toBe(true);
     expect(boxKindCastsShadow("window", new Map([["window", glass]]))).toBe(true);
+  });
+});
+
+describe("building box families", () => {
+  const at = (x: number) => [new THREE.Matrix4().makeTranslation(x, 0, 0)];
+  const boxes = new Map<BuildingPartPlacement["kind"], THREE.Matrix4[]>([
+    ["wall", at(0)],
+    ["corner", at(1)],
+    ["roof", at(2)],
+    ["window", at(3)],
+    ["storefront", at(4)],
+    ["storeSign", at(5)],
+  ]);
+
+  test("kinds sharing a material draw as one tinted instanced draw", () => {
+    const families = buildingBoxFamilies(boxes, { wall: "#ff0000", corner: "#00ff00" });
+    expect(families.map((family) => family.matrices.length).sort()).toEqual([1, 2, 3]);
+    const matte = families.find((family) => family.matrices.length === 3);
+    expect(matte?.surface.color).toBe("#ffffff");
+    expect(matte?.colors?.map((color) => color.getHexString())).toEqual(["ff0000", "00ff00", new THREE.Color("#57534e").getHexString()]);
+    const glass = families.find((family) => family.matrices.length === 2);
+    // Glass inside full walls casts no shadow of its own, merged or not.
+    expect(glass?.castShadow).toBe(false);
+    expect(matte?.castShadow).toBe(true);
+  });
+
+  test("a sign, a textured kind or a kind with its own roughness keeps its own draw", () => {
+    const families = buildingBoxFamilies(boxes, { wall: { color: "#808080", roughness: 0.3 }, roof: { color: "#404040", maps: { color: "roof.png" } } });
+    const single = families.filter((family) => family.colors === null).map((family) => family.kind).sort();
+    // With walls and roofs split off, corners are the only plain matte kind left.
+    expect(single).toEqual(["corner", "roof", "storeSign", "wall"]);
+  });
+
+  test("kinds tinting the same maps at the same tiling share a draw; another tiling does not", () => {
+    const maps = { color: "metal.png", normal: "metal-n.png" };
+    const families = buildingBoxFamilies(boxes, {
+      wall: { color: "#e0c2a6", maps, repeat: [2, 2] },
+      corner: { color: "#b89a80", maps, repeat: [2, 2] },
+      roof: { color: "#96795f", maps, repeat: [4, 4] },
+    });
+    const metal = families.find((family) => family.colors !== null && family.surface.maps !== undefined);
+    expect(metal?.colors?.map((color) => color.getHexString())).toEqual(["e0c2a6", "b89a80"]);
+    expect(metal?.surface.maps).toEqual(maps);
+    expect(families.find((family) => family.kind === "roof")?.colors).toBeNull();
   });
 });

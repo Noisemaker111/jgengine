@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { BoxGeometry, DataTexture, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, Object3D, OrthographicCamera, PerspectiveCamera, PointLight, Scene, ShaderMaterial, WebGLRenderTarget, type Material } from "three";
+import { BoxGeometry, DataTexture, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, MeshStandardMaterial, Object3D, OrthographicCamera, PerspectiveCamera, PointLight, Scene, ShaderMaterial, SkinnedMesh, WebGLRenderTarget, type Material } from "three";
 
 import {
   batchByProgram,
@@ -17,6 +17,7 @@ import {
   sceneRevealed,
   warmupDraws,
   warmupDrawsToTarget,
+  warmupSpawnables,
   warmupWaitsFor,
   withoutSelfSampling,
   type HeldDraw,
@@ -818,6 +819,28 @@ describe("createShaderWarmup links what the first frame draws outside the scene'
     expect(reached.at(-1)).toBe(quad);
   });
 
+  test("content registered to spawn in play is linked lit by the scene before the reveal, without joining the graph", async () => {
+    const scene = new Scene();
+    scene.add(meshAt(0, 0, -5));
+    const camera = new PerspectiveCamera();
+    const { renderer, compiled } = linkingRenderer();
+    const spark = new ShaderMaterial();
+    const burst = new Mesh(new BoxGeometry(), spark);
+    const unregister = warmupSpawnables(scene, () => [burst]);
+    const warmup = createShaderWarmup({ renderer, scene, camera, quietMs: 0, backgroundMs: 0, sleep: async () => {}, loaderQuiet: () => true });
+    await warmup.done;
+    unregister();
+
+    const links = compiled.filter((entry) => entry.materials.includes(spark));
+    expect(links).toHaveLength(1);
+    expect(links[0]!.lightsFrom, "linked with the scene's lights, as the burst will draw").toBe(scene);
+    expect(burst.parent).toBeNull();
+
+    compiled.length = 0;
+    await createShaderWarmup({ renderer, scene, camera, quietMs: 0, backgroundMs: 0, sleep: async () => {}, loaderQuiet: () => true }).done;
+    expect(compiled.some((entry) => entry.materials.includes(spark)), "unregistered content is no longer warmed").toBe(false);
+  });
+
   test("shadow casters link the depth program the shadow pass draws them with, into a target", async () => {
     const scene = new Scene();
     const caster = meshAt(0, 0, -5);
@@ -838,6 +861,26 @@ describe("createShaderWarmup links what the first frame draws outside the scene'
     // The shadow pass draws with the frame's lights but none of the scene's fog or environment.
     expect(depthLinks[0]!.root.children).toContain(sun);
     expect(depthLinks[0]!.lightsFrom).not.toBe(scene);
+  });
+
+  test("a caster's own depth material is linked carrying the map the shadow pass copies onto it", async () => {
+    const scene = new Scene();
+    const caster = meshAt(0, 0, -5);
+    const map = new DataTexture(new Uint8Array(4), 1, 1);
+    caster.material = new MeshStandardMaterial({ map });
+    const own = new MeshDepthMaterial();
+    caster.customDepthMaterial = own;
+    caster.castShadow = true;
+    const sun = new DirectionalLight();
+    sun.castShadow = true;
+    scene.add(caster, sun);
+    const { renderer, compiled } = linkingRenderer();
+    const warmup = createShaderWarmup({ renderer, scene, camera: new PerspectiveCamera(), quietMs: 0, backgroundMs: 0, sleep: async () => {}, loaderQuiet: () => true });
+    await warmup.done;
+
+    const depthLinks = compiled.filter((entry) => entry.materials.includes(own));
+    expect(depthLinks).toHaveLength(1);
+    expect(own.map).toBe(map);
   });
 
   test("waits for work that changes every program, such as the environment bake, before the first link", async () => {
@@ -1261,31 +1304,47 @@ describe("sceneRevealed", () => {
 
 describe("deferUnlinkedDraws", () => {
   function deferringFixture() {
-    const programs = new Map<object, { currentProgram?: FakeProgram }>();
+    const programs = new Map<object, { currentProgram?: FakeProgram; skinning?: boolean }>();
     const ready = new Set<object>();
     const compiled: string[] = [];
     const drawn: string[][] = [];
     const passQuads: Mesh[] = [];
+    const shadow = { enabled: true, needsUpdate: false };
+    /** The shadow pass's one depth material, shared by every caster without its own, as in three. */
+    const depth = Object.assign(new MeshDepthMaterial(), { name: "depth" });
+    // Like three: a draw of an object of another kind than the material's current program switches to (or links) that kind's program.
+    const use = (material: Material, object: Object3D) => {
+      const kind = (object as { isSkinnedMesh?: boolean }).isSkinnedMesh === true;
+      const entry = programs.get(material);
+      if (entry !== undefined && entry.skinning !== kind) programs.set(material, { currentProgram: { isReady: () => ready.has(material) }, skinning: kind });
+    };
     const renderer = {
       properties: { get: (material: object) => programs.get(material) ?? {} },
+      shadowMap: shadow,
       compile(group: Object3D) {
         for (const proxy of group.children) {
           const material = (proxy as Mesh).material as Material;
-          compiled.push(material.name);
-          programs.set(material, { currentProgram: { isReady: () => ready.has(material) } });
+          compiled.push(material.name + ((proxy as { isSkinnedMesh?: boolean }).isSkinnedMesh === true ? " skinned" : ""));
+          programs.set(material, { currentProgram: { isReady: () => ready.has(material) }, skinning: (proxy as { isSkinnedMesh?: boolean }).isSkinnedMesh === true });
         }
       },
-      // Like three: the render walks the scene and draws each mesh through `renderBufferDirect`.
+      // Like three: the shadow pass draws each caster in its reach with its depth material, then the render walks the scene and draws each mesh, all through `renderBufferDirect`.
       render(scene: Scene, camera: PerspectiveCamera) {
         drawn.push([]);
+        scene.traverseVisible((object) => {
+          if ((object as Mesh).isMesh && object.castShadow && object.userData["beyondShadow"] !== true) {
+            renderer.renderBufferDirect(camera, null, (object as Mesh).geometry, (object as Mesh).customDepthMaterial ?? depth, object, null);
+          }
+        });
         scene.traverseVisible((object) => {
           if ((object as Mesh).isMesh && object.userData["culled"] !== true) renderer.renderBufferDirect(camera, scene, (object as Mesh).geometry, (object as Mesh).material as Material, object, null);
         });
         // A pass's own full-screen quad (a shadow blur), drawn inside the render but not in the scene.
         for (const quad of passQuads) renderer.renderBufferDirect(camera, null, quad.geometry, quad.material as Material, quad, null);
       },
-      renderBufferDirect(_camera: unknown, _scene: unknown, _geometry: unknown, material: Material, _object: Object3D, _group: unknown) {
-        drawn.at(-1)?.push(material.name);
+      renderBufferDirect(_camera: unknown, _scene: unknown, _geometry: unknown, material: Material, object: Object3D, _group: unknown) {
+        use(material, object);
+        drawn.at(-1)?.push(material instanceof MeshDepthMaterial ? `depth:${object.name}` : material.name);
       },
     };
     const scene = new Scene();
@@ -1299,8 +1358,98 @@ describe("deferUnlinkedDraws", () => {
       scene.add(mesh);
       return mesh;
     };
-    return { renderer, scene, camera, add, ready, compiled, drawn, passQuads };
+    return { renderer, scene, camera, add, ready, compiled, drawn, passQuads, depth, shadow, programs };
   }
+
+  test("a caster whose shadow program is not linked is left out of the shadow pass while it links, for each kind of caster", () => {
+    const { renderer, scene, camera, add, ready, compiled, drawn, depth, shadow, programs } = deferringFixture();
+    deferUnlinkedDraws(renderer as never, scene, () => true, () => 0);
+    const rock = add("rock", true);
+    rock.castShadow = true;
+    rock.name = "rock";
+    ready.add(depth);
+    programs.set(depth, { currentProgram: { isReady: () => true }, skinning: false });
+    renderer.render(scene, camera);
+    expect(drawn.at(-1)).toEqual(["depth:rock", "rock"]);
+
+    // A unit spawns: its own material is linked, but the shared depth material has no skinned program yet.
+    const unit = Object.assign(new SkinnedMesh(new BoxGeometry(1, 1, 1), Object.assign(new MeshBasicMaterial(), { name: "unit" })), { name: "unit", castShadow: true });
+    unit.position.set(0, 0, -5);
+    ready.add(unit.material as object);
+    programs.set(unit.material as object, { currentProgram: { isReady: () => true }, skinning: true });
+    scene.add(unit);
+    ready.delete(depth);
+    renderer.render(scene, camera);
+    expect(drawn.at(-1), "the frame draws without the unit's shadow, not waiting on its link").toEqual(["depth:rock", "rock", "unit"]);
+    expect(compiled, "the skinned depth program is linked off the frame").toEqual(["depth skinned"]);
+    expect(shadow.needsUpdate, "the shadow map is redrawn once the caster can join it").toBe(true);
+
+    ready.add(depth);
+    renderer.render(scene, camera);
+    renderer.render(scene, camera);
+    expect(drawn.at(-1), "both kinds draw once each has a program, though only one is current at a time").toEqual(["depth:rock", "depth:unit", "rock", "unit"]);
+    expect(compiled).toEqual(["depth skinned"]);
+  });
+
+  test("a caster that arrives unlinked links its shadow program with its lit one, before it walks into the shadow's reach", () => {
+    const { renderer, scene, camera, add, ready, compiled, drawn, depth, programs } = deferringFixture();
+    deferUnlinkedDraws(renderer as never, scene, () => true, () => 0);
+    const rock = add("rock", true);
+    rock.castShadow = true;
+    rock.name = "rock";
+    ready.add(depth);
+    programs.set(depth, { currentProgram: { isReady: () => true }, skinning: false });
+    renderer.render(scene, camera);
+
+    // A unit spawns past the shadow's reach, with its own depth material as every kept caster has.
+    const unitDepth = Object.assign(new MeshDepthMaterial(), { name: "unit depth" });
+    const unit = Object.assign(new SkinnedMesh(new BoxGeometry(1, 1, 1), Object.assign(new MeshBasicMaterial(), { name: "unit" })), { name: "unit", castShadow: true, customDepthMaterial: unitDepth });
+    unit.position.set(0, 0, -5);
+    unit.userData["beyondShadow"] = true;
+    scene.add(unit);
+    renderer.render(scene, camera);
+    expect(compiled, "the depth program is linked with the lit one, not when the unit first casts").toEqual(["unit skinned", "unit depth skinned"]);
+    expect(drawn.at(-1)).toEqual(["depth:rock", "rock"]);
+
+    ready.add(unit.material as object);
+    ready.add(unitDepth);
+    unit.userData["beyondShadow"] = false;
+    renderer.render(scene, camera);
+    expect(drawn.at(-1), "it casts on the first frame it reaches the shadow, with nothing left to link").toEqual(["depth:rock", "depth:unit", "rock", "unit"]);
+    expect(compiled).toEqual(["unit skinned", "unit depth skinned"]);
+  });
+
+  test("late shadow links use the shadow map's target and bare scene, then restore the frame target", () => {
+    const { renderer, scene, camera, add } = deferringFixture();
+    const frameTarget = new WebGLRenderTarget(2, 2);
+    let target: unknown = frameTarget;
+    const linked: { material: Material; scene: Scene | undefined; target: unknown }[] = [];
+    const compile = renderer.compile.bind(renderer);
+    const extended = Object.assign(renderer, {
+      getRenderTarget: () => target,
+      setRenderTarget: (next: unknown) => { target = next; },
+      compile(group: Object3D, _camera?: unknown, targetScene?: Scene) {
+        for (const object of group.children) {
+          if ((object as Mesh).isMesh) linked.push({ material: (object as Mesh).material as Material, scene: targetScene, target });
+        }
+        compile(group);
+      },
+    });
+    const undo = deferUnlinkedDraws(extended as never, scene, () => true, () => 0);
+    const caster = add("caster", false);
+    caster.castShadow = true;
+    extended.render(scene, camera);
+    const depth = linked.find((entry) => entry.material instanceof MeshDepthMaterial);
+    expect(depth).toBeDefined();
+    expect(depth?.scene).not.toBe(scene);
+    expect(depth?.scene?.fog).toBeNull();
+    expect(depth?.scene?.environment).toBeNull();
+    expect(depth?.target).toBeInstanceOf(WebGLRenderTarget);
+    expect(depth?.target).not.toBe(frameTarget);
+    expect(target).toBe(frameTarget);
+    undo();
+    frameTarget.dispose();
+  });
 
   test("a drawable that arrives unlinked is left out of the frame while it links, then drawn", () => {
     const { renderer, scene, camera, add, ready, compiled, drawn } = deferringFixture();

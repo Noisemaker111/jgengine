@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
@@ -8,6 +8,7 @@ import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import type { ScatterBatch } from "./InstancedScatter.draw";
 import type { ScatterModelSource } from "./scatterModels.draw";
+import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 
 /** Camera travel in metres before the near/far split is recomputed. */
 const SPLIT_MOVE = 1;
@@ -103,6 +104,9 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
       return draws;
     });
   }, [batches, sources, cache]);
+  useLayoutEffect(() => {
+    for (const draw of near) freezeStaticTransforms(draw.mesh);
+  }, [near]);
   useEffect(() => () => cache.forEach((draws) => draws.forEach((draw) => draw.mesh.dispose())), [cache]);
 
   // Capacity in steps of 256, so hiding a few placements (felled trees, hero meshes) keeps the far mesh.
@@ -116,6 +120,9 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
     uploadInstances(mesh, []);
     return mesh;
   }, [entry, total]);
+  useLayoutEffect(() => {
+    if (far !== null) freezeStaticTransforms(far);
+  }, [far]);
   useEffect(() => () => { far?.geometry.dispose(); far?.dispose(); }, [far]);
 
   const flags = useMemo(() => batches.map((batch) => new Uint8Array(batch.instances.length)), [batches]);
