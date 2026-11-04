@@ -42,7 +42,7 @@ const HELP = `bun run jgengine plants <verb> [species ids]
   report <id...>      grow each record and print it against its reference
 
 fit flags: --generations <n> (40) --lambda <n> (16) --workers <n> --seeds a,b --sigma <x> (0.12, or 0.04 resuming a saved fit)
-  --until-pass        stop a tree's fit once it is inside the library test's height, DBH, Tallo, crown-shape and crown-architecture limits`;
+  --until-pass        stop a tree's fit once it is inside the fit's height, DBH, Tallo, crown-shape and crown-architecture limits`;
 
 const scientificKey = (traits: SpeciesTraits): string => traits.scientific.split(" ").slice(0, 2).join(" ");
 const camel = (id: string): string => id.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());

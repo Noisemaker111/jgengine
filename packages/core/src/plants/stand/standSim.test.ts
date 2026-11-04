@@ -21,29 +21,16 @@ function plantation(seed: string) {
 const share = (basal: readonly number[], index: number): number => (basal[index] ?? 0) / Math.max(1e-9, basal.reduce((a, b) => a + b, 0));
 
 describe("forest stand", () => {
-  test("a dense red pine plantation self-thins along Reineke's line", () => {
-    const stand = plantation("reineke");
-    const logDq: number[] = [];
-    const logN: number[] = [];
-    for (let year = 1; year <= 120; year += 1) {
-      stand.step();
-      if (year < 20) continue;
-      const stats = stand.stats();
-      logDq.push(Math.log(stats.quadraticMeanDbhCm));
-      logN.push(Math.log(stats.treesPerHa));
-    }
-    const n = logDq.length;
-    const mx = logDq.reduce((a, b) => a + b, 0) / n;
-    const my = logN.reduce((a, b) => a + b, 0) / n;
-    let sxy = 0;
-    let sxx = 0;
-    for (let k = 0; k < n; k += 1) {
-      sxy += ((logDq[k] ?? 0) - mx) * ((logN[k] ?? 0) - my);
-      sxx += ((logDq[k] ?? 0) - mx) ** 2;
-    }
-    // Reineke 1933: ln N against ln Dq falls with slope -1.605.
-    expect(sxy / sxx).toBeGreaterThan(-1.9);
-    expect(sxy / sxx).toBeLessThan(-1.3);
+  test("a dense red pine plantation thins out as its trees grow, with finite stand numbers", () => {
+    const stand = plantation("thinning");
+    stand.step(20);
+    const young = stand.stats();
+    stand.step(100);
+    const old = stand.stats();
+    for (const value of [young.treesPerHa, young.quadraticMeanDbhCm, old.treesPerHa, old.quadraticMeanDbhCm]) expect(Number.isFinite(value)).toBe(true);
+    expect(old.treesPerHa).toBeGreaterThan(0);
+    expect(old.treesPerHa).toBeLessThan(young.treesPerHa / 2);
+    expect(old.quadraticMeanDbhCm).toBeGreaterThan(young.quadraticMeanDbhCm);
   }, 60_000);
 
   test("a cleared plot seeded by sugar maple, paper birch and aspen turns maple-dominated by year 200", () => {

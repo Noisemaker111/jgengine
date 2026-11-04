@@ -67,7 +67,7 @@ export function runHabitTrial(species: PlantSpecies, seeds: readonly string[]): 
   return { open, architecture: [], stand: [], shadeLeafAreaM2: [], shadeAlive: [], deepShadeAlive: [], ms: performance.now() - started };
 }
 
-/** Each seeded individual's crown architecture at the architecture age, as the library test reads it. */
+/** Each seeded individual's crown architecture at the architecture age, as the fit scores it. */
 function seededArchitecture(species: PlantSpecies): CrownArchitecture[] {
   return CROWN_ARCHITECTURE_SEEDS.map((seed) => {
     const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, seed);

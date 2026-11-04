@@ -21,7 +21,7 @@ export interface GrowthCurve {
 
 /**
  * What measured trees say one species should grow into, imported from public tables by
- * `bun run jgengine plants import` and checked by the species library test.
+ * `bun run jgengine plants import` and fitted to by `plants fit`.
  */
 export interface SpeciesReference {
   speciesId: string;

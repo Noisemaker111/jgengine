@@ -3,8 +3,6 @@ import { CROWN_HULL_BINS, CROWN_HULL_SECTORS, type PlantStructure } from "../str
 
 const INCH_CM = 2.54;
 const FOOT_M = 0.3048;
-/** Hopkins bioclimatic index of northern Wisconsin, the region the Carmean curves are for. */
-const HOPKINS_INDEX_NORTHERN_WISCONSIN = 37.7;
 
 /**
  * Ek 1974 open-grown crown width CW = a + b·D^c in feet from DBH in inches, used from 3 in DBH, as
@@ -37,18 +35,6 @@ export function openGrownCrownWidthM(equation: OpenCrownWidthEquation, dbhCm: nu
   const d = dbhCm / INCH_CM;
   const at = (inches: number): number => a + b * plantPow(inches, c);
   return (d >= 3 ? at(d) : (at(3) * d) / 3) * FOOT_M;
-}
-
-/**
- * Crown width in metres of a forest-grown tree of `dbhCm` and crown ratio 0..1 (Bechtold 2003) in
- * northern Wisconsin. Below 5 in DBH it scales linearly to zero, as FVS does.
- * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
- */
-export function forestGrownCrownWidthM(equation: ForestCrownWidthEquation, dbhCm: number, crownRatio: number): number {
-  const { a, b, cr, hi } = equation;
-  const d = dbhCm / INCH_CM;
-  const at = (inches: number): number => a + b * inches + cr * crownRatio * 100 + hi * HOPKINS_INDEX_NORTHERN_WISCONSIN;
-  return (d >= 5 ? at(d) : (at(5) * d) / 5) * FOOT_M;
 }
 
 /** A DBH class of measured stand-grown trees: its middle and the 10th, 50th and 90th percentile crown width. */

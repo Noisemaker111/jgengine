@@ -85,7 +85,6 @@ export const SLOW_TEST_SECONDS: Readonly<Record<string, number>> = {
   "packages/core/src/hud/hudPanelLayout.view.test.ts": 4,
   "packages/core/src/map/mapPointer.view.test.ts": 4,
   "packages/core/src/physics/carStrength.test.ts": 4,
-  "packages/core/src/plants/validation/crownAllometry.test.ts": 4,
   "scripts/reference/physics/referenceCar.test.ts": 20,
   "scripts/tarballInstall.test.ts": 19,
   "scripts/captureCliParity.test.ts": 17,

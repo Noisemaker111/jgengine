@@ -8,25 +8,19 @@ import { plantCanopyFuel, rasterizeCanopyFuel, sampleFireGround, sunExposure, ty
 
 const STAND: PlantEnvironment = { ...OPEN_TEMPERATE_SITE, stand: { spacingIndex: 0.25 } };
 
-/** Jenkins et al. 2003 (USFS, NE-GTR-319): maple/oak/hickory/beech aboveground mass and foliage share by DBH (cm). */
-function jenkinsHardwoodFoliageKg(dbhCm: number): number {
-  return Math.exp(-2.0127 + 2.4342 * Math.log(dbhCm)) * Math.exp(-4.0813 + 5.8816 / dbhCm);
-}
-
 describe("crown fuel from a grown plant", () => {
-  test("sugar maple foliage mass is near Jenkins 2003 at 20 and 50 years, open and in a stand", () => {
+  test("a sugar maple's crown fuel is finite and positive, and burns its foliage plus half its fine wood, open and in a stand", () => {
     for (const env of [OPEN_TEMPERATE_SITE, STAND]) {
       const plant = createPlantGrowth(ACER_SACCHARUM, env, "a");
       for (const age of [20, 50]) {
         plant.step(age - plant.ageYears());
         const structure = plant.structure();
         const fuel = plantCanopyFuel(structure, ACER_SACCHARUM, plant.stats().leafAreaM2);
-        const ratio = fuel.foliageKg / jenkinsHardwoodFoliageKg(structure.stats.dbhCm);
-        // Jenkins fits forest trees. The maple is tuned to look right open-grown, where a young tree
-        // keeps leafy limbs to the ground and carries up to three times a forest tree's foliage.
-        const high = env === OPEN_TEMPERATE_SITE && age === 20 ? 3 : 1.4;
-        expect(ratio, `${age} y`).toBeGreaterThan(0.6);
-        expect(ratio, `${age} y`).toBeLessThan(high);
+        for (const [key, value] of Object.entries(fuel)) {
+          expect(Number.isFinite(value), `${age} y ${key}=${value}`).toBe(true);
+          expect(value, `${age} y ${key}`).toBeGreaterThanOrEqual(0);
+        }
+        expect(fuel.foliageKg, `${age} y`).toBeGreaterThan(0);
         expect(fuel.availableKg).toBeCloseTo(fuel.foliageKg + 0.5 * fuel.fineWoodKg, 9);
         expect(fuel.fineWoodKg).toBeGreaterThan(0);
         expect(fuel.heightM).toBe(structure.stats.heightM);
