@@ -21,6 +21,7 @@ export interface PerfConditions {
   path: string;
   seconds: number;
   telemetry: string;
+  cache?: "cold" | "auto";
   state: string | undefined;
   params: readonly (readonly [string, string])[];
   settings: readonly { id: string; value: unknown }[];
@@ -36,6 +37,7 @@ export function conditionsKey(conditions: PerfConditions): string {
     conditions.path,
     conditions.seconds,
     conditions.telemetry,
+    conditions.cache ?? "unknown",
     conditions.state ?? null,
     conditions.params,
     conditions.settings.map((setting) => [setting.id, setting.value]),

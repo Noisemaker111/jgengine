@@ -17,6 +17,7 @@ test("a cached run is reused only under the same run conditions", () => {
     { ...base, size: { width: 1280, height: 720 } },
     { ...base, quality: "ultra" },
     { ...base, frameClock: "capped" },
+    { ...base, cache: "cold" as const },
     { ...base, path: "still" },
     { ...base, seconds: 3 },
     { ...base, state: "two-towers" },
