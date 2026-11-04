@@ -13,6 +13,8 @@ export interface CrowdMember {
   speed: number;
   /** The entity's own size on top of the kind's placement scale; 1 when absent. */
   size?: number;
+  /** The model's tint (`material.color`), drawn per instance so kinds that differ only in colour share a batch. */
+  tint?: string | undefined;
 }
 
 /** Where a batch's merged geometry sits, so picking hits what the batch draws. @internal */
@@ -35,11 +37,19 @@ const RUN_CLIP_SPEED = 2.6;
 
 /**
  * The identity a character model shares with every other model the GPU crowd can draw: rig url,
- * height normalization and material tint. Two entity kinds with the same key can share one instanced
- * draw; a different tint or height needs its own.
+ * height normalization and material override. The override's colour is left out: the batch draws it
+ * per instance ({@link crowdTintOf}), so traffic resprayed four ways is one draw per material, not
+ * four. Whether there is a colour stays in the key, since a tinted batch draws its paint white.
  */
 export function crowdKindOf(model: ModelConfig): string {
-  return `${model.url}\u0000${model.targetHeight ?? 0}\u0000${model.scale ?? 1}\u0000${JSON.stringify(model.material ?? null)}`;
+  const { color, ...shared } = model.material ?? {};
+  const material = model.material === undefined ? null : { ...shared, tinted: color !== undefined };
+  return `${model.url}\u0000${model.targetHeight ?? 0}\u0000${model.scale ?? 1}\u0000${JSON.stringify(material)}`;
+}
+
+/** The colour a crowd batch tints one member's overridden materials with, or undefined for none. @internal */
+export function crowdTintOf(model: ModelConfig): string | undefined {
+  return model.material?.color;
 }
 
 /**

@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
 import type { CrowdMember } from "./crowdRegistry.draw";
-import { CharacterCrowdRegistry } from "./crowdRegistry.draw";
+import { CharacterCrowdRegistry, crowdKindOf, crowdTintOf } from "./crowdRegistry.draw";
+import { overrideTargets } from "@jgengine/core/material/materialOverride.draw";
 import { poseTimeOffset, writeCrowdBatch, type CrowdPlayback } from "./crowdBatch.draw";
 import { createPointerService } from "@jgengine/core/input/pointerService.draw";
 import { POINTER_ENTITY_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
@@ -165,6 +166,37 @@ describe("one draw per model and material", () => {
     registry.forEach("guest-a", (id) => seen.push(id));
     expect(seen).toEqual(["a", "b"]);
     expect(registry.count("guest-b")).toBe(1);
+  });
+
+  test("models that differ only in paint colour are one kind, and each member draws its own colour", () => {
+    const paint = { roughness: 0.2, materials: ["Paint"] };
+    const yellow = { url: "car.glb", material: { ...paint, color: "#f2c14e" } };
+    const teal = { url: "car.glb", material: { ...paint, color: "#2fa8b8" } };
+    expect(crowdKindOf(yellow)).toBe(crowdKindOf(teal));
+    // A different finish, or no paint override at all, still needs its own batch.
+    expect(crowdKindOf({ ...teal, material: { ...teal.material, roughness: 0.6 } })).not.toBe(crowdKindOf(teal));
+    expect(crowdKindOf({ url: "car.glb", material: paint })).not.toBe(crowdKindOf(teal));
+    expect(crowdKindOf({ url: "car.glb" })).not.toBe(crowdKindOf(teal));
+
+    const drawn = batch(4);
+    drawn.mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(4 * 3), 3);
+    drawn.write([{ id: "a", member: { ...member(0), tint: crowdTintOf(yellow) } }, { id: "b", member: { ...member(1), tint: crowdTintOf(teal) } }, { id: "c", member: member(2) }]);
+    const color = new THREE.Color();
+    expect(drawn.mesh.getColorAt(0, color).getHexString()).toBe(new THREE.Color("#f2c14e").getHexString());
+    expect(drawn.mesh.getColorAt(1, color).getHexString()).toBe(new THREE.Color("#2fa8b8").getHexString());
+    expect(drawn.mesh.getColorAt(2, color).getHexString()).toBe("ffffff");
+    // The yellow car leaving moves the teal one into its slot with its own colour.
+    drawn.write([{ id: "b", member: { ...member(1), tint: crowdTintOf(teal) } }]);
+    expect(drawn.mesh.getColorAt(0, color).getHexString()).toBe(new THREE.Color("#2fa8b8").getHexString());
+  });
+
+  test("an override touches only the materials it names", () => {
+    const paint = new THREE.MeshStandardMaterial({ name: "Paint" });
+    const glass = new THREE.MeshStandardMaterial({ name: "Glass" });
+    expect(overrideTargets(paint, { color: "#fff", materials: ["Paint"] })).toBe(true);
+    expect(overrideTargets(glass, { color: "#fff", materials: ["Paint"] })).toBe(false);
+    expect(overrideTargets(glass, { color: "#fff" })).toBe(true);
+    expect(overrideTargets(new THREE.MeshBasicMaterial({ name: "Paint" }), { color: "#fff", materials: ["Paint"] })).toBe(false);
   });
 });
 

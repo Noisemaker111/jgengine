@@ -4,7 +4,8 @@ import type { RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
 
 import { Color } from "three";
 
-import { buildAuthoredRoadNetwork, buildKerbFaces, gutterColor, roadJunctionInput } from "./RoadRibbons.draw";
+import { mergeJunctionSurfaces } from "./RoadJunctions.draw";
+import { buildAuthoredRoadNetwork, buildKerbFaces, gutterColor, roadJunctionInput, roadLookKey } from "./RoadRibbons.draw";
 
 function road(path: readonly (readonly [number, number])[], width = 8): RoadEnvironmentDescriptor {
   return {
@@ -111,7 +112,7 @@ describe("kerbs and gutters", () => {
   });
 
   test("kerb faces rise from the gutter to the sidewalk top on the road side and skirt the outer edge", () => {
-    const geometry = buildKerbFaces([[[0, 0], [0, 20]]], 10, 3, () => 1, 0.08)!;
+    const geometry = buildKerbFaces([{ elevation: 0.08, paths: [[[0, 0], [0, 20]]] }], 10, 3, () => 1)!;
     const position = geometry.getAttribute("position");
     // Two sides x (kerb + skirt) x two points x (bottom + top).
     expect(position.count).toBe(16);
@@ -125,6 +126,40 @@ describe("kerbs and gutters", () => {
     expect([...ys].sort()).toEqual([0.95, 1.09, 1.24]);
     expect([...xs].sort()).toEqual([5, 8]);
     expect(geometry.getIndex()!.count).toBe(4 * 6);
-    expect(buildKerbFaces([], 10, 3, () => 0, 0)).toBeNull();
+    expect(buildKerbFaces([], 10, 3, () => 0)).toBeNull();
+  });
+
+  test("kerbs of roads at different heights merge into one geometry, each at its own height", () => {
+    const low = { elevation: 0, paths: [[[0, 0], [0, 20]] as [number, number][]] };
+    const high = { elevation: 2, paths: [[[30, 0], [30, 20]] as [number, number][]] };
+    const geometry = buildKerbFaces([low, high], 10, 3, () => 0)!;
+    const position = geometry.getAttribute("position");
+    expect(position.count).toBe(32);
+    let top = -Infinity;
+    for (let i = 16; i < 32; i += 1) top = Math.max(top, position.getY(i));
+    expect(top).toBeCloseTo(2.16, 5);
+  });
+});
+
+describe("one draw per look", () => {
+  test("roads that differ only in path and height share a look; any visible difference splits them", () => {
+    const a = road([[-20, 0], [20, 0]]);
+    const b = { ...road([[0, -20], [0, 20]]), elevation: 3 } as RoadEnvironmentDescriptor;
+    expect(roadLookKey(a)).toBe(roadLookKey(b));
+    expect(roadLookKey(road([[0, 0], [1, 0]], 9))).not.toBe(roadLookKey(a));
+    expect(roadLookKey({ ...a, color: "#ff0000" } as RoadEnvironmentDescriptor)).not.toBe(roadLookKey(a));
+    expect(roadLookKey({ ...a, sidewalk: { width: 2, color: "#cccccc" } } as RoadEnvironmentDescriptor)).not.toBe(roadLookKey(a));
+  });
+
+  test("every junction of one colour becomes one mesh", () => {
+    const roads = [road([[-40, 0], [40, 0]]), road([[-20, -30], [-20, 30]]), road([[20, -30], [20, 30]])];
+    const network = buildAuthoredRoadNetwork(roads, findRoadJunctions(roads), flat);
+    expect(network.junctionSurfaces.length).toBe(2);
+    const patches = mergeJunctionSurfaces(network.junctionSurfaces);
+    expect(patches.length).toBe(1);
+    const vertices = network.junctionSurfaces.reduce((sum, s) => sum + s.ribbon.positions.length / 3, 0);
+    expect(patches[0]!.geometry.getAttribute("position").count).toBe(vertices);
+    const recoloured = mergeJunctionSurfaces([network.junctionSurfaces[0]!, { ...network.junctionSurfaces[1]!, color: "#ff0000" }]);
+    expect(recoloured.length).toBe(2);
   });
 });

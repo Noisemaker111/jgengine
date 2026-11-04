@@ -20,10 +20,11 @@ import {
   crowdClipsOf,
   crowdKindOf,
   crowdSpeedBandsOf,
+  crowdTintOf,
   setCrowdKindReady,
   type CrowdMember,
 } from "./crowdRegistry.draw";
-import { applyMaterialOverrideToMaterial } from "@jgengine/core/material/materialOverride.draw";
+import { applyMaterialOverrideToMaterial, overrideTargets } from "@jgengine/core/material/materialOverride.draw";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 import { POINTER_ENTITY_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
@@ -71,37 +72,62 @@ function CrowdBatch({
   useEffect(() => () => baked?.dispose(), [baked]);
 
   const uniforms = useMemo(() => (baked === null || !baked.animated ? null : createCrowdUniforms(baked)), [baked]);
+  // A tinted kind (traffic resprayed per kind) shares one batch across its colours: the materials the
+  // override names draw white, and each member's colour multiplies them per instance.
+  const painted = useMemo(() => {
+    const override = model.material;
+    if (baked === null || override === undefined || crowdTintOf(model) === undefined) return [];
+    return baked.materials.map((material) => overrideTargets(material, override));
+  }, [baked, model]);
   const materials = useMemo(() => {
     if (baked === null) return [];
-    return baked.materials.map((material) => {
-      const tinted = model.material === undefined ? material.clone() : applyMaterialOverrideToMaterial(material.clone(), model.material, false, undefined);
-      return uniforms === null ? tinted : patchCrowdMaterial(tinted, uniforms);
+    return baked.materials.map((material, index) => {
+      const target = model.material === undefined ? material.clone() : applyMaterialOverrideToMaterial(material.clone(), model.material, false, undefined);
+      if (painted[index] === true && "color" in target && target.color instanceof THREE.Color) target.color.set(0xffffff);
+      return uniforms === null ? target : patchCrowdMaterial(target, uniforms);
     });
-  }, [baked, uniforms, model]);
+  }, [baked, uniforms, model, painted]);
   const depthMaterial = useMemo(
     () => (uniforms === null ? null : patchCrowdMaterial(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), uniforms)),
     [uniforms],
   );
+  const skipped = useMemo(() => new THREE.MeshBasicMaterial({ visible: false }), []);
 
-  const mesh = useMemo(() => {
+  const meshes = useMemo(() => {
     if (baked === null || materials.length === 0) return null;
-    const instanced = new THREE.InstancedMesh(baked.geometry, materials.length === 1 ? materials[0]! : materials, capacity);
-    if (depthMaterial !== null) instanced.customDepthMaterial = depthMaterial;
-    instanced.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 0);
-    instanced.count = 0;
-    if (uniforms !== null) instanced.geometry.setAttribute("crowdPlay", new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3));
-    instanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    return instanced;
-  }, [baked, materials, depthMaterial, uniforms, capacity]);
+    const build = (list: THREE.Material[]) => {
+      const instanced = new THREE.InstancedMesh(baked.geometry, list.length === 1 ? list[0]! : list, capacity);
+      if (depthMaterial !== null) instanced.customDepthMaterial = depthMaterial;
+      instanced.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 0);
+      instanced.count = 0;
+      instanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      return instanced;
+    };
+    if (uniforms !== null) baked.geometry.setAttribute("crowdPlay", new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3));
+    if (!painted.includes(true)) return { main: build(materials), mirrors: [] };
+    // The paint draws carry the per-instance colour; the rest (glass, tyres, trim) share the same
+    // instance matrices without it, each material drawn by exactly one of the two.
+    const main = build(materials.map((material, index) => painted[index] === true ? material : skipped));
+    main.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
+    main.instanceColor.setUsage(THREE.DynamicDrawUsage);
+    if (!painted.includes(false)) return { main, mirrors: [] };
+    const rest = build(materials.map((material, index) => painted[index] === true ? skipped : material));
+    rest.instanceMatrix = main.instanceMatrix;
+    rest.boundingSphere = main.boundingSphere;
+    return { main, mirrors: [rest] };
+  }, [baked, materials, painted, skipped, depthMaterial, uniforms, capacity]);
+  const mesh = meshes?.main ?? null;
 
   useEffect(
     () => () => {
       for (const material of materials) material.dispose();
       depthMaterial?.dispose();
-      mesh?.dispose();
+      meshes?.main.dispose();
+      for (const mirror of meshes?.mirrors ?? []) mirror.dispose();
     },
-    [materials, depthMaterial, mesh],
+    [materials, depthMaterial, meshes],
   );
+  useEffect(() => () => skipped.dispose(), [skipped]);
 
   /** The height and centering the full entity path gives this model, so a crowd copy stands in the same place. */
   const placement = useMemo(() => {
@@ -172,6 +198,10 @@ function CrowdBatch({
       ids: drawnIds.current,
     });
     mesh.userData[ENTITY_INSTANCES_KEY] = drawnIds.current;
+    for (const mirror of meshes?.mirrors ?? []) {
+      mirror.count = count;
+      mirror.userData[ENTITY_INSTANCES_KEY] = drawnIds.current;
+    }
     noteCrowdInstances(kind, count);
   });
 
@@ -181,25 +211,19 @@ function CrowdBatch({
     playback.current.clear();
   }, []);
 
-  if (mesh === null) return null;
-  return (
-    <primitive
-      object={mesh}
-      castShadow
-      receiveShadow
-      onPointerDown={
-        onPick === undefined
-          ? undefined
-          : (event: ThreeEvent<PointerEvent>) => {
-              if (event.instanceId === undefined) return;
-              const id = drawnIds.current[event.instanceId];
-              if (id === undefined) return;
-              event.stopPropagation();
-              onPick(id);
-            }
-      }
-    />
-  );
+  if (meshes === null) return null;
+  const pick = onPick === undefined
+    ? undefined
+    : (event: ThreeEvent<PointerEvent>) => {
+        if (event.instanceId === undefined) return;
+        const id = drawnIds.current[event.instanceId];
+        if (id === undefined) return;
+        event.stopPropagation();
+        onPick(id);
+      };
+  return <>
+    {[meshes.main, ...meshes.mirrors].map((drawn) => <primitive key={drawn.uuid} object={drawn} castShadow receiveShadow onPointerDown={pick} />)}
+  </>;
 }
 
 /** Instance slot → entity id, so picking a batched character resolves like its own rig. @internal */

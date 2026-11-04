@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { BufferAttribute, BufferGeometry, DoubleSide } from "three";
+import { DoubleSide, type BufferGeometry } from "three";
 import type { RoadRibbon } from "@jgengine/core/roads/roads";
 import type { TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
 import { useSurfaceScan } from "@jgengine/core/material/surfaceScanTextures.draw";
 import { useSurfaceRibbonMaterial } from "./surfaceRibbonMaterial.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
-import type { JunctionSurface } from "./RoadRibbons.draw";
+import { mergeRibbonGeometry, type JunctionSurface } from "./RoadRibbons.draw";
 
 function JunctionPatch({
   geometry,
@@ -90,40 +90,30 @@ function JunctionPaint({
   );
 }
 
-function toGeometry(positions: Float32Array, indices: Uint32Array): BufferGeometry | null {
-  if (positions.length === 0) return null;
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new BufferAttribute(positions, 3));
-  geometry.setIndex(new BufferAttribute(indices, 1));
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-/** Merge the junction paint ribbons (stop lines + crosswalk bars) into one buffer geometry. */
-function mergedRibbons(ribbons: readonly RoadRibbon[]): BufferGeometry | null {
-  const vertexCount = ribbons.reduce((sum, r) => sum + r.positions.length, 0);
-  const indexCount = ribbons.reduce((sum, r) => sum + r.indices.length, 0);
-  if (vertexCount === 0) return null;
-  const positions = new Float32Array(vertexCount);
-  const indices = new Uint32Array(indexCount);
-  let vertexOffset = 0;
-  let indexOffset = 0;
-  for (const ribbon of ribbons) {
-    positions.set(ribbon.positions, vertexOffset);
-    const base = vertexOffset / 3;
-    for (let i = 0; i < ribbon.indices.length; i += 1) indices[indexOffset + i] = ribbon.indices[i]! + base;
-    vertexOffset += ribbon.positions.length;
-    indexOffset += ribbon.indices.length;
+/**
+ * Junction surfaces merged per colour, so every crossing of one colour is one draw. @internal
+ */
+export function mergeJunctionSurfaces(surfaces: readonly JunctionSurface[]): { color: string; geometry: BufferGeometry }[] {
+  const byColor = new Map<string, RoadRibbon[]>();
+  for (const surface of surfaces) {
+    const ribbons = byColor.get(surface.color);
+    if (ribbons === undefined) byColor.set(surface.color, [surface.ribbon]);
+    else ribbons.push(surface.ribbon);
   }
-  return toGeometry(positions, indices);
+  const patches: { color: string; geometry: BufferGeometry }[] = [];
+  for (const [color, ribbons] of byColor) {
+    const geometry = mergeRibbonGeometry(ribbons);
+    if (geometry !== null) patches.push({ color, geometry });
+  }
+  return patches;
 }
 
 /**
  * Renders welded road intersections: one seam-shared asphalt surface per junction (built by
  * {@link buildAuthoredRoadNetwork}, its boundary vertices welded onto the trimmed ribbon ends so
  * there is no overlap and no floating disc), plus white stop lines and crosswalk bars at each
- * approach. Markings ride the `GROUND_DECAL_LAYERS` marking layer above the surface, with
- * `polygonOffset`/`renderOrder` so they win the depth test on sloped ground.
+ * approach. Junctions of one colour share one draw. Markings ride the `GROUND_DECAL_LAYERS` marking
+ * layer above the surface, with `polygonOffset`/`renderOrder` so they win the depth test on sloped ground.
  * @internal
  */
 export function RoadJunctions({
@@ -143,21 +133,15 @@ export function RoadJunctions({
   /** Scanned carriageway from the first road that names one, so junctions match the ribbons. */
   scan?: TerrainDetailMaterialConfig | undefined;
 }) {
-  const patches = useMemo(
-    () =>
-      surfaces
-        .map((surface) => ({ color: surface.color, geometry: toGeometry(surface.ribbon.positions, surface.ribbon.indices) }))
-        .filter((entry): entry is { color: string; geometry: BufferGeometry } => entry.geometry !== null),
-    [surfaces],
-  );
+  const patches = useMemo(() => mergeJunctionSurfaces(surfaces), [surfaces]);
 
-  const markings = useMemo(() => mergedRibbons(paint), [paint]);
+  const markings = useMemo(() => mergeRibbonGeometry(paint), [paint]);
 
   if (patches.length === 0 && markings === null) return null;
   return (
     <group>
-      {patches.map((patch, index) => (
-        <JunctionPatch key={`junction-${index}`} geometry={patch.geometry} color={patch.color} surfaceDetail={surfaceDetail} surface={surface} scan={scan} />
+      {patches.map((patch) => (
+        <JunctionPatch key={patch.color} geometry={patch.geometry} color={patch.color} surfaceDetail={surfaceDetail} surface={surface} scan={scan} />
       ))}
       {markings !== null ? <JunctionPaint geometry={markings} surfaceDetail={surfaceDetail} scan={scan} /> : null}
     </group>

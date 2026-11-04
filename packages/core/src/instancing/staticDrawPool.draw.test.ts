@@ -98,6 +98,11 @@ test("different models cut from one material draw once per cell", () => {
   expect(far?.mesh).not.toBe(crate?.mesh);
   expect(pool.batches()).toBe(2);
   expect(pooledMeshes(scene)).toHaveLength(2);
+  // A draw is culled whole by its cell: no per-instance cull, sort and index re-upload in every pass.
+  for (const mesh of pooledMeshes(scene)) {
+    expect(mesh.perObjectFrustumCulled).toBe(false);
+    expect(mesh.sortObjects).toBe(false);
+  }
   const shadowed = pool.acquire({ geometry: box(), material: palette(), castShadow: true }, "0,0", 1);
   expect(shadowed?.mesh).not.toBe(crate?.mesh);
   pool.dispose();
