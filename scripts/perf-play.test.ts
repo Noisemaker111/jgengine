@@ -40,8 +40,8 @@ test("performance source identity rejects a different checkout or server revisio
 });
 
 test("performance movement records displacement and unavailable endpoints", () => {
-  expect(movementEvidence({ position: [1, 2, 3], error: null }, { position: [4, 2, 7], error: null })).toEqual({ start: [1, 2, 3], end: [4, 2, 7], displacement: 5, errors: [] });
-  expect(movementEvidence({ position: null, error: "no player" }, { position: [0, 0, 0], error: null })).toEqual({ start: null, end: [0, 0, 0], displacement: null, errors: ["no player"] });
+  expect(movementEvidence({ position: [1, 2, 3], error: null, focus: "DIV" }, { position: [4, 2, 7], error: null, focus: "DIV" })).toEqual({ start: [1, 2, 3], end: [4, 2, 7], displacement: 5, focus: ["DIV", "DIV"], errors: [] });
+  expect(movementEvidence({ position: null, error: "no player", focus: null }, { position: [0, 0, 0], error: null, focus: "BODY" })).toEqual({ start: null, end: [0, 0, 0], displacement: null, focus: [null, "BODY"], errors: ["no player"] });
 });
 
 test("missing assets, errors and unavailable logs cannot become a clean baseline", () => {

@@ -961,25 +961,25 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
   /** How the run moved while measured. */
   path?: PerfPath;
   /** Player endpoints sampled across the measurement; absent when the bridge cannot report them. */
-  movement?: { start: readonly number[] | null; end: readonly number[] | null; displacement: number | null; errors: string[] };
+  movement?: { start: readonly number[] | null; end: readonly number[] | null; displacement: number | null; focus: readonly (string | null)[]; errors: string[] };
   /** Where each frame went over the measured window; null when the page has no dev telemetry. */
   breakdown?: FrameBreakdownSummary | null;
 }
 
-async function playerPosition(session: CdpSession): Promise<{ position: number[] | null; error: string | null }> {
+async function playerPosition(session: CdpSession): Promise<{ position: number[] | null; error: string | null; focus: string | null }> {
   try {
-    const result = await session.evaluate<{ ok: boolean; position?: number[]; error?: string }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false, error: "agent bridge unavailable" }`);
-    if (result?.ok === true && Array.isArray(result.position) && result.position.length === 3 && result.position.every(Number.isFinite)) return { position: result.position, error: null };
-    return { position: null, error: result?.error ?? "player position unavailable" };
-  } catch (error) { return { position: null, error: error instanceof Error ? error.message : String(error) }; }
+    const result = await session.evaluate<{ ok: boolean; position?: number[]; error?: string; focus: string | null }>(`(() => { const pose = window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false, error: "agent bridge unavailable" }; const active = document.activeElement; return { ...pose, focus: active?.tagName ?? null }; })()`);
+    if (result?.ok === true && Array.isArray(result.position) && result.position.length === 3 && result.position.every(Number.isFinite)) return { position: result.position, error: null, focus: result.focus };
+    return { position: null, error: result?.error ?? "player position unavailable", focus: result?.focus ?? null };
+  } catch (error) { return { position: null, error: error instanceof Error ? error.message : String(error), focus: null }; }
 }
 
 /** Net displacement only; equal endpoints do not prove the player stayed still. */
-export function movementEvidence(start: { position: number[] | null; error: string | null }, end: { position: number[] | null; error: string | null }): NonNullable<PerfRecord["movement"]> {
+export function movementEvidence(start: { position: number[] | null; error: string | null; focus: string | null }, end: { position: number[] | null; error: string | null; focus: string | null }): NonNullable<PerfRecord["movement"]> {
   const a = start.position;
   const b = end.position;
   const displacement = a === null || b === null ? null : Math.hypot((b[0] ?? 0) - (a[0] ?? 0), (b[1] ?? 0) - (a[1] ?? 0), (b[2] ?? 0) - (a[2] ?? 0));
-  return { start: a, end: b, displacement, errors: [start.error, end.error].filter((error): error is string => error !== null) };
+  return { start: a, end: b, displacement, focus: [start.focus, end.focus], errors: [start.error, end.error].filter((error): error is string => error !== null) };
 }
 
 /** Compare the live server's identity, not just the measuring process's checkout. */
