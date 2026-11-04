@@ -9,12 +9,14 @@ import type { PointerService } from "./pointerService.draw";
 type PointerDeps = NonNullable<Parameters<PointerService["bind"]>[0]>;
 
 const env = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean; document?: unknown };
-const hadDocument = "document" in globalThis;
+const savedDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
 
 // R3F's root reaches for `document`; the stand-in must not outlive this file, or a later test in the
-// same process that proves it runs with no DOM (the headless runner) sees one.
+// same process sees a `document` with no DOM methods (the UI kit's style injection then throws).
+// The exact original is put back, so an earlier file's leftover `document: undefined` cannot keep the stub.
 afterEach(() => {
-  if (!hadDocument) delete env.document;
+  if (savedDocument === undefined) delete env.document;
+  else Object.defineProperty(globalThis, "document", savedDocument);
   delete env.IS_REACT_ACT_ENVIRONMENT;
 });
 
