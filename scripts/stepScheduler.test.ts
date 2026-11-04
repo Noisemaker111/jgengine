@@ -64,39 +64,30 @@ describe("fail fast", () => {
     expect(ran).toEqual(["types core", "types game"]);
   });
 
-  test("a step in flight is told to stop when another fails, and is not counted as a failure", async () => {
-    const steps: ScheduledStep[] = [{ name: "slow tests", cost: 90 }, { name: "types", first: true }];
+  test("a step already running when another fails runs to the end and keeps its result, while queued ones never start", async () => {
+    const ran: string[] = [];
+    const steps: ScheduledStep[] = [
+      { name: "tests a", cost: 90 },
+      { name: "tests b", cost: 80 },
+      { name: "tests c", cost: 10 },
+    ];
     const results = await runSteps(
       steps,
       2,
-      async (step, signal) => {
-        if (step.name === "types") {
-          await pause(5);
-          return done(step.name, false);
-        }
-        await new Promise<void>((resolve) => signal.addEventListener("abort", () => resolve(), { once: true }));
-        return { name: step.name, ok: false, ms: 0, output: "stopped", stopped: true };
+      async (step) => {
+        ran.push(step.name);
+        if (step.name === "tests b") return done(step.name, false);
+        await pause(20);
+        return done(step.name);
       },
       { failFast: true },
     );
-    expect(results.find((result) => result.name === "slow tests")).toMatchObject({ ok: false, stopped: true });
-    expect(results.find((result) => result.name === "types")).toMatchObject({ ok: false });
-  });
-
-  test("a first step is never handed a signal that aborts", async () => {
-    const aborted: boolean[] = [];
-    const steps: ScheduledStep[] = [{ name: "a", first: true }, { name: "b", first: true }];
-    await runSteps(
-      steps,
-      2,
-      async (step, signal) => {
-        if (step.name === "b") await pause(10);
-        aborted.push(signal.aborted);
-        return done(step.name, step.name !== "a");
-      },
-      { failFast: true },
-    );
-    expect(aborted).toEqual([false, false]);
+    expect(ran).toEqual(["tests a", "tests b"]);
+    expect(results.map((result) => [result.name, result.ok, result.blockedBy])).toEqual([
+      ["tests a", true, undefined],
+      ["tests b", false, undefined],
+      ["tests c", false, ["tests b"]],
+    ]);
   });
 
   test("without fail fast, a failure leaves its neighbours to finish", async () => {

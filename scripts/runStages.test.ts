@@ -247,7 +247,18 @@ describe("which rows a diff reaches", () => {
     expect(reachedBy(layers, ["scripts/check-layers.ts"])).toBe(true);
     expect(reachedBy(layers, ["bun.lock"])).toBe(true);
     expect(reachedBy({}, ["anything.md"])).toBe(true);
-    expect(readsPath(["packages/core/src/city/cityKind.ts"], "packages/core/src/city/cityKind.ts.bak")).toBe(false);
+    expect(readsPath({ reads: ["packages/core/src/city/cityKind.ts"] }, "packages/core/src/city/cityKind.ts.bak")).toBe(false);
+  });
+
+  test("a row that never reads tests is not reached by a test edit, even one under tooling", () => {
+    const api = row("skill-api");
+    expect(reachedBy(api, ["packages/core/src/plants/stand/standSim.test.ts"])).toBe(false);
+    expect(reachedBy(api, ["scripts/verify-fast.test.ts"])).toBe(false);
+    expect(reachedBy(api, ["packages/core/src/plants/stand/standSim.ts"])).toBe(true);
+    expect(reachedBy(row("layers"), ["packages/core/src/plants/stand/standSim.test.ts"])).toBe(true);
+    const regenerated = GEN_TARGETS.filter((target) => reachedBy(target, ["packages/core/src/world/terrain.test.ts"])).map((target) => target.name);
+    expect(regenerated).not.toContain("skill-api");
+    expect(regenerated).not.toContain("capabilities");
   });
 
   test("every row says what it reads, except the whole-tree type-check and path check", () => {

@@ -19,6 +19,7 @@ import {
   isRuntimeSource,
   jsonRun,
   junitCosts,
+  junitPassedFiles,
   opaqueScopes,
   ownTests,
   pureRenames,
@@ -430,6 +431,17 @@ describe("commands", () => {
     expect(steps).toHaveLength(Math.min(4, Math.ceil(files.length / TESTS_PER_LANE)));
     expect(steps.flatMap((step) => step.command.slice(4)).sort()).toEqual(files);
     expect(steps.flatMap((step) => step.units ?? []).map((unit) => unit.id).sort()).toEqual(files.map((file) => `test:${file}`));
+  });
+
+  test("a junit report names the files whose own tests all passed, and leaves out the failing ones", () => {
+    const xml = [
+      '<testsuites name="bun test" tests="4" failures="1">',
+      String.raw`<testsuite name="packages\core\src\a.test.ts" file="packages\core\src\a.test.ts" tests="1" failures="0" skipped="0" time="0.1">`,
+      '<testsuite name="packages/core/src/b.test.ts" file="packages/core/src/b.test.ts" tests="2" failures="1" skipped="0" time="0.1">',
+      '<testsuite name="d" file="packages/core/src/b.test.ts" line="2" tests="2" failures="1" skipped="0" time="0">',
+      '<testsuite name="ok" file="packages/core/src/b.test.ts" line="9" tests="1" failures="0" skipped="0" time="0">',
+    ].join("\n");
+    expect(junitPassedFiles(xml)).toEqual(["packages/core/src/a.test.ts"]);
   });
 
   test("measured test times split the processes by time, and the junit report supplies them", () => {

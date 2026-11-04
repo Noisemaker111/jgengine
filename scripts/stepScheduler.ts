@@ -27,15 +27,14 @@ export interface StepResult {
   output: string;
   /** Prerequisites that failed, or the step that stopped a fail-fast run, when this step never ran. */
   blockedBy?: string[];
-  /** True when a fail-fast run killed this step part-way: its result says nothing about it. */
-  stopped?: boolean;
 }
 
 export interface RunStepsOptions {
   /**
-   * Stop at the first failure. The `first` steps still all run, since they take seconds and an
-   * author wants every type error at once; every other step not started yet is reported not run,
-   * and the ones in flight are told to stop through the signal handed to `run`.
+   * Start nothing new after the first failure. The `first` steps still all run, since they take
+   * seconds and an author wants every type error at once; every other step not started yet is
+   * reported not run. Steps already running finish, so the next run reuses what they proved
+   * instead of paying for them again.
    */
   failFast?: boolean;
 }
@@ -49,7 +48,7 @@ export interface RunStepsOptions {
 export async function runSteps<S extends ScheduledStep>(
   steps: readonly S[],
   jobs: number,
-  run: (step: S, signal: AbortSignal) => Promise<StepResult>,
+  run: (step: S) => Promise<StepResult>,
   options: RunStepsOptions = {},
 ): Promise<StepResult[]> {
   const names = new Set(steps.map((step) => step.name));
@@ -73,8 +72,6 @@ export async function runSteps<S extends ScheduledStep>(
   const results = new Map<string, StepResult>();
   const pending = [...steps];
   const inFlight = new Map<string, Promise<StepResult>>();
-  const abort = new AbortController();
-  const never = new AbortController().signal;
   let stoppedBy: string | null = null;
   const isDone = (name: string): boolean => results.has(name);
   const rank = (step: S): number => (step.first === true ? 1_000_000 : 0) + (step.cost ?? 1);
@@ -95,10 +92,7 @@ export async function runSteps<S extends ScheduledStep>(
   const settle = (result: StepResult): void => {
     results.set(result.name, result);
     resolved.get(result.name)?.(result);
-    if (options.failFast === true && !result.ok && stoppedBy === null && result.blockedBy === undefined && result.stopped !== true) {
-      stoppedBy = result.name;
-      abort.abort();
-    }
+    if (options.failFast === true && !result.ok && stoppedBy === null && result.blockedBy === undefined) stoppedBy = result.name;
   };
 
   const lanes = Math.max(1, Math.min(jobs, pending.length));
@@ -142,7 +136,7 @@ export async function runSteps<S extends ScheduledStep>(
           }
           if (wantsMachine) machineHeld = true;
           inFlight.set(step.name, settledOf(step.name));
-          const result = await run(step, step.first === true ? never : abort.signal);
+          const result = await run(step);
           inFlight.delete(step.name);
           if (wantsMachine) machineHeld = false;
           settle(result);
