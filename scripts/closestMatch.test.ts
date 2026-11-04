@@ -35,7 +35,15 @@ describe("controlHint", () => {
       { name: "Speed x2", covered: false },
     ];
     expect(controlHint("Resume battle", controls, "controls")).toBe('; closest controls: "Resume battle" (covered by another element), "Resume the mission"');
-    expect(controlHint("Inventory", controls, "controls")).toBe("");
+    expect(controlHint("Inventory", controls, "controls")).toBe('; visible enabled controls: "Resume battle" (covered by another element), "Resume the mission", "Speed x2"');
+    expect(controlHint("Inventory", [], "controls")).toBe('; no visible enabled controls');
+  });
+
+  test("bounds the list of unrelated controls", () => {
+    const controls = Array.from({ length: 12 }, (_, i) => ({ name: `Option ${i}`, covered: false }));
+    const hint = controlHint("Inventory", controls, "controls");
+    expect(hint).toContain('"Option 9"; 2 more');
+    expect(hint).not.toContain('"Option 10"');
   });
 });
 
