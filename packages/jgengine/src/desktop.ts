@@ -16,6 +16,7 @@ import { dirname, extname, join, resolve } from "node:path";
 import { decodePng } from "@jgengine/assets/imageCodec";
 
 import { buildDesktopIcons, DESKTOP_ICON_FILES } from "./desktopIcons";
+import { extractDesktopMaps } from "./desktopMaps";
 import { escapeHtml } from "./escapeHtml";
 import { flag, hasFlag, readPackageJson } from "./pkg";
 import { displayNameFromId, GAME_ID_PATTERN } from "./templates";
@@ -736,7 +737,7 @@ function pickPackageManager(projectDir: string): string {
 }
 
 /** @internal */
-export function buildFrontend(projectDir: string): { ok: true; distDir: string } | { ok: false; error: string } {
+export function buildFrontend(projectDir: string, diagnostics = false): { ok: true; distDir: string } | { ok: false; error: string } {
   const pkg = readPackageJson(join(projectDir, "package.json"));
   const pm = pickPackageManager(projectDir);
   let status: number | null;
@@ -748,7 +749,7 @@ export function buildFrontend(projectDir: string): { ok: true; distDir: string }
     });
     status = result.status;
   } else {
-    const result = spawnSync(pm === "bun" ? "bunx" : "npx", ["vite", "build"], {
+    const result = spawnSync(pm === "bun" ? "bunx" : "npx", ["vite", "build", ...(diagnostics ? ["--sourcemap"] : [])], {
       cwd: projectDir,
       stdio: "inherit",
       shell: process.platform === "win32",
@@ -885,7 +886,7 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
   const sourceBefore = plan.diagnostics && plan.projectDir !== null ? desktopBuildSource(plan.projectDir) : null;
   if (plan.mode === "project" && plan.projectDir !== null && !parsed.skipFrontendBuild && !parsed.dryRun) {
     console.log(`building web frontend in ${plan.projectDir}…`);
-    const built = buildFrontend(plan.projectDir);
+    const built = buildFrontend(plan.projectDir, plan.diagnostics);
     if (!built.ok) {
       console.error(`error: ${built.error}`);
       return 1;
@@ -925,9 +926,11 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
     const sourceAfter = desktopBuildSource(plan.projectDir);
     const stable = sourceBefore.commit !== null && sourceBefore.commit === sourceAfter.commit && sourceBefore.dirty === false && sourceAfter.dirty === false && !parsed.skipFrontendBuild && !parsed.dryRun;
     const changed = sourceBefore.commit !== null && sourceAfter.commit !== null && (sourceBefore.commit !== sourceAfter.commit || (sourceBefore.dirty === false && sourceAfter.dirty === true));
-    const manifest = { sourceBefore, sourceAfter, sourceStatus: stable ? "unchanged-clean" : changed ? "changed" : "unverified", codeSha256: desktopCodeHash(join(stage.stagingDir, "dist")), includes: "staged HTML, JS, CSS and source maps; excludes assets" };
+    const maps = extractDesktopMaps(join(stage.stagingDir, "dist"), join(stage.stagingDir, "private-maps"));
+    const manifest = { sourceBefore, sourceAfter, sourceStatus: stable ? "unchanged-clean" : changed ? "changed" : "unverified", codeSha256: desktopCodeHash(join(stage.stagingDir, "dist")), privateMapsSha256: maps.digest, privateMapCount: maps.count, includes: "staged HTML, JS and CSS; excludes assets and private maps" };
     writeFileSync(join(stage.stagingDir, "dist", "jgengine-build.json"), `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(`  diagnostics source ${manifest.sourceStatus}; code SHA-256 ${manifest.codeSha256}`);
+    console.log(`  private maps ${maps.count} in ${maps.directory}`);
   }
 
   console.log(`  product  ${stage.metadata.productName}`);

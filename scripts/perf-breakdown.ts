@@ -45,7 +45,7 @@ export async function resetBreakdown(session: CdpSession): Promise<boolean> {
  * Read the page's breakdown and give each `frame#<n>` callback its source (`frame#3 src/scene/Water.draw.tsx:41`),
  * read from the function's own location through the debugger, since an r3f callback has no name.
  */
-export async function readBreakdown(session: CdpSession): Promise<FrameBreakdownSummary | null> {
+export async function readBreakdown(session: CdpSession, privateMap?: (scriptId: string) => Promise<string | null>): Promise<FrameBreakdownSummary | null> {
   const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jgFrameBreakdown?.summary({ top: 15 }) ?? null`);
   if (summary === null || summary === undefined) return null;
   const scripts = new Map<string, { url: string; map: string | null }>();
@@ -64,7 +64,9 @@ export async function readBreakdown(session: CdpSession): Promise<FrameBreakdown
       if (owner === undefined) continue;
       let resolved = names.get(owner);
       if (resolved === undefined) {
-        const located = await locateCallback(session, owner, scripts, maps);
+        let located: { label: string; mapped: boolean } | null = null;
+        try { located = await locateCallback(session, owner, scripts, maps, privateMap); }
+        catch (error) { failure ??= error instanceof Error ? error.message : String(error); }
         resolved = located === null ? owner : `${owner} ${located.label}`;
         if (located?.mapped === true) resolvedOwners.add(owner);
         names.set(owner, resolved);
@@ -84,7 +86,7 @@ export async function readBreakdown(session: CdpSession): Promise<FrameBreakdown
   return summary;
 }
 
-async function locateCallback(session: CdpSession, label: string, scripts: ReadonlyMap<string, { url: string; map: string | null }>, maps: Map<string, SourceMap | null>): Promise<{ label: string; mapped: boolean } | null> {
+async function locateCallback(session: CdpSession, label: string, scripts: ReadonlyMap<string, { url: string; map: string | null }>, maps: Map<string, SourceMap | null>, privateMap?: (scriptId: string) => Promise<string | null>): Promise<{ label: string; mapped: boolean } | null> {
   const found = await session.send("Runtime.evaluate", { expression: `globalThis.__jgFrameBreakdown?.callbacks()[${JSON.stringify(label)}]` });
   const objectId = remoteObjectId(found["result"]);
   if (objectId === undefined) return null;
@@ -103,7 +105,10 @@ async function locateCallback(session: CdpSession, label: string, scripts: Reado
   let map = maps.get(scriptId);
   if (map === undefined) {
     map = null;
-    if (script.map !== null && script.map !== "") {
+    if (privateMap !== undefined) {
+      const raw = await privateMap(scriptId);
+      if (raw !== null) map = new SourceMap(JSON.parse(raw));
+    } else if (script.map !== null && script.map !== "") {
       try {
         const mapUrl = new URL(script.map, script.url).toString();
         if (!mapUrl.startsWith("data:") && new URL(mapUrl).origin !== new URL(script.url).origin) throw new Error("cross-origin source map");

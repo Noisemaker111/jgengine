@@ -4,7 +4,60 @@ import { joinFrameGroup } from "../render/useSharedFrame.draw";
 import { createAmbientFauna } from "../ambientFauna/ambientFauna";
 import { createEditableTerrain } from "../terrain/terraform";
 import { readBreakdown } from "../../../../scripts/perf-breakdown";
-import { installFrameBreakdown } from "./frameBreakdown.draw";
+import { FRAME_RETENTION_LIMIT, installFrameBreakdown, measureComposerPasses } from "./frameBreakdown.draw";
+
+test("bounds retained post passes and restores the ones it wraps", () => {
+  const prior = Reflect.get(globalThis, "window");
+  Reflect.set(globalThis, "window", { location: { search: "" } });
+  const internal = { subscribers: [], subscribe: () => () => {} };
+  const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {} };
+  const original = () => {};
+  const passes = Array.from({ length: FRAME_RETENTION_LIMIT + 2 }, () => ({ render: original }));
+  const breakdown = installFrameBreakdown(renderer as never, { getState: () => ({ internal }) } as never);
+  try {
+    measureComposerPasses({ passes });
+    expect(passes[0]?.render).not.toBe(original);
+    expect(passes.at(-1)?.render).toBe(original);
+    expect(breakdown.summary().retention?.passes).toBe(2);
+  } finally {
+    breakdown.dispose();
+    expect(passes[0]?.render).toBe(original);
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+});
+
+test("bounds retained callbacks and draw identities under churn", () => {
+  const prior = Reflect.get(globalThis, "window");
+  Reflect.set(globalThis, "window", { location: { search: "?frameMembers=1" } });
+  const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
+  const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
+    const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
+    return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
+  } };
+  const store = { getState: () => ({ internal }) };
+  const renderer = { getContext: () => ({ getExtension: () => null }), shadowMap: {}, info: { programs: [] }, render() {}, renderBufferDirect(_a: unknown, _b: unknown, _c: unknown, _d: unknown, _e: unknown, _f: unknown) {} };
+  const breakdown = installFrameBreakdown(renderer as never, store as never);
+  const frame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 60); };
+  try {
+    frame();
+    for (let i = 0; i < FRAME_RETENTION_LIMIT + 10; i += 1) {
+      const leave = joinFrameGroup(store, internal.subscribe, 0, { current: () => {} });
+      frame();
+      leave();
+      renderer.renderBufferDirect(null, null, {}, { id: i }, { id: i }, null);
+    }
+    frame();
+    const result = breakdown.summary({ top: FRAME_RETENTION_LIMIT + 20 });
+    expect(Object.keys(breakdown.callbacks()).length).toBeLessThanOrEqual(FRAME_RETENTION_LIMIT);
+    expect(result.objects.length).toBeLessThanOrEqual(FRAME_RETENTION_LIMIT);
+    expect(result.materials.length).toBeLessThanOrEqual(FRAME_RETENTION_LIMIT);
+    expect(result.retention?.callbacks).toBeGreaterThan(0);
+    expect(result.retention?.draws).toBeGreaterThan(0);
+  } finally {
+    breakdown.dispose();
+    if (prior === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", prior);
+  }
+});
 
 test("disposing and reinstalling the recorder restores live callbacks", () => {
   const prior = Reflect.get(globalThis, "window");

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { extractDesktopMaps, readPrivateDesktopMap } from "./desktopMaps";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -22,6 +23,29 @@ import {
 function scratch(): string {
   return mkdtempSync(join(tmpdir(), "jgengine-desktop-"));
 }
+
+test("private maps leave the package and match its exact script and map bytes", () => {
+  const dir = scratch();
+  const dist = join(dir, "dist");
+  const privateRoot = join(dir, "private");
+  mkdirSync(dist);
+  writeFileSync(join(dist, "app.js"), "generated code");
+  writeFileSync(join(dist, "app.js.map"), '{"version":3,"sources":["private.ts"],"names":[],"mappings":"AAAA"}');
+  const result = extractDesktopMaps(dist, privateRoot);
+  expect(result.count).toBe(1);
+  expect(existsSync(join(dist, "app.js.map"))).toBe(false);
+  expect(readPrivateDesktopMap(privateRoot, result.digest, "generated code")).toContain("private.ts");
+  expect(readPrivateDesktopMap(privateRoot, result.digest, "different code")).toBeNull();
+  const indexPath = join(result.directory, "index.json");
+  const entry = JSON.parse(readFileSync(indexPath, "utf8"))[0];
+  const mapPath = join(result.directory, `${entry.map}.map`);
+  writeFileSync(mapPath, "wrong map");
+  expect(() => readPrivateDesktopMap(privateRoot, result.digest, "generated code")).toThrow("source map does not match");
+  rmSync(mapPath);
+  expect(() => readPrivateDesktopMap(privateRoot, result.digest, "generated code")).toThrow();
+  writeFileSync(indexPath, "[]");
+  expect(() => readPrivateDesktopMap(privateRoot, result.digest, "generated code")).toThrow("does not match");
+});
 
 function scaffoldGame(): string {
   const dir = join(scratch(), "probe-game");

@@ -2069,6 +2069,7 @@
     "./create",
     "./desktop",
     "./desktopIcons",
+    "./desktopMaps",
     "./doctor",
     "./escapeHtml",
     "./find/capabilities",

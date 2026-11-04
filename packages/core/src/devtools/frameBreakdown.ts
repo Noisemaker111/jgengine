@@ -107,6 +107,8 @@ export interface FrameBreakdownSummary {
   workCounts?: "enabled" | "disabled";
   /** Callback source lookup coverage, when the performance harness attempted it. */
   sources?: { resolved: number; unresolved: number; error?: string };
+  /** Observations omitted because the recorder's retention limits were reached. */
+  retention?: { callbacks: number; draws: number; passes: number; subscribers: number; shaders: number };
   counts: {
     drawsAvg: number;
     drawsMax: number;
@@ -288,6 +290,7 @@ export function renderBreakdownText(summary: FrameBreakdownSummary, title: strin
     ...summary.cpu.map((entry) => `  ${entry.name.padEnd(40)} ${entry.avgMs.toFixed(2).padStart(7)} / ${entry.p95Ms.toFixed(2)}`),
     ...(summary.calls === undefined || summary.calls.length === 0 ? ["scope calls: unavailable"] : ["scope calls (avg / max per frame):", ...summary.calls.map((entry) => `  ${entry.name} ${entry.avg} / ${entry.max}`)]),
     ...(summary.omitted === undefined ? [] : [`omitted from summary: ${summary.omitted.cpu} CPU rows, ${summary.omitted.calls} call rows`]),
+    ...(summary.retention === undefined ? [] : [`retention omissions since install: ${summary.retention.callbacks} callbacks, ${summary.retention.draws} draw identities, ${summary.retention.passes} passes, ${summary.retention.subscribers} subscriber observations, ${summary.retention.shaders} shader observations`]),
     summary.workCounts === "enabled" ? "work counts: instrumented owners only; other work is unobserved" : "work counts: unavailable (deep diagnostics disabled or older record)",
     ...(summary.sources === undefined ? [] : [`callback sources: ${summary.sources.resolved} resolved, ${summary.sources.unresolved} unresolved${summary.sources.error === undefined ? "" : ` (${summary.sources.error})`}`]),
     ...(summary.passes.length === 0 ? [] : ["top gpu passes (avg / p95):", ...summary.passes.slice(0, 8).map((entry) => `  ${entry.name.padEnd(40)} ${entry.avgMs.toFixed(2).padStart(7)} / ${entry.p95Ms.toFixed(2)}`)]),

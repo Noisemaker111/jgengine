@@ -30,6 +30,8 @@ import {
 const CAPACITY = 4320;
 /** Pending GPU timers kept before the oldest are dropped unread. */
 const MAX_PENDING_QUERIES = 512;
+/** @internal */
+export const FRAME_RETENTION_LIMIT = 1024;
 
 type Callable = (...args: unknown[]) => unknown;
 
@@ -133,6 +135,7 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   const context = renderer.getContext();
   const timers = gpuTimers(context);
   const restore: (() => void)[] = [];
+  const retention = { callbacks: 0, draws: 0, passes: 0, subscribers: 0, shaders: 0 };
 
   const records: FrameBreakdownRecord[] = [];
   let next = 0;
@@ -286,7 +289,10 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   const materials = new Map<string, DrawCost>();
   const tally = (table: Map<string, DrawCost>, label: string, triangles: number, ms: number, pass: string) => {
     const entry = table.get(label);
-    if (entry === undefined) table.set(label, { label, draws: 1, triangles, cpuMs: ms, pass });
+    if (entry === undefined) {
+      if (table.size >= FRAME_RETENTION_LIMIT) { retention.draws += 1; return; }
+      table.set(label, { label, draws: 1, triangles, cpuMs: ms, pass });
+    }
     else {
       entry.draws += 1;
       entry.triangles += triangles;
@@ -325,7 +331,11 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       tally(objects, objectName, triangles, ms, pass);
       tally(materials, materialName, triangles, ms, pass);
       // This draw built or first used a program: name it, so a compile hitch says what to warm up.
-      if (current !== null && current.compileMs - compiledBefore >= 1) (current.shaders ??= []).push(`${materialName} on ${objectName}`);
+      if (current !== null && current.compileMs - compiledBefore >= 1) {
+        const shaders = current.shaders ??= [];
+        if (shaders.length < FRAME_RETENTION_LIMIT) shaders.push(`${materialName} on ${objectName}`);
+        else retention.shaders += 1;
+      }
     }
   });
 
@@ -360,10 +370,13 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   }
 
   // Post passes: wrapped per instance the first time a composer is seen with them.
+  let passCount = 0;
   activePasses = (composer) => {
     for (const pass of composer.passes) {
       const render: unknown = Reflect.get(pass, "render");
       if (wrapped.has(pass) || typeof render !== "function") continue;
+      if (passCount >= FRAME_RETENTION_LIMIT) { wrapped.add(pass); retention.passes += 1; continue; }
+      passCount += 1;
       const name = nameField(pass, "name") ?? pass.constructor.name;
       // The pass that draws the scene is the main pass, whatever the composer calls it.
       const label = /RenderPass$/.test(name) ? "main" : `post:${name.replace(/^_/, "")}`;
@@ -389,6 +402,12 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   const subscriberWrappers = new Map<object, { ref: { current: RenderCallback }; original: RenderCallback; wrapper: RenderCallback }>();
   const liveSubscribers = new Set<object>();
   let nextLabel = 0;
+  const callbackLabel = (suffix: string): string | null => {
+    if (nextLabel >= FRAME_RETENTION_LIMIT) { retention.callbacks += 1; return null; }
+    const label = `frame#${nextLabel}${suffix}`;
+    nextLabel += 1;
+    return label;
+  };
   const memberLabels = new WeakMap<object, string>();
   const detailedWork = new URLSearchParams(window.location.search).get("frameMembers") === "1";
   if (detailedWork) {
@@ -407,11 +426,10 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       enter(task) {
         let label = memberLabels.get(task);
         if (label === undefined) {
-          label = `frame#${nextLabel}:sharedMember`;
-          nextLabel += 1;
+          label = callbackLabel(":sharedMember") ?? "frame#overflow:sharedMember";
           memberLabels.set(task, label);
         }
-        callbacks[label] = task.current;
+        if (label !== "frame#overflow:sharedMember") callbacks[label] = task.current;
         cpuEnter(label);
       },
       leave: () => { cpuLeave(); },
@@ -425,13 +443,13 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     for (const subscription of store.getState().internal.subscribers) {
       const fn = subscription.ref.current;
       if (typeof fn !== "function" || wrapped.has(fn) || fn === tick) continue;
+      if (!subscriberWrappers.has(subscription.ref) && subscriberWrappers.size >= FRAME_RETENTION_LIMIT) { retention.subscribers += 1; continue; }
       let label = labels.get(subscription.ref);
       if (label === undefined) {
-        label = `frame#${nextLabel}${fn.name !== "" && fn.name !== "anonymous" ? `:${fn.name}` : ""}`;
-        nextLabel += 1;
+        label = callbackLabel(fn.name !== "" && fn.name !== "anonymous" ? `:${fn.name}` : "") ?? "frame#overflow";
         labels.set(subscription.ref, label);
       }
-      callbacks[label] = fn;
+      if (label !== "frame#overflow") callbacks[label] = fn;
       const named = label;
       const timedCallback: RenderCallback = (state, delta, frame) => {
         const before = devtools.frame.last()?.serial ?? 0;
@@ -489,8 +507,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       const programs = renderer.info.programs?.length ?? null;
       const complete = ordered().map((record) => unresolved.has(record) ? { ...record, gpu: null } : record);
       // Draw costs are gathered over the whole window, so a tail of it reports frames only.
-      if (options.last !== undefined) return { ...summarizeBreakdown(complete.slice(-options.last), { objects: [], materials: [] }, { programs, top: options.top }), workCounts: detailedWork ? "enabled" : "disabled" };
-      return { ...summarizeBreakdown(complete, { objects: [...objects.values()], materials: [...materials.values()] }, { programs, top: options.top }), workCounts: detailedWork ? "enabled" : "disabled" };
+      if (options.last !== undefined) return { ...summarizeBreakdown(complete.slice(-options.last), { objects: [], materials: [] }, { programs, top: options.top }), workCounts: detailedWork ? "enabled" : "disabled", retention: { ...retention } };
+      return { ...summarizeBreakdown(complete, { objects: [...objects.values()], materials: [...materials.values()] }, { programs, top: options.top }), workCounts: detailedWork ? "enabled" : "disabled", retention: { ...retention } };
     },
     records: () => ordered().map((record) => unresolved.has(record) ? { ...record, gpu: null } : record),
     callbacks: () => ({ ...callbacks }),
