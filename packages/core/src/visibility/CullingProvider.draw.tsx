@@ -19,7 +19,8 @@ const CullingContext = createContext<MutableRefObject<VisiblePredicate> | null>(
 /**
  * Read the current render-visibility predicate. Backward compatible: with no CullingProvider
  * mounted (or culling disabled) it returns an always-visible ref, so a marker that consults it
- * behaves exactly as before this feature existed.
+ * behaves exactly as before this feature existed. The ref holds a new predicate only on a frame the
+ * visible set changed, so work that depends on nothing but the set can skip while it is the same one.
  */
 export function useRenderVisibility(): MutableRefObject<VisiblePredicate> {
   return useContext(CullingContext) ?? alwaysVisibleRef;
@@ -71,20 +72,29 @@ export function CullingProvider({ config, drawDistance, children }: { config: Vi
     return { ...config, culling: { ...config?.culling, defaultMaxRenderDistance: config?.culling?.defaultMaxRenderDistance ?? drawDistance } };
   }, [config, drawDistance]);
   const driver = useMemo(() => (enabled ? buildCullingDriver(ctx, resolvedConfig) : null), [ctx, resolvedConfig, enabled]);
+  const published = useRef(-1);
+  const publishedBy = useRef<object | null>(null);
 
   useFrame(() => {
     if (driver === null) {
       predicateRef.current = ALWAYS_VISIBLE;
+      published.current = -1;
       return;
     }
     const view = viewFromCamera(camera);
     if (view === null) {
       predicateRef.current = ALWAYS_VISIBLE;
+      published.current = -1;
       return;
     }
     driver.setView(view);
-    const visible = driver.system.update().visible;
-    predicateRef.current = (id) => visible.has(id);
+    const system = driver.system;
+    const { generation } = system.update();
+    if (generation === published.current && publishedBy.current === system) return;
+    published.current = generation;
+    publishedBy.current = system;
+    // Reads the system's current set, so the same predicate stays right while the set does not change.
+    predicateRef.current = (id) => system.isVisible(id);
   }, CAMERA_POST_FRAME_PRIORITY);
 
   return <CullingContext.Provider value={predicateRef}>{children}</CullingContext.Provider>;

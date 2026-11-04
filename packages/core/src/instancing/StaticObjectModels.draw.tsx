@@ -55,12 +55,64 @@ export function useStaticObjectBatchProbe(
   useEffect(() => devtools.probes.registerSystem("render/levelPass", levelPassProbe()), []);
 }
 
+/**
+ * Which detail level each placement draws at. `revision` moves on every change, so a level's members
+ * are gathered again only after the switch moved one of them.
+ * @internal
+ */
+export class LevelAssignment extends Map<string, number> {
+  revision = 0;
+
+  override set(id: string, level: number): this {
+    if (super.get(id) !== level) this.revision += 1;
+    return super.set(id, level);
+  }
+
+  override delete(id: string): boolean {
+    const had = super.delete(id);
+    if (had) this.revision += 1;
+    return had;
+  }
+
+  override clear(): void {
+    if (this.size > 0) this.revision += 1;
+    super.clear();
+  }
+}
+
+/** A batch's members this frame, and how many times they have been gathered. */
+interface StaticMembers {
+  current: SceneObject[];
+  version: number;
+}
+
+/**
+ * Whether any placed object changed since this hook's owner last asked: `take()` answers and resets.
+ * True on the first frame. Static batches check their members only then, not every frame, so a still
+ * world costs them nothing however many props it holds.
+ */
+function useObjectChanges(): { take(): boolean; mark(): void } {
+  const ctx = useGameContext();
+  const flag = useMemo(() => {
+    let dirty = true;
+    return { mark: () => { dirty = true; }, take: () => { const was = dirty; dirty = false; return was; } };
+  }, []);
+  useEffect(() => {
+    flag.mark();
+    return ctx.scene.object.subscribe(flag.mark);
+  }, [ctx, flag]);
+  return flag;
+}
+
 /** Live members of one batch after the per-frame compatibility gate removed any that changed at runtime. */
 function useBatchMembers(batch: StaticObjectBatch): { objects: readonly SceneObject[]; excluded: readonly string[] } {
   const ctx = useGameContext();
   const [excluded, setExcluded] = useState<readonly string[]>([]);
   const fallbackObjects = useRef(new Map<string, SceneObject>());
+  const changed = useObjectChanges();
+  useEffect(() => changed.mark(), [batch, changed]);
   useFrame(() => {
+    if (!changed.take()) return;
     const next = incompatibleStaticObjectIds(batch, ctx.scene.object.get, ctx.scene.object.catalog, excluded, fallbackObjects.current);
     if (next !== excluded) setExcluded(next);
   });
@@ -71,13 +123,23 @@ function useBatchMembers(batch: StaticObjectBatch): { objects: readonly SceneObj
 /**
  * The members one batch (or one detail level of it) draws this frame, gathered once before its
  * sources write their instances. `level` narrows them to the placements `assignment` put on it.
+ * Gathered again only when an object, the visible set or these inputs changed; `version` counts the
+ * gathers, so a source rewrites its instances only after one.
  */
-function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObject[], assignment?: ReadonlyMap<string, number>, level?: number, drawn = true): { current: SceneObject[] } {
+function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObject[], assignment?: LevelAssignment, level?: number, drawn = true): StaticMembers {
   const ctx = useGameContext();
   const visibility = useRenderVisibility();
-  const members = useMemo(() => ({ current: [] as SceneObject[] }), []);
+  const members = useMemo((): StaticMembers => ({ current: [], version: 0 }), []);
+  const changed = useObjectChanges();
+  const gathered = useRef<{ visible: unknown; objects: unknown; assignment: unknown; revision: number; level: unknown }>({ visible: null, objects: null, assignment: null, revision: -1, level: null });
   useFrame(() => {
     if (!drawn) return;
+    const last = gathered.current;
+    const objectsChanged = changed.take();
+    const revision = assignment?.revision ?? 0;
+    if (!objectsChanged && last.visible === visibility.current && last.objects === objects && last.assignment === assignment && last.revision === revision && last.level === level) return;
+    gathered.current = { visible: visibility.current, objects, assignment, revision, level };
+    members.version += 1;
     const accept = assignment !== undefined && level !== undefined
       ? (live: SceneObject) => assignment.get(live.instanceId) === level
       : undefined;
@@ -92,7 +154,7 @@ function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObjec
 
 function ObjectSource({ source, members, objects, proxy = "part" }: {
   source: ScatterModelSource;
-  members: { current: readonly SceneObject[] };
+  members: StaticMembers;
   objects: readonly SceneObject[];
   proxy?: ProxyRole;
 }) {
@@ -115,7 +177,7 @@ function ObjectSource({ source, members, objects, proxy = "part" }: {
 function PooledObjectSource({ slot, source, members, objects }: {
   slot: StaticDrawSlot;
   source: ScatterModelSource;
-  members: { current: readonly SceneObject[] };
+  members: StaticMembers;
   objects: readonly SceneObject[];
 }) {
   const indexOf = useMemo(() => new Map(objects.map((object, index) => [object.instanceId, index])), [objects]);
@@ -130,6 +192,7 @@ function PooledObjectSource({ slot, source, members, objects }: {
   }, [scratch, source]);
   const ctx = useGameContext();
   const placedAt = useRef<{ slot: StaticDrawSlot; version: number } | null>(null);
+  const syncedAt = useRef<{ slot: StaticDrawSlot; members: number; placed: unknown; slotOf: unknown } | null>(null);
   const live = useMemo((): SceneObject[] => [], []);
   useFrame(() => {
     const version = ctx.scene.object.version();
@@ -142,6 +205,10 @@ function PooledObjectSource({ slot, source, members, objects }: {
       }
       slot.place(live, slotOf, matrixOf);
     }
+    // The shown instances follow the members alone: written again only after they were gathered again.
+    const synced = syncedAt.current;
+    if (synced?.slot === slot && synced.members === members.version && synced.placed === placedAt.current && synced.slotOf === slotOf) return;
+    syncedAt.current = { slot, members: members.version, placed: placedAt.current, slotOf };
     slot.sync(members.current, slotOf, matrixOf);
   }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   return null;
@@ -150,7 +217,7 @@ function PooledObjectSource({ slot, source, members, objects }: {
 /** A source drawn on its own: one instanced draw holding this batch's placements. */
 function InstancedObjectSource({ source, members, capacity }: {
   source: ScatterModelSource;
-  members: { current: readonly SceneObject[] };
+  members: StaticMembers;
   capacity: number;
 }) {
   const ref = useRef<THREE.InstancedMesh>(null);
@@ -166,10 +233,17 @@ function InstancedObjectSource({ source, members, capacity }: {
     const mesh = ref.current;
     return () => { mesh?.dispose(); };
   }, [capacity, source]);
+  const syncedAt = useRef<{ mesh: THREE.InstancedMesh | null; members: number }>({ mesh: null, members: -1 });
   useFrame((state) => {
-    if (ref.current === null) return;
+    const mesh = ref.current;
+    if (mesh === null) return;
+    // An opaque source's instances follow the members alone; a see-through one re-sorts as the camera moves.
+    const synced = syncedAt.current;
+    if (!blends && synced.mesh === mesh && synced.members === members.version) return;
+    synced.mesh = mesh;
+    synced.members = members.version;
     const drawn = blends ? sortFarToNear(members.current, state.camera.getWorldPosition(eye), ordered) : members.current;
-    syncStaticObjectSource(ref.current, source, drawn, scratch);
+    syncStaticObjectSource(mesh, source, drawn, scratch);
   }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   return <instancedMesh ref={attach} args={[source.geometry, source.material, capacity]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow ?? false} receiveShadow={source.receiveShadow ?? false} dispose={null} />;
 }
@@ -249,7 +323,7 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
     setEntry(acquireImpostor(key, gl, sources, settings));
     return () => releaseImpostor(key, settings);
   }, [key, gl, sources, settings]);
-  const assignment = useMemo(() => new Map<string, number>(), []);
+  const assignment = useMemo(() => new LevelAssignment(), []);
   const camera = useMemo(() => new THREE.Vector3(), []);
   const ready = entry?.atlas != null && entry.materials !== null;
   const last = useRef<{ at: THREE.Vector3; version: number; ready: boolean; objects: readonly SceneObject[] } | null>(null);
@@ -336,7 +410,7 @@ function VariantLevel({ url, model, batch, objects, level, assignment, measure, 
   batch: StaticObjectBatch;
   objects: readonly SceneObject[];
   level: number;
-  assignment: ReadonlyMap<string, number>;
+  assignment: LevelAssignment;
   measure: boolean;
   single: (object: SceneObject) => ReactNode;
   proxy: ProxyRole;
@@ -414,7 +488,7 @@ export function VariantStaticObjects({ batch, single, meta = null }: { batch: St
   const selector = useMemo(() => createModelVariantSelector(batch.model.variants!), [batch.model]);
   const variantSwitch = useMemo(() => variantSwitchOf(batch.model.variants!), [batch.model]);
   const gate = useMemo(() => createLevelPassGate(), []);
-  const assignment = useMemo(() => new Map<string, number>(), []);
+  const assignment = useMemo(() => new LevelAssignment(), []);
   const camera = useMemo(() => new THREE.Vector3(), []);
   const probe = useMemo(() => new THREE.Vector3(), []);
   // One model per level for the batch's life: a fresh object each render rebuilt every level's
