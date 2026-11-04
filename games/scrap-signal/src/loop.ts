@@ -14,7 +14,8 @@ import { settleBootPhase } from "./game/bootPhase";
 import { resetCombat, syncCombatTargets, tickCombat } from "./game/combat/hitModel";
 import { registerPerks } from "./game/combat/gunPerks";
 import { startAmbience, tickAudio } from "./game/audio/drive";
-import { noteEquipped, noteGameNow, noteLevelUp, notePlayerHealth } from "./game/feel";
+import { equippedGun, noteEquipped, noteGameNow, noteLevelUp, notePlayerHealth } from "./game/feel";
+import { applyWalkSpeed, tickHandling } from "./game/handling";
 import { tickEnemies } from "./game/entities/enemies/ai";
 import { tickFront } from "./game/encounters/front";
 import { loseRift, registerRift, riftLootFor, riftShieldRegen, tickRift } from "./game/rift/rift";
@@ -42,6 +43,7 @@ import { noteKill, noteZone } from "./game/progression/discovery";
 import { grantLevelUnlocks, rarityCapFor, zoneOpen } from "./game/progression/unlocks";
 import { NPCS, quests, zoneOpener } from "./game/quests/catalog";
 import { creditObjective, npcDialogStore, reconcileQuestWorld, settleRadioQuests } from "./game/quests/givers";
+import { nearestDiscoveredStation, recoverChassis } from "./game/recovery";
 import { session } from "./game/session";
 import { SCRAP_SLOTS } from "./game/scrapSlots";
 import {
@@ -56,7 +58,6 @@ import { PLAYER_SPAWN, PLAYER_SPAWN_YAW, respawnClusters, setupWorld } from "./g
 
 const dropRng = seededRng("scrap-gun-drops");
 const RESPAWN_SWEEP_SECONDS = 25;
-const DOWNED_WALK_SPEED = 1.6;
 const STATION_DISCOVER_RADIUS = 8;
 
 function deathAnchor(ctx: GameContext, event: EntityDiedEvent): readonly [number, number, number] {
@@ -148,7 +149,6 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
     dropAmmoAt(ctx, event, anchor);
     if (reservePhase(ctx) === "downed") {
       powerSurge(ctx);
-      ctx.scene.entity.update(userId, { movement: { walkSpeed: playerDef.walkSpeed } });
       ctx.scene.entity.floatText({ instanceId: userId, text: "POWER SURGE!", kind: "pickup" });
     }
   }
@@ -176,23 +176,6 @@ function onLevelUp(ctx: GameContext, userId: string): void {
   }
 }
 
-function nearestDiscoveredStation(ctx: GameContext): { x: number; z: number } {
-  const discovered = discoveredStationsStore.read(ctx);
-  const playerEntity = ctx.scene.entity.get(ctx.player.userId);
-  const from = playerEntity?.position ?? PLAYER_SPAWN;
-  let best: { x: number; z: number } = { x: PLAYER_SPAWN[0], z: PLAYER_SPAWN[2] };
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (const station of TRAVEL_STATIONS) {
-    if (!discovered.includes(station.zoneId)) continue;
-    const distance = Math.hypot(from[0] - station.x, from[2] - station.z);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      best = { x: station.x + 4, z: station.z + 4 };
-    }
-  }
-  return best;
-}
-
 function respawnAtNewU(ctx: GameContext): void {
   const userId = ctx.player.userId;
   const cash = ctx.game.economy.balance(userId, "cash");
@@ -200,10 +183,7 @@ function respawnAtNewU(ctx: GameContext): void {
   if (fee > 0) spend(ctx, "cash", fee, "respawn-fee");
   const station = nearestDiscoveredStation(ctx);
   const y = ctx.world.groundHeightAt(station.x, station.z);
-  ctx.scene.entity.update(userId, {
-    position: [station.x, y, station.z],
-    movement: { walkSpeed: playerDef.walkSpeed },
-  });
+  ctx.scene.entity.update(userId, { position: [station.x, y, station.z] });
   const health = ctx.scene.entity.stats.get(userId, "health");
   if (health !== null) ctx.scene.entity.stats.delta(userId, "health", health.max);
   const shield = ctx.scene.entity.stats.get(userId, "shield");
@@ -220,10 +200,7 @@ function tickReserve(ctx: GameContext, dt: number): void {
   const userId = ctx.player.userId;
   const health = ctx.scene.entity.stats.get(userId, "health");
   if (health === null) return;
-  if (reservePhase(ctx) === "alive" && health.current <= (health.min ?? 1)) {
-    enterDowned(ctx);
-    ctx.scene.entity.update(userId, { movement: { walkSpeed: DOWNED_WALK_SPEED } });
-  }
+  if (reservePhase(ctx) === "alive" && health.current <= (health.min ?? 1)) enterDowned(ctx);
   // The shared state owns the countdown; its `died` event is the game's cue to pay the fee.
   for (const event of tickDowned(ctx, dt)) {
     if (event.kind === "died") {
@@ -380,6 +357,8 @@ async function resumeOrStart(ctx: GameContext): Promise<void> {
     reconcileQuestWorld(ctx);
     grantLevelUnlocks(ctx, ctx.scene.entity.stats.get(ctx.player.userId, "level")?.current ?? 1);
   }
+  // After the build is hydrated, so a save that lost the chassis gets it back at its own level.
+  if (worldLoaded && recoverChassis(ctx) !== null) syncCombatTargets(ctx);
   settleBootPhase(ctx);
 }
 
@@ -418,6 +397,8 @@ function onTick(ctx: GameContext, dt: number): void {
   tickCombat(ctx, dt);
   tickReloads(ctx, dt);
   tickReserve(ctx, dt);
+  tickHandling(ctx, gunById(equippedGun() ?? "") ?? null, dt);
+  applyWalkSpeed(ctx, reservePhase(ctx) === "downed");
   tickRelay(ctx, dt);
   tickMastWatch(ctx, dt);
   tickZoneAndStations(ctx, nowMs);

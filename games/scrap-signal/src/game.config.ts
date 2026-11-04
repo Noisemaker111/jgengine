@@ -13,7 +13,9 @@ import { assets } from "./game/assets";
 import { audio, objectSounds } from "./game/audio/catalog";
 import { audioProbe } from "./game/audio/drive";
 import { frontProbe } from "./game/encounters/front";
-import { reserveProbe } from "./game/handroll/reserve";
+import { reserveProbe, reservePhase } from "./game/handroll/reserve";
+import { canSprint, handlingView } from "./game/handling";
+import { windupProbe } from "./game/entities/enemies/behavior";
 import { lookedAtItem, STAND_ON } from "./game/commands";
 import { crashSite } from "./game/progression/onboarding";
 import { depthProbe } from "./game/progression/probe";
@@ -202,6 +204,12 @@ export const game = defineGame({
         { name: "character.pick", input: { characterId: "gunk" } },
         { name: "front.capture", input: { mode: "fight" } },
       ],
+      // The same fight with a rifle in hand, for how guns handle and how enemies wind up.
+      "front-armed": [
+        { name: "character.pick", input: { characterId: "gunk" } },
+        { name: "front.capture", input: { mode: "fight" } },
+        { name: "kit.capture", input: { family: "rifle" } },
+      ],
       // The relay contract's first ambush, so a flow can prove the session opens in the real game
       // without a two-minute walk from the crash site.
       "dead-air": [{ name: "character.pick", input: { characterId: "gunk" } }, { name: "relay.capture", input: { mode: "upload" } }],
@@ -209,7 +217,14 @@ export const game = defineGame({
       // the game's own downed tick opens the real 12 s window, banner, prompt and reconstruct fee.
       downed: [{ name: "character.pick", input: { characterId: "gunk" } }, "reserve.capture"],
     },
-    probe: (ctx) => ({ ...audioProbe(ctx), ...frontProbe(ctx), ...reserveProbe(ctx), ...depthProbe(ctx) }),
+    probe: (ctx) => ({
+      ...audioProbe(ctx),
+      ...frontProbe(ctx),
+      ...reserveProbe(ctx),
+      ...depthProbe(ctx),
+      ...windupProbe(ctx),
+      aimed: Math.round((handlingView(ctx)?.handling.adsProgress ?? 0) * 100) / 100,
+    }),
     // Ferralon's opening view carries the terrain shader, the scrub field, and a settlement's worth
     // of streamed GLB materials, and every one of those programs compiles on the first drawn frame.
     // On a software renderer that is seconds of work after readiness reports done, and the default
@@ -281,6 +296,7 @@ export const game = defineGame({
     hotbarSelection: () => session.selectedSlot(),
     movement: {
       collideObjects: true,
+      canSprint: (ctx) => canSprint(ctx, reservePhase(ctx) === "downed"),
       beforeCommit: (frame) => {
         const currentGround = terrainField.sampleHeight(frame.current[0], frame.current[2]);
         const tooSteep = (x: number, z: number) => {
@@ -368,8 +384,10 @@ export const game = defineGame({
   camera: {
     perspective: "first",
     rigs: {
-      firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
+      // The reticle is the game's own (`SpreadReticle`): it opens with the held gun's cone.
+      firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: false, viewmodel: false },
     },
+    follow: { weapon: (_id, ctx) => handlingView(ctx) },
     lens: { frustum: { far: 4200 } },
   },
 });

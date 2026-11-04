@@ -193,7 +193,7 @@
 - `StatusTickEvent` (type): type StatusTickEvent = StatusDamageTick | StatusStatTick | StatusExpiredTick — Everything one `tick` call produced, in target-then-status order.
 - `TargetProfile` (interface): interface TargetProfile — What a target presents to the table: one resistance class and its armor points.
 - `TargetTraitId` (type): type TargetTraitId = string — Caller-owned id for a target trait — `"armored"`, `"fleshy"`, `"wet"`, `"boss"`. Traits are the receiver-side facets a matchup scores a channel against.
-- `TelegraphConfig` (interface): interface TelegraphConfig { shape: TelegraphShape; at: EntityPosition; dir?: number; windupMs?: number; turns?: number; kind?: string } — ⚠ undocumented
+- `TelegraphConfig` (interface): interface TelegraphConfig { shape: TelegraphShape; at: EntityPosition; dir?: number; windupMs?: number; turns?: number; kind?: string } — ⚠ undocumented · used by `pointInTelegraph` (@jgengine/core/combat/telegraph): Whether a world point stands inside a telegraph's shape, on the ground plane.
 - `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
 - `ThreatReadOptions` (interface): interface ThreatReadOptions — Bounds for {@link threatsFromMemory}.
 - `ThreatReading` (interface): interface ThreatReading extends CoverThreat — One remembered enemy with its age, so a role can treat a stale sighting differently.
@@ -854,8 +854,9 @@
 - `HazardCycleConfig` (interface): interface HazardCycleConfig { windupMs: number; activeMs: number; cooldownMs?: number; offsetMs?: number } — ⚠ undocumented
 - `HazardCycleSample` (interface): interface HazardCycleSample { phase: HazardPhase; fraction: number; remainingMs: number; cycleIndex: number } — ⚠ undocumented
 - `HazardPhase` (type): type HazardPhase = "windup" | "active" | "cooldown" — ⚠ undocumented
-- `TelegraphConfig` (interface): interface TelegraphConfig { shape: TelegraphShape; at: EntityPosition; dir?: number; windupMs?: number; turns?: number; kind?: string } — ⚠ undocumented
+- `TelegraphConfig` (interface): interface TelegraphConfig { shape: TelegraphShape; at: EntityPosition; dir?: number; windupMs?: number; turns?: number; kind?: string } — ⚠ undocumented · used by `pointInTelegraph`: Whether a world point stands inside a telegraph's shape, on the ground plane.
 - `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
+- `pointInTelegraph` (function): function pointInTelegraph(config: TelegraphConfig, point: EntityPosition): boolean — Whether a world point stands inside a telegraph's shape, on the ground plane. `dir` is the yaw the shape faces (`atan2(dx, dz)`), so an attack that locks its cone or line at wind-up and checks the target here when it lands can be stepped out of.
 
 ## @jgengine/core/combat/vfxPresets
 

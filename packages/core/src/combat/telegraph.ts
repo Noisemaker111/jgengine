@@ -119,7 +119,12 @@ function planarDelta(config: TelegraphConfig, point: EntityPosition): { dx: numb
   return { dx: point[0] - config.at[0], dz: point[2] - config.at[2] };
 }
 
-/** @internal */
+/**
+ * Whether a world point stands inside a telegraph's shape, on the ground plane. `dir` is the yaw the
+ * shape faces (`atan2(dx, dz)`), so an attack that locks its cone or line at wind-up and checks the
+ * target here when it lands can be stepped out of.
+ * @capability telegraph-hit-test test whether a point is inside a circle, ring, cone or line telegraph, to resolve a dodgeable attack
+ */
 export function pointInTelegraph(config: TelegraphConfig, point: EntityPosition): boolean {
   const { shape } = config;
   const { dx, dz } = planarDelta(config, point);

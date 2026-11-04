@@ -454,7 +454,7 @@ export function ShoulderRig(props: RigProps) {
     if (turn !== null) props.yawRef.current = turn;
     const sample = readFollow(ctx, followId);
     const follow = sample?.pos ?? { x: 0, y: 0, z: 0 };
-    const weapon = followId === null ? null : (props.config?.follow?.weapon?.(followId) ?? null);
+    const weapon = followId === null ? null : (props.config?.follow?.weapon?.(followId, ctx) ?? null);
     if (weapon === null) {
       const adsTarget = aimingRef.current ? 1 : 0;
       aimRef.current += (adsTarget - aimRef.current) * (1 - Math.exp(-(config?.adsTransitionSpeed ?? 10) * dt));

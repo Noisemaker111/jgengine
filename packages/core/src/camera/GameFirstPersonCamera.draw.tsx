@@ -11,6 +11,7 @@ import {
   type WeaponPresentationTuning,
 } from "@jgengine/core/combat/weaponPresentation";
 import { useGameContext } from "@jgengine/react/provider";
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { usePlayer } from "@jgengine/react/hooks";
 import { useEntityRenderCues } from "@jgengine/core/anim/useEntityRenderCues.draw";
@@ -47,7 +48,7 @@ export interface GameFirstPersonCameraProps {
   /** Custom viewmodel component replacing the built-in three-mesh gun, rendered inside the same camera-locked, muzzle-tracked anchor. Ignored when `config.viewmodel === false`. */
   viewmodel?: ComponentType<ViewmodelProps> | undefined;
   /** Held-weapon source (`GameCameraConfig.weapon`): poses the viewmodel and adds recoil to the look. */
-  weapon?: ((entityId: string) => CameraWeaponView | null) | undefined;
+  weapon?: ((entityId: string, ctx: GameContext) => CameraWeaponView | null) | undefined;
 }
 
 /** First-person camera locked to the followed entity's eyes, with mouse look, head bob and the muzzle-tracked viewmodel. */
@@ -108,7 +109,7 @@ export function GameFirstPersonCamera({
       seededRef.current = true;
       yawRef.current = entity.rotationY;
     }
-    const view = weapon?.(followId) ?? null;
+    const view = weapon?.(followId, ctx) ?? null;
     const last = (lastLookRef.current ??= { yaw: yawRef.current, pitch: pitchRef.current });
     const step = Math.max(1e-4, dt);
     let pose: WeaponPose | null = null;

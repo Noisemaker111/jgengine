@@ -12,10 +12,11 @@ import { scrapSave } from "./save";
 import { captureScrapThumb, scrapProfile } from "./scrapProfile";
 import { refreshScrapSlots } from "./scrapSlots";
 import { noteEquipped } from "./feel";
-import { gunById, rarityRank, rollGun, startReload, reservePhase } from "./handroll";
+import { cancelReload, gunById, rarityRank, rollGun, startReload, reservePhase } from "./handroll";
+import type { GunFamily } from "./handroll/guns";
 import { depositGun, vaultOpenStore, withdrawGun } from "./items/vault";
 import { openAmmoCrate } from "./items/ammoCrates";
-import { playerDef } from "./entities/players/catalog";
+import { applyWalkSpeed } from "./handling";
 import { session } from "./session";
 import { chestDropSpot } from "./items/chestDrops";
 import { noteGunHeld } from "./progression/discovery";
@@ -258,6 +259,8 @@ export function registerCommands(ctx: GameContext): void {
       if (itemId === null) return;
       const gun = gunById(itemId);
       if (gun === undefined) return;
+      // The same key cancels a reload in flight, keeping the rounds already loaded.
+      if (cancelReload(state, gun)) return;
       startReload(state, gun);
     },
   });
@@ -633,6 +636,21 @@ export function registerCommands(ctx: GameContext): void {
         stageRelay(state, input.mode ?? "ambush");
       },
     });
+    // Dev-only: put a rolled gun of one family in the first hotbar slot with its ammo full, so a
+    // capture of how guns handle does not first have to find one in a chest.
+    ctx.game.commands.define<{ family?: GunFamily }>("kit.capture", {
+      apply(state: GameContext, input) {
+        const gun = rollGun(seededRng("kit-capture"), 3, { family: input.family ?? "rifle" });
+        const userId = state.player.userId;
+        state.player.inventory.put("hotbar", gun.id, 1, { slot: 0 });
+        session.selectSlot(state, 0);
+        noteEquipped(gun.id);
+        noteGunHeld(state, gun);
+        const pool = AMMO_STAT_IDS[gun.ammo];
+        const ammo = state.scene.entity.stats.get(userId, pool);
+        if (ammo !== null) state.scene.entity.stats.set(userId, pool, { current: ammo.max });
+      },
+    });
     // Dev-only: drop the chassis to its last point of health, so the game's own downed tick opens
     // the Emergency Reserve window for a capture instead of standing in enemy fire for it.
     ctx.game.commands.define("reserve.capture", {
@@ -672,9 +690,7 @@ function applyPassiveEffects(ctx: GameContext, previousHealthMult = 1): void {
       ctx.scene.entity.stats.delta(userId, "health", Math.max(0, max - health.max));
     }
   }
-  ctx.scene.entity.update(userId, {
-    movement: { walkSpeed: Math.round(playerDef.walkSpeed * (1 + bonus("moveSpeed")) * 10) / 10 },
-  });
+  applyWalkSpeed(ctx, reservePhase(ctx) === "downed");
 }
 
 

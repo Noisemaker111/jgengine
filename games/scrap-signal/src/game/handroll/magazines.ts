@@ -117,6 +117,14 @@ export function startReload(ctx: GameContext, gun: GunDef): boolean {
   return started;
 }
 
+/** Stop a gun's reload in flight; the rounds still loaded stay and the reserve is untouched. Returns whether one was running. */
+export function cancelReload(ctx: GameContext, gun: GunDef): boolean {
+  const mag = magFor(ctx, gun);
+  if (!mag.isReloading()) return false;
+  mag.cancelReload();
+  return true;
+}
+
 /**
  * Put `rounds` back in a gun's magazine without touching the reserve, clamped to its capacity; returns
  * how many went in. A reload in flight keeps its progress. Subsistence and Triple Tap land here.

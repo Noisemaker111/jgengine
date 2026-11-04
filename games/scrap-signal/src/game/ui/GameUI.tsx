@@ -8,7 +8,7 @@ import { ToastStack } from "@jgengine/core/notifications/toastStack.view";
 import { OnboardingHud } from "@jgengine/core/onboarding/onboarding.view";
 import { FERRALON } from "../palette";
 import { itemNameById } from "../content";
-import { DamageVignette, HitMarker, LevelUpBurst } from "./components/Feedback";
+import { DamageVignette, HitMarker, LevelUpBurst, SpreadReticle } from "./components/Feedback";
 import { CashPlate, MissionTracker } from "./components/Mission";
 import { ReserveOverlay, VendorPanel } from "./components/Overlays";
 import { NpcDialog } from "./components/NpcDialog";
@@ -113,6 +113,7 @@ export function GameUI() {
         <AmmoPlate combat={combat} />
       </HudPanel>
 
+      <SpreadReticle />
       <HitMarker />
       <DamageVignette />
       <ReserveOverlay />
