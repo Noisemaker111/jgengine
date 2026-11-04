@@ -26,7 +26,7 @@ The breakdown reports timed scope calls per frame (average and maximum). Render 
 
 The saved record also compares the running dev server's checkout and boot revision with the measuring checkout. `matched` proves that identity only, not that dirty files or compiled assets are byte-identical. A mismatch or unavailable server identity is saved with the run and cannot become a cached baseline. Callback locations use the served source map; a missing map is labeled `generated` and counted as unresolved.
 
-For an opt-in local diagnostic session on a shipped web build, `?telemetry=local&frameMembers=1` enables the same in-page report without probing or posting to the dev server. `bun run jgengine desktop <game-dir> --diagnostics` opts a local desktop build into that mode and WebView developer tools. This does not attach the perf CLI to the app or establish that its source maps match.
+For an opt-in local diagnostic session on a shipped web build, `?telemetry=local&frameMembers=1` enables the same in-page report without probing or posting to the dev server. `bun run jgengine desktop <game-dir> --diagnostics` opts a local desktop build into that mode and WebView developer tools. Launch that app with WebView2's `--remote-debugging-port=<port>` browser argument, then `bun run perf desktop <port> --out <file.json>` reads its existing report and build manifest without opening another page. The manifest fingerprints staged HTML, JS, CSS and source maps, not models, textures or the packaged binary. Missing source maps remain unresolved.
 
 Runs are headless on purpose: headless Chrome draws on the real GPU here, while `--headed` puts an off-screen window under the desktop compositor, so its numbers are not the ones to report.
 
