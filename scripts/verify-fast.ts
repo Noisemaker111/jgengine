@@ -5,7 +5,7 @@
 // runs only those.
 //
 //   bun run verify:fast              # the loop while iterating: seconds
-//   bun run verify:fast --full       # everything CI runs; minutes, before landing
+//   bun run verify:fast --full       # everything CI runs; reproduce CI failures
 //   bun run verify:fast --plan       # the steps and their commands, nothing run
 //   bun run verify:fast --json       # one { ok, ms, checks } document on stdout
 //   bun run verify:fast --cheap      # only the type-checks and gates: what `bun run preflight` runs
@@ -17,10 +17,12 @@
 //
 // Exit: 0 verified, 1 a step failed. `--plan` lists changed files no test reaches.
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
 
 import { assertCheckoutReady } from "./checkout-ready";
 import { digestLines, writeStepLog } from "./failure-digest";
@@ -33,12 +35,13 @@ import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { siteGames } from "./siteGames";
 import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
+import { createVerifyReceipt } from "./verify-receipt";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
   usage: "bun run verify:fast [--full] [--cheap] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skill-api] [--no-cache] [--verbose]",
   flags: [
-    { flag: "--full", detail: "what CI runs, not just what this change reaches; minutes, before landing" },
+    { flag: "--full", detail: "what CI runs; use to reproduce a CI failure" },
     { flag: "--cheap", detail: "only the type-checks and gates, no tests or boots; `bun run preflight` runs this" },
     { flag: "--plan", detail: "print the steps and their commands, run nothing" },
     { flag: "--json", detail: "one { ok, ms, checks } document on stdout" },
@@ -857,7 +860,7 @@ async function run(step: Step, root: string): Promise<StepResult> {
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  return { name: step.name, ok: code === 0, ms: Date.now() - started, output: `${stdout}${stderr}`.trim() };
+  return { name: step.name, ok: code === 0, ms: Date.now() - started, output: `${stdout}${stderr}` };
 }
 
 /**
@@ -892,26 +895,57 @@ function printPlan(plan: Plan, steps: readonly Step[]): void {
   }
 }
 
+function receiptPlan(root: string, base: string, argv: readonly string[], changed: string[], steps: Step[], hits: string[], jobs: number, started: number, junit?: string) {
+  const dirty = git(root, ["status", "--porcelain=v1", "--untracked-files=all"]);
+  const untracked = names(git(root, ["ls-files", "--others", "--exclude-standard"]));
+  const digest = treeDigests(root, untracked);
+  const identity = createHash("sha256").update(dirty).update(git(root, ["diff", "--binary", "HEAD"]));
+  for (const path of untracked) identity.update(`${path}\0${digest(path)}\n`);
+  return {
+    head: git(root, ["rev-parse", "HEAD"]).trim(), base, baseRevision: git(root, ["rev-parse", base]).trim(),
+    dirty: dirty.length > 0, dirtyStatus: dirty, dirtyDigest: identity.digest("hex"),
+    argv, jobs, runtime: `bun ${Bun.version}`, changed, selected: steps, cacheHits: hits,
+    cacheEnabled: !argv.includes("--no-cache") && !argv.includes("--full"), planningMs: Date.now() - started,
+    ...(junit === undefined ? {} : { junit }),
+  };
+}
+
+export function parseVerifyArgs(argv: readonly string[]) {
+  const parsed = parseArgs({ args: [...argv], strict: true, options: {
+    full: { type: "boolean" }, cheap: { type: "boolean" }, plan: { type: "boolean" }, json: { type: "boolean" },
+    base: { type: "string" }, jobs: { type: "string" }, "skill-api": { type: "boolean" }, "no-cache": { type: "boolean" },
+    help: { type: "boolean", short: "h" },
+  } });
+  const base = parsed.values.base ?? BASE;
+  if (!base.trim() || base.startsWith("-")) throw new Error("--base needs a ref");
+  const jobs = parsed.values.jobs === undefined ? DEFAULT_JOBS : Number(parsed.values.jobs);
+  if (!/^\d+$/.test(parsed.values.jobs ?? String(DEFAULT_JOBS)) || !Number.isSafeInteger(jobs) || jobs < 1) throw new Error("--jobs needs a whole number at least 1");
+  const { full = false, plan: planOnly = false, json = false, cheap = false } = parsed.values;
+  if (full && cheap) throw new Error("--full and --cheap cannot be combined");
+  if (planOnly && json) throw new Error("--plan and --json cannot be combined");
+  return { base, jobs, full, planOnly, json, cheap, skillApi: parsed.values["skill-api"] === true };
+}
+
 async function main(argv: readonly string[]): Promise<number> {
   const root = fileURLToPath(new URL("..", import.meta.url));
-  const baseIndex = argv.indexOf("--base");
-  const base = baseIndex >= 0 ? (argv[baseIndex + 1] ?? BASE) : BASE;
-  const full = argv.includes("--full");
-  const planOnly = argv.includes("--plan");
-  const json = argv.includes("--json");
-  const skillApi = argv.includes("--skill-api");
-  const cheap = argv.includes("--cheap");
+  const { base, jobs, full, planOnly, json, cheap, skillApi } = parseVerifyArgs(argv);
+  if (!planOnly) assertCheckoutReady("verify:fast");
   const started = Date.now();
+  const runDir = `.scratch/verify-fast/runs/${crypto.randomUUID()}`;
+  const receipt = planOnly ? null : createVerifyReceipt(root, { argv, jobs, runtime: `bun ${Bun.version}` }, [], join(root, runDir));
+  if (receipt !== null) (json ? console.error : console.log)(`verify:fast receipt: ${receipt.path}`);
   // A failure, its fix and the total always print; the plan, each pass and the cache notes are
   // kept for --verbose, and for --plan, whose whole point is to show them.
   const say = (line: string): void => console.log(line);
   const note = planOnly || isVerbose() ? say : (): void => {};
 
+  try {
   let changed: string[];
   try {
     changed = changedFiles(root, base);
   } catch (error) {
     const message = (error as Error).message;
+    receipt?.finish(false);
     if (json) {
       console.log(JSON.stringify(jsonReport([{ name: "changed files", ok: false, ms: 0 }], Date.now() - started)));
       console.error(message);
@@ -922,6 +956,8 @@ async function main(argv: readonly string[]): Promise<number> {
   }
 
   if (changed.length === 0) {
+    receipt?.plan(receiptPlan(root, base, argv, changed, [], [], jobs, started), []);
+    receipt?.finish(true);
     if (json) {
       console.log(JSON.stringify(jsonReport([], Date.now() - started)));
       return EXIT_VERIFIED;
@@ -931,20 +967,7 @@ async function main(argv: readonly string[]): Promise<number> {
   }
 
   if (full) {
-    const jobsIndex = argv.indexOf("--jobs");
-    const jobs = jobsIndex >= 0 ? Number(argv[jobsIndex + 1]) : DEFAULT_JOBS;
-    if (!Number.isInteger(jobs) || jobs < 1) {
-      console.error(`verify:fast: --jobs needs a whole number of steps at least 1 (got ${argv[jobsIndex + 1]})`);
-      return EXIT_FAILED;
-    }
     const steps = await fullSteps(root, changed);
-    if (json) {
-      const runs = await withHeavyServer(root, steps, () => runSteps(steps, jobs, (step) => run(step, root)));
-      for (const result of runs) if (!result.ok && result.output.length > 0) console.error(result.output);
-      const checks = runs.map((result) => ({ name: result.name, ok: result.ok, ms: result.ms }));
-      console.log(JSON.stringify(jsonReport(checks, Date.now() - started)));
-      return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
-    }
     note(`verify:fast --full: ${steps.length} step(s), what CI runs for ${changed.length} changed file(s)`);
     note(`  ${Math.min(jobs, steps.length)} at a time in this checkout, the same work CI runs as parallel jobs.`);
     if (planOnly) {
@@ -953,6 +976,16 @@ async function main(argv: readonly string[]): Promise<number> {
         console.log(`  step  ${step.name}  (${step.command.join(" ")})${deps}`);
       }
       return EXIT_VERIFIED;
+    }
+    if (receipt === null) throw new Error("missing run receipt");
+    receipt.plan(receiptPlan(root, base, argv, changed, steps, [], jobs, started), steps);
+    if (json) {
+      const runs = await withHeavyServer(root, steps, () => runSteps(steps, jobs, (step) => run(step, root), { onStart: receipt.start, onSettle: receipt.settle }));
+      for (const result of runs) if (!result.ok && result.output.length > 0) console.error(result.output);
+      const checks = runs.map((result) => ({ name: result.name, ok: result.ok, ms: result.ms }));
+      receipt.finish(checks.every((check) => check.ok));
+      console.log(JSON.stringify(jsonReport(checks, Date.now() - started)));
+      return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
     }
     const failures: string[] = [];
     const runs = await withHeavyServer(root, steps, async () =>
@@ -963,8 +996,9 @@ async function main(argv: readonly string[]): Promise<number> {
         if (!result.ok && result.blockedBy === undefined) printFailure(root, step.name, result.output);
         if (!result.ok && result.blockedBy === undefined && step.fix !== undefined) console.log(`  fix: ${step.fix}`);
         return result;
-      }),
+      }, { onStart: receipt.start, onSettle: receipt.settle }),
     );
+    receipt.finish(runs.every((result) => result.ok));
     for (const result of runs) if (!result.ok) failures.push(result.name);
     const seconds = (Date.now() - started) / 1000;
     console.log(`\ntotal ${seconds.toFixed(1)}s — ${steps.length - failures.length} passed, ${failures.length} failed`);
@@ -997,19 +1031,18 @@ async function main(argv: readonly string[]): Promise<number> {
       });
   const skipped: string[] = [];
   const costFile = join(root, ".scratch", "verify-fast", "test-costs.json");
-  const reportDir = ".scratch/verify-fast/junit";
+  // The plan uses a placeholder and never creates or clears evidence.
+  const reportDir = `${runDir}/junit`;
   let testCosts: Record<string, number> = {};
   try {
     testCosts = JSON.parse(readFileSync(costFile, "utf8")) as Record<string, number>;
   } catch {
     testCosts = {};
   }
-  rmSync(join(root, reportDir), { recursive: true, force: true });
-  mkdirSync(join(root, reportDir), { recursive: true });
   const steps = fastSteps(plan, {
     skillApi,
     cheap,
-    lanes: DEFAULT_JOBS,
+    lanes: jobs,
     testCosts,
     reportDir,
     tree,
@@ -1038,20 +1071,6 @@ async function main(argv: readonly string[]): Promise<number> {
     cache.save();
   };
 
-  if (json) {
-    const results: StepResult[] = [];
-    const code = await jsonRun(steps, {
-      run: async (step) => {
-        const result = await run(step, root);
-        results.push(result);
-        return result;
-      },
-      started,
-    });
-    remember(results);
-    return code;
-  }
-
   const leftOutSkillApi = !skillApi && plan.gates.includes("skill-api");
   note(
     `verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.typechecks.length} type-check(s), ${plan.gates.length - (leftOutSkillApi ? 1 : 0)} gate(s), boot ${plan.boots.join(" ") || "none"}  (planned in ${((Date.now() - started) / 1000).toFixed(1)}s)`,
@@ -1070,6 +1089,17 @@ async function main(argv: readonly string[]): Promise<number> {
     printPlan(plan, steps);
     return EXIT_VERIFIED;
   }
+  mkdirSync(join(root, reportDir), { recursive: true });
+  if (receipt === null) throw new Error("missing run receipt");
+  receipt.plan(receiptPlan(root, base, argv, changed, steps, skipped, jobs, started, reportDir), steps);
+  if (json) {
+    const results = await runSteps(steps, jobs, (step) => run(step, root), { failFast: !cheap, onStart: receipt.start, onSettle: receipt.settle });
+    remember(results);
+    receipt.finish(results.every((result) => result.ok));
+    for (const result of results) if (!result.ok && result.output.length > 0) console.error(result.output);
+    console.log(JSON.stringify(jsonReport(results, Date.now() - started)));
+    return results.every((result) => result.ok) ? EXIT_VERIFIED : EXIT_FAILED;
+  }
 
   // The type-checks and gates start first and nothing new starts after a failure, so a type
   // error or a drifted file is named in seconds and the tests behind it never start; the steps
@@ -1078,7 +1108,7 @@ async function main(argv: readonly string[]): Promise<number> {
   // that fixed one gate only to meet the next cost a close per gate.
   const results = await runSteps(
     steps,
-    DEFAULT_JOBS,
+    jobs,
     async (step) => {
       const result = await run(step, root);
       (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
@@ -1088,9 +1118,10 @@ async function main(argv: readonly string[]): Promise<number> {
       }
       return result;
     },
-    { failFast: !cheap },
+    { failFast: !cheap, onStart: receipt.start, onSettle: receipt.settle },
   );
   remember(results);
+  receipt.finish(results.every((result) => result.ok));
   const failures = results.filter((result) => !result.ok && result.blockedBy === undefined).map((result) => result.name);
   const notRun = results.filter((result) => result.blockedBy !== undefined).map((result) => result.name);
   const seconds = (Date.now() - started) / 1000;
@@ -1108,11 +1139,20 @@ async function main(argv: readonly string[]): Promise<number> {
     return EXIT_FAILED;
   }
   return EXIT_VERIFIED;
+  } catch (error) {
+    receipt?.abort(error);
+    throw error;
+  }
 }
 
 if (import.meta.main) {
   const argv = takeVerboseFlag(process.argv.slice(2));
-  if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);
-  assertCheckoutReady("verify:fast");
-  process.exit(await main(argv));
+  try {
+    parseVerifyArgs(argv);
+    if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);
+    process.exit(await main(argv));
+  } catch (error) {
+    console.error(`verify:fast: ${(error as Error).message}`);
+    process.exit(EXIT_FAILED);
+  }
 }

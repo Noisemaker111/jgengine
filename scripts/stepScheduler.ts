@@ -30,6 +30,8 @@ export interface StepResult {
 }
 
 export interface RunStepsOptions {
+  onStart?: (step: ScheduledStep) => void;
+  onSettle?: (result: StepResult) => void;
   /**
    * Start nothing new after the first failure. The `first` steps still all run, since they take
    * seconds and an author wants every type error at once; every other step not started yet is
@@ -91,6 +93,7 @@ export async function runSteps<S extends ScheduledStep>(
 
   const settle = (result: StepResult): void => {
     results.set(result.name, result);
+    options.onSettle?.(result);
     resolved.get(result.name)?.(result);
     if (options.failFast === true && !result.ok && stoppedBy === null && result.blockedBy === undefined) stoppedBy = result.name;
   };
@@ -136,6 +139,7 @@ export async function runSteps<S extends ScheduledStep>(
           }
           if (wantsMachine) machineHeld = true;
           inFlight.set(step.name, settledOf(step.name));
+          options.onStart?.(step);
           const result = await run(step);
           inFlight.delete(step.name);
           if (wantsMachine) machineHeld = false;
