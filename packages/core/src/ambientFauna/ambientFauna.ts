@@ -61,6 +61,8 @@ export interface FaunaWorld {
   surfaceAt?(x: number, z: number, time: number): number;
   /** Ground height at a point; the seabed for a school. */
   groundAt?(x: number, z: number): number;
+  /** Ground height revision, or undefined when changes cannot be tracked. */
+  groundRevision?(): number | undefined;
   /** True where a plant or grass grows, given the ground height there; swarms and drift spawn only there. */
   plantAt?(x: number, z: number, groundY: number): boolean;
   /** Wind at a height: a `windField(...)` fits. */
@@ -545,6 +547,7 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
 
   function place(): void {
     for (const g of runtimes) {
+      g.groundRead.fill(Number.NaN);
       const requested = g.position.length / 3;
       g.count = requested;
       placeAgents(g, world);
@@ -555,6 +558,7 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
     }
   }
   place();
+  let groundRevision = world.groundRevision?.();
 
   return {
     groups: runtimes,
@@ -562,6 +566,11 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
     activeTotal: () => runtimes.reduce((sum, g) => sum + g.active, 0),
     update(frame) {
       const dt = Math.min(frame.dt, 0.1);
+      const nextRevision = world.groundRevision?.();
+      if (nextRevision === undefined || nextRevision !== groundRevision) {
+        for (const g of runtimes) g.groundRead.fill(Number.NaN);
+      }
+      groundRevision = nextRevision;
       for (const g of runtimes) {
         const presence = windowPresence(g.spec.window, frame.sunHeight);
         g.active = Math.min(g.count, Math.round(g.count * presence));
@@ -584,6 +593,7 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
         if (![...saved.position, ...saved.velocity].every(Number.isFinite)) throw new Error(`non-finite restored fauna group ${saved.id}`);
         g.position.set(saved.position);
         g.velocity.set(saved.velocity);
+        g.groundRead.fill(Number.NaN);
       });
     },
     reset: place,

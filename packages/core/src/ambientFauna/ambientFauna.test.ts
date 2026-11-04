@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { gateTimingMs } from "../../../../scripts/timing-budget";
 import { windField } from "../world/wind";
+import { createEditableTerrain } from "../terrain/terraform";
 import {
   createAmbientFauna,
   windowPresence,
@@ -25,6 +26,7 @@ const shore = (x: number): number => (x < 0 ? -6 : -6 + x * 0.5);
 const world: FaunaWorld = {
   surfaceAt: wavy,
   groundAt: (x) => shore(x),
+  groundRevision: () => 0,
   plantAt: (x, z) => Math.sin(x * 0.4) + Math.cos(z * 0.4) > -0.5,
   wind: windField({ direction: [1, 0.4], speed: 6, gust: 2 }),
 };
@@ -215,6 +217,32 @@ describe("cost", () => {
     for (let step = 60; step < 60 + frames; step += 1) fauna.update(frame(step / 30));
     // Every frame used to read it once per insect and twice per fish.
     expect(reads).toBeLessThan((agents * frames) / 4);
+  });
+
+  test("terrain edits invalidate cached heights and unknown revisions never reuse across updates", () => {
+    const terrain = createEditableTerrain({ bounds: { minX: -50, minZ: -50, maxX: 50, maxZ: 50 }, cellSize: 2 });
+    let reads = 0;
+    const make = (tracked: boolean) => createAmbientFauna([group("drift", disc, 30)], {
+      groundAt: (x, z) => { reads += 1; return terrain.sampleHeight(x, z); },
+      ...(tracked ? { groundRevision: terrain.heightRevision } : {}),
+    });
+    const fauna = make(true);
+    for (let step = 0; step < 60; step += 1) fauna.update(frame(step / 30));
+    reads = 0;
+    fauna.update(frame(2));
+    const reused = reads;
+    terrain.apply({ mode: "raise", center: [0, 0], radius: 45, strength: 10, falloff: "none" });
+    reads = 0;
+    fauna.update(frame(2 + 1 / 30));
+    expect(reads).toBeGreaterThan(reused);
+    for (const state of fauna.groups) everyAgent(state, (x, y, z) => {
+      expect(y).toBeGreaterThanOrEqual(terrain.sampleHeight(x, z) + state.spec.band.min - 1e-3);
+    });
+    const untracked = make(false);
+    for (let step = 0; step < 3; step += 1) untracked.update(frame(step / 30));
+    reads = 0;
+    untracked.update(frame(0.1));
+    expect(reads).toBeGreaterThanOrEqual(untracked.activeTotal());
   });
 
   test("a reused ground height keeps insects inside their band over ground steeper than 45°", () => {

@@ -801,11 +801,14 @@ describe("live road drape", () => {
     };
     const world = environment({ roads: source.current(), roadSource: source });
     const field = resolveEnvironmentField(world);
+    const revision = field.heightRevision?.();
+    expect(revision).toBeDefined();
     const flat = flatField().sampleHeight(0, 4);
     expect(field.sampleHeight(0, 4)).toBeCloseTo(flat, 5);
     width = 10;
     for (const listener of listeners) listener();
     expect(field.sampleHeight(0, 4)).toBeCloseTo(flat + 0.2, 5);
+    expect(field.heightRevision?.()).not.toBe(revision);
   });
 });
 
