@@ -56,6 +56,11 @@ export interface VisibilityResult {
   /** Objects within the preload region — load their assets, whether or not they render. */
   readonly preload: ReadonlySet<string>;
   readonly stats: VisibilityStats;
+  /**
+   * Counts the updates whose visible set differed from the one before. Unchanged means every id
+   * visible last update is visible now and no other, so work keyed on the visible set can be skipped.
+   */
+  readonly generation: number;
 }
 
 export interface VisibilityDebugSnapshot {
@@ -96,6 +101,12 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+function sameMembers(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  if (a.size !== b.size) return false;
+  for (const id of a) if (!b.has(id)) return false;
+  return true;
+}
+
 export function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem {
   let settings = mergeCullingSettings(DEFAULT_CULLING_SETTINGS, options.settings ?? {});
   const occlusion = options.occlusion ?? noOcclusion;
@@ -108,6 +119,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
 
   let visible = new Set<string>();
   let prevVisible = new Set<string>();
+  let generation = 0;
   const preload = new Set<string>();
   const requiredAssets = new Set<string>();
 
@@ -314,7 +326,8 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       stats.visible = visible.size;
       stats.preloaded = preload.size;
       stats.drawCallsAvoided = Math.max(0, stats.totalObjects - visible.size);
-      return { visible, preload, stats };
+      if (!sameMembers(visible, prevVisible)) generation += 1;
+      return { visible, preload, stats, generation };
     },
     isVisible(id) {
       return visible.has(id);

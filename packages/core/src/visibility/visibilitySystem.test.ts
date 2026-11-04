@@ -42,6 +42,23 @@ describe("visibilitySystem", () => {
     expect(sys.update().visible.has("mover")).toBe(true);
   });
 
+  test("the generation moves only on a frame the visible set changed", () => {
+    const obj = { id: "mover", position: [500, 0, 20] as [number, number, number], version: 1 };
+    const objects: Renderable[] = [ahead("front", 20), obj];
+    const sys = createVisibilitySystem({ renderables: () => objects, cameras: () => [mainCamera()] });
+    const first = sys.update().generation;
+    expect(sys.update().generation).toBe(first);
+    obj.position = [0, 0, 30];
+    obj.version = 2;
+    const entered = sys.update().generation;
+    expect(entered).not.toBe(first);
+    obj.position = [0, 0, 31];
+    obj.version = 3;
+    expect(sys.update().generation).toBe(entered);
+    objects.pop();
+    expect(sys.update().generation).not.toBe(entered);
+  });
+
   test("a still object is placed in the spatial index once, and again only when its version changes", () => {
     const index = createSpatialIndex();
     const inserted: string[] = [];

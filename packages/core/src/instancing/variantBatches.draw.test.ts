@@ -5,7 +5,7 @@ import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, gatherStaticMembers, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
-import { LevelSingles, VariantStaticObjects } from "./StaticObjectModels.draw";
+import { LevelAssignment, LevelSingles, VariantStaticObjects } from "./StaticObjectModels.draw";
 
 const FULL_TRIANGLES = 9134;
 const FAR_TRIANGLES = 4110;
@@ -129,4 +129,20 @@ describe("model variant batches", () => {
     expect(15 * FULL_TRIANGLES - total).toBe(65312);
     expect(countStaticBatchDraws(scene)).toEqual({ draws: 2, drawn: 15 });
   });
+});
+
+test("a level assignment's revision moves only when a placement changes level", () => {
+  const assignment = new LevelAssignment();
+  assignment.set("a", 0);
+  const placed = assignment.revision;
+  assignment.set("a", 0);
+  expect(assignment.revision).toBe(placed);
+  assignment.set("a", 1);
+  expect(assignment.revision).not.toBe(placed);
+  const moved = assignment.revision;
+  assignment.delete("missing");
+  expect(assignment.revision).toBe(moved);
+  assignment.clear();
+  expect(assignment.revision).not.toBe(moved);
+  expect(assignment.get("a")).toBeUndefined();
 });
