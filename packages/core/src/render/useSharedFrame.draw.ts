@@ -16,6 +16,15 @@ interface FrameGroup {
 
 const groups = new WeakMap<object, Map<number, FrameGroup>>();
 
+/** Optional deep frame diagnostics; absent during normal execution. @internal */
+const observers = new WeakMap<object, { enter(task: Task): void; leave(): void }>();
+
+/** Set the observer for shared frame members. @internal */
+export function observeSharedFrames(loop: object, observer: { enter(task: Task): void; leave(): void } | null): void {
+  if (observer === null) observers.delete(loop);
+  else observers.set(loop, observer);
+}
+
 /** Add `task` to the shared callback for `priority` of the loop `loop` names, subscribing that callback on first use; returns the leave. @internal */
 export function joinFrameGroup(loop: object, subscribe: Subscribe, priority: number, task: Task): () => void {
   let byPriority = groups.get(loop);
@@ -27,7 +36,14 @@ export function joinFrameGroup(loop: object, subscribe: Subscribe, priority: num
   if (group === undefined) {
     const tasks = new Set<Task>();
     const sharedFrameTasks = (state: unknown, delta: number, frame?: unknown): void => {
-      for (const each of tasks) each.current(state, delta, frame);
+      for (const each of tasks) {
+        const observer = observers.get(loop);
+        if (observer === undefined) each.current(state, delta, frame);
+        else {
+          observer.enter(each);
+          try { each.current(state, delta, frame); } finally { observer.leave(); }
+        }
+      }
     };
     group = { tasks, unsubscribe: subscribe({ current: sharedFrameTasks }, priority) };
     byPriority.set(priority, group);
