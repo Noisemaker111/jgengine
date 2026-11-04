@@ -60,12 +60,11 @@ function architecturePenalty(target: CrownArchitectureTarget, measured: CrownArc
   return sum;
 }
 
-/** Score of each check the library test would fail, so a fit never trades a failing check for a closer fit elsewhere. */
+/** Score of each pass limit a trial misses, so a fit never trades a missed limit for a closer fit elsewhere. */
 const TEST_MISS_COST = 10;
 
 /**
- * Guardrail misfit of the seeded individuals, leaving out the worst ones the library test allows to
- * miss, plus a fixed cost for each further seed that misses.
+ * Guardrail misfit of the seeded individuals, leaving out the worst ones a fit allows to miss, plus a fixed cost for each further seed that misses.
  */
 function seededArchitecturePenalty(target: CrownArchitectureTarget, individuals: readonly CrownArchitecture[]): number {
   const penalties = individuals.map((measured) => architecturePenalty(target, measured)).sort((a, b) => a - b);
@@ -107,7 +106,7 @@ export function scoreTrial(target: FitTarget, trial: Trial): TrialScore {
         add("tallo", hinge(Math.log(stand.crownWidthM), Math.log(band.lowM) + 0.06, Math.log(band.highM) - 0.06, 0.015));
         add("talloCentre", 0.2 * sq(logRatio(stand.crownWidthM, 0.5 * (band.lowM + band.highM)) / 0.3));
       }
-      // The library test's limits, with a margin: ±15% height and ±25% DBH.
+      // The fit's pass limits, ±15% height and ±25% DBH, with a margin.
       add("limits", hinge(Math.abs(logRatio(stand.heightM, height)), 0, 0.11, 0.01) + hinge(Math.abs(logRatio(stand.dbhCm, dbh)), 0, 0.18, 0.01));
       const outsideTallo = band !== null && (stand.crownWidthM < band.lowM || stand.crownWidthM > band.highM);
       const testMisses = (Math.abs(stand.heightM / height - 1) >= 0.15 ? 1 : 0) + (Math.abs(stand.dbhCm / dbh - 1) >= 0.25 ? 1 : 0) + (outsideTallo ? 1 : 0);

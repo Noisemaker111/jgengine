@@ -1,4 +1,4 @@
-import { habitHeightAt20M, habitHeightCeilingM, type HabitReference } from "../../packages/core/src/plants/species/habitReference";
+import { habitHeightAt20M, habitHeightCeilingM, SHRUB_STEMS, type HabitReference } from "../../packages/core/src/plants/species/habitReference";
 import type { PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
 import { readRaw, type RawSource } from "./rawSources";
 import type { FitParameter } from "./speciesFit";
@@ -354,7 +354,7 @@ export function scoreHabitTrial(reference: HabitReference, traits: HabitTraits, 
       add("crown", hinge(r.crownWidthM / Math.max(0.1, r.heightM), 0.15, 1e6, 0.05));
       if (traits.widthToHeight !== undefined) add("width", hinge(r.crownWidthM / Math.max(0.1, r.heightM), traits.widthToHeight[0], traits.widthToHeight[1], 0.1));
       add("maxCrown", hinge(r.crownWidthM / 2, 0, maxCrownRadiusM, 0.2));
-      if (reference.multiStem) add("stems", hinge(r.stems, 3, 30, 1));
+      if (reference.multiStem) add("stems", hinge(r.stems, SHRUB_STEMS.min, SHRUB_STEMS.max, 1));
     }
   }
   let total = 0;

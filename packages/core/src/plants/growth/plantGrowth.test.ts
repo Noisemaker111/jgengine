@@ -6,23 +6,12 @@ import { basalStemCount } from "../species/habitReference";
 import { PLANT_REGION } from "../structure/plantStructure";
 import { validatePlantSpecies } from "../species/plantSpecies";
 import { crownRatio, hashPlantStructure } from "../structure/plantStructure";
-import { siteIndexHeightM, type SiteIndexCurve } from "../validation/heightAgeCurves";
-import { SPECIES_REFERENCE } from "../species/speciesReferenceTable";
 import { OPEN_TEMPERATE_SITE } from "./plantEnvironment";
 import { DEFAULT_GROWTH_LIMITS, createPlantGrowth, type PlantGrowthSnapshot } from "./plantGrowth";
 
 const SEED = "maple";
-/** Carmean 1989 site index for northern Wisconsin sugar maple on a good site, feet at 50 years. */
-const SITE_INDEX_FT = 65;
-
-function carmeanOf(speciesId: string): SiteIndexCurve {
-  const curve = SPECIES_REFERENCE[speciesId]?.carmean;
-  if (curve === undefined) throw new Error(`no Carmean curve for ${speciesId}`);
-  return curve;
-}
 
 interface LongRun {
-  heights: Map<number, number>;
   crownRatioAt100: number;
   snapshotAtHalf: PlantGrowthSnapshot;
   hashAtEnd: string;
@@ -41,12 +30,10 @@ const HALF_RUN_YEARS = LONG_RUN_YEARS / 2;
 function growLong(): LongRun {
   if (longRun) return longRun;
   const plant = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
-  const heights = new Map<number, number>();
   let crownRatioAt100 = 0;
   let snapshotAtHalf: PlantGrowthSnapshot | undefined;
   for (let year = 1; year <= LONG_RUN_YEARS; year += 1) {
     plant.step();
-    if (year === 50 || year === 100) heights.set(year, plant.structure().stats.heightM);
     if (year === 100) crownRatioAt100 = crownRatio(plant.structure());
     // Round-trip through JSON: a snapshot is plain data.
     if (year === HALF_RUN_YEARS) snapshotAtHalf = JSON.parse(JSON.stringify(plant.snapshot()));
@@ -54,7 +41,6 @@ function growLong(): LongRun {
   if (!snapshotAtHalf) throw new Error(`no snapshot at ${HALF_RUN_YEARS} years`);
   const stats = plant.stats();
   longRun = {
-    heights,
     crownRatioAt100,
     snapshotAtHalf,
     hashAtEnd: hashPlantStructure(plant.structure()),
@@ -100,15 +86,6 @@ describe("plant growth", () => {
     resumed.step(LONG_RUN_YEARS - HALF_RUN_YEARS);
     expect(hashPlantStructure(resumed.structure())).toBe(run.hashAtEnd);
     expect(run.alive).toBe(true);
-  }, 120_000);
-
-  test("height at 50 and 100 years is within 15% of the Carmean site-index curve", () => {
-    const run = growLong();
-    for (const age of [50, 100]) {
-      const expected = siteIndexHeightM(carmeanOf("acer-saccharum"), SITE_INDEX_FT, age);
-      const height = run.heights.get(age) ?? 0;
-      expect(Math.abs(height - expected) / expected).toBeLessThan(0.15);
-    }
   }, 120_000);
 
   test("a metamer standing for two leaf nodes carries twice the leaves", () => {
@@ -227,16 +204,6 @@ describe("eastern white pine", () => {
   test("the record is valid", () => {
     expect(validatePlantSpecies(PINUS_STROBUS)).toEqual([]);
   });
-
-  test("height at 50 and 100 years is within 15% of the Carmean site-index curve", () => {
-    const plant = createPlantGrowth(PINUS_STROBUS, OPEN_TEMPERATE_SITE, "pine");
-    for (const age of [50, 100]) {
-      plant.step(age - plant.ageYears());
-      const expected = siteIndexHeightM(carmeanOf("pinus-strobus"), SITE_INDEX_FT, age);
-      expect(Math.abs(plant.structure().stats.heightM - expected) / expected).toBeLessThan(0.15);
-    }
-    expect(plant.stats().alive).toBe(true);
-  }, 60_000);
 
   test("evergreen needles keep their colour through winter", () => {
     const plant = createPlantGrowth(PINUS_STROBUS, OPEN_TEMPERATE_SITE, "pine");

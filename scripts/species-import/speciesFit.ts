@@ -139,7 +139,7 @@ export async function fitSpecies(
       options.onBest(best);
     }
     if (options.until?.(best) === true) {
-      options.onGeneration?.(`gen ${generation} stopped at ${best.score.toFixed(2)}: within the library test's limits`);
+      options.onGeneration?.(`gen ${generation} stopped at ${best.score.toFixed(2)}: within the pass limits`);
       return best;
     }
     options.onGeneration?.(`gen ${generation} best ${best.score.toFixed(2)} sigma ${search.sigma.toFixed(3)} ${JSON.stringify(Object.fromEntries(Object.entries(best.parts).map(([k2, v]) => [k2, Number(v.toFixed(2))])))}`);

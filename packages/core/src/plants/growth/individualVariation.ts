@@ -6,8 +6,8 @@ import { plantCos, plantExp, plantLog, PLANT_PI } from "./plantMath";
  * How far one individual's architecture strays from its species record, as standard deviations.
  * Trees of one species and size differ in crown width by about a quarter either way (Jucker et al.
  * 2022, Tallo), across sites and competition as well as individuals; these spreads are set so one
- * site's seeds differ visibly in crown width inside that band while staying within a fifth of the
- * typical tree's height (plants/growth/individualVariation.test.ts).
+ * site's seeds differ visibly in crown width while staying within a fifth of the typical tree's
+ * height (plants/growth/individualVariation.test.ts).
  */
 const INDIVIDUAL_SPREAD = {
   /** Degrees added to the branch angle and to the lateral set point. */

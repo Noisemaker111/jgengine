@@ -1,6 +1,6 @@
 /**
  * What USDA PLANTS says a shrub, palm, fern or herb grows into, for species no forest inventory
- * measures: imported by `bun run jgengine plants import` and checked by the species library test.
+ * measures: imported by `bun run jgengine plants import` and fitted to by `plants fit`.
  * Heights are open-grown on a good site, as PLANTS characteristics describe them.
  * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
  */

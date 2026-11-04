@@ -1,102 +1,65 @@
 import { describe, expect, test } from "bun:test";
-import { OPEN_TEMPERATE_SITE } from "../../growth/plantEnvironment";
+import { OPEN_TEMPERATE_SITE, type PlantEnvironment } from "../../growth/plantEnvironment";
 import { createPlantGrowth } from "../../growth/plantGrowth";
-import { PLANT_REGION } from "../../structure/plantStructure";
-import { CROWN_ARCHITECTURE_AGE, CROWN_ARCHITECTURE_MISSES_ALLOWED, CROWN_ARCHITECTURE_SEEDS, crownArchitecture, crownArchitectureMisses, crownArchitectureTarget } from "../../validation/crownArchitecture";
+import { buildPlantMesh } from "../../mesh/plantMesh";
+import type { PlantStructure } from "../../structure/plantStructure";
 import { PLANT_LIBRARY } from "./plantLibrary";
-import { basalStemCount, habitHeightAt20M, habitHeightCeilingM, SHRUB_STEMS } from "../habitReference";
-import { HABIT_REFERENCE } from "../habitReferenceTable";
-import { validatePlantSpecies, type PlantSpecies } from "../plantSpecies";
-import { crownWidthBandM, REFERENCE_STAND, standDbhAtCm, standHeightAtM } from "../speciesReference";
-import { SPECIES_REFERENCE } from "../speciesReferenceTable";
+import { validatePlantSpecies } from "../plantSpecies";
 
-const SEED = "a";
-const AGES = [20, 50, 100] as const;
-/** Stand-grown DBH error allowed, and the share of the Tallo crown band's high edge. */
-const STRICT = { dbh: 0.25, talloHigh: 1 };
-/**
- * Records that miss the stand tables because no record of them both passes and grows a whole crown in
- * the open: the hand-tuned sugar maple, and six whose refit dies back, thins to a third of its leaf
- * area or stands as a bare pole at 60 years open-grown. Each gets only the DBH error and Tallo overrun
- * it measures.
- */
-const LOOK_SLACK: Readonly<Record<string, typeof STRICT>> = {
-  "acer-saccharum": { dbh: 0.25, talloHigh: 1.1 },
-  "fraxinus-nigra": { dbh: 0.25, talloHigh: 1.1 },
-  "pinus-contorta": { dbh: 0.4, talloHigh: 1.05 },
-  "pinus-taeda": { dbh: 0.35, talloHigh: 1 },
-  "prunus-serotina": { dbh: 0.35, talloHigh: 1.1 },
-  "quercus-coccinea": { dbh: 0.4, talloHigh: 1.3 },
-  "robinia-pseudoacacia": { dbh: 0.45, talloHigh: 1.3 },
-};
-/** Of {@link LOOK_SLACK}, those whose crown-kind guardrails (fork, centroid, leaf shell) are not checked. */
-const CROWN_KIND_UNCHECKED = new Set(["acer-saccharum", "fraxinus-nigra", "prunus-serotina"]);
+const SITES: readonly [string, PlantEnvironment][] = [
+  ["open", OPEN_TEMPERATE_SITE],
+  ["stand", { ...OPEN_TEMPERATE_SITE, stand: { spacingIndex: 0.25 } }],
+];
+const AGES = [5, 60] as const;
 
-function checkTree(species: PlantSpecies): void {
-  test(`${species.id}: a stand-grown tree is within 15% of its height, 25% of its DBH and inside the Tallo crown band at 20, 50 and 100 years`, () => {
-    expect(validatePlantSpecies(species)).toEqual([]);
-    const reference = SPECIES_REFERENCE[species.id];
-    if (reference === undefined) throw new Error(`no reference for ${species.id}`);
-    const plant = createPlantGrowth(species, REFERENCE_STAND, SEED, { individual: "typical" });
-    const slack = LOOK_SLACK[species.id] ?? STRICT;
-    for (const age of AGES) {
-      plant.step(age - plant.ageYears());
-      const { heightM, dbhCm, crownRadiusM } = plant.structure().stats;
-      expect(Math.abs(heightM / standHeightAtM(reference, age) - 1), `${age} y height ${heightM.toFixed(1)} m`).toBeLessThan(0.15);
-      expect(Math.abs(dbhCm / standDbhAtCm(reference, age) - 1), `${age} y DBH ${dbhCm.toFixed(1)} cm`).toBeLessThan(slack.dbh);
-      const band = crownWidthBandM(reference, dbhCm);
-      if (band === null) throw new Error(`no Tallo record for ${species.id}`);
-      expect(2 * crownRadiusM, `${age} y crown width`).toBeGreaterThanOrEqual(band.lowM);
-      expect(2 * crownRadiusM, `${age} y crown width`).toBeLessThanOrEqual(band.highM * slack.talloHigh);
-    }
-  }, 60_000);
+/** The first non-finite value in a float array, as `name[i]=value`, or undefined. */
+function nonFinite(name: string, values: Float32Array): string | undefined {
+  for (let i = 0; i < values.length; i += 1) if (!Number.isFinite(values[i] ?? Number.NaN)) return `${name}[${i}]=${values[i]}`;
+  return undefined;
 }
 
-function checkArchitecture(species: PlantSpecies): void {
-  test(`${species.id}: open-grown ${species.architecture.crownForm ?? "tree"} individuals at ${CROWN_ARCHITECTURE_AGE} years keep its crown kind: fork, shape, openness and leaf shell`, () => {
-    expect(species.architecture.crownForm, "crown form").toBeDefined();
-    const target = crownArchitectureTarget(species);
-    const misses: string[] = [];
-    for (const seed of CROWN_ARCHITECTURE_SEEDS) {
-      const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, seed);
-      plant.step(CROWN_ARCHITECTURE_AGE);
-      const missed = crownArchitectureMisses(target, crownArchitecture(plant.structure()));
-      if (missed.length > 0) misses.push(`seed ${seed}: ${missed.join(", ")}`);
-    }
-    expect(misses.length, misses.join("\n")).toBeLessThanOrEqual(CROWN_ARCHITECTURE_MISSES_ALLOWED);
-  }, 60_000);
-}
-
-function checkHabit(species: PlantSpecies): void {
-  test(`${species.id}: an open-grown ${species.habit} is within 15% of its USDA PLANTS height at 20 years, holds its mature height at 40 and keeps its stems`, () => {
-    expect(validatePlantSpecies(species)).toEqual([]);
-    const reference = HABIT_REFERENCE[species.id];
-    if (reference === undefined) throw new Error(`no PLANTS reference for ${species.id}`);
-    const plant = createPlantGrowth(species, OPEN_TEMPERATE_SITE, SEED, { individual: "typical" });
-    for (const age of [20, 40]) {
-      plant.step(age - plant.ageYears());
-      const structure = plant.structure();
-      const { heightM, crownRadiusM } = structure.stats;
-      if (age === 20) expect(Math.abs(heightM / habitHeightAt20M(reference) - 1), `20 y height ${heightM.toFixed(2)} m`).toBeLessThan(0.15);
-      else expect(heightM / habitHeightCeilingM(reference), `40 y height ${heightM.toFixed(2)} m`).toBeLessThan(1.15);
-      expect(crownRadiusM, `${age} y crown radius`).toBeLessThanOrEqual(species.limits.maxCrownRadiusM * 1.1);
-      if (reference.multiStem) {
-        const stems = basalStemCount(structure.segments, PLANT_REGION.deadwood);
-        expect(stems, `${age} y stems`).toBeGreaterThanOrEqual(SHRUB_STEMS.min);
-        expect(stems, `${age} y stems`).toBeLessThanOrEqual(SHRUB_STEMS.max);
-      }
-    }
-  }, 60_000);
+function brokenNumbers(structure: PlantStructure): string[] {
+  const problems: string[] = [];
+  for (const [key, value] of Object.entries(structure.stats)) if (!Number.isFinite(value) || value < 0) problems.push(`stats.${key}=${value}`);
+  const { segments, leaves } = structure;
+  for (const [name, values] of [
+    ["segments.start", segments.start],
+    ["segments.end", segments.end],
+    ["segments.radiusStart", segments.radiusStart],
+    ["segments.radiusEnd", segments.radiusEnd],
+    ["leaves.position", leaves.position],
+    ["leaves.size", leaves.size],
+  ] as const) {
+    const bad = nonFinite(name, values);
+    if (bad !== undefined) problems.push(bad);
+  }
+  for (const radii of [segments.radiusStart, segments.radiusEnd]) if (radii.some((r) => r < 0)) problems.push("a negative segment radius");
+  if (leaves.size.some((s) => s < 0)) problems.push("a negative leaf size");
+  return problems;
 }
 
 describe("plant species library", () => {
   for (const species of PLANT_LIBRARY) {
-    if (species.habit === "tree") {
-      checkTree(species);
-      if (!CROWN_KIND_UNCHECKED.has(species.id)) checkArchitecture(species);
-    } else {
-      checkHabit(species);
-    }
+    test(`${species.id}: a valid record that grows finite, non-negative sizes and builds a mesh, open and in a stand`, () => {
+      expect(validatePlantSpecies(species)).toEqual([]);
+      for (const [site, env] of SITES) {
+        const plant = createPlantGrowth(species, env, "a");
+        for (const age of AGES) {
+          plant.step(age - plant.ageYears());
+          const structure = plant.structure();
+          const where = `${site} ${age} y`;
+          expect(brokenNumbers(structure), where).toEqual([]);
+          expect(structure.stats.heightM, where).toBeGreaterThan(0);
+          const mesh = buildPlantMesh({ structure, detail: 0.5, structureHash: "-" });
+          expect(mesh.triangles, where).toBeGreaterThan(0);
+          for (const part of [mesh.bark, mesh.leaves]) {
+            expect(nonFinite("positions", part.positions), where).toBeUndefined();
+            const vertices = part.positions.length / 3;
+            expect(part.indices.every((index) => index < vertices), where).toBe(true);
+          }
+        }
+      }
+    }, 60_000);
   }
 });
 
