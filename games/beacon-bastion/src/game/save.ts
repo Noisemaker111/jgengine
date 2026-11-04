@@ -214,7 +214,7 @@ export function keepCanCheckpoint(ctx: GameContext): boolean {
 }
 
 /** Save a live defense at most once a second, only while its slot still contains our last write. */
-export async function checkpointKeep(ctx: GameContext, dt: number): Promise<void> {
+export function checkpointKeep(ctx: GameContext, dt: number): Promise<void> | undefined {
   const state = checkpoints(ctx);
   if (state.slot === null || state.pending !== null || state.failed) return;
   state.elapsed += dt;
@@ -230,9 +230,9 @@ export async function checkpointKeep(ctx: GameContext, dt: number): Promise<void
     if (save.status() === "error") { state.failed = true; unsavedKeep.write(ctx, true); return; }
     state.raw = keepBytes(slot);
     unsavedKeep.write(ctx, false);
-  }).catch(() => { state.failed = true; unsavedKeep.write(ctx, true); });
+  }).catch(() => { state.failed = true; unsavedKeep.write(ctx, true); }).finally(() => { state.guarding = false; state.pending = null; });
   state.pending = pending;
-  try { await pending; } finally { state.guarding = false; state.pending = null; }
+  return pending;
 }
 
 /** Save on withdrawal without taking ownership of a different or externally changed keep. */
