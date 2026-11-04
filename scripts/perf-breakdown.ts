@@ -47,28 +47,35 @@ export async function readBreakdown(session: CdpSession): Promise<FrameBreakdown
   const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jgFrameBreakdown?.summary({ top: 15 }) ?? null`);
   if (summary === null || summary === undefined) return null;
   const urls = new Map<string, string>();
+  const names = new Map<string, string>();
+  let failure: string | undefined;
   const off = session.on("Debugger.scriptParsed", (params) => {
     urls.set(String(params["scriptId"]), String(params["url"]));
   });
   try {
     await session.send("Debugger.enable");
-    const names = new Map<string, string>();
     for (const entry of [...summary.cpu, ...(summary.calls ?? [])]) {
       if (!entry.name.startsWith("frame#")) continue;
-      let resolved = names.get(entry.name);
+      const [owner, ...detail] = entry.name.split(" | ");
+      if (owner === undefined) continue;
+      let resolved = names.get(owner);
       if (resolved === undefined) {
-        const located = await locateCallback(session, entry.name, urls);
-        resolved = located === null ? entry.name : `${entry.name} ${located}`;
-        names.set(entry.name, resolved);
+        const located = await locateCallback(session, owner, urls);
+        resolved = located === null ? owner : `${owner} ${located}`;
+        names.set(owner, resolved);
       }
-      entry.name = resolved;
+      entry.name = detail.length === 0 ? resolved : `${resolved} | ${detail.join(" | ")}`;
     }
-  } catch {
-    // Unnamed callbacks still carry their frame# label; the numbers stand.
+  } catch (error) {
+    failure = error instanceof Error ? error.message : String(error);
   } finally {
     off();
     await session.send("Debugger.disable").catch(() => {});
   }
+  const owners = new Set([...summary.cpu, ...(summary.calls ?? [])].map((entry) => entry.name.split(" | ")[0]?.split(" ")[0]).filter((name): name is string => name?.startsWith("frame#") === true));
+  let resolved = 0;
+  for (const owner of owners) if ((names.get(owner) ?? owner) !== owner) resolved += 1;
+  summary.sources = { resolved, unresolved: owners.size - resolved, ...(failure === undefined ? {} : { error: failure }) };
   return summary;
 }
 

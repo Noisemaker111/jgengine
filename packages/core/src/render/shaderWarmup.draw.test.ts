@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { BoxGeometry, DataTexture, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, MeshStandardMaterial, Object3D, OrthographicCamera, PerspectiveCamera, PointLight, Scene, ShaderMaterial, SkinnedMesh, WebGLRenderTarget, type Material } from "three";
+import { installFrameBreakdown, measureComposerPasses } from "../devtools/frameBreakdown.draw";
 
 import {
   batchByProgram,
@@ -1502,6 +1503,58 @@ describe("deferUnlinkedDraws", () => {
     firstUnlinkedDrawable(renderer, scene, camera);
     firstUnlinkedDrawable(renderer, scene, camera);
     expect(reads).toBeGreaterThan(200);
+  });
+
+  test("frame report separates legitimate passes from repeated readiness walks", () => {
+    const previousWindow = Reflect.get(globalThis, "window");
+    Reflect.set(globalThis, "window", { location: { search: "?frameMembers=1" } });
+    const { renderer, scene, camera, add, depth, programs, ready } = deferringFixture();
+    const visible = add("road", true); visible.castShadow = true;
+    ready.add(depth); programs.set(depth, { currentProgram: { isReady: () => true }, skinning: false });
+    for (let index = 0; index < 100; index += 1) add(`far${index}`, true).userData["culled"] = true;
+    const shadow = Object.assign(renderer.shadowMap, { render: () => {} });
+    const originalRender = renderer.render;
+    renderer.render = (s, c) => { shadow.render(); originalRender(s, c); };
+    Object.assign(renderer, { getContext: () => ({ getExtension: () => null }), info: { programs: [] } });
+    const undo = deferUnlinkedDraws(renderer as never, scene, () => true, () => 0);
+    const subscribers: { ref: { current: (state: unknown, delta: number) => void }; priority: number }[] = [];
+    const internal = { subscribers, subscribe(ref: { current: (state: unknown, delta: number) => void }, priority: number) {
+      const entry = { ref, priority }; subscribers.push(entry); subscribers.sort((a, b) => a.priority - b.priority);
+      return () => { const index = subscribers.indexOf(entry); if (index >= 0) subscribers.splice(index, 1); };
+    } };
+    const store = { getState: () => ({ internal }) };
+    const breakdown = installFrameBreakdown(renderer as never, store as never);
+    class RenderPass { render() { renderer.render(scene, camera); } }
+    class BloomPass { render() { renderer.render(scene, camera); } }
+    const composer = { passes: [new RenderPass(), new BloomPass()] };
+    let broken = false;
+    const runPasses = () => {
+      measureComposerPasses(composer);
+      for (const pass of composer.passes) {
+        if (broken) firstUnlinkedDrawable(renderer, scene, camera);
+        pass.render();
+      }
+    };
+    internal.subscribe({ current: runPasses }, 0);
+    const runFrame = () => { for (const { ref } of subscribers) ref.current({}, 1 / 60); };
+    try {
+      runFrame(); runFrame();
+      const owner = Object.entries(breakdown.callbacks()).find(([, callback]) => callback === runPasses)?.[0];
+      const good = breakdown.records().at(-1);
+      expect(good?.calls?.["pass:main"]).toBe(1);
+      expect(good?.calls?.["post:BloomPass"]).toBe(1);
+      expect(good?.calls?.["render:shadow"]).toBe(2);
+      expect(good?.calls?.[`${owner} | shader readiness scene draw checks`]).toBe(2);
+      expect(good?.calls?.[`${owner} | shader readiness shadow draw checks`]).toBe(2);
+      expect(good?.calls?.[`${owner} | shader readiness scene visits`]).toBeUndefined();
+      broken = true; runFrame(); runFrame();
+      const bad = breakdown.records().at(-1);
+      expect(bad?.calls?.[`${owner} | shader readiness scene visits`]).toBeGreaterThan(200);
+      expect(breakdown.summary({ top: 100 }).calls?.some((entry) => entry.name === `${owner} | shader readiness scene visits`)).toBe(true);
+    } finally {
+      breakdown.dispose(); undo();
+      if (previousWindow === undefined) Reflect.deleteProperty(globalThis, "window"); else Reflect.set(globalThis, "window", previousWindow);
+    }
   });
 
   test("draws everything when inactive, for other scenes, after undo, and once a link has stalled", () => {

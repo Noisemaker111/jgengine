@@ -8,6 +8,16 @@
 /** A frame slower than this is a hitch: two frames missed at 60 Hz. */
 export const HITCH_MS = 33;
 
+/** Receives counts from instrumented work while deep frame diagnostics are active. @internal */
+export type FrameWorkObserver = (name: string, count: number) => void;
+let workObserver: FrameWorkObserver | null = null;
+
+/** Install or remove the active frame's work-count receiver. @internal */
+export function observeFrameWork(observer: FrameWorkObserver | null): void { workObserver = observer; }
+
+/** Current receiver, or null when detailed counts are disabled. @internal */
+export function frameWorkObserver(): FrameWorkObserver | null { return workObserver; }
+
 /** One frame, as the hooks saw it. GPU times arrive a few frames late; `gpu` is null until they do. */
 export interface FrameBreakdownRecord {
   /** Time since the previous frame started (the frame interval the player sees). */
@@ -91,6 +101,12 @@ export interface FrameBreakdownSummary {
   passes: NamedCost[];
   /** Calls per frame for observed scopes. Missing on older records. */
   calls?: { name: string; avg: number; max: number }[];
+  /** Number of CPU and call rows omitted by the summary limit. */
+  omitted?: { cpu: number; calls: number };
+  /** Detailed work counters cover only instrumented owners; absent on older records. */
+  workCounts?: "enabled" | "disabled";
+  /** Callback source lookup coverage, when the performance harness attempted it. */
+  sources?: { resolved: number; unresolved: number; error?: string };
   counts: {
     drawsAvg: number;
     drawsMax: number;
@@ -204,8 +220,15 @@ export function summarizeBreakdown(
   const includeMembers = <T extends { name: string }>(items: T[]): T[] => {
     const first = items.slice(0, top);
     const seen = new Set(first.map((item) => item.name));
-    return [...first, ...items.filter((item) => item.name.includes(":sharedMember") && !seen.has(item.name)).slice(0, top)];
+    return [...first, ...items.filter((item) => (item.name.includes(":sharedMember") || item.name.includes(" | ")) && !seen.has(item.name)).slice(0, top)];
   };
+  const cpuRows = namedCosts(records.map((record) => record.cpu), Number.POSITIVE_INFINITY);
+  const callRows = [...new Set(records.flatMap((record) => Object.keys(record.calls ?? {})))].map((name) => {
+    const values = records.map((record) => record.calls?.[name] ?? 0);
+    return { name, avg: round(values.reduce((sum, value) => sum + value, 0) / n, 2), max: Math.max(...values) };
+  }).sort((a, b) => b.avg - a.avg);
+  const selectedCpu = includeMembers(cpuRows);
+  const selectedCalls = includeMembers(callRows);
   const perFrame = (cost: DrawCost): DrawCost => ({ ...cost, draws: round(cost.draws / n, 1), triangles: Math.round(cost.triangles / n), cpuMs: round(cost.cpuMs / n, 3) });
   return {
     frames: records.length,
@@ -214,12 +237,10 @@ export function summarizeBreakdown(
     work: spread(records.map((record) => record.workMs)),
     gpu: resolved.length === 0 ? null : spread(gpuTotals),
     gpuFrames: resolved.length,
-    cpu: includeMembers(namedCosts(records.map((record) => record.cpu), Number.POSITIVE_INFINITY)),
+    cpu: selectedCpu,
     passes: namedCosts(resolved, top),
-    calls: includeMembers([...new Set(records.flatMap((record) => Object.keys(record.calls ?? {})))].map((name) => {
-      const values = records.map((record) => record.calls?.[name] ?? 0);
-      return { name, avg: round(values.reduce((sum, value) => sum + value, 0) / n, 2), max: Math.max(...values) };
-    }).sort((a, b) => b.avg - a.avg)),
+    calls: selectedCalls,
+    omitted: { cpu: cpuRows.length - selectedCpu.length, calls: callRows.length - selectedCalls.length },
     counts: {
       drawsAvg: round(records.reduce((sum, record) => sum + record.draws, 0) / Math.max(1, records.length), 1),
       drawsMax: records.reduce((max, record) => Math.max(max, record.draws), 0),
@@ -267,6 +288,9 @@ export function renderBreakdownText(summary: FrameBreakdownSummary, title: strin
     "top cpu (avg / p95 per frame):",
     ...summary.cpu.slice(0, 8).map((entry) => `  ${entry.name.padEnd(40)} ${entry.avgMs.toFixed(2).padStart(7)} / ${entry.p95Ms.toFixed(2)}`),
     ...(summary.calls === undefined || summary.calls.length === 0 ? ["scope calls: unavailable"] : ["scope calls (avg / max per frame):", ...summary.calls.map((entry) => `  ${entry.name} ${entry.avg} / ${entry.max}`)]),
+    ...(summary.omitted === undefined ? [] : [`omitted from summary: ${summary.omitted.cpu} CPU rows, ${summary.omitted.calls} call rows`]),
+    summary.workCounts === "enabled" ? "work counts: instrumented owners only; other work is unobserved" : "work counts: unavailable (deep diagnostics disabled or older record)",
+    ...(summary.sources === undefined ? [] : [`callback sources: ${summary.sources.resolved} resolved, ${summary.sources.unresolved} unresolved${summary.sources.error === undefined ? "" : ` (${summary.sources.error})`}`]),
     ...(summary.passes.length === 0 ? [] : ["top gpu passes (avg / p95):", ...summary.passes.slice(0, 8).map((entry) => `  ${entry.name.padEnd(40)} ${entry.avgMs.toFixed(2).padStart(7)} / ${entry.p95Ms.toFixed(2)}`)]),
     `draws ${summary.counts.drawsAvg} avg (${summary.counts.drawsMax} max), triangles ${summary.counts.trianglesAvg} avg, programs ${summary.counts.programs ?? "?"}, ` +
       `compiles ${summary.counts.compiles} (${summary.counts.compileMs} ms), uploads ${summary.counts.uploads} (${summary.counts.uploadMb} MB), heap ${summary.counts.heapMb ?? "?"} MB, gc ~${summary.counts.gcMb} MB`,

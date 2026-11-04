@@ -8,6 +8,7 @@ import {
   aggregateInclusiveTime,
   aggregateSelfTime,
   cappedClockProblem,
+  compareServedSource,
   droppedOverrides,
   DRAW_FRAME_COUNTER_SCRIPT,
   measureGame,
@@ -25,6 +26,16 @@ import {
   summarizeFrameDraws,
   undeclaredSettingErrors,
 } from "./perf-play";
+
+test("performance source identity rejects a different checkout or server revision", () => {
+  const root = process.cwd();
+  const server = { identity: root, root, gameDir: null, pid: 12, kind: "runner" as const, head: "12345678abcdef" };
+  expect(compareServedSource(server, root, "12345678")).toBe("matched");
+  expect(compareServedSource({ ...server, root: join(root, "other") }, root, "12345678")).toBe("mismatch");
+  expect(compareServedSource({ ...server, head: "87654321" }, root, "12345678")).toBe("mismatch");
+  expect(compareServedSource({ ...server, gameDir: join(root, "other") }, root, "12345678")).toBe("mismatch");
+  expect(compareServedSource(null, root, "12345678")).toBe("unavailable");
+});
 
 test("whole-frame draws include extension calls once, even when the extension or inherited methods are reused", () => {
   const ticks: (() => void)[] = [];

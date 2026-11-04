@@ -20,6 +20,7 @@ import {
 } from "./browser-lib";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
+import { checkoutIdentity, readServerIdentity, type ServerIdentityReport } from "./devServerMarker";
 import { baselinePath, cleanCommitFor, conditionsKey, readBaselineAt, resolveCommit, saveBaseline } from "./perf-baselines";
 import {
   acquireWarmCapture,
@@ -955,10 +956,20 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
   frameClock: FrameClock;
   /** Which engine the measured window rendered, so a saved record can be audited later. */
   engine?: EngineRecord;
+  /** Server-reported checkout and boot revision compared with the measuring checkout. */
+  servedSource?: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null };
   /** How the run moved while measured. */
   path?: PerfPath;
   /** Where each frame went over the measured window; null when the page has no dev telemetry. */
   breakdown?: FrameBreakdownSummary | null;
+}
+
+/** Compare the live server's identity, not just the measuring process's checkout. */
+export function compareServedSource(server: ServerIdentityReport | null, expectedRoot: string, expectedCommit: string | null): "matched" | "mismatch" | "unavailable" {
+  if (server === null || server.head === undefined || expectedCommit === null) return "unavailable";
+  const normalize = (path: string) => { const value = resolve(path).replaceAll("\\", "/"); return process.platform === "win32" ? value.toLowerCase() : value; };
+  if (normalize(server.root) !== normalize(expectedRoot) || !server.head.startsWith(expectedCommit) || server.gameDir !== null || server.kind !== "runner") return "mismatch";
+  return "matched";
 }
 export type { PerfReport };
 
@@ -1283,10 +1294,14 @@ async function main(): Promise<void> {
 
   /** Measure one game in the browser already running on `debugPort`, then write and print its record. */
   const measureOne = async (game: string, debugPort: number, base: string): Promise<void> => {
+    const server = await readServerIdentity(base);
+    const servedSource = { status: compareServedSource(server, checkoutIdentity(repoRoot), measuredEngine?.commit ?? null), server };
+    if (servedSource.status !== "matched") console.error(`perf: served source ${servedSource.status}; timings cannot be attributed to this checkout`);
     const session = await openPageSession(debugPort);
     try {
       const measured = await measureGame({ session, base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock, path, size, allocations: profile });
       if (measuredEngine !== null) measured.record.engine = measuredEngine;
+      measured.record.servedSource = servedSource;
       console.error(`perf: ${game} tier ${measured.record.quality}${draft ? " (draft: low tier, half viewport)" : ""}`);
       const pin = perfStateLine(state, params);
       if (pin !== null) console.error(pin);
@@ -1301,10 +1316,10 @@ async function main(): Promise<void> {
       const outPath = resolve(process.cwd(), parsed.args.out ?? join(repoRoot, ".scratch", "perf", `${game}.json`));
       writePerfRecord(measured.record, outPath);
       const commit = cleanCommitFor(repoRoot, game);
-      if (commit !== null) saveBaseline(baselinePath(repoRoot, game, commit, conditions), measured.record);
+      if (commit !== null && servedSource.status === "matched") saveBaseline(baselinePath(repoRoot, game, commit, conditions), measured.record);
       if (json) console.log(JSON.stringify(measured.record, null, 2));
       else console.log(perfSummaryText(measured.record, baselines.get(game) ?? null));
-      console.error(`perf: record written to ${outPath}${commit === null ? "" : ` (kept as the ${commit} baseline)`}`);
+      console.error(`perf: record written to ${outPath}${commit === null || servedSource.status !== "matched" ? "" : ` (kept as the ${commit} baseline)`}`);
       if (profile && measured.profile !== null) {
         printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
         const profilePath = outPath.replace(/\.json$/, "") + ".cpuprofile";

@@ -315,7 +315,7 @@
 
 ## @jgengine/core/ambientFauna/AmbientFauna.draw
 
-- `AmbientFauna` (function): function AmbientFauna({ config, zones, assets, groundAt, lowTier = false }: AmbientFaunaProps): ReactElement | null — Ambient fauna: fish schools, insect swarms, drifting motes and soaring flyers, one instanced draw per species part. Agents within a group's `lod.near` draw the species model, the rest to `lod.far` a sprite; off-screen agents are skipped, each group draws at most its `budget`, all groups at most `config.drawCap`. Groups come from `config.groups` and the `ambient_fauna` zones in the editor scene.
+- `AmbientFauna` (function): function AmbientFauna({ config, zones, assets, groundAt, groundRevision, lowTier = false }: AmbientFaunaProps): ReactElement | null — Ambient fauna: fish schools, insect swarms, drifting motes and soaring flyers, one instanced draw per species part. Agents within a group's `lod.near` draw the species model, the rest to `lod.far` a sprite; off-screen agents are skipped, each group draws at most its `budget`, all groups at most `config.drawCap`. Groups come from `config.groups` and the `ambient_fauna` zones in the editor scene.
 - `AmbientFaunaProps` (interface): interface AmbientFaunaProps — Props of {@link AmbientFauna}.
 
 ## @jgengine/core/ambientFauna/ambientFauna

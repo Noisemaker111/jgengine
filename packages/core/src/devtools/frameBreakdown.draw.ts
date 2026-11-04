@@ -5,6 +5,7 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { observeSharedFrames } from "@jgengine/core/render/useSharedFrame.draw";
 
 import {
+  observeFrameWork,
   summarizeBreakdown,
   type DrawCost,
   type FrameBreakdown,
@@ -387,7 +388,19 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   const callbacks: Record<string, RenderCallback> = {};
   let nextLabel = 0;
   const memberLabels = new WeakMap<object, string>();
-  if (new URLSearchParams(window.location.search).get("frameMembers") === "1") {
+  const detailedWork = new URLSearchParams(window.location.search).get("frameMembers") === "1";
+  if (detailedWork) {
+    observeFrameWork((name, count) => {
+      if (current?.calls === undefined) return;
+      let owner = "unattributed";
+      for (let index = cpuDepth - 1; index >= 0; index -= 1) {
+        const label = cpuLabels[index];
+        if (label?.startsWith("frame#") === true) { owner = label; break; }
+      }
+      const label = `${owner} | ${name}`;
+      current.calls[label] = (current.calls[label] ?? 0) + count;
+    });
+    restore.push(() => observeFrameWork(null));
     observeSharedFrames(store, {
       enter(task) {
         let label = memberLabels.get(task);
@@ -466,8 +479,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       const programs = renderer.info.programs?.length ?? null;
       const complete = ordered().map((record) => unresolved.has(record) ? { ...record, gpu: null } : record);
       // Draw costs are gathered over the whole window, so a tail of it reports frames only.
-      if (options.last !== undefined) return summarizeBreakdown(complete.slice(-options.last), { objects: [], materials: [] }, { programs, top: options.top });
-      return summarizeBreakdown(complete, { objects: [...objects.values()], materials: [...materials.values()] }, { programs, top: options.top });
+      if (options.last !== undefined) return { ...summarizeBreakdown(complete.slice(-options.last), { objects: [], materials: [] }, { programs, top: options.top }), workCounts: detailedWork ? "enabled" : "disabled" };
+      return { ...summarizeBreakdown(complete, { objects: [...objects.values()], materials: [...materials.values()] }, { programs, top: options.top }), workCounts: detailedWork ? "enabled" : "disabled" };
     },
     records: () => ordered().map((record) => unresolved.has(record) ? { ...record, gpu: null } : record),
     callbacks: () => ({ ...callbacks }),
