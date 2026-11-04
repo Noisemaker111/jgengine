@@ -922,7 +922,7 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
     }
   }
 
-  const maps = plan.mode === "project" ? extractDesktopMaps(join(stage.stagingDir, "dist"), join(stage.stagingDir, "private-maps")) : null;
+  const maps = plan.mode === "project" ? extractDesktopMaps(join(stage.stagingDir, "dist"), `${stage.stagingDir}.private-maps`) : null;
   if (plan.diagnostics && plan.projectDir !== null && sourceBefore !== null && maps !== null) {
     const sourceAfter = desktopBuildSource(plan.projectDir);
     const stable = sourceBefore.commit !== null && sourceBefore.commit === sourceAfter.commit && sourceBefore.dirty === false && sourceAfter.dirty === false && !parsed.skipFrontendBuild && !parsed.dryRun;

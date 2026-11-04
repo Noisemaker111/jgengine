@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { extractDesktopMaps, readPrivateDesktopMap } from "./desktopMaps";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -340,6 +340,10 @@ describe("CI smoke-build (dry-run)", () => {
     writeFileSync(join(dir, "dist", "app.js.map"), "private sources");
     expect(await runDesktopAsync([dir, "--dry-run", "--skip-frontend-build", "--out", out], dir)).toBe(0);
     expect(existsSync(join(out, "dist", "app.js.map"))).toBe(false);
+    const before = readdirSync(`${out}.private-maps`);
+    writeFileSync(join(dir, "dist", "app.js.map"), "new private sources");
+    expect(await runDesktopAsync([dir, "--dry-run", "--skip-frontend-build", "--out", out], dir)).toBe(0);
+    expect(readdirSync(`${out}.private-maps`)).toEqual(expect.arrayContaining(before));
   });
   test("diagnostic staging records a fingerprint but does not claim a dry run built the source", async () => {
     const dir = scaffoldGame();
