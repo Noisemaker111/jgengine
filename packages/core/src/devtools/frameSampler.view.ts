@@ -12,8 +12,16 @@ import { readUrlParam } from "@jgengine/core/devtools/urlFlags";
  * here runs on the hot path.
  */
 
-/** Query flag that turns the sampler off for an A/B frame-time comparison. */
+/** Query flag selecting off, local-only, or the dev-server sampler. */
 export const TELEMETRY_FLAG = "telemetry";
+
+/** Local diagnosis never probes or pushes to a server. @internal */
+export async function frameTelemetryMode(flag: string | null, probe: () => Promise<boolean>): Promise<"off" | "local" | "server"> {
+  const value = (flag ?? "").toLowerCase();
+  if (value === "off") return "off";
+  if (value === "local") return "local";
+  return await probe() ? "server" : "off";
+}
 /** How long after the sampler starts the GL counters get their post-warmup baseline. */
 export const TELEMETRY_WARMUP_MS = 5_000;
 /** Cadence of the push to the dev server, in milliseconds. */
@@ -273,7 +281,7 @@ export function resetFrameTelemetry(): void {
  * Install the sampler for the page: publishes `window.__JG.report()` and pushes the
  * same record to the dev server's report route every second. Returns `null` when
  * `?telemetry=off` asks for the comparison run; callers gate installation on
- * {@link probeReportRoute}, so a shipped game never starts the sampler.
+ * {@link frameTelemetryMode}; a shipped game starts it only when local diagnostics are requested.
  * @internal
  */
 export function installFrameTelemetry(sources: FrameTelemetrySources): FrameSampler | null {

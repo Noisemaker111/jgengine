@@ -2,7 +2,8 @@
 // standard path while a window is measured, read the page's breakdown and name its frame callbacks
 // by source line, and diff two records so one fix is one run.
 import { cdpField, remoteObjectId, type CdpSession } from "./browser-lib";
-import { fpsAt, type FrameBreakdownSummary, type NamedCost } from "../packages/core/src/devtools/frameBreakdown";
+import { type FrameBreakdownSummary, type NamedCost } from "../packages/core/src/devtools/frameBreakdown";
+import { SourceMap } from "node:module";
 
 /** How the run moves through the game while it is measured. */
 export type PerfPath = "walk" | "still";
@@ -13,6 +14,7 @@ export type PerfPath = "walk" | "still";
  */
 export async function startPath(session: CdpSession, path: PerfPath): Promise<() => Promise<void>> {
   if (path === "still") return async () => {};
+  await session.evaluate(`(() => { if (document.activeElement !== document.body && document.activeElement !== null) return; const surface = document.querySelector('[data-jg-play-surface]'); if (surface instanceof HTMLElement) surface.focus({ preventScroll: true }); })()`);
   const key = (type: "keyDown" | "keyUp", code: string, text: string) =>
     session.send("Input.dispatchKeyEvent", { type, code, key: text, windowsVirtualKeyCode: text.toUpperCase().charCodeAt(0) });
   await session.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 960, y: 540 });
@@ -43,30 +45,48 @@ export async function resetBreakdown(session: CdpSession): Promise<boolean> {
  * Read the page's breakdown and give each `frame#<n>` callback its source (`frame#3 src/scene/Water.draw.tsx:41`),
  * read from the function's own location through the debugger, since an r3f callback has no name.
  */
-export async function readBreakdown(session: CdpSession): Promise<FrameBreakdownSummary | null> {
+export async function readBreakdown(session: CdpSession, privateMap?: (scriptId: string) => Promise<string | null>): Promise<FrameBreakdownSummary | null> {
   const summary = await session.evaluate<FrameBreakdownSummary | null>(`globalThis.__jgFrameBreakdown?.summary({ top: 15 }) ?? null`);
   if (summary === null || summary === undefined) return null;
-  const urls = new Map<string, string>();
+  const scripts = new Map<string, { url: string; map: string | null }>();
+  const maps = new Map<string, SourceMap | null>();
+  const names = new Map<string, string>();
+  const resolvedOwners = new Set<string>();
+  let failure: string | undefined;
   const off = session.on("Debugger.scriptParsed", (params) => {
-    urls.set(String(params["scriptId"]), String(params["url"]));
+    scripts.set(String(params["scriptId"]), { url: String(params["url"]), map: typeof params["sourceMapURL"] === "string" ? params["sourceMapURL"] : null });
   });
   try {
     await session.send("Debugger.enable");
-    for (const entry of summary.cpu) {
+    for (const entry of [...summary.cpu, ...(summary.calls ?? [])]) {
       if (!entry.name.startsWith("frame#")) continue;
-      const located = await locateCallback(session, entry.name, urls);
-      if (located !== null) entry.name = `${entry.name} ${located}`;
+      const [owner, ...detail] = entry.name.split(" | ");
+      if (owner === undefined) continue;
+      let resolved = names.get(owner);
+      if (resolved === undefined) {
+        let located: { label: string; mapped: boolean } | null = null;
+        try { located = await locateCallback(session, owner, scripts, maps, privateMap); }
+        catch (error) { failure ??= error instanceof Error ? error.message : String(error); }
+        resolved = located === null ? owner : `${owner} ${located.label}`;
+        if (located?.mapped === true) resolvedOwners.add(owner);
+        names.set(owner, resolved);
+      }
+      entry.name = detail.length === 0 ? resolved : `${resolved} | ${detail.join(" | ")}`;
     }
-  } catch {
-    // Unnamed callbacks still carry their frame# label; the numbers stand.
+  } catch (error) {
+    failure = error instanceof Error ? error.message : String(error);
   } finally {
     off();
     await session.send("Debugger.disable").catch(() => {});
   }
+  const owners = new Set([...summary.cpu, ...(summary.calls ?? [])].map((entry) => entry.name.split(" | ")[0]?.split(" ")[0]).filter((name): name is string => name?.startsWith("frame#") === true));
+  let resolved = 0;
+  for (const owner of owners) if (resolvedOwners.has(owner)) resolved += 1;
+  summary.sources = { resolved, unresolved: owners.size - resolved, ...(failure === undefined ? {} : { error: failure }) };
   return summary;
 }
 
-async function locateCallback(session: CdpSession, label: string, urls: ReadonlyMap<string, string>): Promise<string | null> {
+async function locateCallback(session: CdpSession, label: string, scripts: ReadonlyMap<string, { url: string; map: string | null }>, maps: Map<string, SourceMap | null>, privateMap?: (scriptId: string) => Promise<string | null>): Promise<{ label: string; mapped: boolean } | null> {
   const found = await session.send("Runtime.evaluate", { expression: `globalThis.__jgFrameBreakdown?.callbacks()[${JSON.stringify(label)}]` });
   const objectId = remoteObjectId(found["result"]);
   if (objectId === undefined) return null;
@@ -78,10 +98,33 @@ async function locateCallback(session: CdpSession, label: string, urls: Readonly
   await session.send("Runtime.releaseObject", { objectId }).catch(() => {});
   const scriptId = cdpField(where, "scriptId");
   const lineNumber = cdpField(where, "lineNumber");
+  const columnNumber = cdpField(where, "columnNumber");
   if (typeof scriptId !== "string" || typeof lineNumber !== "number") return null;
-  const url = urls.get(scriptId) ?? "";
+  const script = scripts.get(scriptId);
+  if (script === undefined || script.url === "") return null;
+  let map = maps.get(scriptId);
+  if (map === undefined) {
+    map = null;
+    if (privateMap !== undefined) {
+      const raw = await privateMap(scriptId);
+      if (raw !== null) map = new SourceMap(JSON.parse(raw));
+    } else if (script.map !== null && script.map !== "") {
+      try {
+        const mapUrl = new URL(script.map, script.url).toString();
+        if (!mapUrl.startsWith("data:") && new URL(mapUrl).origin !== new URL(script.url).origin) throw new Error("cross-origin source map");
+        const raw = await session.evaluate<string>(`fetch(${JSON.stringify(mapUrl)}).then(r => { if (!r.ok) throw new Error('source map HTTP ' + r.status); return r.text(); })`, { awaitPromise: true });
+        if (raw !== undefined) map = new SourceMap(JSON.parse(raw));
+      } catch { /* Keep the generated location when a source map cannot be loaded. */ }
+    }
+    maps.set(scriptId, map);
+  }
+  const original = map?.findEntry(lineNumber, typeof columnNumber === "number" ? columnNumber : 0);
+  const source = original !== undefined && "originalSource" in original && typeof original.originalSource === "string" ? original.originalSource : undefined;
+  const sourceLine = original !== undefined && "originalLine" in original && typeof original.originalLine === "number" ? original.originalLine : undefined;
+  const mapped = source !== undefined && sourceLine !== undefined;
+  const url = mapped ? new URL(source, script.url).toString() : script.url;
   const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "").replace(/^\/@fs\//, "").replace(/^.*?\/(packages|games|apps)\//, "$1/");
-  return path === "" ? null : `${path}:${lineNumber + 1}`;
+  return path === "" ? null : { label: `${mapped ? "" : "generated "}${path}:${mapped ? sourceLine + 1 : lineNumber + 1}`, mapped };
 }
 
 /** A cost's system: its `frame#<n>` or system label, without the source location appended to it. */
@@ -112,9 +155,9 @@ export function compareBreakdowns(before: FrameBreakdownSummary, after: FrameBre
     line("frame p99", before.frame.p99, after.frame.p99),
     line("cpu p50", before.work.p50, after.work.p50),
     line("cpu p95", before.work.p95, after.work.p95),
-    line("gpu p50", before.gpu?.p50 ?? 0, after.gpu?.p50 ?? 0),
-    line("gpu p95", before.gpu?.p95 ?? 0, after.gpu?.p95 ?? 0),
-    `  cost p50 allows ${fpsAt(cost(before, "p50"))} -> ${fpsAt(cost(after, "p50"))} fps`,
+    before.gpu === null || after.gpu === null ? "  gpu            unavailable in one or both runs" : line("gpu p50", before.gpu.p50, after.gpu.p50),
+    before.gpu === null || after.gpu === null ? "  gpu p95        unavailable in one or both runs" : line("gpu p95", before.gpu.p95, after.gpu.p95),
+    before.gpu === null || after.gpu === null ? "  cost p50       unavailable without GPU timings" : line("max cpu/gpu p50", cost(before, "p50"), cost(after, "p50")),
     line("draws", before.counts.drawsAvg, after.counts.drawsAvg, ""),
     line("triangles", before.counts.trianglesAvg, after.counts.trianglesAvg, ""),
     `  hitches       ${before.hitches.length} -> ${after.hitches.length}`,

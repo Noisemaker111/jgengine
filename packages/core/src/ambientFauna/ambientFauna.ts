@@ -1,4 +1,5 @@
 import { createFlockStepper, type FlockBuffers, type FlockConfig, type FlockStepper } from "../ai/flock";
+import { frameWorkObserver } from "../devtools/frameBreakdown";
 import { createMotionTrack, type MotionTrack } from "../movement/motionTrack";
 import { seededRng } from "../random/rng";
 import { discRegion, rectRegion, samplePoint, type SampleRegion } from "../world/spatialSample";
@@ -61,6 +62,8 @@ export interface FaunaWorld {
   surfaceAt?(x: number, z: number, time: number): number;
   /** Ground height at a point; the seabed for a school. */
   groundAt?(x: number, z: number): number;
+  /** Ground height revision, or undefined when changes cannot be tracked. */
+  groundRevision?(): number | undefined;
   /** True where a plant or grass grows, given the ground height there; swarms and drift spawn only there. */
   plantAt?(x: number, z: number, groundY: number): boolean;
   /** Wind at a height: a `windField(...)` fits. */
@@ -545,6 +548,7 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
 
   function place(): void {
     for (const g of runtimes) {
+      g.groundRead.fill(Number.NaN);
       const requested = g.position.length / 3;
       g.count = requested;
       placeAgents(g, world);
@@ -555,6 +559,12 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
     }
   }
   place();
+  let groundReads = 0;
+  const observedWorld: FaunaWorld = {
+    ...world,
+    ...(world.groundAt === undefined ? {} : { groundAt: (x: number, z: number) => { groundReads += 1; return world.groundAt?.(x, z) ?? 0; } }),
+  };
+  let groundRevision = world.groundRevision?.();
 
   return {
     groups: runtimes,
@@ -562,16 +572,36 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
     activeTotal: () => runtimes.reduce((sum, g) => sum + g.active, 0),
     update(frame) {
       const dt = Math.min(frame.dt, 0.1);
-      for (const g of runtimes) {
-        const presence = windowPresence(g.spec.window, frame.sunHeight);
-        g.active = Math.min(g.count, Math.round(g.count * presence));
-        if (g.active === 0 || dt <= 0) continue;
-        const reach = range + areaExtent(g.spec.area);
-        if (Math.hypot(frame.focusX - g.spec.area.x, frame.focusZ - g.spec.area.z) > reach) continue;
-        if (g.spec.motion === "school") stepSchool(g, world, frame.time, dt);
-        else if (g.spec.motion === "swarm") stepSwarm(g, world, frame.time, dt);
-        else if (g.spec.motion === "drift") stepDrift(g, world, frame.time, dt);
-        else stepSoar(g, world, frame.time, dt);
+      const nextRevision = world.groundRevision?.();
+      const invalidation = nextRevision === undefined ? "unknown ground revision" : nextRevision !== groundRevision ? "ground revision changed" : null;
+      if (invalidation !== null) {
+        for (const g of runtimes) g.groundRead.fill(Number.NaN);
+      }
+      groundRevision = nextRevision;
+      const observe = frameWorkObserver();
+      const sampledWorld = observe === null ? world : observedWorld;
+      groundReads = 0;
+      let agents = 0;
+      try {
+        for (const g of runtimes) {
+          const presence = windowPresence(g.spec.window, frame.sunHeight);
+          g.active = Math.min(g.count, Math.round(g.count * presence));
+          if (g.active === 0 || dt <= 0) continue;
+          const reach = range + areaExtent(g.spec.area);
+          if (Math.hypot(frame.focusX - g.spec.area.x, frame.focusZ - g.spec.area.z) > reach) continue;
+          agents += g.active;
+          if (g.spec.motion === "school") stepSchool(g, sampledWorld, frame.time, dt);
+          else if (g.spec.motion === "swarm") stepSwarm(g, sampledWorld, frame.time, dt);
+          else if (g.spec.motion === "drift") stepDrift(g, sampledWorld, frame.time, dt);
+          else stepSoar(g, sampledWorld, frame.time, dt);
+        }
+      } finally {
+        if (observe !== null) {
+          observe("fauna updates", 1);
+          observe("fauna agents", agents);
+          observe("fauna ground queries", groundReads);
+          if (invalidation !== null) observe(`fauna invalidation: ${invalidation}`, 1);
+        }
       }
     },
     snapshot: () => ({ groups: runtimes.map((g) => ({ id: g.spec.id, position: Array.from(g.position.subarray(0, g.count * 3)), velocity: Array.from(g.velocity.subarray(0, g.count * 3)) })) }),
@@ -584,6 +614,7 @@ export function createAmbientFauna(groups: readonly FaunaGroup[], world: FaunaWo
         if (![...saved.position, ...saved.velocity].every(Number.isFinite)) throw new Error(`non-finite restored fauna group ${saved.id}`);
         g.position.set(saved.position);
         g.velocity.set(saved.velocity);
+        g.groundRead.fill(Number.NaN);
       });
     },
     reset: place,

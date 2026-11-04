@@ -20,6 +20,7 @@ import {
 } from "./browser-lib";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
+import { checkoutIdentity, readServerIdentity, type ServerIdentityReport } from "./devServerMarker";
 import { baselinePath, cleanCommitFor, conditionsKey, readBaselineAt, resolveCommit, saveBaseline } from "./perf-baselines";
 import {
   acquireWarmCapture,
@@ -170,7 +171,7 @@ over 33 ms with its cause. The full record is written as JSON (default .scratch/
 Several games run one after another in one browser, with a table of all of them at the end. A game
 takes about 30 s and the whole run is stopped at 7 minutes, so split a sweep into batches of ten.
 
-A run on a clean tree is kept as the baseline of its commit (.scratch/perf/baselines/), so the
+A clean, cold first-game run is kept as the baseline of its commit (.scratch/perf/baselines/), so the
 before side is measured once: run \`bun run perf <game>\` before editing, then after editing run
 \`bun run perf <game> --compare HEAD\`; the before side comes from the cache.
 
@@ -955,10 +956,57 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
   frameClock: FrameClock;
   /** Which engine the measured window rendered, so a saved record can be audited later. */
   engine?: EngineRecord;
+  /** Browser cache at launch and earlier games in this browser; absent in older records. */
+  cache?: { browser: "cold" | "warm"; priorGames: number };
+  /** Server-reported checkout and boot revision compared with the measuring checkout. */
+  servedSource?: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null };
   /** How the run moved while measured. */
   path?: PerfPath;
+  /** Player endpoints sampled across the measurement; absent when the bridge cannot report them. */
+  movement?: { start: readonly number[] | null; end: readonly number[] | null; displacement: number | null; focus: readonly (string | null)[]; errors: string[] };
   /** Where each frame went over the measured window; null when the page has no dev telemetry. */
   breakdown?: FrameBreakdownSummary | null;
+}
+
+async function playerPosition(session: CdpSession): Promise<{ position: number[] | null; error: string | null; focus: string | null }> {
+  try {
+    const result = await session.evaluate<{ ok: boolean; position?: number[]; error?: string; focus: string | null }>(`(() => { const pose = window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false, error: "agent bridge unavailable" }; const active = document.activeElement; return { ...pose, focus: active?.tagName ?? null }; })()`);
+    if (result?.ok === true && Array.isArray(result.position) && result.position.length === 3 && result.position.every(Number.isFinite)) return { position: result.position, error: null, focus: result.focus };
+    return { position: null, error: result?.error ?? "player position unavailable", focus: result?.focus ?? null };
+  } catch (error) { return { position: null, error: error instanceof Error ? error.message : String(error), focus: null }; }
+}
+
+/** Net displacement only; equal endpoints do not prove the player stayed still. */
+export function movementEvidence(start: { position: number[] | null; error: string | null; focus: string | null }, end: { position: number[] | null; error: string | null; focus: string | null }): NonNullable<PerfRecord["movement"]> {
+  const a = start.position;
+  const b = end.position;
+  const displacement = a === null || b === null ? null : Math.hypot((b[0] ?? 0) - (a[0] ?? 0), (b[1] ?? 0) - (a[1] ?? 0), (b[2] ?? 0) - (a[2] ?? 0));
+  return { start: a, end: b, displacement, focus: [start.focus, end.focus], errors: [start.error, end.error].filter((error): error is string => error !== null) };
+}
+
+/** Whether endpoint evidence supports a matched walking route; intermediate paths remain unmeasured. */
+export function movementComparison(before: PerfRecord["movement"], after: PerfRecord["movement"]): "unavailable" | "unequal" | "endpoints match" {
+  if (before?.start == null || before.end == null || after?.start == null || after.end == null) return "unavailable";
+  const separated = (a: readonly number[], b: readonly number[]) => a.length !== b.length || a.some((value, index) => Math.abs(value - (b[index] ?? Infinity)) > 0.01);
+  return separated(before.start, after.start) || separated(before.end, after.end) ? "unequal" : "endpoints match";
+}
+
+/** Compare the live server's identity, not just the measuring process's checkout. */
+export function compareServedSource(server: ServerIdentityReport | null, expectedRoot: string, expectedCommit: string | null): "matched" | "mismatch" | "unavailable" {
+  if (server === null || server.head === undefined || expectedCommit === null) return "unavailable";
+  const normalize = (path: string) => { const value = resolve(path).replaceAll("\\", "/"); return process.platform === "win32" ? value.toLowerCase() : value; };
+  if (normalize(server.root) !== normalize(expectedRoot) || !server.head.startsWith(expectedCommit) || server.gameDir !== null || server.kind !== "runner") return "mismatch";
+  return "matched";
+}
+
+/** Log evidence that prevents a run from being reused as a clean baseline. */
+export function baselineLogProblem(logs: ReportLogs | null): string | null {
+  if (logs === null) return "game logs unavailable";
+  if (logs.dropped > 0) return "game logs incomplete";
+  if (logs.counts.error > 0) return "game reported errors";
+  if (logs.counts.warn > logs.severe.length) return "warning and error details truncated";
+  if (logs.severe.some((entry) => /missing file|texture\/sub-resource loads failed|environment illumination failed/i.test(entry.message))) return "game reported missing assets";
+  return null;
 }
 export type { PerfReport };
 
@@ -1115,6 +1163,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   }
 
   await session.evaluate(`new Promise((r) => setTimeout(r, ${warmupMs}))`, { awaitPromise: true });
+  const movementStart = await playerPosition(session);
   const releasePath = await startPath(session, options.path ?? "still");
   await session.evaluate(`window.__jgPerfGl?.reset?.()`);
   const hasBreakdown = await resetBreakdown(session);
@@ -1126,6 +1175,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const startedAt = Date.now();
   const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
   const drawFrames = (await session.evaluate<number[]>(`globalThis.__jgPerfDraws?.stop?.() ?? []`)) ?? [];
+  const movementEnd = await playerPosition(session);
   const windowMs = Date.now() - startedAt;
   const frameDraws = summarizeFrameDraws(drawFrames);
   const breakdown = hasBreakdown ? await readBreakdown(session) : null;
@@ -1227,6 +1277,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     params: params.map(([key, value]) => `${key}=${value}`),
     frameClock,
     path: options.path ?? "still",
+    movement: movementEvidence(movementStart, movementEnd),
     breakdown,
   };
 
@@ -1256,7 +1307,8 @@ async function main(): Promise<void> {
   for (const game of games) {
     if (!existsSync(join(repoRoot, "games", game, "src", "index.tsx"))) throw new Error(`no game "${game}" in games/`);
   }
-  const conditions = conditionsKey({ size, quality, draft, frameClock, path, seconds, telemetry, state, params, settings });
+  const forceCold = parsed.args.cold === true || frameClock === "uncapped" || headed === true;
+  const conditions = conditionsKey({ size, quality, draft, frameClock, path, seconds, telemetry, cache: forceCold ? "cold" : "auto", state, params, settings });
   // Find every before side first, so a missing one fails in a second, not after minutes of measuring.
   const baselines = resolveBaselines(parsed.args.compare, games, conditions);
 
@@ -1282,11 +1334,16 @@ async function main(): Promise<void> {
   let pending = [...games];
 
   /** Measure one game in the browser already running on `debugPort`, then write and print its record. */
-  const measureOne = async (game: string, debugPort: number, base: string): Promise<void> => {
+  const measureOne = async (game: string, debugPort: number, base: string, cache: NonNullable<PerfRecord["cache"]>): Promise<void> => {
+    const server = await readServerIdentity(base);
+    const servedSource = { status: compareServedSource(server, checkoutIdentity(repoRoot), measuredEngine?.commit ?? null), server };
+    if (servedSource.status !== "matched") console.error(`perf: served source ${servedSource.status}; timings cannot be attributed to this checkout`);
     const session = await openPageSession(debugPort);
     try {
       const measured = await measureGame({ session, base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock, path, size, allocations: profile });
       if (measuredEngine !== null) measured.record.engine = measuredEngine;
+      measured.record.servedSource = servedSource;
+      measured.record.cache = cache;
       console.error(`perf: ${game} tier ${measured.record.quality}${draft ? " (draft: low tier, half viewport)" : ""}`);
       const pin = perfStateLine(state, params);
       if (pin !== null) console.error(pin);
@@ -1301,10 +1358,13 @@ async function main(): Promise<void> {
       const outPath = resolve(process.cwd(), parsed.args.out ?? join(repoRoot, ".scratch", "perf", `${game}.json`));
       writePerfRecord(measured.record, outPath);
       const commit = cleanCommitFor(repoRoot, game);
-      if (commit !== null) saveBaseline(baselinePath(repoRoot, game, commit, conditions), measured.record);
+      const logProblem = baselineLogProblem(measured.record.logs);
+      if (logProblem !== null) console.error(`perf: not caching a baseline: ${logProblem}`);
+      const cacheable = forceCold && cache.browser === "cold" && cache.priorGames === 0;
+      if (commit !== null && servedSource.status === "matched" && logProblem === null && cacheable) saveBaseline(baselinePath(repoRoot, game, commit, conditions), measured.record);
       if (json) console.log(JSON.stringify(measured.record, null, 2));
       else console.log(perfSummaryText(measured.record, baselines.get(game) ?? null));
-      console.error(`perf: record written to ${outPath}${commit === null ? "" : ` (kept as the ${commit} baseline)`}`);
+      console.error(`perf: record written to ${outPath}${commit === null || servedSource.status !== "matched" || logProblem !== null || !cacheable ? "" : ` (kept as the ${commit} baseline)`}`);
       if (profile && measured.profile !== null) {
         printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
         const profilePath = outPath.replace(/\.json$/, "") + ".cpuprofile";
@@ -1331,7 +1391,7 @@ async function main(): Promise<void> {
    * otherwise a Vite and Chrome this run owns. One browser serves every game, so a batch pays
    * one launch. A function so a daemon that dies under a run can be retried cold once.
    */
-  const runPerf = async (daemon: ShootDaemonState | null): Promise<number> => {
+  const runPerf = async (daemon: ShootDaemonState | null, browser: "cold" | "warm"): Promise<number> => {
     const server = daemon === null ? await ensureDevServer(repoRoot) : await ensureDaemonTarget(daemon, "dev");
     return withDaemonWatch(daemon, withBrowserSession(
       {
@@ -1351,14 +1411,22 @@ async function main(): Promise<void> {
       },
       async ({ debugPort }) => {
         const failed: string[] = [];
+        let priorGames = 0;
         for (let game = pending[0]; game !== undefined; game = pending[0]) {
           try {
-            await measureOne(game, debugPort, server.base);
+            await measureOne(game, debugPort, server.base, { browser, priorGames });
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             console.error(`perf: ${game} failed: ${message}`);
+            const failurePath = resolve(process.cwd(), parsed.args.out ?? join(repoRoot, ".scratch", "perf", `${game}.json`)) + `.${Date.now()}.failure.json`;
+            try {
+              mkdirSync(dirname(failurePath), { recursive: true });
+              writeFileSync(failurePath, `${JSON.stringify({ game, at: Date.now(), error: message, stack: error instanceof Error ? error.stack : undefined, engine: measuredEngine, base: server.base, settings, params, quality, size, path, seconds, frameClock }, null, 2)}\n`);
+              console.error(`perf: failed run saved to ${failurePath}`);
+            } catch (writeError) { console.error(`perf: could not save failure: ${String(writeError)}`); }
             failed.push(game);
           }
+          priorGames += 1;
           pending = pending.slice(1);
         }
         pending = failed;
@@ -1376,7 +1444,7 @@ async function main(): Promise<void> {
     ));
   };
 
-  let exitCode = await runPerf(warm.daemon).catch((error: unknown) => {
+  let exitCode = await runPerf(warm.daemon, warm.mode).catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : error);
     return 1;
   });
@@ -1384,7 +1452,7 @@ async function main(): Promise<void> {
     console.error(
       `cold: the daemon on :${warm.daemon.chromePort} died mid-run — falling back to a direct launch for ${pending.join(", ")}, no retry`,
     );
-    exitCode = await runPerf(null).catch((error: unknown) => {
+    exitCode = await runPerf(null, "cold").catch((error: unknown) => {
       console.error(error instanceof Error ? error.message : error);
       return 1;
     });
@@ -1431,7 +1499,7 @@ function resolveBaselines(compare: string | undefined, games: readonly string[],
   if (missing.length > 0) {
     throw new Error(
       `--compare ${compare}: no cached run at ${commit} with these settings for ${missing.join(", ")}. ` +
-        `Every run on a clean tree is cached, so run \`bun run perf ${missing.join(" ")}\` (same flags) at ${commit} before editing, then compare.`,
+        `Only clean, forced-cold first-game runs are cached; measure each game with --cold at ${commit}, then use --cold and matching flags for the comparison.`,
     );
   }
   console.error(`perf: before side is the cached run at ${commit} for ${games.join(", ")}; not measured again`);
@@ -1461,9 +1529,13 @@ export function perfBatchTable(rows: readonly PerfBatchRow[]): string {
       lines.push(`${game.padEnd(20)}  ${summary}`);
       continue;
     }
-    const cost = Math.max(summary.work.p50, summary.gpu?.p50 ?? 0);
-    const over = cost - 6.94;
     const ms = (value: number) => `${value.toFixed(2)} ms`.padStart(9);
+    if (summary.gpu === null) {
+      lines.push(`${game.padEnd(20)}  ${ms(summary.frame.p50)}  ${ms(summary.frame.p95)}  GPU timing unavailable`);
+      continue;
+    }
+    const cost = Math.max(summary.work.p50, summary.gpu.p50);
+    const over = cost - 6.94;
     lines.push(`${game.padEnd(20)}  ${ms(summary.frame.p50)}  ${ms(summary.frame.p95)}  ${ms(cost)}  ${over <= 0 ? "ok" : `${over.toFixed(2)} ms over`}`);
   }
   return lines.join("\n");
@@ -1485,13 +1557,30 @@ export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null)
       lines.push(`  ${entry.selfPct.toFixed(1).padStart(5)}%  ${entry.fn}  ${entry.at}${entry.via === undefined ? "" : `  via ${entry.via}`}`);
     }
   }
-  lines.push(`run: ${conditions}`);
+  lines.push(`run: ${conditions}; cache ${record.cache === undefined ? "unavailable" : `${record.cache.browser}, ${record.cache.priorGames} earlier games`}`);
+  if (record.path === "walk") lines.push(record.movement?.displacement == null ? "movement: unavailable" : `movement: ${record.movement.displacement.toFixed(2)} m net; endpoints only`);
   const before = baseline?.breakdown;
   if (baseline !== null && before !== null && before !== undefined && record.breakdown !== null && record.breakdown !== undefined) {
     lines.push("", compareBreakdowns(before, record.breakdown));
-    if (baseline.viewport !== record.viewport || baseline.quality !== record.quality || baseline.frameClock !== record.frameClock || baseline.path !== record.path) {
-      lines.push(`  note: the runs differ (${baseline.viewport} ${baseline.quality} ${baseline.frameClock} ${baseline.path ?? "still"} before), so the diff mixes in that change`);
-    }
+    const different = [
+      baseline.game !== record.game ? "game" : null,
+      baseline.gpu !== record.gpu ? "GPU" : null,
+      baseline.viewport !== record.viewport ? "viewport" : null,
+      baseline.quality !== record.quality ? "quality" : null,
+      baseline.frameClock !== record.frameClock ? "clock" : null,
+      baseline.path !== record.path ? "path" : null,
+      JSON.stringify(baseline.cache) !== JSON.stringify(record.cache) ? "cache" : null,
+      baseline.state !== record.state ? "state" : null,
+      JSON.stringify(baseline.params) !== JSON.stringify(record.params) ? "parameters" : null,
+      JSON.stringify(baseline.overrides) !== JSON.stringify(record.overrides) ? "settings" : null,
+    ].filter((value): value is string => value !== null);
+    if (different.length > 0) lines.push(`  unequal conditions: ${different.join(", ")}; the difference cannot be attributed to one change`);
+    if (baseline.cache === undefined || record.cache === undefined) lines.push("  cache conditions unavailable in one or both runs");
+    if (baseline.path === "walk" || record.path === "walk") lines.push(`  movement comparison: ${movementComparison(baseline.movement, record.movement)}; intermediate paths unmeasured`);
+    const beforeProblem = baselineLogProblem(baseline.logs ?? null);
+    const afterProblem = baselineLogProblem(record.logs ?? null);
+    if (beforeProblem !== null || afterProblem !== null) lines.push(`  incomplete evidence: before ${beforeProblem ?? "none"}; after ${afterProblem ?? "none"}`);
+    if (baseline.servedSource?.status !== "matched" || record.servedSource?.status !== "matched") lines.push("  source identity is mismatched or unavailable in one or both runs");
   }
   return lines.join("\n");
 }

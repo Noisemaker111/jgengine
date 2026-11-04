@@ -5,6 +5,7 @@ import { devtools, type PerfQuality } from "@jgengine/core/devtools/devtools";
 import { readUrlParam } from "@jgengine/core/devtools/urlFlags";
 import {
   attachGlCounters,
+  frameTelemetryMode,
   installFrameTelemetry,
   probeReportRoute,
   reportGameId,
@@ -19,8 +20,8 @@ import { installFrameBreakdown } from "./frameBreakdown.draw";
  * Mounts the in-page frame sampler for the live 3D scene: it wraps this renderer's
  * context for GPU-object counts, reads renderer and scene numbers on demand, and
  * publishes `window.__JG.report()`, plus the per-frame breakdown (`window.__jgFrameBreakdown`: CPU
- * per system, GPU per pass, draws, compiles, uploads, hitches). It installs only when the dev server answers its
- * report route, so a shipped game pays for one probe request and nothing else.
+ * per system, GPU per pass, draws, compiles, uploads, hitches). It normally installs only when the
+ * dev server answers its report route; `?telemetry=local` opts a shipped game into local-only reporting.
  * @internal
  */
 export function FrameTelemetry({ game, quality }: { game: string; quality: PerfQuality }) {
@@ -28,12 +29,11 @@ export function FrameTelemetry({ game, quality }: { game: string; quality: PerfQ
   const scene = useThree((state) => state.scene);
   const store = useStore();
   useEffect(() => {
-    if ((readUrlParam(TELEMETRY_FLAG) ?? "").toLowerCase() === "off") return;
     let active = true;
     let telemetry: FrameSampler | null = null;
     let breakdown: FrameBreakdown | null = null;
-    void probeReportRoute(undefined, reportGameId(game)).then((available) => {
-      if (!active || !available) return;
+    void frameTelemetryMode(readUrlParam(TELEMETRY_FLAG), () => probeReportRoute(undefined, reportGameId(game))).then((mode) => {
+      if (!active || mode === "off") return;
       let counters: { totals: GlCounterTotals; attached: boolean } = {
         totals: { programsLinked: 0, framebuffers: 0, buffers: 0, textures: 0, vertexArrays: 0 },
         attached: false,
@@ -53,6 +53,7 @@ export function FrameTelemetry({ game, quality }: { game: string; quality: PerfQ
       const gpuLabel = readGpuLabel(gl.getContext());
       telemetry = installFrameTelemetry({
         game,
+        push: mode !== "local",
         quality: () => quality,
         viewport: () => `${window.innerWidth}x${window.innerHeight}`,
         gpu: () => gpuLabel,

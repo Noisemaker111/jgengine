@@ -50,7 +50,11 @@ function controlNamesExpr(input: boolean): string {
 export function controlHint(text: string, controls: readonly { name: string; covered: boolean }[], what: string): string {
   const covered = new Set(controls.filter((control) => control.covered).map((control) => control.name.replace(/\s+/g, " ").trim()));
   const close = closestMatches(text, controls.map((control) => control.name));
-  if (close.length === 0) return "";
+  if (close.length === 0) {
+    const names = [...new Set(controls.map((control) => control.name.replace(/\s+/g, " ").trim()).filter(Boolean))];
+    if (names.length === 0) return `; no visible enabled ${what}`;
+    return `; visible enabled ${what}: ${names.slice(0, 10).map((name) => JSON.stringify(name.slice(0, 120)) + (covered.has(name) ? " (covered by another element)" : "")).join(", ")}${names.length > 10 ? `; ${names.length - 10} more` : ""}`;
+  }
   return `; closest ${what}: ${close.map((name) => JSON.stringify(name) + (covered.has(name) ? " (covered by another element)" : "")).join(", ")}`;
 }
 
@@ -74,8 +78,9 @@ async function findClickPoint(session: CdpSession, text: string, input = false):
     last = point;
     await new Promise((r) => setTimeout(r, Math.min(deadline - Date.now(), point === null || moved ? 1_000 : SETTLE_INTERVAL_MS)));
   }
-  const controls = (await session.evaluate<{ name: string; covered: boolean }[]>(controlNamesExpr(input)).catch(() => undefined)) ?? [];
-  throw new Error(`drive: no settled actionable element matching "${text}"${controlHint(text, controls, input ? "fields" : "controls")}`);
+  const controls = await session.evaluate<{ name: string; covered: boolean }[]>(controlNamesExpr(input)).catch(() => undefined);
+  const hint = controls === undefined ? "; could not inspect visible controls" : controlHint(text, controls, input ? "fields" : "controls");
+  throw new Error(`drive: no settled actionable element matching "${text}"${hint}`);
 }
 
 /** Click the control whose text or accessible name contains `text`, once it stops moving. */

@@ -36,6 +36,8 @@ export type TerrainNormal = readonly [number, number, number];
 export interface TerrainField {
   sampleHeight(x: number, z: number): number;
   sampleNormal(x: number, z: number): TerrainNormal;
+  /** Changes whenever sampled heights change; absent or undefined means the field cannot promise stability. */
+  heightRevision?(): number | undefined;
   readonly bounds?: WorldBounds | undefined;
   readonly waterLevel?: number;
 }
@@ -137,6 +139,7 @@ function fieldFromHeight(
 export const FLAT_FIELD: TerrainField = {
   sampleHeight: () => 0,
   sampleNormal: () => [0, 1, 0] as const,
+  heightRevision: () => 0,
 };
 
 /** A flat, zero-height `TerrainField` for arenas with no elevation.
@@ -256,12 +259,14 @@ export function arenaField(config: ArenaFieldConfig = {}): TerrainField {
 
 /** @internal */
 export function groundFieldFor(world?: WorldFeature): TerrainField {
-  if (world !== undefined && world.kind === "environment") return resolveEnvironmentField(world);
+  if (world !== undefined && world.kind === "environment") {
+    return resolveEnvironmentField(world);
+  }
   // Place worlds (`world()` from world/place) stand on a flat baseline field: flat/board grounds are
   // exactly y=0, while round/voxel grounds keep their sampled shape in the game's own generation
   // systems (the substrate declaration never bakes a heightfield). Editor-authored sculpt still
   // layers through the environment path above.
-  return flatField();
+  return { ...flatField(), heightRevision: () => 0 };
 }
 
 /** Whether a world declares real terrain (base heightfield or islands) rather than a flat plane — gates terrain-floor sampling in the movement controllers.
@@ -405,12 +410,21 @@ export function flattenFieldAround(base: TerrainField, zones: readonly AvoidZone
  */
 export function liveRoadDrapedField(base: TerrainField, source: LiveRoadSource): TerrainField {
   let draped = roadDrapedField(base, source.current());
+  let revision = 0;
+  let baseRevision = base.heightRevision?.();
   source.subscribe(() => {
     draped = roadDrapedField(base, source.current());
+    revision += 1;
   });
   return {
     sampleHeight: (x, z) => draped.sampleHeight(x, z),
     sampleNormal: base.sampleNormal,
+    heightRevision: () => {
+      const next = base.heightRevision?.();
+      if (next === undefined) return undefined;
+      if (next !== baseRevision) { baseRevision = next; revision += 1; }
+      return revision;
+    },
     ...(base.bounds === undefined ? {} : { bounds: base.bounds }),
     ...(base.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
   };
@@ -475,10 +489,24 @@ export function resolveEnvironmentField(feature: EnvironmentWorldFeature): Terra
     feature.clearings === undefined || feature.clearings.length === 0
       ? sculpted
       : flattenFieldAround(sculpted, feature.clearings);
-  if (feature.roadSource !== undefined) return liveRoadDrapedField(cleared, feature.roadSource);
-  return feature.roads === undefined || feature.roads.length === 0
+  const revisions = [feature.terrain?.heightRevision, ...(feature.islands ?? []).map((island) => island.heightRevision)].filter((revision): revision is () => number | undefined => revision !== undefined);
+  const previous = revisions.map((revision) => revision());
+  let version = 0;
+  const heightRevision = () => {
+    let unknown = false;
+    for (let i = 0; i < revisions.length; i += 1) {
+      const next = revisions[i]?.();
+      if (next === undefined) unknown = true;
+      if (next !== previous[i]) { previous[i] = next; version += 1; }
+    }
+    return unknown ? undefined : version;
+  };
+  const tracked = { ...cleared, heightRevision };
+  if (feature.roadSource !== undefined) return liveRoadDrapedField(tracked, feature.roadSource);
+  const result = feature.roads === undefined || feature.roads.length === 0
     ? cleared
     : roadDrapedField(cleared, feature.roads);
+  return { ...result, heightRevision };
 }
 
 /** Which way the ground falls at a point and how steeply. */

@@ -18,6 +18,7 @@ import {
 } from "three";
 
 import { modelLoadIdleMs, modelLoadStarts } from "@jgengine/core/model/modelLoad.draw";
+import { frameWorkObserver } from "@jgengine/core/devtools/frameBreakdown";
 import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
 /**
@@ -114,10 +115,14 @@ export function firstUnlinkedDrawable(renderer: Pick<ShaderWarmupRenderer, "prop
   const properties = renderer.properties;
   if (properties === undefined) return null;
   let found: Object3D | null = null;
+  const observe = frameWorkObserver();
+  let visited = 0;
   visitVisible(scene, (object) => {
+    if (observe !== null) visited += 1;
     if (found !== null || !isDrawable(object) || !object.layers.test(camera.layers)) return;
     if (linkState(properties, object) !== "linked") found = object;
   });
+  observe?.("shader readiness scene visits", visited);
   return found;
 }
 
@@ -265,8 +270,15 @@ export function deferUnlinkedDraws(
       });
     }
     const draw = renderer.renderBufferDirect;
+    const observe = frameWorkObserver();
+    let sceneChecks = 0;
+    let shadowChecks = 0;
     const drawOwned = Object.prototype.hasOwnProperty.call(renderer, "renderBufferDirect");
     const checked: DrawMethod = (...args) => {
+      if (observe !== null) {
+        if (args[1] === null && isShadowMaterial(args[3])) shadowChecks += 1;
+        else if (args[4].parent !== null) sceneChecks += 1;
+      }
       // three's shadow pass draws with no scene.
       if (args[1] === null && isShadowMaterial(args[3])) shadowKinds.add(isShadowMaterial(args[3], "distance") ? "d" : "z");
       return leaveOut(args[4], args[3]) ? undefined : draw.apply(renderer, args);
@@ -275,6 +287,8 @@ export function deferUnlinkedDraws(
     try {
       return previous.call(renderer, drawn, camera);
     } finally {
+      observe?.("shader readiness scene draw checks", sceneChecks);
+      observe?.("shader readiness shadow draw checks", shadowChecks);
       if (renderer.renderBufferDirect === checked) {
         if (drawOwned) renderer.renderBufferDirect = draw;
         else delete (renderer as { renderBufferDirect?: unknown }).renderBufferDirect;

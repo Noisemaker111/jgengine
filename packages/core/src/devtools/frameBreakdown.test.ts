@@ -15,6 +15,18 @@ test("percentiles of a series", () => {
   expect(spread([])).toEqual({ p50: 0, p95: 0, p99: 0, max: 0, avg: 0 });
 });
 
+test("reports invocation counts and does not invent a GPU cost", () => {
+  const summary = summarizeBreakdown([
+    frame({ gpu: null, calls: { "render:main": 3, "frame#1:sharedMember": 2 } }),
+    frame({ gpu: null, calls: { "render:main": 1 } }),
+  ], { objects: [], materials: [] });
+  expect(summary.calls).toEqual([
+    { name: "render:main", avg: 2, max: 3 },
+    { name: "frame#1:sharedMember", avg: 1, max: 2 },
+  ]);
+  expect(renderBreakdownText(summary, "test")).toContain("cost    unavailable without GPU timing");
+});
+
 test("a hitch names its cause from what happened in that frame", () => {
   expect(hitchCause(frame({ intervalMs: 80, compiles: 3, compileMs: 60 })).cause).toBe("compile");
   // A program linked in an earlier frame stalls the draw that first uses it; the hitch names that draw.
@@ -45,8 +57,8 @@ test("a window sums up: spreads, costliest systems and passes, per-frame draw co
 
   const text = renderBreakdownText(summary, "deepward");
   expect(text).toContain("frame   p50 8.00 ms");
-  expect(text).toContain("cost    p50 4.00 ms -> 250 fps possible");
-  expect(text).toContain("(144 ok)");
+  expect(text).toContain("cost    larger CPU/GPU p50 4.00 ms");
+  expect(text).toContain("not an FPS prediction");
   expect(text).toContain("70.0 ms  compile: 2 shader program(s) compiled");
   expect(fpsAt(6.94)).toBe(144);
 });

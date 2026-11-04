@@ -673,6 +673,7 @@ export function Shell3dPresentation({
           <div
             ref={wrapperRef}
             tabIndex={0}
+            data-jg-play-surface=""
             {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
             className="relative h-full w-full bg-neutral-950 outline-none"
             onKeyDown={keys.onKeyDown}
@@ -749,7 +750,7 @@ export function Shell3dPresentation({
                   ) : null}
                   <LivingWorld ambientLife={playable.scene?.ambientLife} lowTier={graphics.quality === "low"} outdoor={effectiveSky !== undefined} />
                   {playable.scene?.ambientLife !== false && playable.scene?.ambientLife?.fauna !== undefined ? (
-                    <AmbientFauna config={playable.scene.ambientLife.fauna} zones={faunaZones} assets={playable.game.assets} groundAt={ctx.world.groundHeightAt} lowTier={graphics.quality === "low"} />
+                    <AmbientFauna config={playable.scene.ambientLife.fauna} zones={faunaZones} assets={playable.game.assets} groundAt={ctx.world.groundHeightAt} groundRevision={ctx.world.ground.heightRevision} lowTier={graphics.quality === "low"} />
                   ) : null}
                   {sceneLighting !== undefined ? (
                     <ConfiguredLighting

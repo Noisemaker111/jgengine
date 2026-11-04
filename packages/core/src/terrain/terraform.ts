@@ -232,6 +232,8 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
   const vertsX = cols + 1;
   const vertsZ = rows + 1;
   const offsets = new Float32Array(vertsX * vertsZ);
+  let revision = 0;
+  let baseRevision = base.heightRevision?.();
   const surfaces: (string | null)[] = new Array(cols * rows).fill(null);
   const cellCount = cols * rows;
   let layers: TerrainMaterialLayer[] = [];
@@ -311,6 +313,7 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     const before = offsets[index]!;
     if (value === before) return false;
     offsets[index] = value;
+    revision += 1;
     record?.(index, before, value);
     return true;
   }
@@ -614,6 +617,12 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     gridBounds: { minX: bounds.minX, minZ: bounds.minZ, maxX: bounds.minX + spanX, maxZ: bounds.minZ + spanZ },
     sampleHeight,
     sampleNormal,
+    heightRevision() {
+      const next = base.heightRevision?.();
+      if (next === undefined) return undefined;
+      if (next !== baseRevision) { baseRevision = next; revision += 1; }
+      return revision;
+    },
     ...(base.bounds === undefined ? {} : { bounds: base.bounds }),
     ...(base.waterLevel === undefined ? {} : { waterLevel: base.waterLevel }),
     apply(edit) {
@@ -635,9 +644,11 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     },
     applyDelta(delta) {
       for (let i = 0; i < delta.indices.length; i += 1) offsets[delta.indices[i]!] = delta.after[i]!;
+      if (delta.indices.length > 0) revision += 1;
     },
     revertDelta(delta) {
       for (let i = 0; i < delta.indices.length; i += 1) offsets[delta.indices[i]!] = delta.before[i]!;
+      if (delta.indices.length > 0) revision += 1;
     },
     paintRecording(edit, record) {
       return paintSurface(edit, record);
@@ -725,6 +736,7 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     surfaceAt,
     reset() {
       offsets.fill(0);
+      revision += 1;
       surfaces.fill(null);
       weights = null;
     },
@@ -741,6 +753,7 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
       };
     },
     restore(snapshot) {
+      revision += 1;
       const count = Math.min(offsets.length, snapshot.offsets.length);
       for (let index = 0; index < count; index += 1) offsets[index] = snapshot.offsets[index]!;
       const surfaceCount = Math.min(surfaces.length, snapshot.surfaces.length);

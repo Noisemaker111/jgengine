@@ -262,9 +262,12 @@ export interface TerrainEnvironmentConfig {
   /**
    * Game-supplied height function replacing the built-in noise field — banded biomes, ridge walls,
    * terracing, anything expressible as `(x, z) => y`. `flatten` masks still carve into it, and both
-   * the rendered ground and `ctx.world.ground` sample it. A function doesn't serialize; keep it pure.
+   * the rendered ground and `ctx.world.ground` sample it. A function doesn't serialize; keep it pure
+   * unless `heightRevision` tracks changes.
    */
   heightField?: (x: number, z: number) => number;
+  /** Revision of a changing height function; return undefined if its changes cannot be tracked. */
+  heightRevision?: () => number | undefined;
   /** Named palette preset (see `TERRAIN_MATERIAL_PALETTES` in `terrain/terrain`); default "grass". Overridden field-by-field by `colors`. */
   material?: TerrainMaterial;
   /** Explicit low/high/waterline hex colors; any field left unset falls back to the resolved `material` preset. */
@@ -1030,6 +1033,7 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
     {
       ...(config.heightMap === undefined ? {} : { heightMap: config.heightMap }),
       ...(config.heightField === undefined ? {} : { heightField: config.heightField }),
+      ...(config.heightRevision === undefined ? {} : { heightRevision: config.heightRevision }),
       ...(config.material === undefined ? {} : { material: config.material }),
       ...(config.colors === undefined ? {} : { colors: config.colors }),
       ...(config.materialRegions === undefined ? {} : { materialRegions: config.materialRegions }),

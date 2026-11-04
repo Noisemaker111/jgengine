@@ -27,6 +27,21 @@ describe("terraform brushWeight", () => {
 });
 
 describe("editable terrain write-back", () => {
+  test("height revision follows edits, undo, redo, restore and reset", () => {
+    const terrain = createEditableTerrain({ bounds });
+    let revision = terrain.heightRevision?.();
+    expect(revision).toBeDefined();
+    const check = () => { const next = terrain.heightRevision?.(); expect(next).not.toBe(revision); revision = next; };
+    const delta = terrain.editDelta({ mode: "raise", center: [0, 0], radius: 4, strength: 2 });
+    check();
+    const snapshot = terrain.snapshot();
+    terrain.revertDelta(delta); check();
+    terrain.applyDelta(delta); check();
+    terrain.reset(); check();
+    terrain.restore(snapshot); check();
+    const unknownBase = createEditableTerrain({ bounds, base: { sampleHeight: () => 0, sampleNormal: () => [0, 1, 0] } });
+    expect(unknownBase.heightRevision?.()).toBeUndefined();
+  });
   test("raise lifts the height under the cursor above the base field", () => {
     const terrain = createEditableTerrain({ bounds, base: flatField(), cellSize: 1 });
     const before = terrain.sampleHeight(0, 0);

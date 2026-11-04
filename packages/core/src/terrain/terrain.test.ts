@@ -62,6 +62,27 @@ describe("terrain field", () => {
     expect(groundFieldFor(environment()).sampleHeight(5, 5)).toBe(0);
   });
 
+  test("environment ground revisions follow changing base and island height fields", () => {
+    let baseHeight = 0, islandHeight = 1, baseVersion: number | undefined = 0, islandVersion = 0;
+    const field = groundFieldFor(environment({
+      terrain: terrain({ heightField: () => baseHeight, heightRevision: () => baseVersion }),
+      islands: [island({ origin: [20, 0], bounds: { w: 10, d: 10 }, heightField: () => islandHeight, heightRevision: () => islandVersion })],
+    }));
+    const first = field.heightRevision?.();
+    expect(field.sampleHeight(0, 0)).toBe(0);
+    baseHeight = 2; baseVersion += 1;
+    expect(field.sampleHeight(0, 0)).toBe(2);
+    const second = field.heightRevision?.();
+    expect(second).not.toBe(first);
+    islandHeight = 3; islandVersion += 1;
+    expect(field.sampleHeight(20, 0)).toBe(3);
+    expect(field.heightRevision?.()).not.toBe(second);
+    baseVersion = undefined;
+    expect(field.heightRevision?.()).toBeUndefined();
+    baseVersion = 3;
+    expect(field.heightRevision?.()).toBeDefined();
+  });
+
   test("noiseField scales with amplitude and is reproducible per seed", () => {
     const low = noiseField({ seed: "s", amplitude: 1, frequency: 0.1 });
     const high = noiseField({ seed: "s", amplitude: 4, frequency: 0.1 });
@@ -791,6 +812,7 @@ describe("indexed sampling", () => {
 describe("live road drape", () => {
   test("ground collision follows a road source as its streets widen", () => {
     let width = 6;
+    let baseHeight = 0, baseVersion = 0;
     const listeners = new Set<() => void>();
     const source = {
       current: () => [road({ path: [[-50, 0], [50, 0]], width, elevation: 0.2 })],
@@ -799,13 +821,20 @@ describe("live road drape", () => {
         return () => listeners.delete(listener);
       },
     };
-    const world = environment({ roads: source.current(), roadSource: source });
+    const world = environment({ terrain: terrain({ heightField: () => baseHeight, heightRevision: () => baseVersion }), roads: source.current(), roadSource: source });
     const field = resolveEnvironmentField(world);
+    const revision = field.heightRevision?.();
+    expect(revision).toBeDefined();
     const flat = flatField().sampleHeight(0, 4);
     expect(field.sampleHeight(0, 4)).toBeCloseTo(flat, 5);
+    baseHeight = 1; baseVersion += 1;
+    expect(field.sampleHeight(0, 4)).toBeCloseTo(flat + 1, 5);
+    const updatedBase = field.heightRevision?.();
+    expect(updatedBase).not.toBe(revision);
     width = 10;
     for (const listener of listeners) listener();
-    expect(field.sampleHeight(0, 4)).toBeCloseTo(flat + 0.2, 5);
+    expect(field.sampleHeight(0, 4)).toBeCloseTo(flat + 1.2, 5);
+    expect(field.heightRevision?.()).not.toBe(updatedBase);
   });
 });
 

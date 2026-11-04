@@ -26,6 +26,8 @@ export interface AmbientFaunaProps {
   assets?: AssetCatalog | undefined;
   /** Ground height under a point; the seabed for fish and the floor for swarms. */
   groundAt?: ((x: number, z: number) => number) | undefined;
+  /** Revision of ground height, when the field can track changes. */
+  groundRevision?: (() => number | undefined) | undefined;
   /** The low graphics tier halves the agents. */
   lowTier?: boolean | undefined;
 }
@@ -162,7 +164,7 @@ function ModelSpecies({ species, model, groups, shared }: { species: FaunaSpecie
  * `config.drawCap`. Groups come from `config.groups` and the `ambient_fauna` zones in the editor scene.
  * @capability ambient-fauna-render draw ambient fauna as instanced species models with distance LOD, frustum culling, a per-group budget and a global draw cap
  */
-export function AmbientFauna({ config, zones, assets, groundAt, lowTier = false }: AmbientFaunaProps): ReactElement | null {
+export function AmbientFauna({ config, zones, assets, groundAt, groundRevision, lowTier = false }: AmbientFaunaProps): ReactElement | null {
   const groups = useMemo(() => [...(config.groups ?? []), ...(zones ?? [])], [config.groups, zones]);
   const shared = useMemo<Shared>(() => {
     const surface = config.surface;
@@ -171,13 +173,14 @@ export function AmbientFauna({ config, zones, assets, groundAt, lowTier = false 
       {
         surfaceAt: typeof surface === "function" ? surface : () => surface ?? 0,
         ...(groundAt === undefined ? {} : { groundAt }),
+        ...(groundRevision === undefined ? {} : { groundRevision }),
         ...(config.plantAt === undefined ? {} : { plantAt: config.plantAt }),
         ...(config.wind === undefined ? {} : { wind: config.wind }),
       },
       { globalCap: Math.floor((config.globalCap ?? FAUNA_GLOBAL_CAP) * (lowTier ? 0.5 : 1)), ...(config.simulateRange === undefined ? {} : { simulateRange: config.simulateRange }) },
     );
     return { fauna, view: createFaunaView(), budget: { remaining: 0 } };
-  }, [groups, config.surface, config.plantAt, config.wind, config.globalCap, config.simulateRange, groundAt, lowTier]);
+  }, [groups, config.surface, config.plantAt, config.wind, config.globalCap, config.simulateRange, groundAt, groundRevision, lowTier]);
   const frame = useRef<FaunaFrame>({ dt: 0, time: 0, sunHeight: null, focusX: 0, focusZ: 0 });
   const drawCap = (config.drawCap ?? DEFAULT_DRAW_CAP) * (lowTier ? 0.5 : 1);
 

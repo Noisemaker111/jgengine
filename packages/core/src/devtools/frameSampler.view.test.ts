@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { createLogBus } from "@jgengine/core/devtools/logBus";
 import { toReportLogs } from "@jgengine/core/devtools/report";
-import { buildFrameReport, countSceneNodes, attachGlCounters, probeReportRoute, reportGameId } from "./frameSampler.view";
+import { buildFrameReport, countSceneNodes, attachGlCounters, frameTelemetryMode, probeReportRoute, reportGameId } from "./frameSampler.view";
 
 /**
  * The in-page report is the same record `bun run perf` prints, so these assert the
@@ -169,6 +169,15 @@ describe("report game id", () => {
 });
 
 describe("report route probe", () => {
+  test("local-only telemetry skips server access and ordinary shipped pages stay off", async () => {
+    let probes = 0;
+    const probe = async () => { probes += 1; return false; };
+    expect(await frameTelemetryMode("local", probe)).toBe("local");
+    expect(await frameTelemetryMode("off", probe)).toBe("off");
+    expect(probes).toBe(0);
+    expect(await frameTelemetryMode(null, probe)).toBe("off");
+    expect(probes).toBe(1);
+  });
   test("installs only where a dev report route answers JSON", async () => {
     const json = (body: unknown, status = 200) =>
       Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
