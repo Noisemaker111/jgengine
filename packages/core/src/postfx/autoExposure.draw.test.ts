@@ -110,10 +110,28 @@ describe("ExposureMeterPass", () => {
     const pass = new ExposureMeterPass((frame) => samples.push(Float32Array.from(frame)));
     const write = new THREE.WebGLRenderTarget(4, 4);
     const read = new THREE.WebGLRenderTarget(4, 4);
+    const fetched: string[] = [];
+    const getBufferSubData = gl.getBufferSubData;
+    gl.getBufferSubData = (target, offset, out) => {
+      fetched.push(phase);
+      getBufferSubData(target, offset, out);
+    };
+    let phase = "after the scene";
+    // Drawing alone never reads back, however many frames pass.
     for (let frame = 0; frame < 3; frame += 1) pass.render(renderer, write, read, 1 / 60);
+    expect(fetched).toEqual([]);
+    for (let frame = 0; frame < 3; frame += 1) {
+      phase = "frame start";
+      pass.collect();
+      phase = "after the scene";
+      pass.render(renderer, write, read, 1 / 60);
+    }
     expect(errors).toEqual([]);
     expect(samples.length).toBeGreaterThan(0);
     expect(samples[0]![0]).toBeCloseTo(Math.pow(2, (180 / 255) * 24 - 16), 6);
+    // Reading back after the scene would make the CPU wait for the whole scene to finish drawing.
+    expect(fetched.length).toBeGreaterThan(0);
+    expect(fetched.every((at) => at === "frame start")).toBe(true);
     pass.dispose();
   });
 

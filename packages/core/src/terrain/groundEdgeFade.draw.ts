@@ -248,6 +248,10 @@ export function applyGroundEdgeFade<M extends THREE.Material>(material: M, fade:
   const previousCompile = material.onBeforeCompile;
   const previousKey = material.customProgramCacheKey;
   material.transparent = true;
+  // Blending only shows at the outer edge; inside, the layer is opaque ground with depth writes on.
+  // Three draws a two-sided see-through material in two passes and re-flags it twice a frame, which
+  // rebuilds its shader state on every draw, for back faces the ground hides anyway.
+  material.forceSinglePass = true;
   material.onBeforeCompile = (shader, renderer) => {
     previousCompile.call(material, shader, renderer);
     Object.assign(shader.uniforms, fade.uniforms);

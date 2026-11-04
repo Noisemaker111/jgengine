@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MinimapChrome, useMarkers, type MinimapChromeMarker } from "@jgengine/core/map/map.view";
 import { useLiveMarkers } from "@jgengine/react/hooks";
 import { projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
@@ -48,29 +48,36 @@ function useFogSnapshot(): FogCellsSnapshot | null {
 }
 
 /** One SVG path per fog state: solid over ground never seen, dimmed over ground explored but out of
- * sight now. Cells seen this tick are left alone so the terrain (and the blips on it) reads clearly. */
-function fogPaths(snapshot: FogCellsSnapshot): { unseen: string; explored: string } {
+ * sight now. Cells seen this tick are left alone so the terrain (and the blips on it) reads clearly.
+ * Each row's run of cells in one state is one rectangle, so the path is a few rows of text, not a
+ * rectangle per cell rebuilt on every fog tick. */
+export function fogPaths(snapshot: FogCellsSnapshot): { unseen: string; explored: string } {
   const cells = snapshot.explored;
   const seen = snapshot.visible.revealed;
-  const pxPerWorld = SIZE / 2 / RADIUS;
-  const cellPx = cells.cellSize * pxPerWorld;
-  const unseen: string[] = [];
-  const explored: string[] = [];
+  const cellPx = cells.cellSize * (SIZE / 2 / RADIUS);
+  const height = cellPx.toFixed(1);
+  let unseen = "";
+  let explored = "";
+  const state = (index: number) => (seen[index] === true ? 0 : cells.revealed[index] === true ? 1 : 2);
   for (let row = 0; row < cells.rows; row += 1) {
-    for (let col = 0; col < cells.cols; col += 1) {
-      const index = row * cells.cols + col;
-      if (seen[index] === true) continue;
-      const at = projectToMinimap(
-        [cells.minX + (col + 0.5) * cells.cellSize, cells.minZ + (row + 0.5) * cells.cellSize],
-        VIEW,
-      );
-      const x = (at.x - cellPx / 2).toFixed(1);
-      const y = (at.y - cellPx / 2).toFixed(1);
-      const d = `M${x} ${y}h${cellPx.toFixed(1)}v${cellPx.toFixed(1)}h-${cellPx.toFixed(1)}z`;
-      (cells.revealed[index] === true ? explored : unseen).push(d);
+    let col = 0;
+    while (col < cells.cols) {
+      const kind = state(row * cells.cols + col);
+      let end = col + 1;
+      while (end < cells.cols && state(row * cells.cols + end) === kind) end += 1;
+      if (kind !== 0) {
+        const z = cells.minZ + (row + 0.5) * cells.cellSize;
+        const first = projectToMinimap([cells.minX + (col + 0.5) * cells.cellSize, z], VIEW);
+        const last = projectToMinimap([cells.minX + (end - 0.5) * cells.cellSize, z], VIEW);
+        const width = (Math.abs(last.x - first.x) + cellPx).toFixed(1);
+        const d = `M${(Math.min(first.x, last.x) - cellPx / 2).toFixed(1)} ${(first.y - cellPx / 2).toFixed(1)}h${width}v${height}h-${width}z`;
+        if (kind === 1) explored += d;
+        else unseen += d;
+      }
+      col = end;
     }
   }
-  return { unseen: unseen.join(""), explored: explored.join("") };
+  return { unseen, explored };
 }
 
 /** A live top-down radar built on the shared minimap primitives: own forces blue, hero gold,
@@ -111,7 +118,7 @@ export function TacticalMinimap() {
     };
   });
 
-  const fogPaint = fog === null ? null : fogPaths(fog);
+  const fogPaint = useMemo(() => (fog === null ? null : fogPaths(fog)), [fog]);
 
   return (
     <svg width={SIZE} height={SIZE} className="ec-minimap" role="img" aria-label="Battlefield minimap">

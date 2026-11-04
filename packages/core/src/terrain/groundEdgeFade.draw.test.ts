@@ -68,6 +68,8 @@ describe("applyGroundEdgeFade", () => {
     const material = applyGroundEdgeFade(new THREE.MeshStandardMaterial(), fade);
     expect(material.transparent).toBe(true);
     expect(material.depthWrite).toBe(true);
+    // One pass even when two-sided: three's two-pass path re-flags the material twice every frame.
+    expect(material.forceSinglePass).toBe(true);
     const shader = shaderFor(material);
     expect(shader.uniforms["uJgFadeMask"]).toBe(fade.uniforms.uJgFadeMask);
     expect(shader.vertexShader).toContain("vJgFadePos = (modelMatrix");

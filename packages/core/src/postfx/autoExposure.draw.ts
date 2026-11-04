@@ -119,7 +119,6 @@ export class ExposureMeterPass extends Pass {
     if (!this.dry) {
       this.frames += 1;
       this.elapsed += deltaTime;
-      this.collectPendingSample();
       // The first few frames sample every frame so a load starts at its metered exposure, not at
       // the authored one; after that a readback is queued on a schedule.
       if (this.fence === null && (this.taken < 4 || this.frames % this.sampleInterval === 0)) {
@@ -140,7 +139,7 @@ export class ExposureMeterPass extends Pass {
 
   /**
    * Queues a readback through a pixel-pack buffer and a fence, so the CPU never waits on the GPU: the
-   * samples arrive a frame or two later through {@link collectPendingSample}. A renderer without WebGL2
+   * samples arrive a frame or two later through {@link collect}. A renderer without WebGL2
    * buffers falls back to the synchronous read, which costs one stall per sample.
    */
   private queueReadback(renderer: THREE.WebGLRenderer): void {
@@ -167,7 +166,12 @@ export class ExposureMeterPass extends Pass {
     this.fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
   }
 
-  private collectPendingSample(): void {
+  /**
+   * Takes a finished readback, if one is ready. Call it before the frame draws anything: reading a
+   * buffer back makes the browser's GPU process run every command queued ahead of it, so a read made
+   * after the scene waits for the whole scene, while one made first waits for nothing.
+   */
+  collect(): void {
     const gl = this.gl;
     if (gl === null || this.fence === null || this.pbo === null) return;
     const status = gl.clientWaitSync(this.fence, 0, 0);
