@@ -30,6 +30,7 @@ export const game = defineGame({
     cycleAim: ["KeyT"],
     abilityFire: ["KeyQ"],
     abilityBell: ["KeyE"],
+    mendWalls: ["KeyR"],
   },
   server: { mode: "defense" },
   content,
@@ -50,7 +51,7 @@ export const game = defineGame({
     hudFit: { mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
     // Every action already has a control on the HUD itself (the rack's plaques, the mason's tablet), so
   // the derived touch buttons would only repeat them over the field.
-    touch: { hidden: ["buildTower1", "buildTower2", "buildTower3", "buildTower4", "upgradeTower", "sellTower", "cycleAim", "abilityFire", "abilityBell"] },
+    touch: { hidden: ["buildTower1", "buildTower2", "buildTower3", "buildTower4", "upgradeTower", "sellTower", "cycleAim", "abilityFire", "abilityBell", "mendWalls"] },
     pointer: { moveCommand: "tower.build" },
   },
   systems,
@@ -75,6 +76,7 @@ export const game = defineGame({
     //   mid-wave  wave 1 on the approach, raiders mid-path
     //   boss      the Warden on the field, driven through its second phase by real damage
     //   result    a defense played to its own ending, with the result card up
+    //   breached  wave 1 leaked into an empty keep, the road clear and the Mend sign up
     states: {
       title: [],
       menu: ["run.begin", { name: "menu.commander", input: { commander: "Mara Vell" } }, "menu.save", "menu.title"],
@@ -85,6 +87,8 @@ export const game = defineGame({
       "mid-wave": ["run.begin", { name: "run.stage", input: { mode: "midwave" } }],
       boss: ["run.begin", { name: "run.stage", input: { mode: "boss" } }],
       result: ["run.begin", { name: "run.stage", input: { mode: "result" } }],
+      // The first wave walked into an empty keep: walls breached, the road clear, the wave's pay in.
+      breached: ["run.begin", { name: "run.stage", input: { mode: "breached" } }],
       "two-towers": [
         "run.begin",
         "buildTower1",

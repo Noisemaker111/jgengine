@@ -956,6 +956,29 @@ body,
   clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
 }
 
+.bb-mend {
+  margin-top: 5px;
+  font-family: var(--jg-font-display);
+  font-weight: 700;
+  font-size: 11px;
+  color: #f6e6c4;
+}
+
+.bb-mend > [data-jg-frame-face] {
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+}
+
+.bb-mend kbd {
+  font-size: 9px;
+  opacity: 0.75;
+}
+
+.bb-mend[data-dim] {
+  opacity: 0.5;
+}
+
 .bb-waveboard {
   display: flex;
   flex-direction: column;

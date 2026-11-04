@@ -7,7 +7,7 @@ import { sendWave, tickWaves } from "./waves/director";
 import { AUTHORED_WAVES, TOTAL_WAVES } from "./waves/manifest";
 
 /** What a staged defense should look like when the capture takes it. */
-export type StageMode = "midwave" | "boss" | "result";
+export type StageMode = "midwave" | "boss" | "result" | "breached";
 
 /** One simulation step for a staged run - 30 Hz, the same cadence the frame loop asks for. */
 const STEP = 1 / 30;
@@ -57,7 +57,22 @@ function playOutDefense(ctx: GameContext): void {
   }
 }
 
+/** Let the first wave walk into an empty keep, holding the clock, so the walls are breached and the road clears. */
+function stageBreach(ctx: GameContext): void {
+  sendWave(ctx);
+  for (let elapsed = 0; elapsed < MAX_STAGED_SECONDS; elapsed += 1) {
+    const world = keep.of(ctx);
+    if (world.fact("keep.field_clear") === true || runEnded(world)) return;
+    session.countdown.disarm();
+    advance(ctx, 1);
+  }
+}
+
 export function stageRun(ctx: GameContext, mode: StageMode): void {
+  if (mode === "breached") {
+    stageBreach(ctx);
+    return;
+  }
   if (mode === "boss") {
     stageBossWave(ctx);
     return;

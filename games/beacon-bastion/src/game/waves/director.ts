@@ -15,6 +15,7 @@ import { finishRun } from "./legacy";
 import { keep, runEnded } from "../keep";
 import { scorch, isFrozen } from "../combat/strike";
 import { tickAbilities } from "../combat/cast";
+import { tickHeldPay } from "./heldWavePay";
 
 /** How high a wraith floats over the road. */
 export const FLIGHT_HEIGHT = 2.4;
@@ -227,6 +228,7 @@ export function tickWaves(ctx: GameContext, dt: number): void {
     ctx.scene.entity.setPose(creep.instanceId, { position: [next.position[0], next.position[1] + lift, next.position[2]], rotationY: next.heading, dt });
     if (next.done) leakCreep(ctx, creep.instanceId, creep.catalogId);
   }
+  tickHeldPay(ctx);
 
   if (session.encounter.view().done && session.creeps.size === 0 && !runEnded(world)) {
     world.set("keep.held", true);
