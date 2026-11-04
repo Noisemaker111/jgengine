@@ -282,11 +282,10 @@ export function renderBreakdownText(summary: FrameBreakdownSummary, title: strin
       ? "gpu     unavailable or unresolved"
       : `gpu     p50 ${ms(summary.gpu.p50)}  p95 ${ms(summary.gpu.p95)} (${summary.gpuFrames ?? "?"}/${summary.frames} frames complete)`,
     summary.gpu === null ? "cost    unavailable without GPU timing" :
-      `cost    p50 ${ms(cost)} -> ${fpsAt(cost)} fps possible; p95 ${ms(cost95)}. 60 Hz needs 16.67 ms, 144 Hz needs 6.94 ms` +
-      (cost95 <= 6.94 ? " (144 ok)" : ` (${ms(cost95 - 6.94)} over 144)`),
+      `cost    larger CPU/GPU p50 ${ms(cost)}, p95 ${ms(cost95)}; overlap assumed, not an FPS prediction`,
     "",
     "top cpu (avg / p95 per frame):",
-    ...summary.cpu.slice(0, 8).map((entry) => `  ${entry.name.padEnd(40)} ${entry.avgMs.toFixed(2).padStart(7)} / ${entry.p95Ms.toFixed(2)}`),
+    ...summary.cpu.map((entry) => `  ${entry.name.padEnd(40)} ${entry.avgMs.toFixed(2).padStart(7)} / ${entry.p95Ms.toFixed(2)}`),
     ...(summary.calls === undefined || summary.calls.length === 0 ? ["scope calls: unavailable"] : ["scope calls (avg / max per frame):", ...summary.calls.map((entry) => `  ${entry.name} ${entry.avg} / ${entry.max}`)]),
     ...(summary.omitted === undefined ? [] : [`omitted from summary: ${summary.omitted.cpu} CPU rows, ${summary.omitted.calls} call rows`]),
     summary.workCounts === "enabled" ? "work counts: instrumented owners only; other work is unobserved" : "work counts: unavailable (deep diagnostics disabled or older record)",

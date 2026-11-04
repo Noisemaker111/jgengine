@@ -2,7 +2,7 @@
 // standard path while a window is measured, read the page's breakdown and name its frame callbacks
 // by source line, and diff two records so one fix is one run.
 import { cdpField, remoteObjectId, type CdpSession } from "./browser-lib";
-import { fpsAt, type FrameBreakdownSummary, type NamedCost } from "../packages/core/src/devtools/frameBreakdown";
+import { type FrameBreakdownSummary, type NamedCost } from "../packages/core/src/devtools/frameBreakdown";
 import { SourceMap } from "node:module";
 
 /** How the run moves through the game while it is measured. */
@@ -149,7 +149,7 @@ export function compareBreakdowns(before: FrameBreakdownSummary, after: FrameBre
     line("cpu p95", before.work.p95, after.work.p95),
     before.gpu === null || after.gpu === null ? "  gpu            unavailable in one or both runs" : line("gpu p50", before.gpu.p50, after.gpu.p50),
     before.gpu === null || after.gpu === null ? "  gpu p95        unavailable in one or both runs" : line("gpu p95", before.gpu.p95, after.gpu.p95),
-    before.gpu === null || after.gpu === null ? "  cost p50       unavailable without GPU timings" : `  cost p50 allows ${fpsAt(cost(before, "p50"))} -> ${fpsAt(cost(after, "p50"))} fps`,
+    before.gpu === null || after.gpu === null ? "  cost p50       unavailable without GPU timings" : line("max cpu/gpu p50", cost(before, "p50"), cost(after, "p50")),
     line("draws", before.counts.drawsAvg, after.counts.drawsAvg, ""),
     line("triangles", before.counts.trianglesAvg, after.counts.trianglesAvg, ""),
     `  hitches       ${before.hitches.length} -> ${after.hitches.length}`,

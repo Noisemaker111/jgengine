@@ -8,11 +8,13 @@ import {
   aggregateInclusiveTime,
   aggregateSelfTime,
   cappedClockProblem,
+  baselineLogProblem,
   compareServedSource,
   droppedOverrides,
   DRAW_FRAME_COUNTER_SCRIPT,
   measureGame,
   measureSceneNodes,
+  movementEvidence,
   parseDeclaredSettings,
   parsePerfArgs,
   parseSettingSpec,
@@ -35,6 +37,20 @@ test("performance source identity rejects a different checkout or server revisio
   expect(compareServedSource({ ...server, head: "87654321" }, root, "12345678")).toBe("mismatch");
   expect(compareServedSource({ ...server, gameDir: join(root, "other") }, root, "12345678")).toBe("mismatch");
   expect(compareServedSource(null, root, "12345678")).toBe("unavailable");
+});
+
+test("performance movement records displacement and unavailable endpoints", () => {
+  expect(movementEvidence({ position: [1, 2, 3], error: null }, { position: [4, 2, 7], error: null })).toEqual({ start: [1, 2, 3], end: [4, 2, 7], displacement: 5, errors: [] });
+  expect(movementEvidence({ position: null, error: "no player" }, { position: [0, 0, 0], error: null })).toEqual({ start: null, end: [0, 0, 0], displacement: null, errors: ["no player"] });
+});
+
+test("missing assets, errors and unavailable logs cannot become a clean baseline", () => {
+  const logs = { counts: { log: 0, info: 0, warn: 1, error: 0 }, dropped: 0, severe: [{ at: 1, level: "warn" as const, system: "console", message: "Missing file /model.glb" }] };
+  expect(baselineLogProblem(logs)).toBe("game reported missing assets");
+  expect(baselineLogProblem({ ...logs, severe: [], counts: { ...logs.counts, error: 1 } })).toBe("game reported errors");
+  expect(baselineLogProblem(null)).toBe("game logs unavailable");
+  expect(baselineLogProblem({ ...logs, severe: [] })).toBe("warning and error details truncated");
+  expect(baselineLogProblem({ ...logs, counts: { ...logs.counts, warn: 0 }, severe: [] })).toBeNull();
 });
 
 test("whole-frame draws include extension calls once, even when the extension or inherited methods are reused", () => {

@@ -960,8 +960,26 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
   servedSource?: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null };
   /** How the run moved while measured. */
   path?: PerfPath;
+  /** Player endpoints sampled across the measurement; absent when the bridge cannot report them. */
+  movement?: { start: readonly number[] | null; end: readonly number[] | null; displacement: number | null; errors: string[] };
   /** Where each frame went over the measured window; null when the page has no dev telemetry. */
   breakdown?: FrameBreakdownSummary | null;
+}
+
+async function playerPosition(session: CdpSession): Promise<{ position: number[] | null; error: string | null }> {
+  try {
+    const result = await session.evaluate<{ ok: boolean; position?: number[]; error?: string }>(`window.__jgengineAgent?.handle?.({ method: "player_pose" }) ?? { ok: false, error: "agent bridge unavailable" }`);
+    if (result?.ok === true && Array.isArray(result.position) && result.position.length === 3 && result.position.every(Number.isFinite)) return { position: result.position, error: null };
+    return { position: null, error: result?.error ?? "player position unavailable" };
+  } catch (error) { return { position: null, error: error instanceof Error ? error.message : String(error) }; }
+}
+
+/** Net displacement only; equal endpoints do not prove the player stayed still. */
+export function movementEvidence(start: { position: number[] | null; error: string | null }, end: { position: number[] | null; error: string | null }): NonNullable<PerfRecord["movement"]> {
+  const a = start.position;
+  const b = end.position;
+  const displacement = a === null || b === null ? null : Math.hypot((b[0] ?? 0) - (a[0] ?? 0), (b[1] ?? 0) - (a[1] ?? 0), (b[2] ?? 0) - (a[2] ?? 0));
+  return { start: a, end: b, displacement, errors: [start.error, end.error].filter((error): error is string => error !== null) };
 }
 
 /** Compare the live server's identity, not just the measuring process's checkout. */
@@ -970,6 +988,16 @@ export function compareServedSource(server: ServerIdentityReport | null, expecte
   const normalize = (path: string) => { const value = resolve(path).replaceAll("\\", "/"); return process.platform === "win32" ? value.toLowerCase() : value; };
   if (normalize(server.root) !== normalize(expectedRoot) || !server.head.startsWith(expectedCommit) || server.gameDir !== null || server.kind !== "runner") return "mismatch";
   return "matched";
+}
+
+/** Log evidence that prevents a run from being reused as a clean baseline. */
+export function baselineLogProblem(logs: ReportLogs | null): string | null {
+  if (logs === null) return "game logs unavailable";
+  if (logs.dropped > 0) return "game logs incomplete";
+  if (logs.counts.error > 0) return "game reported errors";
+  if (logs.counts.warn > logs.severe.length) return "warning and error details truncated";
+  if (logs.severe.some((entry) => /missing file|texture\/sub-resource loads failed|environment illumination failed/i.test(entry.message))) return "game reported missing assets";
+  return null;
 }
 export type { PerfReport };
 
@@ -1126,6 +1154,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   }
 
   await session.evaluate(`new Promise((r) => setTimeout(r, ${warmupMs}))`, { awaitPromise: true });
+  const movementStart = await playerPosition(session);
   const releasePath = await startPath(session, options.path ?? "still");
   await session.evaluate(`window.__jgPerfGl?.reset?.()`);
   const hasBreakdown = await resetBreakdown(session);
@@ -1137,6 +1166,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const startedAt = Date.now();
   const deltas = (await session.evaluate<number[]>(SAMPLE_FRAMES_SCRIPT(seconds * 1000), { awaitPromise: true })) ?? [];
   const drawFrames = (await session.evaluate<number[]>(`globalThis.__jgPerfDraws?.stop?.() ?? []`)) ?? [];
+  const movementEnd = await playerPosition(session);
   const windowMs = Date.now() - startedAt;
   const frameDraws = summarizeFrameDraws(drawFrames);
   const breakdown = hasBreakdown ? await readBreakdown(session) : null;
@@ -1238,6 +1268,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     params: params.map(([key, value]) => `${key}=${value}`),
     frameClock,
     path: options.path ?? "still",
+    movement: movementEvidence(movementStart, movementEnd),
     breakdown,
   };
 
@@ -1316,10 +1347,12 @@ async function main(): Promise<void> {
       const outPath = resolve(process.cwd(), parsed.args.out ?? join(repoRoot, ".scratch", "perf", `${game}.json`));
       writePerfRecord(measured.record, outPath);
       const commit = cleanCommitFor(repoRoot, game);
-      if (commit !== null && servedSource.status === "matched") saveBaseline(baselinePath(repoRoot, game, commit, conditions), measured.record);
+      const logProblem = baselineLogProblem(measured.record.logs);
+      if (logProblem !== null) console.error(`perf: not caching a baseline: ${logProblem}`);
+      if (commit !== null && servedSource.status === "matched" && logProblem === null) saveBaseline(baselinePath(repoRoot, game, commit, conditions), measured.record);
       if (json) console.log(JSON.stringify(measured.record, null, 2));
       else console.log(perfSummaryText(measured.record, baselines.get(game) ?? null));
-      console.error(`perf: record written to ${outPath}${commit === null || servedSource.status !== "matched" ? "" : ` (kept as the ${commit} baseline)`}`);
+      console.error(`perf: record written to ${outPath}${commit === null || servedSource.status !== "matched" || logProblem !== null ? "" : ` (kept as the ${commit} baseline)`}`);
       if (profile && measured.profile !== null) {
         printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
         const profilePath = outPath.replace(/\.json$/, "") + ".cpuprofile";
@@ -1372,6 +1405,12 @@ async function main(): Promise<void> {
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             console.error(`perf: ${game} failed: ${message}`);
+            const failurePath = resolve(process.cwd(), parsed.args.out ?? join(repoRoot, ".scratch", "perf", `${game}.json`)) + `.${Date.now()}.failure.json`;
+            try {
+              mkdirSync(dirname(failurePath), { recursive: true });
+              writeFileSync(failurePath, `${JSON.stringify({ game, at: Date.now(), error: message, stack: error instanceof Error ? error.stack : undefined, engine: measuredEngine, base: server.base, settings, params, quality, size, path, seconds, frameClock }, null, 2)}\n`);
+              console.error(`perf: failed run saved to ${failurePath}`);
+            } catch (writeError) { console.error(`perf: could not save failure: ${String(writeError)}`); }
             failed.push(game);
           }
           pending = pending.slice(1);
@@ -1508,9 +1547,22 @@ export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null)
   const before = baseline?.breakdown;
   if (baseline !== null && before !== null && before !== undefined && record.breakdown !== null && record.breakdown !== undefined) {
     lines.push("", compareBreakdowns(before, record.breakdown));
-    if (baseline.viewport !== record.viewport || baseline.quality !== record.quality || baseline.frameClock !== record.frameClock || baseline.path !== record.path) {
-      lines.push(`  note: the runs differ (${baseline.viewport} ${baseline.quality} ${baseline.frameClock} ${baseline.path ?? "still"} before), so the diff mixes in that change`);
-    }
+    const different = [
+      baseline.game !== record.game ? "game" : null,
+      baseline.gpu !== record.gpu ? "GPU" : null,
+      baseline.viewport !== record.viewport ? "viewport" : null,
+      baseline.quality !== record.quality ? "quality" : null,
+      baseline.frameClock !== record.frameClock ? "clock" : null,
+      baseline.path !== record.path ? "path" : null,
+      baseline.state !== record.state ? "state" : null,
+      JSON.stringify(baseline.params) !== JSON.stringify(record.params) ? "parameters" : null,
+      JSON.stringify(baseline.overrides) !== JSON.stringify(record.overrides) ? "settings" : null,
+    ].filter((value): value is string => value !== null);
+    if (different.length > 0) lines.push(`  unequal conditions: ${different.join(", ")}; the difference cannot be attributed to one change`);
+    const beforeProblem = baselineLogProblem(baseline.logs ?? null);
+    const afterProblem = baselineLogProblem(record.logs ?? null);
+    if (beforeProblem !== null || afterProblem !== null) lines.push(`  incomplete evidence: before ${beforeProblem ?? "none"}; after ${afterProblem ?? "none"}`);
+    if (baseline.servedSource?.status !== "matched" || record.servedSource?.status !== "matched") lines.push("  source identity is mismatched or unavailable in one or both runs");
   }
   return lines.join("\n");
 }

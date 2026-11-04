@@ -57,8 +57,8 @@ test("a window sums up: spreads, costliest systems and passes, per-frame draw co
 
   const text = renderBreakdownText(summary, "deepward");
   expect(text).toContain("frame   p50 8.00 ms");
-  expect(text).toContain("cost    p50 4.00 ms -> 250 fps possible");
-  expect(text).toContain("(144 ok)");
+  expect(text).toContain("cost    larger CPU/GPU p50 4.00 ms");
+  expect(text).toContain("not an FPS prediction");
   expect(text).toContain("70.0 ms  compile: 2 shader program(s) compiled");
   expect(fpsAt(6.94)).toBe(144);
 });
