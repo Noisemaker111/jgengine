@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { streetPlayOf } from "./streetPlay";
+import { groundCarId, raceStore, streetPlayOf } from "./streetPlay";
 import { vehicleById } from "./entities/vehicles/catalog";
 import { CRED_GATES, credLevel } from "./progression/cred";
 import { GARAGE_POS } from "./world/districts";
@@ -236,7 +236,7 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define("race.start", {
     apply(state) {
-      if (streetPlayOf(state).drivingVehicleId() === null) {
+      if (groundCarId(state) === null) {
         state.game.notices.push({ text: "You need a car to race.", tone: "deny" });
         return;
       }
@@ -247,9 +247,11 @@ export function registerCommands(ctx: GameContext): void {
       }
       if (!streetPlayOf(state).startRace(state)) {
         earn(state, RACE_ENTRY_FEE, "race-refund");
+        state.game.notices.push({ text: "Pull up to a start line to race.", tone: "deny" });
         return;
       }
-      state.game.notices.push({ text: `Ocean Loop entry paid — $${RACE_ENTRY_FEE}.`, tone: "info" });
+      const race = raceStore.read(state);
+      state.game.notices.push({ text: `${race?.label ?? "Race"} entry paid — $${RACE_ENTRY_FEE}. Racing ${race?.rival ?? "a local"}.`, tone: "info" });
     },
   });
 
