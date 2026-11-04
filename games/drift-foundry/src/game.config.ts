@@ -89,6 +89,8 @@ export const game = defineGame({
       title: [],
       "mid-run": ["startRun", { name: "run.stage", input: { mode: "midrun" } }, { name: "run.autopilot", input: {} }],
       result: ["startRun", { name: "run.stage", input: { mode: "result" } }],
+      // The plow drop dodged and the first plow wall in the kart's face: the sign says where the blade lies.
+      walled: ["startRun", { name: "run.stage", input: { mode: "walled" } }],
     },
     views: {
       corridor: {

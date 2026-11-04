@@ -170,6 +170,44 @@ describe("drift-foundry run session", () => {
     expect(snapshot.pose.position[2]).toBeLessThan(EXIT_Z);
   });
 
+  test("a kart that dodged the plow is told where it lies, backs onto it and breaks through the wall", () => {
+    const session = createRunSession();
+    session.start();
+    const plow = PICKUPS.find((p) => p.partId === "plow_blade")!;
+    const wall = ROUTE_GATES.find((g) => g.requirement === "plow")!;
+    // Swing 9 m wide past the plow drop only, then back to the centreline into the wall.
+    for (let i = 0; i < 900 && !session.snapshot().pose.blockedByGate && session.snapshot().phase === "running"; i++) {
+      const snap = session.snapshot();
+      const wide = snap.run > plow.at - 25 && snap.run < plow.at + 6;
+      session.tick(DT, { throttle: 1, brake: 0, steer: steerTowardX(snap.pose.heading, (wide ? 9 : 0) - snap.pose.position[0]) }, { jumpPressed: false, plowBracing: false });
+    }
+    const stopped = session.snapshot();
+    expect(stopped.tuning.hasPlow).toBe(false);
+    expect(stopped.gateAdvice?.gateId).toBe(wall.id);
+    expect(stopped.gateAdvice?.call).toBe(`NO PLOW BLADE - ${Math.round(stopped.run - plow.at)}M BACK`);
+    expect(stopped.ticker.filter((line) => line.text.startsWith("NO PLOW BLADE - "))).toHaveLength(1);
+
+    // Reverse with a touch of counter-steer back over the drop, then drive at the wall. The sign
+    // keeps counting the metres down all the way back, and the radio does not repeat itself.
+    const counted: number[] = [];
+    for (let i = 0; i < 600 && session.snapshot().phase === "running" && !session.snapshot().clearedGateIds.has(wall.id); i++) {
+      const snap = session.snapshot();
+      if (!snap.tuning.hasPlow) {
+        expect(snap.gateAdvice?.kind).toBe("go-back");
+        counted.push(Math.round(snap.run - plow.at));
+      } else expect(snap.gateAdvice).toBeNull();
+      session.tick(DT, snap.tuning.hasPlow
+        ? { throttle: 1, brake: 0, steer: steerTowardX(snap.pose.heading, -snap.pose.position[0]) }
+        : { throttle: 0, brake: 1, steer: 0.1 * Math.sign(snap.pose.position[0]) }, { jumpPressed: false, plowBracing: false });
+    }
+    const through = session.snapshot();
+    expect(through.tuning.hasPlow).toBe(true);
+    expect(through.clearedGateIds.has(wall.id)).toBe(true);
+    expect(through.phase).toBe("running");
+    expect(Math.min(...counted)).toBeLessThan(4);
+    expect(through.ticker.filter((line) => line.text.startsWith("NO PLOW BLADE")).length).toBeLessThanOrEqual(1);
+  });
+
   test("hitting a barricade the build cannot clear bends the nose, costs top speed and pulls the wheel", () => {
     const session = createRunSession();
     session.start();

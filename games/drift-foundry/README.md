@@ -79,7 +79,11 @@ Read from `src/game/{run,parts,route,compactor,vehicle}`. Numbers are what the b
     clean upgrade run wins in ~30 s; a first attempt usually finishes third.
 - **Failure states.** Contact within 1.5 m of the compactor is a crush. Armor plating absorbs one hit and
   throws you 9 m forward, once. A barricade you cannot open is a wall, not a time loss, and a long
-  stop is how the crusher catches you. There is no mid-run respawn; results show finish position,
+  stop is how the crusher catches you. Stopped at one, the gate sign and the pit radio say why: the
+  missing plow blade or coil springs and how many metres back the drop still lies (counting down as
+  you reverse onto it), that the crusher has already rolled over it, or, with springs on, to back up
+  for a faster run-up. On Row Six a kart that swung wide of the plow has time to reverse 22 m onto it
+  and break through before the crusher arrives. There is no mid-run respawn; results show finish position,
   time, parts on exit, salvage carried, the line that priced it, banked vs lost, and the next shift.
 - **Minute 5 to hour 5.** Five minutes in, several attempts have already ended at the 110 m plow wall or
   the 150 m tire ramp, with the plow and springs bolted and one surge survived - and HOBBS has already
