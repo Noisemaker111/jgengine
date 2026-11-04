@@ -5,6 +5,8 @@ description: Author scene content and assets through the JGengine editor.
 
 # JGengine editor
 
+`jgengine editor --help` lists standalone editor options without creating a workspace. Invalid options fail before installation or launch.
+
 ## Ownership
 
 This skill owns scene-document authoring: objects, spawns, markers, terrain, paths, zones, foliage, materials, and asset placement. `editor.scene.json` is the source of truth consumed by runtime and gameplay. Use `jgengine-world` for rendering and querying authored data.
