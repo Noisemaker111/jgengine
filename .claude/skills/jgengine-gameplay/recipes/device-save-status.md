@@ -33,6 +33,8 @@ switches return false after a denied payload read and do not restore cached stat
 storage operation: a payload can be written before its slot index fails. That
 reports `error` too; there is no cross-key rollback or transaction guarantee.
 Async index updates after load also report through status and `onError`.
+Use `switchSlot(slot, { flush: false })` when opening a different save without
+writing the current dirty state. Already-started writes finish before the switch.
 
 `createKeyValueStore` and `localSaveBackend` preserve their legacy silent fallback
 by default. Set `errorMode: "throw"` when persistence must succeed; optionally

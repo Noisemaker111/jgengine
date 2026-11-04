@@ -159,8 +159,8 @@ export interface SaveStore<T> {
    * menu shows. Returns `null` when the slot holds nothing.
    */
   peek(slot?: string): Promise<{ value: T; savedAt: number } | null>;
-  /** Flush any dirty state, switch to `slot`, and load it. */
-  switchSlot(slot: string): Promise<T>;
+  /** Switch to `slot` and load it, flushing dirty state unless `flush` is false. */
+  switchSlot(slot: string, options?: { flush?: boolean }): Promise<T>;
   /** The slots this store has written (for a load/save menu). */
   slots(): Promise<string[]>;
   subscribe(listener: () => void): () => void;
@@ -417,9 +417,10 @@ export function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> {
       );
       return run;
     },
-    async switchSlot(slot) {
-      if (dirty) await save();
+    async switchSlot(slot, options) {
       clearTimer();
+      if (options?.flush === false) await saveChain;
+      else if (dirty) await save();
       currentSlot = slot;
       current = initial;
       dirty = false;
