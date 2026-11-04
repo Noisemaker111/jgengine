@@ -150,7 +150,7 @@ const productionSystem: SystemDefinition = defineSystem({
 });
 
 /** Raise a finished building at its placed spot; a Farm lifts the supply cap. */
-function raiseBuilding(ctx: GameContext, spec: BuildSpec): void {
+export function raiseBuilding(ctx: GameContext, spec: BuildSpec): void {
   const def = combatantDef(spec.type);
   if (def === null) return;
   session.trainSeq += 1;

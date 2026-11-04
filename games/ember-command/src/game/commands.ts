@@ -7,7 +7,8 @@ import { BARRACKS_UNITS, buildingDef, combatantDef, trainableDef } from "./catal
 import { BUILD_CONFIG } from "./building";
 import { anchorFormation, FORMATIONS, pruneFormation, reshapeFormation, type FormationKind } from "./formations";
 import { TRAINING_CONFIG } from "./production";
-import { NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS } from "./tuning";
+import { GOLD, LUMBER, NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS } from "./tuning";
+import { raiseBuilding } from "./systems";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
 import { pendingRanks, RESEARCH_CONFIG, researchUnlocked, UPGRADE_IDS, upgradeDef, upgradeRank } from "./upgrades";
 import { castHeroAct, chooseHeroPick, heroActViews, pendingHeroOffer } from "./heroActs";
@@ -369,6 +370,19 @@ export function registerCommands(ctx: GameContext): void {
           state.scene.entity.setPose(HERO_ID, { position: [muster.x, muster.y, muster.z] });
         }
         tickCampaign(state, 0.2);
+        return state;
+      },
+    });
+    // Dev-only: a Barracks standing beside the keep and a war chest, so the command card's research
+    // and doctrine tokens are live; `doctrine` starts that doctrine's first rank.
+    ctx.game.commands.define<{ doctrine?: string }>("research.capture", {
+      apply: (state, input) => {
+        const keep = livingUnits("player", "building").find((u) => u.catalogId === "keep_player")?.guardPoint;
+        if (keep === undefined) return state;
+        raiseBuilding(state, { type: "barracks", x: keep.x + 12, z: keep.z + 6 });
+        state.game.economy.grant(state.player.userId, GOLD, 600);
+        state.game.economy.grant(state.player.userId, LUMBER, 300);
+        if (input?.doctrine !== undefined) research(state, input.doctrine);
         return state;
       },
     });

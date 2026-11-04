@@ -109,6 +109,9 @@ export const game = defineGame({
       // Dev-only: the first muster played through its world reports, so a flow can reach the
       // mission's own cleared boundary instead of the counter's next tick.
       "mission-cleared": ["campaign.capture"],
+      // Dev-only: a Barracks up and a war chest, so the research row is live; `doctrine` has Bulwark under way.
+      research: ["match.start", "research.capture"],
+      doctrine: ["match.start", { name: "research.capture", input: { doctrine: "bulwark" } }],
     },
     views: {
       "keep-player": {
