@@ -336,7 +336,7 @@ export async function loadSlot(ctx: GameContext, slot: string): Promise<void> {
   if (save.slot() === slot) {
     await save.load();
   } else {
-    await save.switchSlot(slot);
+    await save.switchSlot(slot, { flush: false });
   }
 }
 
@@ -364,7 +364,7 @@ export function newestKeep(): string | null {
 export async function prepareKeep(ctx: GameContext, slot: string): Promise<void> {
   const save = beaconSave(ctx);
   // Switching only loads documents; a fresh run overwrites nothing until it saves.
-  if (save.slot() !== slot) await save.switchSlot(slot);
+  if (save.slot() !== slot) await save.switchSlot(slot, { flush: false });
 }
 
 
