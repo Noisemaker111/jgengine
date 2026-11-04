@@ -91,11 +91,12 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
   }, 30000);
 
   test("fill target checks reject occluded, disabled, readonly, inert and hidden fields", async () => {
-    const chrome = browser.launchChrome(0, "jg-fill-guard-test-");
+    const started = await browser.startBrowser({ debugPort: 0, prefix: "jg-fill-guard-test-", readyMs: 30000 });
+    const chrome = started.chrome;
     const server = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("<label>Name<input value='Old'></label>", { headers: { "content-type": "text/html" } }) });
     let session;
     try {
-      session = await browser.openPage(await browser.waitForDebuggerPort(chrome, 30000));
+      session = await browser.openPage(started.debugPort);
       await session.send("Page.enable");
       await session.send("Runtime.enable");
       await navigate(session, server.url.toString());
@@ -116,11 +117,12 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
   }, 40000);
 
   test("mobile profiles expose touch and coarse pointer; desktop clears both on the same page", async () => {
-    const chrome = browser.launchChrome(0, "jg-harness-test-");
+    const started = await browser.startBrowser({ debugPort: 0, prefix: "jg-harness-test-", readyMs: 30000 });
+    const chrome = started.chrome;
     const server = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("<meta name='viewport' content='width=device-width,initial-scale=1'><button style='width:100px;height:100px'>Tap</button>", { headers: { "content-type": "text/html" } }) });
     let session;
     try {
-      session = await browser.openPage(await browser.waitForDebuggerPort(chrome, 30000));
+      session = await browser.openPage(started.debugPort);
       await session.send("Page.enable");
       await session.send("Runtime.enable");
       await navigate(session, server.url.toString());

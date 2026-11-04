@@ -22,6 +22,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { publishedDebugPort } from "../../scripts/browser-lib";
 import {
   gameAdoption,
   gameDirs,
@@ -315,7 +316,6 @@ async function bootAndRead(game: string, port: number, expectations: Expectation
   let cdp: Cdp | undefined;
   try {
     await waitForHttp(url, 120000);
-    const debugPort = await freePort();
     profile = mkdtempSync(join(tmpdir(), "jg-capability-"));
     chrome = spawn(
       findChrome(),
@@ -327,7 +327,8 @@ async function bootAndRead(game: string, port: number, expectations: Expectation
         "--use-angle=swiftshader",
         "--enable-unsafe-swiftshader",
         "--mute-audio",
-        `--remote-debugging-port=${debugPort}`,
+        // Port 0: Chrome binds a free port and publishes it in the profile, so two probes never share one.
+        "--remote-debugging-port=0",
         `--user-data-dir=${profile}`,
         "--window-size=1280,720",
         // The game loads only after CDP listens, so an error it throws while loading is seen.
@@ -336,6 +337,8 @@ async function bootAndRead(game: string, port: number, expectations: Expectation
       { stdio: "ignore", detached: process.platform !== "win32" },
     );
 
+    const launched = chrome;
+    const debugPort = await publishedDebugPort({ userDataDir: profile, get exitCode() { return launched.exitCode; } }, 30000);
     cdp = await Cdp.connect(await pageTarget(debugPort, 30000));
     await cdp.send("Page.navigate", { url });
     const started = Date.now();
