@@ -114,10 +114,12 @@ async function locateCallback(session: CdpSession, label: string, scripts: Reado
     maps.set(scriptId, map);
   }
   const original = map?.findEntry(lineNumber, typeof columnNumber === "number" ? columnNumber : 0);
-  const mapped = original?.originalSource !== undefined && original.originalLine !== undefined;
-  const url = mapped ? new URL(original.originalSource, script.url).toString() : script.url;
+  const source = original !== undefined && "originalSource" in original && typeof original.originalSource === "string" ? original.originalSource : undefined;
+  const sourceLine = original !== undefined && "originalLine" in original && typeof original.originalLine === "number" ? original.originalLine : undefined;
+  const mapped = source !== undefined && sourceLine !== undefined;
+  const url = mapped ? new URL(source, script.url).toString() : script.url;
   const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "").replace(/^\/@fs\//, "").replace(/^.*?\/(packages|games|apps)\//, "$1/");
-  return path === "" ? null : { label: `${mapped ? "" : "generated "}${path}:${mapped ? original.originalLine + 1 : lineNumber + 1}`, mapped };
+  return path === "" ? null : { label: `${mapped ? "" : "generated "}${path}:${mapped ? sourceLine + 1 : lineNumber + 1}`, mapped };
 }
 
 /** A cost's system: its `frame#<n>` or system label, without the source location appended to it. */
