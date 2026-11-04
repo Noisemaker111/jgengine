@@ -7,6 +7,14 @@ import { renderBreakdownText } from "../packages/core/src/devtools/frameBreakdow
 
 interface Target { type?: string; url?: string; webSocketDebuggerUrl?: string }
 
+/** Bound one debugger read; the caller closes its session on timeout. @internal */
+export async function desktopDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([work, new Promise<never>((_resolve, reject) => { timer = setTimeout(() => reject(new Error(`desktop report timed out after ${ms}ms`)), ms); })]);
+  } finally { if (timer !== undefined) clearTimeout(timer); }
+}
+
 /** Select only an explicitly diagnostic local desktop page. @internal */
 export function diagnosticDesktopTarget(targets: readonly Target[]): Target {
   const matching = targets.filter((target) => {
@@ -25,10 +33,13 @@ async function main(argv: string[]): Promise<void> {
   if (target.webSocketDebuggerUrl === undefined) throw new Error("desktop debugger URL unavailable");
   const session = await CdpSession.connect(target.webSocketDebuggerUrl, 10_000);
   try {
-    const breakdown = await readBreakdown(session);
-    if (breakdown === null) throw new Error("desktop frame report unavailable; diagnostic telemetry has not started");
-    const report = await session.evaluate<unknown>("globalThis.__JG?.report?.() ?? null");
-    const build = await session.evaluate<unknown>(`fetch('./jgengine-build.json').then(r => r.ok ? r.json() : ({ error: 'build manifest HTTP ' + r.status })).catch(e => ({ error: String(e) }))`, { awaitPromise: true });
+    const { breakdown, report, build } = await desktopDeadline((async () => {
+      const breakdown = await readBreakdown(session);
+      if (breakdown === null) throw new Error("desktop frame report unavailable; diagnostic telemetry has not started");
+      const report = await session.evaluate<unknown>("globalThis.__JG?.report?.() ?? null");
+      const build = await session.evaluate<unknown>(`fetch('./jgengine-build.json').then(r => r.ok ? r.json() : ({ error: 'build manifest HTTP ' + r.status })).catch(e => ({ error: String(e) }))`, { awaitPromise: true });
+      return { breakdown, report, build };
+    })(), 30_000);
     const out = resolve(argv[2]);
     mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, `${JSON.stringify({ at: Date.now(), target: target.url, build: build ?? { error: "build manifest unavailable" }, report: report ?? null, breakdown }, null, 2)}\n`);
