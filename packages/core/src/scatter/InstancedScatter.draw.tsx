@@ -18,15 +18,16 @@ import { buildScatterModelSources, disposeScatterModelSources, type ScatterModel
 import { writeScatterVariantLevel } from "./scatterVariants.draw";
 import { detailDrawDistance, IMPOSTOR_MIN_RADIUS, sourceRadius } from "@jgengine/core/lod/impostor.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
-import { showCulled } from "@jgengine/core/visibility/culledTransforms.draw";
 import { ScatterImpostorField } from "./ScatterImpostorField.draw";
-import { builtLevelSource, reskinBuiltLevel, WithBuiltLods } from "@jgengine/core/lod/builtLods.draw";
+import { builtLevelSource, reskinBuiltLevel, useMeshLodView, WithBuiltLods } from "@jgengine/core/lod/builtLods.draw";
+import { DEFAULT_MESH_LOD_HYSTERESIS } from "@jgengine/core/lod/builtLods";
 import { bakeGeneratorVariants, getGenerator, prepareGeneratorVariants, type GeneratorDefinition } from "@jgengine/core/generator/generator";
 import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
 import { ScatterHeroes } from "./ScatterHeroes.draw";
 import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 import {
   assignScatterVariants,
+  coarserScatterLevels,
   isScatterGeneratorItem,
   isUniqueScatterItem,
   parseScatterVariantItem,
@@ -146,16 +147,152 @@ function ScatterBatchMesh({ batch, geometry }: { batch: ScatterBatch; geometry: 
   );
 }
 
-/** One GLB-backed draw source instanced across every chunk of one species. */
-function ScatterModelSourceInstances({ source, matrices }: { source: ScatterModelSource; matrices: THREE.Matrix4[] }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  useEffect(() => {
-    const mesh = meshRef.current;
-    if (mesh === null) return;
-    uploadInstances(mesh, matrices, { localMatrix: source.localMatrix });
+/** Which placements of one chunk each detail level draws, refilled by {@link pickDetailPlacements}. @internal */
+export interface DetailPicks {
+  /** Per placement: the level it draws at, or -1 past the draw distance. */
+  readonly level: Int8Array;
+  /** Per level: the placement indices it draws, the first `counts[level]` of them. */
+  readonly members: Int32Array[];
+  readonly counts: Int32Array;
+  /** `counts` before the last pick. */
+  readonly previous: Int32Array;
+  /** Per level: 1 when its list changed in the last pick, so its draws upload again. */
+  readonly dirty: Uint8Array;
+}
+
+/** Empty picks for a chunk of `placements` over `levels` detail levels. @internal */
+export function createDetailPicks(placements: number, levels: number): DetailPicks {
+  return {
+    level: new Int8Array(placements).fill(-1),
+    members: Array.from({ length: levels }, () => new Int32Array(placements)),
+    counts: new Int32Array(levels),
+    previous: new Int32Array(levels),
+    dirty: new Uint8Array(levels),
+  };
+}
+
+/**
+ * Sort one chunk's placements into detail levels by each one's own ground distance to the camera,
+ * holding a level across the `hysteresis` band ({@link placementLevel}), and leave out the ones past
+ * `reach`. A chunk can span hundreds of metres, so a level chosen per chunk drew its far placements at
+ * full detail whenever the camera stood near its edge. Returns true when any level's list changed.
+ * @internal
+ */
+export function pickDetailPlacements(
+  picks: DetailPicks,
+  levels: readonly { maxDistance: number }[],
+  placements: readonly { x: number; z: number }[],
+  cameraX: number,
+  cameraZ: number,
+  reach: number,
+  hysteresis: number,
+): boolean {
+  const { level: chosen, members, counts, previous, dirty } = picks;
+  dirty.fill(0);
+  previous.set(counts);
+  counts.fill(0);
+  for (let index = 0; index < placements.length; index += 1) {
+    const placement = placements[index];
+    if (placement === undefined) continue;
+    const dx = placement.x - cameraX;
+    const dz = placement.z - cameraZ;
+    const distance = Math.sqrt(dx * dx + dz * dz);
+    const level = distance > reach ? -1 : placementLevel(levels, distance, chosen[index] ?? -1, hysteresis);
+    chosen[index] = level;
+    const list = members[level];
+    if (list === undefined) continue;
+    const slot = counts[level] ?? 0;
+    if (list[slot] !== index) {
+      list[slot] = index;
+      dirty[level] = 1;
+    }
+    counts[level] = slot + 1;
+  }
+  let changed = false;
+  for (let level = 0; level < counts.length; level += 1) {
+    if (counts[level] !== previous[level]) dirty[level] = 1;
+    if (dirty[level] === 1) changed = true;
+  }
+  return changed;
+}
+
+/** Empty every level of a chunk the camera is out of reach of; true when it held anything. @internal */
+export function clearDetailPicks(picks: DetailPicks): boolean {
+  picks.dirty.fill(0);
+  let changed = false;
+  for (let level = 0; level < picks.counts.length; level += 1) {
+    if (picks.counts[level] === 0) continue;
+    picks.counts[level] = 0;
+    picks.dirty[level] = 1;
+    changed = true;
+  }
+  if (changed) picks.level.fill(-1);
+  return changed;
+}
+
+function uploadPicked(mesh: THREE.InstancedMesh, batch: ScatterBatch, picks: DetailPicks, level: number, localMatrix: THREE.Matrix4): void {
+  const members = picks.members[level];
+  const count = members === undefined ? 0 : (picks.counts[level] ?? 0);
+  uploadInstances(mesh, {
+    count,
+    at: (index, out) => {
+      const matrix = batch.matrices[members?.[index] ?? -1];
+      if (matrix !== undefined) out.copy(matrix);
+    },
+  }, { localMatrix });
+}
+
+/** A detail field's draws, by chunk, level and draw source: a slot holds a mesh only while its level picks a placement. */
+type DetailMeshes = (THREE.InstancedMesh | undefined)[][][];
+
+/**
+ * Bring one chunk's draws of one level in line with its picks: a draw source that now holds placements
+ * gets a mesh under `field` and their transforms, and one that holds none leaves the scene and frees
+ * its instance buffer. An empty mesh still costs three's scene walks (every render pass visits every
+ * child) and the matrix pass, and an island holds tens of thousands of chunk, level and source
+ * slots, so keeping them all in the scene made the frame grow with the world instead of the view.
+ * @internal
+ */
+export function syncDetailDraws(
+  field: THREE.Object3D,
+  meshes: DetailMeshes,
+  batchIndex: number,
+  batch: ScatterBatch,
+  picks: DetailPicks,
+  levelIndex: number,
+  sources: readonly ScatterModelSource[],
+): void {
+  const row = ((meshes[batchIndex] ??= [])[levelIndex] ??= []);
+  const count = picks.counts[levelIndex] ?? 0;
+  sources.forEach((source, sourceIndex) => {
+    let mesh = row[sourceIndex];
+    if (count === 0) {
+      if (mesh === undefined) return;
+      field.remove(mesh);
+      mesh.dispose();
+      row[sourceIndex] = undefined;
+      return;
+    }
+    const added = mesh === undefined;
+    mesh ??= new THREE.InstancedMesh(source.geometry, source.material, count);
+    uploadPicked(mesh, batch, picks, levelIndex, source.localMatrix);
+    if (!added) return;
+    mesh.castShadow = source.skipShadow !== true;
+    mesh.receiveShadow = true;
+    field.add(mesh);
     freezeStaticTransforms(mesh);
-  }, [matrices, source]);
-  return <instancedMesh ref={meshRef} args={[source.geometry, source.material, matrices.length]} castShadow={source.skipShadow !== true} receiveShadow />;
+    row[sourceIndex] = mesh;
+  });
+}
+
+/** Take every draw of a detail field out of the scene and free its instance buffers. @internal */
+export function clearDetailDraws(field: THREE.Object3D, meshes: DetailMeshes): void {
+  for (const levels of meshes) for (const row of levels ?? []) for (const mesh of row ?? []) {
+    if (mesh === undefined) continue;
+    field.remove(mesh);
+    mesh.dispose();
+  }
+  meshes.length = 0;
 }
 
 /**
@@ -283,56 +420,62 @@ interface ScatterChunkLevel {
 }
 
 /**
- * Small-detail species (below impostor size): every chunk of the species is its own group, hidden
- * once the camera is farther than {@link detailDrawDistance} from the chunk's nearest edge. Without
- * it a field the size of an island draws every pebble on it every frame. A species with built levels
- * draws one level per chunk, chosen by the chunk's near edge with `hysteresis` (a share of each
- * switch distance), so a far chunk costs fewer triangles and no extra draw.
+ * Small-detail species (below impostor size): each placement draws only within
+ * {@link detailDrawDistance} of the camera, so a field the size of an island draws the plants near the
+ * camera and not every pebble on it. A species with built levels draws each placement at the level its
+ * own distance picks, with `hysteresis` (a share of each switch distance). A chunk the camera is out of
+ * reach of is skipped whole, and the pass runs again only when the camera has moved.
  */
 function ScatterDetailInstances({ levels, batches, radius, hysteresis = 0 }: { levels: readonly ScatterChunkLevel[]; batches: ScatterBatch[]; radius: number; hysteresis?: number }) {
   const quality = useTerrainQuality();
   const reach = useMemo(() => detailDrawDistance(radius, quality), [radius, quality]);
   const footprints = useMemo(() => batches.map(scatterBatchFootprint), [batches]);
-  const groups = useRef<(THREE.Group | null)[][]>([]);
-  const chosen = useMemo(() => batches.map(() => -1), [batches]);
+  const picks = useMemo(() => batches.map((batch) => createDetailPicks(batch.instances.length, levels.length)), [batches, levels]);
+  const group = useMemo(() => new THREE.Group(), []);
+  const meshes = useMemo<DetailMeshes>(() => [], [picks]);
   const cameraPosition = useMemo(() => new THREE.Vector3(), []);
+  const lastCamera = useMemo(() => new THREE.Vector3(Number.POSITIVE_INFINITY, 0, 0), [picks, reach, hysteresis]);
+  useEffect(() => () => {
+    clearDetailDraws(group, meshes);
+    // A remount keeps these memos: start the next pass from nothing drawn.
+    for (const pick of picks) clearDetailPicks(pick);
+    lastCamera.set(Number.POSITIVE_INFINITY, 0, 0);
+  }, [group, meshes, picks, lastCamera]);
   useFrame((state) => {
     state.camera.getWorldPosition(cameraPosition);
+    if (!levelPassNeeded(lastCamera, cameraPosition, LEVEL_PASS_MIN_CAMERA_MOVE)) return;
+    lastCamera.copy(cameraPosition);
     for (let index = 0; index < footprints.length; index += 1) {
       const footprint = footprints[index];
-      const row = groups.current[index];
-      if (footprint === undefined || row === undefined) continue;
-      const distance = Math.hypot(cameraPosition.x - footprint.x, cameraPosition.z - footprint.z) - footprint.radius;
-      const level = distance > reach ? -1 : chunkLevel(levels, distance, chosen[index] ?? -1, hysteresis);
-      chosen[index] = level;
-      row.forEach((group, levelIndex) => { if (group !== null) showCulled(group, levelIndex === level); });
+      const batch = batches[index];
+      const pick = picks[index];
+      if (footprint === undefined || batch === undefined || pick === undefined) continue;
+      const near = Math.hypot(cameraPosition.x - footprint.x, cameraPosition.z - footprint.z) - footprint.radius;
+      const changed = near > reach
+        ? clearDetailPicks(pick)
+        : pickDetailPlacements(pick, levels, batch.instances, cameraPosition.x, cameraPosition.z, reach, hysteresis);
+      if (!changed) continue;
+      levels.forEach((level, levelIndex) => {
+        if (pick.dirty[levelIndex] === 1) syncDetailDraws(group, meshes, index, batch, pick, levelIndex, level.sources);
+      });
     }
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);
-  return (
-    <>
-      {batches.map((batch, batchIndex) => (
-        <group key={batch.key}>
-          {levels.map((level, levelIndex) => (
-            <group key={levelIndex} ref={(group) => { (groups.current[batchIndex] ??= [])[levelIndex] = group; }}>
-              {level.sources.map((source, sourceIndex) => (
-                <ScatterModelSourceInstances key={sourceIndex} source={source} matrices={batch.matrices} />
-              ))}
-            </group>
-          ))}
-        </group>
-      ))}
-    </>
-  );
+  return <primitive object={group} />;
 }
 
 /**
- * The level a chunk at `distance` draws: the first whose `maxDistance` it is inside, holding `current`
- * until the chunk is a `hysteresis` share past the edge it would cross.
+ * The level a placement at `distance` draws: the first whose `maxDistance` it is inside, holding
+ * `current` until it is a `hysteresis` share past the edge it would cross.
  * @internal
  */
-export function chunkLevel(levels: readonly { maxDistance: number }[], distance: number, current: number, hysteresis: number): number {
-  let level = levels.findIndex((candidate) => distance <= candidate.maxDistance);
-  if (level < 0) level = levels.length - 1;
+export function placementLevel(levels: readonly { maxDistance: number }[], distance: number, current: number, hysteresis: number): number {
+  let level = levels.length - 1;
+  for (let index = 0; index < levels.length; index += 1) {
+    if (distance <= (levels[index]?.maxDistance ?? Number.POSITIVE_INFINITY)) {
+      level = index;
+      break;
+    }
+  }
   if (current < 0 || current >= levels.length || current === level) return level;
   const edge = current < level ? levels[current]?.maxDistance : levels[level]?.maxDistance;
   if (edge === undefined || !Number.isFinite(edge)) return level;
@@ -404,56 +547,92 @@ interface ScatterGeneratorSpeciesDraw {
   byVariant: Map<number, ScatterBatch[]>;
 }
 
+/** One bake of a generator's variants: the definition with the details to bake as its `lods`, the base params, the variant options. */
+interface GeneratorBake {
+  definition: GeneratorDefinition;
+  base: Parameters<typeof bakeGeneratorVariants>[1];
+  options: Parameters<typeof bakeGeneratorVariants>[2];
+}
+
 /**
- * A palette item grown by a generator: its variants are baked once, each turned into instanced draws
- * through the mesh builder registered for the generator's output, and every variant draws only the
- * placements assigned to it. Far away every variant draws one shared impostor baked from the first,
- * so more variants cost near draws, not atlas memory. A generator with a `prepare` step (a grown
- * plant) prepares every variant off the frame first, counted as scene loading, then bakes from that.
- * A unique species (`variants: "unique"`) also grows its near placements one by one from their own
- * seeds ({@link ScatterHeroes}) and hides their stand-ins once each is ready.
+ * Bake a generator's variants at every detail in `bake.definition.lods` into draw sources: per variant,
+ * per detail. A generator with a `prepare` step (a grown plant) prepares them off the frame first,
+ * counted as scene loading under `work`; until then, and for no bake, there are none.
  */
-function ScatterGeneratorSpecies({ item, species }: { item: string; species: ScatterGeneratorSpeciesDraw }) {
-  const { definition, spec } = species;
-  const key = useMemo(() => `generator:${item}:${JSON.stringify(spec)}`, [item, spec]);
-  const bake = useMemo(() => ({
-    definition: { ...definition, lods: [spec.detail ?? 1] },
-    base: scatterGeneratorBase(spec, definition.schema),
-    options: {
-      count: scatterGeneratorVariantCount(spec),
-      explore: spec.explore ?? 0.3,
-      seed: item,
-      ...(spec.keep === undefined ? {} : { keep: spec.keep }),
-    },
-  }), [definition, spec, item]);
-  const [prepared, setPrepared] = useState<typeof bake | null>(null);
+function useBakedVariants(bake: GeneratorBake | null, work: string): { ready: boolean; variants: ScatterModelSource[][][] } {
+  const [prepared, setPrepared] = useState<GeneratorBake | null>(null);
   useEffect(() => {
-    if (bake.definition.prepare === undefined) return;
+    if (bake === null || bake.definition.prepare === undefined) return;
     let live = true;
-    const done = trackSceneWork(`scatter-${item}`);
+    const done = trackSceneWork(work);
     prepareGeneratorVariants(bake.definition, bake.base, bake.options)
       .then(() => {
         if (live) setPrepared(bake);
       })
-      .catch((error: unknown) => console.error(`[jgengine] scatter ${item} failed to prepare`, error))
+      .catch((error: unknown) => console.error(`[jgengine] ${work} failed to prepare`, error))
       .finally(done);
     return () => {
       live = false;
     };
-  }, [bake, item]);
-  const ready = bake.definition.prepare === undefined || prepared === bake;
+  }, [bake, work]);
+  const ready = bake !== null && (bake.definition.prepare === undefined || prepared === bake);
   const variants = useMemo(() => {
-    const build = getGeneratorMesh(definition.output);
-    if (build === undefined || !ready) return [];
-    const baked = bakeGeneratorVariants(bake.definition, bake.base, bake.options);
-    return baked.map((variant) => (build(variant.lods[0]?.output) ?? []).map((source): ScatterModelSource => {
+    if (bake === null || !ready) return [];
+    const build = getGeneratorMesh(bake.definition.output);
+    if (build === undefined) return [];
+    return bakeGeneratorVariants(bake.definition, bake.base, bake.options).map((variant) => variant.lods.map((lod) => (build(lod.output) ?? []).map((source): ScatterModelSource => {
       if (source.geometry.boundingSphere === null) source.geometry.computeBoundingSphere();
       // Pebble-sized meshes cast no shadow: the map cannot resolve them, so they only draw a detached halo.
       const small = (source.geometry.boundingSphere?.radius ?? 1) < SMALL_SHADOW_RADIUS;
       return { ...source, localMatrix: IDENTITY, ...(small ? { skipShadow: true } : {}) };
-    }));
-  }, [definition, bake, ready]);
-  useEffect(() => () => variants.forEach((sources) => sources.forEach((source) => source.geometry.dispose())), [variants]);
+    })));
+  }, [bake, ready]);
+  useEffect(() => () => variants.forEach((levels) => levels.forEach((sources) => sources.forEach((source) => source.geometry.dispose()))), [variants]);
+  return { ready, variants };
+}
+
+/**
+ * A palette item grown by a generator: its variants are baked once, each turned into instanced draws
+ * through the mesh builder registered for the generator's output, and every variant draws only the
+ * placements assigned to it. Far away every variant draws one shared impostor baked from the first,
+ * so more variants cost near draws, not atlas memory. A species too small for an impostor also bakes
+ * the generator's coarser levels when the game sets `visibility.meshLods`, and each placement draws
+ * the one its size on screen calls for. A unique species (`variants: "unique"`) also grows its near
+ * placements one by one from their own seeds ({@link ScatterHeroes}) and hides their stand-ins once
+ * each is ready.
+ */
+function ScatterGeneratorSpecies({ item, species }: { item: string; species: ScatterGeneratorSpeciesDraw }) {
+  const { definition, spec } = species;
+  const key = useMemo(() => `generator:${item}:${JSON.stringify(spec)}`, [item, spec]);
+  const detail = spec.detail ?? 1;
+  const base = useMemo(() => scatterGeneratorBase(spec, definition.schema), [spec, definition]);
+  const options = useMemo(() => ({
+    count: scatterGeneratorVariantCount(spec),
+    explore: spec.explore ?? 0.3,
+    seed: item,
+    ...(spec.keep === undefined ? {} : { keep: spec.keep }),
+  }), [spec, item]);
+  const nearBake = useMemo((): GeneratorBake => ({ definition: { ...definition, lods: [detail] }, base, options }), [definition, detail, base, options]);
+  const { ready, variants: near } = useBakedVariants(nearBake, `scatter-${item}`);
+  const { settings, fovY } = useMeshLodView();
+  const radius = useMemo(() => sourceRadius(near[0]?.[0] ?? []), [near]);
+  const coarser = useMemo(
+    () => settings === null || radius <= 0 || radius >= IMPOSTOR_MIN_RADIUS ? [] : coarserScatterLevels(detail, definition.lods, settings.screenSizes, radius, fovY),
+    [settings, radius, detail, definition, fovY],
+  );
+  const farBake = useMemo((): GeneratorBake | null => coarser.length === 0 ? null : { definition: { ...definition, lods: coarser.map((level) => level.detail) }, base, options }, [coarser, definition, base, options]);
+  const { variants: far } = useBakedVariants(farBake, `scatter-${item}-levels`);
+  const levels = useMemo(() => near.map((nearLevels, variant): ScatterChunkLevel[] => {
+    const own = nearLevels[0] ?? [];
+    const farLevels = far[variant];
+    if (farLevels === undefined) return [{ sources: own, maxDistance: Infinity }];
+    return [
+      { sources: own, maxDistance: coarser[0]?.from ?? Infinity },
+      ...coarser.map((level, index) => ({ sources: farLevels[index] ?? [], maxDistance: coarser[index + 1]?.from ?? Infinity })),
+    ];
+  }), [near, far, coarser]);
+  const variants = useMemo(() => near.map((nearLevels) => nearLevels[0] ?? []), [near]);
+  const hysteresis = settings?.hysteresis ?? DEFAULT_MESH_LOD_HYSTERESIS;
   const unique = isUniqueScatterItem(spec);
   const [heroes, setHeroes] = useState<ReadonlySet<string>>(NO_HEROES);
   const instances = useMemo(
@@ -467,8 +646,10 @@ function ScatterGeneratorSpecies({ item, species }: { item: string; species: Sca
   return (
     <>
       {[...byVariant.entries()].map(([variant, batches]) => {
-        const sources = variants[variant];
-        return sources === undefined || sources.length === 0 ? null : <ScatterSourcesField key={variant} cacheKey={key} sources={sources} farSources={variants[0]} batches={batches} />;
+        const variantLevels = levels[variant];
+        return variantLevels === undefined || (variantLevels[0]?.sources.length ?? 0) === 0
+          ? null
+          : <ScatterSourcesField key={variant} cacheKey={key} levels={variantLevels} farSources={variants[0]} batches={batches} hysteresis={hysteresis} />;
       })}
       {unique && ready ? <ScatterHeroes item={item} definition={definition} spec={spec} instances={instances} onShown={setHeroes} /> : null}
     </>

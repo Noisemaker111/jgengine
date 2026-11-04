@@ -27,6 +27,17 @@ export function MeshLodSettings({ config, children }: { config: MeshLodConfig | 
 }
 
 /**
+ * The game's `visibility.meshLods` (null when it asks for none) and the camera's vertical field of
+ * view in radians, for a draw that sets its own level distances from size on screen.
+ * @internal
+ */
+export function useMeshLodView(): { settings: MeshLodConfig | null; fovY: number } {
+  const game = useContext(MeshLodContext);
+  const fovY = cameraFov(useThree((state) => state.camera));
+  return useMemo(() => ({ settings: meshLodSettings(game, undefined), fovY }), [game, fovY]);
+}
+
+/**
  * Reads `<url>.lods/meta.json` through the app's asset base (the dev runner maps a game's files under
  * its own folder), answering null without a request when the host lists the game's files and this
  * one is not among them, and null for a model nothing was built for (a 404, an HTML

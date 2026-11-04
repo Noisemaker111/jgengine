@@ -73,11 +73,24 @@ export function cullSmallShadowCasters(root: THREE.Object3D, minRadius = MIN_SHA
     for (const child of node.children) restoreTree(child);
   };
 
+  // A node that leaves the tree stops being watched, so draws a field adds and drops as the camera
+  // moves are not held here for the rest of the session.
+  const detach = (node: THREE.Object3D): void => {
+    const off = listeners.get(node);
+    if (off === undefined) return;
+    off();
+    listeners.delete(node);
+    for (const child of node.children) detach(child);
+  };
+
   const attach = (node: THREE.Object3D): void => {
     if (listeners.has(node)) return;
     apply(node);
     const added = ({ child }: THREE.Object3DEventMap["childadded"]) => attach(child);
-    const removed = ({ child }: THREE.Object3DEventMap["childremoved"]) => restoreTree(child);
+    const removed = ({ child }: THREE.Object3DEventMap["childremoved"]) => {
+      restoreTree(child);
+      detach(child);
+    };
     node.addEventListener("childadded", added);
     node.addEventListener("childremoved", removed);
     listeners.set(node, () => {
