@@ -9,7 +9,17 @@ import { canResearch, registerCommands } from "./commands";
 import { content } from "./content";
 import { GOLD, LUMBER } from "./tuning";
 import { resetSession, session, type UnitRuntime } from "./session";
-import { grantResearch, RESEARCH_CONFIG, factionDamage, upgradeRank } from "./upgrades";
+import {
+  ASSAULT_DMG_PER_RANK,
+  ASSAULT_SLOW_PER_RANK,
+  BULWARK_DULL_PER_RANK,
+  BULWARK_GUARD_PER_RANK,
+  factionDamage,
+  factionSpeed,
+  grantResearch,
+  RESEARCH_CONFIG,
+  upgradeRank,
+} from "./upgrades";
 
 function boot(): GameContext {
   const definition = defineGameDefinition({ name: "EmberCommandResearchTest", multiplayer: "off" });
@@ -59,6 +69,30 @@ describe("upgrade math", () => {
     expect(factionDamage(8, "enemy", "player")).toBe(6);
   });
 
+  test("Assault hits harder and marches soldiers slower; Bulwark takes and deals less", () => {
+    session.research.ranks.assault = 2;
+    expect(factionDamage(9, "player", "enemy")).toBe(9 + 2 * ASSAULT_DMG_PER_RANK);
+    expect(factionSpeed(4.7, "player")).toBeCloseTo(4.7 * (1 - 2 * ASSAULT_SLOW_PER_RANK), 6);
+    expect(factionSpeed(4.3, "enemy")).toBe(4.3);
+    resetSession();
+    session.research.ranks.bulwark = 2;
+    expect(factionDamage(9, "player", "enemy")).toBe(9 - 2 * BULWARK_DULL_PER_RANK);
+    expect(factionDamage(8, "enemy", "player")).toBe(8 - 2 * BULWARK_GUARD_PER_RANK);
+    expect(factionSpeed(4.7, "player")).toBe(4.7);
+  });
+
+  test("an Assault footman closes on a far enemy slower than a plain one", () => {
+    const reach = (assault: number): number => {
+      const ctx = boot();
+      resetSession();
+      session.research.ranks.assault = assault;
+      spawn(ctx, "footman", "f1", [0, 0, 0], "player", { kind: "move", x: 40, z: 0 });
+      for (let i = 0; i < 10; i += 1) tickUnits(ctx, 0.2);
+      return ctx.scene.entity.get("f1")?.position[0] ?? 0;
+    };
+    expect(reach(2)).toBeLessThan(reach(0) * 0.95);
+  });
+
   test("a swing always chips at least 1 through heavy armor", () => {
     session.research.ranks.armor = 3; // −6 reduction
     expect(factionDamage(4, "enemy", "player")).toBe(1);
@@ -103,6 +137,26 @@ describe("research economy + gating", () => {
       for (const e of r.events) if (e.type === "completed") grantResearch(e.output);
     }
     expect(upgradeRank("weapons")).toBe(1);
+  });
+
+  test("starting one doctrine closes the other, before its first rank even finishes", () => {
+    const ctx = boot();
+    registerCommands(ctx);
+    ctx.game.economy.grant("commander", GOLD, 100000);
+    ctx.game.economy.grant("commander", LUMBER, 100000);
+    expect(canResearch(ctx, "assault")).toBe(false);
+    spawn(ctx, "barracks", "rax", [0, 0, 0], "player", { kind: "idle" });
+    expect(canResearch(ctx, "assault")).toBe(true);
+    expect(canResearch(ctx, "bulwark")).toBe(true);
+    ctx.game.commands.run("research.bulwark", {});
+    expect(upgradeRank("bulwark")).toBe(0);
+    // The fork is reserved when research starts, so both cannot be queued in the same breath.
+    expect(canResearch(ctx, "assault")).toBe(false);
+    const gold = ctx.game.economy.balance("commander", GOLD);
+    ctx.game.commands.run("research.assault", {});
+    expect(ctx.game.economy.balance("commander", GOLD)).toBe(gold);
+    // Iron Weapons still stacks with either doctrine.
+    expect(canResearch(ctx, "weapons")).toBe(true);
   });
 
   test("research stops at the rank cap", () => {

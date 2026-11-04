@@ -5,7 +5,7 @@ import { advancePursuit, armPursuit } from "@jgengine/core/ai/pursuit";
 import { combatantDef, isHostile } from "../catalog";
 import { ARRIVE_RADIUS, DEPOT_RANGE, HARVEST_RANGE, HARVEST_SECONDS } from "../tuning";
 import { matchRunning, playerDepot, session, type UnitRuntime } from "../session";
-import { factionDamage } from "../upgrades";
+import { factionDamage, factionSpeed } from "../upgrades";
 import { heroAttackBonus } from "../hero";
 import { lineMultiplier } from "../heroActs";
 import { tacticalDamage } from "../tactics";
@@ -31,21 +31,39 @@ function faceToward(ctx: GameContext, id: string, from: EntityPosition, tx: numb
   ctx.scene.entity.setPose(id, { position: from, rotationY: Math.atan2(dx, dz) });
 }
 
+/** Every unit step: a soldier marches at its side's researched pace; workers keep their own. */
 function stepTo(ctx: GameContext, dt: number, u: UnitRuntime, speed: number, x: number, z: number): void {
-  ctx.scene.entity.moveTowardCommit(u.id, [x, 0, z], { speed, dt, face: true });
+  const pace = combatantDef(u.catalogId)?.worker === true ? speed : factionSpeed(speed, u.faction);
+  ctx.scene.entity.moveTowardCommit(u.id, [x, 0, z], { speed: pace, dt, face: true });
 }
 
-/** Nearest living hostile (unit or building) within `radius`, by faction — bounded by roster size. */
-function acquireNearest(ctx: GameContext, u: UnitRuntime, self: EntityPosition, radius: number): string | null {
+/** How much nearer a preferred target counts: a raider takes a worker up to ~3x as far as a soldier. */
+const PREFERRED_PULL = 0.35;
+
+function isPreferred(prefers: "worker" | "building" | undefined, target: UnitRuntime): boolean {
+  if (prefers === "building") return target.kind === "building";
+  if (prefers === "worker") return combatantDef(target.catalogId)?.worker === true;
+  return false;
+}
+
+/**
+ * The hostile (unit or building) within `radius` this unit goes for: the nearest, except that what it
+ * prefers counts as nearer, so a raider leaves the soldier beside it for the peasant down the road.
+ * Bounded by roster size.
+ */
+export function acquireTarget(ctx: GameContext, u: UnitRuntime, self: EntityPosition, radius: number): string | null {
+  const prefers = combatantDef(u.catalogId)?.prefers;
   let bestId: string | null = null;
-  let bestDist = radius;
+  let bestScore = Number.POSITIVE_INFINITY;
   for (const other of session.units.values()) {
     if (!isHostile(u.faction, other.faction)) continue;
     const ent = ctx.scene.entity.get(other.id);
     if (ent === null) continue;
     const d = distXZ(self, ent.position);
-    if (d <= bestDist) {
-      bestDist = d;
+    if (d > radius) continue;
+    const score = isPreferred(prefers, other) ? d * PREFERRED_PULL : d;
+    if (score < bestScore) {
+      bestScore = score;
       bestId = other.id;
     }
   }
@@ -131,7 +149,7 @@ function tickUnit(ctx: GameContext, dt: number, u: UnitRuntime): void {
     if (target === null) u.command = { kind: "idle" };
   }
   if (target === null && (u.command.kind === "attackMove" || u.command.kind === "idle" || u.command.kind === "hold")) {
-    const acquired = acquireNearest(ctx, u, self.position, u.command.kind === "hold" ? def.attackRange : def.aggroRadius);
+    const acquired = acquireTarget(ctx, u, self.position, u.command.kind === "hold" ? def.attackRange : def.aggroRadius);
     if (acquired !== null) target = session.units.get(acquired) ?? null;
   }
 

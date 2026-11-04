@@ -5,6 +5,7 @@
 import type { CampaignReadout } from "./campaign";
 import type { FormationKind } from "./formations";
 import type { HeroActView, HeroOffer } from "./heroActs";
+import { UPGRADE_IDS, type UpgradeId } from "./upgrades";
 
 export type MatchPhase = "ready" | "playing" | "paused" | "won" | "lost";
 
@@ -57,11 +58,8 @@ export interface HudSnapshot {
   hasBarracks: boolean;
   buildArmed: string | null;
   building: number;
-  /** Research: achieved rank and achieved+pending "have" per upgrade, plus jobs in the queue. */
-  weaponsRank: number;
-  weaponsHave: number;
-  armorRank: number;
-  armorHave: number;
+  /** Research per upgrade (achieved rank, achieved+pending "have", requirement met), plus jobs in the queue. */
+  research: Record<UpgradeId, ResearchView>;
   researching: number;
   /** Hero: current level, his acts with their cooldowns, the picks he carries and an open offer. */
   heroLevel: number;
@@ -100,10 +98,12 @@ const initial: HudSnapshot = {
   hasBarracks: false,
   buildArmed: null,
   building: 0,
-  weaponsRank: 0,
-  weaponsHave: 0,
-  armorRank: 0,
-  armorHave: 0,
+  research: {
+    weapons: { rank: 0, have: 0, unlocked: false },
+    armor: { rank: 0, have: 0, unlocked: false },
+    assault: { rank: 0, have: 0, unlocked: false },
+    bulwark: { rank: 0, have: 0, unlocked: false },
+  },
   researching: 0,
   heroLevel: 1,
   heroActs: [],
@@ -114,6 +114,22 @@ const initial: HudSnapshot = {
 };
 
 /** Army rows churn every frame as HP ticks; compare on id/kind and integer HP to bound re-renders. */
+/** One upgrade's research state as the command card reads it. */
+export interface ResearchView {
+  rank: number;
+  have: number;
+  unlocked: boolean;
+}
+
+function researchChanged(a: Record<UpgradeId, ResearchView>, b: Record<UpgradeId, ResearchView>): boolean {
+  for (const id of UPGRADE_IDS) {
+    const x = a[id];
+    const y = b[id];
+    if (x.rank !== y.rank || x.have !== y.have || x.unlocked !== y.unlocked) return true;
+  }
+  return false;
+}
+
 function armyChanged(a: ArmyUnit[], b: ArmyUnit[]): boolean {
   if (a.length !== b.length) return true;
   for (let i = 0; i < a.length; i += 1) {
@@ -203,10 +219,7 @@ function changed(next: HudSnapshot): boolean {
     p.hasBarracks !== next.hasBarracks ||
     p.buildArmed !== next.buildArmed ||
     p.building !== next.building ||
-    p.weaponsRank !== next.weaponsRank ||
-    p.weaponsHave !== next.weaponsHave ||
-    p.armorRank !== next.armorRank ||
-    p.armorHave !== next.armorHave ||
+    researchChanged(p.research, next.research) ||
     p.researching !== next.researching ||
     p.heroLevel !== next.heroLevel ||
     actsChanged(p.heroActs, next.heroActs) ||

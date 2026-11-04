@@ -8,7 +8,18 @@ import { hudStore, type ArmyUnit, type HeroKitEntry, type HudSnapshot } from "..
 import { campaignOrdinal, type CampaignReadout } from "../../campaign";
 import { BARRACKS_UNITS, BUILDINGS, COMBATANTS, TRAINABLE, type BuildingId, type TrainableId } from "../../catalog";
 import { FORMATIONS } from "../../formations";
-import { UPGRADES, WEAPON_DMG_PER_RANK, ARMOR_REDUCE_PER_RANK, type UpgradeId } from "../../upgrades";
+import { foldStatContributions } from "@jgengine/core/progression/statGraph";
+import {
+  ARMOR_REDUCE_PER_RANK,
+  ASSAULT_DMG_PER_RANK,
+  ASSAULT_SLOW_PER_RANK,
+  BULWARK_DULL_PER_RANK,
+  BULWARK_GUARD_PER_RANK,
+  rankContributions,
+  UPGRADES,
+  WEAPON_DMG_PER_RANK,
+  type UpgradeId,
+} from "../../upgrades";
 import { HERO_DMG_PER_LEVEL } from "../../hero";
 import type { HeroActView, HeroOffer } from "../../heroActs";
 import { GlyphIcon } from "../icons";
@@ -249,23 +260,46 @@ function buildTone(hud: HudSnapshot, type: BuildingId): "ready" | "active" | "lo
   return (b.cost.gold ?? 0) <= hud.gold && (b.cost.lumber ?? 0) <= hud.lumber ? "ready" : "locked";
 }
 
-function researchTone(hud: HudSnapshot, id: UpgradeId): "ready" | "locked" {
+function researchTone(hud: HudSnapshot, id: UpgradeId): "ready" | "active" | "locked" {
   const up = UPGRADES[id];
-  if (hud.phase !== "playing" || !hud.hasBarracks) return "locked";
-  const rank = id === "weapons" ? hud.weaponsRank : hud.armorRank;
-  const have = id === "weapons" ? hud.weaponsHave : hud.armorHave;
-  if (have >= up.maxRank || have > rank) return "locked";
+  const { rank, have, unlocked } = hud.research[id];
+  if (have > rank) return "active";
+  if (hud.phase !== "playing" || !unlocked || have >= up.maxRank) return "locked";
   const c = up.cost(rank);
   return (c.gold ?? 0) <= hud.gold && (c.lumber ?? 0) <= hud.lumber ? "ready" : "locked";
 }
 
+/** A doctrine whose rival was chosen reads as closed, not just unaffordable. */
+const RIVAL_DOCTRINE: Partial<Record<UpgradeId, UpgradeId>> = { assault: "bulwark", bulwark: "assault" };
+
 function researchFoot(hud: HudSnapshot, id: UpgradeId): string {
   const up = UPGRADES[id];
-  const rank = id === "weapons" ? hud.weaponsRank : hud.armorRank;
-  const have = id === "weapons" ? hud.weaponsHave : hud.armorHave;
+  const { rank, have } = hud.research[id];
   if (have >= up.maxRank) return "max";
   if (have > rank) return "…";
+  const rival = RIVAL_DOCTRINE[id];
+  if (rival !== undefined && hud.research[rival].have > 0) return "closed";
   return costFoot(up.cost(rank).gold, up.cost(rank).lumber);
+}
+
+const RESEARCH_DESC: Record<UpgradeId, string> = {
+  weapons: `+${WEAPON_DMG_PER_RANK} damage to your whole army per rank.`,
+  armor: `−${ARMOR_REDUCE_PER_RANK} damage taken by your whole army per rank.`,
+  assault: `Doctrine: +${ASSAULT_DMG_PER_RANK} damage per rank, soldiers march ${Math.round(ASSAULT_SLOW_PER_RANK * 100)}% slower per rank. Choosing it closes Bulwark for this battle.`,
+  bulwark: `Doctrine: −${BULWARK_GUARD_PER_RANK} damage taken and −${BULWARK_DULL_PER_RANK} damage dealt per rank. Choosing it closes Assault for this battle.`,
+};
+
+/** One research token: its rank badge, cost or state on the foot, and the order it sends. */
+function ResearchSlot({ id, icon, hotkey, setTip }: { id: UpgradeId; icon: string; hotkey: string; setTip: (t: Tip | null) => void }) {
+  const hud = useHud();
+  const { commands } = useGame();
+  const up = UPGRADES[id];
+  const { rank } = hud.research[id];
+  const cost = up.cost(rank);
+  return (
+    <Slot icon={icon} hotkey={hotkey} badge={rank > 0 ? String(rank) : undefined} foot={researchFoot(hud, id)} tone={researchTone(hud, id)} setTip={setTip} onClick={() => commands.run(`research.${id}`, {})}
+      tip={{ title: `${up.label} — L${rank}/${up.maxRank}`, desc: RESEARCH_DESC[id], chips: costChips(cost.gold, cost.lumber) }} />
+  );
 }
 
 /** One of Bram's acts: its mana and cooldown in the writ, its readiness on the token. */
@@ -356,10 +390,8 @@ function CommandBoard() {
           tip={{ title: "Build Guard Tower", desc: "Auto-fires on Marauders that stray into range.", chips: costChips(BUILDINGS.guard_tower.cost.gold, BUILDINGS.guard_tower.cost.lumber) }} />
         <Slot icon="rally" hotkey="F" tone={hud.phase === "playing" ? (hud.rallyArmed ? "active" : "ready") : "locked"} setTip={setTip} onClick={() => commands.run("unit.rally", {})} tip={{ title: "Rally Point", desc: "Arm, then right-click where new recruits should gather.", chips: [] }} />
 
-        <Slot icon="weapons" hotkey="Z" badge={hud.weaponsRank > 0 ? String(hud.weaponsRank) : undefined} foot={researchFoot(hud, "weapons")} tone={researchTone(hud, "weapons")} setTip={setTip} onClick={() => commands.run("research.weapons", {})}
-          tip={{ title: `${UPGRADES.weapons.label} — L${hud.weaponsRank}/${UPGRADES.weapons.maxRank}`, desc: `+${WEAPON_DMG_PER_RANK} damage to your whole army per rank.`, chips: costChips(UPGRADES.weapons.cost(hud.weaponsRank).gold, UPGRADES.weapons.cost(hud.weaponsRank).lumber) }} />
-        <Slot icon="armor" hotkey="X" badge={hud.armorRank > 0 ? String(hud.armorRank) : undefined} foot={researchFoot(hud, "armor")} tone={researchTone(hud, "armor")} setTip={setTip} onClick={() => commands.run("research.armor", {})}
-          tip={{ title: `${UPGRADES.armor.label} — L${hud.armorRank}/${UPGRADES.armor.maxRank}`, desc: `−${ARMOR_REDUCE_PER_RANK} damage taken by your whole army per rank.`, chips: costChips(UPGRADES.armor.cost(hud.armorRank).gold, UPGRADES.armor.cost(hud.armorRank).lumber) }} />
+        <ResearchSlot id="weapons" icon="weapons" hotkey="Z" setTip={setTip} />
+        <ResearchSlot id="armor" icon="armor" hotkey="X" setTip={setTip} />
         <ActSlot act={hud.heroActs.find((entry) => entry.id === "thunderclap")} setTip={setTip} />
         <Slot icon="hold" hotkey="V" tone={hud.phase === "playing" ? "ready" : "locked"} setTip={setTip} onClick={() => commands.run("unit.hold", {})} tip={{ title: "Hold Army", desc: "All combat troops stop and attack only enemies within weapon reach. Workers keep harvesting.", chips: [] }} />
 
@@ -368,6 +400,10 @@ function CommandBoard() {
         <ActSlot act={hud.heroActs.find((entry) => entry.id === "volley")} setTip={setTip} />
         <ActSlot act={hud.heroActs.find((entry) => entry.id === "ward")} setTip={setTip} />
         <KitSlot kit={hud.heroKit} setTip={setTip} />
+
+        {/* The doctrine fork: the first rank of one closes the other for the battle. */}
+        <ResearchSlot id="assault" icon="attackMove" hotkey="N" setTip={setTip} />
+        <ResearchSlot id="bulwark" icon="shield" hotkey="M" setTip={setTip} />
       </div>
     </KitPanel>
   );
@@ -380,8 +416,10 @@ function HeroCard() {
   const mana = useEntityStat("hero", "mana");
   const xp = useEntityStat("hero", "xp");
   const alive = hp !== null && hp.current > 0;
-  const dmg = COMBATANTS.hero.damage +(hud.heroLevel - 1) * HERO_DMG_PER_LEVEL + hud.weaponsRank * WEAPON_DMG_PER_RANK;
-  const armor = hud.armorRank * ARMOR_REDUCE_PER_RANK;
+  const rankOf = (id: UpgradeId): number => hud.research[id].rank;
+  const dmg = foldStatContributions(COMBATANTS.hero.damage + (hud.heroLevel - 1) * HERO_DMG_PER_LEVEL, rankContributions(rankOf, "dealt"));
+  const armor = -foldStatContributions(0, rankContributions(rankOf, "taken"));
+  const pace = Math.round(foldStatContributions(COMBATANTS.hero.walkSpeed, rankContributions(rankOf, "speed")) * 10) / 10;
   return (
     <div className="ec-hero">
       <span className="ec-medallion" data-fallen={alive ? undefined : ""} aria-hidden>
@@ -406,7 +444,7 @@ function HeroCard() {
         <span className="ec-hero-stats">
           <span aria-label={`damage ${dmg}`}><GlyphIcon name="weapons" className="ec-hero-stat-glyph" />{dmg}</span>
           <span aria-label={`armor ${armor}`}><GlyphIcon name="shield" className="ec-hero-stat-glyph" />{armor}</span>
-          <span aria-label="walk speed"><GlyphIcon name="boots" className="ec-hero-stat-glyph" />{COMBATANTS.hero.walkSpeed}</span>
+          <span aria-label="walk speed"><GlyphIcon name="boots" className="ec-hero-stat-glyph" />{pace}</span>
         </span>
       </span>
     </div>

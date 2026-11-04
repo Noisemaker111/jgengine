@@ -56,6 +56,8 @@ export function onTick(ctx: GameContext, _dt: number): void {
   if (ctx.input.justPressed("buildTower")) ctx.game.commands.run("build.arm", { type: "guard_tower" });
   if (ctx.input.justPressed("researchWeapons")) ctx.game.commands.run("research.weapons", {});
   if (ctx.input.justPressed("researchArmor")) ctx.game.commands.run("research.armor", {});
+  if (ctx.input.justPressed("researchAssault")) ctx.game.commands.run("research.assault", {});
+  if (ctx.input.justPressed("researchBulwark")) ctx.game.commands.run("research.bulwark", {});
   if (ctx.input.justPressed("heroAbility")) ctx.game.commands.run("hero.act", { act: "thunderclap" });
   if (ctx.input.justPressed("heroMuster")) ctx.game.commands.run("hero.act", { act: "banner" });
   if (ctx.input.justPressed("heroVolley")) ctx.game.commands.run("hero.act", { act: "volley" });

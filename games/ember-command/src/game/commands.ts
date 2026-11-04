@@ -9,7 +9,7 @@ import { anchorFormation, FORMATIONS, pruneFormation, reshapeFormation, type For
 import { TRAINING_CONFIG } from "./production";
 import { NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS } from "./tuning";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
-import { pendingRanks, RESEARCH_CONFIG, upgradeDef, upgradeRank } from "./upgrades";
+import { pendingRanks, RESEARCH_CONFIG, researchUnlocked, UPGRADE_IDS, upgradeDef, upgradeRank } from "./upgrades";
 import { castHeroAct, chooseHeroPick, heroActViews, pendingHeroOffer } from "./heroActs";
 import { MUSTER_MARKER, noteCampaignBuild, noteCampaignTrain, startCampaignMission, tickCampaign } from "./campaign";
 import { HERO_ID } from "./hero";
@@ -240,8 +240,8 @@ function armBuild(ctx: GameContext, type: string): GameContext {
 }
 
 /** Can the player start the next rank of `upgradeId`? One rank of an upgrade researches at a time;
- * it needs the building, an unmet rank cap, and the gold/lumber for the next rank. Shared by the
- * command and the HUD gate. */
+ * it needs its requirement (a Barracks, and for a doctrine no rival doctrine), an unmet rank cap,
+ * and the gold/lumber for the next rank. Shared by the command and the HUD gate. */
 export function canResearch(ctx: GameContext, upgradeId: string): boolean {
   if (!matchRunning()) return false;
   const up = upgradeDef(upgradeId);
@@ -249,7 +249,7 @@ export function canResearch(ctx: GameContext, upgradeId: string): boolean {
   if (pendingRanks(upgradeId) > 0) return false; // already researching this upgrade
   const rank = upgradeRank(upgradeId);
   if (rank >= up.maxRank) return false;
-  if (!livingUnits("player", "building").some((u) => u.catalogId === up.requires)) return false;
+  if (!researchUnlocked(upgradeId)) return false;
   for (const [currency, amount] of Object.entries(up.cost(rank))) {
     if (ctx.game.economy.balance(ctx.player.userId, currency) < amount) return false;
   }
@@ -323,8 +323,7 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("train.footman", { apply: (state) => trainUnit(state, "footman") });
   ctx.game.commands.define("train.rifleman", { apply: (state) => trainUnit(state, "rifleman") });
   ctx.game.commands.define<{ type: string }>("build.arm", { apply: (state, input) => armBuild(state, input.type) });
-  ctx.game.commands.define("research.weapons", { apply: (state) => research(state, "weapons") });
-  ctx.game.commands.define("research.armor", { apply: (state) => research(state, "armor") });
+  for (const id of UPGRADE_IDS) ctx.game.commands.define(`research.${id}`, { apply: (state) => research(state, id) });
   // One verb per hero act, refused with the kit's own reason so a hotkey never fails silently.
   ctx.game.commands.define<{ act: string }>("hero.act", {
     apply: (state, input) => {

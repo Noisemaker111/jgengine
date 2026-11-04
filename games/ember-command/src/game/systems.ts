@@ -13,11 +13,17 @@ import { heroLevel } from "./hero";
 import { heroActViews, carriedHeroPicks, pendingHeroOffer, tickHero } from "./heroActs";
 import { buildingDef, combatantDef } from "./catalog";
 import { BUILD_CONFIG, type BuildSpec } from "./building";
-import { hudStore } from "./hudStore";
+import { hudStore, type ResearchView } from "./hudStore";
 import { TRAINING_CONFIG } from "./production";
 import { GOLD, INCOME_TRICKLE, LUMBER } from "./tuning";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type UnitRuntime } from "./session";
-import { grantResearch, RESEARCH_CONFIG, upgradeHave, upgradeRank } from "./upgrades";
+import { grantResearch, RESEARCH_CONFIG, researchUnlocked, upgradeHave, upgradeRank, type UpgradeId } from "./upgrades";
+
+/** Each upgrade's rank, ranks under way and whether its requirement holds, for the command card. */
+function researchViews(): Record<UpgradeId, ResearchView> {
+  const view = (id: UpgradeId): ResearchView => ({ rank: upgradeRank(id), have: upgradeHave(id), unlocked: researchUnlocked(id) });
+  return { weapons: view("weapons"), armor: view("armor"), assault: view("assault"), bulwark: view("bulwark") };
+}
 
 function keepStat(ctx: GameContext, faction: "player" | "enemy"): { current: number; max: number } {
   const keep = livingUnits(faction, "building").find((u) => u.catalogId === `keep_${faction}`);
@@ -259,10 +265,7 @@ const hudSystem: SystemDefinition = defineSystem({
       hasBarracks: livingUnits("player", "building").some((u) => u.catalogId === "barracks"),
       buildArmed: session.buildArmed,
       building: activeJobs(session.buildQueue).length + queuedJobs(session.buildQueue).length,
-      weaponsRank: upgradeRank("weapons"),
-      weaponsHave: upgradeHave("weapons"),
-      armorRank: upgradeRank("armor"),
-      armorHave: upgradeHave("armor"),
+      research: researchViews(),
       researching: activeJobs(session.research.queue).length + queuedJobs(session.research.queue).length,
       heroLevel: heroLevel(ctx),
       heroActs: heroActViews(ctx),

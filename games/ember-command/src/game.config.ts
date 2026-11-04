@@ -40,6 +40,8 @@ export const game = defineGame({
     selectArmy: ["KeyH"],
     researchWeapons: ["KeyZ"],
     researchArmor: ["KeyX"],
+    researchAssault: ["KeyN"],
+    researchBulwark: ["KeyM"],
     heroAbility: ["KeyC"],
     heroMuster: ["Digit4"],
     heroVolley: ["Digit5"],
@@ -68,7 +70,7 @@ export const game = defineGame({
     touch: {
       hidden: [
         "trainPeasant", "trainFootman", "trainRifleman", "attackMove", "buildBarracks", "buildFarm", "buildTower", "rally", "hold",
-        "formationLine", "formationWedge", "formationColumn", "selectArmy", "researchWeapons", "researchArmor", "heroAbility",
+        "formationLine", "formationWedge", "formationColumn", "selectArmy", "researchWeapons", "researchArmor", "researchAssault", "researchBulwark", "heroAbility",
         "heroMuster", "heroVolley", "heroWard", "heroPickFirst", "heroPickSecond",
       ],
     },
