@@ -3,11 +3,18 @@ import { afterEach, expect, test } from "bun:test";
 import { setGameAssetFiles } from "@jgengine/core/assets/assetBase";
 import { loadGameFonts } from "./fonts.view";
 
-const saved = { document: Reflect.get(globalThis, "document"), FontFace: Reflect.get(globalThis, "FontFace") };
+// Put each global back exactly: absent stays absent. Setting it to undefined instead left a `document`
+// key behind, and a later file that only stubs `document` when the key is missing then leaked its stub.
+const saved = {
+  document: Object.getOwnPropertyDescriptor(globalThis, "document"),
+  FontFace: Object.getOwnPropertyDescriptor(globalThis, "FontFace"),
+};
 afterEach(() => {
   setGameAssetFiles(null);
-  Reflect.set(globalThis, "document", saved.document);
-  Reflect.set(globalThis, "FontFace", saved.FontFace);
+  for (const [name, descriptor] of Object.entries(saved)) {
+    if (descriptor === undefined) Reflect.deleteProperty(globalThis, name);
+    else Object.defineProperty(globalThis, name, descriptor);
+  }
 });
 
 test("a library font is requested from the running game's folder under the host", () => {

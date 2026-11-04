@@ -79,13 +79,15 @@ describe("material KitPanel and KitButton", () => {
       createElement: () => ({ id: "", textContent: "" }),
       head: { appendChild: (node: { id: string; textContent: string }) => { added.push(node); } },
     };
-    const saved = (globalThis as { document?: unknown }).document;
+    // Put `document` back exactly: absent stays absent, so no later file inherits a `document` key.
+    const saved = Object.getOwnPropertyDescriptor(globalThis, "document");
     (globalThis as { document?: unknown }).document = fake;
     try {
       kitFrameVars({ material: "brass", cut: "notch" });
       kitFrameVars({ material: "wood" });
     } finally {
-      (globalThis as { document?: unknown }).document = saved;
+      if (saved === undefined) Reflect.deleteProperty(globalThis, "document");
+      else Object.defineProperty(globalThis, "document", saved);
     }
     expect(added.length).toBe(1);
     expect(added[0]!.id).toBe("jg-kit-frame-styles");

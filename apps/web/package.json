@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite dev",
     "build": "bun --cwd=../.. run build && vite build",
-    "deploy:cloudflare": "bun run build && bun ../../scripts/check-site-assets.ts && wrangler deploy",
+    "build:checked": "bun run build && bun ../../scripts/check-site-assets.ts",
+    "deploy:cloudflare": "bun run build:checked && wrangler deploy",
     "check-types": "tsgo --noEmit -p tsconfig.json",
     "start": "wrangler dev"
   },
