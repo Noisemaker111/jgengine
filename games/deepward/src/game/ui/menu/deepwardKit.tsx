@@ -3,7 +3,7 @@ import { kitFrameVars } from "@jgengine/core/ui/kit/kitFrame.view";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { customizeKit, type KitMenuProps, type KitPanelProps } from "@jgengine/core/ui/kit/uiKit.view";
-import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+import { terminalKit } from "@jgengine/core/ui/kit/uiKitTerminal.view";
 import { GAME_FONTS } from "../../../art/look";
 
 const FONTS = gameFontStacks(GAME_FONTS);
@@ -141,7 +141,7 @@ const CSS = `
 `;
 
 /** Deepward's kit: the terminal kit's toasts and prompts, with Marrow's console menu and dive-log pane. */
-export const deepwardKit = customizeKit(UI_KITS.terminal, {
+export const deepwardKit = customizeKit(terminalKit, {
   name: "Marrow console",
   tokens: {
     radius: "0px",

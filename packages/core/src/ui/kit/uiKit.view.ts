@@ -190,8 +190,9 @@ export interface UiKitMotion {
 }
 
 /**
- * A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game picks one
- * with `defineGame({ uiKit: "ink" })` and reshapes it with {@link customizeKit}.
+ * A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game imports one
+ * (`inkKit` from `uiKitInk.view`), passes it as `defineGame({ uiKit: inkKit })` and reshapes it with
+ * {@link customizeKit}.
  */
 export interface UiKit {
   /** Lowercase, `[a-z0-9-]`. Class names in `css` are prefixed `jgk-<id>-`. */

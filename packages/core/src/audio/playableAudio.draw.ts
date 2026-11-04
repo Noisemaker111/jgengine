@@ -1,7 +1,6 @@
 import type { AudioBusDef, SoundDef } from "@jgengine/core/audio/audioFalloff";
 import { withFeedbackCueSounds } from "@jgengine/core/audio/feedbackCues";
 import { withUiCueSounds, type UiCueOverrides } from "@jgengine/core/ui/uiCues";
-import { resolveUiKit } from "@jgengine/core/ui/kit/uiKits.view";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
 
@@ -17,7 +16,7 @@ const cache = new WeakMap<PlayableGame, ResolvedPlayableAudio>();
 export function kitCueOverrides(playable: PlayableGame): UiCueOverrides | undefined {
   const overrides = playable.audio?.uiCues;
   if (overrides === false || playable.uiKit === undefined) return overrides;
-  return { ...resolveUiKit(playable.uiKit).sounds, ...overrides };
+  return { ...playable.uiKit.sounds, ...overrides };
 }
 
 /** Resolve once per playable so the engine, the volume bridge and the settings rows share one bus list. @internal */

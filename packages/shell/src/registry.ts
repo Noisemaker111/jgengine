@@ -4,7 +4,6 @@ import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { HudTheme } from "@jgengine/core/hud/hudTheme.view";
 import type { UiKit } from "@jgengine/core/ui/kit/uiKit.view";
-import type { UiKitName } from "@jgengine/core/ui/kit/uiKits.view";
 import type { GameHealthConfig } from "@jgengine/core/health/runtimeHealth";
 import type { CrashReport } from "@jgengine/core/health/crashSeam";
 import type { ViewmodelProps } from "@jgengine/core/camera/GameFirstPersonCamera.draw";
@@ -39,10 +38,11 @@ export type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = Playabl
   hudTheme?: HudTheme | false | undefined;
   /**
    * The game's UI kit: a complete visual language (shapes, type, motion, sound) for every kit part and
-   * engine screen — a built-in name (`ink`, `paper`, `parchment`, `terminal`, `holo`, `broadcast`,
-   * `arcade`, `signal`) or `customizeKit(UI_KITS.ink, { ... })`. Its cue sounds replace the default UI sounds.
+   * engine screen — a built-in kit imported from its own module (`inkKit` from
+   * `@jgengine/core/ui/kit/uiKitInk.view`, and so on), or `customizeKit(inkKit, { ... })`. Only the kit
+   * the game imports is bundled. Its cue sounds replace the default UI sounds.
    */
-  uiKit?: UiKitName | UiKit | undefined;
+  uiKit?: UiKit | undefined;
   /** Runtime health: injected crash reporter and telemetry sink, auto quality thresholds, the game's error screen. Every part is off unless set. */
   health?: GameHealth | undefined;
 };

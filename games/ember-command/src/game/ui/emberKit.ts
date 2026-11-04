@@ -1,10 +1,10 @@
 import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
-import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+import { parchmentKit } from "@jgengine/core/ui/kit/uiKitParchment.view";
 
 import { EMBER_FONTS, INK, PARCHMENT, WAX } from "./theme";
 
 /** Ember Command's kit: the parchment language with wax red as its accent and the war table's two faces. */
-export const emberKit = customizeKit(UI_KITS.parchment, {
+export const emberKit = customizeKit(parchmentKit, {
   name: "Ember war table",
   tokens: {
     accent: WAX,

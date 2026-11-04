@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { customizeKit, type KitMenuProps, type KitPanelProps } from "@jgengine/core/ui/kit/uiKit.view";
-import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+import { signalKit } from "@jgengine/core/ui/kit/uiKitSignal.view";
 import { GAME_FONTS } from "../../../art/fonts/fonts";
 
 const FONTS = gameFontStacks(GAME_FONTS);
@@ -177,7 +177,7 @@ const CSS = `
 `;
 
 /** Drift Foundry's kit: the signal kit's toasts and prompts, with the pit's stencil plates and clipboard pane. */
-export const foundryKit = customizeKit(UI_KITS.signal, {
+export const foundryKit = customizeKit(signalKit, {
   name: "Row Six pit wall",
   tokens: {
     radius: "0px",

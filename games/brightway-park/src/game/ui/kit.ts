@@ -1,6 +1,6 @@
 import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
-import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+import { paperKit } from "@jgengine/core/ui/kit/uiKitPaper.view";
 
 import { GAME_FONTS } from "../../art/fonts/fonts";
 
@@ -10,7 +10,7 @@ const FONTS = gameFontStacks(GAME_FONTS);
  * Brightway's fair-day paper, recut from the park sign: cream ticket stock, teal sign-plate stickers
  * with a gold rim, sand cards and striped awning tape.
  */
-export const parkKit = customizeKit(UI_KITS.paper, {
+export const parkKit = customizeKit(paperKit, {
   name: "Brightway Fair",
   tokens: {
     ink: "#21424a",

@@ -12,7 +12,7 @@ import {
   uiKitVars,
 } from "@jgengine/core/ui/kit/uiKit.view";
 import { ensureUiKitStyles } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+import { paperKit } from "@jgengine/core/ui/kit/uiKitPaper.view";
 
 import { cn } from "@/kit/cn";
 import { LLMVILLE_KIT_CSS } from "@/kit/llmvilleKitCss";
@@ -202,7 +202,7 @@ function Toast({ tone, title, icon, count, leaving, className, style, children }
  * LLMville's UI kit: the paper kit's menu and minimap frame, with LLMville's own glass panels, themed
  * card shells, flat buttons, pill meters and toasts drawn from its palette tokens.
  */
-export const llmvilleKit = customizeKit(UI_KITS.paper, {
+export const llmvilleKit = customizeKit(paperKit, {
   name: "LLMville",
   tokens: {
     ink: P.cream,

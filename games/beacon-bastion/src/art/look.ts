@@ -1,6 +1,6 @@
 import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits";
 import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
-import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+import { parchmentKit } from "@jgengine/core/ui/kit/uiKitParchment.view";
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 
 import { GAME_FONTS } from "./fonts/fonts";
@@ -11,7 +11,7 @@ export const LOOKS_USED = { hdri: ["highland-clouds"], lut: ["warm-filmic"], fon
 const STACKS = gameFontStacks(GAME_FONTS);
 
 /** Parchment kit, beacon-ember accent, Cinzel over Alegreya Sans. */
-export const beaconKit = customizeKit(UI_KITS.parchment, {
+export const beaconKit = customizeKit(parchmentKit, {
   name: "beacon-bastion",
   tokens: { accent: "#d9541e", accentInk: "#fff4e0", fontDisplay: STACKS.fontDisplay, fontBody: STACKS.fontBody },
 });

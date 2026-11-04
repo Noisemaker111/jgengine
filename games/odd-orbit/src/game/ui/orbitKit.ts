@@ -1,6 +1,6 @@
 import { creditsForLooks } from "@jgengine/assets/catalogs/looksCredits";
 import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
-import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
+import { signalKit } from "@jgengine/core/ui/kit/uiKitSignal.view";
 import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 
 import { GAME_FONTS } from "../../art/fonts/fonts";
@@ -11,7 +11,7 @@ export const LOOKS_USED = { hdri: ["lilac-dusk"], lut: ["pastel-dusk"] } as cons
 const STACKS = gameFontStacks(GAME_FONTS);
 
 /** Signal enamel plates, bubblegum accent, Comfortaa over Quicksand. */
-export const orbitKit = customizeKit(UI_KITS.signal, {
+export const orbitKit = customizeKit(signalKit, {
   name: "odd-orbit",
   tokens: { accent: "#f6a6cf", accentInk: "#3a2140", fontDisplay: STACKS.fontDisplay, fontBody: STACKS.fontBody },
 });
