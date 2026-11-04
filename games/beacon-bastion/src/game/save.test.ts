@@ -11,6 +11,9 @@ import { advanceKeep, beaconRunner } from "./testing";
 import { beaconSave, captureDefense, checkpointKeep, defenseSystem, keepIsUnsaved, legacySystem, loadSlot, prepareKeep, validDefenseSave, worldSystem } from "./save";
 import { drawRelics, freshLegacy, legacy, openingGold, upgradeLegacy, writeLegacy } from "./waves/legacy";
 import { WARDEN_ID, bossProfile } from "./waves/manifest";
+import { beginRun } from "./menu";
+import { worldHeartbeat } from "./systems";
+import { gamePhase } from "@jgengine/core/game/gamePhase";
 
 let runner: HeadlessRunner;
 const world = () => keep.of(runner.ctx);
@@ -47,6 +50,30 @@ function playedIntoWave(): void {
 }
 
 describe("the keep's save document", () => {
+  test("a new defense starts and its playing heartbeat writes its progress", async () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const data = new Map<string, string>();
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => { data.set(key, value); },
+      removeItem: (key: string) => { data.delete(key); },
+    } });
+    try {
+      await prepareKeep(runner.ctx, "keep");
+      beginRun(runner.ctx);
+      expect(gamePhase(runner.ctx)).toBe("playing");
+      runner.ui.invoke("beacon.place", { kind: "tower_archer", slot: "plot-1" });
+      worldHeartbeat.update?.(runner.ctx, 1);
+      await checkpointKeep(runner.ctx, 0);
+      expect(data.has("game-save:beacon-bastion:keep")).toBe(true);
+      const reopened = beaconRunner("reopened");
+      await loadSlot(reopened.ctx, "keep");
+      expect(keep.of(reopened.ctx).instances()).toHaveLength(1);
+    } finally {
+      if (original) Object.defineProperty(globalThis, "localStorage", original);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
+  });
   test("checkpoints only an owned keep and stops if its bytes change", async () => {
     const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
     const data = new Map<string, string>();
