@@ -40,6 +40,8 @@ export const game = defineGame({
     selectArmy: ["KeyH"],
     researchWeapons: ["KeyZ"],
     researchArmor: ["KeyX"],
+    researchAssault: ["KeyN"],
+    researchBulwark: ["KeyM"],
     heroAbility: ["KeyC"],
     heroMuster: ["Digit4"],
     heroVolley: ["Digit5"],
@@ -68,7 +70,7 @@ export const game = defineGame({
     touch: {
       hidden: [
         "trainPeasant", "trainFootman", "trainRifleman", "attackMove", "buildBarracks", "buildFarm", "buildTower", "rally", "hold",
-        "formationLine", "formationWedge", "formationColumn", "selectArmy", "researchWeapons", "researchArmor", "heroAbility",
+        "formationLine", "formationWedge", "formationColumn", "selectArmy", "researchWeapons", "researchArmor", "researchAssault", "researchBulwark", "heroAbility",
         "heroMuster", "heroVolley", "heroWard", "heroPickFirst", "heroPickSecond",
       ],
     },
@@ -107,6 +109,9 @@ export const game = defineGame({
       // Dev-only: the first muster played through its world reports, so a flow can reach the
       // mission's own cleared boundary instead of the counter's next tick.
       "mission-cleared": ["campaign.capture"],
+      // Dev-only: a Barracks up and a war chest, so the research row is live; `doctrine` has Bulwark under way.
+      research: ["match.start", "research.capture"],
+      doctrine: ["match.start", { name: "research.capture", input: { doctrine: "bulwark" } }],
     },
     views: {
       "keep-player": {

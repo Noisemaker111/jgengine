@@ -35,6 +35,12 @@ export interface CombatantDef {
   food: number;
   /** True for the Peasant — can harvest resource nodes and build. */
   worker?: boolean;
+  /** Workers drop their haul here (the keep, and any Barracks raised nearer the fields). */
+  depot?: boolean;
+  /** What this unit goes for first when several hostiles are in reach: harvesters or structures. */
+  prefers?: "worker" | "building";
+  /** Damage multiplier against buildings (1 when absent). */
+  siege?: number;
 }
 
 /** What a price is paid in. */
@@ -86,7 +92,7 @@ export const COMBATANTS = {
     maxHealth: 90, walkSpeed: 4.5, damage: 14, attackRange: 7, attackCooldown: 1.3, aggroRadius: 9, food: 3,
   }),
   barracks: def({
-    id: "barracks", label: "Barracks", faction: "player", kind: "building", maxHealth: 700,
+    id: "barracks", label: "Barracks", faction: "player", kind: "building", maxHealth: 700, depot: true,
   }),
   farm: def({
     id: "farm", label: "Farm", faction: "player", kind: "building", maxHealth: 420,
@@ -101,17 +107,18 @@ export const COMBATANTS = {
   }),
   keep_player: def({
     id: "keep_player", label: "Ember Command Keep", faction: "player", kind: "building",
-    maxHealth: 1600, scale: 1,
+    maxHealth: 1600, scale: 1, depot: true,
   }),
 
   // — Marauders (enemy) —
   grunt: def({
     id: "grunt", label: "Marauder", faction: "enemy", kind: "unit",
-    maxHealth: 110, walkSpeed: 4.3, damage: 8, attackRange: 1.9, attackCooldown: 1, aggroRadius: 8, bounty: 14,
+    maxHealth: 110, walkSpeed: 4.3, damage: 8, attackRange: 1.9, attackCooldown: 1, aggroRadius: 8, bounty: 14, prefers: "worker",
   }),
   reaver: def({
     id: "reaver", label: "Reaver", faction: "enemy", kind: "unit",
     maxHealth: 240, walkSpeed: 3.9, scale: 1.22, damage: 17, attackRange: 2.1, attackCooldown: 1.1, aggroRadius: 9, bounty: 28,
+    prefers: "building", siege: 2,
   }),
   keep_enemy: def({
     id: "keep_enemy", label: "Marauder Warcamp", faction: "enemy", kind: "building",

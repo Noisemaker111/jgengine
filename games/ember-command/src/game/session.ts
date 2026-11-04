@@ -191,13 +191,12 @@ export function usedSupply(): number {
   return used;
 }
 
-/** The nearest living player Town Hall an entity should haul resources to. */
+/** The nearest living player drop-off (the keep or a Barracks) an entity should haul resources to. */
 export function playerDepot(from: { x: number; z: number }): { id: string; x: number; z: number } | null {
-  // Only one keep in this build, but written for the general case.
   let best: { id: string; x: number; z: number } | null = null;
   let bestDist = Infinity;
   for (const u of session.units.values()) {
-    if (u.faction !== "player" || u.catalogId !== "keep_player") continue;
+    if (u.faction !== "player" || combatantDef(u.catalogId)?.depot !== true) continue;
     const point = u.guardPoint;
     if (point === undefined) continue;
     const d = Math.hypot(point.x - from.x, point.z - from.z);
