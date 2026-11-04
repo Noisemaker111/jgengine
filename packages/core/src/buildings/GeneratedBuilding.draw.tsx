@@ -118,24 +118,73 @@ export function boxKindCastsShadow(kind: BuildingPartKind, boxKinds: { has(kind:
   return !(GLASS_KINDS.has(kind) && boxKinds.has("wall"));
 }
 
-interface BuildingKindBatchProps {
+/**
+ * Box kinds that draw with one material, merged into one instanced draw that tints each instance
+ * with its kind's colour. A kind with its own texture maps stays alone.
+ * @internal
+ */
+export interface BuildingBoxFamily {
+  key: string;
+  /** The kind whose material the family draws with. */
   kind: BuildingPartKind;
-  matrices: readonly THREE.Matrix4[];
-  palette?: BuildingMaterialPalette | undefined;
-  geometry: THREE.BoxGeometry;
+  surface: BuildingSurfaceMaterial;
+  matrices: THREE.Matrix4[];
+  /** One tint per matrix; null for a single kind, whose material carries its colour. */
+  colors: THREE.Color[] | null;
   castShadow: boolean;
 }
 
-function BuildingKindBatch({ kind, matrices, palette, geometry, castShadow }: BuildingKindBatchProps) {
-  const surface = useMemo(() => surfaceFor(kind, palette), [kind, palette]);
-  const textures = useBuildingSurfaceTextures(surface);
-  const material = useDisposable(() => batchMaterialFor(kind, surface, textures), [kind, surface, textures]);
-  const chunks = useMemo(() => partitionInstances(geometry, matrices), [geometry, matrices]);
-  return <>{chunks.map((chunk) => <BuildingChunk key={chunk.key} chunk={chunk} material={material} geometry={geometry} castShadow={castShadow} />)}</>;
+/** The material a box kind draws with, apart from its colour: kinds with the same one share a draw. */
+function familyOf(kind: BuildingPartKind, surface: BuildingSurfaceMaterial): string {
+  // A sign glows in its own colour, which a per-instance tint cannot carry.
+  if (kind === "storeSign") return `kind:${kind}`;
+  const base = GLASS_KINDS.has(kind) ? "glass" : kind === "roofProp" ? "prop" : "matte";
+  // Maps tint by the colour the same way under an instance tint, so one set of maps at one tiling is one material.
+  return JSON.stringify([base, surface.roughness ?? null, surface.metalness ?? null, surface.maps ?? null, surface.repeat ?? 1]);
 }
 
-function BuildingChunk({ chunk, material, geometry, castShadow }: {
+/**
+ * Groups a building set's box kinds into one draw per material: walls, corners, roofs and the other
+ * matte kinds share one, glass kinds share one, so a city block costs a few draws, not one per kind.
+ * @internal
+ */
+export function buildingBoxFamilies(boxes: ReadonlyMap<BuildingPartKind, readonly THREE.Matrix4[]>, palette: BuildingMaterialPalette | undefined): BuildingBoxFamily[] {
+  const families = new Map<string, { kind: BuildingPartKind; surface: BuildingSurfaceMaterial; parts: { kind: BuildingPartKind; surface: BuildingSurfaceMaterial; matrices: readonly THREE.Matrix4[] }[]; castShadow: boolean }>();
+  for (const [kind, matrices] of boxes) {
+    const surface = surfaceFor(kind, palette);
+    const key = familyOf(kind, surface);
+    const family = families.get(key) ?? { kind, surface, parts: [], castShadow: boxKindCastsShadow(kind, boxes) };
+    family.parts.push({ kind, surface, matrices });
+    families.set(key, family);
+  }
+  return [...families].map(([key, family]) => {
+    if (family.parts.length === 1) {
+      return { key, kind: family.kind, surface: family.surface, matrices: [...(family.parts[0]?.matrices ?? [])], colors: null, castShadow: family.castShadow };
+    }
+    const matrices: THREE.Matrix4[] = [];
+    const colors: THREE.Color[] = [];
+    for (const part of family.parts) {
+      const color = new THREE.Color(part.surface.color ?? DEFAULT_PALETTE[part.kind]);
+      for (const matrix of part.matrices) {
+        matrices.push(matrix);
+        colors.push(color);
+      }
+    }
+    // The instance tint carries each kind's colour; the shared material stays white under it.
+    return { key, kind: family.kind, surface: { ...family.surface, color: "#ffffff" }, matrices, colors, castShadow: family.castShadow };
+  });
+}
+
+function BuildingFamilyBatch({ family, geometry }: { family: BuildingBoxFamily; geometry: THREE.BoxGeometry }) {
+  const textures = useBuildingSurfaceTextures(family.surface);
+  const material = useDisposable(() => batchMaterialFor(family.kind, family.surface, textures), [family, textures]);
+  const chunks = useMemo(() => partitionInstances(geometry, family.matrices), [geometry, family]);
+  return <>{chunks.map((chunk) => <BuildingChunk key={chunk.key} chunk={chunk} colors={family.colors} material={material} geometry={geometry} castShadow={family.castShadow} />)}</>;
+}
+
+function BuildingChunk({ chunk, colors, material, geometry, castShadow }: {
   chunk: InstanceChunk;
+  colors: readonly THREE.Color[] | null;
   material: THREE.Material;
   geometry: THREE.BoxGeometry;
   castShadow: boolean;
@@ -145,13 +194,14 @@ function BuildingChunk({ chunk, material, geometry, castShadow }: {
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    uploadInstances(mesh, chunk.matrices, { bounds: chunk.bounds });
+    const tint = colors === null ? {} : { colors: (index: number, out: THREE.Color) => { out.copy(colors[chunk.sources[index] ?? 0] ?? out.setRGB(1, 1, 1)); } };
+    uploadInstances(mesh, chunk.matrices, { bounds: chunk.bounds, ...tint });
     freezeStaticTransforms(mesh);
     // Release only this chunk's instance buffers; geometry and materials are shared.
     return () => {
       mesh.dispose();
     };
-  }, [chunk, geometry, material]);
+  }, [chunk, colors, geometry, material]);
   return (
     <instancedMesh
       key={chunk.matrices.length}
@@ -176,12 +226,11 @@ export function InstancedBuildings({
     const visible = visibleKinds === undefined ? null : new Set<BuildingPartKind>(visibleKinds);
     return bucketBuildingParts(buildings, visible, kit, resolveModelUrl);
   }, [buildings, visibleKinds, kit, resolveModelUrl]);
+  const families = useMemo(() => buildingBoxFamilies(boxes, palette), [boxes, palette]);
   if (boxes.size === 0 && models.size === 0) return null;
   return (
     <group>
-      {[...boxes.entries()].map(([kind, matrices]) => (
-        <BuildingKindBatch key={kind} kind={kind} matrices={matrices} palette={palette} geometry={geometry} castShadow={boxKindCastsShadow(kind, boxes)} />
-      ))}
+      {families.map((family) => <BuildingFamilyBatch key={family.key} family={family} geometry={geometry} />)}
       {[...models.entries()].map(([url, instances]) => (
         <Suspense key={url} fallback={null}>
           <BuildingKitBatch url={url} instances={instances} materialAssets={kit?.materialAssets} />

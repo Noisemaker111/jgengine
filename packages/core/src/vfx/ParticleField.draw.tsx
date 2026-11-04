@@ -1,8 +1,8 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, type ReactElement } from "react";
 import * as THREE from "three";
 
-import type { ParticleSystem } from "@jgengine/core/vfx/particles";
+import type { ParticleBuffers, ParticleSystem } from "@jgengine/core/vfx/particles";
 import type { ParticleRenderHint } from "@jgengine/core/vfx/particleDirector";
 
 /** How particle fragments composite on screen. */
@@ -111,7 +111,12 @@ const QUAD_FRAGMENT = /* glsl */ `
   }
 `;
 
-const SHAPES: Record<ParticleRenderHint["shape"], number> = { point: 0, streak: 1, flake: 2, flame: 3, smoke: 4, ribbon: 5, ripple: 6 };
+/** Floats per particle in a quad field's interleaved buffer: centre, end, velocity, colour, id, size, alpha. */
+const QUAD_STRIDE = 15;
+/** Floats per particle in a point field's interleaved buffer: position, colour, size, alpha. */
+const POINT_STRIDE = 8;
+
+const SHAPES: Record<ParticleRenderHint["shape"], number> ={ point: 0, streak: 1, flake: 2, flame: 3, smoke: 4, ribbon: 5, ripple: 6 };
 
 /** @internal Mutable resource/upload counters read through the shell's supported diagnostics probe. */
 export interface ParticleFieldMetrics {
@@ -139,6 +144,146 @@ export interface ParticleFieldProps {
   metrics?: ParticleFieldMetrics | undefined;
 }
 
+/** Materials of fields that left, by what they were made with, for the next field made the same way. */
+const spareFieldMaterials = new Map<string, THREE.ShaderMaterial[]>();
+const fieldMaterialKinds = new WeakMap<THREE.ShaderMaterial, string>();
+
+/**
+ * A field's material, reused from a field that left when one was made the same way. Disposing it
+ * dropped its shader program, so the next spark or puff of the same kind linked it again in the
+ * frame it appeared: an effect that comes and goes paid a link every time. @internal
+ */
+export function takeFieldMaterial(quad: boolean, depthWrite: boolean, blending: ParticleBlending): THREE.ShaderMaterial {
+  const kind = `${quad ? "quad" : "point"}|${depthWrite ? "depth" : ""}|${blending}`;
+  const spare = spareFieldMaterials.get(kind)?.pop();
+  if (spare !== undefined) return spare;
+  const made = new THREE.ShaderMaterial({ vertexShader: quad ? QUAD_VERTEX : VERTEX_SHADER, fragmentShader: quad ? QUAD_FRAGMENT : FRAGMENT_SHADER,
+    uniforms: { uScale: { value: 300 }, uShape: { value: SHAPES.point }, uStretch: { value: 0.08 } },
+    transparent: true, depthWrite, side: THREE.DoubleSide,
+    blending: blending === "additive" ? THREE.AdditiveBlending : THREE.NormalBlending });
+  fieldMaterialKinds.set(made, kind);
+  return made;
+}
+
+/** Hand a field's material back for the next field of its kind, keeping its program linked. @internal */
+export function returnFieldMaterial(material: THREE.ShaderMaterial): void {
+  const kind = fieldMaterialKinds.get(material);
+  if (kind === undefined) {
+    material.dispose();
+    return;
+  }
+  const spare = spareFieldMaterials.get(kind);
+  if (spare === undefined) spareFieldMaterials.set(kind, [material]);
+  else if (!spare.includes(material)) spare.push(material);
+}
+
+/**
+ * One empty field of each program a field can draw with: points, and instanced quads for every
+ * other shape. Blending and depth writes do not change the program. For the scene's warmup to link
+ * before play, since a burst's field mounts on the frame the burst fires. `dispose` hands the
+ * materials to the next fields of their kind. @internal
+ */
+export function fieldPrograms(): { objects: THREE.Object3D[]; dispose(): void } {
+  const kinds = [false, true].map((quad) => ({ material: takeFieldMaterial(quad, false, "additive"), geometry: createFieldGeometry(1, quad, false).geometry, quad }));
+  return {
+    objects: kinds.map(({ material, geometry, quad }) => (quad ? new THREE.Mesh(geometry, material) : new THREE.Points(geometry, material))),
+    dispose() {
+      for (const { material, geometry } of kinds) {
+        geometry.dispose();
+        returnFieldMaterial(material);
+      }
+    },
+  };
+}
+
+/** A field's geometry and the one interleaved buffer every per-particle value lives in. @internal */
+export interface FieldGeometry {
+  geometry: THREE.BufferGeometry;
+  packed: THREE.InterleavedBuffer;
+  quad: boolean;
+  ribbon: boolean;
+  /** Ribbon only: each live particle id's index this frame, so a segment finds the one before it. */
+  indexById: Map<number, number>;
+}
+
+/**
+ * Geometry for `max` particles drawn as points or instanced quads. Every value a particle draws with
+ * sits in one interleaved buffer, so a live field is one upload a frame: seven separate attributes
+ * were seven, and a battle's thirty live fields sent two hundred a frame. @internal
+ */
+export function createFieldGeometry(max: number, quad: boolean, ribbon: boolean): FieldGeometry {
+  const geometry = quad ? new THREE.InstancedBufferGeometry() : new THREE.BufferGeometry();
+  const stride = quad ? QUAD_STRIDE : POINT_STRIDE;
+  const packed = quad ? new THREE.InstancedInterleavedBuffer(new Float32Array(max * stride), stride) : new THREE.InterleavedBuffer(new Float32Array(max * stride), stride);
+  packed.setUsage(THREE.DynamicDrawUsage);
+  const at = (offset: number, size: number) => new THREE.InterleavedBufferAttribute(packed, size, offset);
+  if (geometry instanceof THREE.InstancedBufferGeometry) {
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute([-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0], 3));
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
+    geometry.setIndex([0, 1, 2, 0, 2, 3]);
+    geometry.setAttribute("aCenter", at(0, 3));
+    geometry.setAttribute("aEnd", at(3, 3));
+    geometry.setAttribute("aVelocity", at(6, 3));
+    geometry.setAttribute("aColor", at(9, 3));
+    geometry.setAttribute("aId", at(12, 1));
+    geometry.setAttribute("aSize", at(13, 1));
+    geometry.setAttribute("aAlpha", at(14, 1));
+    geometry.instanceCount = 0;
+  } else {
+    geometry.setAttribute("position", at(0, 3));
+    geometry.setAttribute("aColor", at(3, 3));
+    geometry.setAttribute("aSize", at(6, 1));
+    geometry.setAttribute("aAlpha", at(7, 1));
+    geometry.setDrawRange(0, 0);
+  }
+  return { geometry, packed, quad, ribbon, indexById: new Map() };
+}
+
+/** Write a frame's live particles into the field's buffer, mark that range for upload, and draw that many. @internal */
+export function packFieldFrame(field: FieldGeometry, buffers: ParticleBuffers): void {
+  const { geometry, packed, indexById } = field;
+  const count = buffers.count;
+  const data = packed.array;
+  const { positions, colors, sizes, alphas, velocities, ids, previousPositions } = buffers;
+  if (field.quad) {
+    if (field.ribbon) {
+      for (let i = 0; i < count; i++) indexById.set(ids[i]!, i);
+      for (const [id, index] of indexById) if (index >= count || ids[index] !== id) indexById.delete(id);
+    }
+    for (let i = 0; i < count; i++) {
+      const o = i * QUAD_STRIDE;
+      const v = i * 3;
+      // A ribbon segment ends at the particle spawned just before it; anything else at its own last position.
+      const previousIndex = field.ribbon ? indexById.get(ids[i]! - 1) : undefined;
+      const source = previousIndex === undefined ? previousPositions : positions;
+      const e = (previousIndex ?? i) * 3;
+      data[o] = positions[v]!; data[o + 1] = positions[v + 1]!; data[o + 2] = positions[v + 2]!;
+      data[o + 3] = source[e]!; data[o + 4] = source[e + 1]!; data[o + 5] = source[e + 2]!;
+      data[o + 6] = velocities[v]!; data[o + 7] = velocities[v + 1]!; data[o + 8] = velocities[v + 2]!;
+      data[o + 9] = colors[v]!; data[o + 10] = colors[v + 1]!; data[o + 11] = colors[v + 2]!;
+      data[o + 12] = ids[i]!;
+      data[o + 13] = sizes[i]!;
+      data[o + 14] = alphas[i]!;
+    }
+  } else {
+    for (let i = 0; i < count; i++) {
+      const o = i * POINT_STRIDE;
+      const v = i * 3;
+      data[o] = positions[v]!; data[o + 1] = positions[v + 1]!; data[o + 2] = positions[v + 2]!;
+      data[o + 3] = colors[v]!; data[o + 4] = colors[v + 1]!; data[o + 5] = colors[v + 2]!;
+      data[o + 6] = sizes[i]!;
+      data[o + 7] = alphas[i]!;
+    }
+  }
+  if (geometry instanceof THREE.InstancedBufferGeometry) geometry.instanceCount = count;
+  else geometry.setDrawRange(0, count);
+  // An empty update range would make three send the whole pool, so an emptied field sends nothing.
+  if (count === 0) return;
+  packed.clearUpdateRanges();
+  packed.addUpdateRange(0, count * packed.stride);
+  packed.needsUpdate = true;
+}
+
 /**
  * Render one pooled simulation through a point cloud or instanced quads. Output
  * selection does not replace spawn, forces, collisions, or deterministic state.
@@ -148,78 +293,37 @@ export function ParticleField({ system, advance = true, blending = "additive", s
   const dpr = useThree((state) => state.viewport.dpr);
   const shape = render?.shape ?? "point";
   const quad = shape !== "point";
-  const { geometry, material, indexById } = useMemo(() => {
-    const max = system.buffers().positions.length / 3;
-    const geo = quad ? new THREE.InstancedBufferGeometry() : new THREE.BufferGeometry();
-    if (quad) {
-      geo.setAttribute("position", new THREE.Float32BufferAttribute([-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0], 3));
-      geo.setAttribute("uv", new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2));
-      geo.setIndex([0, 1, 2, 0, 2, 3]);
-      geo.setAttribute("aCenter", new THREE.InstancedBufferAttribute(new Float32Array(max * 3), 3));
-      geo.setAttribute("aEnd", new THREE.InstancedBufferAttribute(new Float32Array(max * 3), 3));
-      geo.setAttribute("aVelocity", new THREE.InstancedBufferAttribute(new Float32Array(max * 3), 3));
-      geo.setAttribute("aId", new THREE.InstancedBufferAttribute(new Float32Array(max), 1));
-      (geo as THREE.InstancedBufferGeometry).instanceCount = 0;
-    } else {
-      geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(max * 3), 3));
-      geo.setDrawRange(0, 0);
-    }
-    const attribute = (array: Float32Array, size: number) => quad ? new THREE.InstancedBufferAttribute(array, size) : new THREE.BufferAttribute(array, size);
-    geo.setAttribute("aSize", attribute(new Float32Array(max), 1));
-    geo.setAttribute("aColor", attribute(new Float32Array(max * 3), 3));
-    geo.setAttribute("aAlpha", attribute(new Float32Array(max), 1));
-    const mat = new THREE.ShaderMaterial({ vertexShader: quad ? QUAD_VERTEX : VERTEX_SHADER, fragmentShader: quad ? QUAD_FRAGMENT : FRAGMENT_SHADER,
-      uniforms: { uScale: { value: scale }, uShape: { value: SHAPES[shape] }, uStretch: { value: render?.stretch ?? 0.08 } },
-      transparent: true, depthWrite, side: THREE.DoubleSide,
-      blending: blending === "additive" ? THREE.AdditiveBlending : THREE.NormalBlending });
-    return { geometry: geo, material: mat, indexById: new Map<number, number>() };
+  const { field, material } = useMemo(() => {
+    const mat = takeFieldMaterial(quad, depthWrite, blending);
+    mat.uniforms["uScale"]!.value = scale;
+    mat.uniforms["uShape"]!.value = SHAPES[shape];
+    mat.uniforms["uStretch"]!.value = render?.stretch ?? 0.08;
+    return { field: createFieldGeometry(system.buffers().positions.length / 3, quad, shape === "ribbon"), material: mat };
   }, [system, quad, shape, scale, depthWrite, blending]);
+  const geometry = field.geometry;
 
   useEffect(() => {
-    const bytes = Object.values(geometry.attributes).reduce((total, attribute) => total + attribute.array.byteLength, geometry.index?.array.byteLength ?? 0);
+    const arrays = new Set<ArrayBufferLike>(Object.values(geometry.attributes).map((attribute) => attribute.array.buffer));
+    let bytes = geometry.index?.array.byteLength ?? 0;
+    for (const array of arrays) bytes += array.byteLength;
     if (metrics !== undefined) { metrics.fieldsMounted++; metrics.liveFields++; metrics.attributeBytes += bytes; }
     return () => {
-      geometry.dispose(); material.dispose();
+      geometry.dispose(); returnFieldMaterial(material);
       if (metrics !== undefined) { metrics.fieldsUnmounted++; metrics.liveFields--; metrics.attributeBytes -= bytes; }
     };
   }, [geometry, material, metrics]);
 
+  const uploadedCount = useRef(-1);
   useFrame((_, delta) => {
     const started = metrics === undefined ? 0 : performance.now();
     if (advance) system.update(Math.min(delta, 0.1));
     const buffers = system.buffers();
     const count = buffers.count;
-    const upload = (name: string, values: Float32Array, n: number) => {
-      const attr = geometry.getAttribute(name) as THREE.BufferAttribute;
-      (attr.array as Float32Array).set(values.subarray(0, n));
-      attr.needsUpdate = true;
-    };
-    upload(quad ? "aCenter" : "position", buffers.positions, count * 3);
-    upload("aSize", buffers.sizes, count);
-    upload("aColor", buffers.colors, count * 3);
-    upload("aAlpha", buffers.alphas, count);
-    if (quad) {
-      upload("aVelocity", buffers.velocities, count * 3);
-      const end = geometry.getAttribute("aEnd") as THREE.BufferAttribute;
-      const ids = geometry.getAttribute("aId") as THREE.BufferAttribute;
-      if (shape === "ribbon") {
-        for (let i = 0; i < count; i++) indexById.set(buffers.ids[i]!, i);
-        for (const id of indexById.keys()) {
-          const index = indexById.get(id)!;
-          if (index >= count || buffers.ids[index] !== id) indexById.delete(id);
-        }
-      }
-      for (let i = 0; i < count; i++) {
-        ids.setX(i, buffers.ids[i]!);
-        const previousIndex = shape === "ribbon" ? indexById.get(buffers.ids[i]! - 1) : undefined;
-        const source = previousIndex === undefined ? buffers.previousPositions : buffers.positions;
-        const offset = (previousIndex ?? i) * 3;
-        end.setXYZ(i, source[offset]!, source[offset + 1]!, source[offset + 2]!);
-      }
-      end.needsUpdate = true;
-      ids.needsUpdate = true;
-      (geometry as THREE.InstancedBufferGeometry).instanceCount = count;
-    } else geometry.setDrawRange(0, count);
+    // An idle emitter has nothing to send; a live one sends its live particles, not the whole pool.
+    if (count === 0 && uploadedCount.current === 0) return;
+    uploadedCount.current = count;
+    packFieldFrame(field, buffers);
+    if (count === 0) return;
     material.uniforms["uScale"]!.value = scale * dpr;
     material.uniforms["uStretch"]!.value = render?.stretch ?? 0.08;
     if (metrics !== undefined) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import * as THREE from "three";
-import { decodeMeterByte, ExposureMeterPass } from "./autoExposure.draw";
+import { decodeMeterByte, DRAIN_WAIT_FRAMES, ExposureMeterPass } from "./autoExposure.draw";
 
 type Call = { target: THREE.WebGLRenderTarget | null };
 
@@ -75,15 +75,18 @@ describe("ExposureMeterPass", () => {
     pass.dispose();
   });
 
-  it("reads real samples through a WebGL2 pack buffer, not zeros", () => {
-    // A fake WebGL2 context with GL's rules: readPixels into a pack buffer smaller than the read
-    // fails without writing, and getBufferSubData copies whatever the buffer stores.
-    const PIXEL_PACK_BUFFER = 0x88eb;
+  /**
+   * A fake WebGL2 context with GL's rules: readPixels into a pack buffer smaller than the read fails
+   * without writing, getBufferSubData copies whatever the buffer stores, and a fence reports done
+   * only once `finish` says the GPU has worked through everything queued before it.
+   */
+  function fakeGl() {
     const buffers = new Map<object, Uint8Array>();
+    const fences = new Map<object, boolean>();
     let bound: object | null = null;
     const errors: string[] = [];
     const gl = {
-      PIXEL_PACK_BUFFER,
+      PIXEL_PACK_BUFFER: 0x88eb,
       RGBA: 0x1908,
       UNSIGNED_BYTE: 0x1401,
       STREAM_READ: 0x88e1,
@@ -98,14 +101,20 @@ describe("ExposureMeterPass", () => {
         if (store === undefined || store.length < width * height * 4) { errors.push("buffer too small"); return; }
         store.fill(180);
       },
-      fenceSync: () => ({}),
-      clientWaitSync: () => 0x911a,
-      deleteSync: () => {},
+      fenceSync: () => { const fence = {}; fences.set(fence, false); return fence; },
+      clientWaitSync: (fence: object) => (fences.get(fence) === true ? 0x911a : 0x911b),
+      deleteSync: (fence: object) => { fences.delete(fence); },
       getBufferSubData: (_target: number, _offset: number, out: Uint8Array) => { out.set((bound === null ? undefined : buffers.get(bound))?.subarray(0, out.length) ?? new Uint8Array(out.length)); },
-      deleteBuffer: () => {},
+      deleteBuffer: (buffer: object) => { buffers.delete(buffer); },
     };
+    const finish = () => { for (const fence of fences.keys()) fences.set(fence, true); };
     const { renderer } = fakeRenderer();
     (renderer as unknown as { getContext: () => unknown }).getContext = () => gl;
+    return { gl, renderer, errors, buffers, fences, finish };
+  }
+
+  it("reads real samples through a WebGL2 pack buffer, not zeros, at the start of a frame", () => {
+    const { gl, renderer, errors, buffers, fences, finish } = fakeGl();
     const samples: Float32Array[] = [];
     const pass = new ExposureMeterPass((frame) => samples.push(Float32Array.from(frame)));
     const write = new THREE.WebGLRenderTarget(4, 4);
@@ -120,11 +129,13 @@ describe("ExposureMeterPass", () => {
     // Drawing alone never reads back, however many frames pass.
     for (let frame = 0; frame < 3; frame += 1) pass.render(renderer, write, read, 1 / 60);
     expect(fetched).toEqual([]);
-    for (let frame = 0; frame < 3; frame += 1) {
+    for (let frame = 0; frame < 4; frame += 1) {
+      finish();
       phase = "frame start";
       pass.collect();
       phase = "after the scene";
       pass.render(renderer, write, read, 1 / 60);
+      pass.frameEnd();
     }
     expect(errors).toEqual([]);
     expect(samples.length).toBeGreaterThan(0);
@@ -133,6 +144,46 @@ describe("ExposureMeterPass", () => {
     expect(fetched.length).toBeGreaterThan(0);
     expect(fetched.every((at) => at === "frame start")).toBe(true);
     pass.dispose();
+    expect(buffers.size).toBe(0);
+    expect(fences.size).toBe(0);
+  });
+
+  it("reads back only once the GPU has caught up with the last frame, or after waiting too long", () => {
+    const { renderer, fences, finish } = fakeGl();
+    const samples: Float32Array[] = [];
+    const pass = new ExposureMeterPass((frame) => samples.push(Float32Array.from(frame)), 1000);
+    const write = new THREE.WebGLRenderTarget(4, 4);
+    const read = new THREE.WebGLRenderTarget(4, 4);
+    pass.render(renderer, write, read, 1 / 60);
+    pass.frameEnd();
+    // The readback itself is done, but the GPU is still a frame behind: a read now would wait for that frame.
+    finish();
+    pass.render(renderer, write, read, 1 / 60);
+    pass.frameEnd();
+    for (let frame = 0; frame < 5; frame += 1) {
+      pass.collect();
+      pass.render(renderer, write, read, 1 / 60);
+      pass.frameEnd();
+    }
+    expect(samples).toHaveLength(0);
+    // The GPU catches up: the next frame start reads.
+    finish();
+    pass.collect();
+    expect(samples).toHaveLength(1);
+    // A GPU that never catches up still gets read, after DRAIN_WAIT_FRAMES frames.
+    pass.render(renderer, write, read, 1 / 60);
+    pass.frameEnd();
+    let frames = 0;
+    for (; samples.length === 1 && frames < 200; frames += 1) {
+      if (frames === 0) { const [readback] = fences.keys(); if (readback !== undefined) fences.set(readback, true); }
+      pass.collect();
+      pass.render(renderer, write, read, 1 / 60);
+      pass.frameEnd();
+    }
+    expect(samples).toHaveLength(2);
+    expect(frames).toBe(DRAIN_WAIT_FRAMES + 1);
+    pass.dispose();
+    expect(fences.size).toBe(0);
   });
 
   it("stops sampling once warmed up and never mutates the read buffer", () => {

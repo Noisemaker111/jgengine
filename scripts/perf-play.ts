@@ -682,10 +682,20 @@ const GL_COUNTERS_SCRIPT = `(() => {
  * resets it per frame. Wrapping the draw calls needs no such cooperation: every pass and
  * every instanced draw is one call here, which is the number the GPU is handed.
  */
-const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
+export const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
   if (globalThis.__jgPerfDraws !== undefined) return;
   const state = { frames: [], pending: 0, counting: false };
   const wrapped = new WeakSet();
+  const wrap = (owner, method) => {
+    const original = owner[method];
+    if (typeof original !== "function" || wrapped.has(original)) return;
+    const counted = function (...args) {
+      if (state.counting) state.pending += 1;
+      return original.apply(this, args);
+    };
+    wrapped.add(counted);
+    owner[method] = counted;
+  };
   const drawMethods = [
     "drawArrays",
     "drawElements",
@@ -696,15 +706,24 @@ const DRAW_FRAME_COUNTER_SCRIPT = `(() => {
   for (const name of ["WebGLRenderingContext", "WebGL2RenderingContext"]) {
     const proto = globalThis[name]?.prototype;
     if (proto === undefined) continue;
-    for (const method of drawMethods) {
-      const original = proto[method];
-      if (typeof original !== "function" || wrapped.has(original)) continue;
-      wrapped.add(original);
-      proto[method] = function (...args) {
-        if (state.counting) state.pending += 1;
-        return original.apply(this, args);
-      };
-    }
+    for (const method of drawMethods) wrap(proto, method);
+    const getExtension = proto.getExtension;
+    if (typeof getExtension !== "function" || wrapped.has(getExtension)) continue;
+    const countedExtension = function (...args) {
+      const extension = getExtension.apply(this, args);
+      if (extension !== null) {
+        for (const method of [
+          "drawArraysInstancedANGLE", "drawElementsInstancedANGLE",
+          "multiDrawArraysWEBGL", "multiDrawElementsWEBGL",
+          "multiDrawArraysInstancedWEBGL", "multiDrawElementsInstancedWEBGL",
+          "drawArraysInstancedBaseInstanceWEBGL", "drawElementsInstancedBaseVertexBaseInstanceWEBGL",
+          "multiDrawArraysInstancedBaseInstanceWEBGL", "multiDrawElementsInstancedBaseVertexBaseInstanceWEBGL",
+        ]) wrap(extension, method);
+      }
+      return extension;
+    };
+    wrapped.add(countedExtension);
+    proto.getExtension = countedExtension;
   }
   const tick = () => {
     if (state.counting) state.frames.push(state.pending);
@@ -1043,6 +1062,12 @@ async function confirmSettings(session: CdpSession, settings: readonly PerfSetti
   }
 }
 
+/** Keep the measured inputs, breakdown and failures available after either perf command exits. */
+export function writePerfRecord(record: PerfRecord, path: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);
+}
+
 /**
  * Play one game and measure it: warm up, sample frame deltas, snapshot renderer
  * and scene counts, and read the GL objects created after warmup.
@@ -1274,8 +1299,7 @@ async function main(): Promise<void> {
         console.error(`perf: overrides ${measured.record.overrides.join(" ")}`);
       }
       const outPath = resolve(process.cwd(), parsed.args.out ?? join(repoRoot, ".scratch", "perf", `${game}.json`));
-      mkdirSync(dirname(outPath), { recursive: true });
-      writeFileSync(outPath, `${JSON.stringify(measured.record, null, 2)}\n`);
+      writePerfRecord(measured.record, outPath);
       const commit = cleanCommitFor(repoRoot, game);
       if (commit !== null) saveBaseline(baselinePath(repoRoot, game, commit, conditions), measured.record);
       if (json) console.log(JSON.stringify(measured.record, null, 2));

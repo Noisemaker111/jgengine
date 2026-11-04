@@ -10,7 +10,7 @@ import {
   withBrowserSession,
 } from "./browser-lib";
 import { FRAME_GAMES } from "./ci-scope";
-import { measureGame } from "./perf-play";
+import { measureGame, parseSettingSpec, writePerfRecord } from "./perf-play";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import {
   checkBudget,
@@ -37,9 +37,7 @@ import { runPool } from "./type-shard";
  *
  * On any other GPU the frame time is printed and not judged, and only the GL allocations decide.
  * Draws are printed beside the frame time, as the first number to read when a game is slow; they
- * are not a gate. A game over budget when the gate landed is listed in
- * `scripts/perf-known-failing.json`, which only shrinks: a listed game that holds the budget fails
- * until its entry is removed, and an entry the base branch lacks fails.
+ * are not a gate.
  *
  * Games are measured one at a time by default: two games on one GPU would each read the other's
  * frames as their own cost.
@@ -64,7 +62,7 @@ export const GATE_SIZE = { width: 1600, height: 900 } as const;
 
 export interface GateArgs {
   games: string[];
-  /** The tier every game is measured at; undefined measures each game's own tier. */
+  /** The tier every game is measured at; high by default, undefined for draft. */
   quality?: GraphicsTier;
   /** Half viewport at the low tier, for a smoke pass over the gate itself. */
   draft: boolean;
@@ -118,7 +116,7 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
   }
   if (games.length === 0) throw new Error("--games needs at least one game id");
   if (draft && quality !== undefined) throw new Error(`--draft measures the low tier at half viewport, so drop it or drop --quality ${quality}`);
-  return { games, ...(quality === undefined ? {} : { quality }), draft, seconds, jobs };
+  return { games, ...(draft ? {} : { quality: quality ?? "high" }), draft, seconds, jobs };
 }
 
 const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--draft] [--jobs n]
@@ -126,12 +124,11 @@ const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality l
   Fails a game whose p95 frame time is over ${FRAME_BUDGET_MS} ms on the reference GPU
   (${REFERENCE.label}, uncapped clock), or whose frame loop allocates GL objects after
   warmup. On another GPU the frame time is printed, not judged. Draws are printed, not gated.
-  Games over budget today are listed in ${KNOWN_SLOW_PATH}; the list only shrinks.
 
   --games           comma-separated game ids (default: every game under games/ with a web entry)
   --seconds         measured window per game (default ${DEFAULT_SECONDS})
   --quality         the graphics tier each game is measured at (low, medium, high, ultra). Without
-                    it each game runs its own default tier, and every record names the tier it got.
+                    it each game runs high, with automatic quality changes disabled.
   --draft           low tier at half viewport, for a smoke pass you will not quote (frame time not judged)
   --jobs            games measured at once (default ${DEFAULT_JOBS}); more than one shares the GPU, so
                     their frame times read each other's work
@@ -206,8 +203,11 @@ async function main(): Promise<void> {
             warmupMs: WARMUP_MS,
             profile: false,
             frameClock: "uncapped",
+            path: "walk",
+            settings: [parseSettingSpec("graphics.auto=false")],
             ...(draft ? {} : { size: GATE_SIZE }),
           });
+          writePerfRecord(measured.record, join(repoRoot, ".scratch", "perf-gate", `${game}.json`));
           const budget = loaded.budget;
           if (!rasterizerPrinted) {
             rasterizerPrinted = true;

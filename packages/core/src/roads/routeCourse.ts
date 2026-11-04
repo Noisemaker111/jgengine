@@ -493,7 +493,23 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
     capS: number | null;
   }
 
-  function project(route: Route, seg: number, x: number, z: number): Candidate {
+  function blankCandidate(): Candidate {
+    return { route: main, seg: 0, s: 0, offset: 0, dist: 0, excess: 0, inside: false, capS: null };
+  }
+
+  function fill(out: Candidate, route: Route, seg: number, s: number, offset: number, dist: number, excess: number, inside: boolean, capS: number | null): Candidate {
+    out.route = route;
+    out.seg = seg;
+    out.s = s;
+    out.offset = offset;
+    out.dist = dist;
+    out.excess = excess;
+    out.inside = inside;
+    out.capS = capS;
+    return out;
+  }
+
+  function project(route: Route, seg: number, x: number, z: number, out: Candidate): Candidate {
     const ax = route.x[seg]!;
     const az = route.z[seg]!;
     const dx = route.x[seg + 1]! - ax;
@@ -513,53 +529,109 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
     const pastEnd = seg === route.x.length - 2 && raw > 1;
     if (beforeStart || pastEnd) {
       const along = beforeStart ? -raw * len : (raw - 1) * len;
-      return { route, seg, s, offset: lateral, dist, excess: Math.max(along, Math.abs(lateral) - hw), inside: false, capS: beforeStart ? 0 : route.length };
+      return fill(out, route, seg, s, lateral, dist, Math.max(along, Math.abs(lateral) - hw), false, beforeStart ? 0 : route.length);
     }
     // Clamped onto an interior vertex (the outside of a bend): the distance, not the perpendicular, is the offset.
     // Past a vertex by more than a segment is another stretch's business (or behind an end cap).
     const overrun = (raw < 0 ? -raw : raw > 1 ? raw - 1 : 0) * len;
     const offset = t === raw ? lateral : (lateral < 0 ? -1 : 1) * dist;
-    return { route, seg, s, offset, dist, excess: Math.max(dist - hw, overrun - len + 0.001), inside: dist <= hw && overrun <= len, capS: null };
+    return fill(out, route, seg, s, offset, dist, Math.max(dist - hw, overrun - len + 0.001), dist <= hw && overrun <= len, null);
   }
 
-  function candidates(x: number, z: number): Candidate[] {
+  // Every lookup projects onto dozens of segments, many times a frame per kart. The candidates live
+  // in one pool, refilled by each lookup: a lookup reads its winner before the next lookup starts.
+  const pool: Candidate[] = [];
+  function slot(index: number): Candidate {
+    const existing = pool[index];
+    if (existing !== undefined) return existing;
+    const made = blankCandidate();
+    pool.push(made);
+    return made;
+  }
+
+  /** Projects onto the segments near (x, z) into the pool; returns how many it filled. */
+  function candidates(x: number, z: number): number {
     const list = grid.get(cellKey(Math.floor(x / GRID_CELL), Math.floor(z / GRID_CELL)));
-    if (list === undefined) return [];
-    return list.map((code) => project(routes[Math.floor(code / 1_000_000)]!, code % 1_000_000, x, z));
+    if (list === undefined) return 0;
+    for (let i = 0; i < list.length; i += 1) {
+      const code = list[i]!;
+      project(routes[Math.floor(code / 1_000_000)]!, code % 1_000_000, x, z, slot(i));
+    }
+    return list.length;
   }
 
-  function everything(x: number, z: number): Candidate[] {
-    const out: Candidate[] = [];
-    for (const route of routes) for (let i = 0; i < route.x.length - 1; i += 1) out.push(project(route, i, x, z));
-    return out;
-  }
-
-  const nearest = (list: readonly Candidate[], key: (entry: Candidate) => number): Candidate =>
-    list.reduce((best, entry) => (key(entry) < key(best) ? entry : best));
-
-  function choose(found: readonly Candidate[], hint: CourseFix | null | undefined): Candidate {
-    const inside = found.filter((entry) => entry.inside);
-    const hinted = hint ?? null;
-    if (inside.length > 0) {
-      if (hinted === null) return nearest(inside, (entry) => entry.dist);
-      const same = inside.filter((entry) => entry.route.id === hinted.route);
-      if (same.length > 0) {
-        // Overlapping legs of one route: stay on the stretch the kart was already driving.
-        const local = same.filter((entry) => Math.abs(entry.s - hinted.s) < HINT_WINDOW);
-        return nearest(local.length > 0 ? local : same, (entry) => entry.dist);
+  /** Projects onto every segment of every route into the pool; returns how many it filled. */
+  function everything(x: number, z: number): number {
+    let count = 0;
+    for (const route of routes) {
+      for (let i = 0; i < route.x.length - 1; i += 1) {
+        project(route, i, x, z, slot(count));
+        count += 1;
       }
+    }
+    return count;
+  }
+
+  /** The filters and keys `choose` ranks the pool by. */
+  type Only = "all" | "inside" | "insideOnRoute" | "insideNearHint" | "insideOnJoined" | "nearHint";
+  type By = "dist" | "excess" | "progressGap";
+  let hinted: CourseFix | null = null;
+  let joinedRoute: Route = main;
+
+  function accepts(entry: Candidate, only: Only): boolean {
+    switch (only) {
+      case "all": return true;
+      case "inside": return entry.inside;
+      case "insideOnRoute": return entry.inside && entry.route.id === hinted?.route;
+      case "insideNearHint": return entry.inside && entry.route.id === hinted?.route && Math.abs(entry.s - hinted.s) < HINT_WINDOW;
+      case "insideOnJoined": return entry.inside && entry.route === joinedRoute;
+      case "nearHint": return entry.route.id === hinted?.route && Math.abs(entry.s - hinted.s) < HINT_WINDOW;
+    }
+  }
+
+  function keyOf(entry: Candidate, by: By): number {
+    if (by === "dist") return entry.dist;
+    if (by === "excess") return entry.excess;
+    return Math.abs(progressOn(entry.route, entry.s) - (hinted?.progress ?? 0));
+  }
+
+  /** The first pooled candidate with the smallest key among those `only` accepts, or null when none is. */
+  function nearest(count: number, only: Only, by: By): Candidate | null {
+    let best: Candidate | null = null;
+    let bestKey = Infinity;
+    for (let i = 0; i < count; i += 1) {
+      const entry = pool[i]!;
+      if (!accepts(entry, only)) continue;
+      const key = keyOf(entry, by);
+      if (best === null || key < bestKey) {
+        best = entry;
+        bestKey = key;
+      }
+    }
+    return best;
+  }
+
+  function choose(count: number, hint: CourseFix | null | undefined): Candidate {
+    hinted = hint ?? null;
+    const inside = nearest(count, "inside", "dist");
+    if (inside !== null) {
+      if (hinted === null) return inside;
+      // Overlapping legs of one route: stay on the stretch the kart was already driving.
+      const local = nearest(count, "insideNearHint", "dist");
+      if (local !== null) return local;
+      const same = nearest(count, "insideOnRoute", "dist");
+      if (same !== null) return same;
       // Moving between routes happens at a junction, where the progress on either side agrees.
-      const joined = nearest(inside, (entry) => Math.abs(progressOn(entry.route, entry.s) - hinted.progress));
-      return nearest(
-        inside.filter((entry) => entry.route === joined.route),
-        (entry) => entry.dist,
-      );
+      joinedRoute = nearest(count, "inside", "progressGap")?.route ?? inside.route;
+      return nearest(count, "insideOnJoined", "dist") ?? inside;
     }
     if (hinted !== null) {
-      const same = found.filter((entry) => entry.route.id === hinted.route && Math.abs(entry.s - hinted.s) < HINT_WINDOW);
-      if (same.length > 0) return nearest(same, (entry) => entry.excess);
+      const same = nearest(count, "nearHint", "excess");
+      if (same !== null) return same;
     }
-    return nearest(found, (entry) => entry.excess);
+    const any = nearest(count, "all", "excess");
+    if (any === null) throw new Error("route course: a lookup found no segment");
+    return any;
   }
 
   function fixOf(candidate: Candidate): CourseFix {
@@ -584,8 +656,11 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
 
   function locateCandidate(x: number, z: number, hint?: CourseFix | null): Candidate {
     const near = candidates(x, z);
-    return choose(near.length > 0 ? near : everything(x, z), hint);
+    return choose(near > 0 ? near : everything(x, z), hint);
   }
+
+  /** The clamp's re-projection: outside the pool, so the winner it was clamped from stays intact. */
+  const reprojected = blankCandidate();
 
   const course: RouteCourse = {
     length: main.length,
@@ -609,7 +684,7 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
       return fixOf(locateCandidate(x, z, hint));
     },
     contains(x, z) {
-      return candidates(x, z).some((entry) => entry.inside);
+      return nearest(candidates(x, z), "inside", "dist") !== null;
     },
     clamp(x, z, hint) {
       const found = locateCandidate(x, z, hint);
@@ -618,7 +693,7 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
       const offset = Math.max(-hw, Math.min(hw, found.offset));
       const s = found.capS === null ? found.s : found.capS === 0 ? Math.min(found.route.length, WALL_EPSILON) : Math.max(0, found.route.length - WALL_EPSILON);
       const point = pointOn(found.route, s, offset);
-      return { x: point.x, z: point.z, fix: fixOf(project(found.route, segmentAt(found.route, s), point.x, point.z)) };
+      return { x: point.x, z: point.z, fix: fixOf(project(found.route, segmentAt(found.route, s), point.x, point.z, reprojected)) };
     },
     spansAt(fix, time = 0, tag) {
       const out: CourseSpan[] = [];
@@ -644,7 +719,9 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
             const offset = (side === "left" ? 1 : -1) * (centre.halfWidth + inset);
             const post = pointOn(entry, s, offset);
             const probe = pointOn(entry, s, (side === "left" ? 1 : -1) * (centre.halfWidth + 0.5));
-            const opening = candidates(probe.x, probe.z).some((c) => c.inside && c.route !== entry);
+            const near = candidates(probe.x, probe.z);
+            let opening = false;
+            for (let i = 0; i < near && !opening; i += 1) opening = pool[i]!.inside && pool[i]!.route !== entry;
             if (!opening) out.push({ ...post, route: entry.id, s, side });
           }
         }
@@ -743,9 +820,8 @@ export function buildRouteCourse(spec: RouteCourseSpec): RouteCourse {
       const shoulder = Math.max(0, options.shoulder ?? 4);
       const falloff = Math.max(0.001, Math.min(GRID_REACH - shoulder, options.falloff ?? 16));
       return (x, z) => {
-        const near = candidates(x, z);
-        if (near.length === 0) return base(x, z);
-        const best = nearest(near, (entry) => entry.excess);
+        const best = nearest(candidates(x, z), "all", "excess");
+        if (best === null) return base(x, z);
         const point = pointOn(best.route, best.s, 0);
         const blend = smoothstep((best.excess - shoulder) / falloff);
         return blend <= 0 ? point.elevation : point.elevation + (base(x, z) - point.elevation) * blend;

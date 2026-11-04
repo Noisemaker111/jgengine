@@ -167,6 +167,21 @@ export function staticPoolCellAt(x: number, z: number, cell = STATIC_POOL_CELL):
   return `${Math.floor(x / cell)},${Math.floor(z / cell)}`;
 }
 
+const modelJsons = new WeakMap<ModelConfig, string>();
+
+/**
+ * A model's JSON, written once per model object: regrouping runs on every placement or removal, and
+ * serialising each prop's model again made it cost the whole world each time.
+ */
+function modelJson(model: ModelConfig): string {
+  let json = modelJsons.get(model);
+  if (json === undefined) {
+    json = JSON.stringify(model);
+    modelJsons.set(model, json);
+  }
+  return json;
+}
+
 /** Smallest same-model group a cell batches on its own. @internal */
 export const STATIC_BATCH_MIN = 2;
 
@@ -195,7 +210,8 @@ export function groupStaticObjects(candidates: readonly StaticObjectCandidate[],
       singles.push(candidate);
       continue;
     }
-    const modelKey = JSON.stringify([object.catalogId, model]);
+    const json = modelJson(model);
+    const modelKey = `[${JSON.stringify(object.catalogId)},${json}]`;
     let entry = models.get(modelKey);
     if (entry === undefined) {
       entry = { model, cells: new Map() };
@@ -203,7 +219,7 @@ export function groupStaticObjects(candidates: readonly StaticObjectCandidate[],
     }
     const cellX = Math.floor(object.position[0] / cell);
     const cellZ = Math.floor(object.position[2] / cell);
-    const cellKey = JSON.stringify([object.catalogId, cellX, cellZ, model]);
+    const cellKey = `[${JSON.stringify(object.catalogId)},${cellX},${cellZ},${json}]`;
     let members = entry.cells.get(cellKey);
     if (members === undefined) {
       members = { center: [(cellX + 0.5) * cell, (cellZ + 0.5) * cell], members: [] };
@@ -225,7 +241,7 @@ export function groupStaticObjects(candidates: readonly StaticObjectCandidate[],
       else lone.push(...members);
     }
     if (full.length === 0) {
-      if (lone.length >= STATIC_BATCH_MIN) keep({ key: JSON.stringify([lone[0]!.object.catalogId, "lone", model]), model, objects: lone.map((member) => member.object) });
+      if (lone.length >= STATIC_BATCH_MIN) keep({ key: `[${JSON.stringify(lone[0]!.object.catalogId)},"lone",${modelJson(model)}]`, model, objects: lone.map((member) => member.object) });
       else singles.push(...lone);
       continue;
     }

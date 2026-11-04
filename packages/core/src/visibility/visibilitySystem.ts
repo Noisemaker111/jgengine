@@ -179,8 +179,18 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     return record;
   }
 
-  function maintain(): Renderable[] {
-    const alwaysVisibleList: Renderable[] = [];
+  function pruneUnseen(record: ObjRecord, id: string): void {
+    if (record.lastSeen === updateCounter) return;
+    index.remove(id);
+    bounds.delete(id);
+    records.delete(id);
+    consideredStamp.delete(id);
+  }
+
+  /** Refilled each update, so the per-frame pass over every object allocates nothing. */
+  const alwaysVisibleList: Renderable[] = [];
+  function maintain(): readonly Renderable[] {
+    alwaysVisibleList.length = 0;
     for (const r of options.renderables()) {
       const record = recordFor(r);
       if (!record.indexed) {
@@ -190,14 +200,9 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       stats.totalObjects += 1;
       if (record.alwaysVisible) alwaysVisibleList.push(r);
     }
-    // Prune objects that vanished this frame.
-    for (const [id, record] of records) {
-      if (record.lastSeen === updateCounter) continue;
-      index.remove(id);
-      bounds.delete(id);
-      records.delete(id);
-      consideredStamp.delete(id);
-    }
+    // Prune objects that vanished this frame. `forEach` hands over each entry without the
+    // per-entry pair a `for…of` over the map allocates, every frame, for every object in the world.
+    records.forEach(pruneUnseen);
     return alwaysVisibleList;
   }
 
@@ -207,11 +212,13 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
     return true;
   }
 
-  function distanceLimits(camera: CameraVisibilityContext, resolved: ResolvedOverrides): { min: number; max: number } {
-    const min = resolved.minRenderDistance ?? settings.defaultMinRenderDistance;
-    let max = resolved.maxRenderDistance ?? settings.defaultMaxRenderDistance;
-    if (camera.maxRenderDistance !== undefined) max = Math.min(max, camera.maxRenderDistance);
-    return { min, max };
+  /** Written by `distanceLimits` for every candidate, every frame: one object, read before the next call. */
+  const limitScratch = { min: 0, max: 0 };
+  function distanceLimits(camera: CameraVisibilityContext, resolved: ResolvedOverrides): { readonly min: number; readonly max: number } {
+    limitScratch.min = resolved.minRenderDistance ?? settings.defaultMinRenderDistance;
+    limitScratch.max = resolved.maxRenderDistance ?? settings.defaultMaxRenderDistance;
+    if (camera.maxRenderDistance !== undefined) limitScratch.max = Math.min(limitScratch.max, camera.maxRenderDistance);
+    return limitScratch;
   }
 
   function evaluateCamera(camera: CameraVisibilityContext): void {

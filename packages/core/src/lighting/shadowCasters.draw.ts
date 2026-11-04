@@ -44,10 +44,51 @@ export function isUnderShadowCasterSize(mesh: THREE.Mesh, minRadius = MIN_SHADOW
   return radius !== null && radius < minRadius;
 }
 
+const depthMaterials = new WeakMap<THREE.Material, Map<string, THREE.MeshDepthMaterial>>();
+
+/** What about a mesh picks a different depth shader: instancing, batching, skinning, morphing. */
+function depthKind(mesh: THREE.Mesh): string {
+  const instanced = (mesh as THREE.InstancedMesh).isInstancedMesh === true;
+  const batched = (mesh as THREE.BatchedMesh).isBatchedMesh === true;
+  const skinned = (mesh as THREE.SkinnedMesh).isSkinnedMesh === true;
+  const morphed = mesh.geometry?.morphAttributes?.["position"] !== undefined;
+  return `${instanced ? "i" : ""}${instanced && (mesh as THREE.InstancedMesh).instanceColor !== null ? "c" : ""}${batched ? "b" : ""}${skinned ? "s" : ""}${morphed ? "m" : ""}`;
+}
+
+/**
+ * Give a shadow caster its own depth material, one per caster material and mesh kind. three draws
+ * every caster without one through a single shared depth material and copies each caster's map and
+ * side into it, so a pass that alternates textured, instanced, batched and plain casters rebuilds
+ * that material's program on almost every draw. three still copies the live map, side and alpha
+ * test across each draw, so the shadow stays what the caster's material says.
+ * @internal
+ */
+export function giveStableShadowDepth(mesh: THREE.Mesh): void {
+  if (mesh.customDepthMaterial !== undefined || Array.isArray(mesh.material)) return;
+  const material = mesh.material;
+  let byKind = depthMaterials.get(material);
+  if (byKind === undefined) {
+    const made = new Map<string, THREE.MeshDepthMaterial>();
+    byKind = made;
+    depthMaterials.set(material, made);
+    material.addEventListener("dispose", () => {
+      for (const depth of made.values()) depth.dispose();
+      depthMaterials.delete(material);
+    });
+  }
+  const kind = depthKind(mesh);
+  let depth = byKind.get(kind);
+  if (depth === undefined) {
+    depth = new THREE.MeshDepthMaterial();
+    byKind.set(kind, depth);
+  }
+  mesh.customDepthMaterial = depth;
+}
+
 /**
  * Clear `castShadow` on attached meshes under `minRadius` as nodes stream in, and put the
  * authored value back when they leave. Only clears: a mesh the game keeps out of the pass
- * is never turned back on.
+ * is never turned back on. The casters it keeps get a stable depth material ({@link giveStableShadowDepth}).
  * @internal
  */
 export function cullSmallShadowCasters(root: THREE.Object3D, minRadius = MIN_SHADOW_CASTER_RADIUS): ShadowCasterCull {
@@ -58,7 +99,10 @@ export function cullSmallShadowCasters(root: THREE.Object3D, minRadius = MIN_SHA
     const mesh = node as THREE.Mesh;
     if (mesh.isMesh !== true || cleared.has(mesh) || mesh.castShadow !== true) return;
     node.updateWorldMatrix(true, false);
-    if (!isUnderShadowCasterSize(mesh, minRadius)) return;
+    if (!isUnderShadowCasterSize(mesh, minRadius)) {
+      giveStableShadowDepth(mesh);
+      return;
+    }
     cleared.set(mesh, mesh.castShadow);
     mesh.castShadow = false;
   };

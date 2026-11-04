@@ -86,20 +86,27 @@ export function buildCullingDriver(ctx: GameContext, config: VisibilityConfig | 
     return entry.renderable;
   }
 
-  function* renderables(): Iterable<Renderable> {
+  function forgetUnseen(entry: Entry, id: string): void {
+    if (entry.seen !== frame) entries.delete(id);
+  }
+
+  // Refilled every frame and pruned with `forEach`: a generator and a `for…of` over the map would
+  // allocate an iterator result per object, per frame, which grows with the world, not the view.
+  const list: Renderable[] = [];
+  function renderables(): readonly Renderable[] {
     frame += 1;
+    list.length = 0;
     for (const entity of ctx.scene.entity.list()) {
       sphereFor("entity", entity.name, undefined, ENTITY_FALLBACK.radius, ENTITY_FALLBACK.offsetY);
-      yield update(entity.id, entity.position, entity.rotationY, config?.entities?.[entity.name], "entity");
+      list.push(update(entity.id, entity.position, entity.rotationY, config?.entities?.[entity.name], "entity"));
     }
     for (const object of ctx.scene.object.list()) {
       const scale = object.visual?.scale;
       sphereFor("object", object.catalogId, scaleSize(scale), objectRadius(scale), 0.5);
-      yield update(object.instanceId, object.position, object.rotationY, config?.objects?.[object.catalogId], "object");
+      list.push(update(object.instanceId, object.position, object.rotationY, config?.objects?.[object.catalogId], "object"));
     }
-    for (const [id, entry] of entries) {
-      if (entry.seen !== frame) entries.delete(id);
-    }
+    entries.forEach(forgetUnseen);
+    return list;
   }
 
   const system = createVisibilitySystem({

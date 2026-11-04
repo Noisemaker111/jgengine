@@ -110,6 +110,11 @@ describe("checkBudget", () => {
     expect(violation?.message).toContain("p95 frame unavailable");
   });
 
+  test("rejects a stale renderer snapshot when the measured frames were not drawing", () => {
+    const [violation] = checkBudget(record(REFERENCE_RUN, { draws: 894, drawsFrame: 0, drawsFrames: 260 }), BUDGET);
+    expect(violation?.message).toContain("stale renderer snapshot cannot prove play");
+  });
+
   test("a report still inside its warmup cannot be judged on post-warmup GL counts", () => {
     const warming = record({
       telemetry: { source: "in-page", warmedUp: false, ageMs: 1_900, buildMs: 0.7, heapBytes: null },
@@ -211,8 +216,8 @@ describe("loadBudget", () => {
 });
 
 describe("parseGateArgs", () => {
-  test("defaults to every playable game at each game's own tier, one at a time so no two share the GPU", () => {
-    expect(parseGateArgs([])).toEqual({ games: [...FRAME_GAMES], draft: false, seconds: 6, jobs: 1 });
+  test("defaults to every playable game at high quality, one at a time so no two share the GPU", () => {
+    expect(parseGateArgs([])).toEqual({ games: [...FRAME_GAMES], quality: "high", draft: false, seconds: 6, jobs: 1 });
     expect(parseGateArgs([]).games).toContain("fernwild");
   });
 

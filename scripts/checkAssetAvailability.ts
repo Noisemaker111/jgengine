@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { packExportName } from "../packages/assets/src/manifest";
+import { importedPackNames, packExportName } from "../packages/assets/src/manifest";
 import { sources } from "../packages/assets/src/sources";
 
 /**
@@ -83,9 +83,6 @@ function sourceFilesUnder(dir: string): string[] {
   return out;
 }
 
-// The named imports of the generated pack module: `import { kaykitDungeon, ... } from "@jgengine/assets/generated/packs"`.
-const PACK_IMPORT = /import\s*\{([^}]*)\}\s*from\s*["']@jgengine\/assets\/generated\/packs["']/g;
-const IMPORT_NAME = /([A-Za-z_$][\w$]*)(?:\s+as\s+[A-Za-z_$][\w$]*)?/g;
 const MODELS_LITERAL = /\/models\/([a-zA-Z0-9_-]+)\//g;
 
 /** Every declared model source by the name its pack is exported under. */
@@ -104,11 +101,9 @@ export function packReferencesForGame(game: string, srcDir: string): PackReferen
   };
   for (const file of sourceFilesUnder(srcDir)) {
     const text = readFileSync(file, "utf8");
-    for (const match of text.matchAll(PACK_IMPORT)) {
-      for (const name of (match[1] ?? "").matchAll(IMPORT_NAME)) {
-        const pack = sourceByPackName.get(name[1] ?? "");
-        if (pack !== undefined) add(pack, "pack-import");
-      }
+    for (const name of importedPackNames(text)) {
+      const pack = sourceByPackName.get(name);
+      if (pack !== undefined) add(pack, "pack-import");
     }
     for (const match of text.matchAll(MODELS_LITERAL)) add(match[1]!, "path-literal");
   }

@@ -70,6 +70,12 @@ export function poseTimeOffset(id: string): number {
   return (hashString(id) % 1000) / 1000 + 0.05;
 }
 
+function sendDrawn(attribute: THREE.BufferAttribute, count: number): void {
+  attribute.clearUpdateRanges();
+  attribute.addUpdateRange(0, count * attribute.itemSize);
+  attribute.needsUpdate = true;
+}
+
 /**
  * Writes one frame of instances for a batch and returns how many it drew. Slots are compacted from
  * zero every frame and `ids` is truncated to the drawn range, so a character that left the batch or
@@ -108,10 +114,12 @@ export function writeCrowdBatch(frame: CrowdBatchFrame): number {
   }
   ids.length = count;
   mesh.count = count;
-  mesh.instanceMatrix.needsUpdate = true;
-  if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
-  if (play !== null) play.needsUpdate = true;
+  // Only the drawn slots go to the GPU, and nothing when none are drawn: the rest of the buffer is
+  // never read, and a full upload per batch per frame costs whatever the capacity is.
   if (count > 0) {
+    sendDrawn(mesh.instanceMatrix, count);
+    if (mesh.instanceColor !== null) sendDrawn(mesh.instanceColor, count);
+    if (play !== null) sendDrawn(play, count);
     // One batch spans every drawn member, so its cull sphere has to follow them; three cannot cull
     // an InstancedMesh per instance.
     const sphere = mesh.boundingSphere ?? (mesh.boundingSphere = new THREE.Sphere());

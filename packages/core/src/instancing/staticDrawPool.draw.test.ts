@@ -212,6 +212,24 @@ test("releasing slots frees instances and geometry, and the last one removes the
   expect(pool.batches()).toBe(0);
 });
 
+test("a batch emptied and refilled straight away keeps its mesh and material, so nothing relinks", () => {
+  const scene = new THREE.Scene();
+  const pool = new StaticDrawPool(scene);
+  const first = pool.acquire({ geometry: box(), material: palette() }, "0,0", 3);
+  const mesh = first?.mesh;
+  const material = mesh?.material;
+  let disposed = false;
+  if (material instanceof THREE.Material) material.addEventListener("dispose", () => (disposed = true));
+  first?.release();
+  const again = pool.acquire({ geometry: cylinder(), material: palette() }, "0,0", 2);
+  expect(again?.mesh).toBe(mesh);
+  expect(again?.mesh.material).toBe(material);
+  expect(pooledMeshes(scene)).toEqual(mesh === undefined ? [] : [mesh]);
+  expect(disposed).toBe(false);
+  pool.dispose();
+  expect(disposed).toBe(true);
+});
+
 test("a batch grows its shared buffers as models join it", () => {
   const scene = new THREE.Scene();
   const pool = new StaticDrawPool(scene);

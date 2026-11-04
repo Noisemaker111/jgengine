@@ -110,6 +110,17 @@ export function packExportName(sourceId: string): string {
   return name;
 }
 
+/** The original export names imported from `generated/packs`, including imports renamed locally. */
+export function importedPackNames(text: string): ReadonlySet<string> {
+  const found = new Set<string>();
+  for (const match of text.matchAll(/import\s*\{([^}]*)\}\s*from\s*["']@jgengine\/assets\/generated\/packs["']/g)) {
+    for (const name of (match[1] ?? "").matchAll(/([A-Za-z_$][\w$]*)(?:\s+as\s+[A-Za-z_$][\w$]*)?/g)) {
+      if (name[1] !== undefined) found.add(name[1]);
+    }
+  }
+  return found;
+}
+
 /** A source-owned model or sprite id, with optional offline model measurements. */
 export interface IndexEntry {
   id: string;

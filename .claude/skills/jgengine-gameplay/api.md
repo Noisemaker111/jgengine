@@ -2853,6 +2853,15 @@
 - `TriggeredRuleState` (interface): interface TriggeredRuleState — Serializable runtime state — everything that changes future triggers. Rules travel with it.
 - `createTriggeredRuleEngine` (function): function createTriggeredRuleEngine(rules: readonly TriggeredRule[] = []): TriggeredRuleEngine — Create an empty triggered-rule engine. Rules are added as data; dispatching an event returns the firings the caller applies to its own effect system. Time is caller-supplied (`now` in ms), so the engine is deterministic and drives equally from a fixed-step loop or a save-restored timeline.
 
+## @jgengine/core/run/lingering
+
+- `LINGER_MS` (const): const LINGER_MS: 2000 — How long a resource whose last user left waits before it is freed.
+- `Lingering` (class): class Lingering<K, V> — Resources whose last user left, held a moment before they are freed. A draw that is torn down and built again a frame later (a batch whose members changed, a field whose inputs were rebuilt) takes back the same GPU resource, and so its linked shaders and baked textures, instead of freeing them and paying for the link or bake again mid-play.
+
+## @jgengine/core/run/nextFrame.draw
+
+- `nextFrame` (function): function nextFrame(): Promise<void> — Resolves on the next animation frame, or a zero-delay timer in tests and SSR.
+
 ## @jgengine/core/run/sessionLoop
 
 - `SessionChoice` (interface): interface SessionChoice<T> — One option the next session could open with, in the shape a choice screen shows.

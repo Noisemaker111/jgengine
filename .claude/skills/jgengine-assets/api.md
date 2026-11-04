@@ -99,6 +99,7 @@
 - `generatedSpriteBySource` (const): const generatedSpriteBySource: Record<string, IndexEntry[]> — Pulled sprite/icon entries grouped by source id.
 - `generatedSpriteIndex` (const): const generatedSpriteIndex: IndexEntry[] — Every pulled sprite/icon entry across all sources, flattened.
 - `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
+- `importedPackNames` (function): function importedPackNames(text: string): ReadonlySet<string> — The original export names imported from `generated/packs`, including imports renamed locally.
 - `indexSpriteSourceDir` (function): function indexSpriteSourceDir(source: AssetSource, dir: string): IndexEntry[] — Walks a pulled sprite-pack directory and returns one `IndexEntry` per SVG/PNG, deduped by filename.
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
 - `kaykitSources` (const): const kaykitSources: readonly AssetSource[] — ⚠ undocumented
@@ -834,6 +835,7 @@
 - `PolyPizzaBundleDownload` (interface): interface PolyPizzaBundleDownload — A Poly Pizza bundle (the `poly.pizza/bundle/<slug>` path), zipped on download as one `.glb` per model. Every model's licence must match the source's.
 - `ScrapeDownload` (interface): interface ScrapeDownload { scrape: string } — ⚠ undocumented
 - `SingleAsset` (interface): interface SingleAsset { id: string; url: string; license: string; author: string; categories: readonly string[] } — ⚠ undocumented
+- `importedPackNames` (function): function importedPackNames(text: string): ReadonlySet<string> — The original export names imported from `generated/packs`, including imports renamed locally.
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
 - `packExportName` (function): function packExportName(sourceId: string): string — The name a pack is exported under in `generated/packs`: its source id in camelCase (`kaykit-dungeon` → `kaykitDungeon`).
 

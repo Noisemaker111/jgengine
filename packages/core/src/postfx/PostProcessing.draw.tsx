@@ -672,6 +672,7 @@ export function PostProcessing({
     measureComposerPasses(built.composer);
     for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.collect();
     built.composer.render(delta);
+    for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.frameEnd();
     advanceRevealFade(built, delta);
   }, 1);
 
