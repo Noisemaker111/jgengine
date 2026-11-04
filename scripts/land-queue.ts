@@ -28,7 +28,7 @@ import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
 import { checkoutGitHub, type GhResult, type GitHub, type Pull } from "./github";
 import { needsRegenerate, rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
-import { MERGE_ATTEMPTS, QUEUE_LABEL, baseMoved, checkVerdict, duration, formatFailures, runAt } from "./land";
+import { MERGE_ATTEMPTS, QUEUE_LABEL, baseMoved, checkVerdict, duration, formatFailures, retryServerErrors, runAt } from "./land";
 import type { GhCheck, Run } from "./land";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -508,7 +508,7 @@ function main(): void {
 
   const result = drain(args, {
     github: checkoutGitHub(root),
-    git: (cwd, gitArgs) => run("git", cwd, gitArgs),
+    git: (cwd, gitArgs) => retryServerErrors((args) => run("git", cwd, args), pause)(gitArgs),
     pause,
     now: Date.now,
     log: (line) => console.log(`land:queue: ${line}`),

@@ -913,6 +913,24 @@ export interface SyncResult {
   refusal: string | null;
 }
 
+const SERVER_ERROR = /Internal Server Error|Service Unavailable|Bad Gateway|HTTP 5\d\d|error: 5\d\d/i;
+export const SERVER_ERROR_ATTEMPTS = 3;
+
+/**
+ * `git` that runs a command again when GitHub answered it with a server error: a push or fetch
+ * GitHub refuses with a 500 goes through the same command a few seconds later (4 Nov, twice in a
+ * row on #2947). Any other failure, a rejected push included, is returned at once.
+ */
+export function retryServerErrors(git: Git, pause: (ms: number) => void = sleep): Git {
+  return (args) => {
+    for (let attempt = 1; ; attempt += 1) {
+      const result = git(args);
+      if (result.status === 0 || attempt >= SERVER_ERROR_ATTEMPTS || !SERVER_ERROR.test(details(result))) return result;
+      pause(5_000 * attempt);
+    }
+  };
+}
+
 /**
  * Push the branch, rebase it onto `origin/<base>`, and push it again when the rebase moved it.
  * Land owns a branch only once its own push succeeds; a branch that already exists on the remote
@@ -924,8 +942,11 @@ export function syncOntoBase(options: {
   git: Git;
   /** Runs a generator in this checkout; a rebase that resolved generated files reruns them. */
   exec?: (command: readonly string[]) => Run;
+  /** Waits between tries of a command GitHub answered with a server error. */
+  pause?: (ms: number) => void;
 }): SyncResult {
-  const { branch, base, git: runGit } = options;
+  const { branch, base } = options;
+  const runGit = retryServerErrors(options.git, options.pause);
   const exec = options.exec ?? ((command: readonly string[]): Run => run(command[0]!, command.slice(1), 20 * 60_000));
 
   let pushed = runGit(["push", "-u", "origin", "HEAD"]);

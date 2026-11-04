@@ -33,6 +33,8 @@ import {
   commitsBody,
   noteLines,
   syncOntoBase,
+  retryServerErrors,
+  SERVER_ERROR_ATTEMPTS,
 } from "./land";
 import type { FragmentFile, GhCheck, LandIo, LockWait, Run } from "./land";
 import { attemptsOf, judgeChecks } from "./ci-status";
@@ -1159,4 +1161,26 @@ test("a reused PR keeps its body and gets the Bends section the diff now shows",
   });
   expect(pr).toEqual({ number: 12, url: `https://github.com/${LAND_REPO}/pull/12` });
   expect(edits(api).map((call) => call.fields)).toEqual([{ body: "Context.\n\n## Bends\n\n- test skipped: `a.test.ts` - test.skip\n" }]);
+});
+
+test("a git command GitHub answers with a server error runs again; any other failure returns at once", () => {
+  const serverError: Run = { status: 1, stdout: "", stderr: "remote: Internal Server Error\n ! [remote rejected] HEAD -> agent/x (Internal Server Error)" };
+  const rejected: Run = { status: 1, stdout: "", stderr: " ! [rejected] HEAD -> agent/x (fetch first)" };
+  const answers = (list: Run[]) => {
+    const calls: string[][] = [];
+    return { calls, git: (args: string[]) => { calls.push(args); return list[calls.length - 1] ?? { status: 0, stdout: "", stderr: "" }; } };
+  };
+  const pauses: number[] = [];
+  const blip = answers([serverError]);
+  expect(retryServerErrors(blip.git, (ms) => pauses.push(ms))(["push"]).status).toBe(0);
+  expect(blip.calls.length).toBe(2);
+  expect(pauses.length).toBe(1);
+
+  const down = answers(Array.from({ length: SERVER_ERROR_ATTEMPTS }, () => serverError));
+  expect(retryServerErrors(down.git, () => {})(["push"])).toEqual(serverError);
+  expect(down.calls.length).toBe(SERVER_ERROR_ATTEMPTS);
+
+  const refused = answers([rejected]);
+  expect(retryServerErrors(refused.git, () => {})(["push"])).toEqual(rejected);
+  expect(refused.calls.length).toBe(1);
 });
