@@ -92,8 +92,9 @@ export function GameUI() {
   const replacing = offeredPart ? snapshot.installed[offeredPart.slot] : null;
   const deliberateSwap = offeredPart !== null && replacing !== null && (offeredPart.slot === "engine" || offeredPart.slot === "frame");
   const touch = (action: string, label: string, icon: GameIconName | null, kind: string) => <button type="button" className="fd-pad" data-kind={kind} aria-label={label} onPointerDown={e => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); drive?.press(action); }} onPointerUp={() => drive?.release(action)} onPointerCancel={() => drive?.release(action)} onLostPointerCapture={() => drive?.release(action)}>{icon === null ? null : <GameIcon name={icon} size={kind === "steer" ? 30 : 20} />}{kind === "steer" ? null : <span>{label}</span>}</button>;
-  const blocked = snapshot.pose.blockedByGate;
-  const call = launchCue(snapshot) ?? (blocked ? snapshot.tuning.jumpPower > 0 && nextGate?.requirement === "jump" ? "JUMP TO CLEAR THE STACK" : "MISSING ROUTE PART" : jumpNow ? "JUMP NOW - SPACE" : nextGate?.requirement === "jump" ? "JUMP ON THE TEAL MARKS" : nextGate ? "KEEP THE PLOW POINTED FORWARD" : "BRING IT HOME");
+  const advice = snapshot.gateAdvice;
+  const blocked = advice !== null;
+  const call = launchCue(snapshot) ?? (advice !== null ? advice.call : jumpNow ? "JUMP NOW - SPACE" : nextGate?.requirement === "jump" ? "JUMP ON THE TEAL MARKS" : nextGate ? "KEEP THE PLOW POINTED FORWARD" : "BRING IT HOME");
   const signTone = jumpNow ? "launch" : blocked ? "stop" : !nextGate ? "home" : nextGate.requirement === "jump" ? "jump" : "plow";
   const speedDelta = offeredPart && replacing ? (claimedChange(offeredPart, "topSpeed") - claimedChange(replacing, "topSpeed")) * 3.6 : 0;
   return <>
@@ -101,7 +102,7 @@ export function GameUI() {
     <div className="fd-ui" ref={uiRef}>
     {snapshot.phase === "running" && <><HudCanvas layout={layout} editChord={false}>
       <HudPanel id="tower" anchor="top-left" chip="standings" interactive={false}><TimingTower race={snapshot.race} event={snapshot.event} ghost={snapshot.ghost}/></HudPanel>
-      <HudPanel id="sign" anchor="top" priority="critical" interactive={false}><GateSign eyebrow={`${nextGate ? `NEXT ${nextGate.requirement === "jump" ? "JUMP STACK" : "PLOW WALL"}` : "EXIT GATE"} / ${Math.ceil(Math.max(0, distance))}m`} call={call} sub={nextGate?.label ?? `${track.exitAt}m escape line`} tone={signTone}/></HudPanel>
+      <HudPanel id="sign" anchor="top" priority="critical" interactive={false}><GateSign eyebrow={`${nextGate ? `NEXT ${nextGate.requirement === "jump" ? "JUMP STACK" : "PLOW WALL"}` : "EXIT GATE"} / ${Math.ceil(Math.max(0, distance))}m`} call={call} sub={advice?.sub ?? nextGate?.label ?? `${track.exitAt}m escape line`} tone={signTone}/></HudPanel>
       <HudPanel id="rail" anchor="top-right" priority="critical">
         <nav className="fd-dash-rail" aria-label="Run">
           <DashTab icon="pause" label="Pause run" keyCap="P" onPress={togglePause}/>

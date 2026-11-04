@@ -20,7 +20,7 @@ import { surfaceAt, type SurfaceSample } from "../vehicle/surface";
 import { createOpponentField, RIVAL_DEFS, type OpponentField, type RivalBody } from "../race/opponents";
 import { createStandings, PLAYER_RACER_ID, type RaceSnapshot, type Standings } from "../race/standings";
 import { grantPickup, nearestUncollected, PICKUPS, type PickupDef } from "./pickups";
-import { gateSatisfied, gateStanding, inLane } from "../route/gates";
+import { gateAdvice, gateSatisfied, gateStanding, inLane, type GateAdvice, type RouteGate } from "../route/gates";
 import { createVehicleController, type DriveAxis, type VehicleController, type VehicleTelemetry } from "../vehicle/controller";
 import { NEAR_MISS_ENTER, NEAR_MISS_EXIT } from "./constants";
 import { zoneProgress, type TrackZone } from "../zones/catalog";
@@ -139,6 +139,8 @@ export interface SessionSnapshot {
   compactorZ: number;
   compactorGap: number;
   compactorSurge: CompactorSurge | null;
+  /** Why the wall the kart is stopped at will not open and how to get through, or null when nothing stops it. */
+  gateAdvice: GateAdvice | null;
   installed: Readonly<Record<PartSlotId, DriftFoundryPartDef | null>>;
   tuning: KartTuning;
   /** Ground under the kart: which yard, and how much grip it is giving. */
@@ -200,6 +202,8 @@ export const runSessionStore = defineStore<RunSession>("runSession", () => creat
 const TICKER_LIMIT = 6;
 /** A train on a crossing throws a kart this far back up the road. */
 const TRAIN_KNOCKBACK = 4;
+/** A kart this close to a wall it cannot open is stopped at it. */
+const WALL_REACH = 3;
 
 /** The track an event runs on; an unknown id falls back to Row Six. */
 export function trackOfEvent(event: YardEvent): Track {
@@ -232,6 +236,10 @@ export function createRunSession(
   let installed: readonly DriftFoundryPartDef[] = [];
   let collected = new Set<string>();
   let gateAnnounced = new Set<string>();
+  /** Advice the radio already gave, by gate and call, so a kart leaning on a wall hears it once. */
+  let advised = new Set<string>();
+  /** The wall that stopped the kart and whether a part is what it lacks; null when nothing has. */
+  let stuckAt: { gateId: string; missing: boolean } | null = null;
   let announcedSurge: string | null = null;
   let armorSaveArmed = false;
   let armorSavesUsed = 0;
@@ -403,6 +411,47 @@ export function createRunSession(
     }
   }
 
+  /** The next standing barricade on the kart's road. */
+  function gateAhead(): RouteGate | null {
+    const run = runOf(pose);
+    const route = pose.route ?? "main";
+    let found: RouteGate | null = null;
+    for (const gate of track.gates) {
+      if (gate.route !== route || !gateStanding(gate, runTime) || gate.atZ < run - 1) continue;
+      if (found === null || gate.atZ < found.atZ) found = gate;
+    }
+    return found;
+  }
+
+  /**
+   * Keep `stuckAt` on the wall that stopped the kart until it is through: nosed up against it, backing
+   * off for the part or a run-up. Bolting on the missing part ends it; so does getting past.
+   */
+  function trackStuck(): void {
+    const gate = gateAhead();
+    if (gate === null) { stuckAt = null; return; }
+    const atWall = gate.atZ - runOf(pose) <= WALL_REACH && (pose.blockedByGate || !gateSatisfied(gate, tuning));
+    if (atWall) stuckAt = { gateId: gate.id, missing: !gateSatisfied(gate, tuning) };
+    else if (stuckAt !== null && (stuckAt.gateId !== gate.id || (stuckAt.missing && gateSatisfied(gate, tuning)))) stuckAt = null;
+  }
+
+  function adviceNow(): GateAdvice | null {
+    if (stuckAt === null) return null;
+    const gateId = stuckAt.gateId;
+    const gate = track.gates.find((entry) => entry.id === gateId);
+    if (gate === undefined) return null;
+    return gateAdvice(gate, track.pickups, { run: runOf(pose), tuning, collected, crusherAt: compactorZAt(runTime, compactor) });
+  }
+
+  /** A wall stopped the kart: the radio says why and how to get through, once per gate and kind of advice. */
+  function adviseStop(): void {
+    trackStuck();
+    const advice = adviceNow();
+    if (advice === null || advised.has(`${advice.gateId}:${advice.kind}`)) return;
+    advised.add(`${advice.gateId}:${advice.kind}`);
+    pushRadio(advice.call);
+  }
+
   /**
    * The track's hazards, as the run meets them: the radio calls each one the first time the kart is in
    * it, and a train on a crossing the kart is standing in throws it back up the road and bends the nose.
@@ -455,6 +504,8 @@ export function createRunSession(
     compactor = eventCompactor(event, compactorPlanForShift(loop.offer().optionId));
     collected = new Set<string>();
     gateAnnounced = new Set<string>();
+    advised = new Set<string>();
+    stuckAt = null;
     announcedSurge = null;
     armorSaveArmed = false;
     armorSavesUsed = 0;
@@ -666,6 +717,7 @@ export function createRunSession(
         compactorZ: compactorZAt(runTime, compactor),
         compactorGap: compactorGap(runOf(pose), compactorZAt(runTime, compactor)),
         compactorSurge: activeSurge(runTime, compactor),
+        gateAdvice: adviceNow(),
         installed: installedBySlot(),
         tuning,
         surface: surfaceAt(lateralOf(pose), runOf(pose), track, pose.hazards ?? []),
@@ -780,6 +832,7 @@ export function createRunSession(
 
       applyPickup(input.salvageSwap === true);
       announceGates();
+      adviseStop();
       meetHazards(approachKmh);
 
       // The field races the same corridor every tick, then the shared race state machine re-orders

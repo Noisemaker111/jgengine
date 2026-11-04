@@ -1,6 +1,8 @@
 import { MAIN_ROUTE, type CourseFix } from "@jgengine/core/roads/routeCourse";
 
 import type { KartTuning } from "../parts/build";
+import { partById, type DriftFoundryPartDef } from "../parts/catalog";
+import type { PickupDef } from "../run/pickups";
 import { ROW_SIX_TRACK, type Track } from "../tracks/catalog";
 
 export type GateNeed = "plow" | "jump";
@@ -105,6 +107,63 @@ export function courseBlock(track: Track, from: CourseFix, to: CourseFix, tuning
 
 export function gatesInZone(zoneId: string, gates: readonly RouteGate[] = ROUTE_GATES): readonly RouteGate[] {
   return gates.filter((gate) => gate.zoneId === zoneId);
+}
+
+/** Whether a part, bolted on, is what this barricade asks for. */
+export function partOpens(part: DriftFoundryPartDef, need: GateNeed): boolean {
+  return need === "plow" ? (part.grants?.plow ?? 0) > 0 : (part.grants?.jumpPower ?? 0) > 0;
+}
+
+/** What the sign and the radio tell a driver stopped at a barricade: the call, and how to get through. */
+export interface GateAdvice {
+  gateId: string;
+  /** `run-up`: springs on, not enough air. `go-back`: the part lies behind. `crushed` and `gone`: no part to reach. */
+  kind: "run-up" | "go-back" | "crushed" | "gone";
+  call: string;
+  sub: string;
+  /** Run metres of the part the driver should go back for, or null when there is none to reach. */
+  partAt: number | null;
+}
+
+/** Where the kart stands when a barricade stops it. */
+export interface StoppedKart {
+  run: number;
+  tuning: KartTuning;
+  collected: ReadonlySet<string>;
+  /** Run metres of the compactor's front. */
+  crusherAt: number;
+}
+
+/**
+ * Why this barricade will not open and how to get through it. Springs that did not lift the kart
+ * high enough want a run-up; a missing part is still lying on the road behind unless the crusher has
+ * rolled over it, and then the run is lost.
+ */
+export function gateAdvice(gate: RouteGate, pickups: readonly PickupDef[], kart: StoppedKart): GateAdvice {
+  if (gateSatisfied(gate, kart.tuning)) {
+    return { gateId: gate.id, kind: "run-up", call: "BACK UP AND HIT IT FASTER", sub: `Springs need ${JUMP_CLEARANCE} m of air: jump on the teal marks at speed`, partAt: null };
+  }
+  let behind: PickupDef | null = null;
+  let crushed: PickupDef | null = null;
+  for (const pickup of pickups) {
+    const part = partById(pickup.partId);
+    if (part === null || !partOpens(part, gate.requirement) || kart.collected.has(pickup.id)) continue;
+    if (pickup.at > gate.atZ || (pickup.route !== gate.route && pickup.route !== MAIN_ROUTE)) continue;
+    if (pickup.at <= kart.crusherAt) crushed ??= pickup;
+    else if (behind === null || pickup.at > behind.at) behind = pickup;
+  }
+  const label = (gate.requirement === "plow" ? "plow blade" : "coil springs").toUpperCase();
+  if (behind !== null) {
+    const back = Math.max(0, Math.round(kart.run - behind.at));
+    return { gateId: gate.id, kind: "go-back", call: `NO ${label} - ${back}M BACK`, sub: "Reverse onto it before the crusher does", partAt: behind.at };
+  }
+  return {
+    gateId: gate.id,
+    kind: crushed !== null ? "crushed" : "gone",
+    call: crushed !== null ? `NO ${label} - THE CRUSHER HAS IT` : `NO ${label} ON THIS ROAD`,
+    sub: "This wall will not open: restart the run from Settings",
+    partAt: null,
+  };
 }
 
 /** Lowest barricade on the main line the given tuning cannot open, or null if the build clears it. */

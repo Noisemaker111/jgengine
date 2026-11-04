@@ -1,10 +1,12 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
+import { steerToward } from "@jgengine/core/movement/steering";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
 import { readCareer, saveCareer } from "./career";
 import { YARD_EVENTS } from "./events/catalog";
 import { createRunSession, runSessionStore, type SessionSnapshot } from "./run/session";
+import { PICKUPS } from "./run/pickups";
 import { createCoursePilot, driveCourse, type PilotFrame } from "./testing/courseDriver";
 import type { Track } from "./tracks/catalog";
 
@@ -29,7 +31,7 @@ export function autopilotFrame(ctx: GameContext, snap: SessionSnapshot, track: T
 }
 
 /** What a staged run should look like when the capture takes it. */
-export type StageMode = "midrun" | "result";
+export type StageMode = "midrun" | "result" | "walled";
 
 /** One simulated step at the frame rate the run is tuned for. */
 const STEP = 1 / 60;
@@ -60,6 +62,21 @@ function drive(ctx: GameContext, seconds: number): void {
   }
 }
 
+/** Swing wide past Row Six's plow drop and drive on until the first plow wall stops the kart. */
+function driveIntoWall(ctx: GameContext): void {
+  const session = runSessionStore.peek(ctx);
+  const plow = PICKUPS.find((pickup) => pickup.partId === "plow_blade");
+  if (session === undefined || plow === undefined) return;
+  for (let elapsed = 0; elapsed < 30; elapsed += STEP) {
+    const snap = session.snapshot();
+    if (snap.phase !== "running" || snap.pose.blockedByGate) return;
+    const wide = snap.run > plow.at - 25 && snap.run < plow.at + 6;
+    const dx = (wide ? 9 : 0) - snap.pose.position[0];
+    const steer = Math.max(-0.5, Math.min(0.5, steerToward(snap.pose.heading, Math.max(-0.5, Math.min(0.5, dx * 0.03))) * 2));
+    session.tick(STEP, { throttle: 1, brake: 0, steer }, { jumpPressed: false, plowBracing: false });
+  }
+}
+
 /** Stage on another event's track: the course driver follows its line, through `take` shortcuts. */
 export interface StageCourse {
   event?: string;
@@ -77,6 +94,10 @@ export function stageRun(ctx: GameContext, mode: StageMode, course: StageCourse 
     return;
   }
   session.start();
+  if (mode === "walled") {
+    driveIntoWall(ctx);
+    return;
+  }
   // Partway down the corridor the mid-run shot frames the compactor closing; the result shot keeps
   // driving to whatever ending the gauntlet hands the kart.
   drive(ctx, mode === "midrun" ? 14 : 180);
