@@ -63,17 +63,18 @@ test("a scanned street: asphalt, junctions and paint take the scan, sidewalks ge
     expect(loaded.length).toBe(2);
     const all = materials(scene);
     const scanned = all.filter((m) => m.defines?.["JG_SCAN"] === "");
-    // Two carriageways, the welded junction, two dash sets and the junction stop lines + crosswalks.
-    expect(scanned.length).toBeGreaterThanOrEqual(5);
+    // The two streets look alike, so each layer is one draw for both: the carriageway, the welded
+    // junction, the dashes and the junction stop lines + crosswalks.
+    expect(scanned.length).toBe(4);
     expect(all.some((m) => m.defines?.["JG_RIBBON_PAINT"] === "" && m.defines?.["JG_SCAN"] === "")).toBe(true);
-    expect(all.filter((m) => m.defines?.["JG_RIBBON_SLABS"] === "").length).toBe(2);
+    expect(all.filter((m) => m.defines?.["JG_RIBBON_SLABS"] === "").length).toBe(1);
     // The junction's stop lines and crosswalks are worn paint over the same asphalt scan.
     const junctionPaint = all.filter((m) => new THREE.Color(m.color as THREE.ColorRepresentation).getHexString() === JUNCTION_PAINT.slice(1));
     expect(junctionPaint.length).toBeGreaterThan(0);
     expect(junctionPaint.every((m) => m.defines?.["JG_RIBBON_PAINT"] === "" && m.defines?.["JG_SCAN"] === "")).toBe(true);
     // The kerb face is plain vertical geometry with a darker sidewalk tone.
     const kerbTone = mixColor("#a7adb8", "#000000", 0.12).slice(1);
-    expect(all.filter((m) => new THREE.Color(m.color as THREE.ColorRepresentation).getHexString() === kerbTone).length).toBe(2);
+    expect(all.filter((m) => new THREE.Color(m.color as THREE.ColorRepresentation).getHexString() === kerbTone).length).toBe(1);
   } finally {
     await unmount();
   }

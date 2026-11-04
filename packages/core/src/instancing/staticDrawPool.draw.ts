@@ -538,6 +538,11 @@ export class StaticDrawPool {
     const mesh = new THREE.BatchedMesh(Math.max(16, capacity), vertexCapacity, indexCapacity, owned);
     mesh.castShadow = source.castShadow === true;
     mesh.receiveShadow = source.receiveShadow === true;
+    // Culled whole, by the bounds of its cell, not instance by instance: three's per-instance cull
+    // and sort run again for every pass (each shadow cascade too) and re-upload the batch's index
+    // texture each time, which on a city's props cost more frame than the hidden instances save.
+    mesh.perObjectFrustumCulled = false;
+    mesh.sortObjects = false;
     const ids: string[] = [];
     mesh.userData[STATIC_POOL_MESH_KEY] = true;
     mesh.userData[POINTER_OBJECT_INSTANCES_KEY] = ids;

@@ -75,6 +75,11 @@ export function applyMaterialOverride(
   });
 }
 
+/** Whether an override changes this material: a standard or physical one its `materials` list names, or any when it names none. @internal */
+export function overrideTargets(material: THREE.Material, override: ModelMaterialOverride): boolean {
+  return isStandardOrPhysicalMaterial(material) && (override.materials === undefined || override.materials.includes(material.name));
+}
+
 /** Apply the shared override contract to one material. @internal */
 export function applyMaterialOverrideToMaterial(
   material: THREE.Material,
@@ -82,8 +87,7 @@ export function applyMaterialOverrideToMaterial(
   clone: boolean,
   textures: MaterialOverrideTextures | undefined,
 ): THREE.Material {
-  if (!isStandardOrPhysicalMaterial(material)) return material;
-  if (override.materials !== undefined && !override.materials.includes(material.name)) return material;
+  if (!isStandardOrPhysicalMaterial(material) || !overrideTargets(material, override)) return material;
   const promote = requiresPhysicalMaterial(override, textures) && !(material as THREE.MeshPhysicalMaterial).isMeshPhysicalMaterial;
   const target = promote ? new THREE.MeshPhysicalMaterial() : clone ? material.clone() : material;
   try {

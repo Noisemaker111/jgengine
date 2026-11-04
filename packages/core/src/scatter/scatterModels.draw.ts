@@ -91,7 +91,10 @@ export function buildScatterModelSources(
   if (model.material?.maps !== undefined) throw new Error("Instanced model override maps require an owned texture loader; use EntityModel for authored maps");
   applyModelSurface(gltfScene);
   const root = cloneModelScene(gltfScene, { shadows: model.shadows, surfaceDetail: model.surfaceDetail });
-  applyModelWindToScene(root, model.wind, model.dims?.maxY ?? model.targetHeight ?? 4);
+  // Sway ramps over vertex heights in the model's own units, so its default span is the model's own
+  // measured height: a GLB placed at three sizes sways alike at each and shares one material.
+  const ownHeight = model.dims?.maxY ?? (bounds ?? new THREE.Box3().setFromObject(gltfScene)).max.y;
+  applyModelWindToScene(root, model.wind, Number.isFinite(ownHeight) && ownHeight > 0 ? ownHeight : 4);
   if (model.material !== undefined) applyMaterialOverride(root, model.material, { clone: false, ownMaterial: material => ownModelMaterial(root, material) });
   root.updateMatrixWorld(true);
   const base = scatterModelBaseTransform(root, model, bounds);

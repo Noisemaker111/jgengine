@@ -149,9 +149,8 @@ export function incompatibleStaticObjectIds(
 export const STATIC_BATCH_CELL = 128;
 
 /**
- * Cell edge in metres of the shared batched draws ({@link StaticDrawPool}). Wider than a model batch's
- * cell: a batched draw culls each instance against every camera itself, so its cell only has to keep
- * the draw's one bounding sphere useful to the shadow cascades.
+ * Cell edge in metres of the shared batched draws ({@link StaticDrawPool}). Each draw is culled whole
+ * by its cell's bounds, so the cell is what bounds the props a camera or shadow cascade submits.
  * @internal
  */
 export const STATIC_POOL_CELL = 512;

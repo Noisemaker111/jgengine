@@ -48,6 +48,20 @@ const scratchQuaternion = new THREE.Quaternion();
 const scratchPosition = new THREE.Vector3();
 const scratchScale = new THREE.Vector3();
 
+const WHITE = new THREE.Color(1, 1, 1);
+const tints = new Map<string, THREE.Color>();
+
+/** A member's tint as a colour, parsed once per distinct value; white (no change) for none. */
+function tintColor(tint: string | undefined): THREE.Color {
+  if (tint === undefined) return WHITE;
+  let color = tints.get(tint);
+  if (color === undefined) {
+    color = new THREE.Color(tint);
+    tints.set(tint, color);
+  }
+  return color;
+}
+
 /**
  * A stable non-zero time offset for a member with no recorded pose, so a crowd is not in lockstep.
  * @internal
@@ -85,6 +99,7 @@ export function writeCrowdBatch(frame: CrowdBatchFrame): number {
     scratchMatrix.compose(scratchPosition.set(member.x, member.y, member.z), scratchQuaternion, scratchScale.setScalar(placement.scale * (member.size ?? 1)));
     scratchMatrix.multiply(scratchOffset.makeTranslation(placement.offset.x, placement.offset.y, placement.offset.z));
     mesh.setMatrixAt(count, scratchMatrix);
+    if (mesh.instanceColor !== null) mesh.setColorAt(count, tintColor(member.tint));
     ids[count] = id;
     minX = Math.min(minX, member.x); maxX = Math.max(maxX, member.x);
     minY = Math.min(minY, member.y); maxY = Math.max(maxY, member.y);
@@ -94,6 +109,7 @@ export function writeCrowdBatch(frame: CrowdBatchFrame): number {
   ids.length = count;
   mesh.count = count;
   mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
   if (play !== null) play.needsUpdate = true;
   if (count > 0) {
     // One batch spans every drawn member, so its cull sphere has to follow them; three cannot cull

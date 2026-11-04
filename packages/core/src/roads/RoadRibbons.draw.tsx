@@ -70,17 +70,22 @@ export function gutterColor(roadColor: string, sidewalkColor: string | null): st
     : mixColor(mixColor(sidewalkColor, roadColor, 0.35), "#000000", 0.08);
 }
 
+/** One road's share of a merged draw: its trimmed centreline sub-paths and the base height they drape at. */
+export interface RoadPiece {
+  elevation: number;
+  paths: readonly (readonly RoadPoint[])[];
+}
+
 /**
  * Vertical faces along each sidewalk edge: the kerb face from the gutter up to the sidewalk top on the
  * road side, and a skirt down to the ground on the outer side, so the raised slab never floats.
  * @internal
  */
 export function buildKerbFaces(
-  paths: readonly (readonly RoadPoint[])[],
+  pieces: readonly RoadPiece[],
   roadWidth: number,
   sidewalkWidth: number,
   sampleHeight: (x: number, z: number) => number,
-  elevation: number,
   sidewalkLift: number = CURB_LIFT + DEFAULT_KERB,
 ): BufferGeometry | null {
   const positions: number[] = [];
@@ -97,10 +102,12 @@ export function buildKerbFaces(
       indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
     }
   };
-  for (const path of paths) {
-    for (const side of [1, -1]) {
-      strip(offsetPath(path, (roadWidth / 2) * side), elevation + CURB_LIFT - 0.01, elevation + sidewalkLift);
-      strip(offsetPath(path, (roadWidth / 2 + sidewalkWidth) * side), -0.05, elevation + sidewalkLift);
+  for (const { paths, elevation } of pieces) {
+    for (const path of paths) {
+      for (const side of [1, -1]) {
+        strip(offsetPath(path, (roadWidth / 2) * side), elevation + CURB_LIFT - 0.01, elevation + sidewalkLift);
+        strip(offsetPath(path, (roadWidth / 2 + sidewalkWidth) * side), -0.05, elevation + sidewalkLift);
+      }
     }
   }
   if (positions.length === 0) return null;
@@ -138,8 +145,8 @@ function toGeometry(positions: Float32Array, indices: Uint32Array): BufferGeomet
   return geometry;
 }
 
-/** Merge many ribbons into one buffer geometry (draws collapse to a single mesh). */
-function mergeRibbons(ribbons: readonly RoadRibbon[]): BufferGeometry | null {
+/** Merge many ribbons into one plain buffer geometry, so they cost one draw. @internal */
+export function mergeRibbonGeometry(ribbons: readonly RoadRibbon[]): BufferGeometry | null {
   const vertexCount = ribbons.reduce((sum, r) => sum + r.positions.length, 0);
   const indexCount = ribbons.reduce((sum, r) => sum + r.indices.length, 0);
   if (vertexCount === 0) return null;
@@ -154,9 +161,24 @@ function mergeRibbons(ribbons: readonly RoadRibbon[]): BufferGeometry | null {
     vertexOffset += ribbon.positions.length;
     indexOffset += ribbon.indices.length;
   }
-  const geometry = toGeometry(positions, indices);
+  return toGeometry(positions, indices);
+}
+
+/** {@link mergeRibbonGeometry} plus each ribbon's along/across frame for the surface shader. */
+function mergeRibbons(ribbons: readonly RoadRibbon[]): BufferGeometry | null {
+  const geometry = mergeRibbonGeometry(ribbons);
   geometry?.setAttribute(RIBBON_FRAME_ATTRIBUTE, new BufferAttribute(ribbonSurfaceFrame(ribbons.map((r) => r.positions)), 3));
   return geometry;
+}
+
+/**
+ * Everything about a road that shapes its materials, as one string: roads with equal keys share
+ * every material, so their layers merge into one draw each. The path, its corners and the base
+ * elevation only shape geometry and stay out. @internal
+ */
+export function roadLookKey(road: RoadEnvironmentDescriptor): string {
+  const { width, color, markings, markingColor, sidewalk, surface, materials, wear, edgeSoftness } = road;
+  return JSON.stringify([width, color, markings, markingColor, sidewalk, surface ?? null, materials ?? null, wear ?? null, edgeSoftness ?? null]);
 }
 
 /** Convert a detected {@link RoadJunction} into the structural {@link RoadJunctionInput} the trimmer wants. @internal */
@@ -229,23 +251,25 @@ export function buildAuthoredRoadNetwork(
 }
 
 /**
- * Renders one `road()` descriptor from its trimmed centerline sub-paths (cut back at every junction
- * by {@link buildAuthoredRoadNetwork}): an asphalt ribbon, a curb/edge strip along each border, an
- * optional dashed centerline, and optional sidewalks. Because the sub-paths already stop at the
- * junction boundary, every layer naturally ends there — no ribbon ploughs through the crossing and
- * the dashed line no longer needs exclusion circles to skip intersections. The carriageway, curbs and
- * sidewalks shade with the terrain's procedural surfaces (`road.surface`, default asphalt with tyre
- * wear); `surface: false` keeps them flat.
+ * Renders every road that looks like `road` (equal {@link roadLookKey}) from their trimmed centerline
+ * sub-paths (cut back at every junction by {@link buildAuthoredRoadNetwork}): an asphalt ribbon, a
+ * curb/edge strip along each border, an optional dashed centerline, and optional sidewalks. Each layer
+ * is one merged draw however many roads share the look, so a city of streets costs a handful of draws.
+ * Because the sub-paths already stop at the junction boundary, every layer naturally ends there — no
+ * ribbon ploughs through the crossing and the dashed line no longer needs exclusion circles to skip
+ * intersections. The carriageway, curbs and sidewalks shade with the terrain's procedural surfaces
+ * (`road.surface`, default asphalt with tyre wear); `surface: false` keeps them flat.
  * @capability road-ribbons draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
  */
 export function RoadRibbons({
   road,
   field,
-  paths,
+  pieces,
 }: {
+  /** The shared look; its path and elevation are ignored in favour of `pieces`. */
   road: RoadEnvironmentDescriptor;
   field: TerrainField;
-  paths: readonly (readonly RoadPoint[])[];
+  pieces: readonly RoadPiece[];
 }) {
   const detailed = road.surface !== false;
   const style = useMemo(
@@ -266,22 +290,26 @@ export function RoadRibbons({
   const asphalt = useMemo(
     () =>
       mergeRibbons(
-        paths.map((path) => buildRoadRibbon(path, road.width + margin, (x, z) => field.sampleHeight(x, z), { elevation: road.elevation, maxSegmentLength: 2 })),
+        pieces.flatMap(({ paths, elevation }) =>
+          paths.map((path) => buildRoadRibbon(path, road.width + margin, (x, z) => field.sampleHeight(x, z), { elevation, maxSegmentLength: 2 })),
+        ),
       ),
-    [paths, road.width, margin, road.elevation, field],
+    [pieces, road.width, margin, field],
   );
   const markingWidth = roadMarkingWidth(road.width);
   const dashes = useMemo(() => {
     if (!road.markings) return null;
     const width = markingWidth;
     const ribbons: RoadRibbon[] = [];
-    for (const path of paths) {
-      for (const dash of dashSegments(path, 3.2, 4)) {
-        ribbons.push(buildRoadRibbon(dash, width, (x, z) => field.sampleHeight(x, z), { elevation: road.elevation + MARKING_LIFT }));
+    for (const { paths, elevation } of pieces) {
+      for (const path of paths) {
+        for (const dash of dashSegments(path, 3.2, 4)) {
+          ribbons.push(buildRoadRibbon(dash, width, (x, z) => field.sampleHeight(x, z), { elevation: elevation + MARKING_LIFT }));
+        }
       }
     }
     return mergeRibbons(ribbons);
-  }, [paths, road.markings, markingWidth, road.elevation, field]);
+  }, [pieces, road.markings, markingWidth, field]);
   const sidewalkColor = road.sidewalk === false ? "#a7adb8" : road.sidewalk.color;
   const curbColor = useMemo(
     () => gutterColor(road.color, road.sidewalk === false ? null : sidewalkColor),
@@ -293,32 +321,33 @@ export function RoadRibbons({
     const strip = Math.min(0.6, Math.max(0.35, road.width * 0.045));
     const edge = road.width / 2 - strip / 2;
     const ribbons: RoadRibbon[] = [];
-    for (const path of paths) {
-      for (const off of [edge, -edge]) {
-        ribbons.push(buildRoadRibbon(offsetPath(path, off), strip, (x, z) => field.sampleHeight(x, z), { elevation: road.elevation + CURB_LIFT }));
+    for (const { paths, elevation } of pieces) {
+      for (const path of paths) {
+        for (const off of [edge, -edge]) {
+          ribbons.push(buildRoadRibbon(offsetPath(path, off), strip, (x, z) => field.sampleHeight(x, z), { elevation: elevation + CURB_LIFT }));
+        }
       }
     }
     return mergeRibbons(ribbons);
-  }, [paths, road.width, road.elevation, road.sidewalk, soft, field]);
+  }, [pieces, road.width, road.sidewalk, soft, field]);
   const sidewalks = useMemo(() => {
     const width = sidewalkWidthOf(road);
     if (width <= 0) return null;
     const offset = road.width / 2 + width / 2;
     const ribbons: RoadRibbon[] = [];
-    for (const path of paths) {
-      for (const off of [offset, -offset]) {
-        ribbons.push(buildRoadRibbon(offsetPath(path, off), width, (x, z) => field.sampleHeight(x, z), { elevation: road.elevation + sidewalkLiftOf(road) }));
+    for (const { paths, elevation } of pieces) {
+      for (const path of paths) {
+        for (const off of [offset, -offset]) {
+          ribbons.push(buildRoadRibbon(offsetPath(path, off), width, (x, z) => field.sampleHeight(x, z), { elevation: elevation + sidewalkLiftOf(road) }));
+        }
       }
     }
     return mergeRibbons(ribbons);
-  }, [paths, road, field]);
+  }, [pieces, road, field]);
   const sidewalkWidth = sidewalkWidthOf(road);
   const kerbs = useMemo(
-    () =>
-      sidewalkWidth <= 0
-        ? null
-        : buildKerbFaces(paths, road.width, sidewalkWidth, (x, z) => field.sampleHeight(x, z), road.elevation, sidewalkLiftOf(road)),
-    [paths, road, sidewalkWidth, field],
+    () => (sidewalkWidth <= 0 ? null : buildKerbFaces(pieces, road.width, sidewalkWidth, (x, z) => field.sampleHeight(x, z), sidewalkLiftOf(road))),
+    [pieces, road, sidewalkWidth, field],
   );
 
   const quality = useTerrainQuality();
@@ -457,10 +486,21 @@ function RoadGroup({ roads, field, group }: { roads: readonly RoadEnvironmentDes
     () => buildAuthoredRoadNetwork(roads, junctions, (x, z) => field.sampleHeight(x, z), { paint: paved }),
     [roads, junctions, field, paved],
   );
+  const looks = useMemo(() => {
+    const byLook = new Map<string, { road: RoadEnvironmentDescriptor; pieces: RoadPiece[] }>();
+    roads.forEach((road, index) => {
+      const piece = { elevation: road.elevation, paths: network.roadPaths[index] ?? [] };
+      const key = roadLookKey(road);
+      const look = byLook.get(key);
+      if (look === undefined) byLook.set(key, { road, pieces: [piece] });
+      else look.pieces.push(piece);
+    });
+    return [...byLook.entries()];
+  }, [roads, network]);
   return (
     <>
-      {roads.map((entry, index) => (
-        <RoadRibbons key={`road-${index}`} road={entry} field={field} paths={network.roadPaths[index] ?? []} />
+      {looks.map(([key, look]) => (
+        <RoadRibbons key={key} road={look.road} field={field} pieces={look.pieces} />
       ))}
       <RoadJunctions
         surfaces={network.junctionSurfaces}

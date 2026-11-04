@@ -3,6 +3,7 @@ import * as THREE from "three";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
+import { materialSignature } from "@jgengine/core/instancing/staticDrawPool.draw";
 import { buildScatterModelSources, disposeScatterModelSources } from "./scatterModels.draw";
 
 function meshScene(): { scene: THREE.Group; mesh: THREE.Mesh } {
@@ -36,6 +37,25 @@ describe("buildScatterModelSources", () => {
     disposeScatterModelSources(empty.root);
     expect(disposed).toBe(0);
   });
+  test("one swaying model placed at different heights sways over its own height and shares one material signature", () => {
+    const signature = (targetHeight: number) => {
+      const { scene, mesh } = meshScene();
+      mesh.name = "palm leaf";
+      mesh.position.y = 1;
+      scene.updateMatrixWorld(true);
+      const material = buildScatterModelSources(scene, { url: "palm.glb", targetHeight }).sources[0]!.material as THREE.MeshStandardMaterial;
+      const wind = material.userData["jgWind"] as { uJgWindHeight: { value: number } };
+      return { height: wind.uJgWindHeight.value, signature: materialSignature(material) };
+    };
+    const low = signature(6.2);
+    const tall = signature(9);
+    // The box spans 0..2 in its own units: the ramp covers the whole model whatever size it is placed at.
+    expect(low.height).toBeCloseTo(2, 6);
+    expect(tall.height).toBeCloseTo(2, 6);
+    expect(low.signature).not.toBeNull();
+    expect(low.signature).toBe(tall.signature);
+  });
+
   test("harvests one source per mesh, geometry left unowned by the loader cache", () => {
     const { scene, mesh } = meshScene();
     const { sources } = buildScatterModelSources(scene, { url: "tree.glb" });
