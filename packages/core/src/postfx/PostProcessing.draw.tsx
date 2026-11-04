@@ -670,6 +670,7 @@ export function PostProcessing({
     if (built === null) return;
     if (built.grade !== null) requireUniform(built.grade.uniforms, "uTime").value += delta;
     measureComposerPasses(built.composer);
+    for (const pass of built.composer.passes) if (pass instanceof ExposureMeterPass) pass.collect();
     built.composer.render(delta);
     advanceRevealFade(built, delta);
   }, 1);

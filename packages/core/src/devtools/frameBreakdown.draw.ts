@@ -153,18 +153,25 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   };
   // Self time: each timed scope pays only for what its nested scopes did not, so the CPU list adds up
   // to the frame's work instead of counting a pass inside a callback twice.
-  const cpuStack: { label: string; start: number; child: number }[] = [];
+  // Kept as parallel arrays reused every frame: an object per scope would be garbage the breakdown
+  // then reports as the game's.
+  const cpuLabels: string[] = [];
+  const cpuStarts: number[] = [];
+  const cpuChildren: number[] = [];
+  let cpuDepth = 0;
   const cpuEnter = (label: string) => {
-    cpuStack.push({ label, start: performance.now(), child: 0 });
+    cpuLabels[cpuDepth] = label;
+    cpuStarts[cpuDepth] = performance.now();
+    cpuChildren[cpuDepth] = 0;
+    cpuDepth += 1;
   };
   const cpuLeave = (excluded = 0): number => {
     const end = performance.now();
-    const top = cpuStack.pop();
-    if (top === undefined) return end;
-    const total = end - top.start;
-    addCpu(top.label, total - top.child - excluded);
-    const parent = cpuStack[cpuStack.length - 1];
-    if (parent !== undefined) parent.child += total;
+    if (cpuDepth === 0) return end;
+    cpuDepth -= 1;
+    const total = end - (cpuStarts[cpuDepth] ?? end);
+    addCpu(cpuLabels[cpuDepth] ?? "", total - (cpuChildren[cpuDepth] ?? 0) - excluded);
+    if (cpuDepth > 0) cpuChildren[cpuDepth - 1] = (cpuChildren[cpuDepth - 1] ?? 0) + total;
     return end;
   };
   const fresh = (): FrameBreakdownRecord => ({
@@ -232,7 +239,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   const wrap = (target: object, method: string, make: (original: Callable) => Callable) => {
     const original: unknown = Reflect.get(target, method);
     if (typeof original !== "function") return;
-    const call: Callable = (...args) => Reflect.apply(original, target, args);
+    // Bound, not `(...args) => apply(...)`: that spread made an array on every draw.
+    const call: Callable = Function.prototype.bind.call(original, target);
     Reflect.set(target, method, make(call));
     restore.push(() => {
       Reflect.set(target, method, original);
@@ -281,11 +289,12 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
   // there would be a cost of its own the breakdown reports.
   const objectLabels = new WeakMap<object, string>();
   const materialLabels = new WeakMap<object, string>();
-  const labelFor = (cache: WeakMap<object, string>, thing: unknown, build: () => string): string => {
-    if (typeof thing !== "object" || thing === null) return build();
+  // `build` is a fixed function given its inputs, never a closure made per draw.
+  const labelFor = <Extra>(cache: WeakMap<object, string>, thing: unknown, build: (thing: unknown, extra: Extra) => string, extra: Extra): string => {
+    if (typeof thing !== "object" || thing === null) return build(thing, extra);
     let label = cache.get(thing);
     if (label === undefined) {
-      label = build();
+      label = build(thing, extra);
       cache.set(thing, label);
     }
     return label;
@@ -303,8 +312,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
         current.draws += 1;
         current.triangles += triangles;
       }
-      const objectName = labelFor(objectLabels, object, () => objectLabel(object, geometry));
-      const materialName = labelFor(materialLabels, material, () => labelOf(material, "material"));
+      const objectName = labelFor(objectLabels, object, objectLabel, geometry);
+      const materialName = labelFor(materialLabels, material, labelOf, "material");
       tally(objects, objectName, triangles, ms, pass);
       tally(materials, materialName, triangles, ms, pass);
       // This draw built or first used a program: name it, so a compile hitch says what to warm up.

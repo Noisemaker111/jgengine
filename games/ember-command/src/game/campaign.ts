@@ -376,7 +376,7 @@ export interface CampaignReadout {
   index: number;
   total: number;
   objective: string;
-  /** Seconds left on the active objective's timer, or null when it has none. */
+  /** Whole seconds left (rounded up) on the active objective's timer, or null when it has none. */
   remaining: number | null;
   /** The active objective's whole clock in seconds, so the card can draw a shrinking bar. */
   duration: number | null;
@@ -585,7 +585,8 @@ export function campaignReadout(ctx: GameContext): CampaignReadout | null {
     index: index + 1,
     total: CAMPAIGN.length,
     objective,
-    remaining: live ? view!.remaining : null,
+    // Whole seconds, as the card shows them: a fractional clock would re-render the HUD every frame.
+    remaining: live && view!.remaining !== null ? Math.ceil(view!.remaining) : null,
     duration,
     counted: live ? view!.counted : 0,
     count: live ? view!.count : 0,

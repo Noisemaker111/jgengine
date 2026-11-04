@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import { CSM } from "three/examples/jsm/csm/CSM.js";
 
-import { bindCsmMaterials, cascadeShadowCadence, createCascadeRefreshState, patchSceneMaterials, refreshCascadesOnTexelStep, releaseCascadedShadows, resolveShadowDistance, type CsmMaterialSetup } from "./CascadedShadows.draw";
+import { bindCsmMaterials, createCascadeRefreshState, patchSceneMaterials, refreshCascadesOnTexelStep, releaseCascadedShadows, resolveShadowDistance, type CsmMaterialSetup } from "./CascadedShadows.draw";
 import { resolveGraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import { createShaderWarmup } from "@jgengine/core/render/shaderWarmup.draw";
 
@@ -60,11 +60,29 @@ describe("patchSceneMaterials", () => {
 });
 
 describe("cascade cadence and shadow reach", () => {
-  test("nearest cascades refresh every frame, far ones every 2nd or 4th", () => {
-    expect([0, 1, 2].map((i) => cascadeShadowCadence(i, 3))).toEqual([1, 2, 4]);
-    expect([0, 1, 2, 3].map((i) => cascadeShadowCadence(i, 4))).toEqual([1, 1, 2, 4]);
-    expect([0, 1].map((i) => cascadeShadowCadence(i, 2))).toEqual([1, 2]);
-    expect(cascadeShadowCadence(0, 1)).toBe(1);
+  test("a panning camera redraws at most one far cascade a frame, and a held one keeps its drawn centre", () => {
+    const lights = Array.from({ length: 4 }, () => new THREE.DirectionalLight());
+    const state = createCascadeRefreshState(1);
+    const direction = new THREE.Vector3(-0.5, -1, -0.4).normalize();
+    const drawnAt = lights.map(() => new THREE.Vector3());
+    const lastDrawn = lights.map(() => 0);
+    for (let frame = 0; frame < 24; frame++) {
+      // What CSM.update does each frame: every light follows the camera, a whole unit a frame.
+      for (const light of lights) light.position.set(frame, 20, frame * 0.5);
+      const redrawn = refreshCascadesOnTexelStep(lights, direction, state);
+      if (frame > 0) expect(redrawn).toBe(2);
+      lights.forEach((light, index) => {
+        if (light.shadow.autoUpdate) {
+          drawnAt[index]!.copy(light.position);
+          lastDrawn[index] = frame;
+        } else {
+          expect(light.position.distanceTo(drawnAt[index]!)).toBe(0);
+        }
+        // No far cascade waits longer than one turn of the far cascades.
+        expect(frame - lastDrawn[index]!).toBeLessThanOrEqual(lights.length - 1);
+      });
+      drawShadowPass(lights);
+    }
   });
 
   test("shadow reach follows the tier and never exceeds the authored value", () => {

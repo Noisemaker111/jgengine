@@ -40,17 +40,6 @@ export function resolveShadowDistance(profile?: GraphicsProfile, authored?: numb
   return Math.min(profile.drawDistance, reach);
 }
 
-/**
- * Frames between shadow-map refreshes for the cascade at `index`, nearest first.
- * @deprecated Cascades refresh on a texel step; see {@link refreshCascadesOnTexelStep}.
- * @internal
- */
-export function cascadeShadowCadence(index: number, cascades: number): number {
-  if (index < cascades - 2) return 1;
-  if (cascades <= 2) return index === 0 ? 1 : 2;
-  return 2 ** (index - (cascades - 3));
-}
-
 /** Depth-axis steps worth of a texel the snapped light may drift before it re-anchors. */
 export const CASCADE_DEPTH_STEP_TEXELS = 8;
 
@@ -95,19 +84,26 @@ export interface CascadeRefreshState {
   refreshes: number;
   /** Leading cascades that refresh every frame whatever the snap says: a moving caster must not freeze. */
   floor: number;
+  /** Frames each cascade has waited with a moved light, so the longest wait goes first. */
+  waiting: number[];
 }
 
 /** @internal */
 export function createCascadeRefreshState(floor = 1): CascadeRefreshState {
-  return { centres: [], refreshes: 0, floor };
+  return { centres: [], refreshes: 0, floor, waiting: [] };
 }
+
+const snappedScratch: THREE.Vector3[] = [];
 
 /**
  * Pin each cascade's light to its texel grid and request a depth pass where that grid step moved
  * the light, plus every frame for the `floor` nearest cascades. `floor: 1` keeps the cascade holding
  * the player live so a walking actor's shadow follows it while the camera stands still; the far
- * cascades skip until the camera crosses a texel. An unmoved light keeps `autoUpdate` off, so the
- * map and the sampling matrix always stay the pair they were rendered as.
+ * cascades skip until the camera crosses a texel. When the camera pans, the far cascades cross
+ * their texels on the same frames, so at most one far cascade redraws per frame, the longest
+ * waiting first; the others hold their last centre for that frame or two. A light that does not
+ * redraw keeps `autoUpdate` off at the centre it was drawn from, so the map and the sampling matrix
+ * always stay the pair they were rendered as.
  * @internal
  */
 export function refreshCascadesOnTexelStep(
@@ -115,31 +111,52 @@ export function refreshCascadesOnTexelStep(
   lightDirection: THREE.Vector3,
   state: CascadeRefreshState,
 ): number {
+  // The far cascade whose moved light has waited longest gets this frame's one far redraw.
+  let farPick = -1;
+  for (let index = 0; index < lights.length; index += 1) {
+    const light = lights[index]!;
+    const snapped = (snappedScratch[index] ??= new THREE.Vector3());
+    snapped.copy(snapCascadeCenter(light.position, lightDirection, cascadeTexelSize(light)));
+    const known = state.centres[index];
+    const moved = known === undefined || known.distanceToSquared(snapped) > 1e-12;
+    if (!moved || index < state.floor || mustRedraw(light, known)) continue;
+    state.waiting[index] = (state.waiting[index] ?? 0) + 1;
+    if (farPick < 0 || state.waiting[index]! > state.waiting[farPick]!) farPick = index;
+  }
+
   let refreshed = 0;
   for (let index = 0; index < lights.length; index += 1) {
     const light = lights[index]!;
-    const snapped = snapCascadeCenter(light.position, lightDirection, cascadeTexelSize(light));
+    const snapped = snappedScratch[index]!;
     const known = state.centres[index];
     const moved = known === undefined || known.distanceToSquared(snapped) > 1e-12;
-    // A cascade whose map was never drawn has nothing to keep: three only creates the map in a depth
-    // pass, and a frame whose draw was held (the shader warmup holds draws behind the loading cover)
-    // runs this without one. A map drawn outside a frame (the warmup's) asks for a redraw too. Kept off then, the lit pass samples an empty colour texture through a
-    // shadow sampler, every draw fails, and the scene comes up blank.
-    const refresh = moved || index < state.floor || light.shadow.map === null || light.shadow.needsUpdate;
-    light.position.copy(snapped);
-    light.target.position.copy(snapped).add(lightDirection);
+    const refresh = index < state.floor || mustRedraw(light, known) || (moved && index === farPick);
+    // A held light stays at the centre its map was drawn from.
+    const centre = refresh || known === undefined ? snapped : known;
+    light.position.copy(centre);
+    light.target.position.copy(centre).add(lightDirection);
     light.shadow.autoUpdate = refresh;
     light.shadow.needsUpdate = false;
-    if (moved) {
+    if (refresh) {
       if (known === undefined) state.centres[index] = snapped.clone();
       else known.copy(snapped);
-    }
-    if (refresh) {
+      state.waiting[index] = 0;
       refreshed += 1;
       state.refreshes += 1;
     }
   }
   return refreshed;
+}
+
+/**
+ * A cascade whose map was never drawn has nothing to keep: three only creates the map in a depth
+ * pass, and a frame whose draw was held (the shader warmup holds draws behind the loading cover)
+ * runs the refresh without one. A map drawn outside a frame (the warmup's) asks for a redraw too.
+ * Kept off then, the lit pass samples an empty colour texture through a shadow sampler, every draw
+ * fails, and the scene comes up blank.
+ */
+function mustRedraw(light: THREE.DirectionalLight, known: THREE.Vector3 | undefined): boolean {
+  return known === undefined || light.shadow.map === null || light.shadow.needsUpdate;
 }
 
 function isStandardMaterial(mat: THREE.Material): mat is THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial {
