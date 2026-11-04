@@ -98,6 +98,17 @@ function tagOf(object: THREE.Object3D, key: string): string | null {
   return null;
 }
 
+/**
+ * The id an instanced or batched hit names: its instance's entry in `instancesKey`, else the mesh's
+ * own tag. An empty entry is an instance that names nothing (a building piece, a freed slot), so it
+ * falls back to the tag rather than reporting an empty id.
+ */
+function instanceTagOf(object: THREE.Object3D, instance: number | undefined, instancesKey: string, key: string): string | null {
+  const ids: unknown = instance === undefined ? undefined : object.userData[instancesKey];
+  const id: unknown = Array.isArray(ids) && instance !== undefined ? ids[instance] : undefined;
+  return typeof id === "string" && id !== "" ? id : tagOf(object, key);
+}
+
 function standardMaterialSample(
   material: THREE.Material | readonly THREE.Material[],
 ): { color: string; metalness?: number; roughness?: number } | null {
@@ -151,10 +162,8 @@ export function createPointerService(): PointerService {
       return {
         point,
         normal,
-        entity: instance === undefined ? tagOf(hit.object, POINTER_ENTITY_KEY) :
-          (hit.object.userData[POINTER_ENTITY_INSTANCES_KEY] as readonly string[] | undefined)?.[instance] ?? tagOf(hit.object, POINTER_ENTITY_KEY),
-        object: instance === undefined ? tagOf(hit.object, POINTER_OBJECT_KEY) :
-          (hit.object.userData[POINTER_OBJECT_INSTANCES_KEY] as readonly string[] | undefined)?.[instance] ?? tagOf(hit.object, POINTER_OBJECT_KEY),
+        entity: instanceTagOf(hit.object, instance, POINTER_ENTITY_INSTANCES_KEY, POINTER_ENTITY_KEY),
+        object: instanceTagOf(hit.object, instance, POINTER_OBJECT_INSTANCES_KEY, POINTER_OBJECT_KEY),
         ...(uv !== undefined ? { uv } : {}),
         material: standardMaterialSample(mesh.material),
         ...(instance !== undefined ? { instanceId: instance } : {}),

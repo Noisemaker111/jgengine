@@ -78,6 +78,11 @@ describe("pointerService worldHitCenter", () => {
     camera.updateMatrixWorld();
     const hit = service.worldHitCenter();
     expect(hit?.instanceId).toBe(1);
+    instanced.userData["jgObjectInstances"] = ["a", "b", "c"];
+    expect(service.worldHitCenter()?.object).toBe("b");
+    // An instance that names nothing (a building piece in a shared batch) is no object, not "".
+    instanced.userData["jgObjectInstances"] = ["a", "", "c"];
+    expect(service.worldHitCenter()?.object).toBeNull();
   });
 
   test("leaves instanceId unset for a plain (non-instanced) mesh hit", () => {

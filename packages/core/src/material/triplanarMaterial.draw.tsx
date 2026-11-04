@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 
 import { useMaterialAssetMaterial } from "./materialAsset.draw";
+import { batchSafeSignature, markBatchSafe } from "./compileLayers.draw";
 
 /** Inputs for {@link applyTriplanarProjection}. */
 export interface TriplanarProjectionOptions {
@@ -17,9 +18,22 @@ export interface TriplanarProjectionOptions {
 const VERTEX_PARS = `varying vec3 vJgTriPos;
 varying vec3 vJgTriNormal;`;
 
-const VERTEX_WORLD_NORMAL = `vJgTriNormal = normalize(mat3(modelMatrix) * objectNormal);`;
+// The projection is in world space, so both the normal and the position carry the placement's own
+// transform: the batch's per-instance matrix (`batching_vertex` runs before both chunks) and then
+// the instance matrix, in the order three's `project_vertex` applies them.
+const VERTEX_WORLD_NORMAL = `vec3 jgTriObjectNormal = objectNormal;
+#ifdef USE_BATCHING
+jgTriObjectNormal = mat3(batchingMatrix) * jgTriObjectNormal;
+#endif
+#ifdef USE_INSTANCING
+jgTriObjectNormal = mat3(instanceMatrix) * jgTriObjectNormal;
+#endif
+vJgTriNormal = normalize(mat3(modelMatrix) * jgTriObjectNormal);`;
 
 const VERTEX_WORLD_POSITION = `vec4 jgTriWorld = vec4(transformed, 1.0);
+#ifdef USE_BATCHING
+jgTriWorld = batchingMatrix * jgTriWorld;
+#endif
 #ifdef USE_INSTANCING
 jgTriWorld = instanceMatrix * jgTriWorld;
 #endif
@@ -176,7 +190,11 @@ export function applyTriplanarProjection(
       .replace("#include <normal_fragment_maps>", FRAGMENT_NORMAL)
       .replace("#include <aomap_fragment>", FRAGMENT_AO);
   };
-  material.customProgramCacheKey = () => `${previousKey.call(material)}|jg-triplanar:v1`;
+  material.customProgramCacheKey = () => `${previousKey.call(material)}|jg-triplanar:v2`;
+  const wrapped = batchSafeSignature(previousCompile);
+  if (wrapped !== undefined) {
+    markBatchSafe(material.onBeforeCompile, { signature: `triplanar(${tile},${sharpness},${normalScale})${wrapped}`, userData: ["jgTriplanar"] });
+  }
   material.needsUpdate = true;
   return material;
 }

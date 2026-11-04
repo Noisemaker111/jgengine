@@ -546,6 +546,8 @@ export class StaticDrawPool {
     const ids: string[] = [];
     mesh.userData[STATIC_POOL_MESH_KEY] = true;
     mesh.userData[POINTER_OBJECT_INSTANCES_KEY] = ids;
+    // Before the mesh joins the scene, so scene-wide layers that chain this hook wrap the mirror.
+    mirrorSourceTextures(mesh, material, owned);
     this.parent.add(mesh);
     freezeStaticTransforms(mesh);
     showCulled(mesh, false);
@@ -594,6 +596,40 @@ function refreshCellBounds(cell: ProxyCell): void {
   for (const member of cell.members) {
     if (member.slot.sphereAt(member.index, instanceSphere)) cell.sphere.union(instanceSphere);
   }
+}
+
+const mirrors = new WeakMap<THREE.BatchedMesh, () => void>();
+
+/**
+ * Keep a batch's own material copy drawing its source's textures. The copy is taken when the batch
+ * is made, and a source can swap a texture in later without recompiling (a generated surface whose
+ * bake lands after the first rock is placed), which left the batch on the stand-in texture for good.
+ * Before each draw the copy takes any texture slot that changed; a slot that gains or loses a
+ * texture recompiles, as it would on the source.
+ */
+function mirrorSourceTextures(mesh: THREE.BatchedMesh, source: THREE.Material, owned: THREE.Material): void {
+  const slots = Object.keys(source).filter((key) => key === "map" || key.endsWith("Map"));
+  if (slots.length === 0) return;
+  const mirror = (): void => {
+    for (const slot of slots) {
+      const value: unknown = Reflect.get(source, slot);
+      const held: unknown = Reflect.get(owned, slot);
+      if (value === held || (value !== null && !(value instanceof THREE.Texture))) continue;
+      Reflect.set(owned, slot, value);
+      if ((value === null) !== (held === null || held === undefined)) owned.needsUpdate = true;
+    }
+  };
+  mirrors.set(mesh, mirror);
+  const draw = mesh.onBeforeRender;
+  mesh.onBeforeRender = function (...args: Parameters<THREE.BatchedMesh["onBeforeRender"]>): void {
+    mirror();
+    draw.apply(this, args);
+  };
+}
+
+/** Bring a pool batch's material copy up to its source's textures now; it also happens before every draw. @internal */
+export function mirrorPooledTextures(mesh: THREE.BatchedMesh): void {
+  mirrors.get(mesh)?.();
 }
 
 function disposeGroup(group: PoolGroup): void {
