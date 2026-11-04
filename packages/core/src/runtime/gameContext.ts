@@ -714,6 +714,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     subscribe: signal.subscribe,
     version: signal.version,
     touch: signal.notify,
+    batch: signal.batch,
     snapshot: (viewer) => composeWorldSnapshot(replicationModules, viewer),
     hydrate(snapshot) {
       applyWorldSnapshot(replicationModules, snapshot);

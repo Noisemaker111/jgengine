@@ -70,6 +70,29 @@ function makeContext() {
   });
 }
 
+describe("batch", () => {
+  test("a frame that moves 400 bodies notifies HUD subscribers once, and reads inside see each move", () => {
+    const ctx = makeContext();
+    const ids = Array.from({ length: 400 }, (_, index) => ctx.scene.entity.spawn("dummy", { position: [index, 0, 0] }));
+    let notices = 0;
+    ctx.subscribe(() => {
+      notices += 1;
+    });
+    const before = ctx.version();
+    ctx.batch(() => {
+      for (const id of ids) {
+        ctx.scene.entity.setPose(id, { position: [0, 1, 0], dt: 1 / 60 });
+        expect(ctx.scene.entity.get(id)?.position[1]).toBe(1);
+      }
+      ctx.game.store.set("score", 3);
+    });
+    expect(notices).toBe(1);
+    expect(ctx.version()).toBeGreaterThan(before);
+    for (const id of ids.slice(0, 1)) ctx.scene.entity.setPose(id, { position: [0, 2, 0] });
+    expect(notices).toBe(2);
+  });
+});
+
 describe("opt-in features", () => {
   test("omitted features leave their ctx.game slots undefined", () => {
     const ctx = createGameContext({

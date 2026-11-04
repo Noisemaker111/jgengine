@@ -695,6 +695,12 @@ export interface GameContext {
    */
   touch(): void;
   /**
+   * Run `work` with change notices held: reads inside see every write, and {@link subscribe}
+   * listeners fire once when it ends instead of once per write. The shell runs each frame's
+   * simulation in one, so a HUD selector runs once a frame however many bodies moved.
+   */
+  batch<T>(work: () => T): T;
+  /**
    * Gather every opted-in live subsystem into one {@link WorldSnapshot} — entities, entity stats, the
    * keyed store, the action feed, plus leaderboard/chat when those features are on. The full-world
    * baseline a host sends a joining client; {@link hydrate} is its inverse. Pass a `viewer` and the host

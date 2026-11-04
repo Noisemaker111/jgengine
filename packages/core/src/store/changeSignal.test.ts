@@ -38,6 +38,47 @@ describe("createChangeSignal", () => {
   });
 });
 
+describe("batch", () => {
+  test("a frame of writes notifies once, and readers inside see each version", () => {
+    const signal = createChangeSignal();
+    let fired = 0;
+    signal.subscribe(() => {
+      fired += 1;
+    });
+    const seen: number[] = [];
+    signal.batch(() => {
+      for (let write = 0; write < 500; write += 1) {
+        signal.notify();
+        seen.push(signal.version());
+      }
+      signal.batch(() => signal.notify());
+      expect(fired).toBe(0);
+    });
+    expect(fired).toBe(1);
+    expect(seen.at(-1)).toBe(500);
+    expect(signal.version()).toBe(501);
+  });
+
+  test("a batch with no writes does not notify, and a throw still releases the listeners", () => {
+    const signal = createChangeSignal();
+    let fired = 0;
+    signal.subscribe(() => {
+      fired += 1;
+    });
+    signal.batch(() => undefined);
+    expect(fired).toBe(0);
+    expect(() =>
+      signal.batch(() => {
+        signal.notify();
+        throw new Error("tick failed");
+      }),
+    ).toThrow("tick failed");
+    expect(fired).toBe(1);
+    signal.notify();
+    expect(fired).toBe(2);
+  });
+});
+
 describe("notifyAfter", () => {
   test("wraps only the listed methods and preserves results", () => {
     const signal = createChangeSignal();
