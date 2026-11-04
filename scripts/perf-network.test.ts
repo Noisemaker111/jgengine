@@ -1,10 +1,11 @@
 import { expect, test } from "bun:test";
 
-import { ALL_GAMES, parseArgs } from "./perf-network";
+import { FRAME_GAMES } from "./ci-scope";
+import { parseArgs } from "./perf-network";
 
-test("--all expands to the eight reference games", () => {
-  expect(parseArgs(["--all"]).games).toEqual([...ALL_GAMES]);
-  expect(ALL_GAMES).toHaveLength(8);
+test("--all expands to every playable game", () => {
+  expect(parseArgs(["--all"]).games).toEqual([...FRAME_GAMES]);
+  expect(FRAME_GAMES).toContain("fernwild");
 });
 
 test("one game, a play window and a json path parse", () => {

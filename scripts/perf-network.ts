@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { type CdpSession, ensureDevServer, openPageSession, withBrowserSession } from "./browser-lib";
+import { FRAME_GAMES } from "./ci-scope";
 
 /**
  * Per-game network audit, printed as one JSON line per game.
@@ -16,21 +17,11 @@ import { type CdpSession, ensureDevServer, openPageSession, withBrowserSession }
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 
-export const ALL_GAMES = [
-  "harbor-heat",
-  "scrap-signal",
-  "drift-foundry",
-  "beacon-bastion",
-  "brightway-park",
-  "ember-command",
-  "odd-orbit",
-  "deepward",
-] as const;
 
 const USAGE = `usage: bun run perf network <game...> [--seconds n] [--all] [--json path]
 
   <game...>       one or more game ids from games/
-  --all           every reference game (${ALL_GAMES.join(", ")})
+  --all           every playable game (${FRAME_GAMES.join(", ")})
   --seconds n     play window per game (default 120)
   --json path     also append the JSON lines to a file
   --url base      measure an absolute base instead of the local dev runner
@@ -277,7 +268,7 @@ export function parseArgs(argv: readonly string[]): { games: string[]; seconds: 
       process.exit(0);
     }
     if (arg === "--all") {
-      games.push(...ALL_GAMES);
+      games.push(...FRAME_GAMES);
       continue;
     }
     if (arg === "--seconds" || arg === "--json" || arg === "--timeout" || arg === "--dump" || arg === "--url") {
