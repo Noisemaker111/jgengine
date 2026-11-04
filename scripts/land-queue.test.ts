@@ -7,6 +7,7 @@ import {
   EXIT_DRAINED,
   EXIT_SOMETHING_FAILED,
   POLL_MS,
+  READ_ATTEMPTS,
   RERUN_GRACE_MS,
   WAIT_TIMEOUT_MS,
   drain,
@@ -513,3 +514,30 @@ test("a generated file both sides changed never stops the queue: it takes the ba
   expect(gitIn(bare, ["merge-base", "--is-ancestor", movedTip, pushedTip]).status).toBe(0);
   expect(gitOk(bare, ["show", `${pushedTip}:scripts/export-manifest.json`])).toBe("[\"a\", \"lane\", \"other\"]");
 }, 60_000);
+
+test("a failed read while waiting is tried again, and only reads failing in a row give up, naming GitHub's answer", () => {
+  const flaky = (failures: number): { github: GitHub; reads: () => number } => {
+    const base = onePr(31, [{ name: "ci" }]).github;
+    let reads = 0;
+    return {
+      reads: () => reads,
+      github: {
+        ...base,
+        pull: (number) => {
+          reads += 1;
+          return reads <= failures ? { ok: false, error: "error connecting to api.github.com\ncheck your internet connection" } : base.pull(number);
+        },
+      },
+    };
+  };
+  const blip = flaky(READ_ATTEMPTS - 1);
+  const recovered = io({ github: blip.github });
+  expect(waitForGreen(31, recovered).verdict).toBe("green");
+  expect(blip.reads()).toBe(READ_ATTEMPTS);
+  expect(recovered.lines[0]).toContain("error connecting to api.github.com");
+
+  const down = flaky(READ_ATTEMPTS);
+  const result = waitForGreen(31, io({ github: down.github }));
+  expect(result.verdict).toBe("unreadable");
+  expect(result.detail).toBe(`reading the PR failed ${READ_ATTEMPTS} times in a row: error connecting to api.github.com`);
+});

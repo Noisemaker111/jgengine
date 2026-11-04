@@ -135,24 +135,30 @@ function firstLine(text: string): string {
   return text.split("\n").map((line) => line.trim()).find((line) => line.length > 0) ?? text.trim();
 }
 
-/** The PR and the checks on its head commit; null when GitHub could not be read. */
-export function readView(github: GitHub, number: number): PrView | null {
+/** The PR and the checks on its head commit, or what GitHub answered when it could not be read. */
+export function readView(github: GitHub, number: number): GhResult<PrView> {
   const pull = github.pull(number);
-  if (!pull.ok) return null;
+  if (!pull.ok) return pull;
   const view = pull.value;
   const settled: GhResult<RollupEntry[]> = { ok: true, value: [] };
   const checks = view.state === "OPEN" ? github.checks(view.headRefOid) : settled;
-  if (!checks.ok) return null;
+  if (!checks.ok) return checks;
   return {
-    number: view.number,
-    url: view.url,
-    state: view.state,
-    headRefName: view.headRefName,
-    headRefOid: view.headRefOid,
-    mergeStateStatus: view.mergeStateStatus,
-    statusCheckRollup: checks.value,
+    ok: true,
+    value: {
+      number: view.number,
+      url: view.url,
+      state: view.state,
+      headRefName: view.headRefName,
+      headRefOid: view.headRefOid,
+      mergeStateStatus: view.mergeStateStatus,
+      statusCheckRollup: checks.value,
+    },
   };
 }
+
+/** Reads in a row that may fail while waiting before the wait gives up: one failed `gh api` call is a network blip. */
+export const READ_ATTEMPTS = 3;
 
 export interface CheckReport {
   checks: GhCheck[];
@@ -187,11 +193,20 @@ export function waitForGreen(number: number, io: QueueIo): WaitResult {
   const startedAt = io.now();
   let runIds: number[] = [];
   let rerunAt: number | null = null;
+  let misses = 0;
   for (;;) {
-    const view = readView(io.github, number);
-    if (view === null) {
-      return { verdict: "unreadable", checks: [], runIds, waitedMs: io.now() - startedAt, detail: "reading the PR failed" };
+    const read = readView(io.github, number);
+    if (!read.ok) {
+      misses += 1;
+      if (misses >= READ_ATTEMPTS) {
+        return { verdict: "unreadable", checks: [], runIds, waitedMs: io.now() - startedAt, detail: `reading the PR failed ${misses} times in a row: ${firstLine(read.error)}` };
+      }
+      io.log(`#${number}: reading the PR failed (${firstLine(read.error)}); trying again`);
+      io.pause(POLL_MS);
+      continue;
     }
+    misses = 0;
+    const view = read.value;
     if (view.state === "MERGED") {
       return { verdict: "green", checks: [], runIds, waitedMs: io.now() - startedAt, detail: "already merged" };
     }
@@ -385,8 +400,9 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
   });
 
   for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
-    const view = readView(io.github, pr.number);
-    if (view === null) return done("failed", "could not read the PR");
+    const read = readView(io.github, pr.number);
+    if (!read.ok) return done("failed", `could not read the PR: ${firstLine(read.error)}`);
+    const view = read.value;
     if (view.state === "MERGED") return done("landed", "it was already merged");
     if (view.state !== "OPEN") return done("skipped", `state ${view.state}`);
     if (view.mergeStateStatus === "DIRTY") return done("failed", "conflicts with the base; a person has to resolve it");
@@ -407,7 +423,7 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
       }
       // A person or another queue run may have merged it a moment earlier.
       const after = readView(io.github, pr.number);
-      if (after?.state === "MERGED") return done("landed", "it was merged first by someone else");
+      if (after.ok && after.value.state === "MERGED") return done("landed", "it was merged first by someone else");
       const why = merged.error;
       if (!baseMoved(why)) return done("failed", firstLine(why));
       if (attempt === MERGE_ATTEMPTS) return done("failed", `base kept moving: ${firstLine(why)}`);
@@ -426,12 +442,12 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
  * the lane that handed the PR over keeps working instead of sitting in the queue.
  */
 export function drainOne(number: number, args: QueueArgs, io: QueueIo): { code: number; drained: Drained[] } {
-  const view = readView(io.github, number);
-  if (view === null) {
-    io.error(`#${number} could not be read`);
+  const read = readView(io.github, number);
+  if (!read.ok) {
+    io.error(`#${number} could not be read: ${firstLine(read.error)}`);
     return { code: EXIT_SOMETHING_FAILED, drained: [] };
   }
-  const pr: ReadyPr = { number, url: view.url, branch: view.headRefName, readyAt: io.now() };
+  const pr: ReadyPr = { number, url: read.value.url, branch: read.value.headRefName, readyAt: io.now() };
   const result = landOne(pr, args, io);
   const line = formatOutcome(result);
   if (result.outcome === "failed") io.error(line);
