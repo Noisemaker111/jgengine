@@ -145,7 +145,8 @@ function main(argv: readonly string[]): void {
     const id = startTask({ command });
     console.log(id);
     console.error(`bun run background await ${id}`);
-    console.error(`output: ${join(root, tasksRoot(root), id, "out.log")}`);
+    console.error(`output: ${join(tasksRoot(root), id, "out.log")}`);
+    console.error(`progress: bun run background status ${id}`);
   } catch (error) {
     console.error(`background start: ${(error as Error).message}`);
     process.exit(2);

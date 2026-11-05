@@ -4,7 +4,7 @@
 // the tree. Run it when a gate's output or selection changed, or before trusting a green you did not
 // see fail. Each case's output lands in `.scratch/gate-proof/<case>.log`.
 //
-//   bun scripts/gate-proof.ts                 # every case (bun run test takes several minutes: start it in the background)
+//   bun scripts/gate-proof.ts                 # every case (bun run test takes about ten minutes: start it in the background)
 //   bun scripts/gate-proof.ts verify-fast     # the cases of one gate: verify-fast, check, test
 //   bun scripts/gate-proof.ts --list
 //
@@ -43,7 +43,7 @@ export const CASES: readonly ProofCase[] = [
     patch: "weighted-pick-ignores-weights.patch",
     breaks: "pickWeighted gives every item the same share, so loot tables and spawn odds stop honouring their weights",
     command: ["bun", "run", "verify:fast"],
-    expect: [/^FAIL {2}test /m, /packages\/core\/src\/random\/pick\.test\.ts: \(fail\) respects weight proportions/, /rerun only this: bun test .*pick\.test\.ts/, /^failed: test /m],
+    expect: [/^FAIL {2}test /m, /packages\/core\/src\/random\/pick\.test\.ts: \(fail\) .*respects weight proportions/, /rerun only this: bun test .*pick\.test\.ts/, /^failed: test /m],
     timeoutSeconds: 540,
   },
   {
@@ -61,8 +61,9 @@ export const CASES: readonly ProofCase[] = [
     patch: "weighted-pick-ignores-weights.patch",
     breaks: "the same weighted pick regression, through the whole suite",
     command: ["bun", "run", "test"],
-    expect: [/^test: failed$/m, /packages\/core\/src\/random\/pick\.test\.ts: \(fail\) respects weight proportions/, /rerun only these: bun test .*pick\.test\.ts/, /full log \(UTF-8\)/],
-    timeoutSeconds: 600,
+    expect: [/^test: failed$/m, /packages\/core\/src\/random\/pick\.test\.ts: \(fail\) .*respects weight proportions/, /rerun only these: bun test .*pick\.test\.ts/, /full log \(UTF-8\)/],
+    // The root script's own guard is 900 s (its longest lane measured 580 s on a developer PC).
+    timeoutSeconds: 960,
   },
 ];
 
