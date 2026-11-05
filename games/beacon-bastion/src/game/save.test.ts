@@ -63,12 +63,18 @@ describe("the keep's save document", () => {
       beginRun(runner.ctx);
       expect(gamePhase(runner.ctx)).toBe("playing");
       runner.ui.invoke("beacon.place", { kind: "tower_archer", slot: "plot-1" });
+      advanceKeep(runner, 10);
+      const [tower] = keep.of(runner.ctx).instances();
+      expect(tower?.ready).toBe(true);
+      expect(runner.ctx.scene.entity.get(tower!.id)).not.toBeNull();
       worldHeartbeat.update?.(runner.ctx, 1);
       await checkpointKeep(runner.ctx, 0);
       expect(data.has("game-save:beacon-bastion:keep")).toBe(true);
       const reopened = beaconRunner("reopened");
       await loadSlot(reopened.ctx, "keep");
       expect(keep.of(reopened.ctx).instances()).toHaveLength(1);
+      // the standing tower is back in the scene, not only in the keep's books
+      expect(reopened.ctx.scene.entity.get(tower!.id)).not.toBeNull();
     } finally {
       if (original) Object.defineProperty(globalThis, "localStorage", original);
       else Reflect.deleteProperty(globalThis, "localStorage");
