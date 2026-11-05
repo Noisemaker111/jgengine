@@ -327,7 +327,7 @@ export function createGameSave(config: GameSaveConfig): GameSave {
     },
     async switchSlot(slot, options) {
       if (options?.flush !== false) store.set(capture());
-      const document = await store.switchSlot(slot);
+      const document = await store.switchSlot(slot, options);
       apply(document);
       return document;
     },

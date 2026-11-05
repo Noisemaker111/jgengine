@@ -19,6 +19,7 @@ import { bountyScale } from "../../waves/bounty";
 import { carriedRelic, legacy, relicBountyScale } from "../../waves/legacy";
 import { bossLine, tierLabel, wavePreviewLine, waveStatusLine } from "../../waves/status";
 import { Brazier } from "../kit/Brazier";
+import { keepIsUnsaved } from "../../save";
 
 /**
  * The keep's own signage, top-left: the beacon brazier burns as high as the keep has lives, and
@@ -36,9 +37,11 @@ export function KeepSigns() {
   const interest = interestOn(gold);
   const ratio = livesMax > 0 ? lives / livesMax : 0;
   const danger = ratio <= 0.3;
+  const unsaved = useGameStore((ctx) => keepIsUnsaved(ctx));
 
   return (
     <div className="bb-signs">
+      {unsaved ? <span role="status">Unsaved defense — save to a keep before leaving</span> : null}
       <HudFade watch={[lives]} hold={danger} dimTo={0.45} idleMs={4000}>
         <div className="bb-beacon" data-danger={danger ? "" : undefined} aria-label={`Keep lives ${lives} of ${livesMax}`}>
           <Brazier size={46} strength={0.15 + ratio * 0.85} />

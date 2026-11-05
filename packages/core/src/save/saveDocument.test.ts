@@ -468,6 +468,7 @@ describe("opening a save from a menu", () => {
     const stored = await save.peek("slot-1");
 
     live.level = 99;
+    save.touch();
     await save.switchSlot("slot-1", { flush: false });
     expect(live.level).toBe(3);
     expect(await save.peek("slot-1")).toEqual(stored);

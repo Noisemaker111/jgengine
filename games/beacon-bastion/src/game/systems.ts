@@ -4,6 +4,8 @@ import { tickTowers } from "./combat/towerAI";
 import { keep, runEnded } from "./keep";
 import { tickWaves } from "./waves/director";
 import { heartbeat } from "./world/setup";
+import { checkpointKeep } from "./save";
+import { gamePhase } from "@jgengine/core/game/gamePhase";
 
 export const waves = defineSystem({
   id: "waves",
@@ -24,8 +26,9 @@ export const towers = defineSystem({
 export const worldHeartbeat = defineSystem({
   id: "world-heartbeat",
   tick: { type: "frame", stage: "cleanup" },
-  update(ctx: GameContext) {
+  update(ctx: GameContext, dt) {
     heartbeat(ctx);
+    if (gamePhase(ctx) === "playing") void checkpointKeep(ctx, dt);
   },
 });
 

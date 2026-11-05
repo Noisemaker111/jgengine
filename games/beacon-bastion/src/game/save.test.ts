@@ -8,9 +8,12 @@ import { STARTING_LIVES } from "./entities/base/catalog";
 import { keep, towerLevel } from "./keep";
 import { resetSession, session } from "./session";
 import { advanceKeep, beaconRunner } from "./testing";
-import { captureDefense, defenseSystem, legacySystem, validDefenseSave, worldSystem } from "./save";
+import { beaconSave, captureDefense, checkpointKeep, defenseSystem, keepIsUnsaved, legacySystem, loadSlot, prepareKeep, validDefenseSave, worldSystem } from "./save";
 import { drawRelics, freshLegacy, legacy, openingGold, upgradeLegacy, writeLegacy } from "./waves/legacy";
 import { WARDEN_ID, bossProfile } from "./waves/manifest";
+import { beginRun } from "./menu";
+import { worldHeartbeat } from "./systems";
+import { gamePhase } from "@jgengine/core/game/gamePhase";
 
 let runner: HeadlessRunner;
 const world = () => keep.of(runner.ctx);
@@ -47,6 +50,100 @@ function playedIntoWave(): void {
 }
 
 describe("the keep's save document", () => {
+  test("a new defense starts and its playing heartbeat writes its progress", async () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const data = new Map<string, string>();
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => { data.set(key, value); },
+      removeItem: (key: string) => { data.delete(key); },
+    } });
+    try {
+      await prepareKeep(runner.ctx, "keep");
+      beginRun(runner.ctx);
+      expect(gamePhase(runner.ctx)).toBe("playing");
+      runner.ui.invoke("beacon.place", { kind: "tower_archer", slot: "plot-1" });
+      advanceKeep(runner, 10);
+      const [tower] = keep.of(runner.ctx).instances();
+      expect(tower?.ready).toBe(true);
+      expect(runner.ctx.scene.entity.get(tower!.id)).not.toBeNull();
+      worldHeartbeat.update?.(runner.ctx, 1);
+      await checkpointKeep(runner.ctx, 0);
+      expect(data.has("game-save:beacon-bastion:keep")).toBe(true);
+      const reopened = beaconRunner("reopened");
+      await loadSlot(reopened.ctx, "keep");
+      expect(keep.of(reopened.ctx).instances()).toHaveLength(1);
+      // the standing tower is back in the scene, not only in the keep's books
+      expect(reopened.ctx.scene.entity.get(tower!.id)).not.toBeNull();
+    } finally {
+      if (original) Object.defineProperty(globalThis, "localStorage", original);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
+  });
+  test("checkpoints only an owned keep and stops if its bytes change", async () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const data = new Map<string, string>();
+    const writes: string[] = [];
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => { data.set(key, value); writes.push(key); },
+      removeItem: (key: string) => { data.delete(key); },
+    } });
+    try {
+      const key = "game-save:beacon-bastion:keep";
+      data.set(key, "existing bytes");
+      await prepareKeep(runner.ctx, "keep");
+      expect(keepIsUnsaved(runner.ctx)).toBe(true);
+      await checkpointKeep(runner.ctx, 10);
+      expect(data.get(key)).toBe("existing bytes");
+      expect(writes).toEqual([]);
+      await prepareKeep(runner.ctx, "ward");
+      expect(keepIsUnsaved(runner.ctx)).toBe(true);
+      world().set("keep.gold", 321);
+      for (let i = 0; i < 10; i++) await checkpointKeep(runner.ctx, 1);
+      expect(keepIsUnsaved(runner.ctx)).toBe(false);
+      const ward = "game-save:beacon-bastion:ward";
+      expect(writes.filter(entry => entry === ward)).toHaveLength(10);
+      const reloaded = beaconRunner("Reloaded keep");
+      await loadSlot(reloaded.ctx, "ward");
+      expect(keep.of(reloaded.ctx).num("keep.gold")).toBe(321);
+      data.set(ward, "newer bytes from another window");
+      await checkpointKeep(runner.ctx, 1);
+      expect(data.get(ward)).toBe("newer bytes from another window");
+      expect(keepIsUnsaved(runner.ctx)).toBe(true);
+    } finally {
+      if (original) Object.defineProperty(globalThis, "localStorage", original);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
+  });
+  test("opening or preparing another keep does not overwrite the one left behind", async () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const data = new Map<string, string>();
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => { data.set(key, value); },
+      removeItem: (key: string) => { data.delete(key); },
+    } });
+    try {
+      const save = beaconSave(runner.ctx);
+      await save.save();
+      const key = "game-save:beacon-bastion:keep";
+      const originalBytes = data.get(key);
+      expect(originalBytes).toBeDefined();
+      world().set("keep.gold", 999);
+      await loadSlot(runner.ctx, "ward");
+      expect(data.get(key)).toBe(originalBytes);
+      await save.save();
+      const wardKey = "game-save:beacon-bastion:ward";
+      const wardBytes = data.get(wardKey);
+      world().set("keep.gold", 888);
+      await prepareKeep(runner.ctx, "beacon");
+      expect(data.get(wardKey)).toBe(wardBytes);
+    } finally {
+      if (original) Object.defineProperty(globalThis, "localStorage", original);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
+  });
   test("the world section brings back purse, walls, towers with their levels and a build mid-rise", async () => {
     playedIntoWave();
     const facts = { ...world().facts() };

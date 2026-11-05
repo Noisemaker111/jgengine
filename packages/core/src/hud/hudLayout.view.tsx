@@ -452,6 +452,12 @@ export function HudCanvas({
   children?: ReactNode;
 }) {
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  // The canvas only exists during `showDuring` phases, so the effects that measure it key on the element.
+  const [canvasElement, setCanvasElement] = useState<HTMLDivElement | null>(null);
+  const attachCanvas = useCallback((element: HTMLDivElement | null) => {
+    canvasRef.current = element;
+    setCanvasElement(element);
+  }, []);
   const phase = useOptionalGamePhase();
   const { compact } = useDisplayProfile();
   const { safeArea, controlZones } = useGameViewportLayout();
@@ -495,7 +501,7 @@ export function HudCanvas({
   }, []);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = canvasElement;
     if (canvas === null) return;
     const host = measurableHost(canvas);
     const measure = () => {
@@ -509,7 +515,7 @@ export function HudCanvas({
     const observer = new ResizeObserver(measure);
     observer.observe(host);
     return () => observer.disconnect();
-  }, []);
+  }, [canvasElement]);
 
   const fit = fitEnabled ? resolveHudFit(hudViewport?.config, compact) : null;
   const baseScale = fit !== null && viewport !== null ? hudScaleForViewport(fit, viewport) : compact ? COMPACT_HUD_SCALE : 1;
@@ -584,7 +590,7 @@ export function HudCanvas({
   }, [layout, chordEnabled, hold, press]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = canvasElement;
     if (canvas === null) return;
     const host = measurableHost(canvas);
     if (typeof requestAnimationFrame !== "function") return;
@@ -695,7 +701,7 @@ export function HudCanvas({
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
     };
-  }, []);
+  }, [canvasElement]);
 
   const canvasStyle = {
     position: "absolute",
@@ -710,7 +716,7 @@ export function HudCanvas({
   return (
     <HudCanvasContext.Provider value={value}>
       <div
-        ref={canvasRef}
+        ref={attachCanvas}
         data-hud-canvas=""
         data-hud-editing={editing ? "" : undefined}
         data-hud-scale={scale === preferredScale ? undefined : scale.toFixed(2)}
