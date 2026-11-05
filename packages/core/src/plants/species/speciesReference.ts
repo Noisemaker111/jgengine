@@ -12,6 +12,15 @@ import { siteIndexHeightM, type SiteIndexCurve } from "../validation/heightAgeCu
  */
 export const REFERENCE_STAND: PlantEnvironment = { ...OPEN_TEMPERATE_SITE, stand: { spacingIndex: 0.3 } };
 
+/**
+ * How far a stand-grown tree may sit from its tables and still pass, at 20, 50 and 100 years in
+ * {@link REFERENCE_STAND}: height within 15% of its Carmean or FIA curve, DBH within 25% of its FIA
+ * curve, crown width inside its Tallo band. One envelope for every tree species; the library test
+ * holds every record to it and `bun run jgengine plants fit --until-pass` fits a record into it.
+ * @capability plant-validation published crown allometry and crown-shape measures to check a growth model against
+ */
+export const STAND_ENVELOPE = { heightShare: 0.15, dbhShare: 0.25, ages: [20, 50, 100] } as const;
+
 /** Chapman–Richards growth curve y = a·(1 − e^(−k·t))^p of total age t. */
 export interface GrowthCurve {
   a: number;

@@ -1729,6 +1729,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `HabitReference` (interface) · `import { HabitReference } from "@jgengine/core/plants/species/habitReference"`
 - `REFERENCE_STAND` (const) · `import { REFERENCE_STAND } from "@jgengine/core/plants/species/speciesReference"`
 - `SHRUB_STEMS` (const) · `import { SHRUB_STEMS } from "@jgengine/core/plants/species/habitReference"`
+- `STAND_ENVELOPE` (const) · `import { STAND_ENVELOPE } from "@jgengine/core/plants/species/speciesReference"`
 - `basalStemCount` (function) · `import { basalStemCount } from "@jgengine/core/plants/species/habitReference"`
 - `branchAzimuthHistogram` (function) · `import { branchAzimuthHistogram } from "@jgengine/core/plants/validation/plantSilhouette"`
 - `crownArchitecture` (function) · `import { crownArchitecture } from "@jgengine/core/plants/validation/crownArchitecture"`

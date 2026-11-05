@@ -1,5 +1,5 @@
 import { openGrownCrownWidthM } from "../../packages/core/src/plants/validation/crownAllometry";
-import { crownWidthBandM, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../../packages/core/src/plants/species/speciesReference";
+import { crownWidthBandM, STAND_ENVELOPE, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../../packages/core/src/plants/species/speciesReference";
 import type { CrownForm } from "../../packages/core/src/plants/species/plantSpecies";
 import { CROWN_ARCHITECTURE_MEASURES, CROWN_ARCHITECTURE_MISSES_ALLOWED, crownArchitectureMisses, crownShapeBands, type CrownArchitecture, type CrownArchitectureTarget, type MeasureBand } from "../../packages/core/src/plants/validation/crownArchitecture";
 import type { Trial, TrialReading } from "./speciesTrial";
@@ -88,7 +88,7 @@ export function scoreTrial(target: FitTarget, trial: Trial): TrialScore {
   };
   const seeds = Math.max(1, trial.open.length);
   for (let s = 0; s < trial.open.length; s += 1) {
-    for (const age of [20, 50, 100]) {
+    for (const age of STAND_ENVELOPE.ages) {
       const open = trial.open[s]?.find((r) => r.age === age);
       const stand = trial.stand[s]?.find((r) => r.age === age);
       if (open === undefined || stand === undefined || !open.alive || !stand.alive) {
@@ -109,7 +109,7 @@ export function scoreTrial(target: FitTarget, trial: Trial): TrialScore {
       // The fit's pass limits, ±15% height and ±25% DBH, with a margin.
       add("limits", hinge(Math.abs(logRatio(stand.heightM, height)), 0, 0.11, 0.01) + hinge(Math.abs(logRatio(stand.dbhCm, dbh)), 0, 0.18, 0.01));
       const outsideTallo = band !== null && (stand.crownWidthM < band.lowM || stand.crownWidthM > band.highM);
-      const testMisses = (Math.abs(stand.heightM / height - 1) >= 0.15 ? 1 : 0) + (Math.abs(stand.dbhCm / dbh - 1) >= 0.25 ? 1 : 0) + (outsideTallo ? 1 : 0);
+      const testMisses = (Math.abs(stand.heightM / height - 1) >= STAND_ENVELOPE.heightShare ? 1 : 0) + (Math.abs(stand.dbhCm / dbh - 1) >= STAND_ENVELOPE.dbhShare ? 1 : 0) + (outsideTallo ? 1 : 0);
       add("testMisses", TEST_MISS_COST * testMisses);
       if (reference.openCrownWidth !== undefined) {
         const ek = openGrownCrownWidthM(reference.openCrownWidth, open.dbhCm);

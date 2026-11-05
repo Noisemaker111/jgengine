@@ -4203,10 +4203,6 @@
 
 - `FRAXINUS_AMERICANA` (const): const FRAXINUS_AMERICANA: PlantSpecies — White ash. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 6163 FIA site trees on site index 72 ft and 167 Tallo crowns. Written by `bun run jgengine plants write fraxinus-americana`; edit the importer's traits or refit, not this file.
 
-## @jgengine/core/plants/species/data/fraxinusNigra
-
-- `FRAXINUS_NIGRA` (const): const FRAXINUS_NIGRA: PlantSpecies — Black ash. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4971 FIA site trees on site index 46 ft and 57 Tallo crowns. Written by `bun run jgengine plants write fraxinus-nigra`; edit the importer's traits or refit, not this file.
-
 ## @jgengine/core/plants/species/data/fraxinusPennsylvanica
 
 - `FRAXINUS_PENNSYLVANICA` (const): const FRAXINUS_PENNSYLVANICA: PlantSpecies — Green ash. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 3820 FIA site trees on site index 72 ft and 66 Tallo crowns. Written by `bun run jgengine plants write fraxinus-pennsylvanica`; edit the importer's traits or refit, not this file.
@@ -4307,10 +4303,6 @@
 
 - `POPULUS_TREMULOIDES` (const): const POPULUS_TREMULOIDES: PlantSpecies — Quaking aspen. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 16834 FIA site trees on site index 66 ft and 566 Tallo crowns. Written by `bun run jgengine plants write populus-tremuloides`; edit the importer's traits or refit, not this file.
 
-## @jgengine/core/plants/species/data/prunusSerotina
-
-- `PRUNUS_SEROTINA` (const): const PRUNUS_SEROTINA: PlantSpecies — Black cherry. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1582 FIA site trees on site index 68 ft and 81 Tallo crowns. Written by `bun run jgengine plants write prunus-serotina`; edit the importer's traits or refit, not this file.
-
 ## @jgengine/core/plants/species/data/pseudotsugaMenziesii
 
 - `PSEUDOTSUGA_MENZIESII` (const): const PSEUDOTSUGA_MENZIESII: PlantSpecies — Douglas-fir. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 33633 FIA site trees on site index 109 ft and 4251 Tallo crowns. Written by `bun run jgengine plants write pseudotsuga-menziesii`; edit the importer's traits or refit, not this file.
@@ -4350,10 +4342,6 @@
 ## @jgengine/core/plants/species/data/quercusVelutina
 
 - `QUERCUS_VELUTINA` (const): const QUERCUS_VELUTINA: PlantSpecies — Black oak. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4741 FIA site trees on site index 63 ft and 107 Tallo crowns. Written by `bun run jgengine plants write quercus-velutina`; edit the importer's traits or refit, not this file.
-
-## @jgengine/core/plants/species/data/robiniaPseudoacacia
-
-- `ROBINIA_PSEUDOACACIA` (const): const ROBINIA_PSEUDOACACIA: PlantSpecies — Black locust. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 381 FIA site trees on site index 71 ft and 110 Tallo crowns. Written by `bun run jgengine plants write robinia-pseudoacacia`; edit the importer's traits or refit, not this file.
 
 ## @jgengine/core/plants/species/data/sabalPalmetto
 
@@ -4417,6 +4405,7 @@
 
 - `GrowthCurve` (interface): interface GrowthCurve — Chapman–Richards growth curve y = a·(1 − e^(−k·t))^p of total age t.
 - `REFERENCE_STAND` (const): const REFERENCE_STAND: PlantEnvironment — The stand a species is grown in to compare with its reference: fully stocked and even-aged, seen from a dominant tree. FIA site trees and Tallo stand-grown crowns are dominant and codominant trees, which hold more growing space than the stand's mean tree (Oliver & Larson 1996, Forest Stand Dynamics), so the spacing index is 0.3 rather than the mean tree's 0.25.
+- `STAND_ENVELOPE` (const): const STAND_ENVELOPE: { readonly heightShare: 0.15; readonly dbhShare: 0.25; readonly ages: readonly [20, 50, 100]; } — How far a stand-grown tree may sit from its tables and still pass, at 20, 50 and 100 years in {@link REFERENCE_STAND}: height within 15% of its Carmean or FIA curve, DBH within 25% of its FIA curve, crown width inside its Tallo band. One envelope for every tree species; the library test holds every record to it and `bun run jgengine plants fit --until-pass` fits a record into it.
 - `SpeciesReference` (interface): interface SpeciesReference — What measured trees say one species should grow into, imported from public tables by `bun run jgengine plants import` and fitted to by `plants fit`.
 - `crownWidthBandM` (function): function crownWidthBandM(reference: Pick<SpeciesReference, "crownWidth">, dbhCm: number): { lowM: number; highM: number } | null — The 10th–90th percentile crown width in metres of measured stand-grown trees of a species at `dbhCm`, interpolated between its Tallo DBH classes; below the first class it scales linearly to zero. Null when the species has no Tallo record.
 - `growthCurveAt` (function): function growthCurveAt(curve: GrowthCurve, ageYears: number): number — A {@link GrowthCurve} at `ageYears`.

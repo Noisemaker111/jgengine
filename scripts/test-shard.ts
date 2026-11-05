@@ -104,6 +104,9 @@ export const SPLIT_TESTS: Readonly<Record<string, { match: string; seconds: read
   "packages/core/src/landform/glacial/glacialErosion.test.ts": { match: "the fast path", seconds: [51, 46] },
   "scripts/reference/physics/bondedRock.test.ts": { match: "calibrates to its Young's modulus", seconds: [86, 28] },
   "scripts/reference/physics/discreteElementExperiments.test.ts": { match: "pours a cone", seconds: [56, 16] },
+  // Estimated, not yet measured on a runner: 67 s and 55 s on a developer PC, where the library's finite-mesh
+  // tests take 51 s against the 25 s a runner measured, so about half.
+  "packages/core/src/plants/species/data/treeEnvelope.test.ts": { match: "a stand-grown tree", seconds: [33, 28] },
 };
 
 const UNIT_PATTERN = " -t ";
