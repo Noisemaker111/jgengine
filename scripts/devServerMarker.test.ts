@@ -13,6 +13,7 @@ import {
   listMarkers,
   markerPath,
   readMarker,
+  readServerIdentityResult,
   removeMarker,
   resolveIdleExitMs,
   startIdleWatchdog,
@@ -59,6 +60,12 @@ async function liveServer(report: { identity: string; pid: number } | null): Pro
 }
 
 describe("a marker is checked against the live server before reuse", () => {
+  test("identity failures retain the reason instead of an unexplained null", async () => {
+    const port = await liveServer(null);
+    expect(await readServerIdentityResult(`http://127.0.0.1:${port}`)).toEqual({ server: null, error: "identity route returned HTTP 404" });
+    const valid = await liveServer({ identity: "tree", pid: 42 });
+    expect(await readServerIdentityResult(`http://127.0.0.1:${valid}`)).toMatchObject({ server: { identity: "tree", pid: 42 }, error: null });
+  });
   test("another checkout's Vite on a stale marker's port is foreign, and the lying marker goes", async () => {
     const dir = markerDir();
     const port = await liveServer({ identity: "C:/other-tree", pid: 777 });

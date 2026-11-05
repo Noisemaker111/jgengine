@@ -22,11 +22,34 @@ import {
   subscribeModelLoadFallbacks,
   heavyModels,
   probeModelUrl,
+  pendingModelLoads,
   recordManagerLoadError,
   recordModelTriangles,
   setModelTriangleBudget,
   singlePassModelMaterials,
+  sharedGltfLoader,
+  trackSceneWork,
 } from "./modelLoad.draw";
+
+test("pending work counts duplicate model requests and removes completed scene work", () => {
+  const manager = sharedGltfLoader.manager;
+  const url = "/models/duplicate.glb";
+  manager.itemStart(url);
+  manager.itemStart(url);
+  const finish = trackSceneWork("fixture");
+  try {
+    expect(pendingModelLoads()).toMatchObject({ total: 3, items: [{ url, count: 2 }, { count: 1 }] });
+    manager.itemEnd(url);
+    expect(pendingModelLoads().items[0]).toEqual({ url, count: 1 });
+    finish();
+    finish();
+    expect(pendingModelLoads()).toEqual({ total: 1, items: [{ url, count: 1 }] });
+  } finally {
+    finish();
+    manager.itemEnd(url);
+  }
+  expect(pendingModelLoads()).toEqual({ total: 0, items: [] });
+});
 
 function stubResponse(body: Uint8Array, init: { status?: number; contentType?: string; statusText?: string }): Response {
   return new Response(body, {
