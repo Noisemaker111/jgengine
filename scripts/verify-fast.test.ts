@@ -23,6 +23,7 @@ import {
   opaqueScopes,
   ownTests,
   pureRenames,
+  rerunCommand,
   splitByCost,
   TESTS_PER_LANE,
   workspaceOf,
@@ -293,14 +294,23 @@ describe("attribution fails loudly", () => {
     expect(plan.tests).not.toContain("packages/react/src/a.test.ts");
   });
 
-  test("a root script no test reaches is reported, not passed", () => {
+  test("a root script no test imports runs every scripts test, as CI does; a file under no tested root is reported, not passed", () => {
     const plan = verifyPlan({
-      changed: ["scripts/unreachable.ts"],
-      testFiles: ["scripts/other.test.ts"],
+      changed: ["scripts/species-import/unreachable.ts", "apps/nowhere/src/lonely.ts"],
+      testFiles: ["scripts/other.test.ts", "packages/core/src/a.test.ts"],
       workspaces: fakeWorkspaces,
       graph: emptyGraph,
     });
-    expect(plan.unattributed).toEqual(["scripts/unreachable.ts"]);
+    expect(plan.suites).toEqual(["scripts"]);
+    expect(plan.tests).toEqual(["scripts/other.test.ts"]);
+    expect(plan.unattributed).toEqual(["apps/nowhere/src/lonely.ts"]);
+  });
+
+  test("a failed step names the command that reruns only it, without the junit flags of the run", () => {
+    expect(rerunCommand({ name: "t", command: ["bun", "test", "--timeout", "20000", "--reporter=junit", "--reporter-outfile=.scratch/x/tests-1.xml", "a.test.ts", "b c.test.ts"] })).toBe(
+      'bun test --timeout 20000 a.test.ts "b c.test.ts"',
+    );
+    expect(rerunCommand({ name: "layers", command: ["bun", "scripts/check-layers.ts"] })).toBe("bun scripts/check-layers.ts");
   });
 
   test("a pure rename and a demo never need a test", () => {

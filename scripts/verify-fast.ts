@@ -66,7 +66,7 @@ export const EXIT_FAILED = 1;
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 const SOURCE_FILE = /\.[cm]?[jt]sx?$/;
 const DECLARATION = /\.d\.[cm]?ts$/;
-const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\/[^/]+\/src\//, /^scripts\/[^/]+\.[cm]?tsx?$/, /^games\/[^/]+\/src\//];
+const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\/[^/]+\/src\//, /^scripts\/.+\.[cm]?tsx?$/, /^games\/[^/]+\/src\//];
 const GAME_DIR = /^games\/[^/]+$/;
 /** Demo scenes exist to be looked at; a test of one would be filler, so they never need one. */
 const DEMO = /(^|\/)demos?\//;
@@ -484,19 +484,21 @@ export function verifyPlan(input: {
   }
 
   // A file no test reaches is still covered when its package's whole suite runs: that is the suite
-  // CI runs for it. Only a file outside every tested package (a root script) stays unattributed.
+  // CI runs for it. A root script's suite is every `scripts/` test (CI's shard i), since those tests
+  // reach the scripts by spawning them, which no import shows. Only a file under no tested root at
+  // all stays unattributed, and the run says so rather than passing it.
   const unattributed: string[] = [];
   const suites: string[] = [];
   for (const path of runtime) {
     if (ownTests(path, input.testFiles).length > 0 || (testedBy.get(path) ?? []).length > 0) continue;
-    const workspace = workspaceOf(path, input.workspaces);
-    const suite = workspace === null ? [] : input.testFiles.filter((test) => test.startsWith(`${workspace.dir}/`));
-    if (suite.length === 0) {
+    const suiteDir = workspaceOf(path, input.workspaces)?.dir ?? (path.startsWith("scripts/") ? "scripts" : null);
+    const suite = suiteDir === null ? [] : input.testFiles.filter((test) => test.startsWith(`${suiteDir}/`));
+    if (suiteDir === null || suite.length === 0) {
       unattributed.push(path);
       continue;
     }
     for (const test of suite) tests.add(test);
-    if (!suites.includes(workspace!.dir)) suites.push(workspace!.dir);
+    if (!suites.includes(suiteDir)) suites.push(suiteDir);
   }
 
   const reached = new Set(reachedBy.keys());
@@ -880,10 +882,27 @@ async function withHeavyServer<T>(root: string, steps: readonly Step[], work: ()
   }
 }
 
-/** Each failing file with its first error, and the whole output in a UTF-8 log under `.scratch/verify-fast/`. */
-function printFailure(root: string, step: string, output: string): void {
-  const log = writeStepLog(root, "verify-fast", step, output);
+/**
+ * The command that reruns one step alone, as a line to paste: the run's own junit flags are left
+ * out, and an argument with a space is quoted.
+ */
+export function rerunCommand(step: Pick<Step, "name" | "command">): string {
+  return step.command
+    .filter((word) => !word.startsWith("--reporter"))
+    .map((word) => (/\s/.test(word) ? `"${word}"` : word))
+    .join(" ");
+}
+
+/**
+ * What a red step prints: each failing file with its first error, the command that reruns only this
+ * step, the fix when the step compares a generated file, and the whole output in a UTF-8 log under
+ * `.scratch/verify-fast/`. Everything a lane needs to act, without reading this script.
+ */
+function printFailure(root: string, step: Step, output: string): void {
+  const log = writeStepLog(root, "verify-fast", step.name, output);
   for (const line of digestLines(output, relPosix(root, log))) console.log(line);
+  console.log(`  rerun only this: ${rerunCommand(step)}`);
+  if (step.fix !== undefined) console.log(`  fix: ${step.fix}`);
 }
 
 function printPlan(plan: Plan, steps: readonly Step[]): void {
@@ -993,8 +1012,7 @@ async function main(argv: readonly string[]): Promise<number> {
         const result = await run(step, root);
         const suffix = result.blockedBy === undefined ? "" : `  (${result.output})`;
         (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${(result.ms / 1000).toFixed(1)}s${suffix}`);
-        if (!result.ok && result.blockedBy === undefined) printFailure(root, step.name, result.output);
-        if (!result.ok && result.blockedBy === undefined && step.fix !== undefined) console.log(`  fix: ${step.fix}`);
+        if (!result.ok && result.blockedBy === undefined) printFailure(root, step, result.output);
         return result;
       }, { onStart: receipt.start, onSettle: receipt.settle }),
     );
@@ -1112,10 +1130,7 @@ async function main(argv: readonly string[]): Promise<number> {
     async (step) => {
       const result = await run(step, root);
       (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
-      if (!result.ok) {
-        if (result.output.length > 0) printFailure(root, result.name, result.output);
-        if (step.fix !== undefined) console.log(`  fix: ${step.fix}`);
-      }
+      if (!result.ok) printFailure(root, step, result.output);
       return result;
     },
     { failFast: !cheap, onStart: receipt.start, onSettle: receipt.settle },
@@ -1129,15 +1144,22 @@ async function main(argv: readonly string[]): Promise<number> {
   console.log(
     `\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}`,
   );
+  // The result is partial by design and says so either way: what it covered, what it left out, and
+  // the command that runs CI's whole set.
+  const covered = `${plan.tests.length} test file(s), ${plan.typechecks.length} type-check(s), ${plan.gates.length} gate(s)${plan.boots.length > 0 ? `, boot ${plan.boots.join(" ")}` : ""}${skipped.length > 0 ? `; ${skipped.length} unit(s) already proven on these bytes` : ""}`;
+  if (plan.unattributed.length > 0) {
+    console.log(`verify:fast: no test reaches ${plan.unattributed.length} changed file(s), so this result says nothing about them: ${plan.unattributed.join(", ")}`);
+  }
   if (failures.length > 0) {
     console.log(`failed: ${failures.join(", ")}`);
     if (notRun.length > 0) {
       const named = notRun.slice(0, 4).join(", ");
       console.log(`not run, because the run stops at the first failure: ${named}${notRun.length > 4 ? ` and ${notRun.length - 4} more` : ""}`);
     }
-    console.log("verify:fast ran only what this change reaches. `bun run verify:fast --full` runs what CI runs.");
+    console.log(`verify:fast: partial: only what this change reaches (${covered}). \`bun run verify:fast --full\` runs what CI runs.`);
     return EXIT_FAILED;
   }
+  console.log(`verify:fast: ${cheap ? "cheap checks passed" : "verified"} — partial: only what this change reaches (${covered}). \`bun run verify:fast --full\` runs what CI runs.`);
   return EXIT_VERIFIED;
   } catch (error) {
     receipt?.abort(error);
