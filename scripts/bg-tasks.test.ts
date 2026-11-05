@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -121,6 +122,17 @@ test("bun's argument separator is not part of the command", () => {
   expect(commandFrom(["--", "bun", "run", "verify:fast", "--full"])).toBe("bun run verify:fast --full");
   expect(commandFrom(["bun", "run", "verify:fast", "--full"])).toBe("bun run verify:fast --full");
   expect(commandFrom(["--"])).toBe("");
+});
+
+test("an argument with spaces or quotes reaches the command whole, on either shell", () => {
+  const argv = ["--", "bun", "run", "lane:close", "-m", 'Breaking: the "old" name, gone & done'];
+  expect(commandFrom(argv, "win32")).toBe('bun run lane:close -m "Breaking: the \\"old\\" name, gone & done"');
+  expect(commandFrom(argv, "linux")).toBe(`bun run lane:close -m 'Breaking: the "old" name, gone & done'`);
+  expect(commandFrom(["--", "bun test a.test.ts && echo ok"])).toBe("bun test a.test.ts && echo ok");
+  // The line goes through the same shell the runner uses, and the program sees one argument.
+  const line = commandFrom(["--", "bun", "-e", "console.log(JSON.stringify(process.argv.slice(1)))", "x y", 'say "hi"']);
+  const run = process.platform === "win32" ? spawnSync("cmd.exe", ["/d", "/s", "/c", `"${line}"`], { windowsVerbatimArguments: true, encoding: "utf8" }) : spawnSync("bash", ["-lc", line], { encoding: "utf8" });
+  expect(JSON.parse(run.stdout.trim())).toEqual(["x y", 'say "hi"']);
 });
 
 test("a finished task answers with its whole output and its exit code", async () => {
