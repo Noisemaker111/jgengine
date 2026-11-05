@@ -2425,7 +2425,7 @@
 - `SOIL_YIELD` (const): const SOIL_YIELD: GrainMix — What soil is made of when a river picks it up.
 - `TILL_YIELD` (const): const TILL_YIELD: GrainMix — What glacial till breaks into: unsorted, from boulders to rock flour.
 - `settlingVelocity` (function): function settlingVelocity(diameter: number): number — Settling velocity in m/s of a natural quartz grain of diameter `diameter` metres in water (Ferguson & Church 2004, with C₁ = 18 and C₂ = 1 for natural grains).
-- `weatheredDepth` (function): function weatheredDepth(depth: number, production: number, depthScale: number, dt: number): number — Soil thickness after weathering for `dt` years from `depth`, solving dh/dt = P₀ e^(−h/h₀) exactly: h' = h₀ ln(e^(h/h₀) + P₀ dt / h₀).
+- `weatheredDepth` (function): function weatheredDepth(depth: number, production: number, depthScale: number, dt: number): number — Soil thickness after weathering for `dt` years from `depth`, solving dh/dt = P₀ e^(−h/h₀) exactly: h' = h₀ ln(e^(h/h₀) + P₀ dt / h₀). Inputs are nonnegative and finite, with a positive depth scale. Results beyond the finite range saturate.
 
 ## @jgengine/core/landform/validation/geomorphicLaws
 
