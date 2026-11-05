@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import { assertCheckoutReady } from "./checkout-ready";
-import { digestLines, writeStepLog } from "./failure-digest";
+import { digestLines, failureDigest, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
 import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
@@ -629,27 +629,37 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     const files = tests.map((settles) => settles.id.slice("test:".length));
     // Each file also pays its imports, which the junit time leaves out.
     const cost = Object.fromEntries(files.map((file) => [file, options.testCosts?.[file] !== undefined ? options.testCosts[file]! + 0.5 : guessedTestCost(file)]));
-    const total = files.reduce((sum, file) => sum + cost[file]!, 0);
-    const byCount = Math.min(lanes, Math.ceil(files.length / TESTS_PER_LANE));
-    const byTime = Math.min(lanes * 3, Math.ceil(total / TEST_CHUNK_SECONDS));
-    const parts = Math.min(files.length, Math.max(1, byCount, byTime));
-    const groups = splitByCost(files, cost, parts).filter((group) => group.length > 0);
-    groups.forEach((group, index) => {
-      const label = groups.length === 1 ? `test ${group.length} file(s)` : `test ${group.length} file(s) (${index + 1}/${groups.length})`;
-      steps.push({
-        name: label,
-        command: [
-          "bun",
-          "test",
-          "--timeout",
-          "20000",
-          ...(options.reportDir === undefined ? [] : ["--reporter=junit", `--reporter-outfile=${options.reportDir}/tests-${index + 1}.xml`]),
-          ...[...group].sort(),
-        ],
-        cost: group.reduce((sum, file) => sum + (cost[file] ?? 1), 0),
-        units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
-      });
+    // The tests named after the changed files, and the changed tests themselves, run first in a step
+    // of their own: a break in `pick.ts` reaches a thousand files, the run stops at the first red,
+    // and without this `pick.test.ts` sat in a chunk that never ran while the red named a loot table.
+    const own = new Set(plan.changed.flatMap((file) => ownTests(file, files)));
+    const rest = files.filter((file) => !own.has(file));
+    const testStep = (group: readonly string[], name: string, index: number, first: boolean): Step => ({
+      name,
+      command: [
+        "bun",
+        "test",
+        "--timeout",
+        "20000",
+        ...(options.reportDir === undefined ? [] : ["--reporter=junit", `--reporter-outfile=${options.reportDir}/tests-${index}.xml`]),
+        ...[...group].sort(),
+      ],
+      cost: group.reduce((sum, file) => sum + (cost[file] ?? 1), 0),
+      ...(first ? { first: true } : {}),
+      units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
     });
+    if (own.size > 0) steps.push(testStep([...own], `test ${own.size} own file(s)`, 0, true));
+    if (rest.length > 0) {
+      const total = rest.reduce((sum, file) => sum + cost[file]!, 0);
+      const byCount = Math.min(lanes, Math.ceil(rest.length / TESTS_PER_LANE));
+      const byTime = Math.min(lanes * 3, Math.ceil(total / TEST_CHUNK_SECONDS));
+      const parts = Math.min(rest.length, Math.max(1, byCount, byTime));
+      const groups = splitByCost(rest, cost, parts).filter((group) => group.length > 0);
+      groups.forEach((group, index) => {
+        const label = groups.length === 1 ? `test ${group.length} file(s)` : `test ${group.length} file(s) (${index + 1}/${groups.length})`;
+        steps.push(testStep(group, label, index + 1, false));
+      });
+    }
   }
 
   const gates = options.skillApi === true ? plan.gates : plan.gates.filter((gate) => gate !== "skill-api");
@@ -678,7 +688,7 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       units: boots,
     });
   }
-  return options.cheap === true ? steps.filter((step) => step.first === true) : steps;
+  return options.cheap === true ? steps.filter((step) => step.first === true && step.command[1] !== "test") : steps;
 }
 
 /** The paths whose change turns on CI's frame and smoke gates, from the same map the workflow calls. */
@@ -901,8 +911,15 @@ export function rerunCommand(step: Pick<Step, "name" | "command">): string {
 function printFailure(root: string, step: Step, output: string): void {
   const log = writeStepLog(root, "verify-fast", step.name, output);
   for (const line of digestLines(output, relPosix(root, log))) console.log(line);
-  console.log(`  rerun only this: ${rerunCommand(step)}`);
+  console.log(`  rerun only this: ${rerunFailing(step, output)}`);
   if (step.fix !== undefined) console.log(`  fix: ${step.fix}`);
+}
+
+/** For a test step, `bun test` over just the files that failed; for anything else, the step's own command. */
+export function rerunFailing(step: Pick<Step, "name" | "command">, output: string): string {
+  if (step.command[1] !== "test") return rerunCommand(step);
+  const failed = [...new Set(failureDigest(output).map((entry) => entry.where.replace(/:\d+$/, "")).filter((where) => TEST_FILE.test(where)))];
+  return failed.length === 0 ? rerunCommand(step) : `bun test ${failed.join(" ")}`;
 }
 
 function printPlan(plan: Plan, steps: readonly Step[]): void {

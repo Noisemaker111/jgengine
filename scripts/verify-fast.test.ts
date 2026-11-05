@@ -24,6 +24,7 @@ import {
   ownTests,
   pureRenames,
   rerunCommand,
+  rerunFailing,
   splitByCost,
   TESTS_PER_LANE,
   workspaceOf,
@@ -311,6 +312,23 @@ describe("attribution fails loudly", () => {
       'bun test --timeout 20000 a.test.ts "b c.test.ts"',
     );
     expect(rerunCommand({ name: "layers", command: ["bun", "scripts/check-layers.ts"] })).toBe("bun scripts/check-layers.ts");
+    const chunk = { name: "test 3 file(s)", command: ["bun", "test", "--timeout", "20000", "a.test.ts", "b.test.ts", "c.test.ts"] };
+    expect(rerunFailing(chunk, "b.test.ts:\n(fail) x\n\n 1 fail")).toBe("bun test b.test.ts");
+    expect(rerunFailing(chunk, "bun crashed")).toBe("bun test --timeout 20000 a.test.ts b.test.ts c.test.ts");
+  });
+
+  test("the tests named after the changed files run first, in their own step, so the root cause is never left not run", () => {
+    const plan: Plan = {
+      ...emptyPlan,
+      changed: ["packages/core/src/random/pick.ts"],
+      tests: ["packages/core/src/random/pick.test.ts", "packages/core/src/loot/lootGen.test.ts", "packages/core/src/item/affix.test.ts"],
+    };
+    const steps = fastSteps(plan, { lanes: 2 });
+    expect(steps[0]?.name).toBe("test 1 own file(s)");
+    expect(steps[0]?.first).toBe(true);
+    expect(steps[0]?.command).toContain("packages/core/src/random/pick.test.ts");
+    expect(steps.slice(1).flatMap((step) => step.command)).not.toContain("packages/core/src/random/pick.test.ts");
+    expect(steps.slice(1).flatMap((step) => step.command)).toContain("packages/core/src/loot/lootGen.test.ts");
   });
 
   test("a pure rename and a demo never need a test", () => {
@@ -362,7 +380,8 @@ describe("static gates", () => {
     };
     expect(fastSteps(plan, { cheap: true }).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
     expect(fastSteps(plan).some((step) => step.name.startsWith("test "))).toBe(true);
-    expect(fastSteps(plan).filter((step) => step.first === true).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
+    // The changed file's own test starts with the type-checks and gates, so the root cause is red first.
+    expect(fastSteps(plan).filter((step) => step.first === true).map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 own file(s)", "layers"]);
   });
 
   // A landing that ran a hand-picked subset of what CI runs met each missing check one CI run at a time.
@@ -500,7 +519,7 @@ describe("commands", () => {
     };
     const passed = new Set(["test:packages/core/src/b.test.ts", "gate:artifacts", "boot:harbor-heat", "load:harbor-heat"]);
     const steps = fastSteps(plan, { fresh: (unit) => passed.has(unit) });
-    expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 file(s)"]);
+    expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 own file(s)"]);
     expect(steps[1]?.command.slice(4)).toEqual(["packages/core/src/a.test.ts"]);
     expect(steps[1]?.units).toEqual([{ id: "test:packages/core/src/a.test.ts", inputs: ["packages/core/src/a.ts"] }]);
   });

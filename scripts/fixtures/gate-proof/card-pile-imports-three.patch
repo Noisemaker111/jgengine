@@ -1,0 +1,19 @@
+diff --git a/packages/core/src/cards/cardPile.ts b/packages/core/src/cards/cardPile.ts
+index e4e0e6896..6e1d1a6ca 100644
+--- a/packages/core/src/cards/cardPile.ts
++++ b/packages/core/src/cards/cardPile.ts
+@@ -1,9 +1,14 @@
+ // @skill jgengine-gameplay
++import { Vector3 } from "three";
++
+ import { shuffleWithRng } from "../random/pick";
+ import { seededRng } from "../random/rng";
+ 
+ export type ZoneName = string;
+ 
++/** Where a pile sits in the scene. */
++export const PILE_ORIGIN = new Vector3();
++
+ export interface CardPileConfig {
+   zones: readonly ZoneName[];
+   drawFrom?: ZoneName;
