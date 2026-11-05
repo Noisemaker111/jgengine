@@ -42,7 +42,9 @@ export const CASES: readonly ProofCase[] = [
     gate: "verify-fast",
     patch: "weighted-pick-ignores-weights.patch",
     breaks: "pickWeighted gives every item the same share, so loot tables and spawn odds stop honouring their weights",
-    command: ["bun", "run", "verify:fast"],
+    // Against HEAD, so the gate sees the break alone: against origin/beta it also ran whatever the
+    // branch under proof changed, and a branch touching package.json falls back to every test.
+    command: ["bun", "run", "verify:fast", "--base", "HEAD"],
     expect: [/^FAIL {2}test /m, /packages\/core\/src\/random\/pick\.test\.ts: \(fail\) .*respects weight proportions/, /rerun only this: bun test .*pick\.test\.ts/, /^failed: test /m],
     timeoutSeconds: 540,
   },
