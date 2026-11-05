@@ -5,21 +5,49 @@
 export interface CmaEs {
   readonly sigma: number;
   readonly mean: readonly number[];
+  /** Generations told so far, counting the ones of a restored search. */
+  readonly generation: number;
   ask(): number[][];
   tell(population: readonly (readonly number[])[], scores: readonly number[]): void;
+  /** Everything a later `createCmaEs(..., state)` needs to carry on exactly where this one is. */
+  state(): CmaEsState;
 }
 
-/** xorshift32 in [0, 1). */
-export function createRandom(seed: number): () => number {
-  let s = seed >>> 0 || 1;
-  return () => {
+/**
+ * A search mid-way: saved after each generation, so a fit that stops (a timeout, a closed shell) carries
+ * on from its last generation instead of starting a new search around its best point.
+ */
+export interface CmaEsState {
+  generation: number;
+  sigma: number;
+  mean: number[];
+  pc: number[];
+  ps: number[];
+  /** Row-major n×n covariance. */
+  cov: number[];
+  /** The xorshift32 word the next draw reads. */
+  rng: number;
+}
+
+/** xorshift32 in [0, 1); `state` reads or sets the word the next draw uses. */
+export interface Random {
+  (): number;
+  state: number;
+}
+
+export function createRandom(seed: number): Random {
+  const random = (() => {
+    let s = random.state;
     s ^= s << 13;
     s >>>= 0;
     s ^= s >>> 17;
     s ^= s << 5;
     s >>>= 0;
+    random.state = s;
     return s / 4294967296;
-  };
+  }) as Random;
+  random.state = seed >>> 0 || 1;
+  return random;
 }
 
 function gaussian(random: () => number): number {
@@ -73,10 +101,15 @@ function jacobiEigen(source: Matrix, n: number): { values: Float64Array; vectors
   return { values, vectors: v };
 }
 
-/** A CMA-ES search from `start` with step size `sigma` and `lambda` samples a generation. */
-export function createCmaEs(start: readonly number[], sigma0: number, lambda: number, seed: number): CmaEs {
+/**
+ * A CMA-ES search from `start` with step size `sigma` and `lambda` samples a generation; given a
+ * `resume` state of the same dimension, it continues that search instead (`start` and `sigma0` are
+ * then only what a state of another dimension falls back to).
+ */
+export function createCmaEs(start: readonly number[], sigma0: number, lambda: number, seed: number, resume?: CmaEsState): CmaEs {
   const n = start.length;
   const random = createRandom(seed);
+  const saved = resume !== undefined && resume.mean.length === n && resume.cov.length === n * n ? resume : undefined;
   const mu = Math.floor(lambda / 2);
   const raw = Array.from({ length: mu }, (_, i) => Math.log(mu + 0.5) - Math.log(i + 1));
   const rawSum = raw.reduce((s, x) => s + x, 0);
@@ -88,15 +121,21 @@ export function createCmaEs(start: readonly number[], sigma0: number, lambda: nu
   const cmu = Math.min(1 - c1, (2 * (mueff - 2 + 1 / mueff)) / ((n + 2) ** 2 + mueff));
   const damps = 1 + 2 * Math.max(0, Math.sqrt((mueff - 1) / (n + 1)) - 1) + cs;
   const chiN = Math.sqrt(n) * (1 - 1 / (4 * n) + 1 / (21 * n * n));
-  let mean = start.slice();
-  let sigma = sigma0;
-  let pc = new Float64Array(n);
-  let ps = new Float64Array(n);
-  let cov: Matrix = new Float64Array(n * n);
-  for (let i = 0; i < n; i += 1) cov[i * n + i] = 1;
+  let mean = saved === undefined ? start.slice() : saved.mean.slice();
+  let sigma = saved === undefined ? sigma0 : saved.sigma;
+  let pc = saved === undefined ? new Float64Array(n) : Float64Array.from(saved.pc);
+  let ps = saved === undefined ? new Float64Array(n) : Float64Array.from(saved.ps);
+  let cov: Matrix = saved === undefined ? new Float64Array(n * n) : Float64Array.from(saved.cov);
+  if (saved === undefined) for (let i = 0; i < n; i += 1) cov[i * n + i] = 1;
   let basis: Matrix = cov.slice();
   let scale = new Float64Array(n).fill(1);
-  let generation = 0;
+  if (saved !== undefined) {
+    const eigen = jacobiEigen(cov, n);
+    basis = eigen.vectors;
+    scale = eigen.values.map((v) => Math.sqrt(Math.max(v, 1e-20)));
+    random.state = saved.rng >>> 0 || 1;
+  }
+  let generation = saved?.generation ?? 0;
   const b = (i: number, j: number): number => basis[i * n + j] ?? 0;
 
   return {
@@ -105,6 +144,12 @@ export function createCmaEs(start: readonly number[], sigma0: number, lambda: nu
     },
     get mean() {
       return mean;
+    },
+    get generation() {
+      return generation;
+    },
+    state() {
+      return { generation, sigma, mean: mean.slice(), pc: Array.from(pc), ps: Array.from(ps), cov: Array.from(cov), rng: random.state };
     },
     ask() {
       const population: number[][] = [];

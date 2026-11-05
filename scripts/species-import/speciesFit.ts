@@ -1,6 +1,6 @@
 import type { PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
 import { BAAD_LEAF_TO_SAPWOOD } from "../../packages/core/src/plants/validation/stemAllometry";
-import { createCmaEs } from "./cmaEs";
+import { createCmaEs, type CmaEsState } from "./cmaEs";
 import type { TrialScore } from "./speciesScore";
 import type { Trial } from "./speciesTrial";
 
@@ -92,9 +92,25 @@ export interface FitProgress {
   species: PlantSpecies;
 }
 
+/** One generation of a fit, as it ends. */
+export interface GenerationReport {
+  /** The search's generation count, continuing a resumed search's. */
+  generation: number;
+  /** The generation this run ends at unless `until` stops it first. */
+  last: number;
+  best: FitProgress;
+  search: CmaEsState;
+  /** `until` was met: the fit stops here. */
+  passed: boolean;
+  /** The one-line summary the fit logs. */
+  line: string;
+}
+
 /**
- * Search the fitted parameters of `start` with CMA-ES until `generations` pass, reporting each new
- * best. Deterministic for a given `seed` and evaluator.
+ * Search the fitted parameters of `start` with CMA-ES for `generations` more generations, reporting
+ * each new best and, after every generation, the search state a later call can `resume`. Deterministic
+ * for a given `seed`, state and evaluator. The returned progress carries `passed` when `until` was
+ * met, so a caller can tell a fit that ran out of generations from one that reached its limits.
  */
 export async function fitSpecies(
   start: PlantSpecies,
@@ -106,12 +122,14 @@ export async function fitSpecies(
     sigma: number;
     seed: number;
     parameters?: readonly FitParameter[];
+    /** A saved search to carry on from; its generations count towards the log's numbering, not the budget. */
+    resume?: CmaEsState | undefined;
     onBest: (best: FitProgress) => void;
-    onGeneration?: (line: string) => void;
+    onGeneration?: (report: GenerationReport) => void;
     /** Stop early once the best so far is good enough. */
     until?: (best: FitProgress) => boolean;
   },
-): Promise<FitProgress> {
+): Promise<FitProgress & { passed: boolean }> {
   const parameters = options.parameters ?? FIT_PARAMETERS;
   const at = (point: readonly number[]): PlantSpecies => speciesAt(start, point, parameters);
   const origin = parameters.map((p) => {
@@ -120,16 +138,19 @@ export async function fitSpecies(
   });
   const first = await evaluate(at(origin));
   const firstScore = first === null ? { total: 1e9, parts: {} } : scoreTrial(first);
-  let best: FitProgress = { generation: 0, score: firstScore.total, parts: firstScore.parts, species: at(origin) };
+  const search = createCmaEs(origin, options.sigma, options.lambda, options.seed, options.resume);
+  let best: FitProgress = { generation: search.generation, score: firstScore.total, parts: firstScore.parts, species: at(origin) };
   options.onBest(best);
-  if (options.until?.(best) === true) return best;
-  const search = createCmaEs(origin, options.sigma, options.lambda, options.seed);
-  for (let generation = 1; generation <= options.generations; generation += 1) {
+  if (options.until?.(best) === true) return { ...best, passed: true };
+  const last = search.generation + options.generations;
+  const summary = (): string => JSON.stringify(Object.fromEntries(Object.entries(best.parts).map(([k2, v]) => [k2, Number(v.toFixed(2))])));
+  while (search.generation < last) {
     const population = search.ask();
     const trials = await Promise.all(population.map((point) => evaluate(at(point))));
     const scores = trials.map((trial) => (trial === null ? 1e9 : scoreTrial(trial).total));
     const outside = population.map((point) => 50 * point.reduce((s, x) => s + (x < 0 ? x * x : x > 1 ? (x - 1) ** 2 : 0), 0));
     search.tell(population, scores.map((s, i) => s + (outside[i] ?? 0)));
+    const generation = search.generation;
     const k = scores.indexOf(Math.min(...scores));
     const trial = trials[k];
     const point = population[k];
@@ -138,11 +159,12 @@ export async function fitSpecies(
       best = { generation, score: scored.total, parts: scored.parts, species: at(point) };
       options.onBest(best);
     }
-    if (options.until?.(best) === true) {
-      options.onGeneration?.(`gen ${generation} stopped at ${best.score.toFixed(2)}: within the pass limits`);
-      return best;
-    }
-    options.onGeneration?.(`gen ${generation} best ${best.score.toFixed(2)} sigma ${search.sigma.toFixed(3)} ${JSON.stringify(Object.fromEntries(Object.entries(best.parts).map(([k2, v]) => [k2, Number(v.toFixed(2))])))}`);
+    const passed = options.until?.(best) === true;
+    const line = passed
+      ? `gen ${generation}/${last} stopped at ${best.score.toFixed(2)}: within the pass limits`
+      : `gen ${generation}/${last} best ${best.score.toFixed(2)} sigma ${search.sigma.toFixed(3)} ${summary()}`;
+    options.onGeneration?.({ generation, last, best, search: search.state(), passed, line });
+    if (passed) return { ...best, passed: true };
   }
-  return best;
+  return { ...best, passed: options.until === undefined };
 }

@@ -6,6 +6,7 @@ import { removeDirSync } from "./removeDir";
 
 import { awaitTask, parseAwaitArgs, EXIT_LOST, EXIT_NO_TASK, EXIT_TIMEOUT } from "./bg-await";
 import { commandFrom, startTask } from "./bg-run";
+import { formatStatus, parseStatusArgs, taskStatus } from "./bg-status";
 import { newTaskId, readCommand, readExit, readOutput, readRunner, taskDir, TASK_ID } from "./bg-tasks";
 
 const root = join(import.meta.dir, "..");
@@ -275,6 +276,30 @@ test("the documented commands run a real command in the background and report it
   expect(text).toContain(`background await: ${id} exited 4`);
   expect(awaited.exitCode).toBe(4);
   expect(readOutput(taskDir(root, id))).toContain("bg-cli-one");
+
+  const status = Bun.spawnSync({ cmd: [process.execPath, "run", "background", "status", id, "--lines", "3"], cwd: root, timeout: 60_000, stdout: "pipe", stderr: "pipe" });
+  const report = status.stdout.toString();
+  expect(report).toContain(`background status: ${id} exited 4 after`);
+  expect(report).toContain("bg-cli-one");
+  expect(status.exitCode).toBe(4);
+});
+
+test("a running task's status says so, shows the log's tail and names the await; a lost one is not reported running", () => {
+  const dir = checkout();
+  const task = taskDir(dir, "20261023-204501-run");
+  mkdirSync(task, { recursive: true });
+  writeFileSync(join(task, "cmd.txt"), "bun run jgengine plants fit pinus-strobus\n");
+  writeFileSync(join(task, "runner"), "4242\n");
+  writeFileSync(join(task, "out.log"), "plants fit: 1 species\npinus-strobus gen 1/40 best 6.10\n\npinus-strobus gen 2/40 best 5.90\n");
+  const running = taskStatus(task, "20261023-204501-run", 2, () => true, Date.now());
+  expect(running.state).toBe("running");
+  expect(running.tail).toEqual(["pinus-strobus gen 1/40 best 6.10", "pinus-strobus gen 2/40 best 5.90"]);
+  const text = formatStatus(running, join(task, "out.log"));
+  expect(text).toContain("running for");
+  expect(text).toContain("bun run background await 20261023-204501-run");
+  expect(taskStatus(task, "20261023-204501-run", 2, () => false).state).toBe("lost");
+  expect(parseStatusArgs(["--", "20261023-204501-run", "--lines", "5"])).toEqual({ id: "20261023-204501-run", lines: 5 });
+  expect(() => parseStatusArgs(["a", "--lines", "x"])).toThrow("--lines needs a whole number");
 });
 
 test("the await arguments are an id and an optional timeout", () => {
