@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { watchShown } from "../live/shown";
 import { litLines, type Trace, type TraceLines } from "../live/trace";
 import { CopyButton } from "./Copy";
 
@@ -85,21 +86,39 @@ function useChangedLines(code: string): ReadonlySet<number> {
   return changed;
 }
 
-/** Re-reads which lines a running demo lights, a few times a second. */
-function useLitLines(code: string, trace: { channel: Trace; lines: TraceLines } | undefined): ReadonlySet<number> {
+/** Re-reads which lines a running demo lights, a few times a second while the panel is shown. */
+function useLitLines(
+  code: string,
+  trace: { channel: Trace; lines: TraceLines } | undefined,
+  panel: { readonly current: HTMLElement | null },
+): ReadonlySet<number> {
   const [lit, setLit] = useState<ReadonlySet<number>>(() => new Set());
   useEffect(() => {
-    if (trace === undefined) return;
+    const box = panel.current;
+    if (trace === undefined || box === null) return;
     let key = "";
-    const timer = setInterval(() => {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const read = () => {
       const next = litLines(code, trace.lines, trace.channel.lit(performance.now()));
       const nextKey = [...next].join(",");
       if (nextKey === key) return;
       key = nextKey;
       setLit(next);
-    }, 90);
-    return () => clearInterval(timer);
-  }, [code, trace]);
+    };
+    const run = (shown: boolean) => {
+      if (shown && timer === undefined) timer = setInterval(read, 90);
+      if (!shown && timer !== undefined) {
+        clearInterval(timer);
+        timer = undefined;
+      }
+    };
+    const shown = watchShown(box, run);
+    run(shown.shown());
+    return () => {
+      run(false);
+      shown.dispose();
+    };
+  }, [code, trace, panel]);
   return lit;
 }
 
@@ -121,9 +140,9 @@ export function CodeBlock({
   trace?: { channel: Trace; lines: TraceLines } | undefined;
 }) {
   const border = tone === "good" ? "border-accent/40" : tone === "bad" ? "border-line" : "border-line";
-  const lit = useLitLines(code, trace);
-  const changed = useChangedLines(code);
   const boxRef = useRef<HTMLDivElement>(null);
+  const lit = useLitLines(code, trace, boxRef);
+  const changed = useChangedLines(code);
   const hovered = useRef(false);
   useEffect(() => {
     const box = boxRef.current;
