@@ -35,6 +35,7 @@ export function failureDigest(output: string): FailureLine[] {
 
   let testFile: string | null = null;
   let lastError: string | null = null;
+  let testSummary = false;
   for (const line of lines) {
     const ts = TS_ERROR.exec(line.trim());
     if (ts !== null) {
@@ -46,8 +47,11 @@ export function failureDigest(output: string): FailureLine[] {
     if (header !== null) {
       testFile = header[1]!.replaceAll("\\", "/");
       lastError = null;
+      testSummary = false;
       continue;
     }
+    if (/^\s*\d+ tests? failed:\s*$/.test(line)) testSummary = true;
+    if (testSummary) continue;
     if (ERROR_LINE.test(line) && lastError === null) {
       lastError = line.trim();
       continue;

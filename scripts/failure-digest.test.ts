@@ -24,6 +24,14 @@ describe("failureDigest", () => {
     ]);
   });
 
+  test("does not assign Bun's repeated failure summary to the last passing file", () => {
+    const output = [
+      "a.test.ts:", "error: broken", "(fail) failed [1.00ms]",
+      "b.test.ts:", "(pass) works [1.00ms]", "1 tests failed:", "(fail) failed [1.00ms]",
+    ].join("\n");
+    expect(failureDigest(output)).toEqual([{ where: "a.test.ts", first: "(fail) failed - error: broken" }]);
+  });
+
   test("names each file a type-check failed with its first error, in both tsc formats", () => {
     const output = [
       "src/game.ts(12,5): error TS2322: Type 'string' is not assignable to type 'number'.",
