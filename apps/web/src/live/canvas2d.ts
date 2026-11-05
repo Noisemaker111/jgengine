@@ -63,7 +63,6 @@ export function mountCanvas2d(
     if (isShown) last = performance.now();
     schedule();
   });
-  frame({ ctx, width, height, dt: 0 });
   schedule();
 
   return {
