@@ -50,7 +50,7 @@
     "gen": "bun scripts/guard.ts 600 'bun scripts/run-stages.ts gen'",
     "test": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts --install-only && bun scripts/run-tests.ts'",
     "test:repeat": "bun scripts/repeat-tests.ts",
-    "build": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts --install-only && bun run --cwd packages/core build && bun run --cwd packages/rapier build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/navbake build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/assets build && bun run --cwd packages/editor build && bun run --cwd packages/github build && bun run --cwd packages/jgengine build && bun scripts/build-registry.ts'",
+    "build": "bun scripts/guard.ts 600 'bun scripts/build-fingerprint.ts --clear && bun scripts/ensure-ready.ts --install-only && bun run --cwd packages/core build && bun run --cwd packages/rapier build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/navbake build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/assets build && bun run --cwd packages/editor build && bun run --cwd packages/github build && bun run --cwd packages/jgengine build && bun scripts/build-registry.ts && bun scripts/build-fingerprint.ts --write'",
     "dev:site": "bun --cwd=apps/web run dev",
     "dev:games": "bun --cwd=apps/dev run dev",
     "shoot": "bun scripts/shoot.ts",
