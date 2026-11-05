@@ -143,6 +143,29 @@ test("continuous movement keeps the cache bounded and settles when movement stop
   field.dispose();
 });
 
+test("the first view fills once and walking afterwards does not count as filling again", () => {
+  let revision = 0;
+  const bake = resolveGrassBake({ look: GRASS_DEFAULTS, area: 40, heightAt: () => 0 });
+  const handle = createGrassMaterial(GRASS_DEFAULTS);
+  const field = new GrassStream(bake, handle, { heightRevision: () => revision });
+  let view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  field.update(view, VIEW_HEIGHT, 0);
+  expect(field.filled).toBe(false);
+  for (let i = 0; i < 1000 && !field.filled; i += 1) field.update(view, VIEW_HEIGHT, 1000);
+  expect(field.filled).toBe(true);
+  for (let i = 1; i <= 30; i += 1) {
+    view = camera([0, 1.7, -i * 0.5], [0, 0.5, -30 - i * 0.5]);
+    field.update(view, VIEW_HEIGHT, 0);
+    expect(field.stats().pending).toBeGreaterThan(0);
+    expect(field.filled).toBe(true);
+  }
+  revision += 1;
+  field.update(view, VIEW_HEIGHT, 0);
+  expect(field.filled).toBe(false);
+  field.dispose();
+  handle.material.dispose();
+});
+
 test("a moved camera eventually replaces unfinished selection with its own view", () => {
   const sliced = stream({ area: 40 });
   const whole = stream({ area: 40 });
@@ -379,4 +402,17 @@ test("only leaves in view join the scene graph, and turning around draws from le
   expect(field.stats().pending).toBe(0);
   expect(field.group.children.length).toBeGreaterThan(0);
   expect(field.group.children.length).toBeLessThan(field.stats().cached);
+});
+
+test("a disposed stream that is updated again rebuilds its view", () => {
+  const { stream: field } = stream({ area: 16 });
+  const view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  field.update(view, VIEW_HEIGHT, Infinity);
+  expect(field.filled).toBe(true);
+  field.dispose();
+  expect(field.stats().cached).toBe(0);
+  field.update(view, VIEW_HEIGHT, Infinity);
+  expect(field.filled).toBe(true);
+  expect(field.stats().cached).toBeGreaterThan(0);
+  field.dispose();
 });

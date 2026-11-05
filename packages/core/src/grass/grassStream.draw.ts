@@ -108,6 +108,7 @@ export class GrassStream {
   private refresh = false;
   private revision: number | undefined;
   private invalidating = false;
+  private filledView = false;
   private preview: Leaf | undefined;
   private lastSelection: DesiredNode[] | undefined;
   private viewHeight = 720;
@@ -151,6 +152,7 @@ export class GrassStream {
       this.group.visible = false;
       this.invalidating = true;
       this.refresh = true;
+      this.filledView = false;
     }
     const turnOnly = this.job === undefined && !this.refresh && this.lastSelection !== undefined &&
       camera.projectionMatrix.elements[15] === 0 && this.samePositionAndProjection(camera);
@@ -168,7 +170,7 @@ export class GrassStream {
     }
     observe?.(changed ? "grass view or transform changed" : "grass pending bake", 1);
     const started = now();
-    let steps = 0, selections = 0, tufts = 0;
+    let steps = 0, selections = 0, tufts = 0, polls = 0;
     while (this.job !== undefined) {
       const step = this.job.next();
       if (step.done) {
@@ -177,11 +179,13 @@ export class GrassStream {
         break;
       }
       steps += 1;
+      polls += 1;
       if (step.value === "selection") selections += 1;
       if (step.value === "tuft") tufts += 1;
       if (step.value === "seed") { selections += 1; tufts += 1; steps += 1; }
       const tuftQueries = this.bake.look.growth.slopeThin > 0 ? 5 : 1;
-      if (budgetMs !== Infinity && (selections * 9 + tufts * tuftQueries >= 8184 || steps >= 32768 || now() - started >= budgetMs)) break;
+      // Steps are cheap enough that reading the clock on each one was a visible share of the frame.
+      if (budgetMs !== Infinity && (selections * 9 + tufts * tuftQueries >= 8184 || steps >= 32768 || (polls % 32 === 1 && now() - started >= budgetMs))) break;
     }
     this.syncPreview();
     observe?.("grass bake tuft candidates", tufts);
@@ -388,7 +392,22 @@ export class GrassStream {
     this.pending = pending;
     yield* this.evict();
     this.lastSelection = ordered;
+    this.filledView = true;
     frameWorkObserver()?.("grass leaves pending", pending);
+  }
+
+  /**
+   * Whether one selection has finished with every leaf it chose baked since the stream started or
+   * the ground changed. Until then a caller can spend a larger slice so the first view fills fast;
+   * after it, a moving camera only adds the few leaves that come into range.
+   */
+  get filled(): boolean {
+    return this.filledView;
+  }
+
+  /** Whether selection or baking is unfinished after the last {@link GrassStream.update}. */
+  get busy(): boolean {
+    return this.job !== undefined || this.refresh;
   }
 
   /** What the stream holds and draws now. */
@@ -405,8 +424,11 @@ export class GrassStream {
   dispose(): void {
     this.job?.return();
     this.job = undefined;
-    this.refresh = false;
+    // A remounted patch (StrictMode effects) reuses its stream: the next update rebuilds it.
+    this.refresh = true;
+    this.lastSelection = undefined;
     this.pending = 0;
+    this.filledView = false;
     for (const leaf of this.cache.values()) this.drop(leaf);
     this.drawn = [];
   }
