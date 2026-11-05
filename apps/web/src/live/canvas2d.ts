@@ -1,6 +1,9 @@
+import { watchShown } from "./shown";
+
 /**
- * A focusable 2D canvas that fills its container, redraws every frame and cleans up after itself.
- * The car, key-binding and save demos on /why draw through it; three.js demos use `mountLive`.
+ * A focusable 2D canvas that fills its container, redraws every frame while it is on screen in a
+ * visible tab, and cleans up after itself. The car, key-binding and save demos on /why draw through
+ * it; three.js demos use `mountLive`.
  */
 export interface Canvas2d {
   canvas: HTMLCanvasElement;
@@ -44,17 +47,30 @@ export function mountCanvas2d(
   observer.observe(container);
 
   let last = performance.now();
-  let raf = requestAnimationFrame(function tick(now) {
+  let raf = 0;
+  const tick = (now: number) => {
+    raf = 0;
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     frame({ ctx, width, height, dt });
+    schedule();
+  };
+  const schedule = () => {
+    if (raf !== 0 || !shown.shown()) return;
     raf = requestAnimationFrame(tick);
+  };
+  const shown = watchShown(container, (isShown) => {
+    if (isShown) last = performance.now();
+    schedule();
   });
+  frame({ ctx, width, height, dt: 0 });
+  schedule();
 
   return {
     canvas,
     dispose() {
-      cancelAnimationFrame(raf);
+      if (raf !== 0) cancelAnimationFrame(raf);
+      shown.dispose();
       observer.disconnect();
       canvas.remove();
     },

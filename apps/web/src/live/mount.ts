@@ -6,6 +6,8 @@
  */
 import * as THREE from "three";
 
+import { watchShown } from "./shown";
+
 export interface LiveHandle {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
@@ -51,7 +53,6 @@ export function mountLive(container: HTMLElement, options: MountOptions): LiveHa
   const reducedMotion = prefersReducedMotion();
   let disposed = false;
   let raf = 0;
-  let visible = true;
   let elapsed = 0;
   let last = performance.now();
 
@@ -80,19 +81,12 @@ export function mountLive(container: HTMLElement, options: MountOptions): LiveHa
   };
 
   const schedule = () => {
-    if (disposed || raf !== 0 || !visible || document.hidden || reducedMotion) return;
+    if (disposed || raf !== 0 || !shown.shown() || reducedMotion) return;
     last = performance.now();
     raf = requestAnimationFrame(tick);
   };
 
-  const onVisibility = () => schedule();
-  document.addEventListener("visibilitychange", onVisibility);
-
-  const intersection = new IntersectionObserver((entries) => {
-    visible = entries.some((entry) => entry.isIntersecting);
-    schedule();
-  });
-  intersection.observe(container);
+  const shown = watchShown(container, () => schedule());
 
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(container);
@@ -113,8 +107,7 @@ export function mountLive(container: HTMLElement, options: MountOptions): LiveHa
     dispose() {
       disposed = true;
       if (raf !== 0) cancelAnimationFrame(raf);
-      document.removeEventListener("visibilitychange", onVisibility);
-      intersection.disconnect();
+      shown.dispose();
       resizeObserver.disconnect();
       options.onDispose?.();
       disposeObject(scene);
