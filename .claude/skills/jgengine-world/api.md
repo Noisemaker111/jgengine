@@ -1814,6 +1814,10 @@
 - `grassBareAt` (function): function grassBareAt(look: Pick<GrassLook, "growth" | "season">, seed: number, x: number, z: number): number — Share of the ground grass grows on at a patch-local point, 0..1: the `bareGround` mask that opens sand or soil between tufts. 1 everywhere when `bareGround` is 0.
 - `grassFieldNoise` (function): function grassFieldNoise(x: number, z: number, seed: number): number — Two-octave value noise in 0..1, deterministic per numeric seed; the grass field's season, patch and bare masks.
 
+## @jgengine/core/grass/grassFrameShare
+
+- `GrassFrameShare` (class): class GrassFrameShare — One frame's grass work shared by every patch drawn by one renderer. A patch asks for its slice before it works and says whether it still has work after; the frame's budget is split evenly among the patches that still had work the frame before, so ten patches cost what one does.
+
 ## @jgengine/core/grass/grassKind
 
 - `GRASS_DEFAULTS` (const): const GRASS_DEFAULTS: GrassLook — Grass defaults: a lush, lightly-swaying summer meadow.
