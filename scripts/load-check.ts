@@ -24,16 +24,16 @@ const webRoot = join(repoRoot, "apps", "web");
 
 export const LOAD_USAGE = {
   summary: "cold-cache load times per game on a production build of the site (local only, real GPU)",
-  usage: "bun run shoot --load <game|all> [--runs n] [--no-build] [--headless] [--trace] [--compare <json>]",
+  usage: "bun run shoot --load <game|all> [--runs n] [--no-build] [--headed] [--trace] [--compare <json>]",
   flags: [
     { flag: "<game|all>", detail: "one games/<id>, a comma list, or all of them" },
     { flag: "--runs n", detail: "cold runs per game; the median is reported (default 1)" },
     { flag: "--no-build", detail: "reuse the last production build in apps/web/dist" },
-    { flag: "--headless", detail: "headless Chrome instead of an off-screen window (still the real GPU); with no display (a cloud container) it is always headless" },
+    { flag: "--headed", detail: "open a real Chrome window off-screen instead of headless, for debugging a load; headless already renders on the real GPU, and a window can take focus from a game on this PC" },
     { flag: "--trace", detail: "save a Chrome performance trace per game next to the results" },
     { flag: "--compare <json>", detail: "a previous results file; the table shows before -> after" },
     { flag: "--timeout s", detail: "give up on a game after this many seconds (default 90)" },
-    { flag: "--guard", detail: "fail when a game loads slower than scripts/load-baseline.json says (runner-only build; verify:fast runs it)" },
+    { flag: "--guard", detail: "fail when a game loads slower than scripts/load-baseline.json says (runner-only build)" },
     { flag: "--save-baseline", detail: "measure the games the way --guard does and write them into scripts/load-baseline.json" },
   ],
   example: "bun run shoot --load all --compare .scratch/load/before.json",
@@ -43,7 +43,8 @@ export interface LoadArgs {
   games: string[];
   runs: number;
   build: boolean;
-  headless: boolean;
+  /** A real (off-screen) Chrome window instead of headless; only `--headed` sets it. */
+  headed: boolean;
   trace: boolean;
   compare: string | null;
   timeoutMs: number;
@@ -54,7 +55,7 @@ export interface LoadArgs {
 }
 
 export function parseLoadArgs(argv: readonly string[], known: readonly string[]): LoadArgs {
-  const args: LoadArgs = { games: [], runs: 1, build: true, headless: false, trace: false, compare: null, timeoutMs: 90_000, guard: false, saveBaseline: false };
+  const args: LoadArgs = { games: [], runs: 1, build: true, headed: false, trace: false, compare: null, timeoutMs: 90_000, guard: false, saveBaseline: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     const value = () => {
@@ -65,7 +66,7 @@ export function parseLoadArgs(argv: readonly string[], known: readonly string[])
     };
     if (arg === "--runs") args.runs = Math.max(1, Number.parseInt(value(), 10) || 1);
     else if (arg === "--no-build") args.build = false;
-    else if (arg === "--headless") args.headless = true;
+    else if (arg === "--headed") args.headed = true;
     else if (arg === "--trace") args.trace = true;
     else if (arg === "--compare") args.compare = value();
     else if (arg === "--timeout") args.timeoutMs = Math.max(5, Number(value())) * 1000;
@@ -507,7 +508,7 @@ async function playFrame(page: Page): Promise<Frame | null> {
 }
 
 async function measureOnce(base: string, game: string, path: string, args: LoadArgs, shotDir: string): Promise<LoadSample> {
-  const started = await startBrowser({ debugPort: 0, prefix: "jg-load-", headed: !args.headless });
+  const started = await startBrowser({ debugPort: 0, prefix: "jg-load-", headed: args.headed });
   const browser = await chromium.connectOverCDP(`http://127.0.0.1:${started.debugPort}`);
   const sample: LoadSample = { game, firstPaint: null, menuShown: null, worstClick: null, sceneReady: null, playable: null, revealWorstFrame: null, longestTaskMs: 0, blockingMs: 0, transferKb: 0, menuLabel: null };
   try {
