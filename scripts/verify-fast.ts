@@ -15,7 +15,8 @@
 // `--cheap` (the landing's preflight) runs every gate CI's quick and types jobs run and reports
 // every failure in one pass instead.
 //
-// Exit: 0 verified, 1 a step failed. `--plan` lists changed files no test reaches.
+// Exit: 0 verified, 1 a step failed. A change no test can be attributed to (a root config, the lockfile, a source
+// file under no tested root) runs every test file and type-check; `--plan` names it.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -68,6 +69,10 @@ const SOURCE_FILE = /\.[cm]?[jt]sx?$/;
 const DECLARATION = /\.d\.[cm]?ts$/;
 const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\/[^/]+\/src\//, /^scripts\/.+\.[cm]?tsx?$/, /^games\/[^/]+\/src\//];
 const GAME_DIR = /^games\/[^/]+$/;
+/** Root files every program reads: a change to one is attributable to no test in particular. */
+const ROOT_CONFIG = /^(package\.json|bun\.lock|bunfig\.toml|tsconfig(\.[^/]+)?\.json)$/;
+/** A workspace's own manifest and compiler settings, relative to the workspace. */
+const WORKSPACE_CONFIG = /^(package\.json|bunfig\.toml|tsconfig(\.[^/]+)?\.json)$/;
 /** Demo scenes exist to be looked at; a test of one would be filler, so they never need one. */
 const DEMO = /(^|\/)demos?\//;
 
@@ -134,6 +139,8 @@ export interface Plan {
   gates: string[];
   /** Changed runtime files no selected test can reach. */
   unattributed: string[];
+  /** Changed paths no test can be attributed to (root configs, lockfile, `unattributed`): every test file and type-check runs. */
+  fallback: string[];
   /** Workspaces whose whole suite runs because a changed file in them has no test of its own. */
   suites: string[];
   /**
@@ -500,6 +507,23 @@ export function verifyPlan(input: {
     for (const test of suite) tests.add(test);
     if (!suites.includes(suiteDir)) suites.push(suiteDir);
   }
+  // A workspace's own package.json or tsconfig changes how every file in it resolves and compiles,
+  // which no import shows: its whole suite runs.
+  for (const path of touchedPaths) {
+    const workspace = workspaceOf(path, input.workspaces);
+    if (workspace === null || !WORKSPACE_CONFIG.test(path.slice(workspace.dir.length + 1))) continue;
+    for (const test of input.testFiles) if (test.startsWith(`${workspace.dir}/`)) tests.add(test);
+    if (!suites.includes(workspace.dir)) suites.push(workspace.dir);
+  }
+  // A change no test can be attributed to falls back to the full set: a root config or lockfile
+  // reaches every program, and a source file under no tested root reaches nothing the graph knows.
+  // Before this, a root tsconfig or bun.lock change planned no test at all and reported "verified".
+  const fallback = [...touchedPaths.filter((path) => ROOT_CONFIG.test(path)), ...unattributed];
+  if (fallback.length > 0) {
+    for (const test of input.testFiles) tests.add(test);
+    for (const workspace of input.workspaces) if (workspace.checkTypes && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
+    if (!typechecks.includes("scripts")) typechecks.push("scripts");
+  }
 
   const reached = new Set(reachedBy.keys());
   // Only a game the load check can boot: llmville and folders without a web entry have none.
@@ -518,6 +542,7 @@ export function verifyPlan(input: {
     tests: [...tests].sort(),
     gates: gatesFor(changed),
     unattributed,
+    fallback,
     suites: suites.sort(),
     boots,
     inputs,
@@ -925,9 +950,9 @@ export function rerunFailing(step: Pick<Step, "name" | "command">, output: strin
 function printPlan(plan: Plan, steps: readonly Step[]): void {
   for (const path of plan.changed) console.log(`  changed  ${path}`);
   for (const step of steps) console.log(`  step     ${step.name}  (${step.command.join(" ")})`);
-  if (plan.unattributed.length > 0) {
-    console.log(`  no test reaches ${plan.unattributed.length} changed file(s):`);
-    for (const path of plan.unattributed) console.log(`    ${path}`);
+  if (plan.fallback.length > 0) {
+    console.log(`  no test can be attributed to ${plan.fallback.length} changed file(s), so every test file and type-check runs:`);
+    for (const path of plan.fallback) console.log(`    ${path}`);
   }
 }
 
@@ -1164,8 +1189,8 @@ async function main(argv: readonly string[]): Promise<number> {
   // The result is partial by design and says so either way: what it covered, what it left out, and
   // the command that runs CI's whole set.
   const covered = `${plan.tests.length} test file(s), ${plan.typechecks.length} type-check(s), ${plan.gates.length} gate(s)${plan.boots.length > 0 ? `, boot ${plan.boots.join(" ")}` : ""}${skipped.length > 0 ? `; ${skipped.length} unit(s) already proven on these bytes` : ""}`;
-  if (plan.unattributed.length > 0) {
-    console.log(`verify:fast: no test reaches ${plan.unattributed.length} changed file(s), so this result says nothing about them: ${plan.unattributed.join(", ")}`);
+  if (plan.fallback.length > 0) {
+    console.log(`verify:fast: no test can be attributed to ${plan.fallback.join(", ")}, so every test file and type-check ran`);
   }
   if (failures.length > 0) {
     console.log(`failed: ${failures.join(", ")}`);

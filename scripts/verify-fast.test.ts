@@ -64,7 +64,7 @@ function fixtureGraph(sources: Record<string, string>, others: readonly string[]
 
 const emptyGraph = fixtureGraph({});
 
-const emptyPlan: Plan = { changed: [], deleted: [], typechecks: [], tests: [], gates: [], unattributed: [], suites: [], boots: [], inputs: {} };
+const emptyPlan: Plan = { changed: [], deleted: [], typechecks: [], tests: [], gates: [], unattributed: [], fallback: [], suites: [], boots: [], inputs: {} };
 
 describe("what changed", () => {
   test("counts committed, staged, unstaged and untracked paths", () => {
@@ -136,7 +136,7 @@ describe("workspace mapping", () => {
     expect(workspaceOf("scripts/verify-fast.ts", fakeWorkspaces)).toBeNull();
     const plan = verifyPlan({
       changed: ["scripts/verify-fast.ts"],
-      testFiles: [],
+      testFiles: ["scripts/verify-fast.test.ts"],
       workspaces: fakeWorkspaces,
       graph: emptyGraph,
     });
@@ -149,8 +149,9 @@ describe("workspace mapping", () => {
       "packages/core/src/world/terrain.ts": "export const sample = 1;",
       "packages/core/src/game/loop.ts": "export const tick = 1;",
     });
-    expect(verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: [], workspaces: fakeWorkspaces, graph }).typechecks).toEqual(["packages/core", "packages/shell"]);
-    expect(verifyPlan({ changed: ["packages/core/src/game/loop.ts"], testFiles: [], workspaces: fakeWorkspaces, graph }).typechecks).toEqual(["packages/core"]);
+    const testFiles = ["packages/core/src/a.test.ts"];
+    expect(verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles, workspaces: fakeWorkspaces, graph }).typechecks).toEqual(["packages/core", "packages/shell"]);
+    expect(verifyPlan({ changed: ["packages/core/src/game/loop.ts"], testFiles, workspaces: fakeWorkspaces, graph }).typechecks).toEqual(["packages/core"]);
   });
 
   test("reads the real workspace list and their check-types scripts", () => {
@@ -258,7 +259,7 @@ describe("test mapping", () => {
     });
     expect(opaqueScopes("packages/shell/src/render/World.test.ts", ["@jgengine/core/world/missing", "./gone"], fakeWorkspaces)).toEqual(["packages/core/", "packages/shell/"]);
     expect(verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).toContain("packages/shell/src/render/World.test.ts");
-    expect(verifyPlan({ changed: ["apps/dev/src/x.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).not.toContain("packages/shell/src/render/World.test.ts");
+    expect(verifyPlan({ changed: ["apps/dev/src/x.ts"], testFiles: [...tests, "apps/dev/src/x.test.ts"], workspaces: fakeWorkspaces, graph }).tests).not.toContain("packages/shell/src/render/World.test.ts");
   });
 
   test("a deleted file reaches whatever still imports it", () => {
@@ -295,16 +296,39 @@ describe("attribution fails loudly", () => {
     expect(plan.tests).not.toContain("packages/react/src/a.test.ts");
   });
 
-  test("a root script no test imports runs every scripts test, as CI does; a file under no tested root is reported, not passed", () => {
+  test("a root script no test imports runs every scripts test, as CI does", () => {
     const plan = verifyPlan({
-      changed: ["scripts/species-import/unreachable.ts", "apps/nowhere/src/lonely.ts"],
+      changed: ["scripts/species-import/unreachable.ts"],
       testFiles: ["scripts/other.test.ts", "packages/core/src/a.test.ts"],
       workspaces: fakeWorkspaces,
       graph: emptyGraph,
     });
     expect(plan.suites).toEqual(["scripts"]);
     expect(plan.tests).toEqual(["scripts/other.test.ts"]);
-    expect(plan.unattributed).toEqual(["apps/nowhere/src/lonely.ts"]);
+    expect(plan.fallback).toEqual([]);
+  });
+
+  test("a change no test can be attributed to runs every test file and type-check: a file under no tested root, a root config, the lockfile", () => {
+    const testFiles = ["scripts/other.test.ts", "packages/core/src/a.test.ts"];
+    for (const changed of ["apps/nowhere/src/lonely.ts", "tsconfig.base.json", "bun.lock", "package.json", "bunfig.toml"]) {
+      const plan = verifyPlan({ changed: [changed], testFiles, workspaces: fakeWorkspaces, graph: emptyGraph });
+      expect(plan.fallback, changed).toEqual([changed]);
+      expect(plan.tests, changed).toEqual([...testFiles].sort());
+      expect(plan.typechecks, changed).toEqual(expect.arrayContaining(["scripts", ...fakeWorkspaces.filter((w) => w.checkTypes).map((w) => w.dir)]));
+    }
+    expect(verifyPlan({ changed: ["README.md"], testFiles, workspaces: fakeWorkspaces, graph: emptyGraph }).fallback).toEqual([]);
+  });
+
+  test("a workspace's own package.json or tsconfig runs that workspace's whole suite", () => {
+    const plan = verifyPlan({
+      changed: ["packages/core/tsconfig.json"],
+      testFiles: ["scripts/other.test.ts", "packages/core/src/a.test.ts"],
+      workspaces: fakeWorkspaces,
+      graph: emptyGraph,
+    });
+    expect(plan.tests).toEqual(["packages/core/src/a.test.ts"]);
+    expect(plan.suites).toEqual(["packages/core"]);
+    expect(plan.fallback).toEqual([]);
   });
 
   test("a failed step names the command that reruns only it, without the junit flags of the run", () => {
@@ -374,6 +398,7 @@ describe("static gates", () => {
       tests: ["packages/core/src/a.test.ts"],
       gates: ["layers"],
       unattributed: [],
+      fallback: [],
       suites: [],
       boots: ["harbor-heat"],
       inputs: {},
