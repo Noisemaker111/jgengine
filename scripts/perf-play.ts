@@ -20,7 +20,7 @@ import {
 } from "./browser-lib";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
-import { checkoutIdentity, readServerIdentity, type ServerIdentityReport } from "./devServerMarker";
+import { checkoutIdentity, readServerIdentityResult, type ServerIdentityReport } from "./devServerMarker";
 import { baselinePath, cleanCommitFor, conditionsKey, readBaselineAt, resolveCommit, saveBaseline } from "./perf-baselines";
 import {
   acquireWarmCapture,
@@ -999,6 +999,11 @@ export function compareServedSource(server: ServerIdentityReport | null, expecte
   return "matched";
 }
 
+/** Preserve the source check and original error when measurement fails. */
+export function perfFailureRecord(error: unknown, servedSource: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null; error?: string | null }) {
+  return { error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined, servedSource };
+}
+
 /** Log evidence that prevents a run from being reused as a clean baseline. */
 export function baselineLogProblem(logs: ReportLogs | null): string | null {
   if (logs === null) return "game logs unavailable";
@@ -1334,9 +1339,7 @@ async function main(): Promise<void> {
   let pending = [...games];
 
   /** Measure one game in the browser already running on `debugPort`, then write and print its record. */
-  const measureOne = async (game: string, debugPort: number, base: string, cache: NonNullable<PerfRecord["cache"]>): Promise<void> => {
-    const server = await readServerIdentity(base);
-    const servedSource = { status: compareServedSource(server, checkoutIdentity(repoRoot), measuredEngine?.commit ?? null), server };
+  const measureOne = async (game: string, debugPort: number, base: string, cache: NonNullable<PerfRecord["cache"]>, servedSource: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null; error?: string | null }): Promise<void> => {
     if (servedSource.status !== "matched") console.error(`perf: served source ${servedSource.status}; timings cannot be attributed to this checkout`);
     const session = await openPageSession(debugPort);
     try {
@@ -1413,15 +1416,18 @@ async function main(): Promise<void> {
         const failed: string[] = [];
         let priorGames = 0;
         for (let game = pending[0]; game !== undefined; game = pending[0]) {
+          let servedSource: { status: "matched" | "mismatch" | "unavailable"; server: ServerIdentityReport | null; error?: string | null } = { status: "unavailable", server: null, error: "identity check not completed" };
           try {
-            await measureOne(game, debugPort, server.base, { browser, priorGames });
+            const identity = await readServerIdentityResult(server.base);
+            servedSource = { status: compareServedSource(identity.server, checkoutIdentity(repoRoot), measuredEngine?.commit ?? null), ...identity };
+            await measureOne(game, debugPort, server.base, { browser, priorGames }, servedSource);
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             console.error(`perf: ${game} failed: ${message}`);
             const failurePath = resolve(process.cwd(), parsed.args.out ?? join(repoRoot, ".scratch", "perf", `${game}.json`)) + `.${Date.now()}.failure.json`;
             try {
               mkdirSync(dirname(failurePath), { recursive: true });
-              writeFileSync(failurePath, `${JSON.stringify({ game, at: Date.now(), error: message, stack: error instanceof Error ? error.stack : undefined, engine: measuredEngine, base: server.base, settings, params, quality, size, path, seconds, frameClock }, null, 2)}\n`);
+              writeFileSync(failurePath, `${JSON.stringify({ game, at: Date.now(), ...perfFailureRecord(error, servedSource), engine: measuredEngine, base: server.base, settings, params, quality, size, path, seconds, frameClock }, null, 2)}\n`);
               console.error(`perf: failed run saved to ${failurePath}`);
             } catch (writeError) { console.error(`perf: could not save failure: ${String(writeError)}`); }
             failed.push(game);

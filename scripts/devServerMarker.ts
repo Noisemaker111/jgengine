@@ -136,17 +136,26 @@ export interface ServerIdentityReport {
   head?: string | undefined;
 }
 
-/** The identity a server on `base` reports, or null when it does not answer the route (or is not ours at all). */
-export async function readServerIdentity(base: string, timeoutMs = 2_000): Promise<ServerIdentityReport | null> {
+/** Read the identity route and retain why its response could not be used. */
+export async function readServerIdentityResult(base: string, timeoutMs = 2_000): Promise<{ server: ServerIdentityReport | null; error: string | null }> {
   try {
     const response = await localRequest(`${base}${SERVER_IDENTITY_PATH}`, { timeoutMs });
-    if (response.status !== 200) return null;
-    const parsed = JSON.parse(response.body) as Partial<ServerIdentityReport> | null;
-    if (typeof parsed?.identity !== "string" || typeof parsed.pid !== "number") return null;
-    return parsed as ServerIdentityReport;
-  } catch {
-    return null;
+    if (response.status !== 200) return { server: null, error: `identity route returned HTTP ${response.status}` };
+    let parsed: Partial<ServerIdentityReport> | null;
+    try { parsed = JSON.parse(response.body) as Partial<ServerIdentityReport> | null; }
+    catch { return { server: null, error: "identity route returned invalid JSON" }; }
+    if (typeof parsed?.identity !== "string" || typeof parsed.pid !== "number" || !Number.isFinite(parsed.pid) || typeof parsed.root !== "string" || (parsed.gameDir !== null && typeof parsed.gameDir !== "string") || (parsed.kind !== "runner" && parsed.kind !== "website") || (parsed.head !== undefined && typeof parsed.head !== "string")) {
+      return { server: null, error: "identity route returned an incomplete report" };
+    }
+    return { server: parsed as ServerIdentityReport, error: null };
+  } catch (error) {
+    return { server: null, error: `identity request failed: ${String(error).slice(0, 300)}` };
   }
+}
+
+/** The identity a server reports, or null when it cannot be read. */
+export async function readServerIdentity(base: string, timeoutMs = 2_000): Promise<ServerIdentityReport | null> {
+  return (await readServerIdentityResult(base, timeoutMs)).server;
 }
 
 function processAlive(pid: number | undefined): boolean {

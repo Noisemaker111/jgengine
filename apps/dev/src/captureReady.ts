@@ -4,7 +4,7 @@
  * Page.captureScreenshot — never ships PNG/base64 through the page.
  */
 
-import { modelLoadIdleMs, modelLoadStarts } from "@jgengine/core/model/modelLoad.draw";
+import { modelLoadIdleMs, modelLoadStarts, pendingModelLoads } from "@jgengine/core/model/modelLoad.draw";
 import { SHADER_WARMUP_DEFAULTS } from "@jgengine/core/render/shaderWarmup.draw";
 
 import { resolvedLook } from "./appEnv";
@@ -145,7 +145,9 @@ async function waitForModelStreaming(): Promise<void> {
     if (modelLoadIdleMs() >= MODEL_IDLE_MS) return;
     await delay(100);
   }
-  throw new Error("models did not finish loading before capture");
+  const pending = pendingModelLoads();
+  const items = pending.items.map(({ url, count }) => `${url.slice(0, 120)}${count > 1 ? ` (${count})` : ""}`).join(", ");
+  throw new Error(`streaming did not settle before capture; ${pending.total} pending${items === "" ? "" : `: ${items}`}`);
 }
 
 function nextFrames(count: number): Promise<void> {

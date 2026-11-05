@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { armCaptureReady, setCaptureStatus } from "./captureReady";
-import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
+import { sharedGltfLoader, trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 
 const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 const originalDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
@@ -96,8 +96,20 @@ describe("editor capture readiness", () => {
     const cancel = armCaptureReady("editor");
     await flush();
     expect(page.root.dataset.jgCapture).toBe("error");
-    expect(page.root.dataset.jgCaptureError).toContain("models did not finish loading");
+    expect(page.root.dataset.jgCaptureError).toContain("scene-work:stuck capture test");
     cancel();
     finish();
+  });
+
+  test("names a pending model separately from scene work", async () => {
+    const page = browser(true);
+    let clock = 0;
+    Date.now = () => { clock += 16_000; return clock; };
+    sharedGltfLoader.manager.itemStart("/models/pending.glb");
+    const cancel = armCaptureReady("editor");
+    await flush();
+    expect(page.root.dataset.jgCaptureError).toContain("/models/pending.glb");
+    cancel();
+    sharedGltfLoader.manager.itemEnd("/models/pending.glb");
   });
 });

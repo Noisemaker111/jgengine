@@ -42,6 +42,19 @@ export function recordManagerLoadError(url: string): void {
  */
 const modelLoadingManager = new THREE.LoadingManager();
 modelLoadingManager.setURLModifier(resolveAssetBaseUrl);
+const pendingModelWork = new Map<string, number>();
+const startModelWork = modelLoadingManager.itemStart.bind(modelLoadingManager);
+const endModelWork = modelLoadingManager.itemEnd.bind(modelLoadingManager);
+modelLoadingManager.itemStart = (url) => {
+  pendingModelWork.set(url, (pendingModelWork.get(url) ?? 0) + 1);
+  startModelWork(url);
+};
+modelLoadingManager.itemEnd = (url) => {
+  const count = pendingModelWork.get(url) ?? 0;
+  if (count <= 1) pendingModelWork.delete(url);
+  else pendingModelWork.set(url, count - 1);
+  endModelWork(url);
+};
 // Capture GLTF texture/image load failures that never reach the top-level model onError (the model still
 // resolves). Feeds the `textureErrors` probe so a texture-404'd scene is visible in debug_snapshot.
 modelLoadingManager.onError = recordManagerLoadError;
@@ -565,6 +578,13 @@ export function modelLoadIdleMs(): number {
  */
 export function modelLoadStarts(): number {
   return modelQueueStarts;
+}
+
+/** Pending shared loader and scene work, with duplicate starts counted. @internal */
+export function pendingModelLoads(): { total: number; items: { url: string; count: number }[] } {
+  let total = 0;
+  for (const count of pendingModelWork.values()) total += count;
+  return { total, items: Array.from(pendingModelWork, ([url, count]) => ({ url, count })).slice(0, 5) };
 }
 
 /** Shared GLTF loader used by shell entity/object model mounts. @internal */

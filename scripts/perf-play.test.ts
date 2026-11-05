@@ -10,6 +10,7 @@ import {
   cappedClockProblem,
   baselineLogProblem,
   compareServedSource,
+  perfFailureRecord,
   droppedOverrides,
   DRAW_FRAME_COUNTER_SCRIPT,
   measureGame,
@@ -38,6 +39,14 @@ test("performance source identity rejects a different checkout or server revisio
   expect(compareServedSource({ ...server, head: "87654321" }, root, "12345678")).toBe("mismatch");
   expect(compareServedSource({ ...server, gameDir: join(root, "other") }, root, "12345678")).toBe("mismatch");
   expect(compareServedSource(null, root, "12345678")).toBe("unavailable");
+});
+
+test("a failed performance run retains the server identity checked before navigation", () => {
+  const server = { identity: "checkout", root: process.cwd(), gameDir: null, pid: 12, kind: "runner" as const, head: "12345678" };
+  expect(perfFailureRecord(new Error("streaming stalled"), { status: "matched", server })).toMatchObject({
+    error: "streaming stalled", servedSource: { status: "matched", server },
+  });
+  expect(perfFailureRecord(new Error("failed"), { status: "unavailable", server: null }).servedSource).toEqual({ status: "unavailable", server: null });
 });
 
 test("performance movement records displacement and unavailable endpoints", () => {
