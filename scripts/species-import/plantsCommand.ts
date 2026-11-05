@@ -15,9 +15,10 @@ import { parseCsv, csvNumber } from "./csv";
 import { parseBechtoldCrownWidth, parseCarmeanCurves, parseEkCrownWidth, type CarmeanCurveRow } from "./fvsSource";
 import { BAAD, FIA_SPECIES, FVS_LS_CROWN, FVS_LS_HEIGHT, TALLO, fiaSiteTrees, readRaw } from "./rawSources";
 import { siteTreesOf, standReference } from "./siteTrees";
-import { fitSpecies, type Evaluate } from "./speciesFit";
+import type { CmaEsState } from "./cmaEs";
+import { FIT_PARAMETERS, fitSpecies, type Evaluate, type FitParameter } from "./speciesFit";
 import { buildSpeciesRecord, speciesRecordSource, type FittedParameters, type ImportedValues } from "./speciesRecord";
-import { scoreTrial, type FitTarget } from "./speciesScore";
+import { scoreTrial, type FitTarget, type TrialScore } from "./speciesScore";
 import { SHADE_TOLERANCE, SPECIES_TRAITS, type SpeciesTraits } from "./speciesTraits";
 import { TRIAL_AGES, runHabitTrial, runTrial, type Trial } from "./speciesTrial";
 import { talloCrownWidthClasses } from "./tallo";
@@ -37,12 +38,20 @@ const FOOT_M = 0.3048;
 const HELP = `bun run jgengine plants <verb> [species ids]
 
   import              download (once) and read FIA, FVS, Tallo and BAAD; write species/speciesReferenceTable.ts
-  fit <id...>         fit growth and carbon parameters by CMA-ES; progress in .scratch/species-fit/<id>.json
+  fit <id...|--all>   fit growth and carbon parameters by CMA-ES; the best and the search so far in .scratch/species-fit/<id>.json
   write <id...|--all> write species/data records from traits, imported values and the fit
   report <id...>      grow each record and print it against its reference
 
-fit flags: --generations <n> (40) --lambda <n> (16) --workers <n> --seeds a,b --sigma <x> (0.12, or 0.04 resuming a saved fit)
-  --until-pass        stop a tree's fit once it is inside the fit's height, DBH, Tallo, crown-shape and crown-architecture limits`;
+fit flags: --generations <n> (40, more on top of a saved search) --lambda <n> (16) --workers <n> (at most 4) --seeds a,b
+  --sigma <x>         step size (0.12 fresh, 0.04 around a saved best with no saved search)
+  --until-pass        stop a tree's fit once it is inside the fit's height, DBH, Tallo, crown-shape and crown-architecture limits;
+                      exit 1 when a fit runs its generations out still outside them
+
+A fit takes minutes per species (one trial grows the tree for 100 years, 3-8 s; a generation is --lambda
+trials over the workers), so run it as \`bun run background start -- bun run jgengine plants fit <id...>\`
+and read its progress with \`bun run background status <id>\`: each generation prints its number, the
+budget, the best score, its parts, and the time elapsed and left. Fitting the same species again carries
+its saved search on; delete .scratch/species-fit/<id>.json to start over.`;
 
 const scientificKey = (traits: SpeciesTraits): string => traits.scientific.split(" ").slice(0, 2).join(" ");
 const camel = (id: string): string => id.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
@@ -233,7 +242,18 @@ function flag(argv: readonly string[], name: string, fallback: string): string {
   return at >= 0 ? (argv[at + 1] ?? fallback) : fallback;
 }
 
-export function workerPool(size: number, seeds: readonly string[], shade: boolean, habit = false): { evaluate: Evaluate; close: () => void } {
+/** How one species' trials are grown: the seeds, whether a shaded sapling runs too, and the habit trial for shrubs, palms and ferns. */
+interface TrialSetup {
+  seeds: readonly string[];
+  shade: boolean;
+  habit: boolean;
+}
+
+/**
+ * `size` workers that grow trials, shared by every species of one fit run: each worker loads the
+ * growth model once, not once per species.
+ */
+export function workerPool(size: number): { evaluator: (setup: TrialSetup) => Evaluate; close: () => void } {
   const workers = Array.from({ length: size }, () => new Worker(new URL("./fitWorker.ts", import.meta.url).href));
   const idle = [...workers];
   const queue: (() => void)[] = [];
@@ -248,77 +268,175 @@ export function workerPool(size: number, seeds: readonly string[], shade: boolea
       queue.shift()?.();
     };
   }
-  const evaluate: Evaluate = (species) =>
-    new Promise((resolve) => {
-      const go = (): void => {
-        const worker = idle.pop();
-        if (worker === undefined) {
-          queue.push(go);
-          return;
-        }
-        const id = next++;
-        waiting.set(id, resolve);
-        worker.postMessage({ id, species, seeds, shade, habit });
-      };
-      go();
-    });
-  return { evaluate, close: () => workers.forEach((w) => w.terminate()) };
+  const evaluator =
+    ({ seeds, shade, habit }: TrialSetup): Evaluate =>
+    (species) =>
+      new Promise((resolve) => {
+        const go = (): void => {
+          const worker = idle.pop();
+          if (worker === undefined) {
+            queue.push(go);
+            return;
+          }
+          const id = next++;
+          waiting.set(id, resolve);
+          worker.postMessage({ id, species, seeds, shade, habit });
+        };
+        go();
+      });
+  return { evaluator, close: () => workers.forEach((w) => w.terminate()) };
 }
 
+/**
+ * `.scratch/species-fit/<id>.json`: the best species so far, and the search as it stood after the last
+ * generation, so the next `plants fit <id>` carries that search on instead of starting a new one
+ * around the best point. `plants write <id>` reads the species from it.
+ */
 interface FitFile {
   score: number;
   parts: Record<string, number>;
   against: string;
   species: PlantSpecies;
+  search?: CmaEsState;
+  /** Generations the saved search has run, over every run of this fit. */
+  generation?: number;
+  /** Whether the last run with `--until-pass` ended inside the pass limits. */
+  passed?: boolean;
 }
 
 const AGAINST = "fia, carmean-1989, tallo-2022, ek-1974";
 
-async function runFit(ids: readonly string[], argv: readonly string[]): Promise<void> {
+/** The score parts `--until-pass` holds at zero: a species inside every one passes the library's size and crown checks. */
+const PASS_PARTS = ["limits", "tallo", "shape", "architecture", "dead"] as const;
+
+function insidePassLimits(parts: Record<string, number>): boolean {
+  return PASS_PARTS.every((part) => (parts[part] ?? (part === "architecture" || part === "dead" ? 0 : 1)) === 0);
+}
+
+/** `limits 3.8, tallo 59.8`: the pass parts a best is still outside, for the log. */
+function missedParts(parts: Record<string, number>): string {
+  return PASS_PARTS.filter((part) => (parts[part] ?? 0) !== 0)
+    .map((part) => `${part} ${(parts[part] ?? 0).toFixed(1)}`)
+    .join(", ");
+}
+
+const clock = (ms: number): string => {
+  const s = Math.round(ms / 1000);
+  return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m${String(s % 60).padStart(2, "0")}s` : `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}m`;
+};
+
+function readFitFile(path: string): FitFile | undefined {
+  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as FitFile) : undefined;
+}
+
+/** One species' starting record, the parameters its fit searches, how its trials are grown and scored. */
+interface FitSetup {
+  start: PlantSpecies;
+  parameters: readonly FitParameter[];
+  trial: TrialSetup;
+  score: (trial: Trial) => TrialScore;
+  against: string;
+}
+
+async function fitSetup(id: string, resumed: FitFile | undefined, seeds: readonly string[]): Promise<FitSetup> {
+  const habit = habitOf(id);
+  if (habit !== undefined) {
+    const reference = habitReferenceOf(id);
+    return {
+      start: resumed?.species ?? (await startingHabitRecord(habit)),
+      parameters: habitFitParameters(habit),
+      trial: { seeds, shade: false, habit: true },
+      score: (trial) => scoreHabitTrial(reference, habit, trial),
+      against: HABIT_AGAINST,
+    };
+  }
+  const traits = traitsOf(id);
+  // A fit saved before a field existed resumes with that field's neutral value.
+  const resumedStart = resumed === undefined ? await startingRecord(traits) : { ...resumed.species, carbon: { ...resumed.species.carbon, hydraulicHeightShare: resumed.species.carbon.hydraulicHeightShare ?? 1 } };
+  // The trial reads the crown form to grow the seeded individuals the guardrails check.
+  const start: PlantSpecies = { ...resumedStart, architecture: { ...resumedStart.architecture, crownForm: traits.form } };
+  const target = fitTarget(traits, start, referenceOf(id));
+  return { start, parameters: FIT_PARAMETERS, trial: { seeds, shade: target.shadeTolerant, habit: false }, score: (trial) => scoreTrial(target, trial), against: AGAINST };
+}
+
+/** What one species' fit ended as, for the run's summary and exit code. */
+interface FitOutcome {
+  id: string;
+  score: number;
+  generation: number;
+  passed: boolean;
+  missed: string;
+}
+
+/**
+ * Fit each species in turn, logging one line per generation that says where the run is and how long
+ * is left, and one line per species that says how it ended and where its file is. Returns 1 when a
+ * `--until-pass` fit ran out of generations outside the limits, so a caller never reads a timed-out
+ * search as a pass.
+ */
+async function runFit(ids: readonly string[], argv: readonly string[]): Promise<number> {
   mkdirSync(FIT_DIR, { recursive: true });
   const seeds = flag(argv, "--seeds", "a,b").split(",");
   // The PC is shared: never more than 4 workers, whatever the flag says (AGENTS.md).
   const workers = Math.max(1, Math.min(4, Number(flag(argv, "--workers", "4")), availableParallelism() - 2));
-  for (const id of ids) {
-    const habit = habitOf(id);
-    if (habit !== undefined) {
+  const generations = Number(flag(argv, "--generations", "40"));
+  const lambda = Number(flag(argv, "--lambda", "16"));
+  const untilPass = argv.includes("--until-pass");
+  const pool = workerPool(workers);
+  const outcomes: FitOutcome[] = [];
+  const relative = (path: string): string => path.slice(ROOT.length).replaceAll("\\", "/");
+  console.log(`plants fit: ${ids.length} species, ${generations} generation(s) x ${lambda} trial(s) x ${seeds.length} seed(s) each, ${workers} worker(s)${untilPass ? ", stopping each at the pass limits" : ""}`);
+  try {
+    for (const [index, id] of ids.entries()) {
       const out = join(FIT_DIR, `${id}.json`);
-      const resumed: FitFile | undefined = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : undefined;
-      const start = resumed?.species ?? (await startingHabitRecord(habit));
-      const reference = habitReferenceOf(id);
-      const pool = workerPool(workers, seeds, false, true);
-      await fitSpecies(start, (trial) => scoreHabitTrial(reference, habit, trial), pool.evaluate, {
-        generations: Number(flag(argv, "--generations", "40")),
-        lambda: Number(flag(argv, "--lambda", "16")),
+      const resumed = readFitFile(out);
+      const setup = await fitSetup(id, resumed, seeds);
+      const { start, parameters } = setup;
+      const from = resumed === undefined ? `fresh from record v${start.version}` : resumed.search === undefined ? `from the best in ${relative(out)} (score ${resumed.score.toFixed(2)}, no saved search: a new one starts around it)` : `carrying on the search in ${relative(out)} (generation ${resumed.search.generation}, score ${resumed.score.toFixed(2)})`;
+      console.log(`${id} (${index + 1}/${ids.length}): ${parameters.length} parameters, ${from}`);
+      const file: FitFile = { score: resumed?.score ?? Number.POSITIVE_INFINITY, parts: resumed?.parts ?? {}, against: setup.against, species: start, ...(resumed?.search === undefined ? {} : { search: resumed.search, generation: resumed.search.generation }) };
+      const save = (): void => writeFileSync(out, JSON.stringify(file, null, 1));
+      const started = Date.now();
+      let done = 0;
+      // Shrubs, palms and ferns have no pass limits: their fit runs its generations out.
+      const canPass = untilPass && setup.trial.habit === false;
+      const result = await fitSpecies(start, setup.score, pool.evaluator(setup.trial), {
+        generations,
+        lambda,
         sigma: Number(flag(argv, "--sigma", resumed === undefined ? FRESH_SIGMA : RESUMED_SIGMA)),
         seed: 1,
-        parameters: habitFitParameters(habit),
-        onBest: (best) => writeFileSync(out, JSON.stringify({ score: best.score, parts: best.parts, against: HABIT_AGAINST, species: best.species } satisfies FitFile, null, 1)),
-        onGeneration: (line) => console.log(`${id} ${line}`),
+        parameters,
+        resume: resumed?.search,
+        ...(canPass ? { until: (best: { parts: Record<string, number> }) => insidePassLimits(best.parts) } : {}),
+        onBest: (best) => {
+          Object.assign(file, { score: best.score, parts: best.parts, species: best.species });
+          save();
+        },
+        onGeneration: (report) => {
+          done += 1;
+          Object.assign(file, { search: report.search, generation: report.generation, passed: report.passed });
+          save();
+          const left = report.passed ? "" : `, ~${clock(((Date.now() - started) / done) * (report.last - report.generation))} left`;
+          console.log(`${id} ${report.line}  (${clock(Date.now() - started)} elapsed${left})`);
+        },
       });
-      pool.close();
-      continue;
+      file.passed = result.passed;
+      save();
+      const outcome: FitOutcome = { id, score: result.score, generation: result.generation, passed: result.passed, missed: missedParts(result.parts) };
+      outcomes.push(outcome);
+      const write = `\`bun run jgengine plants write ${id}\` writes the record`;
+      if (!canPass) console.log(`${id}: done, best score ${result.score.toFixed(2)} at generation ${result.generation}; ${relative(out)} holds it; ${write}`);
+      else if (result.passed) console.log(`${id}: passed at generation ${result.generation}, score ${result.score.toFixed(2)}; ${relative(out)} holds it; ${write}`);
+      else console.log(`${id}: NOT passed after ${file.generation ?? 0} generations, score ${result.score.toFixed(2)}, still outside: ${outcome.missed}; ${relative(out)} holds the search, and the same command runs ${generations} more generations from it`);
     }
-    const traits = traitsOf(id);
-    const out = join(FIT_DIR, `${id}.json`);
-    const resumed: FitFile | undefined = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : undefined;
-    // A fit saved before a field existed resumes with that field's neutral value.
-    const resumedStart = resumed === undefined ? await startingRecord(traits) : { ...resumed.species, carbon: { ...resumed.species.carbon, hydraulicHeightShare: resumed.species.carbon.hydraulicHeightShare ?? 1 } };
-    // The trial reads the crown form to grow the seeded individuals the guardrails check.
-    const start: PlantSpecies = { ...resumedStart, architecture: { ...resumedStart.architecture, crownForm: traits.form } };
-    const target = fitTarget(traits, start, referenceOf(id));
-    const pool = workerPool(workers, seeds, target.shadeTolerant);
-    await fitSpecies(start, (trial) => scoreTrial(target, trial), pool.evaluate, {
-      generations: Number(flag(argv, "--generations", "40")),
-      lambda: Number(flag(argv, "--lambda", "16")),
-      sigma: Number(flag(argv, "--sigma", resumed === undefined ? FRESH_SIGMA : RESUMED_SIGMA)),
-      seed: 1,
-      ...(argv.includes("--until-pass") ? { until: (best: { parts: Record<string, number> }) => (best.parts["limits"] ?? 1) === 0 && (best.parts["tallo"] ?? 1) === 0 && (best.parts["shape"] ?? 1) === 0 && (best.parts["architecture"] ?? 0) === 0 && (best.parts["dead"] ?? 0) === 0 } : {}),
-      onBest: (best) => writeFileSync(out, JSON.stringify({ score: best.score, parts: best.parts, against: AGAINST, species: best.species } satisfies FitFile, null, 1)),
-      onGeneration: (line) => console.log(`${id} ${line}`),
-    });
+  } finally {
     pool.close();
   }
+  const failed = outcomes.filter((outcome) => !outcome.passed);
+  if (ids.length > 1 || failed.length > 0) {
+    console.log(`plants fit: ${outcomes.length - failed.length} of ${outcomes.length} species ${untilPass ? "passed" : "fitted"}${failed.length === 0 ? "" : `; not passed: ${failed.map((outcome) => `${outcome.id} (${outcome.missed})`).join(", ")}`}`);
+  }
+  return failed.length === 0 ? 0 : 1;
 }
 
 function wrap(text: string, width: number): string {
@@ -435,8 +553,11 @@ export async function runPlants(argv: readonly string[]): Promise<number> {
       runImport();
       return 0;
     case "fit":
-      await runFit(ids, rest);
-      return 0;
+      if (ids.length === 0) {
+        console.error("plants fit: name the species to fit (ids from scripts/species-import/speciesTraits.ts), or --all");
+        return 2;
+      }
+      return runFit(ids, rest);
     case "write":
       await runWrite(ids);
       return 0;

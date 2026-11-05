@@ -7,6 +7,7 @@ export const BACKGROUND: VerbTable = {
   verbs: {
     start: { script: "scripts/bg-run.ts", detail: "-- <command>: start it detached and print its id" },
     await: { script: "scripts/bg-await.ts", detail: "<id>: block until that command exits, then print its tail and exit code" },
+    status: { script: "scripts/bg-status.ts", detail: "<id> [--lines <n>]: running or exited, how long, and the log's last lines, without waiting" },
   },
   example: "bun run background start -- bun run verify:fast --full",
 };

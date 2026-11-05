@@ -146,7 +146,9 @@ const ENSURE_READY: Stage = {
   args: ["scripts/ensure-ready.ts", "--install-only"],
   rerun: "bun scripts/ensure-ready.ts --install-only",
 };
-const BUILD: Stage = { name: "build", command: "bun", args: ["run", "build"], needs: ["ensure-ready"], rerun: "bun run build" };
+// The build skips itself when dist was built from these exact sources (scripts/build-fingerprint.ts):
+// core's build deletes and recompiles dist, and every `bun run check` paid it on an unchanged tree.
+const BUILD: Stage = { name: "build", command: "bun", args: ["scripts/build-fingerprint.ts"], needs: ["ensure-ready"], rerun: "bun run build" };
 
 export function checkStage(check: CheckDef, withBuild: boolean): Stage {
   const [command, ...args] = checkCommand(check);

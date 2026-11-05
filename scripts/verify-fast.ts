@@ -15,7 +15,8 @@
 // `--cheap` (the landing's preflight) runs every gate CI's quick and types jobs run and reports
 // every failure in one pass instead.
 //
-// Exit: 0 verified, 1 a step failed. `--plan` lists changed files no test reaches.
+// Exit: 0 verified, 1 a step failed. A change no test can be attributed to (a root config, the lockfile, a source
+// file under no tested root) runs every test file and type-check; `--plan` names it.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -25,7 +26,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import { assertCheckoutReady } from "./checkout-ready";
-import { digestLines, writeStepLog } from "./failure-digest";
+import { digestLines, failureDigest, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
 import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
@@ -66,8 +67,12 @@ export const EXIT_FAILED = 1;
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 const SOURCE_FILE = /\.[cm]?[jt]sx?$/;
 const DECLARATION = /\.d\.[cm]?ts$/;
-const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\/[^/]+\/src\//, /^scripts\/[^/]+\.[cm]?tsx?$/, /^games\/[^/]+\/src\//];
+const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\/[^/]+\/src\//, /^scripts\/.+\.[cm]?tsx?$/, /^games\/[^/]+\/src\//];
 const GAME_DIR = /^games\/[^/]+$/;
+/** Root files every program reads: a change to one is attributable to no test in particular. */
+const ROOT_CONFIG = /^(package\.json|bun\.lock|bunfig\.toml|tsconfig(\.[^/]+)?\.json)$/;
+/** A workspace's own manifest and compiler settings, relative to the workspace. */
+const WORKSPACE_CONFIG = /^(package\.json|bunfig\.toml|tsconfig(\.[^/]+)?\.json)$/;
 /** Demo scenes exist to be looked at; a test of one would be filler, so they never need one. */
 const DEMO = /(^|\/)demos?\//;
 
@@ -134,6 +139,8 @@ export interface Plan {
   gates: string[];
   /** Changed runtime files no selected test can reach. */
   unattributed: string[];
+  /** Changed paths no test can be attributed to (root configs, lockfile, `unattributed`): every test file and type-check runs. */
+  fallback: string[];
   /** Workspaces whose whole suite runs because a changed file in them has no test of its own. */
   suites: string[];
   /**
@@ -484,19 +491,38 @@ export function verifyPlan(input: {
   }
 
   // A file no test reaches is still covered when its package's whole suite runs: that is the suite
-  // CI runs for it. Only a file outside every tested package (a root script) stays unattributed.
+  // CI runs for it. A root script's suite is every `scripts/` test (CI's shard i), since those tests
+  // reach the scripts by spawning them, which no import shows. Only a file under no tested root at
+  // all stays unattributed, and the run says so rather than passing it.
   const unattributed: string[] = [];
   const suites: string[] = [];
   for (const path of runtime) {
     if (ownTests(path, input.testFiles).length > 0 || (testedBy.get(path) ?? []).length > 0) continue;
-    const workspace = workspaceOf(path, input.workspaces);
-    const suite = workspace === null ? [] : input.testFiles.filter((test) => test.startsWith(`${workspace.dir}/`));
-    if (suite.length === 0) {
+    const suiteDir = workspaceOf(path, input.workspaces)?.dir ?? (path.startsWith("scripts/") ? "scripts" : null);
+    const suite = suiteDir === null ? [] : input.testFiles.filter((test) => test.startsWith(`${suiteDir}/`));
+    if (suiteDir === null || suite.length === 0) {
       unattributed.push(path);
       continue;
     }
     for (const test of suite) tests.add(test);
-    if (!suites.includes(workspace!.dir)) suites.push(workspace!.dir);
+    if (!suites.includes(suiteDir)) suites.push(suiteDir);
+  }
+  // A workspace's own package.json or tsconfig changes how every file in it resolves and compiles,
+  // which no import shows: its whole suite runs.
+  for (const path of touchedPaths) {
+    const workspace = workspaceOf(path, input.workspaces);
+    if (workspace === null || !WORKSPACE_CONFIG.test(path.slice(workspace.dir.length + 1))) continue;
+    for (const test of input.testFiles) if (test.startsWith(`${workspace.dir}/`)) tests.add(test);
+    if (!suites.includes(workspace.dir)) suites.push(workspace.dir);
+  }
+  // A change no test can be attributed to falls back to the full set: a root config or lockfile
+  // reaches every program, and a source file under no tested root reaches nothing the graph knows.
+  // Before this, a root tsconfig or bun.lock change planned no test at all and reported "verified".
+  const fallback = [...touchedPaths.filter((path) => ROOT_CONFIG.test(path)), ...unattributed];
+  if (fallback.length > 0) {
+    for (const test of input.testFiles) tests.add(test);
+    for (const workspace of input.workspaces) if (workspace.checkTypes && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
+    if (!typechecks.includes("scripts")) typechecks.push("scripts");
   }
 
   const reached = new Set(reachedBy.keys());
@@ -516,6 +542,7 @@ export function verifyPlan(input: {
     tests: [...tests].sort(),
     gates: gatesFor(changed),
     unattributed,
+    fallback,
     suites: suites.sort(),
     boots,
     inputs,
@@ -627,27 +654,37 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     const files = tests.map((settles) => settles.id.slice("test:".length));
     // Each file also pays its imports, which the junit time leaves out.
     const cost = Object.fromEntries(files.map((file) => [file, options.testCosts?.[file] !== undefined ? options.testCosts[file]! + 0.5 : guessedTestCost(file)]));
-    const total = files.reduce((sum, file) => sum + cost[file]!, 0);
-    const byCount = Math.min(lanes, Math.ceil(files.length / TESTS_PER_LANE));
-    const byTime = Math.min(lanes * 3, Math.ceil(total / TEST_CHUNK_SECONDS));
-    const parts = Math.min(files.length, Math.max(1, byCount, byTime));
-    const groups = splitByCost(files, cost, parts).filter((group) => group.length > 0);
-    groups.forEach((group, index) => {
-      const label = groups.length === 1 ? `test ${group.length} file(s)` : `test ${group.length} file(s) (${index + 1}/${groups.length})`;
-      steps.push({
-        name: label,
-        command: [
-          "bun",
-          "test",
-          "--timeout",
-          "20000",
-          ...(options.reportDir === undefined ? [] : ["--reporter=junit", `--reporter-outfile=${options.reportDir}/tests-${index + 1}.xml`]),
-          ...[...group].sort(),
-        ],
-        cost: group.reduce((sum, file) => sum + (cost[file] ?? 1), 0),
-        units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
-      });
+    // The tests named after the changed files, and the changed tests themselves, run first in a step
+    // of their own: a break in `pick.ts` reaches a thousand files, the run stops at the first red,
+    // and without this `pick.test.ts` sat in a chunk that never ran while the red named a loot table.
+    const own = new Set(plan.changed.flatMap((file) => ownTests(file, files)));
+    const rest = files.filter((file) => !own.has(file));
+    const testStep = (group: readonly string[], name: string, index: number, first: boolean): Step => ({
+      name,
+      command: [
+        "bun",
+        "test",
+        "--timeout",
+        "20000",
+        ...(options.reportDir === undefined ? [] : ["--reporter=junit", `--reporter-outfile=${options.reportDir}/tests-${index}.xml`]),
+        ...[...group].sort(),
+      ],
+      cost: group.reduce((sum, file) => sum + (cost[file] ?? 1), 0),
+      ...(first ? { first: true } : {}),
+      units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
     });
+    if (own.size > 0) steps.push(testStep([...own], `test ${own.size} own file(s)`, 0, true));
+    if (rest.length > 0) {
+      const total = rest.reduce((sum, file) => sum + cost[file]!, 0);
+      const byCount = Math.min(lanes, Math.ceil(rest.length / TESTS_PER_LANE));
+      const byTime = Math.min(lanes * 3, Math.ceil(total / TEST_CHUNK_SECONDS));
+      const parts = Math.min(rest.length, Math.max(1, byCount, byTime));
+      const groups = splitByCost(rest, cost, parts).filter((group) => group.length > 0);
+      groups.forEach((group, index) => {
+        const label = groups.length === 1 ? `test ${group.length} file(s)` : `test ${group.length} file(s) (${index + 1}/${groups.length})`;
+        steps.push(testStep(group, label, index + 1, false));
+      });
+    }
   }
 
   const gates = options.skillApi === true ? plan.gates : plan.gates.filter((gate) => gate !== "skill-api");
@@ -676,7 +713,7 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       units: boots,
     });
   }
-  return options.cheap === true ? steps.filter((step) => step.first === true) : steps;
+  return options.cheap === true ? steps.filter((step) => step.first === true && step.command[1] !== "test") : steps;
 }
 
 /** The paths whose change turns on CI's frame and smoke gates, from the same map the workflow calls. */
@@ -880,18 +917,42 @@ async function withHeavyServer<T>(root: string, steps: readonly Step[], work: ()
   }
 }
 
-/** Each failing file with its first error, and the whole output in a UTF-8 log under `.scratch/verify-fast/`. */
-function printFailure(root: string, step: string, output: string): void {
-  const log = writeStepLog(root, "verify-fast", step, output);
+/**
+ * The command that reruns one step alone, as a line to paste: the run's own junit flags are left
+ * out, and an argument with a space is quoted.
+ */
+export function rerunCommand(step: Pick<Step, "name" | "command">): string {
+  return step.command
+    .filter((word) => !word.startsWith("--reporter"))
+    .map((word) => (/\s/.test(word) ? `"${word}"` : word))
+    .join(" ");
+}
+
+/**
+ * What a red step prints: each failing file with its first error, the command that reruns only this
+ * step, the fix when the step compares a generated file, and the whole output in a UTF-8 log under
+ * `.scratch/verify-fast/`. Everything a lane needs to act, without reading this script.
+ */
+function printFailure(root: string, step: Step, output: string): void {
+  const log = writeStepLog(root, "verify-fast", step.name, output);
   for (const line of digestLines(output, relPosix(root, log))) console.log(line);
+  console.log(`  rerun only this: ${rerunFailing(step, output)}`);
+  if (step.fix !== undefined) console.log(`  fix: ${step.fix}`);
+}
+
+/** For a test step, `bun test` over just the files that failed; for anything else, the step's own command. */
+export function rerunFailing(step: Pick<Step, "name" | "command">, output: string): string {
+  if (step.command[1] !== "test") return rerunCommand(step);
+  const failed = [...new Set(failureDigest(output).map((entry) => entry.where.replace(/:\d+$/, "")).filter((where) => TEST_FILE.test(where)))];
+  return failed.length === 0 ? rerunCommand(step) : `bun test ${failed.join(" ")}`;
 }
 
 function printPlan(plan: Plan, steps: readonly Step[]): void {
   for (const path of plan.changed) console.log(`  changed  ${path}`);
   for (const step of steps) console.log(`  step     ${step.name}  (${step.command.join(" ")})`);
-  if (plan.unattributed.length > 0) {
-    console.log(`  no test reaches ${plan.unattributed.length} changed file(s):`);
-    for (const path of plan.unattributed) console.log(`    ${path}`);
+  if (plan.fallback.length > 0) {
+    console.log(`  no test can be attributed to ${plan.fallback.length} changed file(s), so every test file and type-check runs:`);
+    for (const path of plan.fallback) console.log(`    ${path}`);
   }
 }
 
@@ -993,8 +1054,7 @@ async function main(argv: readonly string[]): Promise<number> {
         const result = await run(step, root);
         const suffix = result.blockedBy === undefined ? "" : `  (${result.output})`;
         (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${(result.ms / 1000).toFixed(1)}s${suffix}`);
-        if (!result.ok && result.blockedBy === undefined) printFailure(root, step.name, result.output);
-        if (!result.ok && result.blockedBy === undefined && step.fix !== undefined) console.log(`  fix: ${step.fix}`);
+        if (!result.ok && result.blockedBy === undefined) printFailure(root, step, result.output);
         return result;
       }, { onStart: receipt.start, onSettle: receipt.settle }),
     );
@@ -1112,10 +1172,7 @@ async function main(argv: readonly string[]): Promise<number> {
     async (step) => {
       const result = await run(step, root);
       (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
-      if (!result.ok) {
-        if (result.output.length > 0) printFailure(root, result.name, result.output);
-        if (step.fix !== undefined) console.log(`  fix: ${step.fix}`);
-      }
+      if (!result.ok) printFailure(root, step, result.output);
       return result;
     },
     { failFast: !cheap, onStart: receipt.start, onSettle: receipt.settle },
@@ -1129,15 +1186,22 @@ async function main(argv: readonly string[]): Promise<number> {
   console.log(
     `\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}`,
   );
+  // The result is partial by design and says so either way: what it covered, what it left out, and
+  // the command that runs CI's whole set.
+  const covered = `${plan.tests.length} test file(s), ${plan.typechecks.length} type-check(s), ${plan.gates.length} gate(s)${plan.boots.length > 0 ? `, boot ${plan.boots.join(" ")}` : ""}${skipped.length > 0 ? `; ${skipped.length} unit(s) already proven on these bytes` : ""}`;
+  if (plan.fallback.length > 0) {
+    console.log(`verify:fast: no test can be attributed to ${plan.fallback.join(", ")}, so every test file and type-check ran`);
+  }
   if (failures.length > 0) {
     console.log(`failed: ${failures.join(", ")}`);
     if (notRun.length > 0) {
       const named = notRun.slice(0, 4).join(", ");
       console.log(`not run, because the run stops at the first failure: ${named}${notRun.length > 4 ? ` and ${notRun.length - 4} more` : ""}`);
     }
-    console.log("verify:fast ran only what this change reaches. `bun run verify:fast --full` runs what CI runs.");
+    console.log(`verify:fast: partial: only what this change reaches (${covered}). \`bun run verify:fast --full\` runs what CI runs.`);
     return EXIT_FAILED;
   }
+  console.log(`verify:fast: ${cheap ? "cheap checks passed" : "verified"} — partial: only what this change reaches (${covered}). \`bun run verify:fast --full\` runs what CI runs.`);
   return EXIT_VERIFIED;
   } catch (error) {
     receipt?.abort(error);

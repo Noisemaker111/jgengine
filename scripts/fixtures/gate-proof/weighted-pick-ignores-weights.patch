@@ -1,0 +1,13 @@
+diff --git a/packages/core/src/random/pick.ts b/packages/core/src/random/pick.ts
+index fe0ae9c09..935b0df41 100644
+--- a/packages/core/src/random/pick.ts
++++ b/packages/core/src/random/pick.ts
+@@ -54,7 +54,7 @@ export function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf
+   for (const item of items) {
+     const weight = weightOf(item);
+     if (weight <= 0) continue;
+-    roll -= weight;
++    roll -= total / items.length;
+     if (roll < 0) return item;
+   }
+   for (let index = items.length - 1; index >= 0; index -= 1) {

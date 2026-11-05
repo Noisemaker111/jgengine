@@ -69,3 +69,12 @@ test("writeStepLog keeps non-ASCII output as UTF-8 and strips colour codes", () 
     rmSync(join(root, ".scratch", "failure-digest-test"), { recursive: true, force: true });
   }
 });
+
+test("a red `bun run test` ends with the failing files, the command that reruns only them, and the log", async () => {
+  const { failureFooter } = await import("./run-tests");
+  const output = ["bun test v1.4.4", "", "packages/core/src/a.test.ts:", "error: expect(received).toBe(expected)", "(fail) x [0.69ms]", "", "scripts/b.test.ts:", "(fail) y", "", " 0 pass", " 2 fail"].join("\n");
+  const footer = failureFooter(output, ".scratch/test/last-run.log").join("\n");
+  expect(footer).toContain("packages/core/src/a.test.ts: (fail) x - error: expect(received).toBe(expected)");
+  expect(footer).toContain("rerun only these: bun test packages/core/src/a.test.ts scripts/b.test.ts");
+  expect(footer).toContain("full log (UTF-8): .scratch/test/last-run.log");
+});

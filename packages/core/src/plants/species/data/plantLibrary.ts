@@ -19,9 +19,7 @@ import { FAGUS_GRANDIFOLIA } from "./fagusGrandifolia";
 import { FRAXINUS_PENNSYLVANICA } from "./fraxinusPennsylvanica";
 import { BETULA_ALLEGHANIENSIS } from "./betulaAlleghaniensis";
 import { FRAXINUS_AMERICANA } from "./fraxinusAmericana";
-import { FRAXINUS_NIGRA } from "./fraxinusNigra";
 import { LIRIODENDRON_TULIPIFERA } from "./liriodendronTulipifera";
-import { PRUNUS_SEROTINA } from "./prunusSerotina";
 import { POPULUS_GRANDIDENTATA } from "./populusGrandidentata";
 import { JUGLANS_NIGRA } from "./juglansNigra";
 import { CARYA_OVATA } from "./caryaOvata";
@@ -50,7 +48,6 @@ import { TSUGA_HETEROPHYLLA } from "./tsugaHeterophylla";
 import { THUJA_PLICATA } from "./thujaPlicata";
 import { LARIX_LARICINA } from "./larixLaricina";
 import { LARIX_OCCIDENTALIS } from "./larixOccidentalis";
-import { ROBINIA_PSEUDOACACIA } from "./robiniaPseudoacacia";
 import { VACCINIUM_CORYMBOSUM } from "./vacciniumCorymbosum";
 import { COCOS_NUCIFERA } from "./cocosNucifera";
 import { SABAL_PALMETTO } from "./sabalPalmetto";
@@ -84,9 +81,7 @@ export const PLANT_LIBRARY: readonly PlantSpecies[] = [
   FRAXINUS_PENNSYLVANICA,
   BETULA_ALLEGHANIENSIS,
   FRAXINUS_AMERICANA,
-  FRAXINUS_NIGRA,
   LIRIODENDRON_TULIPIFERA,
-  PRUNUS_SEROTINA,
   POPULUS_GRANDIDENTATA,
   JUGLANS_NIGRA,
   CARYA_OVATA,
@@ -115,7 +110,6 @@ export const PLANT_LIBRARY: readonly PlantSpecies[] = [
   THUJA_PLICATA,
   LARIX_LARICINA,
   LARIX_OCCIDENTALIS,
-  ROBINIA_PSEUDOACACIA,
   VACCINIUM_CORYMBOSUM,
   COCOS_NUCIFERA,
   SABAL_PALMETTO,

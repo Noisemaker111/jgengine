@@ -120,10 +120,24 @@ export function supervise(dir: string): void {
   child.on("exit", (code) => finish(code ?? 1));
 }
 
-/** The command `bun run background start <cmd>` was given, with bun's separator removed. */
-export function commandFrom(argv: readonly string[]): string {
+/**
+ * One argument as the shell that runs the stored line reads it back: cmd.exe on Windows, bash
+ * elsewhere. Joined bare, `-m "two words"` came back as `-m two words` and lane:close refused it.
+ */
+export function shellWord(word: string, platform: NodeJS.Platform = process.platform): string {
+  if (/^[\w@%+=:,./\-]+$/.test(word)) return word;
+  if (platform === "win32") return `"${word.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, "$1$1")}"`;
+  return `'${word.replaceAll("'", "'\\''")}'`;
+}
+
+/**
+ * The command `bun run background start <cmd>` was given, with bun's separator removed. Separate
+ * words are quoted where they need it; a single argument is a whole command line, kept as written.
+ */
+export function commandFrom(argv: readonly string[], platform: NodeJS.Platform = process.platform): string {
   const words = argv[0] === "--" ? argv.slice(1) : argv;
-  return words.join(" ").trim();
+  if (words.length === 1) return (words[0] ?? "").trim();
+  return words.map((word) => shellWord(word, platform)).join(" ").trim();
 }
 
 function main(argv: readonly string[]): void {
@@ -145,7 +159,8 @@ function main(argv: readonly string[]): void {
     const id = startTask({ command });
     console.log(id);
     console.error(`bun run background await ${id}`);
-    console.error(`output: ${join(root, tasksRoot(root), id, "out.log")}`);
+    console.error(`output: ${join(tasksRoot(root), id, "out.log")}`);
+    console.error(`progress: bun run background status ${id}`);
   } catch (error) {
     console.error(`background start: ${(error as Error).message}`);
     process.exit(2);

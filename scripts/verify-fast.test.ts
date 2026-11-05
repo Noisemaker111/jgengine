@@ -23,6 +23,8 @@ import {
   opaqueScopes,
   ownTests,
   pureRenames,
+  rerunCommand,
+  rerunFailing,
   splitByCost,
   TESTS_PER_LANE,
   workspaceOf,
@@ -62,7 +64,7 @@ function fixtureGraph(sources: Record<string, string>, others: readonly string[]
 
 const emptyGraph = fixtureGraph({});
 
-const emptyPlan: Plan = { changed: [], deleted: [], typechecks: [], tests: [], gates: [], unattributed: [], suites: [], boots: [], inputs: {} };
+const emptyPlan: Plan = { changed: [], deleted: [], typechecks: [], tests: [], gates: [], unattributed: [], fallback: [], suites: [], boots: [], inputs: {} };
 
 describe("what changed", () => {
   test("counts committed, staged, unstaged and untracked paths", () => {
@@ -134,7 +136,7 @@ describe("workspace mapping", () => {
     expect(workspaceOf("scripts/verify-fast.ts", fakeWorkspaces)).toBeNull();
     const plan = verifyPlan({
       changed: ["scripts/verify-fast.ts"],
-      testFiles: [],
+      testFiles: ["scripts/verify-fast.test.ts"],
       workspaces: fakeWorkspaces,
       graph: emptyGraph,
     });
@@ -147,8 +149,9 @@ describe("workspace mapping", () => {
       "packages/core/src/world/terrain.ts": "export const sample = 1;",
       "packages/core/src/game/loop.ts": "export const tick = 1;",
     });
-    expect(verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: [], workspaces: fakeWorkspaces, graph }).typechecks).toEqual(["packages/core", "packages/shell"]);
-    expect(verifyPlan({ changed: ["packages/core/src/game/loop.ts"], testFiles: [], workspaces: fakeWorkspaces, graph }).typechecks).toEqual(["packages/core"]);
+    const testFiles = ["packages/core/src/a.test.ts"];
+    expect(verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles, workspaces: fakeWorkspaces, graph }).typechecks).toEqual(["packages/core", "packages/shell"]);
+    expect(verifyPlan({ changed: ["packages/core/src/game/loop.ts"], testFiles, workspaces: fakeWorkspaces, graph }).typechecks).toEqual(["packages/core"]);
   });
 
   test("reads the real workspace list and their check-types scripts", () => {
@@ -256,7 +259,7 @@ describe("test mapping", () => {
     });
     expect(opaqueScopes("packages/shell/src/render/World.test.ts", ["@jgengine/core/world/missing", "./gone"], fakeWorkspaces)).toEqual(["packages/core/", "packages/shell/"]);
     expect(verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).toContain("packages/shell/src/render/World.test.ts");
-    expect(verifyPlan({ changed: ["apps/dev/src/x.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).not.toContain("packages/shell/src/render/World.test.ts");
+    expect(verifyPlan({ changed: ["apps/dev/src/x.ts"], testFiles: [...tests, "apps/dev/src/x.test.ts"], workspaces: fakeWorkspaces, graph }).tests).not.toContain("packages/shell/src/render/World.test.ts");
   });
 
   test("a deleted file reaches whatever still imports it", () => {
@@ -293,14 +296,63 @@ describe("attribution fails loudly", () => {
     expect(plan.tests).not.toContain("packages/react/src/a.test.ts");
   });
 
-  test("a root script no test reaches is reported, not passed", () => {
+  test("a root script no test imports runs every scripts test, as CI does", () => {
     const plan = verifyPlan({
-      changed: ["scripts/unreachable.ts"],
-      testFiles: ["scripts/other.test.ts"],
+      changed: ["scripts/species-import/unreachable.ts"],
+      testFiles: ["scripts/other.test.ts", "packages/core/src/a.test.ts"],
       workspaces: fakeWorkspaces,
       graph: emptyGraph,
     });
-    expect(plan.unattributed).toEqual(["scripts/unreachable.ts"]);
+    expect(plan.suites).toEqual(["scripts"]);
+    expect(plan.tests).toEqual(["scripts/other.test.ts"]);
+    expect(plan.fallback).toEqual([]);
+  });
+
+  test("a change no test can be attributed to runs every test file and type-check: a file under no tested root, a root config, the lockfile", () => {
+    const testFiles = ["scripts/other.test.ts", "packages/core/src/a.test.ts"];
+    for (const changed of ["apps/nowhere/src/lonely.ts", "tsconfig.base.json", "bun.lock", "package.json", "bunfig.toml"]) {
+      const plan = verifyPlan({ changed: [changed], testFiles, workspaces: fakeWorkspaces, graph: emptyGraph });
+      expect(plan.fallback, changed).toEqual([changed]);
+      expect(plan.tests, changed).toEqual([...testFiles].sort());
+      expect(plan.typechecks, changed).toEqual(expect.arrayContaining(["scripts", ...fakeWorkspaces.filter((w) => w.checkTypes).map((w) => w.dir)]));
+    }
+    expect(verifyPlan({ changed: ["README.md"], testFiles, workspaces: fakeWorkspaces, graph: emptyGraph }).fallback).toEqual([]);
+  });
+
+  test("a workspace's own package.json or tsconfig runs that workspace's whole suite", () => {
+    const plan = verifyPlan({
+      changed: ["packages/core/tsconfig.json"],
+      testFiles: ["scripts/other.test.ts", "packages/core/src/a.test.ts"],
+      workspaces: fakeWorkspaces,
+      graph: emptyGraph,
+    });
+    expect(plan.tests).toEqual(["packages/core/src/a.test.ts"]);
+    expect(plan.suites).toEqual(["packages/core"]);
+    expect(plan.fallback).toEqual([]);
+  });
+
+  test("a failed step names the command that reruns only it, without the junit flags of the run", () => {
+    expect(rerunCommand({ name: "t", command: ["bun", "test", "--timeout", "20000", "--reporter=junit", "--reporter-outfile=.scratch/x/tests-1.xml", "a.test.ts", "b c.test.ts"] })).toBe(
+      'bun test --timeout 20000 a.test.ts "b c.test.ts"',
+    );
+    expect(rerunCommand({ name: "layers", command: ["bun", "scripts/check-layers.ts"] })).toBe("bun scripts/check-layers.ts");
+    const chunk = { name: "test 3 file(s)", command: ["bun", "test", "--timeout", "20000", "a.test.ts", "b.test.ts", "c.test.ts"] };
+    expect(rerunFailing(chunk, "b.test.ts:\n(fail) x\n\n 1 fail")).toBe("bun test b.test.ts");
+    expect(rerunFailing(chunk, "bun crashed")).toBe("bun test --timeout 20000 a.test.ts b.test.ts c.test.ts");
+  });
+
+  test("the tests named after the changed files run first, in their own step, so the root cause is never left not run", () => {
+    const plan: Plan = {
+      ...emptyPlan,
+      changed: ["packages/core/src/random/pick.ts"],
+      tests: ["packages/core/src/random/pick.test.ts", "packages/core/src/loot/lootGen.test.ts", "packages/core/src/item/affix.test.ts"],
+    };
+    const steps = fastSteps(plan, { lanes: 2 });
+    expect(steps[0]?.name).toBe("test 1 own file(s)");
+    expect(steps[0]?.first).toBe(true);
+    expect(steps[0]?.command).toContain("packages/core/src/random/pick.test.ts");
+    expect(steps.slice(1).flatMap((step) => step.command)).not.toContain("packages/core/src/random/pick.test.ts");
+    expect(steps.slice(1).flatMap((step) => step.command)).toContain("packages/core/src/loot/lootGen.test.ts");
   });
 
   test("a pure rename and a demo never need a test", () => {
@@ -346,13 +398,15 @@ describe("static gates", () => {
       tests: ["packages/core/src/a.test.ts"],
       gates: ["layers"],
       unattributed: [],
+      fallback: [],
       suites: [],
       boots: ["harbor-heat"],
       inputs: {},
     };
     expect(fastSteps(plan, { cheap: true }).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
     expect(fastSteps(plan).some((step) => step.name.startsWith("test "))).toBe(true);
-    expect(fastSteps(plan).filter((step) => step.first === true).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
+    // The changed file's own test starts with the type-checks and gates, so the root cause is red first.
+    expect(fastSteps(plan).filter((step) => step.first === true).map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 own file(s)", "layers"]);
   });
 
   // A landing that ran a hand-picked subset of what CI runs met each missing check one CI run at a time.
@@ -490,7 +544,7 @@ describe("commands", () => {
     };
     const passed = new Set(["test:packages/core/src/b.test.ts", "gate:artifacts", "boot:harbor-heat", "load:harbor-heat"]);
     const steps = fastSteps(plan, { fresh: (unit) => passed.has(unit) });
-    expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 file(s)"]);
+    expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 own file(s)"]);
     expect(steps[1]?.command.slice(4)).toEqual(["packages/core/src/a.test.ts"]);
     expect(steps[1]?.units).toEqual([{ id: "test:packages/core/src/a.test.ts", inputs: ["packages/core/src/a.ts"] }]);
   });
