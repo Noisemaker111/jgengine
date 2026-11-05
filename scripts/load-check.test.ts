@@ -26,7 +26,8 @@ describe("parseLoadArgs", () => {
   test("`all` expands to every game and flags parse", () => {
     const args = parseLoadArgs(["all", "--runs", "3", "--no-build", "--timeout", "30"], known);
     expect(args.games).toEqual(known);
-    expect(args).toMatchObject({ runs: 3, build: false, timeoutMs: 30_000, headless: false });
+    expect(args).toMatchObject({ runs: 3, build: false, timeoutMs: 30_000, headed: false });
+    expect(parseLoadArgs(["deepward", "--headed"], known).headed).toBe(true);
   });
 
   test("an unknown game or no game is an error that names the known ids", () => {
