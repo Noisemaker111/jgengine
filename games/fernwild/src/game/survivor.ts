@@ -15,6 +15,7 @@ import { scatterClearingOf } from "@jgengine/core/scatter/scatterClearing";
 import { bodyComfort, type BodyComfort } from "@jgengine/core/survival/bodyTemperature";
 import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/stats/vitals";
 import { cancelJob, createWorkQueue, enqueue, jobProgress, tick as tickQueue, type WorkQueueConfig, type WorkQueueState } from "@jgengine/core/work/jobQueue";
+import type { ResourceGrant, ToolProfile } from "@jgengine/core/world/resourceNode";
 
 import { editorLayers } from "../editorLayers";
 import { BAG, BAG_SLOTS, HOTBAR } from "./bags";
@@ -247,6 +248,17 @@ export function nearestHarvestable(ctx: GameContext, from: readonly [number, num
   };
   const hit = survivor.harvest.target({ x: from[0], z: from[2], yaw: 0, reach: within, cone: Math.PI, accepts: yields });
   return hit === null ? null : [hit.x, ctx.world.groundHeightAt(hit.x, hit.z), hit.z];
+}
+
+/**
+ * A bite or blow from anything but the survivor's hand (a ridden tame's bite) on the tree, rock or bush in
+ * front of `from`: the node gives what `tool` draws from it and loses its budget. What it gives is the
+ * caller's to keep; null when nothing stands in reach.
+ */
+export function strikeHarvestable(ctx: GameContext, from: readonly [number, number, number], yaw: number, reach: number, tool: ToolProfile, multiplier: number): readonly ResourceGrant[] | null {
+  const survivor = survivorOf(ctx);
+  ensurePlacements(ctx, survivor);
+  return survivor.harvest.strike({ x: from[0], z: from[2], yaw, reach, tool, multiplier, accepts: (item) => HARVESTABLES[item] !== undefined })?.granted ?? null;
 }
 
 function grantGather(ctx: GameContext, survivor: Survivor, granted: readonly { kind: string; amount: number }[]): void {
