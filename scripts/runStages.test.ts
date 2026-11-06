@@ -14,9 +14,11 @@ const stage = (name: string, needs?: string[]): Stage => ({ name, command: "bun"
 describe("generated files a rebase regenerates", () => {
   // A hand-kept copy of this list missed skill-routing.json and a baseline, so those
   // conflicted on every rebase two lanes shared; the list now comes from this table.
-  test("every generator but the tsconfig one names its files, and the rebase list is exactly those", () => {
+  test("every generator but those writing into hand-edited files names its files, and the rebase list is exactly those", () => {
+    // source-paths edits tsconfigs; game-suite writes a marked block into each game's README and PLAN.
+    const intoHandEdited = new Set(["source-paths", "game-suite"]);
     for (const target of GEN_TARGETS) {
-      if (target.name === "source-paths") expect(target.outputs).toBeUndefined();
+      if (intoHandEdited.has(target.name)) expect(target.outputs).toBeUndefined();
       else expect(target.outputs?.length ?? 0).toBeGreaterThan(0);
     }
     for (const path of [
@@ -28,7 +30,7 @@ describe("generated files a rebase regenerates", () => {
     ]) {
       expect(isGenerated(path)).toBe(true);
     }
-    for (const path of ["tsconfig.json", "CREDITS.md", "packages/core/src/world/terrain.ts", "changes/agent-x.md"]) expect(isGenerated(path)).toBe(false);
+    for (const path of ["tsconfig.json", "games/fernwild/README.md", "games/fernwild/PLAN.md", "CREDITS.md", "packages/core/src/world/terrain.ts", "changes/agent-x.md"]) expect(isGenerated(path)).toBe(false);
   });
 
   test("the barrel outputs are the barrels gen-barrels writes", () => {
