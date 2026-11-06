@@ -50,6 +50,15 @@ describe("resolveLookCamera", () => {
     expect(applied.camera.y).toBe(12 + LOOK_GROUND_CLEARANCE);
   });
 
+  it("lifts only to the clearance a fourth vantage number asks for", () => {
+    const { applied } = camera(resolveLookCamera({ look: "0,0", lookFrom: "1.2,0.08,0,0.05", terrain: flat }));
+    expect(applied.lifted).toBe(false);
+    expect(applied.height).toBe(0.08);
+    const raised = camera(resolveLookCamera({ look: "0,0", lookFrom: "1.2,0.02,0,0.05", terrain: flat }));
+    expect(raised.applied.lifted).toBe(true);
+    expect(raised.applied.height).toBe(0.05);
+  });
+
   it("keeps a height that already clears the ground", () => {
     const { applied } = camera(resolveLookCamera({ look: "0,0", lookFrom: "12,40", terrain: slope }));
     expect(applied.lifted).toBe(false);
