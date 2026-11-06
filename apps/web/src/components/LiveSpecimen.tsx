@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { GRASS_PRESETS, GRASS_SCHEMA } from "@jgengine/core/grass/grassKind";
 
 import type { DialSet, DialValue } from "../live/liveCode";
+import { watchShown } from "../live/shown";
 import { createTrace, type Trace } from "../live/trace";
 
 /**
@@ -311,6 +312,7 @@ export function LiveSpecimen({ specimen, trace, onDials, layout = "stack" }: Liv
   const config = CONFIGS[specimen];
   const controlList = config.controls;
   const nudgeList = config.nudges ?? [];
+  const rootRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<SpecimenInstance | null>(null);
   const traceRef = useRef<Trace>(trace ?? createTrace());
@@ -363,6 +365,17 @@ export function LiveSpecimen({ specimen, trace, onDials, layout = "stack" }: Liv
     return () => clearTimeout(timer);
   }, [ready, nudgeList.length, nudgeAt]);
 
+  // The nudge ring and arrow repaint every frame; off screen they pause (styles.css), so a page
+  // scrolled past a demo stops restyling it 60 times a second.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (root === null || nudgeList.length === 0) return;
+    const shown = watchShown(root, (isShown) => {
+      root.dataset["shown"] = String(isShown);
+    });
+    return () => shown.dispose();
+  }, [nudgeList.length]);
+
   const nudge = nudgeAt >= 0 ? nudgeList[nudgeAt] : undefined;
   const touched = (key: string) => {
     if (nudge?.key !== key) return;
@@ -377,7 +390,7 @@ export function LiveSpecimen({ specimen, trace, onDials, layout = "stack" }: Liv
 
   const side = layout === "side";
   return (
-    <div className={side ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_19rem]" : "flex flex-col gap-4"}>
+    <div ref={rootRef} className={side ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_19rem]" : "flex flex-col gap-4"}>
       <div
         data-theme="dark"
         style={{ aspectRatio: config.aspect ?? "16/10" }}
