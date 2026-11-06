@@ -18,6 +18,7 @@ import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
 import { awakeTamingProgress, creaturePrompts, creaturesView, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { tameFood } from "./game/tameHunger";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
@@ -252,6 +253,8 @@ export const game = defineGame({
         aimedThreat: creatures.aimed !== null && !creatures.aimed.tamed && !creatures.aimed.dead && (creatures.aimed.temperament === "aggressive" || creatures.aimed.temperament === "territorial") ? 1 : 0,
         // The aimed creature's health; 0 with nothing aimed or a body.
         aimedHealth: creatures.aimed?.health.value ?? 0,
+        // The aimed tame's food in percent of its max; -1 with no tame aimed.
+        aimedFood: creatures.aimed === null ? -1 : Math.round(((food) => (food === null ? -0.01 : food.value / food.max))(tameFood(ctx, creatures.aimed.id)) * 100),
         down: creatures.down,
         tamed: creatures.tamed,
         // The bag slot of the first stack the creature whose inventory is open tames on (what you double-click to feed it); -1 with none.

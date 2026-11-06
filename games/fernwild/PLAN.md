@@ -21,16 +21,16 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | harvest | 2/3 | 0 | 0 | 1 | 0 |
 | crafting | 1/6 | 0 | 0 | 5 | 0 |
 | taming | 7/9 | 0 | 0 | 2 | 0 |
-| creatures | 2/13 | 0 | 0 | 11 | 0 |
+| creatures | 3/13 | 0 | 0 | 10 | 0 |
 | breeding | 2/4 | 0 | 0 | 2 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 0/3 | 0 | 0 | 3 | 0 |
 | cave | 1/2 | 0 | 0 | 1 | 0 |
-| **total** | **24/67** | 3 | 0 | 40 | 0 |
+| **total** | **25/67** | 3 | 0 | 39 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 24/67 proven · 3 failing · 40 missing.
+Genres: creature-survival. 25/67 proven · 3 failing · 39 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -82,7 +82,7 @@ Genres: creature-survival. 24/67 proven · 3 failing · 40 missing.
 | `creatures.work.haul` | missing | A tame carries weight so the player can haul more. |  |
 | `creatures.work.lighter-loads` | missing | A specialist tame carries its specialty resource at reduced weight. |  |
 | `creatures.work.airlift` | missing | A flying tame picks up a smaller creature or survivor and carries it. |  |
-| `creatures.feed-starve` | missing | Tames eat from their own inventory or a shared trough; an unfed tame starves and dies. |  |
+| `creatures.feed-starve` | proven | Tames eat from their own inventory or a shared trough; an unfed tame starves and dies. | proofs/sim/tame-hunger.proof.ts |
 | `creatures.guard-base` | missing | Tames left at the base defend it. |  |
 | `creatures.behavior-modes` | missing | Set a tame passive, neutral or aggressive, and it fights accordingly. |  |
 | `creatures.level-up` | proven | Tames gain experience and the player spends their levels on stats. | proofs/sim/tame-level-up.proof.ts |
@@ -188,13 +188,17 @@ the species' dose table doses affinity, belly and ineffectiveness; affinity full
 A shield potion, a sim's meal and a gas cloud are the same shape. Each entry below names its parts;
 build it from them, and add what a part lacks to that part, with a test.
 
+Build order, one PR each: feed-starve; oxygen and swimming; cave hazards (an area doses who stands in
+it); traps and bolas (a `held` meter, with tranq arrows and darts moved onto dose lists); passive
+taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming; boss phases; spawns.
+
 | Entry | Built from |
 | --- | --- |
 | taming.wake-loses | torpor drains at its rate, narcotic doses still landing keep it up; the flag clears only when all of it wears off, then affinity is zeroed (done, timed by the proof) |
 | taming.effectiveness | ineffectiveness meter; hits and meals dose it; effectiveness 1/(1+x) (done) |
 | taming.passive-feed | the same diet dose table, offered by the player to an awake creature that raises a `hungry` flag |
 | taming.trap | a `held` meter dosed by a bola or trap, draining; the flag sets movement speed to 0 (Modifiers) |
-| creatures.feed-starve | a tame's food vital drains; it eats from its inventory through the same diet table; empty food drains health (vitals `whenEmpty`) |
+| creatures.feed-starve | a tame's food vital drains; core `eatWhileRoom` feeds it from its inventory through the `TAME_DIET` dose table; empty food starves it to death; a baby is the same meter at a faster pace (done, `tameHunger.ts`) |
 | survival.oxygen-swim | an oxygen vital drained while under water (`extra` rate), `whenEmpty` drains health |
 | cave.hazards | an area doses who stands in it (gas: oxygen down; heat: health down) |
 | survival.temperature | `bodyTemperature` gives drain rates into the vitals tick |

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createDoseTable, hasRoomFor } from "./doseTable";
+import { createDoseTable, type DoseSupply, eatWhileRoom, hasRoomFor } from "./doseTable";
 import { createVitals } from "./vitals";
 
 describe("doses", () => {
@@ -79,5 +79,19 @@ describe("dose table", () => {
     sim.tick(30);
     expect(sim.value("hunger")).toBeCloseTo(80, 9);
     expect(sim.value("fun")).toBe(55);
+  });
+
+  test("eating from a supply while there is room: a tame's inventory, a sim's fridge", () => {
+    const stock: Record<string, number> = { raw_meat: 5, kibble: 1 };
+    const pantry: DoseSupply = {
+      count: (item) => stock[item] ?? 0,
+      take: (item) => ((stock[item] ?? 0) > 0 ? ((stock[item] = (stock[item] ?? 0) - 1), true) : false),
+    };
+    const raptor = createVitals([{ id: "food", max: 200, start: 10 }, { id: "affinity", max: 99, start: 0 }, { id: "ineffectiveness", max: 99, start: 0 }]);
+    // Kibble first (80), then raw meat (50) twice: 190. A third meat would overfill, so it stops.
+    expect(eatWhileRoom(raptor, foods, "raptor", pantry, "food")).toEqual(["kibble", "raw_meat", "raw_meat"]);
+    expect(raptor.value("food")).toBe(190);
+    expect(stock).toEqual({ raw_meat: 3, kibble: 0 });
+    expect(eatWhileRoom(raptor, foods, "dodo", pantry, "food")).toEqual([]);
   });
 });

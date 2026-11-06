@@ -7,8 +7,9 @@ import { baseSave, demolish, resetBase, rotateBuild, tickBase, useStructure } fr
 import { cavesOf, cavesSave, resetCaves, takeArtifact } from "./game/caves";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, tickBreeding } from "./game/breeding";
+import { resetTameHunger, setTameFood, tameHungerSave, tickTameHunger } from "./game/tameHunger";
 import { broodSave, resetBroodmother, setBroodHealth, summonBroodmother, tickBroodmother, useObelisk } from "./game/broodmother";
-import { closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
+import { closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
@@ -204,6 +205,13 @@ export const systems = [
     save: breedingSave,
     reset: resetBreeding,
   }),
+  defineSystem({
+    id: "tameHunger",
+    tick: { type: "fixed", rate: 2 },
+    update: tickTameHunger,
+    save: tameHungerSave,
+    reset: resetTameHunger,
+  }),
 ];
 
 interface Cheat {
@@ -212,6 +220,8 @@ interface Cheat {
   /** Spend stat points: stat id → points. */
   spend?: Record<string, number>;
   tamingSpeed?: number;
+  /** Every tame's food set to this share of its max. */
+  tameFood?: number;
   /** Spawn a creature this many metres in front of the survivor, and `side` metres to their right. */
   summon?: { species: string; level?: number; distance?: number; side?: number; sex?: "female" | "male"; tamed?: boolean; mating?: boolean; knockedOut?: boolean };
   /** ARK's breeding multipliers (hatch, maturation, mating interval, imprint interval) all at once. */
@@ -253,6 +263,7 @@ function cheat(ctx: GameContext, input: Cheat): void {
   }
   if (input.tamingSpeed !== undefined) setTamingSpeed(ctx, input.tamingSpeed);
   if (input.breedingSpeed !== undefined) setBreedingSpeed(ctx, input.breedingSpeed);
+  if (input.tameFood !== undefined) for (const tame of tames(ctx)) setTameFood(ctx, tame.id, input.tameFood);
   if (input.kill === true) ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: 0 });
   if (input.destroyWild === true) destroyWild(ctx);
   if (input.clock !== undefined) ctx.time.hydrate({ ...ctx.time.snapshot(), now: input.clock });

@@ -15,6 +15,7 @@ import { creatureCard, genesOf, tames } from "./creatures";
 import { breedingOf, BREEDING_STAGES, incubationBand, CARE_INTERVAL, CARE_KINDS, IMPRINT_BONUS, litterOf, NEWBORN_SIZE } from "./data/breeding";
 import { itemTraits } from "./data/items";
 import { WILD_STATS } from "./data/species";
+import { tameFood } from "./tameHunger";
 
 function runner(): HeadlessRunner {
   const definition = defineGameDefinition({
@@ -113,9 +114,9 @@ test("a raptor pair left together mates and lays an egg that a campfire keeps wa
   // stays a newborn while its food runs out.
   game.ui.tryInvoke("cheat", { breedingSpeed: 1 });
   const before = game.ctx.scene.entity.stats.get(baby.id, "health")!.current;
-  for (let t = 0; t < 300 && breedingCard(game.ctx, baby.id)!.baby!.food > 0; t += 1) tick(game, 1);
+  for (let t = 0; t < 300 && tameFood(game.ctx, baby.id)!.value > 0; t += 1) tick(game, 1);
   tick(game, 2);
-  expect(breedingCard(game.ctx, baby.id)!.baby!.food).toBe(0);
+  expect(tameFood(game.ctx, baby.id)!.value).toBe(0);
   const starving = game.ctx.scene.entity.stats.get(baby.id, "health")!.current;
   expect(starving).toBeLessThan(before);
   game.ctx.scene.entity.setPose(baby.id, { position: [game.ctx.scene.entity.get(game.userId)!.position[0], egg.at[1], game.ctx.scene.entity.get(game.userId)!.position[2] + 2.5] });
@@ -127,7 +128,7 @@ test("a raptor pair left together mates and lays an egg that a campfire keeps wa
   const meatSlot = game.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat");
   game.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: meatSlot });
   tick(game, 1);
-  expect(breedingCard(game.ctx, baby.id)!.baby!.food).toBeGreaterThan(0);
+  expect(tameFood(game.ctx, baby.id)!.value).toBeGreaterThan(0);
   expect(game.ctx.scene.entity.stats.get(baby.id, "health")!.current).toBe(starving);
   game.ui.tryInvoke("closeCreature", {});
   game.ui.tryInvoke("cheat", { breedingSpeed: 1000 });

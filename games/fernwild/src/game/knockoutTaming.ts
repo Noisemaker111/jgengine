@@ -1,17 +1,11 @@
 import { evalCurve } from "@jgengine/core/progression/leveling";
-import { createDoseTable, type DoseTable } from "@jgengine/core/stats/doseTable";
+import { createDoseTable, type DoseSupply, type DoseTable } from "@jgengine/core/stats/doseTable";
 import { createVitals, type VitalDose, type Vitals, type VitalsState } from "@jgengine/core/stats/vitals";
 
 import { effectivenessOf, HIT_INEFFECTIVENESS, STARVE_LOSS, type TamingDef, tamingBody, TORPOR_DRAIN, WAKES_AT } from "./data/taming";
 
 /** What changed for one creature this tick. */
 export type TamingEvent = { type: "subdued" } | { type: "ate"; itemId: string } | { type: "released" } | { type: "won"; effectiveness: number };
-
-/** What a downed creature holds: how many of an item, and taking one to eat. */
-export interface TamingSupply {
-  count(itemId: string): number;
-  take(itemId: string): boolean;
-}
 
 /** A tracked creature as the HUD and the rest of the game read it. */
 export interface TamingRead {
@@ -103,7 +97,7 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
     /** Foods its species eats, most preferred first. */
     foods: (kind: string): readonly string[] => diet.sources(kind),
     /** The food it would eat next from `supply`, or null. */
-    nextFood(kind: string, supply: TamingSupply): string | null {
+    nextFood(kind: string, supply: DoseSupply): string | null {
       return diet.pick(kind, (itemId) => supply.count(itemId) > 0);
     },
     /** Torpor from a hit or a dart; true when this knocked it out. */
@@ -125,7 +119,7 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
       tracked.get(id)?.body.dose(...doses);
     },
     /** Advance every tracked body; a downed one eats from `supplyOf` when its belly is empty. `pace` speeds digestion only. */
-    tick(dt: number, supplyOf: (id: string) => TamingSupply | null, pace = 1): { id: string; event: TamingEvent }[] {
+    tick(dt: number, supplyOf: (id: string) => DoseSupply | null, pace = 1): { id: string; event: TamingEvent }[] {
       const out: { id: string; event: TamingEvent }[] = [];
       for (const [id, entry] of tracked) {
         if (entry.down && entry.body.value("belly") <= 0) {

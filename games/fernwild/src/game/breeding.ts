@@ -6,23 +6,22 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { BAG, HOTBAR } from "./bags";
 import { climateAt } from "./climate";
-import { aimedCreature, creatureAlive, foodMaxOf, genesOf, setImprint, spawnBaby, takeFromCreatureInventory, tames, viewedCreature, type CreatureGenes } from "./creatures";
+import { aimedCreature, creatureAlive, genesOf, setImprint, spawnBaby, tames, viewedCreature, type CreatureGenes } from "./creatures";
 import {
-  BABY_FOOD_DRAIN_SECONDS,
   breedingOf,
   BREEDING_STAGES,
   incubationBand,
   CARE_INTERVAL,
   CARE_KINDS,
-  CREATURE_FOOD,
   litterOf,
   MUTATIONS,
-  NEWBORN_FOOD,
   NEWBORN_SIZE,
   WALK_METRES,
 } from "./data/breeding";
 import { itemLabel } from "./data/items";
 import { speciesDef, WILD_STATS } from "./data/species";
+import { BABY_FOOD_DRAIN_SECONDS, NEWBORN_FOOD, TAME_FOOD_DRAIN_SECONDS } from "./data/tameFood";
+import { setFoodPace, setTameFood } from "./tameHunger";
 
 /** How close the survivor stands to a baby to cuddle or feed it. */
 const CARE_REACH = 4;
@@ -34,8 +33,6 @@ function favouriteFood(species: string): string {
 
 interface Nursery {
   field: BreedingField<CreatureGenes>;
-  /** Each baby's food, while it grows. */
-  food: Map<string, number>;
   /** Metres each baby asking for a walk has followed the survivor, and where it last stood. */
   walked: Map<string, { metres: number; x: number; z: number }>;
 }
@@ -58,7 +55,6 @@ const nurseryOf = perContext(
       stages: BREEDING_STAGES,
       litter: litterOf,
     }),
-    food: new Map(),
     walked: new Map(),
   }),
 );
@@ -70,27 +66,11 @@ function bringIntoWorld(ctx: GameContext, species: string, at: readonly [number,
   const id = spawnBaby(ctx, species, [at[0], at[2]], genes, NEWBORN_SIZE);
   if (id === null) return;
   nursery.field.raise(id, species, ctx.time.now());
-  nursery.food.set(id, foodMaxOf(ctx, id) * NEWBORN_FOOD);
+  setTameFood(ctx, id, NEWBORN_FOOD);
 }
 
-/** Baby food: it drains fast while small, the baby eats what it is given, and starves without. */
-function feedBaby(ctx: GameContext, id: string, species: string, matured: number, dt: number): void {
-  const nursery = nurseryOf(ctx);
-  const max = foodMaxOf(ctx, id);
-  let food = (nursery.food.get(id) ?? 0) - (max / BABY_FOOD_DRAIN_SECONDS) * (1 - matured) * dt;
-  const diet = speciesDef(species)?.diet;
-  for (const [item, value] of Object.entries(CREATURE_FOOD)) {
-    if (value.diet !== diet) continue;
-    while (food + value.food <= max && takeFromCreatureInventory(ctx, id, item)) food += value.food;
-  }
-  if (food <= 0) {
-    food = 0;
-    // Starving: about a hundredth of its health a second (approximate).
-    const health = ctx.scene.entity.stats.get(id, "health");
-    if (health !== null) ctx.scene.entity.stats.set(id, "health", { current: health.current - (health.max / 100) * dt });
-  }
-  nursery.food.set(id, food);
-}
+/** A baby is hungrier while small: its food drains R x (1 - maturation) on top of a grown tame's rate. */
+const babyPace = (matured: number): number => 1 + (TAME_FOOD_DRAIN_SECONDS / BABY_FOOD_DRAIN_SECONDS) * (1 - matured);
 
 /** Mating, eggs, births and babies growing, each fixed tick. */
 export function tickBreeding(ctx: GameContext, dt: number): void {
@@ -129,7 +109,7 @@ export function tickBreeding(ctx: GameContext, dt: number): void {
       ctx.game.notices.push({ text: `Your baby ${label(baby?.species ?? "")} wants ${event.care === "feed" ? itemLabel(favouriteFood(baby?.species ?? "")) : `a ${event.care}`}`, tone: "info" });
     } else if (event.type === "grown") {
       ctx.scene.entity.update(event.offspring, { size: 1 });
-      nursery.food.delete(event.offspring);
+      setFoodPace(ctx, event.offspring, 1);
       nursery.walked.delete(event.offspring);
       ctx.game.notices.push({ text: `Your bred tame is fully grown, ${Math.round(event.bond * 100)}% imprinted`, tone: "success" });
     }
@@ -137,14 +117,13 @@ export function tickBreeding(ctx: GameContext, dt: number): void {
   for (const baby of nursery.field.offspring()) {
     if (!creatureAlive(ctx, baby.id)) {
       nursery.field.forget(baby.id);
-      nursery.food.delete(baby.id);
       nursery.walked.delete(baby.id);
       continue;
     }
     const size = NEWBORN_SIZE + (1 - NEWBORN_SIZE) * baby.matured;
     const entity = ctx.scene.entity.get(baby.id);
     if (entity !== null && Math.abs((entity.size ?? 1) - size) > 0.005) ctx.scene.entity.update(baby.id, { size });
-    feedBaby(ctx, baby.id, baby.species, baby.matured, dt);
+    setFoodPace(ctx, baby.id, babyPace(baby.matured));
     if (baby.wants === "walk" && entity !== null && all.find((tame) => tame.id === baby.id)?.following === true) {
       const walk = nursery.walked.get(baby.id) ?? { metres: 0, x: entity.position[0], z: entity.position[2] };
       walk.metres += Math.hypot(entity.position[0] - walk.x, entity.position[2] - walk.z);
@@ -239,8 +218,6 @@ export function breedingCard(ctx: GameContext, id: string) {
             imprint: baby.bond,
             wants: baby.wants === "feed" ? `Feed it ${itemLabel(favouriteFood(baby.species))}` : baby.wants === "cuddle" ? "A cuddle" : baby.wants === "walk" ? `A walk: whistle it to follow and walk ${WALK_METRES} m` : null,
             nextCare: Math.max(0, Math.ceil(baby.nextCareAt - now)),
-            food: Math.round(nursery.food.get(id) ?? 0),
-            foodMax: Math.round(foodMaxOf(ctx, id)),
           },
   };
 }
@@ -278,7 +255,6 @@ export function breedingView(ctx: GameContext) {
 
 interface BreedingSave {
   field: BreedingSnapshot<CreatureGenes>;
-  food: Record<string, number>;
   walked: Record<string, { metres: number; x: number; z: number }>;
 }
 
@@ -287,12 +263,11 @@ export function breedingSave(ctx: GameContext) {
     key: "fernwild.breeding2",
     snapshot: (): BreedingSave => {
       const nursery = nurseryOf(ctx);
-      return { field: nursery.field.snapshot(), food: Object.fromEntries(nursery.food), walked: structuredClone(Object.fromEntries(nursery.walked)) };
+      return { field: nursery.field.snapshot(), walked: structuredClone(Object.fromEntries(nursery.walked)) };
     },
     hydrate: (data: BreedingSave) => {
       const nursery = nurseryOf(ctx);
       nursery.field.restore(data.field);
-      nursery.food = new Map(Object.entries(data.food));
       nursery.walked = new Map(Object.entries(data.walked));
     },
   };
@@ -301,6 +276,5 @@ export function breedingSave(ctx: GameContext) {
 export function resetBreeding(ctx: GameContext): void {
   const nursery = nurseryOf(ctx);
   nursery.field.reset();
-  nursery.food.clear();
   nursery.walked.clear();
 }
