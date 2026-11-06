@@ -255,9 +255,8 @@ export const game = defineGame({
         craftProgress: view.queue[0] === undefined ? -1 : Math.round(view.queue[0].progress * 100),
         fuel: Math.round(fuelNear(ctx, here, 6) * 10) / 10,
         screen: openScreen(ctx) === null ? 0 : 1,
-        // Items in the open storage box (-1 with none open); the bag's stone slot.
+        // Items in the open storage box (-1 with none open).
         stored: ((store) => (store === null ? -1 : store.slots.reduce((sum, slot) => sum + (slot?.count ?? 0), 0)))(storeView(ctx)),
-        stoneSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "stone"),
         picks: ctx.player.inventory.count(HOTBAR, "stone_pick") + ctx.player.inventory.count(BAG, "stone_pick"),
         creatures: creatures.count,
         aimedDown: creatures.aimed?.taming?.unconscious === true ? 1 : 0,
