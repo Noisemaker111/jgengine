@@ -86,9 +86,23 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/tame-favourite.proof.ts",
+      "proves": [
+        "taming.preferred-food"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tame-keep-under.proof.ts",
       "proves": [
         "taming.keep-under"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tame-kibble.proof.ts",
+      "proves": [
+        "taming.crafted-bait"
       ],
       "ok": true
     },

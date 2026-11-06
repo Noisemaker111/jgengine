@@ -1,6 +1,7 @@
 import type { SpoilRule } from "@jgengine/core/inventory/spoilage";
 import type { ToolProfile } from "@jgengine/core/world/resourceNode";
 
+import { EGG_LABEL, EGG_SIZES, eggItem, KIBBLE_LABEL, KIBBLE_TIERS, kibbleItem } from "./kibble";
 import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
 
@@ -13,6 +14,9 @@ export const SPOILS: Readonly<Record<string, SpoilRule>> = {
   raw_prime_meat: { seconds: 600, into: "spoiled_meat" },
   cooked_meat: { seconds: 1200, into: "spoiled_meat" },
   spoiled_meat: { seconds: 3600, into: null },
+  // ARK's wild eggs and kibble go bad too, kibble much slower (approx).
+  ...Object.fromEntries(EGG_SIZES.map((size) => [eggItem(size), { seconds: 1800, into: null }])),
+  ...Object.fromEntries(KIBBLE_TIERS.map((tier) => [kibbleItem(tier), { seconds: 7200, into: null }])),
 };
 
 /** What eating or drinking one unit does to the survivor. */
@@ -166,6 +170,9 @@ export const ITEMS: readonly ItemDef[] = [
   berry("tintoberry", "Tintoberry", { food: 1.5, water: 0.2 }, "A common yellow berry."),
   berry("narcoberry", "Narcoberry", { food: 1.5, torpor: 8 }, "Makes the eater drowsy."),
   berry("stimberry", "Stimberry", { food: 1.5, water: -5, torpor: -7.5 }, "Wakes the eater up and dries them out."),
+  // Wild eggs (ARK's unfertilized eggs): edible, but worth more cooked into kibble.
+  ...EGG_SIZES.map((size): ItemDef => ({ id: eggItem(size), label: EGG_LABEL[size], kind: "consumable", weight: 0.5, stack: 100, consume: { food: 10, health: -2 }, note: "Laid by a wild creature. Cook it into kibble in a cooking pot." })),
+  ...KIBBLE_TIERS.map((tier): ItemDef => ({ id: kibbleItem(tier), label: KIBBLE_LABEL[tier], kind: "consumable", weight: 0.1, stack: 100, consume: { food: 30 }, note: "Taming food. Creatures of this tier and below tame fastest and cleanest on it." })),
   { id: "narcotic", label: "Narcotic", kind: "consumable", weight: 0.1, stack: 100, consume: { health: -5, torpor: 40 }, note: "Force-fed to a sleeping creature to keep it under." },
   { id: "stimulant", label: "Stimulant", kind: "consumable", weight: 0.1, stack: 100, consume: { stamina: 30, water: -10, torpor: -40 }, note: "Wakes the eater fast." },
   {

@@ -117,6 +117,8 @@ interface World {
   /** ARK's TamingSpeedMultiplier: meals come this much sooner. */
   tamingSpeed: number;
   mountReady: number;
+  /** The last tame's taming effectiveness and bonus levels, for the HUD and proofs. */
+  lastTame: { effectiveness: number; bonus: number } | null;
 }
 
 const TAMING = Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, def.taming]));
@@ -196,6 +198,7 @@ const worldOf = perContext((ctx: GameContext): World => {
     lastTarget: null,
     tamingSpeed: 1,
     mountReady: 0,
+    lastTame: null,
   };
 });
 
@@ -583,6 +586,7 @@ export function levelTame(ctx: GameContext, stat: TameStat): void {
 }
 
 function tame(ctx: GameContext, creature: Creature, effectiveness: number, bonus: number): void {
+  worldOf(ctx).lastTame = { effectiveness, bonus };
   creature.level += bonus;
   // ARK's taming bonus levels land on random stats like wild ones, and pass to babies the same way.
   const extra = scatterPoints(bonus, WILD_STATS, ctx.rng);
@@ -634,6 +638,33 @@ export function tames(ctx: GameContext): { id: string; species: string; sex: "fe
     const entity = ctx.scene.entity.get(creature.id);
     if (entity === null) continue;
     out.push({ id: creature.id, species: creature.species, sex: creature.sex, mating: creature.mating, at: entity.position, radius: defOf(creature).radius, following: world.roster.get(creature.id)?.command === "follow" });
+  }
+  return out;
+}
+
+/** The last creature tamed: its taming effectiveness (0-1) and the bonus levels it gave; null before any. */
+export function lastTame(ctx: GameContext): { effectiveness: number; bonus: number } | null {
+  return worldOf(ctx).lastTame;
+}
+
+/** For proofs and admins: put a wild creature straight to sleep, as if clubbed under. */
+export function knockOutNow(ctx: GameContext, id: string): boolean {
+  const world = worldOf(ctx);
+  const creature = world.creatures.get(id);
+  if (creature === undefined || creature.dead || creature.tamed) return false;
+  if (!world.taming.subdue(id, world.taming.capacity(id) * 2)) return false;
+  knockOut(ctx, creature);
+  return true;
+}
+
+/** Wild females awake and alive, where they stand: the ones that lay eggs. */
+export function wildFemales(ctx: GameContext): { id: string; species: string; at: readonly [number, number, number]; radius: number }[] {
+  const world = worldOf(ctx);
+  const out = [];
+  for (const creature of world.creatures.values()) {
+    if (creature.tamed || creature.dead || creature.sex !== "female" || world.taming.state(creature.id)?.subdued === true) continue;
+    const entity = ctx.scene.entity.get(creature.id);
+    if (entity !== null) out.push({ id: creature.id, species: creature.species, at: entity.position, radius: defOf(creature).radius });
   }
   return out;
 }
@@ -1289,6 +1320,7 @@ export function resetCreatures(ctx: GameContext): void {
   world.aimed = null;
   world.viewing = null;
   world.lastTarget = null;
+  world.lastTame = null;
 }
 
 /** Hotbar too: ARK lets you drag from either. Exposed for the screen. */

@@ -1,5 +1,6 @@
 import type { RecipeDef } from "@jgengine/core/crafting/recipe";
 
+import { KIBBLE_RECIPES } from "./kibble";
 import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
 
@@ -64,8 +65,9 @@ export const ENGRAMS: readonly EngramDef[] = [
   ...STRUCTURES.map((entry) => engram(entry.id, entry.level, entry.points, entry.cost, entry.shape === "foundation" || entry.tier === "station" ? 5 : 2)),
 ].sort((a, b) => a.level - b.level);
 
-/** Station recipes that need no engram: cooking on a campfire. */
+/** Station recipes that need no engram: cooking on a campfire, and kibble in a cooking pot. */
 export const COOKING: readonly RecipeDef[] = [
+  ...KIBBLE_RECIPES,
   { id: "cook_meat", inputs: [{ itemId: "raw_meat", count: 1 }], outputs: [{ itemId: "cooked_meat", count: 1 }], seconds: 20, station: "campfire", stationRange: 4, category: "campfire" },
 ];
 

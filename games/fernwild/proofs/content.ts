@@ -3,8 +3,10 @@ import { recipeContent, type SuiteContent, type SuiteContentUse } from "@jgengin
 
 import { islandCaves } from "../src/game/caves";
 import { BROOD_TIERS, TROPHY_DROPS } from "../src/game/data/bosses";
+import { incubationBand } from "../src/game/data/breeding";
 import { CRAFTING_RECIPES, ENGRAMS } from "../src/game/data/engrams";
 import { HARVESTABLES } from "../src/game/data/harvestables";
+import { eggItem, eggSizeFor } from "../src/game/data/kibble";
 import { FIST, ITEMS, PICK_UP, SPOILS, type ToolDef } from "../src/game/data/items";
 import { SPECIES } from "../src/game/data/species";
 import { START } from "../src/game/data/start";
@@ -36,6 +38,10 @@ const carcasses: ContentProgressionRule[] = Object.values(SPECIES).map((species)
   return { id: `carcass:${species.id}`, path: `src/game/data/species.ts/${species.id}`, requires: [], provides: ["raw_meat", "hide", ...(trophy === undefined ? [] : [trophy])] };
 });
 
+// Wild females of every egg-laying species drop an egg of their size (src/game/eggs.ts).
+const laying: ContentProgressionRule[] = Object.values(SPECIES).flatMap((species) =>
+  species.kibble === null || incubationBand(species.id) === null ? [] : [{ id: `lay:${species.id}`, path: "src/game/eggs.ts", requires: [], provides: [eggItem(eggSizeFor(species.radius))] }]);
+
 const spoiling: ContentProgressionRule[] = Object.entries(SPOILS).flatMap(([from, rule]) =>
   rule.into === null ? [] : [{ id: `spoil:${from}`, path: "src/game/data/items.ts/SPOILS", requires: [from], provides: [rule.into] }]);
 
@@ -63,7 +69,7 @@ export const content: SuiteContent = {
     ...(item.tool?.damageClass === "ranged" ? { ammo: Object.keys(item.tool.ranged?.ammo ?? {}) } : {}),
   })),
   start: [...(START.unlocked ?? [])],
-  sources: [...recipes.sources, ...harvest, ...carcasses, ...spoiling, ...crates, ...caves, ...bosses],
+  sources: [...recipes.sources, ...harvest, ...carcasses, ...laying, ...spoiling, ...crates, ...caves, ...bosses],
   uses,
   places: STRUCTURES.map((structure) => structure.id),
   runway: { axis: "level", cap: MAX_LEVEL, unlocks: ENGRAMS.map((engram) => ({ id: engram.id, at: engram.level })) },

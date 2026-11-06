@@ -151,6 +151,15 @@ const HEADING: CSSProperties = { fontSize: 12, letterSpacing: "0.14em", textTran
 const BUTTON: CSSProperties = { background: "#1f3a40", color: "#e8f1f2", border: "1px solid #6fb7c966", borderRadius: 4, padding: "3px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer" };
 
 /** ARK's remote inventory: the creature's own items, taming state, saddle and orders. Click an item to take it back. */
+
+/** Its favourite first (ARK's kibble tier), then the plain foods it also takes; the other kibble tiers go unsaid. */
+function hungryLine(foods: readonly string[]): string {
+  const [best, ...rest] = foods;
+  if (best === undefined) return "It eats nothing you can give it.";
+  const plain = rest.filter((item) => !item.startsWith("kibble_"));
+  return plain.length === 0 ? `Hungry — give it ${itemLabel(best)}.` : `Hungry — it tames best on ${itemLabel(best)}; it also eats ${plain.map(itemLabel).join(", ")}.`;
+}
+
 export function CreaturePanel(): ReactNode {
   const game = useGame();
   const { viewing: card } = useCreatures();
@@ -163,7 +172,7 @@ export function CreaturePanel(): ReactNode {
       {taming !== null ? (
         <div data-taming-food="" style={{ fontSize: 12, opacity: 0.9 }}>
           {taming.eating === null
-            ? `Hungry — give it ${taming.foods.map(itemLabel).join(", ")}.`
+            ? hungryLine(taming.foods)
             : `Eats ${itemLabel(taming.eating)} in ${taming.nextMeal}s.`}
           <div style={{ opacity: 0.75, marginTop: 2 }}>Keep its torpor up with Narcoberries or Narcotics: put them in, then Feed.</div>
         </div>

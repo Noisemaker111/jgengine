@@ -8,12 +8,13 @@ import { cavesOf, cavesSave, resetCaves, takeArtifact } from "./game/caves";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, tickBreeding } from "./game/breeding";
 import { broodSave, resetBroodmother, setBroodHealth, summonBroodmother, tickBroodmother, useObelisk } from "./game/broodmother";
-import { closeCreature, creaturesSave, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
+import { closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
 import { characterSave, createSurvivor, resetCharacter, type LookInput } from "./game/character";
 import { closeNote, dossierSave, readNote, resetDossier, tickDossier } from "./game/dossier";
+import { eggsSave, resetEggs, takeEgg, tickEggs } from "./game/eggs";
 import { callSupplyDrop, openCrate, resetSupplyDrops, supplyDropsSave, tickSupplyDrops } from "./game/supplyDrops";
 import type { NewGameConfig } from "@jgengine/core/game/newGame";
 import { START } from "./game/data/start";
@@ -161,6 +162,16 @@ export const systems = [
     reset: resetSupplyDrops,
   }),
   defineSystem({
+    id: "eggs",
+    tick: { type: "fixed", rate: 1 },
+    create(ctx) {
+      ctx.game.commands.define("takeEgg", { apply: (state) => (takeEgg(state), state) });
+    },
+    update: tickEggs,
+    save: eggsSave,
+    reset: resetEggs,
+  }),
+  defineSystem({
     id: "broodmother",
     tick: { type: "fixed", rate: 10 },
     create(ctx) {
@@ -202,7 +213,7 @@ interface Cheat {
   spend?: Record<string, number>;
   tamingSpeed?: number;
   /** Spawn a creature this many metres in front of the survivor, and `side` metres to their right. */
-  summon?: { species: string; level?: number; distance?: number; side?: number; sex?: "female" | "male"; tamed?: boolean; mating?: boolean };
+  summon?: { species: string; level?: number; distance?: number; side?: number; sex?: "female" | "male"; tamed?: boolean; mating?: boolean; knockedOut?: boolean };
   /** ARK's breeding multipliers (hatch, maturation, mating interval, imprint interval) all at once. */
   breedingSpeed?: number;
   /** Tame the wild creature in front at once. */
@@ -264,6 +275,7 @@ function cheat(ctx: GameContext, input: Cheat): void {
       ...(input.summon.sex === undefined ? {} : { sex: input.summon.sex }),
     });
     if (id !== null && input.summon.tamed === true) tameSummoned(ctx, id, input.summon.mating === true);
+    if (id !== null && input.summon.knockedOut === true) knockOutNow(ctx, id);
   }
   const cave = input.goto === undefined ? undefined : cavesOf(ctx).find((entry) => entry.id === input.goto!.cave);
   if (cave !== undefined && me !== null) {
