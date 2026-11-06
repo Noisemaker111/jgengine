@@ -34,6 +34,7 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   spear: "gameicons:lorc/stone-spear",
   torch: "gameicons:delapouite/primitive-torch",
   storage_box: "gameicons:delapouite/chest",
+  preserving_bin: "gameicons:delapouite/barrel",
   hide_sleeping_bag: "gameicons:delapouite/sleeping-bag",
   cloth_shirt: "gameicons:lucasms/shirt",
   cloth_pants: "gameicons:lorc/trousers",

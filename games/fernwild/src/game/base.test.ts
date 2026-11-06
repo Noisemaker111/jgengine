@@ -189,3 +189,43 @@ test("a storage box holds fifteen stacks: E opens it, items go in and come back 
   expect(baseBuilding(game.ctx).list()).toHaveLength(0);
   expect(game.ctx.player.inventory.count(BAG, "stone")).toBe(60);
 });
+
+/** Place a container in front, open it, and put `count` raw meat in it; returns the runner with it open. */
+function stocked(pieceId: string, count: number): HeadlessRunner {
+  const game = runner();
+  tick(game, 0.1);
+  hold(game, pieceId);
+  place(game, game.ctx.scene.entity.get(game.userId)!.rotationY);
+  tick(game, 0.1);
+  game.ui.tryInvoke("structureUse", {});
+  game.ctx.player.inventory.put(BAG, "raw_meat", count);
+  game.ui.tryInvoke("storePut", { inventoryId: BAG, slot: game.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat") });
+  return game;
+}
+
+const held = (game: HeadlessRunner, itemId: string) => storeView(game.ctx)!.slots.reduce((sum, slot) => sum + (slot?.itemId === itemId ? slot.count : 0), 0);
+const wait = (game: HeadlessRunner, seconds: number) => {
+  for (let t = 0; t < seconds; t += 5) game.step(5, { held: [] });
+};
+
+test("meat goes off in a storage box as fast as carried, and four times slower in a preserving bin, which takes only food", () => {
+  const box = stocked("storage_box", 1);
+  expect(held(box, "raw_meat")).toBe(1);
+  wait(box, 610);
+  expect(held(box, "raw_meat")).toBe(0);
+  expect(held(box, "spoiled_meat")).toBe(1);
+
+  const bin = stocked("preserving_bin", 1);
+  expect(storeView(bin.ctx)!.slots).toHaveLength(6);
+  expect(held(bin, "raw_meat")).toBe(1);
+  wait(bin, 610);
+  expect(held(bin, "raw_meat")).toBe(1);
+  wait(bin, 1800);
+  expect(held(bin, "raw_meat")).toBe(0);
+  expect(held(bin, "spoiled_meat")).toBe(1);
+
+  bin.ctx.player.inventory.put(BAG, "stone", 5);
+  bin.ui.tryInvoke("storePut", { inventoryId: BAG, slot: bin.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "stone") });
+  expect(bin.ctx.player.inventory.count(BAG, "stone")).toBe(5);
+  expect(held(bin, "stone")).toBe(0);
+}, 60_000);

@@ -9,6 +9,8 @@ export interface SpoilingStack {
   key: string;
   itemId: string;
   count: number;
+  /** How fast it goes off, 1 by default: a preserving container slows it (0.25 lasts four times as long), 0 stops it. */
+  rate?: number;
 }
 
 /** Units of one stack that went off this tick: take `count` of `itemId` from `key`, give `count` of `into`. */
@@ -23,7 +25,7 @@ export interface SpoiledUnits {
 export interface Spoilage {
   /** Advance every listed stack by `dt` seconds; stacks no longer listed lose their timers. */
   tick(dt: number, stacks: readonly SpoilingStack[]): SpoiledUnits[];
-  /** Seconds until the next unit of the stack at `key` spoils; `null` when it never does. */
+  /** Seconds until the next unit of the stack at `key` spoils at its rate; `null` when it never does. */
   left(stack: SpoilingStack): number | null;
   snapshot(): Record<string, number>;
   restore(timers: Readonly<Record<string, number>>): void;
@@ -46,7 +48,7 @@ export function createSpoilage(rules: Readonly<Record<string, SpoilRule>>): Spoi
         if (rule === undefined || stack.count <= 0 || rule.seconds <= 0) continue;
         const key = timerKey(stack);
         live.add(key);
-        let elapsed = (timers.get(key) ?? 0) + Math.max(0, dt);
+        let elapsed = (timers.get(key) ?? 0) + Math.max(0, dt) * Math.max(0, stack.rate ?? 1);
         const count = Math.min(stack.count, Math.floor(elapsed / rule.seconds));
         elapsed -= count * rule.seconds;
         if (count >= stack.count) timers.delete(key);
@@ -58,8 +60,9 @@ export function createSpoilage(rules: Readonly<Record<string, SpoilRule>>): Spoi
     },
     left(stack) {
       const rule = rules[stack.itemId];
-      if (rule === undefined || rule.seconds <= 0) return null;
-      return rule.seconds - (timers.get(timerKey(stack)) ?? 0);
+      const rate = Math.max(0, stack.rate ?? 1);
+      if (rule === undefined || rule.seconds <= 0 || rate === 0) return null;
+      return (rule.seconds - (timers.get(timerKey(stack)) ?? 0)) / rate;
     },
     snapshot: () => Object.fromEntries(timers),
     restore(saved) {

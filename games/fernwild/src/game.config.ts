@@ -225,6 +225,7 @@ export const game = defineGame({
         pieceKey: ctx.player.inventory.state(HOTBAR).slots.findIndex((slot) => slot !== null && PIECES.has(slot.itemId)) + 1,
         campfires: piecesBuilt(ctx, "campfire"),
         boxes: piecesBuilt(ctx, "storage_box"),
+        bins: piecesBuilt(ctx, "preserving_bin"),
         // The hotbar key (1-based) holding each tool; 0 when it is not on the hotbar.
         pickKey: keyOf("stone_pick"),
         hatchetKey: keyOf("stone_hatchet"),
@@ -265,6 +266,9 @@ export const game = defineGame({
         screen: openScreen(ctx) === null ? 0 : 1,
         // Items in the open storage box (-1 with none open).
         stored: ((store) => (store === null ? -1 : store.slots.reduce((sum, slot) => sum + (slot?.count ?? 0), 0)))(storeView(ctx)),
+        // The bag's raw meat slot, and the raw meat in the open container (-1 with none open).
+        meatSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat"),
+        storedMeat: ((store) => (store === null ? -1 : store.slots.reduce((sum, slot) => sum + (slot?.itemId === "raw_meat" ? slot.count : 0), 0)))(storeView(ctx)),
         picks: ctx.player.inventory.count(HOTBAR, "stone_pick") + ctx.player.inventory.count(BAG, "stone_pick"),
         creatures: creatures.count,
         aimedDown: creatures.aimed?.taming?.unconscious === true ? 1 : 0,
