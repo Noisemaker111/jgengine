@@ -381,8 +381,13 @@ export function flattenFieldAround(base: TerrainField, zones: readonly AvoidZone
     let best = 0;
     let target = 0;
     for (const zone of zones) {
-      const dist = Math.hypot(x - zone.x, z - zone.z);
-      if (dist >= zone.radius) continue;
+      // Squared first: grass and scatter bake call this for every node against every zone, most far
+      // away, and Math.hypot allocates on every call in V8.
+      const dx = x - zone.x;
+      const dz = z - zone.z;
+      const distSq = dx * dx + dz * dz;
+      if (distSq >= zone.radius * zone.radius) continue;
+      const dist = Math.sqrt(distSq);
       const feather = Math.max(0, zone.feather ?? 0);
       const inner = zone.radius - feather;
       const t = dist <= inner || feather <= 0 ? 1 : (zone.radius - dist) / feather;
