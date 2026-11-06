@@ -1085,6 +1085,18 @@ describe("indexed movement telemetry", () => {
     expect(playerMovementTelemetry(ctx, "pawn")).toBeNull();
   });
 
+  test("flight with no speed of its own flies at the flier's walk speed, so each mount keeps its pace", () => {
+    const fast = context(["a"]);
+    fast.scene.entity.update("a", { movement: { walkSpeed: 16 } });
+    const slow = context(["a"]);
+    slow.scene.entity.update("a", { movement: { walkSpeed: 4 } });
+    const flight = resolvePlayerMovementTuning({ movement: { flight: { mode: "creative", collide: false, acceleration: 1000 } } });
+    driveWith(fast, "a", ["moveForward"], 60, flight, 0);
+    driveWith(slow, "a", ["moveForward"], 60, flight, 0);
+    expect(fast.scene.entity.get("a")!.position[2]).toBeCloseTo(16, 0);
+    expect(slow.scene.entity.get("a")!.position[2]).toBeCloseTo(4, 0);
+  });
+
   test("flight never invents ground contact and returning to walking reads its active motor", () => {
     const ctx = context(["a"]);
     const flight = resolvePlayerMovementTuning({ movement: { flight: { mode: "creative", collide: false } } });

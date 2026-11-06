@@ -30,6 +30,7 @@ import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type Taming
 import { setScreen } from "./screens";
 import { strikeHarvestable } from "./survivor";
 import { biteProfile, loadShare } from "./data/tameWork";
+import { AIRBORNE, FLYERS } from "./data/flight";
 
 /** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
 const CREATURE_SLOTS = 30;
@@ -587,22 +588,37 @@ function grantTameXp(ctx: GameContext, creature: Creature, amount: number): void
   ctx.game.notices.push({ text: `Your ${defOf(creature).label} reached level ${creature.level}. A point to spend in its inventory.`, tone: "success" });
 }
 
-/** A tame's second: the passive XP trickle, and stamina spent on a ridden sprint or won back at rest. */
+/** How high a creature stands above the ground under it, metres. */
+function heightAboveGround(ctx: GameContext, id: string): number {
+  const entity = ctx.scene.entity.get(id);
+  return entity === null ? 0 : entity.position[1] - ctx.world.groundHeightAt(entity.position[0], entity.position[2]);
+}
+
+/** A tame's second: the passive XP trickle, and stamina spent on a ridden sprint or in the air, or won back at rest. */
 function tickTame(ctx: GameContext, creature: Creature, ridden: boolean, dt: number): void {
   grantTameXp(ctx, creature, TAME_LEVELS.passivePerSecond * dt);
   const max = statOf(creature, "stamina");
   const entity = ctx.scene.entity.get(creature.id);
   const moving = entity !== null && Math.hypot(entity.velocity[0], entity.velocity[2]) > 0.5;
   const sprinting = ridden && moving && ctx.input.isDown("sprint") && creature.stamina > 1;
-  const rate = sprinting ? -defOf(creature).sprintStamina : moving ? 0 : max * STAMINA_REGEN;
+  const flyer = FLYERS[creature.species];
+  const flying = ridden && flyer !== undefined && heightAboveGround(ctx, creature.id) > AIRBORNE;
+  const rate = (sprinting ? -defOf(creature).sprintStamina : 0) + (flying ? -flyer.stamina : 0) || (moving ? 0 : max * STAMINA_REGEN);
   creature.stamina = Math.max(0, Math.min(max, creature.stamina + rate * dt));
   const def = defOf(creature);
-  // Loaded past its weight the mount slows, and at the limit it cannot move.
-  const walk = def.walk * statOf(creature, "speed") * loadOf(creature).moveMultiplier;
+  // Loaded past its weight the mount slows, and at the limit it cannot move. In the air a flyer flies at its flying speed.
+  const walk = (flying ? flyer.speed : def.walk * statOf(creature, "speed")) * loadOf(creature).moveMultiplier;
   // Ridden, the mount sprints at its own ARK ratio (a tamed raptor 11.04 / 4.8 m/s), not the survivor's.
   const run = (def.tamedSprint ?? def.sprint) / def.walk;
   const moved = entity === null ? null : entity.movement;
   if (ridden && moved !== null && (Math.abs((moved.walkSpeed ?? 0) - walk) > 0.01 || moved.runMultiplier !== run)) ctx.scene.entity.update(creature.id, { movement: { ...moved, walkSpeed: walk, runMultiplier: run } });
+}
+
+/** Whether the survivor rides a flyer with the stamina to hold itself up: false drops it out of the sky. */
+export function mountCanFly(ctx: GameContext): boolean {
+  const mountId = ridingOf(ctx).mountOf(ctx.player.userId);
+  const mount = mountId === null ? undefined : worldOf(ctx).creatures.get(mountId);
+  return mount !== undefined && FLYERS[mount.species] !== undefined && mount.stamina > 1 && !loadOf(mount).immobile;
 }
 
 /** Whether the mount under the survivor has the stamina to sprint; null on foot. */

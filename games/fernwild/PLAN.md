@@ -212,7 +212,7 @@ taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming;
 | survival.farm | `crafting/crop` growth Phases plus a water meter |
 | spawns.* | `populationDirector`, Placement, Table per biome, a Ladder of level by distance |
 | boss.phases | `thresholdTracker` over the boss's health |
-| creatures.ride.fly | `flight/freeFlight` with stamina as a vital drained while flying |
+| creatures.ride.fly | core hover flight gated by `canFly` (a ridden flyer with stamina); flight speed defaults to the mount's own walk speed, set to its `FLYERS` speed in the air; stamina drains while airborne and at zero it drops (done) |
 | creatures.work.airlift | riding's seat relation with a creature as the passenger |
 
 ## Features
