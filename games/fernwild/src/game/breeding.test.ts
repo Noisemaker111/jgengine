@@ -92,6 +92,7 @@ test("a raptor pair left together mates and lays an egg that a campfire keeps wa
   const egg = eggs(game.ctx)[0]!;
   game.ctx.scene.entity.setPose(game.userId, { position: [egg.at[0] + 8, egg.at[1], egg.at[2]], rotationY: -Math.PI / 2 });
   build(game, "campfire");
+  game.ui.tryInvoke("cheat", { fuel: 600 });
   tick(game, 1);
   const warm = breedingView(game.ctx).egg!.temperature;
   expect(warm).toBeGreaterThanOrEqual(20);

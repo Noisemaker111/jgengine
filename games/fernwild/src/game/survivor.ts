@@ -1,4 +1,4 @@
-import { canCraft, craftSeconds, type RecipeDef } from "@jgengine/core/crafting/recipe";
+import { canCraft, craftSeconds, stationSatisfied, type RecipeDef } from "@jgengine/core/crafting/recipe";
 import { createUnlockPoints, type UnlockPoints, type UnlockPointsState } from "@jgengine/core/economy/unlockPoints";
 import { createScatterHarvest, type ScatterHarvest, type ScatterHarvestState } from "@jgengine/core/harvest/scatterHarvest";
 import { resolveEncumbrance, totalLoad } from "@jgengine/core/inventory/encumbrance";
@@ -610,7 +610,10 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   const speed = SURVIVOR.walkSpeed * (statValue(survivor, "speed") / 100) * load.moveMultiplier * (injured ? SURVIVOR.injuredSpeed : 1) * (knocked ? 0 : 1) * (survivor.web?.slow ?? 1);
   if (Math.abs((me.movement?.walkSpeed ?? 0) - speed) > 0.01) ctx.scene.entity.update(id, { movement: { ...me.movement, walkSpeed: speed } });
 
-  const crafted = tickQueue(survivor.queue, queueConfig(survivor), dt);
+  // Work at a station stops while the station cannot work (a campfire burnt out, or walked away from).
+  const working = survivor.queue.jobs.find((job) => job.status === "active");
+  const needs = working === undefined ? null : recipeDef(working.spec.recipeId);
+  const crafted = tickQueue(survivor.queue, queueConfig(survivor), needs === null || stationSatisfied(needs, craftContext(ctx, survivor)) ? dt : 0);
   survivor.queue = crafted.state;
   for (const event of crafted.events) if (event.type === "completed") finishCraft(ctx, event.output);
   spoil(ctx, survivor, dt);

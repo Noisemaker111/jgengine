@@ -205,7 +205,8 @@ taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming;
 | creatures.work.gather | a tame's attack is a tool profile (`resourceNode` biases) per species, data only |
 | creatures.work.lighter-loads | a carrier x item weight multiplier, the same per-receiver table shape, read by `carryLoad` |
 | survival.encumbrance | `inventory/encumbrance` over carried weight into a speed modifier |
-| crafting.fuel / refine-tier | `crafting/production` with a fuel meter drained while running |
+| crafting.fuel | a campfire or pot is a fuel vital in a `FUEL` dose table (wood 30 s, thatch 7.5 s, sparkpowder 60 s); E puts one on; empty, the station cooks nothing and warms nobody, and queued work waits where it stopped (done, `base.ts`) |
+| crafting.refine-tier | the same fuel meter on a forge, ore in, metal out |
 | crafting.preserve | spoilage rate x a container multiplier (Modifiers) |
 | crafting.tool-wear | `item/durability` |
 | survival.farm | `crafting/crop` growth Phases plus a water meter |

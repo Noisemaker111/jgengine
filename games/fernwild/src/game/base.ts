@@ -4,8 +4,10 @@ import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgeng
 import { playerMovementHeading } from "@jgengine/core/movement/playerMovement";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
+import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/stats/vitals";
 
 import { BAG, HOTBAR } from "./bags";
+import { FUEL, FUEL_MAX } from "./data/fuel";
 import { BASE_BUILDING, STATIONS, structureDef, TIER_COLORS } from "./data/structures";
 import { itemLabel } from "./data/items";
 
@@ -25,11 +27,99 @@ interface Base {
   /** Rotate presses: quarter turns on the ground, the next snap variant when snapping. */
   turn: number;
   syncedVersion: number;
-  /** The piece in front of the survivor, for E (doors), G (demolish) and the look readout. */
+  /** The piece in front of the survivor, for E (doors, fires), G (demolish) and the look readout. */
   aimed: string | null;
+  /** The burning station the survivor faces within reach: found by distance and facing, since a campfire sits below the eye-height ray. */
+  fire: string | null;
+  /** Each burning station's fire, by piece id: a fuel meter that drains while it has any. */
+  fires: Map<string, Vitals>;
 }
 
-const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILDING), ghost: null, turn: 0, syncedVersion: -1, aimed: null }));
+const baseOf = perContext((): Base => ({ building: createBaseBuilding(BASE_BUILDING), ghost: null, turn: 0, syncedVersion: -1, aimed: null, fire: null, fires: new Map() }));
+
+const fireBody = (): Vitals => createVitals([{ id: "fuel", max: FUEL_MAX, start: 0, rate: -1 }]);
+
+/** Whether a piece burns fuel (a campfire, a cooking pot). */
+const burns = (pieceId: string): boolean => FUEL.sources(pieceId).length > 0;
+
+/** A burning station's fire, made empty the first time it is asked for; null for a piece that does not burn. */
+function fireOf(base: Base, piece: BasePiece): Vitals | null {
+  if (!burns(piece.pieceId)) return null;
+  let fire = base.fires.get(piece.id);
+  if (fire === undefined) {
+    fire = fireBody();
+    base.fires.set(piece.id, fire);
+  }
+  return fire;
+}
+
+/** Whether a station can work: one that burns needs fuel in it. */
+const lit = (base: Base, piece: BasePiece): boolean => (fireOf(base, piece)?.value("fuel") ?? 1) > 0;
+
+/** The burning station in front of the survivor, or null. */
+function aimedFire(base: Base): BasePiece | null {
+  return base.fire === null ? null : base.building.get(base.fire);
+}
+
+/** Half-angle of the cone in front of the survivor that a fire must sit in to be stoked. */
+const FIRE_FACING = Math.cos(Math.PI / 3);
+
+/** The nearest burning station within reach inside the survivor's forward cone, or null. */
+function facingFire(base: Base, at: BaseVec3, yaw: number): string | null {
+  const ahead = forward(yaw);
+  let best: string | null = null;
+  let nearest = USE_REACH;
+  for (const piece of base.building.list()) {
+    if (!burns(piece.pieceId)) continue;
+    const dx = piece.position[0] - at[0];
+    const dz = piece.position[2] - at[2];
+    const distance = Math.hypot(dx, dz);
+    if (distance > nearest) continue;
+    if (distance > 0.5 && (dx * ahead[0] + dz * ahead[2]) / distance < FIRE_FACING) continue;
+    nearest = distance;
+    best = piece.id;
+  }
+  return best;
+}
+
+/** The fuel the survivor carries that a station would take next, or null. */
+function nextFuel(ctx: GameContext, pieceId: string): string | null {
+  return FUEL.pick(pieceId, (itemId) => ctx.player.inventory.count(BAG, itemId) + ctx.player.inventory.count(HOTBAR, itemId) > 0);
+}
+
+/** E at a campfire or pot: one fuel from the survivor's bag or hotbar onto its fire. */
+function stoke(ctx: GameContext, base: Base, piece: BasePiece): boolean {
+  const fire = fireOf(base, piece);
+  const itemId = nextFuel(ctx, piece.pieceId);
+  if (fire === null || itemId === null) {
+    ctx.game.notices.push({ text: `Needs ${FUEL.sources(piece.pieceId).map(itemLabel).join(" or ")} to burn`, tone: "deny" });
+    return false;
+  }
+  if (ctx.player.inventory.take(BAG, itemId, 1).status !== "ok" && ctx.player.inventory.take(HOTBAR, itemId, 1).status !== "ok") return false;
+  fire.dose(...(FUEL.of(piece.pieceId, itemId) ?? []));
+  return true;
+}
+
+/** Seconds of fuel left in the nearest burning station within `reach` metres, or -1 with none. */
+export function fuelNear(ctx: GameContext, at: readonly [number, number, number], reach: number): number {
+  const base = baseOf(ctx);
+  let best = -1;
+  let nearest = reach;
+  for (const piece of base.building.list()) {
+    const fire = fireOf(base, piece);
+    const distance = Math.hypot(piece.position[0] - at[0], piece.position[2] - at[2]);
+    if (fire === null || distance > nearest) continue;
+    nearest = distance;
+    best = fire.value("fuel");
+  }
+  return best;
+}
+
+/** Put `seconds` of fuel on every burning station's fire (a cheat, for proofs). */
+export function fuelStations(ctx: GameContext, seconds: number): void {
+  const base = baseOf(ctx);
+  for (const piece of base.building.list()) fireOf(base, piece)?.change("fuel", seconds);
+}
 
 /** The model, for the world overlay. */
 export function baseBuilding(ctx: GameContext): BaseBuilding {
@@ -73,14 +163,23 @@ function syncSolids(ctx: GameContext, base: Base): void {
 }
 
 /** Thirty times a second: the ghost for the structure in hand, the piece in front, and the solids. */
-export function tickBase(ctx: GameContext, heldItemId: string | null): void {
+export function tickBase(ctx: GameContext, heldItemId: string | null, dt: number): void {
   const base = baseOf(ctx);
+  const standing = new Set<string>();
+  for (const piece of base.building.list()) {
+    const fire = fireOf(base, piece);
+    if (fire === null) continue;
+    standing.add(piece.id);
+    fire.tick(dt);
+  }
+  for (const id of [...base.fires.keys()]) if (!standing.has(id)) base.fires.delete(id);
   const me = ctx.scene.entity.get(ctx.player.userId);
   syncSolids(ctx, base);
   if (me === null) return;
   const yaw = aimYaw(ctx, me.rotationY);
   base.ghost = heldItemId !== null && structureDef(heldItemId) !== null ? planFor(ctx, base, heldItemId, yaw) : null;
   base.aimed = base.building.raycast(eye(me.position), forward(yaw), USE_REACH)?.id ?? null;
+  base.fire = facingFire(base, me.position, yaw);
   ctx.touch();
 }
 
@@ -127,6 +226,8 @@ function aimedDoor(base: Base): BasePiece | null {
 /** E on a door or its frame: swing it. */
 export function useStructure(ctx: GameContext): boolean {
   const base = baseOf(ctx);
+  const fire = aimedFire(base);
+  if (fire !== null) return stoke(ctx, base, fire);
   const door = aimedDoor(base);
   if (door === null) return false;
   const open = base.building.toggle(door.id);
@@ -152,6 +253,7 @@ export function demolish(ctx: GameContext): void {
   if (base.aimed === null) return;
   fell(ctx, base.building.remove(base.aimed).removed, DEMOLISH_REFUND);
   base.aimed = null;
+  base.fire = null;
   syncSolids(ctx, base);
 }
 
@@ -173,15 +275,25 @@ export function strikeStructure(ctx: GameContext, yaw: number, reach: number, da
 
 /** Placed stations near enough to matter, for recipes that need one. */
 export function stations(ctx: GameContext): StationInstance[] {
-  return baseOf(ctx)
-    .building.list()
-    .filter((piece) => STATIONS.has(piece.pieceId))
+  const base = baseOf(ctx);
+  return base.building
+    .list()
+    .filter((piece) => STATIONS.has(piece.pieceId) && lit(base, piece))
     .map((piece) => ({ catalogId: piece.pieceId, position: [piece.position[0], piece.position[2]] }));
 }
 
 /** E opens and shuts the door in front. */
 export function basePrompts(ctx: GameContext): PositionedPrompt[] {
-  const piece = aimedDoor(baseOf(ctx));
+  const base = baseOf(ctx);
+  const fire = aimedFire(base);
+  if (fire !== null) {
+    const fuel = Math.ceil(fireOf(base, fire)?.value("fuel") ?? 0);
+    const next = nextFuel(ctx, fire.pieceId);
+    const label = next === null ? `${itemLabel(fire.pieceId)}: needs ${FUEL.sources(fire.pieceId).map(itemLabel).join(" or ")}` : `Add ${itemLabel(next)}`;
+    const display = fuel > 0 ? `${label} (burning, ${fuel}s left)` : label;
+    return [{ id: "fire", position: { x: fire.position[0], z: fire.position[2] }, priority: 3, prompt: proximityPrompt({ radius: USE_REACH + 2, display: keybind("interact", display), invoke: command("structureUse") }) }];
+  }
+  const piece = aimedDoor(base);
   if (piece === null) return [];
   return [
     {
@@ -216,13 +328,27 @@ export function piecesBuilt(ctx: GameContext, prefix: string): number {
   return baseOf(ctx).building.list().filter((piece) => piece.pieceId.startsWith(prefix)).length;
 }
 
+interface BaseSave {
+  building: BaseBuildingState;
+  fires: Record<string, VitalsState>;
+}
+
 export function baseSave(ctx: GameContext) {
   return {
-    key: "fernwild.base",
-    snapshot: (): BaseBuildingState => baseOf(ctx).building.snapshot(),
-    hydrate: (data: BaseBuildingState) => {
+    key: "fernwild.base2",
+    snapshot: (): BaseSave => {
       const base = baseOf(ctx);
-      base.building.restore(data);
+      return { building: base.building.snapshot(), fires: Object.fromEntries([...base.fires].map(([id, fire]) => [id, fire.state()])) };
+    },
+    hydrate: (data: BaseSave) => {
+      const base = baseOf(ctx);
+      base.building.restore(data.building);
+      base.fires.clear();
+      for (const [id, state] of Object.entries(data.fires)) {
+        const fire = fireBody();
+        fire.restore(state);
+        base.fires.set(id, fire);
+      }
       syncSolids(ctx, base);
     },
   };
@@ -231,6 +357,7 @@ export function baseSave(ctx: GameContext) {
 export function resetBase(ctx: GameContext): void {
   const base = baseOf(ctx);
   base.building.clear();
+  base.fires.clear();
   base.ghost = null;
   base.turn = 0;
   syncSolids(ctx, base);

@@ -3,7 +3,7 @@ import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/wor
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
-import { baseSave, demolish, resetBase, rotateBuild, tickBase, useStructure } from "./game/base";
+import { baseSave, demolish, fuelStations, resetBase, rotateBuild, tickBase, useStructure } from "./game/base";
 import { cavesOf, cavesSave, resetCaves, takeArtifact } from "./game/caves";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, tickBreeding } from "./game/breeding";
@@ -128,7 +128,7 @@ export const systems = [
       commands.define("rotateBuild", { apply: (state) => (rotateBuild(state), state) });
       commands.define("demolish", { apply: (state) => (demolish(state), state) });
     },
-    update: (ctx) => tickBase(ctx, heldItem(ctx)),
+    update: (ctx, dt) => tickBase(ctx, heldItem(ctx), dt),
     save: baseSave,
     reset: resetBase,
   }),
@@ -222,6 +222,8 @@ interface Cheat {
   tamingSpeed?: number;
   /** Every tame's food set to this share of its max. */
   tameFood?: number;
+  /** Seconds of fuel onto every campfire and cooking pot. */
+  fuel?: number;
   /** Spawn a creature this many metres in front of the survivor, and `side` metres to their right. */
   summon?: { species: string; level?: number; distance?: number; side?: number; sex?: "female" | "male"; tamed?: boolean; mating?: boolean; knockedOut?: boolean };
   /** ARK's breeding multipliers (hatch, maturation, mating interval, imprint interval) all at once. */
@@ -263,7 +265,11 @@ function cheat(ctx: GameContext, input: Cheat): void {
   }
   if (input.tamingSpeed !== undefined) setTamingSpeed(ctx, input.tamingSpeed);
   if (input.breedingSpeed !== undefined) setBreedingSpeed(ctx, input.breedingSpeed);
+<<<<<<< HEAD
   if (input.tameFood !== undefined) for (const tame of tames(ctx)) setTameFood(ctx, tame.id, input.tameFood);
+=======
+  if (input.fuel !== undefined) fuelStations(ctx, input.fuel);
+>>>>>>> 12d8f3bd6 (Fuelled stations: a campfire or pot burns wood, thatch or sparkpowder and cooks and warms only while lit)
   if (input.kill === true) ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: 0 });
   if (input.destroyWild === true) destroyWild(ctx);
   if (input.clock !== undefined) ctx.time.hydrate({ ...ctx.time.snapshot(), now: input.clock });
