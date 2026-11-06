@@ -218,7 +218,7 @@ export const SUITE_ENTRIES: readonly SuiteEntry[] = [
     },
   },
   { id: "taming.keep-under", genres: ["creature-survival"], by: "sim", does: "Keep an unconscious creature under with a sedative while it eats.", proof: "Setup gives a sedative and a downed creature; play feeds the sedative and its torpor rises." },
-  { id: "taming.wake-loses", genres: ["creature-survival"], by: "sim", does: "If an unconscious creature's torpor runs out it wakes up wild, and the taming progress is lost.", proof: "Setup gives a downed creature partway tamed with no sedative; waiting, it wakes, its taming progress reads zero and it is wild again." },
+  { id: "taming.wake-loses", genres: ["creature-survival"], by: "sim", does: "An unconscious creature stays out until its torpor, and any sedative still taking effect, wears off; then it wakes up wild and the taming progress is lost.", proof: "Setup gives a downed creature partway tamed; play feeds one last sedative and waits: it wakes no sooner than its torpor could wear off, its taming progress reads zero and it is wild again." },
   {
     id: "taming.preferred-food", genres: ["creature-survival"], by: "sim",
     does: "Each species ranks its foods; its favourite tames it several times faster and cleaner than ordinary food.",

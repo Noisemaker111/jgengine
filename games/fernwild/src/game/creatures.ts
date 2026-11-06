@@ -1071,6 +1071,7 @@ function tamingView(world: World, creature: Creature, state: TamingRead | null) 
         progress: state.progress,
         effectiveness: state.effectiveness,
         nextMeal: Math.max(0, Math.ceil(state.belly / Math.max(1e-6, world.tamingSpeed))),
+        wakesIn: Math.ceil(state.wakesIn),
         eating: world.taming.nextFood(creature.species, feeder(creature)),
         foods: world.taming.foods(creature.species),
       };

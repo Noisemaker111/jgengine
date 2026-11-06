@@ -1,7 +1,8 @@
+import { evalCurve } from "@jgengine/core/progression/leveling";
 import { createDoseTable, type DoseTable } from "@jgengine/core/stats/doseTable";
 import { createVitals, type VitalDose, type Vitals, type VitalsState } from "@jgengine/core/stats/vitals";
 
-import { effectivenessOf, HIT_INEFFECTIVENESS, STARVE_LOSS, type TamingDef, tamingBody } from "./data/taming";
+import { effectivenessOf, HIT_INEFFECTIVENESS, STARVE_LOSS, type TamingDef, tamingBody, TORPOR_DRAIN, WAKES_AT } from "./data/taming";
 
 /** What changed for one creature this tick. */
 export type TamingEvent = { type: "subdued" } | { type: "ate"; itemId: string } | { type: "released" } | { type: "won"; effectiveness: number };
@@ -22,6 +23,8 @@ export interface TamingRead {
   effectiveness: number;
   /** Seconds of digestion left before it eats again, at taming speed 1. */
   belly: number;
+  /** Seconds until its torpor, and the narcotics still taking effect, wear off and it wakes; 0 when awake. */
+  wakesIn: number;
 }
 
 interface Tracked {
@@ -58,6 +61,22 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
     for (const vital of ["affinity", "ineffectiveness", "belly"]) entry.body.change(vital, -entry.body.value(vital));
   };
 
+  /** Torpor left to wear off, counting doses still landing (capped where they would overfill), over its drain. */
+  const wakesIn = (entry: Tracked): number => {
+    if (!entry.down) return 0;
+    const drain = evalCurve(TORPOR_DRAIN, entry.level);
+    const max = entry.body.max("torpor");
+    let landing = 0;
+    let longest = 0;
+    for (const dose of entry.body.doses()) {
+      if (dose.vital !== "torpor") continue;
+      landing += dose.amount;
+      longest = Math.max(longest, dose.seconds ?? 0);
+    }
+    const total = Math.min(entry.body.value("torpor") + landing, max + drain * longest);
+    return Math.max(0, (total - WAKES_AT * max) / drain);
+  };
+
   const read = (entry: Tracked): TamingRead => ({
     subdued: entry.down,
     torpor: entry.body.value("torpor"),
@@ -65,6 +84,7 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
     progress: entry.body.fraction("affinity"),
     effectiveness: effectivenessOf(entry.body.value("ineffectiveness")),
     belly: entry.body.value("belly"),
+    wakesIn: wakesIn(entry),
   });
 
   return {
