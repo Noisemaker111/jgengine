@@ -10,6 +10,183 @@ import { GrassStream } from "./grassStream.draw";
 
 const VIEW_HEIGHT = 900;
 
+test("a streaming slice bounds ground queries even for a dense leaf", () => {
+  let queries = 0;
+  const { stream: field } = stream({ area: 400, heightAt: () => { queries += 1; return 0; } });
+  try {
+    field.update(camera([0, 1.7, 0], [0, 0.5, -30]), VIEW_HEIGHT, 0);
+    expect(queries).toBeLessThanOrEqual(128);
+  } finally { field.dispose(); }
+});
+
+test("startup grows the nearest real leaf across slices and frees its partial buffer", () => {
+  const { stream: field, scene, bake } = stream({ area: 16 });
+  const view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  const expected = bakeGrassNode(bake, 0, 1, 1, 1);
+  field.update(view, VIEW_HEIGHT, 0);
+  const mesh = field.group.children[0];
+  expect(mesh).toBeInstanceOf(THREE.Mesh);
+  if (!(mesh instanceof THREE.Mesh) || !(mesh.geometry instanceof THREE.InstancedBufferGeometry)) throw new Error("missing partial leaf");
+  const offsets = mesh.geometry.getAttribute("instanceOffset");
+  expect(offsets.count).toBe(1);
+  expect(offsets.getX(0)).toBe(expected.offsets[0]);
+  expect(offsets.getY(0)).toBe(expected.offsets[1]);
+  expect(offsets.getZ(0)).toBe(expected.offsets[2]);
+  field.update(view, VIEW_HEIGHT, 0);
+  expect(mesh.geometry.getAttribute("instanceOffset")).toBe(offsets);
+  expect(offsets.count).toBe(2);
+  expect(offsets.getX(1)).toBe(expected.offsets[3]);
+  let disposed = false;
+  mesh.geometry.addEventListener("dispose", () => { disposed = true; });
+  field.dispose();
+  expect(disposed).toBe(true);
+  expect(scene.children[0]?.children.length).toBe(0);
+});
+
+test("sliced work completes with the same grass and bounded ground queries", () => {
+  let queries = 0;
+  const look = readGrassLook({ slopeThin: 1 });
+  const heightAt = (x: number, z: number) => { queries += 1; return x * 0.01 + z * 0.02; };
+  const sliced = stream({ area: 16, look, heightAt });
+  const whole = stream({ area: 16, look, heightAt });
+  const view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  whole.stream.update(view, VIEW_HEIGHT, Infinity);
+  let calls = 0;
+  const counts = new Map<string, number>();
+  observeFrameWork((name, count) => counts.set(name, (counts.get(name) ?? 0) + count));
+  do {
+    queries = 0;
+    counts.clear();
+    sliced.stream.update(view, VIEW_HEIGHT, 1000);
+    expect(queries).toBeLessThanOrEqual(8192);
+    expect((counts.get("grass nodes visited") ?? 0) + (counts.get("grass bake tuft candidates") ?? 0) + (counts.get("grass other work steps") ?? 0)).toBeLessThanOrEqual(32768);
+    calls += 1;
+  } while (sliced.stream.stats().pending > 0 && calls < 1000);
+  observeFrameWork(null);
+  expect(sliced.stream.stats().pending).toBe(0);
+  expect(calls).toBeGreaterThan(1);
+  const roots = (scene: THREE.Scene) => submit(scene, view).drawn.flatMap(({ mesh, count }) => {
+    const offset = mesh.geometry.getAttribute("instanceOffset");
+    const shape = mesh.geometry.getAttribute("instanceShape");
+    const vary = mesh.geometry.getAttribute("instanceVary");
+    const tone = mesh.geometry.getAttribute("instanceTone");
+    return Array.from({ length: count }, (_, i) => [offset.getX(i), offset.getY(i), offset.getZ(i), shape.getX(i), shape.getY(i), shape.getZ(i), shape.getW(i), vary.getX(i), vary.getY(i), vary.getZ(i), vary.getW(i), tone.getX(i)].join(","));
+  }).sort();
+  expect(roots(sliced.scene)).toEqual(roots(whole.scene));
+  sliced.stream.dispose();
+  whole.stream.dispose();
+});
+
+test("startup and immediate bakes agree across views and detail levels", () => {
+  for (const [view, height] of [
+    [camera([0, 1.7, 0], [0, 0.5, -30]), 100],
+    [camera([12, 5, 13], [0, 0, 0]), 900],
+    [camera([0, 40, 0], [0, 0, -1]), 900],
+  ] as const) {
+    const sliced = stream({ area: 24, seed: "startup-comparison" });
+    const whole = stream({ area: 24, seed: "startup-comparison" });
+    sliced.stream.update(view, height, 0);
+    whole.stream.update(view, height, Infinity);
+    for (let i = 0; i < 1000 && sliced.stream.stats().pending > 0; i += 1) sliced.stream.update(view, height, 1000);
+    expect(sliced.stream.stats().pending).toBe(0);
+    const roots = (scene: THREE.Scene) => submit(scene, view).drawn.flatMap(({ mesh, count }) => {
+      const offsets = mesh.geometry.getAttribute("instanceOffset");
+      const shape = mesh.geometry.getAttribute("instanceShape");
+      const vary = mesh.geometry.getAttribute("instanceVary");
+      const tone = mesh.geometry.getAttribute("instanceTone");
+      return Array.from({ length: count }, (_, i) => [offsets.getX(i), offsets.getY(i), offsets.getZ(i), shape.getX(i), shape.getY(i), shape.getZ(i), shape.getW(i), vary.getX(i), vary.getY(i), vary.getZ(i), vary.getW(i), tone.getX(i)].join(","));
+    }).sort();
+    expect(roots(sliced.scene)).toEqual(roots(whole.scene));
+    sliced.stream.dispose();
+    whole.stream.dispose();
+  }
+});
+
+test("ground revision discards unfinished and cached grass before rebuilding", () => {
+  let revision = 0, height = 0;
+  const bake = resolveGrassBake({ look: GRASS_DEFAULTS, area: 16, heightAt: () => height });
+  const handle = createGrassMaterial(GRASS_DEFAULTS);
+  const field = new GrassStream(bake, handle, { heightRevision: () => revision });
+  const scene = new THREE.Scene();
+  scene.add(field.group);
+  const view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  field.update(view, VIEW_HEIGHT, Infinity);
+  expect(field.stats().cached).toBeGreaterThan(0);
+  height = 3;
+  revision += 1;
+  field.update(view, VIEW_HEIGHT, 0);
+  expect(field.group.visible).toBe(false);
+  height = 5;
+  revision += 1;
+  for (let i = 0; i < 1000 && field.stats().pending > 0; i += 1) field.update(view, VIEW_HEIGHT, 1000);
+  expect(field.stats().pending).toBe(0);
+  const drawn = submit(scene, view).drawn;
+  expect(drawn.length).toBeGreaterThan(0);
+  for (const { mesh } of drawn) {
+    const offsets = mesh.geometry.getAttribute("instanceOffset");
+    for (let i = 0; i < offsets.count; i += 1) expect(offsets.getY(i)).toBe(5);
+  }
+  field.dispose();
+  handle.material.dispose();
+});
+
+test("continuous movement keeps the cache bounded and settles when movement stops", () => {
+  const { stream: field } = stream({ area: 40 });
+  let view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  for (let i = 0; i < 60; i += 1) {
+    view = camera([i % 20 - 10, 1.7, 0], [i % 20 - 10, 0.5, -30]);
+    field.update(view, VIEW_HEIGHT, 1000);
+    expect(field.stats().cached).toBeLessThanOrEqual(256);
+  }
+  for (let i = 0; i < 1000 && field.stats().pending > 0; i += 1) field.update(view, VIEW_HEIGHT, 1000);
+  expect(field.stats().pending).toBe(0);
+  field.dispose();
+});
+
+test("the first view fills once and walking afterwards does not count as filling again", () => {
+  let revision = 0;
+  const bake = resolveGrassBake({ look: GRASS_DEFAULTS, area: 40, heightAt: () => 0 });
+  const handle = createGrassMaterial(GRASS_DEFAULTS);
+  const field = new GrassStream(bake, handle, { heightRevision: () => revision });
+  let view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  field.update(view, VIEW_HEIGHT, 0);
+  expect(field.filled).toBe(false);
+  for (let i = 0; i < 1000 && !field.filled; i += 1) field.update(view, VIEW_HEIGHT, 1000);
+  expect(field.filled).toBe(true);
+  for (let i = 1; i <= 30; i += 1) {
+    view = camera([0, 1.7, -i * 0.5], [0, 0.5, -30 - i * 0.5]);
+    field.update(view, VIEW_HEIGHT, 0);
+    expect(field.stats().pending).toBeGreaterThan(0);
+    expect(field.filled).toBe(true);
+  }
+  revision += 1;
+  field.update(view, VIEW_HEIGHT, 0);
+  expect(field.filled).toBe(false);
+  field.dispose();
+  handle.material.dispose();
+});
+
+test("a moved camera eventually replaces unfinished selection with its own view", () => {
+  const sliced = stream({ area: 40 });
+  const whole = stream({ area: 40 });
+  const first = camera([0, 1.7, 0], [0, 0.5, -30]);
+  const moved = camera([12, 1.7, 12], [12, 0.5, -18]);
+  sliced.stream.update(first, VIEW_HEIGHT, 0);
+  whole.stream.update(moved, VIEW_HEIGHT, Infinity);
+  for (let i = 0; i < 1000; i += 1) {
+    sliced.stream.update(moved, VIEW_HEIGHT, 1000);
+    if (sliced.stream.stats().pending === 0) break;
+  }
+  expect(sliced.stream.stats().pending).toBe(0);
+  const roots = (scene: THREE.Scene) => submit(scene, moved).drawn.flatMap(({ mesh, count }) => {
+    const offsets = mesh.geometry.getAttribute("instanceOffset");
+    return Array.from({ length: count }, (_, i) => [offsets.getX(i), offsets.getY(i), offsets.getZ(i)].join(","));
+  }).sort();
+  expect(roots(sliced.scene)).toEqual(roots(whole.scene));
+  sliced.stream.dispose();
+  whole.stream.dispose();
+});
+
 test("grass work counts distinguish a stable view from a changed view", () => {
   const { stream: field } = stream({ area: 100 });
   const view = camera([0, 1.7, 0], [0, 0.5, -30]);
@@ -225,4 +402,17 @@ test("only leaves in view join the scene graph, and turning around draws from le
   expect(field.stats().pending).toBe(0);
   expect(field.group.children.length).toBeGreaterThan(0);
   expect(field.group.children.length).toBeLessThan(field.stats().cached);
+});
+
+test("a disposed stream that is updated again rebuilds its view", () => {
+  const { stream: field } = stream({ area: 16 });
+  const view = camera([0, 1.7, 0], [0, 0.5, -30]);
+  field.update(view, VIEW_HEIGHT, Infinity);
+  expect(field.filled).toBe(true);
+  field.dispose();
+  expect(field.stats().cached).toBe(0);
+  field.update(view, VIEW_HEIGHT, Infinity);
+  expect(field.filled).toBe(true);
+  expect(field.stats().cached).toBeGreaterThan(0);
+  field.dispose();
 });

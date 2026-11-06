@@ -50,18 +50,30 @@ describe("waitForQuiescentView", () => {
   test("waits out a capture state whose spawns start model streaming after the first idle reading", async () => {
     // Staged towers: idle at first, the next frames mount them and start two loads, then nothing new.
     const run = harness([
-      { modelLoadStarts: 3, viewLoading: false },
-      { modelLoadStarts: 4, viewLoading: false },
-      { modelLoadStarts: 5, viewLoading: false },
-      { modelLoadStarts: 5, viewLoading: false },
-      { modelLoadStarts: 5, viewLoading: false },
+      { modelLoadStarts: 3, viewLoading: false, modelsIdle: true },
+      { modelLoadStarts: 4, viewLoading: false, modelsIdle: true },
+      { modelLoadStarts: 5, viewLoading: false, modelsIdle: true },
+      { modelLoadStarts: 5, viewLoading: false, modelsIdle: true },
+      { modelLoadStarts: 5, viewLoading: false, modelsIdle: true },
     ]);
     expect(await waitForQuiescentView(run.deps, 60_000)).toBeNull();
     expect(run.frames()).toBe(6);
   });
 
+  test("keeps waiting past one idle slice while a slow load is still in flight (Fernwild's worker-grown trees)", async () => {
+    const busy = { modelLoadStarts: 2, viewLoading: false, modelsIdle: false };
+    const run = harness([busy, busy, busy, busy, busy, busy, { modelLoadStarts: 2, viewLoading: false, modelsIdle: true }]);
+    expect(await waitForQuiescentView(run.deps, 60_000)).toBeNull();
+    expect(run.frames()).toBe(12);
+  });
+
+  test("never declares ready while a load stays in flight and says streaming did not settle", async () => {
+    const run = harness([{ modelLoadStarts: 2, viewLoading: false, modelsIdle: false }]);
+    expect(await waitForQuiescentView(run.deps, 5_000)).toContain("streaming did not settle");
+  });
+
   test("never declares a view ready while the loading screen is mounted", async () => {
-    const run = harness([{ modelLoadStarts: 1, viewLoading: true }]);
+    const run = harness([{ modelLoadStarts: 1, viewLoading: true, modelsIdle: true }]);
     expect(await waitForQuiescentView(run.deps, 5_000)).toContain("loading screen is up");
   });
 });

@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { frameWorkObserver } from "@jgengine/core/devtools/frameBreakdown";
 
 import {
-  bakeGrassNode,
+  bakeGrassNodeSteps,
   GRASS_CELL_SIZE,
   grassNodeRect,
   grassTuftsBelow,
@@ -48,6 +48,23 @@ interface Leaf {
   /** Patch-local root box grown by blade and wind reach. */
   bounds: THREE.Box3;
   used: number;
+  growing: GrowingGrassAttribute[];
+}
+interface DesiredNode { level: number; ix: number; iz: number; share: number; distance: number }
+
+class GrowingGrassAttribute extends THREE.InstancedBufferAttribute {
+  override count = 0;
+
+  constructor(array: Float32Array, itemSize: number, count: number) {
+    super(array, itemSize);
+    this.count = count;
+    this.setUsage(THREE.DynamicDrawUsage);
+  }
+
+  grow(count: number): void {
+    this.count = count;
+    this.needsUpdate = true;
+  }
 }
 
 /** Per-frame bookkeeping the stream reports, for tests and devtools. */
@@ -58,7 +75,7 @@ export interface GrassStreamStats {
   tufts: number;
   /** Leaves held in the cache, drawn or not. */
   cached: number;
-  /** Nodes still waiting for a bake. */
+  /** Nonzero while selection, baking or a newer view remains unfinished. */
   pending: number;
 }
 
@@ -67,6 +84,8 @@ export interface GrassStreamOptions {
   castShadow?: boolean;
   receiveShadow?: boolean;
   frustumCulled?: boolean;
+  /** Revision of the ground sampler; omit for an immutable sampler. */
+  heightRevision?: () => number | undefined;
 }
 
 /**
@@ -85,6 +104,13 @@ export class GrassStream {
   private drawn: Leaf[] = [];
   private frame = 0;
   private pending = 0;
+  private job: Generator<"selection" | "work" | "tuft" | "seed", void> | undefined;
+  private refresh = false;
+  private revision: number | undefined;
+  private invalidating = false;
+  private filledView = false;
+  private preview: Leaf | undefined;
+  private lastSelection: DesiredNode[] | undefined;
   private viewHeight = 720;
   private readonly signature = new Float32Array(16 * 3 + 1);
   private readonly frustum = new THREE.Frustum();
@@ -100,36 +126,177 @@ export class GrassStream {
   ) {
     this.template = createGrassTuftTemplate(bake);
     this.group.name = "grass-stream";
+    this.revision = options.heightRevision?.();
   }
 
   /**
    * Re-select and bake leaves for `camera`. `viewHeight` is the canvas height in CSS pixels;
-   * `budgetMs` caps bake time this call (`Infinity` bakes everything now). The nearest leaf always
-   * bakes, so a call makes progress on any budget.
+   * `budgetMs` limits work time between bounded steps (`Infinity` finishes the work now). A finite
+   * call performs at most 8,192 ground samples and 32,768 incremental steps, excluding work inside
+   * caller-supplied samplers. A cached perspective turn examines at most 32,768 selected and
+   * previously drawn leaves before updating their scene membership.
    */
   update(camera: THREE.Camera, viewHeight: number, budgetMs: number): void {
     const observe = frameWorkObserver();
     this.group.updateWorldMatrix(true, false);
     camera.updateMatrixWorld();
     this.viewHeight = Math.max(1, viewHeight);
+    const revision = this.options.heightRevision?.();
+    if (revision !== this.revision) {
+      this.revision = revision;
+      this.job?.return();
+      this.job = undefined;
+      this.heights.clear();
+      this.lastSelection = undefined;
+      this.drawn = [];
+      this.group.visible = false;
+      this.invalidating = true;
+      this.refresh = true;
+      this.filledView = false;
+    }
+    const turnOnly = this.job === undefined && !this.refresh && this.lastSelection !== undefined &&
+      camera.projectionMatrix.elements[15] === 0 && this.samePositionAndProjection(camera);
     const changed = this.changed(camera);
-    if (!changed && this.pending === 0) { observe?.("grass unchanged updates", 1); return; }
-    let visited = 0;
-    let heightProbes = 0;
-    let baked = 0;
-    let tufts = 0;
+    if (changed && turnOnly && this.lastSelection !== undefined && this.lastSelection.length + this.drawn.length <= 32768) {
+      this.redrawCached(camera, this.lastSelection);
+      observe?.("grass view or transform changed", 1);
+      return;
+    }
+    if (changed) this.refresh = true;
+    if (this.job === undefined && !this.refresh) { observe?.("grass unchanged updates", 1); return; }
+    if (this.job === undefined) {
+      this.refresh = false;
+      this.job = this.runJob(camera, budgetMs === Infinity);
+    }
+    observe?.(changed ? "grass view or transform changed" : "grass pending bake", 1);
+    const started = now();
+    let steps = 0, selections = 0, tufts = 0, polls = 0;
+    while (this.job !== undefined) {
+      const step = this.job.next();
+      if (step.done) {
+        this.job = undefined;
+        this.pending = 0;
+        break;
+      }
+      steps += 1;
+      polls += 1;
+      if (step.value === "selection") selections += 1;
+      if (step.value === "tuft") tufts += 1;
+      if (step.value === "seed") { selections += 1; tufts += 1; steps += 1; }
+      const tuftQueries = this.bake.look.growth.slopeThin > 0 ? 5 : 1;
+      // Steps are cheap enough that reading the clock on each one was a visible share of the frame.
+      if (budgetMs !== Infinity && (selections * 9 + tufts * tuftQueries >= 8184 || steps >= 32768 || (polls % 32 === 1 && now() - started >= budgetMs))) break;
+    }
+    this.syncPreview();
+    observe?.("grass bake tuft candidates", tufts);
+    observe?.("grass other work steps", Math.max(0, steps - selections - tufts));
+    if (this.job !== undefined || this.refresh) this.pending = Math.max(1, this.pending);
+  }
+
+  private samePositionAndProjection(camera: THREE.Camera): boolean {
+    const sig = this.signature;
+    const world = camera.matrixWorld.elements;
+    for (let i = 12; i < 16; i += 1) if (Math.abs(sig[i]! - world[i]!) > 0.1) return false;
+    for (let i = 0; i < 16; i += 1) {
+      if (Math.abs(sig[16 + i]! - camera.projectionMatrix.elements[i]!) > 1e-4 ||
+          Math.abs(sig[32 + i]! - this.group.matrixWorld.elements[i]!) > 1e-4) return false;
+    }
+    return sig[48] === this.viewHeight;
+  }
+
+  private redrawCached(camera: THREE.Camera, desired: DesiredNode[]): void {
+    this.matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    this.frustum.setFromProjectionMatrix(this.matrix, camera.coordinateSystem);
+    const next = new Set<Leaf>();
+    for (const node of desired) {
+      const leaf = this.cache.get(`${node.level}:${node.ix}:${node.iz}`);
+      if (leaf !== undefined && leaf.tufts.count > 0 && this.frustum.intersectsSphere(this.sphere.copy(leaf.geometry.boundingSphere!).applyMatrix4(this.group.matrixWorld))) next.add(leaf);
+    }
+    for (const leaf of this.drawn) if (!next.has(leaf)) this.group.remove(leaf.mesh);
+    for (const leaf of next) if (leaf.mesh.parent !== this.group) this.group.add(leaf.mesh);
+    this.drawn = [...next];
+  }
+
+  private *runJob(camera: THREE.Camera, immediate: boolean): Generator<"selection" | "work" | "tuft" | "seed", void> {
+    if (this.invalidating) {
+      for (const leaf of this.cache.values()) { this.drop(leaf); yield "work"; }
+      this.invalidating = false;
+      this.group.visible = true;
+    }
+    if (!immediate && this.cache.size === 0 && camera.projectionMatrix.elements[15] === 0) {
+      yield* this.startNearestLeaf(camera);
+    }
+    yield* this.selectAndBake(camera, immediate);
+  }
+
+  private *startNearestLeaf(camera: THREE.Camera): Generator<"selection" | "work" | "tuft" | "seed", void> {
+    camera.getWorldPosition(this.cameraPosition);
+    const local = this.group.worldToLocal(this.cameraPosition.clone());
+    const ix = Math.max(0, Math.min(this.bake.columns - 1, Math.floor((local.x + this.bake.width / 2) / GRASS_CELL_SIZE)));
+    const iz = Math.max(0, Math.min(this.bake.rows - 1, Math.floor((local.z + this.bake.depth / 2) / GRASS_CELL_SIZE)));
+    const key = `0:${ix}:${iz}`;
+    const observe = frameWorkObserver();
+    if (!this.heights.has(key)) observe?.("grass selection height queries", 9);
+    observe?.("grass nodes visited", 1);
+    const box = this.nodeWorldBox(0, ix, iz);
+    const distance = box.distanceToPoint(this.cameraPosition);
+    const size = Math.max(box.max.x - box.min.x, box.max.z - box.min.z);
+    const lod = this.cameraLod(camera);
+    if (distance > lod.reach || (this.bake.rootLevel > 0 && distance >= SPLIT * size)) { yield "selection"; return; }
+    const share = Math.min(1, shareAt(lod, distance) * BAKE_HEADROOM);
+    const job = bakeGrassNodeSteps(this.bake, 0, ix, iz, share, false, (tufts) => {
+      if (this.preview === undefined) {
+        this.preview = this.bakeLeaf(key, 0, ix, iz, share, tufts, false);
+        this.group.add(this.preview.mesh);
+      }
+    });
+    try {
+      let step = job.next();
+      if (!step.done) step = job.next();
+      yield "seed";
+      while (!step.done) { step = job.next(); if (!step.done) yield step.value; }
+      this.clearPreview();
+      const leaf = this.bakeLeaf(key, 0, ix, iz, share, step.value);
+      this.group.add(leaf.mesh);
+      this.drawn.push(leaf);
+      frameWorkObserver()?.("grass leaves baked", 1);
+      frameWorkObserver()?.("grass tufts baked", leaf.tufts.count);
+    } finally {
+      this.clearPreview();
+    }
+  }
+
+  private clearPreview(): void {
+    if (this.preview === undefined) return;
+    this.group.remove(this.preview.mesh);
+    this.preview.geometry.dispose();
+    this.preview = undefined;
+  }
+
+  private syncPreview(): void {
+    const leaf = this.preview;
+    if (leaf === undefined) return;
+    const { geometry, tufts } = leaf;
+    for (const attribute of leaf.growing) attribute.grow(tufts.count);
+    geometry.instanceCount = tufts.count;
+    const bounds = tufts.roots.clone().expandByScalar(tufts.extent * this.template.heightScale + this.handle.windReach);
+    geometry.boundingBox = bounds;
+    geometry.boundingSphere = bounds.getBoundingSphere(new THREE.Sphere());
+  }
+
+  private *selectAndBake(camera: THREE.Camera, immediate: boolean): Generator<"selection" | "work" | "tuft", void> {
     this.frame += 1;
     const lod = this.cameraLod(camera);
     camera.getWorldPosition(this.cameraPosition);
-    const desired: { level: number; ix: number; iz: number; share: number; distance: number }[] = [];
+    const desired: DesiredNode[] = [];
     this.matrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.matrix, camera.coordinateSystem);
-    const visit = (level: number, ix: number, iz: number) => {
-      if (observe !== null) {
-        visited += 1;
-        if (!this.heights.has(`${level}:${ix}:${iz}`)) heightProbes += 9;
-      }
+    const visit = function* (this: GrassStream, level: number, ix: number, iz: number): Generator<"selection", void> {
+      const observe = frameWorkObserver();
+      if (!this.heights.has(`${level}:${ix}:${iz}`)) observe?.("grass selection height queries", 9);
+      observe?.("grass nodes visited", 1);
       const box = this.nodeWorldBox(level, ix, iz);
+      yield "selection";
       if (!lod.perspective && !this.frustum.intersectsBox(box)) return;
       const distance = box.distanceToPoint(this.cameraPosition);
       if (lod.perspective && distance > lod.reach) return;
@@ -140,61 +307,114 @@ export class GrassStream {
         for (let dz = 0; dz < 2; dz += 1) {
           for (let dx = 0; dx < 2; dx += 1) {
             const cx = ix * 2 + dx, cz = iz * 2 + dz;
-            if (cx * span < this.bake.columns && cz * span < this.bake.rows) visit(level - 1, cx, cz);
+            if (cx * span < this.bake.columns && cz * span < this.bake.rows) yield* visit.call(this, level - 1, cx, cz);
           }
         }
         return;
       }
       desired.push({ level, ix, iz, share: shareAt(lod, distance), distance });
     };
-    visit(this.bake.rootLevel, 0, 0);
-    desired.sort((a, b) => a.distance - b.distance);
+    yield* visit.call(this, this.bake.rootLevel, 0, 0);
+    // Merge incrementally so a large visible selection cannot monopolize a frame.
+    let ordered = desired;
+    let scratch = new Array<DesiredNode>(desired.length);
+    for (let width = 1; width < desired.length; width *= 2) {
+      for (let start = 0; start < desired.length; start += width * 2) {
+        const middle = Math.min(start + width, desired.length), end = Math.min(start + width * 2, desired.length);
+        let left = start, right = middle;
+        for (let i = start; i < end; i += 1) {
+          if (right >= end || (left < middle && ordered[left]!.distance <= ordered[right]!.distance)) scratch[i] = ordered[left++]!;
+          else scratch[i] = ordered[right++]!;
+          yield "work";
+        }
+      }
+      [ordered, scratch] = [scratch, ordered];
+    }
 
-    const started = now();
     const next = new Set<Leaf>();
     let pending = 0;
-    for (const node of desired) {
+    for (const node of ordered) {
       const key = `${node.level}:${node.ix}:${node.iz}`;
       let leaf = this.cache.get(key);
+      let baked = false;
       if (node.share <= 0) continue;
       if (leaf === undefined || leaf.share < node.share) {
-        if (now() - started <= budgetMs) {
+        {
+          const share = Math.min(1, node.share * BAKE_HEADROOM);
+          const job = bakeGrassNodeSteps(this.bake, node.level, node.ix, node.iz, share, immediate);
+          let step = job.next();
+          while (!step.done) { yield step.value; step = job.next(); }
           if (leaf !== undefined) this.drop(leaf);
-          leaf = this.bakeLeaf(key, node.level, node.ix, node.iz, Math.min(1, node.share * BAKE_HEADROOM));
-          if (observe !== null) { baked += 1; tufts += leaf.tufts.count; }
-        } else {
-          pending += 1;
-          leaf ??= this.ancestor(node.level, node.ix, node.iz);
+          leaf = this.bakeLeaf(key, node.level, node.ix, node.iz, share, step.value);
+          baked = true;
+          frameWorkObserver()?.("grass leaves baked", 1);
+          frameWorkObserver()?.("grass tufts baked", leaf.tufts.count);
         }
       }
       if (leaf === undefined) continue;
       leaf.used = this.frame;
+      this.cache.delete(leaf.key);
+      this.cache.set(leaf.key, leaf);
       // Every leaf around the camera stays baked, so turning never waits on a bake; only the ones in
       // view join the scene graph, which keeps node count and per-draw culling to what is on screen.
-      if (leaf.tufts.count > 0 && this.frustum.intersectsSphere(this.sphere.copy(leaf.geometry.boundingSphere!).applyMatrix4(this.group.matrixWorld))) next.add(leaf);
+      if (leaf.tufts.count > 0 && this.frustum.intersectsSphere(this.sphere.copy(leaf.geometry.boundingSphere!).applyMatrix4(this.group.matrixWorld))) {
+        next.add(leaf);
+        if (leaf.mesh.parent !== this.group) {
+          this.group.add(leaf.mesh);
+          this.drawn.push(leaf);
+        }
+      }
+      yield "work";
+      if (baked && this.refresh) {
+        const limit = Math.max(32, ordered.length) * 2;
+        for (const old of this.cache.values()) {
+          if (this.cache.size <= limit) break;
+          if (old.used !== this.frame) this.drop(old);
+          yield "work";
+        }
+        const held: Leaf[] = [];
+        for (const old of this.drawn) {
+          if (this.cache.get(old.key) === old && old.mesh.parent === this.group) held.push(old);
+          yield "work";
+        }
+        this.drawn = held;
+        return;
+      }
     }
-    for (const leaf of this.drawn) if (!next.has(leaf)) this.group.remove(leaf.mesh);
+    for (const leaf of this.drawn) { if (!next.has(leaf)) this.group.remove(leaf.mesh); yield "work"; }
+    const selectedLeaves: Leaf[] = [];
     for (const leaf of next) {
       if (leaf.mesh.parent !== this.group) this.group.add(leaf.mesh);
+      selectedLeaves.push(leaf);
+      yield "work";
     }
-    this.drawn = [...next];
+    this.drawn = selectedLeaves;
     this.pending = pending;
-    this.evict();
-    if (observe !== null) {
-      observe(changed ? "grass view or transform changed" : "grass pending bake", 1);
-      observe("grass nodes visited", visited);
-      observe("grass selection height queries", heightProbes);
-      observe("grass leaves baked", baked);
-      observe("grass tufts baked", tufts);
-      observe("grass leaves pending", pending);
-    }
+    yield* this.evict();
+    this.lastSelection = ordered;
+    this.filledView = true;
+    frameWorkObserver()?.("grass leaves pending", pending);
+  }
+
+  /**
+   * Whether one selection has finished with every leaf it chose baked since the stream started or
+   * the ground changed. Until then a caller can spend a larger slice so the first view fills fast;
+   * after it, a moving camera only adds the few leaves that come into range.
+   */
+  get filled(): boolean {
+    return this.filledView;
+  }
+
+  /** Whether selection or baking is unfinished after the last {@link GrassStream.update}. */
+  get busy(): boolean {
+    return this.job !== undefined || this.refresh;
   }
 
   /** What the stream holds and draws now. */
   stats(): GrassStreamStats {
     return {
-      leaves: this.drawn.length,
-      tufts: this.drawn.reduce((sum, leaf) => sum + leaf.tufts.count, 0),
+      leaves: this.drawn.length + (this.preview === undefined ? 0 : 1),
+      tufts: this.drawn.reduce((sum, leaf) => sum + leaf.tufts.count, 0) + (this.preview?.tufts.count ?? 0),
       cached: this.cache.size,
       pending: this.pending,
     };
@@ -202,6 +422,13 @@ export class GrassStream {
 
   /** Free every leaf's GPU buffers. */
   dispose(): void {
+    this.job?.return();
+    this.job = undefined;
+    // A remounted patch (StrictMode effects) reuses its stream: the next update rebuilds it.
+    this.refresh = true;
+    this.lastSelection = undefined;
+    this.pending = 0;
+    this.filledView = false;
     for (const leaf of this.cache.values()) this.drop(leaf);
     this.drawn = [];
   }
@@ -267,16 +494,7 @@ export class GrassStream {
     return this.box.applyMatrix4(this.group.matrixWorld);
   }
 
-  private ancestor(level: number, ix: number, iz: number): Leaf | undefined {
-    for (let l = level + 1, x = ix >> 1, z = iz >> 1; l <= this.bake.rootLevel; l += 1, x >>= 1, z >>= 1) {
-      const leaf = this.cache.get(`${l}:${x}:${z}`);
-      if (leaf !== undefined) return leaf;
-    }
-    return undefined;
-  }
-
-  private bakeLeaf(key: string, level: number, ix: number, iz: number, share: number): Leaf {
-    const tufts = bakeGrassNode(this.bake, level, ix, iz, share);
+  private bakeLeaf(key: string, level: number, ix: number, iz: number, share: number, tufts: GrassTufts, cache = true): Leaf {
     const t = this.template;
     const geometry = new THREE.InstancedBufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(t.position, 3));
@@ -285,10 +503,17 @@ export class GrassStream {
     geometry.setAttribute("bladeVary", new THREE.BufferAttribute(t.bladeVary, 4));
     geometry.setAttribute("bladeBendScale", new THREE.BufferAttribute(t.bladeBendScale, 1));
     geometry.setIndex(new THREE.BufferAttribute(t.index, 1));
-    geometry.setAttribute("instanceOffset", new THREE.InstancedBufferAttribute(tufts.offsets, 3));
-    geometry.setAttribute("instanceShape", new THREE.InstancedBufferAttribute(tufts.shape, 4));
-    geometry.setAttribute("instanceVary", new THREE.InstancedBufferAttribute(tufts.vary, 4));
-    geometry.setAttribute("instanceTone", new THREE.InstancedBufferAttribute(tufts.tone, 1));
+    const growing: GrowingGrassAttribute[] = [];
+    const instanceAttribute = (array: Float32Array, size: number): THREE.InstancedBufferAttribute => {
+      if (cache) return new THREE.InstancedBufferAttribute(array, size);
+      const attribute = new GrowingGrassAttribute(array, size, tufts.count);
+      growing.push(attribute);
+      return attribute;
+    };
+    geometry.setAttribute("instanceOffset", instanceAttribute(tufts.offsets, 3));
+    geometry.setAttribute("instanceShape", instanceAttribute(tufts.shape, 4));
+    geometry.setAttribute("instanceVary", instanceAttribute(tufts.vary, 4));
+    geometry.setAttribute("instanceTone", instanceAttribute(tufts.tone, 1));
     geometry.instanceCount = tufts.count;
     const bounds = tufts.count === 0 ? new THREE.Box3() : tufts.roots.clone().expandByScalar(tufts.extent * t.heightScale + this.handle.windReach);
     geometry.boundingBox = bounds;
@@ -305,7 +530,7 @@ export class GrassStream {
       camera.getWorldPosition(position);
       const distance = roots.copy(tufts.roots).applyMatrix4(mesh.matrixWorld).distanceToPoint(position);
       const share = shareAt(lod, distance);
-      geometry.instanceCount = share <= 0 ? 0 : grassTuftsBelow(tufts.ranks, share);
+      geometry.instanceCount = share <= 0 ? 0 : grassTuftsBelow(tufts.ranks.length === tufts.count ? tufts.ranks : tufts.ranks.subarray(0, tufts.count), share);
       const pixels = lod.perspective ? (this.bake.maxHeight * lod.pixelsPerMetre) / Math.max(distance, 0.01) : this.bake.maxHeight * lod.pixelsPerMetre;
       const detail = t.lods[pixels >= 28 ? 0 : pixels >= 9 ? Math.min(1, t.lods.length - 1) : t.lods.length - 1]!;
       geometry.setDrawRange(detail.start, detail.count);
@@ -316,8 +541,8 @@ export class GrassStream {
       const detail = t.lods[Math.min(1, t.lods.length - 1)]!;
       geometry.setDrawRange(detail.start, detail.count);
     };
-    const leaf: Leaf = { key, level, ix, iz, share, tufts, geometry, mesh, bounds, used: this.frame };
-    this.cache.set(key, leaf);
+    const leaf: Leaf = { key, level, ix, iz, share, tufts, geometry, mesh, bounds, used: this.frame, growing };
+    if (cache) this.cache.set(key, leaf);
     return leaf;
   }
 
@@ -327,11 +552,14 @@ export class GrassStream {
     this.cache.delete(leaf.key);
   }
 
-  private evict(): void {
+  private *evict(): Generator<"work", void> {
     const keep = Math.max(32, this.drawn.length);
     if (this.cache.size <= this.drawn.length + keep) return;
-    const idle = [...this.cache.values()].filter((leaf) => leaf.used !== this.frame).sort((a, b) => a.used - b.used);
-    for (const leaf of idle.slice(0, this.cache.size - this.drawn.length - keep)) this.drop(leaf);
+    for (const leaf of this.cache.values()) {
+      if (this.cache.size <= this.drawn.length + keep) break;
+      if (leaf.used !== this.frame) this.drop(leaf);
+      yield "work";
+    }
   }
 }
 

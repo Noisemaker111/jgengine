@@ -6,6 +6,8 @@ import * as THREE from "three";
 import { GrassCover } from "./GrassCover.draw";
 import { bakeGrassNode, resolveGrassBake } from "./grassBake.draw";
 import { readGrassLook } from "./grassKind";
+import { GrassPatch } from "./GrassPatch.draw";
+import { pendingModelLoads } from "@jgengine/core/model/modelLoad.draw";
 import { registerGrassFieldRenderer } from "@jgengine/core/grass/GrassFieldRenderer.draw";
 import { getSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
@@ -76,6 +78,29 @@ test("translated authored grass roots follow world terrain without adding the vo
       }
     }
     expect(samples).toBeGreaterThan(0);
+  });
+});
+
+test("authored grass restarts an unfinished leaf when its terrain revision changes", async () => {
+  const Renderer = renderer();
+  const object = { id: "changing-meadow", kind: "grass_field", center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 8, y: 0.5, z: 8 }, meta: {} };
+  let height = 0, revision = 0;
+  const context = { document: { markers: [], paths: [], volumes: [object] }, field: { sampleHeight: () => height, heightRevision: () => revision } } as unknown as SceneKindRenderContext;
+  await mounted(cameraAt(0, 4, 8, [0, 0, 0]), createElement(Renderer, { objects: [object], context }), async (scene) => {
+    expect(bladeMeshes(scene).length).toBeGreaterThan(0);
+    height = 3;
+    revision += 1;
+    await act(async () => { advance(performance.now()); });
+    scene.updateMatrixWorld(true);
+    const meshes = bladeMeshes(scene);
+    expect(meshes.length).toBeGreaterThan(0);
+    for (const mesh of meshes) {
+      const offsets = mesh.geometry.getAttribute("instanceOffset");
+      for (let i = 0; i < offsets.count; i += 1) {
+        const world = new THREE.Vector3(offsets.getX(i), offsets.getY(i), offsets.getZ(i)).applyMatrix4(mesh.matrixWorld);
+        expect(world.y).toBe(3);
+      }
+    }
   });
 });
 
@@ -186,4 +211,18 @@ test("blades and turf stay off ground below the height a field grows above", () 
   expect(high).toBeGreaterThan(0.2);
   expect(bake.turfAt(-8, 0)).toBe(0);
   expect(bake.turfAt(8, 0)).toBe(1);
+});
+
+test("a patch counts as loading until its first view has filled, and unmounting releases it", async () => {
+  const filling = () => pendingModelLoads().items.some(({ url }) => url.startsWith("scene-work:grass-fill"));
+  const look = readGrassLook({});
+  await mounted(cameraAt(0, 1.7, 0, [0, 0.5, -30]), createElement(GrassPatch, { look, area: 120, seed: "fill" }), async () => {
+    expect(filling()).toBe(true);
+    for (let i = 0; i < 2000 && filling(); i += 1) await act(async () => { advance(performance.now() + i); });
+    expect(filling()).toBe(false);
+  });
+  await mounted(cameraAt(0, 1.7, 0, [0, 0.5, -30]), createElement(GrassPatch, { look, area: 400, seed: "fill" }), () => {
+    expect(filling()).toBe(true);
+  });
+  expect(filling()).toBe(false);
 });

@@ -1782,7 +1782,7 @@
 
 ## @jgengine/core/grass/GrassPatch.draw
 
-- `GrassPatch` (function): function GrassPatch({ look, area, seed, edgeFeather, exclude, heightAt, coverageAt, baseHeight, groundColor, castShadow = false, receiveShadow = true, frustumCulled = true, wind, ...groupProps }: GrassPatchProps): React.JSX.Element — The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance where a blade would be under a pixel — so a patch of any size costs what the view shows.
+- `GrassPatch` (function): function GrassPatch({ look, area, seed, edgeFeather, exclude, heightAt, heightRevision, coverageAt, baseHeight, groundColor, castShadow = false, receiveShadow = true, frustumCulled = true, wind, ...groupProps }: GrassPatchProps): React.JSX.Element — The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance where a blade would be under a pixel — so a patch of any size costs what the view shows.
 - `GrassPatchProps` (interface): interface GrassPatchProps extends Omit<ThreeElements["group"], "children"> — Props for {@link GrassPatch}.
 
 ## @jgengine/core/grass/grassBake.draw

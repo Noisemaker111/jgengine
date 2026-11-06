@@ -14,15 +14,18 @@ import { grassFieldColors, resolveGrassBake, type GrassExclusion } from "./grass
 import { createGrassMaterial, setGrassWindUniforms } from "./grassMaterial.draw";
 import { grassWindAt, grassWindLook, type GrassWindSource } from "./grassWind";
 import { GrassStream } from "./grassStream.draw";
+import { GrassFrameShare } from "./grassFrameShare";
+import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 
-/** Milliseconds of tuft baking one frame may spend once the patch has filled the view. */
+/** Milliseconds of grass work one frame may spend, across every patch, once the view has filled. */
 const BAKE_SLICE_MS = 3;
 /**
- * Milliseconds per frame while the patch first fills the view, nearest leaves first. Baking it all
- * in one frame held the thread for over a second on a large field (each tuft samples the ground),
- * freezing the menu above the loading cover.
+ * Milliseconds per frame, across every patch, while a patch first fills the view, nearest leaves
+ * first. Baking it all in one frame held the thread for over a second on a large field (each tuft
+ * samples the ground), freezing the menu above the loading cover.
  */
 const FILL_SLICE_MS = 8;
+const frameShare = new GrassFrameShare();
 
 /** The mat floats a little above the ground against z-fighting, but always under the blades, so a putting green's 1 cm blades stay visible. */
 function grassCoverLift(look: GrassLook): number {
@@ -42,6 +45,8 @@ export interface GrassPatchProps extends Omit<ThreeElements["group"], "children"
   exclude?: readonly GrassExclusion[];
   /** Patch-local ground height. */
   heightAt?: TerrainHeightSampler;
+  /** Revision of mutable ground heights; omit when the sampler is immutable. */
+  heightRevision?: (() => number | undefined) | undefined;
   /** Patch-local 0..1 coverage (roads, footings); 0 grows nothing. */
   coverageAt?: TerrainHeightSampler;
   /** World height of the patch origin, for `look.growAbove`. Default 0. */
@@ -67,6 +72,7 @@ export function GrassPatch({
   edgeFeather,
   exclude,
   heightAt,
+  heightRevision,
   coverageAt,
   baseHeight,
   groundColor,
@@ -88,11 +94,16 @@ export function GrassPatch({
   const handle = useMemo(() => createGrassMaterial(windy ? { ...look, wind: { ...look.wind, windStrength: Math.max(1, look.wind.windStrength) } } : look, groundColor), [look, groundColor, windy]);
   const origin = useRef<Group>(null);
   const world = useMemo(() => new Vector3(), []);
-  const stream = useMemo(() => new GrassStream(bake, handle, { castShadow, receiveShadow, frustumCulled }), [bake, handle, castShadow, receiveShadow, frustumCulled]);
-  const filling = useRef(true);
+  const stream = useMemo(() => new GrassStream(bake, handle, { castShadow, receiveShadow, frustumCulled, ...(heightRevision === undefined ? {} : { heightRevision }) }), [bake, handle, castShadow, receiveShadow, frustumCulled, heightRevision]);
+  // The first view counts as loading, so play and captures never start on a half-grown field.
+  const filling = useRef<(() => void) | undefined>(undefined);
   useEffect(() => {
-    filling.current = true;
-    return () => stream.dispose();
+    filling.current = trackSceneWork("grass-fill");
+    return () => {
+      filling.current?.();
+      filling.current = undefined;
+      stream.dispose();
+    };
   }, [stream]);
   useEffect(() => () => handle.material.dispose(), [handle]);
   useFrame((state) => {
@@ -101,8 +112,12 @@ export function GrassPatch({
       origin.current?.getWorldPosition(world);
       setGrassWindUniforms(handle.uniforms, { ...grassWindLook(look.wind, grassWindAt(wind, world.x, world.z, state.clock.elapsedTime), wind.response ?? 1), stiffness: look.blade.stiffness });
     }
-    stream.update(state.camera, state.size.height, filling.current ? FILL_SLICE_MS : BAKE_SLICE_MS);
-    if (filling.current && stream.stats().pending === 0) filling.current = false;
+    stream.update(state.camera, state.size.height, frameShare.slice(state.gl, state.clock.elapsedTime, stream.filled ? BAKE_SLICE_MS : FILL_SLICE_MS));
+    if (stream.busy) frameShare.stillBusy(state.gl);
+    if (stream.filled && filling.current !== undefined) {
+      filling.current();
+      filling.current = undefined;
+    }
   });
 
   const colors = useMemo(() => grassFieldColors(look), [look]);
