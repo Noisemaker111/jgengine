@@ -60,8 +60,13 @@ function architecturePenalty(target: CrownArchitectureTarget, measured: CrownArc
   return sum;
 }
 
-/** Score of each pass limit a trial misses, so a fit never trades a missed limit for a closer fit elsewhere. */
-const TEST_MISS_COST = 10;
+/**
+ * Score of each pass limit a trial misses, so a fit never trades a missed limit for a closer fit
+ * elsewhere. At 10 it did: black cherry's best kept two seeds off its crown kind (cost 10) because a
+ * passing crown cost more than that in the open-crown, crown-ratio and shape terms no test checks,
+ * which summed to 22-40 (2026-11-05). 100 is above any sum of those a plausible tree carries.
+ */
+const TEST_MISS_COST = 100;
 
 /**
  * Guardrail misfit of the seeded individuals, leaving out the worst ones a fit allows to miss, plus a fixed cost for each further seed that misses.

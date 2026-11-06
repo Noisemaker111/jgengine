@@ -82,6 +82,20 @@ export function speciesAt(base: PlantSpecies, point: readonly number[], paramete
   return species;
 }
 
+/**
+ * `base` with every fitted parameter taken from `donor` and everything else (its traits, leaf, wood,
+ * buds per node) kept: a start for `base`'s search in the basin another species' fit reached.
+ */
+export function withFittedParameters(base: PlantSpecies, donor: PlantSpecies, parameters: readonly FitParameter[] = FIT_PARAMETERS): PlantSpecies {
+  const species = structuredClone(base);
+  for (const p of parameters) {
+    const value = readPath(donor, p.path);
+    const used = Number.isNaN(value) ? p.absent : value;
+    if (used !== undefined) writePath(species, p.path, used);
+  }
+  return species;
+}
+
 /** Grows a species and returns its trial; a worker pool in practice. */
 export type Evaluate = (species: PlantSpecies) => Promise<Trial | null>;
 
