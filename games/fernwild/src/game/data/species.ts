@@ -2,7 +2,7 @@ import type { TemperamentConfig } from "@jgengine/core/ai/temperament";
 import type { VitalDose } from "@jgengine/core/stats/vitals";
 
 import { type KibbleTier, preferredKibble, withKibble } from "./kibble";
-import { food, type TamingDef, tamingTable } from "./taming";
+import { AWAKE_TAMES, food, type TamingDef, tamingTable } from "./taming";
 
 /** How a wild creature treats the survivor, by ARK's temperament names. */
 export type Temperament = "oblivious" | "skittish" | "docile" | "territorial" | "aggressive";
@@ -253,7 +253,7 @@ function fromRow(id: string, row: Row): Omit<SpeciesDef, "kibble"> {
     sprintStamina: big ? 15 : 8,
     killXp: Math.max(2, round(health / 20)),
     attack: { damage: melee, interval: big ? 1.4 : 1, reach: round(1.4 + radius * 0.6, 0.1) },
-    taming: tamingTable({ base: torpor, perLevel: torporPerLevel }, need, foods),
+    taming: { ...tamingTable({ base: torpor, perLevel: torporPerLevel }, need, foods), awake: AWAKE_TAMES.has(id) },
     saddle: saddleLevel === null ? null : `${id}_saddle`,
     saddleEngram:
       saddleLevel === null

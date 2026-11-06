@@ -21,12 +21,19 @@ export interface TamingRead {
   held: number;
   /** Seconds until its torpor, and the narcotics still taking effect, wear off and it wakes; 0 when awake. */
   wakesIn: number;
+  /** Tamed awake by hand-feeding rather than knocked out. */
+  awakeTame: boolean;
 }
+
+/** What handing an awake tame food came to. */
+export type OfferResult = { type: "ate"; itemId: string } | { type: "full"; seconds: number } | { type: "refuses" } | { type: "not-awake-tame" };
 
 interface Tracked {
   kind: string;
   level: number;
   down: boolean;
+  /** Tamed awake by feeding (its species' `awake`). */
+  awake: boolean;
   body: Vitals;
 }
 
@@ -82,13 +89,16 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
     belly: entry.body.value("belly"),
     held: entry.body.value("held"),
     wakesIn: wakesIn(entry),
+    awakeTame: entry.awake,
   });
+
+  const entryFor = (kind: string, level: number, down: boolean, body: Vitals): Tracked => ({ kind, level, down, awake: defs[kind]?.awake === true, body });
 
   return {
     track(id: string, kind: string, level: number): void {
       if (tracked.has(id)) return;
       const body = bodyFor(kind, level);
-      if (body !== null) tracked.set(id, { kind, level, down: false, body });
+      if (body !== null) tracked.set(id, entryFor(kind, level, false, body));
     },
     forget(id: string): void {
       tracked.delete(id);
@@ -103,10 +113,25 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
     nextFood(kind: string, supply: DoseSupply): string | null {
       return diet.pick(kind, (itemId) => supply.count(itemId) > 0);
     },
-    /** What a blow, an arrow or a bola doses into its body; true when this knocked it out. */
+    /**
+     * An awake tame handed the first food it likes from `supply`: it eats only with its belly empty, and the
+     * meal fills affinity and the belly as a knocked-out one's would.
+     */
+    offer(id: string, supply: DoseSupply): OfferResult {
+      const entry = tracked.get(id);
+      if (entry === undefined || !entry.awake || entry.down) return { type: "not-awake-tame" };
+      const belly = entry.body.value("belly");
+      if (belly > 0) return { type: "full", seconds: belly };
+      const itemId = diet.pick(entry.kind, (food) => supply.count(food) > 0);
+      if (itemId === null || !supply.take(itemId)) return { type: "refuses" };
+      entry.body.dose(...(diet.of(entry.kind, itemId) ?? []));
+      return { type: "ate", itemId };
+    },
+    /** What a blow, an arrow or a bola doses into its body; true when this knocked it out. An awake tame hit is scared off its tame. */
     hit(id: string, doses: readonly VitalDose[]): boolean {
       const entry = tracked.get(id);
       if (entry === undefined) return false;
+      if (entry.awake) loseTheTame(entry);
       entry.body.dose(...doses);
       if (entry.down || !entry.body.has("unconscious")) return false;
       entry.down = true;
@@ -125,7 +150,7 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
     tick(dt: number, supplyOf: (id: string) => DoseSupply | null, pace = 1): { id: string; event: TamingEvent }[] {
       const out: { id: string; event: TamingEvent }[] = [];
       for (const [id, entry] of tracked) {
-        if (entry.down && entry.body.value("belly") <= 0) {
+        if (entry.down && !entry.awake && entry.body.value("belly") <= 0) {
           const supply = supplyOf(id);
           const itemId = supply === null ? null : diet.pick(entry.kind, (food) => supply.count(food) > 0);
           if (supply !== null && itemId !== null && supply.take(itemId)) {
@@ -144,13 +169,13 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
             entry.down = false;
             loseTheTame(entry);
             out.push({ id, event: { type: "released" } });
-          } else if (flag.id === "tamed" && flag.raised && entry.down) {
+          } else if (flag.id === "tamed" && flag.raised && (entry.down || entry.awake)) {
             out.push({ id, event: { type: "won", effectiveness: effectivenessOf(entry.body.value("ineffectiveness")) } });
             tracked.delete(id);
           }
         }
-        // Awake, nothing it eats sticks: the belly drains away and affinity only builds while out.
-        if (!entry.down && entry.body.value("affinity") > 0) loseTheTame(entry);
+        // Awake, nothing it eats sticks (affinity only builds while out), unless it is tamed awake.
+        if (!entry.down && !entry.awake && entry.body.value("affinity") > 0) loseTheTame(entry);
       }
       return out;
     },
@@ -163,7 +188,7 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
         const body = save.body === undefined ? null : bodyFor(save.kind, save.level);
         if (body === null) continue;
         body.restore(save.body);
-        tracked.set(id, { kind: save.kind, level: save.level, down: save.down, body });
+        tracked.set(id, entryFor(save.kind, save.level, save.down, body));
       }
     },
     reset(): void {

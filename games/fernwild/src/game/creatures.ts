@@ -963,6 +963,31 @@ export function useCreature(ctx: GameContext): void {
   if (creature.tamed || world.taming.state(creature.id)?.subdued === true) {
     world.viewing = creature.id;
     setScreen(ctx, "creature");
+    return;
+  }
+  if (world.taming.state(creature.id)?.awakeTame === true) handFeed(ctx, creature);
+}
+
+/** The survivor's bag, then hotbar, as something to take food from. */
+function survivorSupply(ctx: GameContext): DoseSupply {
+  const inv = ctx.player.inventory;
+  return {
+    count: (itemId) => inv.count(BAG, itemId) + inv.count(HOTBAR, itemId),
+    take: (itemId) => inv.take(BAG, itemId, 1).status === "ok" || inv.take(HOTBAR, itemId, 1).status === "ok",
+  };
+}
+
+/** E on an awake tame: hand it a food it likes from the bag, if it is hungry. */
+function handFeed(ctx: GameContext, creature: Creature): void {
+  const world = worldOf(ctx);
+  const def = defOf(creature);
+  const result = world.taming.offer(creature.id, survivorSupply(ctx));
+  if (result.type === "ate") {
+    ctx.scene.entity.floatText({ instanceId: creature.id, text: `Ate ${itemLabel(result.itemId)}`, kind: "pickup" });
+  } else if (result.type === "full") {
+    ctx.game.notices.push({ text: `The ${def.label} is not hungry yet (${Math.ceil(result.seconds / world.tamingSpeed)} s)`, tone: "deny" });
+  } else if (result.type === "refuses") {
+    ctx.game.notices.push({ text: `The ${def.label} eats ${world.taming.foods(creature.species).slice(0, 3).map(itemLabel).join(", ")}`, tone: "deny" });
   }
 }
 
@@ -1010,7 +1035,13 @@ export function creaturePrompts(ctx: GameContext): PositionedPrompt[] {
   if (creature === undefined) return [];
   if (creature.dead) return holdsItems(creature) ? prompt(creature.id, "Access inventory") : [];
   if (creature.tamed) return prompt(creature.id, creature.saddled ? "Ride" : "Access inventory");
-  if (world.taming.state(creature.id)?.subdued === true) return prompt(creature.id, "Access inventory");
+  const taming = world.taming.state(creature.id);
+  if (taming?.subdued === true) return prompt(creature.id, "Access inventory");
+  if (taming?.awakeTame === true) {
+    const food = world.taming.nextFood(creature.species, survivorSupply(ctx));
+    const label = taming.belly > 0 ? `Not hungry (${Math.ceil(taming.belly / world.tamingSpeed)} s)` : food === null ? `Wants ${itemLabel(world.taming.foods(creature.species)[0] ?? "food")}` : `Feed ${itemLabel(food)}`;
+    return prompt(creature.id, `${label} · tamed ${Math.round(taming.progress * 100)}%`);
+  }
   return [];
 }
 

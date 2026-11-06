@@ -177,6 +177,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/tame-passive.proof.ts",
+      "proves": [
+        "taming.passive-feed"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tame-ranged.proof.ts",
       "proves": [
         "taming.ranged-knockout"
