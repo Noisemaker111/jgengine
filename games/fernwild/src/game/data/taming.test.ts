@@ -91,6 +91,35 @@ test("waking up loses the tame: left with no narcotics, a raptor wakes and its a
   expect(run.state("r1")?.progress).toBe(0);
 });
 
+test("waking is not instant: it stays out until its torpor and a narcotic still taking effect wear off", () => {
+  const run = taming();
+  run.track("r1", "raptor", 1);
+  run.subdue("r1", 1000);
+  // Full at 180; a level-1 raptor's torpor wears off 0.3 a second. At 200 s, with 60 of room, a narcotic
+  // adds 40 over 16 s. It wakes at 0.2% of full: (180 + 40 - 0.36) / 0.3 = 732 s, its belly empty throughout.
+  const none = pantry({});
+  let woke = -1;
+  const told: number[] = [];
+  for (let second = 1; second <= 1000 && woke < 0; second += 1) {
+    if (second === 201) run.dose("r1", { vital: "torpor", amount: 40, seconds: 16 });
+    // What the panel says while the narcotic lands, and after.
+    if (second === 205 || second === 400) told.push(second + (run.state("r1")?.wakesIn ?? 0));
+    for (const { event } of run.tick(1, () => none)) if (event.type === "released") woke = second;
+  }
+  for (const when of told) expect(Math.abs(when - woke)).toBeLessThanOrEqual(2);
+  expect(woke).toBeGreaterThanOrEqual(732);
+  expect(woke).toBeLessThanOrEqual(734);
+});
+
+test("a narcotic fed at full torpor is wasted: torpor never goes past its max", () => {
+  const run = taming();
+  run.track("r1", "raptor", 1);
+  run.subdue("r1", 1000);
+  run.dose("r1", { vital: "torpor", amount: 40, seconds: 16 });
+  run.tick(16, () => null);
+  expect(run.state("r1")?.torpor).toBeLessThanOrEqual(180);
+});
+
 test("hitting a downed creature costs effectiveness", () => {
   const run = taming();
   run.track("clean", "raptor", 1);

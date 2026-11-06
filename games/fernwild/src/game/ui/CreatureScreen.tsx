@@ -152,6 +152,12 @@ const BUTTON: CSSProperties = { background: "#1f3a40", color: "#e8f1f2", border:
 
 /** ARK's remote inventory: the creature's own items, taming state, saddle and orders. Click an item to take it back. */
 
+/** 9m 05s, or 40s under a minute. */
+function clockText(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  return minutes === 0 ? `${seconds}s` : `${minutes}m ${String(seconds % 60).padStart(2, "0")}s`;
+}
+
 /** Its favourite first (ARK's kibble tier), then the plain foods it also takes; the other kibble tiers go unsaid. */
 function hungryLine(foods: readonly string[]): string {
   const [best, ...rest] = foods;
@@ -174,6 +180,7 @@ export function CreaturePanel(): ReactNode {
           {taming.eating === null
             ? hungryLine(taming.foods)
             : `Eats ${itemLabel(taming.eating)} in ${taming.nextMeal}s.`}
+          {taming.unconscious ? <div data-wakes-in={taming.wakesIn}>Wakes in {clockText(taming.wakesIn)} unless you keep it under.</div> : null}
           <div style={{ opacity: 0.75, marginTop: 2 }}>Keep its torpor up with Narcoberries or Narcotics: put them in, then Feed.</div>
         </div>
       ) : null}

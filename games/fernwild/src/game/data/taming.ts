@@ -53,7 +53,7 @@ export const HIT_INEFFECTIVENESS = 2;
 export const STARVE_LOSS = 0.001;
 
 /** It wakes once torpor wears down to this share of full. */
-const WAKES_AT = 0.002;
+export const WAKES_AT = 0.002;
 
 /** The body a creature is tamed through, at its level: the meters above, the flags it raises. */
 export function tamingBody(def: TamingDef, level: number): VitalDef[] {

@@ -70,7 +70,7 @@ Genres: creature-survival. 24/67 proven · 3 failing · 40 missing.
 | `taming.knockout-melee` | proven | Knock a creature out by hitting it, feed it, and it becomes yours. | proofs/sim/tame-knockout.proof.ts |
 | `taming.ranged-knockout` | proven | Knock a creature out from range with sedative ammo, without standing in its reach. | proofs/sim/tame-ranged.proof.ts |
 | `taming.keep-under` | proven | Keep an unconscious creature under with a sedative while it eats. | proofs/sim/tame-keep-under.proof.ts |
-| `taming.wake-loses` | proven | If an unconscious creature's torpor runs out it wakes up wild, and the taming progress is lost. | proofs/sim/tame-wake.proof.ts |
+| `taming.wake-loses` | proven | An unconscious creature stays out until its torpor, and any sedative still taking effect, wears off; then it wakes up wild and the taming progress is lost. | proofs/sim/tame-wake.proof.ts |
 | `taming.preferred-food` | proven | Each species ranks its foods; its favourite tames it several times faster and cleaner than ordinary food. | proofs/sim/tame-favourite.proof.ts |
 | `taming.crafted-bait` | proven | A cooked taming food, made from eggs and crops at a station, is the best food for creatures of its tier. | proofs/sim/tame-kibble.proof.ts |
 | `taming.passive-feed` | missing | Some creatures tame awake, by offering food without being hit. |  |
@@ -190,7 +190,7 @@ build it from them, and add what a part lacks to that part, with a test.
 
 | Entry | Built from |
 | --- | --- |
-| taming.wake-loses | torpor flag clears: the game zeroes affinity (done in `knockoutTaming.ts`) |
+| taming.wake-loses | torpor drains at its rate, narcotic doses still landing keep it up; the flag clears only when all of it wears off, then affinity is zeroed (done, timed by the proof) |
 | taming.effectiveness | ineffectiveness meter; hits and meals dose it; effectiveness 1/(1+x) (done) |
 | taming.passive-feed | the same diet dose table, offered by the player to an awake creature that raises a `hungry` flag |
 | taming.trap | a `held` meter dosed by a bola or trap, draining; the flag sets movement speed to 0 (Modifiers) |
