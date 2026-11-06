@@ -4,12 +4,13 @@ import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtim
 
 import { onNewPlayer, survivorStart, systems } from "../loop";
 import { world } from "../world";
-import { baseBuilding, baseView } from "./base";
+import { baseBuilding, baseSave, baseView, storeView } from "./base";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
 import { recipeDef } from "./data/engrams";
 import { itemTraits } from "./data/items";
 import { craftBlock } from "./survivor";
+import { openScreen } from "./screens";
 
 function runner(): HeadlessRunner {
   const definition = defineGameDefinition({
@@ -141,4 +142,50 @@ test("a campfire lets raw meat cook only while it burns: wood on it lights it, a
   expect(craftBlock(game.ctx, cook)).toBeNull();
   tick(game, 6);
   expect(craftBlock(game.ctx, cook)).toBe("Needs a Campfire");
+});
+
+test("a storage box holds fifteen stacks: E opens it, items go in and come back out, a save keeps them, and breaking it spills them into the bag", () => {
+  const game = runner();
+  tick(game, 0.1);
+  hold(game, "storage_box");
+  place(game, game.ctx.scene.entity.get(game.userId)!.rotationY);
+  expect(baseBuilding(game.ctx).list().map((piece) => piece.pieceId)).toEqual(["storage_box"]);
+  tick(game, 0.1);
+  game.ui.tryInvoke("structureUse", {});
+  expect(openScreen(game.ctx)).toBe("storage");
+  expect(storeView(game.ctx)!.slots).toHaveLength(15);
+
+  game.ctx.player.inventory.put(BAG, "stone", 60);
+  const stoneSlot = () => game.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "stone");
+  game.ui.tryInvoke("storePut", { inventoryId: BAG, slot: stoneSlot() });
+  expect(game.ctx.player.inventory.count(BAG, "stone")).toBe(0);
+  expect(storeView(game.ctx)!.slots[0]).toEqual({ itemId: "stone", count: 60 });
+
+  // A full box refuses more and the stack stays in the bag.
+  for (let fill = 1; fill < 15; fill += 1) {
+    game.ctx.player.inventory.put(BAG, "fiber", 300);
+    game.ui.tryInvoke("storePut", { inventoryId: BAG, slot: game.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "fiber") });
+  }
+  game.ctx.player.inventory.put(BAG, "wood", 5);
+  game.ui.tryInvoke("storePut", { inventoryId: BAG, slot: game.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "wood") });
+  expect(game.ctx.player.inventory.count(BAG, "wood")).toBe(5);
+
+  game.ui.tryInvoke("storeTake", { slot: 0 });
+  expect(game.ctx.player.inventory.count(BAG, "stone")).toBe(60);
+  game.ui.tryInvoke("storePut", { inventoryId: BAG, slot: stoneSlot() });
+  game.ui.tryInvoke("closeStore", {});
+  expect(openScreen(game.ctx)).toBeNull();
+
+  // A save and a load keep what it holds.
+  const save = baseSave(game.ctx);
+  const data = JSON.parse(JSON.stringify(save.snapshot()));
+  save.hydrate(data);
+  game.ui.tryInvoke("structureUse", {});
+  expect(storeView(game.ctx)!.slots.filter((slot) => slot !== null)).toHaveLength(15);
+  game.ui.tryInvoke("closeStore", {});
+
+  // Broken, what it held comes out into the bag.
+  game.ui.tryInvoke("demolish", {});
+  expect(baseBuilding(game.ctx).list()).toHaveLength(0);
+  expect(game.ctx.player.inventory.count(BAG, "stone")).toBe(60);
 });
