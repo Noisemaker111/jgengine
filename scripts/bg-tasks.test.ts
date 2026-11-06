@@ -8,7 +8,7 @@ import { removeDirSync } from "./removeDir";
 import { awaitTask, parseAwaitArgs, EXIT_LOST, EXIT_NO_TASK, EXIT_TIMEOUT } from "./bg-await";
 import { commandFrom, startTask } from "./bg-run";
 import { formatStatus, parseStatusArgs, taskStatus } from "./bg-status";
-import { newTaskId, readCommand, readExit, readOutput, readRunner, taskDir, TASK_ID } from "./bg-tasks";
+import { newTaskId, readAwaiter, readCommand, readExit, readOutput, readRunner, taskDir, TASK_ID } from "./bg-tasks";
 
 const root = join(import.meta.dir, "..");
 const made = new Set<string>();
@@ -179,6 +179,30 @@ test("awaiting hands the task directory to the wait, and reports the code it set
 
   expect(asked).toEqual([`${task}|20261023-204501-abc`]);
   expect(code).toBe(0);
+});
+
+test("a waiting await marks itself as the task's awaiter, and clears the mark when the wait ends", async () => {
+  const dir = checkout();
+  const task = taskDir(dir, "20261023-204501-abc");
+  mkdirSync(task, { recursive: true });
+  writeFileSync(join(task, "cmd.txt"), "bun scripts/land-queue.ts --pr 1\n");
+
+  const seen: { awaiter: number | null } = { awaiter: null };
+  const code = await awaitTask({
+    id: "20261023-204501-abc",
+    checkout: dir,
+    pid: 4242,
+    write: () => {},
+    err: () => {},
+    untilExit: async (target) => {
+      seen.awaiter = readAwaiter(target);
+      return 0;
+    },
+  });
+
+  expect(code).toBe(0);
+  expect(seen.awaiter).toBe(4242);
+  expect(readAwaiter(task)).toBeNull();
 });
 
 test("an unknown id, or one that is not an id, is refused instead of waited for", async () => {

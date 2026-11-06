@@ -67,17 +67,25 @@ if (top !== null) {
       } catch {
         continue;
       }
-      if (Number.isInteger(runner) && alive(runner)) {
-        landing = `the landing queue is still merging this branch's PR (task ${id}): run \`bun run background await ${id} --timeout 540\` in the foreground`;
-        break;
+      if (!Number.isInteger(runner) || !alive(runner)) continue;
+      // A `background await` on it is running: the harness is waiting and calls the turn back
+      // when the queue exits, so ending the turn now is the right thing.
+      let awaiter = Number.NaN;
+      try {
+        awaiter = Number(readFileSync(path.join(dir, "awaiter"), "utf8").trim());
+      } catch {
+        awaiter = Number.NaN;
       }
+      if (Number.isInteger(awaiter) && awaiter > 0 && alive(awaiter)) continue;
+      landing = `the landing queue is still merging this branch's PR (task ${id}): run \`bun run background await ${id}\` as a harness background command (Bash run_in_background) and end the turn; its exit calls you back`;
+      break;
     }
   }
   if (landing !== null) {
     process.stdout.write(
       JSON.stringify({
         decision: "block",
-        reason: `The landing is not finished: ${landing}. Wait for it and report the merge (or fix what it names on this branch) before ending the turn.`,
+        reason: `The landing is not finished: ${landing}. Its result is the merge to report, or a failure to fix on this branch.`,
       }),
     );
     process.exit(0);
@@ -128,8 +136,8 @@ if (lastWarnFile !== null) {
 }
 
 const reason =
-  `⚠️ ${count} commit${count === 1 ? "" : "s"} on branch "${branch}" ` +
-  `are not on any remote. This is an ephemeral cloud container — if it is reclaimed, that work is lost.\n\n` +
+  `${count} commit${count === 1 ? "" : "s"} on branch "${branch}" ` +
+  `are not on any remote, so no PR, queue or other checkout can see them.\n\n` +
   `Push before ending:  git push -u origin ${branch}\n` +
   `If that branch name is already taken on the remote with different history, back it up instead:  ` +
   `git push origin ${branch}:backup/${branch}`;

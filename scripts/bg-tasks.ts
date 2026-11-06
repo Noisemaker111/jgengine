@@ -5,6 +5,8 @@
 //   <id>/out.log    its stdout and stderr, together
 //   <id>/runner     the pid of the process running it
 //   <id>/exit       written once, on exit, with the exit code
+//   <id>/awaiter    the pid of a `background await` waiting on it, while it waits: the Stop hooks read it,
+//                   so a turn that ends with the harness awaiting the task is not refused
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -55,5 +57,13 @@ export function readCommand(dir: string): string {
 /** The pid of the runner watching the command, once it has recorded one. */
 export function readRunner(dir: string): number | null {
   const pid = Number((readText(join(dir, "runner")) ?? "").trim());
+  return Number.isInteger(pid) && pid > 0 ? pid : null;
+}
+
+export const AWAITER = "awaiter";
+
+/** The pid of the `background await` waiting on this task, while one is waiting. */
+export function readAwaiter(dir: string): number | null {
+  const pid = Number((readText(join(dir, AWAITER)) ?? "").trim());
   return Number.isInteger(pid) && pid > 0 ? pid : null;
 }
