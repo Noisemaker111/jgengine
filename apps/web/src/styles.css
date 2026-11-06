@@ -451,6 +451,11 @@ body {
   display: inline-block;
   animation: nudge-bob 0.9s ease-in-out infinite;
 }
+/* Paused while their demo is off screen or the tab is hidden (LiveSpecimen sets data-shown). */
+[data-shown="false"] .nudge-ring,
+[data-shown="false"] .nudge-arrow {
+  animation-play-state: paused;
+}
 @keyframes nudge-bob {
   0%,
   100% {
