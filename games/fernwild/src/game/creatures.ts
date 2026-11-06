@@ -5,6 +5,7 @@ import { countItem, createEmptyInventory, putItem, takeItem, type InventoryState
 import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles";
 import type { NavPoint } from "@jgengine/core/nav/navGrid";
 import type { DoseSupply } from "@jgengine/core/stats/doseTable";
+import type { VitalDose } from "@jgengine/core/stats/vitals";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { leveling } from "@jgengine/core/progression/leveling";
@@ -36,6 +37,8 @@ const RESPAWN_SECONDS = 240;
 const WHISTLE_RANGE = 30;
 /** How far E and a swing reach a creature, past its body. */
 const USE_REACH = 3;
+/** A bola wraps nothing bigger than this body radius, metres (ARK: big creatures shrug it off; approx). */
+const BOLA_MAX_RADIUS = 1.6;
 /** Sea and shallows creatures will not walk into. */
 const SHORE = 0.4;
 
@@ -408,7 +411,7 @@ export interface CreatureStrike {
  * Swing `tool` at the creature in front of `attackerId`: live ones take damage and torpor, bodies
  * give meat and hide by the tool's bias. Null when nothing is there.
  */
-export function strikeCreature(ctx: GameContext, attackerId: string, yaw: number, tool: { gather: ToolProfile; damage: number; torpor?: number; reach: number }, melee: number): CreatureStrike | null {
+export function strikeCreature(ctx: GameContext, attackerId: string, yaw: number, tool: { gather: ToolProfile; damage: number; hits?: readonly VitalDose[]; reach: number }, melee: number): CreatureStrike | null {
   const world = worldOf(ctx);
   const target = creatureInFront(ctx, attackerId, yaw, tool.reach, (creature) => !(creature.tamed && !creature.dead) && ridingOf(ctx).riderOf(creature.id) === null);
   if (target === null) return null;
@@ -418,7 +421,7 @@ export function strikeCreature(ctx: GameContext, attackerId: string, yaw: number
     if (cut.depleted) target.rot = Math.min(target.rot, 2);
     return { label: `${def.label} body`, granted: cut.granted, killed: false, knockedOut: false, xp: 0 };
   }
-  return landHit(ctx, attackerId, target, tool.damage * melee, (tool.torpor ?? 0) * melee);
+  return landHit(ctx, attackerId, target, tool.damage * melee, (tool.hits ?? []).map((dose) => ({ ...dose, amount: dose.amount * melee })));
 }
 
 /**
@@ -451,14 +454,19 @@ function creatureAlongAim(ctx: GameContext, fromId: string, yaw: number, range: 
   return best;
 }
 
-/** A shot from a ranged weapon: the first wild creature along the aim takes the ammo's damage and torpor. */
-export function shootCreature(ctx: GameContext, attackerId: string, yaw: number, range: number, shot: { damage: number; torpor: number }): CreatureStrike | null {
+/** A shot from a ranged weapon: the first wild creature along the aim takes the ammo's damage and doses. */
+export function shootCreature(ctx: GameContext, attackerId: string, yaw: number, range: number, shot: { damage: number; doses: readonly VitalDose[] }): CreatureStrike | null {
   const target = creatureAlongAim(ctx, attackerId, yaw, range);
-  return target === null ? null : landHit(ctx, attackerId, target, shot.damage, shot.torpor);
+  return target === null ? null : landHit(ctx, attackerId, target, shot.damage, shot.doses);
 }
 
-/** One blow or shot on a live creature: damage, aggro, torpor (knocking it out), and death. */
-function landHit(ctx: GameContext, attackerId: string, target: Creature, damage: number, torpor: number): CreatureStrike {
+/** What a creature's body takes from a hit: no torpor for one immune to it, no hold for one too big for a bola. */
+function dosesFor(def: SpeciesDef, doses: readonly VitalDose[]): VitalDose[] {
+  return doses.filter((dose) => !(dose.vital === "torpor" && def.torporImmune === true) && !(dose.vital === "held" && def.radius > BOLA_MAX_RADIUS));
+}
+
+/** One blow or shot on a live creature: damage, aggro, its doses (torpor knocking it out, a bola's hold), and death. */
+function landHit(ctx: GameContext, attackerId: string, target: Creature, damage: number, doses: readonly VitalDose[]): CreatureStrike {
   const world = worldOf(ctx);
   const def = defOf(target);
   target.lastHitBy = attackerId;
@@ -467,7 +475,7 @@ function landHit(ctx: GameContext, attackerId: string, target: Creature, damage:
   world.lastTarget = { id: target.id, until: ctx.time.now() + 10 };
   const wasDown = world.taming.state(target.id)?.subdued === true;
   if (wasDown) world.taming.hurt(target.id, damage / maxHealth(target));
-  const knockedOut = !wasDown && def.torporImmune !== true && world.taming.subdue(target.id, torpor);
+  const knockedOut = world.taming.hit(target.id, dosesFor(def, doses)) && !wasDown;
   if (knockedOut) knockOut(ctx, target);
   const killed = (ctx.scene.entity.stats.get(target.id, "health")?.current ?? 1) <= 0;
   if (killed) kill(ctx, target);
@@ -664,7 +672,7 @@ export function knockOutNow(ctx: GameContext, id: string): boolean {
   const world = worldOf(ctx);
   const creature = world.creatures.get(id);
   if (creature === undefined || creature.dead || creature.tamed) return false;
-  if (!world.taming.subdue(id, (world.taming.state(id)?.maxTorpor ?? 0) * 2)) return false;
+  if (!world.taming.hit(id, [{ vital: "torpor", amount: (world.taming.state(id)?.maxTorpor ?? 0) * 2 }])) return false;
   knockOut(ctx, creature);
   return true;
 }
@@ -845,7 +853,9 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
       kill(ctx, creature);
       continue;
     }
-    const down = world.taming.state(creature.id)?.subdued === true;
+    const taming = world.taming.state(creature.id);
+    // Out cold, or tangled in a bola: it stays where it is.
+    const down = taming !== null && (taming.subdued || taming.held > 0);
     const ridden = riding.riderOf(creature.id) !== null;
     // Out past the survivor's notice a wild creature only grazes, so it can think a few times a second.
     const self = ctx.scene.entity.get(creature.id);
@@ -1140,10 +1150,12 @@ export function creaturesView(ctx: GameContext) {
   const world = worldOf(ctx);
   let tamed = 0;
   let down = 0;
+  let held = 0;
   for (const creature of world.creatures.values()) {
     if (creature.dead) continue;
     if (creature.tamed) tamed += 1;
     else if (world.taming.state(creature.id)?.subdued === true) down += 1;
+    if ((world.taming.state(creature.id)?.held ?? 0) > 0) held += 1;
   }
   const riding = ridingOf(ctx).mountOf(ctx.player.userId);
   return {
@@ -1153,6 +1165,7 @@ export function creaturesView(ctx: GameContext) {
     count: [...world.creatures.values()].filter((creature) => !creature.dead).length,
     tamed,
     down,
+    held,
   };
 }
 

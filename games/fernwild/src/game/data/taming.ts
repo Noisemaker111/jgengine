@@ -52,6 +52,9 @@ export const HIT_INEFFECTIVENESS = 2;
 /** Share of the affinity a tame takes, lost a second while a downed creature has nothing it will eat. */
 export const STARVE_LOSS = 0.001;
 
+/** The longest anything can hold a creature still, seconds: a second bola tops it up, never past this. */
+const HOLD_MAX = 30;
+
 /** It wakes once torpor wears down to this share of full. */
 export const WAKES_AT = 0.002;
 
@@ -64,6 +67,8 @@ export function tamingBody(def: TamingDef, level: number): VitalDef[] {
     { id: "belly", max: 1e6, start: 0, rate: -1 },
     { id: "affinity", max: affinity, start: 0, flags: [{ id: "tamed", when: "atLeast", on: 1 }] },
     { id: "ineffectiveness", max: 1e6, start: 0 },
+    // Seconds a bola or a trap still holds it still; they wear off one a second.
+    { id: "held", max: HOLD_MAX, start: 0, rate: -1 },
   ];
 }
 

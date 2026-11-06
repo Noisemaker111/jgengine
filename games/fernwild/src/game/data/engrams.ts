@@ -51,6 +51,8 @@ const ITEM_ENGRAMS: readonly EngramDef[] = [
   engram("sparkpowder", 6, 3, { flint: 2, stone: 1 }, 2, { station: "mortar_and_pestle" }),
   engram("narcotic", 6, 6, { narcoberry: 5, spoiled_meat: 1 }, 3, { station: "mortar_and_pestle" }),
   engram("wooden_club", 8, 4, { wood: 4, fiber: 15 }, 5),
+  // ARK's bola (level and cost approx).
+  engram("bola", 9, 6, { fiber: 10, hide: 3, stone: 5 }, 3),
   // ARK: bow and stone arrows at 10, tranquilizer arrows at 21. Costs approx.
   engram("bow", 10, 9, { wood: 15, fiber: 50, hide: 8 }, 5),
   engram("stone_arrow", 10, 3, { thatch: 2, flint: 1, fiber: 2 }, 1, { count: 2 }),
