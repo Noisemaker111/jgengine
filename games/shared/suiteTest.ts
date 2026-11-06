@@ -8,7 +8,7 @@ import { readGameSuiteConfig, renderSuiteText, scoreGameSuite, suiteRegressions 
 import { runGameSuite, type LoadedSuiteProof } from "@jgengine/core/suite/runSuiteProof.draw";
 import { isSuiteProof } from "@jgengine/core/suite/suiteProof";
 
-import { readGameProject, readSuiteReport, SUITE_PROOFS_DIR, SUITE_REPORT_FILE } from "./suiteReport";
+import { readGameProject, readSuiteReport, SUITE_PROOFS_DIR, SUITE_REPORT_FILE, SUITE_RUN_OUT_ENV } from "./suiteReport";
 
 async function loadProofs(gameDir: string): Promise<LoadedSuiteProof[]> {
   const dir = join(gameDir, SUITE_PROOFS_DIR);
@@ -40,8 +40,12 @@ export function suiteTest(gameDir: string, content: SuiteContent | null = null):
     const score = scoreGameSuite(id, config, report);
     console.log(renderSuiteText(score).filter((line) => !line.startsWith("  proven")).join("\n"));
     const regressed = previous === null ? [] : suiteRegressions(scoreGameSuite(id, config, previous), score);
+    const written = `${JSON.stringify(report, null, 2)}\n`;
+    // `jgengine suite` scores this run, regressed or not, from the file it names.
+    const runOut = process.env[SUITE_RUN_OUT_ENV];
+    if (runOut !== undefined && runOut !== "") writeFileSync(runOut, written);
     // A regressed run keeps the committed report, so the next run still sees what was proven.
-    if (process.env["CI"] === undefined && regressed.length === 0) writeFileSync(join(gameDir, SUITE_REPORT_FILE), `${JSON.stringify(report, null, 2)}\n`);
+    if (process.env["CI"] === undefined && regressed.length === 0) writeFileSync(join(gameDir, SUITE_REPORT_FILE), written);
     expect(score.problems).toEqual([]);
     expect(regressed).toEqual([]);
   }, 1_200_000);

@@ -5,6 +5,8 @@ import { parseSuiteReport, readGameSuiteConfig, scoreGameSuite, type GameSuiteSc
 
 /** Where a game's suite test writes its report, relative to the game; `jgengine suite` and `bun run gen` read it. */
 export const SUITE_REPORT_FILE = "proofs/suite-report.json";
+/** Env var naming a file the suite test also writes its run to, regressed or not: how `jgengine suite` reads a fresh run. */
+export const SUITE_RUN_OUT_ENV = "JGENGINE_SUITE_RUN_OUT";
 /** Where a game's suite proofs live, relative to the game. */
 export const SUITE_PROOFS_DIR = "proofs/sim";
 
@@ -27,8 +29,13 @@ export function readGameProject(gameDir: string): { id: string; project: unknown
  * declares no suite. Entries the report never ran score missing.
  */
 export function scoreCommittedSuite(gameDir: string): GameSuiteScore | null {
+  return scoreSuiteReport(gameDir, readSuiteReport(gameDir));
+}
+
+/** Score `report`, a run of this game's suite, against its declarations and the live catalog; `null` with no suite declared. */
+export function scoreSuiteReport(gameDir: string, report: SuiteReport | null): GameSuiteScore | null {
   const { id, project } = readGameProject(gameDir);
   const config = readGameSuiteConfig(project);
   if (config === null) return null;
-  return scoreGameSuite(id, config, readSuiteReport(gameDir));
+  return scoreGameSuite(id, config, report);
 }

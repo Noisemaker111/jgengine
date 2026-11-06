@@ -11,13 +11,23 @@
 //   --markdown                                     the per-area table and the full entry table
 //
 // Exit: 0 when nothing is failing, 1 when an entry fails, a declaration is wrong, or the suite test failed.
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { expandSuiteGenres, renderSuiteAreaTable, renderSuiteMarkdown, renderSuiteText, requiredSuiteEntries, suiteArea } from "@jgengine/core/suite/gameSuite";
+import {
+  expandSuiteGenres,
+  parseSuiteReport,
+  renderSuiteAreaTable,
+  renderSuiteMarkdown,
+  renderSuiteText,
+  requiredSuiteEntries,
+  suiteArea,
+  type GameSuiteScore,
+} from "@jgengine/core/suite/gameSuite";
 import { SUITE_GENRES } from "@jgengine/core/suite/suiteCatalog";
 
-import { scoreCommittedSuite } from "../games/shared/suiteReport";
+import { scoreCommittedSuite, scoreSuiteReport, SUITE_RUN_OUT_ENV } from "../games/shared/suiteReport";
 
 const root = join(import.meta.dir, "..");
 const gamesDir = join(root, "games");
@@ -31,20 +41,37 @@ function suiteGames(): string[] {
     .sort();
 }
 
-/** Run a game's suite test; its own output is shown only when it fails. */
-function runSuiteTest(game: string): boolean {
+/**
+ * Run a game's suite test and score the run it made, regressed or not: the test keeps the committed
+ * report when a proven entry regressed, so that report would still read green. The test's own output is
+ * shown only when it fails; `ok` is false then (a regression or a wrong declaration).
+ */
+function runSuiteTest(game: string): { ok: boolean; score: GameSuiteScore | null } {
   const dir = join(gamesDir, game);
   if (!existsSync(join(dir, SUITE_TEST))) {
     console.log(`${game}: no ${SUITE_TEST} yet, so nothing is proven; scoring the declared suite`);
-    return true;
+    return { ok: true, score: scoreSuiteReport(dir, null) };
   }
   console.log(`${game}: running the suite test (headless proofs and the content check)...`);
-  const run = Bun.spawnSync(["bun", "test", "--preload", "../../scripts/three-preload.ts", SUITE_TEST], { cwd: dir, stdout: "pipe", stderr: "pipe" });
-  if (run.exitCode === 0) return true;
-  process.stdout.write(run.stdout.toString());
-  process.stderr.write(run.stderr.toString());
-  console.error(`${game}: the suite test failed (a proven entry regressed, or a declaration is wrong)`);
-  return false;
+  const scratch = mkdtempSync(join(tmpdir(), "jg-suite-"));
+  const out = join(scratch, "run.json");
+  try {
+    const run = Bun.spawnSync(["bun", "test", "--preload", "../../scripts/three-preload.ts", SUITE_TEST], {
+      cwd: dir,
+      stdout: "pipe",
+      stderr: "pipe",
+      env: { ...process.env, [SUITE_RUN_OUT_ENV]: out },
+    });
+    if (run.exitCode !== 0) {
+      process.stdout.write(run.stdout.toString());
+      process.stderr.write(run.stderr.toString());
+      console.error(`${game}: the suite test failed (a proven entry regressed, or a declaration is wrong)`);
+    }
+    const score = existsSync(out) ? scoreSuiteReport(dir, parseSuiteReport(JSON.parse(readFileSync(out, "utf8")))) : null;
+    return { ok: run.exitCode === 0, score };
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 }
 
 /** The entries a set of genres requires, grouped by area, each with its proof and depth. */
@@ -93,8 +120,13 @@ function main(argv: string[]): number {
       ok = false;
       continue;
     }
-    if (!flags.has("--no-run") && !runSuiteTest(game)) ok = false;
-    const score = scoreCommittedSuite(dir);
+    let score: GameSuiteScore | null;
+    if (flags.has("--no-run")) score = scoreCommittedSuite(dir);
+    else {
+      const run = runSuiteTest(game);
+      if (!run.ok) ok = false;
+      score = run.score ?? scoreCommittedSuite(dir);
+    }
     if (score === null) {
       console.error(`${game}: jgengine.json declares no "suite": add { "suite": { "genres": [...] } } and read the required entries`);
       ok = false;
