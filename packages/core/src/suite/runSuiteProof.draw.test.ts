@@ -1,10 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
+import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, terrain } from "@jgengine/core/world/features";
 import { defineGame } from "@jgengine/shell/defineGame";
 
 import { runGameSuite, runSuiteProof } from "./runSuiteProof.draw";
 import { defineProof } from "./suiteProof";
+
+/** What a game helper kept from the last context it saw; the fixture's `tally` command writes through it. */
+let remembered: GameContext | null = null;
 
 /** A crafting game in miniature: fire (mouse0) earns wood, `craft` turns 3 wood into a hut, `grant` cheats. */
 function fixture() {
@@ -28,6 +32,12 @@ function fixture() {
         });
         ctx.game.commands.define("grant", { cheat: true, apply: (state) => state.game.store.set("huts", Number(state.game.store.get("huts")) + 1) });
         ctx.game.commands.define("debugWood", { apply: (state) => state.game.store.set("wood", 99) });
+        ctx.game.commands.define("tally", {
+          apply: (state) => {
+            const at = remembered ?? state;
+            at.game.store.set("huts", Number(at.game.store.get("huts")) + 1);
+          },
+        });
       },
       onNewPlayer(ctx) {
         ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] });
@@ -91,6 +101,39 @@ describe("runSuiteProof", () => {
     expect(report.failure.message).toContain("setup has ended");
   });
 
+  test("game code that kept the setup's context keeps working in play", async () => {
+    remembered = null;
+    const proof = defineProof(fixture(), {
+      proves: ["building.place-snap"],
+      setup(s) {
+        // A game helper setup calls, which keeps the context it was handed, as a lazy store does.
+        remembered = s.ctx;
+      },
+      async play(p) {
+        await p.act("tally");
+        await p.expect((r) => r.huts === 1, "the game's own command wrote through the context it kept");
+      },
+    });
+    const { report } = await runSuiteProof(proof);
+    expect(report.ok).toBe(true);
+  });
+
+  test("a command setup defines is a cheat in play", async () => {
+    const proof = defineProof(fixture(), {
+      proves: ["building.place-snap"],
+      setup(s) {
+        s.ctx.game.commands.define("build", { apply: (state) => state.game.store.set("huts", 1) });
+      },
+      async play(p) {
+        await p.act("build");
+        await p.expect((r) => r.huts === 1, "a hut");
+      },
+    });
+    const { report } = await runSuiteProof(proof);
+    if (report.ok) throw new Error("expected a failure");
+    expect(report.failure.message).toContain('a command setup defined, "build"');
+  });
+
   test("an outcome setup already produced does not count", async () => {
     const proof = defineProof(fixture(), {
       proves: ["building.place-snap"],
@@ -108,17 +151,19 @@ describe("runSuiteProof", () => {
     expect(report.failure.message).toContain("already true when play began");
   });
 
-  test("play with no player action fails", async () => {
+  test("play that only checks fails: nothing changed during play", async () => {
     const proof = defineProof(fixture(), {
       proves: ["building.place-snap"],
+      setup(s) {
+        s.ctx.game.store.set("wood", 5);
+      },
       async play(p) {
-        await p.wait(100);
-        await p.expect((r) => r.huts === 0, "no hut");
+        await p.expect((r) => r.wood === 5, "wood");
       },
     });
     const { report } = await runSuiteProof(proof);
     if (report.ok) throw new Error("expected a failure");
-    expect(report.failure.message).toContain("no player action");
+    expect(report.failure.message).toContain("already true when play began");
   });
 
   test("runGameSuite records each proof's result and the failing step", async () => {

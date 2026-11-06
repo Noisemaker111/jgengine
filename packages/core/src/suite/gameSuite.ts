@@ -93,6 +93,25 @@ export function readGameSuiteConfig(projectConfig: unknown): GameSuiteConfig | n
   };
 }
 
+const strings = (value: unknown): string[] | null => (Array.isArray(value) && value.every((item) => typeof item === "string") ? value.filter((item): item is string => typeof item === "string") : null);
+
+/** Read a suite report from parsed JSON (a game's `proofs/suite-report.json`); throws on anything else. */
+export function parseSuiteReport(raw: unknown): SuiteReport {
+  if (!isRecord(raw) || typeof raw["game"] !== "string" || !Array.isArray(raw["proofs"]) || !Array.isArray(raw["data"])) throw new Error("not a suite report: { game, proofs, data }");
+  const proofs = raw["proofs"].map((proof): SuiteProofResult => {
+    const proves = isRecord(proof) ? strings(proof["proves"]) : null;
+    if (!isRecord(proof) || typeof proof["file"] !== "string" || proves === null || typeof proof["ok"] !== "boolean") throw new Error("suite report proof rows are { file, proves, ok, failure? }");
+    const failure = proof["failure"];
+    return { file: proof["file"], proves, ok: proof["ok"], ...(typeof failure === "string" ? { failure } : {}) };
+  });
+  const data = raw["data"].map((row): SuiteDataResult => {
+    const problems = isRecord(row) ? strings(row["problems"]) : null;
+    if (!isRecord(row) || typeof row["id"] !== "string" || typeof row["ok"] !== "boolean" || problems === null) throw new Error("suite report data rows are { id, ok, problems }");
+    return { id: row["id"], ok: row["ok"], problems };
+  });
+  return { game: raw["game"], proofs, data };
+}
+
 /** The genres a declaration reaches, its includes followed. */
 export function expandSuiteGenres(genres: readonly string[]): string[] {
   const reached = new Set<string>();
@@ -198,6 +217,18 @@ export function renderSuiteMarkdown(score: GameSuiteScore): string[] {
   for (const [, rows] of areas(score)) {
     for (const row of rows) lines.push(`| \`${row.entry.id}\` | ${STATUS_MARK[row.status]} | ${cell(row.entry.does)} | ${cell(row.detail ?? "")} |`);
   }
+  return lines;
+}
+
+/** The score as one markdown row per area: proven of counted, then what is failing, not simulatable, missing and cut. */
+export function renderSuiteAreaTable(score: GameSuiteScore): string[] {
+  const lines = ["| Area | Proven | Failing | Not simulatable | Missing | Cut |", "| --- | --- | --- | --- | --- | --- |"];
+  const count = (rows: readonly SuiteScoreRow[], status: SuiteStatus) => rows.filter((row) => row.status === status).length;
+  for (const [area, rows] of areas(score)) {
+    const counted = rows.length - count(rows, "cut");
+    lines.push(`| ${area} | ${count(rows, "proven")}/${counted} | ${count(rows, "failing")} | ${count(rows, "not-simulatable")} | ${count(rows, "missing")} | ${count(rows, "cut")} |`);
+  }
+  lines.push(`| **total** | **${score.proven}/${score.required}** | ${score.counts.failing} | ${score.counts["not-simulatable"]} | ${score.counts.missing} | ${score.counts.cut} |`);
   return lines;
 }
 

@@ -42,4 +42,14 @@ describe("openSetupWindow", () => {
     expect(world.nested.value).toBe(1);
     expect(world.bag.count("stone")).toBe(0);
   });
+
+  test("the owner's own code keeps a view it cached; nothing else does", () => {
+    const world = { bag: new Bag() };
+    const window = openSetupWindow(world, "setup is over");
+    const cached = window.view.bag;
+    window.close();
+    window.owner(() => cached.put("stone", 2));
+    expect(world.bag.count("stone")).toBe(2);
+    expect(() => cached.put("stone", 1)).toThrow(SetupClosedError);
+  });
 });

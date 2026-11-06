@@ -19,6 +19,9 @@ export interface ProofSetup<TProbe extends ProbeReadings> {
   teleport(to: TeleportTarget): void;
   /** Scale the game clock (1 normal, up to 120). Play always starts back at 1. */
   timeScale(scale: number): void;
+  /** Hold keys through the game's bindings, for a time or until a check passes. */
+  hold(keys: FlowKeys, how: FlowHold<TProbe>): void;
+  press(keys: FlowKeys): void;
   /** Let game time pass with nothing held. */
   wait(ms: number): void;
   /** Tick until the check passes, failing after `timeoutMs` of game time (default 15 000). */
@@ -55,8 +58,8 @@ export interface SuiteProofSpec<TProbe extends ProbeReadings> {
   state?: string;
   setup?(setup: ProofSetup<TProbe>): void | Promise<void>;
   /**
-   * The proving steps. It must take at least one player action, and at least one of its checks must be
-   * false when play starts and true after, so the outcome is the player's doing, not setup's.
+   * The proving steps. At least one of its checks must be false when play starts and true after, so the
+   * outcome comes from the player's input, the game's commands or its systems ticking, not from setup.
    */
   play(play: ProofPlay<TProbe>): Promise<void>;
 }

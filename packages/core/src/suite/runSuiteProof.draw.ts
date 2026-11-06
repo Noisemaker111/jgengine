@@ -1,6 +1,6 @@
 import type { ProbeReadings } from "@jgengine/core/game/playableGame";
 import { teleportPlayer } from "@jgengine/core/movement/teleport";
-import { FLOW_PRESS_MS, FLOW_WAIT_MS, flowKeyList, type FlowCommandResult, type FlowKeys, type ProbeCheck } from "@jgengine/core/play/flow";
+import { FLOW_PRESS_MS, FLOW_WAIT_MS, flowKeyList, type FlowCommandResult, type FlowHold, type FlowKeys, type ProbeCheck } from "@jgengine/core/play/flow";
 import { createFlowStepper, runFlowReport, type FlowRunReport } from "@jgengine/core/play/flowSteps";
 import { bootCaptureState } from "@jgengine/core/play/headlessFlow.draw";
 import { createHeadlessKeys } from "@jgengine/core/play/headlessKeys.draw";
@@ -35,8 +35,9 @@ const keysLabel = (keys: FlowKeys): string => flowKeyList(keys).join("+");
 /**
  * Play one suite proof headless against the real game: boot, setup (cheats allowed, through a context
  * that closes when setup ends), then play, where only player input and the game's own commands reach the
- * game. The proof fails when play runs a cheat command (by `cheat: true` or a cheat-like name), takes no
- * player action, or only checks things that were already true before play began.
+ * game. The proof fails when play runs a cheat command (by `cheat: true` or a cheat-like name), or when
+ * none of its checks changed during play: the outcome must come from player input, the game's commands
+ * or its systems ticking, never from setup.
  *
  * @capability suite-proof-run run a game suite proof headless and refuse a proof whose outcome came from setup or a cheat
  */
@@ -44,27 +45,37 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
   const game = proof.game;
   let phase: "setup" | "play" = "setup";
   let cheated: string | null = null;
+  /** The commands the game defined by the time setup starts; one setup defines is setup's code, so a cheat in play. */
+  let gameCommands = new Set<string>();
   const session = createPlaySession(game, {
     seed: options.seed ?? "suite",
     onCommand: ({ name }) => {
-      if (phase === "play" && cheated === null && (session.ctx.game.commands.isCheat(name) || CHEAT_COMMAND_NAME.test(name))) cheated = name;
+      if (phase !== "play" || cheated !== null) return;
+      if (session.ctx.game.commands.isCheat(name) || CHEAT_COMMAND_NAME.test(name) || !gameCommands.has(name)) cheated = name;
     },
   });
   const { ctx } = session;
+  const closedMessage = "setup has ended: a proof's play may change the game only through player input and the game's commands";
+  const window = openSetupWindow(ctx, closedMessage);
+  // The game's own code (ticks, commands, the probe) runs as the window's owner: a store or system that
+  // kept the setup's context keeps working, while proof code that kept it is refused.
+  const owner = window.owner;
   const probeHook = game.capture?.probe;
   const readProbe = (): TProbe => {
     if (probeHook === undefined) throw new Error(`${game.game.name} has no capture.probe; a proof checks the game through its probe`);
-    return probeHook(ctx);
+    return owner(() => probeHook(ctx));
   };
-  const stepper = createFlowStepper(async () => (probeHook === undefined ? undefined : probeHook(ctx)));
+  const stepper = createFlowStepper(async () => (probeHook === undefined ? undefined : owner(() => probeHook(ctx))));
   const reports: { label: string; probe: unknown }[] = [];
   const keys = createHeadlessKeys(game, session);
 
   const assertNoCheat = (): void => {
-    if (cheated !== null) throw new Error(`play ran the cheat command "${cheated}": a cheat may set up a proof, never prove it`);
+    if (cheated === null) return;
+    const why = gameCommands.has(cheated) ? "the cheat command" : "a command setup defined,";
+    throw new Error(`play ran ${why} "${cheated}": a cheat may set up a proof, never prove it`);
   };
   const tick = (): void => {
-    keys.tick();
+    owner(() => keys.tick());
     assertNoCheat();
   };
   const waitUntil = (check: ProbeCheck<TProbe>, timeoutMs: number, what: string): TProbe => {
@@ -76,16 +87,34 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
       tick();
     }
   };
+  const holdKeys = (held: FlowKeys, how: FlowHold<TProbe>): void => {
+    owner(() => keys.down(held));
+    try {
+      const minimum = how.ms ?? 0;
+      for (let index = 0, count = minimum > 0 ? keys.ticksFor(minimum) : 0; index < count; index += 1) tick();
+      if (how.until !== undefined) waitUntil(how.until, how.timeoutMs ?? FLOW_WAIT_MS, `hold ${keysLabel(held)} until ${describeCheck(how.until)}`);
+    } finally {
+      owner(() => keys.up(held));
+      tick();
+    }
+  };
+  const pressKeys = (pressed: FlowKeys): void => {
+    owner(() => keys.down(pressed));
+    try {
+      for (let index = 0, count = keys.ticksFor(FLOW_PRESS_MS); index < count; index += 1) tick();
+    } finally {
+      owner(() => keys.up(pressed));
+      tick();
+    }
+  };
   const run = (name: string, input: unknown): FlowCommandResult => {
-    const result = session.command(name, input ?? DEFAULT_COMMAND_INPUT);
+    const result = owner(() => session.command(name, input ?? DEFAULT_COMMAND_INPUT));
     if (result.status === "unknown-command") throw new Error(`command "${name}" is not registered — registered: ${ctx.game.commands.names().sort().join(", ")}`);
     assertNoCheat();
     if (result.status === "applied") return { status: "applied" };
     return { status: "rejected", reason: result.reason, ...(result.message === undefined ? {} : { message: result.message }) };
   };
 
-  const closedMessage = "setup has ended: a proof's play may change the game only through player input and the game's commands";
-  const window = openSetupWindow(ctx, closedMessage);
   const open = (): void => {
     if (window.closed) throw new Error(closedMessage);
   };
@@ -108,6 +137,14 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
       if (!Number.isFinite(scale) || scale < 0 || scale > 120) throw new RangeError("timeScale needs a scale between 0 and 120 (1 = normal)");
       ctx.time.setTimescale(scale);
     },
+    hold(held, how) {
+      open();
+      holdKeys(held, how);
+    },
+    press(pressed) {
+      open();
+      pressKeys(pressed);
+    },
     wait(ms) {
       open();
       for (let index = 0, count = keys.ticksFor(ms); index < count; index += 1) tick();
@@ -123,7 +160,6 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
   };
 
   let before: TProbe | null = null;
-  let actions = 0;
   let checks = 0;
   let flipped = false;
   const passed = (check: ProbeCheck<TProbe>): void => {
@@ -133,47 +169,24 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
   const playApi: ProofPlay<TProbe> = {
     hold: (held, how) =>
       stepper.run(`hold ${keysLabel(held)} ${how.until === undefined ? `${how.ms} ms` : `until ${describeCheck(how.until)}`}`, async () => {
-        actions += 1;
-        keys.down(held);
-        try {
-          const minimum = how.ms ?? 0;
-          for (let index = 0, count = minimum > 0 ? keys.ticksFor(minimum) : 0; index < count; index += 1) tick();
-          if (how.until !== undefined) {
-            waitUntil(how.until, how.timeoutMs ?? FLOW_WAIT_MS, `hold ${keysLabel(held)} until ${describeCheck(how.until)}`);
-            passed(how.until);
-          }
-        } finally {
-          keys.up(held);
-          tick();
-        }
+        holdKeys(held, how);
+        if (how.until !== undefined) passed(how.until);
       }),
-    press: (pressed) =>
-      stepper.run(`press ${keysLabel(pressed)}`, async () => {
-        actions += 1;
-        keys.down(pressed);
-        try {
-          for (let index = 0, count = keys.ticksFor(FLOW_PRESS_MS); index < count; index += 1) tick();
-        } finally {
-          keys.up(pressed);
-          tick();
-        }
-      }),
+    press: (pressed) => stepper.run(`press ${keysLabel(pressed)}`, async () => pressKeys(pressed)),
     heading: (yaw) =>
       stepper.run(`heading ${yaw.toFixed(3)}`, async () => {
         if (!Number.isFinite(yaw)) throw new RangeError("heading needs a finite yaw in radians");
-        ctx.camera.turnTo(yaw);
+        owner(() => ctx.camera.turnTo(yaw));
         tick();
       }),
     act: (name, input) =>
       stepper.run(`act ${name}`, async () => {
-        actions += 1;
         const result = run(name, input);
         if (result.status === "rejected") throw new Error(`"${name}" was refused: ${result.reason}${result.message === undefined ? "" : ` (${result.message})`}`);
         tick();
       }),
     tryAct: (name, input) =>
       stepper.run(`try ${name}`, async () => {
-        actions += 1;
         const result = run(name, input);
         tick();
         return result;
@@ -200,9 +213,10 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
 
   const report = await runFlowReport(stepper, reports, async () => {
     await stepper.run(proof.state === undefined ? "boot" : `boot state ${proof.state}`, async () => {
-      bootCaptureState(session, game.capture, proof.state);
+      owner(() => bootCaptureState(session, game.capture, proof.state));
       tick();
     });
+    gameCommands = new Set(ctx.game.commands.names());
     if (proof.setup !== undefined) {
       const setup = proof.setup;
       await stepper.run("setup", async () => {
@@ -215,7 +229,6 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
     before = readProbe();
     await proof.play(playApi);
     await stepper.run("verdict", async () => {
-      if (actions === 0) throw new Error("play took no player action: hold or press a key, or act through a game command");
       if (checks === 0) throw new Error("play checked nothing: end with an expect or waitFor on the outcome");
       if (!flipped) throw new Error("every check in play was already true when play began: setup produced the outcome, not the player");
     });

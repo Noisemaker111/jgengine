@@ -3,12 +3,20 @@ export class SetupClosedError extends Error {
   override readonly name = "SetupClosedError";
 }
 
-/** A view of an object that works until {@link close}, then refuses every read, write and call. */
+/**
+ * A view of an object that works until {@link close}, then refuses every read, write and call, except
+ * inside {@link SetupWindow.owner}: the object's own code may still run through a view it kept.
+ */
 export interface SetupWindow<T extends object> {
   /** The object as setup sees it; anything reached through it (a sub-object, a method's result) closes with it. */
   readonly view: T;
   close(): void;
   readonly closed: boolean;
+  /**
+   * Run the owner's own code (a game tick, a command, the probe): a view that code cached during setup,
+   * such as a store that registered through the first context it saw, keeps working inside it.
+   */
+  owner<R>(run: () => R): R;
 }
 
 function isReference(value: unknown): value is object {
@@ -24,10 +32,11 @@ function isReference(value: unknown): value is object {
  */
 export function openSetupWindow<T extends object>(target: T, message: string): SetupWindow<T> {
   let closed = false;
+  let owning = 0;
   const proxies = new WeakMap<object, object>();
   const targets = new WeakMap<object, object>();
   const guard = (): void => {
-    if (closed) throw new SetupClosedError(message);
+    if (closed && owning === 0) throw new SetupClosedError(message);
   };
   const unwrap = (value: unknown): unknown => (isReference(value) ? (targets.get(value) ?? value) : value);
   const handler: ProxyHandler<object> = {
@@ -96,6 +105,14 @@ export function openSetupWindow<T extends object>(target: T, message: string): S
     },
     get closed() {
       return closed;
+    },
+    owner(run) {
+      owning += 1;
+      try {
+        return run();
+      } finally {
+        owning -= 1;
+      }
     },
   };
 }
