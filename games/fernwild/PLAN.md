@@ -188,13 +188,17 @@ the species' dose table doses affinity, belly and ineffectiveness; affinity full
 A shield potion, a sim's meal and a gas cloud are the same shape. Each entry below names its parts;
 build it from them, and add what a part lacks to that part, with a test.
 
+Build order, one PR each: feed-starve; oxygen and swimming; cave hazards (an area doses who stands in
+it); traps and bolas (a `held` meter, with tranq arrows and darts moved onto dose lists); passive
+taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming; boss phases; spawns.
+
 | Entry | Built from |
 | --- | --- |
 | taming.wake-loses | torpor drains at its rate, narcotic doses still landing keep it up; the flag clears only when all of it wears off, then affinity is zeroed (done, timed by the proof) |
 | taming.effectiveness | ineffectiveness meter; hits and meals dose it; effectiveness 1/(1+x) (done) |
 | taming.passive-feed | the same diet dose table, offered by the player to an awake creature that raises a `hungry` flag |
 | taming.trap | a `held` meter dosed by a bola or trap, draining; the flag sets movement speed to 0 (Modifiers) |
-| creatures.feed-starve | a tame's food vital drains; it eats from its inventory through the same diet table; empty food drains health (vitals `whenEmpty`) |
+| creatures.feed-starve | a tame's food vital drains; core `eatWhileRoom` feeds it from its inventory through the `TAME_DIET` dose table; empty food starves it to death; a baby is the same meter at a faster pace (done, `tameHunger.ts`) |
 | survival.oxygen-swim | an oxygen vital drained while under water (`extra` rate), `whenEmpty` drains health |
 | cave.hazards | an area doses who stands in it (gas: oxygen down; heat: health down) |
 | survival.temperature | `bodyTemperature` gives drain rates into the vitals tick |

@@ -4,6 +4,7 @@ import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgeng
 import { countItem, createEmptyInventory, putItem, takeItem, type InventoryState } from "@jgengine/core/inventory/inventoryModel";
 import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles";
 import type { NavPoint } from "@jgengine/core/nav/navGrid";
+import type { DoseSupply } from "@jgengine/core/stats/doseTable";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { leveling } from "@jgengine/core/progression/leveling";
@@ -22,7 +23,7 @@ import { IMPRINT_BONUS, IMPRINTED_STATS } from "./data/breeding";
 import { TROPHY_DROPS } from "./data/bosses";
 import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, WILD_LEVELS, wildLevelCap,WILD_STATS, type SpeciesDef, type TameStat, type WildStat } from "./data/species";
 import { bonusLevels, NARCOTICS } from "./data/taming";
-import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type TamingSave, type TamingSupply } from "./knockoutTaming";
+import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type TamingSave } from "./knockoutTaming";
 import { setScreen } from "./screens";
 
 /** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
@@ -703,14 +704,20 @@ export function foodMaxOf(ctx: GameContext, id: string): number {
   return creature === undefined ? 0 : statOf(creature, "food");
 }
 
-/** Take one `item` from a creature's own inventory; false when it has none. */
-export function takeFromCreatureInventory(ctx: GameContext, id: string, item: string): boolean {
+/** A creature's own inventory as something it eats from; null when there is no such creature. */
+export function creatureSupply(ctx: GameContext, id: string): DoseSupply | null {
   const creature = worldOf(ctx).creatures.get(id);
-  if (creature === undefined) return false;
-  const taken = takeItem(creature.inventory, item, 1);
-  if (taken.status !== "ok") return false;
-  creature.inventory = taken.state;
-  return true;
+  return creature === undefined ? null : feeder(creature);
+}
+
+/** Starving: it loses `share` of its max health, and dies when that runs out. */
+export function starveCreature(ctx: GameContext, id: string, share: number): void {
+  const creature = worldOf(ctx).creatures.get(id);
+  const health = ctx.scene.entity.stats.get(id, "health");
+  if (creature === undefined || creature.dead || health === null) return;
+  const current = health.current - health.max * share;
+  ctx.scene.entity.stats.set(id, "health", { current: Math.max(0, current) });
+  if (current <= 0) kill(ctx, creature);
 }
 
 /** Whether a creature is alive. */
@@ -770,7 +777,7 @@ export function toggleMating(ctx: GameContext): void {
   ctx.game.notices.push({ text: `${defOf(creature).label}: mating ${creature.mating ? "on" : "off"}`, tone: "success" });
 }
 
-function feeder(creature: Creature): TamingSupply {
+function feeder(creature: Creature): DoseSupply {
   return {
     count: (itemId) => countItem(creature.inventory, itemId),
     take(itemId) {

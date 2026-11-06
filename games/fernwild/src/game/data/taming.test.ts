@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
 
-import { createKnockoutTaming, type TamingEvent, type TamingSupply } from "../knockoutTaming";
+import type { DoseSupply } from "@jgengine/core/stats/doseTable";
+
+import { createKnockoutTaming, type TamingEvent } from "../knockoutTaming";
 import { SPECIES } from "./species";
 import { bonusLevels } from "./taming";
 
@@ -9,7 +11,7 @@ type Won = Extract<TamingEvent, { type: "won" }>;
 /** Every species' table, as the game builds it. */
 const taming = () => createKnockoutTaming(Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, def.taming])));
 
-function pantry(stock: Record<string, number>): TamingSupply {
+function pantry(stock: Record<string, number>): DoseSupply {
   return {
     count: (itemId) => stock[itemId] ?? 0,
     take(itemId) {

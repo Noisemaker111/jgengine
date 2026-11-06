@@ -4,6 +4,7 @@ import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { viewedBreeding } from "../breeding";
 import { creaturesView, type CreatureCard } from "../creatures";
 import { itemLabel } from "../data/items";
+import { tameFood } from "../tameHunger";
 import { ItemIcon } from "./ItemIcon";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
@@ -32,6 +33,15 @@ export function Meter({ label, value, max, color, testId }: { label: string; val
   );
 }
 
+/** A tame's food: it eats what it can from its inventory and starves when this runs out. */
+function FoodMeter({ id }: { id: string }): ReactNode {
+  const food = useGameStore((ctx) => {
+    const read = tameFood(ctx, id);
+    return read === null ? null : { value: Math.floor(read.value), max: Math.round(read.max) };
+  }, same);
+  return food === null ? null : <Meter label={food.value <= 0 ? "Food · starving" : "Food"} value={food.value} max={food.max} color="#d79a3c" testId="food" />;
+}
+
 /** ARK's look-at readout over a creature: name and level, health, and while it is down its torpor and taming. */
 export function CreatureReadout({ card }: { card: CreatureCard }): ReactNode {
   const taming = card.taming;
@@ -50,6 +60,7 @@ export function CreatureReadout({ card }: { card: CreatureCard }): ReactNode {
       ) : null}
       {card.dead ? null : <Meter label="Health" value={card.health.value} max={card.health.max} color="#d8483f" />}
       {card.tamed && !card.dead ? <Meter label="Stamina" value={card.stamina.value} max={card.stamina.max} color="#e7c84a" testId="stamina" /> : null}
+      {card.tamed && !card.dead ? <FoodMeter id={card.id} /> : null}
       {taming !== null && (taming.unconscious || taming.torpor > 0) ? <Meter label="Torpor" value={taming.torpor} max={taming.maxTorpor} color="#a45fd6" testId="torpor" /> : null}
       {taming !== null && taming.unconscious ? (
         <>
@@ -108,10 +119,9 @@ function BreedingPanel({ mating }: { mating: boolean }): ReactNode {
       {baby !== null ? (
         <>
           <Meter label={`${baby.stage[0]!.toUpperCase()}${baby.stage.slice(1)} Â· grown in ${clock(baby.secondsLeft)}`} value={Math.round(baby.matured * 100)} max={100} color="#6fb7c9" testId="maturation" />
-          <Meter label="Food" value={baby.food} max={baby.foodMax} color="#d79a3c" testId="baby-food" />
           <Meter label="Imprinting" value={Math.round(baby.imprint * 100)} max={100} color="#e58fd0" testId="imprint" />
           <span style={{ opacity: 0.9 }}>{baby.wants === null ? `Next wants care in ${clock(baby.nextCare)}` : `Wants: ${baby.wants}`}</span>
-          <span style={{ opacity: 0.75 }}>It eats meat or berries you put in its inventory.</span>
+          <span style={{ opacity: 0.75 }}>It eats meat or berries you put in its inventory, faster while small.</span>
         </>
       ) : !card.breeds ? (
         <span style={{ opacity: 0.75 }}>This kind does not breed.</span>
@@ -152,12 +162,6 @@ const BUTTON: CSSProperties = { background: "#1f3a40", color: "#e8f1f2", border:
 
 /** ARK's remote inventory: the creature's own items, taming state, saddle and orders. Click an item to take it back. */
 
-/** 9m 05s, or 40s under a minute. */
-function clockText(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  return minutes === 0 ? `${seconds}s` : `${minutes}m ${String(seconds % 60).padStart(2, "0")}s`;
-}
-
 /** Its favourite first (ARK's kibble tier), then the plain foods it also takes; the other kibble tiers go unsaid. */
 function hungryLine(foods: readonly string[]): string {
   const [best, ...rest] = foods;
@@ -180,7 +184,7 @@ export function CreaturePanel(): ReactNode {
           {taming.eating === null
             ? hungryLine(taming.foods)
             : `Eats ${itemLabel(taming.eating)} in ${taming.nextMeal}s.`}
-          {taming.unconscious ? <div data-wakes-in={taming.wakesIn}>Wakes in {clockText(taming.wakesIn)} unless you keep it under.</div> : null}
+          {taming.unconscious ? <div data-wakes-in={taming.wakesIn}>Wakes in {clock(taming.wakesIn)} unless you keep it under.</div> : null}
           <div style={{ opacity: 0.75, marginTop: 2 }}>Keep its torpor up with Narcoberries or Narcotics: put them in, then Feed.</div>
         </div>
       ) : null}

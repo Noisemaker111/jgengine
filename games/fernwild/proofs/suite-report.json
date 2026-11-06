@@ -100,6 +100,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/tame-hunger.proof.ts",
+      "proves": [
+        "creatures.feed-starve"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/tame-keep-under.proof.ts",
       "proves": [
         "taming.keep-under"

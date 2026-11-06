@@ -127,19 +127,3 @@ export const EGG_HEALTH_SECONDS = 600;
 export const MUTATIONS = { rolls: 3, chance: 0.025, amount: 2 } as const;
 /** How big a newborn is next to its parents; it grows to full size as it matures (approximate). */
 export const NEWBORN_SIZE = 0.25;
-/**
- * A baby eats from its own inventory, fast while small: ARK's FoodPerSec = R x (1 - maturation). R here empties a
- * newborn's full food in about 40 minutes (approximate; ARK's R is per species). A newborn starts with a tenth.
- */
-export const BABY_FOOD_DRAIN_SECONDS = 2400;
-export const NEWBORN_FOOD = 0.1;
-/** What a creature's food stat gains from each item it eats (ARK: meat 50, berries 20 to 30; approximate). */
-export const CREATURE_FOOD: Readonly<Record<string, { diet: "herbivore" | "carnivore"; food: number }>> = {
-  raw_prime_meat: { diet: "carnivore", food: 50 },
-  raw_meat: { diet: "carnivore", food: 50 },
-  cooked_meat: { diet: "carnivore", food: 50 },
-  mejoberry: { diet: "herbivore", food: 30 },
-  amarberry: { diet: "herbivore", food: 20 },
-  azulberry: { diet: "herbivore", food: 20 },
-  tintoberry: { diet: "herbivore", food: 20 },
-};

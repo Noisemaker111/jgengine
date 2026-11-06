@@ -51,3 +51,25 @@ export function hasRoomFor(vitals: Pick<Vitals, "value" | "max">, doses: readonl
   const gain = doses.reduce((sum, dose) => (dose.vital === vital && dose.amount > 0 ? sum + dose.amount : sum), 0);
   return vitals.max(vital) - vitals.value(vital) >= gain - 1e-9;
 }
+
+/** What a body can eat or drink from: how many of a source it holds, and taking one. An inventory, a trough, a fridge. */
+export interface DoseSupply {
+  count(source: string): number;
+  take(source: string): boolean;
+}
+
+/**
+ * Eat from `supply` while there is room: each time, the receiver's most preferred source it holds whose
+ * gain to `vital` fits under the max is taken and its doses go into `body`. A tame eating from its own
+ * inventory, a sim at the fridge, a baby fed what it is given. Returns the sources eaten, in order.
+ */
+export function eatWhileRoom(body: Pick<Vitals, "value" | "max" | "dose">, table: DoseTable, receiver: string, supply: DoseSupply, vital: string, limit = 64): string[] {
+  const eaten: string[] = [];
+  while (eaten.length < limit) {
+    const source = table.pick(receiver, (candidate, doses) => supply.count(candidate) > 0 && hasRoomFor(body, doses, vital));
+    if (source === null || !supply.take(source)) break;
+    body.dose(...(table.of(receiver, source) ?? []));
+    eaten.push(source);
+  }
+  return eaten;
+}
