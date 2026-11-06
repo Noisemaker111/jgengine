@@ -624,6 +624,7 @@ export function registerCommands(ctx: GameContext): void {
   // second phase, so a capture can photograph the real `advancePhase` tell. Never shipped.
   if (import.meta.env.DEV) {
     ctx.game.commands.define<{ mode?: string }>("front.capture", {
+      cheat: true,
       apply(state: GameContext, input) {
         if (input.mode === "fight") stageFrontFight(state);
         else stageFrontBoss(state);
@@ -632,6 +633,7 @@ export function registerCommands(ctx: GameContext): void {
     // Dev-only: stand at the copper ring and take the contract, so a flow can prove the session
     // opens in the real game without a two-minute walk from the crash site.
     ctx.game.commands.define<{ mode?: "ambush" | "upload" }>("relay.capture", {
+      cheat: true,
       apply(state: GameContext, input) {
         stageRelay(state, input.mode ?? "ambush");
       },
@@ -639,6 +641,7 @@ export function registerCommands(ctx: GameContext): void {
     // Dev-only: put a rolled gun of one family in the first hotbar slot with its ammo full, so a
     // capture of how guns handle does not first have to find one in a chest.
     ctx.game.commands.define<{ family?: GunFamily }>("kit.capture", {
+      cheat: true,
       apply(state: GameContext, input) {
         const gun = rollGun(seededRng("kit-capture"), 3, { family: input.family ?? "rifle" });
         const userId = state.player.userId;
@@ -654,6 +657,7 @@ export function registerCommands(ctx: GameContext): void {
     // Dev-only: drop the chassis to its last point of health, so the game's own downed tick opens
     // the Emergency Reserve window for a capture instead of standing in enemy fire for it.
     ctx.game.commands.define("reserve.capture", {
+      cheat: true,
       apply(state: GameContext) {
         const health = state.scene.entity.stats.get(state.player.userId, "health");
         if (health === null) return;

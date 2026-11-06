@@ -1,0 +1,48 @@
+{
+  "game": "scrap-signal",
+  "proofs": [
+    {
+      "file": "proofs/sim/aim-fire-hit.proof.ts",
+      "proves": [
+        "shooter.aim-fire-hit"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/downed-reconstruct.proof.ts",
+      "proves": [
+        "failure.lose-and-recover"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/enemy-threat.proof.ts",
+      "proves": [
+        "shooter.enemy-threat"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/first-goal.proof.ts",
+      "proves": [
+        "onboarding.first-goal"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/reload.proof.ts",
+      "proves": [
+        "shooter.reload-ammo"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/skill-spend.proof.ts",
+      "proves": [
+        "loot.build-choices"
+      ],
+      "ok": true
+    }
+  ],
+  "data": []
+}
