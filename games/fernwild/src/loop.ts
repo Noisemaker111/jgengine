@@ -4,7 +4,7 @@ import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { baseSave, demolish, fuelStations, resetBase, rotateBuild, tickBase, useStructure } from "./game/base";
-import { cavesOf, cavesSave, resetCaves, takeArtifact } from "./game/caves";
+import { cavesOf, cavesSave, resetCaves, takeArtifact, tickCaves } from "./game/caves";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, tickBreeding } from "./game/breeding";
 import { resetTameHunger, setTameFood, tameHungerSave, tickTameHunger } from "./game/tameHunger";
@@ -139,6 +139,8 @@ export const systems = [
       cavesOf(ctx);
       ctx.game.commands.define("takeArtifact", { apply: (state) => (takeArtifact(state), state) });
     },
+    tick: { type: "fixed", rate: 4 },
+    update: tickCaves,
     save: cavesSave,
     reset: resetCaves,
   }),

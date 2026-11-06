@@ -24,6 +24,7 @@ import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgeng
 import { FIST, GEAR_SLOTS, itemDef, itemLabel, itemTraits, PICK_UP, SPOILS, type ToolDef } from "./data/items";
 import { placeHeld, stations, strikeStructure } from "./base";
 import { mountCanSprint, shootCreature, strikeCreature } from "./creatures";
+import { caveExposure } from "./caves";
 import { climateAt, inWater, type ClimateHere } from "./climate";
 import { leaveBody } from "./deathBody";
 import { feedAdded, feedConsumed } from "./pickupFeed";
@@ -52,6 +53,8 @@ interface Survivor {
   climate: ClimateHere | null;
   /** Head under water this step: breath drains. */
   underwater: boolean;
+  /** The hostile air the survivor stands in (a cave's gas, heat or cold), by name. */
+  hazards: readonly string[];
   /** What sits in front of the survivor: the struck node in reach, or what E would pick. */
   aim: { strike: string | null; pick: string | null; pickAt: { x: number; z: number } | null; water: boolean };
   dead: boolean;
@@ -94,6 +97,7 @@ const survivorOf = perContext((ctx: GameContext): Survivor => ({
   comfort: bodyComfort(25, COMFORT),
   climate: null,
   underwater: false,
+  hazards: [],
   aim: { strike: null, pick: null, pickAt: null, water: false },
   dead: false,
   web: null,
@@ -583,7 +587,11 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   const load = encumbrance(ctx, survivor);
   const moving = Math.hypot(me.velocity[0], me.velocity[2]) > 0.5;
   const running = moving && ctx.input.isDown("sprint") && mountCanSprint(ctx) === null && canRun(ctx);
-  survivor.climate = climateAt(ctx, me.position);
+  // A hostile cave's air: its heat or cold on top of the weather, its gas on the vitals below.
+  const air = caveExposure(ctx, id);
+  const outside = climateAt(ctx, me.position);
+  survivor.climate = { ...outside, temperature: outside.temperature + air.temperatureC };
+  survivor.hazards = air.hazards;
   survivor.comfort = bodyComfort(survivor.climate.temperature, COMFORT, { fortitude: survivor.points.fortitude * 2, ...insulation(survivor) });
   const underwater = (playerMovementTelemetry(ctx, id)?.diveDepth ?? 0) >= SURVIVOR.headUnder;
   survivor.underwater = underwater;
@@ -591,6 +599,7 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
     ...(running ? [{ vital: "stamina", rate: -SURVIVOR.runStamina }, { vital: "water", rate: -0.03 }] : []),
     ...(underwater ? [{ vital: "oxygen", rate: -SURVIVOR.oxygen / SURVIVOR.breathSeconds }] : []),
     ...(survivor.comfort.damagePerSecond > 0 ? [{ vital: "health", rate: -survivor.comfort.damagePerSecond }] : []),
+    ...air.rates,
   ];
   // An empty stomach or dry throat stops healing, as in ARK, so the 1 HP per 5 s actually lands.
   const wasting = survivor.vitals.has("starving") || survivor.vitals.has("dehydrated");
@@ -772,6 +781,7 @@ export function survivorView(ctx: GameContext) {
     stats: LEVEL_STATS.map((stat) => ({ ...stat, points: survivor.points[stat.id], value: statValue(survivor, stat.id) })),
     flags: survivor.vitals.flags(),
     temperature: Math.round(survivor.comfort.ambientC),
+    hazards: survivor.hazards,
     comfort: survivor.comfort.band,
     weather: survivor.climate?.weather ?? "clear",
     gear: GEAR_SLOTS.map((slot) => ({ id: slot.id, label: slot.label, item: survivor.gear.worn().find((entry) => entry.slotId === slot.id)?.itemId ?? null })),

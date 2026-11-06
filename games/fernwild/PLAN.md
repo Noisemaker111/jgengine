@@ -19,18 +19,18 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | survival | 4/9 | 0 | 0 | 5 | 0 |
 | building | 1/3 | 0 | 0 | 2 | 0 |
 | harvest | 2/3 | 0 | 0 | 1 | 0 |
-| crafting | 1/6 | 0 | 0 | 5 | 0 |
+| crafting | 2/6 | 0 | 0 | 4 | 0 |
 | taming | 8/9 | 0 | 0 | 1 | 0 |
 | creatures | 3/13 | 0 | 0 | 10 | 0 |
 | breeding | 2/4 | 0 | 0 | 2 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 0/3 | 0 | 0 | 3 | 0 |
-| cave | 1/2 | 0 | 0 | 1 | 0 |
-| **total** | **26/67** | 3 | 0 | 38 | 0 |
+| cave | 2/2 | 0 | 0 | 0 | 0 |
+| **total** | **29/67** | 3 | 0 | 35 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 26/67 proven · 3 failing · 38 missing.
+Genres: creature-survival. 29/67 proven · 3 failing · 35 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -64,7 +64,7 @@ Genres: creature-survival. 26/67 proven · 3 failing · 38 missing.
 | `crafting.station-tiers` | missing | Placed stations craft recipes the bare inventory cannot. |  |
 | `crafting.unlock-spend` | proven | Level-ups give points the player spends to learn recipes. | proofs/sim/craft-learn.proof.ts |
 | `crafting.refine-tier` | missing | Raw ore smelts at a fuelled station into a material that opens a stronger tier of tools and building. |  |
-| `crafting.fuel` | missing | A station that burns consumes fuel and stops when it runs out. |  |
+| `crafting.fuel` | proven | A station that burns consumes fuel and stops when it runs out. | proofs/sim/station-fuel.proof.ts |
 | `crafting.preserve` | missing | A preserving container slows spoilage. |  |
 | `crafting.tool-wear` | missing | Tools and weapons wear with use, break, and can be repaired with materials. |  |
 | `taming.knockout-melee` | proven | Knock a creature out by hitting it, feed it, and it becomes yours. | proofs/sim/tame-knockout.proof.ts |
@@ -100,7 +100,7 @@ Genres: creature-survival. 26/67 proven · 3 failing · 38 missing.
 | `boss.phases` | missing | A boss changes how it fights as it is hurt. |  |
 | `boss.unlocks-progression` | missing | Beating a boss unlocks something no other source gives. |  |
 | `cave.artifact-run` | proven | Enter a cave, survive it, and take the artifact from its end. | proofs/sim/cave-artifact.proof.ts |
-| `cave.hazards` | missing | Caves hold their own dangers: stronger creatures, cold, poison or dark. |  |
+| `cave.hazards` | proven | Caves hold their own dangers: stronger creatures, cold, poison or dark. | proofs/sim/cave-hazards.proof.ts |
 
 </details>
 <!-- /suite-score -->
@@ -200,7 +200,7 @@ taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming;
 | taming.trap | a `held` meter in the creature's body, dosed by a bola, draining a second a second; while it holds the creature stays still. Every weapon hit is now a dose list (club and tranq torpor, bola hold) (done) |
 | creatures.feed-starve | a tame's food vital drains; core `eatWhileRoom` feeds it from its inventory through the `TAME_DIET` dose table; empty food starves it to death; a baby is the same meter at a faster pace (done, `tameHunger.ts`) |
 | survival.oxygen-swim | core swim `dive` (crouch down, jump up, telemetry `diveDepth`); oxygen drained by an `extra` rate while the head is under, `whenEmpty` drowns (done) |
-| cave.hazards | an area doses who stands in it (gas: oxygen down; heat: health down) |
+| cave.hazards | core `areaEffectField`, one source per hostile cave carrying vital rates and a temperature shift; the survivor tick adds them (done: swamp gas, lava heat, snow cold) |
 | survival.temperature | `bodyTemperature` gives drain rates into the vitals tick |
 | creatures.work.gather | a tame's attack is a tool profile (`resourceNode` biases) per species, data only |
 | creatures.work.lighter-loads | a carrier x item weight multiplier, the same per-receiver table shape, read by `carryLoad` |

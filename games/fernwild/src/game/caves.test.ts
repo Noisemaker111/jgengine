@@ -7,7 +7,8 @@ import { world } from "../world";
 import { content } from "./content";
 import { itemDef, itemTraits } from "./data/items";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
-import { caveAt, cavesOf, cavesView } from "./caves";
+import { caveAt, caveExposure, cavesOf, cavesView } from "./caves";
+import { survivorView } from "./survivor";
 
 function runner(): HeadlessRunner {
   const definition = defineGameDefinition({
@@ -93,4 +94,30 @@ test("walking up to a cave wakes its dwellers in the chamber, and they keep to t
   expect(inside().length).toBe(3);
   tick(game, 30);
   expect(inside().length).toBe(3);
+});
+
+test("a hostile cave's air reaches whoever stands in its chamber: gas on the vitals, heat and cold on the temperature", () => {
+  const game = runner();
+  tick(game, 0.1);
+  const exposureIn = (id: string) => {
+    const cave = cavesOf(game.ctx).find((entry) => entry.id === id)!;
+    const [x, z] = cave.layout.chamber.center;
+    game.ctx.scene.entity.setPose(game.userId, { position: [x, game.ctx.world.groundHeightAt(x, z), z] });
+    tick(game, 0.5);
+    return caveExposure(game.ctx, game.userId);
+  };
+  const swamp = exposureIn("cave_swamp_cave");
+  expect(swamp.hazards).toEqual(["Swamp gas"]);
+  expect(swamp.rates.map((rate) => rate.vital).sort()).toEqual(["health", "oxygen"]);
+  expect(exposureIn("cave_lava_cave").temperatureC).toBeGreaterThanOrEqual(20);
+  expect(exposureIn("cave_snow_cave").temperatureC).toBeLessThanOrEqual(-20);
+  const calm = exposureIn("cave_central_cave");
+  expect([calm.temperatureC, calm.rates.length, calm.hazards.length]).toEqual([0, 0, 0]);
+  // And the survivor feels it: the lava cave's chamber reads far hotter than the open ground.
+  exposureIn("cave_lava_cave");
+  tick(game, 1);
+  const inLava = survivorView(game.ctx).temperature;
+  game.ctx.scene.entity.setPose(game.userId, { position: [0, game.ctx.world.groundHeightAt(0, 0), 0] });
+  tick(game, 1);
+  expect(inLava).toBeGreaterThan(survivorView(game.ctx).temperature + 15);
 });

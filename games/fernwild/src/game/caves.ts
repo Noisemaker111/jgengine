@@ -1,9 +1,13 @@
+import { createAreaEffectField, type AreaEffectField } from "@jgengine/core/area/areaEffectField";
+import type { VitalLink } from "@jgengine/core/stats/vitals";
+
 import { caveLayout, type CaveLayout } from "../engine-local/cave/caveLayout";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
 import { editorLayers } from "../editorLayers";
+import { CAVE_HAZARDS, type CaveHazard } from "./data/caveHazards";
 import { itemLabel } from "./data/items";
 import { give, grantXp } from "./survivor";
 
@@ -59,17 +63,49 @@ interface CaveState {
   caves: IslandCave[];
   /** Cave id → game time its artifact is back on the pedestal. */
   takenUntil: Map<string, number>;
+  /** Each hostile cave's air as an area its occupants are members of. */
+  air: AreaEffectField<CaveHazard>;
 }
 
 const caveStateOf = perContext((ctx: GameContext): CaveState => {
   const caves = islandCaves(ctx.world.groundHeightAt);
   ctx.world.solids.set(SOLIDS_LAYER, caves.flatMap((cave) => cave.layout.solids));
-  return { caves, takenUntil: new Map() };
+  const air = createAreaEffectField<CaveHazard>();
+  for (const cave of caves) {
+    const hazard = CAVE_HAZARDS[cave.id];
+    if (hazard === undefined) continue;
+    const [x, z] = cave.layout.chamber.center;
+    const reach = Math.max(...cave.layout.path.map(([px, pz]) => Math.hypot(px - x, pz - z))) + cave.layout.chamber.radius + 10;
+    air.setSource({
+      id: cave.id,
+      payload: hazard,
+      shape: { kind: "custom", center: [x, 0, z], radius: reach, contains: (point) => cave.layout.depth(point[0], point[2]) !== null },
+    });
+  }
+  return { caves, takenUntil: new Map(), air };
 });
 
 /** The caves of this world, laid out (and their rock made solid) on first use. */
 export function cavesOf(ctx: GameContext): readonly IslandCave[] {
   return caveStateOf(ctx).caves;
+}
+
+/** Step the caves' air: who is in which, with a warning on walking in. */
+export function tickCaves(ctx: GameContext, dt: number): void {
+  const me = ctx.player.userId;
+  for (const event of caveStateOf(ctx).air.step({ dtMs: dt * 1000, candidates: () => [me], positionOf: (id) => ctx.scene.entity.get(id)?.position })) {
+    if (event.kind === "enter" && event.receiverId === me) ctx.game.notices.push({ text: event.payload.warning, tone: "deny" });
+  }
+}
+
+/** What the caves' air does to `id` right now: degrees added to what it feels, and vital rates a second. */
+export function caveExposure(ctx: GameContext, id: string): { temperatureC: number; rates: VitalLink[]; hazards: string[] } {
+  const memberships = caveStateOf(ctx).air.membershipsOf(id);
+  return {
+    temperatureC: memberships.reduce((sum, membership) => sum + (membership.payload.temperatureC ?? 0), 0),
+    rates: memberships.flatMap((membership) => membership.payload.rates ?? []),
+    hazards: memberships.map((membership) => membership.payload.label),
+  };
 }
 
 /** Whether `cave`'s artifact sits on its pedestal right now. */
@@ -118,7 +154,7 @@ export function cavesView(ctx: GameContext) {
   const here = me === null ? null : caveAt(ctx, me.position[0], me.position[2]);
   return {
     caves: cavesOf(ctx).map((cave) => ({ id: cave.id, label: cave.label, hard: cave.hard, layout: cave.layout, artifact: artifactHere(ctx, cave) ? cave.artifact : null })),
-    inside: here === null ? null : { id: here.cave.id, label: here.cave.label, depth: here.depth },
+    inside: here === null ? null : { id: here.cave.id, label: here.cave.label, depth: here.depth, hazard: CAVE_HAZARDS[here.cave.id]?.label ?? null },
   };
 }
 

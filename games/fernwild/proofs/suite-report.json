@@ -51,6 +51,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/cave-hazards.proof.ts",
+      "proves": [
+        "cave.hazards"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/craft-learn.proof.ts",
       "proves": [
         "crafting.unlock-spend"
