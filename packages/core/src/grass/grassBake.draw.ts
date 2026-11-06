@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { seededRng } from "@jgengine/core/random/rng";
 import { grassBladeDensity, type GrassLook } from "@jgengine/core/grass/grassKind";
 
-import { grassBareAt, grassClumpCentre, grassFieldNoise } from "@jgengine/core/grass/grassField";
+import { grassBareAt, grassClumpCentre, grassFieldNoise, grassTuftReach } from "@jgengine/core/grass/grassField";
 import { hashNoise2, seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/terrainSeed";
 import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 
@@ -148,6 +148,14 @@ function smoothstep(a: number, b: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
+/** The R2 sequence's steps (1/g and 1/g² for the plastic number g): the most even 2D progressive spread. */
+const R2_X = 0.7548776662466927;
+const R2_Z = 0.5698402909980532;
+
+function fract(value: number): number {
+  return value - Math.floor(value);
+}
+
 /** Tufts a cell keeps at `share`, given its full count and its rank offset `u`. */
 function cellCount(full: number, u: number, share: number): number {
   if (full <= 0) return 0;
@@ -195,6 +203,7 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
   const clumpSeed = bake.clumpSeed;
   const point = new THREE.Vector3();
   const flutterStiff = 1 - look.blade.stiffness;
+  const tuftReach = grassTuftReach(look, bake.bladesPerM2);
   let maxReach = 0;
   let n = 0;
   let partial: GrassTufts | undefined;
@@ -202,14 +211,22 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
     const random = seededRng(`${bake.seed}|${cell.cx}|${cell.cz}`);
     const u = random();
     const count = cellCount(cell.full, u, share);
+    // Roots follow the R2 low-discrepancy sequence from a seeded start, jittered by under half a
+    // spacing. Uniform random roots bunch into piles and leave bare holes; R2 spreads them evenly, and
+    // every prefix of it is still even, so thinning by rank for a far camera never opens holes.
+    const startX = random(), startZ = random();
+    const jitter = 0.45 / Math.sqrt(Math.max(1, cell.full));
     for (let j = 0; j < count; j += 1) {
-      let x = cell.x0 + random() * cell.w;
-      let z = cell.z0 + random() * cell.d;
+      let x = cell.x0 + fract(startX + j * R2_X + (random() - 0.5) * jitter) * cell.w;
+      let z = cell.z0 + fract(startZ + j * R2_Z + (random() - 0.5) * jitter) * cell.d;
       const clumpRoll = random(), clumpAngle = random() * Math.PI * 2, clumpReach = Math.sqrt(random()) * look.tuft.clumpSize;
       const speciesRoll = random(), flowerRoll = random(), yaw = random() * Math.PI * 2;
       const heightRoll = random(), widthRoll = random(), bendRoll = random(), gate = random(), settle = random();
       const phase = random() * Math.PI * 2, colorRoll = random();
-      const clumped = clumpRoll < Math.max(look.tuft.clumping * 0.6, look.tuft.cushion * 0.92);
+      // Pulling a tuft into a clump empties the ground it came from, so only a bunchgrass look
+      // (clumping above 0.4) does it; below that, clumping only varies tussock height.
+      const pulled = Math.max(0, Math.min(1, (look.tuft.clumping - 0.4) / 0.6)) * 0.6;
+      const clumped = clumpRoll < Math.max(pulled, look.tuft.cushion * 0.92);
       if (clumped) {
         const [ccx, ccz] = grassClumpCentre(halfW, halfD, look.tuft.clumpSize, clumpSeed, x, z);
         x = Math.max(-halfW, Math.min(halfW, ccx + Math.cos(clumpAngle) * clumpReach));
@@ -271,13 +288,13 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
         partial ??= { count: 0, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: 0 };
         partial.count = n;
         partial.ranks[n - 1] = vary[(n - 1) * 4 + 3]!;
-        partial.extent = maxReach + look.tuft.tuftSpread;
+        partial.extent = maxReach + tuftReach;
         progress(partial);
       }
       if (!immediate) yield "tuft";
     }
   }
-  const tufts = { count: total, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: maxReach + look.tuft.tuftSpread };
+  const tufts = { count: total, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: maxReach + tuftReach };
   if (cells.length <= 1) {
     for (let i = 0; i < total; i += 1) { tufts.ranks[i] = vary[i * 4 + 3]!; if (!immediate) yield "work"; }
     return tufts;

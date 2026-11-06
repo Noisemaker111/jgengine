@@ -218,9 +218,24 @@ if (vGrassKind > 1.5) {
   grassColor *= 1.0 + vGrassStripe * uStripe.y * 0.6;
   // Roots take the ground colour so blades grow out of the terrain instead of floating on it.
   grassColor = mix(mix(uGroundColor, grassColor, 0.45), grassColor, smoothstep(0.0, 0.3, vGrassT));
+  // The lower blade sits in the sward's own shade, the same for every blade, so a dense field
+  // reads deep from above without any one blade standing out as a dark spot.
+  grassColor *= mix(0.7, 1.0, smoothstep(0.05, 0.7, vGrassT));
 }
 grassColor = mix(grassColor, uGroundColor * 1.04, vGrassFade * 0.55);
 diffuseColor.rgb = grassColor;
+`;
+
+// A blade is one double-sided strip whose normal leans toward the sky (normalLift). three.js turns a
+// back face by negating the whole normal, which points that lift into the ground and leaves every
+// blade seen from behind near black, so a field reads as dark and pale blades in alternating spots.
+// A blade side never faces the ground: whichever side is seen keeps its across-blade direction and
+// has its vertical part mirrored up, so both sides of a blade, upright or drooped, catch the sky.
+const NORMAL_BEGIN = /* glsl */ `
+#include <normal_fragment_begin>
+vec3 jgUp = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+normal = normalize(normal - 2.0 * min(dot(normal, jgUp), 0.0) * jgUp);
+nonPerturbedNormal = normal;
 `;
 
 const LIGHT_END = /* glsl */ `
@@ -281,6 +296,7 @@ export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRe
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", FRAGMENT_HEAD)
       .replace("#include <color_fragment>", FRAGMENT_COLOR)
+      .replace("#include <normal_fragment_begin>", NORMAL_BEGIN)
       .replace("#include <lights_fragment_end>", LIGHT_END);
   };
   material.customProgramCacheKey = () => "jgengine-grass";

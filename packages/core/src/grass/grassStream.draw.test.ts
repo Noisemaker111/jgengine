@@ -5,6 +5,7 @@ import { GRASS_DEFAULTS, GRASS_PRESETS, readGrassLook, type GrassLook } from "@j
 import { observeFrameWork } from "@jgengine/core/devtools/frameBreakdown";
 
 import { bakeGrassNode, grassTuftsBelow, resolveGrassBake, type GrassBakeOptions } from "./grassBake.draw";
+import { createGrassTuftTemplate } from "./grassField";
 import { createGrassMaterial } from "./grassMaterial.draw";
 import { GrassStream } from "./grassStream.draw";
 
@@ -438,5 +439,41 @@ test("every species bakes a finite, bounded node", () => {
     expect(Number.isFinite(tufts.extent)).toBe(true);
     expect(tufts.extent).toBeLessThanOrEqual(bake.maxHeight * 2 + 1);
     createGrassMaterial(look).material.dispose();
+  }
+});
+
+/** Furthest any point of the rect sits from its nearest tuft root, metres, sampled on a fine grid. */
+function largestGap(offsets: Float32Array, count: number, rect: [number, number, number, number], step: number): number {
+  let worst = 0;
+  for (let z = rect[1]; z <= rect[3]; z += step) {
+    for (let x = rect[0]; x <= rect[2]; x += step) {
+      let best = Infinity;
+      for (let i = 0; i < count; i += 1) best = Math.min(best, Math.hypot(offsets[i * 3]! - x, offsets[i * 3 + 2]! - z));
+      worst = Math.max(worst, best);
+    }
+  }
+  return worst;
+}
+
+test("tuft roots cover a cell evenly, at full detail and when thinned for distance", () => {
+  // Uniform random roots leave holes about twice the tuft spacing wide, which read as bare spots
+  // between separate fountains of blades. The even spread keeps every gap near one spacing.
+  const look = readGrassLook({ species: "wildflower-meadow" });
+  const bake = resolveGrassBake({ look, area: 8, seed: "even", edgeFeather: 0 });
+  const spacing = 1 / Math.sqrt(bake.tuftsPerM2);
+  const inner: [number, number, number, number] = [-3, -3, 3, 3];
+  const full = bakeGrassNode(bake, 0, 0, 0, 1);
+  expect(largestGap(full.offsets, full.count, inner, spacing / 3) / spacing).toBeLessThan(1.25);
+  const thinned = bakeGrassNode(bake, 0, 0, 0, 0.25);
+  expect(largestGap(thinned.offsets, thinned.count, inner, spacing / 1.5) / (spacing * 2)).toBeLessThan(1.25);
+});
+
+test("a tuft's blades reach far enough to meet the next tuft", () => {
+  for (const preset of GRASS_PRESETS) {
+    const look = readGrassLook({ species: preset.id });
+    const bake = resolveGrassBake({ look, area: 8, seed: preset.id });
+    const spacing = 1 / Math.sqrt(bake.tuftsPerM2);
+    const template = createGrassTuftTemplate(bake);
+    expect(template.radius).toBeGreaterThanOrEqual(spacing * 0.5);
   }
 });
