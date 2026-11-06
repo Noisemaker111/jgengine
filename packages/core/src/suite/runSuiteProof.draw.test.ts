@@ -11,9 +11,10 @@ import { defineProof } from "./suiteProof";
 let remembered: GameContext | null = null;
 
 /** A crafting game in miniature: fire (mouse0) earns wood, `craft` turns 3 wood into a hut, `grant` cheats. */
-function fixture() {
+function fixture(autosaveMs?: number) {
   return defineGame({
     name: "Suite Fixture",
+    ...(autosaveMs === undefined ? {} : { persist: { storage: "memory" as const, autosaveMs } }),
     world: environment({ terrain: terrain() }),
     input: { moveForward: ["KeyW"], fire: ["mouse0"] },
     content: { entityById: (id) => (id === "hero" ? { role: "player", movement: { walkSpeed: 4 } } : null) },
@@ -51,6 +52,35 @@ function fixture() {
 }
 
 describe("runSuiteProof", () => {
+  // In CI a game's wall-clock autosave fired after its proof ended, read the closed setup view and threw
+  // an unhandled SetupClosedError into the next test file. The proof now disposes the session's save.
+  test("a game's autosave never fires after its proof ends", async () => {
+    const stray: unknown[] = [];
+    const onError = (error: unknown) => stray.push(error);
+    process.on("uncaughtException", onError);
+    try {
+      const proof = defineProof(fixture(5), {
+        proves: ["building.place-snap"],
+        setup(s) {
+          s.ctx.game.store.set("wood", 2);
+          // Game state that holds something setup reached, as a per-context model does.
+          s.ctx.game.store.set("kept", { from: s.ctx.player });
+        },
+        async play(p) {
+          await p.press("mouse0");
+          await p.act("craft");
+          await p.expect((r) => r.huts === 1, "a hut built from gathered wood");
+        },
+      });
+      const { report } = await runSuiteProof(proof);
+      expect(report.ok).toBe(true);
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    } finally {
+      process.off("uncaughtException", onError);
+    }
+    expect(stray).toEqual([]);
+  });
+
   test("setup may seed state directly; play proves through a key and the game's own command", async () => {
     const proof = defineProof(fixture(), {
       proves: ["building.place-snap"],

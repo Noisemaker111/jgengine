@@ -214,28 +214,35 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
     probe: async () => readProbe(),
   };
 
-  const report = await runFlowReport(stepper, reports, async () => {
-    await stepper.run(proof.state === undefined ? "boot" : `boot state ${proof.state}`, async () => {
-      owner(() => bootCaptureState(session, game.capture, proof.state));
-      tick();
-    });
-    gameCommands = new Set(ctx.game.commands.names());
-    if (proof.setup !== undefined) {
-      const setup = proof.setup;
-      await stepper.run("setup", async () => {
-        await setup(setupApi);
+  // The proof owns this session: when it ends, the game's wall-clock autosave must not fire later
+  // against the closed window (it did, as an unhandled SetupClosedError in the next test file).
+  let report: Awaited<ReturnType<typeof runFlowReport>>;
+  try {
+    report = await runFlowReport(stepper, reports, async () => {
+      await stepper.run(proof.state === undefined ? "boot" : `boot state ${proof.state}`, async () => {
+        owner(() => bootCaptureState(session, game.capture, proof.state));
+        tick();
       });
-    }
-    window.close();
-    ctx.time.setTimescale(1);
-    phase = "play";
-    before = readProbe();
-    await proof.play(playApi);
-    await stepper.run("verdict", async () => {
-      if (checks === 0) throw new Error("play checked nothing: end with an expect or waitFor on the outcome");
-      if (!flipped) throw new Error("every check in play was already true when play began: setup produced the outcome, not the player");
+      gameCommands = new Set(ctx.game.commands.names());
+      if (proof.setup !== undefined) {
+        const setup = proof.setup;
+        await stepper.run("setup", async () => {
+          await setup(setupApi);
+        });
+      }
+      window.close();
+      ctx.time.setTimescale(1);
+      phase = "play";
+      before = readProbe();
+      await proof.play(playApi);
+      await stepper.run("verdict", async () => {
+        if (checks === 0) throw new Error("play checked nothing: end with an expect or waitFor on the outcome");
+        if (!flipped) throw new Error("every check in play was already true when play began: setup produced the outcome, not the player");
+      });
     });
-  });
+  } finally {
+    ctx.game.save?.dispose();
+  }
   return { proves: proof.proves, report };
 }
 
