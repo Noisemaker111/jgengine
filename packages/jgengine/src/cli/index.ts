@@ -70,6 +70,9 @@ usage: jgengine <command> [...args]
                        --workspace [--json]: root + declared owners' installed SDK identities only
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
   editor-mcp [...]      scene editor agent bridge (document RPC / localhost server)
+  suite <game|all>      game suite score (monorepo): runs the game's headless proofs in bun test, then
+                        proven / required by area, failing, cut with reasons, missing. [--no-run] [--markdown]
+                        --genres <a,b>: the entries those genres require, to plan a proof for each
   plants <verb> [id...] plant species library (monorepo): import field data, fit, write records, report
   versions              CLI + installed @jgengine/* versions
   help                  this map
@@ -192,6 +195,16 @@ function runPlants(argv: string[]): number {
   return spawnSync("bun", [monorepoCli, ...argv], { stdio: "inherit" }).status ?? 1;
 }
 
+function runSuite(argv: string[]): number {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const monorepoCli = join(here, "..", "..", "..", "..", "scripts", "game-suite.ts");
+  if (!existsSync(monorepoCli)) {
+    console.error("error: the suite command runs the in-repo games' proofs and runs only inside the jgengine monorepo.");
+    return 1;
+  }
+  return spawnSync("bun", [monorepoCli, ...argv], { stdio: "inherit" }).status ?? 1;
+}
+
 function runEditorMcp(argv: string[]): number {
   const here = dirname(fileURLToPath(import.meta.url));
   const monorepoCli = join(here, "..", "..", "..", "editor", "src", "mcp", "cli.ts");
@@ -251,6 +264,9 @@ switch (command) {
     break;
   case "plants":
     process.exit(runPlants(rest));
+    break;
+  case "suite":
+    process.exit(runSuite(rest));
     break;
   case "shoot":
     process.exit(runHarness("shoot", rest));

@@ -23,5 +23,10 @@
         "ember-command campaign"
       ]
     }
+  },
+  "suite": {
+    "genres": [
+      "strategy"
+    ]
   }
 }

@@ -69,6 +69,12 @@ deep. A game with a `PLAN.md` (the `create-game-jg` skill) states its gap
 to target there, in its `## Gaps` section, instead of in the README. Each game's typecheck covers
 `proofs/`, so a mistyped key or probe field in a flow is a compile error.
 
+Every game declares its genres in `jgengine.json` (`"suite": { "genres": [...] }`) and proves what
+they require with headless proofs in `proofs/sim/` and a content check in `proofs/content.ts`, run by
+`src/suite.test.ts` in the game's own `bun test`. The score heads the README and `PLAN.md`;
+`jgengine suite <game>` prints it by area ([workflow](AGENTS.md#game-suite)). Flows and screenshots are for
+look and feel; they never count toward it.
+
 A flow is TypeScript against the game's own probe; it names the capture state it boots, and runs
 headless (game time, no browser) unless it sets `browser: true` or the run passes `--browser`:
 

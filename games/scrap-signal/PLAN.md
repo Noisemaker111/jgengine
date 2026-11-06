@@ -103,7 +103,7 @@ The kinds are counted from the game's data: `quests` is every quest in the catal
 
 ## Engine coverage
 
-| Feature | Engine | Verdict |
+| Feature | Engine | Engine hint |
 | --- | --- | --- |
 | quest givers | `@jgengine/core/mission/quest` (`QuestDef.giver`, `turnIn`, `requires`, `rewards.quests`) | covered |
 | XP and levels | `@jgengine/core/progression/leveling` | covered |

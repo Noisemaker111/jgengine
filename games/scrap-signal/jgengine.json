@@ -27,5 +27,11 @@
         "scrap.save"
       ]
     }
+  },
+  "suite": {
+    "genres": [
+      "shooter",
+      "looter"
+    ]
   }
 }

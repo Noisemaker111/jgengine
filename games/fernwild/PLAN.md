@@ -103,7 +103,7 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 
 <!-- written from the Features list by hand; check each row with `jgengine has "<feature>"` -->
 
-| Feature | Engine | Verdict |
+| Feature | Engine | Engine hint |
 | --- | --- | --- |
 | island terrain — The Island surveyed 1:1: coast, peaks, ridges, rivers, biomes, obelisks, caves | `terrain-coast` · `import { withCoast } from "@jgengine/core/terrain/terrain"` | covered |
 | creature spawns — ARK's spawn zones, species and weights per biome | `spawn-instance-restore` · `import { restoreSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`<br>`spawn-instance-snapshot` · `import { snapshotSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"` | covered |

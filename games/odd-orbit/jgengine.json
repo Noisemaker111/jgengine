@@ -18,5 +18,10 @@
         "window:__jgengineAudio"
       ]
     }
+  },
+  "suite": {
+    "genres": [
+      "life-sim"
+    ]
   }
 }

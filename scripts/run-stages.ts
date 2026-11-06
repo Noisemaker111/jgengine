@@ -85,6 +85,7 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "games-save-states", script: "games/scripts/check-save-states.ts", jobs: ["games"], games: true, reads: ["games/"] },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["packages/"], skipsTests: true },
   { name: "games-sync", script: "packages/jgengine/src/cli/index.ts", args: ["sync", "--check"], jobs: ["games"], games: true, reads: ["games/", "packages/jgengine/"] },
+  { name: "games-suite-score", script: "scripts/gen-game-suite.ts", args: ["--check"], jobs: ["games"], games: true, generated: true, reads: ["games/", "packages/core/src/suite/"] },
   { name: "games-glb-textures", script: "games/scripts/check-glb-textures.ts", jobs: [], games: true, reads: ["games/"] },
   { name: "version", script: "scripts/set-version.ts", args: ["--check"], jobs: [], reads: ["packages/"] },
   // Reads the site build, so CI's web-build job runs it after `bun --cwd=apps/web run build`.
@@ -222,6 +223,7 @@ export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"], outputs: [/^games\/capabilities\.json$/], reads: ["packages/"], skipsTests: true },
   { name: "part-stats", script: "scripts/part-stats.ts", after: ["barrels"], outputs: [/^scripts\/part-stats\.json$/], reads: ["packages/core/src/"], skipsTests: true },
   { name: "recipes", script: "scripts/gen-cookbook.ts", after: ["barrels"], outputs: [/^\.claude\/skills\/jgengine\/recipes\/cookbook\.md$/], reads: ["packages/core/src/recipes/"] },
+  { name: "game-suite", script: "scripts/gen-game-suite.ts", reads: ["games/", "packages/core/src/suite/"] },
 ];
 
 export function genPlan(targets: readonly GenTarget[]): Stage[] {

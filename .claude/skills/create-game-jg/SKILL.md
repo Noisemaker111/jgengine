@@ -49,6 +49,12 @@ its import), `partial` (some of it, or only a folder named for it) or `gap` (not
 `partial` by reading the named folder before trusting or dismissing it. Never search one feature at a
 time.
 
+Then read the game suite those genres require: `bun run jgengine suite --genres <genre,...>` lists
+every required player verb with how it is proven, and for each core feature how a player finds it,
+what improves, two features it feeds, why repeat it at hour 5 and how it fails. Design those answers
+in, and plan one headless proof per entry; an entry the game will not have is a cut with a reason the
+user agrees to.
+
 ## 3. Write PLAN.md
 
 One file, these sections, in this order:
@@ -93,6 +99,11 @@ commit. When the build teaches
 something that changes the direction, brief, features or order, edit `PLAN.md` in the same commit.
 The branch lands once, with `bun run lane:close`, when the milestones asked for are done; a
 milestone is never a PR of its own.
+
+Declare the genres in `jgengine.json` (`"suite": { "genres": [...] }`) at create, add
+`src/suite.test.ts` (`suiteTest`), and let each milestone add the `proofs/sim/*.proof.ts` for the
+suite entries it delivers ([games/AGENTS.md](../../../games/AGENTS.md#game-suite)); the README's suite score is the
+milestone's honest count.
 
 The proof is `proofs/flows/from-zero.flow.ts`: a new game with no save or prepared state, played
 through real input (no teleports, clock scaling or dev commands). Never seed a save or a mid-game
