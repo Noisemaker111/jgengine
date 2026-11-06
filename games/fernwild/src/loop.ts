@@ -109,7 +109,7 @@ export const systems = [
       commands.define("unsaddle", { apply: (state) => (unsaddle(state), state) });
       commands.define<{ itemId: string }>("feedNarcotic", { apply: (state, input) => (feedNarcotic(state, input.itemId), state) });
       // ARK's admin console, for proofs: give items, levels, a taming speed, a creature in front of you.
-      commands.define<Cheat>("cheat", { apply: (state, input) => (cheat(state, input), state) });
+      commands.define<Cheat>("cheat", { cheat: true, apply: (state, input) => (cheat(state, input), state) });
     },
     update(ctx, dt) {
       for (const event of tickCreatures(ctx, dt)) if (event.type === "tamed") grantXp(ctx, SURVIVOR.tameXp);

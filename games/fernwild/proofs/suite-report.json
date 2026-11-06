@@ -1,0 +1,164 @@
+{
+  "game": "fernwild",
+  "proofs": [
+    {
+      "file": "proofs/sim/body-recover.proof.ts",
+      "proves": [
+        "failure.lose-and-recover"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/breed-incubate.proof.ts",
+      "proves": [
+        "breeding.incubate"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/breed-mate.proof.ts",
+      "proves": [
+        "breeding.pair-mate"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/build-snap.proof.ts",
+      "proves": [
+        "building.place-snap"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/carcass-harvest.proof.ts",
+      "proves": [
+        "harvest.carcass"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/cave-artifact.proof.ts",
+      "proves": [
+        "cave.artifact-run"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/craft-learn.proof.ts",
+      "proves": [
+        "crafting.unlock-spend"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/death-recover.proof.ts",
+      "proves": [
+        "failure.lose-and-recover"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/eat-drink.proof.ts",
+      "proves": [
+        "survival.eat-drink"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/first-goal.proof.ts",
+      "proves": [
+        "onboarding.first-goal"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/food-spoils.proof.ts",
+      "proves": [
+        "survival.food-spoils"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/ride-ground.proof.ts",
+      "proves": [
+        "creatures.ride.ground"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tame-keep-under.proof.ts",
+      "proves": [
+        "taming.keep-under"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tame-knockout.proof.ts",
+      "proves": [
+        "taming.knockout-melee"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tame-level-up.proof.ts",
+      "proves": [
+        "creatures.level-up"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/tool-bias.proof.ts",
+      "proves": [
+        "harvest.tool-bias"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/vitals-drain.proof.ts",
+      "proves": [
+        "survival.vitals-drain"
+      ],
+      "ok": true
+    }
+  ],
+  "data": [
+    {
+      "id": "content.item-source",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.item-use",
+      "ok": false,
+      "problems": [
+        "no use for metal, obsidian, crystal, oil, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag, broodmother_trophy_gamma and 4 more"
+      ]
+    },
+    {
+      "id": "content.recipes-reachable",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.placeables-place",
+      "ok": false,
+      "problems": [
+        "says it places but the placement catalog has none: storage_box, hide_sleeping_bag"
+      ]
+    },
+    {
+      "id": "content.weapons-have-ammo",
+      "ok": false,
+      "problems": [
+        "slingshot fires but takes no ammo"
+      ]
+    },
+    {
+      "id": "progression.runway",
+      "ok": false,
+      "problems": [
+        "the last unlock is at level 60 of a cap of 105"
+      ]
+    }
+  ]
+}
