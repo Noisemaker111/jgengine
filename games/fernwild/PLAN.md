@@ -16,7 +16,7 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | menu | 0/1 | 0 | 0 | 1 | 0 |
 | progression | 0/1 | 1 | 0 | 0 | 0 |
 | content | 3/5 | 2 | 0 | 0 | 0 |
-| survival | 3/9 | 0 | 0 | 6 | 0 |
+| survival | 4/9 | 0 | 0 | 5 | 0 |
 | building | 1/3 | 0 | 0 | 2 | 0 |
 | harvest | 2/3 | 0 | 0 | 1 | 0 |
 | crafting | 1/6 | 0 | 0 | 5 | 0 |
@@ -26,11 +26,11 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 0/3 | 0 | 0 | 3 | 0 |
 | cave | 1/2 | 0 | 0 | 1 | 0 |
-| **total** | **25/67** | 3 | 0 | 39 | 0 |
+| **total** | **26/67** | 3 | 0 | 38 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 25/67 proven · 3 failing · 39 missing.
+Genres: creature-survival. 26/67 proven · 3 failing · 38 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -49,7 +49,7 @@ Genres: creature-survival. 25/67 proven · 3 failing · 39 missing.
 | `survival.vitals-drain` | proven | Hunger and thirst fall over time and hurt the player at zero. | proofs/sim/vitals-drain.proof.ts |
 | `survival.eat-drink` | proven | Eating and drinking restore the meters. | proofs/sim/eat-drink.proof.ts |
 | `survival.temperature` | missing | Climate pushes body temperature; clothing, fire or shelter counter it. |  |
-| `survival.oxygen-swim` | missing | Swimming under water drains breath; surfacing refills it. |  |
+| `survival.oxygen-swim` | proven | Swimming under water drains breath; surfacing refills it. | proofs/sim/dive-breath.proof.ts |
 | `survival.food-spoils` | proven | Carried food spoils over time into something else. | proofs/sim/food-spoils.proof.ts |
 | `survival.respawn-point` | missing | A placed bed or bag becomes where the player wakes after death. |  |
 | `survival.storage-place` | missing | A storage container can be placed and holds items. |  |
@@ -199,7 +199,7 @@ taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming;
 | taming.passive-feed | the same diet dose table, offered by the player to an awake creature that raises a `hungry` flag |
 | taming.trap | a `held` meter dosed by a bola or trap, draining; the flag sets movement speed to 0 (Modifiers) |
 | creatures.feed-starve | a tame's food vital drains; core `eatWhileRoom` feeds it from its inventory through the `TAME_DIET` dose table; empty food starves it to death; a baby is the same meter at a faster pace (done, `tameHunger.ts`) |
-| survival.oxygen-swim | an oxygen vital drained while under water (`extra` rate), `whenEmpty` drains health |
+| survival.oxygen-swim | core swim `dive` (crouch down, jump up, telemetry `diveDepth`); oxygen drained by an `extra` rate while the head is under, `whenEmpty` drowns (done) |
 | cave.hazards | an area doses who stands in it (gas: oxygen down; heat: health down) |
 | survival.temperature | `bodyTemperature` gives drain rates into the vitals tick |
 | creatures.work.gather | a tame's attack is a tool profile (`resourceNode` biases) per species, data only |

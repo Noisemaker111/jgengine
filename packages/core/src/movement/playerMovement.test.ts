@@ -189,6 +189,32 @@ describe("swim (heightfield)", () => {
     expect(playerMovementTelemetry(dry, "b")?.swimming).toBe(false);
   });
 
+  test("with dive, crouch swims down to the bed, jump swims up, and letting go drifts back to the surface", () => {
+    const ctx = context(["a"], { entityById: () => ({ movement: { poses: ["standing", "crouch"] } }) });
+    const t = tuning({ movement: { swim: { dive: { down: 2, up: 3, drift: 0.5 } } }, ground: SUBMERGED_GROUND });
+    driveWith(ctx, "a", [], 10, t);
+    expect(playerMovementTelemetry(ctx, "a")?.diveDepth).toBe(0);
+    driveWith(ctx, "a", ["crouch"], 60, t);
+    expect(ctx.scene.entity.get("a")!.position[1]).toBeCloseTo(-2, 1);
+    expect(playerMovementTelemetry(ctx, "a")?.diveDepth).toBeCloseTo(2, 1);
+    // The bed is 5 m down: diving on stops there.
+    driveWith(ctx, "a", ["crouch"], 240, t);
+    expect(ctx.scene.entity.get("a")!.position[1]).toBeCloseTo(-5, 6);
+    const saved = snapshotPlayerMovement(ctx, "a")!;
+    driveWith(ctx, "a", ["jump"], 60, t);
+    expect(ctx.scene.entity.get("a")!.position[1]).toBeCloseTo(-2, 1);
+    driveWith(ctx, "a", [], 60, t);
+    expect(ctx.scene.entity.get("a")!.position[1]).toBeCloseTo(-1.5, 1);
+    restorePlayerMovement(ctx, "a", saved);
+    expect(snapshotPlayerMovement(ctx, "a")!.diveDepth).toBe(5);
+  });
+
+  test("without dive, crouch in the water stays at the surface", () => {
+    const ctx = context(["a"], { entityById: () => ({ movement: { poses: ["standing", "crouch"] } }) });
+    driveWith(ctx, "a", ["crouch"], 60, tuning({ movement: { swim: true }, ground: SUBMERGED_GROUND }));
+    expect(ctx.scene.entity.get("a")!.position[1]).toBeCloseTo(0, 6);
+  });
+
   test("swim unset leaves the player on the (submerged) floor", () => {
     const ctx = context(["a"]);
     // The 5m drop is taller than a step, so the player now genuinely falls before settling on the floor.
@@ -1137,11 +1163,11 @@ describe("indexed movement telemetry", () => {
     backend.addBody({ shape: { kind: "box", halfExtents: [50, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
     const capsule = context(["a"], { entityById: () => ({ movement: { poses: ["standing", "crouch"] } }) });
     driveWith(capsule, "a", ["crouch"], 1, resolvePlayerMovementTuning({ physics: { backend } }));
-    expect(playerMovementTelemetry(capsule, "a")).toEqual({ grounded: true, verticalVelocity: 0, crouching: true, swimming: false });
+    expect(playerMovementTelemetry(capsule, "a")).toEqual({ grounded: true, verticalVelocity: 0, crouching: true, swimming: false, diveDepth: 0 });
     const voxel = context(["a"]);
     driveWith(voxel, "a", [], 1, resolvePlayerMovementTuning({ collision: { voxel: true } }));
     const body = snapshotPlayerMovement(voxel, "a")!.voxelBody!;
-    expect(playerMovementTelemetry(voxel, "a")).toEqual({ grounded: body.grounded, verticalVelocity: body.velocityY, crouching: false, swimming: false });
+    expect(playerMovementTelemetry(voxel, "a")).toEqual({ grounded: body.grounded, verticalVelocity: body.velocityY, crouching: false, swimming: false, diveDepth: 0 });
   });
 });
 

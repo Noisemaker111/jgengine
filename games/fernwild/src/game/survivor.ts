@@ -7,6 +7,7 @@ import type { InventoryState } from "@jgengine/core/inventory/inventoryModel";
 import { createSpoilage, type Spoilage } from "@jgengine/core/inventory/spoilage";
 import { leveling } from "@jgengine/core/progression/leveling";
 import { createStatPoints, type StatPointLine } from "@jgengine/core/progression/statPoints";
+import { playerMovementTelemetry } from "@jgengine/core/movement/playerMovement";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { resolveScatter } from "@jgengine/core/scatter/scatterRegion";
@@ -49,6 +50,8 @@ interface Survivor {
   comfort: BodyComfort;
   /** The air and weather where the survivor stood last tick. */
   climate: ClimateHere | null;
+  /** Head under water this step: breath drains. */
+  underwater: boolean;
   /** What sits in front of the survivor: the struck node in reach, or what E would pick. */
   aim: { strike: string | null; pick: string | null; pickAt: { x: number; z: number } | null; water: boolean };
   dead: boolean;
@@ -90,6 +93,7 @@ const survivorOf = perContext((ctx: GameContext): Survivor => ({
   swingReady: 0,
   comfort: bodyComfort(25, COMFORT),
   climate: null,
+  underwater: false,
   aim: { strike: null, pick: null, pickAt: null, water: false },
   dead: false,
   web: null,
@@ -581,18 +585,22 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   const running = moving && ctx.input.isDown("sprint") && mountCanSprint(ctx) === null && canRun(ctx);
   survivor.climate = climateAt(ctx, me.position);
   survivor.comfort = bodyComfort(survivor.climate.temperature, COMFORT, { fortitude: survivor.points.fortitude * 2, ...insulation(survivor) });
+  const underwater = (playerMovementTelemetry(ctx, id)?.diveDepth ?? 0) >= SURVIVOR.headUnder;
+  survivor.underwater = underwater;
   const extra = [
     ...(running ? [{ vital: "stamina", rate: -SURVIVOR.runStamina }, { vital: "water", rate: -0.03 }] : []),
+    ...(underwater ? [{ vital: "oxygen", rate: -SURVIVOR.oxygen / SURVIVOR.breathSeconds }] : []),
     ...(survivor.comfort.damagePerSecond > 0 ? [{ vital: "health", rate: -survivor.comfort.damagePerSecond }] : []),
   ];
   // An empty stomach or dry throat stops healing, as in ARK, so the 1 HP per 5 s actually lands.
   const wasting = survivor.vitals.has("starving") || survivor.vitals.has("dehydrated");
-  const regen = { health: wasting ? 0 : 1, stamina: moving ? 0.5 : 1 };
+  const regen = { health: wasting ? 0 : 1, stamina: moving ? 0.5 : 1, oxygen: underwater ? 0 : 1 };
   const changes = survivor.vitals.tick(dt, { drain: survivor.comfort.drain, regen, extra });
   for (const change of changes) {
     if (change.id === "unconscious" && change.raised) ctx.game.notices.push({ text: "You passed out", tone: "deny" });
     if (change.id === "starving" && change.raised) ctx.game.notices.push({ text: "You are starving", tone: "deny" });
     if (change.id === "dehydrated" && change.raised) ctx.game.notices.push({ text: "You are dehydrated", tone: "deny" });
+    if (change.id === "drowning" && change.raised) ctx.game.notices.push({ text: "You are drowning: surface!", tone: "deny" });
   }
   ctx.scene.entity.stats.set(id, "health", { current: survivor.vitals.value("health") });
 
@@ -752,6 +760,7 @@ export function survivorView(ctx: GameContext) {
     health: pool === null ? vital("health") : { value: Math.round(pool.current * 10) / 10, max: pool.max },
     stamina: vital("stamina"),
     oxygen: vital("oxygen"),
+    underwater: survivor.underwater,
     food: vital("food"),
     water: vital("water"),
     torpor: vital("torpor"),

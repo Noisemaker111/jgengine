@@ -56,6 +56,19 @@ const CONTROLLER_CONFIG_FIELDS = ["radius", "height", "stepHeight", "maxSlopeDeg
 const DEFAULT_TURN_SPEED = 2.4;
 const DEFAULT_WALK_SPEED = 2;
 const DEFAULT_SWIM_SPEED_MULTIPLIER = 0.65;
+
+/** Metres a second a diver swims down, swims up, and drifts up with no input. */
+export interface SwimDiveConfig {
+  down?: number;
+  up?: number;
+  drift?: number;
+}
+
+function resolveDive(dive: SwimDiveConfig | boolean | undefined): Required<SwimDiveConfig> | null {
+  if (dive === undefined || dive === false) return null;
+  const own = dive === true ? {} : dive;
+  return { down: own.down ?? 2, up: own.up ?? 3, drift: own.drift ?? 0.5 };
+}
 /** Minimum ground-normal `y` the player can stand on before slope-slide kicks in — cos(50°) ≈ 0.643. */
 const DEFAULT_MAX_CLIMB_NORMAL_Y = Math.cos((50 * Math.PI) / 180);
 /** Downhill slide speed (units/s) per unit of slope steepness while on too-steep ground. */
@@ -146,6 +159,8 @@ export interface PlayerMovementTelemetry {
   crouching: boolean;
   /** Floating in water under `movement.swim` this step. */
   swimming: boolean;
+  /** Metres dived below the surface under `movement.swim.dive`; 0 at the surface or out of the water. */
+  diveDepth: number;
   /** Accepted physical height for heightfield walking; absent for other collision paths. */
   collisionHeight?: number;
   /** Live authored height requested for this completed heightfield step. */
@@ -164,6 +179,8 @@ interface PlayerMovementState {
   controllerConfig: CharacterControllerConfig | null;
   controllerJumpHeld: boolean;
   jumpBuffer: InputBuffer | null;
+  /** Metres below the surface while swimming with `swim.dive`. */
+  diveDepth: number;
   /** Controller state restored before the capsule exists; applied when it is created. */
   pendingController: CharacterControllerState | null;
   heightfieldHeight: number | null;
@@ -216,6 +233,7 @@ function stateFor(ctx: GameContext, store: CtxMovementStore, userId: string): Pl
       controllerConfig: null,
       controllerJumpHeld: false,
       jumpBuffer: null,
+      diveDepth: 0,
       pendingController: null,
       heightfieldHeight: null,
       heightfieldEntityId: null,
@@ -272,11 +290,13 @@ function updateTelemetry(
   swimming = false,
 ): void {
   state.entityId = entityId;
-  const telemetry = state.telemetry ??= { grounded, verticalVelocity, crouching, swimming };
+  const diveDepth = swimming ? state.diveDepth : 0;
+  const telemetry = state.telemetry ??= { grounded, verticalVelocity, crouching, swimming, diveDepth };
   telemetry.grounded = grounded;
   telemetry.verticalVelocity = verticalVelocity;
   telemetry.crouching = crouching;
   telemetry.swimming = swimming;
+  telemetry.diveDepth = diveDepth;
   if (collisionHeight === undefined) {
     delete telemetry.collisionHeight;
     delete telemetry.requestedCollisionHeight;
@@ -319,6 +339,8 @@ export interface PlayerMovementSnapshot {
   controllerJumpHeld: boolean;
   /** Buffered jump presses; absent in snapshots taken before jump buffering existed. */
   jumpBuffer?: InputBufferSnapshot | null;
+  /** Metres dived below the surface. */
+  diveDepth?: number;
   /** Accepted heightfield body height. Older walking snapshots retain their historical 1.8m span. */
   heightfieldHeight?: number | null;
   /** Pawn that accepted heightfieldHeight; omission binds legacy dimensions to the active pawn on restore. */
@@ -343,6 +365,7 @@ export function snapshotPlayerMovement(ctx: GameContext, userId: string): Player
     controller: controller === null ? null : copyController(controller),
     controllerJumpHeld: state.controllerJumpHeld,
     jumpBuffer: state.jumpBuffer?.snapshot() ?? null,
+    diveDepth: state.diveDepth,
     heightfieldHeight: state.heightfieldHeight,
     heightfieldEntityId: state.heightfieldEntityId,
   };
@@ -370,6 +393,7 @@ export function restorePlayerMovement(ctx: GameContext, userId: string, snapshot
   state.heightfieldHeight = heightfieldHeight;
   state.heightfieldEntityId = heightfieldEntityId;
   state.controllerJumpHeld = snapshot.controllerJumpHeld;
+  state.diveDepth = snapshot.diveDepth ?? 0;
   const jumpBuffer = snapshot.jumpBuffer ?? null;
   if (jumpBuffer === null) {
     state.jumpBuffer = null;
@@ -1080,7 +1104,17 @@ export function stepPlayerMovement(
     nextY = motionBatch.y;
     motion.jumpOffset = motionBatch.y - effectiveGround;
   } else if (swimEnabled && waterLevel !== undefined && effectiveGround < waterLevel) {
-    nextY = waterLevel;
+    // Floating holds the body at the surface; with `dive`, crouch swims down to the bed, jump swims up,
+    // and otherwise it drifts back up.
+    const dive = typeof swimCfg === "object" && swimCfg !== null ? resolveDive(swimCfg.dive) : null;
+    if (dive === null) state.diveDepth = 0;
+    else {
+      const push = intent.crouching ? dive.down : intent.jumping ? -dive.up : -dive.drift;
+      state.diveDepth = Math.max(0, Math.min(waterLevel - effectiveGround, state.diveDepth + push * dt));
+    }
+    nextY = waterLevel - state.diveDepth;
+  } else {
+    state.diveDepth = 0;
   }
   if (tuning.movement?.beforeCommit !== undefined) {
     const frame: MovementCommitFrame = {

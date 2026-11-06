@@ -67,6 +67,8 @@ function Vitals(): ReactNode {
     pool("water", "Water", view.water.value, view.water.max, view.flags.includes("thirsty")),
     pool("food", "Food", view.food.value, view.food.max, view.flags.includes("hungry")),
     pool("stamina", "Stamina", view.stamina.value, view.stamina.max),
+    // ARK shows breath only once it starts to run out.
+    ...(view.underwater || view.oxygen.value < view.oxygen.max ? [pool("oxygen", "Oxygen", view.oxygen.value, view.oxygen.max, view.oxygen.value <= view.oxygen.max * 0.25)] : []),
     ...(view.torpor.value > 0 ? [{ ...pool("torpor", "Torpor", view.torpor.value, view.torpor.max), color: "#b07ee0" }] : []),
     pool("health", "Health", view.health.value, view.health.max, view.health.value <= 30),
   ];
