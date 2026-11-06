@@ -1,8 +1,8 @@
 import type { TemperamentConfig } from "@jgengine/core/ai/temperament";
-import type { FeedingFood, SubdualFeedingConfig } from "../../engine-local/subdual/subdualFeeding";
+import type { VitalDose } from "@jgengine/core/stats/vitals";
 
 import { type KibbleTier, preferredKibble, withKibble } from "./kibble";
-import { food, tamingTable } from "./taming";
+import { food, type TamingDef, tamingTable } from "./taming";
 
 /** How a wild creature treats the survivor, by ARK's temperament names. */
 export type Temperament = "oblivious" | "skittish" | "docile" | "territorial" | "aggressive";
@@ -36,7 +36,7 @@ export interface SpeciesDef {
   killXp: number;
   /** Bite: damage at level 1, seconds between bites, reach in metres. Null when it never fights. */
   attack: { damage: number; interval: number; reach: number } | null;
-  taming: SubdualFeedingConfig;
+  taming: TamingDef;
   /** Saddle item that makes it rideable; null when it cannot be ridden. */
   saddle: string | null;
   /** The saddle's engram: level it opens at, engram points and what it costs. Null when it has no saddle. */
@@ -82,7 +82,8 @@ const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "kibble">>> = {
     sprintStamina: 0,
     killXp: 2,
     attack: null,
-    taming: tamingTable({ base: 30, perLevel: 1.8 }, { mejoberry: food(4, 49, 10, 121), amarberry: food(6, 48, 15, 120), azulberry: food(6, 48, 15, 120), tintoberry: food(6, 48, 15, 120) }),
+    // Wiki: 4 mejoberries in 0:49 at level 1, 10 at level 30; 6 of the other berries in 0:48.
+    taming: tamingTable({ base: 30, perLevel: 1.8 }, [4, 10], { mejoberry: food(1, 12.3), amarberry: food(0.67, 8), azulberry: food(0.67, 8), tintoberry: food(0.67, 8) }),
     saddle: null,
     saddleEngram: null,
     seat: [0, 0.6, 0],
@@ -105,7 +106,8 @@ const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "kibble">>> = {
     sprintStamina: 20,
     killXp: 4,
     attack: { damage: 10, interval: 1.2, reach: 2.2 },
-    taming: tamingTable({ base: 240, perLevel: 14.4 }, { mejoberry: food(27, 162, 63, 378), amarberry: food(41, 164, 95, 380), azulberry: food(41, 164, 95, 380), tintoberry: food(41, 164, 95, 380) }),
+    // Wiki: 27 mejoberries in 2:42 at level 1, 63 at level 30; 41 of the other berries in 2:44.
+    taming: tamingTable({ base: 240, perLevel: 14.4 }, [27, 63], { mejoberry: food(1, 6), amarberry: food(0.66, 4), azulberry: food(0.66, 4), tintoberry: food(0.66, 4) }),
     saddle: "phiomia_saddle",
     saddleEngram: { level: 5, points: 6, cost: { hide: 20, fiber: 15, wood: 5 } },
     seat: [0, 1.55, -0.1],
@@ -129,7 +131,8 @@ const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "kibble">>> = {
     sprintStamina: 6,
     killXp: 12,
     attack: { damage: 15, interval: 0.8, reach: 2.2 },
-    taming: tamingTable({ base: 180, perLevel: 10.8 }, { raw_prime_meat: food(3, 151, 5, 251, 0.02), raw_meat: food(7, 351, 15, 751), cooked_meat: food(13, 326, 30, 751) }),
+    // Wiki: 7 raw meat in 5:51 at level 1, 15 at level 30; 3 prime in 2:31; 13 cooked in 5:26.
+    taming: tamingTable({ base: 180, perLevel: 10.8 }, [7, 15], { raw_prime_meat: food(2.33, 50, 0.02), raw_meat: food(1, 50), cooked_meat: food(0.54, 25) }),
     saddle: "raptor_saddle",
     saddleEngram: { level: 18, points: 9, cost: { hide: 110, fiber: 65, wood: 20 } },
     seat: [0, 1.25, -0.25],
@@ -226,21 +229,13 @@ const round = (value: number, step = 1) => Math.round(value / step) * step;
 function fromRow(id: string, row: Row): Omit<SpeciesDef, "kibble"> {
   const [label, temperament, diet, health, healthPerLevel, stamina, torpor, torporPerLevel, weight, melee, walk, sprint, radius, saddleLevel] = row;
   // Meals scale with the torpor a body carries, as ARK's do: a raptor (180 torpor) eats 7 raw meat at level 1.
+  // Carnivores count in raw meat, herbivores in mejoberries (three to a meat); a meal digests in 50 s.
   const meals = Math.max(2, round(torpor / 26));
-  const seconds = (count: number) => round(count * 50);
-  const foods: Record<string, FeedingFood> =
+  const need: readonly [number, number] = diet === "carnivore" ? [meals, meals * 2] : [meals * 3, meals * 7];
+  const foods: Record<string, readonly VitalDose[]> =
     diet === "carnivore"
-      ? {
-          raw_prime_meat: food(Math.max(1, round(meals * 0.4)), seconds(meals * 0.4), Math.max(2, round(meals * 0.75)), seconds(meals * 0.75), 0.02),
-          raw_meat: food(meals, seconds(meals), meals * 2, seconds(meals * 2)),
-          cooked_meat: food(meals * 2, seconds(meals * 2), meals * 4, seconds(meals * 4)),
-        }
-      : {
-          mejoberry: food(meals * 3, seconds(meals), meals * 7, seconds(meals * 2.3)),
-          amarberry: food(meals * 4, seconds(meals), meals * 10, seconds(meals * 2.3)),
-          azulberry: food(meals * 4, seconds(meals), meals * 10, seconds(meals * 2.3)),
-          tintoberry: food(meals * 4, seconds(meals), meals * 10, seconds(meals * 2.3)),
-        };
+      ? { raw_prime_meat: food(2.5, 50, 0.02), raw_meat: food(1, 50), cooked_meat: food(0.5, 50) }
+      : { mejoberry: food(1, 16.7), amarberry: food(0.75, 12.5), azulberry: food(0.75, 12.5), tintoberry: food(0.75, 12.5) };
   const big = radius >= 2;
   return {
     id,
@@ -258,7 +253,7 @@ function fromRow(id: string, row: Row): Omit<SpeciesDef, "kibble"> {
     sprintStamina: big ? 15 : 8,
     killXp: Math.max(2, round(health / 20)),
     attack: { damage: melee, interval: big ? 1.4 : 1, reach: round(1.4 + radius * 0.6, 0.1) },
-    taming: tamingTable({ base: torpor, perLevel: torporPerLevel }, foods),
+    taming: tamingTable({ base: torpor, perLevel: torporPerLevel }, need, foods),
     saddle: saddleLevel === null ? null : `${id}_saddle`,
     saddleEngram:
       saddleLevel === null
@@ -293,7 +288,7 @@ function broodmother(tier: "gamma" | "beta" | "alpha", health: number, healthPer
     sprintStamina: 0,
     killXp: 32,
     attack: { damage: melee, interval: 2, reach: 3 },
-    taming: tamingTable({ base: 100000, perLevel: 6000 }, {}),
+    taming: tamingTable({ base: 100000, perLevel: 6000 }, [1, 1], {}),
     saddle: null,
     saddleEngram: null,
     seat: [0, 0, 0],
@@ -307,7 +302,7 @@ function broodmother(tier: "gamma" | "beta" | "alpha", health: number, healthPer
 /** Every species on the Island: the detailed three, the table's rest, and the Broodmother. */
 /** A tameable species with ARK's kibble in its foods: its tier and up first, the tiers below last. */
 function withBait(def: Omit<SpeciesDef, "kibble">): SpeciesDef {
-  const tier = preferredKibble(def.id, def.taming.capacity.kind === "piecewise" ? (def.taming.capacity.points[0]?.[1] ?? 0) : 0);
+  const tier = preferredKibble(def.id, def.taming.torpor.kind === "piecewise" ? (def.taming.torpor.points[0]?.[1] ?? 0) : 0);
   const baseline = def.diet === "carnivore" ? "raw_meat" : "mejoberry";
   return { ...def, kibble: tier, taming: { ...def.taming, foods: withKibble(def.taming.foods, baseline, tier) } };
 }

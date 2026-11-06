@@ -108,7 +108,7 @@ export interface Vitals {
   doses(): readonly VitalDose[];
   /** Set a vital's max (a level-up point, a buff). `fill` raises current by the same amount. */
   setMax(id: string, max: number, fill?: boolean): void;
-  /** Advance `dt` seconds; returns flags raised or cleared during this tick. */
+  /** Advance `dt` seconds; returns flags raised or cleared since the last tick (a change between ticks raises its flag at once, and is reported here). */
   tick(dt: number, options?: VitalsTickOptions): readonly VitalFlagChange[];
   /** Replace the definitions in play (rates, flags, links) keeping current values. */
   retune(defs: readonly VitalDef[]): void;
@@ -136,6 +136,11 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
   const cooldowns = new Map<string, number>();
   const raised = new Set<string>();
   let active: VitalDose[] = [];
+  /** Flags a change between ticks raised or cleared, for the next tick to report. */
+  let pending: VitalFlagChange[] = [];
+  const settle = (): void => {
+    pending.push(...refreshFlags());
+  };
 
   const def = (id: string): VitalDef => {
     const found = byId.get(id);
@@ -187,6 +192,7 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
     cooldowns.clear();
     raised.clear();
     active = [];
+    pending = [];
     for (const entry of defs) pools.set(entry.id, freshPool(entry));
     refreshFlags();
   };
@@ -230,10 +236,13 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
       if (valueOf(id) - minOf(id) < amount) return false;
       write(id, valueOf(id) - amount);
       cooldowns.set(id, def(id).regenDelay ?? 0);
+      settle();
       return true;
     },
     change(id, delta) {
-      return land(id, delta, undefined);
+      const applied = land(id, delta, undefined);
+      settle();
+      return applied;
     },
     dose(...doses) {
       for (const entry of doses) {
@@ -241,6 +250,7 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
         if ((entry.seconds ?? 0) > 0) active.push({ ...entry });
         else land(entry.vital, entry.amount, entry.upTo);
       }
+      settle();
     },
     doses: () => active.map((entry) => ({ ...entry })),
     setMax(id, max, fill = false) {
@@ -248,6 +258,7 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
       const current = valueOf(id);
       pools.set(id, { current, max: Math.max(minOf(id), max), min: poolOf(id).min });
       write(id, fill ? current + (max - before) : current);
+      settle();
     },
     tick(dt, options = {}) {
       if (!(dt > 0)) return [];
@@ -283,7 +294,9 @@ export function createVitals(initial: readonly VitalDef[]): Vitals {
         const wait = byId.get(link.vital)?.regenDelay;
         if (applied < 0 && wait !== undefined) cooldowns.set(link.vital, wait);
       }
-      return refreshFlags();
+      const changes = [...pending, ...refreshFlags()];
+      pending = [];
+      return changes;
     },
     retune(next) {
       defs = [...next];

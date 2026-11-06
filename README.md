@@ -31,7 +31,7 @@ world. Each has one home; a feature that needs one uses that home and never writ
 
 | Part | What it is | Examples it covers | Home |
 | --- | --- | --- | --- |
-| Meter | a number with a range that drains, fills or regenerates | health, hunger, ammo, combo, torpor, heat, stamina | `stats/statPool.ts` |
+| Meter | a number with a range that drains, fills or regenerates; a body's meters take doses (now or over seconds, up to a cap), and a dose table says what each source gives each kind of receiver | health, hunger, ammo, torpor, shield; a meal, potion, narcotic or dart | `stats/statPool.ts`, `stats/vitals.ts`, `stats/doseTable.ts` |
 | Ladder | ordered steps over a number, named by the game | rarity, tiers, ranks, levels, mood bands, wanted stars | `threshold/thresholds.ts` |
 | Phases | named states one after another, by time or by event | growth stages, boss phases, day parts, a match's rounds | `time/stateSchedule.ts` |
 | Schedule | something happens at a pace from a start time | waves, supply drops, weather, events, respawns | `time/pacedSchedule.ts` |

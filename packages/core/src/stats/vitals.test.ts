@@ -51,6 +51,14 @@ describe("createVitals", () => {
     expect(cleared).toEqual([{ id: "unconscious", raised: false }]);
   });
 
+  test("a change raises its flag at once, and the next tick reports it once", () => {
+    const vitals = createVitals(DEFS);
+    vitals.change("torpor", 60);
+    expect(vitals.has("unconscious")).toBe(true);
+    expect(vitals.tick(0.01)).toEqual([{ id: "unconscious", raised: true }]);
+    expect(vitals.tick(0.01)).toEqual([]);
+  });
+
   test("state round-trips and setMax levels a vital", () => {
     const vitals = createVitals(DEFS);
     vitals.setMax("health", 110, true);

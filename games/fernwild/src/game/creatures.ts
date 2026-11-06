@@ -12,7 +12,6 @@ import { createCompanionRoster, type CompanionCommand, type CompanionRecord } fr
 import { ridingOf, type SeatOffset } from "@jgengine/core/scene/riding";
 import type { MountedRider } from "@jgengine/core/scene/mount";
 import { scatterPoints } from "@jgengine/core/inheritance/inheritance";
-import { createSubdualFeeding, type FeedingSupply, type SubdualFeedingState } from "../engine-local/subdual/subdualFeeding";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { createResourceNodeField, type ResourceGrant, type ResourceNodeState, type ToolProfile } from "@jgengine/core/world/resourceNode";
 
@@ -23,6 +22,7 @@ import { IMPRINT_BONUS, IMPRINTED_STATS } from "./data/breeding";
 import { TROPHY_DROPS } from "./data/bosses";
 import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, WILD_LEVELS, wildLevelCap,WILD_STATS, type SpeciesDef, type TameStat, type WildStat } from "./data/species";
 import { bonusLevels, NARCOTICS } from "./data/taming";
+import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type TamingSave, type TamingSupply } from "./knockoutTaming";
 import { setScreen } from "./screens";
 
 /** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
@@ -94,7 +94,7 @@ export type CreatureEvent =
 interface World {
   creatures: Map<string, Creature>;
   driver: ReturnType<typeof createCreatureDriver>;
-  taming: ReturnType<typeof createSubdualFeeding>;
+  taming: KnockoutTaming;
   roster: ReturnType<typeof createCompanionRoster>;
   carcasses: ReturnType<typeof createResourceNodeField>;
   director: PopulationDirector;
@@ -178,7 +178,7 @@ const worldOf = perContext((ctx: GameContext): World => {
   return {
     creatures: new Map(),
     driver: createCreatureDriver({ sight: 24, memorySeconds: 10, blocked: (context, x, z) => context.world.groundHeightAt(x, z) < SHORE }),
-    taming: createSubdualFeeding(TAMING),
+    taming: createKnockoutTaming(TAMING),
     roster: createCompanionRoster(),
     carcasses: createResourceNodeField({ nodes: [], resolve: (id) => carcassNode(worldOf(ctx), id), rng: () => ctx.rng() }),
     director: createPopulationDirector({
@@ -338,7 +338,7 @@ function sleepFarHerds(ctx: GameContext, world: World, at: readonly [number, num
   for (const creature of [...world.creatures.values()]) {
     if (creature.tamed || creature.dead || creature.region === "" || awake(world, creature.region, at)) continue;
     const taming = world.taming.state(creature.id);
-    if (taming !== null && (taming.subdual.pool.current > 0 || taming.progress.pool.current > 0)) continue;
+    if (taming !== null && (taming.torpor > 0 || taming.progress > 0)) continue;
     removeCreature(ctx, world, creature, 0);
   }
 }
@@ -642,6 +642,17 @@ export function tames(ctx: GameContext): { id: string; species: string; sex: "fe
   return out;
 }
 
+/** The most taming progress (0..1) any awake wild creature still carries: 0 when waking loses the tame. */
+export function awakeTamingProgress(ctx: GameContext): number {
+  const world = worldOf(ctx);
+  let most = 0;
+  for (const creature of world.creatures.values()) {
+    const state = creature.tamed || creature.dead ? null : world.taming.state(creature.id);
+    if (state !== null && !state.subdued) most = Math.max(most, state.progress);
+  }
+  return most;
+}
+
 /** The last creature tamed: its taming effectiveness (0-1) and the bonus levels it gave; null before any. */
 export function lastTame(ctx: GameContext): { effectiveness: number; bonus: number } | null {
   return worldOf(ctx).lastTame;
@@ -652,7 +663,7 @@ export function knockOutNow(ctx: GameContext, id: string): boolean {
   const world = worldOf(ctx);
   const creature = world.creatures.get(id);
   if (creature === undefined || creature.dead || creature.tamed) return false;
-  if (!world.taming.subdue(id, world.taming.capacity(id) * 2)) return false;
+  if (!world.taming.subdue(id, (world.taming.state(id)?.maxTorpor ?? 0) * 2)) return false;
   knockOut(ctx, creature);
   return true;
 }
@@ -759,7 +770,7 @@ export function toggleMating(ctx: GameContext): void {
   ctx.game.notices.push({ text: `${defOf(creature).label}: mating ${creature.mating ? "on" : "off"}`, tone: "success" });
 }
 
-function feeder(creature: Creature): FeedingSupply {
+function feeder(creature: Creature): TamingSupply {
   return {
     count: (itemId) => countItem(creature.inventory, itemId),
     take(itemId) {
@@ -804,8 +815,8 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     } else if (event.type === "ate") {
       ctx.scene.entity.floatText({ instanceId: id, text: `Ate ${itemLabel(event.itemId)}`, kind: "pickup" });
     } else if (event.type === "won") {
-      tame(ctx, creature, event.quality, bonusLevels(creature.level, event.quality));
-      events.push({ type: "tamed", id, label, level: creature.level, effectiveness: event.quality });
+      tame(ctx, creature, event.effectiveness, bonusLevels(creature.level, event.effectiveness));
+      events.push({ type: "tamed", id, label, level: creature.level, effectiveness: event.effectiveness });
     }
   }
 
@@ -1018,14 +1029,12 @@ export function unsaddle(ctx: GameContext): void {
 /** Force-feed one narcotic (or stimulant) the creature holds: ARK's "use" on a downed creature. */
 export function feedNarcotic(ctx: GameContext, itemId: string): void {
   const creature = viewed(ctx);
-  const dose = NARCOTICS[itemId];
-  if (creature === null || dose === undefined) return;
+  const doses = NARCOTICS.of("any", itemId);
+  if (creature === null || doses === null) return;
   const taken = takeItem(creature.inventory, itemId, 1);
   if (taken.status !== "ok") return;
   creature.inventory = taken.state;
-  const world = worldOf(ctx);
-  if (dose.amount >= 0) world.taming.dose(creature.id, dose);
-  else world.taming.subdue(creature.id, dose.amount);
+  worldOf(ctx).taming.dose(creature.id, ...doses);
 }
 
 /** Admin cheats as ARK's console has them, for proofs and testing: taming speed and a forced tame. */
@@ -1052,21 +1061,18 @@ export function giveTameXp(ctx: GameContext, amount: number): void {
 
 // --- what the HUD and screens read ------------------------------------------------------------------
 
-function tamingView(world: World, creature: Creature, state: Readonly<SubdualFeedingState> | null) {
-  const def = defOf(creature);
-  const max = world.taming.capacity(creature.id);
-  const food = Object.keys(def.taming.foods).find((itemId) => countItem(creature.inventory, itemId) > 0) ?? null;
+function tamingView(world: World, creature: Creature, state: TamingRead | null) {
   return state === null
     ? null
     : {
-        torpor: Math.round(state.subdual.pool.current),
-        maxTorpor: Math.round(max),
+        torpor: Math.round(state.torpor),
+        maxTorpor: Math.round(state.maxTorpor),
         unconscious: state.subdued,
-        progress: state.progress.pool.current,
-        effectiveness: state.quality.pool.current,
-        nextMeal: Math.max(0, Math.ceil(state.nextMeal / world.tamingSpeed)),
-        eating: food,
-        foods: Object.keys(def.taming.foods),
+        progress: state.progress,
+        effectiveness: state.effectiveness,
+        nextMeal: Math.max(0, Math.ceil(state.belly / Math.max(1e-6, world.tamingSpeed))),
+        eating: world.taming.nextFood(creature.species, feeder(creature)),
+        foods: world.taming.foods(creature.species),
       };
 }
 
@@ -1260,7 +1266,7 @@ interface CreaturesSave {
   creatures: Creature[];
   seq: number;
   driver: Record<string, CreatureDriverState>;
-  taming: ReturnType<ReturnType<typeof createSubdualFeeding>["snapshot"]>;
+  taming: Record<string, TamingSave>;
   roster: Record<string, CompanionRecord>;
   carcasses: Record<string, ResourceNodeState>;
   director: PopulationDirectorState;
