@@ -39,7 +39,7 @@ function FoodMeter({ id }: { id: string }): ReactNode {
     const read = tameFood(ctx, id);
     return read === null ? null : { value: Math.floor(read.value), max: Math.round(read.max) };
   }, same);
-  return food === null ? null : <Meter label={food.value <= 0 ? "Food · starving" : "Food"} value={food.value} max={food.max} color="#d79a3c" testId="food" />;
+  return food === null ? null : <Meter label={food.value <= 0 ? "Food Â· starving" : "Food"} value={food.value} max={food.max} color="#d79a3c" testId="food" />;
 }
 
 /** ARK's look-at readout over a creature: name and level, health, and while it is down its torpor and taming. */

@@ -21,16 +21,16 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | harvest | 2/3 | 0 | 0 | 1 | 0 |
 | crafting | 1/6 | 0 | 0 | 5 | 0 |
 | taming | 7/9 | 0 | 0 | 2 | 0 |
-| creatures | 2/13 | 0 | 0 | 11 | 0 |
+| creatures | 3/13 | 0 | 0 | 10 | 0 |
 | breeding | 2/4 | 0 | 0 | 2 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 0/3 | 0 | 0 | 3 | 0 |
 | cave | 1/2 | 0 | 0 | 1 | 0 |
-| **total** | **24/67** | 3 | 0 | 40 | 0 |
+| **total** | **25/67** | 3 | 0 | 39 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 24/67 proven · 3 failing · 40 missing.
+Genres: creature-survival. 25/67 proven · 3 failing · 39 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -82,7 +82,7 @@ Genres: creature-survival. 24/67 proven · 3 failing · 40 missing.
 | `creatures.work.haul` | missing | A tame carries weight so the player can haul more. |  |
 | `creatures.work.lighter-loads` | missing | A specialist tame carries its specialty resource at reduced weight. |  |
 | `creatures.work.airlift` | missing | A flying tame picks up a smaller creature or survivor and carries it. |  |
-| `creatures.feed-starve` | missing | Tames eat from their own inventory or a shared trough; an unfed tame starves and dies. |  |
+| `creatures.feed-starve` | proven | Tames eat from their own inventory or a shared trough; an unfed tame starves and dies. | proofs/sim/tame-hunger.proof.ts |
 | `creatures.guard-base` | missing | Tames left at the base defend it. |  |
 | `creatures.behavior-modes` | missing | Set a tame passive, neutral or aggressive, and it fights accordingly. |  |
 | `creatures.level-up` | proven | Tames gain experience and the player spends their levels on stats. | proofs/sim/tame-level-up.proof.ts |

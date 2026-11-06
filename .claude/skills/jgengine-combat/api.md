@@ -961,10 +961,12 @@
 
 ## @jgengine/core/stats/doseTable
 
+- `DoseSupply` (interface): interface DoseSupply — What a body can eat or drink from: how many of a source it holds, and taking one. An inventory, a trough, a fridge.
 - `DoseTable` (interface): interface DoseTable — What each source does to each kind of receiver. Pure data; `retune` swaps the rows.
 - `DoseTableOptions` (interface): interface DoseTableOptions { fallback?: string } — ⚠ undocumented · used by `createDoseTable`: What each source does to each kind of receiver, as {@link VitalDose}s: a raptor's foods and how much taming, food and ineffectiveness each g…
 - `DoseTableRows` (type): type DoseTableRows = Readonly<Record<string, Readonly<Record<string, readonly VitalDose[]>>>> — Rows of a {@link DoseTable}: per kind of receiver, each source it takes and the doses that source gives it, listed in the receiver's order of preference. A `fallback` row answers for receivers with no row.
 - `createDoseTable` (function): function createDoseTable(rows: DoseTableRows, options: DoseTableOptions = {}): DoseTable — What each source does to each kind of receiver, as {@link VitalDose}s: a raptor's foods and how much taming, food and ineffectiveness each gives, a sim's meals and the needs they fill, a shooter's potions and the shield each pours in up to its cap, a dart's torpor by the body it lands in. Sources are listed in the receiver's order of preference, so "eats the first food it likes that it holds" is one `pick`.
+- `eatWhileRoom` (function): function eatWhileRoom(body: Pick<Vitals, "value" | "max" | "dose">, table: DoseTable, receiver: string, supply: DoseSupply, vital: string, limit = 64): string[] — Eat from `supply` while there is room: each time, the receiver's most preferred source it holds whose gain to `vital` fits under the max is taken and its doses go into `body`. A tame eating from its own inventory, a sim at the fridge, a baby fed what it is given. Returns the sources eaten, in order.
 - `hasRoomFor` (function): function hasRoomFor(vitals: Pick<Vitals, "value" | "max">, doses: readonly VitalDose[], vital: string): boolean — Whether `vitals` has room for every gain the doses put into `vital` (a creature eats once its food has room for the meal).
 
 ## @jgengine/core/stats/eventMeter
