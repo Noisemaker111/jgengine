@@ -20,7 +20,7 @@ const world = environment({
       // Every look knob is optional, grouped by the part of the field it shapes. These are a few of about forty.
       blade: { bladeHeight: 0.6, density: 0.85, curvature: 0.35 },
       season: { season: 0.1, dryness: 0 },
-      species: { mixShare: 0.08 },
+      mix: { mixShare: 0.08 },
       flowers: { flowerShare: 0.05 },
       wind: { windStrength: 0.5 },
       colour: { baseColor: "#3f7d2d", tipColor: "#6bbf4a" },

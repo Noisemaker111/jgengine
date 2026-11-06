@@ -4925,18 +4925,11 @@
       },
       "label": "dispatch dune north",
       "meta": {
-        "bladeHeight": 0.26,
+        "species": "marram",
         "baseColor": "#8e8850",
         "tipColor": "#b8ad72",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "dispatch_dune_north",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.55,
+        "seed": "dispatch_dune_north"
       }
     },
     {
@@ -4955,18 +4948,11 @@
       },
       "label": "dispatch dune south",
       "meta": {
-        "bladeHeight": 0.24,
+        "species": "marram",
         "baseColor": "#8e8850",
         "tipColor": "#b8ad72",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "dispatch_dune_south",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.5,
+        "seed": "dispatch_dune_south"
       }
     },
     {
@@ -4985,18 +4971,11 @@
       },
       "label": "coastal dune upper",
       "meta": {
-        "bladeHeight": 0.28,
+        "species": "marram",
         "baseColor": "#8e8850",
         "tipColor": "#b8ad72",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "coastal_dune_upper",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.6,
+        "seed": "coastal_dune_upper"
       }
     },
     {
@@ -5015,18 +4994,11 @@
       },
       "label": "coastal dune lower",
       "meta": {
-        "bladeHeight": 0.28,
+        "species": "marram",
         "baseColor": "#8e8850",
         "tipColor": "#b8ad72",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "coastal_dune_lower",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.6,
+        "seed": "coastal_dune_lower"
       }
     },
     {
@@ -5045,18 +5017,11 @@
       },
       "label": "park central",
       "meta": {
-        "bladeHeight": 0.24,
+        "species": "st-augustine",
         "baseColor": "#53734a",
         "tipColor": "#819064",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "park_central",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.2,
+        "seed": "park_central"
       }
     },
     {
@@ -5075,18 +5040,11 @@
       },
       "label": "park west",
       "meta": {
-        "bladeHeight": 0.24,
+        "species": "st-augustine",
         "baseColor": "#53734a",
         "tipColor": "#819064",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "park_west",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.2,
+        "seed": "park_west"
       }
     },
     {
@@ -5105,18 +5063,11 @@
       },
       "label": "park east",
       "meta": {
-        "bladeHeight": 0.24,
+        "species": "st-augustine",
         "baseColor": "#53734a",
         "tipColor": "#819064",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "park_east",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.2,
+        "seed": "park_east"
       }
     },
     {
@@ -5135,18 +5086,11 @@
       },
       "label": "park south",
       "meta": {
-        "bladeHeight": 0.24,
+        "species": "st-augustine",
         "baseColor": "#53734a",
         "tipColor": "#819064",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "park_south",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.2,
+        "seed": "park_south"
       }
     },
     {
@@ -5165,18 +5109,11 @@
       },
       "label": "park northeast",
       "meta": {
-        "bladeHeight": 0.24,
+        "species": "st-augustine",
         "baseColor": "#53734a",
         "tipColor": "#819064",
-        "valueNoise": 0.18,
-        "windStrength": 0.32,
-        "roughness": 0.95,
-        "seed": "park_northeast",
-        "bladeWidth": 0.03,
-        "widthVariation": 0.889,
-        "curvature": 0.042,
-        "tuftSpread": 0.09,
-        "normalLift": 0.45
+        "bladeHeight": 0.2,
+        "seed": "park_northeast"
       }
     }
   ],

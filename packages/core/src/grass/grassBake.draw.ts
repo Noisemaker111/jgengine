@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { seededRng } from "@jgengine/core/random/rng";
 import { grassBladeDensity, type GrassLook } from "@jgengine/core/grass/grassKind";
 
-import { grassBareAt, grassFieldNoise } from "@jgengine/core/grass/grassField";
+import { grassBareAt, grassClumpCentre, grassFieldNoise } from "@jgengine/core/grass/grassField";
 import { hashNoise2, seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/terrainSeed";
 import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
 
@@ -65,6 +65,8 @@ export interface ResolvedGrassBake {
   rootLevel: number;
   /** Tallest blade any tuft can grow, metres. */
   maxHeight: number;
+  /** Seed of the clump grid the bake and the turf mat's cushion shading share. */
+  clumpSeed: number;
 }
 
 function bareCoverage(look: GrassLook, seed: string, coverageAt: TerrainHeightSampler | undefined): TerrainHeightSampler {
@@ -83,7 +85,7 @@ export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
   const rows = Math.max(1, Math.ceil(size.depth / GRASS_CELL_SIZE));
   const bladesPerM2 = grassBladeDensity(look);
   const seed = look.seed.length > 0 ? look.seed : String(options.seed ?? "grass");
-  const tallest = Math.max(1, look.species.mixShare > 0 ? look.species.mixHeight : 1);
+  const tallest = Math.max(1, look.mix.mixShare > 0 ? look.mix.mixHeight : 1);
   const heightAt = options.heightAt ?? (() => 0);
   const coverageAt = bareCoverage(look, seed, options.coverageAt);
   const growAbove = look.growth.growAbove - (options.baseHeight ?? 0);
@@ -104,7 +106,8 @@ export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
     columns,
     rows,
     rootLevel: Math.ceil(Math.log2(Math.max(columns, rows))),
-    maxHeight: look.blade.bladeHeight * tallest * 1.15 + look.flowers.flowerSize,
+    maxHeight: look.blade.bladeHeight * tallest * 1.15 + look.flowers.flowerSize * (1 + look.flowers.headShape * 3),
+    clumpSeed: seedToUint32(seed) + 104729,
   };
 }
 
@@ -189,8 +192,7 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
   const tone = new Float32Array(total);
   const roots = new THREE.Box3();
   const seedNumber = seedToUint32(bake.seed);
-  const clumpSeed = seedNumber + 104729;
-  const cs2 = look.tuft.clumpSize * 2;
+  const clumpSeed = bake.clumpSeed;
   const point = new THREE.Vector3();
   const flutterStiff = 1 - look.blade.stiffness;
   let maxReach = 0;
@@ -207,19 +209,24 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       const speciesRoll = random(), flowerRoll = random(), yaw = random() * Math.PI * 2;
       const heightRoll = random(), widthRoll = random(), bendRoll = random(), gate = random(), settle = random();
       const phase = random() * Math.PI * 2, colorRoll = random();
-      if (clumpRoll < look.tuft.clumping * 0.6) {
-        const column = Math.floor((x + halfW) / cs2), row = Math.floor((z + halfD) / cs2);
-        const ccx = (column + 0.5 + (hashNoise2(column, row, clumpSeed) - 0.5) * 0.8) * cs2 - halfW;
-        const ccz = (row + 0.5 + (hashNoise2(row, column, clumpSeed) - 0.5) * 0.8) * cs2 - halfD;
+      const clumped = clumpRoll < Math.max(look.tuft.clumping * 0.6, look.tuft.cushion * 0.92);
+      if (clumped) {
+        const [ccx, ccz] = grassClumpCentre(halfW, halfD, look.tuft.clumpSize, clumpSeed, x, z);
         x = Math.max(-halfW, Math.min(halfW, ccx + Math.cos(clumpAngle) * clumpReach));
         z = Math.max(-halfD, Math.min(halfD, ccz + Math.sin(clumpAngle) * clumpReach));
       }
-      const species = speciesRoll < look.species.mixShare ? 1 : 0;
-      let height = look.blade.bladeHeight * (1 - look.blade.heightVariation * 0.6 * (1 - heightRoll)) * (species === 1 ? look.species.mixHeight : 1);
+      const species = speciesRoll < look.mix.mixShare ? 1 : 0;
+      let height = look.blade.bladeHeight * (1 - look.blade.heightVariation * 0.6 * (1 - heightRoll)) * (species === 1 ? look.mix.mixHeight : 1);
       if (look.tuft.clumping > 0) {
         // Clumped ground grows taller tussocks; the open ground between clumps stays shorter turf.
         const tussock = hashNoise2(Math.floor(x / look.tuft.clumpSize), Math.floor(z / look.tuft.clumpSize), clumpSeed);
         height *= 1 + look.tuft.clumping * (tussock - 0.5) * 0.6;
+      }
+      if (look.tuft.cushion > 0) {
+        // Cushions dome over their clump centre and the ground between them stays a low skin.
+        const rim = clumpReach / Math.max(1e-4, look.tuft.clumpSize);
+        const dome = clumped ? 0.3 + 0.7 * Math.sqrt(Math.max(0, 1 - rim * rim)) : 0.4;
+        height *= 1 + (dome - 1) * look.tuft.cushion;
       }
       const nx = x / look.season.noiseScale, nz = z / look.season.noiseScale;
       // Mown patches drop to low turf and never flower; at patchiness 0 the mask never bites.
@@ -242,7 +249,7 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       }
       height *= Math.max(0, Math.min(1, bake.coverageAt(x, z))) * smoothstep(bake.growAbove, bake.growAbove + 1, y);
       // A blade masked down to nothing narrows with it, so no flat sliver lies on bare ground.
-      const width = look.blade.bladeWidth * (1 - look.blade.widthVariation * 0.6 * (1 - widthRoll)) * (species === 1 ? look.species.mixWidth : 1) * Math.min(1, height / Math.max(1e-4, look.blade.bladeHeight * 0.2));
+      const width = look.blade.bladeWidth * (1 - look.blade.widthVariation * 0.6 * (1 - widthRoll)) * (species === 1 ? look.mix.mixWidth : 1) * Math.min(1, height / Math.max(1e-4, look.blade.bladeHeight * 0.2));
       const bend = look.blade.curvature * (0.6 + 0.8 * bendRoll) * (1 + flutterStiff * 0.4);
       const flower = flowerRoll < look.flowers.flowerShare && grown > 0.5 ? 2 : 0;
       offsets[n * 3] = x;
@@ -258,7 +265,7 @@ export function* bakeGrassNodeSteps(bake: ResolvedGrassBake, level: number, ix: 
       vary[n * 4 + 3] = cell.full > 0 ? (j + u) / cell.full : 1;
       tone[n] = grassFieldNoise(nx * 0.7 + 17.3, nz * 0.7 - 9.1, seedNumber + 53);
       roots.expandByPoint(point.set(x, y, z));
-      maxReach = Math.max(maxReach, height * 1.15 + width * 2 + (flower > 0 ? look.flowers.flowerSize : 0));
+      maxReach = Math.max(maxReach, height * (1.15 + look.wind.lean * 0.9) + width * 2 + (flower > 0 ? look.flowers.flowerSize * (1 + look.flowers.headShape * 3) : 0));
       n += 1;
       if (progress !== undefined) {
         partial ??= { count: 0, offsets, shape, vary, tone, ranks: new Float32Array(total), roots, extent: 0 };

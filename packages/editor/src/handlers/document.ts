@@ -475,7 +475,8 @@ export const documentHandlers: Pick<
       const available = (definition.schema.presets ?? []).map((entry) => entry.id).join(", ") || "none";
       return { ok: false, error: `unknown preset "${request.preset}" for kind "${target.kind}" (available: ${available})` };
     }
-    const merged = { ...target.meta, ...preset.values };
+    const presetKey = definition.schema.presetKey;
+    const merged = { ...target.meta, ...preset.values, ...(presetKey === undefined ? {} : { [presetKey]: preset.id }) };
     const invalid = validateMetaForKind(target.kind, merged);
     if (invalid !== null) return { ok: false, error: invalid };
     ctx.session.dispatch(metaPatchCommand(target.target, request.id, merged));

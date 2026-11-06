@@ -8,8 +8,8 @@
 import type { WindField, WindVector } from "../world/wind";
 import type { GrassBlade, GrassWind } from "./grassKind";
 
-/** The wind numbers a grass look animates with. */
-export type GrassWindLook = GrassWind;
+/** The wind numbers a grass look animates with; its resting `lean` is pose, not motion, so a shared wind leaves it alone. */
+export type GrassWindLook = Omit<GrassWind, "lean">;
 
 /**
  * A shared wind for a grass patch. `response` is the patch's dial: `0` blades stand still, `1` the kind's own

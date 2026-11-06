@@ -501,7 +501,7 @@ export class GrassStream {
     geometry.setAttribute("grassUv", new THREE.BufferAttribute(t.uv, 2));
     geometry.setAttribute("bladeOffset", new THREE.BufferAttribute(t.bladeOffset, 2));
     geometry.setAttribute("bladeVary", new THREE.BufferAttribute(t.bladeVary, 4));
-    geometry.setAttribute("bladeBendScale", new THREE.BufferAttribute(t.bladeBendScale, 1));
+    geometry.setAttribute("bladeBend", new THREE.BufferAttribute(t.bladeBend, 2));
     geometry.setIndex(new THREE.BufferAttribute(t.index, 1));
     const growing: GrowingGrassAttribute[] = [];
     const instanceAttribute = (array: Float32Array, size: number): THREE.InstancedBufferAttribute => {

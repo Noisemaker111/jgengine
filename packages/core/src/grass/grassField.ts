@@ -40,6 +40,34 @@ export function grassStripeAt(look: Pick<GrassLook, "mowing">, x: number, z: num
 }
 
 /**
+ * Centre of the clump a patch-local point falls in. Clumps sit one per cell of a grid twice
+ * `clumpSize` wide, jittered by `clumpSeed`, so the blade bake and the turf mat agree on where they are.
+ * @internal
+ */
+export function grassClumpCentre(halfW: number, halfD: number, clumpSize: number, clumpSeed: number, x: number, z: number): [number, number] {
+  const cs2 = clumpSize * 2;
+  const column = Math.floor((x + halfW) / cs2), row = Math.floor((z + halfD) / cs2);
+  return [
+    (column + 0.5 + (hashNoise2(column, row, clumpSeed) - 0.5) * 0.8) * cs2 - halfW,
+    (row + 0.5 + (hashNoise2(row, column, clumpSeed) - 0.5) * 0.8) * cs2 - halfD,
+  ];
+}
+
+/**
+ * Turf-mat shade from cushion mounds at a patch-local point, about -0.45..0.45 times `cushion`: light
+ * over each clump's dome, dark in the crevices between, so moss reads as cushions even where its
+ * blades are too small to see. 0 when the look has no cushions.
+ * @internal
+ */
+export function grassCushionShadeAt(look: Pick<GrassLook, "tuft">, clumpSeed: number, halfW: number, halfD: number, x: number, z: number): number {
+  if (look.tuft.cushion <= 0) return 0;
+  const [cx, cz] = grassClumpCentre(halfW, halfD, look.tuft.clumpSize, clumpSeed, x, z);
+  const rim = Math.hypot(x - cx, z - cz) / Math.max(1e-4, look.tuft.clumpSize);
+  const dome = Math.sqrt(Math.max(0, 1 - rim * rim));
+  return (dome - 0.5) * 0.9 * look.tuft.cushion;
+}
+
+/**
  * Share of the ground grass grows on at a patch-local point, 0..1: the `bareGround` mask that opens
  * sand or soil between tufts. 1 everywhere when `bareGround` is 0.
  */
@@ -68,7 +96,8 @@ export interface GrassTuftTemplate {
   uv: Float32Array;
   bladeOffset: Float32Array;
   bladeVary: Float32Array;
-  bladeBendScale: Float32Array;
+  /** Per vertex: the blade's bend scale and its lean out from the tuft centre, radians. */
+  bladeBend: Float32Array;
   index: Uint16Array;
   lods: readonly GrassTemplateLod[];
   /** Largest per-blade height and width scale and splay radius, for conservative bounds. */
@@ -84,17 +113,24 @@ export interface GrassTuftInputs {
   segments: number;
 }
 
+function wrapAngle(angle: number): number {
+  return Math.atan2(Math.sin(angle), Math.cos(angle));
+}
+
 /** Build the shared tuft template for a patch. Pure and seeded: the same inputs give the same buffers. */
 export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTemplate {
   const { look } = inputs;
   const segments = Math.max(1, Math.floor(inputs.segments));
   const blades = look.tuft.tuftBlades;
   const random = seededRng(`${inputs.seed}/tuft`);
+  // Splay draws from its own stream, so a look without it keeps the same tuft it always had.
+  const splayRandom = seededRng(`${inputs.seed}/tuft-splay`);
+  const splay = look.tuft.splay;
   const position: number[] = [];
   const uv: number[] = [];
   const bladeOffset: number[] = [];
   const bladeVary: number[] = [];
-  const bladeBendScale: number[] = [];
+  const bladeBend: number[] = [];
   let heightScale = 0, widthScale = 0, radius = 0;
   for (let blade = 0; blade < blades; blade += 1) {
     const angle = blade === 0 ? 0 : ((blade - 1) / Math.max(1, blades - 1)) * Math.PI * 2 + random() * 1.4;
@@ -102,7 +138,11 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
     const ox = Math.cos(angle) * reach;
     const oz = Math.sin(angle) * reach;
     // Each blade bends away from the tuft centre (plus jitter), so the clump splays open.
-    const yaw = angle + Math.PI / 2 + (random() - 0.5) * 1.6;
+    const curled = angle + Math.PI / 2 + (random() - 0.5) * 1.6;
+    // Splayed blades turn to face straight out from the centre and lean that way from the root.
+    const outward = Math.PI / 2 - angle + (splayRandom() - 0.5) * 0.5;
+    const yaw = blade === 0 ? curled : curled + wrapAngle(outward - curled) * splay;
+    const lean = blade === 0 ? splay * 0.15 : splay * (0.55 + 0.45 * splayRandom()) * 1.3;
     const h = blade === 0 ? 1 : 0.7 + random() * 0.45;
     const w = 0.8 + random() * 0.4;
     const phase = random();
@@ -117,7 +157,7 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
         uv.push(side + 0.5, t);
         bladeOffset.push(ox, oz);
         bladeVary.push(yaw, h, w, phase);
-        bladeBendScale.push(bend);
+        bladeBend.push(bend, lean);
       }
     }
   }
@@ -128,7 +168,7 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
     uv.push(cx + 0.5, cy + 2.5);
     bladeOffset.push(0, 0);
     bladeVary.push(Math.PI / 2, 1, 1, 0);
-    bladeBendScale.push(1);
+    bladeBend.push(1, splay * 0.15);
   }
   const levels = [...new Set([segments, Math.ceil(segments / 2), 1])].sort((a, b) => b - a);
   const index: number[] = [];
@@ -152,7 +192,7 @@ export function createGrassTuftTemplate(inputs: GrassTuftInputs): GrassTuftTempl
     uv: Float32Array.from(uv),
     bladeOffset: Float32Array.from(bladeOffset),
     bladeVary: Float32Array.from(bladeVary),
-    bladeBendScale: Float32Array.from(bladeBendScale),
+    bladeBend: Float32Array.from(bladeBend),
     index: Uint16Array.from(index),
     lods,
     heightScale,

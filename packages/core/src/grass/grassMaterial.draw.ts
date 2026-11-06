@@ -10,7 +10,10 @@ export interface GrassShaderUniforms {
   uLod: THREE.IUniform<THREE.Vector4>;
   uWind: THREE.IUniform<THREE.Vector4>;
   uWindDirection: THREE.IUniform<THREE.Vector2>;
+  /** x profile, y normal lift, z twist, w fold. */
   uShape: THREE.IUniform<THREE.Vector4>;
+  /** x tip droop, y resting lean, z head shape. */
+  uForm: THREE.IUniform<THREE.Vector4>;
   uFlower: THREE.IUniform<number>;
   uBaseColor: THREE.IUniform<THREE.Color>;
   uTipColor: THREE.IUniform<THREE.Color>;
@@ -23,6 +26,9 @@ export interface GrassShaderUniforms {
   uLight: THREE.IUniform<THREE.Vector2>;
   /** Mow stripes: x width in metres (0 off), y contrast, zw heading as a unit vector. */
   uStripe: THREE.IUniform<THREE.Vector4>;
+  /** x variegated margins, y cross bands, z head shape. */
+  uPattern: THREE.IUniform<THREE.Vector4>;
+  uPatternColor: THREE.IUniform<THREE.Color>;
 }
 
 /** The grass blade material and the uniforms behind it. */
@@ -42,15 +48,17 @@ attribute float instanceTone;
 attribute vec2 grassUv;
 attribute vec2 bladeOffset;
 attribute vec4 bladeVary;
-attribute float bladeBendScale;
+attribute vec2 bladeBend;
 uniform float uTime;
 uniform vec4 uLod;
 uniform vec4 uWind;
 uniform vec2 uWindDirection;
 uniform vec4 uShape;
+uniform vec4 uForm;
 uniform float uFlower;
 uniform vec4 uStripe;
 varying float vGrassT;
+varying float vGrassU;
 varying float vGrassStripe;
 varying float vGrassRoll;
 varying float vGrassKind;
@@ -81,12 +89,21 @@ void jgComputeGrassBlade() {
   float kind = instanceVary.z;
   float flower = step(1.5, kind);
   float height = instanceShape.y * bladeVary.y * keep;
-  float phi = min(instanceShape.w * bladeBendScale * 1.5708, 1.75);
-  float a = phi * t;
-  vec2 arc = phi > 1e-3 ? vec2(sin(a), 1.0 - cos(a)) / phi : vec2(t, 0.0);
+  // A blade leaves its root at its splay lean and arcs over; droop tightens the arc toward the tip.
+  float lean0 = bladeBend.y;
+  float phi = min(instanceShape.w * bladeBend.x * 1.5708, 1.75) + uForm.x * 2.4 * t;
+  float a = lean0 + phi * t;
+  vec2 arc = phi > 1e-3 ? vec2(sin(a) - sin(lean0), cos(lean0) - cos(a)) / phi : vec2(cos(lean0), sin(lean0)) * t;
   float width = instanceShape.z * bladeVary.z * jgProfile(t) * widen * keep;
-  vec3 local = vec3(petal ? 0.0 : position.x * width, arc.x * height, arc.y * height);
-  vec3 localNormal = vec3(0.0, -sin(a), cos(a));
+  vec3 bentNormal = vec3(0.0, -sin(a), cos(a));
+  // Twist turns the blade face about its own axis toward the tip, alternating hand blade to blade.
+  float twist = uShape.z * 3.14159 * t * (bladeVary.w > 0.5 ? 1.0 : -1.0);
+  vec3 across = vec3(cos(twist), 0.0, 0.0) + bentNormal * sin(twist);
+  vec3 faceNormal = bentNormal * cos(twist) - vec3(sin(twist), 0.0, 0.0);
+  // Fold tilts each half's normal toward the other edge, so the blade shades as a V-channel.
+  float side = position.x < 0.0 ? -1.0 : 1.0;
+  vec3 localNormal = normalize(faceNormal - across * side * uShape.w * 1.1);
+  vec3 local = vec3(0.0, arc.x * height, arc.y * height) + (petal ? vec3(0.0) : across * position.x * width);
   float bladeYaw = instanceShape.x + bladeVary.x;
   float cy = cos(bladeYaw), sy = sin(bladeYaw);
   vec3 yawed = vec3(local.x * cy + local.z * sy, local.y, -local.x * sy + local.z * cy);
@@ -100,18 +117,23 @@ void jgComputeGrassBlade() {
   float gust = sin(gustPhase) * 0.55 + sin(gustPhase * 0.53 + crossPhase + 2.1) * 0.32 + sin(gustPhase * 1.7 + crossPhase * 0.4 + 4.3) * 0.13;
   float flutter = sin(uTime * 7.5 + instanceVary.x * 2.7 + bladeVary.w * 6.2832) * uWind.w;
   float sway = (gust * uWind.x + flutter) * t * t * (0.4 + 0.6 * bladeVary.y) * keep * min(1.0 + instanceShape.y * 0.6, 2.2);
-  vec2 windOffset = uWindDirection * sway;
-  jgGrassPosition = instanceOffset + tuftOffset + yawed + vec3(windOffset.x, -abs(sway) * 0.25 * t, windOffset.y);
+  float rest = uForm.y * t * t * height;
+  vec2 windOffset = uWindDirection * (sway + rest * 0.9);
+  jgGrassPosition = instanceOffset + tuftOffset + yawed + vec3(windOffset.x, -abs(sway) * 0.25 * t - rest * 0.35, windOffset.y);
   if (petal) {
     // The flower head billboards at the first blade's tip; non-flowering tufts collapse it.
     vec3 right = normalize(vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]));
     vec3 up = normalize(vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]));
     float size = uFlower * flower * keep * mix(0.75, 1.25, instanceVary.y) * (1.0 + (widen - 1.0) * 0.5);
-    vec3 billboard = (right * position.x + up * position.y) * size;
+    // A spike stands upright on the tip and stretches tall and narrow; a blossom faces the camera.
+    float spike = uForm.z;
+    vec3 axis = normalize(mix(up, vec3(0.0, 1.0, 0.0), spike));
+    vec3 billboard = (right * position.x * (1.0 - spike * 0.55) + axis * (position.y + 0.5 * spike) * (1.0 + spike * 3.0)) * size;
     jgGrassPosition += billboard / vec3(length(modelMatrix[0].xyz), length(modelMatrix[1].xyz), length(modelMatrix[2].xyz));
   }
   jgGrassNormal = normalize(mix(normalize(yawedNormal), vec3(0.0, 1.0, 0.0), uShape.y));
   vGrassT = t;
+  vGrassU = grassUv.x;
   vGrassRoll = instanceVary.y;
   vGrassKind = petal ? 2.0 + mod(kind, 2.0) : mod(kind, 2.0);
   vGrassTone = instanceTone;
@@ -135,7 +157,10 @@ uniform vec4 uTone;
 uniform vec2 uNoise;
 uniform vec2 uLight;
 uniform vec4 uStripe;
+uniform vec4 uPattern;
+uniform vec3 uPatternColor;
 varying float vGrassT;
+varying float vGrassU;
 varying float vGrassStripe;
 varying float vGrassRoll;
 varying float vGrassKind;
@@ -154,9 +179,22 @@ const FRAGMENT_COLOR = /* glsl */ `
 vec3 grassColor;
 if (vGrassKind > 1.5) {
   vec2 petal = vGrassPetal - 0.5;
-  if (dot(petal, petal) > 0.25) discard;
+  // A blossom is a round disc with a dark eye. A seed spike is a teardrop that tapers to a point,
+  // with a ragged spikelet edge, so a big plume reads as feathered rather than as a smooth solid.
+  float spike = uPattern.z;
+  float y = clamp(vGrassPetal.y, 0.0, 1.0);
+  float disc = sqrt(max(0.25 - petal.y * petal.y, 0.0));
+  float tear = 0.5 * pow(sin(3.14159 * y), 0.7) * (1.0 - 0.4 * y);
+  vec2 cell = floor(vGrassPetal * vec2(12.0, 56.0)) + floor(vGrassRoll * 97.0);
+  float grain = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
+  float ridge = sin(vGrassPetal.y * 56.0 + vGrassRoll * 20.0);
+  float halfWidth = mix(disc, tear * (1.0 - 0.4 * grain) + ridge * 0.02, spike);
+  if (abs(petal.x) > halfWidth) discard;
   grassColor = mix(uFlowerColor, uFlowerColor2, step(0.5, fract(vGrassRoll * 7.31)));
-  grassColor *= mix(0.55, 1.0, smoothstep(0.0, 0.3, length(petal)));
+  float blossomShade = mix(0.55, 1.0, smoothstep(0.0, 0.3, length(petal)));
+  float core = 1.0 - abs(petal.x) / max(halfWidth, 1e-3);
+  float spikeShade = mix(0.7, 1.08, y) * (0.9 + 0.1 * ridge) * mix(0.78, 1.04, core) * (0.92 + 0.12 * grain);
+  grassColor *= mix(blossomShade, spikeShade, uPattern.z);
 } else {
   float roll2 = fract(vGrassRoll * 13.7);
   float roll3 = fract(vGrassRoll * 29.3);
@@ -165,6 +203,10 @@ if (vGrassKind > 1.5) {
   grassColor = mix(uBaseColor, tip, smoothstep(center - 0.35, center + 0.35, vGrassT));
   grassColor = jgHueShift(grassColor, (roll2 - 0.5) * uNoise.x * 0.6);
   grassColor *= 1.0 + (roll3 - 0.5) * uNoise.y * 0.7;
+  // Variegation: pale margins along the edges and pale bands across the blade.
+  float margin = uPattern.x > 0.0 ? smoothstep(0.44 - uPattern.x * 0.24, 0.48 - uPattern.x * 0.24, abs(vGrassU - 0.5)) : 0.0;
+  float band = smoothstep(0.62, 0.7, fract(vGrassT * 4.0 + vGrassRoll * 5.0)) * smoothstep(0.08, 0.25, vGrassT) * uPattern.y;
+  grassColor = mix(grassColor, uPatternColor, clamp(max(margin, band), 0.0, 1.0) * 0.85);
   // Season and drought: the field's tone patches push each tuft ahead of or behind the look's setting.
   float lum = dot(grassColor, vec3(0.3, 0.55, 0.15));
   float season = clamp(uTone.y + (vGrassTone - 0.5) * uTone.w * 0.9, 0.0, 1.0);
@@ -213,11 +255,12 @@ export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRe
     uLod: { value: new THREE.Vector4(1e6, 1, 1e6, 1) },
     uWind: { value: new THREE.Vector4(strength, look.wind.windSpeed, 0.04 + (1 - look.wind.windGust) * 0.02 + look.wind.windGust * 0.5, flutter) },
     uWindDirection: { value: new THREE.Vector2(Math.cos(heading), Math.sin(heading)) },
-    uShape: { value: new THREE.Vector4(look.blade.profile, look.lighting.normalLift, 0, 0) },
+    uShape: { value: new THREE.Vector4(look.blade.profile, look.lighting.normalLift, look.blade.twist, look.blade.fold) },
+    uForm: { value: new THREE.Vector4(look.blade.droop, look.wind.lean, look.flowers.headShape, 0) },
     uFlower: { value: look.flowers.flowerSize },
     uBaseColor: { value: base },
     uTipColor: { value: new THREE.Color(look.colour.tipColor) },
-    uMixColor: { value: new THREE.Color(look.species.mixColor) },
+    uMixColor: { value: new THREE.Color(look.mix.mixColor) },
     uFlowerColor: { value: new THREE.Color(look.flowers.flowerColor) },
     uFlowerColor2: { value: new THREE.Color(look.flowers.flowerColor2) },
     uGroundColor: { value: groundColor === undefined ? base.clone().multiplyScalar(0.8) : new THREE.Color(groundColor) },
@@ -225,6 +268,8 @@ export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRe
     uNoise: { value: new THREE.Vector2(look.colour.hueNoise, look.colour.valueNoise) },
     uLight: { value: new THREE.Vector2(look.lighting.translucency, 0) },
     uStripe: { value: new THREE.Vector4(look.mowing.stripeWidth, look.mowing.stripeContrast, Math.cos(stripeHeading), Math.sin(stripeHeading)) },
+    uPattern: { value: new THREE.Vector4(look.colour.variegation, look.colour.banding, look.flowers.headShape, 0) },
+    uPatternColor: { value: new THREE.Color(look.colour.variegationColor) },
   };
   const material = new THREE.MeshStandardMaterial({ color: "#ffffff", side: THREE.DoubleSide, roughness: look.lighting.roughness, metalness: 0 });
   material.onBeforeCompile = (shader) => {
@@ -239,5 +284,6 @@ export function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRe
       .replace("#include <lights_fragment_end>", LIGHT_END);
   };
   material.customProgramCacheKey = () => "jgengine-grass";
-  return { material, uniforms, windReach: (strength + flutter) * 2.2 + 0.05 };
+  const tallest = look.blade.bladeHeight * Math.max(1, look.mix.mixShare > 0 ? look.mix.mixHeight : 1);
+  return { material, uniforms, windReach: (strength + flutter) * 2.2 + 0.05 + look.wind.lean * tallest * 0.9 };
 }

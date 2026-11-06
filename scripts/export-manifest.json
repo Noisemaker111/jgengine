@@ -438,6 +438,7 @@
     "./grass/grassKind",
     "./grass/grassMaterial.draw",
     "./grass/grassPreview.draw",
+    "./grass/grassSpecies",
     "./grass/grassStream.draw",
     "./grass/grassWind",
     "./haptics/haptics",

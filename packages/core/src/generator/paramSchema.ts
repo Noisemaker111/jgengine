@@ -180,6 +180,8 @@ export interface ParamGroup {
 export interface ParamPreset {
   id: string;
   label?: string;
+  /** Heading the inspector lists this preset under, so a long preset library stays browsable. */
+  group?: string;
   /** Field values the preset writes; fields not listed keep their current values. */
   values: Readonly<Record<string, unknown>>;
 }
@@ -191,6 +193,24 @@ export interface ParamSchema<Fields extends readonly ParamField[] = readonly Par
   groups?: readonly ParamGroup[] | undefined;
   /** Optional named field-value bundles the inspector offers as one-click applies. */
   presets?: readonly ParamPreset[];
+  /**
+   * A `meta` key naming one of {@link presets}: that preset's values back every field the meta
+   * leaves unset, so `{ species: "tall-fescue", bladeHeight: 0.2 }` is the whole fescue look with one
+   * override. Parsing, validation and the inspector all read through it.
+   */
+  presetKey?: string;
+}
+
+/**
+ * A `meta` bag with its {@link ParamSchema.presetKey} preset filled in under it: the preset's values,
+ * then the meta's own keys on top. The meta unchanged when the schema has no preset key or the meta
+ * names no known preset.
+ */
+export function presetBackedMeta(schema: ParamSchema, meta: Readonly<Record<string, unknown>> | undefined): Readonly<Record<string, unknown>> | undefined {
+  if (schema.presetKey === undefined || meta === undefined) return meta;
+  const id = meta[schema.presetKey];
+  const preset = typeof id === "string" ? findSchemaPreset(schema, id) : undefined;
+  return preset === undefined ? meta : { ...preset.values, ...meta };
 }
 
 /** The parsed value one field yields. */
@@ -318,7 +338,8 @@ function parseField(field: Exclude<ParamField, ActionParamField>, raw: unknown):
   }
 }
 
-function parseInto(schema: ParamSchema, meta: Readonly<Record<string, unknown>> | undefined): ParsedParams {
+function parseInto(schema: ParamSchema, raw: Readonly<Record<string, unknown>> | undefined): ParsedParams {
+  const meta = presetBackedMeta(schema, raw);
   const out: ParsedParams = {};
   for (const field of schema.fields) {
     if (field.type === "action") continue;
@@ -352,6 +373,10 @@ export interface ParamIssue {
 export function validateParams(schema: ParamSchema, meta: Readonly<Record<string, unknown>> | undefined): ParamIssue[] {
   const issues: ParamIssue[] = [];
   if (meta === undefined) return issues;
+  if (schema.presetKey !== undefined && meta[schema.presetKey] !== undefined) {
+    const id = meta[schema.presetKey];
+    if (typeof id !== "string" || findSchemaPreset(schema, id) === undefined) issues.push({ key: schema.presetKey, message: "not a known preset" });
+  }
   for (const field of schema.fields) {
     const raw = meta[field.key];
     if (raw === undefined) continue;

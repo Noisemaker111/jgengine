@@ -152,27 +152,17 @@ const terrainDescriptor = terrain({
   pathProfiles: roadPathProfiles((x, z) => rawField.sampleHeight(x, z)),
 });
 
-// Dry-grass scrub: a short dense ground tuft carries the coverage and a tall dry accent species
-// rises out of it in pockets, so vegetation reads as growth where it can rather than one blade
-// stamped everywhere. Ochre roots into straw tips keep every side-lit blade in a value the light
-// can model instead of a black strip against bright sand.
+// Dry-grass scrub: desert bunchgrass carries the clumps over open sand and a tall dry accent
+// species rises out of it in pockets, so vegetation reads as growth where it can rather than one
+// blade stamped everywhere. Ochre roots into straw tips keep every side-lit blade in a value the
+// light can model instead of a black strip against bright sand.
 const scrubClump = (x: number, z: number, size: number, seed: string): GrassEnvironmentDescriptor =>
   grass({
     area: { w: size, d: size, position: [x, z] },
-    blade: {
-      bladeHeight: 0.48,
-      heightVariation: 0.66,
-      bladeWidth: 0.06,
-      widthVariation: 0.55,
-      curvature: 0.45,
-    },
-    wind: { windStrength: 0.55 },
-    colour: { baseColor: "#6e5a34", tipColor: "#b9a064", valueNoise: 0.3 },
-    season: { dryness: 0.45 },
+    species: "desert-bunchgrass",
+    colour: { baseColor: "#6e5a34", tipColor: "#b9a064" },
     seed,
-    tuft: { tuftSpread: 0.3, clumping: 0.6, clumpSize: 1.8 },
-    lighting: { normalLift: 0.8 },
-    species: { mixShare: 0.1, mixHeight: 2.1, mixColor: "#e2c878" },
+    mix: { mixShare: 0.1, mixHeight: 2.1, mixColor: "#e2c878" },
   });
 
 const scrubClumps = (

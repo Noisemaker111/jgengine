@@ -12,6 +12,7 @@ import { registerSceneKind, type SceneKindObject } from "@jgengine/core/scene/sc
 import { defineParamSchema, parseParams, type ColorParamField, type RangeParamField } from "@jgengine/core/generator/paramSchema";
 import { defineGenerator, registerGenerator } from "@jgengine/core/generator/generator";
 import { createGrassTuftTemplate, type GrassTuftTemplate } from "@jgengine/core/grass/grassField";
+import { GRASS_SPECIES } from "@jgengine/core/grass/grassSpecies";
 
 /** The editor volume kind marking a box as a GPU grass patch. */
 export const GRASS_FIELD_KIND = "grass_field";
@@ -34,14 +35,24 @@ export interface GrassBlade {
   curvature: number;
   /** 0..1 how much a blade resists wind and droop; soft grass sways and flops, stiff grass stands. */
   stiffness: number;
+  /** 0..1 how far a blade spirals about its own axis from root to tip; 1 is a half turn. */
+  twist: number;
+  /** 0..1 how sharply the tip folds over at the end of the blade, past the even arc of `curvature`. */
+  droop: number;
+  /** 0..1 V-fold across the blade, so it lights as a channelled leaf instead of a flat strip. */
+  fold: number;
 }
 
 /** How blades gather into tufts and clumps. */
 export interface GrassTuft {
   /** Spread of blades around each tuft root, in metres. */
   tuftSpread: number;
-  /** Blades grown from one tuft root, 1..9. */
+  /** Blades grown from one tuft root, 1..16. */
   tuftBlades: number;
+  /** 0..1 how far blades lean out from the tuft centre: 0 an upright bundle, 1 a rosette fanned near flat. */
+  splay: number;
+  /** 0..1 clumps mound into domed cushions, tall in the middle and low at the rim (moss, cushion plants). */
+  cushion: number;
   /** 0..1 share of tufts gathered around clump centres into thick tussocks. */
   clumping: number;
   /** Typical clump radius in metres. */
@@ -60,6 +71,12 @@ export interface GrassColour {
   hueNoise: number;
   /** 0..1 per-blade brightness jitter. */
   valueNoise: number;
+  /** 0..1 pale margins along each blade's edges (ribbon grass, variegated sedge). */
+  variegation: number;
+  /** 0..1 pale bands across each blade (zebra grass). */
+  banding: number;
+  /** Colour of the variegated margins and bands, hex. */
+  variegationColor: string;
 }
 
 /** Season, drought and the masks that vary them across the field. */
@@ -86,12 +103,14 @@ export interface GrassSecondSpecies {
   mixColor: string;
 }
 
-/** Flower heads. */
+/** Flower and seed heads. */
 export interface GrassFlowers {
-  /** 0..1 share of tufts carrying a flower head. */
+  /** 0..1 share of tufts carrying a flower or seed head. */
   flowerShare: number;
-  /** Flower head size in metres. */
+  /** Head size in metres. */
   flowerSize: number;
+  /** 0..1 head shape: 0 a round blossom facing the camera, 1 an upright seed spike or plume. */
+  headShape: number;
   /** First flower colour, hex. */
   flowerColor: string;
   /** Second flower colour, hex; each flower picks one of the two. */
@@ -132,6 +151,8 @@ export interface GrassWind {
   windGust: number;
   /** Wind heading in degrees, 0 along +X. */
   windDirection: number;
+  /** 0..1 the whole field leans downwind at rest (windswept coast, trampled path, flattened by rain). */
+  lean: number;
 }
 
 /** Blade material and light. */
@@ -150,7 +171,7 @@ export interface GrassLook {
   tuft: GrassTuft;
   colour: GrassColour;
   season: GrassSeason;
-  species: GrassSecondSpecies;
+  mix: GrassSecondSpecies;
   flowers: GrassFlowers;
   growth: GrassGrowth;
   mowing: GrassMowing;
@@ -163,6 +184,9 @@ export interface GrassLook {
 /** Every grass knob flat, the shape a volume's `meta`, the inspector schema and presets use. */
 export type GrassKnobs = GrassBlade & GrassTuft & GrassColour & GrassSeason & GrassSecondSpecies & GrassFlowers & GrassGrowth & GrassMowing & GrassWind & GrassLighting & { seed: string };
 
+/** A knob set a species writes: any knobs, never the seed. */
+export type GrassSpeciesKnobs = Partial<Omit<GrassKnobs, "seed">>;
+
 const FLAT_DEFAULTS: GrassKnobs = {
   density: 0.55,
   bladeHeight: 0.55,
@@ -172,13 +196,21 @@ const FLAT_DEFAULTS: GrassKnobs = {
   profile: 0.45,
   curvature: 0.35,
   stiffness: 0.5,
+  twist: 0,
+  droop: 0,
+  fold: 0,
   tuftSpread: 0.15,
   tuftBlades: 5,
+  splay: 0,
+  cushion: 0,
   baseColor: "#3a6332",
   tipColor: "#9cc35a",
   gradient: 0.45,
   hueNoise: 0.15,
   valueNoise: 0.3,
+  variegation: 0,
+  banding: 0,
+  variegationColor: "#e9ecc4",
   season: 0,
   seasonNoise: 0.25,
   dryness: 0,
@@ -189,6 +221,7 @@ const FLAT_DEFAULTS: GrassKnobs = {
   mixColor: "#c8b46a",
   flowerShare: 0,
   flowerSize: 0.035,
+  headShape: 0,
   flowerColor: "#f2e36b",
   flowerColor2: "#f4f1ea",
   clumping: 0.35,
@@ -204,6 +237,7 @@ const FLAT_DEFAULTS: GrassKnobs = {
   windSpeed: 1.4,
   windGust: 0.25,
   windDirection: 20,
+  lean: 0,
   normalLift: 0.6,
   roughness: 0.85,
   translucency: 0.5,
@@ -214,15 +248,15 @@ const FLAT_DEFAULTS: GrassKnobs = {
 /** Group a flat knob set into a {@link GrassLook}. @internal */
 export function groupGrassKnobs(knobs: GrassKnobs): GrassLook {
   return {
-    blade: { density: knobs.density, bladeHeight: knobs.bladeHeight, heightVariation: knobs.heightVariation, bladeWidth: knobs.bladeWidth, widthVariation: knobs.widthVariation, profile: knobs.profile, curvature: knobs.curvature, stiffness: knobs.stiffness },
-    tuft: { tuftSpread: knobs.tuftSpread, tuftBlades: knobs.tuftBlades, clumping: knobs.clumping, clumpSize: knobs.clumpSize },
-    colour: { baseColor: knobs.baseColor, tipColor: knobs.tipColor, gradient: knobs.gradient, hueNoise: knobs.hueNoise, valueNoise: knobs.valueNoise },
+    blade: { density: knobs.density, bladeHeight: knobs.bladeHeight, heightVariation: knobs.heightVariation, bladeWidth: knobs.bladeWidth, widthVariation: knobs.widthVariation, profile: knobs.profile, curvature: knobs.curvature, stiffness: knobs.stiffness, twist: knobs.twist, droop: knobs.droop, fold: knobs.fold },
+    tuft: { tuftSpread: knobs.tuftSpread, tuftBlades: knobs.tuftBlades, splay: knobs.splay, cushion: knobs.cushion, clumping: knobs.clumping, clumpSize: knobs.clumpSize },
+    colour: { baseColor: knobs.baseColor, tipColor: knobs.tipColor, gradient: knobs.gradient, hueNoise: knobs.hueNoise, valueNoise: knobs.valueNoise, variegation: knobs.variegation, banding: knobs.banding, variegationColor: knobs.variegationColor },
     season: { season: knobs.season, seasonNoise: knobs.seasonNoise, dryness: knobs.dryness, noiseScale: knobs.noiseScale },
-    species: { mixShare: knobs.mixShare, mixHeight: knobs.mixHeight, mixWidth: knobs.mixWidth, mixColor: knobs.mixColor },
-    flowers: { flowerShare: knobs.flowerShare, flowerSize: knobs.flowerSize, flowerColor: knobs.flowerColor, flowerColor2: knobs.flowerColor2 },
+    mix: { mixShare: knobs.mixShare, mixHeight: knobs.mixHeight, mixWidth: knobs.mixWidth, mixColor: knobs.mixColor },
+    flowers: { flowerShare: knobs.flowerShare, flowerSize: knobs.flowerSize, headShape: knobs.headShape, flowerColor: knobs.flowerColor, flowerColor2: knobs.flowerColor2 },
     growth: { patchiness: knobs.patchiness, slopeThin: knobs.slopeThin, bareGround: knobs.bareGround, growAbove: knobs.growAbove, groundCover: knobs.groundCover },
     mowing: { stripeWidth: knobs.stripeWidth, stripeContrast: knobs.stripeContrast, stripeAngle: knobs.stripeAngle },
-    wind: { windStrength: knobs.windStrength, windSpeed: knobs.windSpeed, windGust: knobs.windGust, windDirection: knobs.windDirection },
+    wind: { windStrength: knobs.windStrength, windSpeed: knobs.windSpeed, windGust: knobs.windGust, windDirection: knobs.windDirection, lean: knobs.lean },
     lighting: { normalLift: knobs.normalLift, roughness: knobs.roughness, translucency: knobs.translucency },
     seed: knobs.seed,
   };
@@ -243,7 +277,7 @@ export function flattenGrassLook(look: GrassLookGroups): Partial<GrassKnobs> {
 }
 
 type NumberKey = { [K in keyof GrassKnobs]: GrassKnobs[K] extends number ? K : never }[keyof GrassKnobs];
-type ColorKey = "baseColor" | "tipColor" | "mixColor" | "flowerColor" | "flowerColor2";
+type ColorKey = "baseColor" | "tipColor" | "mixColor" | "flowerColor" | "flowerColor2" | "variegationColor";
 
 /** Where variants explore, inside each knob's full range, so every variant still reads as grass. */
 const GRASS_EXPLORE: Partial<Record<NumberKey, readonly [number, number]>> = {
@@ -259,7 +293,15 @@ const GRASS_EXPLORE: Partial<Record<NumberKey, readonly [number, number]>> = {
   curvature: [0, 0.8],
   stiffness: [0.2, 1],
   tuftSpread: [0, 0.3],
-  tuftBlades: [2, 9],
+  tuftBlades: [2, 12],
+  twist: [0, 0.5],
+  droop: [0, 0.6],
+  fold: [0, 0.8],
+  splay: [0, 0.7],
+  cushion: [0, 0.6],
+  variegation: [0, 0.4],
+  banding: [0, 0.3],
+  lean: [0, 0.4],
   gradient: [0.2, 1],
   hueNoise: [0, 0.5],
   valueNoise: [0, 0.5],
@@ -287,77 +329,50 @@ const color = <Key extends ColorKey>(key: Key, label: string, group: string): Co
   type: "color", key, label, group, default: FLAT_DEFAULTS[key], explore: { hue: 20, saturation: 0.2, lightness: 0.06 },
 });
 
-/**
- * Starting looks the inspector offers as one-click applies. Each is plain knob values, so a game
- * tweaks from it or ignores it; together with the seed they are the quickest route to a distinct field.
- */
 const { seed: _seed, ...LOOK_BASE } = FLAT_DEFAULTS;
-const preset = (id: string, label: string, values: Partial<Omit<GrassKnobs, "seed">>) => ({ id, label, values: { ...LOOK_BASE, ...values } });
 
-/** Starting looks the inspector applies in one click; each is a full knob set, so any can be tweaked from there. */
-export const GRASS_PRESETS = [
-  preset("meadow", "Summer meadow", { flowerShare: 0.05, mixShare: 0.08 }),
-  preset("lawn", "Mown lawn", { bladeHeight: 0.12, heightVariation: 0.15, bladeWidth: 0.035, profile: 0.3, curvature: 0.15, stiffness: 0.8,
-    tuftSpread: 0.06, tuftBlades: 6, baseColor: "#2f5a28", tipColor: "#78b048", density: 0.8, clumping: 0.1, windStrength: 0.08, seasonNoise: 0.1, mixShare: 0, flowerShare: 0 }),
-  preset("prairie", "Golden prairie", { bladeHeight: 1.1, heightVariation: 0.4, bladeWidth: 0.03, profile: 0.15, curvature: 0.55, stiffness: 0.3,
-    baseColor: "#6d6a35", tipColor: "#d8c07a", season: 0.45, dryness: 0.35, seasonNoise: 0.5, mixShare: 0.2, mixHeight: 1.4, mixColor: "#e6d49a",
-    windStrength: 0.6, windGust: 0.15, translucency: 0.8 }),
-  preset("marsh", "Marsh reeds", { bladeHeight: 1.6, heightVariation: 0.3, bladeWidth: 0.025, profile: 0.6, curvature: 0.15, stiffness: 0.85,
-    tuftSpread: 0.22, tuftBlades: 7, baseColor: "#3d4f2a", tipColor: "#8fa05a", mixShare: 0.25, mixHeight: 1.25, mixWidth: 1.2, mixColor: "#7a6a40",
-    clumping: 0.7, clumpSize: 1.6, windStrength: 0.35 }),
-  preset("alpine", "Alpine flowers", { bladeHeight: 0.28, heightVariation: 0.45, bladeWidth: 0.05, profile: 0.55, baseColor: "#355c34",
-    tipColor: "#8cc068", flowerShare: 0.3, flowerSize: 0.04, flowerColor: "#b07ee0", flowerColor2: "#f6f0d8", patchiness: 0.3, windStrength: 0.25 }),
-  preset("autumn", "Autumn field", { season: 0.95, seasonNoise: 0.6, baseColor: "#4e5a2e", tipColor: "#a8a050", dryness: 0.2,
-    bladeHeight: 0.6, curvature: 0.6, stiffness: 0.35, mixShare: 0.12, mixColor: "#b0603a" }),
-  preset("scrub", "Dry scrub", { bladeHeight: 0.42, heightVariation: 0.6, bladeWidth: 0.04, profile: 0.2, curvature: 0.5, tuftSpread: 0.3,
-    baseColor: "#6e5a34", tipColor: "#c2a868", dryness: 0.65, seasonNoise: 0.4, clumping: 0.7, clumpSize: 1.8, patchiness: 0.45, windStrength: 0.5,
-    mixShare: 0.1, mixHeight: 2.1, mixColor: "#e2c878", groundCover: 0.7 }),
-  preset("jungle", "Broadleaf jungle floor", { bladeHeight: 0.5, heightVariation: 0.5, bladeWidth: 0.16, profile: 0.95, curvature: 0.7,
-    stiffness: 0.4, tuftSpread: 0.25, tuftBlades: 4, baseColor: "#1f4a24", tipColor: "#4f9a3c", hueNoise: 0.25, valueNoise: 0.4, normalLift: 0.45,
-    mixShare: 0.2, mixHeight: 1.8, mixWidth: 0.4, mixColor: "#6cae48", windStrength: 0.15 }),
-  preset("green", "Putting green", { density: 1, bladeHeight: 0.02, heightVariation: 0.05, bladeWidth: 0.01, widthVariation: 0.2, profile: 0.3,
-    curvature: 0.05, stiffness: 0.95, tuftSpread: 0.03, tuftBlades: 7, baseColor: "#2a5a26", tipColor: "#5fa040", gradient: 0.6, hueNoise: 0.05,
-    valueNoise: 0.15, seasonNoise: 0.05, clumping: 0, slopeThin: 0, windStrength: 0, normalLift: 0.85, groundCover: 1, stripeWidth: 1.2, stripeContrast: 0.25 }),
-  preset("fairway", "Striped fairway", { density: 0.9, bladeHeight: 0.035, heightVariation: 0.1, bladeWidth: 0.014, widthVariation: 0.25, profile: 0.3,
-    curvature: 0.1, stiffness: 0.9, tuftSpread: 0.04, tuftBlades: 7, baseColor: "#335f2a", tipColor: "#76b44c", hueNoise: 0.08, valueNoise: 0.2,
-    seasonNoise: 0.1, clumping: 0.05, windStrength: 0.04, normalLift: 0.8, groundCover: 1, stripeWidth: 4, stripeContrast: 0.55, stripeAngle: 30 }),
-  preset("savanna", "Tall savanna", { density: 0.45, bladeHeight: 1.8, heightVariation: 0.45, bladeWidth: 0.022, widthVariation: 0.4, profile: 0.1,
-    curvature: 0.5, stiffness: 0.35, tuftSpread: 0.28, tuftBlades: 9, baseColor: "#7a6a3a", tipColor: "#e0c27a", gradient: 0.3, season: 0.5,
-    dryness: 0.55, seasonNoise: 0.45, mixShare: 0.15, mixHeight: 1.3, mixColor: "#d9b878", clumping: 0.75, clumpSize: 1.4, bareGround: 0.35,
-    windStrength: 0.55, windGust: 0.2, translucency: 0.85, groundCover: 0.35 }),
-  preset("dune", "Beach dune grass", { density: 0.35, bladeHeight: 0.75, heightVariation: 0.4, bladeWidth: 0.012, widthVariation: 0.3, profile: 0.05,
-    curvature: 0.75, stiffness: 0.3, tuftSpread: 0.18, tuftBlades: 9, baseColor: "#6f7a48", tipColor: "#c8c08a", dryness: 0.35, seasonNoise: 0.3,
-    clumping: 0.9, clumpSize: 1.2, bareGround: 0.6, slopeThin: 0.2, windStrength: 0.7, windSpeed: 2, windGust: 0.35, windDirection: 200, groundCover: 0 }),
-];
+/**
+ * Every grass species as an inspector preset: the full knob set over the defaults, listed under its
+ * habitat. A field names one with `species` and any knob it also sets wins over the species.
+ */
+export const GRASS_PRESETS = GRASS_SPECIES.map((species) => ({ id: species.id, label: species.label, group: species.group, values: { ...LOOK_BASE, ...species.values } }));
 
 /** The grass parameter schema: drives the inspector, the variant grid and every `meta` parse. */
 export const GRASS_SCHEMA = defineParamSchema({
   groups: [
     { id: "blade", label: "Blade" },
     { id: "colour", label: "Colour" },
-    { id: "species", label: "Species & flowers", collapsed: true },
+    { id: "species", label: "Second species & heads", collapsed: true },
     { id: "growth", label: "Growth & masks", collapsed: true },
     { id: "mowing", label: "Mow stripes", collapsed: true, parent: "growth" },
     { id: "wind", label: "Wind", collapsed: true },
     { id: "light", label: "Light", collapsed: true },
   ],
   presets: GRASS_PRESETS,
+  presetKey: "species",
   fields: [
     range("density", "fullness", 0, 1, 0.01),
-    range("bladeHeight", "height", 0.01, 2.5, 0.005, "blade", "m"),
+    range("bladeHeight", "height", 0.01, 4, 0.005, "blade", "m"),
     range("heightVariation", "height variation", 0, 1, 0.01, "blade"),
     range("bladeWidth", "width", 0.008, 0.3, 0.002, "blade", "m"),
     range("widthVariation", "width variation", 0, 1, 0.01, "blade"),
     range("profile", "profile (needle → leaf)", 0, 1, 0.01, "blade"),
     range("curvature", "curvature", 0, 1, 0.01, "blade"),
     range("stiffness", "stiffness", 0, 1, 0.01, "blade"),
+    range("twist", "twist", 0, 1, 0.01, "blade"),
+    range("droop", "tip droop", 0, 1, 0.01, "blade"),
+    range("fold", "fold (flat → channelled)", 0, 1, 0.01, "blade"),
     range("tuftSpread", "tuft spread", 0, 0.6, 0.01, "blade", "m"),
-    range("tuftBlades", "blades per tuft", 1, 9, 1, "blade"),
+    range("tuftBlades", "blades per tuft", 1, 16, 1, "blade"),
+    range("splay", "splay (upright → rosette)", 0, 1, 0.01, "blade"),
     color("baseColor", "base colour", "colour"),
     color("tipColor", "tip colour", "colour"),
     range("gradient", "tip gradient", 0, 1, 0.01, "colour"),
     range("hueNoise", "hue noise", 0, 1, 0.01, "colour"),
     range("valueNoise", "value noise", 0, 1, 0.01, "colour"),
+    range("variegation", "variegated margins", 0, 1, 0.01, "colour"),
+    range("banding", "cross bands", 0, 1, 0.01, "colour"),
+    color("variegationColor", "variegation colour", "colour"),
     range("season", "season", 0, 1, 0.01, "colour"),
     range("seasonNoise", "season noise", 0, 1, 0.01, "colour"),
     range("dryness", "dryness", 0, 1, 0.01, "colour"),
@@ -366,12 +381,14 @@ export const GRASS_SCHEMA = defineParamSchema({
     range("mixHeight", "second species height", 0.3, 4, 0.05, "species", "×"),
     range("mixWidth", "second species width", 0.3, 4, 0.05, "species", "×"),
     color("mixColor", "second species colour", "species"),
-    range("flowerShare", "flower share", 0, 0.5, 0.01, "species"),
-    range("flowerSize", "flower size", 0.01, 0.12, 0.002, "species", "m"),
+    range("flowerShare", "head share", 0, 0.5, 0.01, "species"),
+    range("flowerSize", "head size", 0.01, 0.4, 0.002, "species", "m"),
+    range("headShape", "head shape (blossom → spike)", 0, 1, 0.01, "species"),
     color("flowerColor", "flower colour", "species"),
     color("flowerColor2", "second flower colour", "species"),
     range("clumping", "clumping", 0, 1, 0.01, "growth"),
-    range("clumpSize", "clump size", 0.5, 12, 0.25, "growth", "m"),
+    range("clumpSize", "clump size", 0.2, 12, 0.05, "growth", "m"),
+    range("cushion", "cushion mounds", 0, 1, 0.01, "growth"),
     range("patchiness", "mown patches", 0, 1, 0.01, "growth"),
     range("slopeThin", "slope thinning", 0, 1, 0.01, "growth"),
     range("bareGround", "bare ground", 0, 1, 0.01, "growth"),
@@ -383,6 +400,7 @@ export const GRASS_SCHEMA = defineParamSchema({
     range("windSpeed", "speed", 0, 4, 0.05, "wind"),
     range("windGust", "gust size", 0, 1, 0.01, "wind"),
     range("windDirection", "heading", 0, 360, 1, "wind", "°"),
+    range("lean", "resting lean", 0, 1, 0.01, "wind"),
     range("normalLift", "normal lift", 0, 1, 0.01, "light"),
     range("roughness", "roughness", 0, 1, 0.01, "light"),
     range("translucency", "translucency", 0, 1, 0.01, "light"),
@@ -391,7 +409,7 @@ export const GRASS_SCHEMA = defineParamSchema({
   ],
 });
 
-/** Parse a volume's `meta` (or a `grass()` config) into a fully-defaulted, clamped look. @internal */
+/** Parse a volume's `meta` (or a `grass()` config) into a fully-defaulted, clamped look; a `species` id backs every knob the meta leaves unset. @internal */
 export function readGrassLook(meta: Readonly<Record<string, unknown>> | undefined): GrassLook {
   return groupGrassKnobs(parseParams(GRASS_SCHEMA, meta));
 }
@@ -423,7 +441,7 @@ export interface GrassFieldBake {
 }
 
 /**
- * The grass generator: one schema from a putting green to tall savanna and dune grass. Detail picks
+ * The grass generator: one schema from cushion moss and putting greens to reed beds, crops and pampas plumes. Detail picks
  * the blade segments (4 at full detail, 2 at half, 1 at a quarter), so a baked variant carries its LODs.
  */
 export const GRASS_GENERATOR = defineGenerator({
