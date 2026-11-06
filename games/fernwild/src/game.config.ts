@@ -229,6 +229,9 @@ export const game = defineGame({
         ...sight("bush", nearestHarvestable(ctx, here, 80, "pick", "mejoberry")),
         // (passing over prey grazing within 30 m of a hunter, as a survivor with a spear would).
         ...sight("prey", nearestWild(ctx, PREY, here, 220, (at) => nearestThreat(ctx, at, 30) === null)),
+        // The nearest wild hunter within 60 m, and how many creatures a bola or trap holds still.
+        ...sight("threat", nearestThreat(ctx, here, 60)),
+        held: creatures.held,
         // The nearest body left to carve within 10 m.
         ...sight("carcass", nearestCarcass(ctx, here, 10)),
         // The nearest explorer note not yet read.

@@ -47,7 +47,7 @@ test("a level-1 raptor: 180 torpor in eighteen ten-point hits, then seven raw me
   let hits = 0;
   while (run.state("r1")?.subdued !== true) {
     hits += 1;
-    if (run.subdue("r1", 10)) break;
+    if (run.hit("r1", [{ vital: "torpor", amount: 10 }])) break;
   }
   expect(hits).toBe(18);
   const stock = { raw_meat: 10 };
@@ -65,7 +65,7 @@ test("the table grows with level: a level-30 raptor needs fifteen raw meat and i
   const run = taming();
   run.track("r1", "raptor", 30);
   expect(run.state("r1")?.maxTorpor).toBeCloseTo(180 + 29 * 10.8);
-  run.subdue("r1", 10000);
+  run.hit("r1", [{ vital: "torpor", amount: 10000 }]);
   const stock = { raw_meat: 20 };
   expect(feedUntilTamed(run, "r1", stock, 900).won).not.toBeNull();
   expect(stock.raw_meat).toBe(5);
@@ -74,7 +74,7 @@ test("the table grows with level: a level-30 raptor needs fifteen raw meat and i
 test("it eats its favourite first: Simple Kibble over raw meat, and two kibble tame a level-1 raptor", () => {
   const run = taming();
   run.track("r1", "raptor", 1);
-  run.subdue("r1", 1000);
+  run.hit("r1", [{ vital: "torpor", amount: 1000 }]);
   const stock = { raw_meat: 10, kibble_simple: 5 };
   const { won, events } = feedUntilTamed(run, "r1", stock, 600);
   expect(won).not.toBeNull();
@@ -85,7 +85,7 @@ test("it eats its favourite first: Simple Kibble over raw meat, and two kibble t
 test("waking up loses the tame: left with no narcotics, a raptor wakes and its affinity is gone", () => {
   const run = taming();
   run.track("r1", "raptor", 1);
-  run.subdue("r1", 1000);
+  run.hit("r1", [{ vital: "torpor", amount: 1000 }]);
   const { won, events } = feedUntilTamed(run, "r1", { raw_meat: 2 }, 1200, false);
   expect(won).toBeNull();
   expect(events.some((event) => event.type === "released")).toBe(true);
@@ -96,7 +96,7 @@ test("waking up loses the tame: left with no narcotics, a raptor wakes and its a
 test("waking is not instant: it stays out until its torpor and a narcotic still taking effect wear off", () => {
   const run = taming();
   run.track("r1", "raptor", 1);
-  run.subdue("r1", 1000);
+  run.hit("r1", [{ vital: "torpor", amount: 1000 }]);
   // Full at 180; a level-1 raptor's torpor wears off 0.3 a second. At 200 s, with 60 of room, a narcotic
   // adds 40 over 16 s. It wakes at 0.2% of full: (180 + 40 - 0.36) / 0.3 = 732 s, its belly empty throughout.
   const none = pantry({});
@@ -116,7 +116,7 @@ test("waking is not instant: it stays out until its torpor and a narcotic still 
 test("a narcotic fed at full torpor is wasted: torpor never goes past its max", () => {
   const run = taming();
   run.track("r1", "raptor", 1);
-  run.subdue("r1", 1000);
+  run.hit("r1", [{ vital: "torpor", amount: 1000 }]);
   run.dose("r1", { vital: "torpor", amount: 40, seconds: 16 });
   run.tick(16, () => null);
   expect(run.state("r1")?.torpor).toBeLessThanOrEqual(180);
@@ -126,8 +126,8 @@ test("hitting a downed creature costs effectiveness", () => {
   const run = taming();
   run.track("clean", "raptor", 1);
   run.track("hit", "raptor", 1);
-  run.subdue("clean", 1000);
-  run.subdue("hit", 1000);
+  run.hit("clean", [{ vital: "torpor", amount: 1000 }]);
+  run.hit("hit", [{ vital: "torpor", amount: 1000 }]);
   run.hurt("hit", 0.25);
   expect(run.state("hit")?.effectiveness).toBeCloseTo(1 / 1.5, 6);
   expect(run.state("clean")?.effectiveness).toBe(1);
@@ -137,4 +137,20 @@ test("bonus levels follow ARK: floor(level × effectiveness / 2)", () => {
   expect(bonusLevels(90, 0.85)).toBe(38);
   expect(bonusLevels(150, 0.999)).toBe(74);
   expect(bonusLevels(1, 0.8)).toBe(0);
+});
+
+test("a bola's hold is a dose like any other: it fills the held meter, wears off a second at a time, and a second bola tops it up", () => {
+  const run = taming();
+  run.track("r1", "raptor", 1);
+  const bola = [{ vital: "held", amount: 15 }];
+  expect(run.hit("r1", bola)).toBe(false);
+  expect(run.state("r1")?.held).toBe(15);
+  run.tick(10, () => null);
+  expect(run.state("r1")?.held).toBeCloseTo(5, 9);
+  run.hit("r1", bola);
+  expect(run.state("r1")?.held).toBeCloseTo(20, 9);
+  run.tick(25, () => null);
+  expect(run.state("r1")?.held).toBe(0);
+  // Torpor and hold are separate meters: being held does not knock it out.
+  expect(run.state("r1")?.subdued).toBe(false);
 });

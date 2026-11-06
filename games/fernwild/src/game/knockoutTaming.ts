@@ -17,6 +17,8 @@ export interface TamingRead {
   effectiveness: number;
   /** Seconds of digestion left before it eats again, at taming speed 1. */
   belly: number;
+  /** Seconds a bola or trap still holds it still. */
+  held: number;
   /** Seconds until its torpor, and the narcotics still taking effect, wear off and it wakes; 0 when awake. */
   wakesIn: number;
 }
@@ -78,6 +80,7 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
     progress: entry.body.fraction("affinity"),
     effectiveness: effectivenessOf(entry.body.value("ineffectiveness")),
     belly: entry.body.value("belly"),
+    held: entry.body.value("held"),
     wakesIn: wakesIn(entry),
   });
 
@@ -100,11 +103,11 @@ export function createKnockoutTaming(defs: Readonly<Record<string, TamingDef>>) 
     nextFood(kind: string, supply: DoseSupply): string | null {
       return diet.pick(kind, (itemId) => supply.count(itemId) > 0);
     },
-    /** Torpor from a hit or a dart; true when this knocked it out. */
-    subdue(id: string, amount: number): boolean {
+    /** What a blow, an arrow or a bola doses into its body; true when this knocked it out. */
+    hit(id: string, doses: readonly VitalDose[]): boolean {
       const entry = tracked.get(id);
       if (entry === undefined) return false;
-      entry.body.change("torpor", amount);
+      entry.body.dose(...doses);
       if (entry.down || !entry.body.has("unconscious")) return false;
       entry.down = true;
       return true;

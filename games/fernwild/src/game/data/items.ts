@@ -1,4 +1,5 @@
 import type { SpoilRule } from "@jgengine/core/inventory/spoilage";
+import type { VitalDose } from "@jgengine/core/stats/vitals";
 import type { ToolProfile } from "@jgengine/core/world/resourceNode";
 
 import { EGG_LABEL, EGG_SIZES, eggItem, KIBBLE_LABEL, KIBBLE_TIERS, kibbleItem } from "./kibble";
@@ -36,8 +37,8 @@ export interface ToolDef {
   reach: number;
   /** Damage at 100% melee. */
   damage: number;
-  /** Torpor added per hit (clubs knock out). */
-  torpor?: number;
+  /** What a hit doses into a creature's body, at 100% melee (a club's torpor knocks out). */
+  hits?: readonly VitalDose[];
   /** Stamina per swing. */
   stamina: number;
   /** Seconds between swings. */
@@ -48,10 +49,10 @@ export interface ToolDef {
   ranged?: RangedDef;
 }
 
-/** What one shot of an ammo lands. */
+/** What one shot of an ammo lands: damage, and doses into the body it hits (a tranq arrow's torpor, a bola's hold). */
 export interface ShotDef {
   damage: number;
-  torpor: number;
+  doses: readonly VitalDose[];
 }
 
 /** A firing weapon: how far it hits, and its ammo in the order it reaches for them (the first one carried fires). */
@@ -108,13 +109,13 @@ const berry = (id: string, label: string, consume: Consume, note: string): ItemD
 /**
  * Bare hands: ARK's 8-damage punch, thatch from trees, a little stone from rocks. A punch knocks out
  * as well as hurts: ARK deals 1.75x a fist's damage as torpor, so a dodo sleeps before it dies.
- * Each tool's `torpor` is what one hit lands on a creature.
+ * Each tool's `hits` are the doses one hit lands in a creature's body.
  */
 export const FIST: ToolDef = {
   gather: { power: 1, biases: { thatch: 1, wood: 0.35, stone: 0.5, flint: 0.25, fiber: 0, raw_meat: 0.5, hide: 0.5 }, defaultBias: 0 },
   reach: 1.6,
   damage: 8,
-  torpor: 8 * 1.75,
+  hits: [{ vital: "torpor", amount: 8 * 1.75 }],
   damageClass: "fist",
   stamina: 5,
   cooldown: 0.55,
@@ -187,7 +188,7 @@ export const ITEMS: readonly ItemDef[] = [
     id: "wooden_club", label: "Wooden Club", kind: "tool", weight: 1, stack: 1, note: "Knocks creatures out.",
     // ARK's club lands about 3.75x its damage as torpor: a level-1 raptor (180 torpor) sleeps in 9 hits, a
     // phiomia (240) in 12. Fists land more per swing than they did, but the club still outsleeps them.
-    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2.3, damage: 5, torpor: 20, stamina: 6, cooldown: 0.9 },
+    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2.3, damage: 5, hits: [{ vital: "torpor", amount: 20 }], stamina: 6, cooldown: 0.9 },
   },
   {
     id: "spear", label: "Spear", kind: "tool", weight: 2, stack: 1, note: "A long, sharp stick for fighting.",
@@ -205,13 +206,19 @@ export const ITEMS: readonly ItemDef[] = [
   // ARK's slingshot throws the stones in the bag: little damage, a lot of torpor, a short range.
   {
     id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones from the bag. Knocks small creatures out from a few metres away.",
-    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 4, cooldown: 1, ranged: { range: 20, ammo: { stone: { damage: 4, torpor: 25 } } } },
+    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 4, cooldown: 1, ranged: { range: 20, ammo: { stone: { damage: 4, doses: [{ vital: "torpor", amount: 25 }] } } } },
   },
   // ARK's bow: stone arrows wound, tranquilizer arrows (a stone arrow dipped in narcotic) knock out from
   // range. A level-1 raptor (180 torpor) sleeps on two tranq arrows. Numbers approx.
   {
     id: "bow", label: "Bow", kind: "tool", weight: 1, stack: 1, note: "Fires arrows from the bag: tranquilizer arrows first, then stone arrows.",
-    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 2, cooldown: 1.1, ranged: { range: 45, ammo: { tranq_arrow: { damage: 8, torpor: 95 }, stone_arrow: { damage: 25, torpor: 10 } } } },
+    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 2, cooldown: 1.1, ranged: { range: 45, ammo: { tranq_arrow: { damage: 8, doses: [{ vital: "torpor", amount: 95 }] }, stone_arrow: { damage: 25, doses: [{ vital: "torpor", amount: 10 }] } } } },
+  },
+  // ARK's bola: thrown, it wraps a creature's legs and holds it still for a while; the biggest shrug it off.
+  // The bola in hand is its own ammo. Hold time approx.
+  {
+    id: "bola", label: "Bola", kind: "tool", weight: 0.5, stack: 10, note: "Throw it to tangle a creature's legs and hold it still. Too small for the biggest.",
+    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 4, cooldown: 1, ranged: { range: 25, ammo: { bola: { damage: 0, doses: [{ vital: "held", amount: 15 }] } } } },
   },
   { id: "stone_arrow", label: "Stone Arrow", kind: "ammo", weight: 0.05, stack: 100, note: "A flint-tipped arrow for the bow." },
   { id: "tranq_arrow", label: "Tranquilizer Arrow", kind: "ammo", weight: 0.06, stack: 100, note: "A stone arrow dipped in narcotic: knocks creatures out from range." },
