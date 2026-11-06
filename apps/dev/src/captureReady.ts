@@ -123,31 +123,37 @@ function delay(ms: number): Promise<void> {
 
 /** Streaming counts as done after this much loader idle; below it a model can still pop in. */
 const MODEL_IDLE_MS = 400;
-const MODEL_IDLE_TIMEOUT_MS = 15_000;
+/** One idle wait; the quiescence loop repeats it until its own budget runs out. */
+const MODEL_IDLE_SLICE_MS = 15_000;
 /**
  * Budget for staged work to tick, mount and finish streaming before the gate gives up. It outlasts
  * the shader warmup's own cap, which always lifts the loading screen in the end: a shorter one
- * reported a slow load (a GPU short of memory) as a scene that never mounted.
+ * reported a slow load (a GPU short of memory, trees grown in workers) as a failure.
  */
 const QUIESCENCE_TIMEOUT_MS = SHADER_WARMUP_DEFAULTS.planBudgetMs + 30_000;
 /** Start-menu rounds the gate clicks through when the game declares no `capture.play`. */
 const AUTO_START_ROUNDS = 3;
 
 /**
- * Block until the shared GLB loader has been idle for {@link MODEL_IDLE_MS}, bounded.
+ * Wait up to one slice for the shared GLB loader to be idle for {@link MODEL_IDLE_MS}.
  * A detached `?look=` camera frames a region the player never stood in, so its models
  * are still streaming when a fixed settle expires — the reason establishing captures
  * used to need a hand-tuned `--settle` before they stopped coming back half-empty.
  */
 async function waitForModelStreaming(): Promise<void> {
-  const deadline = Date.now() + MODEL_IDLE_TIMEOUT_MS;
+  const deadline = Date.now() + MODEL_IDLE_SLICE_MS;
   while (Date.now() < deadline) {
     if (modelLoadIdleMs() >= MODEL_IDLE_MS) return;
     await delay(100);
   }
+}
+
+/** What the loader still waits on, for a capture that gave up on it. */
+function pendingModelsNote(): string {
+  if (modelLoadIdleMs() >= MODEL_IDLE_MS) return "";
   const pending = pendingModelLoads();
   const items = pending.items.map(({ url, count }) => `${url.slice(0, 120)}${count > 1 ? ` (${count})` : ""}`).join(", ");
-  throw new Error(`streaming did not settle before capture; ${pending.total} pending${items === "" ? "" : `: ${items}`}`);
+  return `; ${pending.total} pending${items === "" ? "" : `: ${items}`}`;
 }
 
 function nextFrames(count: number): Promise<void> {
@@ -166,6 +172,7 @@ function viewActivity(): ViewActivity {
   return {
     modelLoadStarts: modelLoadStarts(),
     viewLoading: document.querySelector("[data-shell-code-loading]") !== null,
+    modelsIdle: modelLoadIdleMs() >= MODEL_IDLE_MS,
   };
 }
 
@@ -175,7 +182,7 @@ async function settleView(): Promise<void> {
     QUIESCENCE_TIMEOUT_MS,
   );
   if (failure === null) return;
-  throw new Error(failure);
+  throw new Error(`${failure}${pendingModelsNote()}`);
 }
 
 /**

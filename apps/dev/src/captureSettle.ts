@@ -9,13 +9,15 @@ export interface ViewActivity {
   modelLoadStarts: number;
   /** The jgengine loading screen (`data-shell-code-loading`) is mounted. */
   viewLoading: boolean;
+  /** The model loader has been idle long enough that nothing is still streaming in. */
+  modelsIdle: boolean;
 }
 
 export interface QuiescenceDeps {
   activity: () => ViewActivity;
   /** Resolve after the page has rendered `count` more frames (each frame also steps the sim). */
   frames: (count: number) => Promise<void>;
-  /** Resolve once the model loader has been idle long enough, bounded by its own timeout. */
+  /** Resolve once the model loader has been idle long enough, or after one bounded slice of waiting. */
   modelIdle: () => Promise<void>;
   now: () => number;
 }
@@ -26,7 +28,9 @@ export interface QuiescenceDeps {
  * for staged content: the frame after a capture command is when the sim resolves its queued work
  * (construction, spawns), the render after that is when React mounts the spawned entities, and
  * mounting is what starts their model loads — so the loader can look idle before the staged
- * models were ever requested. Returns a reason string when the deadline passes first.
+ * models were ever requested. A round counts only once the loader is idle, so a slow load (trees
+ * grown in workers) gets the whole budget, not one idle slice. Returns a reason string when the
+ * deadline passes first.
  */
 export async function waitForQuiescentView(deps: QuiescenceDeps, timeoutMs: number, framesPerRound = 2): Promise<string | null> {
   const deadline = deps.now() + timeoutMs;
@@ -37,13 +41,14 @@ export async function waitForQuiescentView(deps: QuiescenceDeps, timeoutMs: numb
     await deps.modelIdle();
     const next = deps.activity();
     rounds += 1;
-    const stable = !next.viewLoading && next.modelLoadStarts === last.modelLoadStarts;
+    const stable = !next.viewLoading && next.modelsIdle && next.modelLoadStarts === last.modelLoadStarts;
     last = next;
     if (stable && rounds >= 2) return null;
   }
-  return last.viewLoading
-    ? `game view still loading (the jgengine loading screen is up) after ${Math.round(timeoutMs / 1000)}s — the 3D presentation never mounted`
-    : `models kept streaming for ${Math.round(timeoutMs / 1000)}s — capturing would race them`;
+  const seconds = Math.round(timeoutMs / 1000);
+  if (last.viewLoading) return `game view still loading (the jgengine loading screen is up) after ${seconds}s — the 3D presentation never mounted`;
+  if (!last.modelsIdle) return `streaming did not settle before capture within ${seconds}s`;
+  return `models kept streaming for ${seconds}s — capturing would race them`;
 }
 
 /** The slice of an element the start-action picker reads. */
