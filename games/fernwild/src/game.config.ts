@@ -17,7 +17,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { creaturePrompts, creaturesView, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { awakeTamingProgress, creaturePrompts, creaturesView, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
@@ -260,6 +260,9 @@ export const game = defineGame({
         // The game clock in seconds, to time a tame or a craft; the last tame's effectiveness in percent (-1 before any).
         clock: Math.round(ctx.time.now() * 10) / 10,
         lastTameEffectiveness: Math.round((lastTame(ctx)?.effectiveness ?? -0.01) * 100),
+        lastTameBonus: lastTame(ctx)?.bonus ?? -1,
+        // The most taming progress, in percent, an awake wild creature still holds (waking should leave none).
+        awakeProgress: Math.round(awakeTamingProgress(ctx) * 100),
         // Wild eggs and kibble carried, any size or tier.
         eggsCarried: EGG_SIZES.reduce((sum, size) => sum + ctx.player.inventory.count(BAG, eggItem(size)), 0),
         kibble: KIBBLE_TIERS.reduce((sum, tier) => sum + ctx.player.inventory.count(BAG, kibbleItem(tier)), 0),

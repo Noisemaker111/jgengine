@@ -1,6 +1,5 @@
-import type { Curve } from "@jgengine/core/progression/leveling";
 import type { RecipeDef } from "@jgengine/core/crafting/recipe";
-import type { FeedingFood } from "../../engine-local/subdual/subdualFeeding";
+import type { VitalDose } from "@jgengine/core/stats/vitals";
 
 /**
  * ARK's kibble (ark.wiki.gg/wiki/Kibble, since the Homestead update): six tiers, each cooked in a cooking
@@ -52,20 +51,22 @@ export function eggSizeFor(radius: number): EggSize {
   return "xl";
 }
 
-const scale = (curve: Curve, by: number): Curve =>
-  curve.kind === "piecewise" ? { ...curve, points: curve.points.map(([level, value]) => [level, Math.max(1, Math.round(value * by))] as [number, number]) } : curve;
+/** Each dose of `doses` scaled by vital: the plain food's affinity, belly and ineffectiveness, times these. */
+const scaled = (doses: readonly VitalDose[], by: Readonly<Record<string, number>>): VitalDose[] =>
+  doses.map((dose) => ({ ...dose, amount: dose.amount * (by[dose.vital] ?? 1) }));
 
 /**
  * A species' foods with kibble added in ARK's order: its preferred tier first, then the tiers above it,
  * then its own foods, then the tiers below (which it eats only when nothing better is carried).
- * `baseline` is the plain food the speeds are measured against (raw meat or mejoberries).
+ * `baseline` is the plain food the kibble is measured against (raw meat or mejoberries): its tier and up
+ * give four times the affinity and digest in 80% of the time at a third of the ineffectiveness (about
+ * five times the speed); a lower tier gives less affinity than plain food and costs more.
  */
-export function withKibble(foods: Readonly<Record<string, FeedingFood>>, baseline: string, preferred: KibbleTier): Record<string, FeedingFood> {
+export function withKibble(foods: Readonly<Record<string, readonly VitalDose[]>>, baseline: string, preferred: KibbleTier): Record<string, readonly VitalDose[]> {
   const base = foods[baseline] ?? Object.values(foods)[0];
   if (base === undefined) return { ...foods };
-  // 80 food a kibble against 50 a raw meat: fewer bites; 5x the affinity per food point: a fifth of the time.
-  const good: FeedingFood = { meals: scale(base.meals, 0.25), seconds: scale(base.seconds, 0.2), cost: 0.01 };
-  const poor: FeedingFood = { meals: scale(base.meals, 1.3), seconds: scale(base.seconds, 1.5), cost: 0.05 };
+  const good = scaled(base, { affinity: 4, belly: 0.8, ineffectiveness: 1 / 3 });
+  const poor = scaled(base, { affinity: 1 / 1.3, belly: 1.15, ineffectiveness: 5 / 3 });
   const at = KIBBLE_TIERS.indexOf(preferred);
   const above = KIBBLE_TIERS.slice(at).map((tier) => [kibbleItem(tier), good] as const);
   const below = KIBBLE_TIERS.slice(0, at).reverse().map((tier) => [kibbleItem(tier), poor] as const);

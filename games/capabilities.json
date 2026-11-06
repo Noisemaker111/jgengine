@@ -3016,6 +3016,16 @@
       "intent": "pitch a moving sound up as it approaches and down as it passes, from listener and emitter velocity"
     },
     {
+      "id": "dose-table",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/stats/doseTable",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "per-receiver effects of each source (food, potion, dart, hit) as vital doses, with preference order"
+    },
+    {
       "id": "dot-field",
       "packages": [
         "@jgengine/core"
@@ -11170,10 +11180,10 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/survival/vitals",
+      "module": "@jgengine/core/stats/vitals",
       "gameFacing": false,
       "probe": null,
-      "intent": "linked survival meters — drain, delayed regen that costs other vitals, starvation links and knockout-style flags"
+      "intent": "a body's linked meters — drain, delayed regen that costs other vitals, starvation links, knockout-style flags, and doses that land now or over time up to a cap"
     },
     {
       "id": "sync-authored-objects",

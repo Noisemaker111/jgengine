@@ -1586,7 +1586,7 @@
 - `VitalLink` (interface): interface VitalLink — A per-second change one vital applies to another while a condition holds.
 - `VitalRateModifier` (type): type VitalRateModifier = StatRateModifier — Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast).
 - `Vitals` (interface): interface Vitals — One body's survival vitals over plain data; every write is bounded and every value retunable.
-- `VitalsState` (interface): interface VitalsState — Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns and raised flags.
+- `VitalsState` (interface): interface VitalsState — Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns, raised flags and doses still landing.
 - `VitalsTickOptions` (interface): interface VitalsTickOptions — Options for {@link Vitals.tick}.
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
 - `WaitQueue` (interface): interface WaitQueue — A real line: guests join the back, leave the head, and the wait a new arrival faces comes from how fast this queue has actually been boarding — not from a configured constant. A broken ride stops boarding, the line grows, and the estimate grows with it.
@@ -1723,7 +1723,7 @@
 - `createUseBehaviorRegistry` (function): function createUseBehaviorRegistry<TWorld>(): UseBehaviorRegistry<TWorld> — Create an empty use-behavior registry. Games register their behaviors, then compose each item's stored refs into a dispatcher whose serializable state lives with the item.
 - `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
 - `createVisitorPopulation` (function): function createVisitorPopulation(options: VisitorPopulationOptions): VisitorPopulation — Create the population a scene reports, with the game owning arrival and leaving policy. A visitor only exists once the world has made its body, so the HUD's count and the bodies on screen are the same list: `admit` returning `null` is a refused arrival, not a number.
-- `createVitals` (function): function createVitals(initial: readonly VitalDef[]): Vitals — Survival vitals for one body — health, stamina, food, water, oxygen, torpor or anything the game names. Each vital drains or regenerates per second, regen can wait out a delay and charge other vitals (health regen eats food), an empty vital pushes on others (starving drains health), and thresholds raise flags with hysteresis (torpor full knocks out until it wears off). Plain data, deterministic, bounded by the number of vitals.
+- `createVitals` (function): function createVitals(initial: readonly VitalDef[]): Vitals — Survival vitals for one body — health, stamina, food, water, oxygen, torpor or anything the game names. Each vital drains or regenerates per second, regen can wait out a delay and charge other vitals (health regen eats food), an empty vital pushes on others (starving drains health), and thresholds raise flags with hysteresis (torpor full knocks out until it wears off), and doses land now or over time up to a cap (a narcotic's torpor over 16 seconds, a shield potion to 50). Not only survival: a creature being tamed, a sim's needs and a shooter's shield are each one body of vitals. Plain data, deterministic, bounded by the number of vitals and doses.
 - `createWaitQueue` (function): function createWaitQueue(options: WaitQueueOptions = {}): WaitQueue — Create a line whose wait estimate is derived from its own throughput. The queue owns the order and the measurement; the ride owns how fast guests are taken off the head, so a slower cycle raises the estimate without the queue being told a cycle time.
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `createWorkQueue` (function): function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> — Create an empty timed work queue.
@@ -3288,18 +3288,6 @@
 - `RegionHealthState` (interface): interface RegionHealthState { id: string; label: string; current: number; max: number; fraction: number; vital: boolean } — ⚠ undocumented
 - `TreatResult` (interface): interface TreatResult { treated: readonly string[] } — ⚠ undocumented
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
-
-## @jgengine/core/survival/vitals
-
-- `VitalDef` (interface): interface VitalDef — One survival vital: its range, how it moves on its own, what it costs and what it does when empty.
-- `VitalFlag` (interface): interface VitalFlag — A named condition a vital raises from its value, with optional hysteresis.
-- `VitalFlagChange` (interface): interface VitalFlagChange — A flag that changed this tick.
-- `VitalLink` (interface): interface VitalLink — A per-second change one vital applies to another while a condition holds.
-- `VitalRateModifier` (type): type VitalRateModifier = StatRateModifier — Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast).
-- `Vitals` (interface): interface Vitals — One body's survival vitals over plain data; every write is bounded and every value retunable.
-- `VitalsState` (interface): interface VitalsState — Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns and raised flags.
-- `VitalsTickOptions` (interface): interface VitalsTickOptions — Options for {@link Vitals.tick}.
-- `createVitals` (function): function createVitals(initial: readonly VitalDef[]): Vitals — Survival vitals for one body — health, stamina, food, water, oxygen, torpor or anything the game names. Each vital drains or regenerates per second, regen can wait out a delay and charge other vitals (health regen eats food), an empty vital pushes on others (starving drains health), and thresholds raise flags with hysteresis (torpor full knocks out until it wears off). Plain data, deterministic, bounded by the number of vitals.
 
 ## @jgengine/core/talents/talentTree.view
 

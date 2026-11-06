@@ -20,17 +20,17 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | building | 1/3 | 0 | 0 | 2 | 0 |
 | harvest | 2/3 | 0 | 0 | 1 | 0 |
 | crafting | 1/6 | 0 | 0 | 5 | 0 |
-| taming | 5/9 | 0 | 0 | 4 | 0 |
+| taming | 7/9 | 0 | 0 | 2 | 0 |
 | creatures | 2/13 | 0 | 0 | 11 | 0 |
 | breeding | 2/4 | 0 | 0 | 2 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 0/3 | 0 | 0 | 3 | 0 |
 | cave | 1/2 | 0 | 0 | 1 | 0 |
-| **total** | **22/67** | 3 | 0 | 42 | 0 |
+| **total** | **24/67** | 3 | 0 | 40 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 22/67 proven · 3 failing · 42 missing.
+Genres: creature-survival. 24/67 proven · 3 failing · 40 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -70,12 +70,12 @@ Genres: creature-survival. 22/67 proven · 3 failing · 42 missing.
 | `taming.knockout-melee` | proven | Knock a creature out by hitting it, feed it, and it becomes yours. | proofs/sim/tame-knockout.proof.ts |
 | `taming.ranged-knockout` | proven | Knock a creature out from range with sedative ammo, without standing in its reach. | proofs/sim/tame-ranged.proof.ts |
 | `taming.keep-under` | proven | Keep an unconscious creature under with a sedative while it eats. | proofs/sim/tame-keep-under.proof.ts |
-| `taming.wake-loses` | missing | If an unconscious creature's torpor runs out it wakes up wild, and the taming progress is lost. |  |
+| `taming.wake-loses` | proven | If an unconscious creature's torpor runs out it wakes up wild, and the taming progress is lost. | proofs/sim/tame-wake.proof.ts |
 | `taming.preferred-food` | proven | Each species ranks its foods; its favourite tames it several times faster and cleaner than ordinary food. | proofs/sim/tame-favourite.proof.ts |
 | `taming.crafted-bait` | proven | A cooked taming food, made from eggs and crops at a station, is the best food for creatures of its tier. | proofs/sim/tame-kibble.proof.ts |
 | `taming.passive-feed` | missing | Some creatures tame awake, by offering food without being hit. |  |
 | `taming.trap` | missing | A trap or snare holds a creature still for taming. |  |
-| `taming.effectiveness` | missing | A cleaner tame gives a better creature. |  |
+| `taming.effectiveness` | proven | A cleaner tame gives a better creature. | proofs/sim/tame-clean.proof.ts |
 | `creatures.follow-stay` | missing | Order a tame to follow, stay or guard. |  |
 | `creatures.fight-alongside` | missing | Tames attack what threatens the player. |  |
 | `creatures.work.gather` | missing | Species have gather roles: a tame gathers its specialty resource far faster than the player's best tool. |  |
@@ -178,6 +178,38 @@ What each of ARK's beats is, what Fernwild did when this plan was written (playe
 
 Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino raids on the base at night, and no flyers to tame on the path.
 
+## Built from the parts
+
+The root mechanism under most of what is left: a body holds meters (vitals), sources give it doses
+(now, or over seconds, up to a cap), a dose table says what each source gives each kind of receiver,
+and a meter crossing a line raises a flag that a rule acts on. Knockout taming is exactly that: a
+club, a dart or a narcotic doses torpor; torpor full raises `unconscious`; while out, each food from
+the species' dose table doses affinity, belly and ineffectiveness; affinity full raises `tamed`.
+A shield potion, a sim's meal and a gas cloud are the same shape. Each entry below names its parts;
+build it from them, and add what a part lacks to that part, with a test.
+
+| Entry | Built from |
+| --- | --- |
+| taming.wake-loses | torpor flag clears: the game zeroes affinity (done in `knockoutTaming.ts`) |
+| taming.effectiveness | ineffectiveness meter; hits and meals dose it; effectiveness 1/(1+x) (done) |
+| taming.passive-feed | the same diet dose table, offered by the player to an awake creature that raises a `hungry` flag |
+| taming.trap | a `held` meter dosed by a bola or trap, draining; the flag sets movement speed to 0 (Modifiers) |
+| creatures.feed-starve | a tame's food vital drains; it eats from its inventory through the same diet table; empty food drains health (vitals `whenEmpty`) |
+| survival.oxygen-swim | an oxygen vital drained while under water (`extra` rate), `whenEmpty` drains health |
+| cave.hazards | an area doses who stands in it (gas: oxygen down; heat: health down) |
+| survival.temperature | `bodyTemperature` gives drain rates into the vitals tick |
+| creatures.work.gather | a tame's attack is a tool profile (`resourceNode` biases) per species, data only |
+| creatures.work.lighter-loads | a carrier x item weight multiplier, the same per-receiver table shape, read by `carryLoad` |
+| survival.encumbrance | `inventory/encumbrance` over carried weight into a speed modifier |
+| crafting.fuel / refine-tier | `crafting/production` with a fuel meter drained while running |
+| crafting.preserve | spoilage rate x a container multiplier (Modifiers) |
+| crafting.tool-wear | `item/durability` |
+| survival.farm | `crafting/crop` growth Phases plus a water meter |
+| spawns.* | `populationDirector`, Placement, Table per biome, a Ladder of level by distance |
+| boss.phases | `thresholdTracker` over the boss's health |
+| creatures.ride.fly | `flight/freeFlight` with stamina as a vital drained while flying |
+| creatures.work.airlift | riding's seat relation with a creature as the passenger |
+
 ## Features
 
 <!-- Every feature the brief implies, one per line, a few words each (the words before ` — ` are looked up). Then check each with `jgengine has "<feature>"`. -->
@@ -214,7 +246,7 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 | harvesting — trees, bushes, rocks by tool, ARK's yields | `scatter-harvest` · `import { createScatterHarvest } from "@jgengine/core/harvest/scatterHarvest"`<br>`resource-node` · `import { createResourceNodeField } from "@jgengine/core/world/resourceNode"` | covered |
 | crafting — engrams, recipes, a crafting queue | `recipe-catalog-validation` · `import { validateRecipeCatalog } from "@jgengine/core/crafting/recipeCatalog"` | covered |
 | progression — ARK's XP table, stat points, engram points | `content-progression-validation` · `import { validateContentProgression } from "@jgengine/core/game/contentValidation"`<br>`progression-curve` · `import { evalCurve } from "@jgengine/core/gameplay"` | covered |
-| taming — knock-out taming, torpor, narcotics, taming effectiveness | `subdual-feeding` · `import { createSubdualFeeding } from "./engine-local/subdual/subdualFeeding"` | covered |
+| taming — knock-out taming, torpor, narcotics, taming effectiveness | `survival-vitals` · `import { createVitals } from "@jgengine/core/stats/vitals"`<br>`dose-table` · `import { createDoseTable } from "@jgengine/core/stats/doseTable"` | covered |
 | riding — saddles, mounted steering and attacks | `riding` · `import { Riding } from "@jgengine/core/scene/riding"`<br>`ride-choice` · `import { createRideChooser } from "@jgengine/core/gameplay"` | covered |
 | base building — thatch, wood and stone tiers with snap sockets | `base-building` · `import { createBaseBuilding } from "./engine-local/basebuilding/baseBuilding"`<br>`base-structures-draw` · `import { BaseStructures } from "./engine-local/basebuilding/BaseStructures.draw"` | covered |
 | death — a body and beam to recover your items | `death-system` · `import { createDeathSystem } from "@jgengine/core/combat"`<br>`on-death-drops` · `import { OnDeathSpec } from "@jgengine/core/combat"` | covered |
@@ -224,7 +256,7 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 | breeding — mating, eggs, incubation, imprinting, mutations | `breeding` · `import { createBreedingField } from "@jgengine/core/breeding/breeding"`<br>`value-inheritance` · `import { inheritValues } from "@jgengine/core/inheritance/inheritance"`<br>`resolve` · `import { tierAt } from "@jgengine/core/threshold/thresholds"` | covered |
 | boss fight — the Broodmother summoned at an obelisk with artifacts, an arena, Araneo minions, rewards | `summoned-encounter` · `import { createSummonedEncounter } from "./engine-local/summonedEncounter/summonedEncounter"`<br>`phase-ladder` · `import { advancePhase } from "@jgengine/core/ai/phaseLadder"` | covered |
 | metal tier — metal tools and structures, smithy, forge | `mood` · `import { createMoodReader } from "@jgengine/core/agents/mood"`<br>`resolve` · `import { tierAt } from "@jgengine/core/gameplay"` | partial |
-| cooking — cooking pot, kibble for taming | `scripts/` | partial |
+| cooking — cooking pot, kibble for taming | `dose-table` · `import { createDoseTable } from "@jgengine/core/stats/doseTable"`<br>`remains-field` · `import { createRemainsField } from "./engine-local/remains/remains"` | covered |
 | explorer notes — notes across the island and the experience they give | `editor-material-controls` · `import { materialAuthoringNotes } from "@jgengine/editor/materialControls"`<br>`damage-type-unknown` · `import { UnknownDamageTypeError } from "@jgengine/core/combat"` | partial |
 | more bosses — Megapithecus and the Dragon, the Overseer in the Tek cave | `summoned-encounter` · `import { createSummonedEncounter } from "./engine-local/summonedEncounter/summonedEncounter"`<br>`phase-ladder` · `import { createPhaseClock } from "@jgengine/core/ai/phaseLadder"` | partial |
 
@@ -233,7 +265,6 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 <!-- written from the Features list by hand; check each row with `jgengine has "<feature>"` -->
 
 - metal tier — metal tools and structures, smithy, forge: only part ships (mood); extend that owner or confirm it covers the feature.
-- cooking — cooking pot, kibble for taming: only part ships (scripts/); extend that owner or confirm it covers the feature.
 - explorer notes — notes across the island and the experience they give: only part ships (editor-material-controls); extend that owner or confirm it covers the feature.
 - more bosses — Megapithecus and the Dragon, the Overseer in the Tek cave: only part ships (summoned-encounter); extend that owner or confirm it covers the feature.
 
@@ -249,7 +280,7 @@ One PR each, in order; the gaps go first that later milestones need. Tick a mile
 - [x] 6. Breeding (#2606)
 - [x] 7. Boss arena engine feature and the Broodmother at the green obelisk
 - [ ] 8. Metal tier: metal tools and structures, smithy, forge
-- [ ] 9. Cooking pot and kibble for taming
+- [x] 9. Cooking pot and kibble for taming (#2972)
 - [x] 10. Explorer notes, the dossier and the island map
 - [ ] 11. Megapithecus, the Dragon and the Overseer on the boss arena feature
 - [x] 12. The south beach as ARK draws it: pale sand with pebbles and driftwood, palms near the water, a jungle wall of trees, ferns, bushes and waist-high grass (#2687)
