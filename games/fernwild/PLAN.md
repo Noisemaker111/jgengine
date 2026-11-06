@@ -20,7 +20,7 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | building | 1/3 | 0 | 0 | 2 | 0 |
 | harvest | 2/3 | 0 | 0 | 1 | 0 |
 | crafting | 1/6 | 0 | 0 | 5 | 0 |
-| taming | 7/9 | 0 | 0 | 2 | 0 |
+| taming | 8/9 | 0 | 0 | 1 | 0 |
 | creatures | 3/13 | 0 | 0 | 10 | 0 |
 | breeding | 2/4 | 0 | 0 | 2 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
@@ -74,7 +74,7 @@ Genres: creature-survival. 26/67 proven · 3 failing · 38 missing.
 | `taming.preferred-food` | proven | Each species ranks its foods; its favourite tames it several times faster and cleaner than ordinary food. | proofs/sim/tame-favourite.proof.ts |
 | `taming.crafted-bait` | proven | A cooked taming food, made from eggs and crops at a station, is the best food for creatures of its tier. | proofs/sim/tame-kibble.proof.ts |
 | `taming.passive-feed` | missing | Some creatures tame awake, by offering food without being hit. |  |
-| `taming.trap` | missing | A trap or snare holds a creature still for taming. |  |
+| `taming.trap` | proven | A trap or snare holds a creature still for taming. | proofs/sim/bola.proof.ts |
 | `taming.effectiveness` | proven | A cleaner tame gives a better creature. | proofs/sim/tame-clean.proof.ts |
 | `creatures.follow-stay` | missing | Order a tame to follow, stay or guard. |  |
 | `creatures.fight-alongside` | missing | Tames attack what threatens the player. |  |
