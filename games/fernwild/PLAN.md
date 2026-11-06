@@ -202,8 +202,8 @@ taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming;
 | survival.oxygen-swim | core swim `dive` (crouch down, jump up, telemetry `diveDepth`); oxygen drained by an `extra` rate while the head is under, `whenEmpty` drowns (done) |
 | cave.hazards | core `areaEffectField`, one source per hostile cave carrying vital rates and a temperature shift; the survivor tick adds them (done: swamp gas, lava heat, snow cold) |
 | survival.temperature | `bodyTemperature` gives drain rates into the vitals tick |
-| creatures.work.gather | a tame's attack is a tool profile (`resourceNode` biases) per species, data only |
-| creatures.work.lighter-loads | a carrier x item weight multiplier, the same per-receiver table shape, read by `carryLoad` |
+| creatures.work.gather | a species' bite is a tool profile (`TAME_GATHER` in `data/tameWork.ts`); a ridden bite with nothing alive in front works the tree, rock or bush there, into the mount's own inventory, and stops at its weight limit (done) |
+| creatures.work.lighter-loads | `LIGHTER_LOADS`, species x item weight share, read by the tame's `inventory/encumbrance` load: a loaded tame slows and stops at its weight stat (done) |
 | survival.encumbrance | `inventory/encumbrance` over carried weight into a speed modifier |
 | crafting.fuel | a campfire or pot is a fuel vital in a `FUEL` dose table (wood 30 s, thatch 7.5 s, sparkpowder 60 s); E puts one on; empty, the station cooks nothing and warms nobody, and queued work waits where it stopped (done, `base.ts`) |
 | crafting.refine-tier | the same fuel meter on a forge, ore in, metal out |

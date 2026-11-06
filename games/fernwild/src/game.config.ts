@@ -240,6 +240,7 @@ export const game = defineGame({
         ...sight("danger", nearestThreat(ctx, here, 40)),
         // The nearest tamed Phiomia, to walk back to with its saddle.
         ...sight("phiomia", nearestTame(ctx, here, "phiomia")),
+        ...sight("doedicurus", nearestTame(ctx, here, "doedicurus")),
         // The nearest campfire and mortar the survivor placed, to walk back to and work at.
         ...sight("campfire", stationNear("campfire")),
         ...sight("mortar", stationNear("mortar_and_pestle")),
@@ -287,6 +288,10 @@ export const game = defineGame({
         primeSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_prime_meat"),
         rawMeatSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat"),
         riding: creatures.riding === null ? 0 : 1,
+        // The weight the open or ridden tame carries, and its stone (-1 with neither); the bag's stone slot.
+        tameWeight: (creatures.viewing ?? creatures.riding)?.weight.value ?? -1,
+        tameStone: ((card) => (card === null ? -1 : card.inventory.reduce((sum, slot) => sum + (slot?.itemId === "stone" ? slot.count : 0), 0)))(creatures.viewing ?? creatures.riding),
+        stoneSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "stone"),
         saddled: creatures.aimed?.saddled === true ? 1 : 0,
         tameLevel: creatures.viewing?.level ?? creatures.riding?.level ?? 0,
         tamePoints: creatures.viewing?.growth?.unspent ?? 0,
