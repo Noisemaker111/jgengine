@@ -533,6 +533,7 @@ export function registerRift(ctx: GameContext): void {
     // Dev-only: open the ladder and start a tier where the reclaimer stands, so a flow can prove a run
     // without fighting the plain front first.
     ctx.game.commands.define<{ tier?: number; mode?: "run" | "terminal" }>("rift.capture", {
+      cheat: true,
       apply(state: GameContext, input) {
         const rift = riftStore.read(state);
         const tier = input.tier ?? 1;

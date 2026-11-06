@@ -10,6 +10,11 @@
     "react",
     "shell"
   ],
+  "suite": {
+    "genres": [
+      "creature-survival"
+    ]
+  },
   "assetBuild": {
     "lods": {
       "include": [

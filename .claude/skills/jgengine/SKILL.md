@@ -61,4 +61,4 @@ If nothing fits, name the shared owner first (AGENTS.md, "Reusable capability go
 
 ## Finish
 
-Keep scene coordinates in the editor document, state serializable, randomness injected. A game is not done while its entities and props are box markers: run the asset pass in `jgengine-assets`. Prove it with `jgengine-verify`.
+Declare the game's genres in `jgengine.json` (`suite`) and prove each required player verb with a headless proof; `jgengine suite <game>` is the score ([games/AGENTS.md](../../../games/AGENTS.md#game-suite)). Keep scene coordinates in the editor document, state serializable, randomness injected. A game is not done while its entities and props are box markers: run the asset pass in `jgengine-assets`. Prove it with `jgengine-verify`.

@@ -24,6 +24,7 @@ import { staffCover } from "../staff";
 import { joinRide, leaveRide, queuePosition, rideView, tickRides } from "../rides";
 import { accessOf } from "../build/links";
 import { groundAt } from "../build/terrain";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 /**
  * The walking crowd. Guests are agents with bodies (game code), but everything they do to the park
@@ -287,7 +288,7 @@ function makeRideSink(ctx: GameContext): RideTickSink {
   };
 }
 
-const sinks = new WeakMap<GameContext, RideTickSink>();
+const sinks = new ContextMap<RideTickSink>();
 
 /** Advance the park's rides one tick; their events land on the guests and the world. */
 export function tickRidePark(ctx: GameContext, dt: number): void {

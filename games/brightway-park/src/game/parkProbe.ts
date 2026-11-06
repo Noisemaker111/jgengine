@@ -38,6 +38,14 @@ export interface ParkProbe {
   staffHired: number;
   visitors: number;
   loanOwed: number;
+  /** 1 once the park has closed for good (two month-ends in a row in the red), else 0. */
+  gameOver: number;
+  /** The park's day, from 1. */
+  day: number;
+  /** 1 while the gate is open to guests. */
+  gateOpen: number;
+  /** Rides broken down right now, waiting for a mechanic. */
+  ridesDown: number;
 }
 
 /** Open to the player (no lab topic, or its topic done) and how many there are, for one build category. */
@@ -105,5 +113,9 @@ export function parkProbe(ctx: GameContext): ParkProbe {
     staffHired,
     visitors: w.num("park.scenario_visitors"),
     loanOwed: w.num("park.loan_owed"),
+    gameOver: w.fact("park.game_over") === true ? 1 : 0,
+    day: w.num("park.day"),
+    gateOpen: w.fact("park.gate") === true ? 1 : 0,
+    ridesDown: w.instances().filter((entry) => w.fact(`${entry.id}.broken`) === true).length,
   };
 }

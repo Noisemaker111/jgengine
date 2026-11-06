@@ -1,10 +1,11 @@
 import type { GameContext } from "../runtime/gameContext";
 import { createActionContextStack, type ActionContextStack } from "../input/actionContexts";
 import type { ActionCodesMap } from "../input/actionBindings";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 export const PLAY_CONTROLS_STORE_KEY = "jg.playControls";
 const SUSPENSION_PREFIX = "__jg_control_suspension:";
-const ACTION_CONTEXTS = new WeakMap<GameContext, { stack: ActionContextStack; nextLease: number }>();
+const ACTION_CONTEXTS = new ContextMap<{ stack: ActionContextStack; nextLease: number }>();
 
 function contextsFor(ctx: GameContext): ActionContextStack {
   let state = ACTION_CONTEXTS.get(ctx);

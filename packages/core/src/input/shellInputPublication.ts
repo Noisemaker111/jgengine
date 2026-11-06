@@ -3,6 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import type { InputSink } from "./inputSink";
 import { heldActionsFor } from "./boundActionDispatch";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 type Change = "discrete" | "reset" | "analog";
 let lastPressSeq = 0;
@@ -27,7 +28,7 @@ export function observableShellTracker(tracker: ActionStateTracker<string>) {
     subscribe(listener: (change: Change, presses: NonNullable<InputFrame["presses"]>) => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
   };
 }
-const owners = new WeakMap<GameContext, object>();
+const owners = new ContextMap<object>();
 /** Publishes discrete input above Canvas, so release and failure leases survive stalled or unmounted rendering. @internal */
 export function attachShellInputPublication({ ctx, tracker, active, analog, pointer, sink }: {
   ctx: GameContext;

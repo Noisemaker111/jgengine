@@ -25,6 +25,10 @@ Greenfield: write the design brief, then build milestone 1 as the core loop play
 
 Every design pass yields an observed journey, a north star (promise, pillars, anti-pillars, core decision), a loop/flow model, a ranked bottleneck list with cited evidence, an intervention stack, a chosen design slice, and acceptance evidence. See [references/application-playbook.md](references/application-playbook.md) for the full contract and execution rules (verb->feedback->consequence chains, loop/progression/challenge discipline, upstream ownership).
 
+## Game suite
+
+A game's genres (`jgengine.json` `suite`) imply the player verbs it must have; `jgengine suite --genres <a,b>` lists them with each core feature's depth: how a player finds it, what improves, two features it feeds, why repeat it at hour 5, how it fails. Use those as the design questions for each system, and plan a headless proof per entry ([games/AGENTS.md](../../../games/AGENTS.md#game-suite)). A cut needs a reason; the score shows it.
+
 ## Completion
 
 An audit is not completion for a build/improve request. Finish when the slice is playable, a fresh player can state goal/choice/consequence, failure/recovery behave as intended, and evidence supports the pillars. Use `jgengine-verify` and `workflow` to ship.

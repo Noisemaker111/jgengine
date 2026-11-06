@@ -435,6 +435,8 @@ export interface GameContextCommands {
   define<TInput>(name: string, definition: CommandDefinition<GameContext, TInput>): void;
   has(name: string): boolean;
   names(): string[];
+  /** Whether `name` was defined with `cheat: true`: a debug command a suite proof may only use in setup. */
+  isCheat(name: string): boolean;
   run(name: string, input: unknown): CommandResult<GameContext>;
   /** Run a command attributed to `actorUserId` — a shared-world host routes each client's command through this so the handler can read {@link actor}. */
   runAs(actorUserId: string, name: string, input: unknown): CommandResult<GameContext>;

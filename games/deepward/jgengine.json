@@ -21,5 +21,10 @@
         "window:__jgengineAudio"
       ]
     }
+  },
+  "suite": {
+    "genres": [
+      "extraction"
+    ]
   }
 }

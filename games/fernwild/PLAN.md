@@ -2,6 +2,96 @@
 
 Brief: ARK: Survival Evolved 1:1
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+## Suite score
+
+What players must be able to do, proven by headless simulation in `bun test` (`jgengine suite fernwild`). This is the headline; the engine coverage table below only hints where the engine has a part.
+
+| Area | Proven | Failing | Not simulatable | Missing | Cut |
+| --- | --- | --- | --- | --- | --- |
+| onboarding | 1/2 | 0 | 0 | 1 | 0 |
+| failure | 1/1 | 0 | 0 | 0 | 0 |
+| save | 0/1 | 0 | 0 | 1 | 0 |
+| settings | 0/1 | 0 | 0 | 1 | 0 |
+| menu | 0/1 | 0 | 0 | 1 | 0 |
+| progression | 0/1 | 1 | 0 | 0 | 0 |
+| content | 2/5 | 3 | 0 | 0 | 0 |
+| survival | 3/7 | 0 | 0 | 4 | 0 |
+| building | 1/3 | 0 | 0 | 2 | 0 |
+| harvest | 2/3 | 0 | 0 | 1 | 0 |
+| crafting | 1/2 | 0 | 0 | 1 | 0 |
+| taming | 2/7 | 0 | 0 | 5 | 0 |
+| creatures | 2/9 | 0 | 0 | 7 | 0 |
+| breeding | 2/4 | 0 | 0 | 2 | 0 |
+| spawns | 0/3 | 0 | 0 | 3 | 0 |
+| boss | 0/2 | 0 | 0 | 2 | 0 |
+| cave | 1/2 | 0 | 0 | 1 | 0 |
+| **total** | **18/54** | 4 | 0 | 32 | 0 |
+
+<details><summary>Every required entry</summary>
+
+Genres: creature-survival. 18/54 proven · 4 failing · 32 missing.
+
+| Entry | Status | What the player does | Detail |
+| --- | --- | --- | --- |
+| `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
+| `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
+| `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/body-recover.proof.ts |
+| `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
+| `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
+| `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
+| `progression.runway` | FAILING | Something new unlocks steadily across the first five hours, up to the progression cap. | the last unlock is at level 60 of a cap of 105 |
+| `content.item-source` | proven | Every item can be obtained by playing. | content check |
+| `content.item-use` | FAILING | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no use for metal, obsidian, crystal, oil, artifact_skylord, artifact_devourer, artifact_pack, artifact_immune, artifact_strong, element, spider_flag, broodmother_trophy_gamma and 4 more |
+| `content.recipes-reachable` | proven | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | content check |
+| `content.placeables-place` | FAILING | Every item that says it can be placed can be placed. | says it places but the placement catalog has none: storage_box, hide_sleeping_bag |
+| `content.weapons-have-ammo` | FAILING | Every weapon that fires has obtainable ammo, or needs none. | slingshot fires but takes no ammo |
+| `survival.vitals-drain` | proven | Hunger and thirst fall over time and hurt the player at zero. | proofs/sim/vitals-drain.proof.ts |
+| `survival.eat-drink` | proven | Eating and drinking restore the meters. | proofs/sim/eat-drink.proof.ts |
+| `survival.temperature` | missing | Climate pushes body temperature; clothing, fire or shelter counter it. |  |
+| `survival.oxygen-swim` | missing | Swimming under water drains breath; surfacing refills it. |  |
+| `survival.food-spoils` | proven | Carried food spoils over time into something else. | proofs/sim/food-spoils.proof.ts |
+| `survival.respawn-point` | missing | A placed bed or bag becomes where the player wakes after death. |  |
+| `survival.storage-place` | missing | A storage container can be placed and holds items. |  |
+| `building.place-snap` | proven | Building pieces place, snap to each other and stand. | proofs/sim/build-snap.proof.ts |
+| `building.shelter` | missing | A built enclosure shelters the player from weather and cold. |  |
+| `building.tiers-durability` | missing | Stronger building tiers resist attacks a weaker tier does not. |  |
+| `harvest.tool-bias` | proven | The tool used changes what a tree, rock or body yields, and how much. | proofs/sim/tool-bias.proof.ts |
+| `harvest.node-respawn` | missing | Depleted trees, rocks and bushes come back after a while. |  |
+| `harvest.carcass` | proven | A killed creature's body yields meat and hide by tool. | proofs/sim/carcass-harvest.proof.ts |
+| `crafting.station-tiers` | missing | Placed stations craft recipes the bare inventory cannot. |  |
+| `crafting.unlock-spend` | proven | Level-ups give points the player spends to learn recipes. | proofs/sim/craft-learn.proof.ts |
+| `taming.knockout-melee` | proven | Knock a creature out by hitting it, feed it, and it becomes yours. | proofs/sim/tame-knockout.proof.ts |
+| `taming.ranged-knockout` | missing | Knock a creature out from range with a weapon that adds torpor. |  |
+| `taming.keep-under` | proven | Keep an unconscious creature under with a sedative while it eats. | proofs/sim/tame-keep-under.proof.ts |
+| `taming.preferred-food` | missing | A creature's preferred food tames it faster than ordinary food. |  |
+| `taming.passive-feed` | missing | Some creatures tame awake, by offering food without being hit. |  |
+| `taming.trap` | missing | A trap or snare holds a creature still for taming. |  |
+| `taming.effectiveness` | missing | A cleaner tame gives a better creature. |  |
+| `creatures.follow-stay` | missing | Order a tame to follow, stay or guard. |  |
+| `creatures.fight-alongside` | missing | Tames attack what threatens the player. |  |
+| `creatures.work.gather` | missing | A tame gathers resources the player could not gather as fast. |  |
+| `creatures.work.haul` | missing | A tame carries weight so the player can haul more. |  |
+| `creatures.guard-base` | missing | Tames left at the base defend it. |  |
+| `creatures.level-up` | proven | Tames gain experience and the player spends their levels on stats. | proofs/sim/tame-level-up.proof.ts |
+| `creatures.ride.ground` | proven | Saddle a tame and ride it, steering and attacking from its back. | proofs/sim/ride-ground.proof.ts |
+| `creatures.ride.fly` | missing | Ride a flying tame and gain height. |  |
+| `creatures.ride.swim` | missing | Ride a swimming tame through water. |  |
+| `breeding.pair-mate` | proven | Put a male and a female tame together and they produce an egg or a baby. | proofs/sim/breed-mate.proof.ts |
+| `breeding.incubate` | proven | An egg hatches only kept at the right temperature. | proofs/sim/breed-incubate.proof.ts |
+| `breeding.raise-imprint` | missing | Feed and care for a baby; care raises its quality as it grows. |  |
+| `breeding.inherit-mutate` | missing | Offspring inherit their parents' stats, with a chance of mutation. |  |
+| `spawns.biome-weighted` | missing | Each region spawns its own creatures in its own mix. |  |
+| `spawns.danger-by-distance` | missing | Danger rises the further the player travels from the start. |  |
+| `spawns.respawn-population` | missing | Killed or tamed creatures are replaced over time. |  |
+| `boss.summon-arena-reward` | missing | Gather the offering, summon the boss at its altar, win the fight, take the reward. |  |
+| `boss.phases` | missing | A boss changes how it fights as it is hurt. |  |
+| `cave.artifact-run` | proven | Enter a cave, survive it, and take the artifact from its end. | proofs/sim/cave-artifact.proof.ts |
+| `cave.hazards` | missing | Caves hold their own dangers: stronger creatures, cold, poison or dark. |  |
+
+</details>
+<!-- /suite-score -->
+
 ## Design brief
 
 - Core loop: hit a tree, a rock or a bush, see "+3 Thatch", fill the bag, craft the next tool that gathers faster.
@@ -103,7 +193,7 @@ Still short of ARK: no bolas, slingshot or tranq arrows, no kibble, no wild dino
 
 <!-- written from the Features list by hand; check each row with `jgengine has "<feature>"` -->
 
-| Feature | Engine | Verdict |
+| Feature | Engine | Engine hint |
 | --- | --- | --- |
 | island terrain — The Island surveyed 1:1: coast, peaks, ridges, rivers, biomes, obelisks, caves | `terrain-coast` · `import { withCoast } from "@jgengine/core/terrain/terrain"` | covered |
 | creature spawns — ARK's spawn zones, species and weights per biome | `spawn-instance-restore` · `import { restoreSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"`<br>`spawn-instance-snapshot` · `import { snapshotSpawnInstance } from "@jgengine/core/stats/spawnLevelStats"` | covered |

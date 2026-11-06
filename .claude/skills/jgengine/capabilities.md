@@ -48,6 +48,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `readQuantity` (function) · `import { readQuantity } from "@jgengine/core/commands/commandInput"`
 
+## context-map — per-context state keyed by the context a wrapper stands for, so a wrapped context shares its model
+
+- `ContextMap` (class) · `import { ContextMap } from "@jgengine/core/runtime/contextIdentity"`
+
 ## default-drive-codes — stock WASD/arrow throttle, brake, steer and handbrake key codes
 
 - `DEFAULT_DRIVE_CODES` (const) · `import { DEFAULT_DRIVE_CODES } from "@jgengine/shell/gameKit"`

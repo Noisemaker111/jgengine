@@ -1,5 +1,9 @@
 # Harbor Heat
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+Game suite: **0/20 proven · 20 missing** · `jgengine suite harbor-heat`
+<!-- /suite-score -->
+
 A coastal city adventure in Mainsail: courier parcels, street crews, four race circuits, ground vehicles and aircraft. It consumes published `@jgengine/*` packages.
 
 Run `bun run dev`, `bun run check-types` and `bun run test` from this directory. `bun run vite build` produces the standalone build. Provision the seven licensed asset sources declared in `src/game/assets.ts` with the published assets CLI before launching a fresh checkout; the original models are bundled from `src/art/`.

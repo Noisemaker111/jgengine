@@ -33,6 +33,12 @@
       ]
     }
   },
+  "suite": {
+    "genres": [
+      "open-world",
+      "racing"
+    ]
+  },
   "assetBuild": {
     "lods": {
       "include": [

@@ -1,5 +1,9 @@
 # Deepward
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+Game suite: **0/16 proven · 16 missing** · `jgengine suite deepward`
+<!-- /suite-score -->
+
 A first-person extraction slice built on published JGengine packages. Leave
 Marrow through the Garage, search Bellwether for salvage, pack the haul and return
 to the entrance before oxygen runs out. Banked salvage survives the next life.

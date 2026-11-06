@@ -23,6 +23,7 @@ import type { SceneEntity } from "./entityStore";
 
 import { behaviorDataEqual, type BehaviorDescriptor, type DecisionGraphBehavior, type PatrolBehavior, type PursueBehavior, type WanderBehavior } from "./behaviors";
 import { distanceBetween } from "./spatial";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 const DEFAULT_WANDER_SPEED = 1.5;
 const WANDER_ARRIVAL = 0.6;
@@ -159,7 +160,7 @@ interface PursueNav extends Lifecycle {
 type Nav = PatrolNav | WanderNav | DecisionGraphNav | PursueNav;
 
 // Bind unsaved policy without eagerly constructing the lazy AI runtime before boot-time restore.
-const pursuitPolicies = new WeakMap<GameContext, NonNullable<GameDefinition["pursuit"]>["eligible"]>();
+const pursuitPolicies = new ContextMap<NonNullable<GameDefinition["pursuit"]>["eligible"]>();
 
 function thinkCadence(behavior: DecisionGraphBehavior): InterestSchedulerConfig {
   return { wakeRadius: Number.POSITIVE_INFINITY, activeInterval: Math.max(0, behavior.thinkInterval ?? 0) };

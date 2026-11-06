@@ -17,6 +17,17 @@ export interface CapabilityAnswers {
   probes?: Record<string, string[]>;
 }
 
+/**
+ * What a game must prove, against the engine's game suite (`@jgengine/core/suite/suiteCatalog`): its
+ * genres, the entries it cuts with the reason the score shows, and the entries it cannot simulate yet with
+ * the file where that logic lives. `jgengine suite <id>` prints the score.
+ */
+export interface ProjectSuite {
+  genres: string[];
+  cut?: Record<string, string>;
+  notSimulatable?: Record<string, string>;
+}
+
 /** One credited line in `jgengine.json`: a person, a studio, an asset pack, a tool. */
 export interface ProjectCreditLine {
   label: string;
@@ -56,6 +67,8 @@ export interface ProjectConfig {
   capabilities?: CapabilityAnswers;
   /** Who made the game and what it uses; the main menu's Credits reads it. */
   credits?: ProjectCredits;
+  /** The game's genres and answers for the game suite score. */
+  suite?: ProjectSuite;
   /**
    * The asset pipeline's plan (`bun run games:provision build <id>` in the engine monorepo): which
    * model files under `public/` get simplified levels and baked impostors, and how. Read by
@@ -91,6 +104,14 @@ export function readProjectConfig(dir: string): ProjectConfig {
   }
   if (config.credits !== undefined && (typeof config.credits !== "object" || config.credits === null || !Array.isArray(config.credits.sections))) {
     throw new Error(`${path}: "credits" is { sections: [{ heading, entries: [{ label, detail?, href? }] }], notice? }`);
+  }
+  if (config.suite !== undefined) {
+    const suite = config.suite;
+    const reasons = (value: unknown): boolean =>
+      value === undefined || (typeof value === "object" && value !== null && !Array.isArray(value) && Object.values(value).every((reason) => typeof reason === "string" && reason.trim() !== ""));
+    if (typeof suite !== "object" || suite === null || !Array.isArray(suite.genres) || suite.genres.some((genre) => typeof genre !== "string") || !reasons(suite.cut) || !reasons(suite.notSimulatable)) {
+      throw new Error(`${path}: "suite" is { genres: [...], cut?: { "<entry id>": "<reason>" }, notSimulatable?: { "<entry id>": "<file>: <why>" } }`);
+    }
   }
   return config as ProjectConfig;
 }
@@ -128,6 +149,7 @@ export function renderProjectConfig(config: ProjectConfig): string {
     ...(config.owns === undefined || config.owns.length === 0 ? {} : { owns: [...config.owns].sort() }),
     ...(config.capabilities === undefined ? {} : { capabilities: config.capabilities }),
     ...(config.credits === undefined ? {} : { credits: config.credits }),
+    ...(config.suite === undefined ? {} : { suite: config.suite }),
     ...(config.assetBuild === undefined ? {} : { assetBuild: config.assetBuild }),
   };
   return `${JSON.stringify(ordered, null, 2)}\n`;

@@ -2092,6 +2092,16 @@
       "intent": "locate duplicate content ids and broken references across game-owned catalog namespaces with repair guidance"
     },
     {
+      "id": "context-map",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/runtime/contextIdentity",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "per-context state keyed by the context a wrapper stands for, so a wrapped context shares its model"
+    },
+    {
       "id": "continue-pane",
       "packages": [
         "@jgengine/core"
@@ -4531,6 +4541,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a whole game as one declaration the engine runs, with named code hooks for the rest"
+    },
+    {
+      "id": "game-suite-run",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/suite/runSuiteProof.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "run every suite proof and the content check of one game into the report its score is read from"
+    },
+    {
+      "id": "game-suite-score",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/suite/gameSuite",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "score a game against the engine's game suite: proven, failing, not simulatable, missing and cut, by area"
     },
     {
       "id": "game-system",
@@ -10076,6 +10106,16 @@
       "intent": "scrollable settings category tabs with pressed state"
     },
     {
+      "id": "setup-window",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/suite/setupWindow",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "hand setup code a live object that stops working when setup ends, so nothing it kept can write later"
+    },
+    {
       "id": "shaped-grid",
       "packages": [
         "@jgengine/core"
@@ -11002,6 +11042,46 @@
       "gameFacing": false,
       "probe": null,
       "intent": "cinematic lighting rig + backdrop + turntable for parametric studios"
+    },
+    {
+      "id": "suite-content-audit",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/suite/contentAudit",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "prove the game suite's data entries (item sources and uses, placeables, ammo, unlock runway) from a game's content"
+    },
+    {
+      "id": "suite-proof",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/suite/suiteProof",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "prove a game suite entry by simulating the real game headless, with setup that may cheat and play that may not"
+    },
+    {
+      "id": "suite-proof-run",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/suite/runSuiteProof.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "run a game suite proof headless and refuse a proof whose outcome came from setup or a cheat"
+    },
+    {
+      "id": "suite-recipe-content",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/suite/contentAudit",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "turn engine recipes into the game suite's content sources and uses"
     },
     {
       "id": "supply-demand-pricing",

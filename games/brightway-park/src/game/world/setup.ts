@@ -5,8 +5,9 @@ import { restorePark, savePark } from "../persistence";
 import { resetPark } from "../parkReset";
 import { session } from "../session";
 import { traceNative, tracePark } from "../evidence";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
-const cleanups = new WeakMap<GameContext, () => void>();
+const cleanups = new ContextMap<() => void>();
 
 export function disposeWorld(ctx: GameContext): void {
   savePark(ctx);

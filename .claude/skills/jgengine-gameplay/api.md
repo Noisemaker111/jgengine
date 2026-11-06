@@ -3178,6 +3178,70 @@
 - `StoreHandle` (interface): interface StoreHandle<T> — A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single type parameter is fixed at definition; `read`/`write`/`update` never widen to `unknown`, so no call site repeats `store.get(key) as T`. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `store.get`/`store.set` pair gives up the moment it forks run state into a module-level singleton.
 - `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a React selector, no allocation on a hot path). A value that carries functions (a closure-based run store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in place. Hold such objects with `perContext` when they need no store notifications.
 
+## @jgengine/core/suite/contentAudit
+
+- `SuiteContent` (interface): interface SuiteContent — The game's content as the generic check reads it, built from the game's own catalogs (its items, recipes, drops, harvest tables, placement catalog and unlock levels) so the check sees what the game runs on. Facts are opaque strings: an item id, `placed:<id>` once an item can be placed, an unlock id.
+- `SuiteContentItem` (interface): interface SuiteContentItem — One item as the content check sees it.
+- `SuiteContentUse` (interface): interface SuiteContentUse — One way items get used: a recipe's inputs, eating, equipping, feeding a creature, a summon offering.
+- `SuiteUnlock` (interface): interface SuiteUnlock — One unlock on the game's progression axis (a level, a wave, a chapter, money).
+- `auditSuiteContent` (function): function auditSuiteContent(content: SuiteContent): SuiteDataResult[] — The generic content check behind the suite's data entries: every item has a source and a use, every source is usable, every placeable item places, every firing weapon has obtainable ammo, and unlocks run steadily to the progression cap. Builds on {@link validateContentProgression} as a closed world.
+- `placedFact` (const): const placedFact: (id: string) => string — The fact a placed item gives, which a station recipe requires.
+- `recipeContent` (function): function recipeContent(recipes: readonly RecipeDef[], path = "recipes"): { sources: ContentProgressionRule[]; uses: SuiteContentUse[] } — Sources and uses from engine recipes: each recipe needs its inputs, its station placed and its unlocks, and gives its outputs; its inputs are uses.
+
+## @jgengine/core/suite/gameSuite
+
+- `GameSuiteConfig` (interface): interface GameSuiteConfig — A game's suite answers, from the `suite` section of its `jgengine.json`: its genres, the entries it cuts (each with the reason the score shows), and the entries it cannot simulate (each naming the file where the logic lives, so the finding can be fixed).
+- `GameSuiteScore` (interface): interface GameSuiteScore — A game's whole score.
+- `SuiteDataResult` (interface): interface SuiteDataResult — One data entry's result from the content check.
+- `SuiteProofResult` (interface): interface SuiteProofResult — One proof's result, as the suite test records it.
+- `SuiteReport` (interface): interface SuiteReport — What a game's suite test writes to `proofs/suite-report.json`.
+- `SuiteScoreRow` (interface): interface SuiteScoreRow — One required entry's row in a game's score.
+- `SuiteStatus` (type): type SuiteStatus = "proven" | "failing" | "not-simulatable" | "missing" | "cut" — Where an entry stands for one game.
+- `expandSuiteGenres` (function): function expandSuiteGenres(genres: readonly string[]): string[] — The genres a declaration reaches, its includes followed.
+- `parseSuiteReport` (function): function parseSuiteReport(raw: unknown): SuiteReport — Read a suite report from parsed JSON (a game's `proofs/suite-report.json`); throws on anything else.
+- `readGameSuiteConfig` (function): function readGameSuiteConfig(projectConfig: unknown): GameSuiteConfig | null — Read the `suite` section of a parsed `jgengine.json`; `null` when the game declares none. Throws on a malformed section, naming the field.
+- `renderSuiteAreaTable` (function): function renderSuiteAreaTable(score: GameSuiteScore): string[] — The score as one markdown row per area: proven of counted, then what is failing, not simulatable, missing and cut.
+- `renderSuiteMarkdown` (function): function renderSuiteMarkdown(score: GameSuiteScore): string[] — The score as a markdown table grouped by area, for a game's `PLAN.md`.
+- `renderSuiteText` (function): function renderSuiteText(score: GameSuiteScore): string[] — The score as terminal lines, grouped by area.
+- `requiredSuiteEntries` (function): function requiredSuiteEntries(genres: readonly string[], entries: readonly SuiteEntry[] = SUITE_ENTRIES): SuiteEntry[] — Every entry a game with these genres must prove: the universal set plus each genre's.
+- `scoreGameSuite` (function): function scoreGameSuite(game: string, config: GameSuiteConfig, report: SuiteReport | null, entries: readonly SuiteEntry[] = SUITE_ENTRIES): GameSuiteScore — Score a game: each required entry is `cut` (with its reason), `proven` (a passing proof or content check), `failing` (a proof or check that names it fails), `not-simulatable` (declared, with its file) or `missing`. A passing proof wins over a failing one for the same entry. No report: everything not cut is missing.
+- `suiteArea` (function): function suiteArea(id: string): string — The entry's area: its id up to the first dot.
+- `suiteRegressions` (function): function suiteRegressions(before: GameSuiteScore, after: GameSuiteScore): string[] — Entry ids proven in `before` and not in `after`: regressions the suite test refuses.
+- `suiteScoreLine` (function): function suiteScoreLine(score: GameSuiteScore): string — One line: `12/62 proven · 3 failing · 1 not simulatable · 2 cut · 46 missing`.
+
+## @jgengine/core/suite/runSuiteProof.draw
+
+- `LoadedSuiteProof` (interface): interface LoadedSuiteProof — A proof loaded from a game's `proofs/sim/` folder, with the file it came from.
+- `SuiteProofRun` (interface): interface SuiteProofRun — What one proof run produced: the flow report of its steps, and the entries it proved when it passed.
+- `SuiteProofRunOptions` (interface): interface SuiteProofRunOptions — Options for {@link runSuiteProof}.
+- `runGameSuite` (function): function runGameSuite(game: string, proofs: readonly LoadedSuiteProof[], content: SuiteContent | null): Promise<SuiteReport> — Run a game's whole suite: every proof, then the content check. The report is deterministic (no times), so the suite test can compare it with the committed one.
+- `runSuiteProof` (function): function runSuiteProof<TProbe extends ProbeReadings>(proof: SuiteProof<TProbe>, options: SuiteProofRunOptions = {}): Promise<SuiteProofRun> — Play one suite proof headless against the real game: boot, setup (cheats allowed, through a context that closes when setup ends), then play, where only player input and the game's own commands reach the game. The proof fails when play runs a cheat command (by `cheat: true` or a cheat-like name), or when none of its checks changed during play: the outcome must come from player input, the game's commands or its systems ticking, never from setup.
+
+## @jgengine/core/suite/setupWindow
+
+- `SetupClosedError` (class): class SetupClosedError extends Error — Thrown when code touches a {@link SetupWindow} view after the window closed.
+- `SetupWindow` (interface): interface SetupWindow<T extends object> — A view of an object that works until {@link close}, then refuses every read, write and call, except inside {@link SetupWindow.owner}: the object's own code may still run through a view it kept.
+- `openSetupWindow` (function): function openSetupWindow<T extends object>(target: T, message: string): SetupWindow<T> — Wrap `target` so setup code can use it freely and lose it the moment setup ends: everything reached through the view is wrapped the same way, so a sub-object or a method saved for later throws too. Calls run on the real object, so classes with private fields and native collections work.
+
+## @jgengine/core/suite/suiteCatalog
+
+- `SUITE_ENTRIES` (const): const SUITE_ENTRIES: readonly SuiteEntry[] — Every entry, universal first, then by genre.
+- `SUITE_GENRES` (const): const SUITE_GENRES: readonly SuiteGenre[] — Every genre a game may declare.
+- `SUITE_UNIVERSAL` (const): const SUITE_UNIVERSAL: "universal" — The genre tag every game carries.
+- `SuiteDepth` (interface): interface SuiteDepth — The depth a core feature needs, beyond existing: how it is found, grows, connects, repeats and fails.
+- `SuiteEntry` (interface): interface SuiteEntry — One thing a player must be able to do.
+- `SuiteGenre` (interface): interface SuiteGenre — A genre a game may declare; `includes` pulls in another genre's entries too.
+- `SuiteProofBy` (type): type SuiteProofBy = "sim" | "data" — The game suite: every thing a player must be able to do, as data. A game declares its genres in `jgengine.json` (`suite.genres`); every universal entry and every entry of those genres is then required, and counts only when a proof passes (a headless simulation for `sim`, the generic content check for `data`). Adding an entry here raises the bar for every game at once.
+
+## @jgengine/core/suite/suiteProof
+
+- `CHEAT_COMMAND_NAME` (const): const CHEAT_COMMAND_NAME: RegExp — Command names a proof treats as cheats even when the game forgot `cheat: true`.
+- `ProofPlay` (interface): interface ProofPlay<TProbe extends ProbeReadings> — What a proof's play phase may do: what a player's input reaches and nothing else. Keys go through the game's bindings, prompts and hotbar; `act` runs the command a button or menu runs. A cheat command, reached any way, fails the proof. Checks read only the game's probe.
+- `ProofSetup` (interface): interface ProofSetup<TProbe extends ProbeReadings> — What a proof's setup may do: anything, cheats included. It seeds the scenario (give items, place the player, spawn a creature, fast-forward the clock). When setup returns, `ctx` and every object reached through it stop working, and so does this handle, so nothing setup kept can write during play.
+- `SuiteProof` (interface): interface SuiteProof<TProbe extends ProbeReadings = ProbeReadings> — A defined proof, as `<game>/proofs/sim/<name>.proof.ts` exports it by default.
+- `SuiteProofSpec` (interface): interface SuiteProofSpec<TProbe extends ProbeReadings> — A proof as written: the suite entries it proves, its setup, and the play that proves them.
+- `defineProof` (function): function defineProof<TProbe extends ProbeReadings>(game: HeadlessPlayable<TProbe>, spec: SuiteProofSpec<TProbe>): SuiteProof<TProbe> — Define a game suite proof: a deterministic headless simulation of the real game that proves one or more suite entries. Setup may cheat; play may only do what the player can, and its outcome must be new. The game's suite test runs every proof in `bun test`.
+
 ## @jgengine/core/survival/bodyTemperature
 
 - `AmbientInput` (interface): interface AmbientInput — What sets the air temperature at a spot: its climate plus the hour, the weather, the height and nearby heat.

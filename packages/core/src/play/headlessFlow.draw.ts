@@ -1,10 +1,9 @@
-import { actionContextStack, activeActionCodes } from "@jgengine/core/game/controlGate";
 import type { GameCaptureConfig, ProbeReadings } from "@jgengine/core/game/playableGame";
-import { createActionStateTracker, toActionStateBindingMap } from "@jgengine/core/input/actionBindings";
 import { teleportPlayer } from "@jgengine/core/movement/teleport";
 
 import { FLOW_PRESS_MS, FLOW_WAIT_MS, flowKeyList, type Flow, type FlowCommandResult, type FlowKeys, type HeadlessProofFlow, type ProbeCheck } from "./flow";
 import { createFlowStepper, runFlowReport, type FlowRunReport } from "./flowSteps";
+import { createHeadlessKeys } from "./headlessKeys.draw";
 import { createPlaySession, type PlaySession } from "./playSession.draw";
 
 /** Options for {@link runFlowHeadless}. */
@@ -27,8 +26,10 @@ function keysLabel(keys: FlowKeys): string {
   return flowKeyList(keys).join("+");
 }
 
-/** Run the game's `capture.states[state]` (strict) or `capture.play` commands, the way the browser's capture boot does. */
-function boot(session: PlaySession, capture: GameCaptureConfig<ProbeReadings> | undefined, state: string | undefined): void {
+/** Run the game's `capture.states[state]` (strict) or `capture.play` commands, the way the browser's capture boot does.
+ * @internal shared with the game suite's proof runner
+ */
+export function bootCaptureState(session: PlaySession, capture: GameCaptureConfig<ProbeReadings> | undefined, state: string | undefined): void {
   const entries = state === undefined ? (capture?.play ?? []) : capture?.states?.[state];
   if (entries === undefined) {
     const known = Object.keys(capture?.states ?? {}).sort();
@@ -54,7 +55,6 @@ export async function runFlowHeadless<TProbe extends ProbeReadings>(flow: Headle
   const game = flow.game;
   const session = createPlaySession(game, options.seed === undefined ? {} : { seed: options.seed });
   const { ctx } = session;
-  const tickMs = session.dt * 1000;
   const probeHook = game.capture?.probe;
 
   const readProbe = (): TProbe => {
@@ -64,41 +64,11 @@ export async function runFlowHeadless<TProbe extends ProbeReadings>(flow: Headle
   const stepper = createFlowStepper(async () => (probeHook === undefined ? undefined : probeHook(ctx)));
   const reports: { label: string; probe: unknown }[] = [];
 
-  const baseInput = game.game.input ?? {};
-  const tracker = createActionStateTracker<string>(toActionStateBindingMap(activeActionCodes(ctx, baseInput)));
-  const contexts = actionContextStack(ctx);
-  let boundVersion = contexts.version();
-  const rebindIfContextChanged = (): void => {
-    const version = contexts.version();
-    if (version === boundVersion) return;
-    boundVersion = version;
-    tracker.rebind(toActionStateBindingMap(activeActionCodes(ctx, baseInput)));
-  };
-  const held = (): string[] => tracker.actions().filter((action) => tracker.isDown(action));
-  const tick = (): void => {
-    rebindIfContextChanged();
-    session.tick(held());
-    tracker.endFrame();
-  };
-  const ticksFor = (ms: number): number => Math.max(1, Math.ceil(ms / tickMs - 1e-9));
-
-  // A key the game binds nowhere is a mistake in the flow; one whose action a menu context has switched off
-  // is a no-op, as it is in the browser.
-  const baseTracker = createActionStateTracker<string>(toActionStateBindingMap(baseInput));
-  const isBound = (key: string): boolean => {
-    const bound = baseTracker.handleDown(key) !== null;
-    baseTracker.reset();
-    return bound;
-  };
-  const keysDown = (keys: FlowKeys): void => {
-    for (const key of flowKeyList(keys)) {
-      if (!isBound(key)) throw new Error(`key ${key} is bound to no action in ${game.game.name}; bound actions: ${baseTracker.actions().join(", ")}`);
-      tracker.handleDown(key);
-    }
-  };
-  const keysUp = (keys: FlowKeys): void => {
-    for (const key of flowKeyList(keys)) tracker.handleUp(key);
-  };
+  const keys = createHeadlessKeys(game, session);
+  const tick = keys.tick;
+  const ticksFor = keys.ticksFor;
+  const keysDown = keys.down;
+  const keysUp = keys.up;
 
   const waitUntil = (check: ProbeCheck<TProbe>, timeoutMs: number, what: string): TProbe => {
     const deadline = session.clockMs + timeoutMs;
@@ -185,7 +155,7 @@ export async function runFlowHeadless<TProbe extends ProbeReadings>(flow: Headle
 
   return runFlowReport(stepper, reports, async () => {
     await stepper.run(flow.state === undefined && options.state === undefined ? "boot" : `boot state ${options.state ?? flow.state}`, async () => {
-      boot(session, game.capture, options.state ?? flow.state);
+      bootCaptureState(session, game.capture, options.state ?? flow.state);
       tick();
     });
     await flow.run(api);

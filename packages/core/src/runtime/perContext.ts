@@ -1,3 +1,4 @@
+import { contextOf } from "./contextIdentity";
 import type { GameContext } from "./gameContext";
 
 /**
@@ -15,7 +16,9 @@ import type { GameContext } from "./gameContext";
  */
 export function perContext<T>(init: (ctx: GameContext) => T): (ctx: GameContext) => T {
   const byContext = new WeakMap<GameContext, T>();
-  return (ctx) => {
+  return (wrapped) => {
+    // A wrapper of a context (a suite proof's setup view) shares the context's own state.
+    const ctx = contextOf(wrapped);
     if (!byContext.has(ctx)) byContext.set(ctx, init(ctx));
     return byContext.get(ctx) as T;
   };

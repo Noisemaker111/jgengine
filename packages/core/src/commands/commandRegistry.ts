@@ -17,6 +17,12 @@ export interface CommandDefinition<TState, TInput> {
   decode?: CommandDecoder<TInput>;
   validate?(state: TState, input: TInput): CommandRejection | null;
   apply(state: TState, input: TInput): TState | void;
+  /**
+   * A debug or admin command that writes results straight into state (give items, spawn, teleport, skip
+   * time) instead of going through the game's rules. A game suite proof may run it to set up a scenario,
+   * never while it proves an entry.
+   */
+  cheat?: boolean;
 }
 
 export type CommandResult<TState> =
@@ -28,6 +34,8 @@ export interface CommandRegistry<TState> {
   define<TInput>(name: string, definition: CommandDefinition<TState, TInput>): void;
   has(name: string): boolean;
   names(): string[];
+  /** Whether `name` is defined with `cheat: true`. */
+  isCheat(name: string): boolean;
   run(state: TState, name: string, input: unknown): CommandResult<TState>;
 }
 
@@ -46,6 +54,9 @@ export function createCommandRegistry<TState>(): CommandRegistry<TState> {
     },
     names() {
       return Array.from(definitions.keys());
+    },
+    isCheat(name) {
+      return definitions.get(name)?.cheat === true;
     },
     run(state, name, input) {
       const definition = definitions.get(name);

@@ -50,6 +50,7 @@ import {
   type VoxelPlayerBody,
   type VoxelPlayerDims,
 } from "./voxelController";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 const CONTROLLER_CONFIG_FIELDS = ["radius", "height", "stepHeight", "maxSlopeDeg", "skinWidth", "crouchHeight", "snapDistance", "maxSlides", "mask"] as const;
 const DEFAULT_TURN_SPEED = 2.4;
@@ -177,7 +178,7 @@ interface CtxMovementStore {
   solids: { count: number; set: Set<string> };
 }
 
-const stores = new WeakMap<GameContext, CtxMovementStore>();
+const stores = new ContextMap<CtxMovementStore>();
 
 function storeFor(ctx: GameContext): CtxMovementStore {
   let store = stores.get(ctx);

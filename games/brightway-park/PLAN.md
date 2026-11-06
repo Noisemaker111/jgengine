@@ -2,6 +2,51 @@
 
 Brief: a seaside theme-park tycoon with the loop of RollerCoaster Tycoon: start on an empty lot, build a park guests want to visit, and keep it running for hours.
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+## Suite score
+
+What players must be able to do, proven by headless simulation in `bun test` (`jgengine suite brightway-park`). This is the headline; the engine coverage table below only hints where the engine has a part.
+
+| Area | Proven | Failing | Not simulatable | Missing | Cut |
+| --- | --- | --- | --- | --- | --- |
+| onboarding | 1/2 | 0 | 0 | 1 | 0 |
+| failure | 1/1 | 0 | 0 | 0 | 0 |
+| save | 0/1 | 0 | 0 | 1 | 0 |
+| settings | 0/1 | 0 | 0 | 1 | 0 |
+| menu | 0/1 | 0 | 1 | 0 | 0 |
+| progression | 1/1 | 0 | 0 | 0 | 0 |
+| content | 5/5 | 0 | 0 | 0 | 0 |
+| tycoon | 6/6 | 0 | 0 | 0 | 0 |
+| **total** | **14/18** | 0 | 1 | 3 | 0 |
+
+<details><summary>Every required entry</summary>
+
+Genres: tycoon. 14/18 proven · 1 not simulatable · 3 missing.
+
+| Entry | Status | What the player does | Detail |
+| --- | --- | --- | --- |
+| `onboarding.first-goal` | proven | A new game shows a first goal, and the first player action toward it advances it. | proofs/sim/first-goal.proof.ts |
+| `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
+| `failure.lose-and-recover` | proven | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. | proofs/sim/bankrupt-replay.proof.ts |
+| `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
+| `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
+| `menu.start-and-credits` | not simulatable | The main menu starts a game and shows the credits. | src/game/ui/menu/ParkMenu.tsx: the Credits pane is picked inside the engine GameMenu's own React state (@jgengine/core/menu); no command opens it, so a headless run cannot reach it |
+| `progression.runway` | proven | Something new unlocks steadily across the first five hours, up to the progression cap. | content check |
+| `content.item-source` | proven | Every item can be obtained by playing. | content check |
+| `content.item-use` | proven | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | content check |
+| `content.recipes-reachable` | proven | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | content check |
+| `content.placeables-place` | proven | Every item that says it can be placed can be placed. | content check |
+| `content.weapons-have-ammo` | proven | Every weapon that fires has obtainable ammo, or needs none. | content check |
+| `tycoon.build-attraction` | proven | Build something customers pay for. | proofs/sim/build-attraction.proof.ts |
+| `tycoon.customers-pay` | proven | Customers arrive, use attractions and pay. | proofs/sim/customers-pay.proof.ts |
+| `tycoon.staff-upkeep` | proven | Staff and upkeep cost money over time. | proofs/sim/staff-upkeep.proof.ts |
+| `tycoon.breakdowns` | proven | Things break down and need fixing. | proofs/sim/breakdown-fix.proof.ts |
+| `tycoon.unlock-research` | proven | Research or milestones unlock new things to build. | proofs/sim/research-unlock.proof.ts |
+| `tycoon.bankrupt` | proven | Running out of money has consequences. | proofs/sim/bankrupt-replay.proof.ts |
+
+</details>
+<!-- /suite-score -->
+
 ## Direction
 
 - Genre and references: a park tycoon after RollerCoaster Tycoon 2 (guests with opinions, scenarios with deadlines), Parkitect (upkeep and restocking that bite) and Planet Coaster (awards worth pausing for). Inspired by, not a 1:1 remake: own numbers, own rides.

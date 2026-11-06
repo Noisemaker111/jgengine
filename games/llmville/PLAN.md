@@ -2,6 +2,54 @@
 
 Brief: LLMville becomes a real game built on the engine, and one of the best-made games in the repo. It used to run on the engine and drifted into its own private engine. The engine carries everything that is not LLMville's own rules, content and look. Tracking issue #2837 (line S6).
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+## Suite score
+
+What players must be able to do, proven by headless simulation in `bun test` (`jgengine suite llmville`). This is the headline; the engine coverage table below only hints where the engine has a part.
+
+| Area | Proven | Failing | Not simulatable | Missing | Cut |
+| --- | --- | --- | --- | --- | --- |
+| onboarding | 0/2 | 0 | 0 | 2 | 0 |
+| failure | 0/1 | 0 | 0 | 1 | 0 |
+| save | 0/1 | 0 | 0 | 1 | 0 |
+| settings | 0/1 | 0 | 0 | 1 | 0 |
+| menu | 0/1 | 0 | 0 | 1 | 0 |
+| progression | 0/1 | 0 | 0 | 1 | 0 |
+| content | 0/5 | 0 | 0 | 5 | 0 |
+| tycoon | 0/6 | 0 | 0 | 6 | 0 |
+| online | 0/2 | 0 | 0 | 2 | 0 |
+| **total** | **0/20** | 0 | 0 | 20 | 0 |
+
+<details><summary>Every required entry</summary>
+
+Genres: tycoon, online. 0/20 proven · 20 missing.
+
+| Entry | Status | What the player does | Detail |
+| --- | --- | --- | --- |
+| `onboarding.first-goal` | missing | A new game shows a first goal, and the first player action toward it advances it. |  |
+| `onboarding.find-features` | missing | A player following the game's own guidance reaches the first use of every core feature. |  |
+| `failure.lose-and-recover` | missing | The player can fail (die, lose the run, go broke) and the game puts them back into play at a stated cost. |  |
+| `save.continue` | missing | Progress made by playing survives saving and continuing. |  |
+| `settings.controls` | missing | The player opens settings and a change (a binding, volume, sensitivity) takes effect. |  |
+| `menu.start-and-credits` | missing | The main menu starts a game and shows the credits. |  |
+| `progression.runway` | missing | Something new unlocks steadily across the first five hours, up to the progression cap. | no content sheet (proofs/content.ts) |
+| `content.item-source` | missing | Every item can be obtained by playing. | no content sheet (proofs/content.ts) |
+| `content.item-use` | missing | Every item does something: crafts, equips, eats, places, feeds, sells or summons. | no content sheet (proofs/content.ts) |
+| `content.recipes-reachable` | missing | Every recipe and source can actually be used: its inputs, station and unlock are all obtainable. | no content sheet (proofs/content.ts) |
+| `content.placeables-place` | missing | Every item that says it can be placed can be placed. | no content sheet (proofs/content.ts) |
+| `content.weapons-have-ammo` | missing | Every weapon that fires has obtainable ammo, or needs none. | no content sheet (proofs/content.ts) |
+| `tycoon.build-attraction` | missing | Build something customers pay for. |  |
+| `tycoon.customers-pay` | missing | Customers arrive, use attractions and pay. |  |
+| `tycoon.staff-upkeep` | missing | Staff and upkeep cost money over time. |  |
+| `tycoon.breakdowns` | missing | Things break down and need fixing. |  |
+| `tycoon.unlock-research` | missing | Research or milestones unlock new things to build. |  |
+| `tycoon.bankrupt` | missing | Running out of money has consequences. |  |
+| `online.join-shared-world` | missing | A second player joins the same world and each sees the other act. |  |
+| `online.persist-account` | missing | A player's progress follows their account across sessions. |  |
+
+</details>
+<!-- /suite-score -->
+
 ## Direction
 
 The game design stays as the README checklist states it. This plan changes what the game is built on, not what it is.

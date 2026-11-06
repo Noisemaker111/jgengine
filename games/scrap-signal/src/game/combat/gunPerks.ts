@@ -407,6 +407,7 @@ export function registerPerks(ctx: GameContext): void {
   // capture can photograph the card and a proc without farming a boss. Never shipped.
   if (import.meta.env.DEV) {
     ctx.game.commands.define<{ legendary?: string; rarity?: "rare" | "epic" | "legendary"; husks?: number }>("perks.capture", {
+      cheat: true,
       apply(state: GameContext, input) {
         stagePerkCapture(state, input.legendary, input.rarity, input.husks ?? 4);
       },

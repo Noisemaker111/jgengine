@@ -1,5 +1,9 @@
 # LLMville
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+Game suite: **0/20 proven · 20 missing** · `jgengine suite llmville`
+<!-- /suite-score -->
+
 A cosy co-op AI-lab tycoon in one shared multiplayer world: buy GPUs, collect data, train
 models, serve tokens for income and grow your lab next to other players and their LLM bots.
 Live at [llmville.com](https://llmville.com).

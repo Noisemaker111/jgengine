@@ -3,6 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { session } from "./session";
 import { park } from "./park";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 /**
  * Procedural cues for the park's bright, friendly moments. Each id is played from the code path
@@ -140,7 +141,7 @@ export const BRIGHTWAY_SOUNDS = {
 /** Loudness of the sea bed while the park is open and running. */
 const SEA_GAIN = 0.3;
 // Last gain sent to the sea loop, per runtime context (absent until the loop has started).
-const seaGains = new WeakMap<GameContext, number>();
+const seaGains = new ContextMap<number>();
 
 /**
  * Keep the sea bed in step with the park: it starts with the first run, and is muted while the

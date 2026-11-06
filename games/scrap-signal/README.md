@@ -1,5 +1,9 @@
 # Scrap Signal
 
+<!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
+Game suite: **6/20 proven · 14 missing** · `jgengine suite scrap-signal`
+<!-- /suite-score -->
+
 A first-person looter-shooter across Ferralon: pick Gunk, Nyx or Cipher, clear six levelled zones, roll
 guns off what you kill, and finish at the Foundry Heart. Runs on engine source; start
 it with `bun --cwd=games/scrap-signal run dev` from the repository root.
