@@ -58,6 +58,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/dive-breath.proof.ts",
+      "proves": [
+        "survival.oxygen-swim"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/eat-drink.proof.ts",
       "proves": [
         "survival.eat-drink"

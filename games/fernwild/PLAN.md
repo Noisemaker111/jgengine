@@ -16,7 +16,7 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | menu | 0/1 | 0 | 0 | 1 | 0 |
 | progression | 0/1 | 1 | 0 | 0 | 0 |
 | content | 3/5 | 2 | 0 | 0 | 0 |
-| survival | 3/9 | 0 | 0 | 6 | 0 |
+| survival | 4/9 | 0 | 0 | 5 | 0 |
 | building | 1/3 | 0 | 0 | 2 | 0 |
 | harvest | 2/3 | 0 | 0 | 1 | 0 |
 | crafting | 1/6 | 0 | 0 | 5 | 0 |
@@ -49,7 +49,7 @@ Genres: creature-survival. 25/67 proven · 3 failing · 39 missing.
 | `survival.vitals-drain` | proven | Hunger and thirst fall over time and hurt the player at zero. | proofs/sim/vitals-drain.proof.ts |
 | `survival.eat-drink` | proven | Eating and drinking restore the meters. | proofs/sim/eat-drink.proof.ts |
 | `survival.temperature` | missing | Climate pushes body temperature; clothing, fire or shelter counter it. |  |
-| `survival.oxygen-swim` | missing | Swimming under water drains breath; surfacing refills it. |  |
+| `survival.oxygen-swim` | proven | Swimming under water drains breath; surfacing refills it. | proofs/sim/dive-breath.proof.ts |
 | `survival.food-spoils` | proven | Carried food spoils over time into something else. | proofs/sim/food-spoils.proof.ts |
 | `survival.respawn-point` | missing | A placed bed or bag becomes where the player wakes after death. |  |
 | `survival.storage-place` | missing | A storage container can be placed and holds items. |  |
