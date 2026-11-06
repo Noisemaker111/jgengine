@@ -141,6 +141,7 @@ test("a thatch roof keeps the rain off, and a campfire warms whoever stands by i
   expect(survivorView(game.ctx).sheltered).toBe(true);
 
   build(game, "campfire");
+  game.ui.tryInvoke("cheat", { fuel: 600 });
   tick(game, 0.1);
   expect(here(game).temperature).toBeGreaterThan(under.temperature + 5);
 });

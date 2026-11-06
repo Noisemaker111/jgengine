@@ -9,7 +9,7 @@ import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 import { fernwildKit } from "./art/look";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
-import { baseGhost, basePrompts, baseView, piecesBuilt, stations } from "./game/base";
+import { baseGhost, basePrompts, baseView, fuelNear, piecesBuilt, stations } from "./game/base";
 import { cavePrompts, cavesOf, cavesView } from "./game/caves";
 import { eggPrompts, eggsOnGround } from "./game/eggs";
 import { EGG_SIZES, eggItem, KIBBLE_TIERS, kibbleItem } from "./game/data/kibble";
@@ -247,6 +247,9 @@ export const game = defineGame({
         ...sight("floor", base.floor),
         ...sight("doorway", base.doorway),
         crafting: view.queue.length,
+        // The first queued craft's progress in percent (-1 with none), and the fuel left in the nearest campfire or pot within 6 m (-1 with none).
+        craftProgress: view.queue[0] === undefined ? -1 : Math.round(view.queue[0].progress * 100),
+        fuel: Math.round(fuelNear(ctx, here, 6) * 10) / 10,
         screen: openScreen(ctx) === null ? 0 : 1,
         picks: ctx.player.inventory.count(HOTBAR, "stone_pick") + ctx.player.inventory.count(BAG, "stone_pick"),
         creatures: creatures.count,

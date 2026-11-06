@@ -120,7 +120,7 @@ test("fists chip thatch, and a broken wall takes the roof it held", () => {
   expect(building.list().map((piece) => piece.pieceId)).toEqual(["thatch_foundation"]);
 });
 
-test("a campfire on the ground lets raw meat cook", () => {
+test("a campfire lets raw meat cook only while it burns: wood on it lights it, and it goes out when the wood is gone", () => {
   const game = runner();
   tick(game, 0.1);
   const cook = recipeDef("cook_meat")!;
@@ -129,5 +129,16 @@ test("a campfire on the ground lets raw meat cook", () => {
   hold(game, "campfire");
   place(game, game.ctx.scene.entity.get(game.userId)!.rotationY);
   expect(baseBuilding(game.ctx).list().map((piece) => piece.pieceId)).toEqual(["campfire"]);
+  // Placed cold: nothing to burn yet.
+  expect(craftBlock(game.ctx, cook)).toBe("Needs a Campfire");
+  game.ctx.player.inventory.put(BAG, "wood", 1);
+  tick(game, 0.1);
+  game.ui.tryInvoke("structureUse", {});
+  expect(game.ctx.player.inventory.count(BAG, "wood")).toBe(0);
   expect(craftBlock(game.ctx, cook)).toBeNull();
+  // One wood burns about thirty seconds.
+  tick(game, 25);
+  expect(craftBlock(game.ctx, cook)).toBeNull();
+  tick(game, 6);
+  expect(craftBlock(game.ctx, cook)).toBe("Needs a Campfire");
 });
