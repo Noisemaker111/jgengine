@@ -1,5 +1,6 @@
 import type { GameContext } from "./gameContext";
 import { createInputSnapshot, type InputSnapshot } from "./inputSnapshot";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 /** One local seat on a shared screen: a stable slot id, the user id the game spawns for it, and the device driving it. */
 export interface LocalPlayerSlot {
@@ -165,7 +166,7 @@ export function createLocalPlayers(options: LocalPlayersOptions): LocalPlayers {
   };
 }
 
-const LOCAL_PLAYERS = new WeakMap<GameContext, LocalPlayers>();
+const LOCAL_PLAYERS = new ContextMap<LocalPlayers>();
 
 /**
  * The seat table of a game context, created on first use with one seat for `ctx.player` and `ctx.input`.

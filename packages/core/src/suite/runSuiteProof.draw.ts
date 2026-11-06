@@ -5,6 +5,7 @@ import { createFlowStepper, runFlowReport, type FlowRunReport } from "@jgengine/
 import { bootCaptureState } from "@jgengine/core/play/headlessFlow.draw";
 import { createHeadlessKeys } from "@jgengine/core/play/headlessKeys.draw";
 import { createPlaySession } from "@jgengine/core/play/playSession.draw";
+import { aliasContext } from "@jgengine/core/runtime/contextIdentity";
 
 import { auditSuiteContent, type SuiteContent } from "./contentAudit";
 import type { SuiteProofResult, SuiteReport } from "./gameSuite";
@@ -57,6 +58,8 @@ export async function runSuiteProof<TProbe extends ProbeReadings>(proof: SuitePr
   const { ctx } = session;
   const closedMessage = "setup has ended: a proof's play may change the game only through player input and the game's commands";
   const window = openSetupWindow(ctx, closedMessage);
+  // Game helpers setup hands the view to (a per-context model, a store) resolve it to the real context.
+  aliasContext(window.view, ctx);
   // The game's own code (ticks, commands, the probe) runs as the window's owner: a store or system that
   // kept the setup's context keeps working, while proof code that kept it is refused.
   const owner = window.owner;

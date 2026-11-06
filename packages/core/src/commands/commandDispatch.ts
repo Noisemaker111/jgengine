@@ -2,12 +2,13 @@
 import type { CommandResult } from "./commandRegistry";
 import type { GameContext } from "../runtime/gameContext";
 import type { LiveGameBackend } from "../runtime/transport";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 /** A UI command completes locally or after its authoritative host acknowledges it. */
 export type DispatchedCommandResult = CommandResult<GameContext> | Promise<CommandResult<GameContext>>;
 
 type Route = { transport: LiveGameBackend["transport"]; serverId: () => string | null };
-const routes = new WeakMap<GameContext, Route>();
+const routes = new ContextMap<Route>();
 
 /** Bind UI command dispatch to the host for this context. A missing join rejects; it never mutates the local replica. */
 export function bindCommandTransport(ctx: GameContext, route: Route): () => void {

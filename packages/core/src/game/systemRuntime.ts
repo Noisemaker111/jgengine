@@ -7,6 +7,7 @@ import {
 } from "./systemSchedule";
 import type { GameContext } from "../runtime/gameContext";
 import type { SnapshotModule } from "../runtime/worldSnapshot";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 const MAX_FIXED_SUBSTEPS = 8;
 /** A rate fed exact multiples of its step (six 1/60 s steps for a 10 Hz group) runs on time despite float drift. */
@@ -162,7 +163,7 @@ export function installSystems(
   return { schedule, tick, reset, dispose, runManual };
 }
 
-const installedByCtx = new WeakMap<GameContext, InstalledSystems>();
+const installedByCtx = new ContextMap<InstalledSystems>();
 
 /**
  * Look up systems installed on `ctx` (if any). Used by hosts that need `reset`/`dispose` after boot.

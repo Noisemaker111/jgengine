@@ -6,6 +6,7 @@ import { createObjectiveBanner, type ObjectiveBannerController } from "../missio
 import type { GameContext } from "../runtime/gameContext";
 import type { SnapshotModule } from "../runtime/worldSnapshot";
 import { createOnboarding, onboardingAreaFor, validateOnboarding, type Onboarding, type OnboardingConfig, type OnboardingPoint, type OnboardingSnapshot, type OnboardingStep } from "./onboarding";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 /** The id of the waypoint and minimap marker the onboarding owns. */
 export const ONBOARDING_MARK = "onboarding";
@@ -39,7 +40,7 @@ interface InstalledOnboarding extends OnboardingRuntime {
   reset(): void;
 }
 
-const runtimes = new WeakMap<GameContext, InstalledOnboarding>();
+const runtimes = new ContextMap<InstalledOnboarding>();
 
 /** The onboarding running in `ctx`, or `null` when the game installed none. */
 export function onboardingOf(ctx: GameContext): OnboardingRuntime | null {

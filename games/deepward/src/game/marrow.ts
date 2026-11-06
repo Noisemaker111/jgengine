@@ -3,6 +3,7 @@ import type { WorldConditions, WorldModel, WorldModelState } from "@jgengine/cor
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { RecipeDef } from "@jgengine/core/crafting/recipe";
 import { BAYS } from "../world";
+import { ContextMap } from "@jgengine/core/runtime/contextIdentity";
 
 /**
  * Marrow as a living base, declared once and run by the engine's world model: modules built in the
@@ -87,7 +88,7 @@ export const marrowSpec = defineGameSpec({
   },
 });
 
-const lives = new WeakMap<GameContext, MarrowLive>();
+const lives = new ContextMap<MarrowLive>();
 export function setMarrowLive(ctx: GameContext, live: MarrowLive): void { lives.set(ctx, live); }
 function liveOf(ctx: GameContext): MarrowLive { return lives.get(ctx) ?? { growbedKnown: false, home: true }; }
 
