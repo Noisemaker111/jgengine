@@ -1099,28 +1099,30 @@ describe("stray browser sweep", () => {
   }
 
   test.skipIf(process.platform !== "win32" || chrome === null)(
-    "a visible browser whose run died is killed and its profile removed",
+    "a real browser whose run died is killed and its profile removed",
     async () => {
       const root = mkdtempSync(join(tmpdir(), "jg-stray-proof-"));
       const dir = profile(root, "jg-stray-proof", DEAD_PID);
+      // Headless: a planted window, even one placed off-screen, still took the foreground from
+      // Jon's game for a second and a half each time this suite ran. The run record decides the
+      // kill, not the window.
       const child = spawn(
         chrome as string,
         [
           `--user-data-dir=${dir}`,
-          "--window-size=1280,720",
-          "--window-position=-32000,-32000",
+          "--headless=new",
           "--no-first-run",
           "--no-default-browser-check",
           "--no-sandbox",
           "about:blank",
         ],
-        { stdio: "ignore", windowsHide: false },
+        { stdio: "ignore", windowsHide: true },
       );
       try {
         expect(pidAlive(child.pid)).toBe(true);
         const result = sweepStrayBrowsers(root);
         console.error(
-          `proof (1): planted visible Chrome pid ${child.pid} with dead run ${DEAD_PID} — killed ${result.killed}, profiles removed ${result.profilesRemoved}`,
+          `proof (1): planted Chrome pid ${child.pid} with dead run ${DEAD_PID} — killed ${result.killed}, profiles removed ${result.profilesRemoved}`,
         );
         expect(result).toEqual({ killed: 1, profilesRemoved: 1 });
         expect(existsSync(dir)).toBe(false);
