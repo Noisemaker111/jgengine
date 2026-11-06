@@ -381,8 +381,8 @@ export function flattenFieldAround(base: TerrainField, zones: readonly AvoidZone
     let best = 0;
     let target = 0;
     for (const zone of zones) {
-      // Squared first: grass and scatter bake call this for every node against every zone, most far
-      // away, and Math.hypot allocates on every call in V8.
+      // Squared first, as in world/geometry zoneInfluence: grass bake calls this for every node
+      // against every zone, most far away, and Math.hypot allocates on every call in V8.
       const dx = x - zone.x;
       const dz = z - zone.z;
       const distSq = dx * dx + dz * dz;

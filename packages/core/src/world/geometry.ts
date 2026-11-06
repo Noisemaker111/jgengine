@@ -55,6 +55,9 @@ function bandInfluence(dist: number, radius: number, feather: number): number {
   return dist <= inner || feather <= 0 ? 1 : (radius - dist) / feather;
 }
 
+// Grass and scatter test these per vertex against every mask, so they take square roots of their own
+// sums: Math.hypot allocates on every call in V8.
+
 /** Perpendicular distance from a point to a polyline segment [a,b] on the XZ plane. */
 function distanceToSegment(px: number, pz: number, a: Vec2, b: Vec2): number {
   const dx = b[0] - a[0];
@@ -62,7 +65,9 @@ function distanceToSegment(px: number, pz: number, a: Vec2, b: Vec2): number {
   const lenSq = dx * dx + dz * dz || 1;
   let t = ((px - a[0]) * dx + (pz - a[1]) * dz) / lenSq;
   t = t < 0 ? 0 : t > 1 ? 1 : t;
-  return Math.hypot(px - (a[0] + dx * t), pz - (a[1] + dz * t));
+  const ox = px - (a[0] + dx * t);
+  const oz = pz - (a[1] + dz * t);
+  return Math.sqrt(ox * ox + oz * oz);
 }
 
 /**
@@ -73,7 +78,11 @@ function distanceToSegment(px: number, pz: number, a: Vec2, b: Vec2): number {
 export function zoneInfluence(x: number, z: number, zones: readonly AvoidZone[]): number {
   let best = 0;
   for (const zone of zones) {
-    const t = bandInfluence(Math.hypot(x - zone.x, z - zone.z), zone.radius, zone.feather ?? 0);
+    const dx = x - zone.x;
+    const dz = z - zone.z;
+    const distSq = dx * dx + dz * dz;
+    if (distSq >= zone.radius * zone.radius) continue;
+    const t = bandInfluence(Math.sqrt(distSq), zone.radius, zone.feather ?? 0);
     if (t > best) best = t;
   }
   return best;
