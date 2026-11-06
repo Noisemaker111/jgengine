@@ -7,7 +7,7 @@ import { GrassCover } from "./GrassCover.draw";
 import { bakeGrassNode, resolveGrassBake } from "./grassBake.draw";
 import { readGrassLook } from "./grassKind";
 import { GrassPatch } from "./GrassPatch.draw";
-import { modelLoadPending } from "@jgengine/core/model/modelLoad.draw";
+import { pendingModelLoads } from "@jgengine/core/model/modelLoad.draw";
 import { registerGrassFieldRenderer } from "@jgengine/core/grass/GrassFieldRenderer.draw";
 import { getSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
@@ -214,7 +214,7 @@ test("blades and turf stay off ground below the height a field grows above", () 
 });
 
 test("a patch counts as loading until its first view has filled, and unmounting releases it", async () => {
-  const filling = () => modelLoadPending().some(({ item }) => item.startsWith("scene-work:grass-fill"));
+  const filling = () => pendingModelLoads().items.some(({ url }) => url.startsWith("scene-work:grass-fill"));
   const look = readGrassLook({});
   await mounted(cameraAt(0, 1.7, 0, [0, 0.5, -30]), createElement(GrassPatch, { look, area: 120, seed: "fill" }), async () => {
     expect(filling()).toBe(true);
