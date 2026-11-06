@@ -265,11 +265,8 @@ function cheat(ctx: GameContext, input: Cheat): void {
   }
   if (input.tamingSpeed !== undefined) setTamingSpeed(ctx, input.tamingSpeed);
   if (input.breedingSpeed !== undefined) setBreedingSpeed(ctx, input.breedingSpeed);
-<<<<<<< HEAD
   if (input.tameFood !== undefined) for (const tame of tames(ctx)) setTameFood(ctx, tame.id, input.tameFood);
-=======
   if (input.fuel !== undefined) fuelStations(ctx, input.fuel);
->>>>>>> 12d8f3bd6 (Fuelled stations: a campfire or pot burns wood, thatch or sparkpowder and cooks and warms only while lit)
   if (input.kill === true) ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: 0 });
   if (input.destroyWild === true) destroyWild(ctx);
   if (input.clock !== undefined) ctx.time.hydrate({ ...ctx.time.snapshot(), now: input.clock });
