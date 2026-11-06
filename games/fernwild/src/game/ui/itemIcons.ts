@@ -52,11 +52,14 @@ const ARTIFACT = "gameicons:delapouite/glowing-artifact";
 const TROPHY = "gameicons:lorc/trophy";
 const BERRY = "gameicons:lorc/elderberry";
 const SADDLE = "gameicons:delapouite/saddle";
+const EGG = "gameicons:lorc/egg-clutch";
+const KIBBLE = "gameicons:delapouite/dog-bowl";
 
 /** Building pieces by shape. */
 const BY_SHAPE: Readonly<Record<string, string>> = {
   campfire: "gameicons:lorc/campfire",
   mortar_and_pestle: "gameicons:skoll/pestle-mortar",
+  cooking_pot: "gameicons:delapouite/cooking-pot",
   foundation: "gameicons:lorc/stone-block",
   wall: "gameicons:delapouite/stone-wall",
   doorframe: "gameicons:delapouite/wood-frame",
@@ -85,6 +88,8 @@ export function itemIconKey(itemId: string): string | null {
   if (itemId.startsWith("artifact_")) return ARTIFACT;
   if (itemId.includes("_trophy_")) return TROPHY;
   if (itemId.endsWith("berry")) return BERRY;
+  if (itemId.startsWith("egg_")) return EGG;
+  if (itemId.startsWith("kibble_")) return KIBBLE;
   const def = itemDef(itemId);
   if (def?.kind === "saddle") return SADDLE;
   const shape = structureDef(itemId)?.shape;
@@ -92,7 +97,7 @@ export function itemIconKey(itemId: string): string | null {
 }
 
 /** Every icon the game ships, for its credits. */
-export const ITEM_ICON_KEYS: readonly string[] = [...new Set([...Object.values(BY_ITEM), ARTIFACT, TROPHY, BERRY, SADDLE, ...Object.values(BY_SHAPE), ...Object.values(VITAL_ICON)])];
+export const ITEM_ICON_KEYS: readonly string[] = [...new Set([...Object.values(BY_ITEM), ARTIFACT, TROPHY, BERRY, SADDLE, EGG, KIBBLE, ...Object.values(BY_SHAPE), ...Object.values(VITAL_ICON)])];
 
 /** One credit line per game-icons.net artist. */
 export function itemIconCredits(): string[] {

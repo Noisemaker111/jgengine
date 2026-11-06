@@ -1,7 +1,7 @@
 # Fernwild
 
 <!-- suite-score: written by `bun run gen` from proofs/suite-report.json -->
-Game suite: **20/67 proven · 3 failing · 44 missing** · `jgengine suite fernwild`
+Game suite: **22/67 proven · 3 failing · 42 missing** · `jgengine suite fernwild`
 <!-- /suite-score -->
 
 ARK: Survival Evolved, rebuilt on JGengine as close to the real game as our own models and words
@@ -61,6 +61,13 @@ are drawn.
   - Bodies carve into meat and hide by tool (pick for meat, hatchet for hide), and herds refill
     out of sight. Raw meat spoils in 10 minutes and cooked meat in 20, into spoiled meat, which the
     mortar grinds with narcoberries into narcotics.
+  - Kibble, ARK's taming food. Wild female egg-layers drop an unfertilized egg beside them now and
+    then (two at most lying near one; mammals lay none), sized to the body: a dodo's extra small, a
+    raptor's small, up to extra large. E picks one up. A Cooking Pot (level 10) cooks five tiers of
+    kibble, each from an egg of its size plus berries, meat and fiber. Every species prefers one tier,
+    the wiki's where it names one (raptor Simple, rex Exceptional) and by body size otherwise; on that
+    tier or higher it tames about five times faster than on raw meat or berries and far cleaner, and a
+    lower tier is worse than its plain food. Eggs rot in 30 minutes and kibble in two hours.
   - Thatch, wood and stone building tiers with snap sockets.
 - **Explorer notes and the dossier.** 21 notes lie at cave mouths, obelisk feet and summits; E reads
   one, opens it on screen and gives XP the first time. The Dossier tab (I) lists every species, "???"
@@ -126,7 +133,9 @@ are drawn.
   no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed
   yet; rain drops are thin streaks; shots from the slingshot (stones) and the bow (stone and tranquilizer
   arrows) hit instantly along the aim, with no arrow flight, drop or pickup, and the bow always reaches for
-  tranquilizer arrows first; no bolas or traps yet; a tame's inventory holds slots, not weight; drain and regen rates where
+  tranquilizer arrows first; no bolas or traps yet; kibble recipes stand berries, meat and fiber in
+for ARK's crops, which do not grow yet, and wild laying times, the pot's engram and spoil times are
+approximate; a tame's inventory holds slots, not weight; drain and regen rates where
   ARK publishes none are approximate; trees are stylized stand-ins, not palms. The Broodmother's lair is
 an open-sky walled islet rather than ARK's enclosed jungle cave, she is a tinted, enlarged spider
 model, the portal has no drag-weight limit, and the single-player boss damage cut is not applied.

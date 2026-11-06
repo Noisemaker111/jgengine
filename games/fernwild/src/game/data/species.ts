@@ -1,6 +1,7 @@
 import type { TemperamentConfig } from "@jgengine/core/ai/temperament";
 import type { FeedingFood, SubdualFeedingConfig } from "../../engine-local/subdual/subdualFeeding";
 
+import { type KibbleTier, preferredKibble, withKibble } from "./kibble";
 import { food, tamingTable } from "./taming";
 
 /** How a wild creature treats the survivor, by ARK's temperament names. */
@@ -48,6 +49,8 @@ export interface SpeciesDef {
   radius: number;
   /** Clubs, darts and narcotics never put it down (ARK's bosses). */
   torporImmune?: boolean;
+  /** The kibble tier it tames best on; null for what cannot be tamed. */
+  kibble: KibbleTier | null;
 }
 
 /** Wild creatures roll levels 1-30 like ARK's Island at difficulty 1. */
@@ -62,7 +65,7 @@ export function wildLevelCap(metresFromStart: number): number {
 }
 
 /** The three species with their full wiki taming tables. ARK wiki numbers (ark.wiki.gg). Speeds are units/s ÷ 100. */
-const DETAILED: Readonly<Record<string, SpeciesDef>> = {
+const DETAILED: Readonly<Record<string, Omit<SpeciesDef, "kibble">>> = {
   dodo: {
     id: "dodo",
     label: "Dodo",
@@ -220,7 +223,7 @@ const ROWS: Readonly<Record<string, Row>> = {
 const round = (value: number, step = 1) => Math.round(value / step) * step;
 
 /** A table row as a full species: ARK's per-level patterns and size-scaled tables fill what the row leaves out. */
-function fromRow(id: string, row: Row): SpeciesDef {
+function fromRow(id: string, row: Row): Omit<SpeciesDef, "kibble"> {
   const [label, temperament, diet, health, healthPerLevel, stamina, torpor, torporPerLevel, weight, melee, walk, sprint, radius, saddleLevel] = row;
   // Meals scale with the torpor a body carries, as ARK's do: a raptor (180 torpor) eats 7 raw meat at level 1.
   const meals = Math.max(2, round(torpor / 26));
@@ -297,13 +300,21 @@ function broodmother(tier: "gamma" | "beta" | "alpha", health: number, healthPer
     carcass: { hits: 60, meat: 8, hide: 6 },
     radius: 7,
     torporImmune: true,
+    kibble: null,
   };
 }
 
 /** Every species on the Island: the detailed three, the table's rest, and the Broodmother. */
+/** A tameable species with ARK's kibble in its foods: its tier and up first, the tiers below last. */
+function withBait(def: Omit<SpeciesDef, "kibble">): SpeciesDef {
+  const tier = preferredKibble(def.id, def.taming.capacity.kind === "piecewise" ? (def.taming.capacity.points[0]?.[1] ?? 0) : 0);
+  const baseline = def.diet === "carnivore" ? "raw_meat" : "mejoberry";
+  return { ...def, kibble: tier, taming: { ...def.taming, foods: withKibble(def.taming.foods, baseline, tier) } };
+}
+
 export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
-  ...DETAILED,
-  ...Object.fromEntries(Object.entries(ROWS).map(([id, row]) => [id, fromRow(id, row)])),
+  ...Object.fromEntries(Object.values(DETAILED).map((def) => [def.id, withBait(def)])),
+  ...Object.fromEntries(Object.entries(ROWS).map(([id, row]) => [id, withBait(fromRow(id, row))])),
   broodmother_gamma: broodmother("gamma", 324000, 64800, 180),
   broodmother_beta: broodmother("beta", 648000, 97200, 320),
   broodmother_alpha: broodmother("alpha", 972000, 243000, 540),

@@ -104,6 +104,7 @@ export const SHAPES: readonly StructureShapeDef[] = [
   },
   { id: "campfire", boxes: [{ min: [-0.5, 0, -0.5], max: [0.5, 0.35, 0.5] }], ground: { maxStep: 0.6 }, floor: true },
   { id: "mortar_and_pestle", boxes: [{ min: [-0.3, 0, -0.3], max: [0.3, 0.55, 0.3] }], ground: { maxStep: 0.6 }, floor: true },
+  { id: "cooking_pot", boxes: [{ min: [-0.55, 0, -0.55], max: [0.55, 0.8, 0.55] }], ground: { maxStep: 0.6 }, floor: true },
 ];
 
 /** Which socket kinds mate: candidate kind `a` onto placed kind `b`. */
@@ -148,6 +149,8 @@ export const STRUCTURES: readonly StructureDef[] = [
   piece("thatch_door", "Thatch Door", "door", "thatch", 1600, 4, 3, { thatch: 7, fiber: 4 }, 4, "Fits a doorframe. E opens it."),
   piece("thatch_ceiling", "Thatch Ceiling", "ceiling", "thatch", 1600, 4, 3, { thatch: 15, wood: 4, fiber: 10 }, 4, "A roof over walls."),
   piece("mortar_and_pestle", "Mortar and Pestle", "mortar_and_pestle", "station", 1000, 6, 6, { stone: 65, hide: 15 }, 12, "Grinds sparkpowder and narcotics."),
+  // ARK's Cooking Pot (level and points approximate): where eggs become kibble.
+  piece("cooking_pot", "Cooking Pot", "cooking_pot", "station", 1000, 10, 9, { stone: 75, thatch: 15, wood: 10, flint: 8 }, 20, "Cooks kibble from an egg and food: the bait creatures tame fastest on."),
   piece("wooden_foundation", "Wooden Foundation", "foundation", "wood", 15000, 11, 6, { wood: 80, thatch: 20, fiber: 15 }, 4, "Fists and stone tools can't break it."),
   piece("wooden_wall", "Wooden Wall", "wall", "wood", 10000, 11, 7, { wood: 40, thatch: 10, fiber: 7 }, 4, "Fists and stone tools can't break it."),
   piece("wooden_doorframe", "Wooden Doorframe", "doorframe", "wood", 10000, 11, 6, { wood: 30, thatch: 8, fiber: 6 }, 4, "A wooden wall with a door gap."),
@@ -179,4 +182,4 @@ export const BASE_BUILDING: BaseBuildingConfig = {
 };
 
 /** Stations a recipe can need, by piece id. */
-export const STATIONS: ReadonlySet<string> = new Set(["campfire", "mortar_and_pestle"]);
+export const STATIONS: ReadonlySet<string> = new Set(["campfire", "mortar_and_pestle", "cooking_pot"]);

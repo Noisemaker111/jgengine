@@ -11,11 +11,13 @@ import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { baseGhost, basePrompts, baseView, piecesBuilt, stations } from "./game/base";
 import { cavePrompts, cavesOf, cavesView } from "./game/caves";
+import { eggPrompts, eggsOnGround } from "./game/eggs";
+import { EGG_SIZES, eggItem, KIBBLE_TIERS, kibbleItem } from "./game/data/kibble";
 import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { creaturePrompts, creaturesView, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
+import { creaturePrompts, creaturesView, lastTame, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
@@ -34,6 +36,20 @@ import { time, world } from "./world";
 
 const SPAWN_YAW = authoredSpawnRotation(editorLayers);
 const SPAWN_AT = authoredSpawnPosition(editorLayers);
+/** The closest egg to `here` within `within` metres, or null. */
+function nearestEgg(eggs: readonly { at: readonly [number, number, number] }[], here: readonly [number, number, number], within: number): readonly [number, number, number] | null {
+  let best: readonly [number, number, number] | null = null;
+  let bestDistance = within;
+  for (const egg of eggs) {
+    const distance = Math.hypot(egg.at[0] - here[0], egg.at[2] - here[2]);
+    if (distance <= bestDistance) {
+      best = egg.at;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
 const PIECES: ReadonlySet<string> = new Set(STRUCTURES.map((entry) => entry.id));
 
 export const game = defineGame({
@@ -82,7 +98,7 @@ export const game = defineGame({
   controls: {
     movement: { canSprint: canRun, swim: { speedMultiplier: 0.6 }, feel: { runMultiplier: SURVIVOR.runMultiplier } },
     // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
-    prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
+    prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...eggPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
   },
   systems: [createGameFlowSystem(), ...systems, firstDay],
   newGame: survivorStart,
@@ -241,6 +257,19 @@ export const game = defineGame({
         // The bag slot of the first stack the creature whose inventory is open tames on (what you double-click to feed it); -1 with none.
         foodSlot: tamesOn === null ? -1 : ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && tamesOn.includes(slot.itemId)),
         tameProgress: Math.round((creatures.viewing?.taming?.progress ?? creatures.aimed?.taming?.progress ?? 0) * 100),
+        // The game clock in seconds, to time a tame or a craft; the last tame's effectiveness in percent (-1 before any).
+        clock: Math.round(ctx.time.now() * 10) / 10,
+        lastTameEffectiveness: Math.round((lastTame(ctx)?.effectiveness ?? -0.01) * 100),
+        // Wild eggs and kibble carried, any size or tier.
+        eggsCarried: EGG_SIZES.reduce((sum, size) => sum + ctx.player.inventory.count(BAG, eggItem(size)), 0),
+        kibble: KIBBLE_TIERS.reduce((sum, tier) => sum + ctx.player.inventory.count(BAG, kibbleItem(tier)), 0),
+        // The nearest egg on the ground within 60 m, and the nearest cooking pot placed.
+        ...sight("wildEgg", nearestEgg(eggsOnGround(ctx), here, 60)),
+        ...sight("pot", stationNear("cooking_pot")),
+        // The bag slot holding kibble (any tier), raw prime meat and raw meat, to double-click into a downed creature; -1 with none.
+        kibbleSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && slot.itemId.startsWith("kibble_")),
+        primeSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_prime_meat"),
+        rawMeatSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === "raw_meat"),
         riding: creatures.riding === null ? 0 : 1,
         saddled: creatures.aimed?.saddled === true ? 1 : 0,
         tameLevel: creatures.viewing?.level ?? creatures.riding?.level ?? 0,

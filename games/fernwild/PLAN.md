@@ -20,17 +20,17 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | building | 1/3 | 0 | 0 | 2 | 0 |
 | harvest | 2/3 | 0 | 0 | 1 | 0 |
 | crafting | 1/6 | 0 | 0 | 5 | 0 |
-| taming | 3/9 | 0 | 0 | 6 | 0 |
+| taming | 5/9 | 0 | 0 | 4 | 0 |
 | creatures | 2/13 | 0 | 0 | 11 | 0 |
 | breeding | 2/4 | 0 | 0 | 2 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 0/3 | 0 | 0 | 3 | 0 |
 | cave | 1/2 | 0 | 0 | 1 | 0 |
-| **total** | **20/67** | 3 | 0 | 44 | 0 |
+| **total** | **22/67** | 3 | 0 | 42 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 20/67 proven · 3 failing · 44 missing.
+Genres: creature-survival. 22/67 proven · 3 failing · 42 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -71,8 +71,8 @@ Genres: creature-survival. 20/67 proven · 3 failing · 44 missing.
 | `taming.ranged-knockout` | proven | Knock a creature out from range with sedative ammo, without standing in its reach. | proofs/sim/tame-ranged.proof.ts |
 | `taming.keep-under` | proven | Keep an unconscious creature under with a sedative while it eats. | proofs/sim/tame-keep-under.proof.ts |
 | `taming.wake-loses` | missing | If an unconscious creature's torpor runs out it wakes up wild, and the taming progress is lost. |  |
-| `taming.preferred-food` | missing | Each species ranks its foods; its favourite tames it several times faster and cleaner than ordinary food. |  |
-| `taming.crafted-bait` | missing | A cooked taming food, made from eggs and crops at a station, is the best food for creatures of its tier. |  |
+| `taming.preferred-food` | proven | Each species ranks its foods; its favourite tames it several times faster and cleaner than ordinary food. | proofs/sim/tame-favourite.proof.ts |
+| `taming.crafted-bait` | proven | A cooked taming food, made from eggs and crops at a station, is the best food for creatures of its tier. | proofs/sim/tame-kibble.proof.ts |
 | `taming.passive-feed` | missing | Some creatures tame awake, by offering food without being hit. |  |
 | `taming.trap` | missing | A trap or snare holds a creature still for taming. |  |
 | `taming.effectiveness` | missing | A cleaner tame gives a better creature. |  |

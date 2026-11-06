@@ -10,6 +10,7 @@ import { Caves } from "./Caves";
 import { Eggs } from "./Eggs";
 import { Obelisks } from "./Obelisks";
 import { SupplyDrops } from "./SupplyDrops";
+import { WildEggs } from "./WildEggs";
 
 /** What the game draws into the world: the survivor's base (pieces by tier colour, the build ghost), the obelisks, the caves, fallen survivors' bodies, supply crates, fertilized eggs and the Broodmother's lair. */
 export function BaseWorld({ ctx }: WorldOverlayProps): ReactNode {
@@ -20,6 +21,7 @@ export function BaseWorld({ ctx }: WorldOverlayProps): ReactNode {
       <Caves ctx={ctx} />
       <Bodies ctx={ctx} />
       <SupplyDrops ctx={ctx} />
+      <WildEggs ctx={ctx} />
       <Eggs ctx={ctx} />
       <BroodLair ctx={ctx} />
       <OnboardingPointer ctx={ctx} />
