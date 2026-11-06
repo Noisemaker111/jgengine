@@ -600,6 +600,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         define: commandRegistry.define,
         has: commandRegistry.has,
         names: commandRegistry.names,
+        isCheat: commandRegistry.isCheat,
         run(name, input) {
           const result = runGated(name, input);
           signal.notify();
