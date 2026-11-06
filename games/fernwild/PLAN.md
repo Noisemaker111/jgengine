@@ -21,16 +21,16 @@ What players must be able to do, proven by headless simulation in `bun test` (`j
 | harvest | 2/3 | 0 | 0 | 1 | 0 |
 | crafting | 2/6 | 0 | 0 | 4 | 0 |
 | taming | 8/9 | 0 | 0 | 1 | 0 |
-| creatures | 3/13 | 0 | 0 | 10 | 0 |
+| creatures | 5/13 | 0 | 0 | 8 | 0 |
 | breeding | 2/4 | 0 | 0 | 2 | 0 |
 | spawns | 0/3 | 0 | 0 | 3 | 0 |
 | boss | 0/3 | 0 | 0 | 3 | 0 |
 | cave | 2/2 | 0 | 0 | 0 | 0 |
-| **total** | **29/67** | 3 | 0 | 35 | 0 |
+| **total** | **31/67** | 3 | 0 | 33 | 0 |
 
 <details><summary>Every required entry</summary>
 
-Genres: creature-survival. 29/67 proven · 3 failing · 35 missing.
+Genres: creature-survival. 31/67 proven · 3 failing · 33 missing.
 
 | Entry | Status | What the player does | Detail |
 | --- | --- | --- | --- |
@@ -78,9 +78,9 @@ Genres: creature-survival. 29/67 proven · 3 failing · 35 missing.
 | `taming.effectiveness` | proven | A cleaner tame gives a better creature. | proofs/sim/tame-clean.proof.ts |
 | `creatures.follow-stay` | missing | Order a tame to follow, stay or guard. |  |
 | `creatures.fight-alongside` | missing | Tames attack what threatens the player. |  |
-| `creatures.work.gather` | missing | Species have gather roles: a tame gathers its specialty resource far faster than the player's best tool. |  |
+| `creatures.work.gather` | proven | Species have gather roles: a tame gathers its specialty resource far faster than the player's best tool. | proofs/sim/tame-gather.proof.ts |
 | `creatures.work.haul` | missing | A tame carries weight so the player can haul more. |  |
-| `creatures.work.lighter-loads` | missing | A specialist tame carries its specialty resource at reduced weight. |  |
+| `creatures.work.lighter-loads` | proven | A specialist tame carries its specialty resource at reduced weight. | proofs/sim/tame-lighter-loads.proof.ts |
 | `creatures.work.airlift` | missing | A flying tame picks up a smaller creature or survivor and carries it. |  |
 | `creatures.feed-starve` | proven | Tames eat from their own inventory or a shared trough; an unfed tame starves and dies. | proofs/sim/tame-hunger.proof.ts |
 | `creatures.guard-base` | missing | Tames left at the base defend it. |  |
