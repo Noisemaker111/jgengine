@@ -9,6 +9,13 @@
       "ok": true
     },
     {
+      "file": "proofs/sim/bola.proof.ts",
+      "proves": [
+        "taming.trap"
+      ],
+      "ok": true
+    },
+    {
       "file": "proofs/sim/breed-incubate.proof.ts",
       "proves": [
         "breeding.incubate"

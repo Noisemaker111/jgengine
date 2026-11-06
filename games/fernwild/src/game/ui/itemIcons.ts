@@ -42,6 +42,7 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   cloth_boots: "gameicons:lorc/boots",
   waterskin: "gameicons:delapouite/waterskin",
   slingshot: "gameicons:delapouite/slingshot",
+  bola: "gameicons:delapouite/hunting-bolas",
   bow: "gameicons:lorc/pocket-bow",
   stone_arrow: "gameicons:delapouite/plain-arrow",
   tranq_arrow: "gameicons:lorc/arrow-flights",
