@@ -1,0 +1,87 @@
+{
+  "game": "brightway-park",
+  "proofs": [
+    {
+      "file": "proofs/sim/bankrupt-replay.proof.ts",
+      "proves": [
+        "tycoon.bankrupt",
+        "failure.lose-and-recover"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/breakdown-fix.proof.ts",
+      "proves": [
+        "tycoon.breakdowns"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/build-attraction.proof.ts",
+      "proves": [
+        "tycoon.build-attraction"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/customers-pay.proof.ts",
+      "proves": [
+        "tycoon.customers-pay"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/first-goal.proof.ts",
+      "proves": [
+        "onboarding.first-goal"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/research-unlock.proof.ts",
+      "proves": [
+        "tycoon.unlock-research"
+      ],
+      "ok": true
+    },
+    {
+      "file": "proofs/sim/staff-upkeep.proof.ts",
+      "proves": [
+        "tycoon.staff-upkeep"
+      ],
+      "ok": true
+    }
+  ],
+  "data": [
+    {
+      "id": "content.item-source",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.item-use",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.recipes-reachable",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.placeables-place",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "content.weapons-have-ammo",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "id": "progression.runway",
+      "ok": true,
+      "problems": []
+    }
+  ]
+}
