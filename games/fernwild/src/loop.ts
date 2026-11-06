@@ -9,7 +9,7 @@ import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBo
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, tickBreeding } from "./game/breeding";
 import { resetTameHunger, setTameFood, tameHungerSave, tickTameHunger } from "./game/tameHunger";
 import { broodSave, resetBroodmother, setBroodHealth, summonBroodmother, tickBroodmother, useObelisk } from "./game/broodmother";
-import { closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
+import { closeCreature, creaturesSave, knockOutNow, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, loadTame, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tames, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
@@ -45,7 +45,7 @@ export const systems = [
       commands.define<{ aim?: Aim; yaw?: number }>("fire", {
         apply(state, input) {
           // Riding, the click is the mount's bite; on foot, the survivor's swing.
-          const bite = mountBite(state);
+          const bite = mountBite(state, input.aim?.yaw ?? input.yaw);
           if (bite === null) swing(state, input.aim?.yaw ?? input.yaw);
           else if (bite !== "riding" && bite.killed) grantXp(state, bite.xp);
           return state;
@@ -234,6 +234,8 @@ interface Cheat {
   forceTame?: boolean;
   /** XP for the mount under you, or the tame whose inventory is open. */
   tameXp?: number;
+  /** Items straight into the mount under you, or the tame whose inventory is open. */
+  tameLoad?: { itemId: string; count: number };
   /** Move these items' stacks from the bag to the hotbar, in order (the double-click, for proofs). */
   toHotbar?: string[];
   /** Stand `back` metres outside a cave's mouth (negative: that far inside), facing in, the camera behind. */
@@ -309,6 +311,7 @@ function cheat(ctx: GameContext, input: Cheat): void {
   }
   if (input.forceTame === true) forceTame(ctx);
   if (input.tameXp !== undefined) giveTameXp(ctx, input.tameXp);
+  if (input.tameLoad !== undefined) loadTame(ctx, input.tameLoad.itemId, input.tameLoad.count);
   for (const itemId of input.wear ?? []) {
     const slot = ctx.player.inventory.state(BAG).slots.findIndex((stack) => stack?.itemId === itemId);
     if (slot >= 0) wearArmour(ctx, BAG, slot);

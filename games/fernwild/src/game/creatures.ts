@@ -6,6 +6,7 @@ import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles";
 import type { NavPoint } from "@jgengine/core/nav/navGrid";
 import type { DoseSupply } from "@jgengine/core/stats/doseTable";
 import type { VitalDose } from "@jgengine/core/stats/vitals";
+import { resolveEncumbrance, totalLoad, type EncumbranceState } from "@jgengine/core/inventory/encumbrance";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { leveling } from "@jgengine/core/progression/leveling";
@@ -26,6 +27,8 @@ import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperame
 import { bonusLevels, NARCOTICS } from "./data/taming";
 import { createKnockoutTaming, type KnockoutTaming, type TamingRead, type TamingSave } from "./knockoutTaming";
 import { setScreen } from "./screens";
+import { strikeHarvestable } from "./survivor";
+import { biteProfile, loadShare } from "./data/tameWork";
 
 /** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
 const CREATURE_SLOTS = 30;
@@ -41,6 +44,8 @@ const USE_REACH = 3;
 const BOLA_MAX_RADIUS = 1.6;
 /** Sea and shallows creatures will not walk into. */
 const SHORE = 0.4;
+/** A tame's carrying bands, as the survivor's: slowed from 85% of its weight stat, stuck at the limit. */
+const TAME_ENCUMBRANCE = { soft: 0.85, floor: 0.5 } as const;
 
 /** A creature as the world remembers it. */
 interface Creature {
@@ -228,6 +233,12 @@ function statOf(creature: Creature, stat: TameStat): number {
   return IMPRINTED_STATS.includes(stat) ? tamed * (1 + IMPRINT_BONUS * creature.imprint) : tamed;
 }
 
+/** What a creature carries against its weight stat: its specialty items weigh what it feels them at (`LIGHTER_LOADS`). */
+function loadOf(creature: Creature): EncumbranceState {
+  const stacks = creature.inventory.slots.flatMap((slot) => (slot === null ? [] : [{ itemId: slot.itemId, quantity: slot.count }]));
+  return resolveEncumbrance(totalLoad(stacks, (itemId) => (itemDef(itemId)?.weight ?? 0) * loadShare(creature.species, itemId)), statOf(creature, "weight"), TAME_ENCUMBRANCE);
+}
+
 function maxHealth(creature: Creature): number {
   return Math.round(statOf(creature, "health"));
 }
@@ -235,8 +246,8 @@ function maxHealth(creature: Creature): number {
 function body(world: World, creature: Creature): CreatureBody {
   const def = defOf(creature);
   return {
-    walk: def.walk * statOf(creature, "speed"),
-    sprint: def.sprint * statOf(creature, "speed"),
+    walk: def.walk * statOf(creature, "speed") * loadOf(creature).moveMultiplier,
+    sprint: def.sprint * statOf(creature, "speed") * loadOf(creature).moveMultiplier,
     attack: def.attack === null ? null : { effect: "damage", amount: def.attack.damage * statOf(creature, "melee"), interval: def.attack.interval, reach: def.attack.reach + def.radius },
     wander: { radius: world.regions.get(creature.region)?.radius ?? 16 },
   };
@@ -482,8 +493,11 @@ function landHit(ctx: GameContext, attackerId: string, target: Creature, damage:
   return { label: def.label, granted: [], killed, knockedOut, xp: killed ? killXp(def, target.level) : 0 };
 }
 
-/** Left click on a mount: it bites what is in front, and cuts meat from a body for its rider. */
-export function mountBite(ctx: GameContext): CreatureStrike | "riding" | null {
+/**
+ * Left click on a mount: it turns to where the camera aims (`yaw`), as the survivor's swing does, and bites
+ * what is in front: a creature, a body (meat for its rider), or a tree, rock or bush (into its own inventory).
+ */
+export function mountBite(ctx: GameContext, yaw?: number): CreatureStrike | "riding" | null {
   const world = worldOf(ctx);
   const mountId = ridingOf(ctx).mountOf(ctx.player.userId);
   if (mountId === null) return null;
@@ -494,14 +508,31 @@ export function mountBite(ctx: GameContext): CreatureStrike | "riding" | null {
   const now = ctx.time.now();
   if (now < world.mountReady) return "riding";
   world.mountReady = now + def.attack.interval;
-  const bite = { gather: { power: 1, biases: def.diet === "carnivore" ? { raw_meat: 2, hide: 1 } : { raw_meat: 0.5, hide: 1.5 }, defaultBias: 0 }, damage: def.attack.damage, reach: def.attack.reach + def.radius };
-  const hit = strikeCreature(ctx, mountId, entity.rotationY, bite, statOf(mount, "melee"));
-  if (hit === null) return "riding";
-  for (const grant of hit.granted) {
-    const whole = Math.floor(grant.amount + ctx.rng());
-    if (whole > 0) ctx.player.inventory.put(BAG, grant.kind, whole);
+  if (yaw !== undefined && yaw !== entity.rotationY) ctx.scene.entity.setPose(mountId, { position: entity.position, rotationY: yaw });
+  const bite = { gather: biteProfile(mount.species, def.diet), damage: def.attack.damage, reach: def.attack.reach + def.radius };
+  const facing = yaw ?? entity.rotationY;
+  const hit = strikeCreature(ctx, mountId, facing, bite, statOf(mount, "melee"));
+  if (hit !== null) {
+    for (const grant of hit.granted) {
+      const whole = Math.floor(grant.amount + ctx.rng());
+      if (whole > 0) ctx.player.inventory.put(BAG, grant.kind, whole);
+    }
+    return hit;
   }
-  return hit;
+  // Nothing alive in front: the bite works the tree, rock or bush there, into the mount's own inventory, as
+  // ARK's gatherers do. One loaded to its limit stops working.
+  if (loadOf(mount).immobile) {
+    ctx.game.notices.push({ text: `Your ${def.label} is carrying too much to gather`, tone: "deny" });
+    return "riding";
+  }
+  const granted = strikeHarvestable(ctx, entity.position, facing, bite.reach, bite.gather, statOf(mount, "melee"));
+  for (const grant of granted ?? []) {
+    const whole = Math.floor(grant.amount + ctx.rng());
+    if (whole <= 0) continue;
+    const put = putItem(mount.inventory, { slots: CREATURE_SLOTS }, itemTraits, grant.kind, whole);
+    if (put.status === "ok") mount.inventory = put.state;
+  }
+  return "riding";
 }
 
 // --- knock out, wake, die, tame ---------------------------------------------------------------
@@ -565,7 +596,8 @@ function tickTame(ctx: GameContext, creature: Creature, ridden: boolean, dt: num
   const rate = sprinting ? -defOf(creature).sprintStamina : moving ? 0 : max * STAMINA_REGEN;
   creature.stamina = Math.max(0, Math.min(max, creature.stamina + rate * dt));
   const def = defOf(creature);
-  const walk = def.walk * statOf(creature, "speed");
+  // Loaded past its weight the mount slows, and at the limit it cannot move.
+  const walk = def.walk * statOf(creature, "speed") * loadOf(creature).moveMultiplier;
   // Ridden, the mount sprints at its own ARK ratio (a tamed raptor 11.04 / 4.8 m/s), not the survivor's.
   const run = (def.tamedSprint ?? def.sprint) / def.walk;
   const moved = entity === null ? null : entity.movement;
@@ -1076,6 +1108,20 @@ export function giveTameXp(ctx: GameContext, amount: number): void {
   if (creature !== undefined) grantTameXp(ctx, creature, amount);
 }
 
+/** Items straight into the mount under you or the tame whose inventory is open, for tests and proofs; as many as fit. */
+export function loadTame(ctx: GameContext, itemId: string, count: number): void {
+  const world = worldOf(ctx);
+  const id = ridingOf(ctx).mountOf(ctx.player.userId) ?? world.viewing;
+  const creature = id === null ? undefined : world.creatures.get(id);
+  if (creature === undefined) return;
+  const stack = itemDef(itemId)?.stack ?? 1;
+  for (let left = count; left > 0; left -= stack) {
+    const put = putItem(creature.inventory, { slots: CREATURE_SLOTS }, itemTraits, itemId, Math.min(stack, left));
+    if (put.status !== "ok") return;
+    creature.inventory = put.state;
+  }
+}
+
 // --- what the HUD and screens read ------------------------------------------------------------------
 
 function tamingView(world: World, creature: Creature, state: TamingRead | null) {
@@ -1139,6 +1185,7 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     order: creature.tamed ? (world.roster.get(creature.id)?.command ?? null) : null,
     taming: creature.tamed ? null : tamingView(world, creature, world.taming.state(creature.id)),
     stamina: { value: Math.floor(creature.stamina), max: Math.round(statOf(creature, "stamina")) },
+    weight: { value: Math.round(loadOf(creature).mass * 10) / 10, max: Math.round(statOf(creature, "weight")) },
     growth: growthView(creature),
     inventory: creature.inventory.slots,
   };

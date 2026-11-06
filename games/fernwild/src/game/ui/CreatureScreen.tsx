@@ -60,6 +60,7 @@ export function CreatureReadout({ card }: { card: CreatureCard }): ReactNode {
       ) : null}
       {card.dead ? null : <Meter label="Health" value={card.health.value} max={card.health.max} color="#d8483f" />}
       {card.tamed && !card.dead ? <Meter label="Stamina" value={card.stamina.value} max={card.stamina.max} color="#e7c84a" testId="stamina" /> : null}
+      {card.tamed && !card.dead ? <Meter label="Weight" value={card.weight.value} max={card.weight.max} color="#a3a3a3" testId="weight" /> : null}
       {card.tamed && !card.dead ? <FoodMeter id={card.id} /> : null}
       {taming !== null && (taming.unconscious || taming.torpor > 0) ? <Meter label="Torpor" value={taming.torpor} max={taming.maxTorpor} color="#a45fd6" testId="torpor" /> : null}
       {taming !== null && taming.unconscious ? (

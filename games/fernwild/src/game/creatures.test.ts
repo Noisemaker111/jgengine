@@ -9,6 +9,7 @@ import { content } from "./content";
 import { creatureCard, creaturesView } from "./creatures";
 import { itemTraits } from "./data/items";
 import { openScreen } from "./screens";
+import { nearestHarvestable } from "./survivor";
 import { editorLayers } from "../editorLayers";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { speciesDef, wildLevelCap } from "./data/species";
@@ -280,4 +281,52 @@ test("a dodo runs when hit, and its body carves into meat and hide", () => {
     tick(runner, 0.75);
   }
   expect(runner.ctx.player.inventory.count(BAG, "raw_meat")).toBeGreaterThan(runner.ctx.player.inventory.count(BAG, "hide"));
+});
+
+test("a Doedicurus carries stone at a quarter of its weight, bites stone from a boulder into its own inventory, and stops when loaded to its limit", () => {
+  const runner = islandRunner();
+  tick(runner, 0.1);
+  // Stand five metres from the nearest boulder, facing it, with a tame Doedicurus between.
+  const me = runner.ctx.scene.entity.get(runner.userId)!.position;
+  const rock = nearestHarvestable(runner.ctx, me, 200, "strike", "flint")!;
+  expect(rock).not.toBeNull();
+  const away = Math.atan2(me[0] - rock[0], me[2] - rock[2]);
+  runner.ui.tryInvoke("cheat", { teleport: [rock[0] + Math.sin(away) * 5, rock[2] + Math.cos(away) * 5, away + Math.PI] });
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("cheat", { give: { doedicurus_saddle: 1, stone: 100 }, summon: { species: "doedicurus", level: 1, distance: 2.6, tamed: true } });
+  tick(runner, 0.1);
+  const tame = creaturesView(runner.ctx).aimed!;
+  expect(tame.species).toBe("doedicurus");
+
+  // A hundred stone weighs 50 in the bag; on the Doedicurus it weighs 12.5.
+  runner.ui.tryInvoke("creatureUse", {});
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "stone") });
+  expect(creaturesView(runner.ctx).viewing!.weight.value).toBe(12.5);
+  runner.ui.tryInvoke("takeCreature", { slot: 0 });
+  expect(creaturesView(runner.ctx).viewing!.weight.value).toBe(0);
+
+  runner.ui.tryInvoke("giveCreature", { inventoryId: BAG, slot: bagSlot(runner, "doedicurus_saddle") });
+  runner.ui.tryInvoke("closeCreature", {});
+  runner.ui.tryInvoke("creatureUse", {});
+  expect(creaturesView(runner.ctx).riding?.id).toBe(tame.id);
+  const mount = runner.ctx.scene.entity.get(tame.id)!;
+  const toRock = Math.atan2(rock[0] - mount.position[0], rock[2] - mount.position[2]);
+  const stoneOn = () => creaturesView(runner.ctx).riding!.inventory.reduce((sum, slot) => sum + (slot?.itemId === "stone" ? slot.count : 0), 0);
+  for (let bite = 0; bite < 4; bite += 1) {
+    runner.ui.tryInvoke("fire", { yaw: toRock });
+    tick(runner, 1.5);
+  }
+  const bitten = stoneOn();
+  // Four bites at a stone bias of 6: about 36 stone into the tame, none into the bag (still the 100 taken back).
+  expect(bitten).toBeGreaterThan(20);
+  expect(runner.ctx.player.inventory.count(BAG, "stone")).toBe(100);
+
+  // Loaded to its weight limit it will not gather more.
+  const card = creaturesView(runner.ctx).riding!;
+  runner.ui.tryInvoke("cheat", { tameLoad: { itemId: "stone", count: Math.ceil((card.weight.max - card.weight.value) / 0.125) + 1 } });
+  expect(creaturesView(runner.ctx).riding!.weight.value).toBeGreaterThanOrEqual(card.weight.max);
+  const loaded = stoneOn();
+  runner.ui.tryInvoke("fire", { yaw: toRock });
+  tick(runner, 1.5);
+  expect(stoneOn()).toBe(loaded);
 });
