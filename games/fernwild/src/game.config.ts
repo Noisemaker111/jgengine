@@ -80,6 +80,8 @@ export const game = defineGame({
   input: {
     ...DEFAULT_WALK_CODES,
     sprint: ["ShiftLeft"],
+    // ARK's crouch, which under water swims down; Space swims up.
+    crouch: ["KeyC"],
     fire: { hold: ["mouse0"], repeatMs: 250 },
     interact: ["KeyE"],
     // ARK's whistles: T for follow, U for stay.
@@ -97,7 +99,7 @@ export const game = defineGame({
     ...Object.fromEntries(Array.from({ length: HOTBAR_SLOTS }, (_, slot) => [`slot${slot + 1}`, [`Digit${(slot + 1) % 10}`]])),
   },
   controls: {
-    movement: { canSprint: canRun, swim: { speedMultiplier: 0.6 }, feel: { runMultiplier: SURVIVOR.runMultiplier } },
+    movement: { canSprint: canRun, swim: { speedMultiplier: 0.6, dive: true }, feel: { runMultiplier: SURVIVOR.runMultiplier } },
     // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
     prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...eggPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
   },
@@ -190,6 +192,8 @@ export const game = defineGame({
         food: Math.round(view.food.value),
         water: Math.round(view.water.value),
         stamina: Math.round(view.stamina.value),
+        oxygen: Math.round(view.oxygen.value),
+        underwater: view.underwater ? 1 : 0,
         weight: view.weight.value,
         weightMax: view.weight.max,
         thatch: ctx.player.inventory.count(BAG, "thatch"),

@@ -77,6 +77,7 @@ export const VITAL_ICON = {
   water: "gameicons:sbed/water-drop",
   weight: "gameicons:delapouite/weight",
   torpor: "gameicons:lorc/sleepy",
+  oxygen: "gameicons:lorc/bubbles",
   xp: "gameicons:delapouite/upgrade",
   temperature: "gameicons:lorc/thermometer-scale",
 } as const;

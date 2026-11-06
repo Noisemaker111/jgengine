@@ -10,6 +10,7 @@ import type { AudioReverbConfig } from "../audio/reverb";
 import type { MusicTheme } from "../audio/music";
 import type { ModelShadowMode, ModelVariantLodConfig } from "../lod/modelLod";
 import type { MeshLodConfig } from "../lod/builtLods";
+import type { SwimDiveConfig } from "../movement/playerMovement";
 export type { ModelShadowMode, ModelVariantConfig, ModelVariantLodConfig } from "../lod/modelLod";
 import type { UiCueOverrides } from "../ui/uiCues";
 import type { FeedbackCueOverrides } from "../audio/feedbackCues";
@@ -708,8 +709,11 @@ export interface PlayerMovementConfig {
   feel?: MovementFeelConfig | undefined;
   /** Radians/second the rendered body rotates toward its movement heading (shortest arc), so strafing/backpedalling read as a turn rather than an instant flip; also the rate the internally-integrated `turnLeft`/`turnRight` heading turns when the shell doesn't own yaw. Unset = body facing snaps instantly (no change to existing feel). */
   turnSpeed?: number;
-  /** On-foot swimming when the terrain declares a `waterLevel` and the player is submerged: caps speed and floats them at the surface. `true` uses defaults; default off. */
-  swim?: { speedMultiplier?: number } | boolean;
+  /**
+   * On-foot swimming when the terrain declares a `waterLevel` and the player is submerged: caps speed and floats them at the surface.
+   * `dive` lets crouch swim down to the bed and jump swim back up (telemetry `diveDepth` says how deep, for breath). `true` uses defaults; default off.
+   */
+  swim?: { speedMultiplier?: number; dive?: SwimDiveConfig | boolean } | boolean;
   /** Slide the player downhill on terrain steeper than they can stand on (heightfield worlds only). `true` uses defaults; default off. */
   slopeSlide?: { maxClimbSlope?: number } | boolean;
   /**

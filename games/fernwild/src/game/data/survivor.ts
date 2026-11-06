@@ -20,6 +20,9 @@ export const SURVIVOR = {
   /** At or under this much health the survivor is injured and slowed. */
   injuredAt: 30,
   injuredSpeed: 0.5,
+  /** Seconds of breath under water from full (approx), and how far below the surface the head goes under. */
+  breathSeconds: 45,
+  headUnder: 1.4,
   /** Stamina per second while running (approx). */
   runStamina: 5,
   jumpStamina: 5,
@@ -58,7 +61,8 @@ export function survivorVitals(): VitalDef[] {
   return [
     { id: "health", max: SURVIVOR.health, rate: 0.35, regenCost: [{ vital: "food", perPoint: 0.25 }] },
     { id: "stamina", max: SURVIVOR.stamina, rate: 8, regenDelay: 1.2 },
-    { id: "oxygen", max: SURVIVOR.oxygen, rate: 10, regenDelay: 1 },
+    // Breath refills at the surface; under water the survivor's tick drains it, and empty, drowning takes health (approx).
+    { id: "oxygen", max: SURVIVOR.oxygen, rate: 10, regenDelay: 1, whenEmpty: [{ vital: "health", rate: -4 }], flags: [{ id: "drowning", when: "atMost", on: 0, off: 0.05 }] },
     { id: "food", max: SURVIVOR.food, rate: -100 / 3000, whenEmpty: [{ vital: "health", rate: -0.2 }, { vital: "torpor", rate: 0.5 }], flags: [{ id: "hungry", when: "atMost", on: 0.1, off: 0.12 }, { id: "starving", when: "atMost", on: 0 , off: 0.01 }] },
     { id: "water", max: SURVIVOR.water, rate: -100 / 2400, whenEmpty: [{ vital: "health", rate: -0.2 }, { vital: "torpor", rate: 0.5 }], flags: [{ id: "thirsty", when: "atMost", on: 0.1, off: 0.12 }, { id: "dehydrated", when: "atMost", on: 0, off: 0.01 }] },
     { id: "torpor", max: SURVIVOR.torpor, start: 0, rate: -2, flags: [{ id: "unconscious", when: "atLeast", on: 1, off: 0.5 }] },

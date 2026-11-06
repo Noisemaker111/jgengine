@@ -199,7 +199,7 @@ taming; gather and lighter loads; flying; fuel, preserve and tool wear; farming;
 | taming.passive-feed | the same diet dose table, offered by the player to an awake creature that raises a `hungry` flag |
 | taming.trap | a `held` meter dosed by a bola or trap, draining; the flag sets movement speed to 0 (Modifiers) |
 | creatures.feed-starve | a tame's food vital drains; core `eatWhileRoom` feeds it from its inventory through the `TAME_DIET` dose table; empty food starves it to death; a baby is the same meter at a faster pace (done, `tameHunger.ts`) |
-| survival.oxygen-swim | an oxygen vital drained while under water (`extra` rate), `whenEmpty` drains health |
+| survival.oxygen-swim | core swim `dive` (crouch down, jump up, telemetry `diveDepth`); oxygen drained by an `extra` rate while the head is under, `whenEmpty` drowns (done) |
 | cave.hazards | an area doses who stands in it (gas: oxygen down; heat: health down) |
 | survival.temperature | `bodyTemperature` gives drain rates into the vitals tick |
 | creatures.work.gather | a tame's attack is a tool profile (`resourceNode` biases) per species, data only |
