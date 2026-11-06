@@ -40,6 +40,21 @@ export interface ToolDef {
   cooldown: number;
   /** What a structure tier sees this hit as (ARK: wood ignores fists and stone tools). Default `"primitive"`. */
   damageClass?: "fist" | "primitive" | "ranged" | "metal";
+  /** A weapon that fires instead of swinging: a click spends one ammo and hits the first creature along the aim. */
+  ranged?: RangedDef;
+}
+
+/** What one shot of an ammo lands. */
+export interface ShotDef {
+  damage: number;
+  torpor: number;
+}
+
+/** A firing weapon: how far it hits, and its ammo in the order it reaches for them (the first one carried fires). */
+export interface RangedDef {
+  /** Metres. */
+  range: number;
+  ammo: Readonly<Record<string, ShotDef>>;
 }
 
 export type ItemKind = "resource" | "consumable" | "tool" | "structure" | "armor" | "saddle" | "ammo";
@@ -180,7 +195,19 @@ export const ITEMS: readonly ItemDef[] = [
   cloth("cloth_gloves", "Cloth Gloves", "hands", 0.5),
   cloth("cloth_boots", "Cloth Boots", "feet", 0.5),
   { id: "waterskin", label: "Waterskin", kind: "consumable", weight: 0.5, stack: 1, consume: { water: 20 }, note: "Carry a drink with you." },
-  { id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones that knock creatures out.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 5, torpor: 8, damageClass: "ranged", stamina: 4, cooldown: 1 } },
+  // ARK's slingshot throws the stones in the bag: little damage, a lot of torpor, a short range.
+  {
+    id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones from the bag. Knocks small creatures out from a few metres away.",
+    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 4, cooldown: 1, ranged: { range: 20, ammo: { stone: { damage: 4, torpor: 25 } } } },
+  },
+  // ARK's bow: stone arrows wound, tranquilizer arrows (a stone arrow dipped in narcotic) knock out from
+  // range. A level-1 raptor (180 torpor) sleeps on two tranq arrows. Numbers approx.
+  {
+    id: "bow", label: "Bow", kind: "tool", weight: 1, stack: 1, note: "Fires arrows from the bag: tranquilizer arrows first, then stone arrows.",
+    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 0, damageClass: "ranged", stamina: 2, cooldown: 1.1, ranged: { range: 45, ammo: { tranq_arrow: { damage: 8, torpor: 95 }, stone_arrow: { damage: 25, torpor: 10 } } } },
+  },
+  { id: "stone_arrow", label: "Stone Arrow", kind: "ammo", weight: 0.05, stack: 100, note: "A flint-tipped arrow for the bow." },
+  { id: "tranq_arrow", label: "Tranquilizer Arrow", kind: "ammo", weight: 0.06, stack: 100, note: "A stone arrow dipped in narcotic: knocks creatures out from range." },
   ...STRUCTURES.map((entry): ItemDef => ({ id: entry.id, label: entry.label, kind: "structure", weight: entry.weight, stack: 100, note: entry.note })),
   ...Object.values(SPECIES).flatMap((def): ItemDef[] =>
     def.saddle === null ? [] : [{ id: def.saddle, label: `${def.label} Saddle`, kind: "saddle", weight: Math.max(4, Math.round(def.weight.base / 40)), stack: 1, note: `Lets you ride a tamed ${def.label}.` }],

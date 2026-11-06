@@ -42,6 +42,9 @@ const BY_ITEM: Readonly<Record<string, string>> = {
   cloth_boots: "gameicons:lorc/boots",
   waterskin: "gameicons:delapouite/waterskin",
   slingshot: "gameicons:delapouite/slingshot",
+  bow: "gameicons:lorc/pocket-bow",
+  stone_arrow: "gameicons:delapouite/plain-arrow",
+  tranq_arrow: "gameicons:lorc/arrow-flights",
 };
 
 /** Families sharing one icon, by id prefix or suffix. */

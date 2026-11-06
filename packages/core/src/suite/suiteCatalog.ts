@@ -122,6 +122,19 @@ export const SUITE_ENTRIES: readonly SuiteEntry[] = [
   { id: "survival.food-spoils", genres: ["survival"], by: "sim", does: "Carried food spoils over time into something else.", proof: "Setup gives fresh food; waiting turns it into its spoiled item." },
   { id: "survival.respawn-point", genres: ["survival"], by: "sim", does: "A placed bed or bag becomes where the player wakes after death.", proof: "Play places the respawn item and dies; the player wakes at it, not at the spawn." },
   { id: "survival.storage-place", genres: ["survival"], by: "sim", does: "A storage container can be placed and holds items.", proof: "Play places a container, moves items into it, and they stay there." },
+  { id: "survival.encumbrance", genres: ["survival"], by: "sim", does: "Carrying more slows the player, and past the limit they cannot move.", proof: "Setup loads the bag near the limit; play walks and is slower than empty, then adds more and stops moving." },
+  {
+    id: "survival.farm", genres: ["survival"], by: "sim",
+    does: "Plant a seed in a plot; with water and fertilizer it grows a harvest.",
+    proof: "Setup gives a plot, a seed and fertilizer; play plants and waits, and the plot yields more than the seed cost; unwatered it does not grow.",
+    depth: {
+      find: "Seeds drop from the plants the player already picks.",
+      improves: "Larger plots, irrigation and better fertilizer.",
+      feeds: ["taming.crafted-bait", "survival.eat-drink"],
+      repeat: "Crops feed bait recipes and a growing herd.",
+      fails: "Dry or unfertilized plots wither.",
+    },
+  },
   {
     id: "building.place-snap", genres: ["survival"], by: "sim",
     does: "Building pieces place, snap to each other and stand.",
@@ -163,6 +176,21 @@ export const SUITE_ENTRIES: readonly SuiteEntry[] = [
     },
   },
   { id: "crafting.unlock-spend", genres: ["survival"], by: "sim", does: "Level-ups give points the player spends to learn recipes.", proof: "Setup gives a level; play spends its point on a recipe and can now craft it." },
+  {
+    id: "crafting.refine-tier", genres: ["survival"], by: "sim",
+    does: "Raw ore smelts at a fuelled station into a material that opens a stronger tier of tools and building.",
+    proof: "Setup gives ore, fuel and the station; play smelts the ore, crafts a next-tier tool from the result, and that tool out-gathers the previous tier on the same node.",
+    depth: {
+      find: "The ore is visible in the world well before the station unlocks.",
+      improves: "Each tier of tools and pieces outlasts and out-gathers the last.",
+      feeds: ["harvest.tool-bias", "building.tiers-durability"],
+      repeat: "Every late recipe and stronger building needs refined material in bulk.",
+      fails: "Without fuel the station stops; ore is heavy to bring home.",
+    },
+  },
+  { id: "crafting.fuel", genres: ["survival"], by: "sim", does: "A station that burns consumes fuel and stops when it runs out.", proof: "Setup gives a lit station with a little fuel and work queued; waiting burns the fuel, and the work stops when it is gone." },
+  { id: "crafting.preserve", genres: ["survival"], by: "sim", does: "A preserving container slows spoilage.", proof: "Setup gives two equal food stacks; one goes into the container; after the same wait the stored stack has spoiled less." },
+  { id: "crafting.tool-wear", genres: ["survival"], by: "sim", does: "Tools and weapons wear with use, break, and can be repaired with materials.", proof: "Play uses a tool until its durability reading falls, then repairs it and the reading rises while repair materials leave the bag." },
 
   // Creature survival: taming.
   {
@@ -177,9 +205,44 @@ export const SUITE_ENTRIES: readonly SuiteEntry[] = [
       fails: "Striking too hard kills it; waking up loses the progress.",
     },
   },
-  { id: "taming.ranged-knockout", genres: ["creature-survival"], by: "sim", does: "Knock a creature out from range with a weapon that adds torpor.", proof: "Setup gives the ranged weapon and ammo; play fires until the creature drops unconscious." },
+  {
+    id: "taming.ranged-knockout", genres: ["creature-survival"], by: "sim",
+    does: "Knock a creature out from range with sedative ammo, without standing in its reach.",
+    proof: "Setup gives the ranged weapon and sedative ammo and places an aggressive creature beyond its attack reach; play fires until it drops unconscious, the player's health unchanged and the ammo count fallen.",
+    depth: {
+      find: "The ranged weapon unlocks a few levels after the first melee tame, and the sedative ammo soon after.",
+      improves: "Stronger weapons and ammo add more torpor per shot, so bigger creatures become possible.",
+      feeds: ["taming.keep-under", "creatures.ride.fly"],
+      repeat: "Every dangerous or flying creature is tamed this way.",
+      fails: "Shots to a weak creature kill it; missed shots waste ammo while it closes in.",
+    },
+  },
   { id: "taming.keep-under", genres: ["creature-survival"], by: "sim", does: "Keep an unconscious creature under with a sedative while it eats.", proof: "Setup gives a sedative and a downed creature; play feeds the sedative and its torpor rises." },
-  { id: "taming.preferred-food", genres: ["creature-survival"], by: "sim", does: "A creature's preferred food tames it faster than ordinary food.", proof: "Two downed creatures; play feeds one the preferred food and it finishes first." },
+  { id: "taming.wake-loses", genres: ["creature-survival"], by: "sim", does: "If an unconscious creature's torpor runs out it wakes up wild, and the taming progress is lost.", proof: "Setup gives a downed creature partway tamed with no sedative; waiting, it wakes, its taming progress reads zero and it is wild again." },
+  {
+    id: "taming.preferred-food", genres: ["creature-survival"], by: "sim",
+    does: "Each species ranks its foods; its favourite tames it several times faster and cleaner than ordinary food.",
+    proof: "Two downed creatures of one species at one level; play feeds one its favourite and one an ordinary food; the favourite finishes in under half the time with higher effectiveness.",
+    depth: {
+      find: "Inspecting a downed creature names what it likes best.",
+      improves: "Better foods unlock as the player farms, cooks and breeds.",
+      feeds: ["taming.crafted-bait", "taming.effectiveness"],
+      repeat: "Each new species asks for a different food.",
+      fails: "The wrong food takes so long the narcotics run out.",
+    },
+  },
+  {
+    id: "taming.crafted-bait", genres: ["creature-survival"], by: "sim",
+    does: "A cooked taming food, made from eggs and crops at a station, is the best food for creatures of its tier.",
+    proof: "Setup gives the station and inputs; play cooks the bait and feeds it to a downed creature of that tier, and it tames faster than with that creature's best raw food.",
+    depth: {
+      find: "Eggs drop near the creatures that lay them; the recipe is shown at the station.",
+      improves: "Higher tiers of bait, from rarer eggs, tame bigger creatures.",
+      feeds: ["taming.preferred-food", "breeding.pair-mate"],
+      repeat: "Big tames need bait made from the eggs of other tames.",
+      fails: "Bait spoils, and the wrong tier is barely better than nothing.",
+    },
+  },
   { id: "taming.passive-feed", genres: ["creature-survival"], by: "sim", does: "Some creatures tame awake, by offering food without being hit.", proof: "Setup places a passive tamer and food; play offers the food until it is tamed." },
   { id: "taming.trap", genres: ["creature-survival"], by: "sim", does: "A trap or snare holds a creature still for taming.", proof: "Setup gives the trap; play uses it on a creature and it cannot move." },
   { id: "taming.effectiveness", genres: ["creature-survival"], by: "sim", does: "A cleaner tame gives a better creature.", proof: "Two tames, one hit while eating; play shows the cleaner one has more bonus levels." },
@@ -189,8 +252,8 @@ export const SUITE_ENTRIES: readonly SuiteEntry[] = [
   { id: "creatures.fight-alongside", genres: ["creature-survival"], by: "sim", does: "Tames attack what threatens the player.", proof: "Setup spawns a hostile; the following tame damages it." },
   {
     id: "creatures.work.gather", genres: ["creature-survival"], by: "sim",
-    does: "A tame gathers resources the player could not gather as fast.",
-    proof: "Play rides or orders a tame to harvest a node; its yield beats the player's tool.",
+    does: "Species have gather roles: a tame gathers its specialty resource far faster than the player's best tool.",
+    proof: "Setup gives a specialist tame and the player's best tool for that node; play harvests the same node kind both ways for the same time, and the tame's yield of its specialty is at least twice the tool's.",
     depth: {
       find: "The creature's role is shown when it is tamed or inspected.",
       improves: "Specialist creatures gather specific materials far faster.",
@@ -200,7 +263,11 @@ export const SUITE_ENTRIES: readonly SuiteEntry[] = [
     },
   },
   { id: "creatures.work.haul", genres: ["creature-survival"], by: "sim", does: "A tame carries weight so the player can haul more.", proof: "Play moves items into a tame's inventory and rides it while over the player's own limit." },
+  { id: "creatures.work.lighter-loads", genres: ["creature-survival"], by: "sim", does: "A specialist tame carries its specialty resource at reduced weight.", proof: "Setup gives one stack of a resource; moved from the player's bag into the specialist tame, the same stack weighs less on the tame." },
+  { id: "creatures.work.airlift", genres: ["creature-survival"], by: "sim", does: "A flying tame picks up a smaller creature or survivor and carries it.", proof: "Setup gives a ridden flyer over a small tame; play grabs it, flies, and drops it, and the small tame's position moved with the flyer." },
+  { id: "creatures.feed-starve", genres: ["creature-survival"], by: "sim", does: "Tames eat from their own inventory or a shared trough; an unfed tame starves and dies.", proof: "Setup gives a tame with food and one without; waiting, the fed one's food meter refills from its inventory while the unfed one's health falls to death." },
   { id: "creatures.guard-base", genres: ["creature-survival"], by: "sim", does: "Tames left at the base defend it.", proof: "Setup leaves a tame guarding and spawns a raider; the tame drives it off." },
+  { id: "creatures.behavior-modes", genres: ["creature-survival"], by: "sim", does: "Set a tame passive, neutral or aggressive, and it fights accordingly.", proof: "Setup places a tame by a wild creature; set passive it ignores it, set aggressive it attacks it." },
   { id: "creatures.level-up", genres: ["creature-survival"], by: "sim", does: "Tames gain experience and the player spends their levels on stats.", proof: "Setup gives a tame experience; play spends a point and the stat rises." },
   {
     id: "creatures.ride.ground", genres: ["creature-survival"], by: "sim",
@@ -214,7 +281,18 @@ export const SUITE_ENTRIES: readonly SuiteEntry[] = [
       fails: "A tired or hurt mount throws the player into danger.",
     },
   },
-  { id: "creatures.ride.fly", genres: ["creature-survival"], by: "sim", does: "Ride a flying tame and gain height.", proof: "Setup gives a flyer and saddle; play mounts and climbs above the ground." },
+  {
+    id: "creatures.ride.fly", genres: ["creature-survival"], by: "sim",
+    does: "Ride a flying tame: take off, climb, cross terrain that blocks walking, and land.",
+    proof: "Setup gives a flyer and saddle at the foot of a cliff; play mounts, climbs well above the ground, crosses to the top, and lands there.",
+    depth: {
+      find: "Flyers are visible in the sky from the start; the saddle unlocks mid-game.",
+      improves: "Bigger flyers carry more, fly further on their stamina, and lift creatures.",
+      feeds: ["creatures.work.airlift", "cave.artifact-run"],
+      repeat: "The map's far corners and peaks are trips only a flyer makes quickly.",
+      fails: "Stamina runs out in the air and the flyer drops.",
+    },
+  },
   { id: "creatures.ride.swim", genres: ["creature-survival"], by: "sim", does: "Ride a swimming tame through water.", proof: "Setup gives a swimmer and saddle; play rides it across water faster than swimming." },
 
   // Creature survival: breeding.
@@ -251,6 +329,7 @@ export const SUITE_ENTRIES: readonly SuiteEntry[] = [
     },
   },
   { id: "boss.phases", genres: ["creature-survival"], by: "sim", does: "A boss changes how it fights as it is hurt.", proof: "Setup starts a fight; play damages the boss and its phase reading advances." },
+  { id: "boss.unlocks-progression", genres: ["creature-survival"], by: "sim", does: "Beating a boss unlocks something no other source gives.", proof: "Setup wins a fight; afterwards a recipe, level cap or item reads available that read unavailable before the fight." },
   {
     id: "cave.artifact-run", genres: ["creature-survival"], by: "sim",
     does: "Enter a cave, survive it, and take the artifact from its end.",
