@@ -8,10 +8,11 @@
 // slow heartbeat only asks whether the runner is still alive, and answers a task whose runner died
 // without leaving a code instead of hanging forever.
 import { watch, type FSWatcher } from "node:fs";
-import { existsSync } from "node:fs";
+import { existsSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { readCommand, readExit, readOutput, readRunner, taskDir, TASK_ID } from "./bg-tasks";
+import { AWAITER, readCommand, readExit, readOutput, readRunner, readText, taskDir, TASK_ID } from "./bg-tasks";
 import { pidIsAlive } from "./land";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -32,6 +33,8 @@ export interface AwaitOptions {
   /** Replaces the folder watch; the test drives the wait without a real child. */
   untilExit?: (dir: string, id: string) => Promise<WaitResult>;
   timeoutMs?: number;
+  /** The pid written as the task's awaiter; this process by default. */
+  pid?: number;
 }
 
 /** The task's exit code, or why there is none: its runner died, or the wait ran out first. */
@@ -58,7 +61,20 @@ export function awaitTask(options: AwaitOptions): Promise<number> {
     if (code === null) {
       const command = readCommand(dir);
       err(`background await: waiting for ${id}${command.length > 0 ? ` (${command})` : ""}`);
-      code = await untilExit(dir, id);
+      // While this waits, the task has an awaiter: a turn that ends with the harness running this
+      // await in its background is waiting correctly, and the Stop hooks let it end.
+      const awaiter = join(dir, AWAITER);
+      const pid = String(options.pid ?? process.pid);
+      try {
+        writeFileSync(awaiter, `${pid}\n`);
+      } catch {
+        // No marker only means a Stop hook nudges once; the wait itself is unaffected.
+      }
+      try {
+        code = await untilExit(dir, id);
+      } finally {
+        if (readText(awaiter)?.trim() === pid) rmSync(awaiter, { force: true });
+      }
     }
     const text = readOutput(dir);
     if (text.length > 0) options.write(text.endsWith("\n") ? text : `${text}\n`);

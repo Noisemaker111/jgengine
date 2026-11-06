@@ -14,7 +14,8 @@
 // A PR whose checks have not registered yet is a hand-off, not a failure: the queue
 // owns the wait and `bun run ci:status --pr <n>` answers only later, so the report
 // says so and the lane still exits 0. The queue for that PR starts in the background,
-// and the last line names the one command that prints its outcome.
+// and the last line names the one command that prints its outcome, to be awaited from the
+// harness background so the agent's turn ends and the exit calls it back.
 //
 // One run per worktree: a second lane:close started while the first is still verifying is
 // refused (exit 4) and told which run holds the worktree, instead of racing it for the same
@@ -339,8 +340,10 @@ export function queueInBackground(pr: number, io: LaneIo): string {
   }
   return (
     `lane:close: #${pr} is handed to the landing queue and is not merged yet. ` +
-    `Next, in the foreground with a 10-minute timeout: bun run background await ${id} --timeout 540 ` +
-    "(it prints the merge, or a failure to fix on this branch; run it again if it is still waiting). The idea is done when it is merged."
+    `Next: bun run background await ${id}, as a harness background command (Bash run_in_background) with no --timeout; ` +
+    "end the turn, and its exit calls you back with the merge, or a failure to fix on this branch. " +
+    "A shell with no background mode runs it in the foreground with --timeout 540, again while it says still running. " +
+    "The idea is done when it is merged."
   );
 }
 
